@@ -22,6 +22,7 @@ from roguelike_game.ecs.systems.combat.spells.aura_system import AuraSystem
 from roguelike_game.ecs.systems.particles.healing_aura_emitter_system import HealingAuraEmitterSystem
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
+from roguelike_game.ecs.systems.rendering.particles.particle_preset_render_system import ParticlePresetRenderSystem
 from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import LaserBeamEmitterSystem
 # from roguelike_game.ecs.systems.particles.arcane_flame_emitter_system import ArcaneFlameEmitterSystem
 from roguelike_game.ecs.systems.particles.slash_emitter_system import SlashEmitterSystem
@@ -133,7 +134,7 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
-        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, LightningRenderSystem,
+        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]

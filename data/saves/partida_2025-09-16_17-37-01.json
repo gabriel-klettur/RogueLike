@@ -4,139 +4,17 @@
     "level": "global_map",
     "pos": [
       73,
-      89
+      68
     ]
   },
-  "npcs": {
-    "72c63302-fcba-4472-a545-86b69a55da90": {
-      "level": "global_map",
-      "tile": [
-        66,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_blacksmith_smith"
-    },
-    "2ebcfd24-ed91-42c2-aea1-76db228b7afa": {
-      "level": "global_map",
-      "tile": [
-        58,
-        69
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_mague_roberto"
-    },
-    "859e4ed8-9745-4d94-b8eb-bfef50e1ae51": {
-      "level": "global_map",
-      "tile": [
-        93,
-        71
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_banker_abigail"
-    },
-    "c3f2161b-f364-455a-9d2d-d6e868cf7fe2": {
-      "level": "global_map",
-      "tile": [
-        62,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_lumberjack_pavel"
-    },
-    "7f6d13ab-2f12-442f-a603-8e5a099c1770": {
-      "level": "global_map",
-      "tile": [
-        69,
-        88
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_cheff_gatita"
-    },
-    "7e541d9b-4309-4fde-bbfb-76eaed473165": {
-      "level": "global_map",
-      "tile": [
-        95,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_alchemist_valeria"
-    }
-  },
+  "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
         73,
-        89
+        68
       ],
-      "npc_states": {
-        "72c63302-fcba-4472-a545-86b69a55da90": {
-          "level": "global_map",
-          "tile": [
-            66,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_blacksmith_smith"
-        },
-        "2ebcfd24-ed91-42c2-aea1-76db228b7afa": {
-          "level": "global_map",
-          "tile": [
-            58,
-            69
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_mague_roberto"
-        },
-        "859e4ed8-9745-4d94-b8eb-bfef50e1ae51": {
-          "level": "global_map",
-          "tile": [
-            93,
-            71
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_banker_abigail"
-        },
-        "c3f2161b-f364-455a-9d2d-d6e868cf7fe2": {
-          "level": "global_map",
-          "tile": [
-            62,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_lumberjack_pavel"
-        },
-        "7f6d13ab-2f12-442f-a603-8e5a099c1770": {
-          "level": "global_map",
-          "tile": [
-            69,
-            88
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_cheff_gatita"
-        },
-        "7e541d9b-4309-4fde-bbfb-76eaed473165": {
-          "level": "global_map",
-          "tile": [
-            95,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_alchemist_valeria"
-        }
-      }
+      "npc_states": {}
     }
   },
   "player_inventory": {
@@ -302,10 +180,10 @@
   "meta": {
     "name": "partida_2025-09-16_17-37-01",
     "created_at": "2025-09-16T17:37:01",
-    "last_played": "2025-09-16T23:12:42",
+    "last_played": "2025-09-17T01:26:32",
     "player": {
-      "xp": 10,
-      "level": 2
+      "xp": 0,
+      "level": 0
     },
     "items_summary": {
       "stacks": 2,

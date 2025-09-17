@@ -2078,5 +2078,157 @@
             156
         ],
         "id": 176
+    },
+    {
+        "id": 177,
+        "assets": {
+            "idle": "assets/buildings/gardens/ChatGPT Image Sep 17, 2025, 12_27_43 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/ChatGPT Image Sep 17, 2025, 12_27_43 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 178
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_6.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            226,
+            226
+        ],
+        "id": 179
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_7.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            226,
+            226
+        ],
+        "id": 180
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_5.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            226,
+            226
+        ],
+        "id": 181
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            412,
+            412
+        ],
+        "id": 182
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_9.png"
+        },
+        "solid": true,
+        "split_ratio": 0.512,
+        "collider_scope": "CG",
+        "original_scale": [
+            169,
+            412
+        ],
+        "id": 183
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/flowers_5.png"
+        },
+        "solid": true,
+        "split_ratio": 0.658,
+        "collider_scope": "CG",
+        "original_scale": [
+            226,
+            226
+        ],
+        "id": 184
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.693,
+        "collider_scope": "CG",
+        "original_scale": [
+            166,
+            225
+        ],
+        "id": 185
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.366,
+        "collider_scope": "CG",
+        "original_scale": [
+            114,
+            156
+        ],
+        "id": 186
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.655,
+        "collider_scope": "CG",
+        "original_scale": [
+            114,
+            156
+        ],
+        "id": 187
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/gardens/ChatGPT Image Sep 17, 2025, 12_27_43 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.437,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 188
     }
 ]

@@ -1,60 +1,52 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      18
-    ],
-    "overrides": {
-      "visible_in_game": true
-    },
-    "visuals": {
-      "Finished": {
-        "instance_id": 139,
-        "template_id": 158,
-        "offset": [
-          -127,
-          -233
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            26,
+            18
         ],
-        "split_ratio": 0.635,
-        "scale": [
-          258,
-          386
-        ]
-      },
-      "WaitClear": {
-        "instance_id": 140,
-        "template_id": 157,
-        "offset": [
-          -124,
-          -226
-        ],
-        "scale": [
-          257,
-          384
-        ],
-        "split_ratio": 0.781
-      },
-      "AwaitTrigger": {
-        "instance_id": 141,
-        "template_id": 157,
-        "offset": [
-          -128,
-          -234
-        ],
-        "split_ratio": 0.458
-      },
-      "WaitCooldown": {
-        "instance_id": 142,
-        "template_id": 155,
-        "offset": [
-          -117,
-          -237
-        ],
-        "split_ratio": 0.807
-      }
-    },
-    "id": "survival_10_forest_14_9"
-  }
+        "overrides": {
+            "visible_in_game": true
+        },
+        "visuals": {
+            "Finished": {
+                "instance_id": 167,
+                "template_id": 158,
+                "offset": [
+                    -127,
+                    -233
+                ],
+                "scale": [
+                    258,
+                    386
+                ]
+            },
+            "WaitClear": {
+                "instance_id": 168,
+                "template_id": 157,
+                "offset": [
+                    -124,
+                    -226
+                ],
+                "scale": [
+                    257,
+                    384
+                ]
+            },
+            "AwaitTrigger": {
+                "instance_id": 169,
+                "template_id": 157
+            },
+            "WaitCooldown": {
+                "instance_id": 170,
+                "template_id": 155,
+                "offset": [
+                    -117,
+                    -237
+                ]
+            }
+        },
+        "id": "survival_10_forest_14_9"
+    }
 ]
