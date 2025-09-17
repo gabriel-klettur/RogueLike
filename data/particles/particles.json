@@ -352,5 +352,125 @@
         "dispersion": 12
       }
     }
+  },
+  "explosion_ice_small": {
+    "id": "explosion_ice_small",
+    "name": "Explosion (Ice Small)",
+    "type": "explosion",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "explosion",
+        "count": 20,
+        "colors": [[180, 220, 255], [140, 200, 255], [255, 255, 255]]
+      }
+    }
+  },
+  "iceball_trail": {
+    "id": "iceball_trail",
+    "name": "Iceball Trail",
+    "type": "trail",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 4,
+        "speed": 1.0,
+        "lifespan": 38,
+        "size_range": [3, 5],
+        "colors": [[180, 220, 255], [140, 200, 255], [220, 240, 255]],
+        "dispersion": 12
+      }
+    }
+  },
+  "explosion_ice_large": {
+    "id": "explosion_ice_large",
+    "name": "Explosion (Ice Large)",
+    "type": "explosion",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "explosion",
+        "count": 36,
+        "colors": [[170, 210, 255], [130, 190, 255], [235, 245, 255]]
+      }
+    }
+  },
+  "iceball_trail_strong": {
+    "id": "iceball_trail_strong",
+    "name": "Iceball Trail (Strong)",
+    "type": "trail",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 8,
+        "speed": 1.2,
+        "lifespan": 42,
+        "size_range": [4, 6],
+        "colors": [[180, 220, 255], [140, 200, 255], [235, 245, 255]],
+        "dispersion": 14
+      }
+    }
+  },
+  "lightball_trail": {
+    "id": "lightball_trail",
+    "name": "Lightball Trail",
+    "type": "trail",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 5,
+        "speed": 1.0,
+        "lifespan": 36,
+        "size_range": [3, 5],
+        "colors": [[255, 255, 230], [255, 255, 255], [200, 220, 255]],
+        "dispersion": 12
+      }
+    }
+  },
+  "explosion_light_small": {
+    "id": "explosion_light_small",
+    "name": "Explosion (Light Small)",
+    "type": "explosion",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "explosion",
+        "count": 24,
+        "colors": [[255, 255, 230], [255, 255, 255], [200, 220, 255]]
+      }
+    }
+  },
+  "darkball_trail": {
+    "id": "darkball_trail",
+    "name": "Darkball Trail",
+    "type": "trail",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 4,
+        "speed": 0.9,
+        "lifespan": 40,
+        "size_range": [3, 5],
+        "colors": [[60, 0, 80], [30, 0, 50], [40, 40, 40]],
+        "dispersion": 10
+      }
+    }
+  },
+  "explosion_dark_small": {
+    "id": "explosion_dark_small",
+    "name": "Explosion (Dark Small)",
+    "type": "explosion",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "explosion",
+        "count": 22,
+        "colors": [[60, 0, 80], [100, 0, 120], [40, 40, 40]]
+      }
+    }
   }
 }
