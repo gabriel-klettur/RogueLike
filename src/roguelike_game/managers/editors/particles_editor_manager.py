@@ -160,46 +160,43 @@ class ParticlesEditorManager:
         # Overlay: selection highlight for selected instance (ring only; runtime draws the effect)
         try:
             model = getattr(self, 'model', None)
-            if not model or not getattr(model, 'visible', False):
-                return
-            sel_id = getattr(model, 'selected_instance_id', None)
-            if sel_id is None:
-                return
-            # Find entry and compute world coords
-            entry = None
-            for e in load_particles_instances() or []:
-                try:
-                    if int(e.get('id')) == int(sel_id):
-                        entry = e
-                        break
-                except Exception:
-                    continue
-            if not isinstance(entry, dict):
-                return
-            zone = str(entry.get('zone') or 'no zone')
-            rel_x = int(entry.get('rel_x') or 0)
-            rel_y = int(entry.get('rel_y') or 0)
-            off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
-            wx = int(off_tx) * TILE_SIZE + int(rel_x)
-            wy = int(off_ty) * TILE_SIZE + int(rel_y)
-            # World -> screen
-            cam = getattr(self.game, 'camera', None)
-            zoom = float(getattr(cam, 'zoom', 1.0) or 1.0)
-            ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
-            oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
-            sx = int((float(wx) - ox) * zoom)
-            sy = int((float(wy) - oy) * zoom)
-            # Draw ring
-            radius = int(14 * zoom)
-            if radius < 8:
-                radius = 8
-            color_a = (255, 255, 0)
-            color_b = (220, 180, 0)
-            try:
-                pygame.draw.circle(screen, color_a, (sx, sy), radius + 2, width=2)
-                pygame.draw.circle(screen, color_b, (sx, sy), radius, width=2)
-            except Exception:
-                pass
+            if model and getattr(model, 'visible', False):
+                sel_id = getattr(model, 'selected_instance_id', None)
+                if sel_id is not None:
+                    # Find entry and compute world coords
+                    entry = None
+                    for e in load_particles_instances() or []:
+                        try:
+                            if int(e.get('id')) == int(sel_id):
+                                entry = e
+                                break
+                        except Exception:
+                            continue
+                    if isinstance(entry, dict):
+                        zone = str(entry.get('zone') or 'no zone')
+                        rel_x = int(entry.get('rel_x') or 0)
+                        rel_y = int(entry.get('rel_y') or 0)
+                        off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+                        wx = int(off_tx) * TILE_SIZE + int(rel_x)
+                        wy = int(off_ty) * TILE_SIZE + int(rel_y)
+                        # World -> screen
+                        cam = getattr(self.game, 'camera', None)
+                        zoom = float(getattr(cam, 'zoom', 1.0) or 1.0)
+                        ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
+                        oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
+                        sx = int((float(wx) - ox) * zoom)
+                        sy = int((float(wy) - oy) * zoom)
+                        # Draw ring
+                        radius = int(14 * zoom)
+                        if radius < 8:
+                            radius = 8
+                        color_a = (255, 255, 0)
+                        color_b = (220, 180, 0)
+                        try:
+                            pygame.draw.circle(screen, color_a, (sx, sy), radius + 2, width=2)
+                            pygame.draw.circle(screen, color_b, (sx, sy), radius, width=2)
+                        except Exception:
+                            pass
         except Exception:
             pass
         # Overlay: hover highlight (cyan borders) for instance under cursor
@@ -215,29 +212,78 @@ class ParticlesEditorManager:
             zoom = float(getattr(cam, 'zoom', 1.0) or 1.0)
             ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
             oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
-            wx = mx / zoom + ox
-            wy = my / zoom + oy
+            wx = mx / (zoom if zoom != 0 else 1.0) + ox
+            wy = my / (zoom if zoom != 0 else 1.0) + oy
             entry = None
             try:
-                entry = _find_nearest_instance(float(wx), float(wy), max_dist_px=48)
+                # Scale search radius with zoom so hover works when zoomed out/in
+                max_d = int(48 / (zoom if zoom > 0 else 1.0))
+                if max_d < 24:
+                    max_d = 24
+                if max_d > 128:
+                    max_d = 128
+                entry = _find_nearest_instance(float(wx), float(wy), max_dist_px=max_d)
             except Exception:
                 entry = None
-            if not isinstance(entry, dict):
+            wpx = None
+            wpy = None
+            # Prefer persisted entry
+            if isinstance(entry, dict):
+                # Do not draw cyan hover if this entry is currently selected (selection has priority)
+                try:
+                    sel_id = getattr(model, 'selected_instance_id', None)
+                    if sel_id is not None and int(entry.get('id')) == int(sel_id):
+                        return
+                except Exception:
+                    pass
+                # Compute world position of the hovered persisted instance
+                zone = str(entry.get('zone') or 'no zone')
+                rel_x = int(entry.get('rel_x') or 0)
+                rel_y = int(entry.get('rel_y') or 0)
+                off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+                wpx = int(off_tx) * TILE_SIZE + int(rel_x)
+                wpy = int(off_ty) * TILE_SIZE + int(rel_y)
+            else:
+                # Fallback: search nearest runtime ECS particle entity
+                try:
+                    world = getattr(getattr(self.game, 'ecs', None), 'ecs_world', None)
+                except Exception:
+                    world = None
+                if world is not None:
+                    try:
+                        pos_map = world.components.get('Position', {}) or {}
+                        parts = world.components.get('ParticlePresetComponent', {}) or {}
+                        best_e = None
+                        best_d2 = None
+                        for eid, comp in list(parts.items()):
+                            pos = pos_map.get(eid)
+                            if pos is None:
+                                continue
+                            dx = float(getattr(pos, 'x', 0.0)) - float(wx)
+                            dy = float(getattr(pos, 'y', 0.0)) - float(wy)
+                            d2 = dx*dx + dy*dy
+                            if best_d2 is None or d2 < best_d2:
+                                best_d2 = d2
+                                best_e = eid
+                        # Threshold using same scaled radius
+                        thr = float(max_d * max_d)
+                        if best_e is not None and (best_d2 is None or best_d2 <= thr):
+                            pos = pos_map.get(best_e)
+                            if pos is not None:
+                                # Skip if it's the currently selected entry id (if available on component)
+                                try:
+                                    sel_id = getattr(model, 'selected_instance_id', None)
+                                    comp = parts.get(best_e)
+                                    if sel_id is not None and comp is not None and int(getattr(comp, 'entry_id', -1)) == int(sel_id):
+                                        return
+                                except Exception:
+                                    pass
+                                wpx = float(getattr(pos, 'x', 0.0))
+                                wpy = float(getattr(pos, 'y', 0.0))
+                    except Exception:
+                        pass
+            if wpx is None or wpy is None:
                 return
-            # Do not draw cyan hover if this entry is currently selected (selection has priority)
-            try:
-                sel_id = getattr(model, 'selected_instance_id', None)
-                if sel_id is not None and int(entry.get('id')) == int(sel_id):
-                    return
-            except Exception:
-                pass
-            # Compute world position of the hovered instance
-            zone = str(entry.get('zone') or 'no zone')
-            rel_x = int(entry.get('rel_x') or 0)
-            rel_y = int(entry.get('rel_y') or 0)
-            off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
-            wpx = int(off_tx) * TILE_SIZE + int(rel_x)
-            wpy = int(off_ty) * TILE_SIZE + int(rel_y)
             sx = int((float(wpx) - ox) * zoom)
             sy = int((float(wpy) - oy) * zoom)
             # Cyan double ring

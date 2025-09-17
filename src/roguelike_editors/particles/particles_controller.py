@@ -91,6 +91,13 @@ class ParticlesEditorController:
                 # Finalmente, properties panel (no interactivo por ahora)
                 if self.particles_properties_controller.handle_event(event):
                     return
+            else:
+                # AÚN ASÍ: permitir interacciones con el mapa (selección/mover) aunque el panel esté oculto
+                try:
+                    if self.particles_add_remove_controller.handle_event(event):
+                        return
+                except Exception:
+                    pass
         except Exception:
             pass
         return

@@ -3,15 +3,15 @@
     "id": 4,
     "preset_id": "smoke_emitter",
     "zone": "zone_50_0",
-    "rel_x": 270,
+    "rel_x": 272,
     "rel_y": 1429
   },
   {
     "id": 5,
     "preset_id": "smoke_emitter",
     "zone": "zone_50_0",
-    "rel_x": 1009,
-    "rel_y": 1445
+    "rel_x": 1011,
+    "rel_y": 1443
   },
   {
     "id": 7,

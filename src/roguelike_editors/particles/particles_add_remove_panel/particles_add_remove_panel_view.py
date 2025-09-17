@@ -17,7 +17,6 @@ class ParticlesAddRemovePanelView:
         self.x, self.y = 10, 80
         icon_paths = {
             'particles_add_system': 'assets/ui/particles_editor/add_remove_panel/particles_add_system.png',
-            'particles_add': 'assets/ui/particles_editor/add_remove_panel/particles_add.png',
             'particles_remove': 'assets/ui/particles_editor/add_remove_panel/particles_remove.png',
         }
         self.icons = {}
@@ -71,10 +70,6 @@ class ParticlesAddRemovePanelView:
                 rect = self.widget.icon_rects.get('particles_add_system')
                 if rect:
                     pygame.draw.rect(screen, (0, 255, 255), rect.inflate(6, 6), 3)
-            if self.model.active_tool == 'particles_add':
-                rect = self.widget.icon_rects.get('particles_add')
-                if rect:
-                    pygame.draw.rect(screen, (255, 255, 0), rect.inflate(6, 6), 3)
             if self.model.active_tool == 'particles_remove':
                 rect = self.widget.icon_rects.get('particles_remove')
                 if rect:

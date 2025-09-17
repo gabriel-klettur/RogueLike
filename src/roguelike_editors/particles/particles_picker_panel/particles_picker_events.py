@@ -87,4 +87,23 @@ class ParticlesPickerEventHandler:
                 # Normal selection flow
                 self.model.selected_id = pid
                 return True
+        # Right-click drag placement start: begin placing selected preset directly from picker
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            pid = self._id_at_pos(event.pos)
+            if pid:
+                # Resolve editor controller and set drag state on editor model
+                try:
+                    editor = getattr(self.controller, 'editor_controller', None)
+                    if editor is not None and hasattr(editor, 'model'):
+                        editor.model.drag_place_active = True
+                        editor.model.drag_pid = str(pid)
+                        editor.model.drag_entity_eid = None
+                        # Ensure picker isn't blinking add-mode
+                        try:
+                            self.model.add_mode_active = False
+                        except Exception:
+                            pass
+                        return True
+                except Exception:
+                    pass
         return False
