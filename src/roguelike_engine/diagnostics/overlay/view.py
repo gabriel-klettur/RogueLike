@@ -52,7 +52,7 @@ class DiagnosticsOverlayView:
         model.line_keys = []
         y = 0
         used_label_w = min(label_w, total_w // 2)
-        for left, right in lines:
+        for idx, (left, right) in enumerate(lines):
             is_header = left.strip().endswith(':')
             # Render label
             cache_label = f"{('HL' if is_header else 'L')}:{left}|color:{(255, 255, 0) if is_header else model.text_color}"
@@ -82,12 +82,21 @@ class DiagnosticsOverlayView:
 
             # Render value
             if right:
-                cache_val = f"{('HV' if is_header else 'R')}:{right}|color:{(255, 255, 0) if is_header else model.value_color}"
+                # Determine per-line value color: headers use yellow, items use override or default
+                if is_header:
+                    val_color = (255, 255, 0)
+                else:
+                    # Guard against mismatched lengths
+                    if 0 <= idx < len(getattr(model, 'value_colors', [])) and model.value_colors[idx] is not None:
+                        val_color = model.value_colors[idx]  # type: ignore[assignment]
+                    else:
+                        val_color = model.value_color
+                cache_val = f"{('HV' if is_header else 'R')}:{right}|color:{val_color}"
                 if cache_val not in self._text_cache:
                     if is_header:
                         self._text_cache[cache_val] = bold_font.render(right, True, (255, 255, 0))
                     else:
-                        self._text_cache[cache_val] = font.render(right, True, model.value_color)
+                        self._text_cache[cache_val] = font.render(right, True, val_color)
                 surf_r = self._text_cache[cache_val]
                 # Alinear el valor a la derecha del panel cuando haya espacio suficiente;
                 # si no, mantenerlo inmediatamente después de la etiqueta.

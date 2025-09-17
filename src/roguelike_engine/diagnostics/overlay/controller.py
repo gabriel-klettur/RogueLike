@@ -43,7 +43,7 @@ class DiagnosticsOverlayController:
         now = time.perf_counter()
         rebuild = (now - self.model.last_update_time) >= self.model.update_interval
         if rebuild or self.model.panel_surf is None:
-            lines, label_w, value_w, line_levels = lines_builder.build_lines(
+            lines, label_w, value_w, line_levels, value_colors = lines_builder.build_lines(
                 self.model, self.view, state, camera, map_manager, entities, extra_lines
             )
 
@@ -66,6 +66,7 @@ class DiagnosticsOverlayController:
                 i1 = min(total_lines, i0 + lines_per_page)
                 page_lines = lines[i0:i1]
                 page_levels = line_levels[i0:i1]
+                page_colors = value_colors[i0:i1]
                 # Persist runtime paging metadata
                 self.model.page_index = pi
                 self.model.total_lines = total_lines
@@ -74,10 +75,12 @@ class DiagnosticsOverlayController:
                 # Rebuild with just the page
                 self.view.rebuild_panel(self.model, position, page_lines, label_w, value_w)
                 self.model.line_levels = page_levels
+                self.model.value_colors = page_colors
             else:
                 # No paging: render all (ya limitado por max_lines si aplica)
                 self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
                 self.model.line_levels = line_levels
+                self.model.value_colors = value_colors
             self.model.last_update_time = now
 
         if self.model.panel_surf and self.model.panel_rect:
