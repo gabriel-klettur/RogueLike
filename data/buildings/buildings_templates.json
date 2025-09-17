@@ -2274,5 +2274,98 @@
             384
         ],
         "id": 192
+    },
+    {
+        "id": 193,
+        "assets": {
+            "idle": "assets/buildings/houses/curse_house_iso.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 194,
+        "assets": {
+            "idle": "assets/buildings/houses/curse_house_topdown.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 195,
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_25_29 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 196,
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_27_21 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 197,
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_29_09 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "id": 198,
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_30_45 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/ukranian_super_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.517,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 199
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/curse_house_iso.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 200
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/curse_house_iso.png"
+        },
+        "solid": true,
+        "split_ratio": 0.474,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 201
     }
 ]

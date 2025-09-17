@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      56,
-      88
+      74,
+      66
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        56,
-        88
+        74,
+        66
       ],
       "npc_states": {}
     }
@@ -183,18 +183,11 @@
   "meta": {
     "name": "partida_2025-09-16_17-37-01",
     "created_at": "2025-09-16T17:37:01",
-    "last_played": "2025-09-17T03:48:51",
+    "last_played": "2025-09-17T04:07:08",
     "player": {
-      "xp": 70,
-      "level": 1
+      "xp": null,
+      "level": null
     },
-    "items_summary": {
-      "stacks": 3,
-      "top_items": [
-        "gold",
-        "health_potion",
-        "wood"
-      ]
-    }
+    "items_summary": {}
   }
 }

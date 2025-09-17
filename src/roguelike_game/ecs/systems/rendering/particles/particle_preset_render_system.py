@@ -14,13 +14,16 @@ class ParticlePresetRenderSystem:
 
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
+        # Cache of preview providers per INSTANCE, not per preset, to avoid
+        # synchronized animations when multiple entities share the same preset.
+        # Key format: f"{preset_id}#{entry_id or eid}"
         self._providers: Dict[str, object] = {}
         self._last_ticks = 0
         # Match picker default cell size minus padding
         self._cell_size = 56
 
-    def _get_provider(self, preset_id: str):
-        prov = self._providers.get(preset_id)
+    def _get_provider(self, cache_key: str, preset_id: str):
+        prov = self._providers.get(cache_key)
         if prov is not None:
             return prov
         try:
@@ -38,7 +41,7 @@ class ParticlePresetRenderSystem:
                 return None
             def provider(size, dt_ms):
                 return obj.render(size, dt_ms)
-            self._providers[preset_id] = provider
+            self._providers[cache_key] = provider
             return provider
         except Exception:
             return None
@@ -60,7 +63,14 @@ class ParticlePresetRenderSystem:
             pos = pos_map.get(eid)
             if pos is None:
                 continue
-            provider = self._get_provider(getattr(comp, 'preset_id', ''))
+            pid = getattr(comp, 'preset_id', '')
+            # Use persisted entry_id when available to ensure per-instance state
+            try:
+                entry_id = getattr(comp, 'entry_id', None)
+            except Exception:
+                entry_id = None
+            cache_key = f"{pid}#{int(entry_id)}" if entry_id is not None else f"{pid}#{int(eid)}"
+            provider = self._get_provider(cache_key, pid)
             if provider is None:
                 continue
             try:

@@ -5,7 +5,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 317
+        "quantity": 318
       },
       {
         "item": "health_potion",
@@ -13,9 +13,12 @@
       },
       {
         "item": "wood",
+        "quantity": 2
+      },
+      {
+        "item": "experience_orb",
         "quantity": 1
       },
-      null,
       null,
       null,
       null,

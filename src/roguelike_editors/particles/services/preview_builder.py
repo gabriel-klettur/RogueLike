@@ -15,6 +15,7 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewArcaneFlame,
     ParticlePreviewTeleport,
     ParticlePreviewWaterFountain,
+    ParticlePreviewFallingLeaf,
 )
 from roguelike_game.config.particles_config import get_preset
 
@@ -262,6 +263,37 @@ def build_preview_for_definition(defn: Dict[str, Any]):
                 gravity=float(gravity),
                 droplet_size=int(droplet_size),
                 splash_count=int(splash_count),
+            )
+        if kind in ("falling_leaf", "leaf"):
+            # One leaf at a configurable interval (ms). Defaults to very sparse.
+            interval_ms = parts.get("interval_ms")
+            if not isinstance(interval_ms, int) or interval_ms <= 0:
+                # allow seconds aliases
+                sec = parts.get("interval_s") if isinstance(parts.get("interval_s"), (int, float)) else None
+                interval_ms = int(float(sec) * 1000.0) if isinstance(sec, (int, float)) else 30000
+            life_ms = parts.get("life_ms")
+            if not isinstance(life_ms, int) or life_ms <= 0:
+                if isinstance(parts.get("lifespan_ms"), int):
+                    life_ms = int(parts.get("lifespan_ms"))
+                elif isinstance(parts.get("lifespan"), int):
+                    # lifespan in 33ms steps (compat)
+                    life_ms = int(parts.get("lifespan")) * 33
+                else:
+                    life_ms = 6000
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 0.5
+            gravity = parts.get("gravity") if isinstance(parts.get("gravity"), (int, float)) else 0.06
+            sway_amp = parts.get("sway_amp") if isinstance(parts.get("sway_amp"), (int, float)) else 0.6
+            sway_speed = parts.get("sway_speed") if isinstance(parts.get("sway_speed"), (int, float)) else 0.15
+            size = parts.get("size") if isinstance(parts.get("size"), (list, tuple)) and len(parts.get("size")) >= 2 else (3, 2)
+            return ParticlePreviewFallingLeaf(
+                color=color if color_explicit else (120, 200, 80),
+                interval_ms=int(interval_ms),
+                life_ms=int(life_ms),
+                speed=float(speed),
+                gravity=float(gravity),
+                sway_amp=float(sway_amp),
+                sway_speed=float(sway_speed),
+                size=(int(size[0]), int(size[1])) if isinstance(size, (list, tuple)) else (3, 2),
             )
         if kind in ("explosion",):
             palette = palette_colors if len(palette_colors) > 0 else None

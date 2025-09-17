@@ -1001,3 +1001,106 @@ class ParticlePreviewWaterFountain:
             if 0 <= ix < w and 0 <= iy < h:
                 self._surf.blit(blob, (ix, iy))
         return self._surf
+
+
+class ParticlePreviewFallingLeaf:
+    """Single falling leaf at a sparse interval with gentle sway.
+
+    Spawns at most one leaf every `interval_ms`. To avoid an entirely empty
+    picker cell, the first spawn uses a randomized phase offset so the preview
+    often shows a leaf shortly after appearing.
+    """
+
+    def __init__(
+        self,
+        color: Tuple[int, int, int] = (140, 200, 80),
+        interval_ms: int = 30000,
+        life_ms: int = 6000,
+        speed: float = 0.5,
+        gravity: float = 0.06,
+        sway_amp: float = 0.6,
+        sway_speed: float = 0.15,
+        size: Tuple[int, int] = (3, 2),
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._color = color
+        self._interval = max(1000, int(interval_ms))
+        self._life_ms = max(1000, int(life_ms))
+        self._base_vy = float(speed)
+        self._g = float(gravity)
+        self._sway_amp = float(sway_amp)
+        self._sway_speed = float(sway_speed)
+        self._leaf_w = max(2, int(size[0]))
+        self._leaf_h = max(2, int(size[1]))
+        # State
+        self._timer_ms = random.randint(0, self._interval - 1)  # randomize first spawn
+        self._acc_ms = 0
+        self._step_ms = 33
+        # current leaf (None or tuple fields)
+        self._leaf: tuple[float, float, float, float, float, int] | None = None
+        # x, y, vx, vy, sway_phase, age_ms
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+            self._leaf = None
+            # keep timer, do not reset, so cadence persists while browsing
+
+    def _spawn_leaf(self, w: int, h: int) -> None:
+        # Spawn near top canopy
+        x = random.uniform(w * 0.25, w * 0.75)
+        y = random.uniform(h * 0.05, h * 0.25)
+        vx = 0.0
+        vy = max(0.1, self._base_vy)
+        sway_phase = random.random() * 6.28318
+        self._leaf = (x, y, vx, vy, sway_phase, 0)
+
+    def _step(self, w: int, h: int, steps: int) -> None:
+        # Handle spawn timer (in real milliseconds)
+        self._timer_ms += steps * self._step_ms
+        if self._leaf is None and self._timer_ms >= self._interval:
+            self._timer_ms %= self._interval
+            self._spawn_leaf(w, h)
+        if self._leaf is None:
+            return
+        x, y, vx, vy, phase, age = self._leaf
+        for _ in range(steps):
+            # update physics in small steps
+            # sway: horizontal drift by sinusoid
+            phase += self._sway_speed
+            vx = self._sway_amp * math.sin(phase)
+            vy += self._g
+            x += vx
+            y += vy
+            age += self._step_ms
+            # stop if out or lifetime exceeded
+            if y >= h - 2 or age >= self._life_ms:
+                self._leaf = None
+                return
+        self._leaf = (x, y, vx, vy, phase, age)
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # advance in fixed steps
+        self._acc_ms += max(0, dt_ms)
+        steps = 0
+        while self._acc_ms >= self._step_ms:
+            self._step(w, h, 1)
+            self._acc_ms -= self._step_ms
+            steps += 1
+        # draw
+        self._surf.fill((0, 0, 0, 0))
+        if self._leaf is not None:
+            x, y, vx, vy, phase, age = self._leaf
+            # subtle alpha fade with age
+            a = max(80, min(255, 255 - int(255 * (age / max(1, self._life_ms)))))
+            leaf = pygame.Surface((self._leaf_w, self._leaf_h), pygame.SRCALPHA)
+            leaf.fill((*self._color, a))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(leaf, (ix, iy))
+        return self._surf

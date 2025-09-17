@@ -182,4 +182,43 @@
       }
     }
   }
+  ,
+  "falling_leaf_30s": {
+    "id": "falling_leaf_30s",
+    "name": "Falling Leaf (30s)",
+    "type": "leaf",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "falling_leaf",
+        "interval_ms": 1000,
+        "life_ms": 8000,
+        "speed": 0.4,
+        "gravity": 0.06,
+        "sway_amp": 0.7,
+        "sway_speed": 0.12,
+        "size": [3, 2],
+        "color": [130, 200, 90]
+      }
+    }
+  },
+  "falling_petal_30s": {
+    "id": "falling_petal_30s",
+    "name": "Falling Petal (30s)",
+    "type": "leaf",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "falling_leaf",
+        "interval_ms": 2000,
+        "life_ms": 7000,
+        "speed": 0.35,
+        "gravity": 0.055,
+        "sway_amp": 1.0,
+        "sway_speed": 0.10,
+        "size": [2, 2],
+        "color": [255, 160, 200]
+      }
+    }
+  }
 }
