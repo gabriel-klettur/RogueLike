@@ -83,7 +83,7 @@
         "speed": 2.5,
         "size_range": [3, 7],
         "color": [255, 230, 150],
-        "arc_range_degrees": 90
+        "arc_range_degrees": 45
       }
     }
   },
