@@ -220,5 +220,119 @@
         "color": [255, 160, 200]
       }
     }
+  },
+  "water_flow_h": {
+    "id": "water_flow_h",
+    "name": "Water Flow (Horizontal)",
+    "type": "water",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "water_flow",
+        "direction": [1.0, 0.0],
+        "speed": 0.02,
+        "stripe_gap": 8,
+        "ripple_amp": 0.6,
+        "alpha_base": 110,
+        "alpha_wave": 70,
+        "color": [20, 40, 80],
+        "highlight_color": [60, 110, 160]
+      }
+    }
+  },
+  "water_flow_v": {
+    "id": "water_flow_v",
+    "name": "Water Flow (Vertical)",
+    "type": "water",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "water_flow",
+        "direction": [0.0, 1.0],
+        "speed": 0.02,
+        "stripe_gap": 8,
+        "ripple_amp": 0.6,
+        "alpha_base": 110,
+        "alpha_wave": 70,
+        "color": [20, 40, 80],
+        "highlight_color": [60, 110, 160]
+      }
+    }
+  }
+  ,
+  "water_flow_min_h": {
+    "id": "water_flow_min_h",
+    "name": "Water Flow Minimal (H)",
+    "type": "water",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "water_flow",
+        "direction": [1.0, 0.0],
+        "speed": 0.012,
+        "stripe_gap": 14,
+        "ripple_amp": 0.35,
+        "alpha_base": 90,
+        "alpha_wave": 40,
+        "color": [18, 36, 70],
+        "highlight_color": [40, 70, 110]
+      }
+    }
+  },
+  "water_flow_min_v": {
+    "id": "water_flow_min_v",
+    "name": "Water Flow Minimal (V)",
+    "type": "water",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "water_flow",
+        "direction": [0.0, 1.0],
+        "speed": 0.012,
+        "stripe_gap": 14,
+        "ripple_amp": 0.35,
+        "alpha_base": 90,
+        "alpha_wave": 40,
+        "color": [18, 36, 70],
+        "highlight_color": [40, 70, 110]
+      }
+    }
+  }
+  ,
+  "flowers_pollen_soft": {
+    "id": "flowers_pollen_soft",
+    "name": "Flowers Pollen (Soft)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 1,
+        "speed": 0.35,
+        "lifespan": 60,
+        "size_range": [1, 2],
+        "colors": [[220, 210, 160], [235, 225, 180], [245, 240, 210]],
+        "radius": 14
+      }
+    }
+  },
+  "flowers_petal_pink_60s": {
+    "id": "flowers_petal_pink_60s",
+    "name": "Flower Petal Pink (60s)",
+    "type": "leaf",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "falling_leaf",
+        "interval_ms": 60000,
+        "life_ms": 7000,
+        "speed": 0.30,
+        "gravity": 0.05,
+        "sway_amp": 0.9,
+        "sway_speed": 0.12,
+        "size": [2, 2],
+        "color": [255, 160, 200]
+      }
+    }
   }
 }

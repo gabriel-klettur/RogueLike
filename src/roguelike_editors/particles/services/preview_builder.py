@@ -16,6 +16,7 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewTeleport,
     ParticlePreviewWaterFountain,
     ParticlePreviewFallingLeaf,
+    ParticlePreviewWaterFlow,
 )
 from roguelike_game.config.particles_config import get_preset
 
@@ -307,6 +308,32 @@ def build_preview_for_definition(defn: Dict[str, Any]):
             else:
                 speed_range = (0.8, 2.5)
             return ParticlePreviewExplosion(color=base_color, palette=palette, count=int(cnt), speed_range=speed_range)
+        if kind in ("water_flow", "water"):
+            # Flowing water tile: uses base+highlight colors and a flow direction
+            # Default colors if not specified
+            base_col = color if color_explicit else (20, 40, 80)
+            hl = parts.get("highlight_color")
+            if not (isinstance(hl, (list, tuple)) and len(hl) >= 3):
+                if len(palette_colors) >= 2:
+                    hl = palette_colors[1]
+                else:
+                    hl = (60, 110, 160)
+            direction = parts.get("direction") if isinstance(parts.get("direction"), (list, tuple)) and len(parts.get("direction")) >= 2 else (1.0, 0.0)
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 0.6
+            stripe_gap = parts.get("stripe_gap") if isinstance(parts.get("stripe_gap"), int) else 8
+            ripple_amp = parts.get("ripple_amp") if isinstance(parts.get("ripple_amp"), (int, float)) else 0.6
+            alpha_base = parts.get("alpha_base") if isinstance(parts.get("alpha_base"), int) else 120
+            alpha_wave = parts.get("alpha_wave") if isinstance(parts.get("alpha_wave"), int) else 80
+            return ParticlePreviewWaterFlow(
+                base_color=base_col,
+                highlight_color=(int(hl[0]), int(hl[1]), int(hl[2])),
+                direction=(float(direction[0]), float(direction[1])),
+                speed=float(speed),
+                stripe_gap=int(stripe_gap),
+                ripple_amp=float(ripple_amp),
+                alpha_base=int(alpha_base),
+                alpha_wave=int(alpha_wave),
+            )
         # Fallback a humo
         emit_rate = 2
         er = parts.get("emit_rate")

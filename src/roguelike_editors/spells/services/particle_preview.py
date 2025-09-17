@@ -1104,3 +1104,93 @@ class ParticlePreviewFallingLeaf:
             if 0 <= ix < w and 0 <= iy < h:
                 self._surf.blit(leaf, (ix, iy))
         return self._surf
+
+
+class ParticlePreviewWaterFlow:
+    """Tiled flowing water preview using scrolling highlight stripes.
+
+    - Synchronized via global time so adjacent instances do not show seams.
+    - Supports horizontal or vertical flow using a direction vector.
+    - Designed to be overlaid on top of a dark water tile (uses alpha).
+    """
+
+    def __init__(
+        self,
+        base_color: Tuple[int, int, int] = (20, 40, 80),
+        highlight_color: Tuple[int, int, int] = (60, 110, 160),
+        direction: Tuple[float, float] = (1.0, 0.0),
+        speed: float = 0.6,
+        stripe_gap: int = 8,
+        ripple_amp: float = 0.6,
+        alpha_base: int = 120,
+        alpha_wave: int = 80,
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._base = tuple(map(int, base_color))
+        self._hl = tuple(map(int, highlight_color))
+        self._dir = pygame.math.Vector2(float(direction[0]), float(direction[1]))
+        if self._dir.length_squared() == 0:
+            self._dir.update(1.0, 0.0)
+        self._speed = float(speed)  # pixels per second-like; scaled from ms
+        self._gap = max(2, int(stripe_gap))
+        self._ripple = float(ripple_amp)
+        self._ab = max(0, min(255, int(alpha_base)))
+        self._aw = max(0, min(255, int(alpha_wave)))
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+
+    def _draw_horizontal(self, w: int, h: int, t_ms: int) -> None:
+        assert self._surf is not None
+        self._surf.fill((*self._base, self._ab))
+        # Offset advances with time; use global ticks to keep tiles in sync
+        px_per_ms = self._speed  # interpret as px/ms
+        offset = int((t_ms * px_per_ms) % self._gap)
+        # vertical highlight stripes
+        for x in range(-offset, w + self._gap, self._gap):
+            # slight ripple in alpha along y
+            col = (*self._hl, self._aw)
+            pygame.draw.rect(self._surf, col, pygame.Rect(x, 0, 2, h))
+
+    def _draw_vertical(self, w: int, h: int, t_ms: int) -> None:
+        assert self._surf is not None
+        self._surf.fill((*self._base, self._ab))
+        px_per_ms = self._speed
+        offset = int((t_ms * px_per_ms) % self._gap)
+        # horizontal highlight stripes
+        for y in range(-offset, h + self._gap, self._gap):
+            col = (*self._hl, self._aw)
+            pygame.draw.rect(self._surf, col, pygame.Rect(0, y, w, 2))
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # global synchronized time
+        t_ms = pygame.time.get_ticks()
+        # Choose axis by dominant component
+        if abs(self._dir.x) >= abs(self._dir.y):
+            self._draw_horizontal(w, h, t_ms)
+        else:
+            self._draw_vertical(w, h, t_ms)
+        # Simple ripple overlay: sine-based alpha modulation
+        if self._ripple > 0:
+            try:
+                ripple = pygame.Surface((w, h), pygame.SRCALPHA)
+                # Modulate rows/cols depending on direction
+                if abs(self._dir.x) >= abs(self._dir.y):
+                    # horizontal flow: ripple across y
+                    for y in range(h):
+                        a = int(max(0, min(40, 20 + 20 * math.sin((y / max(1, h)) * 6.28318 + (t_ms * 0.002)))))
+                        pygame.draw.line(ripple, (*self._hl, a), (0, y), (w, y))
+                else:
+                    for x in range(w):
+                        a = int(max(0, min(40, 20 + 20 * math.sin((x / max(1, w)) * 6.28318 + (t_ms * 0.002)))))
+                        pygame.draw.line(ripple, (*self._hl, a), (x, 0), (x, h))
+                self._surf.blit(ripple, (0, 0))
+            except Exception:
+                pass
+        return self._surf

@@ -54,6 +54,17 @@ class ParticlePresetRenderSystem:
         else:
             dt_ms = max(0, min(48, now - self._last_ticks))
         self._last_ticks = now
+        # Cache screen rect once for offscreen culling
+        screen_rect = screen.get_rect()
+        # Read camera zoom once per frame (assume uniform scaling)
+        try:
+            base_zoom = float(getattr(camera, 'zoom', 1.0) or 1.0)
+        except Exception:
+            base_zoom = 1.0
+        base_zoom = max(0.25, min(4.0, base_zoom))
+        # Precompute integer-zoom info
+        izoom = int(round(base_zoom))
+        is_integer_zoom = abs(base_zoom - float(izoom)) < 0.01 and izoom >= 1
 
         pos_map = world.components.get('Position', {})
         presets = world.components.get('ParticlePresetComponent', {})
@@ -75,8 +86,26 @@ class ParticlePresetRenderSystem:
                 continue
             try:
                 sx, sy = camera.apply((pos.x, pos.y))
-                surf = provider((self._cell_size, self._cell_size), dt_ms)
+                # Offscreen culling BEFORE calling provider to skip unnecessary work
+                bw = int(self._cell_size * base_zoom)
+                bh = int(self._cell_size * base_zoom)
+                if (sx + bw // 2) < screen_rect.left or (sx - bw // 2) > screen_rect.right or (sy + bh // 2) < screen_rect.top or (sy - bh // 2) > screen_rect.bottom:
+                    continue
+                base_size = (self._cell_size, self._cell_size)
+                surf = provider(base_size, dt_ms)
                 if surf is not None:
-                    screen.blit(surf, (int(sx - surf.get_width() // 2), int(sy - surf.get_height() // 2)))
+                    if abs(base_zoom - 1.0) > 0.01:
+                        tw = max(1, int(surf.get_width() * base_zoom))
+                        th = max(1, int(surf.get_height() * base_zoom))
+                        try:
+                            if is_integer_zoom:
+                                scaled = pygame.transform.scale(surf, (tw, th))
+                            else:
+                                scaled = pygame.transform.smoothscale(surf, (tw, th))
+                        except Exception:
+                            scaled = pygame.transform.scale(surf, (tw, th))
+                        screen.blit(scaled, (int(sx - tw // 2), int(sy - th // 2)))
+                    else:
+                        screen.blit(surf, (int(sx - surf.get_width() // 2), int(sy - surf.get_height() // 2)))
             except Exception:
                 continue
