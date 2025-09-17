@@ -1,14 +1,1 @@
-{
-  "ed3fe8a5-b5ca-478c-be90-b16a85f6b0f9": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 16,
-      "y": 10
-    },
-    "created_at": 1758125553.2925386
-  }
-}
+{}

@@ -161,8 +161,18 @@ class HitboxSystem:
                             tmp = pygame.Surface((rect_w.width, rect_w.height))
                             tmp.fill((255,255,255))
                             target_mask = pygame.mask.from_surface(tmp)
-                        if hitmask.overlap(target_mask, off):
+                        overlap_pt = hitmask.overlap(target_mask, off)
+                        if overlap_pt:
                             hit_any = True
+                            # Compute exact world-space hit position from overlap point
+                            try:
+                                hx = float(left + overlap_pt[0])
+                                hy = float(top + overlap_pt[1])
+                                dbg = world.components.setdefault('DebugSpellHits', {})
+                                dq = dbg.setdefault('_queue', [])
+                                dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (hx, hy)})
+                            except Exception:
+                                pass
                             break
                     if not hit_any:
                         continue
@@ -175,6 +185,13 @@ class HitboxSystem:
                     diff = abs((ang - dir_ang + math.pi) % (2*math.pi) - math.pi)
                     if diff <= hb.arc_angle/2:
                         hit_any = True
+                        # Rough impact point: target center (no mask available)
+                        try:
+                            dbg = world.components.setdefault('DebugSpellHits', {})
+                            dq = dbg.setdefault('_queue', [])
+                            dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (float(tpos.x), float(tpos.y))})
+                        except Exception:
+                            pass
                     else:
                         continue
                 identity = world.components.get('Identity', {}).get(target)

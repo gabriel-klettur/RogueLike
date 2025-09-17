@@ -1,72 +1,72 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      18
-    ],
-    "overrides": {
-      "visible_in_game": true,
-      "hp_scope": "per_state",
-      "life_defaults": {
-        "damageable": true,
-        "max_hp": 1000,
-        "flash_on_hit": true,
-        "flash_color": [
-          255,
-          255,
-          255
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            26,
+            18
         ],
-        "flash_duration_s": 0.08,
-        "hp_reset_on_enter": "set_to_max"
-      }
-    },
-    "visuals": {
-      "Finished": {
-        "instance_id": 202,
-        "template_id": 158,
-        "offset": [
-          -120,
-          -249
-        ],
-        "scale": [
-          258,
-          386
-        ],
-        "life": {
-          "damageable": false
-        }
-      },
-      "WaitClear": {
-        "instance_id": 203,
-        "template_id": 157,
-        "offset": [
-          -120,
-          -237
-        ],
-        "scale": [
-          257,
-          384
-        ]
-      },
-      "AwaitTrigger": {
-        "instance_id": 204,
-        "template_id": 157,
-        "offset": [
-          -126,
-          -237
-        ]
-      },
-      "WaitCooldown": {
-        "instance_id": 205,
-        "template_id": 155,
-        "offset": [
-          -117,
-          -237
-        ]
-      }
-    },
-    "id": "survival_10_forest_14_9"
-  }
+        "overrides": {
+            "visible_in_game": true,
+            "hp_scope": "per_state",
+            "life_defaults": {
+                "damageable": true,
+                "max_hp": 1000,
+                "flash_on_hit": true,
+                "flash_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "flash_duration_s": 0.08,
+                "hp_reset_on_enter": "set_to_max"
+            }
+        },
+        "visuals": {
+            "Finished": {
+                "instance_id": 211,
+                "template_id": 158,
+                "offset": [
+                    -120,
+                    -249
+                ],
+                "scale": [
+                    258,
+                    386
+                ],
+                "life": {
+                    "damageable": false
+                }
+            },
+            "WaitClear": {
+                "instance_id": 212,
+                "template_id": 157,
+                "offset": [
+                    -120,
+                    -237
+                ],
+                "scale": [
+                    257,
+                    384
+                ]
+            },
+            "AwaitTrigger": {
+                "instance_id": 213,
+                "template_id": 157,
+                "offset": [
+                    -126,
+                    -237
+                ]
+            },
+            "WaitCooldown": {
+                "instance_id": 214,
+                "template_id": 155,
+                "offset": [
+                    -117,
+                    -237
+                ]
+            }
+        },
+        "id": "survival_10_forest_14_9"
+    }
 ]

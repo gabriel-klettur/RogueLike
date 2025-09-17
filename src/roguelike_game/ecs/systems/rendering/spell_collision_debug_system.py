@@ -384,12 +384,13 @@ class SpellCollisionDebugSystem:
             if rr > 0:
                 pygame.draw.circle(screen, (0, 200, 255), (int(cx), int(cy)), rr, 1)
 
-        # 5) Consume gameplay debug events (e.g., Fireball hits) to ensure outline even if projectile was removed
+        # 5) Consume gameplay debug events (e.g., Fireball hits, Hitbox hits) to ensure outline even if source was removed
         dbg = comps.get('DebugSpellHits', {})
         queue = dbg.get('_queue', []) if isinstance(dbg, dict) else []
         if queue:
             for ev in queue:
-                if ev.get('type') == 'FB':
+                etype = ev.get('type')
+                if etype == 'FB':
                     src = ev.get('src')
                     tid = ev.get('target')
                     ev_pos = ev.get('pos')
@@ -434,6 +435,39 @@ class SpellCollisionDebugSystem:
                                 bit_wy = by + ly + 0.5
                                 bsx, bsy = camera.apply((bit_wx, bit_wy))
                                 pygame.draw.circle(screen, (255, 0, 255), (int(bsx), int(bsy)), 2)
+                elif etype == 'HB':
+                    # Hitbox impact: draw exact hit position and outline the target collider
+                    hb_eid = ev.get('hb_eid')
+                    tid = ev.get('target')
+                    ev_pos = ev.get('pos')
+                    tpos = positions.get(tid)
+                    multi = comps.get('MultiCollider', {}).get(tid)
+                    if not (tpos and multi):
+                        continue
+                    # Prefer mask collider for outline
+                    mc = next((c for c in multi.colliders.values() if isinstance(c, MaskCollider)), None)
+                    if mc is not None:
+                        bx = tpos.x + mc.offset_x
+                        by = tpos.y + mc.offset_y
+                        outline_pts_w = self._mask_outline_world(mc.mask, bx, by)
+                        pts_s = [camera.apply(p) for p in outline_pts_w]
+                        if len(pts_s) >= 2:
+                            pygame.draw.lines(screen, (255, 0, 0), True, pts_s, 2)
+                        # persist red outline marker
+                        self._add_marker_poly(outline_pts_w, (255, 0, 0), f"HB {hb_eid}->{tid}")
+                    else:
+                        # fallback first collider rect
+                        anyc = next(iter(multi.colliders.values()))
+                        rect_w = build_collider_rect(tpos.x, tpos.y, anyc)
+                        rsx, rsy = camera.apply((rect_w.x, rect_w.y))
+                        rect_s = pygame.Rect(int(rsx), int(rsy), int(rect_w.width), int(rect_w.height))
+                        pygame.draw.rect(screen, (255, 0, 0), rect_s, 2)
+                        self._add_marker_rect(rect_w, (255, 0, 0), f"HB {hb_eid}->{tid}")
+                    # draw pink hit point from event position if provided
+                    if isinstance(ev_pos, (list, tuple)) and len(ev_pos) == 2:
+                        hx, hy = float(ev_pos[0]), float(ev_pos[1])
+                        self._draw_pink_hit(screen, camera, hx, hy)
+                        self._add_marker_circle(hx, hy, max(4.0, 7.0 / max(camera.zoom, 0.001)), (255, 105, 180), f"HB HIT {hb_eid}->{tid}")
             # clear after consuming
             queue.clear()
 

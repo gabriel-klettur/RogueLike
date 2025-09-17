@@ -323,8 +323,8 @@
     },
     "effect": {
       "damage": 20,
-      "arc_range_degrees": 120,
-      "radius": 28,
+      "arc_range_degrees": 180,
+      "radius": 30,
       "lifetime": 15
     },
     "vfx": {

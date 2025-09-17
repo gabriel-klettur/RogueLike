@@ -225,9 +225,9 @@
     },
     {
         "id": 17,
-        "template_id": 17,
+        "template_id": 202,
         "zone": "lobby",
-        "rel_x": 26,
+        "rel_x": 30,
         "rel_y": 939,
         "overrides": {
             "scale": [
@@ -244,7 +244,7 @@
         "template_id": 18,
         "zone": "lobby",
         "rel_x": 211,
-        "rel_y": -222,
+        "rel_y": -220,
         "overrides": {
             "scale": [
                 505,
@@ -1563,8 +1563,8 @@
         "id": 138,
         "template_id": 31,
         "zone": "lobby",
-        "rel_x": 169,
-        "rel_y": 891,
+        "rel_x": 161,
+        "rel_y": 884,
         "overrides": {
             "scale": [
                 172,
@@ -1800,22 +1800,6 @@
         }
     },
     {
-        "id": 194,
-        "template_id": 199,
-        "zone": "lobby",
-        "rel_x": 414,
-        "rel_y": 850,
-        "overrides": {
-            "scale": [
-                325,
-                487
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
         "id": 201,
         "template_id": 201,
         "zone": "Forest",
@@ -1825,6 +1809,22 @@
             "scale": [
                 331,
                 331
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 3
+        }
+    },
+    {
+        "id": 210,
+        "template_id": 191,
+        "zone": "lobby",
+        "rel_x": 417,
+        "rel_y": 915,
+        "overrides": {
+            "scale": [
+                333,
+                333
             ],
             "z_bottom": 3,
             "z_top": 5,

@@ -39,22 +39,47 @@ class HitboxDebugSystem:
             # Convert to screen coords
             screen_left, screen_top = camera.apply((left, top))
             rect = pygame.Rect(int(screen_left), int(screen_top), int(r * 2), int(r * 2))
-            # Skip drawing if off-screen
+            # Skip drawing if off-screen (based on circle bounds)
             if not rect.colliderect(view_rect):
                 continue
-            # Blit cached circle surface instead of drawing each frame
+            # 1) Draw the exact sector polygon (filled) used by collision
+            #    Build points in world space, then convert to screen space.
+            segs = max(4, int(hb.arc_angle / (2 * math.pi) * 16))
+            pts_world = [(cx, cy)]
+            if segs <= 0:
+                segs = 4
+            for i in range(segs + 1):
+                ang = start_ang + (end_ang - start_ang) * (i / segs)
+                px = cx + math.cos(ang) * r
+                py = cy + math.sin(ang) * r
+                pts_world.append((px, py))
+            # Convert to screen coordinates
+            pts_screen = [camera.apply(p) for p in pts_world]
+            # Draw filled sector with transparency on a temporary surface
+            poly_surf = pygame.Surface((camera.screen_width, camera.screen_height), flags=pygame.SRCALPHA)
+            pygame.draw.polygon(poly_surf, (0, 255, 0, 64), [(int(x), int(y)) for (x, y) in pts_screen])
+            screen.blit(poly_surf, (0, 0))
+            # Outline the sector for clarity
+            pygame.draw.lines(screen, (0, 200, 0), False, [(int(x), int(y)) for (x, y) in pts_screen[1:]], 2)
+            # 2) Draw outer circle (radius) as thin red outline (cached)
             radius = int(r)
             if radius > 0:
                 surf = self.circle_surfs.get(radius)
                 if surf is None:
                     size = radius * 2 + 2
                     surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
-                    pygame.draw.circle(surf, (255, 0, 0), (radius+1, radius+1), radius, 1)
+                    pygame.draw.circle(surf, (255, 0, 0), (radius + 1, radius + 1), radius, 1)
                     self.circle_surfs[radius] = surf
                 cx_scr, cy_scr = camera.apply((cx, cy))
-                screen.blit(surf, (int(cx_scr - (radius+1)), int(cy_scr - (radius+1))))
-            # Draw arc segment in green
-            pygame.draw.arc(screen, (0, 255, 0), rect, start_ang, end_ang, 2)
+                screen.blit(surf, (int(cx_scr - (radius + 1)), int(cy_scr - (radius + 1))))
+            # 3) Draw origin crosshair and direction arrow for orientation debugging
+            cx_scr, cy_scr = camera.apply((cx, cy))
+            pygame.draw.line(screen, (255, 255, 0), (int(cx_scr) - 3, int(cy_scr)), (int(cx_scr) + 3, int(cy_scr)), 1)
+            pygame.draw.line(screen, (255, 255, 0), (int(cx_scr), int(cy_scr) - 3), (int(cx_scr), int(cy_scr) + 3), 1)
+            tip_x = cx + dir_x * r
+            tip_y = cy + dir_y * r
+            tx, ty = camera.apply((tip_x, tip_y))
+            pygame.draw.line(screen, (255, 215, 0), (int(cx_scr), int(cy_scr)), (int(tx), int(ty)), 2)
         # Draw all colliders (bounding rect) in blue for debugging
         multi_store = world.components.get('MultiCollider', {})
         for tid, multi in multi_store.items():
