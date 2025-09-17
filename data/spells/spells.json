@@ -30,6 +30,33 @@
       "sprite": {
         "path": "assets/projectiles/fireball.png",
         "scale": 0.05
+      },
+      "particles": {
+        "emit_rate": 2,
+        "speed": 0.8,
+        "lifespan": 25,
+        "size_range": [
+          2,
+          4
+        ],
+        "colors": [
+          [
+            255,
+            200,
+            120
+          ],
+          [
+            255,
+            170,
+            60
+          ],
+          [
+            255,
+            240,
+            160
+          ]
+        ],
+        "dispersion": 8
       }
     }
   },
