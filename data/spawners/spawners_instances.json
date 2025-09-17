@@ -11,7 +11,7 @@
         },
         "visuals": {
             "Finished": {
-                "instance_id": 167,
+                "instance_id": 190,
                 "template_id": 158,
                 "offset": [
                     -127,
@@ -23,7 +23,7 @@
                 ]
             },
             "WaitClear": {
-                "instance_id": 168,
+                "instance_id": 191,
                 "template_id": 157,
                 "offset": [
                     -124,
@@ -35,11 +35,11 @@
                 ]
             },
             "AwaitTrigger": {
-                "instance_id": 169,
+                "instance_id": 192,
                 "template_id": 157
             },
             "WaitCooldown": {
-                "instance_id": 170,
+                "instance_id": 193,
                 "template_id": 155,
                 "offset": [
                     -117,

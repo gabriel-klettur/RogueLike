@@ -750,49 +750,15 @@ def handle_events(game):
             )
         return
 
-    # Si el editor de partículas está activo, delegar sus eventos y permitir pan con MMB
+    # Si el editor de partículas está activo, delegar sus eventos (no consumirlos).
+    # No retornamos aquí para permitir que la lógica específica de selección/hover/add
+    # definida más abajo en este mismo manejador se ejecute correctamente.
     if hasattr(game, 'particles_editor') and getattr(getattr(game.particles_editor, 'model', None), 'visible', False):
         for event in events:
             try:
                 game.particles_editor.handle_event(event)
             except Exception:
                 pass
-        # Forward MMB-down/up y motion con MMB pulsado al engine para pan de cámara
-        mmb_events = []
-        for ev in events:
-            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP) and getattr(ev, 'button', None) == 2:
-                mmb_events.append(ev)
-            elif ev.type == pygame.MOUSEMOTION:
-                buttons = getattr(ev, 'buttons', None)
-                mmb_held = False
-                try:
-                    if buttons and len(buttons) >= 3:
-                        mmb_held = bool(buttons[1])
-                    else:
-                        mmb_held = bool(pygame.mouse.get_pressed(3)[1])
-                except Exception:
-                    mmb_held = False
-                if mmb_held:
-                    mmb_events.append(ev)
-        if mmb_events:
-            engine_handle_events(
-                game.state,
-                game.camera,
-                game.clock,
-                game.menu,
-                game.map,
-                game.buildings,
-                game.tiles_editor,
-                game.buildings_editor,
-                game.map_editor,
-                game.spawner_editor,
-                mmb_events,
-                diagnostics_overlay=overlay,
-                spells_editor=getattr(game, 'spells_editor', None),
-                item_editor=getattr(game, 'item_editor', None),
-                fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
-            )
-        return
 
     # Si el editor de inventario está activo, capturar solo sus eventos
     if hasattr(game, 'inventory_editor') and game.inventory_editor.model.visible:
