@@ -3,18 +3,40 @@
   "player": {
     "level": "global_map",
     "pos": [
-      71,
-      90
+      73,
+      78
     ]
   },
-  "npcs": {},
+  "npcs": {
+    "69208090-d792-45b7-be92-bc1f18010fa9": {
+      "level": "global_map",
+      "tile": [
+        68,
+        89
+      ],
+      "hp": 50,
+      "dead": false,
+      "prototype": "vendor_cheff_gatita"
+    }
+  },
   "levels": {
     "global_map": {
       "player_pos": [
-        71,
-        90
+        73,
+        78
       ],
-      "npc_states": {}
+      "npc_states": {
+        "69208090-d792-45b7-be92-bc1f18010fa9": {
+          "level": "global_map",
+          "tile": [
+            68,
+            89
+          ],
+          "hp": 50,
+          "dead": false,
+          "prototype": "vendor_cheff_gatita"
+        }
+      }
     }
   },
   "player_inventory": {
@@ -178,14 +200,40 @@
           "quantity": 300
         }
       ]
+    },
+    "69208090-d792-45b7-be92-bc1f18010fa9": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "food_apple",
+          "quantity": 40
+        },
+        {
+          "item": "food_bread",
+          "quantity": 25
+        },
+        {
+          "item": "food_borscht",
+          "quantity": 15
+        },
+        {
+          "item": "food_varenyky",
+          "quantity": 20
+        },
+        {
+          "item": "gold",
+          "quantity": 200
+        }
+      ]
     }
   },
   "meta": {
     "name": "partida_2025-09-16_17-37-01",
     "created_at": "2025-09-16T17:37:01",
-    "last_played": "2025-09-17T04:49:58",
+    "last_played": "2025-09-17T05:24:12",
     "player": {
-      "xp": 40,
+      "xp": 60,
       "level": 2
     },
     "items_summary": {

@@ -1,1 +1,43 @@
-{}
+{
+  "69208090-d792-45b7-be92-bc1f18010fa9": {
+    "template_id": null,
+    "slots": [
+      {
+        "item": "food_apple",
+        "quantity": 40
+      },
+      {
+        "item": "food_bread",
+        "quantity": 25
+      },
+      {
+        "item": "food_borscht",
+        "quantity": 15
+      },
+      {
+        "item": "food_varenyky",
+        "quantity": 20
+      },
+      {
+        "item": "gold",
+        "quantity": 200
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}
