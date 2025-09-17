@@ -152,7 +152,9 @@ class SpawnerDamageSystem:
                         except Exception:
                             prev_ratio = None
                 eff = self._merge_life(cfg, token)
-                reset = str(eff.get('hp_reset_on_enter', getattr(cfg, 'life_defaults', {}).get('hp_reset_on_enter', 'set_to_max'))).strip().lower()
+                # Use a safe fallback when cfg.life_defaults is None
+                base_ld = getattr(cfg, 'life_defaults', None) or {}
+                reset = str(eff.get('hp_reset_on_enter', base_ld.get('hp_reset_on_enter', 'set_to_max'))).strip().lower()
                 self._init_pool(entry, scope, token, eff, prev_ratio, reset)
                 entry['last_token'] = token
 
@@ -186,7 +188,9 @@ class SpawnerDamageSystem:
                 pool = self._get_pool(entry, scope, token)
                 # Initialize if missing
                 if pool is None:
-                    reset = str(eff.get('hp_reset_on_enter', getattr(cfg, 'life_defaults', {}).get('hp_reset_on_enter', 'set_to_max'))).strip().lower()
+                    # Use a safe fallback when cfg.life_defaults is None
+                    base_ld = getattr(cfg, 'life_defaults', None) or {}
+                    reset = str(eff.get('hp_reset_on_enter', base_ld.get('hp_reset_on_enter', 'set_to_max'))).strip().lower()
                     self._init_pool(entry, scope, token, eff, prev_ratio=None, reset=reset)
                     pool = self._get_pool(entry, scope, token)
                 if not pool:

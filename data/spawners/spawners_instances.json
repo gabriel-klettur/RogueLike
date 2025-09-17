@@ -11,7 +11,7 @@
       "hp_scope": "per_state",
       "life_defaults": {
         "damageable": true,
-        "max_hp": 100,
+        "max_hp": 1000,
         "flash_on_hit": true,
         "flash_color": [
           255,

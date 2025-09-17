@@ -1,26 +1,14 @@
 {
-  "6a0603b7-523c-4f0c-98c6-c066dd29076b": {
+  "ee25af6a-b9e9-440d-a70f-05380b50710e": {
     "item_id": "wood",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 11,
-      "y": 36
+      "x": 22,
+      "y": 18
     },
-    "created_at": 1758118147.3336217
-  },
-  "1bcbdd74-e49e-44ed-9f48-73da2dcbe56f": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 13,
-      "y": 36
-    },
-    "created_at": 1758118147.5129306
+    "created_at": 1758123618.5997748
   }
 }
