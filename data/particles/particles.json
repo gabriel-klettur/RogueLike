@@ -163,5 +163,23 @@
         "colors": [[255, 180, 80], [255, 120, 60], [255, 220, 120]]
       }
     }
+  },
+  "water_fountain_small": {
+    "id": "water_fountain_small",
+    "name": "Water Fountain (Small)",
+    "type": "fountain",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "water_fountain",
+        "spouts": [0.5],
+        "emit_rate": 6,
+        "speed": 2.2,
+        "gravity": 0.28,
+        "droplet_size": 2,
+        "splash_count": 2,
+        "colors": [[90, 170, 255], [120, 200, 255], [180, 220, 255]]
+      }
+    }
   }
 }

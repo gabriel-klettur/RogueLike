@@ -2261,5 +2261,18 @@
             256
         ],
         "id": 191
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/ukranian_super_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 192
     }
 ]

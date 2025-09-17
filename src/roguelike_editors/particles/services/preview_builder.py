@@ -14,6 +14,7 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewExplosion,
     ParticlePreviewArcaneFlame,
     ParticlePreviewTeleport,
+    ParticlePreviewWaterFountain,
 )
 from roguelike_game.config.particles_config import get_preset
 
@@ -239,6 +240,29 @@ def build_preview_for_definition(defn: Dict[str, Any]):
             else:
                 cycle_ms = 600
             return ParticlePreviewTeleport(color=color if color_explicit else (0, 200, 255), cycle_ms=cycle_ms)
+        if kind in ("water_fountain", "fountain"):
+            # Map configurable parameters to preview constructor
+            spouts = parts.get("spouts")
+            if not isinstance(spouts, (list, tuple)) or len(spouts) == 0:
+                spouts = [0.34, 0.5, 0.66]
+            try:
+                spouts = [float(max(0.05, min(0.95, s))) for s in spouts]
+            except Exception:
+                spouts = [0.34, 0.5, 0.66]
+            emit_rate = parts.get("emit_rate") if isinstance(parts.get("emit_rate"), int) and parts.get("emit_rate") > 0 else 5
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 2.0
+            gravity = parts.get("gravity") if isinstance(parts.get("gravity"), (int, float)) else 0.25
+            droplet_size = parts.get("droplet_size") if isinstance(parts.get("droplet_size"), int) else 2
+            splash_count = parts.get("splash_count") if isinstance(parts.get("splash_count"), int) else 2
+            return ParticlePreviewWaterFountain(
+                color=color if color_explicit else (100, 180, 255),
+                spouts=spouts,
+                emit_rate=int(emit_rate),
+                speed=float(speed),
+                gravity=float(gravity),
+                droplet_size=int(droplet_size),
+                splash_count=int(splash_count),
+            )
         if kind in ("explosion",):
             palette = palette_colors if len(palette_colors) > 0 else None
             base_color = color if color_explicit else (255, 180, 60)

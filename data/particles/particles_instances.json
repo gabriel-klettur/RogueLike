@@ -33,5 +33,40 @@
     "zone": "lobby",
     "rel_x": 1244,
     "rel_y": 697
+  },
+  {
+    "id": 12,
+    "preset_id": "water_fountain_small",
+    "zone": "lobby",
+    "rel_x": 309,
+    "rel_y": 1274
+  },
+  {
+    "id": 13,
+    "preset_id": "water_fountain_small",
+    "zone": "lobby",
+    "rel_x": 342,
+    "rel_y": 1300
+  },
+  {
+    "id": 14,
+    "preset_id": "water_fountain_small",
+    "zone": "lobby",
+    "rel_x": 371,
+    "rel_y": 1271
+  },
+  {
+    "id": 15,
+    "preset_id": "water_fountain_small",
+    "zone": "lobby",
+    "rel_x": 321,
+    "rel_y": 1223
+  },
+  {
+    "id": 16,
+    "preset_id": "water_fountain_small",
+    "zone": "lobby",
+    "rel_x": 361,
+    "rel_y": 1221
   }
 ]

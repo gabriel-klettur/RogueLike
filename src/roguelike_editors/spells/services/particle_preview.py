@@ -864,3 +864,140 @@ class ParticlePreviewTeleport:
             r = max(1, min(radius, max(1, min(w, h) // 2 - 1)))
             pygame.draw.circle(self._surf, col, (cx, cy), r, width=3)
         return self._surf
+
+
+class ParticlePreviewWaterFountain:
+    """Water fountain preview: thin falling streams with gravity and splashes.
+
+    Parameters:
+    - color: RGB base color for droplets.
+    - spouts: list of normalized X in [0..1] where jets originate (top area).
+    - emit_rate: droplets spawned per step per spout (~30 Hz steps).
+    - speed: initial vertical speed (downwards positive); also slight x spread.
+    - gravity: per-step acceleration added to vy.
+    - droplet_size: base droplet pixel size.
+    - splash_count: number of small splash particles spawned on impact.
+    """
+
+    def __init__(
+        self,
+        color: Tuple[int, int, int] = (100, 180, 255),
+        spouts: list[float] | tuple[float, ...] = (0.34, 0.5, 0.66),
+        emit_rate: int = 5,
+        speed: float = 2.0,
+        gravity: float = 0.25,
+        droplet_size: int = 2,
+        splash_count: int = 2,
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._color = color
+        # sanitize spouts
+        self._spouts = [float(max(0.05, min(0.95, s))) for s in list(spouts)] if spouts else [0.5]
+        self._emit = max(1, int(emit_rate))
+        self._speed = float(speed)
+        self._g = float(gravity)
+        self._sz = max(1, int(droplet_size))
+        self._splash = max(0, int(splash_count))
+        # particles: lists of tuples
+        # droplets: x, y, vx, vy, size, age, life
+        self._drops: list[tuple[float, float, float, float, int, int, int]] = []
+        # splashes: x, y, vx, vy, size, age, life
+        self._spl: list[tuple[float, float, float, float, int, int, int]] = []
+        # Fixed-timestep accumulator (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+            self._drops.clear()
+            self._spl.clear()
+
+    def _spawn_droplets(self, w: int, h: int) -> None:
+        top_y = max(2, int(h * 0.18))
+        for s in self._spouts:
+            x = int(2 + s * max(1, w - 4))
+            for _ in range(self._emit):
+                # small x-offset to create thin stream and flicker
+                vx = random.uniform(-0.2, 0.2) * max(0.5, self._speed * 0.35)
+                vy = abs(self._speed) + random.uniform(-0.2, 0.2)
+                size = max(1, int(self._sz + random.choice((-1, 0, 0, 1))))
+                life = 120  # upper bound; most will end on impact earlier
+                self._drops.append((float(x), float(top_y), float(vx), float(vy), size, 0, life))
+
+    def _update_step(self, w: int, h: int) -> None:
+        # spawn
+        self._spawn_droplets(w, h)
+        ground = h - 3
+        new_drops: list[tuple[float, float, float, float, int, int, int]] = []
+        # update droplets
+        for (x, y, vx, vy, sz, age, life) in self._drops:
+            vy += self._g
+            x += vx
+            y += vy
+            age += 1
+            if y >= ground:
+                # splash on impact
+                if self._splash > 0:
+                    for _ in range(self._splash):
+                        ang = random.uniform(-0.9, -2.2)  # up-left to up-right
+                        spd = random.uniform(0.8, 1.6) * (0.6 + 0.4 * (sz / max(1, self._sz)))
+                        svx = math.cos(ang) * spd
+                        svy = math.sin(ang) * spd
+                        ssz = max(1, sz - 1)
+                        slife = random.randint(10, 24)
+                        self._spl.append((x, float(ground), svx, svy, ssz, 0, slife))
+                continue  # drop is consumed
+            if age < life and -4 <= x < w + 4 and -4 <= y < h + 6:
+                new_drops.append((x, y, vx, vy, sz, age, life))
+        self._drops = new_drops
+        # update splashes (with gravity and fade)
+        new_spl: list[tuple[float, float, float, float, int, int, int]] = []
+        for (x, y, vx, vy, sz, age, life) in self._spl:
+            vy += self._g * 0.8
+            x += vx
+            y += vy
+            age += 1
+            if age < life and -4 <= x < w + 4 and -4 <= y < h + 6:
+                new_spl.append((x, y, vx, vy, sz, age, life))
+        self._spl = new_spl
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # advance in fixed steps
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
+            self._update_step(w, h)
+            self._acc_ms -= self._step_ms
+        # draw
+        self._surf.fill((0, 0, 0, 0))
+        base = self._color
+        # stream hint: faint vertical guides (optional aesthetic)
+        try:
+            for s in self._spouts:
+                x = int(2 + s * max(1, w - 4))
+                pygame.draw.line(self._surf, (*base, 40), (x, int(h * 0.18)), (x, h - 3), 1)
+        except Exception:
+            pass
+        # droplets (slightly translucent)
+        for (x, y, vx, vy, sz, age, life) in self._drops:
+            alpha = max(80, min(255, 220 - age))
+            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+            blob.fill((*base, alpha))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(blob, (ix, iy))
+        # splashes brighter but short-lived
+        for (x, y, vx, vy, sz, age, life) in self._spl:
+            alpha = max(0, min(255, int(255 * (1 - age / max(1, life)))))
+            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+            col = (min(255, base[0] + 20), min(255, base[1] + 20), min(255, base[2] + 20))
+            blob.fill((*col, alpha))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(blob, (ix, iy))
+        return self._surf
