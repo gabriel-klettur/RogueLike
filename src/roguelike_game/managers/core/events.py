@@ -748,22 +748,17 @@ def handle_events(game):
                 item_editor=getattr(game, 'item_editor', None),
                 fsm_visible=getattr(__import__('roguelike_engine.config.config', fromlist=['config']), 'DEBUG_ENTITIES', False),
             )
+        # Importante: no continuar con lógica de partículas aquí; ahora vive en el panel
+        return
         return
 
-    # Si el editor de partículas está activo, delegar sus eventos (no consumirlos).
-    # No retornamos aquí para permitir que la lógica específica de selección/hover/add
-    # definida más abajo en este mismo manejador se ejecute correctamente.
+    # Si el editor de partículas está activo, delegar sus eventos y salir (la lógica vive en particles_events.py)
     if hasattr(game, 'particles_editor') and getattr(getattr(game.particles_editor, 'model', None), 'visible', False):
         for event in events:
             try:
                 game.particles_editor.handle_event(event)
             except Exception:
                 pass
-
-    # Si el editor de inventario está activo, capturar solo sus eventos
-    if hasattr(game, 'inventory_editor') and game.inventory_editor.model.visible:
-        for event in events:
-            game.inventory_editor.handle_event(event)
         return
 
     # Si el editor de hechizos está activo, permitir MMB pan (pase al engine) y delegar sus eventos

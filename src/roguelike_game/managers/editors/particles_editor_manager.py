@@ -18,6 +18,11 @@ class ParticlesEditorManager:
         self.game = game
         font = getattr(game, 'font', None)
         self.controller = ParticlesEditorController(font)
+        # Provide game reference to controller for camera/world conversions in panel events
+        try:
+            self.controller.game = game
+        except Exception:
+            pass
         self.model = self.controller.model
         # Expose state globally if needed in future
         try:
