@@ -71,9 +71,16 @@ class BuildingModel:
         self._collision_map: list[list[str]] = []
         self._collision_tiles_cache: list[pygame.Rect] | None = None
         self._collision_tile_objs: list[types.SimpleNamespace] | None = None
+        # Cached collision mask of the full image (alpha-based)
+        self._mask_full: pygame.Mask | None = None
 
         # Alcance de colisión por edificio: 'CG' (global) o 'CU' (único)
         self.collider_scope: ColliderScope = 'CG'
+
+        # --- Flash (damage tint) runtime state ---
+        self._flash_until_ts: float = 0.0
+        self._flash_color: tuple[int, int, int] = (255, 255, 255)
+        self._flash_blink_interval: float = 0.05
 
         # ── Z-layers por defecto (se pueden sobreescribir) ──
         from roguelike_engine.config.config_z_layer import Z_LAYERS
@@ -147,6 +154,8 @@ class BuildingModel:
         self.image = surf
         # Después de cambiar el tamaño, recalcular el “corte” en píxeles:
         self._cut_world = int(self.image.get_height() * self.split_ratio)
+        # Invalidate collision mask cache (image changed)
+        self._mask_full = None
 
     # ───────────── Métodos de redimensionamiento ─────────────
     def resize(self, new_width: int, new_height: int):
@@ -173,6 +182,7 @@ class BuildingModel:
         # Invalidar caches de colisión y renderizado (se regenerarán cuando sea necesario)
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
+        self._mask_full = None
 
     def reset_to_original_size(self):
         """
@@ -224,6 +234,8 @@ class BuildingModel:
             # Invalidate collision caches since geometry may map differently post-scale
             self._collision_tiles_cache = None
             self._collision_tile_objs = None
+            # Invalidate image mask cache
+            self._mask_full = None
         except Exception as ex:
             logger.warning(f"[BuildingModel] No se pudo aplicar nueva imagen '{new_image_path}': {ex}")
 
@@ -245,6 +257,34 @@ class BuildingModel:
         if self.image is not None:
             self._cut_world = int(self.image.get_height() * self.split_ratio)
         return True
+
+    # ----------------------------- Flash (damage tint) API -----------------------------
+    def trigger_flash(self, color: tuple[int, int, int] = (255, 255, 255), duration: float = 0.08, *, blink_interval: float | None = None) -> None:
+        """Start a temporary flash effect with the given color and duration.
+        The actual tint is applied by BuildingView at render time; this only stores timing.
+        """
+        try:
+            import time as _t
+            self._flash_color = (int(color[0]), int(color[1]), int(color[2]))
+            self._flash_until_ts = float(_t.time()) + max(0.0, float(duration))
+            if blink_interval is not None:
+                bi = max(0.0, float(blink_interval))
+                self._flash_blink_interval = bi if bi > 0.0 else self._flash_blink_interval
+        except Exception:
+            # Best-effort; ignore failures
+            pass
+
+    # ----------------------------- Collision mask (alpha-based) -----------------------------
+    def get_full_mask(self) -> pygame.Mask | None:
+        """Return (and cache) a mask built from the full image alpha. None if no image."""
+        try:
+            if self.image is None:
+                return None
+            if self._mask_full is None:
+                self._mask_full = pygame.mask.from_surface(self.image)
+            return self._mask_full
+        except Exception:
+            return None
 
     # ───────────── Colisiones (collision_map + collision_tiles) ─────────────
     @property

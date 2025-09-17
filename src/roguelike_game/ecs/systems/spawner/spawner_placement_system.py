@@ -212,7 +212,41 @@ class SpawnerPlacementSystem:
         waves = [w for w in waves if isinstance(w, dict)]
         spawner_type = tpl.get("spawner_type", "invisible")
 
-        # apply overrides in dot-notation
+        # -------------------- life defaults & hp scope (instance-level) --------------------
+        life_defaults: Dict[str, Any] | None = None
+        hp_scope: str = str(inst.get('overrides', {}).get('hp_scope', 'per_state')).strip().lower() if isinstance(inst.get('overrides'), dict) else 'per_state'
+        try:
+            if isinstance(inst.get('overrides'), dict):
+                ld = inst['overrides'].get('life_defaults')
+                if isinstance(ld, dict):
+                    # Normalize known keys and types; leave unknowns as-is for forward-compat
+                    life_defaults = {}
+                    if 'damageable' in ld:
+                        life_defaults['damageable'] = bool(ld.get('damageable'))
+                    if 'max_hp' in ld and ld.get('max_hp') is not None:
+                        try:
+                            life_defaults['max_hp'] = int(ld.get('max_hp'))
+                        except Exception:
+                            pass
+                    if 'flash_on_hit' in ld:
+                        life_defaults['flash_on_hit'] = bool(ld.get('flash_on_hit'))
+                    if 'flash_color' in ld and isinstance(ld.get('flash_color'), (list, tuple)) and len(ld.get('flash_color')) >= 3:
+                        try:
+                            r, g, b = int(ld['flash_color'][0]), int(ld['flash_color'][1]), int(ld['flash_color'][2])
+                            life_defaults['flash_color'] = [max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255))]
+                        except Exception:
+                            pass
+                    if 'flash_duration_s' in ld and ld.get('flash_duration_s') is not None:
+                        try:
+                            life_defaults['flash_duration_s'] = float(ld.get('flash_duration_s'))
+                        except Exception:
+                            pass
+                    if 'hp_reset_on_enter' in ld and isinstance(ld.get('hp_reset_on_enter'), str):
+                        life_defaults['hp_reset_on_enter'] = str(ld.get('hp_reset_on_enter')).strip().lower()
+        except Exception:
+            life_defaults = life_defaults or None
+
+        # -------------------- apply overrides in dot-notation --------------------
         # Instance-level visuals block (full dict)
         try:
             ivis = inst.get("visuals")
@@ -354,6 +388,50 @@ class SpawnerPlacementSystem:
         except Exception:
             pass
 
+        # -------------------- Collect per-state life config from visuals[*].life --------------------
+        visuals_life: Dict[str, Dict[str, Any]] = {}
+        try:
+            ivis2 = inst.get('visuals')
+            if isinstance(ivis2, dict):
+                for sk, sv in ivis2.items():
+                    try:
+                        life_block = sv.get('life') if isinstance(sv, dict) else None
+                        if isinstance(life_block, dict):
+                            key_norm = str(sk).strip().lower()
+                            eff: Dict[str, Any] = {}
+                            if 'damageable' in life_block:
+                                eff['damageable'] = bool(life_block.get('damageable'))
+                            if life_block.get('max_hp') is not None:
+                                try:
+                                    eff['max_hp'] = int(life_block.get('max_hp'))
+                                except Exception:
+                                    pass
+                            if 'flash_on_hit' in life_block:
+                                eff['flash_on_hit'] = bool(life_block.get('flash_on_hit'))
+                            if isinstance(life_block.get('flash_color'), (list, tuple)) and len(life_block.get('flash_color')) >= 3:
+                                try:
+                                    r, g, b = int(life_block['flash_color'][0]), int(life_block['flash_color'][1]), int(life_block['flash_color'][2])
+                                    eff['flash_color'] = [max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255))]
+                                except Exception:
+                                    pass
+                            if life_block.get('flash_duration_s') is not None:
+                                try:
+                                    eff['flash_duration_s'] = float(life_block.get('flash_duration_s'))
+                                except Exception:
+                                    pass
+                            if isinstance(life_block.get('hp_reset_on_enter'), str):
+                                eff['hp_reset_on_enter'] = str(life_block.get('hp_reset_on_enter')).strip().lower()
+                            if isinstance(life_block.get('next_step_by_hp'), str):
+                                eff['next_step_by_hp'] = str(life_block.get('next_step_by_hp'))
+                            if life_block.get('end_logic') is not None:
+                                eff['end_logic'] = bool(life_block.get('end_logic'))
+                            if eff:
+                                visuals_life[key_norm] = eff
+                    except Exception:
+                        continue
+        except Exception:
+            visuals_life = visuals_life or {}
+
         return SpawnerConfig(
             template_id=tpl.get("id", ""),
             zone=inst.get("zone", tpl.get("zone", "lobby")),
@@ -373,6 +451,9 @@ class SpawnerPlacementSystem:
             building_id=building_id,
             state_visuals=state_visuals or None,
             visuals_offsets_px=visuals_offsets_px or None,
+            life_defaults=life_defaults or None,
+            hp_scope=hp_scope or 'per_state',
+            visuals_life=visuals_life or None,
         )
 
     # --- Auto-repair helpers -------------------------------------------------

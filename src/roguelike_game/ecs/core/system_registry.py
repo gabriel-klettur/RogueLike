@@ -50,6 +50,7 @@ from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
+from roguelike_game.ecs.systems.spawner.spawner_damage_system import SpawnerDamageSystem
 from roguelike_game.ecs.systems.combat.building_damage_system import BuildingDamageSystem
 from roguelike_game.ecs.systems.combat.spells.lightning_system import LightningSystem
 from roguelike_editors.fsm.debug.entities_debug_system import EntitiesDebugSystem
@@ -96,7 +97,6 @@ from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
 from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
-from roguelike_game.ecs.systems.particles.fireball_trail_emitter_system import FireballTrailEmitterSystem
 
 def get_update_system_classes():
     """
@@ -117,7 +117,7 @@ def get_update_system_classes():
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
         # Combat & spells
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, FireballTrailEmitterSystem, LightningSystem, DashSystem, HitboxSystem, ComboSystem, BuildingDamageSystem,
+        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, 
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
@@ -136,7 +136,6 @@ def get_render_system_classes():
     base = [
         HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
         FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem,
-        ExplosionRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]

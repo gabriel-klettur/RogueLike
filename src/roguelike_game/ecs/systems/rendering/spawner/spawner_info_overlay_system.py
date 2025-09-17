@@ -136,10 +136,51 @@ class SpawnerInfoOverlaySystem:
                         except Exception:
                             highlight_warnings = []
 
+                # Compute HP line if damageable for current visual token
+                hp_line = ""
+                try:
+                    # Determine current token preference: visual_override_token over fsm_state
+                    token = None
+                    try:
+                        tok = getattr(st, 'visual_override_token', None)
+                        token = str(tok).strip().lower() if tok else None
+                    except Exception:
+                        token = None
+                    if not token:
+                        token = str(getattr(st, 'fsm_state', '') or '').strip().lower()
+                    eff = {}
+                    base = getattr(cfg, 'life_defaults', None) or {}
+                    if isinstance(base, dict):
+                        eff.update(base)
+                    vm = getattr(cfg, 'visuals_life', None) or {}
+                    if token and isinstance(vm, dict) and token in vm and isinstance(vm[token], dict):
+                        eff.update(vm[token])
+                    if bool(eff.get('damageable', False)):
+                        hp_map = world.components.setdefault('SpawnerHealth', {})
+                        entry = hp_map.get(eid, {})
+                        scope = str(entry.get('scope', getattr(cfg, 'hp_scope', 'per_state'))).lower()
+                        cur = max_hp = None
+                        if scope == 'shared':
+                            pool = entry.get('shared') or {}
+                            cur = pool.get('current_hp')
+                            max_hp = pool.get('max_hp')
+                        else:
+                            pool = (entry.get('by_state') or {}).get(token) or {}
+                            cur = pool.get('current_hp')
+                            max_hp = pool.get('max_hp')
+                        if max_hp is None:
+                            max_hp = eff.get('max_hp')
+                            cur = eff.get('max_hp')
+                        if max_hp is not None and cur is not None:
+                            hp_line = f"hp {int(cur)}/{int(max_hp)}"
+                except Exception:
+                    hp_line = ""
+
                 lines = [
                     f"{cfg.template_id}" + (f"  (bld:{bld})" if bld is not None else ""),
                     f"{status} | wave {wave_num}/{total_waves}",
                     f"live {live}/{exp} | {cd_line}",
+                    hp_line,
                     (f"fsm: {fsm}" if fsm else ""),
                     (f"set: {fsm_set}" if fsm_set else ""),
                     f"{mode} | loop:{'on' if loop_policy else 'off'} | shape:{shape}",

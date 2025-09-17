@@ -7,27 +7,43 @@
             18
         ],
         "overrides": {
-            "visible_in_game": true
+            "visible_in_game": true,
+            "hp_scope": "per_state",
+            "life_defaults": {
+                "damageable": true,
+                "max_hp": 1000,
+                "flash_on_hit": true,
+                "flash_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "flash_duration_s": 0.08,
+                "hp_reset_on_enter": "set_to_max"
+            }
         },
         "visuals": {
             "Finished": {
-                "instance_id": 202,
+                "instance_id": 211,
                 "template_id": 158,
                 "offset": [
-                    -127,
-                    -233
+                    -120,
+                    -249
                 ],
                 "scale": [
                     258,
                     386
-                ]
+                ],
+                "life": {
+                    "damageable": false
+                }
             },
             "WaitClear": {
-                "instance_id": 203,
+                "instance_id": 212,
                 "template_id": 157,
                 "offset": [
-                    -124,
-                    -226
+                    -120,
+                    -237
                 ],
                 "scale": [
                     257,
@@ -35,7 +51,7 @@
                 ]
             },
             "AwaitTrigger": {
-                "instance_id": 204,
+                "instance_id": 213,
                 "template_id": 157,
                 "offset": [
                     -126,
@@ -43,7 +59,7 @@
                 ]
             },
             "WaitCooldown": {
-                "instance_id": 205,
+                "instance_id": 214,
                 "template_id": 155,
                 "offset": [
                     -117,

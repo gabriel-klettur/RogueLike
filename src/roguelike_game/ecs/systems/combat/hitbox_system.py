@@ -53,47 +53,95 @@ class HitboxSystem:
             r2 = r*r
             multi_map = world.components.get('MultiCollider', {})
 
-            # --- Buildings hit detection: generate BuildingDamageEvents ---
+            # --- Buildings hit detection: generate BuildingDamageEvents and SpawnerDamageEvents ---
             try:
                 arc_world_rect = pygame.Rect(int(left), int(top), int(w), int(h))
                 hit_buildings = set()
+                hit_spawners = set()
                 for b in getattr(world, 'buildings', []) or []:
-                    # Skip spawner visuals and non-solid check is not required for damage, but keep visuals optionally damageable
-                    if getattr(b, '_is_spawner_visual', False):
-                        continue
-                    # Quick reject by bounding box
+                    is_spawner_visual = bool(getattr(b, '_is_spawner_visual', False))
+                    # Quick skip if hidden at runtime (editor can still show)
                     try:
-                        if not arc_world_rect.colliderect(b.collision_rect):
+                        if getattr(b, 'runtime_hidden', False):
+                            continue
+                    except Exception:
+                        pass
+                    # Quick reject by bounding box (use full rect for spawner visuals to include top part)
+                    try:
+                        quick_rect = getattr(b, 'rect', None) if is_spawner_visual else b.collision_rect
+                        if not arc_world_rect.colliderect(quick_rect):
                             continue
                     except Exception:
                         continue
-                    # Test per collision tile for precise overlap
+                    # Test hit against building shape
                     try:
-                        for rect_w in b.collision_tiles:
-                            if not arc_world_rect.colliderect(rect_w):
+                        if is_spawner_visual:
+                            # Prefer full-image alpha mask for visual shape
+                            eff = getattr(b, '_spawner_visual_life_cfg', None) or {}
+                            damageable = bool(eff.get('damageable', False))
+                            if not damageable:
                                 continue
-                            sx, sy = camera.apply((rect_w.x, rect_w.y))
-                            off = (int(sx - screen_left), int(sy - screen_top))
-                            # Build a rectangular mask for the tile
-                            tmp = pygame.Surface((rect_w.width, rect_w.height))
-                            tmp.fill((255,255,255))
-                            target_mask = pygame.mask.from_surface(tmp)
-                            if hitmask.overlap(target_mask, off):
-                                # Identify building by spawn_id if present, else by id
-                                bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
-                                if bid is not None:
-                                    hit_buildings.add(bid)
-                                break
-                        # Early-out if already registered a hit for this building
+                            try:
+                                bm = getattr(b, 'model', None)
+                                bmask = bm.get_full_mask() if bm is not None else None
+                            except Exception:
+                                bmask = None
+                            if bmask is not None:
+                                # Offset from arc hitmask origin (screen_left, screen_top) to building top-left in screen coords
+                                bx, by = camera.apply((b.x, b.y))
+                                off = (int(bx - screen_left), int(by - screen_top))
+                                if hitmask.overlap(bmask, off):
+                                    se = getattr(b, '_spawner_eid', None)
+                                    if se is not None:
+                                        hit_spawners.add(int(se))
+                                    continue
+                            # Fallback: per-tile rectangles if mask missing
+                            for rect_w in b.collision_tiles:
+                                if not arc_world_rect.colliderect(rect_w):
+                                    continue
+                                sx, sy = camera.apply((rect_w.x, rect_w.y))
+                                off = (int(sx - screen_left), int(sy - screen_top))
+                                tmp = pygame.Surface((rect_w.width, rect_w.height))
+                                tmp.fill((255,255,255))
+                                target_mask = pygame.mask.from_surface(tmp)
+                                if hitmask.overlap(target_mask, off):
+                                    se = getattr(b, '_spawner_eid', None)
+                                    if se is not None:
+                                        hit_spawners.add(int(se))
+                                    break
+                        else:
+                            # Non-spawner buildings: keep per-tile rectangle checks
+                            for rect_w in b.collision_tiles:
+                                if not arc_world_rect.colliderect(rect_w):
+                                    continue
+                                sx, sy = camera.apply((rect_w.x, rect_w.y))
+                                off = (int(sx - screen_left), int(sy - screen_top))
+                                tmp = pygame.Surface((rect_w.width, rect_w.height))
+                                tmp.fill((255,255,255))
+                                target_mask = pygame.mask.from_surface(tmp)
+                                if hitmask.overlap(target_mask, off):
+                                    bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
+                                    if bid is not None:
+                                        hit_buildings.add(bid)
+                                    break
                     except Exception:
                         continue
                 if hit_buildings:
                     evts = world.components.setdefault('BuildingDamageEvents', [])
                     for bid in hit_buildings:
                         evts.append({'building_key': str(bid), 'damage': hb.damage})
+                if hit_spawners:
+                    sevts = world.components.setdefault('SpawnerDamageEvents', [])
+                    for sp_eid in hit_spawners:
+                        # Deduplicate hits per hitbox lifespan: only hit each spawner once per hitbox
+                        if sp_eid in hb.hit_targets:
+                            continue
+                        sevts.append({'spawner_eid': int(sp_eid), 'damage': hb.damage, 'attacker': int(hb.owner)})
+                        hb.hit_targets.add(sp_eid)
             except Exception:
                 # Never break combat on building processing issues
                 pass
+
             for target in list(healths.keys()):
                 if target == hb.owner or target in hb.hit_targets:
                     continue
@@ -113,8 +161,18 @@ class HitboxSystem:
                             tmp = pygame.Surface((rect_w.width, rect_w.height))
                             tmp.fill((255,255,255))
                             target_mask = pygame.mask.from_surface(tmp)
-                        if hitmask.overlap(target_mask, off):
+                        overlap_pt = hitmask.overlap(target_mask, off)
+                        if overlap_pt:
                             hit_any = True
+                            # Compute exact world-space hit position from overlap point
+                            try:
+                                hx = float(left + overlap_pt[0])
+                                hy = float(top + overlap_pt[1])
+                                dbg = world.components.setdefault('DebugSpellHits', {})
+                                dq = dbg.setdefault('_queue', [])
+                                dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (hx, hy)})
+                            except Exception:
+                                pass
                             break
                     if not hit_any:
                         continue
@@ -127,6 +185,13 @@ class HitboxSystem:
                     diff = abs((ang - dir_ang + math.pi) % (2*math.pi) - math.pi)
                     if diff <= hb.arc_angle/2:
                         hit_any = True
+                        # Rough impact point: target center (no mask available)
+                        try:
+                            dbg = world.components.setdefault('DebugSpellHits', {})
+                            dq = dbg.setdefault('_queue', [])
+                            dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (float(tpos.x), float(tpos.y))})
+                        except Exception:
+                            pass
                     else:
                         continue
                 identity = world.components.get('Identity', {}).get(target)

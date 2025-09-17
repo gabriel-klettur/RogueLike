@@ -60,6 +60,93 @@ class FireballSystem:
                     pass
                 world.remove_entity(eid)
                 continue
+            # Colisión con visuals activos de Spawner (Buildings): probar punto contra collision_tiles o collision_rect
+            try:
+                # Evitar colisiones con edificios ocultos o que no sean visuals de spawner
+                hit_spawner_eid = None
+                # Compute previous position to sweep between frames (reduce tunneling)
+                prev_x = pos.x - vel.vx
+                prev_y = pos.y - vel.vy
+                dx = pos.x - prev_x
+                dy = pos.y - prev_y
+                dist = (dx*dx + dy*dy) ** 0.5
+                samples = max(1, int(dist / 2))  # ~2px step
+                # Generate sample points including end point
+                sample_points = []
+                if samples <= 1:
+                    sample_points = [(pos.x, pos.y)]
+                else:
+                    for i in range(samples + 1):
+                        t = i / samples
+                        sx = prev_x + dx * t
+                        sy = prev_y + dy * t
+                        sample_points.append((sx, sy))
+                for b in getattr(world, 'buildings', []) or []:
+                    try:
+                        if getattr(b, 'runtime_hidden', False):
+                            continue
+                        if not bool(getattr(b, '_is_spawner_visual', False)):
+                            continue
+                        # Daño permitido sólo si el visual actual es damageable
+                        eff = getattr(b, '_spawner_visual_life_cfg', None) or {}
+                        if not bool(eff.get('damageable', False)):
+                            continue
+                        # Prueba principal: shape del asset (alpha mask de la imagen completa)
+                        bm = getattr(b, 'model', None)
+                        bmask = bm.get_full_mask() if bm is not None else None
+                        if bmask is not None and getattr(bm, 'image', None) is not None:
+                            iw, ih = bm.image.get_size()
+                            hit = False
+                            for (sx, sy) in sample_points:
+                                lx = int(sx - b.x)
+                                ly = int(sy - b.y)
+                                if 0 <= lx < iw and 0 <= ly < ih and bmask.get_at((lx, ly)):
+                                    hit = True
+                                    break
+                            if not hit:
+                                continue
+                        else:
+                            # Fallback: bounding rect + tiles
+                            rect = getattr(b, 'rect', None) or b.collision_rect
+                            rect_hit = any(rect.collidepoint(sx, sy) for (sx, sy) in sample_points)
+                            if not rect_hit:
+                                continue
+                            tiles = list(getattr(b, 'collision_tiles', []) or [])
+                            if tiles:
+                                matched = False
+                                for r in tiles:
+                                    for (sx, sy) in sample_points:
+                                        if r.collidepoint(sx, sy):
+                                            matched = True
+                                            break
+                                    if matched:
+                                        break
+                                if not matched:
+                                    continue
+                        # Registrar impacto
+                        se = getattr(b, '_spawner_eid', None)
+                        if se is not None:
+                            hit_spawner_eid = int(se)
+                            break
+                    except Exception:
+                        continue
+                if hit_spawner_eid is not None:
+                    # Publicar evento de daño de spawner y generar explosión como feedback
+                    sevts = world.components.setdefault('SpawnerDamageEvents', [])
+                    sevts.append({'spawner_eid': int(hit_spawner_eid), 'damage': float(comp.damage), 'attacker': int(comp.caster) if comp.caster is not None else None})
+                    # Spawn ECS explosion at collision point
+                    try:
+                        x, y = pos.x, pos.y
+                        eid2 = world.create_entity()
+                        world.components['Position'][eid2] = Position(x, y)
+                        world.components['ExplosionComponent'][eid2] = ExplosionComponent(FireExplosionModel(x, y))
+                    except Exception:
+                        pass
+                    world.remove_entity(eid)
+                    continue
+            except Exception:
+                # No romper la lógica de fireball si hay fallo al procesar buildings
+                pass
             # Colisión con NPCs (usar MaskCollider pixel-perfect siempre que exista)
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
                 # Saltar self, caster y cadáveres con DeathTimer
