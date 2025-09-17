@@ -10,6 +10,8 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
+import logging
+logger = logging.getLogger(__name__)
 
 class ReleaseSpellState(State):
     def enter(self, entity):
@@ -20,6 +22,7 @@ class ReleaseSpellState(State):
         # Consumir maná del caster si corresponde (evitar doble cobro si ya se cobró en SpellCastingSystem)
         try:
             world = entity.world
+
             godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (entity.id == getattr(world, 'player_entity', None))
             if not godmode and not ctx.get('__mana_charged__', False):
                 mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
@@ -156,6 +159,14 @@ class ReleaseSpellState(State):
             spell_key=spell_key,
             spawn_pos=(spawn_x, spawn_y)
         )
+        try:
+            logger.debug(
+                "[ReleaseSpellState] Spawn fireball eid=%s spell=%s pos=(%.1f,%.1f) vel=(%.2f,%.2f) preset=%s",
+                fid, spell_key, spawn_x, spawn_y, dx * speed, dy * speed, str(bool(cfg.get('vfx')))
+            )
+        except Exception:
+            pass
+
         # Audio: disparo de fireball
         try:
             aq = world.components.setdefault('AudioEventQueue', [])

@@ -4,10 +4,13 @@ import math
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
-from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionModel
+from roguelike_game.ecs.systems.combat.explosions_models import TimedEffectModel
+from roguelike_game.ecs.components.particles.particle_preset_component import ParticlePresetComponent
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+import logging
+logger = logging.getLogger(__name__)
 
 class FireballSystem:
     """
@@ -18,7 +21,14 @@ class FireballSystem:
     
     def update(self, world, camera=None):
         # Actualizar cada fireball
-        for eid in list(world.components.get('FireballComponent', {})):
+        fbd = world.components.get('FireballComponent', {})
+        if not getattr(self, '_dbg_logged_count', False):
+            setattr(self, '_dbg_logged_count', True)
+            try:
+                logger.debug("[FireballSystem] start update: fireballs=%d", len(fbd))
+            except Exception:
+                pass
+        for eid in list(fbd):
             comp = world.components['FireballComponent'][eid]
             pos = world.components['Position'][eid]
             vel = world.components['Velocity'][eid]
@@ -33,6 +43,10 @@ class FireballSystem:
                 dxr = pos.x - comp.spawn_pos[0]
                 dyr = pos.y - comp.spawn_pos[1]
                 if math.hypot(dxr, dyr) > max_range:
+                    try:
+                        logger.debug("[FireballSystem] remove eid=%s by range (%.1f > %.1f)", eid, math.hypot(dxr, dyr), max_range)
+                    except Exception:
+                        pass
                     world.remove_entity(eid)
                     continue
             # Evitar colisiones el primer frame para no impactar desde el spawn
@@ -40,6 +54,10 @@ class FireballSystem:
                 continue
             # Expirar por lifespan
             if comp.age >= comp.lifespan:
+                try:
+                    logger.debug("[FireballSystem] remove eid=%s by lifespan age=%d lifespan=%d", eid, comp.age, comp.lifespan)
+                except Exception:
+                    pass
                 world.remove_entity(eid)
                 continue
             # Colisión con visuals activos de Spawner (Buildings): probar punto contra collision_tiles o collision_rect
@@ -174,6 +192,42 @@ class FireballSystem:
                                 break
 
                 if hit:
+                    # Spawn preset-based explosion VFX at impact point (only if preset explicitly configured)
+                    try:
+                        preset_id = None
+                        ttl_ticks = None
+                        if cfg is None:
+                            cfg = SPELLS.get(getattr(comp, 'spell_key', ''), {})
+                        vfx_obj = None
+                        try:
+                            vfx_attr = getattr(cfg, 'vfx', None)
+                            if isinstance(vfx_attr, dict):
+                                vfx_obj = vfx_attr
+                            else:
+                                vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                        except Exception:
+                            vfx_obj = None
+                        if isinstance(vfx_obj, dict):
+                            impact = vfx_obj.get('impact') or {}
+                            if isinstance(impact, dict):
+                                if isinstance(impact.get('preset'), str):
+                                    preset_id = impact.get('preset')
+                                if isinstance(impact.get('ttl'), (int, float)):
+                                    ttl_ticks = int(impact.get('ttl'))
+                                exp = impact.get('explosion') or {}
+                                if isinstance(exp, dict):
+                                    if isinstance(exp.get('preset'), str):
+                                        preset_id = exp.get('preset')
+                                    if isinstance(exp.get('ttl'), (int, float)):
+                                        ttl_ticks = int(exp.get('ttl'))
+                        if isinstance(preset_id, str) and preset_id:
+                            x, y = hit_pos if hit_pos else (pos.x, pos.y)
+                            peid = world.create_entity()
+                            world.components.setdefault('Position', {})[peid] = Position(x, y)
+                            world.components.setdefault('ParticlePresetComponent', {})[peid] = ParticlePresetComponent(preset_id)
+                            world.components.setdefault('ExplosionComponent', {})[peid] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
+                    except Exception:
+                        pass
                     # Inmortalidad del jugador en godmode
                     is_player = target in world.components.get('PlayerTagComponent', {})
                     godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player
@@ -250,13 +304,44 @@ class FireballSystem:
                     break
 
             # Colisión con tiles sólidos
-            point = pygame.Rect(pos.x, pos.y, 1, 1)
+            px = int(round(pos.x))
+            py = int(round(pos.y))
+            point = pygame.Rect(px - 1, py - 1, 3, 3)
             nearby = world.get_solid_tiles_for_rect(point)
             if nearby and point.collidelist(nearby) != -1:
-                # Spawn ECS explosion at collision point
-                x, y = pos.x, pos.y
-                eid2 = world.create_entity()
-                world.components['Position'][eid2] = Position(x, y)
-                world.components['ExplosionComponent'][eid2] = ExplosionComponent(FireExplosionModel(x, y))
+                # Spawn preset-based explosion at collision point (only if preset explicitly configured)
+                try:
+                    preset_id = None
+                    ttl_ticks = None
+                    vfx_obj = None
+                    try:
+                        vfx_attr = getattr(cfg, 'vfx', None)
+                        if isinstance(vfx_attr, dict):
+                            vfx_obj = vfx_attr
+                        else:
+                            vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                    except Exception:
+                        vfx_obj = None
+                    if isinstance(vfx_obj, dict):
+                        impact = vfx_obj.get('impact') or {}
+                        if isinstance(impact, dict):
+                            if isinstance(impact.get('preset'), str):
+                                preset_id = impact.get('preset')
+                            if isinstance(impact.get('ttl'), (int, float)):
+                                ttl_ticks = int(impact.get('ttl'))
+                            exp = impact.get('explosion') or {}
+                            if isinstance(exp, dict):
+                                if isinstance(exp.get('preset'), str):
+                                    preset_id = exp.get('preset')
+                                if isinstance(exp.get('ttl'), (int, float)):
+                                    ttl_ticks = int(exp.get('ttl'))
+                    if isinstance(preset_id, str) and preset_id:
+                        x, y = float(px), float(py)
+                        eid2 = world.create_entity()
+                        world.components.setdefault('Position', {})[eid2] = Position(x, y)
+                        world.components.setdefault('ParticlePresetComponent', {})[eid2] = ParticlePresetComponent(preset_id)
+                        world.components.setdefault('ExplosionComponent', {})[eid2] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
+                except Exception:
+                    pass
                 world.remove_entity(eid)
                 continue

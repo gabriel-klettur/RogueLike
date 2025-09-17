@@ -27,54 +27,9 @@
     },
     {
       "version": 6,
-      "hash": "6338c81b767b2a9eff660d2cb242f0dcc2f1cac83a526fb15c646abc5f880871",
-      "created_at": "2025-09-17T14:03:37"
-    },
-    {
-      "version": 7,
-      "hash": "53b88b632cdb3287b36ef1102e921363b1d25945d9b37ca2d806444709efb810",
-      "created_at": "2025-09-17T14:09:50"
-    },
-    {
-      "version": 8,
-      "hash": "0a9537eb34648f4f71866e18f3fe11b27657d433799833c0cb57add026fc7e1e",
-      "created_at": "2025-09-17T15:41:08"
-    },
-    {
-      "version": 9,
-      "hash": "33daabef34a5089b5a7d21dfb7361634707ab4524e3e112cf1ee1370d0c4c44b",
-      "created_at": "2025-09-17T15:58:44"
-    },
-    {
-      "version": 10,
-      "hash": "11cdd3fef180b0080b8b1ea1752299419ecab5548eafc96db2c7223c89a77aec",
-      "created_at": "2025-09-17T16:02:03"
-    },
-    {
-      "version": 11,
-      "hash": "43dd4ed942b8a022287acb65ea3260fe50af94624c62cdce84402247b7fe14fa",
-      "created_at": "2025-09-17T16:43:58"
-    },
-    {
-      "version": 12,
-      "hash": "3f1d791d7b1d7b0178a70e20daed9a890b5cdbe75a42c7874a6c2762c1bb1faa",
-      "created_at": "2025-09-17T16:45:24"
-    },
-    {
-      "version": 13,
-      "hash": "4859812c8092a88ece5a7050f60801eccd82a7c8421f9d37c6707314aaff0281",
-      "created_at": "2025-09-17T16:59:27"
-    },
-    {
-      "version": 14,
-      "hash": "95b19ca97a3822c18ebe3b69de1ed8f1ad45440338d0274df906a9597bc21cfd",
-      "created_at": "2025-09-17T18:18:35"
-    },
-    {
-      "version": 15,
-      "hash": "3f1d791d7b1d7b0178a70e20daed9a890b5cdbe75a42c7874a6c2762c1bb1faa",
-      "created_at": "2025-09-17T19:15:31"
+      "hash": "16b0ad71a85adf77d8287f1df40f664716410f830c44e3a3eb7d15eb421b0bce",
+      "created_at": "2025-09-17T16:49:54"
     }
   ],
-  "last_version": 15
+  "last_version": 6
 }
