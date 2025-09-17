@@ -133,7 +133,11 @@ class HitboxSystem:
                 if hit_spawners:
                     sevts = world.components.setdefault('SpawnerDamageEvents', [])
                     for sp_eid in hit_spawners:
+                        # Deduplicate hits per hitbox lifespan: only hit each spawner once per hitbox
+                        if sp_eid in hb.hit_targets:
+                            continue
                         sevts.append({'spawner_eid': int(sp_eid), 'damage': hb.damage, 'attacker': int(hb.owner)})
+                        hb.hit_targets.add(sp_eid)
             except Exception:
                 # Never break combat on building processing issues
                 pass

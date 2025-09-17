@@ -279,8 +279,41 @@ def write_instances_json(data: List[Dict[str, Any]]) -> None:
             except (ValueError, TypeError):
                 pass
         cleaned.append(e)
+
+    # Deduplicate by composite key (template_id, zone, tile) with last-wins policy
+    unique_map: dict[tuple[str, str, tuple[int, int]], Dict[str, Any]] = {}
+    for e in cleaned:
+        try:
+            tpl = str(e.get('template_id'))
+            zone = str(e.get('zone'))
+            tile = e.get('tile', [0, 0])
+            tx = int(tile[0]) if isinstance(tile, (list, tuple)) and len(tile) >= 2 else int(tile)
+            ty = int(tile[1]) if isinstance(tile, (list, tuple)) and len(tile) >= 2 else 0
+            key = (tpl, zone, (tx, ty))
+        except Exception:
+            # If malformed, fall back to using object id to avoid crash; it won't dedup
+            key = (str(e.get('template_id')), str(e.get('zone')), (id(e), 0))
+        # Last occurrence overwrites previous to reflect most recent edit
+        unique_map[key] = e
+
+    deduped: List[Dict[str, Any]] = list(unique_map.values())
+    # Ensure unique and valid string IDs post-dedup
+    try:
+        changed, fixed = ensure_instance_ids(deduped)
+        deduped = fixed if changed else deduped
+    except Exception:
+        pass
+
+    # Optional debug: report duplicates removed
+    try:
+        removed = max(0, len(cleaned) - len(deduped))
+        if removed > 0:
+            logger.debug(f"[spawner.persistence] write_instances_json: removed {removed} duplicate instance(s) by key (template_id, zone, tile)")
+    except Exception:
+        pass
+
     with open(path, 'w', encoding='utf-8') as f:
-        json.dump(cleaned, f, ensure_ascii=False, indent=2)
+        json.dump(deduped, f, ensure_ascii=False, indent=2)
 
 
 def slugify(s: str) -> str:

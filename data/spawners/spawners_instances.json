@@ -27,8 +27,8 @@
         "instance_id": 202,
         "template_id": 158,
         "offset": [
-          -350,
-          -112
+          -120,
+          -249
         ],
         "scale": [
           258,
@@ -42,8 +42,8 @@
         "instance_id": 203,
         "template_id": 157,
         "offset": [
-          -108,
-          -100
+          -120,
+          -237
         ],
         "scale": [
           257,
@@ -68,23 +68,5 @@
       }
     },
     "id": "survival_10_forest_14_9"
-  },
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      16
-    ],
-    "id": "survival_10_forest_26_17"
-  },
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      24,
-      16
-    ],
-    "id": "survival_10_forest_24_16"
   }
 ]

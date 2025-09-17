@@ -1,14 +1,14 @@
 {
-  "ee25af6a-b9e9-440d-a70f-05380b50710e": {
-    "item_id": "wood",
+  "ed3fe8a5-b5ca-478c-be90-b16a85f6b0f9": {
+    "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 22,
-      "y": 18
+      "x": 16,
+      "y": 10
     },
-    "created_at": 1758123618.5997748
+    "created_at": 1758125553.2925386
   }
 }

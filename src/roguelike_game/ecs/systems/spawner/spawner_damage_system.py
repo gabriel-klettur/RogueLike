@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict
 from roguelike_game.ecs.components.combat.health import Health
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 
 class SpawnerDamageSystem:
     """
@@ -179,6 +180,12 @@ class SpawnerDamageSystem:
                         is_player_attacker = True
                 except Exception:
                     is_player_attacker = False
+                # Godmode attacker: if the attacker is the player and godmode is active, one-shot the spawner
+                gm_attacker = False
+                try:
+                    gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_attacker
+                except Exception:
+                    gm_attacker = False
                 token = self._cur_token(st)
                 eff = self._merge_life(cfg, token)
                 if not bool(eff.get('damageable', False)):
@@ -197,9 +204,18 @@ class SpawnerDamageSystem:
                     continue
                 # Apply damage
                 try:
-                    pool['current_hp'] = max(0.0, float(pool.get('current_hp', 0)) - dmg)
+                    if gm_attacker:
+                        pool['current_hp'] = 0.0
+                    else:
+                        pool['current_hp'] = max(0.0, float(pool.get('current_hp', 0)) - dmg)
                 except Exception:
                     pool['current_hp'] = 0.0
+                # Record last attacker for KO attribution and debugging
+                try:
+                    if attacker is not None:
+                        world.components.setdefault('LastAttacker', {})[eid] = LastAttacker(int(attacker), float(time.time()))
+                except Exception:
+                    pass
                 # Publish/refresh Health component so TargetHudRenderSystem can render the bar
                 try:
                     world.components.setdefault('Health', {})[eid] = Health(
@@ -215,6 +231,18 @@ class SpawnerDamageSystem:
                         hud['target_eid'] = int(eid)
                         hud['last_hit_time'] = float(time.time())
                         hud.setdefault('ttl_s', 3.0)
+                    except Exception:
+                        pass
+                    # Publish combo event for hit attributed to the player
+                    try:
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({
+                            'attacker': int(attacker),
+                            'target': int(eid),
+                            'damage': float(dmg),
+                            'source': 'hitbox',
+                            'time': float(time.time()),
+                        })
                     except Exception:
                         pass
                 # Trigger flash
@@ -241,6 +269,13 @@ class SpawnerDamageSystem:
                             try:
                                 st.finished = True
                                 st.fsm_state = 'finished'
+                            except Exception:
+                                pass
+                        # Combo kill event when player kills a spawner
+                        if is_player_attacker:
+                            try:
+                                combo_q = world.components.setdefault('ComboEventQueue', [])
+                                combo_q.append({'type': 'kill', 'entity': int(attacker), 'target': int(eid)})
                             except Exception:
                                 pass
                 except Exception:
