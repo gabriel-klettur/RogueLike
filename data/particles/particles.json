@@ -335,4 +335,22 @@
       }
     }
   }
+  ,
+  "fireball_trail": {
+    "id": "fireball_trail",
+    "name": "Fireball Trail",
+    "type": "trail",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "smoke_emitter",
+        "emit_rate": 4,
+        "speed": 1.0,
+        "lifespan": 38,
+        "size_range": [3, 5],
+        "colors": [[255, 200, 120], [255, 170, 60], [255, 240, 160]],
+        "dispersion": 12
+      }
+    }
+  }
 }

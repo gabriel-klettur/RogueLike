@@ -8,6 +8,8 @@ from roguelike_game.ecs.systems.combat.explosions_models import FireExplosionMod
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+import logging
+logger = logging.getLogger(__name__)
 
 class FireballSystem:
     """
@@ -18,7 +20,14 @@ class FireballSystem:
     
     def update(self, world, camera=None):
         # Actualizar cada fireball
-        for eid in list(world.components.get('FireballComponent', {})):
+        fbd = world.components.get('FireballComponent', {})
+        if not getattr(self, '_dbg_logged_count', False):
+            setattr(self, '_dbg_logged_count', True)
+            try:
+                logger.debug("[FireballSystem] start update: fireballs=%d", len(fbd))
+            except Exception:
+                pass
+        for eid in list(fbd):
             comp = world.components['FireballComponent'][eid]
             pos = world.components['Position'][eid]
             vel = world.components['Velocity'][eid]
@@ -33,6 +42,10 @@ class FireballSystem:
                 dxr = pos.x - comp.spawn_pos[0]
                 dyr = pos.y - comp.spawn_pos[1]
                 if math.hypot(dxr, dyr) > max_range:
+                    try:
+                        logger.debug("[FireballSystem] remove eid=%s by range (%.1f > %.1f)", eid, math.hypot(dxr, dyr), max_range)
+                    except Exception:
+                        pass
                     world.remove_entity(eid)
                     continue
             # Evitar colisiones el primer frame para no impactar desde el spawn
@@ -40,6 +53,10 @@ class FireballSystem:
                 continue
             # Expirar por lifespan
             if comp.age >= comp.lifespan:
+                try:
+                    logger.debug("[FireballSystem] remove eid=%s by lifespan age=%d lifespan=%d", eid, comp.age, comp.lifespan)
+                except Exception:
+                    pass
                 world.remove_entity(eid)
                 continue
             # Colisión con NPCs (usar MaskCollider pixel-perfect siempre que exista)

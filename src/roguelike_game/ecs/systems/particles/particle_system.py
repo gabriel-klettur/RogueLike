@@ -1,4 +1,6 @@
 from roguelike_engine.utils.benchmark import benchmark
+import logging
+logger = logging.getLogger(__name__)
 
 class ParticleSystem:
     """
@@ -11,6 +13,13 @@ class ParticleSystem:
         # Obtener componentes de posición y partículas
         positions = world.components.get('Position', {})
         particles = world.components.get('ParticleComponent', {})
+        # One-time debug of particle count to help diagnose emission
+        if not getattr(self, '_dbg_logged_particles', False):
+            setattr(self, '_dbg_logged_particles', True)
+            try:
+                logger.debug("[ParticleSystem] start update: particles=%d", len(particles))
+            except Exception:
+                pass
         for eid, comp in list(particles.items()):
             pos = positions.get(eid)
             if pos is None:
