@@ -10,8 +10,8 @@
     "id": 5,
     "preset_id": "smoke_emitter",
     "zone": "zone_50_0",
-    "rel_x": 1011,
-    "rel_y": 1443
+    "rel_x": 1010,
+    "rel_y": 1445
   },
   {
     "id": 7,
@@ -21,10 +21,17 @@
     "rel_y": 1533
   },
   {
-    "id": 9,
-    "preset_id": "arcane_flame_emitter",
+    "id": 10,
+    "preset_id": "explosion_small",
     "zone": "lobby",
-    "rel_x": 333,
-    "rel_y": 131
+    "rel_x": 336,
+    "rel_y": 143
+  },
+  {
+    "id": 11,
+    "preset_id": "smoke_emitter",
+    "zone": "lobby",
+    "rel_x": 1244,
+    "rel_y": 697
   }
 ]

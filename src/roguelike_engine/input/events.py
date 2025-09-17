@@ -18,6 +18,7 @@ def handle_events(
     events=None,
     *,
     diagnostics_overlay=None,
+    particles_editor=None,
     spells_editor=None,
     item_editor=None,
     fsm_visible: bool = False,
@@ -47,6 +48,12 @@ def handle_events(
         active_spawner = bool(getattr(getattr(spawner_editor, 'model', None), 'visible', False))
     except Exception:
         active_spawner = False
+    # Particles editor visibility enables MMB camera panning (passed as keyword-only arg)
+    active_particles = False
+    try:
+        active_particles = bool(getattr(getattr(particles_editor, 'model', None), 'visible', False))
+    except Exception:
+        active_particles = False
     # Other editors (visibility toggles) also enable MMB camera panning
     active_spells = False
     try:
@@ -88,7 +95,7 @@ def handle_events(
             # Enable MMB camera panning while editors are active; disable in gameplay.
             # Include Spawner/Spells/Items editors visibility and FSM editor visible flag.
             mmb_pan_enabled = (
-                active_tiles or active_buildings or active_map or
+                active_tiles or active_buildings or active_map or active_particles or
                 active_spawner or active_spells or active_items or active_fsm
             )
             # Avoid double-processing of wheel when Map/Tiles editor already handled it
