@@ -36,3 +36,8 @@ class SpawnerState:
     # These do not drive behavior; they are informative for tools/UI.
     fsm_set_id: Optional[str] = None
     fsm_set_params: Dict[str, Any] = field(default_factory=dict)
+    # Visual override token: when set (e.g., by damage system), the runtime visual selection
+    # will prefer this token over fsm_state. Expected tokens are lowercase runtime keys
+    # (e.g., 'await_trigger', 'wait_cooldown', 'wait_clear', 'finished') or exact state ids
+    # that can be normalized by the runtime system.
+    visual_override_token: Optional[str] = None

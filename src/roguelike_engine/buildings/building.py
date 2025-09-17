@@ -316,6 +316,14 @@ class Building:
         self.model.reset_to_original_size()
         self.update_on_camera_change()
 
+    # ----------------------------- Flash (damage tint) API -----------------------------
+    def trigger_flash(self, color: tuple[int, int, int] = (255, 255, 255), duration: float = 0.08) -> None:
+        """Delegates to BuildingModel.trigger_flash so systems can request a temporary tint effect."""
+        try:
+            self.model.trigger_flash(color=color, duration=duration)
+        except Exception:
+            pass
+
     # ───────────────────── Visual state (multi-image) APIs ─────────────────────
     def set_images_by_state(self, images_by_state: dict[str, str], initial_state: str | None = None):
         """Define mapping estado->ruta de imagen. Si hay controlador, limpiará caches."""

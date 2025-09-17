@@ -3,8 +3,8 @@
   "player": {
     "level": "global_map",
     "pos": [
-      73,
-      78
+      22,
+      70
     ]
   },
   "npcs": {
@@ -12,7 +12,7 @@
       "level": "global_map",
       "tile": [
         68,
-        89
+        93
       ],
       "hp": 50,
       "dead": false,
@@ -22,15 +22,15 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        73,
-        78
+        22,
+        70
       ],
       "npc_states": {
         "69208090-d792-45b7-be92-bc1f18010fa9": {
           "level": "global_map",
           "tile": [
             68,
-            89
+            93
           ],
           "hp": 50,
           "dead": false,
@@ -45,7 +45,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 318
+        "quantity": 322
       },
       {
         "item": "health_potion",
@@ -53,7 +53,7 @@
       },
       {
         "item": "wood",
-        "quantity": 2
+        "quantity": 3
       },
       null,
       null,
@@ -231,10 +231,10 @@
   "meta": {
     "name": "partida_2025-09-16_17-37-01",
     "created_at": "2025-09-16T17:37:01",
-    "last_played": "2025-09-17T05:24:12",
+    "last_played": "2025-09-17T14:09:50",
     "player": {
-      "xp": 60,
-      "level": 2
+      "xp": 50,
+      "level": 6
     },
     "items_summary": {
       "stacks": 3,
