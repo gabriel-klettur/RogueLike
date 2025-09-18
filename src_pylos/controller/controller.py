@@ -20,6 +20,11 @@ class InputState:
     show_holes: bool = False
     show_indices: bool = False
     dragging: bool = False  # RMB drag to climb
+    # Calibration UI
+    calibration_mode: bool = False
+    calib_dragging: bool = False
+    calib_handle: Optional[str] = None
+    last_mouse_pos: Optional[tuple[int, int]] = None
 
 
 class PylosController:
@@ -80,6 +85,11 @@ class PylosController:
 
         if event.type == pygame.MOUSEMOTION:
             pos = pygame.mouse.get_pos()
+            # Calibration drag adjusts grid mapping live
+            if self.input.calibration_mode and self.input.calib_dragging:
+                self._calibration_drag_update(pos)
+                self.input.last_mouse_pos = pos
+                return
             # In REMOVAL, pick the nearest own free marble (avoid empty upper cells)
             sub = getattr(self.state, "subphase", None)
             if sub is not None and sub.name == "REMOVAL":
@@ -96,8 +106,42 @@ class PylosController:
                 if rect is not None and rect.collidepoint(pygame.mouse.get_pos()):
                     self._request_menu = True
                     return
+            # Calibration button toggles mode
+            cfg_btn = self.view.get_config_button_rect()
+            if cfg_btn is not None and cfg_btn.collidepoint(pygame.mouse.get_pos()):
+                self.input.calibration_mode = not self.input.calibration_mode
+                self.input.calib_dragging = False
+                self.input.calib_handle = None
+                if self.input.calibration_mode:
+                    # Make current board rect editable
+                    self.view.ensure_board_manual()
+                return
+            # When calibrating, start dragging if clicking a size knob or a rect handle (or inside the rect for move)
+            if self.input.calibration_mode and event.button in (1,):
+                pos = pygame.mouse.get_pos()
+                if self.view.pick_size_handle(pos):
+                    self.input.calib_handle = "size"
+                    self.input.calib_dragging = True
+                    self.input.last_mouse_pos = pos
+                    return
+                # Board rect handles have priority after size knob
+                bhandle = self.view.pick_board_handle(pos)
+                if bhandle is not None:
+                    self.input.calib_handle = bhandle
+                    self.input.calib_dragging = True
+                    self.input.last_mouse_pos = pos
+                    return
+                handle = self.view.pick_calibration_handle(pos)
+                if handle is not None:
+                    self.input.calib_handle = handle
+                    self.input.calib_dragging = True
+                    self.input.last_mouse_pos = pos
+                    return
+                return
             # Right-click: select nearest own FREE marble under cursor (robust) and start drag (ACTION only)
             if event.button == 3:  # RMB
+                if self.input.calibration_mode:
+                    return  # ignore gameplay input while calibrating
                 pos = pygame.mouse.get_pos()
                 # Only allow selecting/dragging during ACTION subphase
                 if self.is_human_action_turn():
@@ -119,11 +163,19 @@ class PylosController:
                         if self.state.attempt_climb(self.input.selected_src, self.input.hovered):
                             self.input.selected_src = None
                     return
+            # Stop calibration drag on LMB up
+            if event.button == 1 and self.input.calibration_mode and self.input.calib_dragging:
+                self.input.calib_dragging = False
+                self.input.calib_handle = None
+                self.input.last_mouse_pos = None
+                return
 
             # Left-click actions
             if event.button == 1:
                 if self.state.phase != GamePhase.PLAYING:
                     return
+                if self.input.calibration_mode:
+                    return  # block gameplay while calibrating
                 # If clicking the Show Holes button, toggle
                 btn = self.view.get_showholes_button_rect()
                 if btn is not None and btn.collidepoint(pygame.mouse.get_pos()):
@@ -229,6 +281,93 @@ class PylosController:
 
     def show_indices(self) -> bool:
         return self.input.show_indices
+
+    def calibration_mode(self) -> bool:
+        return self.input.calibration_mode
+
+    # --- Calibration helpers ---
+    def _calibration_drag_update(self, pos: tuple[int, int]) -> None:
+        if self.input.last_mouse_pos is None:
+            self.input.last_mouse_pos = pos
+            return
+        if self.view.get_board_rect() is None:
+            return
+        bx, by, bw, bh = self.view.get_board_rect()
+        dx = pos[0] - self.input.last_mouse_pos[0]
+        dy = pos[1] - self.input.last_mouse_pos[1]
+        # Current grid rect in pixels
+        rect = self.view.get_grid_rect()
+        if rect is None:
+            return
+        new_rect = rect.copy()
+        handle = self.input.calib_handle or "move"
+        min_size = 40
+        if handle == "size":
+            # Set marble scale based on drag distance from anchor center to cursor
+            scale = self.view.size_scale_from_pos(pos)
+            if scale is not None:
+                self.view.cfg.marble_scale = scale
+            return
+        if handle == "board_move":
+            new_b = self.view.get_board_rect().copy()
+            new_b.x += dx
+            new_b.y += dy
+            self.view.set_board_manual_rect(new_b)
+            return
+        if handle in ("board_tl", "board_tr", "board_bl", "board_br"):
+            # Uniform scale from center, keep aspect ratio
+            b = self.view.get_board_rect()
+            cx = b.centerx
+            cy = b.centery
+            # Determine sign based on which corner is being dragged
+            sx = 1 if "r" in handle else -1
+            sy = 1 if "b" in handle else -1
+            # Project movement along corner vector for uniform scaling
+            proj = (dx * (1 if sx > 0 else -1) + dy * (1 if sy > 0 else -1)) / 2.0
+            new_w = max(80, b.width + int(proj * 2))
+            # Keep image aspect ratio
+            img = self.view._board_img
+            aspect = img.get_width() / img.get_height() if img else b.width / max(1, b.height)
+            new_h = int(new_w / aspect)
+            new_b = pygame.Rect(0, 0, new_w, new_h)
+            new_b.center = (cx, cy)
+            self.view.set_board_manual_rect(new_b)
+            return
+        if handle == "move":
+            new_rect.x += dx
+            new_rect.y += dy
+        elif handle == "tl":
+            new_rect.x += dx
+            new_rect.y += dy
+            new_rect.width -= dx
+            new_rect.height -= dy
+        elif handle == "tr":
+            new_rect.y += dy
+            new_rect.width += dx
+            new_rect.height -= dy
+        elif handle == "bl":
+            new_rect.x += dx
+            new_rect.width -= dx
+            new_rect.height += dy
+        elif handle == "br":
+            new_rect.width += dx
+            new_rect.height += dy
+        # Clamp within board rect and min size
+        new_rect.width = max(min_size, new_rect.width)
+        new_rect.height = max(min_size, new_rect.height)
+        if new_rect.left < bx:
+            new_rect.x = bx
+        if new_rect.top < by:
+            new_rect.y = by
+        if new_rect.right > bx + bw:
+            new_rect.right = bx + bw
+        if new_rect.bottom > by + bh:
+            new_rect.bottom = by + bh
+        # Convert to normalized and write into config
+        self.view.cfg.grid_norm_left = (new_rect.x - bx) / bw
+        self.view.cfg.grid_norm_top = (new_rect.y - by) / bh
+        self.view.cfg.grid_norm_width = new_rect.width / bw
+        self.view.cfg.grid_norm_height = new_rect.height / bh
 
     def is_human_removal_turn(self) -> bool:
         """True if current turn is a human player's REMOVAL subphase."""

@@ -36,6 +36,14 @@ def run() -> int:
         Exit code (0 for normal quit).
     """
     cfg = ViewConfig()
+    # Enable assets: use board.png and marble sprites
+    cfg.use_assets = True
+    # Initial calibration for board.png: normalized rect spanning 4x4 hole centers
+    # Tweak these if alignment looks off
+    cfg.grid_norm_left = 0.185
+    cfg.grid_norm_top = 0.185
+    cfg.grid_norm_width = 0.63
+    cfg.grid_norm_height = 0.63
     screen = _init_pygame(cfg)
     clock = pygame.time.Clock()
 
@@ -89,6 +97,7 @@ def run() -> int:
                 controller.removal_cursor_player_id(),
                 controller.show_holes(),
                 controller.show_indices(),
+                controller.calibration_mode(),
             )
             pygame.display.flip()
 

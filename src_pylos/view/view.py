@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+import os
 from typing import Dict, Optional, Tuple, List
 
 import pygame
@@ -35,6 +36,22 @@ class ViewConfig:
     layer_vertical_offset: int = 0
     # Vertical gap between the bottom status panel and the overlay toggle buttons
     toggle_gap: int = 48
+    # --- Asset rendering options ---
+    use_assets: bool = False
+    assets_dir: str = os.path.join(os.path.dirname(__file__), "..", "assets")
+    board_image: str = os.path.join(os.path.dirname(__file__), "..", "assets", "board.png")
+    marble_a_image: str = os.path.join(os.path.dirname(__file__), "..", "assets", "bola_a.png")
+    marble_b_image: str = os.path.join(os.path.dirname(__file__), "..", "assets", "bola_b.png")
+    # Normalized rect inside board image that spans from the FIRST to LAST center of the 4x4 holes
+    # Tune these if alignment looks off for your board asset
+    grid_norm_left: float = 0.20
+    grid_norm_top: float = 0.20
+    grid_norm_width: float = 0.60
+    grid_norm_height: float = 0.60
+    # Marble visual scale factor relative to logical hole size (derived from grid)
+    marble_scale: float = 1.00  # 1.0 fits snug; <1 smaller, >1 larger
+    marble_scale_min: float = 0.60
+    marble_scale_max: float = 1.40
 
 
 class PylosView:
@@ -54,6 +71,26 @@ class PylosView:
         self.cell_centers: Dict[Cell, Tuple[int, int]] = {}
         self.pick_radius: int = max(14, self.cfg.cell_size // 2 - 6)
         self._bottom_panel_h: int = self.cfg.bottom_panel_height
+        # Asset surfaces and rects
+        self._board_img: Optional[pygame.Surface] = None
+        self._marble_img_p1: Optional[pygame.Surface] = None
+        self._marble_img_p2: Optional[pygame.Surface] = None
+        self._board_rect: Optional[pygame.Rect] = None
+        self._board_rect_manual: Optional[pygame.Rect] = None  # override when calibrating board placement/size
+        # Load assets if enabled
+        if self.cfg.use_assets:
+            try:
+                if os.path.exists(self.cfg.board_image):
+                    self._board_img = pygame.image.load(self.cfg.board_image).convert_alpha()
+                if os.path.exists(self.cfg.marble_a_image):
+                    self._marble_img_p1 = pygame.image.load(self.cfg.marble_a_image).convert_alpha()
+                if os.path.exists(self.cfg.marble_b_image):
+                    self._marble_img_p2 = pygame.image.load(self.cfg.marble_b_image).convert_alpha()
+            except Exception:
+                # Fallback to shapes if load fails
+                self._board_img = None
+                self._marble_img_p1 = None
+                self._marble_img_p2 = None
         self._compute_layout()
         # Last computed End Removal button rects (left=P1, right=P2)
         self._last_end_btn_left: Optional[pygame.Rect] = None
@@ -78,15 +115,55 @@ class PylosView:
 
     def _compute_layout(self) -> None:
         self.cell_centers.clear()
-        for layer, size in enumerate(Board.LAYER_SIZES):
-            x0, y0 = self._compute_layer_top_left(size)
-            # Symmetric layout: no vertical staggering unless configured
-            y0 -= layer * self.cfg.layer_vertical_offset
-            for y in range(size):
-                for x in range(size):
-                    cx = int(round(x0 + x * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
-                    cy = int(round(y0 + y * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
-                    self.cell_centers[Cell(layer, x, y)] = (cx, cy)
+        if self.cfg.use_assets and self._board_img is not None:
+            # Compute board rect to fit between top margin and above bottom panel, centered horizontally
+            if self._board_rect_manual is not None:
+                self._board_rect = self._board_rect_manual.copy()
+            else:
+                avail_h = self.cfg.height - self._bottom_panel_h - self.cfg.top_margin - 20
+                avail_w = self.cfg.width - 40
+                img_w, img_h = self._board_img.get_width(), self._board_img.get_height()
+                scale = min(avail_w / img_w, avail_h / img_h)
+                bw = int(img_w * scale)
+                bh = int(img_h * scale)
+                bx = (self.cfg.width - bw) // 2
+                by = self.cfg.top_margin + (self.cfg.height - self._bottom_panel_h - self.cfg.top_margin - bh) // 2
+                self._board_rect = pygame.Rect(bx, by, bw, bh)
+            # Compute grid screen rect using normalized values (first-to-last centers span)
+            bx = self._board_rect.x
+            by = self._board_rect.y
+            bw = self._board_rect.width
+            bh = self._board_rect.height
+            gx = bx + int(self.cfg.grid_norm_left * bw)
+            gy = by + int(self.cfg.grid_norm_top * bh)
+            gw = int(self.cfg.grid_norm_width * bw)
+            gh = int(self.cfg.grid_norm_height * bh)
+            # Base step between centers on the 4x4 grid: 3 intervals
+            step_x = gw / 3.0
+            step_y = gh / 3.0
+            # Derive pick radius from smaller step
+            self.pick_radius = max(10, int(min(step_x, step_y) * 0.35))
+            # Fill centers per layer, centered within the same span using offsets
+            for layer, size in enumerate(Board.LAYER_SIZES):
+                off_mul = (4 - size) / 2.0
+                ox = gx + int(off_mul * step_x)
+                oy = gy + int(off_mul * step_y)
+                for y in range(size):
+                    for x in range(size):
+                        cx = int(round(ox + x * step_x))
+                        cy = int(round(oy + y * step_y))
+                        self.cell_centers[Cell(layer, x, y)] = (cx, cy)
+        else:
+            # Fallback: synthetic geometry
+            for layer, size in enumerate(Board.LAYER_SIZES):
+                x0, y0 = self._compute_layer_top_left(size)
+                # Symmetric layout: no vertical staggering unless configured
+                y0 -= layer * self.cfg.layer_vertical_offset
+                for y in range(size):
+                    for x in range(size):
+                        cx = int(round(x0 + x * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
+                        cy = int(round(y0 + y * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
+                        self.cell_centers[Cell(layer, x, y)] = (cx, cy)
 
     def pick_cell(self, pos: Tuple[int, int], board: Board) -> Optional[Cell]:
         mx, my = pos
@@ -149,6 +226,7 @@ class PylosView:
         removal_preview_player_id: Optional[int] = None,
         show_holes: bool = False,
         show_indices: bool = False,
+        calibration_mode: bool = False,
     ) -> None:
         self.screen.fill(self.cfg.bg_color)
         # Measure dynamic status panel height for this frame and recompute layout accordingly
@@ -166,8 +244,11 @@ class PylosView:
         # Draw the bottom status panel first so other UI (buttons) can render above it
         self._draw_status(state, info)
         # Toggle overlays buttons (positioned just above the bottom panel), responsive to panel width
-        self._draw_toggle_buttons(show_holes, show_indices)
+        self._draw_toggle_buttons(show_holes, show_indices, calibration_mode)
         self._draw_marbles(state)
+        # Calibration overlay (white guides) to adjust board grid mapping
+        if calibration_mode:
+            self._draw_calibration_overlay()
         if show_holes:
             self._draw_available_holes(state.board)
         if show_indices:
@@ -188,20 +269,24 @@ class PylosView:
             self._draw_cursor_preview(preview_player_id)
 
     def _draw_layers(self) -> None:
-        # Draw layer outlines to convey pyramid levels
-        for layer, size in enumerate(Board.LAYER_SIZES):
-            x0, y0 = self._compute_layer_top_left(size)
-            y0 -= layer * self.cfg.layer_vertical_offset
-            w = size * self.cfg.cell_size + (size - 1) * self.cfg.gap
-            h = w
-            rect = pygame.Rect(x0 - 8, y0 - 8, w + 16, h + 16)
-            pygame.draw.rect(self.screen, self.cfg.layer_outline, rect, width=2, border_radius=8)
-            # Grid dots for the cells
-            for y in range(size):
-                for x in range(size):
-                    cx = int(round(x0 + x * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
-                    cy = int(round(y0 + y * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
-                    pygame.draw.circle(self.screen, self.cfg.grid_color, (cx, cy), 4)
+        if self.cfg.use_assets and self._board_img is not None and self._board_rect is not None:
+            board_scaled = pygame.transform.smoothscale(self._board_img, (self._board_rect.width, self._board_rect.height))
+            self.screen.blit(board_scaled, self._board_rect.topleft)
+        else:
+            # Draw layer outlines to convey pyramid levels (synthetic)
+            for layer, size in enumerate(Board.LAYER_SIZES):
+                x0, y0 = self._compute_layer_top_left(size)
+                y0 -= layer * self.cfg.layer_vertical_offset
+                w = size * self.cfg.cell_size + (size - 1) * self.cfg.gap
+                h = w
+                rect = pygame.Rect(x0 - 8, y0 - 8, w + 16, h + 16)
+                pygame.draw.rect(self.screen, self.cfg.layer_outline, rect, width=2, border_radius=8)
+                # Grid dots for the cells
+                for y in range(size):
+                    for x in range(size):
+                        cx = int(round(x0 + x * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
+                        cy = int(round(y0 + y * (self.cfg.cell_size + self.cfg.gap) + self.cfg.cell_size / 2.0))
+                        pygame.draw.circle(self.screen, self.cfg.grid_color, (cx, cy), 4)
 
     def _draw_available_holes(self, board: Board) -> None:
         """Draw semi-transparent green overlays on all supported empty cells."""
@@ -220,7 +305,7 @@ class PylosView:
             pygame.draw.circle(ghost, rim, center, r, width=2)
             self.screen.blit(ghost, (cx - d // 2, cy - d // 2))
 
-    def _draw_toggle_buttons(self, holes_enabled: bool, indices_enabled: bool) -> None:
+    def _draw_toggle_buttons(self, holes_enabled: bool, indices_enabled: bool, calibration_enabled: bool) -> None:
         """Responsive layout for 'Mostrar huecos' and 'Mostrar índices' above the bottom panel.
 
         If both button widths fit within the legend content width, draw them side-by-side centered.
@@ -229,14 +314,18 @@ class PylosView:
         # Labels and text surfaces
         holes_label = "Ocultar huecos" if holes_enabled else "Mostrar huecos"
         idx_label = "Ocultar índices" if indices_enabled else "Mostrar índices"
+        cfg_label = "Salir config" if calibration_enabled else "Configuración"
         holes_txt = self.font_small.render(holes_label, True, (250, 250, 255))
         idx_txt = self.font_small.render(idx_label, True, (250, 250, 255))
+        cfg_txt = self.font_small.render(cfg_label, True, (250, 250, 255))
 
         pad_x, pad_y = 10, 6
         holes_w = holes_txt.get_width() + 2 * pad_x
         holes_h = holes_txt.get_height() + 2 * pad_y
         idx_w = idx_txt.get_width() + 2 * pad_x
         idx_h = idx_txt.get_height() + 2 * pad_y
+        cfg_w = cfg_txt.get_width() + 2 * pad_x
+        cfg_h = cfg_txt.get_height() + 2 * pad_y
 
         panel_top = self.cfg.height - self._bottom_panel_h
         gap = max(12, self.cfg.toggle_gap)
@@ -246,31 +335,38 @@ class PylosView:
         center_x = self.cfg.width // 2
 
         # Decide layout: inline or stacked
-        inline = (holes_w + gap + idx_w) <= available_w
+        inline = (holes_w + gap + idx_w + gap + cfg_w) <= available_w
 
         bg_off = (40, 40, 50)
         bg_on_holes = (56, 142, 60)
         bg_on_idx = (84, 110, 122)
+        bg_cfg = (90, 90, 100)
         outline = (20, 20, 26)
 
         if inline:
-            group_w = holes_w + gap + idx_w
+            group_w = holes_w + gap + idx_w + gap + cfg_w
             start_x = center_x - group_w // 2
             by = max(8, panel_top - max(holes_h, idx_h) - gap)
             # Holes button
             holes_rect = pygame.Rect(start_x, by, holes_w, holes_h)
             # Indices button
             idx_rect = pygame.Rect(holes_rect.right + gap, by, idx_w, idx_h)
+            # Config button to the right
+            cfg_rect = pygame.Rect(idx_rect.right + gap, by, cfg_w, max(idx_h, holes_h))
         else:
             # Stack: índices arriba, huecos abajo
             holes_by = max(8, panel_top - holes_h - gap)
             holes_rect = pygame.Rect(center_x - holes_w // 2, holes_by, holes_w, holes_h)
             idx_by = max(8, holes_rect.y - gap - idx_h)
             idx_rect = pygame.Rect(center_x - idx_w // 2, idx_by, idx_w, idx_h)
+            # Place config button above indices if stacked
+            cfg_by = max(8, idx_rect.y - gap - cfg_h)
+            cfg_rect = pygame.Rect(center_x - cfg_w // 2, cfg_by, cfg_w, cfg_h)
 
         # Store rects for controller hit-tests
         self._last_showholes_btn = holes_rect
         self._last_indices_btn = idx_rect
+        self._last_config_btn = cfg_rect
 
         # Draw indices button
         pygame.draw.rect(self.screen, bg_on_idx if indices_enabled else bg_off, idx_rect, border_radius=8)
@@ -281,6 +377,175 @@ class PylosView:
         pygame.draw.rect(self.screen, bg_on_holes if holes_enabled else bg_off, holes_rect, border_radius=8)
         pygame.draw.rect(self.screen, outline, holes_rect, width=2, border_radius=8)
         self.screen.blit(holes_txt, (holes_rect.centerx - holes_txt.get_width() // 2, holes_rect.centery - holes_txt.get_height() // 2))
+        # Draw config button
+        pygame.draw.rect(self.screen, bg_cfg, cfg_rect, border_radius=8)
+        pygame.draw.rect(self.screen, outline, cfg_rect, width=2, border_radius=8)
+        self.screen.blit(cfg_txt, (cfg_rect.centerx - cfg_txt.get_width() // 2, cfg_rect.centery - cfg_txt.get_height() // 2))
+
+    def get_config_button_rect(self) -> Optional[pygame.Rect]:
+        return getattr(self, "_last_config_btn", None)
+
+    def get_board_rect(self) -> Optional[pygame.Rect]:
+        return self._board_rect
+
+    def get_grid_rect(self) -> Optional[pygame.Rect]:
+        # Return the current 4x4 span rect in screen space (first-to-last centers)
+        if self._board_rect is None:
+            return None
+        bw, bh = self._board_rect.width, self._board_rect.height
+        gx = self._board_rect.x + int(self.cfg.grid_norm_left * bw)
+        gy = self._board_rect.y + int(self.cfg.grid_norm_top * bh)
+        gw = int(self.cfg.grid_norm_width * bw)
+        gh = int(self.cfg.grid_norm_height * bh)
+        return pygame.Rect(gx, gy, gw, gh)
+
+    def pick_calibration_handle(self, pos: Tuple[int, int]) -> Optional[str]:
+        """Return which calibration handle is under pos: one of
+        'move', 'tl', 'tr', 'bl', 'br', 'l', 'r', 't', 'b' or None.
+        """
+        rect = self.get_grid_rect()
+        if rect is None:
+            return None
+        x, y = pos
+        # Corner handle size
+        hs = 14
+        tl = pygame.Rect(rect.left - hs // 2, rect.top - hs // 2, hs, hs)
+        tr = pygame.Rect(rect.right - hs // 2, rect.top - hs // 2, hs, hs)
+        bl = pygame.Rect(rect.left - hs // 2, rect.bottom - hs // 2, hs, hs)
+        br = pygame.Rect(rect.right - hs // 2, rect.bottom - hs // 2, hs, hs)
+        if tl.collidepoint((x, y)):
+            return "tl"
+        if tr.collidepoint((x, y)):
+            return "tr"
+        if bl.collidepoint((x, y)):
+            return "bl"
+        if br.collidepoint((x, y)):
+            return "br"
+        if rect.collidepoint((x, y)):
+            return "move"
+        return None
+
+    def _draw_calibration_overlay(self) -> None:
+        """Draw white guides for the 4x4 grid span, handles, and hole centers."""
+        # 1) Board rect overlay (green)
+        if self._board_rect is not None:
+            b = self._board_rect
+            green = (76, 175, 80)
+            pygame.draw.rect(self.screen, green, b, width=3)
+            # corner handles
+            hs = 14
+            for (hx, hy) in [
+                (b.left, b.top),
+                (b.right, b.top),
+                (b.left, b.bottom),
+                (b.right, b.bottom),
+            ]:
+                hrect = pygame.Rect(hx - hs // 2, hy - hs // 2, hs, hs)
+                pygame.draw.rect(self.screen, green, hrect)
+                pygame.draw.rect(self.screen, (20, 20, 26), hrect, width=2)
+            # cache for picking
+            self._last_board_handle_rects = {
+                "tl": pygame.Rect(b.left - hs // 2, b.top - hs // 2, hs, hs),
+                "tr": pygame.Rect(b.right - hs // 2, b.top - hs // 2, hs, hs),
+                "bl": pygame.Rect(b.left - hs // 2, b.bottom - hs // 2, hs, hs),
+                "br": pygame.Rect(b.right - hs // 2, b.bottom - hs // 2, hs, hs),
+                "move": b.copy(),
+            }
+
+        # 2) Grid rect overlay (yellow + centers + size knob)
+        rect = self.get_grid_rect()
+        if rect is None:
+            return
+        # Outline (yellow) over the board image
+        pygame.draw.rect(self.screen, self.cfg.highlight_color, rect, width=3)
+        # Corner handles
+        hs = 14
+        for (hx, hy) in [
+            (rect.left, rect.top),
+            (rect.right, rect.top),
+            (rect.left, rect.bottom),
+            (rect.right, rect.bottom),
+        ]:
+            handle = pygame.Rect(hx - hs // 2, hy - hs // 2, hs, hs)
+            pygame.draw.rect(self.screen, self.cfg.highlight_color, handle)
+            pygame.draw.rect(self.screen, (20, 20, 26), handle, width=2)
+        # White hole centers (4x4)
+        step_x = rect.width / 3.0
+        step_y = rect.height / 3.0
+        r = max(6, int(min(step_x, step_y) * 0.28))
+        for j in range(4):
+            for i in range(4):
+                cx = int(round(rect.left + i * step_x))
+                cy = int(round(rect.top + j * step_y))
+                pygame.draw.circle(self.screen, (255, 255, 255), (cx, cy), r, width=2)
+        # Size preview/handle: use the (1,1) center as anchor and draw a draggable circle with a small knob
+        anchor_cx = int(round(rect.left + 1 * step_x))
+        anchor_cy = int(round(rect.top + 1 * step_y))
+        logical_r = min(step_x, step_y) * 0.5
+        vis_r = int(logical_r * self.cfg.marble_scale)
+        # Main preview circle (semi-transparent white)
+        pygame.draw.circle(self.screen, (255, 255, 255, 40), (anchor_cx, anchor_cy), vis_r)
+        pygame.draw.circle(self.screen, self.cfg.highlight_color, (anchor_cx, anchor_cy), vis_r, width=2)
+        # Knob at the rightmost point
+        knob_r = max(6, int(vis_r * 0.15))
+        knob_x = anchor_cx + vis_r
+        knob_y = anchor_cy
+        knob_rect = pygame.Rect(knob_x - knob_r, knob_y - knob_r, knob_r * 2, knob_r * 2)
+        pygame.draw.circle(self.screen, self.cfg.highlight_color, (knob_x, knob_y), knob_r)
+        pygame.draw.circle(self.screen, (20, 20, 26), (knob_x, knob_y), knob_r, width=2)
+        # Store for picking this frame
+        self._last_size_handle = {
+            "center": (anchor_cx, anchor_cy),
+            "radius": vis_r,
+            "knob_rect": knob_rect,
+            "logical_r": logical_r,
+        }
+
+    def pick_size_handle(self, pos: Tuple[int, int]) -> bool:
+        data = getattr(self, "_last_size_handle", None)
+        if not data:
+            return False
+        return data["knob_rect"].collidepoint(pos)
+
+    def size_scale_from_pos(self, pos: Tuple[int, int]) -> Optional[float]:
+        data = getattr(self, "_last_size_handle", None)
+        if not data:
+            return None
+        cx, cy = data["center"]
+        logical_r: float = float(data["logical_r"]) if data.get("logical_r") else 0.0
+        if logical_r <= 0:
+            return None
+        dx = pos[0] - cx
+        dy = pos[1] - cy
+        dist = (dx * dx + dy * dy) ** 0.5
+        scale = max(self.cfg.marble_scale_min, min(self.cfg.marble_scale_max, dist / logical_r))
+        return scale
+
+    # --- Board rect editing helpers ---
+    def ensure_board_manual(self) -> None:
+        if self._board_rect is not None and self._board_rect_manual is None:
+            self._board_rect_manual = self._board_rect.copy()
+
+    def set_board_manual_rect(self, rect: pygame.Rect) -> None:
+        # keep it clamped to screen and above bottom panel
+        rect = rect.copy()
+        rect.width = max(80, rect.width)
+        rect.height = max(80, rect.height)
+        rect.x = max(0, min(self.cfg.width - rect.width, rect.x))
+        max_h = self.cfg.height - self._bottom_panel_h - 4
+        rect.y = max(0, min(max_h - rect.height, rect.y))
+        self._board_rect_manual = rect
+
+    def pick_board_handle(self, pos: Tuple[int, int]) -> Optional[str]:
+        data = getattr(self, "_last_board_handle_rects", None)
+        if not data:
+            return None
+        for key in ("tl", "tr", "bl", "br"):
+            if data[key].collidepoint(pos):
+                return f"board_{key}"
+        if data["move"].collidepoint(pos):
+            return "board_move"
+        return None
 
     def _draw_showholes_button(self, enabled: bool) -> None:
         """Draw the Show Holes toggle button just above the bottom status panel."""
@@ -355,17 +620,30 @@ class PylosView:
     def _draw_marbles(self, state: GameState) -> None:
         board = state.board
         removal_active = getattr(state, "subphase", None) is not None and state.subphase.name == "REMOVAL"
+        # Determine base diameter from grid if assets are active
+        grid_rect = self.get_grid_rect() if (self.cfg.use_assets and self._board_img is not None) else None
+        if grid_rect is not None:
+            step_d = min(grid_rect.width / 3.0, grid_rect.height / 3.0)
+            base_d = int(step_d * 0.70)
+        else:
+            base_d = int(self.pick_radius * 2)
         for cell, (cx, cy) in self.cell_centers.items():
             owner = board.get(cell)
             if owner is None:
                 # Draw faint circle for empty cells on bottom layer only to avoid clutter
-                if cell.layer == 0:
-                    pygame.draw.circle(self.screen, self.cfg.empty_color, (cx, cy), self.pick_radius, width=2)
+                if cell.layer == 0 and not (self.cfg.use_assets and self._board_img is not None):
+                    pygame.draw.circle(self.screen, self.cfg.empty_color, (cx, cy), int(self.pick_radius * self.cfg.marble_scale), width=2)
                 continue
-            color = self.cfg.player1_color if owner == 1 else self.cfg.player2_color
-            pygame.draw.circle(self.screen, color, (cx, cy), self.pick_radius)
-            # subtle rim
-            pygame.draw.circle(self.screen, (20, 20, 26), (cx, cy), self.pick_radius, width=2)
+            if self.cfg.use_assets and (self._marble_img_p1 is not None and self._marble_img_p2 is not None):
+                img = self._marble_img_p1 if owner == 1 else self._marble_img_p2
+                d = max(6, int(base_d * self.cfg.marble_scale))
+                sprite = pygame.transform.smoothscale(img, (d, d))
+                self.screen.blit(sprite, (cx - d // 2, cy - d // 2))
+            else:
+                color = self.cfg.player1_color if owner == 1 else self.cfg.player2_color
+                pygame.draw.circle(self.screen, color, (cx, cy), int(self.pick_radius * self.cfg.marble_scale))
+                # subtle rim
+                pygame.draw.circle(self.screen, (20, 20, 26), (cx, cy), int(self.pick_radius * self.cfg.marble_scale), width=2)
             # Overlays: 'L' (free) and level in parentheses
             is_free = board.is_free(cell)
             if is_free:
