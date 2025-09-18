@@ -1,0 +1,106 @@
+"""Pylos mini-game entry point.
+
+Provides a `run()` function that initializes pygame, wires MVC components,
+and executes the main loop. Designed for future integration with the larger
+project while remaining runnable as a standalone mini-game.
+"""
+
+from __future__ import annotations
+
+from typing import Final
+
+import pygame
+
+from src_pylos.controller import PylosController
+from src_pylos.model import GameState
+from src_pylos.view import PylosView
+from src_pylos.view.view import ViewConfig
+from src_pylos.view.menu import ConfigMenu
+
+
+FPS: Final[int] = 60
+
+
+def _init_pygame(cfg: ViewConfig) -> pygame.Surface:
+    """Initialize pygame and create the main screen surface."""
+    pygame.init()
+    screen = pygame.display.set_mode((cfg.width, cfg.height))
+    pygame.display.set_caption("Pylos Mini-game")
+    return screen
+
+
+def run() -> int:
+    """Run the Pylos mini-game loop.
+
+    Returns:
+        Exit code (0 for normal quit).
+    """
+    cfg = ViewConfig()
+    screen = _init_pygame(cfg)
+    clock = pygame.time.Clock()
+
+    view = PylosView(screen, cfg)
+
+    while True:
+        # 1) Show configuration menu
+        menu = ConfigMenu(screen, cfg)
+        game_cfg = menu.run()
+
+        # 2) Create game state and controller based on menu
+        state = GameState()
+        state.current_player = game_cfg.starting_player
+        state.allow_square_removal = (game_cfg.game_mode == "Experto")
+        controller = PylosController(
+            state,
+            view,
+            ai_enabled=game_cfg.ai_enabled,
+            ai_player=game_cfg.ai_player,
+        )
+        controller.ai.set_depth(game_cfg.ai_depth)
+
+        # 3) Game loop
+        running = True
+        while running:
+            # Handle input/events
+            for event in pygame.event.get():
+                controller.handle_event(event)
+
+            if not controller.is_running():
+                running = False
+                break
+
+            if controller.request_menu():
+                # Break to outer loop to show menu again
+                break
+
+            # Update
+            dt_ms = clock.tick(FPS)  # caps FPS and returns elapsed milliseconds
+            _dt = dt_ms / 1000.0
+            controller.update(_dt)
+
+            # Render
+            view.draw(
+                state,
+                controller.hovered_cell(),
+                controller.info_text(),
+                controller.is_ai_p2(),
+                controller.selected_src(),
+                controller.cursor_player_id(),
+                controller.removal_cursor_player_id(),
+                controller.show_holes(),
+                controller.show_indices(),
+            )
+            pygame.display.flip()
+
+        # If controller requested menu, continue outer loop; else exit
+        if not controller.is_running():
+            break
+        # else: loop continues and menu will be shown again
+
+    pygame.quit()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(run())
+
