@@ -21,6 +21,8 @@ class HitboxSystem:
         positions = world.components.get('Position', {})
         healths = world.components.get('Health', {})
         hitboxes = world.components.get('HitboxComponent', {})
+        spr_map = world.components.get('Sprite', {})
+        scl_map = world.components.get('Scale', {})
         for eid, hb in list(hitboxes.items()):
             pos = positions.get(eid)
             if pos is None:
@@ -31,6 +33,36 @@ class HitboxSystem:
             if hb.lifespan < 0:
                 world.remove_entity(eid)
                 continue
+            # Reposicionar la hitbox para que siga al owner: centro(owner) + direction * offset
+            try:
+                if getattr(hb, 'follow_owner', False):
+                    owner_pos = positions.get(hb.owner)
+                    if owner_pos is not None:
+                        ospr = spr_map.get(hb.owner)
+                        oscl = scl_map.get(hb.owner)
+                        oc = compute_entity_center(owner_pos, ospr, oscl)
+                        # Recalcular dirección hacia el mouse actual si está habilitado
+                        if getattr(hb, 'rotate_with_owner', False):
+                            try:
+                                mx, my = pygame.mouse.get_pos()
+                                if camera is not None:
+                                    wx = mx / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_x', 0)
+                                    wy = my / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_y', 0)
+                                else:
+                                    wx, wy = mx, my
+                                ndx = float(wx) - float(oc.x)
+                                ndy = float(wy) - float(oc.y)
+                                mag = (ndx*ndx + ndy*ndy) ** 0.5
+                                if mag > 1e-6:
+                                    hb.direction = (ndx / mag, ndy / mag)
+                            except Exception:
+                                pass
+                        dir_x, dir_y = hb.direction
+                        pos.x = float(oc.x + dir_x * hb.offset)
+                        pos.y = float(oc.y + dir_y * hb.offset)
+            except Exception:
+                # Si algo falla, mantenemos la posición actual para no romper combate
+                pass
             # pixel-perfect collision using masks
             cx, cy = pos.x, pos.y
             dir_x, dir_y = hb.direction

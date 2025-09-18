@@ -97,7 +97,8 @@ class SlashEmitterSystem:
                     math.sin(angle) * speed,
                     color,
                     size,
-                    lifespan
+                    lifespan,
+                    anchor_eid=caster
                 )
                 emitted += 1
             try:

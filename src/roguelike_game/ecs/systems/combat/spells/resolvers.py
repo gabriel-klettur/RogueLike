@@ -252,14 +252,23 @@ class SlashResolver(BaseSpellResolver):
         # 1) Si cfg trae un valor "real" (no default/sentinel), usarlo.
         # 2) Si no, usar parts (preset/overrides).
         # 3) Si no hay, usar defaults razonables.
-        # Radio y arco
-        radius = cfg.get('radius', None)
-        if not isinstance(radius, (int, float)) or radius <= 0:
-            radius = parts.get('radius', 0)
-        arc_deg = cfg.get('arc_range_degrees', None)
-        if not isinstance(arc_deg, (int, float)) or arc_deg <= 0:
-            arc_deg = parts.get('arc_range_degrees', 120)
-        arc_range = math.radians(arc_deg)
+        # Radio/arco VISUAL (partículas): siguen usando los valores clásicos
+        vis_radius = cfg.get('radius', None)
+        if not isinstance(vis_radius, (int, float)) or vis_radius <= 0:
+            vis_radius = parts.get('radius', 0)
+        vis_arc_deg = cfg.get('arc_range_degrees', None)
+        if not isinstance(vis_arc_deg, (int, float)) or vis_arc_deg <= 0:
+            vis_arc_deg = parts.get('arc_range_degrees', 120)
+        vis_arc_range = math.radians(vis_arc_deg)
+
+        # Radio/arco de IMPACTO (hitbox): opcionales y desacoplados
+        hit_radius = cfg.get('hit_radius', None)
+        if not isinstance(hit_radius, (int, float)) or hit_radius <= 0:
+            hit_radius = vis_radius
+        hit_arc_deg = cfg.get('hit_arc_degrees', None)
+        if not isinstance(hit_arc_deg, (int, float)) or hit_arc_deg <= 0:
+            hit_arc_deg = vis_arc_deg
+        hit_arc_range = math.radians(hit_arc_deg)
         # Número de partículas por “golpe”
         count = cfg.get('particle_count', None)
         if not isinstance(count, int) or count <= 0:
@@ -296,12 +305,12 @@ class SlashResolver(BaseSpellResolver):
         # Log de diagnóstico: parámetros efectivos
         try:
             logger.info(
-                "[SlashResolver] caster=%s preset=%s radius=%s arc_deg=%s count=%s life=%s size=%s color=%s speed_mult=%s",
-                caster, str(preset_id), radius, arc_deg, count, lifespan, (size_min, size_max), base_color, speed_mult
+                "[SlashResolver] caster=%s preset=%s vis_radius=%s vis_arc_deg=%s hit_radius=%s hit_arc_deg=%s count=%s life=%s size=%s color=%s speed_mult=%s",
+                caster, str(preset_id), vis_radius, vis_arc_deg, hit_radius, hit_arc_deg, count, lifespan, (size_min, size_max), base_color, speed_mult
             )
         except Exception:
             pass
-        # Registrar hitbox de slash para colisión
+        # Registrar hitbox de slash para colisión (usa SOLO hit_radius/hit_arc_range)
         hb_id = world.create_entity()
         real_x = cx + dir_x * offset
         real_y = cy + dir_y * offset
@@ -310,16 +319,18 @@ class SlashResolver(BaseSpellResolver):
         world.components['HitboxComponent'][hb_id] = HitboxComponent(
             owner=caster,
             offset=offset,
-            radius=radius,
-            arc_angle=arc_range,
+            radius=hit_radius,
+            arc_angle=hit_arc_range,
             direction=(dir_x, dir_y),
             lifespan=lifespan,
             damage=cfg.get('damage', 0),
+            follow_owner=True,
+            rotate_with_owner=True,
         )
-        # Añadir emisor de partículas de slash
+        # Añadir emisor de partículas de slash (usa SOLO vis_radius/vis_arc_range)
         world.components.setdefault('SlashEmitterComponent', {})[caster] = SlashEmitterComponent(
-            radius=radius,
-            arc_range=arc_range,
+            radius=vis_radius,
+            arc_range=vis_arc_range,
             count=count,
             lifespan=lifespan,
             size_range=(size_min, size_max),
