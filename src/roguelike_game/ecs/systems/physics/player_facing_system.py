@@ -30,6 +30,11 @@ class PlayerFacingSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
+        # Estado para decidir la fuente dominante del apuntado (stick/mouse)
+        self._last_source: dict[int, str] = {}  # eid -> 'stick' | 'mouse'
+        self._last_stick_vec: dict[int, tuple[float, float]] = {}  # eid -> (ax, ay) normalizado
+        self._prev_mouse_pos: tuple[int, int] | None = None
+        self.aim_deadzone = 0.25
     
     def update(self, world, camera=None):
         comps = world.components
@@ -37,7 +42,14 @@ class PlayerFacingSystem:
         vel_map = comps.get('Velocity', {})
         anim_map = comps.get('Animator', {})
         players = comps.get('PlayerTagComponent', {})
+        input_map = comps.get('InputComponent', {})
+        AIM_DEADZONE = 0.25
         
+        # Detectar movimiento del ratón (global)
+        mx, my = pygame.mouse.get_pos()
+        mouse_moved = (self._prev_mouse_pos != (mx, my))
+        self._prev_mouse_pos = (mx, my)
+
         for eid in players:
             animator = anim_map.get(eid)
             pos = pos_map.get(eid)
@@ -65,13 +77,45 @@ class PlayerFacingSystem:
             vel = vel_map.get(eid)
             vx = vel.vx if vel else 0
             vy = vel.vy if vel else 0
-            mx, my = pygame.mouse.get_pos()
-            world_x = mx / camera.zoom + camera.offset_x
-            world_y = my / camera.zoom + camera.offset_y
-            dx = world_x - pos.x
-            dy = world_y - pos.y
-            # calcular dirección basada en ratón (8 direcciones)
-            direction = get_direction_name(dx, dy)
+            # 1) Intentar usar el aim del stick derecho si supera el deadzone
+            inp = input_map.get(eid)
+            direction = None
+            if inp is not None:
+                ax = float(getattr(inp, 'aim_x', 0.0) or 0.0)
+                ay = float(getattr(inp, 'aim_y', 0.0) or 0.0)
+                stick_active = (ax*ax + ay*ay) >= (self.aim_deadzone * self.aim_deadzone)
+                if stick_active:
+                    # Normalizar y recordar como última dirección válida de stick
+                    mag = (ax*ax + ay*ay) ** 0.5
+                    if mag > 0:
+                        nx, ny = ax / mag, ay / mag
+                        self._last_stick_vec[eid] = (nx, ny)
+                    self._last_source[eid] = 'stick'
+                elif mouse_moved:
+                    self._last_source[eid] = 'mouse'
+
+            # 2) Resolver la dirección según la fuente dominante
+            src = self._last_source.get(eid)
+            if src == 'stick':
+                # Usar el último vector de stick conocido, aunque el stick esté en reposo
+                nx, ny = self._last_stick_vec.get(eid, (0.0, 0.0))
+                if nx == 0.0 and ny == 0.0:
+                    # Fallback duro si no tenemos vector aún
+                    world_x = mx / camera.zoom + camera.offset_x
+                    world_y = my / camera.zoom + camera.offset_y
+                    dx = world_x - pos.x
+                    dy = world_y - pos.y
+                    direction = get_direction_name(dx, dy)
+                else:
+                    direction = get_direction_name(nx, ny)
+            else:
+                # Por defecto o si la fuente dominante es el ratón
+                world_x = mx / camera.zoom + camera.offset_x
+                world_y = my / camera.zoom + camera.offset_y
+                dx = world_x - pos.x
+                dy = world_y - pos.y
+                direction = get_direction_name(dx, dy)
+            
             # Determinar estado base a través del mapa de animaciones y aplicarlo
             state_class = 'IdleState' if vx == 0 and vy == 0 else 'MoveState'
             set_mapped_anim_for(world, eid, state_class, direction)

@@ -26,6 +26,44 @@ def format_key_label(keyname: str) -> str:
         }
         return mouse_map.get(m, m.replace('M_', 'Mouse ').title())
 
+    # Gamepad mapping (string-based)
+    if isinstance(keyname, str) and keyname.startswith('G_'):
+        g = keyname.upper()
+        gamepad_map = {
+            # Face buttons
+            'G_BTN_A': 'A',
+            'G_BTN_B': 'B',
+            'G_BTN_X': 'X',
+            'G_BTN_Y': 'Y',
+            # Bumpers and triggers (digitalized)
+            'G_LB': 'LB',
+            'G_RB': 'RB',
+            'G_TRIG_LT': 'LT',
+            'G_TRIG_RT': 'RT',
+            # Menu buttons
+            'G_BACK': 'Back',
+            'G_START': 'Start',
+            'G_GUIDE': 'Guide',
+            # Stick clicks
+            'G_LS': 'L3',
+            'G_RS': 'R3',
+            # D-Pad directions
+            'G_DPAD_UP': 'D-Pad Up',
+            'G_DPAD_DOWN': 'D-Pad Down',
+            'G_DPAD_LEFT': 'D-Pad Left',
+            'G_DPAD_RIGHT': 'D-Pad Right',
+            # Stick directions (digitalized)
+            'G_AXIS_LX_POS': 'LS Right',
+            'G_AXIS_LX_NEG': 'LS Left',
+            'G_AXIS_LY_POS': 'LS Down',
+            'G_AXIS_LY_NEG': 'LS Up',
+            'G_AXIS_RX_POS': 'RS Right',
+            'G_AXIS_RX_NEG': 'RS Left',
+            'G_AXIS_RY_POS': 'RS Down',
+            'G_AXIS_RY_NEG': 'RS Up',
+        }
+        return gamepad_map.get(g, g.replace('G_', 'Gamepad ').title())
+
     # Resolve using pygame if it's a keyboard constant-like name
     if isinstance(keyname, str) and keyname.startswith('K_'):
         try:

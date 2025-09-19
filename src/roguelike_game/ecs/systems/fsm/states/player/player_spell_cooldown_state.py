@@ -4,6 +4,7 @@ from roguelike_game.config.spells_config import SPELLS
 import time
 import pygame
 from roguelike_game.ecs.components.magic_spell_bar_component import MagicSpellBarComponent
+from roguelike_game.config.input_config import InputConfig
 
 import logging
 logger = logging.getLogger(__name__)
@@ -34,8 +35,87 @@ class PlayerSpellCooldownState(State):
             # Debug del cooldown
             spell_key = self.fsm.context.get('spell', '')
             logger.debug(f" Eid={entity.id} state PlayerSpellCooldownState -> IdleState (cooldown {elapsed:.2f}s spell={spell_key})")
-            # Recast automático: si automatic y botón sigue presionado, reiniciar la sub-FSM a PrepareSpellState
-            if self.fsm.context.get('automatic', False) and pygame.mouse.get_pressed()[0]:
+            # Recast automático: si automatic y botón sigue presionado (mouse/teclado/mando), reiniciar a PrepareSpellState
+            def _gp_pressed(token: str | None) -> bool:
+                if not token:
+                    return False
+                t = str(token).upper()
+                try:
+                    pygame.joystick.init()
+                except Exception:
+                    pass
+                BTN_INDEX = {
+                    'G_BTN_A': 0, 'G_BTN_B': 1, 'G_BTN_X': 2, 'G_BTN_Y': 3,
+                    'G_LB': 4, 'G_RB': 5, 'G_BACK': 6, 'G_START': 7, 'G_GUIDE': 8,
+                    'G_LS': 9, 'G_RS': 10,
+                }
+                try:
+                    for i in range(pygame.joystick.get_count()):
+                        js = pygame.joystick.Joystick(i)
+                        try:
+                            js.init()
+                        except Exception:
+                            pass
+                        if t in BTN_INDEX:
+                            idx = BTN_INDEX[t]
+                            try:
+                                if js.get_button(idx):
+                                    return True
+                            except Exception:
+                                pass
+                        if t.startswith('G_DPAD_'):
+                            try:
+                                vx, vy = js.get_hat(0)
+                            except Exception:
+                                vx, vy = (0, 0)
+                            if t == 'G_DPAD_UP' and vy == 1: return True
+                            if t == 'G_DPAD_DOWN' and vy == -1: return True
+                            if t == 'G_DPAD_LEFT' and vx == -1: return True
+                            if t == 'G_DPAD_RIGHT' and vx == 1: return True
+                        # Axes (digitalizados)
+                        ax = None; sign = 0; thresh = 0.5
+                        if t == 'G_AXIS_LX_POS': ax, sign = 0, +1
+                        elif t == 'G_AXIS_LX_NEG': ax, sign = 0, -1
+                        elif t == 'G_AXIS_LY_POS': ax, sign = 1, +1
+                        elif t == 'G_AXIS_LY_NEG': ax, sign = 1, -1
+                        elif t == 'G_AXIS_RX_POS': ax, sign = 2, +1
+                        elif t == 'G_AXIS_RX_NEG': ax, sign = 2, -1
+                        elif t == 'G_AXIS_RY_POS': ax, sign = 3, +1
+                        elif t == 'G_AXIS_RY_NEG': ax, sign = 3, -1
+                        if ax is not None:
+                            try:
+                                val = float(js.get_axis(ax))
+                            except Exception:
+                                val = 0.0
+                            if (sign > 0 and val >= thresh) or (sign < 0 and val <= -thresh):
+                                return True
+                        # Triggers
+                        try:
+                            if t == 'G_TRIG_LT' and float(js.get_axis(4)) >= 0.5:
+                                return True
+                            if t == 'G_TRIG_RT' and float(js.get_axis(5)) >= 0.5:
+                                return True
+                        except Exception:
+                            pass
+                except Exception:
+                    return False
+                return False
+
+            def _kb_pressed(code: int | None) -> bool:
+                if not isinstance(code, int):
+                    return False
+                keys = pygame.key.get_pressed()
+                return bool(keys[code])
+
+            held_mouse = pygame.mouse.get_pressed()[0]
+            # Leer mapeos actuales desde InputConfig
+            cfg = InputConfig()
+            gp_token = cfg.get_gamepad_token_for_binding('gp_fireball')
+            kb_a = cfg.get_key_for_binding('kb_fireball_a')
+            kb_b = cfg.get_key_for_binding('kb_fireball_b')
+            held_gp = _gp_pressed(gp_token)
+            held_kb = _kb_pressed(kb_a) or _kb_pressed(kb_b)
+            if self.fsm.context.get('automatic', False) and (held_mouse or held_gp or held_kb):
                 # Godmode: omitir chequeo de maná para el jugador
                 try:
                     world = entity.world

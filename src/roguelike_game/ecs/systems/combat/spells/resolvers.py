@@ -55,19 +55,27 @@ class ProjectileResolver(BaseSpellResolver):
         if sprite_cmp:
             w, h = sprite_cmp.image.get_size()
             cx += w / 2; cy += h / 2
-        # Dirección hacia el cursor actual
-        mx, my = pygame.mouse.get_pos()
-        if camera:
-            zoom = getattr(camera, 'zoom', 1.0)
-            offset_x = getattr(camera, 'offset_x', 0)
-            offset_y = getattr(camera, 'offset_y', 0)
-            wx = mx / zoom + offset_x
-            wy = my / zoom + offset_y
-        else:
-            wx, wy = mx, my
-        dx, dy = wx - cx, wy - cy
-        length = (dx * dx + dy * dy) ** 0.5 or 1
-        dir_x, dir_y = dx / length, dy / length
+        # Dirección de disparo: preferir stick si es la última fuente de apuntado
+        inp = world.components.get('InputComponent', {}).get(caster)
+        dir_x, dir_y = 0.0, 0.0
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+        if dir_x == 0.0 and dir_y == 0.0:
+            # Fallback: ratón en coordenadas de mundo
+            mx, my = pygame.mouse.get_pos()
+            if camera:
+                zoom = getattr(camera, 'zoom', 1.0)
+                offset_x = getattr(camera, 'offset_x', 0)
+                offset_y = getattr(camera, 'offset_y', 0)
+                wx = mx / zoom + offset_x
+                wy = my / zoom + offset_y
+            else:
+                wx, wy = mx, my
+            dx, dy = wx - cx, wy - cy
+            length = (dx * dx + dy * dy) ** 0.5 or 1
+            dir_x, dir_y = dx / length, dy / length
+
         # Calcular posición de spawn
         sx, sy = cx + dir_x * offset, cy + dir_y * offset
         # Crear entidad de proyectil
@@ -125,9 +133,21 @@ class BeamResolver(BaseSpellResolver):
             w, h = sprite_cmp.image.get_size()
             cx += w/2; cy += h/2
         # compute world target from cursor
-        mx, my = pygame.mouse.get_pos()
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
+        inp = world.components.get('InputComponent', {}).get(caster)
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+            if dir_x == 0.0 and dir_y == 0.0:
+                mx, my = pygame.mouse.get_pos()
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+            else:
+                wx = cx + dir_x * 10000
+                wy = cy + dir_y * 10000
+        else:
+            mx, my = pygame.mouse.get_pos()
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
         dx, dy = wx - cx, wy - cy
         length = (dx*dx + dy*dy)**0.5 or 1
         # Register continuous laser beam component to handle particle emission and damage over time
@@ -167,12 +187,19 @@ class DashResolver(BaseSpellResolver):
         if sprite_cmp:
             w, h = sprite_cmp.image.get_size()
             cx += w/2; cy += h/2
-        mx, my = pygame.mouse.get_pos()
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
-        dx, dy = wx - cx, wy - cy
-        length = (dx*dx + dy*dy)**0.5 or 1
-        dir_x, dir_y = dx/length, dy/length
+        inp = world.components.get('InputComponent', {}).get(caster)
+        dir_x, dir_y = 0.0, 0.0
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+        if dir_x == 0.0 and dir_y == 0.0:
+            mx, my = pygame.mouse.get_pos()
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
+            dx, dy = wx - cx, wy - cy
+            length = (dx*dx + dy*dy)**0.5 or 1
+            dir_x, dir_y = dx/length, dy/length
+
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
         world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
@@ -196,13 +223,20 @@ class SlashResolver(BaseSpellResolver):
         if sprite_cmp:
             w, h = sprite_cmp.image.get_size()
             cx += w/2; cy += h/2
-        # Dirección al cursor
-        mx, my = pygame.mouse.get_pos()
-        wx = mx / camera.zoom + camera.offset_x
-        wy = my / camera.zoom + camera.offset_y
-        dx_raw, dy_raw = wx - cx, wy - cy
-        length = (dx_raw*dx_raw + dy_raw*dy_raw)**0.5 or 1
-        dir_x, dir_y = dx_raw/length, dy_raw/length
+        # Dirección de corte: preferir stick; fallback a ratón
+        inp = world.components.get('InputComponent', {}).get(caster)
+        dir_x, dir_y = 0.0, 0.0
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+        if dir_x == 0.0 and dir_y == 0.0:
+            mx, my = pygame.mouse.get_pos()
+            wx = mx / camera.zoom + camera.offset_x
+            wy = my / camera.zoom + camera.offset_y
+            dx_raw, dy_raw = wx - cx, wy - cy
+            length = (dx_raw*dx_raw + dy_raw*dy_raw)**0.5 or 1
+            dir_x, dir_y = dx_raw/length, dy_raw/length
+
         # Parámetros de configuración (con soporte de preset en vfx.preset)
         # Resolver defaults desde particles preset, y aplicar overrides del spell.
         base: dict = {}
@@ -348,12 +382,28 @@ class LightningResolver(BaseSpellResolver):
     def resolve(self, world, caster, spawn_meta, cfg, camera):
         # Instanciar LightningComponent en el caster
         start = spawn_meta.get('spawn_pos', (0, 0))
-        mx, my = pygame.mouse.get_pos()
-        if camera:
-            wx = mx / camera.zoom + camera.offset_x
-            wy = my / camera.zoom + camera.offset_y
+        # Objetivo: usar stick si está activo, si no usar ratón
+        inp = world.components.get('InputComponent', {}).get(caster)
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+            if dir_x == 0.0 and dir_y == 0.0:
+                mx, my = pygame.mouse.get_pos()
+                if camera:
+                    wx = mx / camera.zoom + camera.offset_x
+                    wy = my / camera.zoom + camera.offset_y
+                else:
+                    wx, wy = mx, my
+            else:
+                wx = start[0] + dir_x * 10000
+                wy = start[1] + dir_y * 10000
         else:
-            wx, wy = mx, my
+            mx, my = pygame.mouse.get_pos()
+            if camera:
+                wx = mx / camera.zoom + camera.offset_x
+                wy = my / camera.zoom + camera.offset_y
+            else:
+                wx, wy = mx, my
         comp = LightningComponent(start, (wx, wy),
                                    cfg.get('segments', 10),
                                    cfg.get('offset', 0),
@@ -380,15 +430,25 @@ class FireworkLaunchResolver(BaseSpellResolver):
         if sprite_cmp:
             w, h = sprite_cmp.image.get_size()
             cx += w / 2; cy += h / 2
-        mx, my = pygame.mouse.get_pos()
-        if camera:
-            zoom = getattr(camera, 'zoom', 1.0)
-            offset_x = getattr(camera, 'offset_x', 0)
-            offset_y = getattr(camera, 'offset_y', 0)
-            wx = mx / zoom + offset_x
-            wy = my / zoom + offset_y
+        # Objetivo: preferir dirección de stick; si no, cursor
+        inp = world.components.get('InputComponent', {}).get(caster)
+        dir_x, dir_y = 0.0, 0.0
+        if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+            dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+            dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+        if dir_x == 0.0 and dir_y == 0.0:
+            mx, my = pygame.mouse.get_pos()
+            if camera:
+                zoom = getattr(camera, 'zoom', 1.0)
+                offset_x = getattr(camera, 'offset_x', 0)
+                offset_y = getattr(camera, 'offset_y', 0)
+                wx = mx / zoom + offset_x
+                wy = my / zoom + offset_y
+            else:
+                wx, wy = mx, my
         else:
-            wx, wy = mx, my
+            wx = cx + dir_x * 10000
+            wy = cy + dir_y * 10000
         speed = cfg.get('speed', 0)
         model = FireworkLaunchModel(cx, cy, wx, wy, speed)
         world.components.setdefault('FireworkLaunchComponent', {})[caster] = FireworkLaunchComponent(model)

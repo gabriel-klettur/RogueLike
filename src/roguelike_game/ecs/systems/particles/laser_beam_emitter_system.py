@@ -18,10 +18,12 @@ class LaserBeamEmitterSystem:
 
     def update(self, world, camera=None):
         now = time.time()
-        # Remove beam when middle mouse is released
+        # Remove beam when middle mouse is released (legacy behavior)
+        # TODO: Integrate with gamepad hold state if needed
         if not pygame.mouse.get_pressed()[1]:
             world.components.get('LaserBeamComponent', {}).clear()
             return
+
         # Debug beam presence
         beam_count = len(world.components.get('LaserBeamComponent', {}))
         if beam_count:
@@ -39,9 +41,22 @@ class LaserBeamEmitterSystem:
                 if sprite_cmp:
                     w, h = sprite_cmp.image.get_size()
                     cx += w/2; cy += h/2
-                mx, my = pygame.mouse.get_pos()
-                wx = mx / camera.zoom + camera.offset_x
-                wy = my / camera.zoom + camera.offset_y
+                # Objetivo del haz: preferir stick si es fuente dominante, si no usar cursor
+                inp = world.components.get('InputComponent', {}).get(caster)
+                if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+                    dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+                    dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+                    if dir_x == 0.0 and dir_y == 0.0:
+                        mx, my = pygame.mouse.get_pos()
+                        wx = mx / camera.zoom + camera.offset_x
+                        wy = my / camera.zoom + camera.offset_y
+                    else:
+                        wx = cx + dir_x * 10000
+                        wy = cy + dir_y * 10000
+                else:
+                    mx, my = pygame.mouse.get_pos()
+                    wx = mx / camera.zoom + camera.offset_x
+                    wy = my / camera.zoom + camera.offset_y
                 beam.origin = (cx, cy)
                 beam.target = (wx, wy)
             x1, y1 = beam.origin

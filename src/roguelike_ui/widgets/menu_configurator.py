@@ -71,7 +71,7 @@ class MenuConfigurator:
         }
 
         # Construir cabeceras de forma temprana para precomputar layout fijo
-        headers = ["Acción", "Keyboard A", "Keyboard B", "Mouse"]
+        headers = ["Acción", "Keyboard A", "Keyboard B", "Mouse", "Mando"]
         # Precalcular layout fijo (tamaños de columna y panel) en función de todas las pestañas
         self._compute_fixed_layout(headers)
 
@@ -105,7 +105,7 @@ class MenuConfigurator:
                         hold['left']['held'] = True
                         hold['left']['next'] = repeat_cfg['initial']
                     elif event.key in (pygame.K_RIGHT, pygame.K_d):
-                        selected_col = min(3, selected_col + 1)
+                        selected_col = min(4, selected_col + 1)
                         hold['right']['held'] = True
                         hold['right']['next'] = repeat_cfg['initial']
                     # Cambiar pestañas con Q/E o PageUp/PageDown
@@ -126,6 +126,8 @@ class MenuConfigurator:
                                 self._prompt_key(spec['kb_b_key'], slot='keyboard_b')
                             elif selected_col == 3:
                                 self._prompt_mouse(spec['mouse_key'])
+                            elif selected_col == 4:
+                                self._prompt_gamepad(spec['gp_key'])
                             else:
                                 pass
                         else:  # single
@@ -189,6 +191,8 @@ class MenuConfigurator:
                                     self._prompt_key(spec['kb_b_key'], slot='keyboard_b')
                                 elif selected_col == 3:
                                     self._prompt_mouse(spec['mouse_key'])
+                                elif selected_col == 4:
+                                    self._prompt_gamepad(spec['gp_key'])
                             else:
                                 if selected_col == 1:
                                     self._prompt_key(spec['action_key'], slot='keyboard_a')
@@ -214,7 +218,7 @@ class MenuConfigurator:
                 elif name == 'left':
                     selected_col = max(0, selected_col - 1)
                 elif name == 'right':
-                    selected_col = min(3, selected_col + 1)
+                    selected_col = min(4, selected_col + 1)
             for name, st in hold.items():
                 if not st['held']:
                     st['next'] = 0
@@ -301,6 +305,8 @@ class MenuConfigurator:
                 base_actions.add(body)
             elif k.startswith('mouse_'):
                 base_actions.add(k[len('mouse_'):])
+            elif k.startswith('gp_'):
+                base_actions.add(k[len('gp_'):])
             else:
                 base_actions.add(k)
 
@@ -315,6 +321,7 @@ class MenuConfigurator:
             kb_a_key = f"kb_{base}_a"
             kb_b_key = f"kb_{base}_b"
             mouse_key = f"mouse_{base}"
+            gp_key = f"gp_{base}"
             # Etiquetas: A/B/mouse desde sus slots; A cae al binding base si slot vacío
             kb_a_label = label_for(kb_a_key)
             if kb_a_label == "—":
@@ -323,6 +330,7 @@ class MenuConfigurator:
                     kb_a_label = format_key_label(raw_base)
             kb_b_label = label_for(kb_b_key)
             mouse_label = label_for(mouse_key)
+            gp_label = label_for(gp_key)
 
             all_specs.append({
                 'kind': 'tri',
@@ -330,8 +338,9 @@ class MenuConfigurator:
                 'kb_a_key': kb_a_key,
                 'kb_b_key': kb_b_key,
                 'mouse_key': mouse_key,
+                'gp_key': gp_key,
                 'base_key': base,
-                'labels': (kb_a_label, kb_b_label, mouse_label),
+                'labels': (kb_a_label, kb_b_label, mouse_label, gp_label),
             })
 
         # 3) Categorizar
@@ -353,7 +362,7 @@ class MenuConfigurator:
 
         # 4) Ordenar y construir filas
         all_specs.sort(key=lambda s: s['display'])
-        rows = [[s['display'], s['labels'][0], s['labels'][1], s['labels'][2]] for s in all_specs]
+        rows = [[s['display'], s['labels'][0], s['labels'][1], s['labels'][2], s['labels'][3]] for s in all_specs]
         return all_specs, rows
 
     def _compute_fixed_layout(self, headers: list[str]) -> None:
@@ -470,6 +479,152 @@ class MenuConfigurator:
             self._draw_modal_with_buttons(lines, buttons, hover_index=hovered, redraw=True)
             pygame.display.flip()
 
+    def _prompt_gamepad(self, binding_key: str):
+        """Modal para capturar entrada de mando (botones, dpad, ejes digitalizados).
+        Mantiene el mismo flujo BORRAR/CANCELAR/ACEPTAR.
+        """
+        pretty = self._format_action_friendly(binding_key, slot_hint='gamepad')
+        buttons = ["BORRAR", "CANCELAR", "ACEPTAR"]
+        hovered = None
+        candidate_value: str | None = None
+        candidate_label: str | None = None
+
+        # Inicializar joysticks
+        try:
+            pygame.joystick.init()
+        except Exception:
+            pass
+        joysticks = []
+        try:
+            for i in range(pygame.joystick.get_count()):
+                js = pygame.joystick.Joystick(i)
+                try:
+                    js.init()
+                except Exception:
+                    pass
+                joysticks.append(js)
+        except Exception:
+            joysticks = []
+
+        def describe_controllers():
+            names = []
+            for js in joysticks:
+                try:
+                    names.append(js.get_name())
+                except Exception:
+                    names.append("?")
+            return ", ".join(names) if names else "(ningún mando detectado)"
+
+        # Umbral para ejes
+        AXIS_THRESH = 0.5
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.JOYBUTTONDOWN:
+                    btn = getattr(event, 'button', None)
+                    # Mapeo estándar Xbox en Windows (SDL): A=0,B=1,X=2,Y=3,LB=4,RB=5,Back=6,Start=7,Guide=8,LS=9,RS=10
+                    btn_map = {
+                        0: 'G_BTN_A', 1: 'G_BTN_B', 2: 'G_BTN_X', 3: 'G_BTN_Y',
+                        4: 'G_LB', 5: 'G_RB', 6: 'G_BACK', 7: 'G_START', 8: 'G_GUIDE',
+                        9: 'G_LS', 10: 'G_RS',
+                    }
+                    gname = btn_map.get(int(btn), f'G_BTN_{int(btn)}') if btn is not None else None
+                    if gname:
+                        candidate_value = gname
+                        candidate_label = format_key_label(gname)
+                elif event.type == pygame.JOYHATMOTION:
+                    # D-Pad
+                    hat = getattr(event, 'hat', 0)
+                    if hat == 0:
+                        vx, vy = getattr(event, 'value', (0, 0))
+                        if vy == 1:
+                            candidate_value = 'G_DPAD_UP'
+                        elif vy == -1:
+                            candidate_value = 'G_DPAD_DOWN'
+                        elif vx == -1:
+                            candidate_value = 'G_DPAD_LEFT'
+                        elif vx == 1:
+                            candidate_value = 'G_DPAD_RIGHT'
+                        if candidate_value:
+                            candidate_label = format_key_label(candidate_value)
+                elif event.type == pygame.JOYAXISMOTION:
+                    axis = getattr(event, 'axis', -1)
+                    val = float(getattr(event, 'value', 0.0))
+                    # Ejes típicos: 0=LX,1=LY,2=RX,3=RY,4=LT,5=RT
+                    if axis == 0:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_AXIS_LX_POS'
+                        elif val <= -AXIS_THRESH:
+                            candidate_value = 'G_AXIS_LX_NEG'
+                    elif axis == 1:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_AXIS_LY_POS'
+                        elif val <= -AXIS_THRESH:
+                            candidate_value = 'G_AXIS_LY_NEG'
+                    elif axis == 2:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_AXIS_RX_POS'
+                        elif val <= -AXIS_THRESH:
+                            candidate_value = 'G_AXIS_RX_NEG'
+                    elif axis == 3:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_AXIS_RY_POS'
+                        elif val <= -AXIS_THRESH:
+                            candidate_value = 'G_AXIS_RY_NEG'
+                    elif axis == 4:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_TRIG_LT'
+                    elif axis == 5:
+                        if val >= AXIS_THRESH:
+                            candidate_value = 'G_TRIG_RT'
+                    if candidate_value:
+                        candidate_label = format_key_label(candidate_value)
+                elif event.type == pygame.MOUSEMOTION:
+                    # Actualizar hover de botones del modal
+                    lines = [f"Pulsa un botón/axis del mando para {pretty}", f"Mandos: {describe_controllers()} "]
+                    if candidate_label:
+                        lines.append({"text": f"Acción: {pretty}", "color": (0, 220, 255), "bold": True})
+                        lines.append({"text": f"Entrada seleccionada: {candidate_label}", "color": (255, 210, 0), "bold": True})
+                    layout = self._draw_modal_with_buttons(lines, buttons, redraw=False)
+                    hovered = None
+                    for idx, rect in enumerate(layout['button_rects']):
+                        if rect.collidepoint(event.pos):
+                            hovered = idx
+                            break
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    lines = [f"Pulsa un botón/axis del mando para {pretty}", f"Mandos: {describe_controllers()} "]
+                    if candidate_label:
+                        lines.append({"text": f"Acción: {pretty}", "color": (0, 220, 255), "bold": True})
+                        lines.append({"text": f"Entrada seleccionada: {candidate_label}", "color": (255, 210, 0), "bold": True})
+                    layout = self._draw_modal_with_buttons(lines, buttons, redraw=False)
+                    for idx, rect in enumerate(layout['button_rects']):
+                        if rect.collidepoint(event.pos):
+                            label = buttons[idx]
+                            if label == "BORRAR":
+                                self.config.set_binding(binding_key, "")
+                                if hasattr(self.config, 'save'):
+                                    self.config.save()
+                                waiting = False
+                            elif label == "CANCELAR":
+                                waiting = False
+                            elif label == "ACEPTAR":
+                                if candidate_value:
+                                    self.config.set_binding(binding_key, candidate_value)
+                                    if hasattr(self.config, 'save'):
+                                        self.config.save()
+                                waiting = False
+                            break
+                elif event.type == pygame.QUIT:
+                    waiting = False
+                    break
+
+            lines = [f"Pulsa un botón/axis del mando para {pretty}", f"Mandos: {describe_controllers()} "]
+            if candidate_label:
+                lines.append({"text": f"Acción: {pretty}", "color": (0, 220, 255), "bold": True})
+                lines.append({"text": f"Entrada seleccionada: {candidate_label}", "color": (255, 210, 0), "bold": True})
+            self._draw_modal_with_buttons(lines, buttons, hover_index=hovered, redraw=True)
+            pygame.display.flip()
     def _flash_message(self, lines, ms=750):
         """Muestra un mensaje temporal con el mismo estilo del menú."""
         clock = pygame.time.Clock()
@@ -530,12 +685,19 @@ class MenuConfigurator:
             base = action[len('mouse_'):]
             nice = base.replace('_', ' ').title()
             return f"{nice} (Ratón)"
+        # Mando (gp_)
+        if action.startswith('gp_'):
+            base = action[len('gp_'):]
+            nice = base.replace('_', ' ').title()
+            return f"{nice} (Mando)"
         # Genérico con pista
         nice = action.replace('_', ' ').title()
         if slot_hint == 'keyboard_a' or slot_hint == 'keyboard_b' or slot_hint == 'keyboard':
             return f"{nice} (Teclado)"
         if slot_hint == 'mouse':
             return f"{nice} (Ratón)"
+        if slot_hint == 'gamepad' or slot_hint == 'gp' or slot_hint == 'mando':
+            return f"{nice} (Mando)"
         return nice
 
     _KEYCODE_CONST_CACHE = None

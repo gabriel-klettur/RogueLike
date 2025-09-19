@@ -41,20 +41,31 @@ class HitboxSystem:
                         ospr = spr_map.get(hb.owner)
                         oscl = scl_map.get(hb.owner)
                         oc = compute_entity_center(owner_pos, ospr, oscl)
-                        # Recalcular dirección hacia el mouse actual si está habilitado
+                        # Recalcular dirección de la hitbox si está habilitado el seguimiento
                         if getattr(hb, 'rotate_with_owner', False):
                             try:
-                                mx, my = pygame.mouse.get_pos()
-                                if camera is not None:
-                                    wx = mx / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_x', 0)
-                                    wy = my / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_y', 0)
-                                else:
-                                    wx, wy = mx, my
-                                ndx = float(wx) - float(oc.x)
-                                ndy = float(wy) - float(oc.y)
-                                mag = (ndx*ndx + ndy*ndy) ** 0.5
-                                if mag > 1e-6:
-                                    hb.direction = (ndx / mag, ndy / mag)
+                                # Preferir dirección del stick del owner si es la fuente dominante
+                                inp = world.components.get('InputComponent', {}).get(hb.owner)
+                                use_stick = False
+                                if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+                                    ax = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+                                    ay = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+                                    if (ax*ax + ay*ay) > 1e-6:
+                                        hb.direction = (ax, ay)
+                                        use_stick = True
+                                if not use_stick:
+                                    # Fallback: apuntar hacia el cursor del ratón en coordenadas de mundo
+                                    mx, my = pygame.mouse.get_pos()
+                                    if camera is not None:
+                                        wx = mx / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_x', 0)
+                                        wy = my / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_y', 0)
+                                    else:
+                                        wx, wy = mx, my
+                                    ndx = float(wx) - float(oc.x)
+                                    ndy = float(wy) - float(oc.y)
+                                    mag = (ndx*ndx + ndy*ndy) ** 0.5
+                                    if mag > 1e-6:
+                                        hb.direction = (ndx / mag, ndy / mag)
                             except Exception:
                                 pass
                         dir_x, dir_y = hb.direction

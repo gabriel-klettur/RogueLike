@@ -36,4 +36,12 @@ class InputComponent:
         self.use_item = None
         # UI drag state: when the inventory panel is being dragged
         self.ui_drag: bool = False
+        # Dirección de mirada/aim (stick derecho): valores continuos en [-1.0, 1.0]
+        self.aim_x: float = 0.0
+        self.aim_y: float = 0.0
+        # Fuente y vector de apuntado persistentes: 'stick' o 'mouse'
+        self.aim_source: str = 'mouse'
+        self.aim_dir_x: float = 0.0
+        self.aim_dir_y: float = 0.0
+
 # Path: src/roguelike_game/ecs/components/input_component.py

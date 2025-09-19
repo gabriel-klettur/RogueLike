@@ -171,6 +171,45 @@ class InputConfig:
         if ensured_slots:
             self.save()
 
+        # Ensure gp_* slots for core actions (optional, empty by default)
+        ensured_gp = False
+        for base in ("fireball", "laser_beam", "dash"):
+            gk = f"gp_{base}"
+            if gk not in self.bindings:
+                self.bindings[gk] = ""
+                ensured_gp = True
+        # Allow movement via gamepad mapping if user wants to bind D-Pad or sticks
+        for base in ("move_up", "move_down", "move_left", "move_right", "attack", "interact"):
+            gk = f"gp_{base}"
+            if gk not in self.bindings:
+                self.bindings[gk] = ""
+                ensured_gp = True
+        if ensured_gp:
+            self.save()
+
+        # Prefill default Xbox mapping if currently unbound
+        defaults_set = False
+        default_gp_map = {
+            # Movement via Left Stick (digitalized)
+            "gp_move_up": "G_AXIS_LY_NEG",
+            "gp_move_down": "G_AXIS_LY_POS",
+            "gp_move_left": "G_AXIS_LX_NEG",
+            "gp_move_right": "G_AXIS_LX_POS",
+            # Core actions
+            "gp_attack": "G_BTN_A",
+            "gp_dash": "G_BTN_B",
+            "gp_laser_beam": "G_TRIG_RT",
+            "gp_fireball": "G_RB",
+            "gp_interact": "G_BTN_X",
+        }
+        for k, v in default_gp_map.items():
+            cur = self.bindings.get(k, None)
+            if cur is None or str(cur).strip() == "":
+                self.bindings[k] = v
+                defaults_set = True
+        if defaults_set:
+            self.save()
+
     def get_key(self, action):
         """
         Retorna el código pygame de la tecla para una acción.
@@ -346,7 +385,7 @@ class InputConfig:
         Empty/false-y values unbind the slot.
         """
         val = (value or "").strip()
-        # Enforce uniqueness across all bindings of the same family (K_* among keys, M_* among mouse)
+        # Enforce uniqueness across all bindings of the same family (K_* among keys, M_* among mouse, G_* among gamepad)
         if enforce_unique and val:
             family_prefix = None
             if isinstance(val, str):
@@ -354,6 +393,8 @@ class InputConfig:
                     family_prefix = "K_"
                 elif val.upper().startswith("M_"):
                     family_prefix = "M_"
+                elif val.upper().startswith("G_"):
+                    family_prefix = "G_"
             if family_prefix is not None:
                 new_base = self._binding_base(binding_key)
                 for k, v in list(self.bindings.items()):
@@ -387,6 +428,8 @@ class InputConfig:
             return body
         if binding_key.startswith('mouse_'):
             return binding_key[len('mouse_'):]
+        if binding_key.startswith('gp_'):
+            return binding_key[len('gp_'):]
         return binding_key
 
     def get_key_for_binding(self, binding_key: str) -> Optional[int]:
@@ -415,6 +458,16 @@ class InputConfig:
         up = name.upper()
         if up.startswith("M_"):
             return self._MOUSE_BUTTONS.get(up)
+        return None
+
+    def get_gamepad_token_for_binding(self, binding_key: str) -> Optional[str]:
+        """Return the G_* token string for a binding key if present, else None."""
+        name = self.bindings.get(binding_key, "")
+        if not name or not isinstance(name, str):
+            return None
+        up = name.upper()
+        if up.startswith("G_"):
+            return up
         return None
 
     def save(self):

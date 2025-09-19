@@ -160,15 +160,23 @@ class SpellCastingSystem:
                         spawn_x, spawn_y = pos_cmp.x + w/2, pos_cmp.y + h/2
                     else:
                         spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
-                    if camera:
-                        mx, my = pygame.mouse.get_pos()
-                        world_x = mx / camera.zoom + camera.offset_x
-                        world_y = my / camera.zoom + camera.offset_y
-                    else:
-                        world_x, world_y = mx, my
-                    dx, dy = world_x - spawn_x, world_y - spawn_y
-                    length = math.hypot(dx, dy) or 1
-                    new_state.spell_fsm.context['direction'] = (dx/length, dy/length)
+                    # Dirección inicial: preferir stick si es fuente dominante
+                    inp = world.components.get('InputComponent', {}).get(eid)
+                    dir_x, dir_y = 0.0, 0.0
+                    if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+                        dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+                        dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+                    if dir_x == 0.0 and dir_y == 0.0:
+                        if camera:
+                            mx, my = pygame.mouse.get_pos()
+                            world_x = mx / camera.zoom + camera.offset_x
+                            world_y = my / camera.zoom + camera.offset_y
+                        else:
+                            world_x, world_y = mx, my
+                        dx, dy = world_x - spawn_x, world_y - spawn_y
+                        length = math.hypot(dx, dy) or 1
+                        dir_x, dir_y = dx/length, dy/length
+                    new_state.spell_fsm.context['direction'] = (dir_x, dir_y)
                     new_state.spell_fsm.context['spawn_pos'] = (spawn_x, spawn_y)
                     # Guardar camera y spell para recalcular aiming dinámico
                     new_state.spell_fsm.context['camera'] = camera

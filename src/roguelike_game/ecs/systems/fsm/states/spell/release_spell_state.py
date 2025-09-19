@@ -135,15 +135,24 @@ class ReleaseSpellState(State):
         lock = cfg.get('lock_cast_direction', True)
         if not lock:
             camera = ctx.get('camera')
-            mx, my = pygame.mouse.get_pos()
-            if camera:
-                world_x = mx / camera.zoom + camera.offset_x
-                world_y = my / camera.zoom + camera.offset_y
+            # Preferir apuntado por stick si es la fuente dominante
+            inp = world.components.get('InputComponent', {}).get(entity.id)
+            dir_x, dir_y = 0.0, 0.0
+            if inp and getattr(inp, 'aim_source', 'mouse') == 'stick':
+                dir_x = float(getattr(inp, 'aim_dir_x', 0.0) or 0.0)
+                dir_y = float(getattr(inp, 'aim_dir_y', 0.0) or 0.0)
+            if dir_x == 0.0 and dir_y == 0.0:
+                mx, my = pygame.mouse.get_pos()
+                if camera:
+                    world_x = mx / camera.zoom + camera.offset_x
+                    world_y = my / camera.zoom + camera.offset_y
+                else:
+                    world_x, world_y = mx, my
+                dx, dy = world_x - spawn_x, world_y - spawn_y
+                length = math.hypot(dx, dy) or 1
+                dx, dy = dx/length, dy/length
             else:
-                world_x, world_y = mx, my
-            dx, dy = world_x - spawn_x, world_y - spawn_y
-            length = math.hypot(dx, dy) or 1
-            dx, dy = dx/length, dy/length
+                dx, dy = dir_x, dir_y
         else:
             dx, dy = ctx.get('direction', (1, 0))
         fid = world.create_entity()

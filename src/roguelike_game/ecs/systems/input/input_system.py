@@ -19,6 +19,7 @@ from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousS
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_game.config.input_config import InputConfig
 from roguelike_game.config.spells_config import reload_spells
+from roguelike_game.config.spells_config import SPELLS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -51,6 +52,28 @@ class InputSystem:
         self._prev_reload_spells = False
         # Per-entity cache to avoid spamming suppression logs each frame
         self._prev_suppressed = {}
+        # Gamepad support
+        try:
+            pygame.joystick.init()
+        except Exception:
+            pass
+        self.joysticks: list[pygame.joystick.Joystick] = []
+        try:
+            for i in range(pygame.joystick.get_count()):
+                js = pygame.joystick.Joystick(i)
+                try:
+                    js.init()
+                except Exception:
+                    pass
+                self.joysticks.append(js)
+        except Exception:
+            self.joysticks = []
+        self._axis_thresh = 0.5
+        self._aim_deadzone = 0.25
+        # Seguimiento de ratón para dominancia de apuntado
+        self._prev_mouse_pos: tuple[int, int] | None = None
+        # Timers para disparo continuo por "hold" de botones (por entidad y spell)
+        self._hold_next_time: dict[tuple[int, str], float] = {}
     
     def update(self, world, *args):
 
@@ -65,6 +88,8 @@ class InputSystem:
                 inp.attack = False
                 inp.interact = False
                 inp.show_all_drops = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
@@ -105,6 +130,10 @@ class InputSystem:
                 inp.attack = False
                 inp.interact = False
                 inp.show_all_drops = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
@@ -145,6 +174,8 @@ class InputSystem:
                 inp.attack = False
                 inp.interact = False
                 inp.show_all_drops = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
@@ -178,6 +209,8 @@ class InputSystem:
                 inp.attack = False
                 inp.interact = False
                 inp.show_all_drops = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
@@ -212,6 +245,8 @@ class InputSystem:
                 inp.attack = False
                 inp.interact = False
                 inp.show_all_drops = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
                 inp.toggle_editor = False
@@ -240,8 +275,41 @@ class InputSystem:
 
         # Recargar bindings para aplicar cambios guardados sin reiniciar
         self.config._load()
+        # Refrescar lista de joysticks si cambió el recuento
+        try:
+            count = pygame.joystick.get_count()
+            if count != len(self.joysticks):
+                self.joysticks = []
+                for i in range(count):
+                    js = pygame.joystick.Joystick(i)
+                    try:
+                        js.init()
+                    except Exception:
+                        pass
+                    self.joysticks.append(js)
+        except Exception:
+            pass
+
         # Obtener estado actual del teclado
         keys = pygame.key.get_pressed()
+        # Leer stick derecho (aim) de primer mando conectado
+        def read_right_stick():
+            try:
+                for js in self.joysticks:
+                    rx = float(js.get_axis(2)) if js.get_numaxes() > 2 else 0.0
+                    ry = float(js.get_axis(3)) if js.get_numaxes() > 3 else 0.0
+                    # Deadzone
+                    mag2 = rx * rx + ry * ry
+                    if mag2 >= (self._aim_deadzone * self._aim_deadzone):
+                        return rx, ry
+            except Exception:
+                pass
+            return 0.0, 0.0
+        aim_rx, aim_ry = read_right_stick()
+        # Detectar movimiento de ratón (global)
+        mx, my = pygame.mouse.get_pos()
+        mouse_moved = (self._prev_mouse_pos != (mx, my))
+        self._prev_mouse_pos = (mx, my)
         # Helper para evaluar múltiples teclas configuradas por acción
         def any_pressed(action: str) -> bool:
             try:
@@ -249,6 +317,93 @@ class InputSystem:
             except Exception:
                 codes = []
             return any(bool(keys[c]) for c in codes if isinstance(c, int))
+
+        # Helper para evaluar token de mando (G_*) para gp_<action>
+        def gp_token_for(action: str):
+            try:
+                return self.config.get_gamepad_token_for_binding(f"gp_{action}")
+            except Exception:
+                return None
+
+        def gp_pressed_token(token: str | None) -> bool:
+            if not token:
+                return False
+            t = str(token).upper()
+            # Buttons mapping indices per SDL on Windows (Xbox controller)
+            BTN_INDEX = {
+                'G_BTN_A': 0, 'G_BTN_B': 1, 'G_BTN_X': 2, 'G_BTN_Y': 3,
+                'G_LB': 4, 'G_RB': 5, 'G_BACK': 6, 'G_START': 7, 'G_GUIDE': 8,
+                'G_LS': 9, 'G_RS': 10,
+            }
+            try:
+                for js in self.joysticks:
+                    # Buttons
+                    if t in BTN_INDEX:
+                        idx = BTN_INDEX[t]
+                        try:
+                            if js.get_button(idx):
+                                return True
+                        except Exception:
+                            pass
+                    # D-Pad (hat 0)
+                    if t.startswith('G_DPAD_'):
+                        try:
+                            vx, vy = js.get_hat(0)
+                        except Exception:
+                            vx, vy = (0, 0)
+                        if t == 'G_DPAD_UP' and vy == 1:
+                            return True
+                        if t == 'G_DPAD_DOWN' and vy == -1:
+                            return True
+                        if t == 'G_DPAD_LEFT' and vx == -1:
+                            return True
+                        if t == 'G_DPAD_RIGHT' and vx == 1:
+                            return True
+                    # Axes (digitalizados)
+                    ax = None
+                    sign = 0
+                    if t == 'G_AXIS_LX_POS':
+                        ax, sign = 0, +1
+                    elif t == 'G_AXIS_LX_NEG':
+                        ax, sign = 0, -1
+                    elif t == 'G_AXIS_LY_POS':
+                        ax, sign = 1, +1
+                    elif t == 'G_AXIS_LY_NEG':
+                        ax, sign = 1, -1
+                    elif t == 'G_AXIS_RX_POS':
+                        ax, sign = 2, +1
+                    elif t == 'G_AXIS_RX_NEG':
+                        ax, sign = 2, -1
+                    elif t == 'G_AXIS_RY_POS':
+                        ax, sign = 3, +1
+                    elif t == 'G_AXIS_RY_NEG':
+                        ax, sign = 3, -1
+                    if ax is not None:
+                        try:
+                            val = float(js.get_axis(ax))
+                        except Exception:
+                            val = 0.0
+                        if (sign > 0 and val >= self._axis_thresh) or (sign < 0 and val <= -self._axis_thresh):
+                            return True
+                    # Triggers
+                    if t == 'G_TRIG_LT':
+                        try:
+                            if float(js.get_axis(4)) >= self._axis_thresh:
+                                return True
+                        except Exception:
+                            pass
+                    if t == 'G_TRIG_RT':
+                        try:
+                            if float(js.get_axis(5)) >= self._axis_thresh:
+                                return True
+                        except Exception:
+                            pass
+            except Exception:
+                return False
+            return False
+
+        def any_pressed_with_gp(action: str) -> bool:
+            return any_pressed(action) or gp_pressed_token(gp_token_for(action))
 
         # Manual reload of spells.json via F4
         reload_pressed = bool(keys[getattr(pygame, 'K_F4')])
@@ -259,6 +414,7 @@ class InputSystem:
             except Exception:
                 logger.exception("[InputSystem] Failed to reload spells on F4")
         self._prev_reload_spells = reload_pressed
+
         # Leer bindings dinámicos (multi-binding via OR)
         # Movimiento y acciones simples se evaluarán con any_pressed dentro del bucle por entidad
 
@@ -281,6 +437,8 @@ class InputSystem:
                     inp.attack = False
                     inp.interact = False
                     inp.show_all_drops = False
+                    inp.aim_x = 0.0
+                    inp.aim_y = 0.0
                     # Desactivar hechizos
                     for name in ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']:
                         setattr(inp, f'spell_{name}', False)
@@ -313,15 +471,27 @@ class InputSystem:
                     continue
             # Asignar flag show_all_drops
             inp.show_all_drops = alt_down
+            # Aim con stick derecho (vector continuo)
+            inp.aim_x = aim_rx
+            inp.aim_y = aim_ry
+            # Persistencia de fuente de apuntado y vector del stick
+            stick_mag2 = aim_rx * aim_rx + aim_ry * aim_ry
+            if stick_mag2 >= (self._aim_deadzone * self._aim_deadzone):
+                mag = max((stick_mag2) ** 0.5, 1e-6)
+                inp.aim_dir_x = aim_rx / mag
+                inp.aim_dir_y = aim_ry / mag
+                inp.aim_source = 'stick'
+            elif mouse_moved:
+                inp.aim_source = 'mouse'
             # Movimiento en ejes X e Y (soporta múltiples teclas por acción)
-            right_down = any_pressed("move_right")
-            left_down = any_pressed("move_left")
-            down_down = any_pressed("move_down")
-            up_down = any_pressed("move_up")
+            right_down = any_pressed_with_gp("move_right")
+            left_down = any_pressed_with_gp("move_left")
+            down_down = any_pressed_with_gp("move_down")
+            up_down = any_pressed_with_gp("move_up")
             inp.move_x = int(right_down) - int(left_down)
             inp.move_y = int(down_down) - int(up_down)
             # Ataque físico (soporta múltiples teclas por acción)
-            curr_attack = any_pressed("attack")
+            curr_attack = any_pressed_with_gp("attack")
 
             inp.attack = curr_attack
             #logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} move=({inp.move_x},{inp.move_y}), click={inp.click}")
@@ -430,7 +600,8 @@ class InputSystem:
             self.prev_toggle_inventory[eid] = curr_inv
 
             # Interact action: rising-edge detection (OR of multiple bindings)
-            curr_interact = any_pressed("interact")
+            curr_interact = any_pressed_with_gp("interact")
+
             prev_inter = self.prev_interact.get(eid, False)
             if curr_interact and not prev_inter:
                 inp.interact = True
@@ -464,6 +635,8 @@ class InputSystem:
                 self.prev_right[eid] = False
                 inp.interact = False
                 self.prev_interact[eid] = False
+                inp.aim_x = 0.0
+                inp.aim_y = 0.0
                 # Reset mouse action edges
                 self.prev_mouse[(eid, 'fireball')] = False
                 self.prev_mouse[(eid, 'dash')] = False
@@ -473,6 +646,9 @@ class InputSystem:
                 for base in ('fireball','laser_beam','dash'):
                     self.prev_action_slots[(eid, f'{base}_kb_a')] = False
                     self.prev_action_slots[(eid, f'{base}_kb_b')] = False
+                # Reset gamepad edges
+                self.prev_action_slots[(eid, 'fireball_gp')] = False
+                self.prev_action_slots[(eid, 'dash_gp')] = False
             else:
                 # Actualizar estado del mouse y acciones configurables
                 mx, my = pygame.mouse.get_pos()
@@ -499,6 +675,11 @@ class InputSystem:
                     ('dash','b'): self.config.get_key_for_binding('kb_dash_b'),
                 }
 
+                # Gamepad tokens
+                gp_fb_token = self.config.get_gamepad_token_for_binding("gp_fireball")
+                gp_lb_token = self.config.get_gamepad_token_for_binding("gp_laser_beam")
+                gp_dash_token = self.config.get_gamepad_token_for_binding("gp_dash")
+
                 # Fireball en flanco ascendente
                 curr_fb_mouse = bool(mouse_pressed[fb_btn]) if isinstance(fb_btn, int) else False
                 curr_fb_mouse = curr_fb_mouse and not ui_blocked
@@ -513,8 +694,37 @@ class InputSystem:
                         if curr and not prev:
                             fb_edge = True
                         self.prev_action_slots[(eid, f'fireball_kb_{slot}')] = curr
+                # Gamepad edge (ignora bloqueo por UI para permitir disparo con mando)
+                gp_fb_held_raw = gp_pressed_token(gp_fb_token)
+                curr_fb_gp = gp_fb_held_raw
+                prev_fb_gp = self.prev_action_slots.get((eid, 'fireball_gp'), False)
+                if curr_fb_gp and not prev_fb_gp:
+                    fb_edge = True
+                self.prev_action_slots[(eid, 'fireball_gp')] = curr_fb_gp
+                # Disparo continuo (hold): si está pulsado, encolar según cooldown
+                kb_held = False
+                for slot in ('a','b'):
+                    code = kb_codes.get(('fireball', slot))
+                    if code is not None:
+                        kb_held = kb_held or (bool(keys[code]) and not ui_blocked)
+                # Para gamepad, permitir hold aunque el ratón esté sobre UI
+                held = curr_fb_mouse or kb_held or gp_fb_held_raw
+                # Cooldown efectivo desde spells.json
+                try:
+                    fb_cfg = SPELLS.get('fireball', {})
+                    cd = float(((fb_cfg.get('timings') or {}).get('cooldown')) or 0.1)
+                    punish = float(((fb_cfg.get('rules') or {}).get('automatic_cast_punish')) or 1.0)
+                    interval = max(0.01, cd * punish)
+                except Exception:
+                    interval = 0.1
+                now_ts = time.time()
+                key_hold = (eid, 'fireball')
                 if eid in world.components.get('PlayerTagComponent', {}) and fb_edge:
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                    self._hold_next_time[key_hold] = now_ts + interval
+                elif eid in world.components.get('PlayerTagComponent', {}) and held and now_ts >= self._hold_next_time.get(key_hold, 0.0):
+                    world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='fireball')
+                    self._hold_next_time[key_hold] = now_ts + interval
                 self.prev_mouse[(eid, 'fireball')] = curr_fb_mouse
 
                 # Laser beam: mantener el comportamiento original (disparo continuo mientras se mantiene)
@@ -525,6 +735,8 @@ class InputSystem:
                     code = kb_codes.get(('laser_beam', slot))
                     if code is not None:
                         curr_lb = curr_lb or (bool(keys[code]) and not ui_blocked)
+                # Gamepad hold
+                curr_lb = curr_lb or (gp_pressed_token(gp_lb_token) and not ui_blocked)
                 if curr_lb:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({lb_btn}) -> laser_beam")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='laser_beam')
@@ -534,6 +746,7 @@ class InputSystem:
                 curr_dash_mouse = curr_dash_mouse and not ui_blocked
                 prev_dash_mouse = self.prev_mouse.get((eid, 'dash'), False)
                 dash_edge = (curr_dash_mouse and not prev_dash_mouse)
+
                 if dash_edge:
                     # Si se pulsa sobre el panel de inventario, ignorar
                     for s in getattr(world, 'render_systems', []):
@@ -550,6 +763,12 @@ class InputSystem:
                         if curr and not prev:
                             dash_edge = True
                         self.prev_action_slots[(eid, f'dash_kb_{slot}')] = curr
+                # Gamepad edge for dash
+                curr_dash_gp = gp_pressed_token(gp_dash_token) and not ui_blocked
+                prev_dash_gp = self.prev_action_slots.get((eid, 'dash_gp'), False)
+                if curr_dash_gp and not prev_dash_gp:
+                    dash_edge = True
+                self.prev_action_slots[(eid, 'dash_gp')] = curr_dash_gp
                 if dash_edge:
                     logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({dash_btn}) -> dash")
                     world.components.setdefault('WantsToCastSpell', {})[eid] = WantsToCastSpell(caster=eid, spell='dash')

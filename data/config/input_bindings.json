@@ -42,5 +42,14 @@
     "kb_move_up_b": "K_UP",
     "mouse_spell_slash": "M_RIGHT",
     "toggle_particles_editor": "K_F1",
-    "reload_data": "K_F1"
+    "reload_data": "K_F1",
+    "gp_fireball": "G_RB",
+    "gp_laser_beam": "G_TRIG_RT",
+    "gp_dash": "G_BTN_B",
+    "gp_move_up": "G_AXIS_LY_NEG",
+    "gp_move_down": "G_AXIS_LY_POS",
+    "gp_move_left": "G_AXIS_LX_NEG",
+    "gp_move_right": "G_AXIS_LX_POS",
+    "gp_attack": "G_BTN_A",
+    "gp_interact": "G_BTN_X"
 }
