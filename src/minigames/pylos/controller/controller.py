@@ -5,9 +5,10 @@ from typing import Optional
 
 import pygame
 
-from src_pylos.model import Cell, GameState, GamePhase
-from src_pylos.view import PylosView
-from src_pylos.IA import PylosAI
+from pylos.model import Cell, GameState, GamePhase
+from pylos.view import PylosView
+from pylos.ia import PylosAI
+from pylos.data.config_store import save_view_prefs
 
 
 @dataclass
@@ -17,6 +18,7 @@ class InputState:
     hovered: Optional[Cell] = None
     running: bool = True
     selected_src: Optional[Cell] = None
+    show_labels: bool = False
     show_holes: bool = False
     show_indices: bool = False
     dragging: bool = False  # RMB drag to climb
@@ -77,10 +79,12 @@ class PylosController:
             # Toggle show holes
             if event.key == pygame.K_h:
                 self.input.show_holes = not self.input.show_holes
+                save_view_prefs(self.view.cfg, self.view, show_holes=self.input.show_holes)
                 return
             # Toggle show indices
             if event.key == pygame.K_i:
                 self.input.show_indices = not self.input.show_indices
+                save_view_prefs(self.view.cfg, self.view, show_indices=self.input.show_indices)
                 return
 
         if event.type == pygame.MOUSEMOTION:
@@ -115,6 +119,15 @@ class PylosController:
                 if self.input.calibration_mode:
                     # Make current board rect editable
                     self.view.ensure_board_manual()
+                else:
+                    # Persist current calibration and UI flags when leaving config mode
+                    save_view_prefs(
+                        self.view.cfg,
+                        self.view,
+                        show_labels=self.input.show_labels,
+                        show_holes=self.input.show_holes,
+                        show_indices=self.input.show_indices,
+                    )
                 return
             # When calibrating, start dragging if clicking a size knob or a rect handle (or inside the rect for move)
             if self.input.calibration_mode and event.button in (1,):
@@ -124,16 +137,17 @@ class PylosController:
                     self.input.calib_dragging = True
                     self.input.last_mouse_pos = pos
                     return
-                # Board rect handles have priority after size knob
-                bhandle = self.view.pick_board_handle(pos)
-                if bhandle is not None:
-                    self.input.calib_handle = bhandle
-                    self.input.calib_dragging = True
-                    self.input.last_mouse_pos = pos
-                    return
+                # Give priority to GRID (yellow) handles over BOARD (green) handles
                 handle = self.view.pick_calibration_handle(pos)
                 if handle is not None:
                     self.input.calib_handle = handle
+                    self.input.calib_dragging = True
+                    self.input.last_mouse_pos = pos
+                    return
+                # Board rect handles as fallback (outer green frame)
+                bhandle = self.view.pick_board_handle(pos)
+                if bhandle is not None:
+                    self.input.calib_handle = bhandle
                     self.input.calib_dragging = True
                     self.input.last_mouse_pos = pos
                     return
@@ -168,6 +182,8 @@ class PylosController:
                 self.input.calib_dragging = False
                 self.input.calib_handle = None
                 self.input.last_mouse_pos = None
+                # Persist on end of a calibration drag
+                save_view_prefs(self.view.cfg, self.view)
                 return
 
             # Left-click actions
@@ -176,15 +192,24 @@ class PylosController:
                     return
                 if self.input.calibration_mode:
                     return  # block gameplay while calibrating
+                # If clicking the Show Labels button, toggle
+                lab_btn = getattr(self.view, "get_labels_button_rect", lambda: None)()
+                if lab_btn is not None and lab_btn.collidepoint(pygame.mouse.get_pos()):
+                    self.input.show_labels = not self.input.show_labels
+                    # Save UI flag immediately
+                    save_view_prefs(self.view.cfg, self.view, show_labels=self.input.show_labels)
+                    return
                 # If clicking the Show Holes button, toggle
                 btn = self.view.get_showholes_button_rect()
                 if btn is not None and btn.collidepoint(pygame.mouse.get_pos()):
                     self.input.show_holes = not self.input.show_holes
+                    save_view_prefs(self.view.cfg, self.view, show_holes=self.input.show_holes)
                     return
                 # If clicking the Show Indices button, toggle
                 idx_btn = self.view.get_indices_button_rect()
                 if idx_btn is not None and idx_btn.collidepoint(pygame.mouse.get_pos()):
                     self.input.show_indices = not self.input.show_indices
+                    save_view_prefs(self.view.cfg, self.view, show_indices=self.input.show_indices)
                     return
                 # Removal subphase: remove own free
                 if hasattr(self.state, "subphase") and str(self.state.subphase) and getattr(self.state, "removals_allowed", 0) > 0 and self.state.subphase.name == "REMOVAL":
@@ -281,6 +306,9 @@ class PylosController:
 
     def show_indices(self) -> bool:
         return self.input.show_indices
+
+    def show_labels(self) -> bool:
+        return self.input.show_labels
 
     def calibration_mode(self) -> bool:
         return self.input.calibration_mode

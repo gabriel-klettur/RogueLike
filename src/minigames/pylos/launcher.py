@@ -31,7 +31,7 @@ def main() -> int:
     except Exception:
         # Fallback when executed as a script
         _ensure_project_root_on_syspath()
-        from src_pylos.main import run  # type: ignore
+        from pylos.main import run  # type: ignore
     return run()
 
 

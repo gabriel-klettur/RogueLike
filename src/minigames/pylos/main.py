@@ -11,11 +11,12 @@ from typing import Final
 
 import pygame
 
-from src_pylos.controller import PylosController
-from src_pylos.model import GameState
-from src_pylos.view import PylosView
-from src_pylos.view.view import ViewConfig
-from src_pylos.view.menu import ConfigMenu
+from pylos.controller import PylosController
+from pylos.model import GameState
+from pylos.view import PylosView
+from pylos.view.view import ViewConfig
+from pylos.view.menu import ConfigMenu
+from pylos.data.config_store import load_view_prefs, save_view_prefs
 
 
 FPS: Final[int] = 60
@@ -48,6 +49,8 @@ def run() -> int:
     clock = pygame.time.Clock()
 
     view = PylosView(screen, cfg)
+    # Initial load of persisted calibration (grid, board manual, marble size) and UI flags
+    loaded = load_view_prefs(cfg, view)
 
     while True:
         # 1) Show configuration menu
@@ -55,6 +58,8 @@ def run() -> int:
         game_cfg = menu.run()
 
         # 2) Create game state and controller based on menu
+        # Reload persisted values in case user returned to menu previously
+        loaded = load_view_prefs(cfg, view)
         state = GameState()
         state.current_player = game_cfg.starting_player
         state.allow_square_removal = (game_cfg.game_mode == "Experto")
@@ -65,6 +70,16 @@ def run() -> int:
             ai_player=game_cfg.ai_player,
         )
         controller.ai.set_depth(game_cfg.ai_depth)
+        # Apply persisted UI flags (if any)
+        try:
+            if isinstance(loaded.get("show_labels"), bool):
+                controller.input.show_labels = bool(loaded["show_labels"])  # type: ignore[attr-defined]
+            if isinstance(loaded.get("show_holes"), bool):
+                controller.input.show_holes = bool(loaded["show_holes"])  # type: ignore[attr-defined]
+            if isinstance(loaded.get("show_indices"), bool):
+                controller.input.show_indices = bool(loaded["show_indices"])  # type: ignore[attr-defined]
+        except Exception:
+            pass
 
         # 3) Game loop
         running = True
@@ -97,15 +112,35 @@ def run() -> int:
                 controller.removal_cursor_player_id(),
                 controller.show_holes(),
                 controller.show_indices(),
+                controller.show_labels(),
                 controller.calibration_mode(),
             )
             pygame.display.flip()
 
+        # Persist current calibration and UI flags before returning to menu or quitting
+        save_view_prefs(
+            cfg,
+            view,
+            show_labels=controller.show_labels(),
+            show_holes=controller.show_holes(),
+            show_indices=controller.show_indices(),
+        )
         # If controller requested menu, continue outer loop; else exit
         if not controller.is_running():
             break
         # else: loop continues and menu will be shown again
 
+    # Final save on exit (persist with last known controller state if available)
+    try:
+        save_view_prefs(
+            cfg,
+            view,
+            show_labels=controller.show_labels(),  # type: ignore[name-defined]
+            show_holes=controller.show_holes(),    # type: ignore[name-defined]
+            show_indices=controller.show_indices(),# type: ignore[name-defined]
+        )
+    except Exception:
+        save_view_prefs(cfg, view)
     pygame.quit()
     return 0
 

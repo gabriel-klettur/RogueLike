@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from math import inf
 from typing import Optional, Tuple, List
 
-from src_pylos.model import Board, Cell, GamePhase, GameState, PlayerId, TurnSubphase
+from pylos.model import Board, Cell, GamePhase, GameState, PlayerId, TurnSubphase
 
 
 @dataclass

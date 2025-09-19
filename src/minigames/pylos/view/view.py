@@ -7,7 +7,7 @@ from typing import Dict, Optional, Tuple, List
 
 import pygame
 
-from src_pylos.model import Board, Cell, GameState
+from pylos.model import Board, Cell, GameState
 
 Color = Tuple[int, int, int]
 
@@ -99,6 +99,8 @@ class PylosView:
         self._last_showholes_btn: Optional[pygame.Rect] = None
         # Last computed Show Indices button rect
         self._last_indices_btn: Optional[pygame.Rect] = None
+        # Last computed Show Labels button rect
+        self._last_labels_btn: Optional[pygame.Rect] = None
         # Last computed win banner rect (for restart click)
         self._last_win_banner_rect: Optional[pygame.Rect] = None
 
@@ -226,6 +228,7 @@ class PylosView:
         removal_preview_player_id: Optional[int] = None,
         show_holes: bool = False,
         show_indices: bool = False,
+        show_labels: bool = True,
         calibration_mode: bool = False,
     ) -> None:
         self.screen.fill(self.cfg.bg_color)
@@ -244,8 +247,8 @@ class PylosView:
         # Draw the bottom status panel first so other UI (buttons) can render above it
         self._draw_status(state, info)
         # Toggle overlays buttons (positioned just above the bottom panel), responsive to panel width
-        self._draw_toggle_buttons(show_holes, show_indices, calibration_mode)
-        self._draw_marbles(state)
+        self._draw_toggle_buttons(show_labels, show_holes, show_indices, calibration_mode)
+        self._draw_marbles(state, show_labels)
         # Calibration overlay (white guides) to adjust board grid mapping
         if calibration_mode:
             self._draw_calibration_overlay()
@@ -305,7 +308,7 @@ class PylosView:
             pygame.draw.circle(ghost, rim, center, r, width=2)
             self.screen.blit(ghost, (cx - d // 2, cy - d // 2))
 
-    def _draw_toggle_buttons(self, holes_enabled: bool, indices_enabled: bool, calibration_enabled: bool) -> None:
+    def _draw_toggle_buttons(self, labels_enabled: bool, holes_enabled: bool, indices_enabled: bool, calibration_enabled: bool) -> None:
         """Responsive layout for 'Mostrar huecos' and 'Mostrar índices' above the bottom panel.
 
         If both button widths fit within the legend content width, draw them side-by-side centered.
@@ -315,9 +318,11 @@ class PylosView:
         holes_label = "Ocultar huecos" if holes_enabled else "Mostrar huecos"
         idx_label = "Ocultar índices" if indices_enabled else "Mostrar índices"
         cfg_label = "Salir config" if calibration_enabled else "Configuración"
+        labels_label = "Ocultar info" if labels_enabled else "Mostrar info"
         holes_txt = self.font_small.render(holes_label, True, (250, 250, 255))
         idx_txt = self.font_small.render(idx_label, True, (250, 250, 255))
         cfg_txt = self.font_small.render(cfg_label, True, (250, 250, 255))
+        labels_txt = self.font_small.render(labels_label, True, (250, 250, 255))
 
         pad_x, pad_y = 10, 6
         holes_w = holes_txt.get_width() + 2 * pad_x
@@ -326,6 +331,8 @@ class PylosView:
         idx_h = idx_txt.get_height() + 2 * pad_y
         cfg_w = cfg_txt.get_width() + 2 * pad_x
         cfg_h = cfg_txt.get_height() + 2 * pad_y
+        lab_w = labels_txt.get_width() + 2 * pad_x
+        lab_h = labels_txt.get_height() + 2 * pad_y
 
         panel_top = self.cfg.height - self._bottom_panel_h
         gap = max(12, self.cfg.toggle_gap)
@@ -335,27 +342,32 @@ class PylosView:
         center_x = self.cfg.width // 2
 
         # Decide layout: inline or stacked
-        inline = (holes_w + gap + idx_w + gap + cfg_w) <= available_w
+        inline = (lab_w + gap + holes_w + gap + idx_w + gap + cfg_w) <= available_w
 
         bg_off = (40, 40, 50)
         bg_on_holes = (56, 142, 60)
         bg_on_idx = (84, 110, 122)
         bg_cfg = (90, 90, 100)
+        bg_on_labels = (123, 31, 162)
         outline = (20, 20, 26)
 
         if inline:
-            group_w = holes_w + gap + idx_w + gap + cfg_w
+            group_w = lab_w + gap + holes_w + gap + idx_w + gap + cfg_w
             start_x = center_x - group_w // 2
             by = max(8, panel_top - max(holes_h, idx_h) - gap)
+            # Labels button (left-most)
+            lab_rect = pygame.Rect(start_x, by, lab_w, lab_h)
             # Holes button
-            holes_rect = pygame.Rect(start_x, by, holes_w, holes_h)
+            holes_rect = pygame.Rect(lab_rect.right + gap, by, holes_w, holes_h)
             # Indices button
             idx_rect = pygame.Rect(holes_rect.right + gap, by, idx_w, idx_h)
             # Config button to the right
             cfg_rect = pygame.Rect(idx_rect.right + gap, by, cfg_w, max(idx_h, holes_h))
         else:
             # Stack: índices arriba, huecos abajo
-            holes_by = max(8, panel_top - holes_h - gap)
+            lab_by = max(8, panel_top - lab_h - gap)
+            lab_rect = pygame.Rect(center_x - lab_w // 2, lab_by, lab_w, lab_h)
+            holes_by = max(8, lab_rect.y - gap - holes_h)
             holes_rect = pygame.Rect(center_x - holes_w // 2, holes_by, holes_w, holes_h)
             idx_by = max(8, holes_rect.y - gap - idx_h)
             idx_rect = pygame.Rect(center_x - idx_w // 2, idx_by, idx_w, idx_h)
@@ -364,9 +376,15 @@ class PylosView:
             cfg_rect = pygame.Rect(center_x - cfg_w // 2, cfg_by, cfg_w, cfg_h)
 
         # Store rects for controller hit-tests
+        self._last_labels_btn = lab_rect
         self._last_showholes_btn = holes_rect
         self._last_indices_btn = idx_rect
         self._last_config_btn = cfg_rect
+
+        # Draw labels button
+        pygame.draw.rect(self.screen, bg_on_labels if labels_enabled else bg_off, lab_rect, border_radius=8)
+        pygame.draw.rect(self.screen, outline, lab_rect, width=2, border_radius=8)
+        self.screen.blit(labels_txt, (lab_rect.centerx - labels_txt.get_width() // 2, lab_rect.centery - labels_txt.get_height() // 2))
 
         # Draw indices button
         pygame.draw.rect(self.screen, bg_on_idx if indices_enabled else bg_off, idx_rect, border_radius=8)
@@ -377,13 +395,17 @@ class PylosView:
         pygame.draw.rect(self.screen, bg_on_holes if holes_enabled else bg_off, holes_rect, border_radius=8)
         pygame.draw.rect(self.screen, outline, holes_rect, width=2, border_radius=8)
         self.screen.blit(holes_txt, (holes_rect.centerx - holes_txt.get_width() // 2, holes_rect.centery - holes_txt.get_height() // 2))
-        # Draw config button
-        pygame.draw.rect(self.screen, bg_cfg, cfg_rect, border_radius=8)
+        # Draw config button: match other buttons when OFF, turn gray when ON
+        cfg_bg = bg_cfg if calibration_enabled else bg_off
+        pygame.draw.rect(self.screen, cfg_bg, cfg_rect, border_radius=8)
         pygame.draw.rect(self.screen, outline, cfg_rect, width=2, border_radius=8)
         self.screen.blit(cfg_txt, (cfg_rect.centerx - cfg_txt.get_width() // 2, cfg_rect.centery - cfg_txt.get_height() // 2))
 
     def get_config_button_rect(self) -> Optional[pygame.Rect]:
         return getattr(self, "_last_config_btn", None)
+
+    def get_labels_button_rect(self) -> Optional[pygame.Rect]:
+        return self._last_labels_btn
 
     def get_board_rect(self) -> Optional[pygame.Rect]:
         return self._board_rect
@@ -617,7 +639,7 @@ class PylosView:
             self.screen.blit(sh, (x + 1, y + 1))
             self.screen.blit(txt, (x, y))
 
-    def _draw_marbles(self, state: GameState) -> None:
+    def _draw_marbles(self, state: GameState, show_labels: bool) -> None:
         board = state.board
         removal_active = getattr(state, "subphase", None) is not None and state.subphase.name == "REMOVAL"
         # Determine base diameter from grid if assets are active
@@ -644,30 +666,31 @@ class PylosView:
                 pygame.draw.circle(self.screen, color, (cx, cy), int(self.pick_radius * self.cfg.marble_scale))
                 # subtle rim
                 pygame.draw.circle(self.screen, (20, 20, 26), (cx, cy), int(self.pick_radius * self.cfg.marble_scale), width=2)
-            # Overlays: 'L' (free) and level in parentheses
+            # Overlays: 'L' (free) and level in parentheses (conditional)
             is_free = board.is_free(cell)
-            if is_free:
-                label = self.font_small.render("L", True, (240, 240, 250))
-                shadow = self.font_small.render("L", True, (20, 20, 26))
-                lx = cx - label.get_width() // 2
-                ly = cy - label.get_height() // 2
-                # shadow first
-                self.screen.blit(shadow, (lx + 1, ly + 1))
-                self.screen.blit(label, (lx, ly))
+            if show_labels:
+                if is_free:
+                    label = self.font_small.render("L", True, (240, 240, 250))
+                    shadow = self.font_small.render("L", True, (20, 20, 26))
+                    lx = cx - label.get_width() // 2
+                    ly = cy - label.get_height() // 2
+                    # shadow first
+                    self.screen.blit(shadow, (lx + 1, ly + 1))
+                    self.screen.blit(label, (lx, ly))
 
-            level_text = f"({cell.layer + 1})"  # Display levels as 1..4 (base-1)
-            lvl = self.font_small.render(level_text, True, (240, 240, 250))
-            lvl_sh = self.font_small.render(level_text, True, (20, 20, 26))
-            if is_free:
-                # Place level just below the centered 'L'
-                lvy = cy + (label.get_height() // 2) + 2
-                lvx = cx - lvl.get_width() // 2
-            else:
-                # Center the level on the marble
-                lvx = cx - lvl.get_width() // 2
-                lvy = cy - lvl.get_height() // 2
-            self.screen.blit(lvl_sh, (lvx + 1, lvy + 1))
-            self.screen.blit(lvl, (lvx, lvy))
+                level_text = f"({cell.layer + 1})"  # Display levels as 1..4 (base-1)
+                lvl = self.font_small.render(level_text, True, (240, 240, 250))
+                lvl_sh = self.font_small.render(level_text, True, (20, 20, 26))
+                if is_free:
+                    # Place level just below the centered 'L'
+                    lvy = cy + (label.get_height() // 2) + 2
+                    lvx = cx - lvl.get_width() // 2
+                else:
+                    # Center the level on the marble
+                    lvx = cx - lvl.get_width() // 2
+                    lvy = cy - lvl.get_height() // 2
+                self.screen.blit(lvl_sh, (lvx + 1, lvy + 1))
+                self.screen.blit(lvl, (lvx, lvy))
             # If in REMOVAL subphase, highlight all candidates (own & free)
             if removal_active and owner == state.current_player and board.is_free(cell):
                 pygame.draw.circle(self.screen, (220, 68, 68), (cx, cy), self.pick_radius + 2, width=3)
