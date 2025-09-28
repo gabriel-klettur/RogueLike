@@ -1,60 +1,85 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      26,
-      18
-    ],
-    "overrides": {
-      "visible_in_game": true
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            27,
+            17
+        ],
+        "overrides": {
+            "visible_in_game": true,
+            "hp_scope": "per_state",
+            "life_defaults": {
+                "damageable": true,
+                "max_hp": 1000,
+                "flash_on_hit": true,
+                "flash_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "flash_duration_s": 0.08,
+                "hp_reset_on_enter": "set_to_max"
+            }
+        },
+        "visuals": {
+            "Finished": {
+                "instance_id": 216,
+                "template_id": 158,
+                "offset": [
+                    -115,
+                    -260
+                ],
+                "scale": [
+                    258,
+                    386
+                ],
+                "life": {
+                    "damageable": false
+                },
+                "split_ratio": 0.751
+            },
+            "WaitClear": {
+                "instance_id": 217,
+                "template_id": 157,
+                "offset": [
+                    -114,
+                    -253
+                ],
+                "scale": [
+                    257,
+                    384
+                ],
+                "split_ratio": 0.776
+            },
+            "AwaitTrigger": {
+                "instance_id": 218,
+                "template_id": 157,
+                "offset": [
+                    -116,
+                    -248
+                ],
+                "split_ratio": 0.776
+            },
+            "WaitCooldown": {
+                "instance_id": 219,
+                "template_id": 155,
+                "offset": [
+                    -117,
+                    -237
+                ],
+                "split_ratio": 0.755
+            }
+        },
+        "id": "survival_10_forest_14_9"
     },
-    "visuals": {
-      "Finished": {
-        "instance_id": 139,
-        "template_id": 158,
-        "offset": [
-          -127,
-          -233
+    {
+        "template_id": "vendor_valeria_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            45,
+            6
         ],
-        "split_ratio": 0.635,
-        "scale": [
-          258,
-          386
-        ]
-      },
-      "WaitClear": {
-        "instance_id": 140,
-        "template_id": 157,
-        "offset": [
-          -124,
-          -226
-        ],
-        "scale": [
-          257,
-          384
-        ],
-        "split_ratio": 0.781
-      },
-      "AwaitTrigger": {
-        "instance_id": 141,
-        "template_id": 157,
-        "offset": [
-          -128,
-          -234
-        ],
-        "split_ratio": 0.458
-      },
-      "WaitCooldown": {
-        "instance_id": 142,
-        "template_id": 155,
-        "offset": [
-          -117,
-          -237
-        ],
-        "split_ratio": 0.807
-      }
-    },
-    "id": "survival_10_forest_14_9"
-  }
+        "id": "vendor_valeria_respawn_5m_lobby_45_6"
+    }
 ]

@@ -27,6 +27,8 @@ from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component
 from roguelike_game.config.players_config import PLAYER_ASSETS
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
+from roguelike_engine.config.config_tiles import TILE_SIZE
 
 
 def _abs_to_rel_asset_path(path: str) -> str:
@@ -64,6 +66,89 @@ class SpawnEntityCommand(Command):
         if hasattr(world, 'invalidate_spatial_index'):
             world.invalidate_spatial_index()
 
+
+@dataclass
+class MoveEntityCommand(Command):
+    """Undoable move of a single entity in world space, with NPC persistence.
+
+    - Updates Position component at runtime.
+    - If the entity is an NPC (has NPCTagComponent and MonsterInstanceComponent),
+      persists its tile position into world.npc_memory and current map local_state.
+    """
+    controller: Any
+    eid: int
+    start_pos: Tuple[int, int]
+    end_pos: Tuple[int, int]
+    description: str = "Move entity"
+
+    def _apply_runtime(self, pos_xy: Tuple[int, int]) -> None:
+        world = self.controller.game.ecs.ecs_world
+        pos_store = world.components.get('Position', {})
+        pos = pos_store.get(self.eid)
+        if pos is None:
+            return
+        pos.x, pos.y = int(pos_xy[0]), int(pos_xy[1])
+        if hasattr(world, 'invalidate_spatial_index'):
+            world.invalidate_spatial_index()
+
+    def _persist_npc_tile(self) -> None:
+        """Persist NPC tile into world.npc_memory and current map local state if available."""
+        g = self.controller.game
+        world = g.ecs.ecs_world
+        comps = world.components
+        npc_tags = comps.get('NPCTagComponent', {}) or {}
+        if self.eid not in npc_tags:
+            return  # only persist NPCs
+        inst_store = comps.get('MonsterInstanceComponent', {}) or {}
+        inst = inst_store.get(self.eid)
+        if inst is None:
+            return
+        instance_id = getattr(inst, 'instance_id', None)
+        if not instance_id:
+            return
+        # Compute tile from current Position/Sprite/Scale
+        try:
+            tile = compute_foot_tile(world, self.eid, TILE_SIZE)
+        except Exception:
+            tile = None
+        # Determine current level
+        level = getattr(g.world, 'current_level', None) or getattr(g.map, 'name', None)
+        if not level:
+            return
+        # Ensure npc_memory dict exists
+        if getattr(g.world, 'npc_memory', None) is None:
+            g.world.npc_memory = {}
+        # Update memory entry (keep previous fields if existed)
+        entry = dict(getattr(g.world, 'npc_memory', {}).get(str(instance_id), {}) or {})
+        entry.update({
+            'level': level,
+            'tile': [int(tile[0]), int(tile[1])] if tile is not None else None,
+        })
+        g.world.npc_memory[str(instance_id)] = entry
+        # Also reflect in current map local_state if available
+        try:
+            mgr = getattr(g, 'map', None)
+            ls = getattr(mgr, '_local_state', None)
+            if isinstance(ls, dict):
+                states = dict(ls.get('npc_states', {}) or {})
+                states[str(instance_id)] = {
+                    'level': level,
+                    'tile': entry.get('tile'),
+                    'hp': (states.get(str(instance_id), {}) or {}).get('hp'),
+                    'dead': (states.get(str(instance_id), {}) or {}).get('dead'),
+                    'prototype': (states.get(str(instance_id), {}) or {}).get('prototype'),
+                }
+                ls['npc_states'] = states
+        except Exception:
+            pass
+
+    def apply(self) -> None:
+        self._apply_runtime(self.end_pos)
+        self._persist_npc_tile()
+
+    def undo(self) -> None:
+        self._apply_runtime(self.start_pos)
+        self._persist_npc_tile()
 
 @dataclass
 class DeleteEntityCommand(Command):

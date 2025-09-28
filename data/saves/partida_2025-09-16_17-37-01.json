@@ -3,140 +3,18 @@
   "player": {
     "level": "global_map",
     "pos": [
-      73,
-      89
+      123,
+      73
     ]
   },
-  "npcs": {
-    "72c63302-fcba-4472-a545-86b69a55da90": {
-      "level": "global_map",
-      "tile": [
-        66,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_blacksmith_smith"
-    },
-    "2ebcfd24-ed91-42c2-aea1-76db228b7afa": {
-      "level": "global_map",
-      "tile": [
-        58,
-        69
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_mague_roberto"
-    },
-    "859e4ed8-9745-4d94-b8eb-bfef50e1ae51": {
-      "level": "global_map",
-      "tile": [
-        93,
-        71
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_banker_abigail"
-    },
-    "c3f2161b-f364-455a-9d2d-d6e868cf7fe2": {
-      "level": "global_map",
-      "tile": [
-        62,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_lumberjack_pavel"
-    },
-    "7f6d13ab-2f12-442f-a603-8e5a099c1770": {
-      "level": "global_map",
-      "tile": [
-        69,
-        88
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_cheff_gatita"
-    },
-    "7e541d9b-4309-4fde-bbfb-76eaed473165": {
-      "level": "global_map",
-      "tile": [
-        95,
-        57
-      ],
-      "hp": 50,
-      "dead": false,
-      "prototype": "vendor_alchemist_valeria"
-    }
-  },
+  "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        73,
-        89
+        123,
+        73
       ],
-      "npc_states": {
-        "72c63302-fcba-4472-a545-86b69a55da90": {
-          "level": "global_map",
-          "tile": [
-            66,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_blacksmith_smith"
-        },
-        "2ebcfd24-ed91-42c2-aea1-76db228b7afa": {
-          "level": "global_map",
-          "tile": [
-            58,
-            69
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_mague_roberto"
-        },
-        "859e4ed8-9745-4d94-b8eb-bfef50e1ae51": {
-          "level": "global_map",
-          "tile": [
-            93,
-            71
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_banker_abigail"
-        },
-        "c3f2161b-f364-455a-9d2d-d6e868cf7fe2": {
-          "level": "global_map",
-          "tile": [
-            62,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_lumberjack_pavel"
-        },
-        "7f6d13ab-2f12-442f-a603-8e5a099c1770": {
-          "level": "global_map",
-          "tile": [
-            69,
-            88
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_cheff_gatita"
-        },
-        "7e541d9b-4309-4fde-bbfb-76eaed473165": {
-          "level": "global_map",
-          "tile": [
-            95,
-            57
-          ],
-          "hp": 50,
-          "dead": false,
-          "prototype": "vendor_alchemist_valeria"
-        }
-      }
+      "npc_states": {}
     }
   },
   "player_inventory": {
@@ -145,11 +23,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 316
+        "quantity": 7
       },
       {
-        "item": "health_potion",
-        "quantity": 40
+        "item": "wood",
+        "quantity": 1
       },
       null,
       null,
@@ -297,21 +175,83 @@
           "quantity": 300
         }
       ]
+    },
+    "69208090-d792-45b7-be92-bc1f18010fa9": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "food_apple",
+          "quantity": 40
+        },
+        {
+          "item": "food_bread",
+          "quantity": 25
+        },
+        {
+          "item": "food_borscht",
+          "quantity": 15
+        },
+        {
+          "item": "food_varenyky",
+          "quantity": 20
+        },
+        {
+          "item": "gold",
+          "quantity": 200
+        }
+      ]
+    },
+    "5d9d7816-cc4e-46a1-b20e-e7193e0a5338": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "gold",
+          "quantity": 1
+        },
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        },
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
+    },
+    "608b78d1-643b-4e4f-8c1d-6ab1d44b7b0f": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "gold",
+          "quantity": 1
+        },
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        },
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
     }
   },
   "meta": {
     "name": "partida_2025-09-16_17-37-01",
     "created_at": "2025-09-16T17:37:01",
-    "last_played": "2025-09-16T23:12:42",
+    "last_played": "2025-09-28T16:41:40",
     "player": {
       "xp": 10,
-      "level": 2
+      "level": 0
     },
     "items_summary": {
       "stacks": 2,
       "top_items": [
         "gold",
-        "health_potion"
+        "wood"
       ]
     }
   }

@@ -34,6 +34,9 @@ class DiagnosticsOverlayModel:
     line_keys: List[str] = field(default_factory=list)
     # Parallel to line_keys; indentation level (0+). None for lines where level is unknown.
     line_levels: List[Optional[int]] = field(default_factory=list)
+    # Per-line override colors for right-side values; None means use default value_color.
+    # This list must be kept aligned with the currently rendered lines (after paging).
+    value_colors: List[Optional[Tuple[int, int, int]]] = field(default_factory=list)
     collapsed_groups: Set[str] = field(default_factory=set)
     initially_collapsed: bool = True
 
@@ -58,6 +61,7 @@ class DiagnosticsOverlayModel:
         self.panel_rect = None
         self.line_keys.clear()
         self.line_levels.clear()
+        self.value_colors.clear()
 
     def load_persisted_state(self) -> None:
         try:

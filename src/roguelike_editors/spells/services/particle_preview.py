@@ -864,3 +864,333 @@ class ParticlePreviewTeleport:
             r = max(1, min(radius, max(1, min(w, h) // 2 - 1)))
             pygame.draw.circle(self._surf, col, (cx, cy), r, width=3)
         return self._surf
+
+
+class ParticlePreviewWaterFountain:
+    """Water fountain preview: thin falling streams with gravity and splashes.
+
+    Parameters:
+    - color: RGB base color for droplets.
+    - spouts: list of normalized X in [0..1] where jets originate (top area).
+    - emit_rate: droplets spawned per step per spout (~30 Hz steps).
+    - speed: initial vertical speed (downwards positive); also slight x spread.
+    - gravity: per-step acceleration added to vy.
+    - droplet_size: base droplet pixel size.
+    - splash_count: number of small splash particles spawned on impact.
+    """
+
+    def __init__(
+        self,
+        color: Tuple[int, int, int] = (100, 180, 255),
+        spouts: list[float] | tuple[float, ...] = (0.34, 0.5, 0.66),
+        emit_rate: int = 5,
+        speed: float = 2.0,
+        gravity: float = 0.25,
+        droplet_size: int = 2,
+        splash_count: int = 2,
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._color = color
+        # sanitize spouts
+        self._spouts = [float(max(0.05, min(0.95, s))) for s in list(spouts)] if spouts else [0.5]
+        self._emit = max(1, int(emit_rate))
+        self._speed = float(speed)
+        self._g = float(gravity)
+        self._sz = max(1, int(droplet_size))
+        self._splash = max(0, int(splash_count))
+        # particles: lists of tuples
+        # droplets: x, y, vx, vy, size, age, life
+        self._drops: list[tuple[float, float, float, float, int, int, int]] = []
+        # splashes: x, y, vx, vy, size, age, life
+        self._spl: list[tuple[float, float, float, float, int, int, int]] = []
+        # Fixed-timestep accumulator (~30 Hz)
+        self._acc_ms = 0
+        self._step_ms = 33
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+            self._drops.clear()
+            self._spl.clear()
+
+    def _spawn_droplets(self, w: int, h: int) -> None:
+        top_y = max(2, int(h * 0.18))
+        for s in self._spouts:
+            x = int(2 + s * max(1, w - 4))
+            for _ in range(self._emit):
+                # small x-offset to create thin stream and flicker
+                vx = random.uniform(-0.2, 0.2) * max(0.5, self._speed * 0.35)
+                vy = abs(self._speed) + random.uniform(-0.2, 0.2)
+                size = max(1, int(self._sz + random.choice((-1, 0, 0, 1))))
+                life = 120  # upper bound; most will end on impact earlier
+                self._drops.append((float(x), float(top_y), float(vx), float(vy), size, 0, life))
+
+    def _update_step(self, w: int, h: int) -> None:
+        # spawn
+        self._spawn_droplets(w, h)
+        ground = h - 3
+        new_drops: list[tuple[float, float, float, float, int, int, int]] = []
+        # update droplets
+        for (x, y, vx, vy, sz, age, life) in self._drops:
+            vy += self._g
+            x += vx
+            y += vy
+            age += 1
+            if y >= ground:
+                # splash on impact
+                if self._splash > 0:
+                    for _ in range(self._splash):
+                        ang = random.uniform(-0.9, -2.2)  # up-left to up-right
+                        spd = random.uniform(0.8, 1.6) * (0.6 + 0.4 * (sz / max(1, self._sz)))
+                        svx = math.cos(ang) * spd
+                        svy = math.sin(ang) * spd
+                        ssz = max(1, sz - 1)
+                        slife = random.randint(10, 24)
+                        self._spl.append((x, float(ground), svx, svy, ssz, 0, slife))
+                continue  # drop is consumed
+            if age < life and -4 <= x < w + 4 and -4 <= y < h + 6:
+                new_drops.append((x, y, vx, vy, sz, age, life))
+        self._drops = new_drops
+        # update splashes (with gravity and fade)
+        new_spl: list[tuple[float, float, float, float, int, int, int]] = []
+        for (x, y, vx, vy, sz, age, life) in self._spl:
+            vy += self._g * 0.8
+            x += vx
+            y += vy
+            age += 1
+            if age < life and -4 <= x < w + 4 and -4 <= y < h + 6:
+                new_spl.append((x, y, vx, vy, sz, age, life))
+        self._spl = new_spl
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # advance in fixed steps
+        self._acc_ms += max(0, dt_ms)
+        while self._acc_ms >= self._step_ms:
+            self._update_step(w, h)
+            self._acc_ms -= self._step_ms
+        # draw
+        self._surf.fill((0, 0, 0, 0))
+        base = self._color
+        # stream hint: faint vertical guides (optional aesthetic)
+        try:
+            for s in self._spouts:
+                x = int(2 + s * max(1, w - 4))
+                pygame.draw.line(self._surf, (*base, 40), (x, int(h * 0.18)), (x, h - 3), 1)
+        except Exception:
+            pass
+        # droplets (slightly translucent)
+        for (x, y, vx, vy, sz, age, life) in self._drops:
+            alpha = max(80, min(255, 220 - age))
+            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+            blob.fill((*base, alpha))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(blob, (ix, iy))
+        # splashes brighter but short-lived
+        for (x, y, vx, vy, sz, age, life) in self._spl:
+            alpha = max(0, min(255, int(255 * (1 - age / max(1, life)))))
+            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+            col = (min(255, base[0] + 20), min(255, base[1] + 20), min(255, base[2] + 20))
+            blob.fill((*col, alpha))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(blob, (ix, iy))
+        return self._surf
+
+
+class ParticlePreviewFallingLeaf:
+    """Single falling leaf at a sparse interval with gentle sway.
+
+    Spawns at most one leaf every `interval_ms`. To avoid an entirely empty
+    picker cell, the first spawn uses a randomized phase offset so the preview
+    often shows a leaf shortly after appearing.
+    """
+
+    def __init__(
+        self,
+        color: Tuple[int, int, int] = (140, 200, 80),
+        interval_ms: int = 30000,
+        life_ms: int = 6000,
+        speed: float = 0.5,
+        gravity: float = 0.06,
+        sway_amp: float = 0.6,
+        sway_speed: float = 0.15,
+        size: Tuple[int, int] = (3, 2),
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._color = color
+        self._interval = max(1000, int(interval_ms))
+        self._life_ms = max(1000, int(life_ms))
+        self._base_vy = float(speed)
+        self._g = float(gravity)
+        self._sway_amp = float(sway_amp)
+        self._sway_speed = float(sway_speed)
+        self._leaf_w = max(2, int(size[0]))
+        self._leaf_h = max(2, int(size[1]))
+        # State
+        self._timer_ms = random.randint(0, self._interval - 1)  # randomize first spawn
+        self._acc_ms = 0
+        self._step_ms = 33
+        # current leaf (None or tuple fields)
+        self._leaf: tuple[float, float, float, float, float, int] | None = None
+        # x, y, vx, vy, sway_phase, age_ms
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+            self._leaf = None
+            # keep timer, do not reset, so cadence persists while browsing
+
+    def _spawn_leaf(self, w: int, h: int) -> None:
+        # Spawn near top canopy
+        x = random.uniform(w * 0.25, w * 0.75)
+        y = random.uniform(h * 0.05, h * 0.25)
+        vx = 0.0
+        vy = max(0.1, self._base_vy)
+        sway_phase = random.random() * 6.28318
+        self._leaf = (x, y, vx, vy, sway_phase, 0)
+
+    def _step(self, w: int, h: int, steps: int) -> None:
+        # Handle spawn timer (in real milliseconds)
+        self._timer_ms += steps * self._step_ms
+        if self._leaf is None and self._timer_ms >= self._interval:
+            self._timer_ms %= self._interval
+            self._spawn_leaf(w, h)
+        if self._leaf is None:
+            return
+        x, y, vx, vy, phase, age = self._leaf
+        for _ in range(steps):
+            # update physics in small steps
+            # sway: horizontal drift by sinusoid
+            phase += self._sway_speed
+            vx = self._sway_amp * math.sin(phase)
+            vy += self._g
+            x += vx
+            y += vy
+            age += self._step_ms
+            # stop if out or lifetime exceeded
+            if y >= h - 2 or age >= self._life_ms:
+                self._leaf = None
+                return
+        self._leaf = (x, y, vx, vy, phase, age)
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # advance in fixed steps
+        self._acc_ms += max(0, dt_ms)
+        steps = 0
+        while self._acc_ms >= self._step_ms:
+            self._step(w, h, 1)
+            self._acc_ms -= self._step_ms
+            steps += 1
+        # draw
+        self._surf.fill((0, 0, 0, 0))
+        if self._leaf is not None:
+            x, y, vx, vy, phase, age = self._leaf
+            # subtle alpha fade with age
+            a = max(80, min(255, 255 - int(255 * (age / max(1, self._life_ms)))))
+            leaf = pygame.Surface((self._leaf_w, self._leaf_h), pygame.SRCALPHA)
+            leaf.fill((*self._color, a))
+            ix, iy = int(x), int(y)
+            if 0 <= ix < w and 0 <= iy < h:
+                self._surf.blit(leaf, (ix, iy))
+        return self._surf
+
+
+class ParticlePreviewWaterFlow:
+    """Tiled flowing water preview using scrolling highlight stripes.
+
+    - Synchronized via global time so adjacent instances do not show seams.
+    - Supports horizontal or vertical flow using a direction vector.
+    - Designed to be overlaid on top of a dark water tile (uses alpha).
+    """
+
+    def __init__(
+        self,
+        base_color: Tuple[int, int, int] = (20, 40, 80),
+        highlight_color: Tuple[int, int, int] = (60, 110, 160),
+        direction: Tuple[float, float] = (1.0, 0.0),
+        speed: float = 0.6,
+        stripe_gap: int = 8,
+        ripple_amp: float = 0.6,
+        alpha_base: int = 120,
+        alpha_wave: int = 80,
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._base = tuple(map(int, base_color))
+        self._hl = tuple(map(int, highlight_color))
+        self._dir = pygame.math.Vector2(float(direction[0]), float(direction[1]))
+        if self._dir.length_squared() == 0:
+            self._dir.update(1.0, 0.0)
+        self._speed = float(speed)  # pixels per second-like; scaled from ms
+        self._gap = max(2, int(stripe_gap))
+        self._ripple = float(ripple_amp)
+        self._ab = max(0, min(255, int(alpha_base)))
+        self._aw = max(0, min(255, int(alpha_wave)))
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+
+    def _draw_horizontal(self, w: int, h: int, t_ms: int) -> None:
+        assert self._surf is not None
+        self._surf.fill((*self._base, self._ab))
+        # Offset advances with time; use global ticks to keep tiles in sync
+        px_per_ms = self._speed  # interpret as px/ms
+        offset = int((t_ms * px_per_ms) % self._gap)
+        # vertical highlight stripes
+        for x in range(-offset, w + self._gap, self._gap):
+            # slight ripple in alpha along y
+            col = (*self._hl, self._aw)
+            pygame.draw.rect(self._surf, col, pygame.Rect(x, 0, 2, h))
+
+    def _draw_vertical(self, w: int, h: int, t_ms: int) -> None:
+        assert self._surf is not None
+        self._surf.fill((*self._base, self._ab))
+        px_per_ms = self._speed
+        offset = int((t_ms * px_per_ms) % self._gap)
+        # horizontal highlight stripes
+        for y in range(-offset, h + self._gap, self._gap):
+            col = (*self._hl, self._aw)
+            pygame.draw.rect(self._surf, col, pygame.Rect(0, y, w, 2))
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        # global synchronized time
+        t_ms = pygame.time.get_ticks()
+        # Choose axis by dominant component
+        if abs(self._dir.x) >= abs(self._dir.y):
+            self._draw_horizontal(w, h, t_ms)
+        else:
+            self._draw_vertical(w, h, t_ms)
+        # Simple ripple overlay: sine-based alpha modulation
+        if self._ripple > 0:
+            try:
+                ripple = pygame.Surface((w, h), pygame.SRCALPHA)
+                # Modulate rows/cols depending on direction
+                if abs(self._dir.x) >= abs(self._dir.y):
+                    # horizontal flow: ripple across y
+                    for y in range(h):
+                        a = int(max(0, min(40, 20 + 20 * math.sin((y / max(1, h)) * 6.28318 + (t_ms * 0.002)))))
+                        pygame.draw.line(ripple, (*self._hl, a), (0, y), (w, y))
+                else:
+                    for x in range(w):
+                        a = int(max(0, min(40, 20 + 20 * math.sin((x / max(1, w)) * 6.28318 + (t_ms * 0.002)))))
+                        pygame.draw.line(ripple, (*self._hl, a), (x, 0), (x, h))
+                self._surf.blit(ripple, (0, 0))
+            except Exception:
+                pass
+        return self._surf

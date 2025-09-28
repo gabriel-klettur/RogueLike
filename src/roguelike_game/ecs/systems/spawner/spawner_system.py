@@ -42,9 +42,16 @@ class SpawnerRuntimeSystem:
 
     # ---------------------- Visual helpers ----------------------
     def _current_state_key(self, st) -> str | None:
-        """Return a canonical lowercase key for the current FSM-ish state in runtime.
-        Values set in this system are like 'await_trigger', 'spawning_wave', 'wait_cooldown', 'wait_restart', 'finished'.
+        """Return a canonical lowercase key for the current visual state token.
+        Prefers SpawnerState.visual_override_token when present; otherwise uses fsm_state.
+        Values are like 'await_trigger', 'spawning_wave', 'wait_cooldown', 'wait_restart', 'finished'.
         """
+        try:
+            tok = getattr(st, 'visual_override_token', None)
+            if tok:
+                return str(tok).strip().lower()
+        except Exception:
+            pass
         try:
             cur = getattr(st, 'fsm_state', None)
             return str(cur).strip().lower() if cur is not None else None
@@ -236,6 +243,20 @@ class SpawnerRuntimeSystem:
                         off_dx, off_dy = offs[camel.lower()]
             except Exception:
                 off_dx, off_dy = 0, 0
+            # Compute effective life config for current state and attach to the active visual building
+            # Merge order: state-specific (cfg.visuals_life[cur_key]) overrides cfg.life_defaults
+            eff_life = {}
+            try:
+                life_map = getattr(cfg, 'visuals_life', None) or {}
+                base = getattr(cfg, 'life_defaults', None) or {}
+                cur_key = self._current_state_key(st)
+                if isinstance(base, dict):
+                    eff_life.update(base)
+                if cur_key and isinstance(life_map, dict) and cur_key in life_map and isinstance(life_map[cur_key], dict):
+                    eff_life.update(life_map[cur_key])
+            except Exception:
+                eff_life = {}
+
             for ob in getattr(world, 'buildings', []) or []:
                 try:
                     bid = getattr(ob, 'id', None)
@@ -244,6 +265,11 @@ class SpawnerRuntimeSystem:
                         setattr(ob, '_spawner_eid', eid)
                         setattr(ob, '_world_ref', world)
                         setattr(ob, '_is_spawner_visual', True)
+                        # Attach effective life config for damage/flash lookup in combat systems
+                        try:
+                            setattr(ob, '_spawner_visual_life_cfg', eff_life if eff_life else None)
+                        except Exception:
+                            pass
                         # Exclusive visibility: only desired remains visible
                         visible_this = (bid == desired)
                         setattr(ob, 'runtime_hidden', not visible_this)
@@ -665,6 +691,19 @@ class SpawnerRuntimeSystem:
                         continue
                     count = max(0, min(count, capacity_left))
                 attempted_total += count
+                # Decide strict-center mode for vendor-like singleton spawners
+                strict_center = False
+                try:
+                    strict_center = (
+                        (getattr(cfg, 'spawn_radius', None) in (None, 0)) and
+                        int(entry.get('spread_radius', 0) or 0) == 0 and
+                        int(count) == 1 and
+                        int(getattr(cfg, 'policy', {}).get('max_active', 0) or 0) == 1 and
+                        bool(getattr(cfg, 'policy', {}).get('persistent', True))
+                    )
+                except Exception:
+                    strict_center = False
+
                 for _ in range(count):
                     ax, ay = cfg.anchor_tile
                     chosen = choose_spawn_tile(
@@ -680,6 +719,7 @@ class SpawnerRuntimeSystem:
                         fallback_max,
                         sr,
                         shape,
+                        strict_center,
                     )
                     if chosen is None:
                         continue
@@ -694,6 +734,8 @@ class SpawnerRuntimeSystem:
                     comps['SpawnRequest'][req_eid] = SpawnRequest(
                         prototype=proto,
                         position=chosen,
+                        instance_id=getattr(cfg, 'instance_id', None),
+                        no_stabilize=True if strict_center else None,
                         spawner_eid=eid,
                         wave_idx=st.current_wave_idx,
                         defend_center=defend_center,

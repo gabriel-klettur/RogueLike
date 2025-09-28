@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple
 import json
 import os
 from roguelike_engine.config.config import PARTICLES_INSTANCES_PATH
@@ -153,3 +153,77 @@ def remove_nearest_instance(world_x: float, world_y: float, max_dist_px: int = 4
         rid = None
     _log.info(f"[ParticlesInstances] Removed id={rid} at world≈({world_x:.1f},{world_y:.1f}) d≈{(best_d2**0.5):.1f}px")
     return removed
+
+
+def find_nearest_instance(world_x: float, world_y: float, max_dist_px: int = 48) -> Optional[Dict[str, Any]]:
+    """Return the nearest instance entry to a world position without removing it.
+
+    Returns the entry dict or None if nothing within max_dist_px.
+    """
+    data = load_particles_instances() or []
+    if not data:
+        return None
+    best: Tuple[int, float] | None = None  # (index, d2)
+    best_idx = -1
+    best_d2: Optional[float] = None
+    for i, e in enumerate(data):
+        try:
+            zone = str(e.get('zone') or 'no zone')
+            rel_x = int(e.get('rel_x') or 0)
+            rel_y = int(e.get('rel_y') or 0)
+        except Exception:
+            continue
+        # Convert to world px
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+        except Exception:
+            off_tx, off_ty = (0, 0)
+        wx = int(off_tx) * TILE_SIZE + int(rel_x)
+        wy = int(off_ty) * TILE_SIZE + int(rel_y)
+        dx = float(world_x) - float(wx)
+        dy = float(world_y) - float(wy)
+        d2 = dx * dx + dy * dy
+        if best_d2 is None or d2 < best_d2:
+            best_d2 = d2
+            best_idx = i
+    if best_idx < 0:
+        return None
+    if best_d2 is None or best_d2 > float(max_dist_px * max_dist_px):
+        return None
+    try:
+        return (load_particles_instances() or [])[best_idx]
+    except Exception:
+        return None
+
+
+def update_instance_position(entry_id: int, world_x: float, world_y: float) -> Optional[Dict[str, Any]]:
+    """Update an instance's zone and relative position by its id using world coordinates.
+
+    Returns the updated entry dict, or None if id was not found.
+    """
+    data = load_particles_instances() or []
+    # Compute new zone and rel coords
+    zone, (off_tx, off_ty) = detect_zone_from_px(world_x, world_y)
+    origin_px_x = int(off_tx) * TILE_SIZE
+    origin_px_y = int(off_ty) * TILE_SIZE
+    rel_x = int(world_x - origin_px_x)
+    rel_y = int(world_y - origin_px_y)
+    updated: Optional[Dict[str, Any]] = None
+    for e in data:
+        try:
+            if int(e.get('id')) == int(entry_id):
+                e['zone'] = str(zone)
+                e['rel_x'] = int(rel_x)
+                e['rel_y'] = int(rel_y)
+                updated = e
+                break
+        except Exception:
+            continue
+    if updated is None:
+        return None
+    write_particles_instances(data)
+    _log.info(
+        f"[ParticlesInstances] Moved id={entry_id} -> zone={updated['zone']} rel=({updated['rel_x']},{updated['rel_y']})"
+    )
+    return updated

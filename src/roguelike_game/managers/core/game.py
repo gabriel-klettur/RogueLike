@@ -94,6 +94,11 @@ class Game:
             self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
         except Exception:
             self.state.spells_editor_visible = False
+        # Propaga visibilidad del Particles Editor al game.state para que Update Manager pueda pausar el follow de cámara
+        try:
+            self.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
+        except Exception:
+            self.state.particles_editor_visible = False
         # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
         try:
             self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
@@ -104,7 +109,7 @@ class Game:
             self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
         except Exception:
             pass
-        # Propagar visibilidad del Spawner Editor para ocultar minimapa/HUD asociados
+        # Propaga visibilidad del Spawner Editor para ocultar minimapa/HUD asociados
         try:
             w = self.ecs.ecs_world
             if hasattr(w, 'state'):
@@ -113,6 +118,11 @@ class Game:
                     'spawner_editor_active',
                     bool(getattr(self, 'spawner_editor', None) and getattr(self.spawner_editor, 'model', None) and getattr(self.spawner_editor.model, 'visible', False))
                 )
+                # Propagar visibilidad del Particles Editor para suprimir gameplay input (laser en MMB) y habilitar MMB pan
+                try:
+                    w.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
+                except Exception:
+                    w.state.particles_editor_visible = False
         except Exception:
             pass
         self.renderer.render_game(

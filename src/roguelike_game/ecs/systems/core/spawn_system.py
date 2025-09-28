@@ -5,6 +5,7 @@ using the entity factory.
 """
 from roguelike_game.factories.registry import get_factory
 from roguelike_game.ecs.components.spawn.spawn_stabilizer import SpawnStabilizer
+from roguelike_game.ecs.components.physics.no_npc_separation import NoNpcSeparation
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.ai.defend_area import DefendArea
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
@@ -62,7 +63,14 @@ class SpawnSystem:
             except Exception:
                 pass
             # Marcar para estabilización pos-spawn (evitar solapes iniciales sin jitter)
-            world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
+            try:
+                if not bool(getattr(req, 'no_stabilize', False)):
+                    world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
+                else:
+                    # También excluir de separaciones inter-NPC para no mover vendors anclados
+                    world.components.setdefault('NoNpcSeparation', {})[new_eid] = NoNpcSeparation()
+            except Exception:
+                world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
 
             # Si la solicitud indica un área de defensa, adjuntarla al NPC
             defend_center = getattr(req, 'defend_center', None)

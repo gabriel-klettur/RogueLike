@@ -1,0 +1,15 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "hola valeria"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, cielo! Soy Valeria, alquimista mayor; dime qué remedio buscas y cuántos necesitas."
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

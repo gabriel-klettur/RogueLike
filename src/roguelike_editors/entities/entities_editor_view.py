@@ -1,5 +1,5 @@
 import pygame
-from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_rect_at
+from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_rect_at, iter_clickable_entities
 from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN
 
 class EntitiesEditorView:
@@ -36,6 +36,21 @@ class EntitiesEditorView:
                     pw, _ = pick_view.draggable_panel.surface.get_size()
                     prop_view.draggable_panel.pos = (px + pw + margin, py)
                 c.properties_controller.draw(screen)
+        # Overlays de hover/selección siempre que el editor esté activo y no estemos en delete/spawn
+        if c.model.active and not (c.model.delete_mode_active or c.model.spawn_mode_active):
+            try:
+                hovered = c.model.hovered_entity_eid
+                selected = c.model.selected_entity_eid
+                if hovered is not None or selected is not None:
+                    rect_map = {eid: rect for eid, rect in iter_clickable_entities(c.game)}
+                    # Selección en amarillo tiene prioridad visual
+                    if selected is not None and selected in rect_map:
+                        pygame.draw.rect(screen, (255, 255, 0), rect_map[selected], 2)
+                    # Hover en cian si es distinto del seleccionado
+                    if hovered is not None and hovered != selected and hovered in rect_map:
+                        pygame.draw.rect(screen, (0, 255, 255), rect_map[hovered], 2)
+            except Exception:
+                pass
         # Highlight hovered player/NPC in delete mode
         if self.controller.model.delete_mode_active:
             mx, my = pygame.mouse.get_pos()

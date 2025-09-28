@@ -72,6 +72,12 @@ def update_game(
                 return
         except Exception:
             pass
+        # Mientras el Particles Editor esté visible, no seguir al jugador (conservar la posición donde se soltó MMB)
+        try:
+            if bool(getattr(state, 'particles_editor_visible', False)):
+                return
+        except Exception:
+            pass
         try:
             # Respetar defer de follow tras salir del Map Editor
             if getattr(getattr(map_editor, 'editor_state', None), 'defer_follow_frames', 0) > 0:

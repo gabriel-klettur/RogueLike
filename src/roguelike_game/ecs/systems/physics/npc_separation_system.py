@@ -35,6 +35,7 @@ class NpcSeparationSystem:
         multi_map = comps.get('MultiCollider', {})
         death_map = comps.get('DeathTimer', {})
         player_map = comps.get('PlayerTagComponent', {})
+        no_sep_map = comps.get('NoNpcSeparation', {})
         tile_query = getattr(world, 'get_solid_tiles_for_rect', None)
         if tile_query is None:
             return
@@ -84,9 +85,11 @@ class NpcSeparationSystem:
                     if not overlap:
                         continue
 
-                    # Política de empuje: no mover jugador
-                    move_a = not a_is_player
-                    move_b = not b_is_player
+                    # Política de empuje:
+                    # - No mover jugador
+                    # - No mover entidades marcadas con NoNpcSeparation (p.ej., vendors con ancla estricta)
+                    move_a = (not a_is_player) and (a_id not in no_sep_map)
+                    move_b = (not b_is_player) and (b_id not in no_sep_map)
                     if not move_a and not move_b:
                         continue
 

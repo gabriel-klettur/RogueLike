@@ -14,6 +14,9 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewExplosion,
     ParticlePreviewArcaneFlame,
     ParticlePreviewTeleport,
+    ParticlePreviewWaterFountain,
+    ParticlePreviewFallingLeaf,
+    ParticlePreviewWaterFlow,
 )
 from roguelike_game.config.particles_config import get_preset
 
@@ -239,6 +242,60 @@ def build_preview_for_definition(defn: Dict[str, Any]):
             else:
                 cycle_ms = 600
             return ParticlePreviewTeleport(color=color if color_explicit else (0, 200, 255), cycle_ms=cycle_ms)
+        if kind in ("water_fountain", "fountain"):
+            # Map configurable parameters to preview constructor
+            spouts = parts.get("spouts")
+            if not isinstance(spouts, (list, tuple)) or len(spouts) == 0:
+                spouts = [0.34, 0.5, 0.66]
+            try:
+                spouts = [float(max(0.05, min(0.95, s))) for s in spouts]
+            except Exception:
+                spouts = [0.34, 0.5, 0.66]
+            emit_rate = parts.get("emit_rate") if isinstance(parts.get("emit_rate"), int) and parts.get("emit_rate") > 0 else 5
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 2.0
+            gravity = parts.get("gravity") if isinstance(parts.get("gravity"), (int, float)) else 0.25
+            droplet_size = parts.get("droplet_size") if isinstance(parts.get("droplet_size"), int) else 2
+            splash_count = parts.get("splash_count") if isinstance(parts.get("splash_count"), int) else 2
+            return ParticlePreviewWaterFountain(
+                color=color if color_explicit else (100, 180, 255),
+                spouts=spouts,
+                emit_rate=int(emit_rate),
+                speed=float(speed),
+                gravity=float(gravity),
+                droplet_size=int(droplet_size),
+                splash_count=int(splash_count),
+            )
+        if kind in ("falling_leaf", "leaf"):
+            # One leaf at a configurable interval (ms). Defaults to very sparse.
+            interval_ms = parts.get("interval_ms")
+            if not isinstance(interval_ms, int) or interval_ms <= 0:
+                # allow seconds aliases
+                sec = parts.get("interval_s") if isinstance(parts.get("interval_s"), (int, float)) else None
+                interval_ms = int(float(sec) * 1000.0) if isinstance(sec, (int, float)) else 30000
+            life_ms = parts.get("life_ms")
+            if not isinstance(life_ms, int) or life_ms <= 0:
+                if isinstance(parts.get("lifespan_ms"), int):
+                    life_ms = int(parts.get("lifespan_ms"))
+                elif isinstance(parts.get("lifespan"), int):
+                    # lifespan in 33ms steps (compat)
+                    life_ms = int(parts.get("lifespan")) * 33
+                else:
+                    life_ms = 6000
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 0.5
+            gravity = parts.get("gravity") if isinstance(parts.get("gravity"), (int, float)) else 0.06
+            sway_amp = parts.get("sway_amp") if isinstance(parts.get("sway_amp"), (int, float)) else 0.6
+            sway_speed = parts.get("sway_speed") if isinstance(parts.get("sway_speed"), (int, float)) else 0.15
+            size = parts.get("size") if isinstance(parts.get("size"), (list, tuple)) and len(parts.get("size")) >= 2 else (3, 2)
+            return ParticlePreviewFallingLeaf(
+                color=color if color_explicit else (120, 200, 80),
+                interval_ms=int(interval_ms),
+                life_ms=int(life_ms),
+                speed=float(speed),
+                gravity=float(gravity),
+                sway_amp=float(sway_amp),
+                sway_speed=float(sway_speed),
+                size=(int(size[0]), int(size[1])) if isinstance(size, (list, tuple)) else (3, 2),
+            )
         if kind in ("explosion",):
             palette = palette_colors if len(palette_colors) > 0 else None
             base_color = color if color_explicit else (255, 180, 60)
@@ -251,6 +308,32 @@ def build_preview_for_definition(defn: Dict[str, Any]):
             else:
                 speed_range = (0.8, 2.5)
             return ParticlePreviewExplosion(color=base_color, palette=palette, count=int(cnt), speed_range=speed_range)
+        if kind in ("water_flow", "water"):
+            # Flowing water tile: uses base+highlight colors and a flow direction
+            # Default colors if not specified
+            base_col = color if color_explicit else (20, 40, 80)
+            hl = parts.get("highlight_color")
+            if not (isinstance(hl, (list, tuple)) and len(hl) >= 3):
+                if len(palette_colors) >= 2:
+                    hl = palette_colors[1]
+                else:
+                    hl = (60, 110, 160)
+            direction = parts.get("direction") if isinstance(parts.get("direction"), (list, tuple)) and len(parts.get("direction")) >= 2 else (1.0, 0.0)
+            speed = parts.get("speed") if isinstance(parts.get("speed"), (int, float)) else 0.6
+            stripe_gap = parts.get("stripe_gap") if isinstance(parts.get("stripe_gap"), int) else 8
+            ripple_amp = parts.get("ripple_amp") if isinstance(parts.get("ripple_amp"), (int, float)) else 0.6
+            alpha_base = parts.get("alpha_base") if isinstance(parts.get("alpha_base"), int) else 120
+            alpha_wave = parts.get("alpha_wave") if isinstance(parts.get("alpha_wave"), int) else 80
+            return ParticlePreviewWaterFlow(
+                base_color=base_col,
+                highlight_color=(int(hl[0]), int(hl[1]), int(hl[2])),
+                direction=(float(direction[0]), float(direction[1])),
+                speed=float(speed),
+                stripe_gap=int(stripe_gap),
+                ripple_amp=float(ripple_amp),
+                alpha_base=int(alpha_base),
+                alpha_wave=int(alpha_wave),
+            )
         # Fallback a humo
         emit_rate = 2
         er = parts.get("emit_rate")

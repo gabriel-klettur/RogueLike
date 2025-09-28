@@ -1,4 +1,6 @@
 import pygame
+import time
+
 from roguelike_engine.diagnostics.helpers import draw_debug_rect
 from roguelike_engine.buildings.services.types import CameraProtocol
 from roguelike_engine.buildings.building_model import BuildingModel
@@ -75,12 +77,45 @@ class BuildingView:
         base_x, base_y = self._model.x, self._model.y
         screen_x, screen_y = self._camera.apply((base_x, base_y))
 
+        # Check flash state (damage tint)
+        # We avoid mutating cached surfaces by working on copies when flashing
+        now = time.time()
+        flashing = False
+        color = (255, 255, 255)
+        blink_ok = True
+        try:
+            flashing = now < getattr(self._model, '_flash_until_ts', 0.0)
+            color = tuple(getattr(self._model, '_flash_color', (255, 255, 255)))
+            bi = float(getattr(self._model, '_flash_blink_interval', 0.05) or 0.0)
+            if flashing and bi > 0.0:
+                # Global time-based blink; simple and stable
+                blink_ok = (int(now / bi) % 2 == 0)
+        except Exception:
+            flashing = False
+            blink_ok = True
+
         if top:
-            screen.blit(top_surf, (screen_x, screen_y))
+            surf_to_blit = top_surf
+            if flashing and blink_ok:
+                try:
+                    tmp = top_surf.copy()
+                    tmp.fill(color, special_flags=pygame.BLEND_RGB_ADD)
+                    surf_to_blit = tmp
+                except Exception:
+                    surf_to_blit = top_surf
+            screen.blit(surf_to_blit, (screen_x, screen_y))
         else:
             # La parte “bottom” debe dibujarse desplazada por la altura del top_render
             offset = top_surf.get_height()
-            screen.blit(bot_surf, (screen_x, screen_y + offset))
+            surf_to_blit = bot_surf
+            if flashing and blink_ok:
+                try:
+                    tmp = bot_surf.copy()
+                    tmp.fill(color, special_flags=pygame.BLEND_RGB_ADD)
+                    surf_to_blit = tmp
+                except Exception:
+                    surf_to_blit = bot_surf
+            screen.blit(surf_to_blit, (screen_x, screen_y + offset))
 
             # Si el edificio es sólido, dibujamos (para debugging) el rect de colisión:
             if self._model.solid:

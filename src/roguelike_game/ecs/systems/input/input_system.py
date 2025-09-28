@@ -262,8 +262,10 @@ class InputSystem:
         # Leer bindings dinámicos (multi-binding via OR)
         # Movimiento y acciones simples se evaluarán con any_pressed dentro del bucle por entidad
 
-        # Flag: Buildings Editor activo -> solo permitir movimiento
+        # Flags: Editors activos -> suprimir acciones de combate
         editor_buildings_active = bool(getattr(getattr(world, 'state', None), 'buildings_editor_active', False))
+        particles_editor_visible = bool(getattr(getattr(world, 'state', None), 'particles_editor_visible', False))
+
         # Para cada entidad con InputComponent
         # Flag para mostrar todos los drops
         alt_down = bool(pygame.key.get_mods() & pygame.KMOD_ALT)
@@ -348,7 +350,7 @@ class InputSystem:
                         state_comp.fsm.change_state(MoveState(), proxy)
                     elif inp.move_x == 0 and inp.move_y == 0 and isinstance(current, MoveState):
                         state_comp.fsm.change_state(IdleState(), proxy)
-                    if not editor_buildings_active:
+                    if not editor_buildings_active and not particles_editor_visible:
                         # Ataque físico: sólo en flanco ascendente y evitar re-entrada
                         prev_a = self.prev_attack.get(eid, False)
                         if curr_attack and not prev_a:
@@ -369,7 +371,7 @@ class InputSystem:
 
             # Mapear habilidades Q, E, X desde config
             spell_attrs = ['lightball','slash','healing_aura','darkball','iceball','lightning','arcane_flame','firework_launch','smoke','smoke_emitter','sphere_magic_shield','teleport']
-            if editor_buildings_active:
+            if editor_buildings_active or particles_editor_visible:
                 # En editor: desactivar todos los hechizos y resetear flancos
                 for name in spell_attrs:
                     setattr(inp, f'spell_{name}', False)
@@ -444,12 +446,14 @@ class InputSystem:
             # Suppress gameplay input while Spawner Editor is dragging/panning with RMB
             spawner_suppressed = bool(getattr(getattr(world, 'state', None), 'spawner_input_suppressed', False))
             # Log suppression only on transitions to reduce noise
-            suppressed_now = editor_buildings_active or dragging or spawner_suppressed
+            suppressed_now = editor_buildings_active or particles_editor_visible or dragging or spawner_suppressed
+
             prev_supp = self._prev_suppressed.get(eid, False)
             if suppressed_now and not prev_supp:
                 logger.debug(
-                    f"[DEBUG] [InputSystem] input suppressed (buildings_editor={editor_buildings_active}, dragging_items={dragging_items}, dragging_ui={dragging_ui})"
+                    f"[DEBUG] [InputSystem] input suppressed (buildings_editor={editor_buildings_active}, particles_editor={particles_editor_visible}, dragging_items={dragging_items}, dragging_ui={dragging_ui})"
                 )
+
             elif not suppressed_now and prev_supp:
                 logger.debug("[DEBUG] [InputSystem] input suppression ended")
             self._prev_suppressed[eid] = suppressed_now

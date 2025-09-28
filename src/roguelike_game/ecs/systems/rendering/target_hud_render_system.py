@@ -78,6 +78,15 @@ class TargetHudRenderSystem:
     def _fmt_name(self, world, eid: int) -> str:
         idc: Identity = world.components.get('Identity', {}).get(eid)
         if not idc:
+            # Fallback: SpawnerConfig.template_id if this eid is a spawner
+            try:
+                sc = world.components.get('SpawnerConfig', {}).get(eid)
+                if sc is not None:
+                    tpl = getattr(sc, 'template_id', None)
+                    if tpl:
+                        return str(tpl)
+            except Exception:
+                pass
             return f"{eid}"
         base = idc.name
         try:

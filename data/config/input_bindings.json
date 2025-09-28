@@ -41,5 +41,6 @@
     "kb_move_right_b": "K_RIGHT",
     "kb_move_up_b": "K_UP",
     "mouse_spell_slash": "M_RIGHT",
-    "toggle_particles_editor": "K_F1"
+    "toggle_particles_editor": "K_F1",
+    "reload_data": "K_F1"
 }

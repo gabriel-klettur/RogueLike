@@ -5,6 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 from roguelike_editors.entities.services.ui_helpers import hide_assets_picker_and_clear_properties
 from roguelike_editors.entities.services.camera_helpers import screen_to_tile
+from roguelike_editors.entities.services.camera_helpers import screen_to_world
 from roguelike_editors.entities.services.entity_lookup import find_clickable_entity_at
 from roguelike_editors.entities.services.spawn_services import spawn_entity
 from roguelike_editors.entities.services.constants import ENTITIES_TOOLS, UI_MARGIN, ADD_ENTITIES_ON_SYSTEM
@@ -13,6 +14,7 @@ from roguelike_editors.entities.services.commands import (
     SpawnEntityCommand,
     DeleteEntityCommand,
     DeleteEntityDefinitionCommand,
+    MoveEntityCommand,
 )
 
 from roguelike_editors.entities.entities_editor_model import EntitiesEditorModel
@@ -388,6 +390,75 @@ class EntitiesEditorController:
                 except Exception:
                     pass
                 return True
+            # (fin bloque ENTITIES_TOOLS)
+        # Interacciones de mapa (hover/selección/drag) SIEMPRE que el editor esté abierto,
+        # independientemente de la herramienta activa, salvo en delete/spawn modes.
+        try:
+            if self.model.active and not (self.model.delete_mode_active or self.model.spawn_mode_active):
+                # Hover detection on mouse move
+                if event.type == pygame.MOUSEMOTION:
+                    mx, my = getattr(event, 'pos', pygame.mouse.get_pos())
+                    eid = find_clickable_entity_at(self.game, mx, my)
+                    self.model.hovered_entity_eid = eid
+                    # Si estamos arrastrando con botón derecho, actualizar la posición del entity seleccionado
+                    if self.model.is_right_dragging and self.model.selected_entity_eid is not None:
+                        try:
+                            wx, wy = screen_to_world(self.game.camera, mx, my)
+                            world = self.game.ecs.ecs_world
+                            pos_store = world.components.get('Position', {})
+                            pos = pos_store.get(self.model.selected_entity_eid)
+                            if pos is not None:
+                                dx, dy = self.model.drag_offset_world
+                                pos.x = int(wx - dx)
+                                pos.y = int(wy - dy)
+                                if hasattr(world, 'invalidate_spatial_index'):
+                                    world.invalidate_spatial_index()
+                            return True
+                        except Exception:
+                            pass
+                # Selección con clic izquierdo
+                if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+                    mx, my = event.pos
+                    eid = find_clickable_entity_at(self.game, mx, my)
+                    # Seleccionar o limpiar selección
+                    self.model.selected_entity_eid = eid
+                    return eid is not None
+                # Inicio de drag con botón derecho (sobre el seleccionado)
+                if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3:
+                    mx, my = event.pos
+                    eid = find_clickable_entity_at(self.game, mx, my)
+                    if eid is not None and eid == self.model.selected_entity_eid:
+                        try:
+                            wx, wy = screen_to_world(self.game.camera, mx, my)
+                            world = self.game.ecs.ecs_world
+                            pos = world.components.get('Position', {}).get(eid)
+                            if pos is not None:
+                                # Guardar offset de arrastre y posición inicial
+                                self.model.drag_offset_world = (float(wx - pos.x), float(wy - pos.y))
+                                self.model.drag_start_world_pos = (int(pos.x), int(pos.y))
+                                self.model.is_right_dragging = True
+                                return True
+                        except Exception:
+                            pass
+                # Finalizar drag con botón derecho (persistir movimiento)
+                if event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
+                    if self.model.is_right_dragging and self.model.selected_entity_eid is not None:
+                        try:
+                            world = self.game.ecs.ecs_world
+                            pos = world.components.get('Position', {}).get(self.model.selected_entity_eid)
+                            if pos is not None and self.model.drag_start_world_pos is not None:
+                                end_pos = (int(pos.x), int(pos.y))
+                                start_pos = tuple(self.model.drag_start_world_pos)
+                                # Push undoable move command to persist and allow undo/redo
+                                self.history.push(MoveEntityCommand(self, self.model.selected_entity_eid, start_pos, end_pos))
+                        except Exception:
+                            pass
+                        finally:
+                            self.model.is_right_dragging = False
+                            self.model.drag_start_world_pos = None
+                            return True
+        except Exception:
+            pass
         return False
 
     def update(self, camera, game_map=None):

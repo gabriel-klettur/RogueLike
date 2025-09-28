@@ -104,6 +104,14 @@ class EntitiesEditorModel:
         self.spawn_entity_type: Optional[str] = None  # id de entidad a colocar
         # Delete mode para entidades en el mapa
         self.delete_mode_active: bool = False  # indica si estamos en modo borrado
+        # Interacción directa sobre entidades del mapa (hover/selección/drag)
+        self.hovered_entity_eid: Optional[int] = None
+        self.selected_entity_eid: Optional[int] = None
+        self.is_right_dragging: bool = False
+        # Offset del click respecto al topleft del sprite en coordenadas mundo
+        self.drag_offset_world: tuple[float, float] = (0.0, 0.0)
+        # Posición inicial (mundo) para comandos de undo/redo de movimiento
+        self.drag_start_world_pos: Optional[tuple[int, int]] = None
 
     def reload_neutrals(self) -> None:
         """

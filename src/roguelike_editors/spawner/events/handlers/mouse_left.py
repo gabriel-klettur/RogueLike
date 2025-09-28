@@ -9,6 +9,17 @@ from .. import split_drag as split
 from .. import types as etypes
 from ..utils import compute_spawner_handle_rects, find_building_in_world_by_id
 from .helpers import reset_selected_building_size
+from ...services.coords import screen_to_tile
+from ...services.persistence import (
+    load_instances_json,
+    write_instances_json,
+    load_spawners_json,
+    find_instance_in_json,
+)
+from ...services.persistence import zone_for_global_tile
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
+from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
 
 
 def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -> bool:
@@ -17,6 +28,137 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
     world, camera = ctx.world, ctx.camera
     ip = getattr(h.controller, 'instance_properties', None)
     mx, my = event.pos
+
+    # - - - Placement Mode: place new spawner instance on LMB - - -
+    # When a template was selected from the Add dropdown, we store `placing_template_id` in the editor model.
+    # Convert the first world click into a persisted instance and create the ECS entity immediately.
+    try:
+        placing_tpl = getattr(h.model, 'placing_template_id', None)
+    except Exception:
+        placing_tpl = None
+    if placing_tpl:
+        try:
+            # 1) Compute global tile from screen coords, then derive zone and zone-local tile
+            tx, ty = screen_to_tile(camera, int(mx), int(my))
+            zone = zone_for_global_tile(int(tx), int(ty)) or 'lobby'
+            off_x, off_y = global_map_settings.zone_offsets.get(str(zone), (0, 0))
+            local = (int(tx - off_x), int(ty - off_y))
+
+            # 2) Persist new instance to spawners_instances.json
+            arr = load_instances_json()
+            new_entry = {
+                'template_id': str(placing_tpl),
+                'zone': str(zone),
+                'tile': [int(local[0]), int(local[1])],
+            }
+            arr.append(new_entry)
+            write_instances_json(arr)
+
+            # 3) Reload to get normalized entry (with assigned id ensured by load path)
+            arr2 = load_instances_json()
+            _, idx_found, _ = find_instance_in_json(str(placing_tpl), str(zone), tuple(local))
+            inst = arr2[idx_found] if idx_found is not None else new_entry
+
+            # 4) Create ECS entity now using the same resolution logic as the placement system
+            #    (reuses internal _resolve_config and auto-repair visuals)
+            try:
+                tpls = load_spawners_json()
+                tpl = None
+                for t in (tpls or []):
+                    try:
+                        if str(t.get('id')) == str(placing_tpl):
+                            tpl = t
+                            break
+                    except Exception:
+                        continue
+                if tpl is not None and world is not None:
+                    sps = SpawnerPlacementSystem()
+                    cfg = sps._resolve_config(tpl, inst)
+                    eid = world.create_entity()
+                    world.components['SpawnerConfig'][eid] = cfg
+                    world.components['SpawnerState'][eid] = SpawnerState()
+                    # Attempt to auto-generate/link visuals mappings if needed
+                    try:
+                        sps._auto_repair_state_visuals(world, eid, cfg, inst)
+                    except Exception:
+                        pass
+            except Exception:
+                logger.debug("[SpawnerEditor] placement: failed to create ECS entity for new instance", exc_info=True)
+
+            # 5) Exit placement/add modes, refresh instances list, and re-enable gameplay input
+            try:
+                h.model.placing_template_id = None
+            except Exception:
+                pass
+            try:
+                h.controller.model.add_mode_active = False
+            except Exception:
+                pass
+            try:
+                tb = getattr(h.controller, 'instance_toolbar', None)
+                if tb is not None and hasattr(tb, 'model'):
+                    tb.model.add_mode_active = False
+                    tb.model.add_templates = []
+            except Exception:
+                pass
+            try:
+                st = getattr(h.controller, 'spawner_toolbar', None)
+                if st is not None and hasattr(st, 'model'):
+                    st.model.active_tool = 'spawner_list'
+            except Exception:
+                pass
+            try:
+                h.controller.spawner_instances.refresh_from_disk()
+            except Exception:
+                pass
+            try:
+                if hasattr(world, 'state'):
+                    setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+        except Exception:
+            logger.debug("[SpawnerEditor] placement: unexpected error handling placement click", exc_info=True)
+        return True
+
+    # - - - Remove Mode: prepare delete confirmation on LMB over spawner anchor - - -
+    try:
+        remove_mode = bool(getattr(h.model, 'remove_mode_active', False))
+    except Exception:
+        remove_mode = False
+    if remove_mode:
+        try:
+            eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
+        except Exception:
+            eid = None
+        if eid is not None:
+            try:
+                cfg = world.components['SpawnerConfig'][eid]
+                zone = getattr(cfg, 'zone', 'lobby')
+                tx, ty = cfg.anchor_tile
+                off_x, off_y = global_map_settings.zone_offsets.get(str(zone), (0, 0))
+                local = (int(tx - off_x), int(ty - off_y))
+                # Fill pending delete confirmation payload for overlay + confirm handler
+                h.model.pending_delete_confirm = {
+                    'eid': eid,
+                    'template_id': str(getattr(cfg, 'template_id', '')),
+                    'zone': str(zone),
+                    'local_tile': local,
+                }
+                # Mark candidate and suppress gameplay input until confirm/cancel
+                try:
+                    if hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_remove_candidate_eid', eid)
+                        setattr(world.state, 'spawner_input_suppressed', True)
+                except Exception:
+                    pass
+                # Optional tutorial pulse flag
+                try:
+                    setattr(h.controller.model, 'tutorial_delete_pending_pulse', True)
+                except Exception:
+                    pass
+            except Exception:
+                logging.getLogger(__name__).debug("LMB remove_mode: failed to prepare delete confirmation", exc_info=True)
+            return True
 
     # 0) Building overlay handles for the currently selected building (Delete/Reset/Resize)
     sel_bid = None

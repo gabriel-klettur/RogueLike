@@ -119,6 +119,18 @@ class InputConfig:
         if "select_class" not in self.bindings:
             self.bindings["select_class"] = "K_F2"
             self.save()
+        # Ensure a global data reload binding exists (developer convenience)
+        if "reload_data" not in self.bindings:
+            # Use F1 (without modifiers) for hot-reload; Alt+F1 remains available for particles editor
+            self.bindings["reload_data"] = "K_F1"
+            self.save()
+        # Migrate old default (K_F5) to K_F1 for reload_data
+        try:
+            if str(self.bindings.get("reload_data", "")).upper() == "K_F5":
+                self.bindings["reload_data"] = "K_F1"
+                self.save()
+        except Exception:
+            pass
 
         # Mouse actions defaults (allow configuring dash, fireball, laser beam)
         ensured_mouse = False
@@ -205,7 +217,9 @@ class InputConfig:
             # Gameplay inventory (not editor)
             "toggle_inventory": pygame.K_i,
             "interact": pygame.K_RETURN,
-            "select_class": pygame.K_F2
+            "select_class": pygame.K_F2,
+            # Developer hot-reload shortcut (F1 without modifiers)
+            "reload_data": pygame.K_F1,
         }
 
         # Intentar binding de usuario (binding base, p.ej. 'move_up' -> 'K_UP')
@@ -304,6 +318,8 @@ class InputConfig:
             "toggle_inventory": pygame.K_i,
             "interact": pygame.K_RETURN,
             "select_class": pygame.K_F2,
+            # Developer hot-reload shortcut (F1 without modifiers)
+            "reload_data": pygame.K_F1,
         }
         if action in defaults:
             codes.append(defaults[action])

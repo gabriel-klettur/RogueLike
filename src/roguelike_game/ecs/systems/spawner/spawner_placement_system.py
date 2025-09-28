@@ -35,6 +35,10 @@ class SpawnerPlacementSystem:
         self._loaded = False
         self._templates: Dict[str, Dict[str, Any]] = {}
         self._waves: Dict[str, List[Dict[str, Any]]] = {}
+        # Runtime cache for saved positions keyed by spawner instance id
+        self._positions: Dict[str, Dict[str, Any]] | None = None
+        # Track created instance ids to avoid duplicates caused by repeated entries in instances JSON
+        self._seen_instance_ids: set[str] = set()
 
     # Phase 2: compile a visual FSM set id for the FSM Editor based on the resolved config.
     # This is purely metadata for tools/UI and does not change runtime behavior.
@@ -152,6 +156,21 @@ class SpawnerPlacementSystem:
                 waves_map[key] = [w for w in val.get("waves", []) if isinstance(w, dict)]
         return waves_map
 
+    def _load_positions(self) -> Dict[str, Dict[str, Any]]:
+        """Load saved NPC positions keyed by spawner instance id.
+        File shape: { "<inst_id>": { "zone": str, "tile": [tx, ty] }, ... }
+        """
+        base = config.DATA_DIR
+        path = os.path.join(base, "spawners", "spawners_positions.json")
+        try:
+            with open(path, "r", encoding="utf-8-sig") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except FileNotFoundError:
+            return {}
+        except Exception:
+            return {}
+
     def _load_instances(self) -> List[Dict[str, Any]]:
         base = config.DATA_DIR
         path = os.path.join(base, "spawners", "spawners_instances.json")
@@ -212,7 +231,41 @@ class SpawnerPlacementSystem:
         waves = [w for w in waves if isinstance(w, dict)]
         spawner_type = tpl.get("spawner_type", "invisible")
 
-        # apply overrides in dot-notation
+        # -------------------- life defaults & hp scope (instance-level) --------------------
+        life_defaults: Dict[str, Any] | None = None
+        hp_scope: str = str(inst.get('overrides', {}).get('hp_scope', 'per_state')).strip().lower() if isinstance(inst.get('overrides'), dict) else 'per_state'
+        try:
+            if isinstance(inst.get('overrides'), dict):
+                ld = inst['overrides'].get('life_defaults')
+                if isinstance(ld, dict):
+                    # Normalize known keys and types; leave unknowns as-is for forward-compat
+                    life_defaults = {}
+                    if 'damageable' in ld:
+                        life_defaults['damageable'] = bool(ld.get('damageable'))
+                    if 'max_hp' in ld and ld.get('max_hp') is not None:
+                        try:
+                            life_defaults['max_hp'] = int(ld.get('max_hp'))
+                        except Exception:
+                            pass
+                    if 'flash_on_hit' in ld:
+                        life_defaults['flash_on_hit'] = bool(ld.get('flash_on_hit'))
+                    if 'flash_color' in ld and isinstance(ld.get('flash_color'), (list, tuple)) and len(ld.get('flash_color')) >= 3:
+                        try:
+                            r, g, b = int(ld['flash_color'][0]), int(ld['flash_color'][1]), int(ld['flash_color'][2])
+                            life_defaults['flash_color'] = [max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255))]
+                        except Exception:
+                            pass
+                    if 'flash_duration_s' in ld and ld.get('flash_duration_s') is not None:
+                        try:
+                            life_defaults['flash_duration_s'] = float(ld.get('flash_duration_s'))
+                        except Exception:
+                            pass
+                    if 'hp_reset_on_enter' in ld and isinstance(ld.get('hp_reset_on_enter'), str):
+                        life_defaults['hp_reset_on_enter'] = str(ld.get('hp_reset_on_enter')).strip().lower()
+        except Exception:
+            life_defaults = life_defaults or None
+
+        # -------------------- apply overrides in dot-notation --------------------
         # Instance-level visuals block (full dict)
         try:
             ivis = inst.get("visuals")
@@ -318,9 +371,24 @@ class SpawnerPlacementSystem:
         between_waves_cooldown_s = float(policy.get("between_waves_cooldown_s", 0.0) or 0.0)
         between_waves_cooldown_frames = int(round(between_waves_cooldown_s * fps))
 
-        # Convert zone-local tile -> global tile using zone offsets
+        # Prefer saved position for this instance id, if available
+        inst_id = inst.get("id")
         zone = inst.get("zone", "lobby")
         local_tx, local_ty = tuple(inst.get("tile", (0, 0)))
+        try:
+            if inst_id:
+                if self._positions is None:
+                    self._positions = self._load_positions()
+                saved = self._positions.get(str(inst_id)) if isinstance(self._positions, dict) else None
+                if isinstance(saved, dict):
+                    sz = saved.get("zone")
+                    st = saved.get("tile")
+                    if isinstance(sz, str) and isinstance(st, (list, tuple)) and len(st) >= 2:
+                        zone = sz
+                        local_tx, local_ty = int(st[0]), int(st[1])
+        except Exception:
+            pass
+        # Convert zone-local tile -> global tile using zone offsets
         off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
         anchor_tile = (off_x + int(local_tx), off_y + int(local_ty))
 
@@ -354,9 +422,53 @@ class SpawnerPlacementSystem:
         except Exception:
             pass
 
+        # -------------------- Collect per-state life config from visuals[*].life --------------------
+        visuals_life: Dict[str, Dict[str, Any]] = {}
+        try:
+            ivis2 = inst.get('visuals')
+            if isinstance(ivis2, dict):
+                for sk, sv in ivis2.items():
+                    try:
+                        life_block = sv.get('life') if isinstance(sv, dict) else None
+                        if isinstance(life_block, dict):
+                            key_norm = str(sk).strip().lower()
+                            eff: Dict[str, Any] = {}
+                            if 'damageable' in life_block:
+                                eff['damageable'] = bool(life_block.get('damageable'))
+                            if life_block.get('max_hp') is not None:
+                                try:
+                                    eff['max_hp'] = int(life_block.get('max_hp'))
+                                except Exception:
+                                    pass
+                            if 'flash_on_hit' in life_block:
+                                eff['flash_on_hit'] = bool(life_block.get('flash_on_hit'))
+                            if isinstance(life_block.get('flash_color'), (list, tuple)) and len(life_block.get('flash_color')) >= 3:
+                                try:
+                                    r, g, b = int(life_block['flash_color'][0]), int(life_block['flash_color'][1]), int(life_block['flash_color'][2])
+                                    eff['flash_color'] = [max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255))]
+                                except Exception:
+                                    pass
+                            if life_block.get('flash_duration_s') is not None:
+                                try:
+                                    eff['flash_duration_s'] = float(life_block.get('flash_duration_s'))
+                                except Exception:
+                                    pass
+                            if isinstance(life_block.get('hp_reset_on_enter'), str):
+                                eff['hp_reset_on_enter'] = str(life_block.get('hp_reset_on_enter')).strip().lower()
+                            if isinstance(life_block.get('next_step_by_hp'), str):
+                                eff['next_step_by_hp'] = str(life_block.get('next_step_by_hp'))
+                            if life_block.get('end_logic') is not None:
+                                eff['end_logic'] = bool(life_block.get('end_logic'))
+                            if eff:
+                                visuals_life[key_norm] = eff
+                    except Exception:
+                        continue
+        except Exception:
+            visuals_life = visuals_life or {}
+
         return SpawnerConfig(
             template_id=tpl.get("id", ""),
-            zone=inst.get("zone", tpl.get("zone", "lobby")),
+            zone=str(zone),
             anchor_tile=anchor_tile,
             spawner_type=spawner_type,
             trigger=trigger,
@@ -373,6 +485,10 @@ class SpawnerPlacementSystem:
             building_id=building_id,
             state_visuals=state_visuals or None,
             visuals_offsets_px=visuals_offsets_px or None,
+            life_defaults=life_defaults or None,
+            hp_scope=hp_scope or 'per_state',
+            visuals_life=visuals_life or None,
+            instance_id=str(inst_id) if inst_id is not None else None,
         )
 
     # --- Auto-repair helpers -------------------------------------------------
@@ -872,6 +988,17 @@ class SpawnerPlacementSystem:
         comps = world.components
         for inst in instances:
             tpl_id = inst.get("template_id")
+            inst_id = inst.get("id")
+            # Skip duplicate instance ids defensively
+            try:
+                if inst_id is not None:
+                    key = str(inst_id)
+                    if key in self._seen_instance_ids:
+                        logger.warning("[SpawnerPlacementSystem] Skipping duplicate spawner instance id=%s (already created)", key)
+                        continue
+                    self._seen_instance_ids.add(key)
+            except Exception:
+                pass
             if not tpl_id or tpl_id not in self._templates:
                 continue
             tpl = self._templates[tpl_id]

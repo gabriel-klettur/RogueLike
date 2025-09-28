@@ -109,6 +109,10 @@ class ECSWorld:
                 gp_ctrl = getattr(ctrl, 'graph_panel_controller', None)
                 gp_model = getattr(gp_ctrl, 'model', None) if gp_ctrl else None
                 if bool(getattr(gp_model, 'visible', False)):
+                    try:
+                        logger.debug("[ECSWorld.render] skipped ECS render because FSM Graph Panel is visible")
+                    except Exception:
+                        pass
                     return
         except Exception:
             pass

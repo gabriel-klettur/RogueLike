@@ -19,6 +19,9 @@ from .particles_add_remove_panel.particles_add_remove_panel_events import (
 from .particles_add_remove_panel.particles_add_remove_panel_controller import (
     ParticlesAddRemovePanelController,
 )
+from .particles_properties_panel.particles_properties_panel_controller import (
+    ParticlesPropertiesPanelController,
+)
 
 class ParticlesEditorController:
     """Minimal controller for Particles Editor."""
@@ -55,6 +58,13 @@ class ParticlesEditorController:
                 self.particles_add_remove_view.widget.controller = self.particles_add_remove_controller
         except Exception:
             pass
+        # Properties panel MVC (shows selected instance data)
+        self.particles_properties_controller = ParticlesPropertiesPanelController(self.font)
+        try:
+            # Back-reference if needed later
+            self.particles_properties_controller.editor_controller = self
+        except Exception:
+            pass
 
     def toggle_visible(self):
         self.model.visible = not bool(self.model.visible)
@@ -78,6 +88,16 @@ class ParticlesEditorController:
                 # Luego, picker grid
                 if self.particles_picker_controller.handle_event(event):
                     return
+                # Finalmente, properties panel (no interactivo por ahora)
+                if self.particles_properties_controller.handle_event(event):
+                    return
+            else:
+                # AÚN ASÍ: permitir interacciones con el mapa (selección/mover) aunque el panel esté oculto
+                try:
+                    if self.particles_add_remove_controller.handle_event(event):
+                        return
+                except Exception:
+                    pass
         except Exception:
             pass
         return
@@ -134,6 +154,15 @@ class ParticlesEditorController:
 
                 self.particles_picker_controller.set_anchor(left_x, top_y)
                 self.particles_picker_controller.draw(screen)
+                # Properties: update from current selection and position the panel
+                try:
+                    sel_id = getattr(self.model, 'selected_instance_id', None)
+                    self.particles_properties_controller.set_anchor_from_editor(self)
+                    self.particles_properties_controller.model.visible = sel_id is not None
+                    self.particles_properties_controller.show_for_id(sel_id)
+                    self.particles_properties_controller.draw(screen)
+                except Exception:
+                    pass
             else:
                 # Ocultar panel Add/Remove si no está activa la lista
                 self.particles_add_remove_model.visible = False

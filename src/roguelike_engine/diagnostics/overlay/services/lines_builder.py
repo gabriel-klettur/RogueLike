@@ -19,7 +19,7 @@ def build_lines(
     map_manager: Optional[MapManagerLike] = None,
     entities: Optional[EntitiesLike] = None,
     extra_lines: Optional[List[str]] = None,
-) -> Tuple[List[Tuple[str, str]], int, int, List[Optional[int]]]:
+) -> Tuple[List[Tuple[str, str]], int, int, List[Optional[int]], List[Optional[Tuple[int, int, int]]]]:
     """Compose the diagnostics text lines and layout widths.
 
     Returns (lines, label_w, value_w, line_levels) where lines are (left,right) tuples
@@ -27,6 +27,7 @@ def build_lines(
     """
     lines: List[Tuple[str, str]] = []
     line_levels: List[Optional[int]] = []
+    value_colors: List[Optional[Tuple[int, int, int]]] = []
     label_w = value_w = 0
 
     tree = perf.build_perf_tree(model.perf_log)
@@ -53,6 +54,7 @@ def build_lines(
                 val = f"{avg_ms:>6.2f} ms"
                 lines.append((lbl, val))
                 line_levels.append(level)
+                value_colors.append(None)
                 continue
             # Render header for multi-item groups (header indentation is only visual)
             name_part = f" {child.get('title', '').strip()}" if child.get('title') else ""
@@ -63,6 +65,7 @@ def build_lines(
             val = f"{child.get('total', 0.0):>6.2f} ms ({child.get('count', 0)})"
             lines.append((lbl, val))
             line_levels.append(level)
+            value_colors.append(None)
             if is_collapsed:
                 continue
             # Render child subtree
@@ -75,6 +78,7 @@ def build_lines(
                 val = f"{avg_ms:>6.2f} ms"
                 lines.append((lbl, val))
                 line_levels.append(level)
+                value_colors.append(None)
 
     render_node(tree, 0)
 
@@ -99,9 +103,11 @@ def build_lines(
         if _norm("FrameTime:") not in existing_norms:
             lines.insert(0, ("FrameTime:", f"{ft:0.1f} ms"))
             line_levels.insert(0, None)
+            value_colors.insert(0, None)
         if _norm("FPS:") not in existing_norms:
             lines.insert(0, ("FPS:", f"{fps:0.1f}"))
             line_levels.insert(0, None)
+            value_colors.insert(0, None)
 
     if extra_lines is None and state and camera and map_manager and entities:
         extra_lines = probes.get_custom_debug_lines(state, camera, map_manager, entities)
@@ -114,9 +120,11 @@ def build_lines(
         if filtered:
             lines.append(("", ""))
             line_levels.append(None)
+            value_colors.append(None)
             for text in filtered:
                 lines.append((text, ""))
                 line_levels.append(None)
+                value_colors.append(None)
 
     # Safety: limit number of lines only when paging is disabled
     if not getattr(model, 'paging_enabled', False):
@@ -127,9 +135,11 @@ def build_lines(
             if keep > 0:
                 lines = lines[:keep] + [("...", f"{truncated_count} líneas ocultas")]
                 line_levels = line_levels[:keep] + [None]
+                value_colors = value_colors[:keep] + [None]
             else:
                 lines = [("...", f"{truncated_count} líneas ocultas")]
                 line_levels = [None]
+                value_colors = [None]
 
     # Truncate fields to avoid creating huge text surfaces. Do NOT truncate header labels (ending with ':').
     def _truncate_field(left: str, right: str) -> tuple[str, str]:
@@ -153,4 +163,37 @@ def build_lines(
         label_w = max(label_w, lw)
         value_w = max(value_w, vw)
 
-    return lines, label_w, value_w, line_levels
+    # Compute per-line value colors for top consumption items
+    # Criteria: non-header lines (level not None), right ends with ' ms', parse numeric value
+    candidates: List[Tuple[int, float]] = []
+    rx_ms = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s*ms$")
+    for i, ((left, right), lvl) in enumerate(zip(lines, line_levels)):
+        if lvl is None:
+            continue
+        # Skip headers (left ends with ':')
+        if (left or '').strip().endswith(':'):
+            continue
+        m = rx_ms.search((right or "").strip())
+        if not m:
+            continue
+        try:
+            val = float(m.group(1))
+        except ValueError:
+            continue
+        candidates.append((i, val))
+
+    candidates.sort(key=lambda t: t[1], reverse=True)
+    top_n = 5
+    next_n = 5
+    RED = (255, 0, 0)
+    WHITE = (255, 255, 255)
+    for rank, (idx, _v) in enumerate(candidates):
+        if rank < top_n:
+            value_colors[idx] = RED
+        elif rank < top_n + next_n:
+            value_colors[idx] = WHITE
+        else:
+            # keep default (None)
+            pass
+
+    return lines, label_w, value_w, line_levels, value_colors
