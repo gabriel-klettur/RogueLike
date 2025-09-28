@@ -112,7 +112,6 @@ class BuildingEditorController:
                     self.collider_scope_tool.toggle_scope(ab)
                     return
             # Botón eliminar (clic izq)
-            # Usar la vista para el botón rojo
             if hasattr(self, 'default_view'):
                 get_rect = self.default_view.get_delete_handle_rect
             else:
@@ -122,28 +121,28 @@ class BuildingEditorController:
             if ab is not None:
                 delete_rect = get_rect(ab, camera)
                 if delete_rect and delete_rect.collidepoint(mx, my):
-                    logger.info("🗑️ Click en botón eliminar (handle rojo) → abrir confirmación")
-                    self._ask_confirm_delete(ab)
+                    # Si el usuario mantiene Shift, borrar inmediatamente sin confirmación
+                    try:
+                        mods = pygame.key.get_mods()
+                    except Exception:
+                        mods = 0
+                    if mods & pygame.KMOD_SHIFT:
+                        logger.info("🗑️ Click en botón eliminar con Shift → eliminación inmediata")
+                        self._delete_building(ab, buildings)
+                    else:
+                        logger.info("🗑️ Click en botón eliminar (handle rojo) → abrir confirmación")
+                        self._ask_confirm_delete(ab)
                     return
                 # Detect reset handle (click izquierdo)
-                reset_rect = self.default_view.get_reset_handle_rect(ab, camera)
-                if reset_rect.collidepoint(mx, my):
+                reset_rect = self.default_view.get_reset_handle_rect(ab, camera) if hasattr(self, 'default_view') else None
+                if reset_rect and reset_rect.collidepoint(mx, my):
                     self.default_tool.apply_reset(ab)
                     return
                 # Detect resize handle (click izquierdo)
                 if self.resize_tool.check_resize_handle_click(mx, my, ab, camera):
                     self._start_resize(ab, (mx, my))
                     return
-
-        # 3) Drag de edificio (clic der) SOLO sobre activo
-        if button == 3:
-            ab = getattr(self.editor, 'active_building', None)
-            if ab and ab.rect.collidepoint(world_x, world_y):
-                self._start_drag(ab, world_x, world_y)
-            return
-
-        # 4) Paneles Z (+ / –) (clic izq)
-        if button == 1:
+            # 4) Paneles Z (+ / –) (clic izq)
             ab = getattr(self.editor, 'active_building', None)
             targets = [ab] if ab is not None else []
             if ab and self.z_tool_bottom.handle_mouse_click((mx, my), targets, camera):
@@ -155,7 +154,6 @@ class BuildingEditorController:
                 if b.rect.collidepoint(world_x, world_y):
                     self.editor.active_building = b
                     return
-
     def on_mouse_up(self, button, camera, buildings):
         # 1) Finalizar resize / split (igual que antes)
         if self.editor.resizing:
@@ -267,6 +265,18 @@ class BuildingEditorController:
         try:
             bid = getattr(building, 'id', None)
             if bid is None:
+                # Permitir confirmar borrado aunque el edificio aún no tenga ID asignado
+                self.editor.confirm_delete_visible = True
+                self.editor.confirm_delete_target_id = None
+                self.editor.confirm_delete_refs_count = 0
+                self.editor.confirm_delete_text = (
+                    "¿Eliminar edificio sin ID (no guardado aún)?\n"
+                    "Esta acción no se puede deshacer."
+                )
+                try:
+                    self.editor.confirm_delete_target_ref = building
+                except Exception:
+                    pass
                 return
             refs = self._count_spawner_refs(bid)
             self.editor.confirm_delete_visible = True
@@ -275,6 +285,11 @@ class BuildingEditorController:
             except Exception:
                 self.editor.confirm_delete_target_id = bid
             self.editor.confirm_delete_refs_count = int(refs)
+            try:
+                # En el camino normal por ID, limpiamos cualquier ref directa previa
+                self.editor.confirm_delete_target_ref = None
+            except Exception:
+                pass
             # Texto en español, consistente con confirmaciones existentes
             if refs > 0:
                 self.editor.confirm_delete_text = (
@@ -307,6 +322,17 @@ class BuildingEditorController:
                             break
                     except Exception:
                         continue
+            # Fallback: si no hay ID, usar referencia directa almacenada
+            if target is None:
+                try:
+                    ref = getattr(self.editor, 'confirm_delete_target_ref', None)
+                except Exception:
+                    ref = None
+                if ref in buildings:
+                    target = ref
+            # Fallback final: usar el activo
+            if target is None:
+                target = getattr(self.editor, 'active_building', None)
             if target is not None:
                 self._delete_building(target, buildings)
         except Exception:
@@ -324,6 +350,10 @@ class BuildingEditorController:
             self.editor.confirm_delete_refs_count = 0
             self.editor.confirm_yes_rect = None
             self.editor.confirm_no_rect = None
+            try:
+                self.editor.confirm_delete_target_ref = None
+            except Exception:
+                pass
         except Exception:
             pass
 
