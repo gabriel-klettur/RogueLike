@@ -57,65 +57,33 @@ class MapEditorView:
         if not self.state.active:
             return
 
-        # 1. Si hay herramienta asíncrona ejecutándose, mostrar overlay de carga y barra de progreso
-        if self.state.executing_tool:
-            self._draw_loading_overlay(screen)
-            # Title above the overlay for consistent branding
-            if self.title_view:
-                # Keep state reference up to date
-                self.title_view.state = self.state
-                self.title_view.render(screen)
-            return
-
         # Title bar in normal rendering path
         title_rect = None
         if self.title_view:
             self.title_view.state = self.state
-            title_rect = self.title_view.render(screen)
-            # Cache for overlays (e.g., tutorial positioning)
             try:
+                title_rect = self.title_view.render(screen)
                 self._last_title_rect = title_rect
             except Exception:
                 pass
-            # Align toolbar panel flush left (matching title's left) and just below the title (preserve dragging later)
-            try:
-                toolbar = getattr(self.controller, "toolbar", None)
-                tv = getattr(getattr(toolbar, "view", None), "widget", None)
-                panel = getattr(tv, "panel", None)
-                if tv and panel and not getattr(panel, "dragging", False):
-                    # If toolbar is still at its initial position, snap it under the title
-                    initial_pos = (getattr(tv, "x", 10), getattr(tv, "y", 10))
-                    if getattr(panel, "pos", None) in (None, initial_pos):
-                        gap = 8
-                        snap_x = int(title_rect.left)
-                        snap_y = int(title_rect.bottom + gap)
-                        panel.pos = (snap_x, snap_y)
-            except Exception:
-                # Non-fatal: keep previous toolbar position
-                pass
 
-        # 2. Dibujar zonas
+        # 2. Dibujar zonas y overlays
         self._draw_zones(screen, camera)
-
-        # 3. Dibujar overlay de colisiones, si está habilitado
         if self.state.show_colliders:
             self._draw_colliders_overlay(screen, camera)
 
-        # 4. Dibujar toolbar y dropdown (si está abierto)
+        # 3. Toolbar y dropdown de capas
         self._draw_toolbar(screen)
-
         if self.state.layers_view_open:
-            # Delegar dropdown al MVC de ViewLayers
             try:
                 self.controller.toolbar.view_layers.view.render_dropdown(screen)
             except Exception:
-                # Falla no fatal: evita romper el render completo si algo ocurre en la vista de dropdown
                 pass
 
-        # 5. Dibujar los diálogos de confirmación, si corresponde
+        # 4. Diálogos de confirmación
         self._draw_confirmation_dialogs(screen)
 
-        # 6. Si la herramienta asíncrona volvió a activarse en medio de diálogos, dibujar barra de progreso inferior
+        # 5. Progreso inferior mientras corren herramientas asíncronas
         if self.state.executing_tool:
             self._draw_progress_bar(screen)
 

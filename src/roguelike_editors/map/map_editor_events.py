@@ -182,6 +182,15 @@ class MapEditorEventHandler:
             self._apply_tile_overlay(tile)
             self._apply_ground_overlay(tile)
             self.state.execution_index += 1
+            # Immediate per-tile visual feedback: update the chunk that contains this tile.
+            # Keeps existing coalesced batch flush for performance but ensures users see progress right away.
+            try:
+                tx = int(tile.x) // TILE_SIZE
+                ty = int(tile.y) // TILE_SIZE
+                self.map_manager.view.update_chunks(self.map_manager, camera, [(ty, tx)])
+            except Exception:
+                # Never break the async loop on visual update errors
+                pass
             # Incremental view update: coalesce dirty cells and refresh chunks in batches
             try:
                 if len(self.state.dirty_cells) >= TILE_PAINT_BATCH or (
@@ -192,6 +201,13 @@ class MapEditorEventHandler:
                     self.state.dirty_cells.clear()
             except Exception:
                 # Never break the async loop on visual update errors
+                pass
+            # Safety net: periodically invalidate the entire cache so next render fully rebuilds
+            # This covers rare cases where per-chunk updates don't reflect immediately (e.g., zoom cache miss)
+            try:
+                if (self.state.execution_index % 128) == 0:
+                    self.map_manager.view.invalidate_cache()
+            except Exception:
                 pass
             # Progreso (con throttling cada 10%)
             total = max(self.state.execution_total, 1)
@@ -503,7 +519,8 @@ class MapEditorEventHandler:
             zone = self.state.pending_paint_tiles_zone
             if self.state.confirm_paint_yes_rect and self.state.confirm_paint_yes_rect.collidepoint(ev.pos):
                 # Establecer código de overlay antes de iniciar la ejecución
-                self.state.tile_code = "floor"
+                # Usar un overlay de alto contraste para validar refresco visual inmediato
+                self.state.tile_code = "dungeon_1"
                 tiles = self.map_manager.tiles_by_zone.get(zone, [])
                 # Pulso tutorial: confirmado
                 try:
@@ -513,6 +530,11 @@ class MapEditorEventHandler:
                 self.state.begin_async_tool("paint_tiles", zone, tiles)
                 # Initialize undo/redo command for this batch
                 self.state.current_command = PaintTilesCommand(zone, self.state.tile_code)
+                # Force a full cache rebuild on next render to guarantee immediate visual consistency
+                try:
+                    self.map_manager.view.invalidate_cache()
+                except Exception:
+                    pass
                 logger.info(
                     f"[MapEditor] Paint tiles confirmed zone={zone} count={len(tiles)} overlay={self.state.tile_code}"
                 )
@@ -523,7 +545,6 @@ class MapEditorEventHandler:
                 logger.info("[MapEditor] Paint tiles canceled")
                 self.state.reset_paint_tiles_dialog()
                 return True
-
         # Vaciar colliders
         if self.state.confirm_clear_colliders:
             # Delegate to Clear Colliders tool events
