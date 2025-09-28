@@ -20,12 +20,12 @@ class BuildingsToolBarPanelView:
         self.size = 64
         self.padding = 8
 
-        icon_paths = {
-            'tutorial_building': 'assets/ui/tutorials_button.png',
+        icon_paths = {            
             'buildings_manager': 'assets/ui/building_manager_icon.png',
             'buildings_colliders': 'assets/ui/buildings_colliders.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
+            'tutorial_building': 'assets/ui/tutorials_button.png',
         }
         self.icons = {}
         for tool in self.model.tools:
