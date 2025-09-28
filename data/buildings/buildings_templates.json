@@ -2380,5 +2380,92 @@
             768
         ],
         "id": 202
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/castles/castle_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            384,
+            256
+        ],
+        "id": 203
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/castles/castle_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 204
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_27_21 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 205
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal_dudgeon_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 206
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 207
+    },
+    {
+        "id": 208,
+        "assets": {
+            "idle": "assets/buildings/others/Portal wow.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG"
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/others/Portal wow.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 209
     }
 ]
