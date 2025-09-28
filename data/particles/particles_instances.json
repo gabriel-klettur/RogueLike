@@ -17,8 +17,8 @@
     "id": 7,
     "preset_id": "smoke_emitter",
     "zone": "zone_50_0",
-    "rel_x": 1477,
-    "rel_y": 1533
+    "rel_x": 1386,
+    "rel_y": 1538
   },
   {
     "id": 10,
@@ -852,13 +852,6 @@
     "zone": "lobby",
     "rel_x": 561,
     "rel_y": 821
-  },
-  {
-    "id": 129,
-    "preset_id": "water_flow_min_h",
-    "zone": "lobby",
-    "rel_x": 1397,
-    "rel_y": 121
   },
   {
     "id": 130,

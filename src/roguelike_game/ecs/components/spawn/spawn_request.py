@@ -11,6 +11,8 @@ class SpawnRequest:
     # Metadata opcional para rastrear oleadas
     spawner_eid: Optional[int] = None
     wave_idx: Optional[int] = None
+    # Si True, no aplicar SpawnStabilizer tras el spawn (útil para ancla estricta de vendors)
+    no_stabilize: Optional[bool] = None
     # Metadata opcional de defensa: si se especifica, el NPC defenderá un área circular
     # center_x/center_y en píxeles y radio en píxeles
     defend_center: Optional[Tuple[float, float]] = None

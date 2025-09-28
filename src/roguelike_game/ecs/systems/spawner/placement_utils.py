@@ -8,6 +8,9 @@ import random
 from typing import Iterable, Optional, Set, Tuple
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config import config as eng_config
+import logging
+from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 Tile = Tuple[int, int]
 
@@ -24,19 +27,29 @@ def collect_blocked_tiles(world) -> tuple[Set[Tile], Set[Tile]]:
 
 
 def collect_npc_tiles(world) -> Set[Tile]:
-    """Return set of global tile coords occupied by existing NPCs/Player (alive)."""
+    """Return set of global tile coords occupied by existing NPCs/Player (alive),
+    using the feet-bottom-center tile to match spawn calibration and visual footing.
+    """
     comps = world.components
     death_map = comps.get('DeathTimer', {})
     tiles: Set[Tile] = set()
     for nid in world.get_entities_with('Position', 'MultiCollider'):
         if nid in death_map:
             continue
-        p = comps.get('Position', {}).get(nid)
-        if not p:
+        try:
+            ft = compute_foot_tile(world, nid, TILE_SIZE)
+        except Exception:
+            ft = None
+        if not ft:
+            # Fallback to top-left tile only if feet calc unavailable
+            p = comps.get('Position', {}).get(nid)
+            if not p:
+                continue
+            tx = int(p.x // TILE_SIZE)
+            ty = int(p.y // TILE_SIZE)
+            tiles.add((tx, ty))
             continue
-        tx = int(p.x // TILE_SIZE)
-        ty = int(p.y // TILE_SIZE)
-        tiles.add((tx, ty))
+        tiles.add((int(ft[0]), int(ft[1])))
     return tiles
 
 
@@ -95,6 +108,7 @@ def choose_spawn_tile(
     fallback_max: int,
     spawn_radius_cfg,
     shape: str,
+    prefer_center_ignore_occupancy: bool = False,
 ) -> Optional[Tile]:
     """
     Find a placement tile around anchor (ax, ay) avoiding collisions and respecting optional
@@ -135,6 +149,30 @@ def choose_spawn_tile(
                 if _too_close_px(cx, cy, min_px_dist_sq, reserved_tiles.union(reserved_global)):
                     continue
             return (tx, ty)
+
+    # Optional strict center-first test ignoring NPC occupancy (still respects solids/buildings/walkability)
+    if prefer_center_ignore_occupancy:
+        tx, ty = ax, ay
+        if (tx, ty) not in solid and (tx, ty) not in building:
+            if map_manager and hasattr(map_manager, 'is_walkable'):
+                try:
+                    if map_manager.is_walkable(tx, ty):
+                        return (tx, ty)
+                    else:
+                        if getattr(eng_config, 'DEBUG_SPAWNER', False):
+                            logging.getLogger(__name__).debug(
+                                "[Placement] strict-center rejected: not walkable at %s", (tx, ty)
+                            )
+                except Exception:
+                    pass
+            else:
+                return (tx, ty)
+        else:
+            if getattr(eng_config, 'DEBUG_SPAWNER', False):
+                reason = 'building' if (tx, ty) in building else 'solid'
+                logging.getLogger(__name__).debug(
+                    "[Placement] strict-center rejected: %s blocked at %s", reason, (tx, ty)
+                )
 
     # Fallback: center-first spiral
     for tx, ty in iter_spiral_tiles(ax, ay, fallback_max):

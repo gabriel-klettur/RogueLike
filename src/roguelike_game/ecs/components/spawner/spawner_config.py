@@ -71,3 +71,5 @@ class SpawnerConfig:
     hp_scope: str = "per_state"
     # Per-state effective life configuration (normalized keys)
     visuals_life: Optional[Dict[str, Dict[str, Any]]] = None
+    # Persistent identifier of the spawner instance (from spawners_instances.json 'id')
+    instance_id: Optional[str] = None

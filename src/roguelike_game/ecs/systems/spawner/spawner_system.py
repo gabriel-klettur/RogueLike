@@ -691,6 +691,19 @@ class SpawnerRuntimeSystem:
                         continue
                     count = max(0, min(count, capacity_left))
                 attempted_total += count
+                # Decide strict-center mode for vendor-like singleton spawners
+                strict_center = False
+                try:
+                    strict_center = (
+                        (getattr(cfg, 'spawn_radius', None) in (None, 0)) and
+                        int(entry.get('spread_radius', 0) or 0) == 0 and
+                        int(count) == 1 and
+                        int(getattr(cfg, 'policy', {}).get('max_active', 0) or 0) == 1 and
+                        bool(getattr(cfg, 'policy', {}).get('persistent', True))
+                    )
+                except Exception:
+                    strict_center = False
+
                 for _ in range(count):
                     ax, ay = cfg.anchor_tile
                     chosen = choose_spawn_tile(
@@ -706,6 +719,7 @@ class SpawnerRuntimeSystem:
                         fallback_max,
                         sr,
                         shape,
+                        strict_center,
                     )
                     if chosen is None:
                         continue
@@ -720,6 +734,8 @@ class SpawnerRuntimeSystem:
                     comps['SpawnRequest'][req_eid] = SpawnRequest(
                         prototype=proto,
                         position=chosen,
+                        instance_id=getattr(cfg, 'instance_id', None),
+                        no_stabilize=True if strict_center else None,
                         spawner_eid=eid,
                         wave_idx=st.current_wave_idx,
                         defend_center=defend_center,

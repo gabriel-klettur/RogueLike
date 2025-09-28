@@ -35,6 +35,10 @@ class SpawnerPlacementSystem:
         self._loaded = False
         self._templates: Dict[str, Dict[str, Any]] = {}
         self._waves: Dict[str, List[Dict[str, Any]]] = {}
+        # Runtime cache for saved positions keyed by spawner instance id
+        self._positions: Dict[str, Dict[str, Any]] | None = None
+        # Track created instance ids to avoid duplicates caused by repeated entries in instances JSON
+        self._seen_instance_ids: set[str] = set()
 
     # Phase 2: compile a visual FSM set id for the FSM Editor based on the resolved config.
     # This is purely metadata for tools/UI and does not change runtime behavior.
@@ -151,6 +155,21 @@ class SpawnerPlacementSystem:
             elif isinstance(val, dict) and isinstance(val.get("waves"), list):
                 waves_map[key] = [w for w in val.get("waves", []) if isinstance(w, dict)]
         return waves_map
+
+    def _load_positions(self) -> Dict[str, Dict[str, Any]]:
+        """Load saved NPC positions keyed by spawner instance id.
+        File shape: { "<inst_id>": { "zone": str, "tile": [tx, ty] }, ... }
+        """
+        base = config.DATA_DIR
+        path = os.path.join(base, "spawners", "spawners_positions.json")
+        try:
+            with open(path, "r", encoding="utf-8-sig") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except FileNotFoundError:
+            return {}
+        except Exception:
+            return {}
 
     def _load_instances(self) -> List[Dict[str, Any]]:
         base = config.DATA_DIR
@@ -352,9 +371,24 @@ class SpawnerPlacementSystem:
         between_waves_cooldown_s = float(policy.get("between_waves_cooldown_s", 0.0) or 0.0)
         between_waves_cooldown_frames = int(round(between_waves_cooldown_s * fps))
 
-        # Convert zone-local tile -> global tile using zone offsets
+        # Prefer saved position for this instance id, if available
+        inst_id = inst.get("id")
         zone = inst.get("zone", "lobby")
         local_tx, local_ty = tuple(inst.get("tile", (0, 0)))
+        try:
+            if inst_id:
+                if self._positions is None:
+                    self._positions = self._load_positions()
+                saved = self._positions.get(str(inst_id)) if isinstance(self._positions, dict) else None
+                if isinstance(saved, dict):
+                    sz = saved.get("zone")
+                    st = saved.get("tile")
+                    if isinstance(sz, str) and isinstance(st, (list, tuple)) and len(st) >= 2:
+                        zone = sz
+                        local_tx, local_ty = int(st[0]), int(st[1])
+        except Exception:
+            pass
+        # Convert zone-local tile -> global tile using zone offsets
         off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
         anchor_tile = (off_x + int(local_tx), off_y + int(local_ty))
 
@@ -434,7 +468,7 @@ class SpawnerPlacementSystem:
 
         return SpawnerConfig(
             template_id=tpl.get("id", ""),
-            zone=inst.get("zone", tpl.get("zone", "lobby")),
+            zone=str(zone),
             anchor_tile=anchor_tile,
             spawner_type=spawner_type,
             trigger=trigger,
@@ -454,6 +488,7 @@ class SpawnerPlacementSystem:
             life_defaults=life_defaults or None,
             hp_scope=hp_scope or 'per_state',
             visuals_life=visuals_life or None,
+            instance_id=str(inst_id) if inst_id is not None else None,
         )
 
     # --- Auto-repair helpers -------------------------------------------------
@@ -953,6 +988,17 @@ class SpawnerPlacementSystem:
         comps = world.components
         for inst in instances:
             tpl_id = inst.get("template_id")
+            inst_id = inst.get("id")
+            # Skip duplicate instance ids defensively
+            try:
+                if inst_id is not None:
+                    key = str(inst_id)
+                    if key in self._seen_instance_ids:
+                        logger.warning("[SpawnerPlacementSystem] Skipping duplicate spawner instance id=%s (already created)", key)
+                        continue
+                    self._seen_instance_ids.add(key)
+            except Exception:
+                pass
             if not tpl_id or tpl_id not in self._templates:
                 continue
             tpl = self._templates[tpl_id]

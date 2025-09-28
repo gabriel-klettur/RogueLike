@@ -129,7 +129,7 @@
     },
     {
         "id": 9,
-        "template_id": 9,
+        "template_id": 203,
         "zone": "lobby",
         "rel_x": 1043,
         "rel_y": 237,
@@ -139,7 +139,7 @@
                 232
             ],
             "z_bottom": 1,
-            "z_top": 4,
+            "z_top": 6,
             "z": 1
         }
     },
@@ -267,7 +267,7 @@
                 579
             ],
             "z_bottom": 3,
-            "z_top": 5,
+            "z_top": 8,
             "z": 3
         }
     },
@@ -1531,8 +1531,8 @@
         "id": 116,
         "template_id": 15,
         "zone": "lobby",
-        "rel_x": 1427,
-        "rel_y": -86,
+        "rel_x": 1335,
+        "rel_y": -80,
         "overrides": {
             "scale": [
                 227,
@@ -1829,6 +1829,22 @@
             "z_bottom": 3,
             "z_top": 5,
             "z": 3
+        }
+    },
+    {
+        "id": 211,
+        "template_id": 91,
+        "zone": "zone_100_50",
+        "rel_x": 598,
+        "rel_y": 835,
+        "overrides": {
+            "scale": [
+                256,
+                256
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 1
         }
     }
 ]

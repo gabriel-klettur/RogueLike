@@ -235,5 +235,29 @@
         ]
       }
     ]
+  },
+  {
+    "id": "vendor_valeria_respawn_5m",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "defend_spawn": false,
+    "trigger": { "type": "auto" },
+    "policy": {
+      "mode": "periodic",
+      "advance_on": "cooldown",
+      "cooldown_s": 0.0,
+      "max_active": 1,
+      "persistent": true,
+      "restart_on_done": true,
+      "restart_cooldown_s": 300.0
+    },
+    "waves": [
+      {
+        "spawns": [
+          { "kind": "monster", "id": "vendor_alchemist_valeria", "count": 1, "spread_radius": 0 }
+        ]
+      }
+    ]
   }
 ]

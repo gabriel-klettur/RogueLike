@@ -6,6 +6,9 @@ from roguelike_game.utils.inventory_sync import write_active_for_player
 from roguelike_game.utils.inventory_registry import publish_inventory
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.components.spawner.spawner_child import SpawnerChild
+from roguelike_game.ecs.systems.core.spawner_position_persistence_system import (
+    SpawnerPositionPersistenceSystem,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -300,6 +303,19 @@ class ShutdownManager:
                     f"[Save] Preparando guardado: nivel={level_name}, player_tile={player_tile}, npcs={npc_cnt}, npc_inventarios={inv_cnt}, slot={slot_hint}"
                 )
             except Exception:
+                pass
+
+            # 5b) Forzar persistencia inmediata de posiciones de NPCs de spawner (vendors)
+            try:
+                ecs_world = g.ecs.ecs_world
+                sys = next(
+                    (s for s in getattr(ecs_world, 'update_systems', []) if isinstance(s, SpawnerPositionPersistenceSystem)),
+                    None,
+                )
+                if sys is not None:
+                    sys.flush()
+            except Exception:
+                # No bloquear el guardado por esta persistencia auxiliar
                 pass
 
             # 6) Salvar el mundo en disco

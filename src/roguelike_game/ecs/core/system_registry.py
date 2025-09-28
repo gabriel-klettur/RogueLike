@@ -62,6 +62,7 @@ from roguelike_game.ecs.systems.physics.coin_pickup_system import CoinPickupSyst
 from roguelike_game.ecs.systems.core.spawn_stabilization_system import SpawnStabilizationSystem
 from roguelike_game.ecs.systems.core.npc_restore_system import NpcRestoreSystem
 from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
+from roguelike_game.ecs.systems.core.spawner_position_persistence_system import SpawnerPositionPersistenceSystem
 from roguelike_game.ecs.systems.experience.orb_attraction_system import OrbAttractionSystem
 from roguelike_game.ecs.systems.inventory.inventory_init_system import InventoryInitSystem
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
@@ -114,6 +115,8 @@ def get_update_system_classes():
         SpawnStabilizationSystem,
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
+        # Persist last-known positions for spawner-driven singletons (vendors, etc.)
+        SpawnerPositionPersistenceSystem,
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
