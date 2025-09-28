@@ -1,51 +1,51 @@
 [
-    {
-        "template_id": "survival_10",
-        "zone": "Forest",
-        "tile": [
-            27,
-            17
+  {
+    "template_id": "survival_10",
+    "zone": "Forest",
+    "tile": [
+      27,
+      17
+    ],
+    "overrides": {
+      "visible_in_game": true,
+      "hp_scope": "per_state",
+      "life_defaults": {
+        "damageable": true,
+        "max_hp": 1000,
+        "flash_on_hit": true,
+        "flash_color": [
+          255,
+          255,
+          255
         ],
-        "overrides": {
-            "visible_in_game": true,
-            "hp_scope": "per_state",
-            "life_defaults": {
-                "damageable": true,
-                "max_hp": 1000,
-                "flash_on_hit": true,
-                "flash_color": [
-                    255,
-                    255,
-                    255
-                ],
-                "flash_duration_s": 0.08,
-                "hp_reset_on_enter": "set_to_max"
-            }
-        },
-        "visuals": {
-            "WaitClear": {
-                "instance_id": 212,
-                "template_id": 157,
-                "offset": [
-                    -114,
-                    -253
-                ],
-                "scale": [
-                    257,
-                    384
-                ],
-                "split_ratio": 0.776
-            },
-            "AwaitTrigger": {
-                "instance_id": 213,
-                "template_id": 157,
-                "offset": [
-                    -116,
-                    -248
-                ],
-                "split_ratio": 0.776
-            }
-        },
-        "id": "survival_10_forest_14_9"
-    }
+        "flash_duration_s": 0.08,
+        "hp_reset_on_enter": "set_to_max"
+      }
+    },
+    "visuals": {
+      "WaitClear": {
+        "instance_id": 215,
+        "template_id": 157,
+        "offset": [
+          -114,
+          -253
+        ],
+        "scale": [
+          257,
+          384
+        ],
+        "split_ratio": 0.776
+      },
+      "AwaitTrigger": {
+        "instance_id": 216,
+        "template_id": 157,
+        "offset": [
+          -116,
+          -248
+        ],
+        "split_ratio": 0.776
+      }
+    },
+    "id": "survival_10_forest_14_9"
+  }
 ]
