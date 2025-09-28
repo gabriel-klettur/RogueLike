@@ -300,8 +300,12 @@ class BuildingEditorEventHandler:
                 if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
                     ab = getattr(self.editor, 'active_building', None)
                     if ab is not None:
-                        logger.info("⌫ Supr: confirmar eliminación de edificio activo")
-                        self.controller._ask_confirm_delete(ab)
+                        # Si el edificio no tiene ID (recién colocado), borrar directamente sin confirmación
+                        if getattr(ab, 'id', None) is None:
+                            self.controller._delete_building(ab, entities.buildings)
+                        else:
+                            logger.info("⌫ Supr: confirmar eliminación de edificio activo")
+                            self.controller._ask_confirm_delete(ab)
                     return
                 # D → reset SOLO sobre active_building (no en modo colliders)
                 if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
@@ -316,6 +320,20 @@ class BuildingEditorEventHandler:
             # --- Mouse en modo editor (handles y split) ---
             if ev.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
+                # Antes de delegar: si clic izq sobre el handle rojo y el edificio NO tiene ID, borrar directamente
+                if getattr(ev, 'button', None) == 1 and not getattr(self.editor, 'colliders_mode', False):
+                    ab = getattr(self.editor, 'active_building', None)
+                    if ab is not None and getattr(ab, 'id', None) is None:
+                        try:
+                            dv = getattr(self.controller, 'default_view', None)
+                            get_rect = getattr(dv, 'get_delete_handle_rect', None) if dv else None
+                            if callable(get_rect):
+                                delete_rect = get_rect(ab, camera)
+                                if delete_rect and delete_rect.collidepoint(mx, my):
+                                    self.controller._delete_building(ab, entities.buildings)
+                                    return
+                        except Exception:
+                            pass
                 # Delegar al controlador
                 self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
             elif ev.type == pygame.MOUSEBUTTONUP:
