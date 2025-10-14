@@ -75,7 +75,7 @@ from roguelike_game.ecs.systems.inventory.inventory_drag_system import Inventory
 from roguelike_game.ecs.systems.inventory.inventory_ui_system import InventoryUISystem
 from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
 from roguelike_game.ecs.systems.spawner.spawner_trigger_system import SpawnerTriggerSystem
-from roguelike_game.ecs.systems.spawner.spawner_system import SpawnerRuntimeSystem
+from roguelike_game.ecs.systems.spawner.spawner_runtime import SpawnerRuntimeSystem
 from roguelike_game.ecs.systems.rendering.temp_z_layer_system import TempZLayerSystem
 
 from roguelike_game.ecs.systems.rendering.drop_hover_system import DropHoverRenderSystem

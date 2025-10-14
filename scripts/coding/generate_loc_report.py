@@ -257,7 +257,9 @@ def write_reports(
                 md.write("Archivo | LOC\n")
                 md.write("--- | ---:\n")
                 for fs in show_files:
-                    md.write(f"`{fs.rel_path}` | {fs.loc}\n")
+                    abs_path = (root / fs.rel_path).resolve()
+                    uri = abs_path.as_uri()
+                    md.write(f"[`{fs.rel_path}`]({uri}) | {fs.loc}\n")
                 md.write("\n")
                 if note_extra > 0:
                     md.write(f"_... y {note_extra} archivos más en esta carpeta._\n\n")

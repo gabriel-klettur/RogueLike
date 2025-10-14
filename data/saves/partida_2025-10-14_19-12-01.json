@@ -3,7 +3,7 @@
   "player": {
     "level": "global_map",
     "pos": [
-      75,
+      73,
       80
     ]
   },
@@ -11,7 +11,7 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        75,
+        73,
         80
       ],
       "npc_states": {}
@@ -48,9 +48,9 @@
   },
   "npc_inventories": {},
   "meta": {
-    "name": "partida_2025-10-14_12-49-38",
-    "created_at": "2025-10-14T12:49:38",
-    "last_played": "2025-10-14T12:50:07",
+    "name": "partida_2025-10-14_19-12-01",
+    "created_at": "2025-10-14T19:12:01",
+    "last_played": "2025-10-14T19:12:11",
     "player": {
       "xp": 0,
       "level": 0
