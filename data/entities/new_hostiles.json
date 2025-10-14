@@ -20,7 +20,7 @@
   "ANIMATION_INTERVAL": 0.15,
   "INITIAL_ANIMATION_STATE": "down_idle",
   "DEFAULT_DEATH_DISSAPEAR_TIME": 10.0,
-  "DEFAULT_DAMAGE_STOP_PROBABILITY": 0.10,
+  "DEFAULT_DAMAGE_STOP_PROBABILITY": 0.1,
   "MELEE_WEAPON": {
     "damage": 1,
     "cooldown": 1.0
@@ -47,7 +47,7 @@
           "spawn_count": 10,
           "spawn_margin": 0,
           "death_dissapear_time": 5.0,
-          "damage_stop_probability": 0.10
+          "damage_stop_probability": 0.1
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -1407,6 +1407,133 @@
               ]
             }
           }
+        }
+      },
+      "mon1": {
+        "assets": {
+          "no-sets": {
+            "idle": {
+              "north": "dummy.png",
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "chase": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "cast": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55,
+              "tint": null
+            }
+          },
+          "active_set": "no-sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [],
+              "walk": [],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55,
+              "tint": null
+            }
+          }
+        },
+        "stats": {
+          "hp": null,
+          "speed": null,
+          "faction": null,
+          "aggro_range": null,
+          "melee_range": null,
+          "melee_damage": null,
+          "melee_cooldown": null,
+          "defense": null,
+          "power": null,
+          "damage_duration": null,
+          "chasing_speed": null,
+          "feet_width_factor": null,
+          "feet_height_factor": null,
+          "spawn_padding": null,
+          "spawn_count": null,
+          "spawn_margin": null
         }
       }
     }

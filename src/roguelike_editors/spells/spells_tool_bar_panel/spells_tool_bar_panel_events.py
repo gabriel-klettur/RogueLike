@@ -65,8 +65,8 @@ class SpellsToolBarPanelEventHandler:
                     pass
                 # Rebuild spell previews so picker reflects updated presets/overrides
                 try:
-                    if hasattr(self.controller, '_rebuild_particle_preview_providers'):
-                        self.controller._rebuild_particle_preview_providers()
+                    if hasattr(self.controller, 'preview_manager'):
+                        self.controller.preview_manager.rebuild(self.controller.model.spells)
                 except Exception:
                     pass
                 return True
