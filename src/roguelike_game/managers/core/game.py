@@ -1,7 +1,7 @@
 import pygame
 import roguelike_engine.config.config as config
 
-from roguelike_game.managers.core.events import handle_events as core_handle_events
+from roguelike_game.managers.core.events.events import handle_events as core_handle_events
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.managers.core.update_manager import update_game
 from roguelike_game.managers.core.loop_manager import GameLoop

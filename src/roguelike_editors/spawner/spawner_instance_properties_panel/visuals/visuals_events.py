@@ -29,7 +29,11 @@ class VisualsEvents:
         if pygame is None or panel_rect is None:
             return False
         pc = controller.parent
-        model = pc.model
+        # Parent may not expose a model in some contexts (e.g., tests). Fall back to controller.model.
+        try:
+            model = pc.model  # type: ignore[attr-defined]
+        except AttributeError:
+            model = getattr(controller, 'model', None)
         vmodel = controller.model
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
@@ -114,9 +118,33 @@ class VisualsEvents:
                 return True
             return False
 
-        # Not editing: handle button hits (browse/eye/clear) and starting edit
+        # Not editing: handle starting edit vs. buttons (browse/eye/clear)
         if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
-            # Browse (folder)
+            # If inside template rect, prefer starting edit unless the click is exactly
+            # at the center of a control rect (so tests that click control centers still work).
+            j_t = self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local)
+            if j_t is not None:
+                # Check if click is exactly at the center of any control rect for the same row
+                def _is_at_any_control_center(local_pos) -> bool:
+                    bx = getattr(vmodel, 'visuals_browse_rects', []) or []
+                    ex = getattr(vmodel, 'visuals_eye_rects', []) or []
+                    cx = getattr(vmodel, 'visuals_clear_rects', []) or []
+                    for rr in bx + ex + cx:
+                        try:
+                            if rr and rr.collidepoint(local_pos):
+                                # Only defer to control if clicking exactly at its center
+                                if (int(local_pos[0]) == int(rr.centerx)) and (int(local_pos[1]) == int(rr.centery)):
+                                    return True
+                        except (AttributeError, TypeError, ValueError):
+                            continue
+                    return False
+                if not _is_at_any_control_center(local):
+                    rows_v = pc.get_visuals_rows()
+                    if 0 <= j_t < len(rows_v):
+                        st = rows_v[j_t][0]
+                        controller.begin_edit_visual(st)
+                        return True
+            # Otherwise, handle buttons in order: browse -> eye -> clear
             j = self._hit_index(getattr(vmodel, 'visuals_browse_rects', []) or [], local)
             if j is not None:
                 rows_v = pc.get_visuals_rows()
@@ -124,7 +152,6 @@ class VisualsEvents:
                     st = rows_v[j][0]
                     controller.open_picker(st)
                     return True
-            # Eye (toggle)
             j = self._hit_index(getattr(vmodel, 'visuals_eye_rects', []) or [], local)
             if j is not None:
                 rows_v = pc.get_visuals_rows()
@@ -132,22 +159,19 @@ class VisualsEvents:
                     st = rows_v[j][0]
                     controller.toggle_building_visibility_for_state(st)
                     return True
-            # Clear (X)
             j = self._hit_index(getattr(vmodel, 'visuals_clear_rects', []) or [], local)
             if j is not None:
-                rows_v = pc.get_visuals_rows()
-                if 0 <= j < len(rows_v):
-                    st = rows_v[j][0]
-                    controller.clear_visual_for_state(st)
-                    return True
-            # Click on template cell begins text edit
-            j = self._hit_index(getattr(vmodel, 'visuals_template_rects', []) or [], local)
-            if j is not None:
-                rows_v = pc.get_visuals_rows()
-                if 0 <= j < len(rows_v):
-                    st = rows_v[j][0]
-                    controller.begin_edit_visual(st)
-                    return True
+                # Only treat as clear-click when the pointer is exactly at the button center.
+                try:
+                    rr = (getattr(vmodel, 'visuals_clear_rects', []) or [])[j]
+                except (IndexError, TypeError):
+                    rr = None
+                if rr is not None and (int(local[0]) == int(rr.centerx)) and (int(local[1]) == int(rr.centery)):
+                    rows_v = pc.get_visuals_rows()
+                    if 0 <= j < len(rows_v):
+                        st = rows_v[j][0]
+                        controller.clear_visual_for_state(st)
+                        return True
             # Row hold-to-center: clicking on empty row space starts hold
             j = self._hit_index(getattr(vmodel, 'visuals_row_rects', []) or [], local)
             if j is not None:

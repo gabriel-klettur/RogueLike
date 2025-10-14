@@ -108,9 +108,11 @@ def test_browse_click_opens_picker():
     click_pos = (panel.left + browse_rect.centerx, panel.top + browse_rect.centery)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
     handled = ev.handle_event(vctrl, event, panel)
+    print("[browse] handled=", handled)
+    print("[browse] actions=", vctrl.parent.actions)
 
-    assert handled is True
-    assert ("open_picker", "Idle") in vctrl.parent.actions
+    assert handled is True, f"Expected handler to return True when clicking browse; got {handled}"
+    assert ("open_picker", "Idle") in vctrl.parent.actions, f"Expected open_picker for 'Idle'; actions={vctrl.parent.actions}"
 
 
 def test_eye_click_toggles_visibility():
@@ -127,9 +129,11 @@ def test_eye_click_toggles_visibility():
     click_pos = (panel.left + eye_rect.centerx, panel.top + eye_rect.centery)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
     handled = ev.handle_event(vctrl, event, panel)
+    print("[eye] handled=", handled)
+    print("[eye] actions=", vctrl.parent.actions)
 
-    assert handled is True
-    assert ("toggle_eye", "Idle") in vctrl.parent.actions
+    assert handled is True, f"Expected handler to return True when clicking eye; got {handled}"
+    assert ("toggle_eye", "Idle") in vctrl.parent.actions, f"Expected toggle_eye for 'Idle'; actions={vctrl.parent.actions}"
 
 
 def test_clear_click_clears_visual():
@@ -146,9 +150,11 @@ def test_clear_click_clears_visual():
     click_pos = (panel.left + clear_rect.centerx, panel.top + clear_rect.centery)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
     handled = ev.handle_event(vctrl, event, panel)
+    print("[clear] handled=", handled)
+    print("[clear] actions=", vctrl.parent.actions)
 
-    assert handled is True
-    assert ("clear", "Idle") in vctrl.parent.actions
+    assert handled is True, f"Expected handler to return True when clicking clear; got {handled}"
+    assert ("clear", "Idle") in vctrl.parent.actions, f"Expected clear for 'Idle'; actions={vctrl.parent.actions}"
 
 
 def test_template_cell_begins_edit():
@@ -165,6 +171,8 @@ def test_template_cell_begins_edit():
     click_pos = (panel.left + template_rect.centerx, panel.top + template_rect.centery)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
     handled = ev.handle_event(vctrl, event, panel)
+    print("[template] handled=", handled)
+    print("[template] actions=", vctrl.parent.actions)
 
-    assert handled is True
-    assert ("begin_edit", "Idle") in vctrl.parent.actions
+    assert handled is True, f"Expected handler to return True when clicking template cell; got {handled}"
+    assert ("begin_edit", "Idle") in vctrl.parent.actions, f"Expected begin_edit for 'Idle'; actions={vctrl.parent.actions}"
