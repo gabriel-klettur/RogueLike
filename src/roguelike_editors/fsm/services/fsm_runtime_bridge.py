@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Tuple
 from dataclasses import dataclass, field
 
-from .fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     load_all,
     default_sets_path,
     default_assignments_path,

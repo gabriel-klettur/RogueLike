@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional
 import logging
 import time
-from roguelike_editors.fsm.services.fsm_persistence import get_last_lint, get_last_lint_enriched
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import get_last_lint, get_last_lint_enriched
 
 from .fsm_graph_panel_model import FsmGraphPanelModel
 from .fsm_graph_panel_view import FsmGraphPanelView

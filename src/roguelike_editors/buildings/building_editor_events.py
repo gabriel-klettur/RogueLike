@@ -7,7 +7,21 @@ from roguelike_editors.buildings.utils.save_buildings_to_json import (
     save_buildings_split,
 )
 from roguelike_editors.buildings.buildings_picker.building_picker_events import BuildingPickerEventHandler
-
+from roguelike_editors.buildings.events import (
+    handle_confirm_delete,
+    early_rmb_drag_to_move_panel,
+    handle_picker_event,
+    handle_toolbar_and_panels,
+    handle_colliders,
+    handle_pan_state,
+    handle_keydown,
+    handle_keyup,
+    handle_mousedown,
+    handle_mouseup,
+    handle_motion,
+    handle_wheel,
+    undo_delete,
+)
 
 
 logger = logging.getLogger("building_editor.events")
@@ -31,179 +45,62 @@ class BuildingEditorEventHandler:
 
 
     def handle(self, camera, entities, events=None):
-
         if events is None:
             events = pygame.event.get()
+
         for ev in events:
-            # Si hay confirmación de borrado visible, interceptar todo aquí
+            # 1) Modal de confirmación de borrado: consume todo
             try:
-                if getattr(self.editor, 'confirm_delete_visible', False):
-                    et = getattr(ev, 'type', None)
-                    if et == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 1:
-                        mx, my = getattr(ev, 'pos', (0, 0))
-                        yesr = getattr(self.editor, 'confirm_yes_rect', None)
-                        nor = getattr(self.editor, 'confirm_no_rect', None)
-                        if yesr is not None and pygame.Rect(yesr).collidepoint(mx, my):
-                            self.controller.confirm_delete_yes(entities.buildings)
-                            continue
-                        if nor is not None and pygame.Rect(nor).collidepoint(mx, my):
-                            self.controller.confirm_delete_no()
-                            continue
-                        # Clic fuera: no hacer nada, mantener modal
-                        continue
-                    if et == pygame.KEYDOWN:
-                        key = getattr(ev, 'key', None)
-                        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                            self.controller.confirm_delete_yes(entities.buildings)
-                            continue
-                        if key == pygame.K_ESCAPE:
-                            self.controller.confirm_delete_no()
-                            continue
-                    # Mientras está visible, suprimir resto de manejadores
+                if handle_confirm_delete(self.editor, self.controller, ev, entities):
                     continue
             except Exception:
                 pass
-            # Si el panel de Tutorial está activo, delegar primero sus eventos de mouse
+
+            # 2) Tutorial: consumir primero eventos de ratón si está activo
             if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
                 try:
-                    tutorial = getattr(self, 'tutorial', None)
+                    tutorial = getattr(self, "tutorial", None)
                     if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
                         continue
                 except Exception:
                     pass
-            # Early guard: iniciar drag del panel del picker con RMB dentro del panel pero fuera del grid/scrollbar
-            if (
-                ev.type == pygame.MOUSEBUTTONDOWN
-                and getattr(ev, 'button', None) == 3
-                and getattr(self.editor, 'picker_active', False)
-            ):
-                try:
-                    panel_rect = getattr(self.editor, 'picker_panel_rect', None)
-                    if panel_rect:
-                        mx, my = getattr(ev, 'pos', (None, None))
-                        if mx is not None and panel_rect.collidepoint(mx, my):
-                            m = int(getattr(self.editor, 'picker_internal_margin', 8) or 8)
-                            pad = int(getattr(self.editor, 'picker_padding', 8) or 8)
-                            cw = int(getattr(self.editor, 'picker_cell_w', 64) or 64)
-                            ch = int(getattr(self.editor, 'picker_cell_h', 64) or 64)
-                            footer_h = int(getattr(self.editor, 'picker_footer_h', 0) or 0)
-                            needs_scroll = bool(getattr(self.editor, 'picker_needs_scroll', False))
-                            sb_pad = 4
-                            sb_w = int(getattr(self.editor, 'picker_scrollbar_w', 10) or 10) if needs_scroll else 0
-                            gx = panel_rect.left + m
-                            gy = panel_rect.top + m
-                            gw = max(0, panel_rect.w - 2 * m)
-                            gh = max(0, panel_rect.h - 2 * m - footer_h)
-                            gw_effective = max(0, gw - (sb_w + (sb_pad if needs_scroll else 0)))
-                            track_rect = getattr(self.editor, 'picker_scroll_track_rect', None)
-                            in_grid = pygame.Rect(gx, gy, gw, gh).collidepoint(mx, my)
-                            in_scroll = needs_scroll and (
-                                (track_rect and pygame.Rect(track_rect).collidepoint(mx, my)) or (mx >= gx + gw_effective)
-                            )
-                            if (not in_grid) and (not in_scroll):
-                                self.editor.picker_dragging_panel = True
-                                self.editor.picker_drag_offset = (mx - panel_rect.left, my - panel_rect.top)
-                                if getattr(self.editor, 'picker_manual_pos', None) is None:
-                                    self.editor.picker_manual_pos = (panel_rect.left, panel_rect.top)
-                                # No consumir aquí; dejar que el picker procese también si está activo
-                except Exception:
-                    pass
-            # Si el picker está activo y el mouse está sobre su panel, delegar PRIMERO al picker
-            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL) and getattr(self.editor, 'picker_active', False):
-                try:
-                    panel_rect = getattr(self.editor, 'picker_panel_rect', None)
-                    if panel_rect:
-                        if ev.type == pygame.MOUSEWHEEL:
-                            mx, my = pygame.mouse.get_pos()
-                        else:
-                            mx, my = getattr(ev, 'pos', (None, None))
-                        if mx is not None and panel_rect.collidepoint(mx, my):
-                            # Robust guard: si es RMB down dentro del panel pero fuera del grid/scrollbar,
-                            # marcar el flag de arrastre del panel inmediatamente (evita que el orden de delegación lo impida)
-                            if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 3:
-                                try:
-                                    m = int(getattr(self.editor, 'picker_internal_margin', 8) or 8)
-                                    pad = int(getattr(self.editor, 'picker_padding', 8) or 8)
-                                    cw = int(getattr(self.editor, 'picker_cell_w', 64) or 64)
-                                    ch = int(getattr(self.editor, 'picker_cell_h', 64) or 64)
-                                    footer_h = int(getattr(self.editor, 'picker_footer_h', 0) or 0)
-                                    needs_scroll = bool(getattr(self.editor, 'picker_needs_scroll', False))
-                                    sb_pad = 4
-                                    sb_w = int(getattr(self.editor, 'picker_scrollbar_w', 10) or 10) if needs_scroll else 0
-                                    gx = panel_rect.left + m
-                                    gy = panel_rect.top + m
-                                    gw = max(0, panel_rect.w - 2 * m)
-                                    gh = max(0, panel_rect.h - 2 * m - footer_h)
-                                    # Scrollbar track
-                                    gw_effective = max(0, gw - (sb_w + (sb_pad if needs_scroll else 0)))
-                                    track_rect = getattr(self.editor, 'picker_scroll_track_rect', None)
-                                    in_grid = pygame.Rect(gx, gy, gw, gh).collidepoint(mx, my)
-                                    in_scroll = needs_scroll and (
-                                        (track_rect and pygame.Rect(track_rect).collidepoint(mx, my)) or (mx >= gx + gw_effective)
-                                    )
-                                    if (not in_grid) and (not in_scroll):
-                                        self.editor.picker_dragging_panel = True
-                                        self.editor.picker_drag_offset = (mx - panel_rect.left, my - panel_rect.top)
-                                        if getattr(self.editor, 'picker_manual_pos', None) is None:
-                                            self.editor.picker_manual_pos = (panel_rect.left, panel_rect.top)
-                                except Exception:
-                                    pass
-                            self.picker_events.handle(ev, camera)
-                            continue
-                except Exception:
-                    pass
-            # Delegar primero a la toolbar SOLO para eventos de mouse (no teclas)
-            if ev.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
-                try:
-                    toolbar = getattr(self, 'buildings_toolbar_controller', None)
-                    if toolbar and toolbar.handle_event(ev):
-                        continue
-                except Exception:
-                    pass
-                # Delegar al panel de Add/Remove si está activo
-                try:
-                    add_remove = getattr(self, 'add_remove', None)
-                    if add_remove and add_remove.is_active() and add_remove.handle_event(ev, camera, entities):
-                        continue
-                except Exception:
-                    pass
-                # Delegar al panel de Tutorial si está activo (por si clicks fuera de botones deban ser ignorados)
-                try:
-                    tutorial = getattr(self, 'tutorial', None)
-                    if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
-                        continue
-                except Exception:
-                    pass
-            # Delegar al panel de colisiones (si está activo). Consume el evento si corresponde.
+
+            # 3) Early guard: RMB para arrastrar el panel del picker
             try:
-                colliders = getattr(self, 'colliders', None)
-                if colliders and colliders.is_active() and colliders.handle_event(ev, camera, self.buildings):
+                early_rmb_drag_to_move_panel(self.editor, ev)
+            except Exception:
+                pass
+
+            # 4) Delegar al picker si el ratón está sobre su panel
+            try:
+                if handle_picker_event(self.editor, self.picker_events, ev, camera):
                     continue
             except Exception:
                 pass
-            # Pan camera with middle mouse
-            if ev.type == pygame.MOUSEBUTTONDOWN and getattr(ev, 'button', None) == 2:
-                # Start panning
-                self.panning = True
-                self.pan_start = ev.pos
-                self.pan_offset_start = (camera.offset_x, camera.offset_y)
-                logger.info(f" EDITOR] Start panning at {self.pan_start}, offset_start={self.pan_offset_start}")
-                continue
-            if ev.type == pygame.MOUSEBUTTONUP and getattr(ev, 'button', None) == 2 and self.panning:
-                # Stop panning
-                self.panning = False
-                logger.info(" EDITOR] Stop panning")
-                continue
-            if ev.type == pygame.MOUSEMOTION and self.panning:
-                # Apply panning motion (using relative motion)
-                rel_x, rel_y = ev.rel
-                
-                camera.offset_x -= rel_x / camera.zoom
-                camera.offset_y -= rel_y / camera.zoom
-                
-                continue
+
+            # 5) Delegar a toolbar y paneles (add/remove, tutorial) en eventos de ratón
+            try:
+                if handle_toolbar_and_panels(self, ev, camera, entities):
+                    continue
+            except Exception:
+                pass
+
+            # 6) Delegar al panel de colisiones (consume si corresponde)
+            try:
+                if handle_colliders(self, ev, camera, self.buildings):
+                    continue
+            except Exception:
+                pass
+
+            # 7) Paneo de cámara con MMB
+            try:
+                if handle_pan_state(self, ev, camera):
+                    continue
+            except Exception:
+                pass
+
+            # 8) QUIT: persistir y salir
             if ev.type == pygame.QUIT:
-                # Persist building changes if editor active
                 if self.editor.active:
                     try:
                         save_buildings_split(
@@ -212,158 +109,47 @@ class BuildingEditorEventHandler:
                             zone_offsets=self.zone_offsets,
                         )
                     except Exception:
-                        # avoid blocking quit on save failure
                         pass
                 self.state.running = False
                 return
-            # --- Finaliza resize al soltar R ---
-            if ev.type == pygame.KEYUP and ev.key == pygame.K_r:
-                if self.editor.resizing:
-                    self.editor.resizing = False
-                    logger.info("✅ Resize finalizado al soltar R")
-                    # Opcional: podrías llamar aquí a una función para fijar el tamaño
 
-            # --- Si el picker está activo, delego ahí ---
-            if self.editor.picker_active:
-                self.picker_events.handle(ev, camera)                
+            # 9) Finaliza resize al soltar R
+            try:
+                if handle_keyup(self.editor, ev):
+                    pass
+            except Exception:
+                pass
 
-            # --- Teclas cuando estoy en modo “editor” sin picker ---
-            if ev.type == pygame.KEYDOWN:
-                # Si el Tutorial está activo, permitirle consumir teclas (ESC para cerrar)
+            # 10) Si el picker está activo, delego también (no consume aquí)
+            if getattr(self.editor, "picker_active", False):
                 try:
-                    tutorial = getattr(self, 'tutorial', None)
+                    self.picker_events.handle(ev, camera)
+                except Exception:
+                    pass
+
+            # 11) Teclas (modo editor)
+            if ev.type == pygame.KEYDOWN:
+                # Permitir al tutorial consumir teclas (ESC para cerrar)
+                try:
+                    tutorial = getattr(self, "tutorial", None)
                     if tutorial and tutorial.is_active() and tutorial.handle_event(ev):
                         continue
                 except Exception:
                     pass
-                # Ctrl+P (o simplemente P) → toggle picker
-                if ev.key == pygame.K_p:
-                    self.controller.toggle_picker()
+
+                # Delegar al manejador de teclas: retorna True si hay que terminar el ciclo (return)
+                if handle_keydown(self, self.editor, self.controller, self.state, ev, camera, entities, save_buildings_split):
                     return
 
-                # ESC → Cerrar editor completo
-                if ev.key == pygame.K_ESCAPE:
-                    logger.info("Escape: closing Building Editor and saving")
-                    self.editor.active = False
-                    self.editor.selected_building = None
-                    self.editor.dragging = False
-                    self.editor.resizing = False
-                    self.editor.split_dragging = False
-                    
-                    try:
-                        save_buildings_split(
-                            entities.buildings,
-                            z_state=self.state.z_state,
-                            zone_offsets=self.zone_offsets,
-                        )
-                    except Exception:
-                        pass
-                    return
-
-                # Ctrl+S → guardar sin salir
-                if ev.key == pygame.K_s and (ev.mod & pygame.KMOD_CTRL):
-                    logger.info("Ctrl+S: saving buildings")
-
-                    try:
-                        save_buildings_split(
-                            entities.buildings,
-                            z_state=self.state.z_state,
-                            zone_offsets=self.zone_offsets,
-                        )
-                    except Exception:
-                        pass
-
-                    return
-
-                # Ctrl+Z → Undo delete (restaurar edificio)
-                if ev.key == pygame.K_z and (ev.mod & pygame.KMOD_CTRL):
-                    self._undo_delete(entities.buildings)
-                    return
-
-                # R → iniciar resize SOLO sobre active_building (no en modo colliders)
-                if ev.key == pygame.K_r and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None:
-                        try:
-                            mouse_pos = pygame.mouse.get_pos()
-                        except Exception:
-                            mouse_pos = (0, 0)
-                        self.controller._start_resize(ab, mouse_pos)
-                    return
-
-                # N → colocar edificio aleatorio sin picker
-                if ev.key == pygame.K_n and not getattr(self.editor, 'colliders_mode', False):
-                    self.controller.placer_tool.place_building_at_mouse(entities.buildings)
-                    return
-
-                # Supr → borrar SOLO active_building
-                if ev.key == pygame.K_DELETE and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None:
-                        # Si el edificio no tiene ID (recién colocado), borrar directamente sin confirmación
-                        if getattr(ab, 'id', None) is None:
-                            self.controller._delete_building(ab, entities.buildings)
-                        else:
-                            logger.info("⌫ Supr: confirmar eliminación de edificio activo")
-                            self.controller._ask_confirm_delete(ab)
-                    return
-                # D → reset SOLO sobre active_building (no en modo colliders)
-                if ev.key == pygame.K_d and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None:
-                        try:
-                            self.controller.default_tool.apply_reset(ab)
-                        except Exception:
-                            # No romper flujo del editor si la herramienta falla
-                            pass
-                    return
-            # --- Mouse en modo editor (handles y split) ---
+            # 12) Ratón en modo editor
             if ev.type == pygame.MOUSEBUTTONDOWN:
-                mx, my = pygame.mouse.get_pos()
-                # Antes de delegar: si clic izq sobre el handle rojo y el edificio NO tiene ID, borrar directamente
-                if getattr(ev, 'button', None) == 1 and not getattr(self.editor, 'colliders_mode', False):
-                    ab = getattr(self.editor, 'active_building', None)
-                    if ab is not None and getattr(ab, 'id', None) is None:
-                        try:
-                            dv = getattr(self.controller, 'default_view', None)
-                            get_rect = getattr(dv, 'get_delete_handle_rect', None) if dv else None
-                            if callable(get_rect):
-                                delete_rect = get_rect(ab, camera)
-                                if delete_rect and delete_rect.collidepoint(mx, my):
-                                    self.controller._delete_building(ab, entities.buildings)
-                                    return
-                        except Exception:
-                            pass
-                # Delegar al controlador
-                self.controller.on_mouse_down((mx, my), ev.button, camera, entities.buildings)
+                handle_mousedown(self, self.editor, self.controller, ev, camera, entities)
             elif ev.type == pygame.MOUSEBUTTONUP:
-                # 3) Delegar al controlador y guardar cambios de posición/tamaño
-                self.controller.on_mouse_up(ev.button, camera, entities.buildings)
-                # Persistir cambios de edificios (posición, tamaño, split)
-                try:
-                    save_buildings_split(
-                        entities.buildings,
-                        z_state=self.state.z_state,
-                        zone_offsets=self.zone_offsets,
-                    )
-                except Exception:
-                    pass
+                handle_mouseup(self, self.controller, ev, camera, entities, save_buildings_split, self.state)
                 return
             elif ev.type == pygame.MOUSEMOTION:
-                mx, my = ev.pos
-                # If mouse is over any registered UI panel (Tiles/Buildings/Map),
-                # suppress ONLY hover state to avoid bleed-through visuals, but KEEP active selection.
-                try:
-                    if is_blocked(mx, my):
-                        self.editor.hovered_buildings = []
-                        self.editor.hovered_building = None
-                        return
-                except Exception:
-                    pass
-
-                # Do NOT clear active_building on mouse leave; selection should persist until changed explicitly
-                # Delegate motion and update hover list (no auto-select on hover)
-                self.controller.on_mouse_motion(ev.pos, camera, entities.buildings)
+                if handle_motion(self.editor, self.controller, ev, camera, entities, is_blocked):
+                    return
             elif ev.type == pygame.MOUSEWHEEL:
                 self._handle_mouse_wheel(ev, camera, entities.buildings)
 

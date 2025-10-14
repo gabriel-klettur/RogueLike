@@ -7,8 +7,8 @@ from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from .instance_properties_model import InstancePropertiesModel
 from .instance_properties_view import InstancePropertiesView
 from .instance_properties_events import InstancePropertiesEventHandler
-from .visuals.visuals_controller import VisualsController
-from .visuals.visuals_picker import VisualsPicker
+from roguelike_editors.spawner.spawner_instance_properties_panel.visuals.controller.visuals_controller import VisualsController
+from roguelike_editors.spawner.spawner_instance_properties_panel.visuals.visuals_picker import VisualsPicker
 
 # Mixins (modularized functionality)
 from .controller.logging_mixin import LoggingMixin
@@ -22,7 +22,7 @@ from .controller.visuals_index_mixin import VisualsIndexMixin
 from .controller.visuals_rows_mixin import VisualsRowsMixin
 from .controller.visuals_sanitize_mixin import VisualsSanitizeMixin
 from .controller.buildings_gc_mixin import BuildingsGCMixin
-from .controller.visuals_edit_mixin import VisualsEditMixin
+from .controller.visuals_edit_mixin.visuals_edit_mixin import VisualsEditMixin
 from .controller.template_combo_mixin import TemplateComboMixin
 from .controller.row_edit_mixin import RowEditMixin
 from .controller.persistence_mixin import PersistenceMixin

@@ -3,7 +3,7 @@ from typing import Optional
 import logging
 import copy
 
-from roguelike_editors.fsm.services.fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     default_sets_path,
     load_sets,
     save_sets,

@@ -13,7 +13,7 @@ from .sets_panel_delete.sets_panel_delete_controller import SetsPanelDeleteContr
 from .sets_panel_delete.sets_panel_delete_events import SetsPanelDeleteEventHandler
 from .sets_panel_delete.sets_panel_delete_model import SetsPanelDeleteModel
 from .sets_panel_delete.sets_panel_delete_view import SetsPanelDeleteView
-from roguelike_editors.fsm.services.fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     default_sets_path,
     load_sets,
 )

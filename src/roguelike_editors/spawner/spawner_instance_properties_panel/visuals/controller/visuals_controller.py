@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional, Any, List, Dict
 import logging
 from roguelike_engine.buildings.factory import build_from_config
-from ..services.buildings_service import (
+from roguelike_editors.spawner.spawner_instance_properties_panel.services.buildings_service import (
     load_buildings_instances,
     write_buildings_instances,
     get_template_image_path,
@@ -11,9 +11,9 @@ from ..services.buildings_service import (
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
-from .visuals_model import VisualsModel
-from .visuals_view import VisualsView
-from .visuals_events import VisualsEvents
+from roguelike_editors.spawner.spawner_instance_properties_panel.visuals.visuals_model import VisualsModel
+from roguelike_editors.spawner.spawner_instance_properties_panel.visuals.visuals_view import VisualsView
+from roguelike_editors.spawner.spawner_instance_properties_panel.visuals.visuals_events import VisualsEvents
 from roguelike_editors.spawner.services import load_instances_json as load_spawners_instances_json
 
 logger = logging.getLogger(__name__)

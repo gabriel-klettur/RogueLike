@@ -1,5 +1,5 @@
 import pygame
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_ui.ui_blocker import register_blocker
 from pathlib import Path
 from roguelike_ui.panel import DraggablePanel

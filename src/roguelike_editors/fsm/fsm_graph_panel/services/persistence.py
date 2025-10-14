@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from roguelike_editors.fsm.services.fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     default_layouts_path,
     load_layouts,
     save_layouts,
