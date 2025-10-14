@@ -35,6 +35,17 @@ def ensure_cache() -> Cached:
     if _CACHE is not None:
         return _CACHE
 
+    # Back-compat: allow tests (and bridge) to inject a prebuilt cache via fsm_runtime_bridge._CACHE
+    # Import locally to avoid circular import at module initialization time.
+    try:
+        from . import fsm_runtime_bridge as fbr  # type: ignore
+        ext_cache = getattr(fbr, "_CACHE", None)
+        if ext_cache is not None:
+            _CACHE = ext_cache  # type: ignore[assignment]
+            return _CACHE  # type: ignore[return-value]
+    except Exception:
+        pass
+
     sets, assignments = load_all()
 
     # Load animation map (optional but recommended)

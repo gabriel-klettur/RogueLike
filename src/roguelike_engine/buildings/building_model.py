@@ -1,6 +1,7 @@
 import os
 import pygame
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.utils.loader import load_image
 import logging
 logger = logging.getLogger(__name__)

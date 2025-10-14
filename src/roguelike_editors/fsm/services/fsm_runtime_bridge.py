@@ -26,12 +26,14 @@ from .fsm_highlight import (
 )
 from .fsm_assignments import assignment_for
 from .fsm_builder import build_fsm_from_set as _build_fsm_from_set
+from .fsm_cache import Cached as _Cached
 
 
 logger = logging.getLogger(__name__)
 
 
 FSM_SETS_VERSION: int = 0
+_CACHE: Optional[_Cached] = None
 
 
 def reload() -> int:

@@ -35,7 +35,12 @@ def build_fsm_from_set(set_def: Dict[str, Any]) -> Tuple[FiniteStateMachine, str
     # Resolve and attach animation map for this set (default + per-set override)
     set_id = set_def.get("id", "") or ""
     try:
-        c = ensure_cache()
+        try:
+            from . import fsm_runtime_bridge as fbr  # type: ignore
+            ext_cache = getattr(fbr, "_CACHE", None)
+        except Exception:
+            ext_cache = None
+        c = ext_cache if ext_cache is not None else ensure_cache()
         amap_doc = c.anim_map or {}
         default_map = (amap_doc.get("default") or {})
         overrides = ((amap_doc.get("overrides") or {}).get(set_id) or {})
