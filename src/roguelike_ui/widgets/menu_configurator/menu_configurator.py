@@ -1,5 +1,5 @@
 import pygame
-from roguelike_ui.widgets.menu_renderer import MenuRenderer
+from roguelike_ui.widgets.menu_renderer.menu_renderer import MenuRenderer
 from roguelike_ui.services.formatting import format_key_label
 
 

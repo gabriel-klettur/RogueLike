@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Dict, Any, List, Tuple
 import pygame
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from ..services.buildings_service import (
     load_buildings_instances as svc_load_buildings_instances,

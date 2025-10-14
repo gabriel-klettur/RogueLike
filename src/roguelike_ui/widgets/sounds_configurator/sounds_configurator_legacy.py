@@ -1,7 +1,7 @@
 import pygame
 import json
 from pathlib import Path
-from roguelike_ui.widgets.menu_renderer import MenuRenderer
+from roguelike_ui.widgets.menu_renderer.menu_renderer import MenuRenderer
 try:
     from roguelike_engine.audio.api import apply_audio_config_now
 except Exception:

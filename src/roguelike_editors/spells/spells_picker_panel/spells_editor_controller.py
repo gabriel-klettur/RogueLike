@@ -5,7 +5,7 @@ import logging
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
 from roguelike_editors.spells.spells_picker_panel.spells_editor_model import SpellEditorModel
 from roguelike_editors.spells.spells_picker_panel.spells_editor_view import SpellEditorView
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_editors.spells.spells_picker_panel.spells_editor_events import SpellEditorEventHandler
 from roguelike_editors.spells.spells_properties_panel.spells_properties_panel_controller import (

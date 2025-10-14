@@ -1,5 +1,5 @@
 import pygame
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
