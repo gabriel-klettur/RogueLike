@@ -5,11 +5,11 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 10
+        "quantity": 11
       },
       {
         "item": "wood",
-        "quantity": 1
+        "quantity": 2
       },
       null,
       null,

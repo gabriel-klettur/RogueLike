@@ -122,8 +122,9 @@ class BuildingEditorController:
             if ab is not None:
                 delete_rect = get_rect(ab, camera)
                 if delete_rect and delete_rect.collidepoint(mx, my):
-                    logger.info("🗑️ Click en botón eliminar (handle rojo) → abrir confirmación")
-                    self._ask_confirm_delete(ab)
+                    idx = buildings.index(ab) if ab in buildings else -1
+                    logger.info(f"🗑️ Eliminado edificio activo via handle rojo (idx={idx}). Apilado en undo_stack.")
+                    self._delete_building(ab, buildings)
                     return
                 # Detect reset handle (click izquierdo)
                 reset_rect = self.default_view.get_reset_handle_rect(ab, camera)

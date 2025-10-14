@@ -1,11 +1,32 @@
 import pygame
 from pygame.time import get_ticks
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TextInput:
     """
     Widget for inline text editing with blinking caret, cursor movement, and key repeat.
     """
     def __init__(self, font: pygame.font.Font, blink_interval: int = 500):
+        # Provide a safe default font if None is passed in (e.g., tests)
+        if font is None:
+            try:
+                if not pygame.get_init():
+                    pygame.init()
+            except Exception:
+                pass
+            try:
+                if not pygame.font.get_init():
+                    pygame.font.init()
+            except Exception:
+                pass
+            try:
+                font = pygame.font.Font(None, 16)
+                logger.info("[TextInput] No font provided; using default pygame font (size=%d)", font.get_height())
+            except Exception:
+                # As a last resort, keep None; downstream will raise with clear error
+                logger.error("[TextInput] Could not create default font; TextInput may fail without a valid font.")
         self.font = font
         self.blink_interval = blink_interval
         self.text = ""
