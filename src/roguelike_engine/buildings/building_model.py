@@ -1,31 +1,27 @@
 import os
-import types
 import pygame
-from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.utils.loader import load_image
-from typing import Dict, Tuple, Optional
 import logging
 logger = logging.getLogger(__name__)
 
 # Shared services and types for buildings package
 from roguelike_engine.buildings.services.zones import zone_offset
 from roguelike_engine.buildings.services.types import (
-    CollisionMap,
-    VisualStateMap,
-    StateThresholds,
-    RectList,
     ColliderScope,
 )
-from roguelike_engine.buildings.services.collisions import (
-    image_to_grid_size,
-    resample_collision_map,
+
+# Utils split out to keep this module lean
+from roguelike_engine.buildings.model_utils.image_ops import (
+    load_and_prepare_image as _mu_load_and_prepare_image,
 )
+from roguelike_engine.buildings.model_utils.pickling_ops import (
+    model_getstate as _mu_model_getstate,
+    model_setstate as _mu_model_setstate,
+)
+from roguelike_engine.buildings.model_mixins import BuildingCollisionMixin
 
-# Cache for building images: key = (image_path, scale)
-_BUILDING_IMAGE_CACHE: Dict[Tuple[str, Optional[Tuple[int,int]]], pygame.Surface] = {}
-
-class BuildingModel:
+class BuildingModel(BuildingCollisionMixin):
     """
     Modelo de datos para un edificio:
     • Coordenadas relativas en su zona (rel_x, rel_y).
@@ -131,26 +127,11 @@ class BuildingModel:
         • Si la imagen es muy grande (>512×512), reduce a 1/4.
         • Guarda en self.image y self.original_scale.
         """
-        # Use cache to avoid reloading and re-scaling
-        key = (self.image_path, scale)
-        if key in _BUILDING_IMAGE_CACHE:
-            surf = _BUILDING_IMAGE_CACHE[key]
-            self.original_scale = surf.get_size()
-        else:
-            raw = load_image(self.image_path)
-            if scale:
-                surf = pygame.transform.scale(raw, scale)
-                self.original_scale = scale
-            else:
-                w, h = raw.get_size()
-                if w > 512 or h > 512:
-                    new_size = (w // 4, h // 4)
-                    surf = pygame.transform.scale(raw, new_size)
-                    self.original_scale = new_size
-                else:
-                    surf = raw
-                    self.original_scale = (w, h)
-            _BUILDING_IMAGE_CACHE[key] = surf
+        # Delegate to model_utils image loader (with internal cache)
+        surf, applied_size = _mu_load_and_prepare_image(
+            self.image_path, scale, loader=load_image
+        )
+        self.original_scale = applied_size
         self.image = surf
         # Después de cambiar el tamaño, recalcular el “corte” en píxeles:
         self._cut_world = int(self.image.get_height() * self.split_ratio)
@@ -273,144 +254,11 @@ class BuildingModel:
         except Exception:
             # Best-effort; ignore failures
             pass
-
-    # ----------------------------- Collision mask (alpha-based) -----------------------------
-    def get_full_mask(self) -> pygame.Mask | None:
-        """Return (and cache) a mask built from the full image alpha. None if no image."""
-        try:
-            if self.image is None:
-                return None
-            if self._mask_full is None:
-                self._mask_full = pygame.mask.from_surface(self.image)
-            return self._mask_full
-        except Exception:
-            return None
-
-    # ───────────── Colisiones (collision_map + collision_tiles) ─────────────
-    @property
-    def collision_rect(self) -> pygame.Rect:
-        """
-        Retorna el rectángulo de colisión real, que corresponde a la parte inferior
-        del edificio (después de aplicar el split en self._cut_world).
-        """
-        full_h = self.image.get_height()
-        cut_h = self._cut_world
-        return pygame.Rect(
-            self.x,
-            self.y + cut_h,
-            self.image.get_width(),
-            full_h - cut_h
-        )
-
-    @property
-    def collision_tiles(self) -> list[pygame.Rect]:
-        """
-        Construye, si no existe, la lista de rectángulos de colisión por cada celda '#'
-        de self._collision_map. Crea también objetos envoltorio con flag 'solid'.
-        """
-        if self._collision_tiles_cache is None:
-            cache: list[pygame.Rect] = []
-            for row_idx, row in enumerate(self._collision_map):
-                for col_idx, cell in enumerate(row):
-                    if cell == "#":
-                        x = self.x + col_idx * TILE_SIZE
-                        y = self.y + row_idx * TILE_SIZE
-                        cache.append(pygame.Rect(x, y, TILE_SIZE, TILE_SIZE))
-            self._collision_tiles_cache = cache
-            # También creamos una lista de SimpleNamespace para quien necesite .solid y .rect
-            self._collision_tile_objs = [
-                types.SimpleNamespace(solid=True, rect=rect)
-                for rect in cache
-            ]
-        return self._collision_tiles_cache
-
-    @property
-    def collision_tile_objs(self) -> list[types.SimpleNamespace]:
-        """
-        Acceso rápido a los objetos de colisión (con atributos .solid y .rect).
-        """
-        # Asegurarnos de que collision_tiles ya haya sido calculado
-        _ = self.collision_tiles
-        return self._collision_tile_objs or []
-
-    # ───────────── Utilidades de grid para collision_map ─────────────
-    def _image_to_grid_size(self) -> tuple[int, int]:
-        """
-        Devuelve (rows, cols) de la grilla de colisión a partir del tamaño de la imagen.
-        Garantiza al menos 1×1 celdas para permitir edición incluso en tamaños pequeños.
-        """
-        return image_to_grid_size(self.image, TILE_SIZE)
-
-    def _resample_collision_map(self, new_rows: int, new_cols: int):
-        """
-        Redimensiona self._collision_map a (new_rows×new_cols) usando remuestreo
-        nearest-neighbor para preservar lo existente al escalar.
-        Si el mapa actual es vacío, inicializa con '.' (caminable).
-        """
-        self._collision_map = resample_collision_map(self._collision_map, new_rows, new_cols)
-
-    # ───────────── Acceso al mapa de colisión en bruto ─────────────
-    @property
-    def collision_map(self) -> CollisionMap:
-        """
-        El collision_map se debe cargar por fuera (p. ej. desde JSON) antes de utilizarlo.
-        Aquí sólo devolvemos la referencia. No se modifica internamente en este modelo.
-        """
-        return self._collision_map
-
-    @collision_map.setter
-    def collision_map(self, data: CollisionMap):
-        """
-        Setter que invalida el cache de collision_tiles cuando cambia el mapa.
-        """
-        self._collision_map = data
-        self._collision_tiles_cache = None
-        self._collision_tile_objs = None
-
-    # ───────────── Invalidation helpers ─────────────
-    def invalidate_collision_caches(self) -> None:
-        """Invalida caches derivados de collision_map (rects y objetos)."""
-        self._collision_tiles_cache = None
-        self._collision_tile_objs = None
-
     # Support pickling BuildingModel: omit surfaces and reconstruct on unpickle
     def __getstate__(self):
-        return {
-            'rel_x': self.rel_x,
-            'rel_y': self.rel_y,
-            'zone': self.zone,
-            'solid': self.solid,
-            'image_path': self.image_path,
-            'split_ratio': self.split_ratio,
-            'z_bottom': self.z_bottom,
-            'z_top': self.z_top,
-            'collision_map': self._collision_map,
-            'original_scale': self.original_scale,
-            'collider_scope': self.collider_scope,
-            'images_by_state': self.images_by_state,
-            'state_thresholds': self.state_thresholds,
-            'current_visual_state': self.current_visual_state,
-        }
+        return _mu_model_getstate(self)
 
     def __setstate__(self, state):
-        self.rel_x = state['rel_x']
-        self.rel_y = state['rel_y']
-        self.zone = state.get('zone', None)
-        self.solid = state['solid']
-        self.image_path = state['image_path']
-        self.split_ratio = state['split_ratio']
-        self.z_bottom = state['z_bottom']
-        self.z_top = state['z_top']
-        self.z = self.z_bottom
-        self._collision_map = state['collision_map']
-        self._collision_tiles_cache = None
-        self._collision_tile_objs = None
-        self.original_scale = state.get('original_scale')
-        # Restaurar alcance de colisión por edificio
-        self.collider_scope = state.get('collider_scope', 'CG')
-        # Multi-state visual support
-        self.images_by_state = state.get('images_by_state', {}) or {}
-        self.state_thresholds = state.get('state_thresholds')
-        self.current_visual_state = state.get('current_visual_state')
+        _mu_model_setstate(self, state)
         # Reload image using cached loader
         self._load_and_prepare_image(self.original_scale)
