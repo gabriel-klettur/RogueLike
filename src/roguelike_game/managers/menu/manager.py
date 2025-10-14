@@ -14,7 +14,7 @@ from roguelike_game.ecs.components.experience_component import ExperienceCompone
 
 from roguelike_game.managers.menu.menu_handler import MenuHandler
 from roguelike_ui.widgets.menu_renderer.menu_renderer import MenuRenderer
-from roguelike_ui.widgets.menu_configurator.menu_configurator import MenuConfigurator
+from roguelike_ui.widgets.menu_configurator.controller import MenuConfigurator
 from roguelike_ui.widgets.options_configurator import OptionsConfigurator
 
 from .subsystems.background import BackgroundManager

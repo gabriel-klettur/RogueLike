@@ -1,6 +1,6 @@
 import pygame
 from roguelike_ui.widgets.menu_renderer.menu_renderer import MenuRenderer
-from roguelike_ui.widgets.menu_configurator.menu_configurator import MenuConfigurator
+from roguelike_ui.widgets.menu_configurator.controller import MenuConfigurator
 from roguelike_ui.widgets.sounds_configurator.sounds_configurator import SoundsConfigurator
 
 class OptionsConfigurator:
