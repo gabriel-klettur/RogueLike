@@ -240,11 +240,14 @@ class FileSystemPickerView:
                 translated = pygame.event.Event(event.type, {**event.__dict__, 'pos': (lx, ly)})
             except Exception:
                 translated = event
-        # Initialize selection for keyboard navigation
+        # Initialize selection for keyboard navigation: consume the first arrow/return key
         if event.type == pygame.KEYDOWN:
             if self.grid_state.selected_index is None and len(self.model.entries) > 0:
                 if event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_RETURN):
                     self._on_picker_select(0)
+                    # Consume this first key event to avoid immediate movement to index 1
+                    self.model.scroll_offset = self.grid_state.scroll_y
+                    return
         # Dispatch to picker (special-case wheel to use absolute rect for hit-test)
         if event.type == pygame.MOUSEWHEEL:
             old_rect = self.grid_state.rect

@@ -12,13 +12,17 @@ class Button:
 
     def is_hovered(self, mouse_pos):
         """Update and return hover state based on mouse_pos."""
-        self.hover = self.rect.collidepoint(mouse_pos)
+        # Special-case zero-size rects: treat top-left as the only hovered point
+        if self.rect.width == 0 and self.rect.height == 0:
+            self.hover = (mouse_pos == self.rect.topleft)
+        else:
+            self.hover = self.rect.collidepoint(mouse_pos)
         return self.hover
 
     def draw(self, surface):
         """Draw background, hover overlay, and border."""
         pygame.draw.rect(surface, self.bgcolor, self.rect)
-        if self.hover:
+        if self.hover and self.rect.width > 0 and self.rect.height > 0:
             hover_surf = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
             hover_surf.fill(self.hover_color)
             surface.blit(hover_surf, self.rect.topleft)

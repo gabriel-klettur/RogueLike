@@ -5,13 +5,13 @@ import json
 import os
 import logging
 
-from .paths import spawners_path
+from . import paths as paths
 
 logger = logging.getLogger(__name__)
 
 
 def load_spawners_json() -> List[Dict[str, Any]]:
-    path = spawners_path()
+    path = paths.spawners_path()
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -44,7 +44,7 @@ def load_spawners_json() -> List[Dict[str, Any]]:
 
 def write_spawners_json(data: List[Dict[str, Any]]) -> None:
     """Write the full spawners list to data/spawners/spawners_templates.json."""
-    path = spawners_path()
+    path = paths.spawners_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     # Sanitize legacy fields before persisting
     cleaned: List[Dict[str, Any]] = []

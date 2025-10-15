@@ -35,6 +35,17 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
         if eid in system.initialized:
             continue
         key = str(eid)
+        # Normalizar player_id en active_players siempre que exista la entrada,
+        # incluso si ya hay InventoryComponent (no sobrescribimos el componente, solo saneamos el store)
+        if key in active_players:
+            pdata = active_players[key]
+            pid = pdata.get('player_id')
+            try:
+                uuid.UUID(str(pid)) if pid else (_ for _ in ()).throw(ValueError())
+            except Exception:
+                pid = str(uuid.uuid4())
+                pdata['player_id'] = pid
+                system.dirty_players = True
         # Si ya existen componentes (cargados desde un save), NO sobrescribirlos
         existing_inv = world.components.get('InventoryComponent', {}).get(eid)
         existing_xp  = world.components.get('ExperienceComponent', {}).get(eid)
@@ -44,14 +55,8 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
             # Cargar inventario persistido de activos si existe
             if key in active_players:
                 pdata = active_players[key]
-                # Normalizar player_id inexistente o inválido
+                # Usar player_id ya normalizado arriba
                 pid = pdata.get('player_id')
-                try:
-                    uuid.UUID(str(pid)) if pid else (_ for _ in ()).throw(ValueError())
-                except Exception:
-                    pid = str(uuid.uuid4())
-                    pdata['player_id'] = pid
-                    system.dirty_players = True
                 inv_comp = InventoryComponent(
                     capacity=system.player_template.get('capacity', 20),
                     player_id=pid

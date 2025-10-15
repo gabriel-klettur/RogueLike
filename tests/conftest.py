@@ -56,7 +56,10 @@ def ensure_pygame_initialized():
 
 # Avoid filesystem writes from tile overlay saving in tests
 @pytest.fixture(autouse=True)
-def patch_overlay_save_layers(monkeypatch):
+def patch_overlay_save_layers(monkeypatch, request):
+    nodeid = getattr(request.node, "nodeid", "")
+    if "roguelike_engine/map/model/overlay/test_overlay_manager_happy_error.py" in nodeid:
+        return
     try:
         import roguelike_engine.map.model.overlay.overlay_manager as om
         monkeypatch.setattr(om, "save_layers", lambda *a, **k: None, raising=False)

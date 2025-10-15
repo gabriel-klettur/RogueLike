@@ -24,6 +24,7 @@ from .paths import (
     instances_path,
     spawners_path,
 )
+from . import paths as paths
 from .ids import (
     slugify,
     generate_instance_id,
@@ -51,6 +52,7 @@ from .operations import (
 
 __all__ = [
     # paths
+    "paths",
     "_project_root",
     "_abs_data_base",
     "instances_path",

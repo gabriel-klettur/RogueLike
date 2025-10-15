@@ -5,7 +5,7 @@ import json
 import os
 import logging
 
-from .paths import instances_path
+from . import paths as paths
 from .ids import ensure_instance_ids
 from .logutil import dedup_should_log
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_instances_json() -> List[Dict[str, Any]]:
-    path = instances_path()
+    path = paths.instances_path()
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -44,7 +44,7 @@ def load_instances_json() -> List[Dict[str, Any]]:
 
 
 def write_instances_json(data: List[Dict[str, Any]]) -> None:
-    path = instances_path()
+    path = paths.instances_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     # Sanitize legacy fields and normalize building_id inside overrides/root
     cleaned: List[Dict[str, Any]] = []

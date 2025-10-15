@@ -189,17 +189,19 @@ def handle_mouse_actions(system, world, eid: int, keys, mx: int, my: int) -> Non
     system.prev_click[eid] = curr_left
 
     # Botones/teclas configurables
-    fb_btn = system.config.get_mouse_button_for_binding("mouse_fireball")
-    lb_btn = system.config.get_mouse_button_for_binding("mouse_laser_beam")
-    dash_btn = system.config.get_mouse_button_for_binding("mouse_dash")
+    _get_mouse_btn = getattr(system.config, "get_mouse_button_for_binding", None)
+    _get_key = getattr(system.config, "get_key_for_binding", None)
+    fb_btn = _get_mouse_btn("mouse_fireball") if callable(_get_mouse_btn) else None
+    lb_btn = _get_mouse_btn("mouse_laser_beam") if callable(_get_mouse_btn) else None
+    dash_btn = _get_mouse_btn("mouse_dash") if callable(_get_mouse_btn) else None
 
     kb_codes = {
-        ("fireball", "a"): system.config.get_key_for_binding("kb_fireball_a"),
-        ("fireball", "b"): system.config.get_key_for_binding("kb_fireball_b"),
-        ("laser_beam", "a"): system.config.get_key_for_binding("kb_laser_beam_a"),
-        ("laser_beam", "b"): system.config.get_key_for_binding("kb_laser_beam_b"),
-        ("dash", "a"): system.config.get_key_for_binding("kb_dash_a"),
-        ("dash", "b"): system.config.get_key_for_binding("kb_dash_b"),
+        ("fireball", "a"): _get_key("kb_fireball_a") if callable(_get_key) else None,
+        ("fireball", "b"): _get_key("kb_fireball_b") if callable(_get_key) else None,
+        ("laser_beam", "a"): _get_key("kb_laser_beam_a") if callable(_get_key) else None,
+        ("laser_beam", "b"): _get_key("kb_laser_beam_b") if callable(_get_key) else None,
+        ("dash", "a"): _get_key("kb_dash_a") if callable(_get_key) else None,
+        ("dash", "b"): _get_key("kb_dash_b") if callable(_get_key) else None,
     }
 
     # Fireball (edge)
@@ -257,7 +259,7 @@ def handle_mouse_actions(system, world, eid: int, keys, mx: int, my: int) -> Non
 
     # Mouse para hechizos genéricos
     for name in SPELL_ATTRS:
-        btn = system.config.get_mouse_button_for_binding(f"mouse_spell_{name}")
+        btn = _get_mouse_btn(f"mouse_spell_{name}") if callable(_get_mouse_btn) else None
         if isinstance(btn, int):
             curr_spell_mouse = bool(mouse_pressed[btn]) and not ui_blocked
             prev_spell_mouse = system.prev_mouse.get((eid, f"spell_{name}"), False)

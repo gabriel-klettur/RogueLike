@@ -3,6 +3,7 @@ from .factory import get_overlay_store
 from roguelike_engine.map.model.layer import Layer
 
 import logging
+import sys
 logger = logging.getLogger(__name__)
 
 # Instanciamos por defecto el store JSON usando sólo overlays de zonas
@@ -51,4 +52,5 @@ def save_layers(map_name: str, layers: Dict[Layer, List[List[str]]]) -> None:
     Guarda múltiples capas en el formato nuevo JSON.
     """
     data = {"layers": {layer.name: grid for layer, grid in layers.items()}}
-    _default_store.save(map_name, data)
+    store = globals()["_default_store"]
+    store.save(map_name, data)

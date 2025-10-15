@@ -6,12 +6,15 @@ from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.utils.loader import get_sprite_for_tile
 
 import logging
+import math as _math
 logger = logging.getLogger(__name__)
 # Disable very chatty map chunk build logs by default
 DEBUG_CHUNKED: bool = False
+MAX_ZOOM: float = 10.0
+MAX_SURFACE_DIM: int = 4096
 
-# Cache scaled sprites per (sprite, zoom)
-_SCALED_CACHE: dict[tuple[pygame.Surface, float], pygame.Surface] = {}
+# Cache scaled sprites per (sprite_id, zoom)
+_SCALED_CACHE: dict[tuple[int, float], pygame.Surface] = {}
 
 class ChunkedMapView:
     """
@@ -32,6 +35,14 @@ class ChunkedMapView:
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
         """
+        # Clamp zoom locally for safety
+        try:
+            z = float(zoom)
+        except Exception:
+            z = 1.0
+        if not _math.isfinite(z):
+            z = 1.0
+        zoom = min(max(z or 1.0, 0.1), MAX_ZOOM)
         width  = len(map_model.matrix[0])
         height = len(map_model.matrix)
         cs = self.chunk_size
@@ -70,11 +81,15 @@ class ChunkedMapView:
                 tile_w = min(cs, width  - cx*cs)
                 tile_h = min(cs, height - cy*cs)
 
-                # tamaño en píxeles tras escalar (usar redondeo para evitar acumulación de truncado)
-                pix_w = int(round(tile_w * TILE_SIZE * zoom))
-                pix_h = int(round(tile_h * TILE_SIZE * zoom))
+                # tamaño en píxeles tras escalar (usar redondeo y tamaño entre 1..MAX_SURFACE_DIM)
+                pix_w = min(MAX_SURFACE_DIM, max(1, int(round(tile_w * TILE_SIZE * zoom))))
+                pix_h = min(MAX_SURFACE_DIM, max(1, int(round(tile_h * TILE_SIZE * zoom))))
 
-                surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
+                try:
+                    surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
+                except Exception:
+                    # Fallback ultra defensivo
+                    surf = pygame.Surface((1, 1), pygame.SRCALPHA)
                 zkey = float(zoom)
 
                 # dibujar cada tile por capa en orden usando raw_layers
@@ -92,17 +107,25 @@ class ChunkedMapView:
 
                             if not sprite:
                                 continue
-                            # scaled cache
-                            skey = (sprite, zkey)
+                            # scaled cache (by sprite id and zoom)
+                            skey = (id(sprite), zkey)
                             scaled = _SCALED_CACHE.get(skey)
                             if scaled is None:
                                 sw, sh = sprite.get_size()
-                                scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
+                                tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
+                                th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
+                                try:
+                                    scaled = pygame.transform.scale(sprite, (tw, th))
+                                except Exception:
+                                    scaled = sprite
                                 _SCALED_CACHE[skey] = scaled
                             # posición dentro del chunk
                             px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
                             py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
-                            surf.blit(scaled, (px, py))
+                            try:
+                                surf.blit(scaled, (px, py))
+                            except Exception:
+                                pass
 
                 chunk_dict[(cx, cy)] = surf
 
@@ -119,8 +142,8 @@ class ChunkedMapView:
         """
         Rebuild only the chunks containing the given tile coordinates.
         """
-        # Determine zoom level (exact)
-        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
+        # Determine zoom level (clamped)
+        zoom = min(max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1), MAX_ZOOM)
 
         # Ensure base cache exists
         if zoom not in self.chunks_by_zoom:
@@ -164,11 +187,16 @@ class ChunkedMapView:
                         sprite = sprite_map.get((char, code))
                         if not sprite:
                             continue
-                        skey = (sprite, zoom)
+                        skey = (id(sprite), zoom)
                         scaled = _SCALED_CACHE.get(skey)
                         if scaled is None:
                             sw, sh = sprite.get_size()
-                            scaled = pygame.transform.scale(sprite, (int(round(sw * zoom)), int(round(sh * zoom))))
+                            tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
+                            th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
+                            try:
+                                scaled = pygame.transform.scale(sprite, (tw, th))
+                            except Exception:
+                                scaled = sprite
                             _SCALED_CACHE[skey] = scaled
                         px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
                         py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
@@ -190,8 +218,8 @@ class ChunkedMapView:
         """
         dirty_rects: list[pygame.Rect] = []
         screen_w, screen_h = screen.get_size()
-        # Use exact zoom and clamp to minimum to avoid division by zero
-        zoom = max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1)
+        # Use clamped zoom to avoid extreme surface sizes
+        zoom = min(max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1), MAX_ZOOM)
 
         # rebuild cache para este zoom si falta
         if zoom not in self.chunks_by_zoom:
@@ -200,21 +228,20 @@ class ChunkedMapView:
         chunks = self.chunks_by_zoom[zoom]
         cs = self.chunk_size
 
-        # límites en coordenadas de mundo
         left   = camera.offset_x
         top    = camera.offset_y
         right  = camera.offset_x + screen_w  / zoom
         bottom = camera.offset_y + screen_h / zoom
 
-        # índices de chunk visibles
-        min_cx = max(int((left  // TILE_SIZE) // cs), 0)
-        max_cx = min(int((right // TILE_SIZE) // cs) + 1,
-                     math.ceil(len(map_model.matrix[0]) / cs))
-        min_cy = max(int((top   // TILE_SIZE) // cs), 0)
-        max_cy = min(int((bottom// TILE_SIZE) // cs) + 1,
-                     math.ceil(len(map_model.matrix) / cs))
+        n_chunks_x = math.ceil(len(map_model.matrix[0]) / cs) if map_model.matrix else 0
+        n_chunks_y = math.ceil(len(map_model.matrix) / cs)
 
-        # blitear sólo los chunks en ese rango
+        chunk_w_px = cs * TILE_SIZE
+        min_cx = max(int(math.floor(left   / chunk_w_px)), 0)
+        max_cx = min(int(math.ceil (right  / chunk_w_px)), n_chunks_x)
+        min_cy = max(int(math.floor(top    / chunk_w_px)), 0)
+        max_cy = min(int(math.ceil (bottom / chunk_w_px)), n_chunks_y)
+
         for cy in range(min_cy, max_cy):
             for cx in range(min_cx, max_cx):
                 surf = chunks.get((cx, cy))
