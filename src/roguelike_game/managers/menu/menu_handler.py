@@ -83,9 +83,14 @@ class MenuHandler:
         Alterna entre modo local y online.
         """
         if self.state.mode == "local":
-            self.state.mode = "online"
-            logger.info("Conectando al servidor...")
-            # self.state.network.connect()
+            net = getattr(self.state, "network", None)
+            if net is not None and hasattr(net, "connect"):
+                self.state.mode = "online"
+                logger.info("Conectando al servidor...")
+                # self.state.network.connect()
+            else:
+                self.state.mode = "local"
+                logger.info("Modo multijugador no disponible; permanece en modo local.")
         else:
             self.state.mode = "local"
             logger.info("Cambiando a modo local...")

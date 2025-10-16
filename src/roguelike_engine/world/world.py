@@ -260,14 +260,38 @@ class WorldManager:
                 except Exception:
                     pass
             else:
-                raise FileNotFoundError("No hay slot de guardado activo para cargar.")
+                try:
+                    logger.info("[World] No hay slot de guardado activo para cargar.")
+                except Exception:
+                    pass
+                return
         else:
             # Log explícito si el path es provisto o ya existe en current_save_path
             try:
                 logger.info(f"[World] Cargando mundo desde: {load_path}")
             except Exception:
                 pass
-        # Recordar slot activo y actualizar índice
+        # Validar existencia del archivo; si no existe, intentar fallback silencioso
+        try:
+            path_obj = Path(load_path)
+            exists = path_obj.exists()
+        except Exception:
+            exists = False
+        if not exists:
+            fallback = self._find_latest_slot()
+            if fallback is not None and fallback.exists():
+                load_path = str(fallback)
+                try:
+                    logger.info(f"[World] Slot no encontrado, usando más reciente: {load_path}")
+                except Exception:
+                    pass
+            else:
+                try:
+                    logger.info("[World] No hay archivo de guardado válido; iniciando sin cargar mundo.")
+                except Exception:
+                    pass
+                return
+        # Recordar slot activo y actualizar índice (tras validar)
         self.current_save_path = load_path
         try:
             self.repository.set_current_path(self.config.save_dir, load_path)
@@ -277,7 +301,33 @@ class WorldManager:
             self.events.publish("on_slot_changed", load_path)
         except Exception:
             pass
-        data = self.repository.load_from_path(load_path)
+        # Cargar datos con manejo de falta de archivo (stale índice)
+        try:
+            data = self.repository.load_from_path(load_path)
+        except FileNotFoundError:
+            fallback = self._find_latest_slot()
+            if fallback is not None and fallback.exists():
+                load_path = str(fallback)
+                self.current_save_path = load_path
+                try:
+                    self.repository.set_current_path(self.config.save_dir, load_path)
+                except Exception:
+                    pass
+                try:
+                    data = self.repository.load_from_path(load_path)
+                except FileNotFoundError:
+                    # Último recurso: abortar sin error
+                    try:
+                        logger.info("[World] Ningún slot válido disponible tras fallback; omitiendo carga.")
+                    except Exception:
+                        pass
+                    return
+            else:
+                try:
+                    logger.info("[World] Ningún slot válido disponible; omitiendo carga.")
+                except Exception:
+                    pass
+                return
         # Importante: al cargar un mundo desde disco, descartar mapas en memoria
         # para que el estado de disco (deserialize_state) se aplique al llamar a load_level().
         try:
