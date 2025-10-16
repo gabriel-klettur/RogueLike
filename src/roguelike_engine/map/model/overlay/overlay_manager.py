@@ -8,6 +8,14 @@ logger = logging.getLogger(__name__)
 
 # Instanciamos por defecto el store JSON usando sólo overlays de zonas
 _default_store = get_overlay_store("json")
+# Optional store for tests/tools to force usage
+_injected_store = None
+
+def set_overlay_store(store) -> None:
+    """Permite inyectar un store de overlays (para tests/herramientas)."""
+    global _default_store, _injected_store
+    _default_store = store
+    _injected_store = store
 
 def load_overlay(map_name: str) -> Optional[List[List[str]]]:
     """
@@ -51,6 +59,12 @@ def save_layers(map_name: str, layers: Dict[Layer, List[List[str]]]) -> None:
     """
     Guarda múltiples capas en el formato nuevo JSON.
     """
-    data = {"layers": {layer.name: grid for layer, grid in layers.items()}}
-    store = globals()["_default_store"]
+    data = serialize_layers_payload(layers)
+    # Acceder al atributo del módulo en tiempo de ejecución (respetando monkeypatch)
+    mod = sys.modules[__name__]
+    store = getattr(mod, "_injected_store", None) or mod._default_store
     store.save(map_name, data)
+
+def serialize_layers_payload(layers: Dict[Layer, List[List[str]]]) -> Dict[str, List[List[str]]]:
+    """Serializa el diccionario {Layer: grid} al formato persistible {"layers": {name: grid}}."""
+    return {"layers": {layer.name: grid for layer, grid in layers.items()}}

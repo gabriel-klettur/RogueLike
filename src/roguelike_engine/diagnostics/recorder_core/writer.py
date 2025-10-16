@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from roguelike_engine.log_config import build_log_filepath
@@ -13,9 +13,9 @@ from .context import now_iso
 def _session_datetime(data: Dict[str, Any]) -> datetime:
     try:
         ts_val = float(data.get("_started_ts", 0.0) or 0.0)
-        return datetime.utcfromtimestamp(ts_val) if ts_val > 0 else datetime.utcnow()
+        return datetime.fromtimestamp(ts_val, timezone.utc) if ts_val > 0 else datetime.now(timezone.utc)
     except Exception:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
 
 def write_session(data: Dict[str, Any]) -> str:

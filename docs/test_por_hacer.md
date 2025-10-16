@@ -22,63 +22,63 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 ### 1) roguelike_game (260)
 
 #### 1.1 Componentes ECS (112)
-- tests/roguelike_game/ecs/components/abilities/test_abilities_component_defaults.py
-- tests/roguelike_game/ecs/components/abilities/test_abilities_component_validation.py
-- tests/roguelike_game/ecs/components/abilities/test_abilities_component_serialization.py
-- tests/roguelike_game/ecs/components/abilities/test_abilities_component_invariants.py
+- tests/roguelike_game/ecs/components/abilities/test_abilities_component_defaults.py [COMPLETADO]
+- tests/roguelike_game/ecs/components/abilities/test_abilities_component_validation.py [COMPLETADO]
+- tests/roguelike_game/ecs/components/abilities/test_abilities_component_serialization.py [COMPLETADO]
+- tests/roguelike_game/ecs/components/abilities/test_abilities_component_invariants.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/abilities/test_abilities_component_merging.py
 - tests/roguelike_game/ecs/components/abilities/test_abilities_component_factory.py
 - tests/roguelike_game/ecs/components/abilities/test_abilities_component_edge_cases.py
 - tests/roguelike_game/ecs/components/abilities/test_abilities_component_schema_compat.py
-- tests/roguelike_game/ecs/components/ai/test_ai_component_defaults.py
+- tests/roguelike_game/ecs/components/ai/test_ai_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/ai/test_ai_component_validation.py
-- tests/roguelike_game/ecs/components/ai/test_ai_component_serialization.py
+- tests/roguelike_game/ecs/components/ai/test_ai_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/ai/test_ai_component_invariants.py
 - tests/roguelike_game/ecs/components/ai/test_ai_component_merging.py
 - tests/roguelike_game/ecs/components/ai/test_ai_component_factory.py
 - tests/roguelike_game/ecs/components/ai/test_ai_component_edge_cases.py
 - tests/roguelike_game/ecs/components/ai/test_ai_component_schema_compat.py
-- tests/roguelike_game/ecs/components/chat/test_chat_component_defaults.py
+- tests/roguelike_game/ecs/components/chat/test_chat_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/chat/test_chat_component_validation.py
-- tests/roguelike_game/ecs/components/chat/test_chat_component_serialization.py
+- tests/roguelike_game/ecs/components/chat/test_chat_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/chat/test_chat_component_invariants.py
 - tests/roguelike_game/ecs/components/chat/test_chat_component_merging.py
 - tests/roguelike_game/ecs/components/chat/test_chat_component_factory.py
 - tests/roguelike_game/ecs/components/chat/test_chat_component_edge_cases.py
 - tests/roguelike_game/ecs/components/chat/test_chat_component_schema_compat.py
-- tests/roguelike_game/ecs/components/combat/test_combat_component_defaults.py
+- tests/roguelike_game/ecs/components/combat/test_combat_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/combat/test_combat_component_validation.py
-- tests/roguelike_game/ecs/components/combat/test_combat_component_serialization.py
+- tests/roguelike_game/ecs/components/combat/test_combat_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/combat/test_combat_component_invariants.py
 - tests/roguelike_game/ecs/components/combat/test_combat_component_merging.py
 - tests/roguelike_game/ecs/components/combat/test_combat_component_factory.py
 - tests/roguelike_game/ecs/components/combat/test_combat_component_edge_cases.py
 - tests/roguelike_game/ecs/components/combat/test_combat_component_schema_compat.py
-- tests/roguelike_game/ecs/components/core/test_core_component_defaults.py
+- tests/roguelike_game/ecs/components/core/test_core_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/core/test_core_component_validation.py
-- tests/roguelike_game/ecs/components/core/test_core_component_serialization.py
+- tests/roguelike_game/ecs/components/core/test_core_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/core/test_core_component_invariants.py
 - tests/roguelike_game/ecs/components/core/test_core_component_merging.py
 - tests/roguelike_game/ecs/components/core/test_core_component_factory.py
 - tests/roguelike_game/ecs/components/core/test_core_component_edge_cases.py
 - tests/roguelike_game/ecs/components/core/test_core_component_schema_compat.py
-- tests/roguelike_game/ecs/components/debug/test_debug_component_defaults.py
+- tests/roguelike_game/ecs/components/debug/test_debug_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/debug/test_debug_component_validation.py
-- tests/roguelike_game/ecs/components/debug/test_debug_component_serialization.py
+- tests/roguelike_game/ecs/components/debug/test_debug_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/debug/test_debug_component_invariants.py
 - tests/roguelike_game/ecs/components/debug/test_debug_component_merging.py
 - tests/roguelike_game/ecs/components/debug/test_debug_component_factory.py
 - tests/roguelike_game/ecs/components/debug/test_debug_component_edge_cases.py
 - tests/roguelike_game/ecs/components/debug/test_debug_component_schema_compat.py
-- tests/roguelike_game/ecs/components/fsm/test_fsm_component_defaults.py
+- tests/roguelike_game/ecs/components/fsm/test_fsm_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_validation.py
-- tests/roguelike_game/ecs/components/fsm/test_fsm_component_serialization.py
+- tests/roguelike_game/ecs/components/fsm/test_fsm_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_invariants.py
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_merging.py
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_factory.py
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_edge_cases.py
 - tests/roguelike_game/ecs/components/fsm/test_fsm_component_schema_compat.py
-- tests/roguelike_game/ecs/components/items/test_items_component_defaults.py
+- tests/roguelike_game/ecs/components/items/test_items_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/items/test_items_component_validation.py
 - tests/roguelike_game/ecs/components/items/test_items_component_serialization.py
 - tests/roguelike_game/ecs/components/items/test_items_component_invariants.py
@@ -86,49 +86,49 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_game/ecs/components/items/test_items_component_factory.py
 - tests/roguelike_game/ecs/components/items/test_items_component_edge_cases.py
 - tests/roguelike_game/ecs/components/items/test_items_component_schema_compat.py
-- tests/roguelike_game/ecs/components/particles/test_particles_component_defaults.py
+- tests/roguelike_game/ecs/components/particles/test_particles_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/particles/test_particles_component_validation.py
-- tests/roguelike_game/ecs/components/particles/test_particles_component_serialization.py
+- tests/roguelike_game/ecs/components/particles/test_particles_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/particles/test_particles_component_invariants.py
 - tests/roguelike_game/ecs/components/particles/test_particles_component_merging.py
 - tests/roguelike_game/ecs/components/particles/test_particles_component_factory.py
 - tests/roguelike_game/ecs/components/particles/test_particles_component_edge_cases.py
 - tests/roguelike_game/ecs/components/particles/test_particles_component_schema_compat.py
-- tests/roguelike_game/ecs/components/physics/test_physics_component_defaults.py
-- tests/roguelike_game/ecs/components/physics/test_physics_component_validation.py
+- tests/roguelike_game/ecs/components/physics/test_physics_component_defaults.py [COMPLETADO]
+- tests/roguelike_game/ecs/components/physics/test_physics_component_validation.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/physics/test_physics_component_serialization.py
 - tests/roguelike_game/ecs/components/physics/test_physics_component_invariants.py
 - tests/roguelike_game/ecs/components/physics/test_physics_component_merging.py
 - tests/roguelike_game/ecs/components/physics/test_physics_component_factory.py
 - tests/roguelike_game/ecs/components/physics/test_physics_component_edge_cases.py
 - tests/roguelike_game/ecs/components/physics/test_physics_component_schema_compat.py
-- tests/roguelike_game/ecs/components/rendering/test_rendering_component_defaults.py
+- tests/roguelike_game/ecs/components/rendering/test_rendering_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/rendering/test_rendering_component_validation.py
-- tests/roguelike_game/ecs/components/rendering/test_rendering_component_serialization.py
+- tests/roguelike_game/ecs/components/rendering/test_rendering_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/rendering/test_rendering_component_invariants.py
 - tests/roguelike_game/ecs/components/rendering/test_rendering_component_merging.py
 - tests/roguelike_game/ecs/components/rendering/test_rendering_component_factory.py
-- tests/roguelike_game/ecs/components/rendering/test_rendering_component_edge_cases.py
+- tests/roguelike_game/ecs/components/rendering/test_rendering_component_edge_cases.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/rendering/test_rendering_component_schema_compat.py
-- tests/roguelike_game/ecs/components/spawn/test_spawn_component_defaults.py
+- tests/roguelike_game/ecs/components/spawn/test_spawn_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_validation.py
-- tests/roguelike_game/ecs/components/spawn/test_spawn_component_serialization.py
+- tests/roguelike_game/ecs/components/spawn/test_spawn_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_invariants.py
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_merging.py
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_factory.py
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_edge_cases.py
 - tests/roguelike_game/ecs/components/spawn/test_spawn_component_schema_compat.py
-- tests/roguelike_game/ecs/components/spawner/test_spawner_component_defaults.py
+- tests/roguelike_game/ecs/components/spawner/test_spawner_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_validation.py
-- tests/roguelike_game/ecs/components/spawner/test_spawner_component_serialization.py
+- tests/roguelike_game/ecs/components/spawner/test_spawner_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_invariants.py
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_merging.py
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_factory.py
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_edge_cases.py
 - tests/roguelike_game/ecs/components/spawner/test_spawner_component_schema_compat.py
-- tests/roguelike_game/ecs/components/transform/test_transform_component_defaults.py
+- tests/roguelike_game/ecs/components/transform/test_transform_component_defaults.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/transform/test_transform_component_validation.py
-- tests/roguelike_game/ecs/components/transform/test_transform_component_serialization.py
+- tests/roguelike_game/ecs/components/transform/test_transform_component_serialization.py [COMPLETADO]
 - tests/roguelike_game/ecs/components/transform/test_transform_component_invariants.py
 - tests/roguelike_game/ecs/components/transform/test_transform_component_merging.py
 - tests/roguelike_game/ecs/components/transform/test_transform_component_factory.py
@@ -136,62 +136,64 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_game/ecs/components/transform/test_transform_component_schema_compat.py
 
 #### 1.2 Sistemas ECS (102)
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_process.py
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_events.py
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_integration_small.py
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_perf_budget.py
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_error_paths.py
-- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_config.py
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_events.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_integration_small.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_perf_budget.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_error_paths.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/abilities/test_abilities_system_config.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_process.py
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_events.py
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_integration_small.py
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_error_paths.py
 - tests/roguelike_game/ecs/systems/ai/test_ai_system_config.py
-- tests/roguelike_game/ecs/systems/audio/test_audio_system_process.py
-- tests/roguelike_game/ecs/systems/audio/test_audio_system_events.py
+- tests/roguelike_game/ecs/systems/audio/test_audio_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/audio/test_audio_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/audio/test_audio_system_integration_small.py
-- tests/roguelike_game/ecs/systems/audio/test_audio_system_perf_budget.py
+ - tests/roguelike_game/ecs/systems/audio/test_audio_system_integration_small.py [COMPLETADO]
+ - tests/roguelike_game/ecs/systems/audio/test_audio_system_perf_budget.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/audio/test_audio_system_error_paths.py
-- tests/roguelike_game/ecs/systems/audio/test_audio_system_config.py
-- tests/roguelike_game/ecs/systems/chat/test_chat_system_process.py
-- tests/roguelike_game/ecs/systems/chat/test_chat_system_events.py
+- tests/roguelike_game/ecs/systems/audio/test_audio_system_config.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/chat/test_chat_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/chat/test_chat_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/chat/test_chat_system_integration_small.py
+ - tests/roguelike_game/ecs/systems/chat/test_chat_system_integration_small.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/chat/test_chat_system_perf_budget.py
-- tests/roguelike_game/ecs/systems/chat/test_chat_system_error_paths.py
-- tests/roguelike_game/ecs/systems/chat/test_chat_system_config.py
-- tests/roguelike_game/ecs/systems/combat/test_combat_system_process.py
-- tests/roguelike_game/ecs/systems/combat/test_combat_system_events.py
+- tests/roguelike_game/ecs/systems/chat/test_chat_system_error_paths.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/chat/test_chat_system_config.py [COMPLETADO]
+ - tests/roguelike_game/ecs/systems/combat/test_combat_system_process.py [COMPLETADO]
+ - tests/roguelike_game/ecs/systems/combat/test_combat_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/combat/test_combat_system_integration_small.py
-- tests/roguelike_game/ecs/systems/combat/test_combat_system_perf_budget.py
-- tests/roguelike_game/ecs/systems/combat/test_combat_system_error_paths.py
+ - tests/roguelike_game/ecs/systems/combat/test_combat_system_perf_budget.py [COMPLETADO]
+ - tests/roguelike_game/ecs/systems/combat/test_combat_system_error_paths.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/combat/test_combat_system_config.py
-- tests/roguelike_game/ecs/systems/core/test_core_system_process.py
+- tests/roguelike_game/ecs/systems/core/test_core_system_process.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/core/test_core_system_events.py
 - tests/roguelike_game/ecs/systems/core/test_core_system_integration_small.py
 - tests/roguelike_game/ecs/systems/core/test_core_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/core/test_core_system_error_paths.py
 - tests/roguelike_game/ecs/systems/core/test_core_system_config.py
-- tests/roguelike_game/ecs/systems/experience/test_experience_system_process.py
+- tests/roguelike_game/ecs/systems/experience/test_experience_system_process.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/experience/test_experience_system_events.py
 - tests/roguelike_game/ecs/systems/experience/test_experience_system_integration_small.py
 - tests/roguelike_game/ecs/systems/experience/test_experience_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/experience/test_experience_system_error_paths.py
 - tests/roguelike_game/ecs/systems/experience/test_experience_system_config.py
-- tests/roguelike_game/ecs/systems/fsm/test_fsm_system_process.py
-- tests/roguelike_game/ecs/systems/fsm/test_fsm_system_events.py
+- tests/roguelike_game/ecs/systems/fsm/test_fsm_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/fsm/test_fsm_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/fsm/test_fsm_system_integration_small.py
 - tests/roguelike_game/ecs/systems/fsm/test_fsm_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/fsm/test_fsm_system_error_paths.py
 - tests/roguelike_game/ecs/systems/fsm/test_fsm_system_config.py
 - tests/roguelike_game/ecs/systems/input/test_input_system_process.py [COMPLETADO]
-- tests/roguelike_game/ecs/systems/input/test_input_system_events.py
+- tests/roguelike_game/ecs/systems/input/test_input_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/input/test_input_system_integration_small.py
 - tests/roguelike_game/ecs/systems/input/test_input_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/input/test_input_system_error_paths.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/input/test_input_system_config.py [COMPLETADO]
-- tests/roguelike_game/ecs/systems/inventory/test_inventory_system_process.py
-- tests/roguelike_game/ecs/systems/inventory/test_inventory_system_events.py
+- tests/roguelike_game/ecs/systems/inventory/test_inventory_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/inventory/test_inventory_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/inventory/test_inventory_system_integration_small.py
 - tests/roguelike_game/ecs/systems/inventory/test_inventory_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/inventory/test_inventory_system_error_paths.py [COMPLETADO]
@@ -208,14 +210,14 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_game/ecs/systems/map/test_map_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/map/test_map_system_error_paths.py
 - tests/roguelike_game/ecs/systems/map/test_map_system_config.py
-- tests/roguelike_game/ecs/systems/particles/test_particles_system_process.py
-- tests/roguelike_game/ecs/systems/particles/test_particles_system_events.py
+- tests/roguelike_game/ecs/systems/particles/test_particles_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/particles/test_particles_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/particles/test_particles_system_integration_small.py
 - tests/roguelike_game/ecs/systems/particles/test_particles_system_perf_budget.py
-- tests/roguelike_game/ecs/systems/particles/test_particles_system_error_paths.py
+- tests/roguelike_game/ecs/systems/particles/test_particles_system_error_paths.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/particles/test_particles_system_config.py
-- tests/roguelike_game/ecs/systems/physics/test_physics_system_process.py
-- tests/roguelike_game/ecs/systems/physics/test_physics_system_events.py
+- tests/roguelike_game/ecs/systems/physics/test_physics_system_process.py [COMPLETADO]
+- tests/roguelike_game/ecs/systems/physics/test_physics_system_events.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/physics/test_physics_system_integration_small.py
 - tests/roguelike_game/ecs/systems/physics/test_physics_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/physics/test_physics_system_error_paths.py
@@ -232,7 +234,7 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_game/ecs/systems/spawner/test_spawner_system_perf_budget.py
 - tests/roguelike_game/ecs/systems/spawner/test_spawner_system_error_paths.py
 - tests/roguelike_game/ecs/systems/spawner/test_spawner_system_config.py
-- tests/roguelike_game/ecs/systems/vendors/test_vendors_system_process.py
+- tests/roguelike_game/ecs/systems/vendors/test_vendors_system_process.py [COMPLETADO]
 - tests/roguelike_game/ecs/systems/vendors/test_vendors_system_events.py
 - tests/roguelike_game/ecs/systems/vendors/test_vendors_system_integration_small.py
 - tests/roguelike_game/ecs/systems/vendors/test_vendors_system_perf_budget.py
@@ -240,33 +242,33 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_game/ecs/systems/vendors/test_vendors_system_config.py
 
 #### 1.3 Managers (buildings) (18)
-- tests/roguelike_game/managers/buildings/test_loader_happy_path.py
-- tests/roguelike_game/managers/buildings/test_loader_invalid_data.py
-- tests/roguelike_game/managers/buildings/test_loader_io_errors.py
-- tests/roguelike_game/managers/buildings/test_loader_perf_budget.py
-- tests/roguelike_game/managers/buildings/test_loader_compat_schema.py
-- tests/roguelike_game/managers/buildings/test_loader_regressions.py
-- tests/roguelike_game/managers/buildings/test_updater_happy_path.py
-- tests/roguelike_game/managers/buildings/test_updater_invalid_data.py
-- tests/roguelike_game/managers/buildings/test_updater_io_errors.py
-- tests/roguelike_game/managers/buildings/test_updater_perf_budget.py
-- tests/roguelike_game/managers/buildings/test_updater_compat_schema.py
-- tests/roguelike_game/managers/buildings/test_updater_regressions.py
-- tests/roguelike_game/managers/buildings/test_calibrator_happy_path.py
-- tests/roguelike_game/managers/buildings/test_calibrator_invalid_data.py
-- tests/roguelike_game/managers/buildings/test_calibrator_io_errors.py
-- tests/roguelike_game/managers/buildings/test_calibrator_perf_budget.py
-- tests/roguelike_game/managers/buildings/test_calibrator_compat_schema.py
-- tests/roguelike_game/managers/buildings/test_calibrator_regressions.py
+- tests/roguelike_game/managers/buildings/test_loader_happy_path.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_loader_invalid_data.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_loader_io_errors.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_loader_perf_budget.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_loader_compat_schema.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_loader_regressions.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_happy_path.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_invalid_data.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_io_errors.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_perf_budget.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_compat_schema.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_updater_regressions.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_happy_path.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_invalid_data.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_io_errors.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_perf_budget.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_compat_schema.py [COMPLETADO]
+- tests/roguelike_game/managers/buildings/test_calibrator_regressions.py [COMPLETADO]
 
 #### 1.4 Utils (inventario) (8)
 - tests/roguelike_game/utils/inventory_sync/test_inventory_sync_basic.py [COMPLETADO]
-- tests/roguelike_game/utils/inventory_sync/test_inventory_sync_conflicts.py
-- tests/roguelike_game/utils/inventory_sync/test_inventory_sync_perf.py
+- tests/roguelike_game/utils/inventory_sync/test_inventory_sync_conflicts.py [COMPLETADO]
+- tests/roguelike_game/utils/inventory_sync/test_inventory_sync_perf.py [COMPLETADO]
 - tests/roguelike_game/utils/inventory_sync/test_inventory_sync_idempotency.py [COMPLETADO]
 - tests/roguelike_game/utils/inventory_registry/test_inventory_registry_register.py [COMPLETADO]
 - tests/roguelike_game/utils/inventory_registry/test_inventory_registry_lookup.py [COMPLETADO]
-- tests/roguelike_game/utils/inventory_registry/test_inventory_registry_persistence.py
+- tests/roguelike_game/utils/inventory_registry/test_inventory_registry_persistence.py [COMPLETADO]
 - tests/roguelike_game/utils/inventory_registry/test_inventory_registry_errors.py [COMPLETADO]
 
 #### 1.5 Integración (20)
@@ -296,68 +298,68 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 ### 2) roguelike_engine (160)
 
 #### 2.1 Mapa (controller, events, helpers, model, services, view) (72)
-- tests/roguelike_engine/map/controller/test_controller_happy_path.py
-- tests/roguelike_engine/map/controller/test_controller_edge_cases.py
-- tests/roguelike_engine/map/controller/test_controller_serialization.py
-- tests/roguelike_engine/map/controller/test_controller_error_paths.py
-- tests/roguelike_engine/map/controller/test_controller_perf_budget.py
-- tests/roguelike_engine/map/controller/test_controller_validation.py
-- tests/roguelike_engine/map/controller/test_controller_integration_small.py
-- tests/roguelike_engine/map/controller/test_controller_tiles_interop.py
-- tests/roguelike_engine/map/controller/test_controller_compat_schema.py
-- tests/roguelike_engine/map/controller/test_controller_resource_leaks.py
-- tests/roguelike_engine/map/controller/test_controller_regressions.py
-- tests/roguelike_engine/map/controller/test_controller_fuzz_inputs.py
-- tests/roguelike_engine/map/events/test_events_happy_path.py
-- tests/roguelike_engine/map/events/test_events_edge_cases.py
-- tests/roguelike_engine/map/events/test_events_serialization.py
-- tests/roguelike_engine/map/events/test_events_error_paths.py
-- tests/roguelike_engine/map/events/test_events_perf_budget.py
-- tests/roguelike_engine/map/events/test_events_validation.py
-- tests/roguelike_engine/map/events/test_events_integration_small.py
-- tests/roguelike_engine/map/events/test_events_tiles_interop.py
-- tests/roguelike_engine/map/events/test_events_compat_schema.py
-- tests/roguelike_engine/map/events/test_events_resource_leaks.py
-- tests/roguelike_engine/map/events/test_events_regressions.py
-- tests/roguelike_engine/map/events/test_events_fuzz_inputs.py
+- tests/roguelike_engine/map/controller/test_controller_happy_path.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_edge_cases.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_serialization.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_error_paths.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_perf_budget.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_validation.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_integration_small.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_tiles_interop.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_compat_schema.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_resource_leaks.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_regressions.py [COMPLETADO]
+- tests/roguelike_engine/map/controller/test_controller_fuzz_inputs.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_happy_path.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_edge_cases.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_serialization.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_error_paths.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_perf_budget.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_validation.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_integration_small.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_tiles_interop.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_compat_schema.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_resource_leaks.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_regressions.py [COMPLETADO]
+- tests/roguelike_engine/map/events/test_events_fuzz_inputs.py [COMPLETADO]
 - tests/roguelike_engine/map/helpers/test_helpers_happy_path.py [COMPLETADO]
 - tests/roguelike_engine/map/helpers/test_helpers_error_paths.py [COMPLETADO]
 - tests/roguelike_engine/map/model/test_model_happy_path.py [COMPLETADO]
-- tests/roguelike_engine/map/model/test_model_edge_cases.py
-- tests/roguelike_engine/map/model/test_model_serialization.py
+- tests/roguelike_engine/map/model/test_model_edge_cases.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_serialization.py [COMPLETADO]
 - tests/roguelike_engine/map/model/test_model_error_paths.py [COMPLETADO]
-- tests/roguelike_engine/map/model/test_model_perf_budget.py
-- tests/roguelike_engine/map/model/test_model_validation.py
-- tests/roguelike_engine/map/model/test_model_integration_small.py
-- tests/roguelike_engine/map/model/test_model_tiles_interop.py
-- tests/roguelike_engine/map/model/test_model_compat_schema.py
-- tests/roguelike_engine/map/model/test_model_resource_leaks.py
-- tests/roguelike_engine/map/model/test_model_regressions.py
-- tests/roguelike_engine/map/model/test_model_fuzz_inputs.py
+- tests/roguelike_engine/map/model/test_model_perf_budget.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_validation.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_integration_small.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_tiles_interop.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_compat_schema.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_resource_leaks.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_regressions.py [COMPLETADO]
+- tests/roguelike_engine/map/model/test_model_fuzz_inputs.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_happy_path.py [COMPLETADO]
-- tests/roguelike_engine/map/services/test_services_edge_cases.py
-- tests/roguelike_engine/map/services/test_services_serialization.py
+- tests/roguelike_engine/map/services/test_services_edge_cases.py [COMPLETADO]
+- tests/roguelike_engine/map/services/test_services_serialization.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_error_paths.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_perf_budget.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_validation.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_integration_small.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_tiles_interop.py [COMPLETADO]
 - tests/roguelike_engine/map/services/test_services_compat_schema.py [COMPLETADO]
-- tests/roguelike_engine/map/services/test_services_resource_leaks.py
-- tests/roguelike_engine/map/services/test_services_regressions.py
-- tests/roguelike_engine/map/services/test_services_fuzz_inputs.py
+- tests/roguelike_engine/map/services/test_services_resource_leaks.py [COMPLETADO]
+- tests/roguelike_engine/map/services/test_services_regressions.py [COMPLETADO]
+- tests/roguelike_engine/map/services/test_services_fuzz_inputs.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_happy_path.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_edge_cases.py [COMPLETADO]
-- tests/roguelike_engine/map/view/test_view_serialization.py
+- tests/roguelike_engine/map/view/test_view_serialization.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_error_paths.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_perf_budget.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_validation.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_integration_small.py [COMPLETADO]
 - tests/roguelike_engine/map/view/test_view_tiles_interop.py [COMPLETADO]
-- tests/roguelike_engine/map/view/test_view_compat_schema.py
-- tests/roguelike_engine/map/view/test_view_resource_leaks.py
-- tests/roguelike_engine/map/view/test_view_regressions.py
-- tests/roguelike_engine/map/view/test_view_fuzz_inputs.py
+- tests/roguelike_engine/map/view/test_view_compat_schema.py [COMPLETADO]
+- tests/roguelike_engine/map/view/test_view_resource_leaks.py [COMPLETADO]
+- tests/roguelike_engine/map/view/test_view_regressions.py [COMPLETADO]
+- tests/roguelike_engine/map/view/test_view_fuzz_inputs.py [COMPLETADO]
 
 #### 2.2 Consola (18)
 - tests/roguelike_engine/console/command_sets/test_command_sets_process.py
@@ -380,39 +382,39 @@ Este documento recoge una propuesta profesional de 500 archivos de test a crear 
 - tests/roguelike_engine/console/contexts/test_contexts_integration_small.py
 
 #### 2.3 Diagnóstico (16)
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_record_cycle.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_buffer_wraparound.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_file_rotation.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_error_paths.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_sampling_perf.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_json_schema.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_retention_policy.py
-- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_concurrent_writes.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_record_cycle.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_buffer_wraparound.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_file_rotation.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_error_paths.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_sampling_perf.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_json_schema.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_retention_policy.py
-- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_concurrent_writes.py
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_record_cycle.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_buffer_wraparound.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_file_rotation.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_error_paths.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_sampling_perf.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_json_schema.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_retention_policy.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/overlay/services/test_overlay_services_concurrent_writes.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_record_cycle.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_buffer_wraparound.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_file_rotation.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_error_paths.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_sampling_perf.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_json_schema.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_retention_policy.py [COMPLETADO]
+- tests/roguelike_engine/diagnostics/recorder_core/test_recorder_core_concurrent_writes.py [COMPLETADO]
 
 #### 2.4 Input (8)
-- tests/roguelike_engine/input/test_input_mapping_basic.py
-- tests/roguelike_engine/input/test_input_event_queue.py
-- tests/roguelike_engine/input/test_input_debouncing.py
-- tests/roguelike_engine/input/test_input_device_hotplug.py
-- tests/roguelike_engine/input/test_input_repeat_rate.py
-- tests/roguelike_engine/input/test_input_chords.py
-- tests/roguelike_engine/input/test_input_error_paths.py
-- tests/roguelike_engine/input/test_input_integration_small.py
+- tests/roguelike_engine/input/test_input_mapping_basic.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_event_queue.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_debouncing.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_device_hotplug.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_repeat_rate.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_chords.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_error_paths.py [COMPLETADO]
+- tests/roguelike_engine/input/test_input_integration_small.py [COMPLETADO]
 
 #### 2.5 Tile y utils (8)
-- tests/roguelike_engine/tile/test_tile_grid_indexing.py
-- tests/roguelike_engine/tile/test_tile_atlas_loading.py
-- tests/roguelike_engine/tile/test_tile_animation_steps.py
+- tests/roguelike_engine/tile/test_tile_grid_indexing.py [COMPLETADO]
+- tests/roguelike_engine/tile/test_tile_atlas_loading.py [COMPLETADO]
+- tests/roguelike_engine/tile/test_tile_animation_steps.py [COMPLETADO]
 - tests/roguelike_engine/tile/test_tile_z_layer_ordering.py
-- tests/roguelike_engine/tile/test_tile_error_paths.py
+- tests/roguelike_engine/tile/test_tile_error_paths.py [COMPLETADO]
 - tests/roguelike_engine/tile/utils/test_utils_neighbors.py
 - tests/roguelike_engine/tile/utils/test_utils_pathfinding.py
 - tests/roguelike_engine/tile/utils/test_utils_serialization.py

@@ -159,7 +159,9 @@ class VendorTradeSystem:
     # --- Helpers --------------------------------------------------------------
     def _get_transfer_system(self, world):
         # Delegar a fachada para mantener única responsabilidad
-        return get_transfer_system(world)
+        # Importar desde el módulo para respetar monkeypatch en tests
+        from . import services as _services
+        return _services.get_transfer_system(world)
 
     def _get_price(self, world, vendor_eid: int, item_id: str, op: Optional[str] = None) -> Optional[float]:
         """Determina el precio final respetando overrides, economía y negociación."""

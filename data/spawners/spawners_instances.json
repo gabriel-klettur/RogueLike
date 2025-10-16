@@ -25,11 +25,7 @@
     "visuals": {
       "AwaitTrigger": {
         "instance_id": 215,
-        "template_id": 157,
-        "offset": [
-          -126,
-          -240
-        ]
+        "template_id": 157
       },
       "Finished": {
         "instance_id": 216,
@@ -37,7 +33,8 @@
         "offset": [
           -125,
           -243
-        ]
+        ],
+        "split_ratio": 0.5
       },
       "WaitCooldown": {
         "instance_id": 217,

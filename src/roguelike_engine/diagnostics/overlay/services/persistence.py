@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Iterable, List, Optional
 import os
 import json
+import tempfile
+import io
 
 
 def get_state_file_path(base_path: Optional[str] = None) -> str:
@@ -44,8 +46,23 @@ def save_overlay_state(collapsed_groups: Iterable[str], base_path: Optional[str]
     try:
         fp = get_state_file_path(base_path)
         data = {"collapsed_groups": sorted(list(collapsed_groups))}
-        with open(fp, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        # Atomic write: write to a temp file in the same directory, then replace.
+        target_dir = os.path.dirname(fp)
+        os.makedirs(target_dir, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(prefix="overlay_state_", suffix=".json.tmp", dir=target_dir)
+        try:
+            with io.open(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, fp)
+        finally:
+            # If replace succeeded, tmp_path no longer exists. If it failed, ensure cleanup.
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
     except Exception:
         # Fail silently to avoid impacting runtime
         pass

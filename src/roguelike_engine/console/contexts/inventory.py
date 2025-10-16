@@ -65,16 +65,18 @@ class InventoryContext:
         item_id = f"{category}_{key}"
         if item_id not in self.game.items:
             return f"Item desconocido: {item_id}"
+        # Validar propiedad y valor antes de buscar en el inventario
+        if prop != 'quantity':
+            return f"Propiedad desconocida: {prop}"
+        try:
+            qty = int(value)
+        except ValueError:
+            return f"Valor inválido: {value}"
+        # Buscar el stack y aplicar cambio si existe
         for stack in inv.slots:
             if stack and stack.item_id == item_id:
-                if prop == 'quantity':
-                    try:
-                        qty = int(value)
-                    except ValueError:
-                        return f"Valor inválido: {value}"
-                    stack.quantity = qty
-                    return f"{item_id} cantidad ajustada a {qty}"
-                return f"Propiedad desconocida: {prop}"
+                stack.quantity = qty
+                return f"{item_id} cantidad ajustada a {qty}"
         return f"Item {item_id} no encontrado"
 
     def edit_direct(self, item_id: str, prop: str, value: str) -> str:
@@ -83,16 +85,17 @@ class InventoryContext:
             return inv
         if item_id not in self.game.items:
             return f"Item desconocido: {item_id}"
+        # Validar propiedad y valor antes de buscar en el inventario
+        if prop != 'quantity':
+            return f"Propiedad desconocida: {prop}"
+        try:
+            qty = int(value)
+        except ValueError:
+            return f"Valor inválido: {value}"
         for stack in inv.slots:
             if stack and stack.item_id == item_id:
-                if prop == 'quantity':
-                    try:
-                        qty = int(value)
-                    except ValueError:
-                        return f"Valor inválido: {value}"
-                    stack.quantity = qty
-                    return f"{item_id} cantidad ajustada a {qty}"
-                return f"Propiedad desconocida: {prop}"
+                stack.quantity = qty
+                return f"{item_id} cantidad ajustada a {qty}"
         return f"Item {item_id} no encontrado"
 
     def list(self) -> str:

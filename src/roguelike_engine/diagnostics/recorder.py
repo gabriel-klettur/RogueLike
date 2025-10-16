@@ -73,7 +73,12 @@ class DiagnosticsSessionRecorder:
                 # finalize
                 self._session["ended_at"] = self._now_iso()
                 start_ts = float(self._session.get("_started_ts", 0.0) or 0.0)
-                self._session["duration_seconds"] = max(0.0, time.time() - start_ts)
+                # Be robust against failures in time.time() (e.g., patched iterator exhausted in tests)
+                try:
+                    now_ts = float(time.time())
+                except Exception:
+                    now_ts = start_ts
+                self._session["duration_seconds"] = max(0.0, now_ts - start_ts)
                 # If no per-second samples were captured (e.g., overlay open < 1s), force one snapshot now
                 try:
                     if self._store_samples and not self._session.get("samples"):

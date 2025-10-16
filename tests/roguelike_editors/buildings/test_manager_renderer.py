@@ -19,7 +19,6 @@ from roguelike_editors.buildings.buildings_tool_bar_panel.buildings_tool_bar_pan
 )
 
 
-@pytest.mark.skip(reason="[MGR-*] Manager/Renderer integration tests pending implementation.")
 def test_manager_renderer_matrix_placeholder():
     """
     MGR-001..MGR-004 per README (renderer invokes BuildingEditorManager.render,

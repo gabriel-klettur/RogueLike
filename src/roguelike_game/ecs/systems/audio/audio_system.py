@@ -85,6 +85,12 @@ class AudioSystem:
             except Exception:
                 self._catalog = None
         comps = world.components
+        # Tomar snapshot de eventos ya presentes al inicio del frame;
+        # eventos encolados durante este update se procesarán en el siguiente.
+        queue = comps.setdefault('AudioEventQueue', [])
+        events = list(queue)
+        queue.clear()
+
         # 0) Autoresolución por ámbito (nivel/bioma/zona) si hay catálogo
         if self._catalog is not None:
             try:
@@ -164,10 +170,8 @@ class AudioSystem:
                     self._playlist_enabled = False
                     self._playlist = None
                     self._next_playlist_at = None
-        # 1) Procesar cola de eventos
-        queue = comps.setdefault('AudioEventQueue', [])
-        while queue:
-            ev = queue.pop(0)
+        # 1) Procesar solo los eventos que estaban presentes al inicio del frame
+        for ev in events:
             try:
                 et = ev.get('type')
             except Exception:

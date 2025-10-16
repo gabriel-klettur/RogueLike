@@ -65,12 +65,15 @@ class BuildingView:
         • Calcula el offset vertical para la parte inferior.
         • Opcionalmente, dibuja un rect de colisión si model.solid y no es la parte top.
         """
+        # Siempre verificamos si la imagen fuente ha cambiado e
+        # invalidamos caches en consecuencia (dentro de _get_scaled_image()).
+        # Además, asegura que tanto la imagen escalada como las partes (top/bottom)
+        # para la clave actual queden construidas si no existen.
+        self._get_scaled_image()
+
         zoom = round(self._camera.zoom, 2)
         split_key = round(float(self._model.split_ratio), 4)
         key = (zoom, split_key)
-        if key not in self._render_part_cache:
-            # Forzamos la generación de caches (asegura scaled y partes)
-            self._get_scaled_image()
         top_surf, bot_surf = self._render_part_cache[key]
 
         # Calculamos posición en pantalla, usando camera.apply para las coordenadas de world

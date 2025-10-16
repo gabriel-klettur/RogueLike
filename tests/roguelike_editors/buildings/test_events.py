@@ -407,7 +407,6 @@ def test_evt_015_mouse_wheel_cycles_hovered(camera, surface_factory):
     assert editor.hovered_building_index == 0
 
 
-@pytest.mark.skip(reason="[EVT-*] Remaining matrix pending implementation.")
 def test_events_matrix_placeholder():
     """
     EVT-001..EVT-016 per README: see specific tests for implemented cases.

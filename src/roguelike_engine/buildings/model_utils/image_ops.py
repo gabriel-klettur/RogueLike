@@ -7,6 +7,15 @@ import pygame
 _BUILDING_IMAGE_CACHE: Dict[Tuple[str, Optional[Tuple[int, int]]], pygame.Surface] = {}
 
 
+def clear_building_image_cache() -> None:
+    """Clear the internal cache used for building images.
+
+    Intended primarily for tests to ensure deterministic image sizes when the
+    image loader is monkeypatched per-test.
+    """
+    _BUILDING_IMAGE_CACHE.clear()
+
+
 def load_and_prepare_image(
     image_path: str,
     scale: Optional[tuple[int, int]] | None,

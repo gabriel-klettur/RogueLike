@@ -88,8 +88,17 @@ class MapService:
         )
         # 5) Generar y colocar zonas adicionales
         self._place_additional_zones(world)
-        # 6) Serializar matriz global a filas de texto
-        rows = ["".join(row) for row in world.matrix]
+        # 6) Serializar matriz global a filas de texto (rectangulares)
+        target_w = world.width
+        rows: List[str] = []
+        for row in world.matrix:
+            s = "".join(row)
+            if len(s) > target_w:
+                s = s[:target_w]
+            elif len(s) < target_w:
+                # Rellenar con muros para mantener rectangularidad
+                s = s + ("#" * (target_w - len(s)))
+            rows.append(s)
         # 7) Cargar capas y tiles
         _, tiles_by_layer, layers = self.loader.load(rows, key)
         # 8) Preparar metadata final
@@ -131,9 +140,18 @@ class MapService:
         return {"offset": offset, "metadata": metadata}
 
     def _merge_zone_into_world(self, world: Zone, zone: Zone) -> None:
+        # Copy zone tiles into world, clipping to world bounds to avoid IndexError
+        world_h = len(world.matrix)
+        world_w = len(world.matrix[0]) if world_h > 0 else 0
         for y in range(zone.height):
+            gy = zone.offset_y + y
+            if gy < 0 or gy >= world_h:
+                continue
             for x in range(zone.width):
-                world.matrix[zone.offset_y + y][zone.offset_x + x] = zone.matrix[y][x]
+                gx = zone.offset_x + x
+                if gx < 0 or gx >= world_w:
+                    continue
+                world.matrix[gy][gx] = zone.matrix[y][x]
 
     def _connect_tunnels_in_world(
         self,

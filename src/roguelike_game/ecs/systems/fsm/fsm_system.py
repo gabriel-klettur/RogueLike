@@ -32,7 +32,11 @@ class FSMSystem:
     
     def update(self, world, camera=None):
         # Iterar sobre copia para evitar modificación concurrente al remover entidades
-        for eid in list(world.get_entities_with('NPCState')):
+        try:
+            eids = list(world.get_entities_with('NPCState'))
+        except Exception:
+            eids = list(world.components.get('NPCState', {}).keys())
+        for eid in eids:
             npc_state = world.components['NPCState'][eid]
             entity = _EntityProxy(world, eid)
             # Consumir eventos de FSM antes de update() por entidad
