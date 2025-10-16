@@ -6,8 +6,7 @@ from roguelike_editors.tiles.tiles_editor_config import TOOLS
 class Tool(Enum):
     """
     Enumeración de herramientas disponibles en la toolbar.
-    """
-    TUTORIAL = "tutorial_tiles"
+    """    
     DELETE = "delete"
     DEFAULT = "default"
     VIEW = "view"
@@ -15,6 +14,7 @@ class Tool(Enum):
     VIEW_COLLISIONS = "view_collisions"
     BRUSH = "brush"
     SELECT = "select"
+    TUTORIAL = "tutorial_tiles"
     # Agregar nuevas herramientas aquí si es necesario
 
 
@@ -26,8 +26,7 @@ class TileToolbarEventHandler:
     def __init__(self, toolbar_controller):
         self.controller = toolbar_controller
         # Mapear cada herramienta con su método handler
-        self._click_handlers = {
-            Tool.TUTORIAL: self._handle_tutorial,
+        self._click_handlers = {            
             Tool.DELETE: self._handle_delete,
             Tool.DEFAULT: self._handle_default,
             Tool.VIEW: self._handle_view,
@@ -35,6 +34,7 @@ class TileToolbarEventHandler:
             Tool.VIEW_COLLISIONS: self._handle_view_collisions,
             Tool.BRUSH: self._handle_brush,
             Tool.SELECT: self._handle_select,
+            Tool.TUTORIAL: self._handle_tutorial
         }
 
     def handle_click(self, event, map, camera=None):
