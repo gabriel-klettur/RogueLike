@@ -6,5 +6,5 @@ class ParticlesToolBarPanelModel:
     """Modelo de datos para la toolbar de Partículas."""
     def __init__(self):
         # Orden: tutorial, luego listado principal, y finalmente undo/redo
-        self.tools = ['tutorial_particles', 'particles_list', 'particles_reload', 'undo', 'redo']
+        self.tools = ['particles_list', 'particles_reload', 'undo', 'redo','tutorial_particles']
         self.active_tool: str | None = None

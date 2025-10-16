@@ -840,13 +840,6 @@
     "rel_y": 480
   },
   {
-    "id": 127,
-    "preset_id": "water_flow_min_v",
-    "zone": "lobby",
-    "rel_x": 563,
-    "rel_y": 688
-  },
-  {
     "id": 128,
     "preset_id": "water_flow_min_v",
     "zone": "lobby",

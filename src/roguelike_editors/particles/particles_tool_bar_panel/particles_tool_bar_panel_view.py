@@ -16,12 +16,12 @@ class ParticlesToolBarPanelView:
         self.x, self.y = 10, 10
         self.size = 48
         self.padding = 8
-        icon_paths = {
-            'tutorial_particles': 'assets/ui/tutorials_button.png',
+        icon_paths = {            
             'particles_list': 'assets/ui/particles_editor/toolbar/particles_list.png',
             'particles_reload': 'assets/ui/particles_editor/toolbar/particles_reset.png',
             'undo': 'assets/ui/undo.png',
             'redo': 'assets/ui/redo.png',
+            'tutorial_particles': 'assets/ui/tutorials_button.png'
         }
         self.icons = {}
         for tool in self.model.tools:

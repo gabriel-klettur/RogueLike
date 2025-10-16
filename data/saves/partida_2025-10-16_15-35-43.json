@@ -3,22 +3,22 @@
   "player": {
     "level": "global_map",
     "pos": [
-      78,
-      75
+      74,
+      89
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        78,
-        75
+        74,
+        89
       ],
       "npc_states": {}
     }
   },
   "player_inventory": {
-    "player_id": "1c576b0e-2104-46c0-b268-1e9819728bec",
+    "player_id": "player",
     "capacity": 20,
     "slots": [
       {
@@ -48,9 +48,9 @@
   },
   "npc_inventories": {},
   "meta": {
-    "name": "partida_2025-10-16_15-25-17",
-    "created_at": "2025-10-16T15:25:17",
-    "last_played": "2025-10-16T15:28:18",
+    "name": "partida_2025-10-16_15-35-43",
+    "created_at": "2025-10-16T15:35:43",
+    "last_played": "2025-10-16T16:44:33",
     "player": {
       "xp": 0,
       "level": 0

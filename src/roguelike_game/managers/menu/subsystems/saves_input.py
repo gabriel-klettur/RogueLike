@@ -70,7 +70,16 @@ def handle_event(mgr, event) -> None:
             max_jump = max(1, (layout.get("end", 0) - start))
             max_off = max(0, len(mgr.save_entries) - max_jump)
             mgr._saves_row_scroll_offset = min(max_off, mgr._saves_row_scroll_offset + max_jump)
-        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+        elif event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_KP_ENTER):
+            if mgr.save_entries:
+                mgr._load_selected_save()
+                try:
+                    menu = getattr(mgr.game, "menu", None)
+                    if menu:
+                        menu.show_menu = False
+                        menu.mode = "pause"
+                except Exception:
+                    pass
             return None
         return None
 
@@ -132,6 +141,13 @@ def handle_event(mgr, event) -> None:
             btn_rect = layout.get("load_button_rect")
             if btn_rect and btn_rect.collidepoint(event.pos):
                 mgr._load_selected_save()
+                try:
+                    menu = getattr(mgr.game, "menu", None)
+                    if menu:
+                        menu.show_menu = False
+                        menu.mode = "pause"
+                except Exception:
+                    pass
                 return None
             del_rect = layout.get("delete_button_rect")
             if del_rect and del_rect.collidepoint(event.pos):
