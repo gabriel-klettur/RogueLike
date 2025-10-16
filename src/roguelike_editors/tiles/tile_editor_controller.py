@@ -337,4 +337,16 @@ class TileEditorController:
         except Exception:
             pass
         if hasattr(self, "ecs_world"):
-            self.ecs_world.invalidate_spatial_index()
+            try:
+                # Ensure ECS rebuild uses the same MapManager instance being edited
+                try:
+                    self.ecs_world.map_manager = map
+                except Exception:
+                    pass
+                self.ecs_world.rebuild_spatial_index()
+            except Exception:
+                # Fallback: at least mark dirty
+                try:
+                    self.ecs_world.invalidate_spatial_index()
+                except Exception:
+                    pass

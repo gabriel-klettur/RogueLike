@@ -242,7 +242,7 @@ class TileToolbarController:
         if base_map is None:
             base_map = load_base_tile_images()
             self._base_map_cache = base_map
-        changed = self._reset_region_in_memory(tile, game_map, base_map, camera)
+        changed = self._reset_region_all_layers_in_memory(tile, game_map, base_map, camera)
         # Throttled partial chunk updates for feedback during drag
         if changed:
             # Tutorial pulse: default action performed
@@ -340,6 +340,11 @@ class TileToolbarController:
                     t = grid[r][c]
                     if t:
                         t.sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                        # Ensure no global alpha (use per-pixel alpha so get_alpha() returns None)
+                        try:
+                            t.sprite.set_alpha(None)
+                        except Exception:
+                            pass
                         t.scaled_cache.clear()
                         # Update overlay in-memory
                         t.overlay_code = ''
@@ -412,4 +417,47 @@ class TileToolbarController:
                             self.editor_controller._pending_cells.append(cell)
                             self.editor_controller._pending_cells_set.add(cell)
                         changed_cells.append(cell)
+        return changed_cells
+
+    def _reset_region_all_layers_in_memory(self, tile, game_map, base_map, camera):
+        """
+        Restaura sprites y overlay de una región al estado por defecto en TODAS las capas,
+        solo en memoria. Marca zonas/celdas para persistencia diferida.
+        """
+        origin_row, origin_col = tile.y // TILE_SIZE, tile.x // TILE_SIZE
+        w, h = self.editor_state.size_panel_state.selected_size
+        max_r = len(game_map.tiles)
+        max_c = len(game_map.tiles[0])
+        changed_cells = []
+        for layer, grid in getattr(game_map, 'tiles_by_layer', {}).items():
+            codes_grid = game_map.layers.get(layer)
+            for dy in range(h):
+                for dx in range(w):
+                    r, c = origin_row + dy, origin_col + dx
+                    if 0 <= r < max_r and 0 <= c < max_c:
+                        t = grid[r][c] if grid else None
+                        if t:
+                            default_imgs = base_map.get(t.tile_type)
+                            sprite = None
+                            if default_imgs is not None:
+                                sprite = default_imgs[0] if isinstance(default_imgs, list) else default_imgs
+                            else:
+                                # Fallback a DEFAULT_TILE_MAP si no hay entrada en base_map
+                                variant = DEFAULT_TILE_MAP.get(t.tile_type)
+                                if variant:
+                                    sprite = load_image(f"tiles/{variant}.png", (TILE_SIZE, TILE_SIZE))
+                            if sprite is not None:
+                                t.sprite = sprite
+                                t.scaled_cache.clear()
+                            t.overlay_code = ''
+                            if codes_grid and 0 <= r < len(codes_grid) and 0 <= c < len(codes_grid[0]):
+                                codes_grid[r][c] = ''
+                            # Track pending zones/cells
+                            zone_name, _, _ = game_map.get_zone_for(r, c)
+                            self.editor_controller._pending_tile_zones.add(zone_name)
+                            cell = (r, c)
+                            if cell not in self.editor_controller._pending_cells_set:
+                                self.editor_controller._pending_cells.append(cell)
+                                self.editor_controller._pending_cells_set.add(cell)
+                            changed_cells.append(cell)
         return changed_cells

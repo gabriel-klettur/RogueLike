@@ -68,4 +68,5 @@ class TilesCollisionPanelController:
                 setattr(self.editor_state, 'tutorial_collision_painted_pulse', True)
             except Exception:
                 pass
+            # Visual refresh only during brush; heavy updates happen on mouse-up (flush)
             game_map.view.update_chunks(game_map, camera, cells)

@@ -59,7 +59,16 @@ def update_game(
             def _run_editor(sfn=fn):
                 sfn()
             _run_editor()
-            # Early return when an editor is active
+            # If the Tiles Editor is active, still run ECS update so physics reflects edits in runtime
+            if key == "2.0.1.tiles_editor.update":
+                try:
+                    @benchmark(perf_log, "2.2.ecs.update[while_tiles_editor]")
+                    def _run_ecs_update():
+                        ecs.ecs_world.update(camera)
+                    _run_ecs_update()
+                except Exception:
+                    pass
+            # Early return when an editor is active (after optional ECS update for tiles editor)
             return
 
     # 3.1) Cámara sigue al jugador si está vivo (tiene Position),
