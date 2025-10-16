@@ -30,6 +30,13 @@ class TilesTutorialPanelController:
     def activate(self) -> None:
         self.model.active = True
         self.model.reset_runtime()
+        # Al activar, limpiar posición para que el panel aparezca centrado
+        try:
+            self.model.pos = None
+            self.model.dragging = False
+            self.model.drag_offset = (0, 0)
+        except Exception:
+            pass
         if self.model.step_index < 0:
             self.model.step_index = 0
         self._last_step_index = self.model.step_index

@@ -12,6 +12,25 @@ class TilesTutorialPanelEventHandler:
     def handle(self, event) -> bool:
         if not getattr(self.model, 'active', False):
             return False
+        # Drag con botón derecho (RMB)
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3:
+            panel_rect = getattr(self.model, 'panel_rect', None)
+            if panel_rect and panel_rect.collidepoint(event.pos):
+                # iniciar drag
+                mx, my = event.pos
+                # usar posición almacenada si existe; si no, tomar topleft actual del rect
+                px, py = (self.model.pos if getattr(self.model, 'pos', None) is not None else (panel_rect.x, panel_rect.y))
+                self.model.dragging = True
+                self.model.drag_offset = (mx - px, my - py)
+                return True
+        elif event.type == pygame.MOUSEMOTION and getattr(self.model, 'dragging', False):
+            mx, my = event.pos
+            dx, dy = getattr(self.model, 'drag_offset', (0, 0))
+            self.model.pos = (mx - dx, my - dy)
+            return True
+        elif event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3 and getattr(self.model, 'dragging', False):
+            self.model.dragging = False
+            return True
         # Cerrar con ESC
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.controller.deactivate()

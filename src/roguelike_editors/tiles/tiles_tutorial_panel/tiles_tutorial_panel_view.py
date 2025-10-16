@@ -70,27 +70,24 @@ class TilesTutorialPanelView:
         return max(int(ty), self.min_height)
 
     def _compute_position(self, screen: pygame.Surface, required_h: int) -> tuple[int, int]:
+        """Compute panel position.
+
+        If `model.pos` is set, clamp it within the screen with a margin.
+        Otherwise, center the panel and store the position.
+        """
         margin = 16
         sw, sh = screen.get_size()
-        # Intentar anclar a la derecha del toolbar, debajo del título de Tiles
-        try:
-            title_ctrl = self.controller.editor_controller.title_controller
-            title_widget = title_ctrl.view.widget if hasattr(title_ctrl, 'view') else None
-            title_rect = title_widget.rect if (title_widget and hasattr(title_widget, 'rect')) else None
-        except Exception:
-            title_rect = None
-        if title_rect is not None and self.toolbar_view is not None and hasattr(self.toolbar_view, 'widget'):
-            try:
-                tb_w = self.toolbar_view.widget.panel.surface.get_width()
-                x = min(max(margin, title_rect.left + tb_w + 8), max(margin, sw - self.width - margin))
-                y = (title_rect.bottom + 8)
-                y = max(margin, min(y, max(margin, sh - required_h - margin)))
-                return (x, y)
-            except Exception:
-                pass
-        # Fallback: esquina superior izquierda con margen
-        x = max(margin, min(sw - self.width - margin, margin))
-        y = max(margin, min(sh - required_h - margin, 96))
+        # If already positioned (e.g., via drag), keep it but clamp to screen.
+        if getattr(self.model, 'pos', None) is not None:
+            x, y = self.model.pos
+            x = max(margin, min(x, max(margin, sw - self.width - margin)))
+            y = max(margin, min(y, max(margin, sh - required_h - margin)))
+            return (x, y)
+
+        # Initial placement: centered on screen
+        x = max(margin, min((sw - self.width) // 2, max(margin, sw - self.width - margin)))
+        y = max(margin, min((sh - required_h) // 2, max(margin, sh - required_h - margin)))
+        self.model.pos = (x, y)
         return (x, y)
 
     def render(self, screen: pygame.Surface) -> None:
@@ -106,6 +103,8 @@ class TilesTutorialPanelView:
         # Altura y posición
         required_h = self._measure_required_height(step)
         x, y = self._compute_position(screen, required_h)
+        # Persist corrected/clamped position
+        self.model.pos = (x, y)
         panel_rect = pygame.Rect(x, y, self.width, required_h)
         draw_translucent_panel(screen, panel_rect)
         self.model.panel_rect = panel_rect

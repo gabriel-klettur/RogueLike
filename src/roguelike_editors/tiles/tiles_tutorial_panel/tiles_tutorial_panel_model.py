@@ -2,7 +2,7 @@
 Modelo del panel de Tutorial (Tiles Editor).
 """
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 import pygame
 
 
@@ -110,6 +110,10 @@ class TilesTutorialPanelModel:
     panel_rect: Optional[pygame.Rect] = None
     button_rects: Dict[str, pygame.Rect] = field(default_factory=dict)
     checklist_done_by_step: Dict[int, set] = field(default_factory=dict)
+    # Posición y drag (RMB)
+    pos: Optional[Tuple[int, int]] = None
+    dragging: bool = False
+    drag_offset: Tuple[int, int] = (0, 0)
 
     def reset_runtime(self) -> None:
         self.button_rects.clear()
