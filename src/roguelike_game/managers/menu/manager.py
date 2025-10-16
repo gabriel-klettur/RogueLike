@@ -200,9 +200,31 @@ class MenuManager:
     def handle_input(self, event):
         # gate de press-to-start
         if self.show_menu and self.mode == "start" and self.press.active:
-            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+            joy_types = []
+            try:
+                if hasattr(pygame, "JOYBUTTONDOWN"):
+                    joy_types.append(pygame.JOYBUTTONDOWN)
+                if hasattr(pygame, "JOYHATMOTION"):
+                    joy_types.append(pygame.JOYHATMOTION)
+                if hasattr(pygame, "CONTROLLERBUTTONDOWN"):
+                    joy_types.append(pygame.CONTROLLERBUTTONDOWN)
+            except Exception:
+                pass
+            base_types = (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL)
+            if event.type in (*base_types, *tuple(joy_types)):
+                if hasattr(pygame, "JOYHATMOTION") and event.type == getattr(pygame, "JOYHATMOTION", None):
+                    if getattr(event, "value", (0, 0)) in ((0, 0), 0):
+                        return None
                 self.disable_press_to_start()
                 return None
+            
+            if hasattr(pygame, "JOYAXISMOTION") and event.type == getattr(pygame, "JOYAXISMOTION", None):
+                try:
+                    if abs(float(getattr(event, "value", 0.0))) >= 0.5:
+                        self.disable_press_to_start()
+                        return None
+                except Exception:
+                    pass
             return None
         # lista de partidas
         if self.mode == "load_list":

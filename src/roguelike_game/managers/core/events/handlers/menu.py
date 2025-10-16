@@ -15,8 +15,38 @@ def handle_menu(game, events) -> bool:
                 game.menu.handle_input(event)
             continue
         try:
-            if getattr(game.menu, '_press_start_active', False) and mode == 'start':
-                if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL):
+            overlay_active = False
+            try:
+                overlay_active = bool(getattr(getattr(game.menu, 'press', None), 'active', False))
+            except Exception:
+                overlay_active = False
+            if not overlay_active:
+                try:
+                    overlay_active = bool(getattr(game.menu, '_press_start_active', False))
+                except Exception:
+                    overlay_active = False
+            if overlay_active and mode == 'start':
+                joy_types = []
+                try:
+                    if hasattr(pygame, 'JOYBUTTONDOWN'):
+                        joy_types.append(pygame.JOYBUTTONDOWN)
+                    if hasattr(pygame, 'JOYHATMOTION'):
+                        joy_types.append(pygame.JOYHATMOTION)
+                    if hasattr(pygame, 'CONTROLLERBUTTONDOWN'):
+                        joy_types.append(pygame.CONTROLLERBUTTONDOWN)
+                    if hasattr(pygame, 'JOYAXISMOTION'):
+                        joy_axis_type = pygame.JOYAXISMOTION
+                    else:
+                        joy_axis_type = None
+                except Exception:
+                    joy_axis_type = None
+                if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.MOUSEWHEEL, *tuple(joy_types)):
+                    try:
+                        game.menu.handle_input(event)
+                    except Exception:
+                        pass
+                    continue
+                if joy_axis_type is not None and event.type == joy_axis_type:
                     try:
                         game.menu.handle_input(event)
                     except Exception:
@@ -31,7 +61,14 @@ def handle_menu(game, events) -> bool:
         elif event.type == pygame.MOUSEMOTION:
             mx, my = event.pos
             try:
-                if getattr(game.menu, '_press_start_active', False) and getattr(game.menu, 'mode', '') == 'start':
+                overlay_active = False
+                try:
+                    overlay_active = bool(getattr(getattr(game.menu, 'press', None), 'active', False))
+                except Exception:
+                    overlay_active = False
+                if not overlay_active:
+                    overlay_active = bool(getattr(game.menu, '_press_start_active', False))
+                if overlay_active and getattr(game.menu, 'mode', '') == 'start':
                     continue
             except Exception:
                 pass
@@ -69,7 +106,14 @@ def handle_menu(game, events) -> bool:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mx, my = event.pos
             try:
-                if getattr(game.menu, '_press_start_active', False) and getattr(game.menu, 'mode', '') == 'start':
+                overlay_active = False
+                try:
+                    overlay_active = bool(getattr(getattr(game.menu, 'press', None), 'active', False))
+                except Exception:
+                    overlay_active = False
+                if not overlay_active:
+                    overlay_active = bool(getattr(game.menu, '_press_start_active', False))
+                if overlay_active and getattr(game.menu, 'mode', '') == 'start':
                     continue
             except Exception:
                 pass

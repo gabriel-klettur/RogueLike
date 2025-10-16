@@ -29,12 +29,7 @@
       },
       "Finished": {
         "instance_id": 216,
-        "template_id": 158,
-        "offset": [
-          -125,
-          -243
-        ],
-        "split_ratio": 0.5
+        "template_id": 158
       },
       "WaitCooldown": {
         "instance_id": 217,
