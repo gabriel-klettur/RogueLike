@@ -19,14 +19,28 @@ class SpawnerRuntimeSystem:
     Keeps API compatible with the original system (same class name and update signature).
     """
 
-    def __init__(self, perf_log: Any | None = None, blocked_ttl_frames: int = 6) -> None:
+    def __init__(self, perf_log: Any | None = None, blocked_ttl_frames: int = 30) -> None:
         self.perf_log = perf_log
+        self._default_blocked_ttl = int(blocked_ttl_frames)
         self.caches = SpawnCaches(blocked_ttl_frames=blocked_ttl_frames)
         self.visuals = SpawnerVisualSync()
 
     def update(self, world, camera=None) -> None:
         # Advance frame and collect per-frame caches
         self.caches.next_frame()
+        # If the Buildings Editor is active, reduce frequency of expensive blocked-tiles scans
+        try:
+            st = getattr(getattr(world, 'game', None), 'state', None)
+            editor_active = bool(getattr(getattr(st, 'editor', None), 'active', False))
+            if editor_active:
+                # Bump TTL (e.g., ~1s at 60 FPS) to amortize heavy scans
+                self.caches._blocked_cache_ttl_frames = max(self.caches._blocked_cache_ttl_frames, 60)
+            else:
+                # Restore default when editor is not active
+                self.caches._blocked_cache_ttl_frames = max(1, int(self._default_blocked_ttl))
+        except Exception:
+            # Keep previous TTL if environment doesn't expose game/state/editor
+            pass
         comps = world.components
         solid, building = self.caches.collect_blocked(world)
         # Global reservation set to avoid cross-spawner overlaps within the frame

@@ -71,8 +71,8 @@ def update_game(
                     _run_ecs_update()
                 except Exception:
                     pass
-            # If the Buildings Editor is active, rebuild SpatialIndex only when needed (dirty or throttled)
-            # and run ECS update on those rebuild frames to avoid FPS drops.
+            # If the Buildings Editor is active, rebuild SpatialIndex only when there are pending collider changes
+            # (colliders_dirty) and the throttle interval elapsed. Then run ECS update on those rebuild frames.
             if key == "2.0.2.buildings_editor.update":
                 try:
                     # Throttle parameters
@@ -89,13 +89,13 @@ def update_game(
                     except Exception:
                         pass
                     due = (ticks - last_ms) >= interval
-                    if due:
+                    if dirty and due:
                         # Rebuild at most once per interval; emit INFO only once per dirty cycle
                         try:
                             ecs.ecs_world._log_rebuild_info = bool(dirty)
                         except Exception:
                             pass
-                        if dirty and not bool(getattr(be_state, '_colliders_dirty_logged', False)):
+                        if not bool(getattr(be_state, '_colliders_dirty_logged', False)):
                             logger.info("[COLLIDERS][BE] Rebuild SpatialIndex (reason=dirty)")
                             try:
                                 be_state._colliders_dirty_logged = True
@@ -115,6 +115,7 @@ def update_game(
                         def _run_ecs_update():
                             ecs.ecs_world.update(camera)
                         _run_ecs_update()
+                    # If not dirty, skip rebuild/update entirely to avoid unnecessary cost
                 except Exception:
                     pass
             # Global hot-reload: if Buildings Editor marked colliders dirty, ensure rebuild+ECS update
@@ -163,6 +164,11 @@ def update_game(
                 buildings_editor.editor_state.last_colliders_rebuild_ms = pygame.time.get_ticks()
             except Exception:
                 pass
+            # Ensure world state reflects new spatial index immediately in idle frames
+            @benchmark(perf_log, "2.2.ecs.update[after_rebuild]")
+            def _run_ecs_update():
+                ecs.ecs_world.update(camera)
+            _run_ecs_update()
     except Exception:
         pass
 

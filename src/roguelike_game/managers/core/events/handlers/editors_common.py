@@ -90,6 +90,12 @@ def close_all_editors(game) -> None:
             except Exception:
                 pass
             be.editor_state.active = False
+            # Clear pending collider rebuilds to prevent ECS updates after closing
+            try:
+                be.editor_state.colliders_dirty = False
+                be.editor_state.last_colliders_rebuild_ms = pygame.time.get_ticks()
+            except Exception:
+                pass
             try:
                 be.editor_state.picker_active = False
             except Exception:

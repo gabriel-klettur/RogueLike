@@ -28,6 +28,12 @@ class BuildingEditorView:
             self._id_font = pygame.font.Font(None, 16)
         except Exception:
             self._id_font = None
+        # Caches to avoid per-frame allocations
+        self._hover_fill_cache = {}
+        self._id_label_cache = {}
+        self._dim_cache = {}
+        self._modal_text_cache = {}
+        self._button_label_cache = {}
 
 
     def render(self, screen, camera, buildings):
@@ -107,10 +113,16 @@ class BuildingEditorView:
                     w, h = camera.scale(hb.image.get_size())
                     hover_rect = pygame.Rect(x, y, w, h)
                     if getattr(self.editor, 'remove_mode_active', False):
-                        # Semi-transparent red fill
-                        fill = pygame.Surface((hover_rect.width, hover_rect.height), pygame.SRCALPHA)
-                        fill.fill((255, 0, 0, 60))  # 60 alpha for subtle overlay
-                        screen.blit(fill, (hover_rect.left, hover_rect.top))
+                        size = (max(0, hover_rect.width), max(0, hover_rect.height))
+                        if size[0] > 0 and size[1] > 0:
+                            key = (size[0], size[1])
+                            fill = self._hover_fill_cache.get(key)
+                            if fill is None:
+                                s = pygame.Surface(size, pygame.SRCALPHA)
+                                s.fill((255, 0, 0, 60))
+                                self._hover_fill_cache[key] = s
+                                fill = s
+                            screen.blit(fill, (hover_rect.left, hover_rect.top))
                         # Red border
                         pygame.draw.rect(screen, (255, 0, 0), hover_rect, 3)
                     else:
@@ -138,15 +150,14 @@ class BuildingEditorView:
                     bid = getattr(b, 'id', None)
                     if bid is not None:
                         label = f"ID {bid}"
-                        text_surf = self._id_font.render(label, True, (255, 255, 255))
-                        shadow_surf = self._id_font.render(label, True, (0, 0, 0))
+                        ts, ss = self._get_id_label_surfaces(label)
                         lx = rect.left
-                        ly = rect.top - text_surf.get_height() - 2
+                        ly = rect.top - ts.get_height() - 2
                         if ly < 0:
                             ly = rect.top + 2
                         # simple shadow for readability
-                        screen.blit(shadow_surf, (lx + 1, ly + 1))
-                        screen.blit(text_surf, (lx, ly))
+                        screen.blit(ss, (lx + 1, ly + 1))
+                        screen.blit(ts, (lx, ly))
             except Exception:
                 pass
             # Ocultar handles de herramientas en modo colisiones o cuando la UI bloquea
@@ -208,8 +219,13 @@ class BuildingEditorView:
         except Exception:
             return
         try:
-            dim = pygame.Surface((w, h), pygame.SRCALPHA)
-            dim.fill((0, 0, 0, 140))
+            key = (w, h)
+            dim = self._dim_cache.get(key)
+            if dim is None:
+                d = pygame.Surface((w, h), pygame.SRCALPHA)
+                d.fill((0, 0, 0, 140))
+                self._dim_cache[key] = d
+                dim = d
             screen.blit(dim, (0, 0))
         except Exception:
             pass
@@ -232,12 +248,20 @@ class BuildingEditorView:
             font = None
         lines = []
         if font is not None:
-            for raw in str(text).split("\n"):
-                try:
-                    surf = font.render(raw, True, (240, 240, 240))
-                    lines.append(surf)
-                except Exception:
-                    continue
+            cache_key = (text, font.size(" ")[1])
+            cached = self._modal_text_cache.get(cache_key)
+            if cached is None:
+                acc = []
+                for raw in str(text).split("\n"):
+                    try:
+                        s = font.render(raw, True, (240, 240, 240))
+                        acc.append(s)
+                    except Exception:
+                        continue
+                self._modal_text_cache[cache_key] = acc
+                lines = acc
+            else:
+                lines = cached
         y = panel_rect.top + 16
         for s in lines:
             try:
@@ -258,12 +282,12 @@ class BuildingEditorView:
             pygame.draw.rect(screen, (180, 40, 40), yes_rect, border_radius=6)
             pygame.draw.rect(screen, (255, 255, 255), yes_rect, 2, border_radius=6)
             yfont = pygame.font.Font(None, 28)
-            ys = yfont.render("Eliminar", True, (255, 255, 255))
+            ys = self._get_button_label(yfont, "Eliminar")
             screen.blit(ys, (yes_rect.centerx - ys.get_width() // 2, yes_rect.centery - ys.get_height() // 2))
             # No button (Cancelar)
             pygame.draw.rect(screen, (60, 60, 60), no_rect, border_radius=6)
             pygame.draw.rect(screen, (255, 255, 255), no_rect, 2, border_radius=6)
-            ns = yfont.render("Cancelar", True, (255, 255, 255))
+            ns = self._get_button_label(yfont, "Cancelar")
             screen.blit(ns, (no_rect.centerx - ns.get_width() // 2, no_rect.centery - ns.get_height() // 2))
         except Exception:
             pass
@@ -273,3 +297,28 @@ class BuildingEditorView:
             self.editor.confirm_no_rect = no_rect
         except Exception:
             pass
+
+    def _get_id_label_surfaces(self, label: str):
+        surf = self._id_label_cache.get(label)
+        if surf is None:
+            try:
+                ts = self._id_font.render(label, True, (255, 255, 255)) if self._id_font else pygame.Surface((0, 0), pygame.SRCALPHA)
+                ss = self._id_font.render(label, True, (0, 0, 0)) if self._id_font else pygame.Surface((0, 0), pygame.SRCALPHA)
+            except Exception:
+                ts = pygame.Surface((0, 0), pygame.SRCALPHA)
+                ss = pygame.Surface((0, 0), pygame.SRCALPHA)
+            self._id_label_cache[label] = (ts, ss)
+            return ts, ss
+        return surf
+
+    def _get_button_label(self, font: pygame.font.Font, text: str) -> pygame.Surface:
+        key = (text, font.size(" ")[1])
+        surf = self._button_label_cache.get(key)
+        if surf is None:
+            try:
+                s = font.render(text, True, (255, 255, 255))
+            except Exception:
+                s = pygame.Surface((0, 0), pygame.SRCALPHA)
+            self._button_label_cache[key] = s
+            return s
+        return surf

@@ -23,6 +23,12 @@ class PickerView:
         self._path_font = pygame.font.SysFont(None, 14)
         # Cache de miniaturas
         self.thumb_cache: dict[str, pygame.Surface] = {}
+        # Cache para icono de volver escalado por tamaño de celda
+        self._back_scaled_cache: dict[tuple[int, int], pygame.Surface] = {}
+        # Cache para labels de carpetas
+        self._label_cache: dict[str, pygame.Surface] = {}
+        # Cache para la preview de drag por path
+        self._drag_preview_cache: dict[str, pygame.Surface] = {}
 
         # Estilo consistente con Items Picker Panel
         self.cell_w = THUMB_SIZE
@@ -197,7 +203,7 @@ class PickerView:
             if has_back and vidx == 0:
                 # Dibuja icono de volver como primer elemento
                 try:
-                    back = pygame.transform.smoothscale(self.back_icon, (self.cell_w, self.cell_h))
+                    back = self._get_back_icon((self.cell_w, self.cell_h))
                 except Exception:
                     back = self.back_icon
                 screen.blit(back, (x, y))
@@ -213,7 +219,7 @@ class PickerView:
                 screen.blit(self.folder_icon, (x, y))
                 # Nombre de la carpeta centrado dentro del icono
                 try:
-                    name_surf = self._label_font.render(entry.name, True, (220, 220, 220))
+                    name_surf = self._get_label(entry.name)
                     # Fondo semitransparente para mejorar legibilidad
                     pad = 4
                     bg_rect = name_surf.get_rect(center=rect.center).inflate(pad*2, pad)
@@ -282,11 +288,50 @@ class PickerView:
     def _draw_drag_preview(self, screen):
         mx, my = pygame.mouse.get_pos()
         entry = self.editor.selected_entry
-        img = load_image(entry.path)
-        # Escalamos al THUMB_SIZE*2 para preview (por ejemplo)
-        w = THUMB_SIZE * 2
-        h = img.get_height() * w // img.get_width()
-        surf = pygame.transform.scale(img, (w, h))
-        # Dibujamos semitransparente
-        surf.set_alpha(200)
+        # Obtener una preview cacheada para evitar escala/carga por frame
+        surf = self._get_drag_preview(entry.path)
+        w, h = surf.get_size()
         screen.blit(surf, (mx - w//2, my - h//2))
+
+    def _get_back_icon(self, size: tuple[int, int]) -> pygame.Surface:
+        key = (int(size[0]), int(size[1]))
+        cached = self._back_scaled_cache.get(key)
+        if cached is not None:
+            return cached
+        try:
+            scaled = pygame.transform.smoothscale(self.back_icon, key)
+        except Exception:
+            scaled = self.back_icon
+        self._back_scaled_cache[key] = scaled
+        return scaled
+
+    def _get_label(self, name: str) -> pygame.Surface:
+        surf = self._label_cache.get(name)
+        if surf is None:
+            try:
+                surf = self._label_font.render(name, True, (220, 220, 220))
+            except Exception:
+                # Fallback minimal para evitar romper el flujo
+                surf = pygame.Surface((0, 0), pygame.SRCALPHA)
+            self._label_cache[name] = surf
+        return surf
+
+    def _get_drag_preview(self, path: str) -> pygame.Surface:
+        cached = self._drag_preview_cache.get(path)
+        if cached is not None:
+            return cached
+        try:
+            img = load_image(path)
+            w = THUMB_SIZE * 2
+            iw, ih = img.get_width(), img.get_height()
+            if iw <= 0 or ih <= 0:
+                iw, ih = w, w
+            h = ih * w // max(1, iw)
+            surf = pygame.transform.scale(img, (w, h))
+            surf.set_alpha(200)
+        except Exception:
+            # Fallback a un rectángulo transparente para no bloquear el render
+            surf = pygame.Surface((THUMB_SIZE * 2, THUMB_SIZE * 2), pygame.SRCALPHA)
+            surf.set_alpha(200)
+        self._drag_preview_cache[path] = surf
+        return surf
