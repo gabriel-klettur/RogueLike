@@ -23,10 +23,18 @@ class DiagnosticsOverlayModel:
     border_width: int = 5
     update_interval: float = 0.2
     scroll_speed: int = 20
+    # Anchor config: default overlay appears at top-right with a margin
+    anchor_top_right: bool = True
+    anchor_margin: int = 8
 
     # Runtime state
     panel_surf: Optional[object] = None
     panel_rect: Optional[object] = None
+    # Current topleft position for the overlay panel (persisted during runtime)
+    panel_pos: Optional[Tuple[int, int]] = None
+    # Dragging state (RMB drag)
+    dragging: bool = False
+    drag_offset: Tuple[int, int] = (0, 0)
     last_update_time: float = 0.0
     scroll_offset: int = 0
     label_w: int = 0

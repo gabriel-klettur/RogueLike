@@ -73,15 +73,32 @@ class DiagnosticsOverlayController:
                 self.model.lines_per_page = lines_per_page
                 self.model.total_pages = total_pages
                 # Rebuild with just the page
-                self.view.rebuild_panel(self.model, position, page_lines, label_w, value_w)
+                # Choose base position: manual dragged pos wins; else pass incoming position temporarily (will be anchored below)
+                base_pos = self.model.panel_pos if self.model.panel_pos is not None else position
+                self.view.rebuild_panel(self.model, base_pos, page_lines, label_w, value_w)
                 self.model.line_levels = page_levels
                 self.model.value_colors = page_colors
             else:
                 # No paging: render all (ya limitado por max_lines si aplica)
-                self.view.rebuild_panel(self.model, position, lines, label_w, value_w)
+                base_pos = self.model.panel_pos if self.model.panel_pos is not None else position
+                self.view.rebuild_panel(self.model, base_pos, lines, label_w, value_w)
                 self.model.line_levels = line_levels
                 self.model.value_colors = value_colors
             self.model.last_update_time = now
+
+        # After (re)build, if anchored to top-right and not dragging and no manual pos, snap rect to top-right
+        if self.model.panel_rect is not None and not getattr(self.model, 'dragging', False):
+            if getattr(self.model, 'anchor_top_right', False) and self.model.panel_pos is None:
+                try:
+                    screen_surf = pygame.display.get_surface()
+                    if screen_surf is not None:
+                        sw, _ = screen_surf.get_size()
+                        margin = int(getattr(self.model, 'anchor_margin', 8) or 8)
+                        new_left = max(0, sw - self.model.panel_rect.width - margin)
+                        new_top = margin
+                        self.model.panel_rect.topleft = (new_left, new_top)
+                except Exception:
+                    pass
 
         if self.model.panel_surf and self.model.panel_rect:
             clip = screen.get_clip()

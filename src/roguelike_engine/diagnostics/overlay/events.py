@@ -8,6 +8,58 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
     Returns True if the overlay consumed the event, False otherwise.
     """
     et = event.type
+    # Right-click drag: start
+    if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3:
+        pos = getattr(event, 'pos', None)
+        if pos and model.panel_rect and model.panel_rect.collidepoint(pos):
+            # Begin dragging
+            model.dragging = True
+            try:
+                offx = pos[0] - int(model.panel_rect.left)
+                offy = pos[1] - int(model.panel_rect.top)
+            except Exception:
+                offx, offy = 0, 0
+            model.drag_offset = (offx, offy)
+            # Persist current position baseline
+            try:
+                model.panel_pos = (int(model.panel_rect.left), int(model.panel_rect.top))
+            except Exception:
+                pass
+            # Stop anchoring once user drags manually
+            try:
+                model.anchor_top_right = False
+            except Exception:
+                pass
+            return True
+    # Right-click drag: move
+    if et == pygame.MOUSEMOTION and getattr(model, 'dragging', False):
+        pos = getattr(event, 'pos', None)
+        if pos:
+            dx, dy = model.drag_offset
+            new_left = int(pos[0] - dx)
+            new_top = int(pos[1] - dy)
+            # Clamp within screen bounds to avoid losing the panel
+            try:
+                screen = pygame.display.get_surface()
+                if screen is not None and model.panel_rect is not None:
+                    sw, sh = screen.get_size()
+                    pw, ph = model.panel_rect.size
+                    new_left = max(0, min(sw - max(32, pw), new_left))
+                    new_top = max(0, min(sh - max(32, ph), new_top))
+            except Exception:
+                pass
+            model.panel_pos = (new_left, new_top)
+            if model.panel_rect is not None:
+                try:
+                    model.panel_rect.topleft = model.panel_pos
+                except Exception:
+                    pass
+            return True
+    # Right-click drag: stop
+    if et == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3:
+        if getattr(model, 'dragging', False):
+            model.dragging = False
+            return True
     # Scroll wheel moves panel content
     if et == pygame.MOUSEWHEEL:
         # Ctrl + wheel => cambiar página (si paginación activa y el ratón está sobre el panel)
