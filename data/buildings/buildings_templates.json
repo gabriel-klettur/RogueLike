@@ -2467,5 +2467,31 @@
             256
         ],
         "id": 209
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "split_ratio": 0.643,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 210
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/mine.png"
+        },
+        "solid": true,
+        "split_ratio": 0.341,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 211
     }
 ]

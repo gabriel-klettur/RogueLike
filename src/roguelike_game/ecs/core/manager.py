@@ -25,6 +25,8 @@ class ECSWorld:
         self.screen = screen
         self.map_manager = map_manager
         self.buildings = buildings
+        # Control de verbosidad para reconstrucciones (evita spam en intervalos)
+        self._log_rebuild_info: bool = False
 
         self.entities = []
         self.next_entity_id = 1
@@ -158,6 +160,12 @@ class ECSWorld:
     def invalidate_spatial_index(self):
         """Marca SpatialIndex para reconstrucción en el próximo update."""
         self._spatial_index_dirty = True
+        try:
+            import os
+            if os.environ.get("RL_VERBOSE_ECS") == "1":
+                logger.info("[ECSWorld] invalidate_spatial_index() called -> will rebuild on next update")
+        except Exception:
+            pass
 
     def rebuild_spatial_index(self):
         """
@@ -167,8 +175,34 @@ class ECSWorld:
         Preferir este método (o `invalidate_spatial_index`) desde sistemas y editores
         en lugar de asignar `world.spatial_index = SpatialIndex(...)` directamente.
         """
+        # Medición básica y trazas de conteo para depuración de colliders en runtime
+        try:
+            if getattr(self, '_log_rebuild_info', False):
+                b_count = len(self.buildings) if self.buildings is not None else 0
+                b_rects = 0
+                for b in (self.buildings or []):
+                    try:
+                        b_rects += len(b.collision_tiles)
+                    except Exception:
+                        pass
+                map_rects = len(getattr(self.map_manager, 'solid_tiles', []) or [])
+                logger.info(f"[ECSWorld] SpatialIndex rebuild: buildings={b_count} building_rects={b_rects} map_rects={map_rects}")
+        except Exception:
+            pass
         self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
+        try:
+            # Tamaño del índice por celdas ocupadas (aprox broad-phase buckets)
+            if getattr(self, '_log_rebuild_info', False):
+                idx_cells = len(getattr(self.spatial_index, '_building_index', {}) or {})
+                logger.info(f"[ECSWorld] SpatialIndex ready: building_index_cells={idx_cells}")
+        except Exception:
+            pass
         self._spatial_index_dirty = False
+        # Reset one-shot logging flag to avoid subsequent debug/infos
+        try:
+            self._log_rebuild_info = False
+        except Exception:
+            pass
 
     def get_entities_in_camera(self, camera, *component_types):
         """

@@ -8,6 +8,13 @@ from roguelike_engine.config.config import (
 from roguelike_engine.z_layer.persistence import inject_z_into_json
 import logging
 logger = logging.getLogger(__name__)
+try:
+    import os as _os
+    if _os.environ.get('RL_VERBOSE_SAVE') != '1':
+        # Demote this module's DEBUG chatter unless explicitly requested
+        logger.setLevel(logging.INFO)
+except Exception:
+    pass
 
 from roguelike_engine.config.map_config import global_map_settings
 
@@ -208,6 +215,17 @@ def save_buildings_split(
         pass
 
     # Build new templates/instances
+    # Aggregated logging counters (to avoid per-instance spam)
+    preserved_count = 0
+    reused_spawn_count = 0
+    reused_pos_count = 0
+    new_assigned_count = 0
+    _SAMPLE_N = 3
+    preserved_samples = []
+    reused_spawn_samples = []
+    reused_pos_samples = []
+    new_assigned_samples = []
+
     seen_spawn_ids = set()
     templates_needed: dict[int, dict] = dict(tid_to_entry)  # start with existing
     instances_out = []
@@ -294,35 +312,40 @@ def save_buildings_split(
                         pass
                 else:
                     iid = cur_id
-                    try:
-                        logger.info(f"[Buildings][SaveSplit] Preserving existing building.id -> iid={iid} (zone={zone_norm} rel=({relx},{rely}) tpl={tid})")
-                    except Exception:
-                        pass
+                    preserved_count += 1
+                    if len(preserved_samples) < _SAMPLE_N:
+                        preserved_samples.append(iid)
+
             if iid is None and (spawn_id is not None and str(spawn_id) in by_spawn_id):
                 iid = by_spawn_id[str(spawn_id)]
-                try:
-                    logger.info(f"[Buildings][SaveSplit] ID reuse by spawn_id: spawn_id={spawn_id} -> iid={iid}")
-                except Exception:
-                    pass
+                reused_spawn_count += 1
+                if len(reused_spawn_samples) < _SAMPLE_N:
+                    reused_spawn_samples.append((spawn_id, iid))
+
             if iid is None:
                 pos_key = f"{zone_norm}|{relx}|{rely}|{tid}"
                 iid = by_pos_key.get(pos_key)
                 if iid is not None:
-                    try:
-                        logger.info(f"[Buildings][SaveSplit] ID reuse by pos_key: key={pos_key} -> iid={iid}")
-                    except Exception:
-                        pass
+                    reused_pos_count += 1
+                    if len(reused_pos_samples) < _SAMPLE_N:
+                        reused_pos_samples.append((pos_key, iid))
+
             if iid is None or iid in used_ids:
                 iid = max_iid + 1
                 max_iid = iid
+
                 try:
                     img_dbg = getattr(b, 'image_path', None)
                 except Exception:
                     img_dbg = None
+                new_assigned_count += 1
+                if len(new_assigned_samples) < _SAMPLE_N:
+                    new_assigned_samples.append(iid)
                 try:
-                    logger.warning(f"[Buildings][SaveSplit] New ID assigned: iid={iid} (prev_max={iid-1}) zone={zone_norm} rel=({relx},{rely}) tpl={tid} img={img_dbg}")
+                    logger.debug(f"[Buildings][SaveSplit] New ID assigned: iid={iid} zone={zone_norm} rel=({relx},{rely}) tpl={tid} img={img_dbg}")
                 except Exception:
                     pass
+
             # Mark id as used in this pass
             try:
                 used_ids.add(int(iid))
@@ -399,8 +422,29 @@ def save_buildings_split(
     with open(i_path, 'w', encoding='utf-8') as inf:
         json.dump(instances_out, inf, indent=4)
 
-    logger.info(f"✅ {len(templates_list)} templates guardados en {t_path}")
-    logger.info(f"✅ {len(instances_out)} instancias guardadas en {i_path}")
+    # Concise success line (paths at DEBUG to avoid console spam)
+    logger.info(f"[Buildings][SaveSplit] Saved templates={len(templates_list)} instances={len(instances_out)}")
+    try:
+        logger.debug(f"✅ templates_path={t_path}")
+        logger.debug(f"✅ instances_path={i_path}")
+    except Exception:
+        pass
+    # Single concise summary for IDs used this save
+    try:
+        logger.info(
+            f"[Buildings][SaveSplit] ID summary: preserved={preserved_count} reused_spawn={reused_spawn_count} reused_pos={reused_pos_count} new_assigned={new_assigned_count}"
+        )
+        # Optional tiny debug samples for traceability
+        if preserved_samples:
+            logger.debug(f"[Buildings][SaveSplit] preserved_samples={preserved_samples}")
+        if reused_spawn_samples:
+            logger.debug(f"[Buildings][SaveSplit] reused_spawn_samples={reused_spawn_samples}")
+        if reused_pos_samples:
+            logger.debug(f"[Buildings][SaveSplit] reused_pos_samples={reused_pos_samples}")
+        if new_assigned_samples:
+            logger.debug(f"[Buildings][SaveSplit] new_assigned_samples={new_assigned_samples}")
+    except Exception:
+        pass
 
     # Audit: diff previous vs new instances to detect added/removed/modified IDs
     try:

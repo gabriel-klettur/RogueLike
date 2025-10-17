@@ -26,6 +26,7 @@ class BuildingEditorManager:
         self.view         = BuildingEditorView(state, self.editor_state)
         # Panel especializado de colisiones (delegación completa del "collision brush")
         self.colliders    = BuildingCollidersPanelController(state, self.editor_state, self.view)
+
         # Panel de Add/Remove (abre picker y acciones rápidas)
         self.add_remove   = BuildingsAddRemovePanelController(state, self.editor_state, self.view, self)
         # Panel de Tutorial (overlay con guía paso a paso)
@@ -55,6 +56,18 @@ class BuildingEditorManager:
         # Permitir al manejador de eventos delegar al panel de colisiones
         try:
             self.handler.colliders = self.colliders
+        except Exception:
+            pass
+        # Inyectar ECSWorld en el panel de colliders para aplicar cambios en runtime
+        try:
+            if hasattr(self.colliders, 'events') and hasattr(self.game, 'ecs') and hasattr(self.game.ecs, 'ecs_world'):
+                self.colliders.events.ecs_world = self.game.ecs.ecs_world
+        except Exception:
+            pass
+        # Inyectar referencia al Game para poder disparar el mismo hot-reload que F1
+        try:
+            if hasattr(self.colliders, 'events'):
+                self.colliders.events.game = self.game
         except Exception:
             pass
         # Delegación al panel de add/remove
