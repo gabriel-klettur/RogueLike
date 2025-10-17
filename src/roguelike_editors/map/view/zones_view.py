@@ -43,6 +43,10 @@ class ZonesView:
             screen_tl = camera.apply((px, py))
             screen_size = camera.scale((pw, ph))
 
+            # Skip drawing if zoomed so far out that the rectangle collapses to 0 px
+            if screen_size[0] < 1 or screen_size[1] < 1:
+                continue
+
             # Fill
             surf = Surface(screen_size, pygame.SRCALPHA)
             surf.fill(fill_color)
@@ -76,6 +80,10 @@ class ZonesView:
         label_surf = self.fonts.large.render(text, True, self.palette.text)
         label_w, label_h = label_surf.get_size()
         max_w, max_h = screen_size
+
+        # If the zone is smaller than a pixel in either dimension, skip label drawing
+        if max_w <= 0 or max_h <= 0:
+            return
 
         if label_w > max_w or label_h > max_h:
             scale = min(max_w / label_w, max_h / label_h)

@@ -1,4 +1,3 @@
-import pygame
 from pygame import Surface
 from roguelike_editors.map.map_title_panel.map_title_view import MapTitleView
 
@@ -99,6 +98,18 @@ class MapEditorView:
     # -------------------------------------------------------------
     def _draw_toolbar(self, screen: Surface) -> None:
         # Delegar dibujo en el widget compartido a través de la vista del toolbar
+        # Auto-ubicar bajo el título si aún está en la posición por defecto
+        try:
+            widget = self.controller.toolbar.view.widget
+            panel = widget.panel
+            title_rect = getattr(self, "_last_title_rect", None)
+            if title_rect is not None:
+                default_pos = (getattr(widget, "x", 10), getattr(widget, "y", 10))
+                current_pos = getattr(panel, "pos", None) or default_pos
+                if current_pos == default_pos:
+                    panel.pos = (title_rect.x, title_rect.bottom + 10)
+        except Exception:
+            pass
         self.controller.toolbar.view.render(screen)
 
     # -------------------------------------------------------------

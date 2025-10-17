@@ -15,6 +15,9 @@ class CollidersView:
         for tile in map_manager.solid_tiles:
             tl = camera.apply((tile.x, tile.y))
             size = camera.scale((TILE_SIZE, TILE_SIZE))
+            # Skip if zoom is so small that a tile collapses to 0 px in any dimension
+            if size[0] < 1 or size[1] < 1:
+                continue
             overlay = pygame.Surface(size, pygame.SRCALPHA)
             overlay.fill(self.palette.collider_fill)
             screen.blit(overlay, tl)

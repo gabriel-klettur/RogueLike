@@ -1,16 +1,13 @@
 {
   "1": {
-    "player_id": "2f3d711d-c6c1-44a4-be4a-117fb4a8d616",
+    "player_id": "4069e9f7-cc7c-459e-96b4-f853fc0da557",
     "capacity": 20,
     "slots": [
       {
         "item": "gold",
         "quantity": 10
       },
-      {
-        "item": "health_potion",
-        "quantity": 2
-      },
+      null,
       null,
       null,
       null,

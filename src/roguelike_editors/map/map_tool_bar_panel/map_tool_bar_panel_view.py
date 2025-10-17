@@ -2,13 +2,14 @@ from roguelike_ui.widgets.toolbar_panel import ToolbarView
 
 # Ordered list of tools for the Map toolbar
 TOOLS = [
-    "map_tutorial",
+    
     "view_layers",
     "add_zone",
     "delete_zone",
     "paint_tiles",
     "clear_colliders",
     "paint_colliders",
+    "map_tutorial",
 ]
 
 
@@ -27,7 +28,7 @@ class MapToolBarPanelView:
             items=TOOLS,
             icons=getattr(src, "icons", {}),
             x=getattr(src, "x", 10),
-            y=getattr(src, "y", 10),
+            y=getattr(src, "y", 100),
             size=getattr(src, "size", 64),
             padding=getattr(src, "padding", 8),
             name="MapToolBar",

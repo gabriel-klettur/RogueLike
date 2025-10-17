@@ -5,7 +5,7 @@ import pygame
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.config.config_camera import ALLOWED_ZOOMS, next_allowed_zoom
+ 
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,14 @@ def handle_zoom(ev: pygame.event.Event, camera, state) -> None:
     mx, my = pygame.mouse.get_pos()
     wx = mx / camera.zoom + camera.offset_x
     wy = my / camera.zoom + camera.offset_y
-    allowed = ALLOWED_ZOOMS
+    # Continuous zoom for the editor: unlimited zoom out, smooth steps, epsilon floor
     z = float(getattr(camera, "zoom", 1.0)) or 1.0
-    new_z = next_allowed_zoom(z, +1, allowed) if ev.y > 0 else next_allowed_zoom(z, -1, allowed)
+    factor = 1.1
+    if ev.y > 0:
+        new_z = z * factor
+    else:
+        # Allow unlimited zoom out, but avoid reaching zero to prevent division-by-zero
+        new_z = max(z / factor, 1e-6)
     if abs(new_z - z) > 1e-9:
         camera.zoom = new_z
         camera.offset_x = wx - mx / camera.zoom
