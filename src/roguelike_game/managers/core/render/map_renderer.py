@@ -24,13 +24,18 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                 logger.debug("[Render][MapEditor] visible_layers=%s", vis_names)
             except Exception:
                 pass
-        orig = map_.tiles_by_layer
-        filtered = {layer: tiles for layer, tiles in orig.items() if visible.get(layer, True)}
-        map_.tiles_by_layer = filtered
+        # Filter both tiles_by_layer (Tile grids) and layers (code grids) to honor visibility
+        orig_tiles_by_layer = map_.tiles_by_layer
+        filtered_tiles_by_layer = {layer: tiles for layer, tiles in orig_tiles_by_layer.items() if visible.get(layer, True)}
+        orig_layers = map_.layers
+        filtered_layers = {layer: orig_layers[layer] for layer in orig_layers if visible.get(layer, True)}
+        map_.tiles_by_layer = filtered_tiles_by_layer
+        map_.layers = filtered_layers
         try:
             dirty_rects = map_.view.render(screen, camera, map_)
         finally:
-            map_.tiles_by_layer = orig
+            map_.tiles_by_layer = orig_tiles_by_layer
+            map_.layers = orig_layers
         return dirty_rects
 
     # Collision-only mode: render only collision grid (log only on toggle)

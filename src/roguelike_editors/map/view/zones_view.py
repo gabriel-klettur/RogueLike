@@ -47,10 +47,11 @@ class ZonesView:
             if screen_size[0] < 1 or screen_size[1] < 1:
                 continue
 
-            # Fill
-            surf = Surface(screen_size, pygame.SRCALPHA)
-            surf.fill(fill_color)
-            screen.blit(surf, screen_tl)
+            # Fill (skip for the selected zone to show border-only highlight)
+            if zone_name != state.selected_zone:
+                surf = Surface(screen_size, pygame.SRCALPHA)
+                surf.fill(fill_color)
+                screen.blit(surf, screen_tl)
 
             # Outline
             pygame.draw.rect(screen, outline_color, (*screen_tl, *screen_size), 2)

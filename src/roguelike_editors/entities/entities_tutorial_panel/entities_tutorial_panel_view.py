@@ -4,6 +4,7 @@ Vista del panel de Tutorial (Entities Editor).
 import pygame
 from roguelike_editors.common.ui.panels import draw_translucent_panel
 from roguelike_ui.ui_blocker import register_blocker
+from roguelike_ui.panel import DraggablePanel
 
 
 class EntitiesTutorialPanelView:
@@ -33,6 +34,8 @@ class EntitiesTutorialPanelView:
             self.title_font = pygame.font.Font(None, 22)
             self.text_font = pygame.font.Font(None, 18)
             self.button_font = pygame.font.Font(None, 18)
+        # Panel draggable para administrar posición y arrastre (click derecho en cabecera)
+        self.panel = DraggablePanel(self.width, self.min_height)
 
     def _wrap_text(self, text: str, font: pygame.font.Font, max_width: int) -> list[str]:
         words = text.split(' ')
@@ -104,9 +107,16 @@ class EntitiesTutorialPanelView:
         step = steps[idx] if steps else {"title": "", "text": ""}
         # Altura y posición
         required_h = self._measure_required_height(step)
-        x, y = self._compute_position(screen, required_h)
+        # Redimensionar surface del panel según contenido actual
+        self.panel.resize(self.width, required_h)
+        # Establecer posición inicial si aún no existe; conservar si el usuario lo movió
+        if self.panel.pos is None:
+            self.panel.pos = self._compute_position(screen, required_h)
+        x, y = self.panel.pos
         panel_rect = pygame.Rect(x, y, self.width, required_h)
+        # Fondo translúcido (se preserva el estilo actual)
         draw_translucent_panel(screen, panel_rect)
+        # Exponer rect para interacción (botones, bloqueo de UI, y cálculo de cabecera)
         self.model.panel_rect = panel_rect
         try:
             register_blocker(panel_rect)
@@ -116,6 +126,12 @@ class EntitiesTutorialPanelView:
         # Título y progreso
         title_surf = self.title_font.render(step.get('title', ''), True, self.title_color)
         screen.blit(title_surf, (x + self.padding, y + self.padding))
+        # Definir zona arrastrable (cabecera): franja superior que contiene el título
+        try:
+            header_h = title_surf.get_height() + self.padding * 2
+        except Exception:
+            header_h = 40
+        self.model.header_rect = pygame.Rect(x, y, self.width, header_h)
         try:
             if total > 0:
                 prog = f"{idx+1}/{total}"

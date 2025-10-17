@@ -1,115 +1,14 @@
 {
   "SET_IDS": [
-    "Player_Default",
-    "Monster_stupid",
-    "Monster_Default",
-    "Spawner_Periodic_Cooldown",
-    "Spawner_Waves_Clear",
-    "Spawner_Periodic_BetweenWaves"
+    "TestSet"
   ],
   "STATES_BY_SET": {
-    "Monster_Default": [
-      "Patrol",
-      "Aggro",
-      "Chase",
-      "Attack",
-      "Flee",
-      "AlertChase",
-      "Damage",
-      "Death"
-    ],
-    "Monster_stupid": [
-      "Patrol",
-      "Damage"
-    ],
-    "Player_Default": [
+    "TestSet": [
       "Idle",
-      "Move",
-      "Attack",
-      "SpellSelect",
       "Damage"
-    ],
-    "Spawner_Periodic_BetweenWaves": [
-      "AwaitTrigger",
-      "SpawningWave",
-      "WaitCooldown",
-      "WaitRestart",
-      "Finished"
-    ],
-    "Spawner_Periodic_Cooldown": [
-      "AwaitTrigger",
-      "SpawningWave",
-      "WaitCooldown",
-      "WaitRestart",
-      "Finished"
-    ],
-    "Spawner_Waves_Clear": [
-      "AwaitTrigger",
-      "SpawningWave",
-      "WaitClear",
-      "WaitRestart",
-      "Finished"
     ]
   },
   "TRANSITIONS_BY_SET": {
-    "Monster_Default": [
-      "tr_d4aeff4d",
-      "tr_920609f2",
-      "tr_95c26df6",
-      "tr_b2319a5e",
-      "tr_b56700bb",
-      "tr_a5fb0d53",
-      "tr_072c53fd",
-      "tr_6170b805",
-      "tr_6094fcde",
-      "tr_5faeda85",
-      "tr_17ce0c09",
-      "tr_755dbb1f",
-      "tr_e536689f",
-      "tr_79b31459",
-      "tr_e001a8cc"
-    ],
-    "Monster_stupid": [
-      "tr_f5a59d54"
-    ],
-    "Player_Default": [
-      "tr_c1d3b0f3",
-      "tr_3ac424bb",
-      "tr_c1ac0885",
-      "tr_a118f50f",
-      "tr_4456905b",
-      "tr_6bad833d",
-      "tr_b52b3ae2"
-    ],
-    "Spawner_Periodic_BetweenWaves": [
-      "tr_b2edf240",
-      "tr_9c867845",
-      "tr_6b5b77e2",
-      "tr_a35a81a6",
-      "tr_2474bd1c",
-      "tr_a82b5258",
-      "tr_d936810d",
-      "tr_3cf9cb39"
-    ],
-    "Spawner_Periodic_Cooldown": [
-      "tr_2a900349",
-      "tr_fc97db89",
-      "tr_a561f136",
-      "tr_01a59110",
-      "tr_8a13c574",
-      "tr_7b908cad",
-      "tr_52658327",
-      "tr_884c0ade"
-    ],
-    "Spawner_Waves_Clear": [
-      "tr_6af7b926",
-      "tr_5bc18c24",
-      "tr_903c8dd6",
-      "tr_9705db01",
-      "tr_31c0173a",
-      "tr_60732508",
-      "tr_3a5a8c7b",
-      "tr_a8ffc366"
-    ]
+    "TestSet": []
   }
 }

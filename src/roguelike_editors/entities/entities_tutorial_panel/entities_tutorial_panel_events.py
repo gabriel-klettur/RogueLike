@@ -12,6 +12,15 @@ class EntitiesTutorialPanelEventHandler:
     def handle(self, event) -> bool:
         if not getattr(self.model, 'active', False):
             return False
+        # Arrastre del panel (click derecho sobre cabecera)
+        try:
+            panel = getattr(self.controller.view, 'panel', None)
+            header_rect = getattr(self.model, 'header_rect', None)
+            if panel is not None and header_rect is not None and hasattr(panel, 'handle_event'):
+                if panel.handle_event(event, header_rect=header_rect):
+                    return True
+        except Exception:
+            pass
         # Cerrar con ESC
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.controller.deactivate()

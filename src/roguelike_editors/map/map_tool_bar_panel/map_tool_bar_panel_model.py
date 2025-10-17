@@ -10,7 +10,7 @@ class MapToolBarPanelModel:
     State and domain logic for the Map toolbar panel.
     Holds geometry, icons, rects, and editor mutations.
     """
-    def __init__(self, editor_state, *, x: int = 10, y: int = 100, size: int = 64, padding: int = 8):
+    def __init__(self, editor_state, *, x: int = 10, y: int = 10, size: int = 64, padding: int = 8):
         self.editor = editor_state
         # Geometry/layout
         self.x = x
