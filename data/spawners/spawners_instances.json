@@ -24,36 +24,24 @@
     },
     "visuals": {
       "AwaitTrigger": {
-        "instance_id": 215,
+        "instance_id": 304,
         "template_id": 157
       },
       "Finished": {
-        "instance_id": 216,
+        "instance_id": 315,
         "template_id": 158
       },
       "WaitCooldown": {
-        "instance_id": 217,
-        "template_id": 155,
-        "offset": [
-          -125,
-          -232
-        ]
+        "instance_id": 316,
+        "template_id": 155
       },
       "WaitClear": {
-        "instance_id": 218,
-        "template_id": 157,
-        "offset": [
-          -124,
-          -236
-        ]
+        "instance_id": 317,
+        "template_id": 157
       },
       "SpawningWave": {
-        "instance_id": 219,
-        "template_id": 157,
-        "offset": [
-          -125,
-          -240
-        ]
+        "instance_id": 318,
+        "template_id": 157
       }
     },
     "id": "survival_10_forest_14_9"

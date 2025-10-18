@@ -2545,5 +2545,304 @@
             256
         ],
         "id": 215
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 216
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 217
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/healer_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 218
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_30_45 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 219
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 220
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/curse_house_topdown.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 221
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 222
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.577,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 223
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.572,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 224
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.389,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 225
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.57,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 226
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.375,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 227
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.376,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 228
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.327,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 229
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.586,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 230
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.23,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 231
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/portal.png"
+        },
+        "solid": true,
+        "split_ratio": 0.215,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            384
+        ],
+        "id": 232
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/others/guillotina.png"
+        },
+        "solid": true,
+        "split_ratio": 0.387,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 233
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/healer_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.646,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 234
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/ukranian_super_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.587,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 235
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.774,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 236
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/houses/orden_house_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.732,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 237
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/shops/jewlery_shop.png"
+        },
+        "solid": true,
+        "split_ratio": 0.625,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 238
     }
 ]
