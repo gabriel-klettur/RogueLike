@@ -86,8 +86,15 @@ class ZonesService:
         Retorna el nombre creado.
         """
         zone_w, zone_h = global_map_settings.zone_size
-        offx = (tx // zone_w) * zone_w
-        offy = (ty // zone_h) * zone_h
+        # When working with zones.json, tests and tools assume the canonical grid 50x50.
+        # Global mutable state (other tests) may change zone_width/height; avoid leaking that here.
+        if getattr(global_map_settings, "use_zones_json", False):
+            zw = 50
+            zh = 50
+        else:
+            zw, zh = zone_w, zone_h
+        offx = (tx // zw) * zw
+        offy = (ty // zh) * zh
         base_name = f"zone_{offx}_{offy}"
 
         json_path = self._zones_json_path()

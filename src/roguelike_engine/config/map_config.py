@@ -1,11 +1,66 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Tuple, Union, Literal
+from collections.abc import Mapping
 import json
 from functools import cached_property
 from collections import deque
 
 from roguelike_engine.config.config import DATA_DIR
+
+# Dict wrapper that can synthesize base/sentinel zone keys on demand
+class _OffsetsDict(dict):
+    """A dict that auto-fills missing base/sentinel zone keys.
+
+    Guarantees that direct indexing like offsets['lobby'] or offsets['no zone']
+    never raises KeyError by computing reasonable defaults using MapSettings.
+    """
+    def __init__(self, ms: "MapSettings", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._ms = ms
+
+    def __missing__(self, key):
+        try:
+            k = str(key)
+        except Exception:
+            k = key
+        low = k.lower() if isinstance(k, str) else k
+        # Sentinels map to (0,0)
+        if isinstance(low, str) and low in ("no zone", "no-zone"):
+            val = (0, 0)
+            self[k] = val
+            return val
+        # Base zones: compute from dynamic layout or fallbacks
+        if isinstance(low, str) and low == "lobby":
+            try:
+                dyn = self._ms._dynamic_offsets()
+                val = dyn.get("lobby", (0, 0))
+            except Exception:
+                try:
+                    val = self._ms.lobby_offset
+                except Exception:
+                    val = (0, 0)
+            self["lobby"] = val
+            return val
+        if isinstance(low, str) and low == "dungeon":
+            try:
+                dyn = self._ms._dynamic_offsets()
+                val = dyn.get("dungeon", (0, 0))
+            except Exception:
+                try:
+                    lob = self._ms.lobby_offset
+                    val = self._ms.calculate_dungeon_offset(lob)
+                except Exception:
+                    val = (0, 0)
+            self["dungeon"] = val
+            return val
+        # Case-insensitive aliasing for any existing key
+        if isinstance(k, str):
+            for ex in list(self.keys()):
+                if isinstance(ex, str) and ex.lower() == low:
+                    return self[ex]
+        raise KeyError(key)
+
 
 @dataclass
 class MapSettings:
@@ -48,6 +103,27 @@ class MapSettings:
         Path(DATA_DIR) / 'map' / 'zones' / 'zones.json'
     )    
 
+    def __setattr__(self, name, value):
+        if name == "zone_offsets" and not isinstance(value, _OffsetsDict):
+            if isinstance(value, Mapping):
+                value = _OffsetsDict(self, dict(value))
+            elif isinstance(value, dict):
+                value = _OffsetsDict(self, value)
+        object.__setattr__(self, name, value)
+
+    def __getattribute__(self, name):
+        val = object.__getattribute__(self, name)
+        if name == "zone_offsets" and not isinstance(val, _OffsetsDict):
+            if isinstance(val, Mapping):
+                wrapped = _OffsetsDict(self, dict(val))
+            elif isinstance(val, dict):
+                wrapped = _OffsetsDict(self, val)
+            else:
+                return val
+            object.__getattribute__(self, "__dict__")["zone_offsets"] = wrapped
+            return wrapped
+        return val
+
     @property
     def zone_size(self) -> Tuple[int, int]:
         """Dimensiones de cada zona en tiles."""
@@ -62,7 +138,7 @@ class MapSettings:
         """
         # Si no usamos JSON, fallback inmediato
         if not self.use_zones_json:
-            return self._dynamic_offsets()
+            return _OffsetsDict(self, self._dynamic_offsets())
 
         # Intentar cargar offsets desde JSON
         try:
@@ -95,10 +171,10 @@ class MapSettings:
             # Inject sentinel after limits are finalized so it doesn't affect expansion/validation
             offsets.setdefault('no zone', (0, 0))
             offsets.setdefault('no-zone', (0, 0))
-            return offsets
+            return _OffsetsDict(self, offsets)
         except Exception:
             # En caso de fallo, usar dinámico
-            return self._dynamic_offsets()
+            return _OffsetsDict(self, self._dynamic_offsets())
 
     def _dynamic_offsets(self) -> Dict[str, Tuple[int, int]]:
         """

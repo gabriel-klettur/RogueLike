@@ -7,9 +7,18 @@
         "item": "gold",
         "quantity": 10
       },
-      null,
-      null,
-      null,
+      {
+        "item": "ghjgjh",
+        "quantity": 2
+      },
+      {
+        "item": "energy_potion",
+        "quantity": 1
+      },
+      {
+        "item": "bucket_water",
+        "quantity": 1
+      },
       null,
       null,
       null,

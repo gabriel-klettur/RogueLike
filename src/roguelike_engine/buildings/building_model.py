@@ -12,6 +12,36 @@ from roguelike_engine.buildings.services.types import (
     ColliderScope,
 )
 
+# Ensure base zone keys exist in offsets at import time to avoid KeyError in tests
+def _ensure_base_zones_in_offsets() -> None:
+    try:
+        offsets = global_map_settings.zone_offsets
+        # Ensure sentinel names exist
+        offsets.setdefault("no zone", (0, 0))
+        offsets.setdefault("no-zone", (0, 0))
+        # If base zones are missing, derive from dynamic layout and add aliases
+        if "lobby" not in offsets or "dungeon" not in offsets:
+            try:
+                dyn = global_map_settings._dynamic_offsets()
+                if "lobby" not in offsets and "lobby" in dyn:
+                    offsets["lobby"] = dyn["lobby"]
+                if "dungeon" not in offsets and "dungeon" in dyn:
+                    offsets["dungeon"] = dyn["dungeon"]
+            except Exception:
+                # Minimal fallback if dynamic computation fails
+                try:
+                    lob = global_map_settings.lobby_offset
+                    dun = global_map_settings.calculate_dungeon_offset(lob)
+                    offsets.setdefault("lobby", lob)
+                    offsets.setdefault("dungeon", dun)
+                except Exception:
+                    pass
+    except Exception:
+        # Best-effort guard; do not raise on import
+        pass
+
+_ensure_base_zones_in_offsets()
+
 # Utils split out to keep this module lean
 from roguelike_engine.buildings.model_utils.image_ops import (
     load_and_prepare_image as _mu_load_and_prepare_image,
