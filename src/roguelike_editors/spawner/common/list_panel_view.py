@@ -36,6 +36,17 @@ class ListPanelView:
                 end = min(start + visible_rows, len(items))
                 # reset hitboxes for this frame
                 self.coords_hitboxes = {}
+                if len(items) == 0:
+                    try:
+                        empty_text = str(getattr(model, 'empty_text', 'No entries'))
+                        hint_text = str(getattr(model, 'empty_hint', ''))
+                        et = font.render(empty_text, True, (200, 200, 200))
+                        surf.blit(et, (10, y_off + 4))
+                        if hint_text:
+                            eh = font.render(hint_text, True, (160, 160, 160))
+                            surf.blit(eh, (10, y_off + 4 + font.get_linesize()))
+                    except Exception:
+                        pass
                 # Rows (windowed by scroll_offset)
                 for i, item in enumerate(items[start:end]):
                     g_idx = start + i
