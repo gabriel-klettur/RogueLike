@@ -24,11 +24,11 @@
     },
     "visuals": {
       "AwaitTrigger": {
-        "instance_id": 304,
+        "instance_id": 372,
         "template_id": 157
       },
       "Finished": {
-        "instance_id": 315,
+        "instance_id": 379,
         "template_id": 158
       },
       "WaitCooldown": {
@@ -36,11 +36,11 @@
         "template_id": 155
       },
       "WaitClear": {
-        "instance_id": 317,
+        "instance_id": 380,
         "template_id": 157
       },
       "SpawningWave": {
-        "instance_id": 318,
+        "instance_id": 381,
         "template_id": 157
       }
     },

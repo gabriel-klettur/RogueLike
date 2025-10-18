@@ -1,2282 +1,2555 @@
 [
-    {
-        "id": 1,
-        "template_id": 1,
-        "zone": "lobby",
-        "rel_x": 961,
-        "rel_y": 383,
-        "overrides": {
-            "scale": [
-                353,
-                528
-            ],
-            "z_bottom": 3,
-            "z_top": 9,
-            "z": 3
-        }
-    },
-    {
-        "id": 2,
-        "template_id": 185,
-        "zone": "lobby",
-        "rel_x": 1437,
-        "rel_y": 1191,
-        "overrides": {
-            "scale": [
-                166,
-                225
-            ],
-            "z_bottom": 4,
-            "z_top": 6,
-            "z": 4
-        }
-    },
-    {
-        "id": 3,
-        "template_id": 3,
-        "zone": "lobby",
-        "rel_x": 1500,
-        "rel_y": -169,
-        "overrides": {
-            "scale": [
-                180,
-                244
-            ],
-            "z_bottom": 2,
-            "z_top": 2,
-            "z": 2
-        }
-    },
-    {
-        "id": 4,
-        "template_id": 4,
-        "zone": "lobby",
-        "rel_x": 565,
-        "rel_y": 189,
-        "overrides": {
-            "scale": [
-                189,
-                239
-            ],
-            "z_bottom": 4,
-            "z_top": 6,
-            "z": 4
-        }
-    },
-    {
-        "id": 5,
-        "template_id": 5,
-        "zone": "lobby",
-        "rel_x": 1481,
-        "rel_y": 626,
-        "overrides": {
-            "scale": [
-                181,
-                244
-            ],
-            "z_bottom": 1,
-            "z_top": 6,
-            "z": 1
-        }
-    },
-    {
-        "id": 6,
-        "template_id": 6,
-        "zone": "lobby",
-        "rel_x": 854,
-        "rel_y": 180,
-        "overrides": {
-            "scale": [
-                231,
-                282
-            ],
-            "z_bottom": 1,
-            "z_top": 7,
-            "z": 1
-        }
-    },
-    {
-        "id": 7,
-        "template_id": 7,
-        "zone": "Forest",
-        "rel_x": 1370,
-        "rel_y": -259,
-        "overrides": {
-            "scale": [
-                289,
-                368
-            ],
-            "z_bottom": 1,
-            "z_top": 5,
-            "z": 1
-        }
-    },
-    {
-        "id": 8,
-        "template_id": 8,
-        "zone": "lobby",
-        "rel_x": 853,
-        "rel_y": 584,
-        "overrides": {
-            "scale": [
-                201,
-                258
-            ],
-            "z_bottom": 3,
-            "z_top": 8,
-            "z": 3
-        }
-    },
-    {
-        "id": 10,
-        "template_id": 10,
-        "zone": "lobby",
-        "rel_x": 34,
-        "rel_y": 371,
-        "overrides": {
-            "scale": [
-                499,
-                499
-            ],
-            "z_bottom": 1,
-            "z_top": 0,
-            "z": 1
-        }
-    },
-    {
-        "id": 11,
-        "template_id": 11,
-        "zone": "lobby",
-        "rel_x": 141,
-        "rel_y": -833,
-        "overrides": {
-            "scale": [
-                1322,
-                879
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 12,
-        "template_id": 12,
-        "zone": "lobby",
-        "rel_x": 935,
-        "rel_y": -177,
-        "overrides": {
-            "scale": [
-                414,
-                414
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 13,
-        "template_id": 13,
-        "zone": "lobby",
-        "rel_x": 730,
-        "rel_y": 141,
-        "overrides": {
-            "scale": [
-                158,
-                158
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 14,
-        "template_id": 14,
-        "zone": "lobby",
-        "rel_x": 136,
-        "rel_y": 122,
-        "overrides": {
-            "scale": [
-                316,
-                473
-            ],
-            "z_bottom": 2,
-            "z_top": 5,
-            "z": 2
-        }
-    },
-    {
-        "id": 17,
-        "template_id": 202,
-        "zone": "lobby",
-        "rel_x": 30,
-        "rel_y": 939,
-        "overrides": {
-            "scale": [
-                222,
-                222
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 18,
-        "template_id": 18,
-        "zone": "lobby",
-        "rel_x": 211,
-        "rel_y": -220,
-        "overrides": {
-            "scale": [
-                505,
-                505
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 20,
-        "template_id": 20,
-        "zone": "lobby",
-        "rel_x": 1179,
-        "rel_y": 221,
-        "overrides": {
-            "scale": [
-                389,
-                579
-            ],
-            "z_bottom": 3,
-            "z_top": 8,
-            "z": 3
-        }
-    },
-    {
-        "id": 21,
-        "template_id": 21,
-        "zone": "lobby",
-        "rel_x": 630,
-        "rel_y": 447,
-        "overrides": {
-            "scale": [
-                73,
-                177
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 22,
-        "template_id": 22,
-        "zone": "lobby",
-        "rel_x": 901,
-        "rel_y": 491,
-        "overrides": {
-            "scale": [
-                75,
-                182
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 24,
-        "template_id": 22,
-        "zone": "lobby",
-        "rel_x": 920,
-        "rel_y": 1061,
-        "overrides": {
-            "scale": [
-                50,
-                121
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 25,
-        "template_id": 22,
-        "zone": "lobby",
-        "rel_x": 1441,
-        "rel_y": 1234,
-        "overrides": {
-            "scale": [
-                50,
-                121
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 26,
-        "template_id": 22,
-        "zone": "lobby",
-        "rel_x": 1439,
-        "rel_y": 1057,
-        "overrides": {
-            "scale": [
-                50,
-                121
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 27,
-        "template_id": 183,
-        "zone": "lobby",
-        "rel_x": 925,
-        "rel_y": 1413,
-        "overrides": {
-            "scale": [
-                50,
-                121
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 29,
-        "template_id": 22,
-        "zone": "lobby",
-        "rel_x": 1442,
-        "rel_y": 1411,
-        "overrides": {
-            "scale": [
-                50,
-                121
-            ],
-            "z_bottom": 3,
-            "z_top": 3,
-            "z": 3
-        }
-    },
-    {
-        "id": 33,
-        "template_id": 25,
-        "zone": "lobby",
-        "rel_x": 56,
-        "rel_y": 1513,
-        "overrides": {
-            "scale": [
-                109,
-                51
-            ],
-            "z_bottom": 1,
-            "z_top": 3,
-            "z": 1
-        }
-    },
-    {
-        "id": 34,
-        "template_id": 26,
-        "zone": "lobby",
-        "rel_x": 228,
-        "rel_y": 1512,
-        "overrides": {
-            "scale": [
-                133,
-                54
-            ],
-            "z_bottom": 1,
-            "z_top": 3,
-            "z": 1
-        }
-    },
-    {
-        "id": 35,
-        "template_id": 26,
-        "zone": "lobby",
-        "rel_x": 422,
-        "rel_y": 1513,
-        "overrides": {
-            "scale": [
-                122,
-                50
-            ],
-            "z_bottom": 1,
-            "z_top": 3,
-            "z": 1
-        }
-    },
-    {
-        "id": 36,
-        "template_id": 26,
-        "zone": "lobby",
-        "rel_x": 584,
-        "rel_y": 1508,
-        "overrides": {
-            "scale": [
-                137,
-                56
-            ],
-            "z_bottom": 1,
-            "z_top": 1,
-            "z": 1
-        }
-    },
-    {
-        "id": 37,
-        "template_id": 27,
-        "zone": "lobby",
-        "rel_x": 75,
-        "rel_y": 1341,
-        "overrides": {
-            "scale": [
-                235,
-                235
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 38,
-        "template_id": 28,
-        "zone": "lobby",
-        "rel_x": 289,
-        "rel_y": 1379,
-        "overrides": {
-            "scale": [
-                188,
-                188
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 39,
-        "template_id": 29,
-        "zone": "lobby",
-        "rel_x": 469,
-        "rel_y": 1370,
-        "overrides": {
-            "scale": [
-                206,
-                206
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 42,
-        "template_id": 32,
-        "zone": "lobby",
-        "rel_x": 562,
-        "rel_y": 490,
-        "overrides": {
-            "scale": [
-                197,
-                269
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 44,
-        "template_id": 34,
-        "zone": "Forest",
-        "rel_x": 909,
-        "rel_y": -104,
-        "overrides": {
-            "scale": [
-                176,
-                240
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 45,
-        "template_id": 35,
-        "zone": "Forest",
-        "rel_x": 1003,
-        "rel_y": -14,
-        "overrides": {
-            "scale": [
-                166,
-                227
-            ],
-            "z_bottom": 3,
-            "z_top": 0,
-            "z": 3
-        }
-    },
-    {
-        "id": 46,
-        "template_id": 36,
-        "zone": "Forest",
-        "rel_x": 1103,
-        "rel_y": -96,
-        "overrides": {
-            "scale": [
-                177,
-                242
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 47,
-        "template_id": 37,
-        "zone": "Forest",
-        "rel_x": 1242,
-        "rel_y": -79,
-        "overrides": {
-            "scale": [
-                114,
-                156
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 48,
-        "template_id": 38,
-        "zone": "Forest",
-        "rel_x": 679,
-        "rel_y": -52,
-        "overrides": {
-            "scale": [
-                164,
-                224
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 49,
-        "template_id": 39,
-        "zone": "Forest",
-        "rel_x": 831,
-        "rel_y": -46,
-        "overrides": {
-            "scale": [
-                162,
-                221
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 52,
-        "template_id": 40,
-        "zone": "Forest",
-        "rel_x": 578,
-        "rel_y": 14,
-        "overrides": {
-            "scale": [
-                114,
-                156
-            ],
-            "z_bottom": 3,
-            "z_top": 0,
-            "z": 3
-        }
-    },
-    {
-        "id": 53,
-        "template_id": 40,
-        "zone": "Forest",
-        "rel_x": 537,
-        "rel_y": 46,
-        "overrides": {
-            "scale": [
-                114,
-                156
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 54,
-        "template_id": 40,
-        "zone": "Forest",
-        "rel_x": 477,
-        "rel_y": -17,
-        "overrides": {
-            "scale": [
-                114,
-                156
-            ],
-            "z_bottom": 4,
-            "z_top": 5,
-            "z": 4
-        }
-    },
-    {
-        "id": 55,
-        "template_id": 42,
-        "zone": "Forest",
-        "rel_x": 737,
-        "rel_y": 6,
-        "overrides": {
-            "scale": [
-                203,
-                276
-            ],
-            "z_bottom": 1,
-            "z_top": 3,
-            "z": 1
-        }
-    },
-    {
-        "id": 56,
-        "template_id": 43,
-        "zone": "Forest",
-        "rel_x": 1298,
-        "rel_y": -47,
-        "overrides": {
-            "scale": [
-                139,
-                190
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 57,
-        "template_id": 44,
-        "zone": "Forest",
-        "rel_x": 644,
-        "rel_y": 51,
-        "overrides": {
-            "scale": [
-                129,
-                176
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 58,
-        "template_id": 45,
-        "zone": "Forest",
-        "rel_x": 568,
-        "rel_y": -90,
-        "overrides": {
-            "scale": [
-                141,
-                192
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 59,
-        "template_id": 46,
-        "zone": "Forest",
-        "rel_x": 895,
-        "rel_y": -48,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 60,
-        "template_id": 47,
-        "zone": "Forest",
-        "rel_x": 1152,
-        "rel_y": 151,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 61,
-        "template_id": 48,
-        "zone": "Forest",
-        "rel_x": 325,
-        "rel_y": -228,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 62,
-        "template_id": 49,
-        "zone": "Forest",
-        "rel_x": 225,
-        "rel_y": -247,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 63,
-        "template_id": 48,
-        "zone": "Forest",
-        "rel_x": 73,
-        "rel_y": -236,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 2,
-            "z_top": 5,
-            "z": 2
-        }
-    },
-    {
-        "id": 64,
-        "template_id": 49,
-        "zone": "Forest",
-        "rel_x": 1406,
-        "rel_y": 518,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 65,
-        "template_id": 50,
-        "zone": "Forest",
-        "rel_x": -11,
-        "rel_y": -101,
-        "overrides": {
-            "scale": [
-                194,
-                265
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 66,
-        "template_id": 51,
-        "zone": "Forest",
-        "rel_x": 18,
-        "rel_y": 94,
-        "overrides": {
-            "scale": [
-                168,
-                229
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 67,
-        "template_id": 52,
-        "zone": "Forest",
-        "rel_x": 38,
-        "rel_y": 208,
-        "overrides": {
-            "scale": [
-                172,
-                235
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 68,
-        "template_id": 53,
-        "zone": "Forest",
-        "rel_x": 28,
-        "rel_y": 236,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 69,
-        "template_id": 163,
-        "zone": "Forest",
-        "rel_x": 385,
-        "rel_y": 515,
-        "overrides": {
-            "scale": [
-                184,
-                235
-            ],
-            "z_bottom": 3,
-            "z_top": 9,
-            "z": 3
-        }
-    },
-    {
-        "id": 70,
-        "template_id": 55,
-        "zone": "Forest",
-        "rel_x": 239,
-        "rel_y": 386,
-        "overrides": {
-            "scale": [
-                220,
-                297
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 71,
-        "template_id": 162,
-        "zone": "Forest",
-        "rel_x": 1316,
-        "rel_y": 656,
-        "overrides": {
-            "scale": [
-                177,
-                242
-            ],
-            "z_bottom": 1,
-            "z_top": 5,
-            "z": 1
-        }
-    },
-    {
-        "id": 73,
-        "template_id": 58,
-        "zone": "Forest",
-        "rel_x": 1421,
-        "rel_y": 229,
-        "overrides": {
-            "scale": [
-                196,
-                253
-            ],
-            "z_bottom": 4,
-            "z_top": 5,
-            "z": 4
-        }
-    },
-    {
-        "id": 74,
-        "template_id": 59,
-        "zone": "Forest",
-        "rel_x": 1294,
-        "rel_y": 239,
-        "overrides": {
-            "scale": [
-                169,
-                231
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 75,
-        "template_id": 60,
-        "zone": "Forest",
-        "rel_x": 1193,
-        "rel_y": 294,
-        "overrides": {
-            "scale": [
-                181,
-                247
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 76,
-        "template_id": 61,
-        "zone": "Forest",
-        "rel_x": 1413,
-        "rel_y": 396,
-        "overrides": {
-            "scale": [
-                238,
-                302
-            ],
-            "z_bottom": 4,
-            "z_top": 9,
-            "z": 4
-        }
-    },
-    {
-        "id": 77,
-        "template_id": 62,
-        "zone": "Forest",
-        "rel_x": 681,
-        "rel_y": 738,
-        "overrides": {
-            "scale": [
-                246,
-                314
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 78,
-        "template_id": 63,
-        "zone": "Forest",
-        "rel_x": 1181,
-        "rel_y": 614,
-        "overrides": {
-            "scale": [
-                201,
-                257
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "collider_scope": "CU",
-            "collision_override": {
-                "width": 7,
-                "height": 9,
-                "collision": [
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ],
-                    [
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        ".",
-                        "."
-                    ]
-                ]
-            },
-            "z": 3
-        }
-    },
-    {
-        "id": 80,
-        "template_id": 65,
-        "zone": "Forest",
-        "rel_x": 1284,
-        "rel_y": 260,
-        "overrides": {
-            "scale": [
-                251,
-                308
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 81,
-        "template_id": 66,
-        "zone": "Forest",
-        "rel_x": 1264,
-        "rel_y": 346,
-        "overrides": {
-            "scale": [
-                154,
-                208
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 85,
-        "template_id": 70,
-        "zone": "Forest",
-        "rel_x": 36,
-        "rel_y": 389,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 86,
-        "template_id": 71,
-        "zone": "Forest",
-        "rel_x": 122,
-        "rel_y": 1282,
-        "overrides": {
-            "scale": [
-                216,
-                276
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 87,
-        "template_id": 72,
-        "zone": "Forest",
-        "rel_x": 1355,
-        "rel_y": 1149,
-        "overrides": {
-            "scale": [
-                244,
-                311
-            ],
-            "z_bottom": 3,
-            "z_top": 8,
-            "z": 3
-        }
-    },
-    {
-        "id": 88,
-        "template_id": 73,
-        "zone": "Forest",
-        "rel_x": 783,
-        "rel_y": 1329,
-        "overrides": {
-            "scale": [
-                186,
-                237
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 89,
-        "template_id": 74,
-        "zone": "Forest",
-        "rel_x": 677,
-        "rel_y": 1229,
-        "overrides": {
-            "scale": [
-                208,
-                265
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 90,
-        "template_id": 75,
-        "zone": "no zone",
-        "rel_x": 253,
-        "rel_y": 2955,
-        "overrides": {
-            "scale": [
-                194,
-                248
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 93,
-        "template_id": 78,
-        "zone": "no zone",
-        "rel_x": 415,
-        "rel_y": 2915,
-        "overrides": {
-            "scale": [
-                224,
-                286
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 94,
-        "template_id": 79,
-        "zone": "Forest",
-        "rel_x": 31,
-        "rel_y": 1365,
-        "overrides": {
-            "scale": [
-                170,
-                217
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 95,
-        "template_id": 73,
-        "zone": "Forest",
-        "rel_x": 53,
-        "rel_y": 1213,
-        "overrides": {
-            "scale": [
-                186,
-                237
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 96,
-        "template_id": 48,
-        "zone": "Forest",
-        "rel_x": 871,
-        "rel_y": 1212,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 97,
-        "template_id": 48,
-        "zone": "no zone",
-        "rel_x": 1001,
-        "rel_y": 2886,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 98,
-        "template_id": 48,
-        "zone": "Forest",
-        "rel_x": 1111,
-        "rel_y": 1207,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 99,
-        "template_id": 171,
-        "zone": "Forest",
-        "rel_x": 591,
-        "rel_y": 1251,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 100,
-        "template_id": 49,
-        "zone": "no zone",
-        "rel_x": 1244,
-        "rel_y": 2871,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 101,
-        "template_id": 80,
-        "zone": "Forest",
-        "rel_x": 15,
-        "rel_y": 869,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 102,
-        "template_id": 173,
-        "zone": "Forest",
-        "rel_x": 651,
-        "rel_y": 842,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 104,
-        "template_id": 82,
-        "zone": "Forest",
-        "rel_x": 187,
-        "rel_y": 609,
-        "overrides": {
-            "scale": [
-                88,
-                88
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 105,
-        "template_id": 83,
-        "zone": "Forest",
-        "rel_x": 419,
-        "rel_y": 739,
-        "overrides": {
-            "scale": [
-                81,
-                81
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 106,
-        "template_id": 84,
-        "zone": "Forest",
-        "rel_x": 896,
-        "rel_y": 209,
-        "overrides": {
-            "scale": [
-                71,
-                71
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 107,
-        "template_id": 85,
-        "zone": "Forest",
-        "rel_x": 1265,
-        "rel_y": 74,
-        "overrides": {
-            "scale": [
-                53,
-                53
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 108,
-        "template_id": 86,
-        "zone": "Forest",
-        "rel_x": 449,
-        "rel_y": 58,
-        "overrides": {
-            "scale": [
-                50,
-                50
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 109,
-        "template_id": 87,
-        "zone": "Forest",
-        "rel_x": 124,
-        "rel_y": 82,
-        "overrides": {
-            "scale": [
-                58,
-                58
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 110,
-        "template_id": 88,
-        "zone": "Forest",
-        "rel_x": 631,
-        "rel_y": 148,
-        "overrides": {
-            "scale": [
-                58,
-                58
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 111,
-        "template_id": 89,
-        "zone": "Forest",
-        "rel_x": 52,
-        "rel_y": 683,
-        "overrides": {
-            "scale": [
-                64,
-                64
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 116,
-        "template_id": 15,
-        "zone": "lobby",
-        "rel_x": 1335,
-        "rel_y": -80,
-        "overrides": {
-            "scale": [
-                227,
-                346
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 122,
-        "template_id": 30,
-        "zone": "lobby",
-        "rel_x": 578,
-        "rel_y": 683,
-        "overrides": {
-            "scale": [
-                172,
-                218
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 138,
-        "template_id": 31,
-        "zone": "lobby",
-        "rel_x": 161,
-        "rel_y": 884,
-        "overrides": {
-            "scale": [
-                172,
-                221
-            ],
-            "z_bottom": 2,
-            "z_top": 6,
-            "z": 2
-        }
-    },
-    {
-        "id": 143,
-        "template_id": 40,
-        "zone": "Forest",
-        "rel_x": 863,
-        "rel_y": 792,
-        "overrides": {
-            "scale": [
-                218,
-                298
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 144,
-        "template_id": 48,
-        "zone": "Forest",
-        "rel_x": 1005,
-        "rel_y": 794,
-        "overrides": {
-            "scale": [
-                251,
-                324
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 145,
-        "template_id": 175,
-        "zone": "Forest",
-        "rel_x": 772,
-        "rel_y": 917,
-        "overrides": {
-            "scale": [
-                245,
-                335
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 146,
-        "template_id": 176,
-        "zone": "Forest",
-        "rel_x": 959,
-        "rel_y": 947,
-        "overrides": {
-            "scale": [
-                209,
-                267
-            ],
-            "z_bottom": 3,
-            "z_top": 4,
-            "z": 3
-        }
-    },
-    {
-        "id": 148,
-        "template_id": 91,
-        "zone": "Forest",
-        "rel_x": 119,
-        "rel_y": 649,
-        "overrides": {
-            "scale": [
-                256,
-                256
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 151,
-        "template_id": 149,
-        "zone": "lobby",
-        "rel_x": 215,
-        "rel_y": 1148,
-        "overrides": {
-            "scale": [
-                256,
-                256
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 162,
-        "template_id": 188,
-        "zone": "lobby",
-        "rel_x": 980,
-        "rel_y": 1059,
-        "overrides": {
-            "scale": [
-                437,
-                437
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 177,
-        "template_id": 176,
-        "zone": "lobby",
-        "rel_x": 971,
-        "rel_y": 1322,
-        "overrides": {
-            "scale": [
-                180,
-                230
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 178,
-        "template_id": 40,
-        "zone": "lobby",
-        "rel_x": 1126,
-        "rel_y": 1357,
-        "overrides": {
-            "scale": [
-                162,
-                221
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 180,
-        "template_id": 176,
-        "zone": "lobby",
-        "rel_x": 1266,
-        "rel_y": 1311,
-        "overrides": {
-            "scale": [
-                177,
-                226
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 183,
-        "template_id": 176,
-        "zone": "lobby",
-        "rel_x": 1433,
-        "rel_y": 958,
-        "overrides": {
-            "scale": [
-                179,
-                228
-            ],
-            "z_bottom": 4,
-            "z_top": 5,
-            "z": 4
-        }
-    },
-    {
-        "id": 187,
-        "template_id": 187,
-        "zone": "lobby",
-        "rel_x": 1129,
-        "rel_y": 856,
-        "overrides": {
-            "scale": [
-                173,
-                235
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 188,
-        "template_id": 175,
-        "zone": "lobby",
-        "rel_x": 1298,
-        "rel_y": 907,
-        "overrides": {
-            "scale": [
-                148,
-                202
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 189,
-        "template_id": 175,
-        "zone": "lobby",
-        "rel_x": 969,
-        "rel_y": 874,
-        "overrides": {
-            "scale": [
-                169,
-                231
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 201,
-        "template_id": 201,
-        "zone": "Forest",
-        "rel_x": 1176,
-        "rel_y": 398,
-        "overrides": {
-            "scale": [
-                331,
-                331
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 210,
-        "template_id": 191,
-        "zone": "lobby",
-        "rel_x": 417,
-        "rel_y": 915,
-        "overrides": {
-            "scale": [
-                333,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 230,
-        "template_id": 238,
-        "zone": "zone_100_50",
-        "rel_x": 205,
-        "rel_y": -110,
-        "overrides": {
-            "scale": [
-                328,
-                328
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 259,
-        "template_id": 249,
-        "zone": "lobby",
-        "rel_x": 694,
-        "rel_y": 844,
-        "overrides": {
-            "scale": [
-                220,
-                220
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 283,
-        "template_id": 221,
-        "zone": "zone_100_50",
-        "rel_x": 1164,
-        "rel_y": 1164,
-        "overrides": {
-            "scale": [
-                426,
-                426
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 286,
-        "template_id": 237,
-        "zone": "zone_100_50",
-        "rel_x": 301,
-        "rel_y": 631,
-        "overrides": {
-            "scale": [
-                447,
-                447
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 303,
-        "template_id": 254,
-        "zone": "zone_100_50",
-        "rel_x": 484,
-        "rel_y": -292,
-        "overrides": {
-            "scale": [
-                1126,
-                1126
-            ],
-            "z_bottom": 3,
-            "z_top": 4,
-            "z": 3
-        }
-    },
-    {
-        "id": 305,
-        "template_id": 231,
-        "zone": "zone_100_50",
-        "rel_x": 780,
-        "rel_y": 697,
-        "overrides": {
-            "scale": [
-                171,
-                256
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 306,
-        "template_id": 232,
-        "zone": "zone_100_50",
-        "rel_x": 1113,
-        "rel_y": 687,
-        "overrides": {
-            "scale": [
-                177,
-                265
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 307,
-        "template_id": 244,
-        "zone": "zone_100_50",
-        "rel_x": 905,
-        "rel_y": 777,
-        "overrides": {
-            "scale": [
-                256,
-                256
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 308,
-        "template_id": 234,
-        "zone": "zone_100_50",
-        "rel_x": 583,
-        "rel_y": 1200,
-        "overrides": {
-            "scale": [
-                277,
-                277
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 311,
-        "template_id": 175,
-        "zone": "zone_100_50",
-        "rel_x": -48,
-        "rel_y": 207,
-        "overrides": {
-            "scale": [
-                187,
-                255
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 314,
-        "template_id": 176,
-        "zone": "zone_100_50",
-        "rel_x": 81,
-        "rel_y": -154,
-        "overrides": {
-            "scale": [
-                210,
-                268
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 316,
-        "template_id": 49,
-        "zone": "zone_100_50",
-        "rel_x": -14,
-        "rel_y": -111,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 320,
-        "template_id": 241,
-        "zone": "zone_100_50",
-        "rel_x": -34,
-        "rel_y": 340,
-        "overrides": {
-            "scale": [
-                198,
-                255
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 322,
-        "template_id": 176,
-        "zone": "zone_100_50",
-        "rel_x": -44,
-        "rel_y": 485,
-        "overrides": {
-            "scale": [
-                194,
-                248
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 325,
-        "template_id": 242,
-        "zone": "zone_100_50",
-        "rel_x": 286,
-        "rel_y": 761,
-        "overrides": {
-            "scale": [
-                183,
-                250
-            ],
-            "z_bottom": 1,
-            "z_top": 4,
-            "z": 1
-        }
-    },
-    {
-        "id": 328,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 574,
-        "rel_y": 736,
-        "overrides": {
-            "scale": [
-                187,
-                255
-            ],
-            "z_bottom": 3,
-            "z_top": 4,
-            "z": 3
-        }
-    },
-    {
-        "id": 332,
-        "template_id": 48,
-        "zone": "zone_100_50",
-        "rel_x": 401,
-        "rel_y": 606,
-        "overrides": {
-            "scale": [
-                210,
-                271
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 335,
-        "template_id": 48,
-        "zone": "zone_100_50",
-        "rel_x": 750,
-        "rel_y": 885,
-        "overrides": {
-            "scale": [
-                189,
-                243
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 337,
-        "template_id": 176,
-        "zone": "zone_100_50",
-        "rel_x": 660,
-        "rel_y": 1053,
-        "overrides": {
-            "scale": [
-                215,
-                274
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 339,
-        "template_id": 49,
-        "zone": "zone_100_50",
-        "rel_x": 263,
-        "rel_y": 1050,
-        "overrides": {
-            "scale": [
-                233,
-                333
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 342,
-        "template_id": 176,
-        "zone": "zone_100_50",
-        "rel_x": -86,
-        "rel_y": 1289,
-        "overrides": {
-            "scale": [
-                221,
-                282
-            ],
-            "z_bottom": 3,
-            "z_top": 6,
-            "z": 3
-        }
-    },
-    {
-        "id": 344,
-        "template_id": 175,
-        "zone": "lobby",
-        "rel_x": 1480,
-        "rel_y": 1059,
-        "overrides": {
-            "scale": [
-                175,
-                238
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 348,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 968,
-        "rel_y": 1245,
-        "overrides": {
-            "scale": [
-                202,
-                275
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 350,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 1076,
-        "rel_y": 1307,
-        "overrides": {
-            "scale": [
-                203,
-                277
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 352,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 1134,
-        "rel_y": 981,
-        "overrides": {
-            "scale": [
-                212,
-                290
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 355,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 1248,
-        "rel_y": 856,
-        "overrides": {
-            "scale": [
-                205,
-                280
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 357,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 1393,
-        "rel_y": 740,
-        "overrides": {
-            "scale": [
-                171,
-                233
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 359,
-        "template_id": 40,
-        "zone": "zone_100_50",
-        "rel_x": 1361,
-        "rel_y": 934,
-        "overrides": {
-            "scale": [
-                215,
-                294
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
-    },
-    {
-        "id": 364,
-        "template_id": 243,
-        "zone": "no zone",
-        "rel_x": 3476,
-        "rel_y": 2672,
-        "overrides": {
-            "scale": [
-                364,
-                546
-            ],
-            "z_bottom": 3,
-            "z_top": 5,
-            "z": 3
-        }
+  {
+    "id": 1,
+    "template_id": 1,
+    "zone": "lobby",
+    "rel_x": 961,
+    "rel_y": 383,
+    "overrides": {
+      "scale": [
+        353,
+        528
+      ],
+      "z_bottom": 3,
+      "z_top": 9,
+      "z": 3
     }
+  },
+  {
+    "id": 2,
+    "template_id": 185,
+    "zone": "lobby",
+    "rel_x": 1437,
+    "rel_y": 1191,
+    "overrides": {
+      "scale": [
+        166,
+        225
+      ],
+      "z_bottom": 4,
+      "z_top": 6,
+      "z": 4
+    }
+  },
+  {
+    "id": 3,
+    "template_id": 3,
+    "zone": "lobby",
+    "rel_x": 1500,
+    "rel_y": -169,
+    "overrides": {
+      "scale": [
+        180,
+        244
+      ],
+      "z_bottom": 2,
+      "z_top": 2,
+      "z": 2
+    }
+  },
+  {
+    "id": 4,
+    "template_id": 4,
+    "zone": "lobby",
+    "rel_x": 565,
+    "rel_y": 189,
+    "overrides": {
+      "scale": [
+        189,
+        239
+      ],
+      "z_bottom": 4,
+      "z_top": 6,
+      "z": 4
+    }
+  },
+  {
+    "id": 5,
+    "template_id": 5,
+    "zone": "lobby",
+    "rel_x": 1481,
+    "rel_y": 626,
+    "overrides": {
+      "scale": [
+        181,
+        244
+      ],
+      "z_bottom": 1,
+      "z_top": 6,
+      "z": 1
+    }
+  },
+  {
+    "id": 6,
+    "template_id": 6,
+    "zone": "lobby",
+    "rel_x": 854,
+    "rel_y": 180,
+    "overrides": {
+      "scale": [
+        231,
+        282
+      ],
+      "z_bottom": 1,
+      "z_top": 7,
+      "z": 1
+    }
+  },
+  {
+    "id": 7,
+    "template_id": 7,
+    "zone": "Forest",
+    "rel_x": 1370,
+    "rel_y": -259,
+    "overrides": {
+      "scale": [
+        289,
+        368
+      ],
+      "z_bottom": 1,
+      "z_top": 5,
+      "z": 1
+    }
+  },
+  {
+    "id": 8,
+    "template_id": 8,
+    "zone": "lobby",
+    "rel_x": 853,
+    "rel_y": 584,
+    "overrides": {
+      "scale": [
+        201,
+        258
+      ],
+      "z_bottom": 3,
+      "z_top": 8,
+      "z": 3
+    }
+  },
+  {
+    "id": 10,
+    "template_id": 10,
+    "zone": "lobby",
+    "rel_x": 34,
+    "rel_y": 371,
+    "overrides": {
+      "scale": [
+        499,
+        499
+      ],
+      "z_bottom": 1,
+      "z_top": 0,
+      "z": 1
+    }
+  },
+  {
+    "id": 11,
+    "template_id": 11,
+    "zone": "lobby",
+    "rel_x": 141,
+    "rel_y": -833,
+    "overrides": {
+      "scale": [
+        1322,
+        879
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 12,
+    "template_id": 12,
+    "zone": "lobby",
+    "rel_x": 935,
+    "rel_y": -177,
+    "overrides": {
+      "scale": [
+        414,
+        414
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 13,
+    "template_id": 13,
+    "zone": "lobby",
+    "rel_x": 730,
+    "rel_y": 141,
+    "overrides": {
+      "scale": [
+        158,
+        158
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 14,
+    "template_id": 14,
+    "zone": "lobby",
+    "rel_x": 136,
+    "rel_y": 122,
+    "overrides": {
+      "scale": [
+        316,
+        473
+      ],
+      "z_bottom": 2,
+      "z_top": 5,
+      "z": 2
+    }
+  },
+  {
+    "id": 17,
+    "template_id": 202,
+    "zone": "lobby",
+    "rel_x": 30,
+    "rel_y": 939,
+    "overrides": {
+      "scale": [
+        222,
+        222
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 18,
+    "template_id": 18,
+    "zone": "lobby",
+    "rel_x": 211,
+    "rel_y": -220,
+    "overrides": {
+      "scale": [
+        505,
+        505
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 20,
+    "template_id": 20,
+    "zone": "lobby",
+    "rel_x": 1179,
+    "rel_y": 221,
+    "overrides": {
+      "scale": [
+        389,
+        579
+      ],
+      "z_bottom": 3,
+      "z_top": 8,
+      "z": 3
+    }
+  },
+  {
+    "id": 21,
+    "template_id": 21,
+    "zone": "lobby",
+    "rel_x": 630,
+    "rel_y": 447,
+    "overrides": {
+      "scale": [
+        73,
+        177
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 22,
+    "template_id": 22,
+    "zone": "lobby",
+    "rel_x": 901,
+    "rel_y": 491,
+    "overrides": {
+      "scale": [
+        75,
+        182
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 24,
+    "template_id": 22,
+    "zone": "lobby",
+    "rel_x": 920,
+    "rel_y": 1061,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 25,
+    "template_id": 22,
+    "zone": "lobby",
+    "rel_x": 1441,
+    "rel_y": 1234,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 26,
+    "template_id": 22,
+    "zone": "lobby",
+    "rel_x": 1439,
+    "rel_y": 1057,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 27,
+    "template_id": 183,
+    "zone": "lobby",
+    "rel_x": 925,
+    "rel_y": 1413,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 29,
+    "template_id": 22,
+    "zone": "lobby",
+    "rel_x": 1442,
+    "rel_y": 1411,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ],
+      "z_bottom": 3,
+      "z_top": 3,
+      "z": 3
+    }
+  },
+  {
+    "id": 33,
+    "template_id": 25,
+    "zone": "lobby",
+    "rel_x": 56,
+    "rel_y": 1513,
+    "overrides": {
+      "scale": [
+        109,
+        51
+      ],
+      "z_bottom": 1,
+      "z_top": 3,
+      "z": 1
+    }
+  },
+  {
+    "id": 34,
+    "template_id": 26,
+    "zone": "lobby",
+    "rel_x": 228,
+    "rel_y": 1512,
+    "overrides": {
+      "scale": [
+        133,
+        54
+      ],
+      "z_bottom": 1,
+      "z_top": 3,
+      "z": 1
+    }
+  },
+  {
+    "id": 35,
+    "template_id": 26,
+    "zone": "lobby",
+    "rel_x": 422,
+    "rel_y": 1513,
+    "overrides": {
+      "scale": [
+        122,
+        50
+      ],
+      "z_bottom": 1,
+      "z_top": 3,
+      "z": 1
+    }
+  },
+  {
+    "id": 36,
+    "template_id": 26,
+    "zone": "lobby",
+    "rel_x": 584,
+    "rel_y": 1508,
+    "overrides": {
+      "scale": [
+        137,
+        56
+      ],
+      "z_bottom": 1,
+      "z_top": 1,
+      "z": 1
+    }
+  },
+  {
+    "id": 37,
+    "template_id": 27,
+    "zone": "lobby",
+    "rel_x": 75,
+    "rel_y": 1341,
+    "overrides": {
+      "scale": [
+        235,
+        235
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 38,
+    "template_id": 28,
+    "zone": "lobby",
+    "rel_x": 289,
+    "rel_y": 1379,
+    "overrides": {
+      "scale": [
+        188,
+        188
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 39,
+    "template_id": 29,
+    "zone": "lobby",
+    "rel_x": 469,
+    "rel_y": 1370,
+    "overrides": {
+      "scale": [
+        206,
+        206
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 42,
+    "template_id": 32,
+    "zone": "lobby",
+    "rel_x": 562,
+    "rel_y": 490,
+    "overrides": {
+      "scale": [
+        197,
+        269
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 44,
+    "template_id": 34,
+    "zone": "Forest",
+    "rel_x": 909,
+    "rel_y": -104,
+    "overrides": {
+      "scale": [
+        176,
+        240
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 45,
+    "template_id": 35,
+    "zone": "Forest",
+    "rel_x": 1003,
+    "rel_y": -14,
+    "overrides": {
+      "scale": [
+        166,
+        227
+      ],
+      "z_bottom": 3,
+      "z_top": 0,
+      "z": 3
+    }
+  },
+  {
+    "id": 46,
+    "template_id": 36,
+    "zone": "Forest",
+    "rel_x": 1103,
+    "rel_y": -96,
+    "overrides": {
+      "scale": [
+        177,
+        242
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 47,
+    "template_id": 37,
+    "zone": "Forest",
+    "rel_x": 1242,
+    "rel_y": -79,
+    "overrides": {
+      "scale": [
+        114,
+        156
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 48,
+    "template_id": 38,
+    "zone": "Forest",
+    "rel_x": 679,
+    "rel_y": -52,
+    "overrides": {
+      "scale": [
+        164,
+        224
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 49,
+    "template_id": 39,
+    "zone": "Forest",
+    "rel_x": 831,
+    "rel_y": -46,
+    "overrides": {
+      "scale": [
+        162,
+        221
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 52,
+    "template_id": 40,
+    "zone": "Forest",
+    "rel_x": 578,
+    "rel_y": 14,
+    "overrides": {
+      "scale": [
+        114,
+        156
+      ],
+      "z_bottom": 3,
+      "z_top": 0,
+      "z": 3
+    }
+  },
+  {
+    "id": 53,
+    "template_id": 40,
+    "zone": "Forest",
+    "rel_x": 537,
+    "rel_y": 46,
+    "overrides": {
+      "scale": [
+        114,
+        156
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 54,
+    "template_id": 40,
+    "zone": "Forest",
+    "rel_x": 477,
+    "rel_y": -17,
+    "overrides": {
+      "scale": [
+        114,
+        156
+      ],
+      "z_bottom": 4,
+      "z_top": 5,
+      "z": 4
+    }
+  },
+  {
+    "id": 55,
+    "template_id": 42,
+    "zone": "Forest",
+    "rel_x": 737,
+    "rel_y": 6,
+    "overrides": {
+      "scale": [
+        203,
+        276
+      ],
+      "z_bottom": 1,
+      "z_top": 3,
+      "z": 1
+    }
+  },
+  {
+    "id": 56,
+    "template_id": 43,
+    "zone": "Forest",
+    "rel_x": 1298,
+    "rel_y": -47,
+    "overrides": {
+      "scale": [
+        139,
+        190
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 57,
+    "template_id": 44,
+    "zone": "Forest",
+    "rel_x": 644,
+    "rel_y": 51,
+    "overrides": {
+      "scale": [
+        129,
+        176
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 58,
+    "template_id": 45,
+    "zone": "Forest",
+    "rel_x": 568,
+    "rel_y": -90,
+    "overrides": {
+      "scale": [
+        141,
+        192
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 59,
+    "template_id": 46,
+    "zone": "Forest",
+    "rel_x": 895,
+    "rel_y": -48,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 60,
+    "template_id": 47,
+    "zone": "Forest",
+    "rel_x": 1152,
+    "rel_y": 151,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 61,
+    "template_id": 48,
+    "zone": "Forest",
+    "rel_x": 325,
+    "rel_y": -228,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 62,
+    "template_id": 49,
+    "zone": "Forest",
+    "rel_x": 225,
+    "rel_y": -247,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 63,
+    "template_id": 48,
+    "zone": "Forest",
+    "rel_x": 73,
+    "rel_y": -236,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 2,
+      "z_top": 5,
+      "z": 2
+    }
+  },
+  {
+    "id": 64,
+    "template_id": 49,
+    "zone": "Forest",
+    "rel_x": 1406,
+    "rel_y": 518,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 65,
+    "template_id": 50,
+    "zone": "Forest",
+    "rel_x": -11,
+    "rel_y": -101,
+    "overrides": {
+      "scale": [
+        194,
+        265
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 66,
+    "template_id": 51,
+    "zone": "Forest",
+    "rel_x": 18,
+    "rel_y": 94,
+    "overrides": {
+      "scale": [
+        168,
+        229
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 67,
+    "template_id": 52,
+    "zone": "Forest",
+    "rel_x": 38,
+    "rel_y": 208,
+    "overrides": {
+      "scale": [
+        172,
+        235
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 68,
+    "template_id": 53,
+    "zone": "Forest",
+    "rel_x": 28,
+    "rel_y": 236,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 69,
+    "template_id": 163,
+    "zone": "Forest",
+    "rel_x": 385,
+    "rel_y": 515,
+    "overrides": {
+      "scale": [
+        184,
+        235
+      ],
+      "z_bottom": 3,
+      "z_top": 9,
+      "z": 3
+    }
+  },
+  {
+    "id": 70,
+    "template_id": 55,
+    "zone": "Forest",
+    "rel_x": 239,
+    "rel_y": 386,
+    "overrides": {
+      "scale": [
+        220,
+        297
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 71,
+    "template_id": 162,
+    "zone": "Forest",
+    "rel_x": 1316,
+    "rel_y": 656,
+    "overrides": {
+      "scale": [
+        177,
+        242
+      ],
+      "z_bottom": 1,
+      "z_top": 5,
+      "z": 1
+    }
+  },
+  {
+    "id": 73,
+    "template_id": 58,
+    "zone": "Forest",
+    "rel_x": 1421,
+    "rel_y": 229,
+    "overrides": {
+      "scale": [
+        196,
+        253
+      ],
+      "z_bottom": 4,
+      "z_top": 5,
+      "z": 4
+    }
+  },
+  {
+    "id": 74,
+    "template_id": 59,
+    "zone": "Forest",
+    "rel_x": 1294,
+    "rel_y": 239,
+    "overrides": {
+      "scale": [
+        169,
+        231
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 75,
+    "template_id": 60,
+    "zone": "Forest",
+    "rel_x": 1193,
+    "rel_y": 294,
+    "overrides": {
+      "scale": [
+        181,
+        247
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 76,
+    "template_id": 61,
+    "zone": "Forest",
+    "rel_x": 1413,
+    "rel_y": 396,
+    "overrides": {
+      "scale": [
+        238,
+        302
+      ],
+      "z_bottom": 4,
+      "z_top": 9,
+      "z": 4
+    }
+  },
+  {
+    "id": 77,
+    "template_id": 62,
+    "zone": "Forest",
+    "rel_x": 681,
+    "rel_y": 738,
+    "overrides": {
+      "scale": [
+        246,
+        314
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 78,
+    "template_id": 63,
+    "zone": "Forest",
+    "rel_x": 1181,
+    "rel_y": 614,
+    "overrides": {
+      "scale": [
+        201,
+        257
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "collider_scope": "CU",
+      "collision_override": {
+        "width": 7,
+        "height": 9,
+        "collision": [
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ]
+        ]
+      },
+      "z": 3
+    }
+  },
+  {
+    "id": 80,
+    "template_id": 65,
+    "zone": "Forest",
+    "rel_x": 1284,
+    "rel_y": 260,
+    "overrides": {
+      "scale": [
+        251,
+        308
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 81,
+    "template_id": 66,
+    "zone": "Forest",
+    "rel_x": 1264,
+    "rel_y": 346,
+    "overrides": {
+      "scale": [
+        154,
+        208
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 85,
+    "template_id": 70,
+    "zone": "Forest",
+    "rel_x": 36,
+    "rel_y": 389,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 86,
+    "template_id": 71,
+    "zone": "Forest",
+    "rel_x": 122,
+    "rel_y": 1282,
+    "overrides": {
+      "scale": [
+        216,
+        276
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 87,
+    "template_id": 72,
+    "zone": "Forest",
+    "rel_x": 1355,
+    "rel_y": 1149,
+    "overrides": {
+      "scale": [
+        244,
+        311
+      ],
+      "z_bottom": 3,
+      "z_top": 8,
+      "z": 3
+    }
+  },
+  {
+    "id": 88,
+    "template_id": 73,
+    "zone": "Forest",
+    "rel_x": 783,
+    "rel_y": 1329,
+    "overrides": {
+      "scale": [
+        186,
+        237
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 89,
+    "template_id": 74,
+    "zone": "Forest",
+    "rel_x": 677,
+    "rel_y": 1229,
+    "overrides": {
+      "scale": [
+        208,
+        265
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 90,
+    "template_id": 75,
+    "zone": "no zone",
+    "rel_x": 253,
+    "rel_y": 2955,
+    "overrides": {
+      "scale": [
+        194,
+        248
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 93,
+    "template_id": 78,
+    "zone": "no zone",
+    "rel_x": 415,
+    "rel_y": 2915,
+    "overrides": {
+      "scale": [
+        224,
+        286
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 94,
+    "template_id": 79,
+    "zone": "Forest",
+    "rel_x": 31,
+    "rel_y": 1365,
+    "overrides": {
+      "scale": [
+        170,
+        217
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 95,
+    "template_id": 73,
+    "zone": "Forest",
+    "rel_x": 53,
+    "rel_y": 1213,
+    "overrides": {
+      "scale": [
+        186,
+        237
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 96,
+    "template_id": 48,
+    "zone": "Forest",
+    "rel_x": 871,
+    "rel_y": 1212,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 97,
+    "template_id": 48,
+    "zone": "no zone",
+    "rel_x": 1001,
+    "rel_y": 2886,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 98,
+    "template_id": 48,
+    "zone": "Forest",
+    "rel_x": 1111,
+    "rel_y": 1207,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 99,
+    "template_id": 171,
+    "zone": "Forest",
+    "rel_x": 591,
+    "rel_y": 1251,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 100,
+    "template_id": 49,
+    "zone": "no zone",
+    "rel_x": 1244,
+    "rel_y": 2871,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 101,
+    "template_id": 80,
+    "zone": "Forest",
+    "rel_x": 15,
+    "rel_y": 869,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 102,
+    "template_id": 173,
+    "zone": "Forest",
+    "rel_x": 651,
+    "rel_y": 842,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 104,
+    "template_id": 82,
+    "zone": "Forest",
+    "rel_x": 187,
+    "rel_y": 609,
+    "overrides": {
+      "scale": [
+        88,
+        88
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 105,
+    "template_id": 83,
+    "zone": "Forest",
+    "rel_x": 419,
+    "rel_y": 739,
+    "overrides": {
+      "scale": [
+        81,
+        81
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 106,
+    "template_id": 84,
+    "zone": "Forest",
+    "rel_x": 896,
+    "rel_y": 209,
+    "overrides": {
+      "scale": [
+        71,
+        71
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 107,
+    "template_id": 85,
+    "zone": "Forest",
+    "rel_x": 1265,
+    "rel_y": 74,
+    "overrides": {
+      "scale": [
+        53,
+        53
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 108,
+    "template_id": 86,
+    "zone": "Forest",
+    "rel_x": 449,
+    "rel_y": 58,
+    "overrides": {
+      "scale": [
+        50,
+        50
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 109,
+    "template_id": 87,
+    "zone": "Forest",
+    "rel_x": 124,
+    "rel_y": 82,
+    "overrides": {
+      "scale": [
+        58,
+        58
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 110,
+    "template_id": 88,
+    "zone": "Forest",
+    "rel_x": 631,
+    "rel_y": 148,
+    "overrides": {
+      "scale": [
+        58,
+        58
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 111,
+    "template_id": 89,
+    "zone": "Forest",
+    "rel_x": 52,
+    "rel_y": 683,
+    "overrides": {
+      "scale": [
+        64,
+        64
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 116,
+    "template_id": 15,
+    "zone": "lobby",
+    "rel_x": 1335,
+    "rel_y": -80,
+    "overrides": {
+      "scale": [
+        227,
+        346
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 122,
+    "template_id": 30,
+    "zone": "lobby",
+    "rel_x": 578,
+    "rel_y": 683,
+    "overrides": {
+      "scale": [
+        172,
+        218
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 138,
+    "template_id": 31,
+    "zone": "lobby",
+    "rel_x": 161,
+    "rel_y": 884,
+    "overrides": {
+      "scale": [
+        172,
+        221
+      ],
+      "z_bottom": 2,
+      "z_top": 6,
+      "z": 2
+    }
+  },
+  {
+    "id": 143,
+    "template_id": 40,
+    "zone": "Forest",
+    "rel_x": 863,
+    "rel_y": 792,
+    "overrides": {
+      "scale": [
+        218,
+        298
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 144,
+    "template_id": 48,
+    "zone": "Forest",
+    "rel_x": 1005,
+    "rel_y": 794,
+    "overrides": {
+      "scale": [
+        251,
+        324
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 145,
+    "template_id": 175,
+    "zone": "Forest",
+    "rel_x": 772,
+    "rel_y": 917,
+    "overrides": {
+      "scale": [
+        245,
+        335
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 146,
+    "template_id": 176,
+    "zone": "Forest",
+    "rel_x": 959,
+    "rel_y": 947,
+    "overrides": {
+      "scale": [
+        209,
+        267
+      ],
+      "z_bottom": 3,
+      "z_top": 4,
+      "z": 3
+    }
+  },
+  {
+    "id": 148,
+    "template_id": 91,
+    "zone": "Forest",
+    "rel_x": 119,
+    "rel_y": 649,
+    "overrides": {
+      "scale": [
+        256,
+        256
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 151,
+    "template_id": 149,
+    "zone": "lobby",
+    "rel_x": 215,
+    "rel_y": 1148,
+    "overrides": {
+      "scale": [
+        256,
+        256
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 162,
+    "template_id": 188,
+    "zone": "lobby",
+    "rel_x": 980,
+    "rel_y": 1059,
+    "overrides": {
+      "scale": [
+        437,
+        437
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 177,
+    "template_id": 176,
+    "zone": "lobby",
+    "rel_x": 971,
+    "rel_y": 1322,
+    "overrides": {
+      "scale": [
+        180,
+        230
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 178,
+    "template_id": 40,
+    "zone": "lobby",
+    "rel_x": 1126,
+    "rel_y": 1357,
+    "overrides": {
+      "scale": [
+        162,
+        221
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 180,
+    "template_id": 176,
+    "zone": "lobby",
+    "rel_x": 1266,
+    "rel_y": 1311,
+    "overrides": {
+      "scale": [
+        177,
+        226
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 183,
+    "template_id": 176,
+    "zone": "lobby",
+    "rel_x": 1433,
+    "rel_y": 958,
+    "overrides": {
+      "scale": [
+        179,
+        228
+      ],
+      "z_bottom": 4,
+      "z_top": 5,
+      "z": 4
+    }
+  },
+  {
+    "id": 187,
+    "template_id": 187,
+    "zone": "lobby",
+    "rel_x": 1129,
+    "rel_y": 856,
+    "overrides": {
+      "scale": [
+        173,
+        235
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 188,
+    "template_id": 175,
+    "zone": "lobby",
+    "rel_x": 1298,
+    "rel_y": 907,
+    "overrides": {
+      "scale": [
+        148,
+        202
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 189,
+    "template_id": 175,
+    "zone": "lobby",
+    "rel_x": 969,
+    "rel_y": 874,
+    "overrides": {
+      "scale": [
+        169,
+        231
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 201,
+    "template_id": 201,
+    "zone": "Forest",
+    "rel_x": 1176,
+    "rel_y": 398,
+    "overrides": {
+      "scale": [
+        331,
+        331
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 210,
+    "template_id": 191,
+    "zone": "lobby",
+    "rel_x": 417,
+    "rel_y": 915,
+    "overrides": {
+      "scale": [
+        333,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 230,
+    "template_id": 238,
+    "zone": "zone_100_50",
+    "rel_x": 205,
+    "rel_y": -110,
+    "overrides": {
+      "scale": [
+        328,
+        328
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 259,
+    "template_id": 249,
+    "zone": "lobby",
+    "rel_x": 694,
+    "rel_y": 844,
+    "overrides": {
+      "scale": [
+        220,
+        220
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 283,
+    "template_id": 221,
+    "zone": "zone_100_50",
+    "rel_x": 1164,
+    "rel_y": 1164,
+    "overrides": {
+      "scale": [
+        426,
+        426
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 286,
+    "template_id": 237,
+    "zone": "zone_100_50",
+    "rel_x": 301,
+    "rel_y": 631,
+    "overrides": {
+      "scale": [
+        447,
+        447
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 303,
+    "template_id": 256,
+    "zone": "zone_100_50",
+    "rel_x": 484,
+    "rel_y": -292,
+    "overrides": {
+      "scale": [
+        1126,
+        1126
+      ],
+      "z_bottom": 4,
+      "z_top": 3,
+      "z": 4
+    }
+  },
+  {
+    "id": 305,
+    "template_id": 231,
+    "zone": "zone_100_50",
+    "rel_x": 780,
+    "rel_y": 697,
+    "overrides": {
+      "scale": [
+        171,
+        256
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 306,
+    "template_id": 232,
+    "zone": "zone_100_50",
+    "rel_x": 1113,
+    "rel_y": 687,
+    "overrides": {
+      "scale": [
+        177,
+        265
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 307,
+    "template_id": 244,
+    "zone": "zone_100_50",
+    "rel_x": 905,
+    "rel_y": 777,
+    "overrides": {
+      "scale": [
+        256,
+        256
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 308,
+    "template_id": 234,
+    "zone": "zone_100_50",
+    "rel_x": 583,
+    "rel_y": 1200,
+    "overrides": {
+      "scale": [
+        277,
+        277
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 311,
+    "template_id": 175,
+    "zone": "zone_100_50",
+    "rel_x": -48,
+    "rel_y": 207,
+    "overrides": {
+      "scale": [
+        187,
+        255
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 314,
+    "template_id": 176,
+    "zone": "zone_100_50",
+    "rel_x": 81,
+    "rel_y": -154,
+    "overrides": {
+      "scale": [
+        210,
+        268
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 316,
+    "template_id": 49,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 320,
+    "template_id": 241,
+    "zone": "zone_100_50",
+    "rel_x": -34,
+    "rel_y": 340,
+    "overrides": {
+      "scale": [
+        198,
+        255
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 322,
+    "template_id": 176,
+    "zone": "zone_100_50",
+    "rel_x": -44,
+    "rel_y": 485,
+    "overrides": {
+      "scale": [
+        194,
+        248
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 325,
+    "template_id": 242,
+    "zone": "zone_100_50",
+    "rel_x": 286,
+    "rel_y": 761,
+    "overrides": {
+      "scale": [
+        183,
+        250
+      ],
+      "z_bottom": 1,
+      "z_top": 4,
+      "z": 1
+    }
+  },
+  {
+    "id": 328,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 574,
+    "rel_y": 736,
+    "overrides": {
+      "scale": [
+        187,
+        255
+      ],
+      "z_bottom": 3,
+      "z_top": 4,
+      "z": 3
+    }
+  },
+  {
+    "id": 332,
+    "template_id": 48,
+    "zone": "zone_100_50",
+    "rel_x": 401,
+    "rel_y": 606,
+    "overrides": {
+      "scale": [
+        210,
+        271
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 335,
+    "template_id": 255,
+    "zone": "zone_100_50",
+    "rel_x": 750,
+    "rel_y": 885,
+    "overrides": {
+      "scale": [
+        189,
+        243
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "collider_scope": "CU",
+      "collision_override": {
+        "width": 6,
+        "height": 8,
+        "collision": [
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            "#",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            "#",
+            ".",
+            ".",
+            "."
+          ],
+          [
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            "."
+          ]
+        ]
+      },
+      "z": 3
+    }
+  },
+  {
+    "id": 337,
+    "template_id": 176,
+    "zone": "zone_100_50",
+    "rel_x": 660,
+    "rel_y": 1053,
+    "overrides": {
+      "scale": [
+        215,
+        274
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 339,
+    "template_id": 49,
+    "zone": "zone_100_50",
+    "rel_x": 263,
+    "rel_y": 1050,
+    "overrides": {
+      "scale": [
+        233,
+        333
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 342,
+    "template_id": 176,
+    "zone": "zone_100_50",
+    "rel_x": -86,
+    "rel_y": 1289,
+    "overrides": {
+      "scale": [
+        221,
+        282
+      ],
+      "z_bottom": 3,
+      "z_top": 6,
+      "z": 3
+    }
+  },
+  {
+    "id": 344,
+    "template_id": 175,
+    "zone": "lobby",
+    "rel_x": 1480,
+    "rel_y": 1059,
+    "overrides": {
+      "scale": [
+        175,
+        238
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 348,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 968,
+    "rel_y": 1245,
+    "overrides": {
+      "scale": [
+        202,
+        275
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 350,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 1076,
+    "rel_y": 1307,
+    "overrides": {
+      "scale": [
+        203,
+        277
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 352,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 1134,
+    "rel_y": 981,
+    "overrides": {
+      "scale": [
+        212,
+        290
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 355,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 1248,
+    "rel_y": 856,
+    "overrides": {
+      "scale": [
+        205,
+        280
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 357,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 1393,
+    "rel_y": 740,
+    "overrides": {
+      "scale": [
+        171,
+        233
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 359,
+    "template_id": 40,
+    "zone": "zone_100_50",
+    "rel_x": 1361,
+    "rel_y": 934,
+    "overrides": {
+      "scale": [
+        215,
+        294
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 364,
+    "template_id": 243,
+    "zone": "no zone",
+    "rel_x": 3476,
+    "rel_y": 2672,
+    "overrides": {
+      "scale": [
+        364,
+        546
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 367,
+    "template_id": 48,
+    "zone": "lobby",
+    "rel_x": 1084,
+    "rel_y": 247,
+    "overrides": {
+      "scale": [
+        213,
+        274
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 371,
+    "template_id": 175,
+    "zone": "lobby",
+    "rel_x": 40,
+    "rel_y": -31,
+    "overrides": {
+      "scale": [
+        183,
+        250
+      ],
+      "z_bottom": 3,
+      "z_top": 5,
+      "z": 3
+    }
+  },
+  {
+    "id": 372,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 373,
+    "template_id": 158,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 374,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 375,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 376,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 377,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 378,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 379,
+    "template_id": 158,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 380,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  },
+  {
+    "id": 381,
+    "template_id": 157,
+    "zone": "Forest",
+    "rel_x": 880,
+    "rel_y": 560,
+    "overrides": {
+      "_is_spawner_visual": true,
+      "spawner_instance_id": "survival_10_forest_14_9",
+      "scale": [
+        256,
+        384
+      ]
+    },
+    "spawn_id": "survival_10_forest_14_9",
+    "spawner_instance_id": "survival_10_forest_14_9"
+  }
 ]

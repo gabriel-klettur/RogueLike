@@ -847,27 +847,6 @@
     "rel_y": 117
   },
   {
-    "id": 131,
-    "preset_id": "water_flow_min_h",
-    "zone": "lobby",
-    "rel_x": 210,
-    "rel_y": 117
-  },
-  {
-    "id": 132,
-    "preset_id": "water_flow_min_v",
-    "zone": "lobby",
-    "rel_x": 66,
-    "rel_y": 74
-  },
-  {
-    "id": 133,
-    "preset_id": "water_flow_min_v",
-    "zone": "lobby",
-    "rel_x": 124,
-    "rel_y": 41
-  },
-  {
     "id": 134,
     "preset_id": "flowers_pollen_soft",
     "zone": "lobby",
