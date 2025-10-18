@@ -96,7 +96,6 @@
     "quest_id": "123e4567-e89b-12d3-a456-426614174000",
     "despawn_time": 60,
     "z_layer": 1
-    
   },
   "bucket": {
     "id": "bucket",
@@ -182,7 +181,9 @@
     "scale_inventory": 0.05,
     "max_stack": 20,
     "despawn_time": 60,
-    "default_params": {"hunger": 10},
+    "default_params": {
+      "hunger": 10
+    },
     "z_layer": 1
   },
   "food_bread": {
@@ -196,7 +197,9 @@
     "scale_inventory": 0.05,
     "max_stack": 10,
     "despawn_time": 60,
-    "default_params": {"hunger": 15},
+    "default_params": {
+      "hunger": 15
+    },
     "z_layer": 1
   },
   "food_borscht": {
@@ -210,7 +213,9 @@
     "scale_inventory": 0.05,
     "max_stack": 5,
     "despawn_time": 60,
-    "default_params": {"hunger": 25},
+    "default_params": {
+      "hunger": 25
+    },
     "z_layer": 1
   },
   "food_varenyky": {
@@ -224,7 +229,9 @@
     "scale_inventory": 0.05,
     "max_stack": 10,
     "despawn_time": 60,
-    "default_params": {"hunger": 20},
+    "default_params": {
+      "hunger": 20
+    },
     "z_layer": 1
   },
   "image_item_not_found": {
@@ -283,11 +290,8 @@
     "id": "wizard_staff_lvl_1",
     "name": "Bastón de Mago I",
     "description": "Bastón básico para magos.",
-    "icon": "assets/items/wizard_staff_lvl_1.png",
     "stackable": false,
-    "scale_editor": 1.0,
-    "scale_map": 0.04,
-    "scale_inventory": 0.05,
+    "icon": "assets/items/wizard_staff_lvl_1.png",
     "equip_slot": "weapon",
     "durability": 250,
     "damage": 8,
@@ -297,7 +301,9 @@
     "value": 150,
     "rarity": "uncommon",
     "level_requirement": 2,
-    "despawn_time": 60,
+    "scale_editor": 1.0,
+    "scale_map": 0.04,
+    "scale_inventory": 0.05,
     "z_layer": 1
   },
   "wizard_staff_lvl_2": {

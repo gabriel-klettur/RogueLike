@@ -950,5 +950,495 @@
     "zone": "zone_100_50",
     "rel_x": 791,
     "rel_y": 1222
+  },
+  {
+    "id": 146,
+    "preset_id": "falling_leaf_30s",
+    "zone": "lobby",
+    "rel_x": 1558,
+    "rel_y": 1464
+  },
+  {
+    "id": 147,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 2,
+    "rel_y": 1368
+  },
+  {
+    "id": 148,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 98,
+    "rel_y": 1466
+  },
+  {
+    "id": 149,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 19,
+    "rel_y": 1340
+  },
+  {
+    "id": 150,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 698,
+    "rel_y": 1193
+  },
+  {
+    "id": 151,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 845,
+    "rel_y": 1210
+  },
+  {
+    "id": 152,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 778,
+    "rel_y": 1124
+  },
+  {
+    "id": 153,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 720,
+    "rel_y": 1131
+  },
+  {
+    "id": 154,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 368,
+    "rel_y": 1076
+  },
+  {
+    "id": 155,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 283,
+    "rel_y": 1192
+  },
+  {
+    "id": 156,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 3,
+    "rel_y": 598
+  },
+  {
+    "id": 157,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 108,
+    "rel_y": 604
+  },
+  {
+    "id": 158,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 51,
+    "rel_y": 542
+  },
+  {
+    "id": 159,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 109,
+    "rel_y": 463
+  },
+  {
+    "id": 160,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 4,
+    "rel_y": 444
+  },
+  {
+    "id": 161,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 75,
+    "rel_y": 402
+  },
+  {
+    "id": 162,
+    "preset_id": "falling_leaf_30s",
+    "zone": "lobby",
+    "rel_x": 1593,
+    "rel_y": 353
+  },
+  {
+    "id": 163,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 99,
+    "rel_y": 334
+  },
+  {
+    "id": 164,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 42,
+    "rel_y": 278
+  },
+  {
+    "id": 165,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_50_0",
+    "rel_x": 1552,
+    "rel_y": 1549
+  },
+  {
+    "id": 166,
+    "preset_id": "falling_leaf_30s",
+    "zone": "no zone",
+    "rel_x": 3211,
+    "rel_y": 1576
+  },
+  {
+    "id": 167,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 38,
+    "rel_y": 31
+  },
+  {
+    "id": 168,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 144,
+    "rel_y": 57
+  },
+  {
+    "id": 169,
+    "preset_id": "falling_leaf_30s",
+    "zone": "no zone",
+    "rel_x": 3302,
+    "rel_y": 1553
+  },
+  {
+    "id": 170,
+    "preset_id": "falling_leaf_30s",
+    "zone": "no zone",
+    "rel_x": 3396,
+    "rel_y": 1571
+  },
+  {
+    "id": 171,
+    "preset_id": "falling_leaf_30s",
+    "zone": "no zone",
+    "rel_x": 3376,
+    "rel_y": 1492
+  },
+  {
+    "id": 172,
+    "preset_id": "falling_leaf_30s",
+    "zone": "no zone",
+    "rel_x": 3427,
+    "rel_y": 1486
+  },
+  {
+    "id": 173,
+    "preset_id": "falling_petal_30s",
+    "zone": "zone_100_50",
+    "rel_x": 344,
+    "rel_y": 839
+  },
+  {
+    "id": 174,
+    "preset_id": "falling_petal_30s",
+    "zone": "zone_100_50",
+    "rel_x": 375,
+    "rel_y": 806
+  },
+  {
+    "id": 175,
+    "preset_id": "falling_petal_30s",
+    "zone": "zone_100_50",
+    "rel_x": 829,
+    "rel_y": 1034
+  },
+  {
+    "id": 176,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 729,
+    "rel_y": 829
+  },
+  {
+    "id": 177,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 345,
+    "rel_y": 833
+  },
+  {
+    "id": 178,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 480,
+    "rel_y": 648
+  },
+  {
+    "id": 179,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1041,
+    "rel_y": 1376
+  },
+  {
+    "id": 180,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1165,
+    "rel_y": 1452
+  },
+  {
+    "id": 181,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1221,
+    "rel_y": 1440
+  },
+  {
+    "id": 182,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1106,
+    "rel_y": 1304
+  },
+  {
+    "id": 183,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1045,
+    "rel_y": 1291
+  },
+  {
+    "id": 184,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1182,
+    "rel_y": 1141
+  },
+  {
+    "id": 185,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1309,
+    "rel_y": 1113
+  },
+  {
+    "id": 186,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1242,
+    "rel_y": 1087
+  },
+  {
+    "id": 187,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1270,
+    "rel_y": 1037
+  },
+  {
+    "id": 188,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1528,
+    "rel_y": 1092
+  },
+  {
+    "id": 189,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1407,
+    "rel_y": 1088
+  },
+  {
+    "id": 190,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1468,
+    "rel_y": 1019
+  },
+  {
+    "id": 191,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1346,
+    "rel_y": 958
+  },
+  {
+    "id": 192,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1291,
+    "rel_y": 968
+  },
+  {
+    "id": 193,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1392,
+    "rel_y": 956
+  },
+  {
+    "id": 194,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1435,
+    "rel_y": 857
+  },
+  {
+    "id": 195,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1513,
+    "rel_y": 841
+  },
+  {
+    "id": 196,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_100_50",
+    "rel_x": 1492,
+    "rel_y": 809
+  },
+  {
+    "id": 197,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1256,
+    "rel_y": 311
+  },
+  {
+    "id": 198,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1244,
+    "rel_y": 398
+  },
+  {
+    "id": 199,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1225,
+    "rel_y": 743
+  },
+  {
+    "id": 200,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1289,
+    "rel_y": 741
+  },
+  {
+    "id": 201,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1373,
+    "rel_y": 740
+  },
+  {
+    "id": 202,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1430,
+    "rel_y": 775
+  },
+  {
+    "id": 203,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1445,
+    "rel_y": 641
+  },
+  {
+    "id": 204,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1571,
+    "rel_y": 690
+  },
+  {
+    "id": 205,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1563,
+    "rel_y": 545
+  },
+  {
+    "id": 206,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1520,
+    "rel_y": 501
+  },
+  {
+    "id": 207,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1490,
+    "rel_y": 368
+  },
+  {
+    "id": 208,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1390,
+    "rel_y": 319
+  },
+  {
+    "id": 209,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1339,
+    "rel_y": 368
+  },
+  {
+    "id": 210,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1590,
+    "rel_y": 365
+  },
+  {
+    "id": 211,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1525,
+    "rel_y": 269
+  },
+  {
+    "id": 212,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1262,
+    "rel_y": 213
+  },
+  {
+    "id": 213,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1194,
+    "rel_y": 330
+  },
+  {
+    "id": 214,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1350,
+    "rel_y": 284
+  },
+  {
+    "id": 215,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1454,
+    "rel_y": 412
   }
 ]

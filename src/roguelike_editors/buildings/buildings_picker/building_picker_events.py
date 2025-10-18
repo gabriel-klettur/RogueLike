@@ -265,6 +265,9 @@ class BuildingPickerEventHandler:
             # Primer icono = atrás
             if has_back and vidx == 0:
                 self.ctrl.go_back()
+                # Marcar el DOWN como consumido para que el UP no seleccione
+                # accidentalmente una carpeta en el nuevo directorio.
+                self._last_lmb_down_consumed = True
                 return
 
             # Mapear índice visual a índice de entries
