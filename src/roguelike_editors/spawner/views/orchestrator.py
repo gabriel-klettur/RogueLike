@@ -14,6 +14,30 @@ from . import theme
 
 logger = logging.getLogger(__name__)
 
+# Cache of last debug values per key to avoid repetitive logs each frame
+_last_debug_values: dict[str, object] = {}
+
+def _debug_if_changed(key: str, value: object, msg: str, *args: object) -> None:
+    """Log a DEBUG message only when the associated value changes.
+
+    This prevents per-frame spam in the render loop by emitting logs
+    only the first time and on subsequent changes.
+
+    Args:
+        key: Identifier for the message/value being tracked.
+        value: Hashable or comparable value to detect changes.
+        msg: Log format string passed to logger.debug.
+        *args: Arguments for the log format string.
+    """
+    try:
+        prev = _last_debug_values.get(key, object())
+        if value != prev:
+            _last_debug_values[key] = value
+            logger.debug(msg, *args)
+    except Exception:
+        # Never let logging disrupt the render loop
+        pass
+
 
 def orchestrate_render(view, screen: pygame.Surface) -> None:
     """Dibuja los overlays/paneles del editor usando el estado del `controller`.
@@ -101,7 +125,15 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                     if base is not None:
                         ax = max(20, base.left - width - 8)
                 try:
-                    logger.debug("[Spawner.View] Manager anchor=(%s,%s) width=%s sw=%s", ax, ay, width, sw)
+                    _debug_if_changed(
+                        "manager_anchor",
+                        (ax, ay, width, sw),
+                        "[Spawner.View] Manager anchor=(%s,%s) width=%s sw=%s",
+                        ax,
+                        ay,
+                        width,
+                        sw,
+                    )
                 except Exception:
                     pass
             except Exception:
@@ -109,7 +141,12 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
             anchor = (ax, ay)
             mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
             try:
-                logger.debug("[Spawner.View] Manager rendered rect=%s", getattr(mgr_rect, 'size', None) and (mgr_rect.left, mgr_rect.top, mgr_rect.width, mgr_rect.height))
+                _debug_if_changed(
+                    "manager_rect",
+                    (getattr(mgr_rect, 'size', None) and (mgr_rect.left, mgr_rect.top, mgr_rect.width, mgr_rect.height)),
+                    "[Spawner.View] Manager rendered rect=%s",
+                    getattr(mgr_rect, 'size', None) and (mgr_rect.left, mgr_rect.top, mgr_rect.width, mgr_rect.height),
+                )
             except Exception:
                 pass
     except (AttributeError, TypeError, pygame.error):
