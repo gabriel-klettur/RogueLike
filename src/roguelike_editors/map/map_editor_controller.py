@@ -80,7 +80,7 @@ class MapEditorController:
         3. Recarga settings y mapa, selecciona la nueva zona.
         """
         new_name = self.zones.add_zone_at_tile(tx, ty)
-        # Forzar recarga de mapa tras cambio persistente
+        self._invalidate_map_cache()
         self.map_manager.reload_map()
         self.state.selected_zone = new_name
 
@@ -109,10 +109,12 @@ class MapEditorController:
         ok = self.zones.delete_zone(sel)
         if not ok:
             return False
+        self._invalidate_map_cache()
         # Recargar mapa y limpiar selección
         self.map_manager.reload_map()
         self.state.selected_zone = None
         logger.debug(f"[MapEditor] Removed zone '{sel}'")
+
         # Tutorial pulse
         try:
             setattr(self.state, 'tutorial_zone_deleted_pulse', True)
@@ -174,5 +176,12 @@ class MapEditorController:
         Carga offsets desde JSON, actualiza additional_zones y limpia caché.
         """
         self.zones.load_zones()
+
+    def _invalidate_map_cache(self) -> None:
+        try:
+            cache_file = self.map_manager.loader.cache_dir / f"map_{self.map_manager.map_name}.pkl"
+            cache_file.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     # 3. HELPERS PRIVADOS eliminados por delegación al ZonesService

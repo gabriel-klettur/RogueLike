@@ -21,9 +21,13 @@ class MapLoader:
     """
     Gestiona la carga de mapas con cache y profiling.
     """
-    def __init__(self, cache_dir: Optional[str] = 'cache'):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(exist_ok=True)
+    def __init__(self, cache_dir: Optional[str | Path] = None):
+        if cache_dir is None:
+            root = Path(__file__).resolve().parents[4]
+            self.cache_dir = root / 'data' / 'cache'
+        else:
+            self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def load(self, map_name: str) -> Any:
         # Configuración de zones JSON
