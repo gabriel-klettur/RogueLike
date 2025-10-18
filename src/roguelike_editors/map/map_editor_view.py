@@ -58,6 +58,11 @@ class MapEditorView:
                 self.controller.toolbar.view_layers.view.render_dropdown(screen)
             except Exception:
                 pass
+        # 3.1. Tile Picker (Paint Tiles): render floating panel to the right of toolbar
+        try:
+            self.controller.toolbar.paint_tiles.render(screen)
+        except Exception:
+            pass
 
         # 4. Diálogos de confirmación
         self._draw_confirmation_dialogs(screen)

@@ -21,6 +21,15 @@ def handle_mode_clicks(ev: pygame.event.Event, camera, state, controller, map_ma
             return True
 
     if state.paint_tiles_mode:
+        # Require a tile to be selected in the Map Editor's tile picker before confirming
+        try:
+            picker = getattr(controller.toolbar, 'paint_tiles', None)
+            has_choice = bool(picker and getattr(picker, '_proxy', None) and picker._proxy.current_choice)
+        except Exception:
+            has_choice = False
+        if not has_choice:
+            # No tile selected yet: do not consume, allow normal zone selection if any
+            return False
         for zn, (ox, oy) in global_map_settings.zone_offsets.items():
             if zn in ("no zone", "no-zone"):
                 continue

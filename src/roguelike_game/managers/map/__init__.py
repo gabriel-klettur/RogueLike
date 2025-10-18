@@ -97,6 +97,12 @@ class MapManager:
         Devuelve self para compatibilidad con llamadas existentes que ignoran
         el valor de retorno.
         """
+        # Preserve current world overlay grid to avoid losing live edits during a reload
+        try:
+            _prev_overlay = self.layers.get(Layer.Ground)
+        except Exception:
+            _prev_overlay = None
+
         # Recargar datos base del mapa
         result = self.loader.load(self.map_name)
         self.result = result

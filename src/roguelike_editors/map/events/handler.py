@@ -33,10 +33,9 @@ class MapEditorEventHandler:
         self.map_manager = map_manager
 
     def handle(self, camera, map_manager, events=None):
-        # Async tools loop
+        # Async tools loop: advance work but do not block input/other events
         if self.state.executing_tool:
             async_tools.process_async_tool(camera, self.state, self.controller, self.manager, self.map_manager)
-            return
 
         # Continuous keyboard pan
         cam.handle_keyboard_pan(camera, self.state)
@@ -99,6 +98,33 @@ class MapEditorEventHandler:
                         self.state.pan_start_offset = (camera.offset_x, camera.offset_y)
                         cam.update_panning(ev, camera, self.state)
                         continue
+
+            # Forward UI events to Paint Tiles picker to avoid click-through and allow scroll/drag
+            try:
+                if self.controller.toolbar.paint_tiles.handle_event(ev, camera=None, map_manager=None):
+                    continue
+            except Exception:
+                pass
+
+            # Progress bar controls (Pause/Resume, Cancel) while executing async tool
+            if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and self.state.executing_tool:
+                try:
+                    pr = getattr(self.state, 'progress_pause_rect', None)
+                    cr = getattr(self.state, 'progress_cancel_rect', None)
+                    if pr and pr.collidepoint(ev.pos):
+                        # Toggle pause state
+                        self.state.execution_paused = not bool(self.state.execution_paused)
+                        continue
+                    if cr and cr.collidepoint(ev.pos):
+                        # Cancel current tool and clear async state
+                        async_tools.clear_async_state(self.state)
+                        try:
+                            self.map_manager.view.invalidate_cache()
+                        except Exception:
+                            pass
+                        continue
+                except Exception:
+                    pass
 
             if ev.type == pygame.KEYDOWN:
                 if self.state.renaming_zone:

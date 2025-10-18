@@ -2519,5 +2519,31 @@
             225
         ],
         "id": 213
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/temples/ChatGPT Image Apr 3, 2025, 05_11_11 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 214
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/temples/ChatGPT Image Apr 3, 2025, 05_11_14 AM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.5,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 215
     }
 ]

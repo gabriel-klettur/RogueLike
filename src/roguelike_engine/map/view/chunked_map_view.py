@@ -149,26 +149,16 @@ class ChunkedMapView:
         if zoom not in self.chunks_by_zoom:
             self._build_chunk_surfaces(map_model, zoom)
         cs = self.chunk_size
-        # Precompute sprite mapping for this zoom and map
-        sprite_map: dict[tuple[str, str|None], pygame.Surface|None] = {}
+        # Use a local lazy sprite cache only for tiles encountered in the chunks
         matrix = map_model.matrix
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
-        # Build sprite map
-        for layer, grid in map_model.layers.items():
-            for y, row in enumerate(grid):
-                if y >= len(matrix):
-                    continue
-                row_str = matrix[y]
-                for x, code in enumerate(row):
-                    if x >= len(row_str):
-                        continue
-                    key = (row_str[x], code)
-                    if key not in sprite_map:                        
-                        sprite_map[key] = get_sprite_for_tile(row_str[x], code)
-        # Rebuild each affected chunk
+        local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
+        # Compute unique chunks to rebuild (coalesce many cells per chunk)
+        dirty_chunks: set[tuple[int,int]] = set()
         for row, col in set(cells):
-            cx = col // cs
-            cy = row // cs
+            dirty_chunks.add((col // cs, row // cs))
+        # Rebuild each affected chunk only once
+        for (cx, cy) in dirty_chunks:
             width = len(matrix[0]) if matrix else 0
             height = len(matrix)
             tile_w = min(cs, width - cx*cs)
@@ -184,7 +174,11 @@ class ChunkedMapView:
                         code = map_model.layers[layer][ty][tx]
                         if not code and layer != Layer.Ground:
                             continue
-                        sprite = sprite_map.get((char, code))
+                        key = (char, code)
+                        sprite = local_sprite_cache.get(key)
+                        if sprite is None and key not in local_sprite_cache:
+                            sprite = get_sprite_for_tile(char, code)
+                            local_sprite_cache[key] = sprite
                         if not sprite:
                             continue
                         skey = (id(sprite), zoom)
@@ -204,6 +198,68 @@ class ChunkedMapView:
                         surf.blit(scaled, (px, py))
             # Store updated chunk
             self.chunks_by_zoom[zoom][(cx, cy)] = surf
+
+    def update_cells_all_zooms(self, map_model, cells):
+        """
+        Rebuild affected chunks for every cached zoom level.
+
+        This ensures that when updates are applied using a different camera/zoom than
+        the one currently rendered, the visible cache still reflects the changes.
+        """
+        if not self.chunks_by_zoom:
+            return
+        cs = self.chunk_size
+        matrix = map_model.matrix
+        layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
+        for zoom in list(self.chunks_by_zoom.keys()):
+            # Ensure base cache exists for this zoom
+            if zoom not in self.chunks_by_zoom:
+                self._build_chunk_surfaces(map_model, zoom)
+            # Local lazy sprite cache per zoom update
+            local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
+
+            # Compute unique chunks to rebuild at this zoom
+            dirty_chunks: set[tuple[int,int]] = set()
+            for r, c in set(cells):
+                dirty_chunks.add((c // cs, r // cs))
+            for (cx, cy) in dirty_chunks:
+                width = len(matrix[0]) if matrix else 0
+                height = len(matrix)
+                tile_w = min(cs, width - cx*cs)
+                tile_h = min(cs, height - cy*cs)
+                pix_w = int(round(tile_w * TILE_SIZE * zoom))
+                pix_h = int(round(tile_h * TILE_SIZE * zoom))
+
+                surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
+                for ty in range(cy*cs, cy*cs + tile_h):
+                    for tx in range(cx*cs, cx*cs + tile_w):
+                        char = matrix[ty][tx]
+                        for layer in layers_ordered:
+                            code = map_model.layers[layer][ty][tx]
+                            if not code and layer != Layer.Ground:
+                                continue
+                            key = (char, code)
+                            sprite = local_sprite_cache.get(key)
+                            if sprite is None and key not in local_sprite_cache:
+                                sprite = get_sprite_for_tile(char, code)
+                                local_sprite_cache[key] = sprite
+                            if not sprite:
+                                continue
+                            skey = (id(sprite), zoom)
+                            scaled = _SCALED_CACHE.get(skey)
+                            if scaled is None:
+                                sw, sh = sprite.get_size()
+                                tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
+                                th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
+                                try:
+                                    scaled = pygame.transform.scale(sprite, (tw, th))
+                                except Exception:
+                                    scaled = sprite
+                                _SCALED_CACHE[skey] = scaled
+                            px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
+                            py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
+                            surf.blit(scaled, (px, py))
+                self.chunks_by_zoom[zoom][(cx, cy)] = surf
 
     def render(
         self,

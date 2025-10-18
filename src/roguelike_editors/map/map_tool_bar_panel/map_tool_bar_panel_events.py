@@ -68,7 +68,17 @@ class MapToolBarPanelEvents:
                     c.delete_zone.toggle()
                     return True
                 if tool_name == "paint_tiles":
-                    _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    # Open/close the floating Tile Picker panel
+                    try:
+                        opened = c.paint_tiles.toggle()
+                        # Ensure mutual exclusivity with other modes
+                        editor.add_zone_mode = False
+                        editor.delete_zone_mode = False
+                        editor.clear_colliders_mode = False
+                        editor.paint_colliders_mode = False
+                        logger.debug(f"[DEBUG][Toolbar/Events] paint_tiles_open -> {opened}")
+                    except Exception:
+                        _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
                     return True
                 if tool_name == "clear_colliders":
                     c.clear_colliders.toggle()

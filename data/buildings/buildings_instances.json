@@ -1830,5 +1830,21 @@
             "z_top": 5,
             "z": 3
         }
+    },
+    {
+        "id": 213,
+        "template_id": 214,
+        "zone": "zone_100_50",
+        "rel_x": 362,
+        "rel_y": 72,
+        "overrides": {
+            "scale": [
+                511,
+                511
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 3
+        }
     }
 ]

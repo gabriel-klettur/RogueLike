@@ -207,7 +207,16 @@ class TilePickerView:
                 surf.blit(self.hover_surface, rect.topleft)
                 pygame.draw.rect(surf, CLR_HOVER, rect, 3)
             if self._selected_idx is not None and idx == self._selected_idx:
+                # Draw selection overlay
                 surf.blit(self.selection_overlay, rect.topleft)
+                # Optional blinking yellow border for selected tile (used by Map Editor picker)
+                try:
+                    if getattr(self.controller, 'blink_selection', False):
+                        ticks = pygame.time.get_ticks()
+                        if (ticks // 300) % 2 == 0:
+                            pygame.draw.rect(surf, (255, 255, 0), rect, 3)
+                except Exception:
+                    pass
 
     def _draw_toolbar_and_labels(self, hovered_value, hovered_orig_size, w, h_grid):
         """Draw delete/default buttons and display hovered/selected labels."""

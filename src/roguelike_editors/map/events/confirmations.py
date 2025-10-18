@@ -20,7 +20,8 @@ def handle_confirmation_dialogs(
     if state.confirm_paint_tiles:
         zone = state.pending_paint_tiles_zone
         if state.confirm_paint_yes_rect and state.confirm_paint_yes_rect.collidepoint(ev.pos):
-            state.tile_code = "dungeon_1"
+            # Use the overlay code selected via the Tile Picker (already set in state.tile_code)
+            # Fallback: if not set, keep current value as-is
             tiles = map_manager.tiles_by_zone.get(zone, [])
             try:
                 setattr(state, "tutorial_paint_tiles_confirmed_pulse", True)

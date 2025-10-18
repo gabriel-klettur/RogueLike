@@ -51,4 +51,36 @@ class ProgressView:
 
         label = f"{getattr(state, 'executing_tool', '').replace('_', ' ').title()}: {int(progress * 100)}%"
         text_surf = self.fonts.small.render(label, True, self.palette.text)
-        screen.blit(text_surf, (bar_x, bar_y - bar_h - 2))
+        label_pos = (bar_x, bar_y - bar_h - 2)
+        screen.blit(text_surf, label_pos)
+
+        # Draw Pause/Resume and Cancel buttons above the bar, aligned to the right edge
+        btn_h = max(20, int(self.fonts.small.get_height() + 8))
+        pause_txt = "Reanudar" if getattr(state, 'execution_paused', False) else "Pausar"
+        pause_surf = self.fonts.small.render(pause_txt, True, self.palette.text)
+        cancel_surf = self.fonts.small.render("Cancelar", True, self.palette.text)
+        pad = 8
+        cancel_w = cancel_surf.get_width() + 14
+        pause_w = pause_surf.get_width() + 14
+        btn_y = bar_y - btn_h - 6
+        cancel_x = bar_x + bar_w - cancel_w
+        pause_x = cancel_x - pad - pause_w
+        pause_rect = pygame.Rect(int(pause_x), int(btn_y), int(pause_w), int(btn_h))
+        cancel_rect = pygame.Rect(int(cancel_x), int(btn_y), int(cancel_w), int(btn_h))
+
+        # Buttons background and borders
+        pygame.draw.rect(screen, self.palette.progress_bg, pause_rect)
+        pygame.draw.rect(screen, self.palette.text, pause_rect, 1)
+        pygame.draw.rect(screen, self.palette.progress_bg, cancel_rect)
+        pygame.draw.rect(screen, self.palette.text, cancel_rect, 1)
+
+        # Buttons labels centered
+        screen.blit(pause_surf, pause_surf.get_rect(center=pause_rect.center))
+        screen.blit(cancel_surf, cancel_surf.get_rect(center=cancel_rect.center))
+
+        # Expose rects on state for event handling
+        try:
+            state.progress_pause_rect = pause_rect
+            state.progress_cancel_rect = cancel_rect
+        except Exception:
+            pass

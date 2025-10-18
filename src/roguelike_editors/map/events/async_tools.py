@@ -11,9 +11,26 @@ from roguelike_engine.tile.utils.loader import get_sprite_for_tile
 from roguelike_editors.map.services.overlay_service import set_overlay_cell, merge_zone_to_world
 
 logger = logging.getLogger(__name__)
+# Toggle extremely chatty per-cell logs
+DEBUG_PAINT: bool = False
+
+# Flush tuning (ms and batch size)
+FLUSH_DIRTY_MS: int = 120
+FLUSH_ALL_ZOOMS_MS: int = 900
 
 
 def process_async_tool(camera, state, controller, manager, map_manager) -> None:
+    # Do not advance while paused; keep UI responsive and progress visible
+    if getattr(state, 'execution_paused', False):
+        return
+    # Avoid double-advancing in the same frame if called from multiple places
+    try:
+        now = pygame.time.get_ticks()
+        if getattr(state, 'execution_last_tick_ms', -1) == now:
+            return
+        state.execution_last_tick_ms = now
+    except Exception:
+        pass
     tool = state.executing_tool
     if tool == "paint_tiles":
         _handle_paint_tiles_execution(camera, state, controller, map_manager)
@@ -31,26 +48,38 @@ def _handle_paint_tiles_execution(camera, state, controller, map_manager) -> Non
         _apply_tile_overlay(tile, state)
         _apply_ground_overlay(tile, state, map_manager)
         state.execution_index += 1
+        # No per-cell chunk rebuild; we batch-flush below for performance
+        # Batch flush by time/size/tick to keep FPS high
         try:
-            tx = int(tile.x) // TILE_SIZE
-            ty = int(tile.y) // TILE_SIZE
-            map_manager.view.update_chunks(map_manager, camera, [(ty, tx)])
-        except Exception:
-            pass
-        try:
-            if len(state.dirty_cells) >= TILE_PAINT_BATCH or (
-                state.execution_index % TILE_PAINT_TICK == 0 and state.dirty_cells
-            ):
+            now = pygame.time.get_ticks()
+            last_flush = getattr(state, 'execution_last_flush_ms', 0)
+            need_flush = (
+                len(state.dirty_cells) >= TILE_PAINT_BATCH or
+                (state.execution_index % max(1, TILE_PAINT_TICK) == 0 and state.dirty_cells) or
+                (now - last_flush) >= FLUSH_DIRTY_MS
+            )
+            if need_flush and state.dirty_cells:
                 cells = list(state.dirty_cells)
                 map_manager.view.update_chunks(map_manager, camera, cells)
                 state.dirty_cells.clear()
+                state.execution_last_flush_ms = now
+                # Optionally refresh other zoom caches, but not every flush
+                last_all = getattr(state, 'execution_last_allzooms_flush_ms', 0)
+                if (now - last_all) >= FLUSH_ALL_ZOOMS_MS:
+                    try:
+                        if hasattr(map_manager.view, 'update_cells_all_zooms'):
+                            map_manager.view.update_cells_all_zooms(map_manager, cells)
+                    except Exception:
+                        pass
+                    state.execution_last_allzooms_flush_ms = now
         except Exception:
             pass
-        try:
-            if (state.execution_index % 128) == 0:
-                map_manager.view.invalidate_cache()
-        except Exception:
-            pass
+        # Light invalidate very occasionally if desired (disabled by default)
+        # try:
+        #     if (state.execution_index % 512) == 0:
+        #         map_manager.view.invalidate_cache()
+        # except Exception:
+        #     pass
         total = max(state.execution_total, 1)
         percent = int((state.execution_index / total) * 100)
         if percent >= (state.last_progress_report + 10):
@@ -74,6 +103,10 @@ def _handle_paint_tiles_execution(camera, state, controller, map_manager) -> Non
             logger.exception(f"[MapEditor] Error finalizing paint tiles for zone={zone}: {e}")
         finally:
             clear_async_state(state)
+            try:
+                state.execution_last_tick_ms = pygame.time.get_ticks()
+            except Exception:
+                pass
             try:
                 setattr(state, "tutorial_paint_tiles_finalized_pulse", True)
             except Exception:
@@ -102,6 +135,25 @@ def _apply_ground_overlay(tile, state, map_manager) -> None:
     if world and 0 <= ty < len(world) and 0 <= tx < len(world[0]):
         before = world[ty][tx]
     set_overlay_cell(map_manager, tx, ty, tile.overlay_code)
+    if DEBUG_PAINT:
+        try:
+            logger.debug(f"[PaintTiles] World overlay ({ty},{tx}) {before!r} -> {tile.overlay_code!r}")
+        except Exception:
+            pass
+    # Track for live overlay rendering (short-lived visual feedback independent of chunk caches)
+    try:
+        expiry = pygame.time.get_ticks() + 1200
+        state.recent_overlays.append((int(ty), int(tx), str(tile.overlay_code or ""), int(expiry)))
+        if len(state.recent_overlays) > 5000:
+            state.recent_overlays = state.recent_overlays[-3000:]
+    except Exception:
+        pass
+    # Pin expected overlay to auto-correct drifts for a short time
+    try:
+        lock_expiry = pygame.time.get_ticks() + 4000
+        state.overlay_locks[(int(ty), int(tx))] = (str(tile.overlay_code or ""), int(lock_expiry))
+    except Exception:
+        pass
     try:
         if before != tile.overlay_code and state.current_command is not None:
             state.current_command.add_edit(ty, tx, before, tile.overlay_code)

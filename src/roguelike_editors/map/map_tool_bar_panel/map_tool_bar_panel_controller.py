@@ -7,6 +7,7 @@ from .clear_colliders.clear_colliders_controller import ClearCollidersController
 from .delete_zone.delete_zone_controller import DeleteZoneController
 from .paint_colliders.paint_colliders_controller import PaintCollidersController
 from .view_layers.view_layers_controller import ViewLayersController
+from .paint_tiles.paint_tiles_controller import PaintTilesController
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,12 @@ class MapToolBarPanelController:
             map_controller=self.map_controller,
             toolbar_controller=self,
         )
+        # Paint tiles tool: opens floating Tile Picker
+        self.paint_tiles = PaintTilesController(
+            editor_state=editor_state,
+            map_controller=self.map_controller,
+            toolbar_controller=self,
+        )
         self.clear_colliders = ClearCollidersController(
             editor_state=editor_state,
             map_controller=self.map_controller,
@@ -89,7 +96,10 @@ class MapToolBarPanelController:
         if tool == "delete_zone":
             return bool(getattr(self.editor, "delete_zone_mode", False))
         if tool == "paint_tiles":
-            return bool(getattr(self.editor, "paint_tiles_mode", False))
+            try:
+                return bool(self.paint_tiles.is_open())
+            except Exception:
+                return bool(getattr(self.editor, "paint_tiles_mode", False))
         if tool == "clear_colliders":
             return bool(getattr(self.editor, "clear_colliders_mode", False))
         if tool == "paint_colliders":
