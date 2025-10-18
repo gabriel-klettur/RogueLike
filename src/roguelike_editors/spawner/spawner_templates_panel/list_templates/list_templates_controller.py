@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from typing import Optional, List, Dict, Any
+import logging
 
 from .list_templates_model import ListTemplatesModel
 from .list_templates_view import ListTemplatesView
 from .list_templates_events import ListTemplatesEventHandler
 from roguelike_editors.spawner.services.persistence import load_spawners_json, write_spawners_json
+from roguelike_editors.spawner.services import paths as sp_paths
 from .list_templates_delete.list_templates_delete_controller import ListTemplatesDeleteController
 from .list_templates_delete.list_templates_delete_events import ListTemplatesDeleteEventHandler
 from .list_templates_delete.list_templates_delete_model import ListTemplatesDeleteModel
@@ -76,6 +78,15 @@ class SpawnerTemplatesListController:
         # Reset hover if invalid
         if self.model.hovered_index is not None and not (0 <= self.model.hovered_index < len(items)):
             self.model.hovered_index = None
+        # Debug: report how many templates and from which path
+        try:
+            logging.getLogger(__name__).debug(
+                "[SpawnerTemplatesList] refresh_from_disk: %s templates from %s",
+                len(items),
+                sp_paths.spawners_path(),
+            )
+        except Exception:
+            pass
 
     def get_selected_template(self) -> Optional[Dict[str, Any]]:
         idx = self.model.selected_index

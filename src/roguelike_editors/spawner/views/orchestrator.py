@@ -82,17 +82,36 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
     mgr_rect = None
     try:
         if hasattr(c, 'spawner_manager') and getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
+            width = 720
+            try:
+                width = int(getattr(getattr(getattr(c.spawner_manager, 'list_controller', None), 'model', None), 'panel_width', 720) or 720)
+            except Exception:
+                width = 720
             if inst_tb_rect is not None:
-                # Prefer right of Instance Toolbar if present to avoid overlap
-                anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
+                ax, ay = inst_tb_rect.right + 8, inst_tb_rect.top
             elif tb_rect is not None:
-                # Right of main toolbar
-                anchor = (tb_rect.right + 8, tb_rect.top)
+                ax, ay = tb_rect.right + 8, tb_rect.top
             else:
-                # Fallback: place below title if toolbar rect missing
                 base_x = title_rect.left if title_rect else 20
-                anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
+                ax, ay = base_x, (title_rect.bottom + 8) if title_rect else 90
+            try:
+                sw = screen.get_width()
+                if ax + width > sw - 4:
+                    base = inst_tb_rect or tb_rect
+                    if base is not None:
+                        ax = max(20, base.left - width - 8)
+                try:
+                    logger.debug("[Spawner.View] Manager anchor=(%s,%s) width=%s sw=%s", ax, ay, width, sw)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            anchor = (ax, ay)
             mgr_rect = c.spawner_manager.render(screen, anchor=anchor)
+            try:
+                logger.debug("[Spawner.View] Manager rendered rect=%s", getattr(mgr_rect, 'size', None) and (mgr_rect.left, mgr_rect.top, mgr_rect.width, mgr_rect.height))
+            except Exception:
+                pass
     except (AttributeError, TypeError, pygame.error):
         logger.debug("orchestrate_render: spawner_manager render failed", exc_info=True)
     try:
@@ -105,14 +124,27 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
         if hasattr(c, 'spawner_instances') and getattr(getattr(c.spawner_instances, 'model', None), 'visible', True):
             # Only render when not showing manager to avoid overlap
             if not getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
-                # Prefer placing to the right of the Instance Toolbar if present; else right of main toolbar
+                width = 720
+                try:
+                    width = int(getattr(getattr(c.spawner_instances, 'model', None), 'panel_width', 720) or 720)
+                except Exception:
+                    width = 720
                 if inst_tb_rect is not None:
-                    anchor = (inst_tb_rect.right + 8, inst_tb_rect.top)
+                    ax, ay = inst_tb_rect.right + 8, inst_tb_rect.top
                 elif tb_rect is not None:
-                    anchor = (tb_rect.right + 8, tb_rect.top)
+                    ax, ay = tb_rect.right + 8, tb_rect.top
                 else:
                     base_x = title_rect.left if title_rect else 20
-                    anchor = (base_x, (title_rect.bottom + 8) if title_rect else 90)
+                    ax, ay = base_x, (title_rect.bottom + 8) if title_rect else 90
+                try:
+                    sw = screen.get_width()
+                    if ax + width > sw - 4:
+                        base = inst_tb_rect or tb_rect
+                        if base is not None:
+                            ax = max(20, base.left - width - 8)
+                except Exception:
+                    pass
+                anchor = (ax, ay)
                 inst_rect = c.spawner_instances.render(screen, anchor=anchor)
     except (AttributeError, TypeError, pygame.error):
         logger.debug("orchestrate_render: spawner_instances render failed", exc_info=True)

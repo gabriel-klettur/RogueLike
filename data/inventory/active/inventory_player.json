@@ -1,24 +1,15 @@
 {
   "1": {
-    "player_id": "7874f5f6-b106-424c-b98e-0bb79c49ae2c",
+    "player_id": "5798f450-fea2-42a4-915e-7edf06b96492",
     "capacity": 20,
     "slots": [
       {
         "item": "gold",
         "quantity": 10
       },
-      {
-        "item": "ghjgjh",
-        "quantity": 2
-      },
-      {
-        "item": "energy_potion",
-        "quantity": 1
-      },
-      {
-        "item": "bucket_water",
-        "quantity": 1
-      },
+      null,
+      null,
+      null,
       null,
       null,
       null,

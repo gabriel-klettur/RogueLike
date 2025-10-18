@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+import logging
 
 
 @dataclass(frozen=True)
@@ -37,18 +38,42 @@ def compute_ui_state(controller) -> UIState:
         and not getattr(model, 'remove_mode_active', False)
         and not placing_active
     )
-    return UIState(
+    state = UIState(
         active_tool=active_tool,
         hold=hold,
         placing_active=placing_active,
         manager_visible=manager_visible,
         instances_visible=instances_visible,
     )
+    # Log only if state changed vs last logged
+    try:
+        prev = getattr(controller, '_last_ui_state_log', None)
+        curr = (active_tool, hold, placing_active, manager_visible, instances_visible)
+        if prev != curr:
+            logging.getLogger(__name__).debug(
+                "[Spawner.UI] compute_ui_state: active_tool=%s hold=%s placing=%s manager_visible=%s instances_visible=%s",
+                active_tool, hold, placing_active, manager_visible, instances_visible,
+            )
+    except Exception:
+        pass
+    return state
 
 
 def apply_ui_state(controller, state: UIState) -> None:
     """Synchronize panels visibility and global flags from a `UIState`."""
     # Gate subpanels by editor visibility
+    # Log only if state changed vs last logged, then update marker
+    try:
+        prev = getattr(controller, '_last_ui_state_log', None)
+        curr = (state.active_tool, state.hold, state.placing_active, state.manager_visible, state.instances_visible)
+        if prev != curr:
+            logging.getLogger(__name__).debug(
+                "[Spawner.UI] apply_ui_state: set manager_visible=%s instances_visible=%s",
+                state.manager_visible, state.instances_visible,
+            )
+        setattr(controller, '_last_ui_state_log', curr)
+    except Exception:
+        pass
     try:
         controller.spawner_manager.set_visible(bool(state.manager_visible))
     except Exception:

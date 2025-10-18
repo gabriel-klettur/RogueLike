@@ -23,6 +23,20 @@ class SpawnerToolbarEventHandler:
             new_state = None if controller.is_active('spawner_list') else 'spawner_list'
             controller.set_active(new_state)
             logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_list' -> active_tool=%s", new_state)
+            # Apply UI state immediately so panel visibility reflects the change this frame
+            try:
+                from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
+                editor = getattr(controller, 'editor_controller', None)
+                if editor is not None:
+                    # Clear hold so UI gates do not hide panels
+                    try:
+                        setattr(editor.model, 'hold_focus_active', False)
+                    except Exception:
+                        pass
+                    state = compute_ui_state(editor)
+                    apply_ui_state(editor, state)
+            except Exception:
+                pass
             return True
 
         toolbar = getattr(controller.view, 'toolbar', None)
@@ -49,6 +63,21 @@ class SpawnerToolbarEventHandler:
             if not pos or not panel_rect.collidepoint(pos):
                 return False
             icon_rects = getattr(toolbar, 'icon_rects', {})
+            # Compute icon rects for hit-testing if not available yet (pre-render)
+            try:
+                if not icon_rects or len(icon_rects) != len(getattr(toolbar, 'items', [])):
+                    icon_rects = {}
+                    items = list(getattr(toolbar, 'items', []) or [])
+                    size = int(getattr(toolbar, 'size', 48) or 48)
+                    padding = int(getattr(toolbar, 'padding', 8) or 8)
+                    edge_padding = int(getattr(toolbar, 'edge_padding', 8) or 8)
+                    for idx, tool in enumerate(items):
+                        lx = edge_padding
+                        ly = edge_padding + idx * (size + padding)
+                        rect_local = pygame.Rect(lx, ly, size, size)
+                        icon_rects[tool] = rect_local.move(panel_pos)
+            except Exception:
+                pass
             # Tutorial (toggle Spawner Tutorial panel)
             rect = icon_rects.get('tutorial_spawner')
             if rect and rect.collidepoint(pos):
@@ -76,19 +105,51 @@ class SpawnerToolbarEventHandler:
             if rect and rect.collidepoint(pos):
                 controller.on_redo()
                 return True
-            # Spawner list toggle
+            # Spawner list activate (idempotent)
             rect = icon_rects.get('spawner_list')
             if rect and rect.collidepoint(pos):
-                new_state = None if controller.is_active('spawner_list') else 'spawner_list'
+                new_state = 'spawner_list'
                 controller.set_active(new_state)
                 logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_list' -> active_tool=%s", new_state)
+                # Apply UI state immediately so panel visibility reflects the change this frame
+                try:
+                    from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
+                    editor = getattr(controller, 'editor_controller', None)
+                    if editor is not None:
+                        try:
+                            setattr(editor.model, 'hold_focus_active', False)
+                        except Exception:
+                            pass
+                        state = compute_ui_state(editor)
+                        apply_ui_state(editor, state)
+                except Exception:
+                    pass
                 return True
-            # Spawner manager toggle (shows templates list)
+            # Spawner manager activate (idempotent)
             rect = icon_rects.get('spawner_manager')
             if rect and rect.collidepoint(pos):
-                new_state = None if controller.is_active('spawner_manager') else 'spawner_manager'
+                new_state = 'spawner_manager'
                 controller.set_active(new_state)
                 logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_manager' -> active_tool=%s", new_state)
+                # Apply UI state immediately so manager panel becomes visible in the same frame
+                try:
+                    from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
+                    editor = getattr(controller, 'editor_controller', None)
+                    if editor is not None:
+                        # Clear hold flag that would gate manager visibility
+                        try:
+                            setattr(editor.model, 'hold_focus_active', False)
+                        except Exception:
+                            pass
+                        # Also set manager visible directly for immediate feedback
+                        try:
+                            editor.spawner_manager.set_visible(new_state == 'spawner_manager')
+                        except Exception:
+                            pass
+                        state = compute_ui_state(editor)
+                        apply_ui_state(editor, state)
+                except Exception:
+                    pass
                 return True
             # Clicked toolbar background: block
             logger.debug("[SpawnerToolbar][CLICK BG] blocked (no action)")

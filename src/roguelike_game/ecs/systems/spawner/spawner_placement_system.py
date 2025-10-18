@@ -1,4 +1,4 @@
-﻿"""
+"""
 SpawnerPlacementSystem: loads spawner templates and instances from JSON and creates ECS entities
 with SpawnerConfig + SpawnerState components.
 """

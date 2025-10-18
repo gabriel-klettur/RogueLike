@@ -1,11 +1,263 @@
 [
   {
-    "id": "s1",
-    "template_id": "orc2",
-    "zone": "forest",
-    "tile": [
-      1,
-      2
+    "id": "barbol_periodic_no_stack",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "defend_spawn": false,
+    "trigger": {
+      "type": "proximity",
+      "radius": 5,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 10.0,
+      "max_active": 0,
+      "persistent": false,
+      "restart_on_done": true
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbol_periodic_faster",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "defend_spawn": false,
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 1,
+      "max_active": 0,
+      "persistent": false,
+      "restart_on_done": true
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "survival_10",
+    "spawner_type": "invisible",
+    "spawner_shape": "square",
+    "spawn_radius": 20,
+    "defend_spawn": true,
+    "defend_leash": true,
+    "visible_in_game": true,
+    "trigger": {
+      "type": "proximity",
+      "radius": 10,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 1.0,
+      "proximity_initial_only": true,
+      "between_waves_cooldown_s": 5.0,
+      "max_active": 0,
+      "persistent": false,
+      "restart_on_done": false
+    },
+    "waves_id": "waves_survival_10"
+  },
+  {
+    "id": "barbol_pair_10s_restart",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 10.0,
+      "max_active": 0,
+      "persistent": false,
+      "restart_on_done": true
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 2,
+            "spread_radius": 3,
+            "spread_fallback_max": 12,
+            "min_px_distance": 24
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbol_auto_pair_3s_max2_restart10",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "trigger": { "type": "auto" },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 3.0,
+      "advance_on": "cooldown",
+      "max_active": 2,
+      "persistent": false,
+      "restart_on_done": true,
+      "restart_cooldown_s": 10.0
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 3,
+            "spread_fallback_max": 12,
+            "min_px_distance": 24
+          }
+        ]
+      },
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 3,
+            "spread_fallback_max": 12,
+            "min_px_distance": 24
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbol_defend_fixed10",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 10,
+    "defend_spawn": true,
+    "defend_leash": true,
+    "trigger": {
+      "type": "proximity",
+      "radius": 6,
+      "auto_start": true
+    },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 5.0,
+      "max_active": 0,
+      "persistent": false,
+      "restart_on_done": true
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 2,
+            "spread_radius": 3,
+            "spread_fallback_max": 12,
+            "min_px_distance": 24
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbol_defend_random",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": "random",
+    "defend_spawn": true,
+    "defend_leash": true,
+    "trigger": { "type": "auto" },
+    "policy": {
+      "mode": "periodic",
+      "cooldown_s": 3.0,
+      "advance_on": "cooldown",
+      "max_active": 3,
+      "persistent": false,
+      "restart_on_done": true
+    },
+    "waves": [
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 3,
+            "spread_fallback_max": 10,
+            "min_px_distance": 24
+          }
+        ]
+      },
+      {
+        "spawns": [
+          {
+            "kind": "monster",
+            "id": "barbol",
+            "count": 1,
+            "spread_radius": 3,
+            "spread_fallback_max": 14,
+            "min_px_distance": 24
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vendor_valeria_respawn_5m",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "defend_spawn": false,
+    "trigger": { "type": "auto" },
+    "policy": {
+      "mode": "periodic",
+      "advance_on": "cooldown",
+      "cooldown_s": 0.0,
+      "max_active": 1,
+      "persistent": true,
+      "restart_on_done": true,
+      "restart_cooldown_s": 300.0
+    },
+    "waves": [
+      {
+        "spawns": [
+          { "kind": "monster", "id": "vendor_alchemist_valeria", "count": 1, "spread_radius": 0 }
+        ]
+      }
     ]
   }
 ]

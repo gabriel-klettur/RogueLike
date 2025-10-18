@@ -1,148 +1,148 @@
 [
-  {
-    "template_id": "survival_10",
-    "zone": "Forest",
-    "tile": [
-      27,
-      17
-    ],
-    "overrides": {
-      "visible_in_game": true,
-      "hp_scope": "per_state",
-      "life_defaults": {
-        "damageable": true,
-        "max_hp": 1000,
-        "flash_on_hit": true,
-        "flash_color": [
-          255,
-          255,
-          255
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            27,
+            17
         ],
-        "flash_duration_s": 0.08,
-        "hp_reset_on_enter": "set_to_max"
-      }
+        "overrides": {
+            "visible_in_game": true,
+            "hp_scope": "per_state",
+            "life_defaults": {
+                "damageable": true,
+                "max_hp": 1000,
+                "flash_on_hit": true,
+                "flash_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "flash_duration_s": 0.08,
+                "hp_reset_on_enter": "set_to_max"
+            }
+        },
+        "visuals": {
+            "AwaitTrigger": {
+                "instance_id": 372,
+                "template_id": 157
+            },
+            "Finished": {
+                "instance_id": 373,
+                "template_id": 158
+            },
+            "WaitCooldown": {
+                "instance_id": 374,
+                "template_id": 155
+            },
+            "WaitClear": {
+                "instance_id": 375,
+                "template_id": 157
+            },
+            "SpawningWave": {
+                "instance_id": 376,
+                "template_id": 157
+            }
+        },
+        "id": "survival_10_forest_14_9"
     },
-    "visuals": {
-      "AwaitTrigger": {
-        "instance_id": 372,
-        "template_id": 157
-      },
-      "Finished": {
-        "instance_id": 379,
-        "template_id": 158
-      },
-      "WaitCooldown": {
-        "instance_id": 316,
-        "template_id": 155
-      },
-      "WaitClear": {
-        "instance_id": 380,
-        "template_id": 157
-      },
-      "SpawningWave": {
-        "instance_id": 381,
-        "template_id": 157
-      }
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            5,
+            1
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_4"
     },
-    "id": "survival_10_forest_14_9"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      5,
-      1
-    ],
-    "id": "barbol_periodic_no_stack_forest_10_4"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      4,
-      12
-    ],
-    "id": "barbol_periodic_no_stack_forest_4_12"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      11,
-      18
-    ],
-    "id": "barbol_periodic_no_stack_forest_10_18"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      4,
-      35
-    ],
-    "id": "barbol_periodic_no_stack_forest_4_35"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      9,
-      44
-    ],
-    "id": "barbol_periodic_no_stack_forest_10_43"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      19,
-      44
-    ],
-    "id": "barbol_periodic_no_stack_forest_21_44"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      29,
-      32
-    ],
-    "id": "barbol_periodic_no_stack_forest_28_32"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      30,
-      44
-    ],
-    "id": "barbol_periodic_no_stack_forest_29_44"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      41,
-      43
-    ],
-    "id": "barbol_periodic_no_stack_forest_38_44"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      43,
-      22
-    ],
-    "id": "barbol_periodic_no_stack_forest_44_19"
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "Forest",
-    "tile": [
-      44,
-      13
-    ],
-    "id": "barbol_periodic_no_stack_forest_45_13"
-  }
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            4,
+            12
+        ],
+        "id": "barbol_periodic_no_stack_forest_4_12"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            11,
+            18
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_18"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            4,
+            35
+        ],
+        "id": "barbol_periodic_no_stack_forest_4_35"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            9,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_43"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            19,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_21_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            29,
+            32
+        ],
+        "id": "barbol_periodic_no_stack_forest_28_32"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            30,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_29_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            41,
+            43
+        ],
+        "id": "barbol_periodic_no_stack_forest_38_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            43,
+            22
+        ],
+        "id": "barbol_periodic_no_stack_forest_44_19"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            44,
+            13
+        ],
+        "id": "barbol_periodic_no_stack_forest_45_13"
+    }
 ]
