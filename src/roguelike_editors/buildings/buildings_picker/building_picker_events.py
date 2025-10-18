@@ -166,6 +166,11 @@ class BuildingPickerEventHandler:
                 cols = min(cols, max_cols)
             col = (mx - gx) // (cw + pad)
             row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding area
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
             idx = int(row) * int(cols) + int(col)
 
             has_back = bool(getattr(self.editor, 'history', []))
@@ -253,6 +258,11 @@ class BuildingPickerEventHandler:
                 cols = min(cols, max_cols)
             col = (mx - gx) // (cw + pad)
             row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding band
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
             idx = int(row) * int(cols) + int(col)
 
             has_back = bool(getattr(self.editor, 'history', []))
@@ -332,6 +342,11 @@ class BuildingPickerEventHandler:
                 cols = min(cols, max_cols)
             col = (mx - gx) // (cw + pad)
             row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding band
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
             idx = int(row) * int(cols) + int(col)
 
             has_back = bool(getattr(self.editor, 'history', []))

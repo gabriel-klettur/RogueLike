@@ -2961,5 +2961,96 @@
             256
         ],
         "id": 247
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_30_45 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.386,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 248
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_30_45 PM.png"
+        },
+        "solid": true,
+        "split_ratio": 0.195,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 249
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.377,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 250
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.344,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 251
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.338,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 252
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.374,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 253
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/combat/coliseo_2.png"
+        },
+        "solid": true,
+        "split_ratio": 0.571,
+        "collider_scope": "CG",
+        "original_scale": [
+            256,
+            256
+        ],
+        "id": 254
     }
 ]

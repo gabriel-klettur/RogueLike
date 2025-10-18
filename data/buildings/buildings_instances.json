@@ -1833,7 +1833,7 @@
     },
     {
         "id": 259,
-        "template_id": 219,
+        "template_id": 249,
         "zone": "lobby",
         "rel_x": 694,
         "rel_y": 844,
@@ -1881,7 +1881,7 @@
     },
     {
         "id": 303,
-        "template_id": 247,
+        "template_id": 254,
         "zone": "zone_100_50",
         "rel_x": 484,
         "rel_y": -292,
@@ -1890,9 +1890,9 @@
                 1126,
                 1126
             ],
-            "z_bottom": 5,
-            "z_top": 5,
-            "z": 5
+            "z_bottom": 3,
+            "z_top": 4,
+            "z": 3
         }
     },
     {
