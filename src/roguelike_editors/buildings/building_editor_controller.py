@@ -142,11 +142,42 @@ class BuildingEditorController:
         # 4) Paneles Z (+ / –) (clic izq)
         if button == 1:
             ab = getattr(self.editor, 'active_building', None)
-            targets = [ab] if ab is not None else []
-            if ab and self.z_tool_bottom.handle_mouse_click((mx, my), targets, camera):
-                return
-            if ab and self.z_tool_top.handle_mouse_click((mx, my), targets, camera):
-                return
+            if ab is not None:
+                # Si el punto cae en ambos paneles (top y bottom), decidir por cercanía al centro del botón clicado
+                try:
+                    top_m, top_p = self.z_tool_top._get_button_rects(ab, camera)
+                except Exception:
+                    top_m, top_p = None, None
+                try:
+                    bot_m, bot_p = self.z_tool_bottom._get_button_rects(ab, camera)
+                except Exception:
+                    bot_m, bot_p = None, None
+
+                hits = []  # (dist2, tag)
+                for tag, r in (("top", top_m), ("top", top_p), ("bottom", bot_m), ("bottom", bot_p)):
+                    try:
+                        if r is not None and r.collidepoint(mx, my):
+                            dx = (r.centerx - mx)
+                            dy = (r.centery - my)
+                            hits.append((dx * dx + dy * dy, tag))
+                    except Exception:
+                        continue
+
+                if hits:
+                    hits.sort(key=lambda t: t[0])
+                    winner = hits[0][1]
+                    if winner == "top":
+                        if self.z_tool_top.handle_mouse_click((mx, my), [ab], camera):
+                            return
+                    else:
+                        if self.z_tool_bottom.handle_mouse_click((mx, my), [ab], camera):
+                            return
+                else:
+                    # Sin solape o fuera de botones: probar normalmente
+                    if self.z_tool_top.handle_mouse_click((mx, my), [ab], camera):
+                        return
+                    if self.z_tool_bottom.handle_mouse_click((mx, my), [ab], camera):
+                        return
             # 5) Selección persistente con clic izquierdo (si no consumieron otros handles)
             for b in reversed(buildings):
                 if b.rect.collidepoint(world_x, world_y):

@@ -251,10 +251,10 @@ def test_ctl_009_z_buttons_click_updates_z(camera, surface_factory):
     assert b.z_bottom == 4
     assert zs.calls and zs.calls[-1] == (b, b.z_bottom)
 
-    # Click '+' on top tool (increments and clamps to >= bottom)
+    # Click '+' on top tool (increments independently; top can be below bottom)
     minus_rect_t, plus_rect_t = ctl.z_tool_top._get_button_rects(b, camera)
     ctl.on_mouse_down(plus_rect_t.center, 1, camera, buildings)
-    assert b.z_top == 5 and b.z_top >= b.z_bottom
+    assert b.z_top == 2
 
 
 # [CTL-011] Motion builds hover list ordered by top-most and normalizes index

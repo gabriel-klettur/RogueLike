@@ -176,3 +176,152 @@ def test_template_cell_begins_edit():
 
     assert handled is True, f"Expected handler to return True when clicking template cell; got {handled}"
     assert ("begin_edit", "Idle") in vctrl.parent.actions, f"Expected begin_edit for 'Idle'; actions={vctrl.parent.actions}"
+
+
+def test_clear_click_on_edge_still_clears_visual():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+
+    ev = VisualsEvents()
+    # Click near top-left corner inside clear rect (not exactly center)
+    click_pos = (panel.left + clear_rect.left + 1, panel.top + clear_rect.top + 1)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is True
+    assert ("clear", "Idle") in vctrl.parent.actions
+    assert ("begin_edit", "Idle") not in vctrl.parent.actions
+
+
+def test_control_click_inside_template_does_not_begin_edit_for_clear():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+
+    ev = VisualsEvents()
+    click_pos = (panel.left + clear_rect.centerx, panel.top + clear_rect.centery)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is True
+    assert ("clear", "Idle") in vctrl.parent.actions
+    assert ("begin_edit", "Idle") not in vctrl.parent.actions
+
+
+def test_clear_while_editing_still_triggers_clear():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+    # Simulate editing state
+    m.visuals_editing_state = "Idle"
+
+    ev = VisualsEvents()
+    click_pos = (panel.left + clear_rect.centerx, panel.top + clear_rect.centery)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is True
+    assert ("clear", "Idle") in vctrl.parent.actions
+
+
+def test_browse_while_editing_opens_picker():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+    m.visuals_editing_state = "Idle"
+
+    ev = VisualsEvents()
+    click_pos = (panel.left + browse_rect.centerx, panel.top + browse_rect.centery)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is True
+    assert ("open_picker", "Idle") in vctrl.parent.actions
+
+
+def test_eye_while_editing_toggles_visibility():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+    m.visuals_editing_state = "Idle"
+
+    ev = VisualsEvents()
+    click_pos = (panel.left + eye_rect.centerx, panel.top + eye_rect.centery)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is True
+    assert ("toggle_eye", "Idle") in vctrl.parent.actions
+
+
+def test_row_hold_then_release_clears_hold():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+
+    ev = VisualsEvents()
+    # Click in state cell area to avoid controls/template
+    click_down = (panel.left + state_rect.centerx, panel.top + state_rect.centery)
+    e_down = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_down, "button": 1})
+    handled_down = ev.handle_event(vctrl, e_down, panel)
+
+    assert handled_down is True
+    assert m.hold_active is True
+    assert m.hold_row_index == 0
+
+    # Release anywhere should stop hold
+    e_up = pygame.event.Event(pygame.MOUSEBUTTONUP, {"pos": (0, 0), "button": 1})
+    handled_up = ev.handle_event(vctrl, e_up, panel)
+
+    assert handled_up is True
+    assert m.hold_active is False
+    assert m.hold_row_index is None
+
+
+def test_click_outside_panel_not_handled():
+    vctrl = DummyVisualsController()
+    panel, template_rect, browse_rect, eye_rect, clear_rect, row_rect, state_rect = _panel_and_rects()
+    m = vctrl.model
+    m.visuals_template_rects.append(template_rect)
+    m.visuals_browse_rects.append(browse_rect)
+    m.visuals_eye_rects.append(eye_rect)
+    m.visuals_clear_rects.append(clear_rect)
+    m.visuals_row_rects.append(row_rect)
+
+    ev = VisualsEvents()
+    click_pos = (panel.right + 50, panel.bottom + 50)
+    event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {"pos": click_pos, "button": 1})
+    handled = ev.handle_event(vctrl, event, panel)
+
+    assert handled is False
