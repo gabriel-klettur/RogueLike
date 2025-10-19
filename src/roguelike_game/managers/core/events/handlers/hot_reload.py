@@ -1,5 +1,5 @@
 import pygame
-from roguelike_game.config.hot_reload import reload_all_game_data
+from roguelike_game.config.hot_reload import reload_all_game_data_and_code
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def handle_hot_reload_anywhere(game, events) -> bool:
                     mods = 0
                 if not bool(mods & (pygame.KMOD_LALT | pygame.KMOD_RALT)):
                     try:
-                        summary = reload_all_game_data(game)
+                        summary = reload_all_game_data_and_code(game)
                         try:
                             total_groups = sum(1 for _ in (summary or {}).items())
                             total_items = sum(int(v or 0) for v in (summary or {}).values())

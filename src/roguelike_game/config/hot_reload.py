@@ -10,6 +10,8 @@ without restarting the process.
 from __future__ import annotations
 
 import logging
+import sys
+import importlib
 from pathlib import Path
 from typing import Callable, Dict, List, Tuple, Optional
 
@@ -357,3 +359,107 @@ def reload_all_game_data(game, *, force: bool = False) -> Dict[str, int]:
         logger.info("[hot_reload] Reload summary: %s", results)
         _draw_loader(game, 1.0, "Recarga completa")
     return results
+
+
+# --- Python modules hot-reload (code under src/) --------------------------------
+
+# Separate cache for .py module mtimes
+_PY_FILE_MTIMES: Dict[Path, float] = {}
+
+def _module_in_project(mod_name: str, mod_obj) -> Optional[Path]:
+    """Return the module file path if it is a project module under src/, else None."""
+    try:
+        f = getattr(mod_obj, "__file__", None)
+        if not f:
+            return None
+        p = Path(f).resolve()
+        # Only reload plain .py files that live inside the project repo under src/
+        if p.suffix != ".py":
+            return None
+        # Must be within the repository root and specifically inside src/
+        if not str(p).startswith(str(BASE_DIR / "src")):
+            return None
+        # Limit to our top-level packages to avoid editor helpers or tests if desired
+        allowed_prefixes = (
+            "roguelike_game",
+            "roguelike_engine",
+            "roguelike_editors",
+            "minigames",
+        )
+        if not any(mod_name.startswith(pref + ".") or mod_name == pref for pref in allowed_prefixes):
+            return None
+        return p
+    except Exception:
+        return None
+
+
+def _should_reload_py(path: Path, *, force: bool) -> bool:
+    try:
+        mtime = path.stat().st_mtime
+    except Exception:
+        return False
+    if force:
+        prev = _PY_FILE_MTIMES.get(path)
+        _PY_FILE_MTIMES[path] = mtime
+        return True
+    prev = _PY_FILE_MTIMES.get(path)
+    if prev is None or mtime > prev:
+        _PY_FILE_MTIMES[path] = mtime
+        return True
+    return False
+
+
+def reload_changed_python_modules(*, force: bool = False) -> int:
+    """Reload changed Python modules under src/ using importlib.reload.
+
+    Notes:
+    - Python hot-reload updates module objects, but existing bound names (e.g.,
+      `from mod import func`) will NOT update automatically. Prefer module-level
+      accesses (`import mod; mod.func()`).
+    - We reload deeper modules first to reduce dependency churn.
+    """
+    # Collect candidate modules with their paths
+    candidates: list[tuple[str, object, Path]] = []
+    for name, mod in list(sys.modules.items()):
+        if not mod:
+            continue
+        p = _module_in_project(name, mod)
+        if p is None:
+            continue
+        if _should_reload_py(p, force=force):
+            candidates.append((name, mod, p))
+
+    # Sort by package depth (deeper first)
+    candidates.sort(key=lambda t: t[0].count("."), reverse=True)
+
+    reloaded = 0
+    for name, mod, p in candidates:
+        try:
+            importlib.reload(mod)
+            reloaded += 1
+            logger.info("[hot_reload] Code reloaded: %s (%s)", name, p.name)
+        except Exception:
+            logger.exception("[hot_reload] Failed reloading module: %s", name)
+    if reloaded == 0 and candidates:
+        # Candidates exist but mtimes did not surpass cache (could be same-second). Force update cache.
+        for _n, _m, path in candidates:
+            try:
+                _PY_FILE_MTIMES[path] = path.stat().st_mtime
+            except Exception:
+                pass
+    return reloaded
+
+
+def reload_all_game_data_and_code(game, *, force: bool = False) -> Dict[str, int]:
+    """Reload Python code (under src/) and all JSON-backed game data.
+
+    Returns a dict summary that includes 'Code' key for modules reloaded.
+    """
+    code_cnt = reload_changed_python_modules(force=force)
+    data_summary = reload_all_game_data(game, force=force)
+    try:
+        summary: Dict[str, int] = {"Code": int(code_cnt)}
+        summary.update({k: int(v or 0) for k, v in (data_summary or {}).items()})
+    except Exception:
+        summary = {"Code": int(code_cnt)}
+    return summary
