@@ -246,19 +246,48 @@ def _reload_spawners(game) -> int:
         try:
             from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
             sys = None
-            for s in getattr(world, 'update_systems', []) or []:
-                if isinstance(s, SpawnerPlacementSystem):
-                    sys = s
-                    break
+            systems = list(getattr(world, 'update_systems', []) or [])
+            # 1) Try direct isinstance (works when class identity unchanged)
+            for s in systems:
+                try:
+                    if isinstance(s, SpawnerPlacementSystem):
+                        sys = s
+                        break
+                except Exception:
+                    continue
+            # 2) Fallback: match by class name or duck-typing to survive hot-reload
+            if sys is None:
+                for s in systems:
+                    try:
+                        if type(s).__name__ == 'SpawnerPlacementSystem':
+                            sys = s
+                            break
+                    except Exception:
+                        continue
+            if sys is None:
+                for s in systems:
+                    try:
+                        if hasattr(s, 'update') and hasattr(s, '_loaded') and hasattr(s, '_templates') and hasattr(s, '_waves'):
+                            mod = getattr(type(s), '__module__', '') or ''
+                            if 'spawner_placement_system' in mod:
+                                sys = s
+                                break
+                    except Exception:
+                        continue
             if sys is not None:
                 try:
                     sys._loaded = False
-                    # Clear internal caches to be safe
                     setattr(sys, '_templates', {})
                     setattr(sys, '_waves', {})
-                    # Place immediately so user sees results right after F1
                     sys.update(world)
-                    # After update, count placed spawners
+                    created = len(world.components.get('SpawnerConfig', {}) or {})
+                except Exception:
+                    pass
+            else:
+                # 3) Last resort: create a transient placement system instance and run it once
+                try:
+                    tmp = SpawnerPlacementSystem()
+                    tmp.update(world)
                     created = len(world.components.get('SpawnerConfig', {}) or {})
                 except Exception:
                     pass
@@ -467,8 +496,96 @@ def reload_all_game_data_and_code(game, *, force: bool = False) -> Dict[str, int
 
     Returns a dict summary that includes 'Code' key for modules reloaded.
     """
+    # Preserve editor/debug flags and UI state that gate overlays (e.g., spawner F3) across reload
+    prev_debug_spawner = False
+    prev_spawner_editor_active = False
+    prev_spawner_ui_state: dict[str, object] = {}
+    prev_spawner_editor_visible = False
+    try:
+        import roguelike_engine.config.config as _cfg
+        prev_debug_spawner = bool(getattr(_cfg, 'DEBUG_SPAWNER', False))
+    except Exception:
+        prev_debug_spawner = False
+    try:
+        world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+        if world is not None and hasattr(world, 'state'):
+            st = world.state
+            prev_spawner_editor_active = bool(getattr(st, 'spawner_editor_active', False))
+            # Snapshot commonly used UI state keys so UX persists after reload
+            for k in (
+                'spawner_editor_hovered_eid',
+                'spawner_selected_eid',
+                'spawner_remove_candidate_eid',
+                'spawner_info_pos',
+                'spawner_input_suppressed',
+            ):
+                if hasattr(st, k):
+                    prev_spawner_ui_state[k] = getattr(st, k)
+        # Snapshot UI editor visibility (controller/model)
+        try:
+            se = getattr(game, 'spawner_editor', None)
+            prev_spawner_editor_visible = bool(getattr(getattr(se, 'model', None), 'visible', False))
+        except Exception:
+            prev_spawner_editor_visible = False
+    except Exception:
+        prev_spawner_editor_active = False
+
     code_cnt = reload_changed_python_modules(force=force)
     data_summary = reload_all_game_data(game, force=force)
+
+    # Restore flags/state so overlays continue to render without requiring another F3
+    try:
+        import roguelike_engine.config.config as _cfg2
+        # If either gate was previously on, force DEBUG_SPAWNER True to ensure overlays draw
+        force_on = bool(prev_debug_spawner or prev_spawner_editor_active)
+        setattr(_cfg2, 'DEBUG_SPAWNER', bool(prev_debug_spawner or force_on))
+    except Exception:
+        pass
+    try:
+        world2 = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+        if world2 is not None and hasattr(world2, 'state'):
+            # If either gate was previously on, keep editor_active True for robust gating
+            setattr(world2.state, 'spawner_editor_active', bool(prev_spawner_editor_active or prev_debug_spawner))
+            # Restore UI state snapshot
+            try:
+                for k, v in (prev_spawner_ui_state or {}).items():
+                    setattr(world2.state, k, v)
+            except Exception:
+                pass
+        # Restore editor UI visibility
+        try:
+            se2 = getattr(game, 'spawner_editor', None)
+            if se2 is not None and hasattr(se2, 'model'):
+                setattr(se2.model, 'visible', bool(prev_spawner_editor_visible or prev_spawner_editor_active or prev_debug_spawner))
+        except Exception:
+            pass
+        # Force-enable DEBUG_SPAWNER on any overlay modules that kept old config alias
+        try:
+            if prev_spawner_editor_active or prev_debug_spawner:
+                for _mn in (
+                    'roguelike_game.ecs.systems.rendering.spawner.spawner_anchor_debug_system',
+                    'roguelike_game.ecs.systems.rendering.spawner.spawner_info_overlay_system',
+                    'roguelike_game.ecs.systems.rendering.spawner.collider_velocity_debug_system',
+                    'roguelike_game.ecs.systems.rendering.spawner_debug_system',
+                ):
+                    try:
+                        _m = __import__(_mn, fromlist=['*'])
+                        _cfg_alias = getattr(_m, 'config', None)
+                        if _cfg_alias is not None:
+                            setattr(_cfg_alias, 'DEBUG_SPAWNER', True)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Ensure spawners exist if the component map is empty after reload (edge case)
+        try:
+            comps2 = getattr(world2, 'components', {}) if world2 is not None else {}
+            if not (comps2.get('SpawnerConfig') or {}):
+                _ = _reload_spawners(game)
+        except Exception:
+            pass
+    except Exception:
+        pass
     try:
         summary: Dict[str, int] = {"Code": int(code_cnt)}
         summary.update({k: int(v or 0) for k, v in (data_summary or {}).items()})

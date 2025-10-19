@@ -3,12 +3,16 @@ Centralized logging configuration for the RogueLike project.
 Adds colorized console output and optional rotating file logging.
 """
 
+from __future__ import annotations
+
 import logging
 import logging.config
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import os
 from datetime import datetime
+import re
+import time
 
 # ANSI color codes
 RESET = "\033[0m"
@@ -45,6 +49,84 @@ class ColorFormatter(logging.Formatter):
         # Otros niveles: incluir nombre del logger
         name_part  = f"{COLOR_NAME}[{record.name}]{RESET}"
         return f"{time_part}{level_part}{name_part}: {msg_part}"
+
+
+class RateLimitFilter(logging.Filter):
+    """Rate-limit duplicate log messages per logger prefix and level.
+
+    - Maintains a per-key (logger prefix, level, normalized message) state.
+    - Suppresses logs within a time window, counting how many were suppressed.
+    - On first allowed log after the window, optionally appends "; suppressed=N".
+
+    Normalization removes any trailing "suppressed=\d+" to make keys stable even
+    when upstream code already aggregates duplicates.
+    """
+
+    _SUPPRESSED_RE = re.compile(r";?\s*suppressed=\d+")
+
+    def __init__(
+        self,
+        *,
+        default_window_ms: int = 0,
+        rules: list[tuple[str, int]] | None = None,
+    ) -> None:
+        """Create the filter.
+
+        Args:
+            default_window_ms: Window in ms for logs without a matching rule. 0 disables.
+            rules: List of (logger_name_prefix, window_ms).
+        """
+        super().__init__()
+        self.default_window_ms = int(default_window_ms) if default_window_ms else 0
+        self.rules = [(p, int(w)) for p, w in (rules or []) if int(w) > 0]
+        # key -> (last_ms, suppressed_count)
+        self._state: dict[tuple[str, int, str], tuple[int, int]] = {}
+
+    @staticmethod
+    def _normalize_message(msg: str) -> str:
+        """Strip variable suppressed counters to stabilize dedup keys."""
+        return RateLimitFilter._SUPPRESSED_RE.sub("", msg).strip()
+
+    def _window_for(self, record: logging.LogRecord) -> tuple[str, int]:
+        """Return (matched_prefix, window_ms) for the record."""
+        name = record.name or ""
+        for prefix, win in self.rules:
+            if name.startswith(prefix):
+                return prefix, win
+        return "", self.default_window_ms
+
+    def filter(self, record: logging.LogRecord) -> bool:  # noqa: D401
+        """Return True to allow the record, False to suppress within window."""
+        prefix, window_ms = self._window_for(record)
+        if window_ms <= 0:
+            return True
+
+        # Build a stable message for keying
+        try:
+            # getMessage() safely formats with args if present
+            rendered = record.getMessage()
+        except Exception:
+            rendered = str(record.msg)
+        normalized = self._normalize_message(rendered)
+
+        key = (prefix or record.name or "", int(record.levelno), normalized)
+        now_ms = int(time.monotonic() * 1000)
+        last_ms, suppressed = self._state.get(key, (-10_000_000, 0))
+
+        if now_ms - last_ms >= window_ms:
+            # Allow and report how many were suppressed, but avoid duplicating
+            # downstream "suppressed=" if it already exists in the message.
+            if suppressed > 0 and "suppressed=" not in rendered:
+                new_msg = f"{rendered}; suppressed={suppressed}"
+                record.msg = new_msg
+                record.args = None
+            # Reset window
+            self._state[key] = (now_ms, 0)
+            return True
+        else:
+            # Suppress and accumulate count
+            self._state[key] = (last_ms, suppressed + 1)
+            return False
 
 def build_log_filepath(base_name: str, directory: str = "logs", extension: str = "log", now_dt: datetime | None = None) -> Path:
     """
@@ -100,6 +182,29 @@ def init_logging(config_path: str = None, level: str = "INFO", logfile: str = No
             level=getattr(logging, level.upper(), logging.INFO),
             handlers=handlers,
         )
+        # Install rate-limit filter(s)
+        try:
+            # Read environment overrides
+            spawner_ms_env = os.getenv("RL_RATELIMIT_SPAWNER_MS")
+            spawner_ms = int(spawner_ms_env) if spawner_ms_env else 5000
+            default_ms_env = os.getenv("RL_RATELIMIT_DEFAULT_MS")
+            default_ms = int(default_ms_env) if default_ms_env else 0
+
+            rate_filter = RateLimitFilter(
+                default_window_ms=default_ms,
+                rules=[
+                    ("roguelike_editors.spawner", spawner_ms),
+                ],
+            )
+
+            console_handler.addFilter(rate_filter)
+            # If file handler exists, also add the filter to it (last in list)
+            for h in handlers:
+                if isinstance(h, RotatingFileHandler):
+                    h.addFilter(rate_filter)
+        except Exception:
+            # Filters are optional; logging must not crash
+            pass
         # Optional per-module level overrides via env vars
         # RL_LOG_LEVEL_SPELLS or RL_SPELLS_LOG_LEVEL -> applies to 'roguelike_editors.spells' and children
         try:

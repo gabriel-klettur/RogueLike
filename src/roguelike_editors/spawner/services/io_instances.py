@@ -7,39 +7,69 @@ import logging
 
 from . import paths as paths
 from .ids import ensure_instance_ids
-from .logutil import dedup_should_log
 
 logger = logging.getLogger(__name__)
+
+
+# Simple mtime-aware cache for instances JSON to avoid repeated disk reads
+_INST_CACHE_PATH: str | None = None
+_INST_CACHE_MTIME: float | None = None
+_INST_CACHE_DATA: List[Dict[str, Any]] | None = None
+
+
+def _safe_mtime(path: str) -> float | None:
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return None
 
 
 def load_instances_json() -> List[Dict[str, Any]]:
     path = paths.instances_path()
     try:
+        # Fast path: serve from cache if mtime unchanged
+        mtime = _safe_mtime(path)
+        global _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA
+        if (
+            _INST_CACHE_PATH == path
+            and _INST_CACHE_DATA is not None
+            and _INST_CACHE_MTIME is not None
+            and mtime is not None
+            and _INST_CACHE_MTIME == mtime
+        ):
+            return _INST_CACHE_DATA
+
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         if not isinstance(data, list):
+            _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, mtime, []
             return []
         # Ensure every instance has a unique 'id' for robust identification
         changed, fixed = ensure_instance_ids(data)
-        # Debug: de-duplicate noisy logs within a short window
-        key = f"load_instances_json:{path}"
-        allow, suppressed = dedup_should_log(key, window_ms=2000)
+        # Log; centralized RateLimitFilter will throttle repeated messages
         if changed:
             logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}; changed_ids=True")
-        elif allow:
-            extra = f"; suppressed={suppressed}" if suppressed else ""
-            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}{extra}")
+        else:
+            logger.debug(f"[spawner.persistence] load_instances_json: read {len(data)} entries from {path}")
         if changed:
             write_instances_json(fixed)
+            # After write, refresh mtime and cache with the fixed data
+            mtime2 = _safe_mtime(path)
+            _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, mtime2, fixed
             return fixed
+        # Update cache with freshly read data
+        _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, mtime, data
         return data
     except FileNotFoundError:
+        _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, None, []
         return []
     except json.JSONDecodeError:
         logger.debug("load_instances_json: JSON decode error", exc_info=True)
+        _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, _safe_mtime(path), []
         return []
     except OSError:
         logger.debug("load_instances_json: OS error while reading file", exc_info=True)
+        _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA = path, _safe_mtime(path), []
         return []
 
 
@@ -110,3 +140,11 @@ def write_instances_json(data: List[Dict[str, Any]]) -> None:
 
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(deduped, f, ensure_ascii=False, indent=2)
+    # Update cache post-write to reflect latest contents
+    try:
+        global _INST_CACHE_PATH, _INST_CACHE_MTIME, _INST_CACHE_DATA
+        _INST_CACHE_PATH = path
+        _INST_CACHE_MTIME = _safe_mtime(path)
+        _INST_CACHE_DATA = deduped
+    except Exception:
+        pass

@@ -59,6 +59,27 @@ class SpawnerListInstancesEventHandler(ListPanelEventHandler):
                 self._hold_pressed = False
                 return True
 
+        # Toggle agrupado por zona con teclado (G/Z)
+        if et == pygame.KEYDOWN:
+            try:
+                key = getattr(event, 'key', None)
+                if key in (getattr(pygame, 'K_g', None), getattr(pygame, 'K_z', None)):
+                    controller.toggle_group_by_zone()
+                    return True
+            except Exception:
+                pass
+
+        # Evitar seleccionar encabezados (filas sin instancia) al hacer click
+        if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+            if rect.collidepoint(pos):
+                gidx = compute_gidx(pos[1])
+                try:
+                    if gidx is not None and not controller.is_row_instance(gidx):
+                        # Consumir el click para no seleccionar encabezados
+                        return True
+                except Exception:
+                    pass
+
         # Detectar click sobre el segmento de coordenadas
         if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
             if rect.collidepoint(pos):
@@ -71,7 +92,10 @@ class SpawnerListInstancesEventHandler(ListPanelEventHandler):
                     if seg.collidepoint(local_x, local_y):
                         # Calcular coords mundiales (px) del centro del tile
                         try:
-                            inst = controller._instances[gidx]
+                            inst_idx = controller.instance_index_for_row(gidx)
+                            if inst_idx is None:
+                                return True
+                            inst = controller._instances[inst_idx]
                             zone = inst.get('zone')
                             tile = inst.get('tile', [0, 0])
                             ox, oy = global_map_settings.zone_offsets.get(zone, (0, 0))

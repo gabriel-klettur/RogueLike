@@ -8,7 +8,6 @@ from roguelike_game.ecs.utils.debug_draw import (
     auto_bottom_band_metrics,
 )
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
-from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 
 
 class ColliderAndVelocityDebugSystem:
@@ -100,7 +99,7 @@ class ColliderAndVelocityDebugSystem:
             if not pos:
                 continue
             zoom = getattr(camera, 'zoom', 1.0) or 1.0
-            if isinstance(feet, CircleCollider):
+            if hasattr(feet, "radius"):
                 # Draw true circle overlay and outline
                 cx_w, cy_w, r_w = get_circle_world(pos.x, pos.y, feet)
                 cx_s, cy_s = camera.apply((cx_w, cy_w))

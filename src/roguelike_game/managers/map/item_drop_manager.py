@@ -8,11 +8,14 @@ class ItemDropManager:
     _instances = {}
 
     def __new__(cls, path: str):
-        if path in cls._instances:
-            return cls._instances[path]
-        instance = super(ItemDropManager, cls).__new__(cls)
-        cls._instances[path] = instance
-        return instance
+        inst = cls._instances.get(path)
+        if inst is not None and not isinstance(inst, cls):
+            inst = None
+        if inst is None:
+            instance = object.__new__(cls)
+            cls._instances[path] = instance
+            return instance
+        return inst
     """
     Gestor de drops de ítems en el mapa, persiste en un JSON.
     """
