@@ -30,6 +30,30 @@
           -164,
           -228
         ]
+      },
+      "WaitClear": {
+        "instance_id": 373,
+        "template_id": 157,
+        "offset": [
+          -162,
+          -226
+        ]
+      },
+      "WaitCooldown": {
+        "instance_id": 374,
+        "template_id": 155,
+        "offset": [
+          -165,
+          -223
+        ]
+      },
+      "AwaitTrigger": {
+        "instance_id": 375,
+        "template_id": 157,
+        "offset": [
+          -163,
+          -227
+        ]
       }
     },
     "id": "survival_10_forest_14_9"

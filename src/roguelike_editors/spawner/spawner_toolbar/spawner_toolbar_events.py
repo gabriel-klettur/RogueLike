@@ -3,6 +3,33 @@ from __future__ import annotations
 import logging
 logger = logging.getLogger(__name__)
 
+from .spawner_toolbar_model import (
+    TOOL_SPAWNER_INSTANCES,
+    TOOL_SPAWNER_TEMPLATES,
+    TOOL_TUTORIAL_SPAWNER,
+    TOOL_UNDO,
+    TOOL_REDO,
+)
+from roguelike_editors.spawner.spawner_toolbar.buttons.spawner_instances_button.spawner_instances_button_events import (
+    SpawnerInstancesButtonEvents,
+)
+from roguelike_editors.spawner.spawner_toolbar.buttons.spawner_templates_button.spawner_templates_button_events import (
+    SpawnerTemplatesButtonEvents,
+)
+
+def _apply_ui_state(controller, ensure_manager: bool = False) -> None:
+    try:
+        from roguelike_editors.spawner.spawner_toolbar.service.ui_state import (
+            apply_ui_state_basic,
+            apply_ui_state_ensure_manager,
+        )
+        if ensure_manager:
+            apply_ui_state_ensure_manager(controller)
+        else:
+            apply_ui_state_basic(controller)
+    except Exception:
+        pass
+
 
 class SpawnerToolbarEventHandler:
     def handle_event(self, controller, event) -> bool:
@@ -20,24 +47,9 @@ class SpawnerToolbarEventHandler:
 
         # Toggle 'spawner_list' with the 'M' key (kept for parity with previous manager toggle)
         if getattr(event, 'type', None) == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_m:
-            new_state = None if controller.is_active('spawner_instances') else 'spawner_instances'
-            controller.set_active(new_state)
-            logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_instances' -> active_tool=%s", new_state)
-            # Apply UI state immediately so panel visibility reflects the change this frame
-            try:
-                from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
-                editor = getattr(controller, 'editor_controller', None)
-                if editor is not None:
-                    # Clear hold so UI gates do not hide panels
-                    try:
-                        setattr(editor.model, 'hold_focus_active', False)
-                    except Exception:
-                        pass
-                    state = compute_ui_state(editor)
-                    apply_ui_state(editor, state)
-            except Exception:
-                pass
-            return True
+            ok = SpawnerInstancesButtonEvents.on_key_toggle(controller)
+            logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_instances'")
+            return bool(ok)
 
         toolbar = getattr(controller.view, 'toolbar', None)
         if toolbar is None:
@@ -79,14 +91,14 @@ class SpawnerToolbarEventHandler:
             except Exception:
                 pass
             # Tutorial (toggle Spawner Tutorial panel)
-            rect = icon_rects.get('tutorial_spawner')
+            rect = icon_rects.get(TOOL_TUTORIAL_SPAWNER)
             if rect and rect.collidepoint(pos):
                 try:
                     editor = getattr(controller, 'editor_controller', None)
                     tut = getattr(editor, 'tutorial', None)
                     if tut is not None:
                         # Toggle toolbar active state
-                        new_state = None if controller.is_active('tutorial_spawner') else 'tutorial_spawner'
+                        new_state = None if controller.is_active(TOOL_TUTORIAL_SPAWNER) else TOOL_TUTORIAL_SPAWNER
                         controller.set_active(new_state)
                         if new_state is None:
                             tut.deactivate()
@@ -96,61 +108,25 @@ class SpawnerToolbarEventHandler:
                     pass
                 return True
             # Undo
-            rect = icon_rects.get('undo')
+            rect = icon_rects.get(TOOL_UNDO)
             if rect and rect.collidepoint(pos):
                 controller.on_undo()
                 return True
             # Redo
-            rect = icon_rects.get('redo')
+            rect = icon_rects.get(TOOL_REDO)
             if rect and rect.collidepoint(pos):
                 controller.on_redo()
                 return True
             # Spawner list activate (idempotent)
-            rect = icon_rects.get('spawner_instances')
+            rect = icon_rects.get(TOOL_SPAWNER_INSTANCES)
             if rect and rect.collidepoint(pos):
-                new_state = 'spawner_instances'
-                controller.set_active(new_state)
-                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_instances' -> active_tool=%s", new_state)
-                # Apply UI state immediately so panel visibility reflects the change this frame
-                try:
-                    from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
-                    editor = getattr(controller, 'editor_controller', None)
-                    if editor is not None:
-                        try:
-                            setattr(editor.model, 'hold_focus_active', False)
-                        except Exception:
-                            pass
-                        state = compute_ui_state(editor)
-                        apply_ui_state(editor, state)
-                except Exception:
-                    pass
-                return True
+                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_instances'")
+                return bool(SpawnerInstancesButtonEvents.on_click(controller))
             # Spawner templates (manager) activate (idempotent)
-            rect = icon_rects.get('spawner_templates')
+            rect = icon_rects.get(TOOL_SPAWNER_TEMPLATES)
             if rect and rect.collidepoint(pos):
-                new_state = 'spawner_templates'
-                controller.set_active(new_state)
-                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_templates' -> active_tool=%s", new_state)
-                # Apply UI state immediately so manager panel becomes visible in the same frame
-                try:
-                    from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
-                    editor = getattr(controller, 'editor_controller', None)
-                    if editor is not None:
-                        # Clear hold flag that would gate manager visibility
-                        try:
-                            setattr(editor.model, 'hold_focus_active', False)
-                        except Exception:
-                            pass
-                        # Also set manager visible directly for immediate feedback
-                        try:
-                            editor.spawner_manager.set_visible(new_state == 'spawner_templates')
-                        except Exception:
-                            pass
-                        state = compute_ui_state(editor)
-                        apply_ui_state(editor, state)
-                except Exception:
-                    pass
-                return True
+                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_templates'")
+                return bool(SpawnerTemplatesButtonEvents.on_click(controller))
             # Clicked toolbar background: block
             logger.debug("[SpawnerToolbar][CLICK BG] blocked (no action)")
             return True

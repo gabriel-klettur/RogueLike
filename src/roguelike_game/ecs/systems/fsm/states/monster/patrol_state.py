@@ -63,13 +63,24 @@ class PatrolState(State):
         player_pos = world.player_position
         rng_cmp = world.components.get('AggroRange', {}).get(eid)
         if player_pos and rng_cmp:
-            dx_p = pos.x - player_pos.x
-            dy_p = pos.y - player_pos.y
-            if dx_p*dx_p + dy_p*dy_p <= (rng_cmp.radius * TILE_SIZE) ** 2:
-                npc_state = world.components.get('NPCState', {}).get(eid)
-                if npc_state:
-                    npc_state.fsm.change_state(AggroState(), entity)
-                return
+            try:
+                player_id = world.player_entity
+                ph = world.components.get('Health', {}).get(player_id)
+                player_dead = (ph is None) or (ph.current_hp <= 0)
+                has_death_timer = player_id in world.components.get('DeathTimer', {})
+                if player_dead or has_death_timer:
+                    pass
+                else:
+                    dx_p = pos.x - player_pos.x
+                    dy_p = pos.y - player_pos.y
+                    if dx_p*dx_p + dy_p*dy_p <= (rng_cmp.radius * TILE_SIZE) ** 2:
+                        npc_state = world.components.get('NPCState', {}).get(eid)
+                        if npc_state:
+                            npc_state.fsm.change_state(AggroState(), entity)
+                        return
+            except Exception:
+                pass
+
         # Si está esperando en un waypoint, consumir dwell y mantener anim/velocidad
         if self.waiting:
             dt_val = dt or 0.0

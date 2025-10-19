@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional, Tuple
+from .spawner_toolbar_model import ICON_PATHS
 
 
 class SpawnerToolbarView:
@@ -25,16 +26,9 @@ class SpawnerToolbarView:
         if base is None:
             base = pygame.Surface(icon_size, pygame.SRCALPHA)
             base.fill((180, 180, 180, 255))
-        mapping = {
-            'undo': 'assets/ui/undo.png',
-            'spawner_instances': 'assets/ui/spawner_editor/spawner_list.png',
-            'spawner_templates': 'assets/ui/spawner_editor/spawner_manager.png',
-            'tutorial_spawner': 'assets/ui/tutorials_button.png',
-            'redo': 'assets/ui/redo.png',
-        }
         icons = {}
         for tool in getattr(model, 'buttons', []) or []:
-            surf = mapping.get(tool)
+            surf = ICON_PATHS.get(tool)
             icon = None
             if surf:
                 icon = IconCache.get_icon(surf, icon_size)
