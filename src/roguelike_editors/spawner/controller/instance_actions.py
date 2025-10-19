@@ -9,7 +9,7 @@ def on_instance_selection_changed(controller: Any, selected_index: Optional[int]
     try:
         active_tool = getattr(getattr(controller, 'spawner_toolbar', None), 'model', None)
         active_tool = getattr(active_tool, 'active_tool', None)
-        instances_visible = (active_tool == 'spawner_list')
+        instances_visible = (active_tool == 'spawner_instances')
     except Exception:
         instances_visible = True
     try:

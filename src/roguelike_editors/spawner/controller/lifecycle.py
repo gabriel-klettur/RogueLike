@@ -58,6 +58,6 @@ def toggle_visible(controller: Any) -> None:
         try:
             tb = getattr(getattr(controller, 'spawner_toolbar', None), 'model', None)
             if tb is not None and getattr(tb, 'active_tool', None) is None:
-                tb.active_tool = 'spawner_list'
+                tb.active_tool = 'spawner_instances'
         except Exception:
             pass

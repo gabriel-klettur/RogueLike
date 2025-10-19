@@ -1,5 +1,5 @@
 {
-  "e5c9efe5-a987-4be7-b496-14a643128dfd": {
+  "2932094b-5a35-45dd-841d-083e7bfa8c17": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       null,
@@ -25,11 +25,11 @@
     ],
     "schema_version": "1.0.0"
   },
-  "69499b8c-dd00-4b9a-b055-2ca31d2fc4ce": {
+  "71fbaefd-e477-49ee-8a55-400db1d96b43": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
-        "item": "experience_orb",
+        "item": "wood",
         "quantity": 1
       },
       null,

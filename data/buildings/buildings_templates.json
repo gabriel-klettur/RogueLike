@@ -3078,5 +3078,31 @@
             256
         ],
         "id": 256
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_1.png"
+        },
+        "solid": true,
+        "split_ratio": 0.616,
+        "collider_scope": "CG",
+        "original_scale": [
+            153,
+            207
+        ],
+        "id": 257
+    },
+    {
+        "assets": {
+            "idle": "assets/buildings/vegetation/tree_3.png"
+        },
+        "solid": true,
+        "split_ratio": 0.66,
+        "collider_scope": "CG",
+        "original_scale": [
+            216,
+            276
+        ],
+        "id": 258
     }
 ]

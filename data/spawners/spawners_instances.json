@@ -3,8 +3,8 @@
     "template_id": "survival_10",
     "zone": "Forest",
     "tile": [
-      24,
-      16
+      25,
+      18
     ],
     "overrides": {
       "visible_in_game": true,
@@ -20,6 +20,16 @@
         ],
         "flash_duration_s": 0.08,
         "hp_reset_on_enter": "set_to_max"
+      }
+    },
+    "visuals": {
+      "Finished": {
+        "instance_id": 372,
+        "template_id": 158,
+        "offset": [
+          -164,
+          -228
+        ]
       }
     },
     "id": "survival_10_forest_14_9"

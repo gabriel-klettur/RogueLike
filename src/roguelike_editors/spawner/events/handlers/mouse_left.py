@@ -104,7 +104,7 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
             try:
                 st = getattr(h.controller, 'spawner_toolbar', None)
                 if st is not None and hasattr(st, 'model'):
-                    st.model.active_tool = 'spawner_list'
+                    st.model.active_tool = 'spawner_instances'
             except Exception:
                 pass
             try:

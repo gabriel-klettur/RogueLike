@@ -66,6 +66,26 @@ class ECSWorld:
         logger.debug(f" Update systems: {[type(s).__name__ for s in self.update_systems]}")
         logger.debug(f" Render systems: {[type(s).__name__ for s in self.render_systems]}")
 
+    def reinit_systems_preserving_state(self):
+        """Reinstancia los sistemas de ECS manteniendo el estado del mundo.
+
+        Útil tras hot-reload de código para que las instancias de sistemas
+        apunten a las definiciones de clase actualizadas. No toca entidades,
+        componentes ni índices espaciales.
+        """
+        try:
+            self._init_systems()
+            try:
+                logger.info("[ECSWorld] Systems reinitialized after hot-reload")
+            except Exception:
+                pass
+        except Exception:
+            # Nunca romper el juego por reinit fallido
+            try:
+                logger.exception("[ECSWorld] Failed to reinitialize systems after hot-reload")
+            except Exception:
+                pass
+
     def create_entity(self):
         eid = self.next_entity_id
         self.next_entity_id += 1

@@ -83,7 +83,7 @@ class SpawnerEditorController:
         self.tutorial = SpawnerTutorialPanelController(self, self.view)
         # Ensure default tool is the Instances list so panels are visible on startup
         try:
-            self.spawner_toolbar.set_active('spawner_list')
+            self.spawner_toolbar.set_active('spawner_instances')
         except Exception:
             pass
         # Wire Add button callback from Templates list to begin placement mode

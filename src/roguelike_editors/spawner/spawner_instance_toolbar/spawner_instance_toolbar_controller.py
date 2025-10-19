@@ -106,7 +106,7 @@ class SpawnerInstanceToolbarController:
             try:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
-                    tb.model.active_tool = 'spawner_list'
+                    tb.model.active_tool = 'spawner_instances'
             except AttributeError:
                 pass
 
@@ -165,11 +165,11 @@ class SpawnerInstanceToolbarController:
                 self.editor_controller.model.pending_delete_confirm = None
             except AttributeError:
                 pass
-            # Activate 'spawner_list' so instances panel shows again
+            # Activate 'spawner_instances' so instances panel shows again
             try:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
-                    tb.model.active_tool = 'spawner_list'
+                    tb.model.active_tool = 'spawner_instances'
             except Exception:
                 pass
 

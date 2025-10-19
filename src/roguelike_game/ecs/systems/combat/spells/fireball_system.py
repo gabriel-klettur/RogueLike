@@ -160,11 +160,11 @@ class FireballSystem:
                 hit_pos = None
                 hit_shape = None
                 # Determinar si el target tiene al menos un MaskCollider
-                has_mask = any(isinstance(c, MaskCollider) for c in multi.colliders.values())
+                has_mask = any(hasattr(c, 'mask') for c in multi.colliders.values())
                 # 1) Intentar con máscaras (pixel-perfect) si existen
                 if has_mask:
                     for col in multi.colliders.values():
-                        if isinstance(col, MaskCollider):
+                        if hasattr(col, 'mask'):
                             bx = tpos.x + col.offset_x
                             by = tpos.y + col.offset_y
                             lx = int(pos.x - bx)
@@ -178,18 +178,19 @@ class FireballSystem:
                 # 2) Solo si NO hay máscaras, usar fallback a rectángulos
                 if not hit and not has_mask:
                     for col in multi.colliders.values():
-                        if not isinstance(col, MaskCollider):
-                            rect = pygame.Rect(
-                                tpos.x + col.offset_x,
-                                tpos.y + col.offset_y,
-                                getattr(col, 'width', 0),
-                                getattr(col, 'height', 0)
-                            )
-                            if rect.collidepoint(pos.x, pos.y):
-                                hit = True
-                                hit_pos = (float(pos.x), float(pos.y))
-                                hit_shape = 'rect'
-                                break
+                        if hasattr(col, 'mask'):
+                            continue
+                        rect = pygame.Rect(
+                            tpos.x + col.offset_x,
+                            tpos.y + col.offset_y,
+                            getattr(col, 'width', 0),
+                            getattr(col, 'height', 0)
+                        )
+                        if rect.collidepoint(pos.x, pos.y):
+                            hit = True
+                            hit_pos = (float(pos.x), float(pos.y))
+                            hit_shape = 'rect'
+                            break
 
                 if hit:
                     # Spawn preset-based explosion VFX at impact point (only if preset explicitly configured)

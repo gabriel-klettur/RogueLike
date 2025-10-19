@@ -881,7 +881,7 @@
     },
     {
         "id": 70,
-        "template_id": 55,
+        "template_id": 257,
         "zone": "Forest",
         "rel_x": 239,
         "rel_y": 386,
@@ -1129,7 +1129,7 @@
     },
     {
         "id": 85,
-        "template_id": 70,
+        "template_id": 258,
         "zone": "Forest",
         "rel_x": 36,
         "rel_y": 389,

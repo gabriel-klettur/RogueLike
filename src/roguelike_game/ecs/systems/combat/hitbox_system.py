@@ -174,6 +174,31 @@ class HitboxSystem:
                 # Never break combat on building processing issues
                 pass
 
+            # --- Interceptar proyectiles (Fireball) con el arco del hitbox ---
+            try:
+                fireballs = world.components.get('FireballComponent', {})
+                if fireballs:
+                    for fb_eid in list(fireballs.keys()):
+                        fpos = positions.get(fb_eid)
+                        if fpos is None:
+                            continue
+                        # Offset del punto de la fireball en coords de pantalla respecto al origen del hitmask
+                        fsx, fsy = camera.apply((fpos.x, fpos.y)) if camera is not None else (fpos.x, fpos.y)
+                        off_x = int(fsx - screen_left)
+                        off_y = int(fsy - screen_top)
+                        if 0 <= off_x < w and 0 <= off_y < h and hitmask.get_at((off_x, off_y)):
+                            # Impacto: eliminar fireball y publicar evento de depuración
+                            world.remove_entity(fb_eid)
+                            try:
+                                dbg = world.components.setdefault('DebugSpellHits', {})
+                                dq = dbg.setdefault('_queue', [])
+                                dq.append({'type': 'FB', 'src': int(fb_eid), 'target': int(eid), 'pos': (float(fpos.x), float(fpos.y)), 'shape': 'arc_clear'})
+                            except Exception:
+                                pass
+            except Exception:
+                # Nunca romper combate por fallos en limpieza de proyectiles
+                pass
+
             for target in list(healths.keys()):
                 if target == hb.owner or target in hb.hit_targets:
                     continue

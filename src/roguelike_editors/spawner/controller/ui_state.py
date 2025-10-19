@@ -32,7 +32,7 @@ def compute_ui_state(controller) -> UIState:
     manager_visible = bool(model.visible and (active_tool == 'spawner_manager') and not hold)
     instances_visible = bool(
         model.visible
-        and (active_tool == 'spawner_list')
+        and (active_tool == 'spawner_instances')
         and not hold
         and not getattr(model, 'add_mode_active', False)
         and not getattr(model, 'remove_mode_active', False)
@@ -137,7 +137,7 @@ def update_tutorial_pulses(controller, state: UIState) -> None:
     """Emit one-frame tutorial pulses when panels change visibility."""
     try:
         if (
-            controller.model.visible and (state.active_tool == 'spawner_list') and not state.hold
+            controller.model.visible and (state.active_tool == 'spawner_instances') and not state.hold
             and not getattr(controller.model, 'add_mode_active', False)
             and not getattr(controller.model, 'remove_mode_active', False)
             and not state.placing_active and not controller._instances_visible_last
@@ -154,7 +154,7 @@ def update_tutorial_pulses(controller, state: UIState) -> None:
 
 def maybe_refresh_instances_on_first_show(controller, state: UIState) -> None:
     """Refresh instances list when the Instances tool becomes visible."""
-    if (controller.model.visible and (state.active_tool == 'spawner_list')) and not controller._instances_visible_last:
+    if (controller.model.visible and (state.active_tool == 'spawner_instances')) and not controller._instances_visible_last:
         try:
             controller.spawner_instances.refresh_from_disk()
         except Exception:

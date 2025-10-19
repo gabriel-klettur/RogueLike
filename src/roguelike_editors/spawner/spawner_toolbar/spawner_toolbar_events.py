@@ -20,9 +20,9 @@ class SpawnerToolbarEventHandler:
 
         # Toggle 'spawner_list' with the 'M' key (kept for parity with previous manager toggle)
         if getattr(event, 'type', None) == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_m:
-            new_state = None if controller.is_active('spawner_list') else 'spawner_list'
+            new_state = None if controller.is_active('spawner_instances') else 'spawner_instances'
             controller.set_active(new_state)
-            logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_list' -> active_tool=%s", new_state)
+            logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_instances' -> active_tool=%s", new_state)
             # Apply UI state immediately so panel visibility reflects the change this frame
             try:
                 from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
@@ -106,11 +106,11 @@ class SpawnerToolbarEventHandler:
                 controller.on_redo()
                 return True
             # Spawner list activate (idempotent)
-            rect = icon_rects.get('spawner_list')
+            rect = icon_rects.get('spawner_instances')
             if rect and rect.collidepoint(pos):
-                new_state = 'spawner_list'
+                new_state = 'spawner_instances'
                 controller.set_active(new_state)
-                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_list' -> active_tool=%s", new_state)
+                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_instances' -> active_tool=%s", new_state)
                 # Apply UI state immediately so panel visibility reflects the change this frame
                 try:
                     from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state

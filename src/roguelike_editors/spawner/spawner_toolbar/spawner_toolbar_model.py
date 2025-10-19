@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 DEFAULT_BUTTONS: List[str] = [
-    "spawner_list",
+    "spawner_instances",
     "spawner_manager",  # debajo de spawner_list
     "tutorial_spawner",
     "undo",

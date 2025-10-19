@@ -61,12 +61,13 @@ class AnimationSystem:
                 mc = mc_map.get(eid)
                 if mc:
                     body = mc.colliders.get('body') if hasattr(mc, 'colliders') else None
-                    if isinstance(body, MaskCollider):
+                    if hasattr(body, 'mask'):
                         # 1) Intentar usar máscara precomputada en Animator
                         masks_map = getattr(animator, 'masks', {}) or {}
                         state_key = getattr(animator, 'current_state', None)
                         idx = getattr(animator, 'last_frame_idx', 0)
                         used_precomputed = False
+
                         if state_key and state_key in masks_map:
                             frames_masks = masks_map.get(state_key) or []
                             if 0 <= idx < len(frames_masks):

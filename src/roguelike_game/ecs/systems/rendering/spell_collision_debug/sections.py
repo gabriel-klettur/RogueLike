@@ -37,10 +37,10 @@ def debug_fireballs(world, screen: pygame.Surface, camera, markers) -> None:
             if not (tpos and multi):
                 continue
             hit_drawn = False
-            has_mask = any(isinstance(c, MaskCollider) for c in multi.colliders.values())
+            has_mask = any(hasattr(c, 'mask') for c in multi.colliders.values())
             if has_mask:
                 for collider in multi.colliders.values():
-                    if not isinstance(collider, MaskCollider):
+                    if not hasattr(collider, 'mask'):
                         continue
                     bx = tpos.x + collider.offset_x
                     by = tpos.y + collider.offset_y
@@ -67,7 +67,7 @@ def debug_fireballs(world, screen: pygame.Surface, camera, markers) -> None:
                         break
             else:
                 for collider in multi.colliders.values():
-                    if isinstance(collider, MaskCollider):
+                    if hasattr(collider, 'mask'):
                         continue
                     rect_w = build_collider_rect(tpos.x, tpos.y, collider)
                     if rect_w.collidepoint(pos.x, pos.y):
@@ -111,7 +111,7 @@ def debug_hitboxes(world, screen: pygame.Surface, camera, markers, seen_pairs: S
             if is_new:
                 seen_pairs.add(pair)
             for collider in multi.colliders.values():
-                if isinstance(collider, MaskCollider):
+                if hasattr(collider, 'mask'):
                     bx = tpos.x + collider.offset_x
                     by = tpos.y + collider.offset_y
                     outline_pts_w = mask_outline_world(collider.mask, bx, by)
@@ -232,7 +232,7 @@ def debug_lasers(world, screen: pygame.Surface, camera, markers, laser_prev_pair
                 if pair not in laser_prev_pairs:
                     multi = comps.get('MultiCollider', {}).get(tid)
                     if multi:
-                        mc = next((c for c in multi.colliders.values() if isinstance(c, MaskCollider)), None)
+                        mc = next((c for c in multi.colliders.values() if hasattr(c, 'mask')), None)
                         if mc is not None:
                             bx = tpos.x + mc.offset_x
                             by = tpos.y + mc.offset_y
@@ -283,7 +283,7 @@ def consume_debug_events(world, screen: pygame.Surface, camera, markers) -> None
             multi = comps.get('MultiCollider', {}).get(tid)
             if not (tpos and multi):
                 continue
-            mc = next((c for c in multi.colliders.values() if isinstance(c, MaskCollider)), None)
+            mc = next((c for c in multi.colliders.values() if hasattr(c, 'mask')), None)
             if mc is not None:
                 bx = tpos.x + mc.offset_x
                 by = tpos.y + mc.offset_y

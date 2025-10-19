@@ -28,7 +28,7 @@ class SpawnerTutorialPanelModel:
                 "Ambos se sitúan a la derecha de la toolbar principal."
             ),
             "highlight": [
-                {"kind": "toolbar_main", "item": "spawner_list"},
+                {"kind": "toolbar_main", "item": "spawner_instances"},
                 {"kind": "toolbar_main", "item": "spawner_manager"},
             ],
             "checklist": [

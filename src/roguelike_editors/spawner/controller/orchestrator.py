@@ -54,7 +54,7 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
         apply_ui_state(controller, state)
         update_tutorial_pulses(controller, state)
         maybe_refresh_instances_on_first_show(controller, state)
-        controller._instances_visible_last = bool(controller.model.visible and (state.active_tool == 'spawner_list'))
+        controller._instances_visible_last = bool(controller.model.visible and (state.active_tool == 'spawner_instances'))
         controller._manager_visible_last = bool(state.manager_visible)
 
         # Tutorial overlay primero para consumir ESC/clicks dentro
@@ -85,7 +85,7 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
         placing_active = bool(state.placing_active)
         if (
             controller.model.visible
-            and (state.active_tool == 'spawner_list')
+            and (state.active_tool == 'spawner_instances')
             and not getattr(controller.model, 'add_mode_active', False)
             and not getattr(controller.model, 'remove_mode_active', False)
             and not placing_active
@@ -123,12 +123,12 @@ def render(controller: Any, screen: pygame.Surface) -> None:
         # Sincronización de estado antes de render (por si hay toggles externos)
         state: UIState = compute_ui_state(controller)
         apply_ui_state(controller, state)
-        if (controller.model.visible and (state.active_tool == 'spawner_list')) and not controller._instances_visible_last:
+        if (controller.model.visible and (state.active_tool == 'spawner_instances')) and not controller._instances_visible_last:
             try:
                 controller.spawner_instances.refresh_from_disk()
             except Exception:
                 pass
-        controller._instances_visible_last = bool(controller.model.visible and (state.active_tool == 'spawner_list'))
+        controller._instances_visible_last = bool(controller.model.visible and (state.active_tool == 'spawner_instances'))
 
         # Mientras hold, mantener cámara centrada en target
         if state.hold and getattr(controller.model, 'hold_focus_target_px', None) is not None:

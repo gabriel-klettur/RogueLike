@@ -584,6 +584,12 @@ def reload_all_game_data_and_code(game, *, force: bool = False) -> Dict[str, int
                 _ = _reload_spawners(game)
         except Exception:
             pass
+        # Reinitialize ECS systems so hot-reloaded classes are picked up by instances
+        try:
+            if world2 is not None and hasattr(world2, 'reinit_systems_preserving_state'):
+                world2.reinit_systems_preserving_state()
+        except Exception:
+            pass
     except Exception:
         pass
     try:
