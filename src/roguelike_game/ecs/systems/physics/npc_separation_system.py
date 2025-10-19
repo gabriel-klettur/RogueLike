@@ -48,7 +48,7 @@ class NpcSeparationSystem:
             if not feet:
                 continue
             pos = pos_map[eid]
-            if isinstance(feet, CircleCollider):
+            if hasattr(feet, "radius"):
                 feet_circles[eid] = get_circle_world(pos.x, pos.y, feet)
             else:
                 feet_rects[eid] = build_collider_rect(pos.x, pos.y, feet)

@@ -68,7 +68,7 @@ class MapSettings:
     Configuración central para generación y carga de mapas.
     """
     # Flag para decidir tipo de carga de offsets: JSON o dinámico
-    use_zones_json: bool = False         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
+    use_zones_json: bool = True         #! Mas adelante deberiamos trabajar sobre el offset no dinamico.
 
     # Auto-ajuste de límites: expande global_width/global_height si es necesario
     auto_expand: bool = True
@@ -291,6 +291,12 @@ class MapSettings:
         new_h = max(self.global_height, max_y) + dy
         new_offsets = {n: (ox + dx, oy + dy) for n, (ox, oy) in offsets.items()}
         return new_w, new_h, new_offsets
+
+    def refresh_zone_offsets(self) -> None:
+        try:
+            self.__dict__.pop('zone_offsets', None)
+        except Exception:
+            pass
 
 # Instancia global para uso en toda la aplicación
 global_map_settings = MapSettings()

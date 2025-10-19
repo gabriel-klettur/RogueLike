@@ -1,16 +1,23 @@
 import pygame
 # Initialize font module to ensure SysFont works in tests
 pygame.font.init()
-# Wrap SysFont to ensure font module is initialized on each call
-_orig_sysfont = pygame.font.SysFont
+_orig_sysfont = getattr(pygame.font, "_original_SysFont", None) or pygame.font.SysFont
 import logging
 logger = logging.getLogger(__name__)
 
 def _safe_sysfont(*args, **kwargs):
     pygame.font.init()
     return _orig_sysfont(*args, **kwargs)
-
-pygame.font.SysFont = _safe_sysfont
+if not getattr(pygame.font, "_is_patched_sysfont", False):
+    try:
+        pygame.font._original_SysFont = _orig_sysfont
+    except Exception:
+        pass
+    pygame.font.SysFont = _safe_sysfont
+    try:
+        pygame.font._is_patched_sysfont = True
+    except Exception:
+        pass
 from typing import Any, Dict, Optional, Callable
 from roguelike_editors.items.items_picker_panel.items_picker_panel_model import ItemPickerPanelModel
 from roguelike_editors.items.items_picker_panel.items_picker_panel_view import ItemPickerPanelView

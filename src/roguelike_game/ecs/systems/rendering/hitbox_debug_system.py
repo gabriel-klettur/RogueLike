@@ -95,7 +95,7 @@ class HitboxDebugSystem:
                     continue
                 pygame.draw.rect(screen, (0, 0, 255), rect_s, 1)
                 # If it's a circle collider, draw its true circle (use cached surfaces)
-                if isinstance(collider, CircleCollider):
+                if hasattr(collider, "radius"):
                     cx, cy, r = get_circle_world(tpos.x, tpos.y, collider)
                     cx_s, cy_s = camera.apply((cx, cy))
                     radius = int(r)

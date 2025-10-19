@@ -189,7 +189,7 @@ class MovementCollisionSystem:
             nmulti = multi_map[nid]
             nfeet = nmulti.colliders.get('feet')
             if nfeet:
-                if isinstance(nfeet, CircleCollider):
+                if hasattr(nfeet, "radius"):
                     npc_feet_circles[nid] = get_circle_world(npos.x, npos.y, nfeet)
                 else:
                     npc_feet_rects[nid] = build_collider_rect(npos.x, npos.y, nfeet)
@@ -209,7 +209,7 @@ class MovementCollisionSystem:
                 continue
 
             # 2b) Resolver movimiento según tipo de collider
-            if isinstance(feet, CircleCollider):
+            if hasattr(feet, "radius"):
                 # Centro y radio actuales
                 cx, cy, r = get_circle_world(pos.x, pos.y, feet)
                 # Preparar conjuntos de NPCs contra los que colisionar (excluyendo self y estabilizados)

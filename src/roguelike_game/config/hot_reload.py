@@ -194,6 +194,18 @@ def _reload_tiles(game) -> int:
 def _reload_buildings(game) -> int:
     # Re-run BuildingsManager pipeline and invalidate spatial index
     try:
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            try:
+                setattr(global_map_settings, 'use_zones_json', True)
+            except Exception:
+                pass
+            try:
+                global_map_settings.refresh_zone_offsets()
+            except Exception:
+                pass
+        except Exception:
+            pass
         bm = getattr(game, 'buildings', None)
         if bm is None or not hasattr(bm, 'init_buildings'):
             logger.warning("[hot_reload] BuildingsManager not found; skipping buildings reload")

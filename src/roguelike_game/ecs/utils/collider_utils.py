@@ -10,7 +10,7 @@ def build_collider_rect(pos_x: float,
     Retorna el pygame.Rect ubicado en (pos_x,pos_y) con el offset y tamaño del collider.
     """
     # Soporta Collider y MaskCollider (usa mask.get_size()) y CircleCollider (devuelve su AABB)
-    if isinstance(collider, MaskCollider):
+    if hasattr(collider, "mask"):
         w, h = collider.mask.get_size()
         return pygame.Rect(
             pos_x + collider.offset_x,
@@ -18,7 +18,7 @@ def build_collider_rect(pos_x: float,
             w,
             h
         )
-    if isinstance(collider, CircleCollider):
+    if hasattr(collider, "radius"):
         cx, cy, r = get_circle_world(pos_x, pos_y, collider)
         return pygame.Rect(int(cx - r), int(cy - r), int(r * 2), int(r * 2))
     # Collider rectangular
