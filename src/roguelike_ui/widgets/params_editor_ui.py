@@ -1,6 +1,6 @@
 import json, os
 import pygame
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from jsonschema import Draft7Validator, ValidationError
 
 class ParamsEditorUI:

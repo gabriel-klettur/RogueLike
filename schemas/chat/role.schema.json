@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Role",
+  "type": "object",
+  "required": ["tools", "limits", "guardrails"],
+  "properties": {
+    "tools": {"type": "array", "items": {"type": "string"}},
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_tokens": {"type": "integer", "minimum": 1},
+        "temperature": {"type": "number", "minimum": 0, "maximum": 2}
+      },
+      "required": ["max_tokens", "temperature"],
+      "additionalProperties": true
+    },
+    "guardrails": {"type": "object"},
+    "dialogue": {
+      "type": "object",
+      "properties": {
+        "greet_on_open": {"type": "boolean"},
+        "goodbye_on_close": {"type": "boolean"},
+        "greet_lines": {"type": "array", "items": {"type": "string"}},
+        "goodbye_lines": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "online_style": {
+      "type": "object",
+      "properties": {
+        "humanize": {"type": "boolean"},
+        "decorate_sales_pitch": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -26,20 +26,22 @@ class ListController:
         """
         ed_model = self.editor_controller.model
         category = self.panel_model.current_category
-        use_default = getattr(ed_model, 'editing_side', 'active') == 'default' and category in ('player', 'monsters')
+        # Alias: tratar 'hostile' como 'monsters'
+        effective_category = 'monsters' if category in ('monsters', 'hostile') else category
+        use_default = getattr(ed_model, 'editing_side', 'active') == 'default' and effective_category in ('player', 'monsters')
         # Mostrar PLANTILLAS (templates) completas cuando está seleccionada la vista Default
-        if use_default and category == 'monsters':
+        if use_default and effective_category == 'monsters':
             default_monsters = ed_model.default_data.get('monsters', {}) or {}
             return self._get_monster_templates_items(default_monsters)
-        if use_default and category == 'player':
+        if use_default and effective_category == 'player':
             default_player = ed_model.default_data.get('player', {}) or {}
             return self._get_player_template_items(default_player)
 
         # Caso normal: datos activos
-        data = ed_model.active_data.get(category, {})
-        if category == 'player':
+        data = ed_model.active_data.get(effective_category, {})
+        if effective_category == 'player':
             items = self._get_player_items(data)
-        elif category == 'monsters':
+        elif effective_category == 'monsters':
             items = self._get_monsters_items(data, use_default=False)
         else:
             items = self._get_other_items(data)

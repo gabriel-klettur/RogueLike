@@ -6,7 +6,7 @@ import pygame
 import pytest
 
 
-# [UTL-001] Carga básica
+# [UTL-001] Carga básica (split: templates + instances + split collisions)
 @pytest.mark.usefixtures("pygame_context")
 def test_utl_001_load_buildings_basic_fields(tmp_path, monkeypatch):
     # Patch loader to avoid disk IO and control sizes
@@ -20,35 +20,44 @@ def test_utl_001_load_buildings_basic_fields(tmp_path, monkeypatch):
     import roguelike_engine.buildings.building_model as building_model_mod
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
-    # Prepare JSON files and patch module constants
-    b_data = [
+    # Prepare split JSON files and patch module constants
+    templates = [
+        {"id": 100, "assets": {"idle": "assets/buildings/dummy.png"}, "solid": True}
+    ]
+    instances = [
         {
-            "zone": "Lobby",  # should canonicalize to 'lobby'
+            "id": 1,
+            "template_id": 100,
+            "zone": "Lobby",  # canonicalize to 'lobby'
             "rel_x": 10,
             "rel_y": 20,
-            "image_path": "assets/buildings/dummy.png",
-            "solid": True,
-            "scale": [96, 64],
-            "original_scale": [96, 64],
-            "split_ratio": 0.33,
-            "z_bottom": 5,
-            "z_top": 9,
-            "collider_scope": "CG",
+            "overrides": {
+                "scale": [96, 64],
+                "original_scale": [96, 64],
+                "split_ratio": 0.33,
+                "z_bottom": 5,
+                "z_top": 9,
+                "collider_scope": "CG",
+            },
         }
     ]
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps(b_data), encoding="utf-8")
-
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps({}), encoding="utf-8")
+    t_json = tmp_path / "buildings_templates.json"
+    i_json = tmp_path / "buildings_instances.json"
+    t_json.write_text(json.dumps(templates), encoding="utf-8")
+    i_json.write_text(json.dumps(instances), encoding="utf-8")
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_image_json.write_text(json.dumps({}), encoding="utf-8")
+    by_spawn_json.write_text(json.dumps({}), encoding="utf-8")
+    by_binst_json.write_text(json.dumps({}), encoding="utf-8")
 
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
-    # Force legacy combined path by making split files appear absent
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(tmp_path / "no_by_image.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(tmp_path / "no_by_spawn.json"), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(tmp_path / "no_by_binst.json"), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(t_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(i_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert isinstance(buildings, list) and len(buildings) == 1
@@ -65,7 +74,7 @@ def test_utl_001_load_buildings_basic_fields(tmp_path, monkeypatch):
     assert getattr(b, "collider_scope", "CG") == "CG"
 
 
-# [UTL-002] Normalización de colisiones (padding/truncado a ceil tiles)
+# [UTL-002] Normalización de colisiones (padding/truncado a ceil tiles) - split
 @pytest.mark.usefixtures("pygame_context")
 def test_utl_002_collision_map_normalization(tmp_path, monkeypatch):
     import roguelike_engine.utils.loader as loader_mod
@@ -76,29 +85,31 @@ def test_utl_002_collision_map_normalization(tmp_path, monkeypatch):
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
     # Entry image 96x64 -> desired tiles: cols=3, rows=2 (TILE_SIZE=32)
-    entry = {
-        "zone": "lobby",
-        "rel_x": 0,
-        "rel_y": 0,
-        "image_path": "assets/buildings/dummy.png",
-        "solid": True,
-        "scale": [96, 64],
-    }
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps([entry]), encoding="utf-8")
-
+    templates = [
+        {"id": 200, "assets": {"idle": "assets/buildings/dummy.png"}, "solid": True}
+    ]
+    instances = [
+        {"id": 2, "template_id": 200, "zone": "lobby", "rel_x": 0, "rel_y": 0, "overrides": {"scale": [96, 64]}}
+    ]
+    t_json = tmp_path / "buildings_templates.json"
+    i_json = tmp_path / "buildings_instances.json"
+    t_json.write_text(json.dumps(templates), encoding="utf-8")
+    i_json.write_text(json.dumps(instances), encoding="utf-8")
     # Collisions smaller than desired (1x1) -> must pad to 2x3
-    collisions = {
-        "assets/buildings/dummy.png": {
-            "collision": [["#"]]
-        }
-    }
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps(collisions), encoding="utf-8")
+    by_image = {"assets/buildings/dummy.png": {"collision": [["#"]]}}
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_image_json.write_text(json.dumps(by_image), encoding="utf-8")
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_spawn_json.write_text(json.dumps({}), encoding="utf-8")
+    by_binst_json.write_text(json.dumps({}), encoding="utf-8")
 
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(t_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(i_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert len(buildings) == 1
@@ -109,7 +120,7 @@ def test_utl_002_collision_map_normalization(tmp_path, monkeypatch):
     assert (rows, cols) == (2, 3)
 
 
-# [UTL-003] Override CU normalizado
+# [UTL-003] Override CU normalizado - split
 @pytest.mark.usefixtures("pygame_context")
 def test_utl_003_collision_override_cu_normalization(tmp_path, monkeypatch):
     import roguelike_engine.utils.loader as loader_mod
@@ -119,35 +130,43 @@ def test_utl_003_collision_override_cu_normalization(tmp_path, monkeypatch):
     import roguelike_engine.buildings.building_model as building_model_mod
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
-    entry = {
-        "zone": "lobby",
-        "rel_x": 0,
-        "rel_y": 0,
-        "image_path": "assets/buildings/dummy.png",
-        "solid": True,
-        "scale": [96, 64],
-        "collider_scope": "CU",
-        "collision_override": {
-            "width": 1,
-            "height": 1,
-            "collision": [["."]],
-        },
-    }
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps([entry]), encoding="utf-8")
-
-    # Global collisions (ignored by CU override)
-    collisions = {
-        "assets/buildings/dummy.png": {
-            "collision": [["#", "#"], ["#", "#"]]
+    templates = [
+        {"id": 300, "assets": {"idle": "assets/buildings/dummy.png"}, "solid": True}
+    ]
+    instances = [
+        {
+            "id": 3,
+            "template_id": 300,
+            "zone": "lobby",
+            "rel_x": 0,
+            "rel_y": 0,
+            "overrides": {
+                "scale": [96, 64],
+                "collider_scope": "CU",
+                "collision_override": {"width": 1, "height": 1, "collision": [["."]]},
+            },
         }
-    }
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps(collisions), encoding="utf-8")
+    ]
+    t_json = tmp_path / "buildings_templates.json"
+    i_json = tmp_path / "buildings_instances.json"
+    t_json.write_text(json.dumps(templates), encoding="utf-8")
+    i_json.write_text(json.dumps(instances), encoding="utf-8")
+
+    # Global collisions (should be ignored by CU override final application)
+    by_image = {"assets/buildings/dummy.png": {"collision": [["#", "#"], ["#", "#"]]}}
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_image_json.write_text(json.dumps(by_image), encoding="utf-8")
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_spawn_json.write_text(json.dumps({}), encoding="utf-8")
+    by_binst_json.write_text(json.dumps({}), encoding="utf-8")
 
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(t_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(i_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert len(buildings) == 1
@@ -157,7 +176,7 @@ def test_utl_003_collision_override_cu_normalization(tmp_path, monkeypatch):
     assert (rows, cols) == (2, 3)  # normalized to image tiles
 
 
-# [UTL-004] Inyección de Z desde z_state
+# [UTL-004] Inyección de Z desde z_state - split
 @pytest.mark.usefixtures("pygame_context")
 def test_utl_004_inject_z_when_z_state_provided(tmp_path, monkeypatch):
     import roguelike_engine.utils.loader as loader_mod
@@ -167,23 +186,36 @@ def test_utl_004_inject_z_when_z_state_provided(tmp_path, monkeypatch):
     import roguelike_engine.buildings.building_model as building_model_mod
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
-    entry = {
-        "zone": "lobby",
-        "rel_x": 0,
-        "rel_y": 0,
-        "image_path": "assets/buildings/dummy.png",
-        "solid": True,
-        "scale": [64, 64],
-        "z": 17,
-    }
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps([entry]), encoding="utf-8")
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps({}), encoding="utf-8")
+    templates = [
+        {"id": 400, "assets": {"idle": "assets/buildings/dummy.png"}, "solid": True}
+    ]
+    instances = [
+        {
+            "id": 4,
+            "template_id": 400,
+            "zone": "lobby",
+            "rel_x": 0,
+            "rel_y": 0,
+            "overrides": {"scale": [64, 64], "z": 17},
+        }
+    ]
+    t_json = tmp_path / "buildings_templates.json"
+    i_json = tmp_path / "buildings_instances.json"
+    t_json.write_text(json.dumps(templates), encoding="utf-8")
+    i_json.write_text(json.dumps(instances), encoding="utf-8")
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_image_json.write_text(json.dumps({}), encoding="utf-8")
+    by_spawn_json.write_text(json.dumps({}), encoding="utf-8")
+    by_binst_json.write_text(json.dumps({}), encoding="utf-8")
 
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(t_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(i_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     class ZState:
         def __init__(self):
@@ -202,7 +234,7 @@ def test_utl_004_inject_z_when_z_state_provided(tmp_path, monkeypatch):
     assert z_state.calls[0][1] == 17
 
 
-# [UTL-005] Canonicalización de zonas (incluye 'no zone')
+# [UTL-005] Canonicalización de zonas (incluye 'no zone') - split
 @pytest.mark.usefixtures("pygame_context")
 def test_utl_005_zone_canonicalization_and_no_zone(tmp_path, monkeypatch):
     import roguelike_engine.utils.loader as loader_mod
@@ -212,19 +244,33 @@ def test_utl_005_zone_canonicalization_and_no_zone(tmp_path, monkeypatch):
     import roguelike_engine.buildings.building_model as building_model_mod
     monkeypatch.setattr(building_model_mod, "load_image", _fake_load_image, raising=True)
 
-    data = [
-        {"zone": "Lobby", "rel_x": 0, "rel_y": 0, "image_path": "assets/buildings/a.png", "scale": [32, 32]},
-        {"zone": "no zone", "rel_x": 0, "rel_y": 0, "image_path": "assets/buildings/b.png", "scale": [32, 32]},
-        {"zone": "DUngEOn", "rel_x": 0, "rel_y": 0, "image_path": "assets/buildings/c.png", "scale": [32, 32]},
+    templates = [
+        {"id": 500, "assets": {"idle": "assets/buildings/a.png"}},
+        {"id": 501, "assets": {"idle": "assets/buildings/b.png"}},
+        {"id": 502, "assets": {"idle": "assets/buildings/c.png"}},
     ]
-    buildings_json = tmp_path / "buildings_data.json"
-    buildings_json.write_text(json.dumps(data), encoding="utf-8")
-    collisions_json = tmp_path / "buildings_collisions_data.json"
-    collisions_json.write_text(json.dumps({}), encoding="utf-8")
+    instances = [
+        {"id": 5, "template_id": 500, "zone": "Lobby", "rel_x": 0, "rel_y": 0, "overrides": {"scale": [32, 32]}},
+        {"id": 6, "template_id": 501, "zone": "no zone", "rel_x": 0, "rel_y": 0, "overrides": {"scale": [32, 32]}},
+        {"id": 7, "template_id": 502, "zone": "DUngEOn", "rel_x": 0, "rel_y": 0, "overrides": {"scale": [32, 32]}},
+    ]
+    t_json = tmp_path / "buildings_templates.json"
+    i_json = tmp_path / "buildings_instances.json"
+    t_json.write_text(json.dumps(templates), encoding="utf-8")
+    i_json.write_text(json.dumps(instances), encoding="utf-8")
+    by_image_json = tmp_path / "buildings_collisions_by_image.json"
+    by_spawn_json = tmp_path / "buildings_collisions_by_spawn_id.json"
+    by_binst_json = tmp_path / "buildings_collisions_by_building_instance_id.json"
+    by_image_json.write_text(json.dumps({}), encoding="utf-8")
+    by_spawn_json.write_text(json.dumps({}), encoding="utf-8")
+    by_binst_json.write_text(json.dumps({}), encoding="utf-8")
 
     load_mod = importlib.import_module("roguelike_editors.buildings.utils.load_buildings_from_json")
-    monkeypatch.setattr(load_mod, "BUILDINGS_DATA_PATH", str(buildings_json), raising=True)
-    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_DATA_PATH", str(collisions_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_TEMPLATES_PATH", str(t_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_INSTANCES_PATH", str(i_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_IMAGE_PATH", str(by_image_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH", str(by_spawn_json), raising=True)
+    monkeypatch.setattr(load_mod, "BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH", str(by_binst_json), raising=True)
 
     buildings = load_mod.load_buildings_from_json()
     assert [b.zone for b in buildings] == ["lobby", "no zone", "dungeon"]

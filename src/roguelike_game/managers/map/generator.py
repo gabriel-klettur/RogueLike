@@ -4,7 +4,7 @@ Módulo de generación incremental de zonas y regeneración de tiles.
 from pathlib import Path
 import json
 import logging
-from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.map_config import global_map_settings, _OffsetsDict
 from roguelike_engine.map.model.generator.factory import get_generator
 from roguelike_engine.map.model.loader.text_loader_strategy import TextMapLoader
 from roguelike_engine.map.model.layer import Layer
@@ -53,7 +53,7 @@ class MapGenerator:
         merged_offsets.setdefault('no zone', (0, 0))
         merged_offsets.setdefault('no-zone', (0, 0))
         # Inyectar offsets fusionados en el cache del cached_property
-        global_map_settings.__dict__['zone_offsets'] = merged_offsets
+        global_map_settings.__dict__['zone_offsets'] = _OffsetsDict(global_map_settings, merged_offsets)
         truncated = False
         for y in range(old_h):
             ny = y + dy

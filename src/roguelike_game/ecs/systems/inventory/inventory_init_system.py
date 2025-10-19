@@ -1,13 +1,10 @@
 import os
 import json
-import random
-import uuid
 
-from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
-from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
+from .inventory_io import ensure_active_file, read_json_or
+from .vendor_seed import VendorSupport
+from .inventory_update_runner import run_inventory_init_update
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
-from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
-from roguelike_game.ecs.components.experience_component import ExperienceComponent
 
 
 class InventoryInitSystem:
@@ -20,12 +17,16 @@ class InventoryInitSystem:
                  active_monster_path: str = 'data/inventory/active/inventory_monsters.json',
                  default_player_path: str = 'data/inventory/defaults/inventory_player.json',
                  active_player_path: str = 'data/inventory/active/inventory_player.json',
+                 default_neutral_path: str = 'data/inventory/defaults/inventory_neutrals.json',
+                 active_neutral_path: str = 'data/inventory/active/inventory_neutrals.json',
                  schema_version: str = '1.0.0'):
         self.perf_log = perf_log
         self.default_monster_path = default_monster_path
         self.active_monster_path = active_monster_path
         self.default_player_path = default_player_path
         self.active_player_path = active_player_path
+        self.default_neutral_path = default_neutral_path
+        self.active_neutral_path = active_neutral_path
         self.schema_version = schema_version
         self.initialized = set()
 
@@ -34,164 +35,92 @@ class InventoryInitSystem:
             self.monster_templates = json.load(f)
         with open(self.default_player_path, 'r') as f:
             self.player_template = json.load(f)
+        # Plantillas neutrales (si no existe archivo, usar vacío)
+        try:
+            with open(self.default_neutral_path, 'r') as f:
+                self.neutral_templates = json.load(f)
+        except Exception:
+            self.neutral_templates = {}
 
         # Asegurar archivos activos existan
-        os.makedirs(os.path.dirname(self.active_monster_path), exist_ok=True)
-        if not os.path.exists(self.active_monster_path):
-            with open(self.active_monster_path, 'w') as f:
-                json.dump({}, f, indent=2)
-        os.makedirs(os.path.dirname(self.active_player_path), exist_ok=True)
-        if not os.path.exists(self.active_player_path):
-            with open(self.active_player_path, 'w') as f:
-                json.dump({}, f, indent=2)
+        ensure_active_file(self.active_monster_path, {})
+        ensure_active_file(self.active_player_path, {})
+        ensure_active_file(self.active_neutral_path, {})
 
         # Load active inventories into memory with fallback
-        try:
-            with open(self.active_monster_path, 'r') as f:
-                self.active_monsters = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            self.active_monsters = {}
-            with open(self.active_monster_path, 'w') as f:
-                json.dump(self.active_monsters, f, indent=2)
-        try:
-            with open(self.active_player_path, 'r') as f:
-                self.active_players = json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            self.active_players = {}
-            with open(self.active_player_path, 'w') as f:
-                json.dump(self.active_players, f, indent=2)
+        self.active_monsters = read_json_or(self.active_monster_path, {})
+        self.active_players = read_json_or(self.active_player_path, {})
+        self.active_neutrals = read_json_or(self.active_neutral_path, {})
         # Initialize dirty flags
         self.dirty_monsters = False
         self.dirty_players = False
+        self.dirty_neutrals = False
+
+        # Registry & Schemas
+        self.vendors_registry_path = os.path.join('data', 'vendors', 'registry', 'vendors.json')
+        self._vendors_registry = None
+        self._vendors_registry_mtime = None
+        self.inventory_seed_schema_path = os.path.join('schemas', 'vendors', 'InventorySeedSchema.json')
+        self._inventory_seed_schema = None
+        # Catálogo de ítems para sembrar stock comerciable en NPCs con chat
+        self.items_catalog_path = os.path.join('data', 'items', 'items.json')
+        self._items_catalog = None
+        self._items_catalog_mtime = None
+
+        # Helper para operaciones de vendors/semillas y catálogo de ítems
+        self.vendor_support = VendorSupport(
+            vendors_registry_path=self.vendors_registry_path,
+            items_catalog_path=self.items_catalog_path,
+            inventory_seed_schema_path=self.inventory_seed_schema_path,
+        )
 
     
     def update(self, world, *args):
-        comps = world.components
-        player_tag_store = comps.get('PlayerTagComponent', {})
-        npc_tag_store = comps.get('NPCTagComponent', {})
-        instance_store = comps.get('MonsterInstanceComponent', {})
+        # Delegar la lógica del update al runner especializado para mejorar legibilidad y testabilidad
+        run_inventory_init_update(self, world, *args)
 
-        # Cargar datos activos
-        # Cargar datos activos
-        # Use in-memory active_monsters
-        active_monsters = self.active_monsters
-        # Reset dirty flag for monsters
-        self.dirty_monsters = False
-        # Use in-memory active_players
-        active_players = self.active_players
-        # Reset dirty flag for players
-        self.dirty_players = False
+    # --- Helpers: Vendors Registry & Schemas -------------------------------
+    def _ensure_seed_schema_loaded(self):
+        if self._inventory_seed_schema is not None:
+            return
+        # Delegar en helper y reflejar caché local
+        self.vendor_support._ensure_seed_schema_loaded()
+        self._inventory_seed_schema = self.vendor_support._inventory_seed_schema
 
-        # Inicializar jugadores
-        for eid in list(player_tag_store.keys()):
-            if eid in self.initialized:
-                continue
-            key = str(eid)
-            # Si ya existen componentes (cargados desde un save), NO sobrescribirlos
-            existing_inv = world.components.get('InventoryComponent', {}).get(eid)
-            existing_xp  = world.components.get('ExperienceComponent', {}).get(eid)
+    def _load_vendors_registry(self):
+        # Delegar en helper y reflejar caché local
+        reg = self.vendor_support._load_vendors_registry()
+        self._vendors_registry = reg
+        # No exponemos mtime aquí; sólo mantenemos compatibilidad de retorno
+        return reg
 
-            # Inventario: solo crear/asignar si no existe ya
-            if existing_inv is None:
-                # Cargar inventario persistido de activos si existe
-                if key in active_players:
-                    pdata = active_players[key]
-                    # Normalizar player_id inexistente o inválido
-                    pid = pdata.get('player_id')
-                    try:
-                        uuid.UUID(str(pid)) if pid else (_ for _ in ()).throw(ValueError())
-                    except Exception:
-                        pid = str(uuid.uuid4())
-                        pdata['player_id'] = pid
-                        self.dirty_players = True
-                    inv_comp = InventoryComponent(
-                        capacity=self.player_template.get('capacity', 20),
-                        player_id=pid
-                    )
-                    for slot in pdata.get('slots', []):
-                        if slot:
-                            inv_comp.add(slot['item'], slot['quantity'])
-                else:
-                    # Crear InventoryComponent con plantilla por defecto
-                    capacity = self.player_template.get('capacity', 20)
-                    # Normalizar/generar player_id si plantilla no lo define
-                    player_id = self.player_template.get('player_id')
-                    try:
-                        uuid.UUID(str(player_id)) if player_id else (_ for _ in ()).throw(ValueError())
-                    except Exception:
-                        player_id = str(uuid.uuid4())
-                    inv_comp = InventoryComponent(capacity=capacity, player_id=player_id)
-                    for slot in self.player_template.get('slots', []):
-                        if slot:
-                            inv_comp.add(slot['item'], slot['quantity'])
-                    # Persistir inicial
-                    active_players[key] = {
-                        'player_id': player_id,
-                        'slots': inv_comp.serialize().get('slots'),
-                        'schema_version': self.schema_version
-                    }
-                    self.dirty_players = True
-                world.components['InventoryComponent'][eid] = inv_comp
+    def _get_vendor_entry(self, identity_key: str):
+        # Delegar en helper, manteniendo firma
+        return self.vendor_support.get_vendor_entry(identity_key)
 
-            # Experiencia: solo crear por defecto si no existe ya
-            if existing_xp is None:
-                world.components['ExperienceComponent'][eid] = ExperienceComponent()
-            self.initialized.add(eid)
+    # --- Helpers: catálogo de ítems y siembra para comercio -----------------
+    def _ensure_items_catalog_loaded(self):
+        # Delegar en helper y reflejar caché local
+        self.vendor_support._ensure_items_catalog_loaded()
+        self._items_catalog = self.vendor_support._items_catalog
 
-        # Inicializar NPCs
-        for eid in list(npc_tag_store.keys()):
-            inst = instance_store.get(eid)
-            if not inst:
-                continue
-            iid = inst.instance_id
-            # Saltar si ya inicializado
-            if iid in self.initialized:
-                continue
-            if eid in self.initialized:
-                continue
-            # Determinar plantilla a partir de Identity.name
-            identity = comps.get('Identity', {}).get(eid)
-            template_key = identity.name.lower() if identity else None
-            template = self.monster_templates.get(template_key)
-            if not template:
-                continue
-            template_id = template.get('template_id')
-            if iid in active_monsters:
-                # Cargar inventario activo existente
-                saved = active_monsters.get(iid, {})
-                inv_comp = InventoryComponent(player_id=saved.get('template_id', template_id))
-                for slot in saved.get('slots', []):
-                    if slot:
-                        inv_comp.add(slot['item'], slot.get('quantity', 0))
-            else:
-                # Generar ítems según rangos y probabilidades
-                inv_comp = InventoryComponent(player_id=template_id)
-                for entry in template.get('inventory', []):
-                    if random.random() <= entry.get('chance', 1.0):
-                        qty = random.randint(entry.get('min', 1), entry.get('max', 1))
-                        if qty > 0:
-                            inv_comp.add(entry['item'], qty)
-                # Persistir inventario generado
-                active_monsters[iid] = {
-                    'template_id': template_id,
-                    'slots': inv_comp.serialize().get('slots'),
-                    'schema_version': self.schema_version
-                }
-                self.dirty_monsters = True
-            # Asignar componente e inicializar marcado
-            world.components['InventoryComponent'][eid] = inv_comp
-            self.initialized.add(eid)
+    def _maybe_seed_trader(self, eid: int, inv_comp: InventoryComponent, *, is_neutral: bool, active_store: dict, iid: str):
+        """Garantiza que un NPC con chat tenga oro y algo de stock vendible.
 
-        # Remove entries for monsters no longer present
-        current_npc_keys = set(inst.instance_id for eid, inst in instance_store.items() if eid in npc_tag_store)
-        for key in list(active_monsters.keys()):
-            if key not in current_npc_keys:
-                active_monsters.pop(key)
-                self.dirty_monsters = True
-        # Guardar archivos activos solo si hay cambios
-        if self.dirty_monsters:
-            with open(self.active_monster_path, 'w') as f:
-                json.dump(self.active_monsters, f, indent=2)
-        if self.dirty_players:
-            with open(self.active_player_path, 'w') as f:
-                json.dump(self.active_players, f, indent=2)
+        Reglas:
+          - Asegura al menos MIN_GOLD de 'gold'.
+          - Si no tiene ningún ítem vendible (excluyendo 'gold'), añade hasta MAX_SEED_ITEMS
+            ítems stackeables del catálogo, con cantidades pequeñas.
+        Persiste los cambios en el almacén activo correspondiente y marca dirty.
+        """
+        # Delegar en helper centralizado (mantiene persistencia y comportamiento)
+        self.vendor_support.maybe_seed_trader(
+            inv_comp,
+            active_store=active_store,
+            iid=iid,
+            schema_version=self.schema_version,
+        )
+        if is_neutral:
+            self.dirty_neutrals = True
+        else:
+            self.dirty_monsters = True

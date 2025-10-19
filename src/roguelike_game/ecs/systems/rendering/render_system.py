@@ -24,8 +24,11 @@ class RenderSystem:
             screen (pygame.Surface): Superficie principal de renderizado.
         """
         self.screen = screen
-        # Cache de sprites escalados: clave = (entity_id, scale_factor)
-        self._scaled_sprite_cache: dict[tuple[int, float], pygame.Surface] = {}
+        # Cache de sprites escalados: clave = (entity_id, id(surface), scale_factor)
+        self._scaled_sprite_cache: dict[tuple[int, int, float], pygame.Surface] = {}
+        # Cache de sprites TEÑIDOS: clave = (id(surface_escalada), r, g, b)
+        # Evita recomputar el tinte cada frame para el mismo frame/escala
+        self._tinted_cache: dict[tuple[int, int, int, int], pygame.Surface] = {}
         # Rect reutilizable para culling y blit
         self._blit_rect = pygame.Rect(0, 0, 0, 0)
 
@@ -95,17 +98,18 @@ class RenderSystem:
             scale_factor = entity_scale * zoom_key
 
             # 5b) Obtener sprite escalado del cache o generarlo
+            # IMPORTANTE: incluir id(surface) para evitar usar un frame antiguo tras cambiar de animación
+            orig_surface = sprite.image
             if scale_factor != 1.0:
-                key = (eid, scale_factor)
+                key = (eid, id(orig_surface), scale_factor)
                 cache = self._scaled_sprite_cache
                 if key not in cache:
-                    orig = sprite.image
-                    w, h = orig.get_size()
+                    w, h = orig_surface.get_size()
                     # Usar rotozoom para mejor performance y suavidad
-                    cache[key] = pygame.transform.rotozoom(orig, 0, scale_factor)
+                    cache[key] = pygame.transform.rotozoom(orig_surface, 0, scale_factor)
                 image = cache[key]
             else:
-                image = sprite.image
+                image = orig_surface
 
             # 5c) Convertir posición de mundo a pantalla
             dest = camapply((pos.x, pos.y))
@@ -116,7 +120,23 @@ class RenderSystem:
             if not screen_rect.colliderect(self._blit_rect):
                 continue
 
-            # 5e) Acumular operación de blit
+            # 5e) Aplicar tinte si es el jugador en godmode
+            try:
+                is_player = eid == getattr(world, 'player_entity', None)
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
+                if is_player and godmode:
+                    color = (255, 230, 100)
+                    tkey = (id(image), color[0], color[1], color[2])
+                    tinted = self._tinted_cache.get(tkey)
+                    if tinted is None:
+                        tinted = self._tint_surface(image, color)
+                        self._tinted_cache[tkey] = tinted
+                    image = tinted
+            except Exception:
+                # En caso de cualquier problema con el tinte, continuamos sin romper el render
+                pass
+
+            # 5f) Acumular operación de blit
             blit_ops.append((image, dest))
 
         # 6) Ejecutar todos los blits en batch (más eficiente que múltiples blit individuales)
@@ -126,6 +146,54 @@ class RenderSystem:
         # Aplicar escala de grises si se ha marcado
         if world.components.get('GrayscaleComponent'):
             self.apply_grayscale(screen)
+
+    def _tint_surface(self, surface: pygame.Surface, color: tuple[int, int, int]) -> pygame.Surface:
+        """
+        Devuelve una copia teñida de 'surface'.
+        Si hay NumPy: recolorea por luminancia al tono 'color' (monocromo amarillo),
+        preservando alpha y relieve (más visible que un simple MULT).
+        Si no: aplica un tinte por blending manteniendo alpha.
+        """
+        try:
+            if HAS_NUMPY:
+                # 1) Leer RGB y Alpha del source
+                rgb = surfarray.array3d(surface).astype('float32')  # shape (w,h,3)
+                # Luminancia perceptual
+                lum = (0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2])
+                # Normalizar color objetivo (amarillo)
+                r_fac = color[0] / 255.0
+                g_fac = color[1] / 255.0
+                b_fac = color[2] / 255.0
+                # 2) Construir nuevo RGB monocromo al tono deseado
+                new_rgb = np.zeros_like(rgb)
+                new_rgb[:, :, 0] = np.clip(lum * r_fac, 0, 255)
+                new_rgb[:, :, 1] = np.clip(lum * g_fac, 0, 255)
+                new_rgb[:, :, 2] = np.clip(lum * b_fac, 0, 255)
+                new_rgb = new_rgb.astype('uint8')
+                # 3) Crear surface destino y blitear RGB
+                out = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+                surfarray.blit_array(out, new_rgb)
+                # 4) Copiar alpha del source
+                try:
+                    src_a = surfarray.array_alpha(surface)
+                    dst_a = surfarray.pixels_alpha(out)
+                    dst_a[:, :] = src_a
+                    del dst_a
+                except Exception:
+                    pass
+                return out
+            else:
+                # Fallback: blending multiplicativo + aditivo (menos intenso que el método con NumPy)
+                img = surface.copy()
+                tint = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                tint.fill((color[0], color[1], color[2], 255))
+                img.blit(tint, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                boost = pygame.Surface(img.get_size(), pygame.SRCALPHA)
+                boost.fill((40, 35, 0, 0))
+                img.blit(boost, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+                return img
+        except Exception:
+            return surface
 
     def apply_grayscale(self, surface):
         """Convierte la superficie entera a escala de grises."""

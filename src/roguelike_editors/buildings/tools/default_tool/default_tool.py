@@ -24,4 +24,9 @@ class DefaultTool:
         return reset_rect.collidepoint(mx, my)
 
     def apply_reset(self, building):
+        # Emitir pulso para el tutorial (se consume en el controlador del panel)
+        try:
+            setattr(self.editor, 'tutorial_reset_pulse', True)
+        except Exception:
+            pass
         building.reset_to_original_size()

@@ -18,15 +18,15 @@ class ListEventHandler:
 
     def handle(self, event):
         """
-        Maneja clicks en la lista. Para 'monsters', un solo click sobre 'Pos:' inicia un
+        Maneja clicks en la lista. Para 'monsters'/'hostile', un solo click sobre 'Pos:' inicia un
         "press-and-hold": se oculta el Inventory Editor, centra la cámara en el monstruo
         mientras se mantenga presionado, y al soltar se restaura el estado.
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             if self.view.panel_rect.collidepoint(mx, my):
-                # Solo categoría 'monsters' tiene lógica compleja
-                if self.model.current_category == 'monsters':
+                # Solo categoría 'monsters'/'hostile' tiene lógica compleja
+                if self.model.current_category in ('monsters', 'hostile'):
                     # En modo 'Show Default' mostramos plantillas; permitir seleccionar template
                     if getattr(self.editor_controller.model, 'editing_side', 'active') == 'default':
                         line_h = self.view.font.get_linesize()

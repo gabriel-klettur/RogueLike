@@ -127,7 +127,8 @@ class SpellEditorEventHandler:
                     except Exception:
                         pass
                     try:
-                        self.controller._rebuild_particle_preview_providers()
+                        if hasattr(self.controller, 'preview_manager'):
+                            self.controller.preview_manager.rebuild(self.controller.model.spells)
                     except Exception:
                         pass
                 # Always stop further processing in ADD mode

@@ -8,6 +8,7 @@ import pickle
 import cProfile
 import pstats
 from datetime import datetime
+from roguelike_engine.log_config import build_log_filepath
 from typing import Any, Optional
 
 from roguelike_engine.map.controller.map_controller import build_map
@@ -20,9 +21,13 @@ class MapLoader:
     """
     Gestiona la carga de mapas con cache y profiling.
     """
-    def __init__(self, cache_dir: Optional[str] = 'cache'):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(exist_ok=True)
+    def __init__(self, cache_dir: Optional[str | Path] = None):
+        if cache_dir is None:
+            root = Path(__file__).resolve().parents[4]
+            self.cache_dir = root / 'data' / 'cache'
+        else:
+            self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def load(self, map_name: str) -> Any:
         # Configuración de zones JSON
@@ -82,8 +87,8 @@ class MapLoader:
 
         # Dump profiling stats
         logs_dir = Path('logs')
-        logs_dir.mkdir(exist_ok=True)
-        profile_log = logs_dir / f'build_map_profile_{map_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+        (logs_dir / 'profile').mkdir(parents=True, exist_ok=True)
+        profile_log = build_log_filepath(f'build_map_profile_{map_name}', directory=str(logs_dir / 'profile'), extension='log', now_dt=datetime.now())
         with open(profile_log, 'w') as pf:
             stats = pstats.Stats(profile, stream=pf)
             stats.sort_stats('tottime').print_stats(30)

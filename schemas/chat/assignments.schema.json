@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ChatAssignments",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["persona_id", "role", "chat_range"],
+    "properties": {
+      "persona_id": {"type": "string"},
+      "role": {"type": "string"},
+      "chat_range": {"type": "integer", "minimum": 0}
+    }
+  }
+}

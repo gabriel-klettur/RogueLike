@@ -65,8 +65,29 @@ def _choose_side(parent_key: str) -> str:
     Selecciona un lado válido para expandir sin solapar zonas existentes.
     """
     all_sides = ['bottom', 'top', 'left', 'right']
+
+    def _resolve_zone_offset(zkey: str) -> tuple[int, int]:
+        if zkey in global_map_settings.zone_offsets:
+            return global_map_settings.zone_offsets[zkey]
+        seen: set[str] = set()
+        cur = zkey
+        off = global_map_settings.zone_offsets.get('dungeon', (0, 0))
+        while cur in getattr(global_map_settings, 'additional_zones', {}) and cur not in seen:
+            seen.add(cur)
+            parent, side = global_map_settings.additional_zones[cur]
+            base = global_map_settings.zone_offsets[parent] if parent in global_map_settings.zone_offsets else _resolve_zone_offset(parent)
+            off = global_map_settings.calculate_offset(base, side)
+            cur = parent
+        return off
+
     used = set(global_map_settings.zone_offsets.values())
-    parent_off = global_map_settings.zone_offsets[parent_key]
+    for k in getattr(global_map_settings, 'additional_zones', {}).keys():
+        try:
+            used.add(_resolve_zone_offset(k))
+        except Exception:
+            pass
+
+    parent_off = _resolve_zone_offset(parent_key)
     valid = [s for s in all_sides if global_map_settings.calculate_offset(parent_off, s) not in used]
     return random.choice(valid) if valid else 'bottom'
 

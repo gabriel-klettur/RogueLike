@@ -1,0 +1,80 @@
+"""
+Eventos del panel de Tutorial (Tiles Editor).
+"""
+import pygame
+
+
+class TilesTutorialPanelEventHandler:
+    def __init__(self, controller, model):
+        self.controller = controller
+        self.model = model
+
+    def handle(self, event) -> bool:
+        if not getattr(self.model, 'active', False):
+            return False
+        # Drag con botón derecho (RMB)
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 3:
+            panel_rect = getattr(self.model, 'panel_rect', None)
+            if panel_rect and panel_rect.collidepoint(event.pos):
+                # iniciar drag
+                mx, my = event.pos
+                # usar posición almacenada si existe; si no, tomar topleft actual del rect
+                px, py = (self.model.pos if getattr(self.model, 'pos', None) is not None else (panel_rect.x, panel_rect.y))
+                self.model.dragging = True
+                self.model.drag_offset = (mx - px, my - py)
+                return True
+        elif event.type == pygame.MOUSEMOTION and getattr(self.model, 'dragging', False):
+            mx, my = event.pos
+            dx, dy = getattr(self.model, 'drag_offset', (0, 0))
+            self.model.pos = (mx - dx, my - dy)
+            return True
+        elif event.type == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 3 and getattr(self.model, 'dragging', False):
+            self.model.dragging = False
+            return True
+        # Cerrar con ESC
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.controller.deactivate()
+            return True
+        # Clicks en botones
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+            pos = event.pos
+            # Si clic dentro del panel, consumir SIEMPRE para bloquear propagación
+            panel_rect = getattr(self.model, 'panel_rect', None)
+            if panel_rect and panel_rect.collidepoint(pos):
+                rects = getattr(self.model, 'button_rects', {}) or {}
+                if rects:
+                    total = len(getattr(self.model, 'steps', []) or [])
+                    is_last = (total > 0 and self.model.step_index >= total - 1)
+                    # Prev
+                    r = rects.get('prev')
+                    if r and r.collidepoint(pos):
+                        if self.model.step_index <= 0:
+                            return True
+                        new_idx = max(0, self.model.step_index - 1)
+                        try:
+                            self.controller.on_step_changed(new_idx)
+                        except Exception:
+                            pass
+                        self.model.step_index = new_idx
+                        return True
+                    # Next
+                    r = rects.get('next')
+                    if r and r.collidepoint(pos):
+                        if is_last:
+                            return True
+                        max_idx = max(0, len(self.model.steps) - 1)
+                        new_idx = min(max_idx, self.model.step_index + 1)
+                        try:
+                            self.controller.on_step_changed(new_idx)
+                        except Exception:
+                            pass
+                        self.model.step_index = new_idx
+                        return True
+                    # Close
+                    r = rects.get('close')
+                    if r and r.collidepoint(pos):
+                        self.controller.deactivate()
+                        return True
+                # Clic dentro del panel pero fuera de botones
+                return True
+        return False

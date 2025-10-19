@@ -40,9 +40,23 @@ class MapToolBarPanelEvents:
 
         for tool_name, rect in c.icon_rects.items():
             if rect and rect.collidepoint(mouse_pos):
+                if tool_name == "map_tutorial":
+                    try:
+                        tm = getattr(c, 'editor_manager', None)
+                        if tm and getattr(tm, 'tutorial', None):
+                            tm.tutorial.toggle()
+                            return True
+                    except Exception:
+                        return True
                 if tool_name == "view_layers":
                     # Delegar al controlador ViewLayers (mantiene consistencia y exclusividad si aplica)
                     opened = c.view_layers.toggle()
+                    # Tutorial pulse: layers view opened
+                    try:
+                        if opened:
+                            setattr(c.editor, 'tutorial_layers_view_opened_pulse', True)
+                    except Exception:
+                        pass
                     logger.debug(f"[DEBUG][Toolbar/Events] layers_view_open -> {opened}")
                     return True
                 if tool_name == "add_zone":
@@ -54,7 +68,17 @@ class MapToolBarPanelEvents:
                     c.delete_zone.toggle()
                     return True
                 if tool_name == "paint_tiles":
-                    _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
+                    # Open/close the floating Tile Picker panel
+                    try:
+                        opened = c.paint_tiles.toggle()
+                        # Ensure mutual exclusivity with other modes
+                        editor.add_zone_mode = False
+                        editor.delete_zone_mode = False
+                        editor.clear_colliders_mode = False
+                        editor.paint_colliders_mode = False
+                        logger.debug(f"[DEBUG][Toolbar/Events] paint_tiles_open -> {opened}")
+                    except Exception:
+                        _toggle_pair("paint_tiles_mode", ["add_zone_mode", "delete_zone_mode", "clear_colliders_mode", "paint_colliders_mode"])
                     return True
                 if tool_name == "clear_colliders":
                     c.clear_colliders.toggle()

@@ -2,13 +2,19 @@ import os
 import json
 from typing import Dict, Tuple, Optional
 from roguelike_engine.config.config import (
-    BUILDINGS_DATA_PATH,
     BUILDINGS_TEMPLATES_PATH,
     BUILDINGS_INSTANCES_PATH,
 )
 from roguelike_engine.z_layer.persistence import inject_z_into_json
 import logging
 logger = logging.getLogger(__name__)
+try:
+    import os as _os
+    if _os.environ.get('RL_VERBOSE_SAVE') != '1':
+        # Demote this module's DEBUG chatter unless explicitly requested
+        logger.setLevel(logging.INFO)
+except Exception:
+    pass
 
 from roguelike_engine.config.map_config import global_map_settings
 
@@ -56,121 +62,22 @@ def save_buildings_to_json(
     buildings,
     filepath: Optional[str] = None,
     z_state=None,
-    zone_offsets: Optional[Dict[str, Tuple[int, int]]] = None,
+    zone_offsets: Optional[Dict] = None,
     **kwargs
 ):
     """
-    Guarda la lista de buildings en un JSON usando coordenadas relativas.
-    - Si `filepath` es proporcionado, se usa esa ruta; si no, BUILDINGS_DATA_PATH.
-    - Si se proporciona `z_state`, inyecta la capa Z de cada edificio.
+    [DEPRECADO] Guardado legacy.
+    Esta función se mantiene por compatibilidad, pero delega SIEMPRE a save_buildings_split.
+    Ignora `filepath` y persiste en:
+      - BUILDINGS_TEMPLATES_PATH
+      - BUILDINGS_INSTANCES_PATH
     """
-    target = filepath or BUILDINGS_DATA_PATH
-    data = []
-    seen_spawn_ids = set()  # Deduplicate by spawn_id for spawner-linked buildings
-
-    # Preparar asignación de IDs únicos (auto-incremental y persistente)
-    used_ids = set()
-    # IDs existentes en memoria
-    for b0 in buildings:
-        try:
-            bid = getattr(b0, 'id', None)
-            if bid is not None and str(bid).isdigit():
-                used_ids.add(int(bid))
-        except Exception:
-            pass
-    # IDs existentes en disco (para evitar colisiones)
-    try:
-        if os.path.exists(target):
-            with open(target, 'r', encoding='utf-8') as rf:
-                prev = json.load(rf) or []
-            if isinstance(prev, list):
-                for e in prev:
-                    try:
-                        pid = e.get('id')
-                        if pid is not None and str(pid).isdigit():
-                            used_ids.add(int(pid))
-                    except Exception:
-                        pass
-    except Exception:
-        pass
-    next_id = (max(used_ids) + 1) if used_ids else 1
-
-    for b in buildings:
-        try:
-            zone_norm = _canonicalize_zone(b.zone)
-            relx = int(b.rel_x)
-            rely = int(b.rel_y)
-            img = _normalize_asset_path(b.image_path)
-            spawn_id = getattr(b, 'spawn_id', None) or getattr(b, 'spawner_instance_id', None)
-
-            if spawn_id:
-                sid = str(spawn_id)
-                if sid in seen_spawn_ids:
-                    try:
-                        logger.debug(f"[Buildings][Save] Skipping duplicate spawn_id={sid}")
-                    except Exception:
-                        pass
-                    continue
-                seen_spawn_ids.add(sid)
-
-            building_data = {
-                "zone": zone_norm,
-                "rel_x": relx,
-                "rel_y": rely,
-                "assets": {"idle": img},
-                "solid": b.solid,
-                "scale": [b.image.get_width(), b.image.get_height()],
-                "original_scale": list(b.original_scale) if getattr(b, "original_scale", None) else None,
-                "split_ratio": round(b.split_ratio, 3),
-                "z_bottom": b.z_bottom,
-                "z_top": b.z_top,
-                "collider_scope": getattr(b, "collider_scope", "CG"),
-            }
-
-            # ID del edificio (auto-asignado si falta)
-            try:
-                bid = getattr(b, 'id', None)
-            except Exception:
-                bid = None
-            if bid is None or not str(bid).isdigit():
-                bid = next_id
-                next_id += 1
-                try:
-                    setattr(b, 'id', bid)
-                except Exception:
-                    pass
-            building_data["id"] = int(bid)
-
-            if spawn_id:
-                building_data["spawn_id"] = str(spawn_id)
-
-            if z_state:
-                building_data["z"] = inject_z_into_json(b, z_state)
-
-            # Persistir override de colisiones por instancia si el alcance es CU
-            if building_data.get("collider_scope") == "CU" and getattr(b, "collision_map", None):
-                rows = len(b.collision_map)
-                cols = len(b.collision_map[0]) if rows > 0 else 0
-                building_data["collision_override"] = {
-                    "width": cols,
-                    "height": rows,
-                    "collision": b.collision_map,
-                }
-
-            data.append(building_data)
-
-        except Exception as e:
-            logger.error(f"⚠️ Error al procesar un edificio: {e}")
-
-    if not data:
-        logger.warning("⚠️ No se encontraron edificios válidos para guardar.")
-        return
-
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    with open(target, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
-
-    logger.info(f"✅ {len(data)} edificios guardados en {target}")
+    logger.warning("[Buildings][Deprecated] save_buildings_to_json() delega a save_buildings_split(); usa el modo split")
+    return save_buildings_split(
+        buildings,
+        z_state=z_state,
+        zone_offsets=zone_offsets,
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -302,14 +209,39 @@ def save_buildings_split(
                 max_iid = iid
         except Exception:
             continue
+    try:
+        logger.debug(f"[Buildings][SaveSplit] Existing instances indexed: max_iid={max_iid} by_spawn_id={len(by_spawn_id)} by_pos_key={len(by_pos_key)}")
+    except Exception:
+        pass
 
     # Build new templates/instances
+    # Aggregated logging counters (to avoid per-instance spam)
+    preserved_count = 0
+    reused_spawn_count = 0
+    reused_pos_count = 0
+    new_assigned_count = 0
+    _SAMPLE_N = 3
+    preserved_samples = []
+    reused_spawn_samples = []
+    reused_pos_samples = []
+    new_assigned_samples = []
+
     seen_spawn_ids = set()
     templates_needed: dict[int, dict] = dict(tid_to_entry)  # start with existing
     instances_out = []
+    # Track IDs assigned during this pass to avoid duplicates
+    used_ids: set[int] = set()
 
+    skipped_spawner_visuals = 0
     for b in buildings:
         try:
+            # Do not persist spawner visuals (runtime/link-only)
+            try:
+                if getattr(b, '_is_spawner_visual', False) or getattr(b, '_spawner_eid', None) is not None:
+                    skipped_spawner_visuals += 1
+                    continue
+            except Exception:
+                pass
             # Dedup spawner-linked visuals
             spawn_id = getattr(b, 'spawn_id', None) or getattr(b, 'spawner_instance_id', None)
             if spawn_id:
@@ -366,14 +298,59 @@ def save_buildings_split(
 
             # Determine instance id (preserve if exists)
             iid = None
-            if spawn_id is not None and str(spawn_id) in by_spawn_id:
+            # 0) Prefer the in-memory BuildingModel.id if present and not yet used in this pass
+            try:
+                cur_id_attr = getattr(b, 'id', None)
+                cur_id = int(cur_id_attr) if cur_id_attr is not None and str(cur_id_attr).isdigit() else None
+            except Exception:
+                cur_id = None
+            if cur_id is not None:
+                if cur_id in used_ids:
+                    try:
+                        logger.warning(f"[Buildings][SaveSplit] Preserve-id conflict: id={cur_id} already used in this pass; will reassign for building at zone={zone_norm} rel=({relx},{rely}) tpl={tid}")
+                    except Exception:
+                        pass
+                else:
+                    iid = cur_id
+                    preserved_count += 1
+                    if len(preserved_samples) < _SAMPLE_N:
+                        preserved_samples.append(iid)
+
+            if iid is None and (spawn_id is not None and str(spawn_id) in by_spawn_id):
                 iid = by_spawn_id[str(spawn_id)]
+                reused_spawn_count += 1
+                if len(reused_spawn_samples) < _SAMPLE_N:
+                    reused_spawn_samples.append((spawn_id, iid))
+
             if iid is None:
                 pos_key = f"{zone_norm}|{relx}|{rely}|{tid}"
                 iid = by_pos_key.get(pos_key)
-            if iid is None:
+                if iid is not None:
+                    reused_pos_count += 1
+                    if len(reused_pos_samples) < _SAMPLE_N:
+                        reused_pos_samples.append((pos_key, iid))
+
+            if iid is None or iid in used_ids:
                 iid = max_iid + 1
                 max_iid = iid
+
+                try:
+                    img_dbg = getattr(b, 'image_path', None)
+                except Exception:
+                    img_dbg = None
+                new_assigned_count += 1
+                if len(new_assigned_samples) < _SAMPLE_N:
+                    new_assigned_samples.append(iid)
+                try:
+                    logger.debug(f"[Buildings][SaveSplit] New ID assigned: iid={iid} zone={zone_norm} rel=({relx},{rely}) tpl={tid} img={img_dbg}")
+                except Exception:
+                    pass
+
+            # Mark id as used in this pass
+            try:
+                used_ids.add(int(iid))
+            except Exception:
+                pass
 
             inst_obj = {
                 'id': int(iid),
@@ -404,9 +381,107 @@ def save_buildings_split(
     with open(t_path, 'w', encoding='utf-8') as tf:
         json.dump(templates_list, tf, indent=4)
 
-    # Write instances
+    # Deduplicate instances_out by position/template
+    try:
+        before = len(instances_out)
+        seen: dict[str, dict] = {}
+        def _key(e: dict) -> str:
+            try:
+                return f"{e.get('zone')}|{int(e.get('rel_x') or 0)}|{int(e.get('rel_y') or 0)}|{int(e.get('template_id') or -1)}"
+            except Exception:
+                return str(id(e))
+        def _score(e: dict) -> tuple:
+            has_sid = 1 if (e.get('spawn_id') is not None) else 0
+            try:
+                neg_id = -int(e.get('id') or 0)
+            except Exception:
+                neg_id = 0
+            return (has_sid, neg_id)
+        for e in instances_out:
+            k = _key(e)
+            cur = seen.get(k)
+            if cur is None:
+                seen[k] = e
+            else:
+                if _score(e) > _score(cur):
+                    seen[k] = e
+        instances_out = list(seen.values())
+        after = len(instances_out)
+        if skipped_spawner_visuals:
+            logger.info(f"[Buildings][SaveSplit] Skipped spawner visuals: {skipped_spawner_visuals}")
+        if after != before:
+            logger.debug(f"[Buildings][SaveSplit] Dedup instances by pos/tpl: {before}->{after} (removed={before-after})")
+    except Exception:
+        pass
+
+    # Write instances (ordered by id for stability)
+    try:
+        instances_out.sort(key=lambda x: int(x.get('id') or 0))
+    except Exception:
+        pass
     with open(i_path, 'w', encoding='utf-8') as inf:
         json.dump(instances_out, inf, indent=4)
 
-    logger.info(f"✅ {len(templates_list)} templates guardados en {t_path}")
-    logger.info(f"✅ {len(instances_out)} instancias guardadas en {i_path}")
+    # Concise success line (paths at DEBUG to avoid console spam)
+    logger.info(f"[Buildings][SaveSplit] Saved templates={len(templates_list)} instances={len(instances_out)}")
+    try:
+        logger.debug(f"✅ templates_path={t_path}")
+        logger.debug(f"✅ instances_path={i_path}")
+    except Exception:
+        pass
+    # Single concise summary for IDs used this save
+    try:
+        logger.info(
+            f"[Buildings][SaveSplit] ID summary: preserved={preserved_count} reused_spawn={reused_spawn_count} reused_pos={reused_pos_count} new_assigned={new_assigned_count}"
+        )
+        # Optional tiny debug samples for traceability
+        if preserved_samples:
+            logger.debug(f"[Buildings][SaveSplit] preserved_samples={preserved_samples}")
+        if reused_spawn_samples:
+            logger.debug(f"[Buildings][SaveSplit] reused_spawn_samples={reused_spawn_samples}")
+        if reused_pos_samples:
+            logger.debug(f"[Buildings][SaveSplit] reused_pos_samples={reused_pos_samples}")
+        if new_assigned_samples:
+            logger.debug(f"[Buildings][SaveSplit] new_assigned_samples={new_assigned_samples}")
+    except Exception:
+        pass
+
+    # Audit: diff previous vs new instances to detect added/removed/modified IDs
+    try:
+        def _as_id_map(arr: list[dict]) -> dict[int, dict]:
+            out: dict[int, dict] = {}
+            for e in arr or []:
+                try:
+                    eid = int(e.get('id'))
+                except Exception:
+                    continue
+                out[eid] = e
+            return out
+        old_map = _as_id_map(existing_instances)
+        new_map = _as_id_map(instances_out)
+        old_ids = set(old_map.keys())
+        new_ids = set(new_map.keys())
+        added = sorted(new_ids - old_ids)
+        removed = sorted(old_ids - new_ids)
+        common = sorted(new_ids & old_ids)
+        if added:
+            logger.info(f"[Buildings][SaveSplit][Audit] Added IDs: {added}")
+        if removed:
+            logger.info(f"[Buildings][SaveSplit][Audit] Removed IDs: {removed}")
+        # Field-level modifications for common IDs
+        for iid in common:
+            o = old_map.get(iid, {})
+            n = new_map.get(iid, {})
+            diffs = {}
+            try:
+                for key in ('template_id', 'zone', 'rel_x', 'rel_y'):
+                    ov = o.get(key)
+                    nv = n.get(key)
+                    if ov != nv:
+                        diffs[key] = {'old': ov, 'new': nv}
+            except Exception:
+                pass
+            if diffs:
+                logger.info(f"[Buildings][SaveSplit][Audit] Modified ID {iid}: {diffs}")
+    except Exception:
+        pass

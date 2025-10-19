@@ -13,7 +13,7 @@ from .sets_panel_delete.sets_panel_delete_controller import SetsPanelDeleteContr
 from .sets_panel_delete.sets_panel_delete_events import SetsPanelDeleteEventHandler
 from .sets_panel_delete.sets_panel_delete_model import SetsPanelDeleteModel
 from .sets_panel_delete.sets_panel_delete_view import SetsPanelDeleteView
-from roguelike_editors.fsm.services.fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     default_sets_path,
     load_sets,
 )
@@ -88,13 +88,18 @@ class FsmSetsPanelController:
     def _refresh_items_from_disk(self) -> None:
         """Reload sets.json and update model.items to match current disk state."""
         try:
-            # Prefer fast helper from runtime bridge
-            if _get_set_ids is not None:
-                self.model.items = list(_get_set_ids() or [])
-                return
-            # Fallback to reading sets.json
-            data = load_sets(default_sets_path())
+            # 1) Priorizar lectura directa desde disco (permite a los tests monkeypatchear load_sets/default_sets_path)
+            try:
+                data = load_sets(default_sets_path())
+            except Exception:
+                data = {}
             set_ids = [s.get('id', '?') for s in (data.get('sets') or [])]
+            # 2) Si está vacío, caer al helper rápido del runtime bridge
+            if not set_ids and _get_set_ids is not None:
+                try:
+                    set_ids = list(_get_set_ids() or [])
+                except Exception:
+                    set_ids = []
             self.model.items = set_ids
         except Exception as ex:
             LOGGER.exception("[SetsPanel] failed to refresh items: %s", ex)

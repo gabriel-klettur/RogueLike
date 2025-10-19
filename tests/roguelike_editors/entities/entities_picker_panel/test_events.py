@@ -10,12 +10,12 @@ def _make_picker_controller_stub():
     # Tabs
     tabs = {
         "Players": pygame.Rect(0, 0, 80, 20),
-        "Monsters": pygame.Rect(80, 0, 100, 20),
+        "Hostile": pygame.Rect(80, 0, 100, 20),
     }
     model = SimpleNamespace(
         visible=True,
         tab_rects=tabs,
-        active_tab="Monsters",
+        active_tab="Hostile",
         scroll_index=0,
         hovered_id=None,
         selected_id=None,
@@ -71,7 +71,7 @@ def test_grid_click_selects_entity_id():
     controller, _ = _make_picker_controller_stub()
     handler = EntitiesPickerEventHandler(controller)
 
-    # Position over first cell of Monsters grid
+    # Position over first cell of Hostile grid
     margin = controller.view.margin
     header_h = next(iter(controller.model.tab_rects.values())).height
     x = controller.view.x + margin + 5

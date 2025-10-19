@@ -45,6 +45,8 @@ class SpellConfig:
     interruptible: bool = False
     automatic: bool = False
     automatic_cast_punish: float = 1.0
+    # Costes
+    mana_cost: float = 0.0
 
     # Common projectile-like fields
     speed: float = 0.0
@@ -56,6 +58,8 @@ class SpellConfig:
 
     # Area/auras
     radius: float = 0.0
+    # Optional decoupled hitbox fields for melee/area spells
+    hit_radius: float = 0.0
     duration: float = 0.0
     buff: Dict[str, Any] = field(default_factory=dict)
 
@@ -77,6 +81,8 @@ class SpellConfig:
     color: List[int] = field(default_factory=lambda: [255, 255, 255])
     speed_multiplier: float = 1.0
     arc_range_degrees: float = 0.0
+    # Optional decoupled arc for hitbox (degrees); falls back to arc_range_degrees when unset
+    hit_arc_degrees: float = 0.0
 
     # Smoke emitter
     particle_color: List[int] = field(default_factory=lambda: [200, 200, 200])
@@ -114,10 +120,12 @@ SCHEMA_KEYS: List[str] = [
     # Casting rules
     "max_instances", "allow_overlap", "allow_movement", "interruptible",
     "automatic", "automatic_cast_punish",
+    # Costs
+    "mana_cost",
     # Common
     "speed", "damage", "lifespan", "range", "sprite", "scale",
     # Areas / durations
-    "radius", "duration", "buff",
+    "radius", "hit_radius", "duration", "buff",
     # Particles / beams
     "particle_count", "particle_dispersion", "particle_colors",
     # Lightning
@@ -125,7 +133,7 @@ SCHEMA_KEYS: List[str] = [
     # Teleport
     "distance",
     # Slash
-    "size_range", "color", "speed_multiplier", "arc_range_degrees",
+    "size_range", "color", "speed_multiplier", "arc_range_degrees", "hit_arc_degrees",
     # Smoke emitter
     "particle_color", "emit_rate",
     # FSM phase durations & controls
@@ -186,7 +194,7 @@ def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(effect, dict):
         # Copy recognized keys directly
         for k in ("speed", "damage", "range", "distance", "radius",
-                  "arc_range_degrees", "duration", "lifetime"):
+                  "hit_radius", "arc_range_degrees", "hit_arc_degrees", "duration", "lifetime"):
             if k in effect:
                 flat[k] = effect.get(k)
         # Backward compat: mirror lifetime->lifespan

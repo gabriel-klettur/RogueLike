@@ -16,6 +16,8 @@ class SpawnerEditorModel:
     dragging: bool = False
     dragging_eid: int | None = None
     hovered_eid: int | None = None
+    # Currently selected spawner entity (for selection ring / actions)
+    selected_eid: int | None = None
     # Title submodel for consistent title bar rendering
     title_model: SpawnerTitleModel = field(default_factory=SpawnerTitleModel)
     # Pending zone confirmation overlay data, or None
@@ -46,3 +48,14 @@ class SpawnerEditorModel:
     #   'local_tile': tuple[int,int],
     # }
     pending_delete_confirm: dict | None = None
+    # Resize mode for selected visual building
+    resizing_visual: bool = False
+    resizing_visual_bid: int | None = None
+    resize_origin_mouse: tuple[int, int] | None = None
+    resize_start_size: tuple[int, int] | None = None
+    # Move (RMB-drag) for selected visual building
+    moving_visual: bool = False
+    moving_visual_bid: int | None = None
+    # Split ratio dragging for selected visual building
+    split_drag_active: bool = False
+    split_drag_bid: int | None = None

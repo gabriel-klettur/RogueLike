@@ -76,15 +76,15 @@ This document describes the in‑game Buildings Editor: purpose, features, contr
     - Events handle LMB selection, RMB start-drag or panel drag, mouse wheel scroll, scroll thumb drag, and RMB drop to place.
 
 ## Data & Persistence
-- __Save path__: `roguelike_engine.config.config.BUILDINGS_DATA_PATH`
-- __Save method__: `roguelike_editors.buildings.utils.save_buildings_to_json.save_buildings_to_json`
+- __Save paths (split)__: `data/buildings/buildings_templates.json` + `data/buildings/buildings_instances.json`
+- __Save method__: `roguelike_editors.buildings.utils.save_buildings_to_json.save_buildings_split`
 - __When saved__:
   - On `pygame.QUIT` if the editor is active.
   - On `F10` when closing the editor.
   - On `Ctrl+S`.
   - After mouse up following drag/resize/split operations.
 - __Zone integration__: on mouse up the controller calls `assign_zone_and_relatives(building)` so position changes update zone-relative data.
-- __Z-state & zones__: `save_buildings_to_json` receives `z_state` and `zone_offsets` (from `roguelike_engine.config.map_config.global_map_settings.zone_offsets`).
+- __Z-state & zones__: `save_buildings_split` receives `z_state` and `zone_offsets` (from `roguelike_engine.config.map_config.global_map_settings.zone_offsets`).
 
 ## UI Blockers & Interaction Safety
 - UI panels call `roguelike_ui.ui_blocker.register_blocker(rect)` (e.g., Title and Picker). The editor checks `is_blocked(mx, my)` to:

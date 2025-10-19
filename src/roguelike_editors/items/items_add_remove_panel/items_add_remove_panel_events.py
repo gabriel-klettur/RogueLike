@@ -32,6 +32,11 @@ class ItemsAddRemovePanelEventHandler:
                         else:
                             self.model.active_tool = key
                             self.controller.enter_spawn_mode()
+                            # Tutorial pulse: add mode on
+                            try:
+                                setattr(self.controller.model, 'tutorial_add_mode_on_pulse', True)
+                            except Exception:
+                                pass
                         return True
                     if key == 'remove_item':
                         # Asegurar toolbar principal en 'items_on_map' y picker visible
@@ -52,6 +57,11 @@ class ItemsAddRemovePanelEventHandler:
                         else:
                             self.model.active_tool = key
                             self.controller.enter_delete_mode()
+                            # Tutorial pulse: remove mode on
+                            try:
+                                setattr(self.controller.model, 'tutorial_remove_mode_on_pulse', True)
+                            except Exception:
+                                pass
                         return True
                     if key == 'add_item_on_system':
                         # Toggle modo de añadir ítem al sistema
@@ -82,6 +92,11 @@ class ItemsAddRemovePanelEventHandler:
                             try:
                                 if hasattr(self.controller, 'enter_add_items_on_system_mode'):
                                     self.controller.enter_add_items_on_system_mode()
+                            except Exception:
+                                pass
+                            # Tutorial pulse: add item on system mode on
+                            try:
+                                setattr(self.controller.model, 'tutorial_add_system_mode_on_pulse', True)
                             except Exception:
                                 pass
                         return True

@@ -1,0 +1,55 @@
+{
+  "$schema_version": "1.0.0",
+  "vendors": {
+    "vendor_cheff_gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
+      "prices_override": {}
+    },
+    "gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
+      "prices_override": {}
+    },
+    "valeria": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
+      "seed_group": "vendor_alchemist",
+      "economy_group": "vendor_alchemist",
+      "prices_override": {
+        "health_potion": {"buy": 25, "sell": 25}
+      }
+    },
+    "Smith": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
+      "seed_group": "vendor_blacksmith",
+      "economy_group": "vendor_blacksmith",
+      "prices_override": {
+        "iron_sword": {"buy": 50, "sell": 50}
+      }
+    },
+    "abigail": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_banker_abigail.json",
+      "seed_group": "vendor_banker",
+      "economy_group": "vendor_banker",
+      "prices_override": {}
+    },
+    "pavel": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_lumberjack_pavel.json",
+      "seed_group": "vendor_lumberjack",
+      "economy_group": "vendor_lumberjack",
+      "prices_override": {
+        "wood": {"buy": 1, "sell": 1}
+      }
+    },
+    "roberto": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_mague_roberto.json",
+      "seed_group": "vendor_mague",
+      "economy_group": "vendor_mague",
+      "prices_override": {
+        "wood": {"buy": 1, "sell": 1}
+      }
+    }
+  }
+}

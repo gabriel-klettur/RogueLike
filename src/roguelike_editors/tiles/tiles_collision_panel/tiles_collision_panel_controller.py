@@ -63,4 +63,10 @@ class TilesCollisionPanelController:
                         logger.warning(f"Colisión fuera de rango en zona '{zone_name}': local=({local_r},{local_c}), tamaño=({len(grid)},{len(grid[0])})")
         # Update view for all painted cells
         if cells:
+            # Tutorial pulse: collision painted
+            try:
+                setattr(self.editor_state, 'tutorial_collision_painted_pulse', True)
+            except Exception:
+                pass
+            # Visual refresh only during brush; heavy updates happen on mouse-up (flush)
             game_map.view.update_chunks(game_map, camera, cells)

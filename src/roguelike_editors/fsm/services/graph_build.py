@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 import math
 import random
 
-from roguelike_editors.fsm.services.fsm_persistence import (
+from roguelike_editors.fsm.services.fsm_persistence.fsm_persistence import (
     default_layouts_path,
     load_layouts,
 )

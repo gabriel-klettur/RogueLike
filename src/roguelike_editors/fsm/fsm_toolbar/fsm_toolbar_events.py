@@ -49,6 +49,17 @@ class FsmToolbarEventHandler:
             # 1) Intentar click sobre icono (acción válida)
             for tool, rect in getattr(toolbar, 'icon_rects', {}).items():
                 if rect.collidepoint(pos):
+                    # Tutorial button is a toggle overlay, not a persistent active_tool
+                    if tool == 'tutorial_fsm':
+                        owner = getattr(controller, 'owner_editor', None)
+                        try:
+                            if owner and hasattr(owner, 'tutorial_panel_controller') and owner.tutorial_panel_controller:
+                                owner.tutorial_panel_controller.toggle()
+                        except Exception:
+                            pass
+                        # Do not set active state for tutorial; keep previous tool selection
+                        logger.debug("[FSMToolbar][CLICK ICON] tool=%s -> toggled tutorial overlay", tool)
+                        return True
                     new_state = None if controller.is_active(tool) else tool
                     controller.set_active(new_state)
                     logger.debug("[FSMToolbar][CLICK ICON] tool=%s -> active_tool=%s", tool, new_state)

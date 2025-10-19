@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "player": {
+    "level": "global_map",
+    "pos": [
+      46,
+      85
+    ]
+  },
+  "npcs": {},
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        46,
+        85
+      ],
+      "npc_states": {}
+    }
+  },
+  "player_inventory": {
+    "player_id": "7874f5f6-b106-424c-b98e-0bb79c49ae2c",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 10
+      },
+      {
+        "item": "ghjgjh",
+        "quantity": 2
+      },
+      {
+        "item": "energy_potion",
+        "quantity": 1
+      },
+      {
+        "item": "bucket_water",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {},
+  "meta": {
+    "name": "partida_2025-10-17_23-27-14",
+    "created_at": "2025-10-17T23:27:14",
+    "last_played": "2025-10-18T17:58:44",
+    "player": {
+      "xp": 0,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 4,
+      "top_items": [
+        "gold",
+        "ghjgjh",
+        "energy_potion",
+        "bucket_water"
+      ]
+    }
+  }
+}

@@ -25,6 +25,8 @@ class ECSWorld:
         self.screen = screen
         self.map_manager = map_manager
         self.buildings = buildings
+        # Control de verbosidad para reconstrucciones (evita spam en intervalos)
+        self._log_rebuild_info: bool = False
 
         self.entities = []
         self.next_entity_id = 1
@@ -83,11 +85,11 @@ class ECSWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
     
+    @benchmark(lambda self: self.perf_log, "5.TOTAL: ECS UPDATE [CORE]")
     def update(self, camera):
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
-            self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
-            self._spatial_index_dirty = False
+            self.rebuild_spatial_index()
         
         # Ejecutar cada sistema de update
         for i, system in enumerate(self.update_systems, start=1):
@@ -97,6 +99,7 @@ class ECSWorld:
                 sys.update(self, camera)
             _update_sys()
     
+    @benchmark(lambda self: self.perf_log, "4.TOTAL: ECS RENDER [CORE]")
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
         # (barras de vida, debug, etc.) para que no se vean por encima del panel.
@@ -108,6 +111,10 @@ class ECSWorld:
                 gp_ctrl = getattr(ctrl, 'graph_panel_controller', None)
                 gp_model = getattr(gp_ctrl, 'model', None) if gp_ctrl else None
                 if bool(getattr(gp_model, 'visible', False)):
+                    try:
+                        logger.debug("[ECSWorld.render] skipped ECS render because FSM Graph Panel is visible")
+                    except Exception:
+                        pass
                     return
         except Exception:
             pass
@@ -132,7 +139,19 @@ class ECSWorld:
         if eid in self.entities:
             self.entities.remove(eid)
         for comp_dict in self.components.values():
-            comp_dict.pop(eid, None)
+            # Algunos "component stores" no son dicts (p.ej., colas de eventos como listas).
+            # Asegurar eliminación segura según el tipo de contenedor.
+            try:
+                if isinstance(comp_dict, dict):
+                    comp_dict.pop(eid, None)
+                elif isinstance(comp_dict, set):
+                    comp_dict.discard(eid)
+                else:
+                    # listas/otros tipos: no están indexados por eid, ignorar
+                    pass
+            except Exception:
+                # Nunca romper la eliminación de entidad por un componente anómalo
+                pass
 
     def get_solid_tiles_for_rect(self, rect):
         # Delegamos totalmente al spatial_index
@@ -141,6 +160,49 @@ class ECSWorld:
     def invalidate_spatial_index(self):
         """Marca SpatialIndex para reconstrucción en el próximo update."""
         self._spatial_index_dirty = True
+        try:
+            import os
+            if os.environ.get("RL_VERBOSE_ECS") == "1":
+                logger.info("[ECSWorld] invalidate_spatial_index() called -> will rebuild on next update")
+        except Exception:
+            pass
+
+    def rebuild_spatial_index(self):
+        """
+        Reconstruye el índice espacial inmediatamente usando el `map_manager` y los
+        `buildings` actuales del mundo, y limpia la bandera de suciedad.
+
+        Preferir este método (o `invalidate_spatial_index`) desde sistemas y editores
+        en lugar de asignar `world.spatial_index = SpatialIndex(...)` directamente.
+        """
+        # Medición básica y trazas de conteo para depuración de colliders en runtime
+        try:
+            if getattr(self, '_log_rebuild_info', False):
+                b_count = len(self.buildings) if self.buildings is not None else 0
+                b_rects = 0
+                for b in (self.buildings or []):
+                    try:
+                        b_rects += len(b.collision_tiles)
+                    except Exception:
+                        pass
+                map_rects = len(getattr(self.map_manager, 'solid_tiles', []) or [])
+                logger.info(f"[ECSWorld] SpatialIndex rebuild: buildings={b_count} building_rects={b_rects} map_rects={map_rects}")
+        except Exception:
+            pass
+        self.spatial_index = SpatialIndex(self.map_manager, self.buildings)
+        try:
+            # Tamaño del índice por celdas ocupadas (aprox broad-phase buckets)
+            if getattr(self, '_log_rebuild_info', False):
+                idx_cells = len(getattr(self.spatial_index, '_building_index', {}) or {})
+                logger.info(f"[ECSWorld] SpatialIndex ready: building_index_cells={idx_cells}")
+        except Exception:
+            pass
+        self._spatial_index_dirty = False
+        # Reset one-shot logging flag to avoid subsequent debug/infos
+        try:
+            self._log_rebuild_info = False
+        except Exception:
+            pass
 
     def get_entities_in_camera(self, camera, *component_types):
         """

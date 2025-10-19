@@ -41,35 +41,50 @@ def test_utl_006_save_buildings_json_contains_expected_fields(tmp_path, surface_
             # collision_map sólo relevante para CU
             self.collision_map = [["#", "."], [".", "#"]]
 
-    out = tmp_path / "buildings.json"
+    # Patch split output paths to temp files
+    t_out = tmp_path / "buildings_templates.json"
+    i_out = tmp_path / "buildings_instances.json"
+    setattr(save_mod, "BUILDINGS_TEMPLATES_PATH", str(t_out))
+    setattr(save_mod, "BUILDINGS_INSTANCES_PATH", str(i_out))
 
     b1 = _B(surface_factory(64, 48), scope="CG")
     b2 = _B(surface_factory(96, 64), scope="CU")
 
-    save_mod.save_buildings_to_json([b1, b2], filepath=str(out))
+    # Call legacy wrapper (delegates to split)
+    save_mod.save_buildings_to_json([b1, b2], filepath=str(tmp_path / "ignored.json"))
 
-    with open(out, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    # Validate templates.json
+    with open(t_out, "r", encoding="utf-8") as f:
+        templates = json.load(f)
+    assert isinstance(templates, list) and len(templates) == 2
+    for te in templates:
+        # Campos base presentes en templates
+        assert set(["id", "assets", "solid", "split_ratio", "collider_scope"]).issubset(te.keys())
+        assert isinstance(te.get("assets"), dict) and "idle" in te["assets"]
 
-    # Deben existir dos entradas
-    assert isinstance(data, list) and len(data) == 2
-    e1, e2 = data
+    # Validate instances.json
+    with open(i_out, "r", encoding="utf-8") as f:
+        instances = json.load(f)
+    assert isinstance(instances, list) and len(instances) == 2
 
-    # Campos base presentes (imagen ahora anidada en assets.idle)
-    for e in (e1, e2):
-        assert set(["zone", "rel_x", "rel_y", "assets", "solid", "scale", "original_scale", "split_ratio", "z_bottom", "z_top", "collider_scope"]).issubset(e.keys())
-        assert isinstance(e.get("assets"), dict) and "idle" in e["assets"]
+    # Instancia CG
+    inst_cg = instances[0]
+    assert set(["id", "template_id", "zone", "rel_x", "rel_y"]).issubset(inst_cg.keys())
+    assert inst_cg["zone"].lower() == "lobby"
+    assert inst_cg["rel_x"] == 123 and inst_cg["rel_y"] == 45
+    assert isinstance(inst_cg.get("overrides"), dict)
+    assert inst_cg["overrides"]["scale"] == [64, 48]
 
-    # 'scale' refleja tamaño actual de imagen
-    assert e1["scale"] == [64, 48]
-    assert e2["scale"] == [96, 64]
-
-    # CU incluye collision_override con dimensiones coherentes
-    assert e2["collider_scope"] == "CU"
-    co = e2.get("collision_override")
+    # Instancia CU incluye collision_override en overrides
+    inst_cu = instances[1]
+    assert set(["id", "template_id", "zone", "rel_x", "rel_y"]).issubset(inst_cu.keys())
+    assert isinstance(inst_cu.get("overrides"), dict)
+    ov = inst_cu["overrides"]
+    assert ov.get("collider_scope") == "CU"
+    co = ov.get("collision_override")
     assert co is not None
-    assert co["width"] == 2  # columnas de collision_map
-    assert co["height"] == 2 # filas de collision_map
+    assert co["width"] == 2  # columnas
+    assert co["height"] == 2 # filas
     assert co["collision"] == [["#", "."], [".", "#"]]
 
 

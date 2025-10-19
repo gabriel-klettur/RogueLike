@@ -2,7 +2,7 @@
 Builder para crear la entidad monstruo usando coordenadas en píxeles.
 """
 from roguelike_game.factories.monster.cache import _load_caches_once
-from roguelike_game.factories.monster.config import MONSTER_DEFS
+from roguelike_game.factories.monster.config import MONSTER_DEFS, MONSTER_DEFAULTS
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component, create_movement_components
 from roguelike_game.factories.monster.physics import create_physics_components, create_collider_components, create_zlayer_component
 from roguelike_game.factories.monster.calibrator import calibrate_tile_position
@@ -24,10 +24,14 @@ from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
 from roguelike_game.ecs.systems.fsm.fsm import FiniteStateMachine
+from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_editors.fsm.services.fsm_runtime_bridge import build_fsm_for_archetype, get_set, build_fsm_from_set
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.core.npc_tag import NPCTagComponent
 from roguelike_game.ecs.components.monster_instance_component import MonsterInstanceComponent
+from roguelike_game.ecs.components.chat.chat_component import ChatComponent
+from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
+from roguelike_game.ecs.components.monster_archetype import MonsterArchetype
 
 
 class MonsterBuilder:
@@ -36,7 +40,7 @@ class MonsterBuilder:
     def __init__(self, world):
         self.world = world
 
-    def build(self, x: int, y: int, monster_type: str) -> int:
+    def build(self, x: int, y: int, monster_type: str, instance_id: str | None = None) -> int:
         world = self.world
 
         _load_caches_once()
@@ -77,27 +81,63 @@ class MonsterBuilder:
 
         # Health & Identity
         world.components["Health"][eid] = Health(cfg["hp"], cfg["hp"])
-        world.components["Identity"][eid] = Identity(id=eid, name=monster_type, title="", faction=getattr(Faction, cfg.get("faction"), None))
+        # Usar default_name si está disponible en el JSON; si no, usar el id de clase
+        display_name = cfg.get("default_name") or monster_type
+        world.components["Identity"][eid] = Identity(
+            id=eid,
+            name=str(display_name),
+            title="",
+            faction=getattr(Faction, cfg.get("faction"), None)
+        )
         # Etiqueta NPC para gestión de inventario
         world.components["NPCTagComponent"][eid] = NPCTagComponent()
         # Identificador único de instancia para persistencia de inventario
-        world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent()
+        # Guardar tipo de arquetipo y respetar instance_id si se provee
+        world.components["MonsterInstanceComponent"][eid] = MonsterInstanceComponent(instance_id=instance_id)
+        world.components["MonsterArchetype"][eid] = MonsterArchetype(type=str(monster_type))
+
+        # Chat & Vendor: si el JSON define chat_range (>0), añadimos ChatComponent.
+        # Interpretamos chat_range como tiles y lo convertimos a píxeles (coordinado con Position/distancias en px).
+        try:
+            chat_range_tiles = float(cfg.get("chat_range", 0) or 0)
+        except Exception:
+            chat_range_tiles = 0.0
+        if chat_range_tiles > 0:
+            chat_range_px = float(chat_range_tiles) * float(TILE_SIZE)
+            # Heurística para rol vendor: nombre que contenga 'vendor'
+            lower_name = str(monster_type).lower()
+            is_vendor = ("vendor" in lower_name)
+            role = "vendor" if is_vendor else "generic"
+            world.components["ChatComponent"][eid] = ChatComponent(
+                chat_range=chat_range_px,
+                role=role,
+                greeting=None,
+            )
+            if is_vendor:
+                # Precios por defecto definidos en VendorComponent: {"wood": 1} usando moneda "gold".
+                world.components["VendorComponent"][eid] = VendorComponent()
 
         # Combat & CombatStats
         world.components["CombatStats"][eid] = CombatStats(current_hp=cfg["hp"], max_hp=cfg["hp"], power=cfg["power"], defense=cfg["defense"])
         world.components["MeleeWeapon"][eid] = MeleeWeapon(cfg["melee_damage"], cfg["melee_cooldown"])
         world.components["AggroRange"][eid] = AggroRange(cfg["aggro_range"])
         world.components["MeleeRange"][eid] = MeleeRange(cfg["melee_range"])
-        world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"])
+        # Configuración de daño: duración y probabilidad de detenerse al recibir daño
+        stop_prob = float(cfg.get("damage_stop_probability", MONSTER_DEFAULTS.get("damage_stop_probability", 0.25)))
+        world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"], stop_probability=stop_prob)
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")
-        route = build_patrol_route(x, y, patrol_cfg, TILE_SIZE)
-        world.components["PatrolRoute"][eid] = PatrolRoute(
-            points=route.get("points", []),
-            dwell_times=route.get("dwell_times"),
-        )
-        # Try per-class FSM via fsm_set in new_monsters.json, then fallback to assignments.json, then Patrol
+        # Distinguir entre 'patrol' ausente (usar comportamiento previo) y 'patrol': null explícito
+        explicit_null_patrol = ("patrol" in cfg) and (patrol_cfg is None)
+        route = None
+        if not explicit_null_patrol:
+            route = build_patrol_route(x, y, patrol_cfg, TILE_SIZE)
+            world.components["PatrolRoute"][eid] = PatrolRoute(
+                points=route.get("points", []),
+                dwell_times=route.get("dwell_times"),
+            )
+        # Try per-class FSM via fsm_set in new_hostiles.json, then fallback to assignments.json, then Patrol
         fsm_set_id = cfg.get("fsm_set")
         if fsm_set_id:
             try:
@@ -129,9 +169,15 @@ class MonsterBuilder:
                 fsm.context["attack_duration"] = float(attack_duration)
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
-            fsm = FiniteStateMachine(PatrolState())
-            world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
-            # Also make attack_duration available even in Patrol fallback
+            if explicit_null_patrol:
+                # Si el JSON especifica "patrol": null, arrancar en Idle
+                fsm = FiniteStateMachine(IdleState())
+                world.components["NPCState"][eid] = NPCState(fsm, "IdleState")
+            else:
+                # Comportamiento previo: patrulla por defecto
+                fsm = FiniteStateMachine(PatrolState())
+                world.components["NPCState"][eid] = NPCState(fsm, "PatrolState")
+            # Also make attack_duration available even in Idle/Patrol fallback
             attack_duration = cfg.get("damage_duration")
             if attack_duration is not None:
                 fsm.context["attack_duration"] = float(attack_duration)

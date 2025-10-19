@@ -4,6 +4,7 @@ from pathlib import Path
 from roguelike_ui.services.json_persistence import load_from_json
 from roguelike_engine.utils.loader import load_image, load_sprite_sheet
 from roguelike_game.factories.monster.sprite_loader import create_sprite_component
+from roguelike_game.factories.monster.config import reload_monster_defs
 
 from roguelike_game.config.players_config import PLAYER_ASSETS
 from roguelike_editors.entities.entities_title.entities_title_model import EntitiesTitleModel
@@ -20,6 +21,8 @@ class EntitiesEditorModel:
     def __init__(self, data_dir: Path = Path('data')):
         # Editor global
         self.active: bool = False
+        # Persist base data directory for runtime reloads
+        self.data_dir: Path = data_dir
         # Carga de datos JSON
         players_path = data_dir / 'entities' / 'new_players.json'
         players_root = load_from_json(str(players_path))
@@ -31,10 +34,19 @@ class EntitiesEditorModel:
         self.player_assets = PLAYER_ASSETS
         self.player_stats = {cls: cfg.get('stats', {}) for cls, cfg in classes.items()}
         self.orig_size = tuple(players_root.get('ORIGINAL_SPRITE_SIZE', [128, 128]))
-        monsters_path = data_dir / 'entities' / 'new_monsters.json'
-        monsters_root = load_from_json(str(monsters_path))
-        # Only extract nested monster classes
-        self.monsters = monsters_root.get('monsters', {}).get('classes', {})
+        hostiles_path = data_dir / 'entities' / 'new_hostiles.json'
+        hostiles_root = load_from_json(str(hostiles_path))
+        # Extraer solo las clases de hostiles anidadas
+        self.hostiles = hostiles_root.get('hostiles', {}).get('classes', {})
+
+        # Neutrals (nuevo archivo)
+        neutrals_path = data_dir / 'entities' / 'new_neutrals.json'
+        neutrals_root = load_from_json(str(neutrals_path)) if neutrals_path.exists() else {"neutrals": {"classes": {}}}
+        self.neutrals = neutrals_root.get('neutrals', {}).get('classes', {})
+
+        # Alias de compatibilidad: 'monsters' referencia combinada para consumo general
+        self.monsters = {**self.hostiles, **self.neutrals}
+
         # Carga de assets
         self.assets: dict[str, pygame.Surface] = {}
         # Jugadores
@@ -68,8 +80,8 @@ class EntitiesEditorModel:
                 self.assets[pid] = load_image(f'assets/npc/player/{pid}/{pid}_1_down.png')
             except Exception:
                 pass
-                # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
-        # Monstruos: cargar sprites tinted con factory
+            # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
+        # Hostiles + Neutrales: cargar sprites con la factory
         for mid in self.monsters.keys():
             try:
                 sprite, _ = create_sprite_component(mid)
@@ -80,7 +92,8 @@ class EntitiesEditorModel:
         self.title_model = EntitiesTitleModel()
         self.toolbar_model = EntitiesToolBarPanelModel()
         self.add_remove_model = EntitiesAddRemovePanelModel()
-        self.picker_model = EntityPickerPanelModel(self.player_stats, self.monsters, self.assets)
+        self.picker_model = EntityPickerPanelModel(self.player_stats, self.hostiles, self.neutrals, self.assets)
+        # Properties usa el conjunto combinado para editar tanto hostiles como neutrales
         self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.player_assets, self.monsters)
         # Cámara y arrastre
         self.panning: bool = False
@@ -91,6 +104,51 @@ class EntitiesEditorModel:
         self.spawn_entity_type: Optional[str] = None  # id de entidad a colocar
         # Delete mode para entidades en el mapa
         self.delete_mode_active: bool = False  # indica si estamos en modo borrado
+        # Interacción directa sobre entidades del mapa (hover/selección/drag)
+        self.hovered_entity_eid: Optional[int] = None
+        self.selected_entity_eid: Optional[int] = None
+        self.is_right_dragging: bool = False
+        # Offset del click respecto al topleft del sprite en coordenadas mundo
+        self.drag_offset_world: tuple[float, float] = (0.0, 0.0)
+        # Posición inicial (mundo) para comandos de undo/redo de movimiento
+        self.drag_start_world_pos: Optional[tuple[int, int]] = None
+
+    def reload_neutrals(self) -> None:
+        """
+        Recarga el dataset de neutrales desde data/entities/new_neutrals.json y
+        reconstruye íconos de picker para neutrales recién añadidos. Mantiene
+        las referencias de dict in-place para que los controllers/vistas sigan
+        apuntando a los mismos objetos.
+        """
+        try:
+            neutrals_path = self.data_dir / 'entities' / 'new_neutrals.json'
+            if not neutrals_path.exists():
+                return
+            neutrals_root = load_from_json(str(neutrals_path)) or {}
+            new_classes = neutrals_root.get('neutrals', {}).get('classes', {}) or {}
+            # Actualizar dict en sitio (preservar referencias)
+            self.neutrals.clear()
+            self.neutrals.update(new_classes)
+            # Actualizar vista combinada (monsters) para consumo de propiedades/íconos
+            self.monsters.clear()
+            self.monsters.update(self.hostiles)
+            self.monsters.update(self.neutrals)
+            # Recargar definiciones (stats/assets) para que la factory conozca nuevas clases
+            try:
+                reload_monster_defs()
+            except Exception:
+                pass
+            # Construir assets para neutrales que no estén en caché de íconos
+            for mid in self.neutrals.keys():
+                if mid not in self.assets:
+                    try:
+                        sprite, _ = create_sprite_component(mid)
+                        self.assets[mid] = sprite.image
+                    except Exception:
+                        pass
+        except Exception:
+            # Evitar reventar el editor si hay algún problema de lectura
+            pass
 
     @property
     def visible(self) -> bool:

@@ -29,6 +29,12 @@ class ECSManager:
 
         # Spawn jugador (NPCs se spawnean vía sistema de spawners JSON)
         self.spawner.spawn_player(self.ecs_world, map_manager)
+        # Spawn persisted particle instances for the current map
+        try:
+            from .particles_loader import spawn_particles_from_instances as _spawn_particles_from_instances
+            _spawn_particles_from_instances(self.ecs_world)
+        except Exception:
+            pass
 
         # Enlaza entidades
         self.entities_manager.ecs_manager = self

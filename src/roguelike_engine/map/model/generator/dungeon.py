@@ -89,17 +89,33 @@ class DungeonGenerator(MapGenerator):
         half = global_map_settings.dungeon_tunnel_thickness // 2
         x_start = min(x1, x2)
         x_end = max(x1, x2)
-        length = x_end - x_start + 1
+        if not map_:
+            return
         for t in range(global_map_settings.dungeon_tunnel_thickness):
             yy = y + t - half
             if 0 <= yy < len(map_):
-                map_[yy][x_start:x_end+1] = ["="] * length
+                width_row = len(map_[yy])
+                if width_row <= 0:
+                    continue
+                x_start_clip = max(0, x_start)
+                x_end_clip = min(width_row - 1, x_end)
+                if x_start_clip > x_end_clip:
+                    continue
+                length = x_end_clip - x_start_clip + 1
+                # Assign only within clipped range to avoid growing rows
+                map_[yy][x_start_clip:x_end_clip+1] = ["="] * length
 
     @staticmethod
     def _vert_tunnel(map_: List[List[str]], y1: int, y2: int, x: int) -> None:
         half = global_map_settings.dungeon_tunnel_thickness // 2
-        for yy in range(min(y1, y2), max(y1, y2) + 1):
+        height = len(map_)
+        width = len(map_[0]) if height > 0 else 0
+        y_start = max(0, min(y1, y2))
+        y_end = min(height - 1, max(y1, y2))
+        if height <= 0 or width <= 0 or y_start > y_end:
+            return
+        for yy in range(y_start, y_end + 1):
             for t in range(global_map_settings.dungeon_tunnel_thickness):
                 xx = x + t - half
-                if 0 <= xx < len(map_[0]):
+                if 0 <= xx < width:
                     map_[yy][xx] = "="

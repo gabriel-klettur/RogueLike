@@ -88,7 +88,7 @@ class EntitiesAddRemovePanelEventHandler:
                                 except Exception:
                                     pass
                             else:
-                                logger.debug(" Opening Properties Panel to add new monster class")
+                                logger.debug(" Opening Properties Panel to add new hostile class")
                                 self.model.active_tool = tool
                                 try:
                                     # Asegurar que no estamos en modos que ocultan Properties
@@ -96,13 +96,23 @@ class EntitiesAddRemovePanelEventHandler:
                                         self.controller.exit_spawn_mode()
                                     if self.controller.model.delete_mode_active:
                                         self.controller.exit_delete_mode()
-                                    self.controller.open_new_monster_properties()
-                                    # Mostrar selector en Properties Panel, por defecto 'Monster'
+                                    # Abrir propiedades para nuevo Hostile (alias de Monster)
+                                    try:
+                                        self.controller.open_new_hostile_properties()
+                                    except Exception:
+                                        # Compatibilidad: fallback al método original si no existiera
+                                        self.controller.open_new_monster_properties()
+                                    # Mostrar selector en Properties Panel, por defecto 'Hostile'
                                     pp_model = self.controller.properties_controller.model
                                     pp_model.show_add_system_selector = True
-                                    pp_model.add_system_entity_type = 'Monster'
+                                    pp_model.add_system_entity_type = 'Hostile'
                                     # Activar layout expandido y ocultar picker
                                     self.controller.enter_add_entities_on_system_mode()
+                                    # Pulso de tutorial para modo Add on System
+                                    try:
+                                        setattr(self.controller.model, 'tutorial_add_system_mode_pulse', True)
+                                    except Exception:
+                                        pass
                                 except Exception as e:
                                     logger.error(f" Error opening new monster properties: {e}")
                         return True

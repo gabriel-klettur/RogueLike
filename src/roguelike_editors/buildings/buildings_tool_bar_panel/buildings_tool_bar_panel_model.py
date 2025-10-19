@@ -9,11 +9,12 @@ class BuildingsToolBarPanelModel:
     """
     def __init__(self):
         # Claves de botones disponibles en la toolbar
-        self.tools = [
+        self.tools = [            
             'buildings_manager',   # Toggle del picker de edificios
             'buildings_colliders', # Toggle del modo de colisiones
             'undo',
             'redo',
+            'tutorial_building'  # Nuevo botón de tutorial (guía paso a paso)
         ]
         # Herramienta activa (una a la vez)
         self.active_tool: str | None = None

@@ -78,7 +78,7 @@
       "mode": "periodic",
       "cooldown_s": 1.0,
       "proximity_initial_only": true,
-      "between_waves_cooldown_s": 10.0,
+      "between_waves_cooldown_s": 5.0,
       "max_active": 0,
       "persistent": false,
       "restart_on_done": false
@@ -232,6 +232,30 @@
             "spread_fallback_max": 14,
             "min_px_distance": 24
           }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vendor_valeria_respawn_5m",
+    "spawner_type": "invisible",
+    "spawner_shape": "circle",
+    "spawn_radius": 0,
+    "defend_spawn": false,
+    "trigger": { "type": "auto" },
+    "policy": {
+      "mode": "periodic",
+      "advance_on": "cooldown",
+      "cooldown_s": 0.0,
+      "max_active": 1,
+      "persistent": true,
+      "restart_on_done": true,
+      "restart_cooldown_s": 300.0
+    },
+    "waves": [
+      {
+        "spawns": [
+          { "kind": "monster", "id": "vendor_alchemist_valeria", "count": 1, "spread_radius": 0 }
         ]
       }
     ]

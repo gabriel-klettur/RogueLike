@@ -40,7 +40,7 @@ class SpawnersManagerView:
         height = 360
         self.panel_rect = pygame.Rect(x, y, width, height)
         surf = pygame.Surface(self.panel_rect.size, pygame.SRCALPHA)
-        surf.fill((24, 24, 24, 230))
+        surf.fill((24, 24, 24, 255))
         pygame.draw.rect(surf, (100, 100, 100), surf.get_rect(), 2)
         # Header
         try:

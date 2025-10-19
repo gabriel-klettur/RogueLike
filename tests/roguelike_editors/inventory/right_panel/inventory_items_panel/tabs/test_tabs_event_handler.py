@@ -1,5 +1,4 @@
 import pytest
-pytestmark = pytest.mark.skip("Right panel no longer has tabs; behavior moved to left panel")
 import pygame
 from types import SimpleNamespace
 

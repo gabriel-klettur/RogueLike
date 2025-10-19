@@ -29,6 +29,7 @@ class GameLoop:
         g = self.game
         return (
             g.menu.show_menu
+            or (hasattr(g, 'class_selector') and getattr(g.class_selector, 'show', False))
             or g.tiles_editor.editor_state.active
             or g.map_editor.editor_state.active
             or g.inventory_editor.model.visible

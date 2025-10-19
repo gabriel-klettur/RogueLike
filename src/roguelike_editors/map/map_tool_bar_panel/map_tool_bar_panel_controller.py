@@ -7,6 +7,7 @@ from .clear_colliders.clear_colliders_controller import ClearCollidersController
 from .delete_zone.delete_zone_controller import DeleteZoneController
 from .paint_colliders.paint_colliders_controller import PaintCollidersController
 from .view_layers.view_layers_controller import ViewLayersController
+from .paint_tiles.paint_tiles_controller import PaintTilesController
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ class MapToolBarPanelController:
         self.editor = editor_state
         # Optional back-reference to the MapEditorController for tool actions
         self.map_controller = map_controller
+        # Will be injected by MapEditorManager to allow toolbar to toggle tutorial
+        self.editor_manager = None
 
         # Model: geometry, icons, and rects
         self.model = MapToolBarPanelModel(editor_state, x=10, y=10, size=64, padding=8)
@@ -52,6 +55,12 @@ class MapToolBarPanelController:
             map_controller=self.map_controller,
             toolbar_controller=self,
         )
+        # Paint tiles tool: opens floating Tile Picker
+        self.paint_tiles = PaintTilesController(
+            editor_state=editor_state,
+            map_controller=self.map_controller,
+            toolbar_controller=self,
+        )
         self.clear_colliders = ClearCollidersController(
             editor_state=editor_state,
             map_controller=self.map_controller,
@@ -74,6 +83,12 @@ class MapToolBarPanelController:
         """
         Indicates to ToolbarView whether a button should be rendered as active.
         """
+        if tool == "map_tutorial":
+            try:
+                tm = getattr(self, 'editor_manager', None)
+                return bool(tm and getattr(tm, 'tutorial', None) and tm.tutorial.is_active())
+            except Exception:
+                return False
         if tool == "view_layers":
             return bool(self.editor.layers_view_open)
         if tool == "add_zone":
@@ -81,7 +96,10 @@ class MapToolBarPanelController:
         if tool == "delete_zone":
             return bool(getattr(self.editor, "delete_zone_mode", False))
         if tool == "paint_tiles":
-            return bool(getattr(self.editor, "paint_tiles_mode", False))
+            try:
+                return bool(self.paint_tiles.is_open())
+            except Exception:
+                return bool(getattr(self.editor, "paint_tiles_mode", False))
         if tool == "clear_colliders":
             return bool(getattr(self.editor, "clear_colliders_mode", False))
         if tool == "paint_colliders":

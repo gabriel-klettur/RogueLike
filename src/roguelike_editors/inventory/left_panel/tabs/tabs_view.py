@@ -54,7 +54,7 @@ class TabsView:
             tab_x += rect.width + 5
 
         # 2) Pestañas secundarias (Show Default/Show Active) a la derecha, ocultas en 'map'
-        if self.show_side_tabs and getattr(model, 'current_category', None) in ('player', 'monsters'):
+        if self.show_side_tabs and getattr(model, 'current_category', None) in ('player', 'monsters', 'hostile'):
             padding = 10
             side_gap = 5
             # Preparar superficies para conocer anchos

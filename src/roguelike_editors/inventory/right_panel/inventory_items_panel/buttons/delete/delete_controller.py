@@ -45,7 +45,7 @@ class DeleteController:
                         else:
                             slots[slot_idx] = None
                         tpl['slots'] = slots
-            elif cat == 'monsters':
+            elif cat in ('monsters', 'hostile'):
                 # Determine target template_id: prefer explicit selection from left list
                 sel_tid = getattr(self.editor_model, 'selected_default_template_id', None)
                 template_id = sel_tid
@@ -70,7 +70,7 @@ class DeleteController:
                             break
         elif side == 'active':
             active_map = self.editor_model.active_data.get(cat, {})
-            if cat == 'monsters':
+            if cat in ('monsters', 'hostile'):
                 inst_comp = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
                 key = inst_comp.instance_id if inst_comp else str(eid)
             else:
@@ -86,7 +86,7 @@ class DeleteController:
                 entry['slots'] = slots
                 active_map[key] = entry
             # Actualizar componente ECS
-            if cat == 'monsters':
+            if cat in ('monsters', 'hostile'):
                 inst_map = self.world.components.get('MonsterInstanceComponent', {})
                 numeric_eid = next((e for e, comp in inst_map.items() if comp.instance_id == key), None)
             else:

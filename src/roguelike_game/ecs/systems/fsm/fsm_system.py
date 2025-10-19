@@ -7,7 +7,10 @@ from roguelike_editors.fsm.services.fsm_registry import get_state_class
 from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
+from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 import time
+import random
+from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 
 # Wrapper para pasar entidad con acceso a world e id como key en componentes
 class _EntityProxy:
@@ -29,7 +32,11 @@ class FSMSystem:
     
     def update(self, world, camera=None):
         # Iterar sobre copia para evitar modificación concurrente al remover entidades
-        for eid in list(world.get_entities_with('NPCState')):
+        try:
+            eids = list(world.get_entities_with('NPCState'))
+        except Exception:
+            eids = list(world.components.get('NPCState', {}).keys())
+        for eid in eids:
             npc_state = world.components['NPCState'][eid]
             entity = _EntityProxy(world, eid)
             # Consumir eventos de FSM antes de update() por entidad
@@ -49,7 +56,18 @@ class FSMSystem:
             ev = events.pop(0)
             etype = ev.get('type')
             if etype == 'OnHit':
+                # Si ya está muerto o inconsciente, ignorar golpes para no alterar timers
+                if isinstance(fsm.current_state, (UnconsciousState, DeathState)):
+                    continue
                 from_left = bool(ev.get('from_left', False))
+                # Política: probabilidad configurable de detenerse (stun) al recibir daño.
+                dmg_cfg = world.components.get('DamageConfig', {}).get(eid)
+                stop_prob = float(getattr(dmg_cfg, 'stop_probability', 0.25))
+                duration = float(getattr(dmg_cfg, 'duration', 0.25))
+                # Si NO cae en la probabilidad de stun, solo aplicar flash y continuar sin cambiar de estado.
+                if random.random() >= stop_prob:
+                    world.components.setdefault('FlashComponent', {})[eid] = FlashComponent((255, 255, 255), duration)
+                    continue
                 # Política de siguiente estado tras Damage
                 current = fsm.current_state
                 if isinstance(current, AttackState):
@@ -60,7 +78,10 @@ class FSMSystem:
                     next_state = cls() if cls is not None else AttackState()
                 fsm.change_state(DamageState(next_state, from_left), entity)
             elif etype == 'OnDeath':
-                fsm.change_state(DeathState(), entity)
+                # Evitar reentrada a estados terminales; enrutar a UnconsciousState la primera vez
+                if isinstance(fsm.current_state, (UnconsciousState, DeathState)):
+                    continue
+                fsm.change_state(UnconsciousState(), entity)
 
     def _evaluate_json_transitions(self, world, eid, npc_state, entity):
         """Evalúa transiciones simples definidas en JSON que dependan de timers en contexto.

@@ -32,21 +32,43 @@ class SpawnerManagerController:
 
     def set_visible(self, visible: bool) -> None:
         if visible and not self.model.visible:
-            # Became visible -> refresh list from disk
             try:
                 self.list_controller.refresh_from_disk()
             except Exception:
                 pass
-            # Sync selection to properties on show
             try:
                 self._sync_selection_to_props()
             except Exception:
                 pass
         self.model.visible = visible
+        try:
+            self._was_visible = bool(visible)
+        except Exception:
+            pass
 
     def render(self, screen, *, anchor=None):
         if not self.model.visible:
             return None
+        try:
+            if not self._was_visible:
+                try:
+                    self.list_controller.refresh_from_disk()
+                except Exception:
+                    pass
+                try:
+                    self._sync_selection_to_props()
+                except Exception:
+                    pass
+                self._was_visible = True
+        except Exception:
+            pass
+        # Ensure list is populated at least once
+        try:
+            items = list(getattr(getattr(self.list_controller, 'model', None), 'items', []) or [])
+            if len(items) == 0:
+                self.list_controller.refresh_from_disk()
+        except Exception:
+            pass
         return self.view.render(self, screen, anchor=anchor)
 
     def handle_event(self, event) -> bool:

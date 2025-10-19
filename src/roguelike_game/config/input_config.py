@@ -3,6 +3,8 @@ import json
 import os
 from typing import Optional
 
+from ._input_defaults import DEFAULT_BINDINGS, MOUSE_DEFAULTS, TRISLOT_BASES
+
 class InputConfig:
     # Singleton por ruta de config
     _instances: dict[str, 'InputConfig'] = {}
@@ -28,135 +30,52 @@ class InputConfig:
     def _load(self):
         if os.path.exists(self.path):
             with open(self.path, 'r', encoding='utf-8') as f:
-                self.bindings = json.load(f)
+                try:
+                    self.bindings = json.load(f) or {}
+                except Exception:
+                    self.bindings = {}
         else:
-            # Valores por defecto
-            self.bindings = {
-                "move_up": "K_UP",
-                "move_down": "K_DOWN",
-                "move_left": "K_LEFT",
-                "move_right": "K_RIGHT",
-                "spell_lightball": "K_q",
-                "spell_slash": "K_e",
-                "spell_healing_aura": "K_x",
-                "spell_darkball": "K_1",
-                "spell_iceball": "K_2",
-                "spell_arcane_flame": "K_c",
-                "spell_firework_launch": "K_v",
-                "spell_smoke": "K_f",
-                "spell_smoke_emitter": "K_g",
-                "spell_sphere_magic_shield": "K_t",
-                "spell_teleport": "K_j",
-                "pause": "K_ESCAPE",
-                # Editor toggles (defaults)
-                "toggle_spawner_editor": "K_F3",
-                "toggle_spells_editor": "K_F4",
-                "toggle_entities_editor": "K_F5",
-                "toggle_inventory_editor": "K_F6",
-                "toggle_item_editor": "K_F7",
-                "toggle_tile_editor": "K_F8",
-                "toggle_building_editor": "K_F10",
-                "toggle_map_editor": "K_F11",
-                "toggle_fsm_editor": "K_F12",
-                # Diagnostics overlay toggle
-                "toggle_debug_overlay": "K_F9",
-                "select_class": "K_F2",
-                # Gameplay inventory (not editor)
-                "toggle_inventory": "K_i"
-            }
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
-            with open(self.path, 'w', encoding='utf-8') as f:
-                json.dump(self.bindings, f, indent=4)
+            self.bindings = {}
 
-        # Ensure presence of editor toggle bindings in user config for discoverability
         ensured = False
-        if "toggle_spawner_editor" not in self.bindings:
-            self.bindings["toggle_spawner_editor"] = "K_F3"; ensured = True
-        if "toggle_spells_editor" not in self.bindings:
-            self.bindings["toggle_spells_editor"] = "K_F4"; ensured = True
-        if "toggle_entities_editor" not in self.bindings:
-            self.bindings["toggle_entities_editor"] = "K_F5"; ensured = True
-        if "toggle_inventory_editor" not in self.bindings:
-            self.bindings["toggle_inventory_editor"] = "K_F6"; ensured = True
-        if "toggle_item_editor" not in self.bindings:
-            self.bindings["toggle_item_editor"] = "K_F7"; ensured = True
-        if "toggle_tile_editor" not in self.bindings:
-            self.bindings["toggle_tile_editor"] = "K_F8"; ensured = True
-        if "toggle_building_editor" not in self.bindings:
-            self.bindings["toggle_building_editor"] = "K_F10"; ensured = True
-        if "toggle_map_editor" not in self.bindings:
-            self.bindings["toggle_map_editor"] = "K_F11"; ensured = True
-        if "toggle_fsm_editor" not in self.bindings:
-            self.bindings["toggle_fsm_editor"] = "K_F12"; ensured = True
-        # Ensure diagnostics overlay toggle binding exists
-        if "toggle_debug_overlay" not in self.bindings:
-            self.bindings["toggle_debug_overlay"] = "K_F9"; ensured = True
-        if ensured:
-            self.save()
-        if "toggle_inventory" not in self.bindings:
-            self.bindings["toggle_inventory"] = "K_i"
-            self.save()
-
-        # Asegurar binding para lightning
-        if "spell_lightning" not in self.bindings:
-            self.bindings["spell_lightning"] = "K_r"
-        # Asegurar binding para arcane flame
-        if "spell_arcane_flame" not in self.bindings:
-            if "spell_firework_launch" not in self.bindings:
-                self.bindings["spell_firework_launch"] = "K_v"
-                self.save()
-            self.bindings["spell_arcane_flame"] = "K_c"
-            self.save()
-            self.bindings["spell_lightning"] = "K_r"
-
-        if "select_class" not in self.bindings:
-            self.bindings["select_class"] = "K_F2"
-            self.save()
-
-        # Mouse actions defaults (allow configuring dash, fireball, laser beam)
-        ensured_mouse = False
-        if "mouse_fireball" not in self.bindings:
-            self.bindings["mouse_fireball"] = "M_LEFT"  # left click
-            ensured_mouse = True
-        if "mouse_laser_beam" not in self.bindings:
-            self.bindings["mouse_laser_beam"] = "M_MIDDLE"  # middle click
-            ensured_mouse = True
-        if "mouse_dash" not in self.bindings:
-            self.bindings["mouse_dash"] = "M_RIGHT"  # right click
-            ensured_mouse = True
-        if ensured_mouse:
-            self.save()
-
-        # Ensure triple-slot bindings for combat actions (keyboard A/B + mouse)
-        ensured_slots = False
-        for base in ("fireball", "laser_beam", "dash"):
-            kb_a = f"kb_{base}_a"
-            kb_b = f"kb_{base}_b"
+        # Ensure keyboard defaults
+        for k, v in DEFAULT_BINDINGS.items():
+            if k not in self.bindings:
+                self.bindings[k] = v
+                ensured = True
+        # Ensure mouse defaults
+        for k, v in MOUSE_DEFAULTS.items():
+            if k not in self.bindings:
+                self.bindings[k] = v
+                ensured = True
+        # Ensure tri-slot A/B and mouse_{base}
+        for base in TRISLOT_BASES:
+            a = f"kb_{base}_a"
+            b = f"kb_{base}_b"
+            if a not in self.bindings:
+                self.bindings[a] = ""
+                ensured = True
+            if b not in self.bindings:
+                self.bindings[b] = ""
+                ensured = True
             mkey = f"mouse_{base}"
-            if kb_a not in self.bindings:
-                self.bindings[kb_a] = ""  # empty means unbound
-                ensured_slots = True
-            if kb_b not in self.bindings:
-                self.bindings[kb_b] = ""
-                ensured_slots = True
-            # mouse_{base} ya se asegura arriba, pero por si el archivo del usuario es antiguo
             if mkey not in self.bindings:
-                # establecer un valor razonable por defecto
-                default_mouse = {
-                    "fireball": "M_LEFT",
-                    "laser_beam": "M_MIDDLE",
-                    "dash": "M_RIGHT",
-                }[base]
-                self.bindings[mkey] = default_mouse
-                ensured_slots = True
-        if ensured_slots:
+                default_mouse = MOUSE_DEFAULTS.get(mkey)
+                if default_mouse:
+                    self.bindings[mkey] = default_mouse
+                    ensured = True
+        # Migration: old reload_data K_F5 -> K_F1
+        try:
+            if str(self.bindings.get("reload_data", "")).upper() == "K_F5":
+                self.bindings["reload_data"] = "K_F1"
+                ensured = True
+        except Exception:
+            pass
+        if ensured:
             self.save()
 
     def get_key(self, action):
-        """
-        Retorna el código pygame de la tecla para una acción.
-        Primero intenta la configuración del usuario, luego aplica valores por defecto.
-        """
+        """Retorna el keycode pygame para una acción (preferencia: slots A/B, usuario, default)."""
         # Preferir tri-slot si existe: kb_<action>_a, luego kb_<action>_b
         if isinstance(action, str):
             a_code = self.get_key_for_binding(f"kb_{action}_a")
@@ -165,71 +84,18 @@ class InputConfig:
             b_code = self.get_key_for_binding(f"kb_{action}_b")
             if b_code is not None:
                 return b_code
-        # Mapeo de valores por defecto
-        defaults = {
-            "move_up": pygame.K_UP,
-            "move_down": pygame.K_DOWN,
-            "move_left": pygame.K_LEFT,
-            "move_right": pygame.K_RIGHT,
-            "spell_lightball": pygame.K_q,
-            "spell_slash": pygame.K_e,
-            "spell_healing_aura": pygame.K_x,
-            "spell_darkball": pygame.K_1,
-            "spell_iceball": pygame.K_2,
-            "spell_arcane_flame": pygame.K_c,
-            "spell_firework_launch": pygame.K_v,
-            "spell_smoke": pygame.K_f,
-            "spell_smoke_emitter": pygame.K_g,
-            "spell_sphere_magic_shield": pygame.K_t,
-            "spell_teleport": pygame.K_j,
-            "pause": pygame.K_ESCAPE,
-            # Editor toggles (defaults)
-            "toggle_spawner_editor": pygame.K_F3,
-            "toggle_spells_editor": pygame.K_F4,
-            "toggle_entities_editor": pygame.K_F5,
-            "toggle_inventory_editor": pygame.K_F6,
-            "toggle_item_editor": pygame.K_F7,
-            "toggle_tile_editor": pygame.K_F8,
-            "toggle_building_editor": pygame.K_F10,
-            "toggle_map_editor": pygame.K_F11,
-            "toggle_fsm_editor": pygame.K_F12,
-            "toggle_debug_overlay": pygame.K_F9,
-            # Gameplay inventory (not editor)
-            "toggle_inventory": pygame.K_i,
-            "select_class": pygame.K_F2
-        }
-
-        # Intentar binding de usuario (binding base, p.ej. 'move_up' -> 'K_UP')
-        name = self.bindings.get(action)
-        if name:
-            if name.startswith("K_"):
-                try:
-                    return getattr(pygame, name)
-                except AttributeError:
-                    # try lowercase variant after K_
-                    alt = "K_" + name[2:].lower()
-                    try:
-                        return getattr(pygame, alt)
-                    except AttributeError:
-                        pass
-            try:
-                return pygame.key.key_code(name)
-            except Exception:
-                pass
-        # Devolver valor por defecto si existe
-        if action in defaults:
-            return defaults[action]
+        # Intentar binding de usuario y luego default
+        code = self._resolve_key_name(self.bindings.get(action))
+        if code is not None:
+            return code
+        code = self._resolve_key_name(DEFAULT_BINDINGS.get(action))
+        if code is not None:
+            return code
         # Si no hay binding y no es acción conocida, error
         raise KeyError(f"No key binding for action '{action}'")
 
     def get_keys_for_action(self, action: str) -> list[int]:
-        """Devuelve una lista de keycodes pygame para una acción, agregando:
-        - kb_<action>_a y kb_<action>_b si existen
-        - binding base (self.bindings[action]) si es una tecla válida
-        - valor por defecto si existe en la tabla de defaults
-
-        El orden es [kb_a, kb_b, base, default] y se eliminan duplicados conservando el orden.
-        """
+        """Devuelve keycodes pygame para una acción: [kb_a, kb_b, base, default] sin duplicados."""
         codes: list[int] = []
         if not isinstance(action, str):
             return codes
@@ -241,61 +107,13 @@ class InputConfig:
         if b_code is not None:
             codes.append(b_code)
         # 2) Binding base de usuario (si es tecla)
-        name = self.bindings.get(action)
-        if isinstance(name, str) and name:
-            up = name.upper()
-            # Soportar nombres tipo 'K_*' o equivalentes en minúscula
-            if up.startswith("K_"):
-                try:
-                    codes.append(getattr(pygame, up))
-                except AttributeError:
-                    # probar variante minúscula tras K_
-                    alt = "K_" + name[2:].lower()
-                    try:
-                        codes.append(getattr(pygame, alt))
-                    except AttributeError:
-                        try:
-                            codes.append(pygame.key.key_code(name))
-                        except Exception:
-                            pass
-            else:
-                try:
-                    codes.append(pygame.key.key_code(name))
-                except Exception:
-                    pass
-        # 3) Valores por defecto (idénticos a los de get_key)
-        defaults = {
-            "move_up": pygame.K_UP,
-            "move_down": pygame.K_DOWN,
-            "move_left": pygame.K_LEFT,
-            "move_right": pygame.K_RIGHT,
-            "spell_lightball": pygame.K_q,
-            "spell_slash": pygame.K_e,
-            "spell_healing_aura": pygame.K_x,
-            "spell_darkball": pygame.K_1,
-            "spell_iceball": pygame.K_2,
-            "spell_arcane_flame": pygame.K_c,
-            "spell_firework_launch": pygame.K_v,
-            "spell_smoke": pygame.K_f,
-            "spell_smoke_emitter": pygame.K_g,
-            "spell_sphere_magic_shield": pygame.K_t,
-            "spell_teleport": pygame.K_j,
-            "pause": pygame.K_ESCAPE,
-            "toggle_spawner_editor": pygame.K_F3,
-            "toggle_spells_editor": pygame.K_F4,
-            "toggle_entities_editor": pygame.K_F5,
-            "toggle_inventory_editor": pygame.K_F6,
-            "toggle_item_editor": pygame.K_F7,
-            "toggle_tile_editor": pygame.K_F8,
-            "toggle_building_editor": pygame.K_F10,
-            "toggle_map_editor": pygame.K_F11,
-            "toggle_fsm_editor": pygame.K_F12,
-            "toggle_debug_overlay": pygame.K_F9,
-            "toggle_inventory": pygame.K_i,
-            "select_class": pygame.K_F2,
-        }
-        if action in defaults:
-            codes.append(defaults[action])
+        base_code = self._resolve_key_name(self.bindings.get(action))
+        if isinstance(base_code, int):
+            codes.append(base_code)
+        # 3) Valor por defecto (idéntico a get_key, vía DEFAULT_BINDINGS)
+        default_code = self._resolve_key_name(DEFAULT_BINDINGS.get(action))
+        if isinstance(default_code, int):
+            codes.append(default_code)
         # 4) Deduplicar preservando orden
         seen = set()
         uniq: list[int] = []
@@ -362,6 +180,25 @@ class InputConfig:
             return binding_key[len('mouse_'):]
         return binding_key
 
+    def _resolve_key_name(self, name: Optional[str]) -> Optional[int]:
+        """Resuelve un nombre textual a keycode pygame. Acepta K_* y nombres key_code."""
+        if not name or not isinstance(name, str):
+            return None
+        up = name.upper()
+        if up.startswith("K_"):
+            try:
+                return getattr(pygame, up)
+            except AttributeError:
+                alt = "K_" + name[2:].lower()
+                try:
+                    return getattr(pygame, alt)
+                except AttributeError:
+                    return None
+        try:
+            return pygame.key.key_code(name)
+        except Exception:
+            return None
+
     def get_key_for_binding(self, binding_key: str) -> Optional[int]:
         """Resolve pygame keycode for a K_* binding entry; returns None if unbound or non-key."""
         name = self.bindings.get(binding_key, "")
@@ -404,9 +241,7 @@ class InputConfig:
     }
 
     def get_mouse_button(self, action: str) -> int:
-        """Return pygame mouse button index for a mouse action binding.
-        Defaults to left click if invalid/not found.
-        """
+        """Devuelve el índice de botón de ratón; por defecto, izquierdo (0)."""
         name = self.bindings.get(action)
         if isinstance(name, str) and name.upper().startswith("M_"):
             return self._MOUSE_BUTTONS.get(name.upper(), 0)

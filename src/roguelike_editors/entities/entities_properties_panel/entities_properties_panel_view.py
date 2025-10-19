@@ -2,7 +2,6 @@ import pygame
 from roguelike_ui.ui_blocker import register_blocker
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_ui.panel import DraggablePanel
-from roguelike_ui.widgets.hover import draw_hover
 from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
     TYPE_TAB_PROPERTIES,
     TYPE_TAB_ASSETS,
@@ -17,7 +16,18 @@ from roguelike_editors.entities.entities_properties_panel.services.stats_templat
     PLAYER_STATS_TEMPLATE,
     MONSTER_STATS_TEMPLATE,
 )
-
+from roguelike_editors.entities.entities_properties_panel.render_utils import (
+    draw_background,
+    draw_properties,
+    draw_editing_indicator,
+    draw_confirm_button,
+    draw_entity_type_selector,
+    truncate_text,
+)
+from roguelike_editors.entities.entities_properties_panel.data_utils import (
+    get_entity_stats_data,
+    get_entity_data,
+)
 
 
 class EntityPropertiesPanelView:
@@ -139,7 +149,7 @@ class EntityPropertiesPanelView:
         register_blocker(model.panel_rect)
 
         # 1. Dibujar fondo
-        self._draw_background(screen, px, py, panel_w, panel_h)
+        draw_background(screen, px, py, panel_w, panel_h)
 
         # Dibujar pestañas principales (properties/assets)
         self.type_assets_controller.draw(screen)
@@ -156,8 +166,9 @@ class EntityPropertiesPanelView:
             # Reset confirm rect por defecto
             model.confirm_button_rect = None
             if getattr(model, 'show_add_system_selector', False):
-                sel_consumed_h = self._draw_entity_type_selector(
+                sel_consumed_h = draw_entity_type_selector(
                     screen,
+                    self.font,
                     model,
                     px,
                     py + primary_header + state_header,
@@ -185,11 +196,11 @@ class EntityPropertiesPanelView:
                 pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, scrollbar_width, bar_h))
                 pygame.draw.rect(screen, (200, 200, 200), (bar_x, thumb_y, scrollbar_width, thumb_h))
             # Draw properties with scroll bajo el selector
-            self._draw_properties(screen, model, lines, px, content_y0, pad, font_h, panel_w)
-            self._draw_editing_indicator(screen, model, font_h)
+            draw_properties(screen, self.font, model, lines, px, content_y0, pad, font_h, panel_w)
+            draw_editing_indicator(screen, self.font, model, self.blink_interval, font_h)
             # Dibujar botón Confirm al fondo del panel cuando se está añadiendo una entidad al sistema
             if confirm_visible:
-                self._draw_confirm_button(screen, model, px, py, panel_w, panel_h, pad, font_h)
+                draw_confirm_button(screen, self.font, model, px, py, panel_w, panel_h, pad, font_h)
         elif self.type_assets_controller.model.active_type_tab == TYPE_TAB_ASSETS:
             # Calcular métricas de scroll para Assets
             grid_w = panel_w - pad * 2
@@ -236,220 +247,31 @@ class EntityPropertiesPanelView:
             screen.set_clip(None)
 
     # ----------------------------
-    # MÉTODOS PRIVADOS
+    # MÉTODOS PRIVADOS (delegados)
     # ----------------------------
     def _get_entity_data(self, model: EntityPropertiesPanelModel) -> dict:
-        """Obtiene los datos aplanados de la entidad seleccionada o hovered.
-
-        Delegado a services.entity_flatten.flatten_entity_data para mantener la vista
-        desacoplada de la estructura JSON interna.
-        """
-        ent_id = model.hovered_entity_id or model.selected_id
-        # En modo "Add Entities on System" con selector visible, mostrar SOLO las propiedades
-        # de la sección 'stats' según el tipo elegido (Player/Monster).
-        if getattr(model, 'show_add_system_selector', False):
-            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
-            if sel_type == 'Player':
-                # Para jugadores, los stats del modelo ya están disponibles a nivel de clase
-                # en model.player_stats[ent_id]. Si no existe, devolver dict vacío.
-                return dict(model.player_stats.get(ent_id, {}))
-            else:
-                # Para monstruos, los stats viven dentro de la entrada de monstruo.
-                monster = model.monsters.get(ent_id, {}) if model.monsters else {}
-                return dict(monster.get('stats', {}))
-        # Comportamiento normal: aplanar toda la entidad (stats + assets en claves 'asset_*')
-        return flatten_entity_data(model.player_stats, model.player_assets, model.monsters, ent_id)
+        return get_entity_data(model)
 
     def _draw_background(self, screen: pygame.Surface, x: int, y: int, w: int, h: int) -> None:
-        """Dibuja el fondo semitransparente del panel."""
-        info_surf = pygame.Surface((w, h), pygame.SRCALPHA)
-        info_surf.fill((0, 0, 0, 200))
-        screen.blit(info_surf, (x, y))
+        draw_background(screen, x, y, w, h)
 
     def _get_entity_stats_data(self, model: EntityPropertiesPanelModel) -> dict:
-        """Retorna sólo los 'stats' según el selector 'Type of Entity',
-        fusionando con una plantilla de claves esperadas y aplanando
-        anidados simples (p. ej., 'basic_trail.interval').
-
-        - Player: plantilla PLAYER_STATS_TEMPLATE + stats jugador
-        - Monster: plantilla MONSTER_STATS_TEMPLATE + stats monstruo
-        """
-        def _flatten(d: dict) -> dict:
-            flat: dict = {}
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    for sk, sv in v.items():
-                        flat[f"{k}.{sk}"] = sv
-                else:
-                    flat[k] = v
-            return flat
-
-        ent_id = model.hovered_entity_id or model.selected_id
-        if getattr(model, 'show_add_system_selector', False):
-            sel_type = getattr(model, 'add_system_entity_type', 'Monster')
-        else:
-            # Inferir tipo por pertenencia del id
-            sel_type = 'Player' if ent_id in model.player_stats else 'Monster'
-        if sel_type == 'Player':
-            tmpl = PLAYER_STATS_TEMPLATE
-            src = model.player_stats.get(ent_id, {})
-        else:
-            tmpl = MONSTER_STATS_TEMPLATE
-            src = (model.monsters.get(ent_id, {}) or {}).get('stats', {})
-
-        # Deep-ish merge (1 nivel) y aplanado
-        merged: dict = {}
-        # copiar plantilla
-        for k, v in tmpl.items():
-            if isinstance(v, dict):
-                merged[k] = dict(v)
-            else:
-                merged[k] = v
-        # sobreescribir con valores reales
-        for k, v in src.items():
-            if isinstance(v, dict) and isinstance(merged.get(k), dict):
-                merged[k].update(v)
-            else:
-                merged[k] = v
-
-        return _flatten(merged)
+        return get_entity_stats_data(model)
 
     def _draw_properties(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                          lines: list[str], px: int, py: int, pad: int, font_h: int, panel_w: int) -> None:
-        """Renderiza las propiedades, maneja hover y actualiza las áreas clicables."""
-        # Configurar recorte para no dibujar fuera del área de contenido
-        content_start_y = py + pad
-        prev_clip = screen.get_clip()
-        screen.set_clip(pygame.Rect(px + pad, content_start_y, panel_w - pad*2, model.available_height))
-        tx = px + pad
-        ty = py + pad - model.scroll_offset
-        model.property_entries.clear()
-
-        for i, line in enumerate(lines):
-            # Línea de encabezado sólo si no es par clave:valor
-            is_header = (i == 0) and (': ' not in line)
-            if is_header:
-                text = self._truncate_text(line, panel_w - pad * 2)
-                txt_surf = self.font.render(text, True, (255, 255, 0))
-                screen.blit(txt_surf, (tx, ty))
-                ty += font_h + 2
-                continue
-            # Separar clave y valor
-            parts = line.split(': ', 1)
-            if len(parts) != 2:
-                # Si no tiene formato clave: valor, omitir
-                continue
-            key, val_str = parts[0], parts[1]
-            # Renderizar clave en blanco
-            key_text = f'{key}: '
-            key_surf = self.font.render(self._truncate_text(key_text, panel_w - pad * 2), True, (255, 255, 255))
-            # Renderizar valor en color según contenido
-            color = (128, 0, 128) if val_str == 'None' else (255, 255, 0)
-            val_surf = self.font.render(self._truncate_text(val_str, panel_w - pad * 2 - key_surf.get_width()), True, color)
-            # Registrar área clicable
-            rect = pygame.Rect(tx, ty, key_surf.get_width() + val_surf.get_width(), font_h)
-            model.property_entries.append((rect, key))
-            # Hover visual
-            if key == model.hovered_property:
-                draw_hover(screen, rect)
-            # Dibujar clave y valor
-            screen.blit(key_surf, (tx, ty))
-            screen.blit(val_surf, (tx + key_surf.get_width(), ty))
-            ty += font_h + 2
-
-
-
-        # Restaurar recorte tras dibujar propiedades
-        screen.set_clip(None)
+        draw_properties(screen, self.font, model, lines, px, py, pad, font_h, panel_w)
 
     def _draw_editing_indicator(self, screen: pygame.Surface, model: EntityPropertiesPanelModel, font_h: int) -> None:
-        """Dibuja los indicadores de edición activa o foco."""
-        # Si hay edición activa
-        if model.editing_property:
-            for rect, key in model.property_entries:
-                if key == model.editing_property:
-                    # Marco púrpura
-                    er = rect.inflate(4, 0)
-                    pygame.draw.rect(screen, (128, 0, 128), er, 2)
-
-                    # Cursor parpadeante
-                    t = pygame.time.get_ticks()
-                    if (t % self.blink_interval) < (self.blink_interval // 2):
-                        prefix = f"{key}: "
-                        caret_x = er.x + self.font.size(prefix + model.editing_text[:model.editing_cursor])[0]
-                        caret_y = er.y
-                        pygame.draw.line(screen, (255, 255, 255), (caret_x, caret_y),
-                                         (caret_x, caret_y + font_h), 2)
-                    break
-
-        # Si solo hay foco
-        elif model.focused_property:
-            for rect, key in model.property_entries:
-                if key == model.focused_property:
-                    hl_rect = rect.inflate(4, 0)
-                    pygame.draw.rect(screen, (255, 255, 0), hl_rect, 2)
-                    break
+        draw_editing_indicator(screen, self.font, model, self.blink_interval, font_h)
 
     def _truncate_text(self, text: str, max_width: int) -> str:
-        """Trunca el texto y añade '...' si excede el ancho disponible."""
-        if self.font.size(text)[0] <= max_width:
-            return text
-        text = text.rstrip()
-        while self.font.size(text + '...')[0] > max_width and text:
-            text = text[:-1]
-        return text + '...'
+        return truncate_text(self.font, text, max_width)
 
     def _draw_entity_type_selector(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                                    px: int, py: int, pad: int, font_h: int, panel_w: int) -> int:
-        """Dibuja el label y combobox 'Type of Entity' en la parte superior del panel Properties.
-
-        Retorna la altura consumida para ajustar el área scrollable inferior.
-        """
-        tx = px + pad
-        ty = py + pad
-        # Label
-        label = "Type of Entity"
-        label_surf = self.font.render(label, True, (255, 255, 255))
-        screen.blit(label_surf, (tx, ty))
-        # Combobox
-        value = getattr(model, 'add_system_entity_type', 'Monster')
-        value_text = str(value)
-        value_surf = self.font.render(value_text, True, (0, 0, 0))
-        cb_pad_x = 8
-        cb_w = max(120, value_surf.get_width() + cb_pad_x * 2)
-        cb_h = font_h + 6
-        cb_x = tx + label_surf.get_width() + pad
-        cb_y = ty - 2
-        rect = pygame.Rect(cb_x, cb_y, min(cb_w, panel_w - (cb_x - px) - pad), cb_h)
-        # Fondo y borde
-        pygame.draw.rect(screen, (200, 200, 200), rect)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 2)
-        # Texto centrado
-        text_x = rect.x + (rect.w - value_surf.get_width()) // 2
-        text_y = rect.y + (rect.h - value_surf.get_height()) // 2
-        screen.blit(value_surf, (text_x, text_y))
-        # Guardar rect para eventos
-        model.entity_type_rect = rect
-        # Altura consumida (label + margen inferior)
-        consumed_h = max(label_surf.get_height(), rect.h) + pad
-        return consumed_h
+        return draw_entity_type_selector(screen, self.font, model, px, py, pad, font_h, panel_w)
 
     def _draw_confirm_button(self, screen: pygame.Surface, model: EntityPropertiesPanelModel,
                               px: int, py: int, panel_w: int, panel_h: int, pad: int, font_h: int) -> None:
-        """Dibuja el botón de confirmación en la parte inferior del panel y guarda su rect en el modelo."""
-        btn_text = "Confirm"
-        text_surf = self.font.render(btn_text, True, (255, 255, 255))
-        btn_h = font_h + 6
-        btn_w = panel_w - pad * 2
-        btn_x = px + pad
-        btn_y = py + panel_h - pad - btn_h
-        rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
-        # Fondo verde y borde
-        pygame.draw.rect(screen, (0, 140, 0), rect)
-        pygame.draw.rect(screen, (255, 255, 255), rect, 2)
-        # Texto centrado
-        tx = rect.x + (rect.w - text_surf.get_width()) // 2
-        ty = rect.y + (rect.h - text_surf.get_height()) // 2
-        screen.blit(text_surf, (tx, ty))
-        # Guardar rect
-        model.confirm_button_rect = rect
+        draw_confirm_button(screen, self.font, model, px, py, panel_w, panel_h, pad, font_h)

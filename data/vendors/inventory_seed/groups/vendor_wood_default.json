@@ -1,0 +1,7 @@
+{
+  "slots": [
+    { "item": "wood", "quantity": 30 },
+    { "item": "gold", "quantity": 150 }
+  ],
+  "schema_version": "1.0.0"
+}

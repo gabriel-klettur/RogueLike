@@ -10,6 +10,7 @@ from roguelike_editors.tiles.tiles_collision_panel.tiles_collision_panel_control
 from roguelike_editors.tiles.layers_panel.layers_panel_controller import LayersPanelController
 from roguelike_editors.tiles.size_panel.size_panel_controller import SizePanelController
 from roguelike_editors.tiles.tile_outline_view import TileOutlineView
+from roguelike_editors.tiles.tiles_tutorial_panel.tiles_tutorial_panel_controller import TilesTutorialPanelController
 
 from roguelike_engine.utils.loader import load_image
 from roguelike_editors.tiles.tiles_editor_config import BRUSH_UPDATE_THROTTLE_MS
@@ -40,12 +41,15 @@ class TileEditorController:
         self.layers_panel_controller =      LayersPanelController(self, editor_state.layers_panel_state)
         self.size_panel_controller =        SizePanelController(self, editor_state.size_panel_state)
         self.outline_view =                 TileOutlineView(self, editor_state)
+        # Tutorial panel controller (overlay)
+        self.tutorial_controller =          TilesTutorialPanelController(self)
         
         self.brush_cache: dict[str, pygame.Surface] = {}
         # Cache to avoid recomputing overlay code mapping for the same choice path
         self._code_cache: dict[str, str] = {}
         # Track whether we already updated chunks during this stroke
         self._did_partial_updates: bool = False
+        
         # Throttle timer for chunk updates (ms since pygame init)
         self._last_chunk_update_ms: int = 0
         
@@ -146,6 +150,11 @@ class TileEditorController:
         t1 = pygame.time.get_ticks()
         # Update only changed chunks for this brush step (avoid full cache invalidation)
         if changed_cells:
+            # Tutorial pulse: painted at least one tile
+            try:
+                setattr(self.editor, 'tutorial_brush_painted_pulse', True)
+            except Exception:
+                pass
             # Deduplicate cells and throttle updates to at most once per interval
             now = pygame.time.get_ticks()
             if now - self._last_chunk_update_ms >= BRUSH_UPDATE_THROTTLE_MS:
@@ -319,5 +328,25 @@ class TileEditorController:
                 map.view.update_chunks(map, camera, cells)
         except Exception:
             map.view.invalidate_cache()
+        # Ensure immediate on-screen refresh regardless of partial update path
+        # Some scenarios (very short strokes, throttled updates, or layer filters)
+        # may leave stale chunk caches; force a full cache invalidation so the
+        # next render rebuilds the affected zoom surfaces from current in-memory layers.
+        try:
+            map.view.invalidate_cache()
+        except Exception:
+            pass
         if hasattr(self, "ecs_world"):
-            self.ecs_world.invalidate_spatial_index()
+            try:
+                # Ensure ECS rebuild uses the same MapManager instance being edited
+                try:
+                    self.ecs_world.map_manager = map
+                except Exception:
+                    pass
+                self.ecs_world.rebuild_spatial_index()
+            except Exception:
+                # Fallback: at least mark dirty
+                try:
+                    self.ecs_world.invalidate_spatial_index()
+                except Exception:
+                    pass

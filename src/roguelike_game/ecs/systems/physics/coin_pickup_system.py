@@ -60,10 +60,11 @@ class CoinPickupSystem:
                 # Añadir al inventario
                 logger.debug(f"[CoinPickupSystem] Player {player_eid} recogió {phys.quantity}x {phys.item_id}")
                 inv.add(phys.item_id, phys.quantity)
-                # Persistir inventario
-                for sys in world.update_systems:
-                    if isinstance(sys, InventoryPickupSystem):
-                        sys._persist_inventory(player_eid, inv)
+                # Persistir inventario: invocar el primer sistema que exponga _persist_inventory
+                for sys in getattr(world, 'update_systems', []) or []:
+                    persist = getattr(sys, '_persist_inventory', None)
+                    if callable(persist):
+                        persist(player_eid, inv)
                         break
                 # Persistir eliminación en inventory_map.json
                 self.drop_manager.pick_up(phys.drop_id)

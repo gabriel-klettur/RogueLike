@@ -3,7 +3,7 @@ import random
 from typing import Optional, List, Tuple, Dict
 
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_engine.zone.model.zone_model import Zone
+from roguelike_engine.zone.zone_model import Zone
 from roguelike_engine.map.model.generator.factory import get_generator
 from roguelike_engine.map.model.loader.factory import get_map_loader
 from roguelike_engine.map.model.map_model import Map
@@ -64,7 +64,9 @@ class MapService:
         )
         # 3) Generar y colocar 'lobby'
         lobby_rows = generate_lobby_matrix()
-        lobby = Zone(lobby_key, offsets[lobby_key])
+        lobby_w = len(lobby_rows[0]) if lobby_rows else global_map_settings.zone_width
+        lobby_h = len(lobby_rows)
+        lobby = Zone(lobby_key, offsets[lobby_key], lobby_w, lobby_h)
         lobby.set_matrix_from_rows(lobby_rows)
         self._merge_zone_into_world(world, lobby)
         # 4) Generar y colocar 'dungeon'
@@ -73,7 +75,7 @@ class MapService:
             height=global_map_settings.zone_height,
             return_rooms=True,
         )
-        dungeon = Zone(dungeon_key, offsets[dungeon_key])
+        dungeon = Zone(dungeon_key, offsets[dungeon_key], global_map_settings.zone_width, global_map_settings.zone_height)
         dungeon_rows = ["".join(r) for r in raw_map]
         dungeon.set_matrix_from_rows(dungeon_rows)
         self._merge_zone_into_world(world, dungeon)
@@ -86,8 +88,17 @@ class MapService:
         )
         # 5) Generar y colocar zonas adicionales
         self._place_additional_zones(world)
-        # 6) Serializar matriz global a filas de texto
-        rows = ["".join(row) for row in world.matrix]
+        # 6) Serializar matriz global a filas de texto (rectangulares)
+        target_w = world.width
+        rows: List[str] = []
+        for row in world.matrix:
+            s = "".join(row)
+            if len(s) > target_w:
+                s = s[:target_w]
+            elif len(s) < target_w:
+                # Rellenar con muros para mantener rectangularidad
+                s = s + ("#" * (target_w - len(s)))
+            rows.append(s)
         # 7) Cargar capas y tiles
         _, tiles_by_layer, layers = self.loader.load(rows, key)
         # 8) Preparar metadata final
@@ -97,7 +108,9 @@ class MapService:
     def _place_lobby_zone(self, world: Zone) -> Tuple[int, int]:
         rows = generate_lobby_matrix()
         offset = calculate_lobby_offset()
-        lobby = Zone("lobby", offset)
+        lw = len(rows[0]) if rows else global_map_settings.zone_width
+        lh = len(rows)
+        lobby = Zone("lobby", offset, lw, lh)
         lobby.set_matrix_from_rows(rows)
         self._merge_zone_into_world(world, lobby)
         return offset
@@ -113,7 +126,7 @@ class MapService:
             return_rooms=True,
         )
         offset = calculate_dungeon_offset(lobby_offset)
-        dungeon = Zone("dungeon", offset)
+        dungeon = Zone("dungeon", offset, global_map_settings.zone_width, global_map_settings.zone_height)
         dungeon_rows = ["".join(r) for r in raw_map]
         dungeon.set_matrix_from_rows(dungeon_rows)
         self._merge_zone_into_world(world, dungeon)
@@ -127,9 +140,18 @@ class MapService:
         return {"offset": offset, "metadata": metadata}
 
     def _merge_zone_into_world(self, world: Zone, zone: Zone) -> None:
+        # Copy zone tiles into world, clipping to world bounds to avoid IndexError
+        world_h = len(world.matrix)
+        world_w = len(world.matrix[0]) if world_h > 0 else 0
         for y in range(zone.height):
+            gy = zone.offset_y + y
+            if gy < 0 or gy >= world_h:
+                continue
             for x in range(zone.width):
-                world.matrix[zone.offset_y + y][zone.offset_x + x] = zone.matrix[y][x]
+                gx = zone.offset_x + x
+                if gx < 0 or gx >= world_w:
+                    continue
+                world.matrix[gy][gx] = zone.matrix[y][x]
 
     def _connect_tunnels_in_world(
         self,
@@ -213,7 +235,7 @@ class MapService:
                 offsets[zone_name] = offset
             # Si la zona es vacía (nombre empieza con 'empty'), generar zona de suelo caminable
             if zone_name.startswith("empty"):
-                zone = Zone(zone_name, offset)
+                zone = Zone(zone_name, offset, global_map_settings.zone_width, global_map_settings.zone_height)
                 zone_rows = ["." * global_map_settings.zone_width for _ in range(global_map_settings.zone_height)]
                 zone.set_matrix_from_rows(zone_rows)
                 self._merge_zone_into_world(world, zone)
@@ -224,7 +246,7 @@ class MapService:
                 height=global_map_settings.zone_height,
                 return_rooms=True,
             )
-            zone = Zone(zone_name, offset)
+            zone = Zone(zone_name, offset, global_map_settings.zone_width, global_map_settings.zone_height)
             zone_rows = ["".join(r) for r in raw_map]
             zone.set_matrix_from_rows(zone_rows)
             self._merge_zone_into_world(world, zone)

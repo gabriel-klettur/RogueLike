@@ -134,6 +134,9 @@ def test_apply_brush_removes_collision(controller_and_panel):
     # update_chunks called with correct cells
     assert game_map._last_update[2] == [(1, 0)]
 
+# Note: Spatial index rebuild/invalidation happens on flush (mouse-up), not on each brush step.
+# Brush step tests should verify visual updates only (update_chunks) and tile/matrix state changes.
+
 @pytest.mark.parametrize("show, overlay, choice", [
     (False, False, '#'),
     (False, True, None),

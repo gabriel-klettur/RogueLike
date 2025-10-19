@@ -1,6 +1,10 @@
+"""
+High-level map view that orchestrates zone rendering via ZoneView.
+"""
 import pygame
-from roguelike_engine.map.view.zone_view import ZoneView
+from roguelike_engine.zone.zone_view import ZoneView
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.utils.pickle_utils import rebuild_map_view
 
 class MapView:
     """
@@ -9,6 +13,13 @@ class MapView:
     """
     def __init__(self):
         self.zone_view = ZoneView()
+
+    def __reduce__(self):
+        """Provide a stable reconstruction path for pickle.
+        Returning a top-level factory function avoids relying on class identity
+        checks that can fail under certain import/reload scenarios.
+        """
+        return (rebuild_map_view, ())
 
     def render(
         self,

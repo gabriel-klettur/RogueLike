@@ -1,12 +1,13 @@
 import pygame
 import roguelike_engine.config.config as config
 
-from roguelike_game.managers.core.events import handle_events as core_handle_events
+from roguelike_game.managers.core.events.events import handle_events as core_handle_events
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.managers.core.update_manager import update_game
 from roguelike_game.managers.core.loop_manager import GameLoop
 from roguelike_game.managers.core.shutdown_manager import ShutdownManager
 from roguelike_game.managers.core.initializer import GameInitializer
+from roguelike_engine.diagnostics.recorder import recorder
 
 class Game:
     
@@ -85,7 +86,7 @@ class Game:
             item_editor=self.item_editor,
         )
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORS]")
+    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORSSSSS]")
     def render(self):
         # Renderiza el mundo
         # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda
@@ -93,17 +94,37 @@ class Game:
             self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
         except Exception:
             self.state.spells_editor_visible = False
-        # Propaga visibilidad del FSM Editor (usa config.DEBUG_ENTITIES como flag global del editor FSM)
+        # Propaga visibilidad del Particles Editor al game.state para que Update Manager pueda pausar el follow de cámara
         try:
-            import roguelike_engine.config.config as config
-            self.state.fsm_editor_visible = bool(getattr(config, 'DEBUG_ENTITIES', False))
+            self.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
         except Exception:
-            self.state.fsm_editor_visible = False
+            self.state.particles_editor_visible = False
         # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
         try:
             self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
         except Exception:
             self.state.class_selector_visible = False
+        # Suprimir HUD textual (HP/MP) cuando UI de menú o selector está activa
+        try:
+            self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
+        except Exception:
+            pass
+        # Propaga visibilidad del Spawner Editor para ocultar minimapa/HUD asociados
+        try:
+            w = self.ecs.ecs_world
+            if hasattr(w, 'state'):
+                setattr(
+                    w.state,
+                    'spawner_editor_active',
+                    bool(getattr(self, 'spawner_editor', None) and getattr(self.spawner_editor, 'model', None) and getattr(self.spawner_editor.model, 'visible', False))
+                )
+                # Propagar visibilidad del Particles Editor para suprimir gameplay input (laser en MMB) y habilitar MMB pan
+                try:
+                    w.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
+                except Exception:
+                    w.state.particles_editor_visible = False
+        except Exception:
+            pass
         self.renderer.render_game(
             self.state,
             self.screen,
@@ -121,6 +142,9 @@ class Game:
         self.inventory_editor.draw(self.screen)
         self.entities_editor.draw(self.screen)
         self.spells_editor.draw(self.screen)
+        # Particles Editor overlay
+        if hasattr(self, 'particles_editor'):
+            self.particles_editor.draw(self.screen)
         # Spawner Editor overlay
         if hasattr(self, 'spawner_editor'):
             self.spawner_editor.draw(self.screen)
@@ -160,6 +184,18 @@ class Game:
     def shutdown(self):
         """Guarda todo y cierra."""
         self.shutdown_manager.shutdown()
+        # Flush diagnostics session if overlay left open
+        try:
+            recorder.finish_if_active(self)
+        except Exception:
+            pass
+        # Parar servicio de audio si está activo
+        try:
+            svc = getattr(self, 'audio_service', None)
+            if svc is not None:
+                svc.stop(fade_music_ms=300, timeout_s=1.0)
+        except Exception:
+            pass
 
 
 

@@ -31,7 +31,7 @@ def test_handle_click_outside():
     pygame.init()
     rect = pygame.Rect(0, 0, 10, 10)
     controller = DummyController()
-    view = DummyView([(rect, 'monsters')])
+    view = DummyView([(rect, 'hostile')])
     handler = TabsEventHandler(None, controller, view, None)
     event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, {'button': 1, 'pos': (20, 20)})
     result = handler.handle(event)

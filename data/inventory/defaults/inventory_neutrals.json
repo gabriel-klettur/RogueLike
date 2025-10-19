@@ -1,0 +1,12 @@
+{
+  "vendor_cheff_gatita": {
+    "template_id": "77777777-7777-7777-7777-777777777777",
+    "inventory": [
+      { "item": "food_apple", "min": 10, "max": 25, "chance": 1.0 },
+      { "item": "food_bread", "min": 6, "max": 15, "chance": 1.0 },
+      { "item": "food_borscht", "min": 4, "max": 10, "chance": 1.0 },
+      { "item": "food_varenyky", "min": 6, "max": 15, "chance": 1.0 },
+      { "item": "gold", "min": 100, "max": 300, "chance": 1.0 }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 from typing import List, Optional
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.tile.model.tile_model import Tile
+from roguelike_engine.tile.tile_model import Tile
 from .assets import get_sprite_for_tile
 
 

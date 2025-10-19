@@ -10,6 +10,8 @@ class BuildingPickerEventHandler:
         self.ctrl = controller
         self.buildings = buildings
         self.back_icon = load_image(ICON_BACK, (NAV_HEIGHT, NAV_HEIGHT))
+        # Track whether the last LMB-down produced a selection to prevent double fire
+        self._last_lmb_down_consumed: bool = False
 
     def handle(self, ev, camera):
         # 1) ESC: si estoy arrastrando, cancelo drag; si no, cierro picker
@@ -164,6 +166,11 @@ class BuildingPickerEventHandler:
                 cols = min(cols, max_cols)
             col = (mx - gx) // (cw + pad)
             row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding area
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
             idx = int(row) * int(cols) + int(col)
 
             has_back = bool(getattr(self.editor, 'history', []))
@@ -191,6 +198,7 @@ class BuildingPickerEventHandler:
 
         # 3) Clic con botón izquierdo (hit-test sobre la grilla del panel)
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+            self._last_lmb_down_consumed = False
             mx, my = ev.pos
 
             panel_rect = getattr(self.editor, 'picker_panel_rect', None)
@@ -250,6 +258,11 @@ class BuildingPickerEventHandler:
                 cols = min(cols, max_cols)
             col = (mx - gx) // (cw + pad)
             row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding band
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
             idx = int(row) * int(cols) + int(col)
 
             has_back = bool(getattr(self.editor, 'history', []))
@@ -262,6 +275,9 @@ class BuildingPickerEventHandler:
             # Primer icono = atrás
             if has_back and vidx == 0:
                 self.ctrl.go_back()
+                # Marcar el DOWN como consumido para que el UP no seleccione
+                # accidentalmente una carpeta en el nuevo directorio.
+                self._last_lmb_down_consumed = True
                 return
 
             # Mapear índice visual a índice de entries
@@ -272,10 +288,87 @@ class BuildingPickerEventHandler:
                 entry = entries[entry_idx]
                 if entry.is_dir:
                     self.ctrl.change_dir(entry.path)
+                    self._last_lmb_down_consumed = True
                 else:
                     # Selección con LMB sin iniciar drag (drag es con RMB)
                     try:
                         self.editor.selected_entry = entry
                     except Exception:
                         pass
+                    self._last_lmb_down_consumed = True
+            return
+
+        # 3.b) Fallback: si por solapamiento el DOWN no fue procesado, permitir selección en UP
+        if ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
+            try:
+                # Si el DOWN ya se procesó, no repetir acción
+                if self._last_lmb_down_consumed:
+                    self._last_lmb_down_consumed = False
+                    return
+            except Exception:
+                self._last_lmb_down_consumed = False
+            mx, my = ev.pos
+
+            panel_rect = getattr(self.editor, 'picker_panel_rect', None)
+            if not panel_rect:
+                return
+
+            # Métricas internas del panel (inyectadas por la vista)
+            m = getattr(self.editor, 'picker_internal_margin', 8)
+            cw = getattr(self.editor, 'picker_cell_w', THUMB_SIZE)
+            ch = getattr(self.editor, 'picker_cell_h', THUMB_SIZE)
+            pad = getattr(self.editor, 'picker_padding', THUMB_PADDING)
+            footer_h = getattr(self.editor, 'picker_footer_h', 0)
+            max_cols = getattr(self.editor, 'picker_max_columns', None)
+            scroll_row = int(getattr(self.editor, 'picker_scroll_row', 0) or 0)
+            visible_rows = int(getattr(self.editor, 'picker_visible_rows', 3) or 3)
+            needs_scroll = bool(getattr(self.editor, 'picker_needs_scroll', False))
+            sb_pad = 4
+            sb_w = int(getattr(self.editor, 'picker_scrollbar_w', 10) or 10) if needs_scroll else 0
+
+            gx = panel_rect.left + m
+            gy = panel_rect.top + m
+            gw = max(0, panel_rect.w - 2 * m)
+            gh = max(0, panel_rect.h - 2 * m - footer_h)
+
+            # Si UP fuera del grid, no hacer nada
+            if not pygame.Rect(gx, gy, gw, gh).collidepoint(mx, my):
+                return
+            gw_effective = max(0, gw - (sb_w + (sb_pad if needs_scroll else 0)))
+            if needs_scroll and mx >= gx + gw_effective:
+                return
+            cols = max(1, (gw_effective + pad) // (cw + pad))
+            if max_cols:
+                cols = min(cols, max_cols)
+            col = (mx - gx) // (cw + pad)
+            row = (my - gy) // (ch + pad)
+            # Ignore clicks that fall within the inter-cell padding band
+            dx = (mx - gx) - int(col) * (cw + pad)
+            dy = (my - gy) - int(row) * (ch + pad)
+            if dx < 0 or dx >= cw or dy < 0 or dy >= ch:
+                return
+            idx = int(row) * int(cols) + int(col)
+
+            has_back = bool(getattr(self.editor, 'history', []))
+            total = len(getattr(self.editor, 'entries', [])) + (1 if has_back else 0)
+            vidx = scroll_row * int(cols) + int(idx)
+            if vidx < 0 or vidx >= total:
+                return
+            if has_back and vidx == 0:
+                self.ctrl.go_back()
+                return
+            base = 1 if has_back else 0
+            entry_idx = vidx - base
+            entries = getattr(self.editor, 'entries', [])
+            if 0 <= entry_idx < len(entries):
+                entry = entries[entry_idx]
+                if entry.is_dir:
+                    self.ctrl.change_dir(entry.path)
+                else:
+                    try:
+                        self.editor.selected_entry = entry
+                    except Exception:
+                        pass
+            # Reset flag after UP handling
+            self._last_lmb_down_consumed = False
             return

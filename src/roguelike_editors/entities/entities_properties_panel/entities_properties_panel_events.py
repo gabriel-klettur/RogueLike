@@ -1,5 +1,5 @@
 import pygame
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
 from roguelike_editors.entities.entities_properties_panel.entities_properties_panel_model import EntityPropertiesPanelModel
 from roguelike_editors.entities.entities_properties_panel.services.assets_constants import (
@@ -53,9 +53,9 @@ class EntitiesPropertiesPanelEventHandler:
         ):
             rect = getattr(self.model, 'entity_type_rect', None)
             if getattr(self.model, 'show_add_system_selector', False) and rect and rect.collidepoint(getattr(event, 'pos', (0, 0))):
-                # Toggle entre 'Monster' y 'Player'
-                cur = getattr(self.model, 'add_system_entity_type', 'Monster')
-                new_type = 'Player' if cur == 'Monster' else 'Monster'
+                # Toggle entre 'Hostile' y 'Player'
+                cur = getattr(self.model, 'add_system_entity_type', 'Hostile')
+                new_type = 'Player' if cur == 'Hostile' else 'Hostile'
                 self.model.add_system_entity_type = new_type
                 # Al cambiar a 'Player' durante Add-Entities-On-System, inicializar stats por defecto
                 try:
@@ -83,7 +83,7 @@ class EntitiesPropertiesPanelEventHandler:
                                 }
                                 self.model.player_stats[ent_id] = default_stats
                         else:
-                            # Si volvemos a Monster y aún no existe en monstruos, no hacemos nada aquí;
+                            # Si volvemos a Hostile y aún no existe en monstruos, no hacemos nada aquí;
                             # open_new_monster_properties() ya creó la entrada pendiente con sus defaults.
                             pass
                 except Exception:

@@ -95,7 +95,6 @@ class MapEditorState:
         self.dragging: str | None = None
         self.drag_offset: tuple[int, int] = (0, 0)
 
-
         # 8. EJECUCIÓN ASÍNCRONA DE HERRAMIENTAS
         self.executing_tool: str | None = None   # Nombre de herramienta en ejecución
         self.executing_zone: str | None = None   # Zona objetivo (si aplica)
@@ -112,6 +111,20 @@ class MapEditorState:
         self.redo_stack: list = []
         # Comando actual en construcción durante la ejecución asíncrona
         self.current_command = None
+        # Controles de progreso: pausa y botones de UI
+        self.execution_paused: bool = False
+        self.progress_pause_rect: pygame.Rect | None = None
+        self.progress_cancel_rect: pygame.Rect | None = None
+        # Marca temporal del último tick en que avanzó la herramienta (para evitar doble avance por frame)
+        self.execution_last_tick_ms: int = -1
+        # Lista de celdas recientemente pintadas para dibujar overlay en vivo por un corto periodo
+        # Formato: list[tuple[int ty, int tx, str code, int expire_ms]]
+        self.recent_overlays: list[tuple[int, int, str, int]] = []
+        # Anclajes temporales de overlay para detectar y corregir derivas (drift)
+        # Mapa (row, col) -> (expected_code, expire_ms)
+        self.overlay_locks: dict[tuple[int, int], tuple[str, int]] = {}
+        # Cursor para procesar overlay_locks en trozos por frame (rendimiento)
+        self.overlay_locks_cursor: int = 0
 
     # -------------------------------------------------------------
     # MÉTODOS AUXILIARES PARA MANTENER CONSISTENCIA INTERNA

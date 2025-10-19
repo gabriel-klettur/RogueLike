@@ -2,6 +2,7 @@ import os
 import json
 
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
+from roguelike_game.ecs.components.core.identity import Faction
 
 import logging
 logger = logging.getLogger(__name__)
@@ -10,27 +11,16 @@ class InventoryTransferSystem:
 
     def __init__(self,
                  active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json')):
+                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json'),
+                 active_neutral_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_neutrals.json')):
         self.active_monster_path = active_monster_path
         self.active_player_path = active_player_path
+        self.active_neutral_path = active_neutral_path
         self.world = None
 
     def update(self, world, *args):
         self.world = world
-
-    def transfer(self, world, item_id: str, quantity: int, source_eid: int, target_eid: int) -> None:
-        """
-        ECS system to handle item transfers between entities.
-        """
-        def __init__(self,
-            active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
-            active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json')):
-            self.active_monster_path = active_monster_path
-            self.active_player_path = active_player_path
-
-    def update(self, world, *args):
-        """No-op update for transfer system"""
-        pass
+        return
 
     def transfer(self, world, item_id: str, quantity: int, source_eid: int, target_eid: int) -> None:
         self.world = world
@@ -57,29 +47,37 @@ class InventoryTransferSystem:
         logger.debug(f"[TransferEvent] Transferred {quantity}x{item_id} from eid={source_eid} to eid={target_eid}")
 
     def _persist_inventory(self, eid: int, inv: InventoryComponent) -> None:
-        inst = self.world.components.get('MonsterInstanceComponent', {}).get(eid)
+        comps = getattr(self.world, 'components', {})
+        inst = comps.get('MonsterInstanceComponent', {}).get(eid)
+        identity = comps.get('Identity', {}).get(eid)
+        player_tags = comps.get('PlayerTagComponent', {})
+
+        # Clave de persistencia: instance_id si existe, si no eid como str
         if inst:
-            key = inst.instance_id
+            key = getattr(inst, 'instance_id', None) or str(eid)
         else:
             key = str(eid)
-        key = str(eid)
-        # Update monster inventory JSON
+
+        # Seleccionar archivo activo según tipo/facción
+        save_path = self.active_monster_path
         try:
-            with open(self.active_monster_path, 'r', encoding='utf-8') as f:
+            if eid in player_tags:
+                save_path = self.active_player_path
+            else:
+                # Si tiene identidad y es neutral, usar neutrals
+                if identity is not None and getattr(identity, 'faction', None) == Faction.NEUTRAL:
+                    save_path = self.active_neutral_path
+        except Exception:
+            # Fallback robusto: mantener save_path por defecto
+            pass
+
+        # Leer, actualizar y escribir solo si existe la entrada
+        try:
+            with open(save_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {}
         if key in data:
             data[key]['slots'] = inv.serialize().get('slots')
-            with open(self.active_monster_path, 'w', encoding='utf-8') as f:
+            with open(save_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2)
-        # Update player inventory JSON
-        try:
-            with open(self.active_player_path, 'r', encoding='utf-8') as f:
-                pdata = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pdata = {}
-        if key in pdata:
-            pdata[key]['slots'] = inv.serialize().get('slots')
-            with open(self.active_player_path, 'w', encoding='utf-8') as f:
-                json.dump(pdata, f, indent=2)

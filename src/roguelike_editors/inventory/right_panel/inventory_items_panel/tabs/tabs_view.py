@@ -53,9 +53,11 @@ class TabsView:
     def get_slots_data(self, model):
         
         """Obtiene los datos de slots según el modelo y pestaña activa"""
+        # Alias local: 'hostile' se trata como 'monsters'
+        effective_category = 'monsters' if getattr(model, 'current_category', None) in ('monsters', 'hostile') else getattr(model, 'current_category', None)
         if model.editing_side == 'default':
             # Show default inventory templates
-            if model.current_category == 'player':
+            if effective_category == 'player':
                 default_player = model.default_data.get('player', {}) or {}
                 classes = default_player.get('classes')
                 if isinstance(classes, dict) and classes:
@@ -79,7 +81,7 @@ class TabsView:
                 if isinstance(cap, int) and cap > 0 and len(slots) < cap:
                     slots = slots + [None] * (cap - len(slots))
                 return slots
-            elif model.current_category == 'monsters':
+            elif effective_category == 'monsters':
                 # Prefer explicit selection from left list (template_id)
                 sel_tid = getattr(model, 'selected_default_template_id', None)
                 if sel_tid:
@@ -88,13 +90,15 @@ class TabsView:
                             inv_list = def_entry.get('inventory', [])
                             slots = [{'item': inv.get('item'), 'quantity': inv.get('min', 0)} for inv in inv_list]
                             # Pad to active length if active has more slots
-                            active_mon = model.active_data.get('monsters', {}).get(str(getattr(model, 'selected_eid', '')), {})
+                            active_mon = model.active_data.get('monsters', {}).get(str(getattr(model, 'selected_eid', '')), {}) or \
+                                         model.active_data.get('hostile', {}).get(str(getattr(model, 'selected_eid', '')), {})
                             active_len = len((active_mon.get('slots', []) or []))
                             if active_len > len(slots):
                                 slots = slots + [None] * (active_len - len(slots))
                             return slots
                 # Fallback: use template of selected active monster (if any)
-                active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {})
+                active_mon = model.active_data.get('monsters', {}).get(str(model.selected_eid), {}) or \
+                             model.active_data.get('hostile', {}).get(str(model.selected_eid), {})
                 template_id = active_mon.get('template_id')
                 for def_entry in model.default_data.get('monsters', {}).values():
                     if def_entry.get('template_id') == template_id:
@@ -109,10 +113,10 @@ class TabsView:
             return []
         else:
             # Show active data from JSON
-            active_data = model.active_data.get(model.current_category, {})
+            active_data = model.active_data.get(effective_category, {})
             entry = active_data.get(str(model.selected_eid), {})
             # Fallback for legacy single-entry player active JSON
-            if not entry and model.current_category == 'player' and isinstance(active_data, dict) and active_data:
+            if not entry and effective_category == 'player' and isinstance(active_data, dict) and active_data:
                 try:
                     entry = next(iter(active_data.values())) or {}
                 except Exception:

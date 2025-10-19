@@ -2,6 +2,9 @@ import math
 import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
+import time
+from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,6 +21,8 @@ class HitboxSystem:
         positions = world.components.get('Position', {})
         healths = world.components.get('Health', {})
         hitboxes = world.components.get('HitboxComponent', {})
+        spr_map = world.components.get('Sprite', {})
+        scl_map = world.components.get('Scale', {})
         for eid, hb in list(hitboxes.items()):
             pos = positions.get(eid)
             if pos is None:
@@ -28,6 +33,36 @@ class HitboxSystem:
             if hb.lifespan < 0:
                 world.remove_entity(eid)
                 continue
+            # Reposicionar la hitbox para que siga al owner: centro(owner) + direction * offset
+            try:
+                if getattr(hb, 'follow_owner', False):
+                    owner_pos = positions.get(hb.owner)
+                    if owner_pos is not None:
+                        ospr = spr_map.get(hb.owner)
+                        oscl = scl_map.get(hb.owner)
+                        oc = compute_entity_center(owner_pos, ospr, oscl)
+                        # Recalcular dirección hacia el mouse actual si está habilitado
+                        if getattr(hb, 'rotate_with_owner', False):
+                            try:
+                                mx, my = pygame.mouse.get_pos()
+                                if camera is not None:
+                                    wx = mx / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_x', 0)
+                                    wy = my / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_y', 0)
+                                else:
+                                    wx, wy = mx, my
+                                ndx = float(wx) - float(oc.x)
+                                ndy = float(wy) - float(oc.y)
+                                mag = (ndx*ndx + ndy*ndy) ** 0.5
+                                if mag > 1e-6:
+                                    hb.direction = (ndx / mag, ndy / mag)
+                            except Exception:
+                                pass
+                        dir_x, dir_y = hb.direction
+                        pos.x = float(oc.x + dir_x * hb.offset)
+                        pos.y = float(oc.y + dir_y * hb.offset)
+            except Exception:
+                # Si algo falla, mantenemos la posición actual para no romper combate
+                pass
             # pixel-perfect collision using masks
             cx, cy = pos.x, pos.y
             dir_x, dir_y = hb.direction
@@ -50,47 +85,95 @@ class HitboxSystem:
             r2 = r*r
             multi_map = world.components.get('MultiCollider', {})
 
-            # --- Buildings hit detection: generate BuildingDamageEvents ---
+            # --- Buildings hit detection: generate BuildingDamageEvents and SpawnerDamageEvents ---
             try:
                 arc_world_rect = pygame.Rect(int(left), int(top), int(w), int(h))
                 hit_buildings = set()
+                hit_spawners = set()
                 for b in getattr(world, 'buildings', []) or []:
-                    # Skip spawner visuals and non-solid check is not required for damage, but keep visuals optionally damageable
-                    if getattr(b, '_is_spawner_visual', False):
-                        continue
-                    # Quick reject by bounding box
+                    is_spawner_visual = bool(getattr(b, '_is_spawner_visual', False))
+                    # Quick skip if hidden at runtime (editor can still show)
                     try:
-                        if not arc_world_rect.colliderect(b.collision_rect):
+                        if getattr(b, 'runtime_hidden', False):
+                            continue
+                    except Exception:
+                        pass
+                    # Quick reject by bounding box (use full rect for spawner visuals to include top part)
+                    try:
+                        quick_rect = getattr(b, 'rect', None) if is_spawner_visual else b.collision_rect
+                        if not arc_world_rect.colliderect(quick_rect):
                             continue
                     except Exception:
                         continue
-                    # Test per collision tile for precise overlap
+                    # Test hit against building shape
                     try:
-                        for rect_w in b.collision_tiles:
-                            if not arc_world_rect.colliderect(rect_w):
+                        if is_spawner_visual:
+                            # Prefer full-image alpha mask for visual shape
+                            eff = getattr(b, '_spawner_visual_life_cfg', None) or {}
+                            damageable = bool(eff.get('damageable', False))
+                            if not damageable:
                                 continue
-                            sx, sy = camera.apply((rect_w.x, rect_w.y))
-                            off = (int(sx - screen_left), int(sy - screen_top))
-                            # Build a rectangular mask for the tile
-                            tmp = pygame.Surface((rect_w.width, rect_w.height))
-                            tmp.fill((255,255,255))
-                            target_mask = pygame.mask.from_surface(tmp)
-                            if hitmask.overlap(target_mask, off):
-                                # Identify building by spawn_id if present, else by id
-                                bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
-                                if bid is not None:
-                                    hit_buildings.add(bid)
-                                break
-                        # Early-out if already registered a hit for this building
+                            try:
+                                bm = getattr(b, 'model', None)
+                                bmask = bm.get_full_mask() if bm is not None else None
+                            except Exception:
+                                bmask = None
+                            if bmask is not None:
+                                # Offset from arc hitmask origin (screen_left, screen_top) to building top-left in screen coords
+                                bx, by = camera.apply((b.x, b.y))
+                                off = (int(bx - screen_left), int(by - screen_top))
+                                if hitmask.overlap(bmask, off):
+                                    se = getattr(b, '_spawner_eid', None)
+                                    if se is not None:
+                                        hit_spawners.add(int(se))
+                                    continue
+                            # Fallback: per-tile rectangles if mask missing
+                            for rect_w in b.collision_tiles:
+                                if not arc_world_rect.colliderect(rect_w):
+                                    continue
+                                sx, sy = camera.apply((rect_w.x, rect_w.y))
+                                off = (int(sx - screen_left), int(sy - screen_top))
+                                tmp = pygame.Surface((rect_w.width, rect_w.height))
+                                tmp.fill((255,255,255))
+                                target_mask = pygame.mask.from_surface(tmp)
+                                if hitmask.overlap(target_mask, off):
+                                    se = getattr(b, '_spawner_eid', None)
+                                    if se is not None:
+                                        hit_spawners.add(int(se))
+                                    break
+                        else:
+                            # Non-spawner buildings: keep per-tile rectangle checks
+                            for rect_w in b.collision_tiles:
+                                if not arc_world_rect.colliderect(rect_w):
+                                    continue
+                                sx, sy = camera.apply((rect_w.x, rect_w.y))
+                                off = (int(sx - screen_left), int(sy - screen_top))
+                                tmp = pygame.Surface((rect_w.width, rect_w.height))
+                                tmp.fill((255,255,255))
+                                target_mask = pygame.mask.from_surface(tmp)
+                                if hitmask.overlap(target_mask, off):
+                                    bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
+                                    if bid is not None:
+                                        hit_buildings.add(bid)
+                                    break
                     except Exception:
                         continue
                 if hit_buildings:
                     evts = world.components.setdefault('BuildingDamageEvents', [])
                     for bid in hit_buildings:
                         evts.append({'building_key': str(bid), 'damage': hb.damage})
+                if hit_spawners:
+                    sevts = world.components.setdefault('SpawnerDamageEvents', [])
+                    for sp_eid in hit_spawners:
+                        # Deduplicate hits per hitbox lifespan: only hit each spawner once per hitbox
+                        if sp_eid in hb.hit_targets:
+                            continue
+                        sevts.append({'spawner_eid': int(sp_eid), 'damage': hb.damage, 'attacker': int(hb.owner)})
+                        hb.hit_targets.add(sp_eid)
             except Exception:
                 # Never break combat on building processing issues
                 pass
+
             for target in list(healths.keys()):
                 if target == hb.owner or target in hb.hit_targets:
                     continue
@@ -110,8 +193,18 @@ class HitboxSystem:
                             tmp = pygame.Surface((rect_w.width, rect_w.height))
                             tmp.fill((255,255,255))
                             target_mask = pygame.mask.from_surface(tmp)
-                        if hitmask.overlap(target_mask, off):
+                        overlap_pt = hitmask.overlap(target_mask, off)
+                        if overlap_pt:
                             hit_any = True
+                            # Compute exact world-space hit position from overlap point
+                            try:
+                                hx = float(left + overlap_pt[0])
+                                hy = float(top + overlap_pt[1])
+                                dbg = world.components.setdefault('DebugSpellHits', {})
+                                dq = dbg.setdefault('_queue', [])
+                                dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (hx, hy)})
+                            except Exception:
+                                pass
                             break
                     if not hit_any:
                         continue
@@ -124,14 +217,31 @@ class HitboxSystem:
                     diff = abs((ang - dir_ang + math.pi) % (2*math.pi) - math.pi)
                     if diff <= hb.arc_angle/2:
                         hit_any = True
+                        # Rough impact point: target center (no mask available)
+                        try:
+                            dbg = world.components.setdefault('DebugSpellHits', {})
+                            dq = dbg.setdefault('_queue', [])
+                            dq.append({'type': 'HB', 'hb_eid': int(eid), 'target': int(target), 'pos': (float(tpos.x), float(tpos.y))})
+                        except Exception:
+                            pass
                     else:
                         continue
                 identity = world.components.get('Identity', {}).get(target)
                 name = identity.name if identity else 'Unknown'
                 logger.debug(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
-                # apply damage
+                # apply damage (omit if player in godmode)
+                is_player_target = target in world.components.get('PlayerTagComponent', {})
+                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
                 health = healths[target]
-                health.current_hp = max(0, health.current_hp - hb.damage)
+                # One-shot si atacante es jugador y godmode activo
+                gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (hb.owner in world.components.get('PlayerTagComponent', {}))
+                if not godmode:
+                    if gm_attacker:
+                        health.current_hp = 0
+                    else:
+                        health.current_hp = max(0, health.current_hp - hb.damage)
+                    # record last attacker for KO attribution
+                    world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
                 if hb.owner in world.components.get('PlayerTagComponent', {}):
                     attacker_pos = world.components['Position'][hb.owner]
@@ -142,16 +252,85 @@ class HitboxSystem:
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
-                elif target in world.components.get('PlayerTagComponent', {}):
+                        # Evento de kill para combo basado en muertes
+                        combo_q = world.components.setdefault('ComboEventQueue', [])
+                        combo_q.append({'type': 'kill', 'entity': hb.owner, 'target': target})
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({
+                        'attacker': hb.owner,
+                        'target': target,
+                        'damage': float(hb.damage),
+                        'source': 'hitbox',
+                        'time': float(time.time()),
+                    })
+                    # Actualizar HUD de objetivo (centrado arriba)
+                    try:
+                        hud = world.components.setdefault('TargetHUD', {})
+                        hud['target_eid'] = int(target)
+                        hud['last_hit_time'] = float(time.time())
+                        hud.setdefault('ttl_s', 3.0)
+                    except Exception:
+                        pass
+                elif target in world.components.get('PlayerTagComponent', {}) and not godmode:
                     # NPC or other entity hit the player -> publish OnHit/OnDeath for player
                     attacker_pos = positions.get(hb.owner)
                     defender_pos = positions.get(target)
-                    if attacker_pos and defender_pos:
-                        from_left = attacker_pos.x < defender_pos.x
-                    else:
-                        from_left = False
+                    # Compute centers when possible for consistent facing/origin
+                    try:
+                        spr_map = world.components.get('Sprite', {})
+                        scl_map = world.components.get('Scale', {})
+                        if attacker_pos:
+                            aspr = spr_map.get(hb.owner)
+                            ascl = scl_map.get(hb.owner)
+                            if aspr:
+                                ac = compute_entity_center(attacker_pos, aspr, ascl)
+                                ax = float(ac.x)
+                            else:
+                                ax = float(attacker_pos.x)
+                        else:
+                            ax = float(cx)
+                        if defender_pos:
+                            dspr = spr_map.get(target)
+                            dscl = scl_map.get(target)
+                            if dspr:
+                                dc = compute_entity_center(defender_pos, dspr, dscl)
+                                dx_center = float(dc.x)
+                            else:
+                                dx_center = float(defender_pos.x)
+                        else:
+                            dx_center = float(cx)
+                        from_left = ax < dx_center
+                    except Exception:
+                        from_left = bool(attacker_pos and defender_pos and (attacker_pos.x < defender_pos.x))
                     qmap = world.components.setdefault('FSMEventQueue', {})
                     q = qmap.setdefault(target, [])
                     q.append({"type": "OnHit", "from_left": from_left})
                     if health.current_hp <= 0:
                         q.append({"type": "OnDeath"})
+                    # Break player's combo upon taking damage
+                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                    combo_q.append({'type': 'break', 'entity': target})
+                    # Publish debug event to visualize NPC hitbox hit on the player
+                    try:
+                        dbg = world.components.setdefault('DebugAttackEvents', {})
+                        dq = dbg.setdefault('_queue', [])
+                        player_pos = defender_pos
+                        # Use hitbox center as origin to reflect actual attack origin
+                        src_x = cx
+                        src_y = cy
+                        if player_pos:
+                            dq.append({
+                                'type': 'NPC_HITBOX_HIT',
+                                'attacker': int(hb.owner),
+                                'target': int(target),
+                                'posA': (float(src_x), float(src_y)),
+                                'posB': (float(player_pos.x), float(player_pos.y)),
+                                'hb_center': (float(cx), float(cy)),
+                                'hb_radius': float(r),
+                                'arc_angle': float(hb.arc_angle),
+                                'direction': (float(hb.direction[0]), float(hb.direction[1])),
+                                'damage': float(hb.damage),
+                                'time': float(time.time()),
+                            })
+                    except Exception:
+                        pass

@@ -55,6 +55,15 @@ class ClassSelectorManager:
             "drawft": (70, 120, 255),       # azul (alias por posible typo)
         }
 
+        # Background image (fullscreen) support
+        self.background_path: Optional[str] = None
+        self._bg_surface: Optional[pygame.Surface] = None
+        self._bg_scaled_cache: Optional[pygame.Surface] = None
+        self._bg_scaled_size: Optional[tuple[int, int]] = None
+        self._bg_scaled_screen_size: Optional[tuple[int, int]] = None
+        self._bg_scaled_offset: tuple[int, int] = (0, 0)
+        self._bg_scale_mode: str = "cover"  # 'cover' or 'contain'
+
     def refresh_options(self):
         """Reload players_config and refresh available class options."""
         try:
@@ -150,10 +159,77 @@ class ClassSelectorManager:
                     return chosen
         return None
 
+    # ---------- Background helpers ----------
+    def set_background(self, path: Optional[str], *, scale_mode: Optional[str] = None):
+        """Configure a fullscreen background image for the selector.
+        scale_mode: 'cover' (fill screen, may crop) or 'contain' (fit, may letterbox).
+        """
+        self.background_path = path
+        if scale_mode in ("cover", "contain"):
+            self._bg_scale_mode = scale_mode
+        # Reset caches
+        self._bg_surface = None
+        self._bg_scaled_cache = None
+        self._bg_scaled_size = None
+        self._bg_scaled_screen_size = None
+        self._bg_scaled_offset = (0, 0)
+
+    def _ensure_background_loaded(self):
+        if self._bg_surface is None and self.background_path:
+            try:
+                surf = pygame.image.load(self.background_path)
+                try:
+                    surf = surf.convert_alpha()
+                except Exception:
+                    surf = surf.convert()
+                self._bg_surface = surf
+            except Exception:
+                self._bg_surface = None
+
+    def _blit_background_if_any(self, screen):
+        if not self.background_path:
+            return
+        self._ensure_background_loaded()
+        if self._bg_surface is None:
+            return
+        sw, sh = screen.get_size()
+        iw, ih = self._bg_surface.get_size()
+        if (
+            self._bg_scaled_cache is None
+            or self._bg_scaled_screen_size != (sw, sh)
+            or self._bg_scaled_size is None
+        ):
+            try:
+                if iw == 0 or ih == 0:
+                    return
+                if self._bg_scale_mode == "contain":
+                    scale = min(sw / iw, sh / ih)
+                else:
+                    scale = max(sw / iw, sh / ih)
+                new_w = max(1, int(iw * scale))
+                new_h = max(1, int(ih * scale))
+                self._bg_scaled_cache = pygame.transform.scale(self._bg_surface, (new_w, new_h))
+                self._bg_scaled_size = (new_w, new_h)
+                self._bg_scaled_screen_size = (sw, sh)
+                off_x = (sw - new_w) // 2
+                off_y = (sh - new_h) // 2
+                self._bg_scaled_offset = (off_x, off_y)
+            except Exception:
+                self._bg_scaled_cache = self._bg_surface
+                self._bg_scaled_size = self._bg_surface.get_size()
+                self._bg_scaled_screen_size = (sw, sh)
+                off_x = (sw - self._bg_scaled_size[0]) // 2
+                off_y = (sh - self._bg_scaled_size[1]) // 2
+                self._bg_scaled_offset = (off_x, off_y)
+        surface_to_blit = self._bg_scaled_cache._surf if hasattr(self._bg_scaled_cache, '_surf') else self._bg_scaled_cache
+        screen.blit(surface_to_blit, self._bg_scaled_offset)
+
     def draw(self):
         # Ensure options reflect latest JSON when the selector is visible
         self.refresh_options()
-        # Semi-transparent full-screen overlay
+        # Draw background image if configured
+        self._blit_background_if_any(self.screen)
+        # Semi-transparent full-screen overlay to improve UI readability
         overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 128))
 
@@ -163,20 +239,14 @@ class ClassSelectorManager:
             cls_name = self.options[self.selected]
             img = self._get_header_image(cls_name)
             if img is not None:
-                # Show full image (contain): scale to fit within header rect without cropping
+                # Mostrar solo la imagen escalada (sin panel gris de fondo)
+                # Escalar para encajar dentro del rectángulo de cabecera (contain)
                 iw, ih = img.get_size()
                 if iw > 0 and ih > 0:
                     scale = min(header_rect.width / iw, header_rect.height / ih)
                     tw = max(1, int(iw * scale))
                     th = max(1, int(ih * scale))
                     scaled = pygame.transform.smoothscale(img, (tw, th))
-                    # Shadow + background panel
-                    shadow = pygame.Surface((header_rect.width, header_rect.height), pygame.SRCALPHA)
-                    shadow.fill((0, 0, 0, 90))
-                    overlay.blit(shadow, (header_rect.x, header_rect.y + 6))
-                    bg = pygame.Surface((header_rect.width, header_rect.height), pygame.SRCALPHA)
-                    bg.fill((28, 28, 28, 220))
-                    overlay.blit(bg, header_rect.topleft)
                     # Center the scaled image (letterbox if necessary)
                     hx = header_rect.x + (header_rect.width - tw) // 2
                     hy = header_rect.y + (header_rect.height - th) // 2

@@ -37,9 +37,7 @@ DATA_DIR = str(DATA_DIR)
 
 
 #!------------------------ BUILDINGS CONFIG ------------------------
-# Persistencia de edificios
-BUILDINGS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_data.json"
-BUILDINGS_DATA_PATH = str(BUILDINGS_DATA_PATH)
+# Persistencia de edificios (modo split únicamente)
 
 # Persistencia de colisiones de edificios
 BUILDINGS_COLLISIONS_DATA_PATH = Path(DATA_DIR) / "buildings" / "buildings_collisions_data.json"
@@ -57,12 +55,36 @@ BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = Path(DATA_DIR) / "buildings"
 BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = str(BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH)
 
 # Rutas nuevas para la separación Templates/Instances de Buildings
-# Si existen, el sistema usará estos archivos en lugar del legacy BUILDINGS_DATA_PATH.
+# Canon: el sistema usa SIEMPRE estos archivos (sin fallback legacy)
 BUILDINGS_TEMPLATES_PATH = Path(DATA_DIR) / "buildings" / "buildings_templates.json"
 BUILDINGS_TEMPLATES_PATH = str(BUILDINGS_TEMPLATES_PATH)
 
 BUILDINGS_INSTANCES_PATH = Path(DATA_DIR) / "buildings" / "buildings_instances.json"
 BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
+
+#!------------------------ PARTICLES CONFIG ------------------------
+# Persistencia de instancias de partículas colocadas en el mapa
+PARTICLES_INSTANCES_PATH = Path(DATA_DIR) / "particles" / "particles_instances.json"
+PARTICLES_INSTANCES_PATH = str(PARTICLES_INSTANCES_PATH)
+
+
+#! ------------------------ DEV/TOOLS FLAGS -----------------------
+# Auto-importar nuevas imágenes de assets/buildings como plantillas al iniciar (solo DEV)
+# TODO: deshabilitar en producción
+# TODO Deberia estar en True cada vez que agregamos nuevas imagenes a nuestros buildings
+DEV_AUTO_IMPORT_BUILDINGS = True
+# Patrones a excluir (fnmatch) al escanear assets/buildings
+DEV_AUTO_IMPORT_EXCLUDES = [
+    "**/WIP/**",
+    "**/_wip/**",
+    "**/tmp/**",
+    "**/*.aseprite",
+]
+# Crear instancias placeholder automáticamente para nuevas plantillas (no recomendado por defecto)
+DEV_AUTO_IMPORT_CREATE_INSTANCES = False
+# Zona y posición por defecto si se crean instancias automáticamente
+DEV_AUTO_IMPORT_DEFAULT_ZONE = "no zone"
+DEV_AUTO_IMPORT_DEFAULT_REL_POS = (0, 0)
 
 
 #! ------------------------ Z-LAYER CONFIG -----------------------

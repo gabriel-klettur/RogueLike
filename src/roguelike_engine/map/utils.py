@@ -1,9 +1,16 @@
+"""Legacy map utilities.
+
+Note: new code should prefer `roguelike_engine.map.helpers` submodules
+(`geometry`, `zones`, `placement`). This module remains for backwards
+compatibility and may be turned into thin forwarders in the future.
+"""
 from typing import Tuple, List
 from roguelike_engine.config.map_config import global_map_settings
 import logging
 logger = logging.getLogger(__name__)
 
-def intersect(room1, room2):
+def intersect(room1: Tuple[int, int, int, int], room2: Tuple[int, int, int, int]) -> bool:
+    """Return True if two axis-aligned rectangles (x1,y1,x2,y2) intersect."""
     x1a, y1a, x2a, y2a = room1
     x1b, y1b, x2b, y2b = room2
     return (
@@ -11,11 +18,13 @@ def intersect(room1, room2):
         y1a <= y2b and y2a >= y1b
     )
 
-def center_of(room):
+def center_of(room: Tuple[int, int, int, int]) -> Tuple[int, int]:
+    """Return the integer center (cx, cy) of a rectangle (x1,y1,x2,y2)."""
     x1, y1, x2, y2 = room
     return (x1 + x2) // 2, (y1 + y2) // 2
 
-def find_closest_room_center(source_x, source_y, dungeon_rooms):
+def find_closest_room_center(source_x: int, source_y: int, dungeon_rooms: List[Tuple[int, int, int, int]]) -> Tuple[int, int]:
+    """Find the closest room center to the given (source_x, source_y)."""
     logger.debug(f" Buscando sala más cercana desde ({source_x}, {source_y})")
     min_dist = float("inf")
     closest_center = None
@@ -32,7 +41,8 @@ def find_closest_room_center(source_x, source_y, dungeon_rooms):
 def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
     """
     Devuelve el nombre de zona en la que cae la tile (tile_x,tile_y),
-    comparando contra ZONE_OFFSETS y ZONE_SIZE.
+    comparando contra zone_offsets y zone_size de `global_map_settings`.
+    Retorna 'no zone' cuando no cae dentro de ninguna zona.
     """
     w, h = global_map_settings.zone_size
     for zone, (ox, oy) in global_map_settings.zone_offsets.items():
@@ -43,7 +53,7 @@ def get_zone_for_tile(tile_x: int, tile_y: int) -> str:
 def generate_lobby_matrix() -> List[str]:
     """
     Genera dinámicamente el mapa del lobby de tamaño ZONE_WIDTH×ZONE_HEIGHT:
--    - Zona completamente vacía de suelo '.'
+    - Zona completamente vacía de suelo '.'
     """
     return ["." * global_map_settings.zone_width for _ in range(global_map_settings.zone_height)]
 
@@ -97,7 +107,7 @@ def calculate_lobby_offset() -> Tuple[int, int]:
 
 
 
-def calculate_dungeon_offset(lobby_off: Tuple[int,int]):
+def calculate_dungeon_offset(lobby_off: Tuple[int,int]) -> Tuple[int, int]:
     """
     Calcula el offset (x,y) para colocar la dungeon adyacente al lobby
     según DUNGEON_CONNECT_SIDE: arriba, abajo, izquierda, derecha.

@@ -1,0 +1,1 @@
+from .collision_mixin import BuildingCollisionMixin

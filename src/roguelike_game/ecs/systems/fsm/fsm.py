@@ -36,11 +36,13 @@ class FiniteStateMachine:
         allowed = ctx.get('allowed_state_classes')
         allow_death = ctx.get('allow_death', True)
         allow_damage = ctx.get('allow_damage', True)
+        allow_unconscious = ctx.get('allow_unconscious', True)
         if allowed:
             if new_state_name not in allowed:
                 special_ok = (
                     (allow_death and new_state_name == 'DeathState') or
-                    (allow_damage and new_state_name == 'DamageState')
+                    (allow_damage and new_state_name == 'DamageState') or
+                    (allow_unconscious and new_state_name == 'UnconsciousState')
                 )
                 if not special_ok:
                     logger.debug(f" Eid={entity.id} blocked transition {old_state_name} -> {new_state_name} (not allowed by set)")

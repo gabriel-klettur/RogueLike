@@ -7,7 +7,7 @@ from .spawners_manager_model import SpawnersManagerModel
 from .spawners_manager_view import SpawnersManagerView
 from .spawners_manager_events import SpawnersManagerEventHandler
 from roguelike_ui.widgets.double_click_detector import DoubleClickDetector
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from roguelike_editors.spawner.services.persistence import save_spawner_template, rename_spawner_template_id
 import pygame
 

@@ -23,6 +23,47 @@ class PrepareSpellState(State):
         # Penalización x multiplicador si es auto-cast
         punish = self.fsm.context.get('automatic_cast_punish', 1.0) if self.fsm.context.get('automatic', False) else 1.0
         duration = base * punish
+        # Guard: suficiente maná para proceder hacia Channel/Release (ignorar en godmode jugador)
+        try:
+            world = entity.world
+            godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (entity.id == getattr(world, 'player_entity', None))
+        except Exception:
+            godmode = False
+        try:
+            if not godmode:
+                world = entity.world
+                mana_comp = world.components.get('Mana', {}).get(entity.id)
+                mana_cost = float(SPELLS.get(spell, {}).get('mana_cost', 0))
+                cur = float(getattr(mana_comp, 'current_mana', 0)) if mana_comp is not None else 0.0
+            else:
+                mana_cost = 0.0
+                cur = 0.0
+        except Exception:
+            mana_cost = 0.0
+            cur = 0.0
+        if not godmode and mana_cost > 0 and cur < mana_cost:
+            # Feedback antispam cada 1s
+            now = time.time()
+            last_warn = float(self.fsm.context.get('_no_mana_warn_prepare_ts', 0.0))
+            if now - last_warn > 1.0:
+                try:
+                    from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+                    push_bubble(entity.world, entity.id, 'No tengo suficiente maná', color=(240, 200, 200), ttl_ms=1000)
+                except Exception:
+                    pass
+                try:
+                    flash_store = getattr(world, '_mana_flash_until', None)
+                    if not isinstance(flash_store, dict):
+                        flash_store = {}
+                        setattr(world, '_mana_flash_until', flash_store)
+                    import time as _time
+                    flash_store[entity.id] = _time.time() + 0.5
+                except Exception:
+                    pass
+                self.fsm.context['_no_mana_warn_prepare_ts'] = now
+            # Reiniciar temporizador de preparación para seguir esperando maná
+            self.fsm.context['prepare_start'] = now
+            return
         if time.time() - self.fsm.context['prepare_start'] >= duration:
             from roguelike_game.ecs.systems.fsm.states.spell.channel_spell_state import ChannelSpellState
             self.fsm.change_state(ChannelSpellState(), entity)

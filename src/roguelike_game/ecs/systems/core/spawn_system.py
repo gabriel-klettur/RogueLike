@@ -11,6 +11,10 @@ from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.monster.behaviour_loader import build_patrol_route
 from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
+from roguelike_game.ecs.components.spawner.spawner_child import SpawnerChild
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SpawnSystem:
     """
@@ -35,7 +39,28 @@ class SpawnSystem:
         for req_eid, req in requests:
             # req.prototype: identificador del tipo de NPC a generar
             # req.position: tupla (x, y) de coordenadas donde spawnar
-            new_eid = get_factory("monster").create(world, tile_x=req.position[0], tile_y=req.position[1], monster_type=req.prototype)
+            # Respetar instance_id si el SpawnRequest lo aporta para persistencia
+            try:
+                inst_id = getattr(req, 'instance_id', None)
+            except Exception:
+                inst_id = None
+            new_eid = get_factory("monster").create(
+                world,
+                tile_x=req.position[0],
+                tile_y=req.position[1],
+                monster_type=req.prototype,
+                instance_id=inst_id,
+            )
+            try:
+                logger.debug(
+                    "[SpawnSystem] Created NPC eid=%s proto=%s at tile=%s instance_id=%s",
+                    new_eid,
+                    getattr(req, 'prototype', None),
+                    getattr(req, 'position', None),
+                    inst_id,
+                )
+            except Exception:
+                pass
             # Marcar para estabilización pos-spawn (evitar solapes iniciales sin jitter)
             world.components.setdefault('SpawnStabilizer', {})[new_eid] = SpawnStabilizer()
 
@@ -52,6 +77,13 @@ class SpawnSystem:
                     leash=bool(True if defend_leash is None else defend_leash),
                     shape=defend_shape,
                 )
+                try:
+                    logger.debug(
+                        "[SpawnSystem] Applied DefendArea to eid=%s center=%s radius_px=%s leash=%s shape=%s",
+                        new_eid, defend_center, defend_radius_px, defend_leash, defend_shape,
+                    )
+                except Exception:
+                    pass
                 # Ajustar la ruta de patrulla para circundar el área defendida
                 try:
                     radius_tiles = float(defend_radius_px) / float(TILE_SIZE)
@@ -104,6 +136,15 @@ class SpawnSystem:
                     except Exception:
                         # Backward compatibility if field missing
                         pass
+                # Marcar al NPC como hijo de spawner para evitar persistirlo en el guardado
+                try:
+                    world.components.setdefault('SpawnerChild', {})[new_eid] = SpawnerChild(spawner_eid, wave_idx)
+                    logger.info(
+                        "[SpawnSystem] eid=%s marked as SpawnerChild (spawner_eid=%s, wave=%s)",
+                        new_eid, spawner_eid, wave_idx
+                    )
+                except Exception:
+                    pass
 
             # Una vez generado el NPC, eliminar la entidad de solicitud
             world.remove_entity(req_eid)

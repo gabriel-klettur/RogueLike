@@ -12,7 +12,6 @@ def init_pygame():
     pygame.quit()
 
 
-@pytest.mark.skip(reason="Right panel no longer draws tabs; tabs moved to left panel")
 def test_draw_tabs_rect_positions():
     font = pygame.font.SysFont(None, 24)
     button_size = (50, 20)
@@ -42,7 +41,7 @@ def test_get_slots_data_default_player():
 def test_get_slots_data_default_monsters():
     model = SimpleNamespace(
         editing_side='default',
-        current_category='monsters',
+        current_category='hostile',
         selected_eid=1,
         default_data={
             'monsters': {'m1': {'template_id': 1, 'inventory': [

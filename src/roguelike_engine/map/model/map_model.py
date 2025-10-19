@@ -1,13 +1,24 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
-from roguelike_engine.tile.model.tile_model import Tile
+from roguelike_engine.tile.tile_model import Tile
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.utils.loader import load_tiles_from_text
 
 @dataclass
 class Map:
     """
-    Contenedor inmutable con todos los datos resultantes de la construcción de un mapa.
+    Contenedor inmutable con los datos de un mapa construido.
+
+    Campos principales:
+    - matrix: lista de filas de texto con el layout base (caracter por celda).
+    - layers: códigos por capa (`Layer -> List[List[str]]`).
+    - tiles_by_layer: objetos `Tile` por capa (malla render-ready).
+    - metadata: información adicional opcional (ej. habitaciones, offsets, etc.).
+    - name: identificador lógico del mapa / zona (para overlays persistidos).
+
+    Compatibilidad legacy:
+    - overlay: alias a la capa `Ground` para compatibilidad con código antiguo.
+    - tiles: malla de `Tile` combinada basada en `matrix` + overlay `Ground`.
     """
     matrix: List[str]                          # Cada elemento es una fila del mapa (“########”, “#...#”, …)
     layers: Dict[Layer, List[List[str]]]       # Códigos de tile por capa

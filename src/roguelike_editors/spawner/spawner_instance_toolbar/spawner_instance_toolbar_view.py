@@ -21,7 +21,7 @@ class SpawnerInstanceToolbarView:
         try:
             import pygame  # type: ignore
             from roguelike_ui.widgets.icon_cache import IconCache
-        except Exception:
+        except ImportError:
             return {}
         icon_size = (max(8, self.size - 8), max(8, self.size - 8))
         # Base placeholder
@@ -45,7 +45,7 @@ class SpawnerInstanceToolbarView:
     def ensure_ready(self, model, *, anchor: Optional[Tuple[int, int]] = None) -> None:
         try:
             from roguelike_ui.widgets.toolbar_panel import ToolbarView as _ToolbarView
-        except Exception:
+        except ImportError:
             return
         if anchor is None:
             anchor = self.anchor
@@ -77,7 +77,7 @@ class SpawnerInstanceToolbarView:
         self.ensure_ready(model, anchor=anchor)
         try:
             import pygame  # type: ignore
-        except Exception:
+        except ImportError:
             return None
         self.toolbar.render(screen)
         panel_pos = self.toolbar.panel.pos or (self.anchor if anchor is None else anchor)
@@ -87,7 +87,7 @@ class SpawnerInstanceToolbarView:
         try:
             from roguelike_ui.ui_blocker import register_blocker
             register_blocker(self.last_rect)
-        except Exception:
+        except (ImportError, AttributeError):
             pass
         # Optional dropdown for Add mode
         self.dropdown_rect = None
@@ -96,7 +96,7 @@ class SpawnerInstanceToolbarView:
             add_rect = None
             try:
                 add_rect = self.toolbar.icon_rects.get('add_spawner')
-            except Exception:
+            except AttributeError:
                 add_rect = None
             if add_rect is None:
                 add_rect = self.last_rect
@@ -110,14 +110,14 @@ class SpawnerInstanceToolbarView:
             height = len(items) * item_h + 2 * pad
             width = max_w
             self.dropdown_rect = pygame.Rect(x, y, width, height)
-            # Draw background
+            # Draw background (fully opaque to ensure it covers world overlays)
             bg = pygame.Surface((width, height), pygame.SRCALPHA)
-            bg.fill((0, 0, 0, 200))
+            bg.fill((0, 0, 0, 255))
             screen.blit(bg, (x, y))
             # Draw items
             try:
                 font = pygame.font.Font(None, 18)
-            except Exception:
+            except pygame.error:
                 font = None
             for idx, tpl in enumerate(items):
                 item_rect = pygame.Rect(x + pad, y + pad + idx * item_h, width - 2 * pad, item_h)
@@ -136,7 +136,7 @@ class SpawnerInstanceToolbarView:
             try:
                 from roguelike_ui.ui_blocker import register_blocker
                 register_blocker(self.dropdown_rect)
-            except Exception:
+            except (ImportError, AttributeError):
                 pass
         return self.last_rect
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from roguelike_ui.widgets.text_input import TextInput
+from roguelike_ui.widgets.text_input.text_input import TextInput
 from .view import (
     draw_grid,
     draw_nodes,
