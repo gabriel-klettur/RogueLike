@@ -28,7 +28,7 @@ class SpawnerToolbarView:
         mapping = {
             'undo': 'assets/ui/undo.png',
             'spawner_instances': 'assets/ui/spawner_editor/spawner_list.png',
-            'spawner_manager': 'assets/ui/spawner_editor/spawner_manager.png',
+            'spawner_templates': 'assets/ui/spawner_editor/spawner_manager.png',
             'tutorial_spawner': 'assets/ui/tutorials_button.png',
             'redo': 'assets/ui/redo.png',
         }

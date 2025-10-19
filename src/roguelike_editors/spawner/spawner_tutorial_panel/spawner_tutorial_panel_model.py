@@ -29,7 +29,7 @@ class SpawnerTutorialPanelModel:
             ),
             "highlight": [
                 {"kind": "toolbar_main", "item": "spawner_instances"},
-                {"kind": "toolbar_main", "item": "spawner_manager"},
+                {"kind": "toolbar_main", "item": "spawner_templates"},
             ],
             "checklist": [
                 {"id": "instances_open", "label": "Abrir la Lista de Instancias", "condition": {"kind": "instances_open"}},

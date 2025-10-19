@@ -125,12 +125,12 @@ class SpawnerToolbarEventHandler:
                 except Exception:
                     pass
                 return True
-            # Spawner manager activate (idempotent)
-            rect = icon_rects.get('spawner_manager')
+            # Spawner templates (manager) activate (idempotent)
+            rect = icon_rects.get('spawner_templates')
             if rect and rect.collidepoint(pos):
-                new_state = 'spawner_manager'
+                new_state = 'spawner_templates'
                 controller.set_active(new_state)
-                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_manager' -> active_tool=%s", new_state)
+                logger.debug("[SpawnerToolbar][CLICK ICON] 'spawner_templates' -> active_tool=%s", new_state)
                 # Apply UI state immediately so manager panel becomes visible in the same frame
                 try:
                     from roguelike_editors.spawner.controller.ui_state import compute_ui_state, apply_ui_state
@@ -143,7 +143,7 @@ class SpawnerToolbarEventHandler:
                             pass
                         # Also set manager visible directly for immediate feedback
                         try:
-                            editor.spawner_manager.set_visible(new_state == 'spawner_manager')
+                            editor.spawner_manager.set_visible(new_state == 'spawner_templates')
                         except Exception:
                             pass
                         state = compute_ui_state(editor)

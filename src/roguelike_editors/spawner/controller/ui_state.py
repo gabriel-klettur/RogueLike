@@ -29,7 +29,7 @@ def compute_ui_state(controller) -> UIState:
     model = controller.model
     hold = bool(getattr(model, 'hold_focus_active', False))
     placing_active = bool(getattr(model, 'placing_template_id', None))
-    manager_visible = bool(model.visible and (active_tool == 'spawner_manager') and not hold)
+    manager_visible = bool(model.visible and (active_tool == 'spawner_templates') and not hold)
     instances_visible = bool(
         model.visible
         and (active_tool == 'spawner_instances')

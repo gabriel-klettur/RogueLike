@@ -5,7 +5,7 @@ from typing import List, Optional
 
 DEFAULT_BUTTONS: List[str] = [
     "spawner_instances",
-    "spawner_manager",  # debajo de spawner_list
+    "spawner_templates",  # debajo de spawner_instances
     "tutorial_spawner",
     "undo",
     "redo",

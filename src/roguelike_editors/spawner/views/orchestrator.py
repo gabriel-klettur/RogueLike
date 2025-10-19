@@ -311,13 +311,13 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
                 except Exception:
                     pass
         except (AttributeError, TypeError, pygame.error):
-            logger.debug("orchestrate_render: spawner_manager render failed", exc_info=True)
+            logger.debug("orchestrate_render: spawner_templates_panel render failed", exc_info=True)
         try:
             view._last_manager_rect = mgr_rect_local
         except AttributeError:
             logger.debug("orchestrate_render: failed to store last_manager_rect", exc_info=True)
 
-    panel_calls.append(("spawner_manager", _z_of("spawner_manager"), _draw_manager))
+    panel_calls.append(("spawner_templates_panel", _z_of("spawner_templates_panel"), _draw_manager))
 
     # Spawner Instances list
     def _draw_instances():

@@ -4,7 +4,7 @@
   "spawner_toolbar": { "z": 110 },
   "spawner_instance_toolbar": { "z": 120 },
 
-  "spawner_manager": { "z": 200 },
+  "spawner_templates_panel": { "z": 200 },
   "spawner_instances_panel": { "z": 210 },
   "spawner_instance_properties_panel": { "z": 220 },
 
