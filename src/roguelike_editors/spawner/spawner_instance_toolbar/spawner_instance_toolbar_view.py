@@ -110,9 +110,9 @@ class SpawnerInstanceToolbarView:
             height = len(items) * item_h + 2 * pad
             width = max_w
             self.dropdown_rect = pygame.Rect(x, y, width, height)
-            # Draw background
+            # Draw background (fully opaque to ensure it covers world overlays)
             bg = pygame.Surface((width, height), pygame.SRCALPHA)
-            bg.fill((0, 0, 0, 200))
+            bg.fill((0, 0, 0, 255))
             screen.blit(bg, (x, y))
             # Draw items
             try:

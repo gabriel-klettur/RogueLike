@@ -18,7 +18,7 @@ class ListPanelView:
             self.panel_rect = pygame.Rect(x, y, width, height)
             # Avoid relying on Rect.size to support dummy rects in tests
             surf = pygame.Surface((self.panel_rect.width, self.panel_rect.height), pygame.SRCALPHA)
-            surf.fill((20, 20, 20, 220))
+            surf.fill((20, 20, 20, 255))
             # Robust draw.rect access (pygame.draw may be callable in tests)
             draw_attr = getattr(pygame, 'draw', None)
             def _draw_rect(surface, color, rect, width=0):

@@ -1,13 +1,16 @@
 import roguelike_engine.config.config as config
+import os
+import json
+import logging
 
 # Importamos cada clase de sistema
 from roguelike_game.ecs.systems.physics.movement_collision_system import MovementCollisionSystem
 from roguelike_game.ecs.systems.rendering.animation_system import AnimationSystem
 from roguelike_game.ecs.systems.rendering.health_bar_system import HealthBarSystem
-from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
 from roguelike_game.ecs.systems.rendering.mana_bar_render_system import ManaBarRenderSystem
 from roguelike_game.ecs.systems.rendering.mana_regen_aura_render_system import ManaRegenAuraRenderSystem
 from roguelike_game.ecs.systems.rendering.godmode_aura_render_system import GodmodeAuraRenderSystem
+from roguelike_game.ecs.systems.rendering.nameplate_system import NamePlateSystem
 from roguelike_game.ecs.systems.rendering.hud_stats_render_system import HUDStatsRenderSystem
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
@@ -99,6 +102,40 @@ from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBa
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
 from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
 
+logger = logging.getLogger(__name__)
+
+# Cache for ECS z-order config
+_ECS_Z_CFG: dict | None = None
+
+def _load_ecs_z_config() -> dict:
+    global _ECS_Z_CFG
+    if _ECS_Z_CFG is not None:
+        return _ECS_Z_CFG
+    try:
+        path = os.path.join(os.path.dirname(__file__), 'ecs-z-order.json')
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                _ECS_Z_CFG = data
+                return data
+    except Exception:
+        # Silent fallback to defaults
+        pass
+    _ECS_Z_CFG = {}
+    return _ECS_Z_CFG
+
+def _ecs_z_for(cls_name: str, default_index: int) -> int:
+    """Return z for a render system class. Default is derived from index to preserve order."""
+    cfg = _load_ecs_z_config()
+    try:
+        entry = cfg.get(cls_name, None)
+        if isinstance(entry, dict) and 'z' in entry:
+            return int(entry.get('z'))
+    except Exception:
+        pass
+    # Default z preserves original order while allowing configured items to move
+    return (default_index + 1) * 10
+
 def get_update_system_classes():
     """
     Devuelve la lista de clases de sistemas que se ejecutan en la fase de actualización.
@@ -161,4 +198,7 @@ def get_render_system_classes():
     # Spawner debug overlay always visible above game objects
     base.append(SpawnerDebugRenderSystem)
     # FlashSystem y TrailSystem son sistemas de update, no deben ir en render
-    return base
+    # Order by external ECS z-order with stable fallback
+    decorated = [(cls, _ecs_z_for(getattr(cls, '__name__', str(cls)), i), i) for i, cls in enumerate(base)]
+    ordered = [cls for (cls, _z, _i) in sorted(decorated, key=lambda t: (t[1], t[2]))]
+    return ordered
