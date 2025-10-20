@@ -158,6 +158,8 @@ class AttackState(State):
                     spell_id = 'hostile_slash_cyan'
                 elif mtype in ('barbol_gris', 'gris', 'gray', 'grey'):
                     spell_id = 'hostile_slash_gray'
+                elif mtype in ('barbol_gigante', 'gigante', 'giant'):
+                    spell_id = 'hostile_slash_giant'
                 # Preferir spell_id, fallback a hostile_slash, luego 'slash'
                 cfg = SPELLS.get(spell_id) or SPELLS.get('hostile_slash') or SPELLS.get('slash')
                 cd_secs = float(cfg.get('cooldown_duration', 1.0)) if cfg else 1.0
