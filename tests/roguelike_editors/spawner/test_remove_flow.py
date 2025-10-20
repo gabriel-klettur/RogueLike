@@ -160,6 +160,8 @@ def test_delete_confirm_removes_entity_and_visuals_runtime(monkeypatch):
         store.extend(data)
 
     monkeypatch.setattr('roguelike_editors.spawner.events.confirmations.find_instance_in_json', _find_instance_in_json)
+    # Ensure delete confirmation persists removal to our in-memory store instead of disk
+    monkeypatch.setattr('roguelike_editors.spawner.events.confirmations.write_instances_json', _write_instances_json)
 
     # KeyDown Y should accept and remove both entity and visuals in runtime
     e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_y})
@@ -167,7 +169,7 @@ def test_delete_confirm_removes_entity_and_visuals_runtime(monkeypatch):
     assert handled is True
 
     # Store should be empty
-    assert len(store) == 1
+    assert len(store) == 0
     # Entity removed from world
     assert eid not in world.entities
     assert eid not in world.components['SpawnerConfig']

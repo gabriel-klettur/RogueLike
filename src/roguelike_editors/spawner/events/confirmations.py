@@ -8,6 +8,8 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.spawner.services import (
     persist_drop,
     find_instance_in_json,
+    write_instances_json,
+    find_instance_by_id,
 )
 from .types import EditorCtx
 
@@ -107,6 +109,24 @@ def handle_delete_confirm(ctx: EditorCtx, event: pygame.event.Event) -> bool:
                                 continue
             except Exception:
                 inst_id_str = inst_id_str  # keep existing value if any
+            # Persistently remove the instance from spawners_instances.json
+            try:
+                if idx is not None and 0 <= idx < len(data):
+                    try:
+                        data.pop(idx)
+                    except Exception:
+                        pass
+                    write_instances_json(data)
+                elif inst_id_str is not None:
+                    d2, i2, _ = find_instance_by_id(inst_id_str)
+                    if i2 is not None and 0 <= i2 < len(d2):
+                        try:
+                            d2.pop(i2)
+                        except Exception:
+                            pass
+                        write_instances_json(d2)
+            except Exception:
+                logger.debug("handle_delete_confirm: failed to persist deletion to spawners_instances.json", exc_info=True)
             try:
                 if inst_id_str is not None and hasattr(ctx.controller, 'spawner_instances') and hasattr(ctx.controller.spawner_instances, 'hide_instance_by_id'):
                     ctx.controller.spawner_instances.hide_instance_by_id(inst_id_str)
