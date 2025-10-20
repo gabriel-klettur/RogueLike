@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 import logging
+import time
 
 from .spawner_instance_toolbar_model import SpawnerInstanceToolbarModel
 from .spawner_instance_toolbar_view import SpawnerInstanceToolbarView
@@ -112,9 +113,29 @@ class SpawnerInstanceToolbarController:
 
     def on_remove_spawner(self) -> None:
         """Toggle Remove Mode: when active, user can click a spawner center to delete with confirm."""
+        # Debounce: ignore rapid consecutive toggles within 700ms
+        try:
+            now_ms = int(time.time() * 1000)
+            last_ms = int(getattr(self, '_last_remove_toggle_ms', 0))
+            if (now_ms - last_ms) < 700:
+                try:
+                    logging.getLogger(__name__).debug("[InstanceToolbar] on_remove_spawner: debounced duplicate toggle")
+                except Exception:
+                    pass
+                return
+            setattr(self, '_last_remove_toggle_ms', now_ms)
+        except Exception:
+            pass
         # Flip mode
         active = bool(getattr(self.editor_controller.model, 'remove_mode_active', False))
         new_state = not active
+        try:
+            logging.getLogger(__name__).debug(
+                "[InstanceToolbar] on_remove_spawner: toggling remove_mode_active %s -> %s",
+                active, new_state,
+            )
+        except Exception:
+            pass
         self.editor_controller.model.remove_mode_active = new_state
         try:
             # Mirror into toolbar model so view can blink
@@ -139,6 +160,13 @@ class SpawnerInstanceToolbarController:
                 # Clear any prior candidate when toggling
                 if not new_state:
                     setattr(world.state, 'spawner_remove_candidate_eid', None)
+                try:
+                    logging.getLogger(__name__).debug(
+                        "[InstanceToolbar] world.state: spawner_remove_mode=%s, candidate cleared=%s",
+                        new_state, (not new_state),
+                    )
+                except Exception:
+                    pass
             except AttributeError:
                 pass
         # Leave placement mode if entering remove mode
@@ -157,6 +185,12 @@ class SpawnerInstanceToolbarController:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
                     tb.model.active_tool = None
+                try:
+                    logging.getLogger(__name__).debug(
+                        "[InstanceToolbar] entering Remove Mode: cleared Add Mode and toolbar active_tool"
+                    )
+                except Exception:
+                    pass
             except AttributeError:
                 pass
         # Clear any pending confirms when turning off, and restore Instances panel
@@ -170,6 +204,12 @@ class SpawnerInstanceToolbarController:
                 tb = getattr(self.editor_controller, 'spawner_toolbar', None)
                 if tb and getattr(tb, 'model', None) is not None:
                     tb.model.active_tool = 'spawner_instances'
+                try:
+                    logging.getLogger(__name__).debug(
+                        "[InstanceToolbar] leaving Remove Mode: restored active tool to 'spawner_instances'"
+                    )
+                except Exception:
+                    pass
             except Exception:
                 pass
 

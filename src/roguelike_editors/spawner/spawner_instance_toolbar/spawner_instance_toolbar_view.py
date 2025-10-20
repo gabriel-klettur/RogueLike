@@ -89,6 +89,27 @@ class SpawnerInstanceToolbarView:
             register_blocker(self.last_rect)
         except (ImportError, AttributeError):
             pass
+        # Active-state highlight for Add/Remove buttons
+        try:
+            active_tools = []
+            if bool(getattr(self._model_ref, 'add_mode_active', False)):
+                active_tools.append('add_spawner')
+            if bool(getattr(self._model_ref, 'remove_mode_active', False)):
+                active_tools.append('remove_spawner')
+            for tool in active_tools:
+                r = None
+                try:
+                    r = self.toolbar.icon_rects.get(tool)
+                except Exception:
+                    r = None
+                if r is not None:
+                    overlay = pygame.Surface(r.size, pygame.SRCALPHA)
+                    overlay.fill((255, 255, 0, 60))  # semi-transparent yellow fill
+                    screen.blit(overlay, r.topleft)
+                    pygame.draw.rect(screen, (255, 255, 0), r, 3)  # yellow border
+        except Exception:
+            pass
+
         # Optional dropdown for Add mode
         self.dropdown_rect = None
         self.dropdown_item_rects = []

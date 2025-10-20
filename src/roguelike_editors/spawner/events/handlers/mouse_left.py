@@ -141,10 +141,18 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
         remove_mode = False
     if remove_mode:
         try:
+            logger.debug("[SpawnerEditor] RemoveMode LMB at (%s,%s)", mx, my)
+        except Exception:
+            pass
+        try:
             eid = pick_spawner_under_cursor(world, camera, int(mx), int(my))
         except Exception:
             eid = None
         if eid is not None:
+            try:
+                logger.debug("[SpawnerEditor] RemoveMode picked candidate eid=%s", eid)
+            except Exception:
+                pass
             try:
                 cfg = world.components['SpawnerConfig'][eid]
                 zone = getattr(cfg, 'zone', 'lobby')
@@ -158,6 +166,10 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
                     'zone': str(zone),
                     'local_tile': local,
                 }
+                try:
+                    logger.debug("[SpawnerEditor] RemoveMode pending_delete_confirm prepared: tpl=%s zone=%s local=%s", getattr(cfg, 'template_id', ''), zone, local)
+                except Exception:
+                    pass
                 # Mark candidate and suppress gameplay input until confirm/cancel
                 try:
                     if hasattr(world, 'state'):
@@ -173,6 +185,11 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
             except Exception:
                 logging.getLogger(__name__).debug("LMB remove_mode: failed to prepare delete confirmation", exc_info=True)
             return True
+        else:
+            try:
+                logger.debug("[SpawnerEditor] RemoveMode no candidate under cursor")
+            except Exception:
+                pass
 
     # 0) Building overlay handles for the currently selected building (Delete/Reset/Resize)
     sel_bid = None

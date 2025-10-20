@@ -4,7 +4,7 @@ from typing import Optional
 from roguelike_engine.config.config_tiles import TILE_SIZE
 
 
-def pick_spawner_under_cursor(world, camera, mx: int, my: int, *, tile_size: int = TILE_SIZE, hit_radius: int = 12) -> Optional[int]:
+def pick_spawner_under_cursor(world, camera, mx: int, my: int, *, tile_size: int = TILE_SIZE, hit_radius: int = 24) -> Optional[int]:
     """Return spawner entity id under the cursor or None.
 
     - Computes screen position of each spawner's anchor tile via camera.apply

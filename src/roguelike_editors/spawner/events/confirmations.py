@@ -85,6 +85,29 @@ def handle_delete_confirm(ctx: EditorCtx, event: pygame.event.Event) -> bool:
             zone = pending.get('zone')
             local_tile = pending.get('local_tile')
             data, idx, _ = find_instance_in_json(tpl_id, zone, tuple(local_tile))
+            # Capture instance id and visuals building ids before removal for runtime cleanup
+            inst_id_str = None
+            vis_bids: list[int] = []
+            try:
+                if idx is not None and 0 <= idx < len(data):
+                    inst_entry = data[idx]
+                    inst_id = inst_entry.get('id')
+                    if inst_id is not None:
+                        inst_id_str = str(inst_id)
+                    vis = inst_entry.get('visuals') if isinstance(inst_entry.get('visuals'), dict) else None
+                    if isinstance(vis, dict):
+                        for _, v in list(vis.items()):
+                            try:
+                                if isinstance(v, dict):
+                                    bid = v.get('instance_id') or v.get('id') or v.get('building_instance_id')
+                                else:
+                                    bid = v
+                                if bid is not None:
+                                    vis_bids.append(int(bid))
+                            except Exception:
+                                continue
+            except Exception:
+                inst_id_str = inst_id_str  # keep existing value if any
             if idx is not None:
                 try:
                     data.pop(idx)
@@ -99,6 +122,33 @@ def handle_delete_confirm(ctx: EditorCtx, event: pygame.event.Event) -> bool:
                     world.remove_entity(eid)
             except AttributeError:
                 logger.debug("handle_delete_confirm: failed to remove entity from world", exc_info=True)
+            # Runtime visuals cleanup: remove any Building objects tied to this spawner instance
+            try:
+                removed_count = 0
+                if getattr(world, 'buildings', None) is not None:
+                    new_list = []
+                    for ob in list(world.buildings or []):
+                        try:
+                            ob_id = getattr(ob, 'id', None)
+                            sid = getattr(ob, 'spawner_instance_id', getattr(ob, 'spawn_id', None))
+                            is_spawner_vis = bool(getattr(ob, '_is_spawner_visual', False))
+                            if (ob_id is not None and int(ob_id) in set(vis_bids)) or (inst_id_str is not None and sid is not None and str(sid) == str(inst_id_str)):
+                                removed_count += 1
+                                continue
+                        except Exception:
+                            pass
+                        new_list.append(ob)
+                    world.buildings = new_list
+                    # Invalidate spatial index so colliders/indices update
+                    try:
+                        if hasattr(world, 'invalidate_spatial_index'):
+                            world.invalidate_spatial_index()
+                    except Exception:
+                        pass
+                if removed_count:
+                    logger.debug("handle_delete_confirm: removed %d runtime visual building(s) for spawner id=%s", removed_count, inst_id_str)
+            except Exception:
+                logger.debug("handle_delete_confirm: failed to cleanup runtime visuals for deleted spawner", exc_info=True)
             try:
                 ctx.controller.spawner_instances.refresh_from_disk()
             except AttributeError:

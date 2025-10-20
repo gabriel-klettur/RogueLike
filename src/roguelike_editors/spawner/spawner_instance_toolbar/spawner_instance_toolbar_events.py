@@ -80,7 +80,16 @@ class SpawnerInstanceToolbarEventHandler:
             rect = icon_rects.get('remove_spawner')
             if rect and rect.collidepoint(pos):
                 try:
+                    logger.debug("[InstanceToolbar] remove icon clicked at pos=%s", pos)
+                except Exception:
+                    pass
+                try:
                     controller.on_remove_spawner()
+                    try:
+                        state = bool(getattr(controller.editor_controller.model, 'remove_mode_active', False))
+                        logger.debug("[InstanceToolbar] remove_mode_active toggled -> %s", state)
+                    except Exception:
+                        pass
                 except AttributeError:
                     logger.debug("[InstanceToolbar] on_remove_spawner failed", exc_info=False)
                 return True
