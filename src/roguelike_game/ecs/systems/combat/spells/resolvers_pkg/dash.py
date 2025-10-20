@@ -34,10 +34,41 @@ class DashResolver(BaseSpellResolver):
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
         world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
+        # Particles: allow overrides via SpellConfig (flattened from vfx.particles)
+        try:
+            count = int(cfg.get('particle_count', 10) or 10)
+        except Exception:
+            count = 10
+        try:
+            lifespan = int(cfg.get('particle_lifespan', 15) or 15)
+        except Exception:
+            lifespan = 15
+        sr = cfg.get('size_range')
+        if not (isinstance(sr, (list, tuple)) and len(sr) >= 2):
+            sr = [3, 6]
+        try:
+            size_range = (int(sr[0]), int(sr[1]))
+        except Exception:
+            size_range = (3, 6)
+        # Colors: accept list of colors or single color; default to bluish palette
+        color_choices = ((200,200,255),(150,150,255),(255,255,255))
+        try:
+            cols = cfg.get('particle_colors')
+            if isinstance(cols, (list, tuple)) and cols:
+                # If a single color triplet is provided, wrap it; if palette, convert all
+                if all(isinstance(c, int) for c in cols) and len(cols) >= 3:
+                    color_choices = (tuple(int(x) for x in cols[:3]),)
+                else:
+                    color_choices = tuple(tuple(int(x) for x in c[:3]) for c in cols if isinstance(c, (list, tuple)) and len(c) >= 3)
+                    if not color_choices:
+                        color_choices = ((200,200,255),(150,150,255),(255,255,255))
+        except Exception:
+            pass
+        speed_range = (1.0, 3.0)
         world.components.setdefault('DashEmitterComponent', {})[caster] = DashEmitterComponent(
-            count=10,
-            lifespan=15,
-            size_range=(3, 6),
-            color_choices=((200,200,255),(150,150,255),(255,255,255)),
-            speed_range=(1.0, 3.0)
+            count=count,
+            lifespan=lifespan,
+            size_range=size_range,
+            color_choices=color_choices,
+            speed_range=speed_range,
         )

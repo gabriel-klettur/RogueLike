@@ -139,8 +139,27 @@ class AttackState(State):
             cd = cd_map.get(eid)
             # Determinar cooldown del slash desde config (fallback 1.0s)
             try:
-                # Preferir el slash de hostiles por defecto; si falta, usar 'slash'
-                cfg = SPELLS.get('hostile_slash') or SPELLS.get('slash')
+                # Selección de spell por clase de monstruo
+                arche_map = world.components.get('MonsterArchetype', {})
+                mtype = None
+                try:
+                    mt = arche_map.get(eid)
+                    mtype = (getattr(mt, 'type', None) or '').lower()
+                except Exception:
+                    mtype = None
+                spell_id = 'hostile_slash'
+                if mtype in ('barbol_oscuro', 'oscuro', 'dark'):
+                    spell_id = 'hostile_slash_dark'
+                elif mtype in ('barbol_morado', 'morado', 'purple'):
+                    spell_id = 'hostile_slash_purple'
+                elif mtype in ('barbol_boss', 'boss'):
+                    spell_id = 'hostile_slash_red'
+                elif mtype in ('barbol_cyan', 'cyan'):
+                    spell_id = 'hostile_slash_cyan'
+                elif mtype in ('barbol_gris', 'gris', 'gray', 'grey'):
+                    spell_id = 'hostile_slash_gray'
+                # Preferir spell_id, fallback a hostile_slash, luego 'slash'
+                cfg = SPELLS.get(spell_id) or SPELLS.get('hostile_slash') or SPELLS.get('slash')
                 cd_secs = float(cfg.get('cooldown_duration', 1.0)) if cfg else 1.0
             except Exception:
                 cd_secs = 1.0
