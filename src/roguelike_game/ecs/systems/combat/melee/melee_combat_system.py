@@ -8,9 +8,10 @@ from roguelike_game.ecs.components.combat.combat_stats import CombatStats
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
+from roguelike_game.ecs.components.core.identity import Faction
 import time
  
-
+ 
 class MeleeCombatSystem:
     """
     Sistema que procesa eventos de WantsToMelee y aplica daño.
@@ -36,9 +37,24 @@ class MeleeCombatSystem:
             # Obtener estadísticas de atacante y defensor
             attacker_stats: CombatStats = world.components['CombatStats'][intent.attacker]
             defender_stats: CombatStats = world.components['CombatStats'][intent.target]
+            # Friendly-fire filter: evitar daño entre monstruos de la misma facción
+            try:
+                monsters = world.components.get('MonsterArchetype', {})
+                if (intent.attacker in monsters) and (intent.target in monsters):
+                    # Bypass if attacker has AllowFriendlyFire enabled (provocation)
+                    aff = world.components.get('AllowFriendlyFire', {}).get(intent.attacker)
+                    allow_ff = bool(getattr(aff, 'enabled', False))
+                    owner_idt = world.components.get('Identity', {}).get(intent.attacker)
+                    target_idt = world.components.get('Identity', {}).get(intent.target)
+                    if (not allow_ff) and owner_idt and target_idt and owner_idt.faction == target_idt.faction:
+                        # Limpiar el evento y saltar daño
+                        del world.components['WantsToMelee'][eid]
+                        continue
+            except Exception:
+                pass
             
             # Bonus de arma si existe
-            weapon_comp = world.components['MeleeWeapon'].get(intent.attacker)
+            weapon_comp = world.components.get('MeleeWeapon', {}).get(intent.attacker)
             weapon_bonus = weapon_comp.damage if weapon_comp else 0
             
             # Cálculo de daño neto (no negativo)

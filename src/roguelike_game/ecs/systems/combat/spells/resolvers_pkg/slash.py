@@ -23,9 +23,17 @@ class SlashResolver(BaseSpellResolver):
         cfg_offset = cfg.get('offset', 0)
         offset = spawn_offset + cfg_offset
         cx, cy = get_entity_center(world, caster)
-        # Dirección al cursor
-        wx, wy = mouse_world(camera)
-        dx_raw, dy_raw, length = direction_from_to(cx, cy, wx, wy)
+        # Dirección: permitir override desde spawn_meta (NPC) o usar mouse (Player)
+        dir_override = spawn_meta.get('direction') if isinstance(spawn_meta, dict) else None
+        target_eid = spawn_meta.get('target_eid') if isinstance(spawn_meta, dict) else None
+        if isinstance(dir_override, (list, tuple)) and len(dir_override) >= 2:
+            dx_raw, dy_raw = float(dir_override[0]), float(dir_override[1])
+        elif isinstance(target_eid, int) and target_eid in world.components.get('Position', {}):
+            tx, ty = get_entity_center(world, target_eid)
+            dx_raw, dy_raw, _ = direction_from_to(cx, cy, tx, ty)
+        else:
+            wx, wy = mouse_world(camera)
+            dx_raw, dy_raw, _ = direction_from_to(cx, cy, wx, wy)
         dir_x, dir_y = dx_raw, dy_raw
         # Parámetros de configuración (con soporte de preset en vfx.preset)
         # Resolver defaults desde particles preset, y aplicar overrides del spell.
@@ -139,6 +147,14 @@ class SlashResolver(BaseSpellResolver):
         real_x, real_y = spawn_at_offset(cx, cy, dir_x, dir_y, offset)
 
         world.components['Position'][hb_id] = Position(real_x, real_y)
+        # Rotate behavior: allow override so NPC slashes don't rotate with mouse
+        rotate_with_owner = True
+        try:
+            rwo = spawn_meta.get('rotate_with_owner') if isinstance(spawn_meta, dict) else None
+            if isinstance(rwo, bool):
+                rotate_with_owner = rwo
+        except Exception:
+            pass
         world.components['HitboxComponent'][hb_id] = HitboxComponent(
             owner=caster,
             offset=offset,
@@ -148,7 +164,7 @@ class SlashResolver(BaseSpellResolver):
             lifespan=lifespan,
             damage=cfg.get('damage', 0),
             follow_owner=True,
-            rotate_with_owner=True,
+            rotate_with_owner=rotate_with_owner,
         )
         # Añadir emisor de partículas de slash (usa SOLO vis_radius/vis_arc_range)
         world.components.setdefault('SlashEmitterComponent', {})[caster] = SlashEmitterComponent(

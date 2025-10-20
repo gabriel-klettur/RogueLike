@@ -231,6 +231,7 @@
   "dash": {
     "id": "dash",
     "type": "dash",
+    
     "mana_cost": 0,
     "name": "Dash",
     "timings": {
@@ -252,6 +253,40 @@
     "effect": {
       "duration": 0.1,
       "speed": 2000
+    }
+  },
+  "hostile_dash": {
+    "id": "hostile_dash",
+    "type": "hostile_dash",
+    "mana_cost": 0,
+    "name": "Hostile Dash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 0.22,
+      "speed": 2400
+    },
+    "vfx": {
+      "particles": {
+        "count": 22,
+        "lifespan": 16,
+        "size_range": [4, 9],
+        "colors": [[0, 255, 120], [0, 200, 80], [0, 220, 100]]
+      }
     }
   },
   "teleport": {
@@ -438,6 +473,49 @@
     "meta": {
       "speed_multiplier": 1.05,
       "offset": 12
+    }
+  },
+  "hostile_slash": {
+    "id": "hostile_slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 140,
+      "radius": 36,
+      "hit_radius": 64,
+      "hit_arc_degrees": 140,
+      "lifetime": 16
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 28,
+        "size_range": [4, 8],
+        "color": [0, 255, 100],
+        "speed": 6.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 16
     }
   },
   "lightning": {
