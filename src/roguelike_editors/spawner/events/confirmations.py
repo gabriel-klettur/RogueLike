@@ -8,7 +8,6 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.spawner.services import (
     persist_drop,
     find_instance_in_json,
-    write_instances_json,
 )
 from .types import EditorCtx
 
@@ -108,20 +107,45 @@ def handle_delete_confirm(ctx: EditorCtx, event: pygame.event.Event) -> bool:
                                 continue
             except Exception:
                 inst_id_str = inst_id_str  # keep existing value if any
-            if idx is not None:
-                try:
-                    data.pop(idx)
-                except (IndexError, AttributeError):
-                    logger.debug("handle_delete_confirm: failed to pop instance from list", exc_info=True)
-                try:
-                    write_instances_json(data)
-                except OSError:
-                    logger.debug("handle_delete_confirm: failed to write instances after delete", exc_info=True)
+            try:
+                if inst_id_str is not None and hasattr(ctx.controller, 'spawner_instances') and hasattr(ctx.controller.spawner_instances, 'hide_instance_by_id'):
+                    ctx.controller.spawner_instances.hide_instance_by_id(inst_id_str)
+            except Exception:
+                logger.debug("handle_delete_confirm: failed to hide instance id in Instances panel", exc_info=True)
             try:
                 if eid is not None:
                     world.remove_entity(eid)
             except AttributeError:
                 logger.debug("handle_delete_confirm: failed to remove entity from world", exc_info=True)
+            # Remove any pending spawn requests for this spawner
+            try:
+                reqs = list(getattr(world, 'components', {}).get('SpawnRequest', {}).items())
+            except Exception:
+                reqs = []
+            for req_eid, req in reqs:
+                try:
+                    if getattr(req, 'spawner_eid', None) == eid:
+                        world.remove_entity(req_eid)
+                except Exception:
+                    pass
+            # Remove all NPCs spawned by this spawner (SpawnerChild links)
+            try:
+                children = list(getattr(world, 'components', {}).get('SpawnerChild', {}).items())
+            except Exception:
+                children = []
+            removed_npcs = 0
+            for child_eid, child in children:
+                try:
+                    if getattr(child, 'spawner_eid', None) == eid:
+                        world.remove_entity(child_eid)
+                        removed_npcs += 1
+                except Exception:
+                    pass
+            try:
+                if removed_npcs:
+                    logger.debug("handle_delete_confirm: removed %d spawned NPC(s) for spawner eid=%s", removed_npcs, eid)
+            except Exception:
+                pass
             # Runtime visuals cleanup: remove any Building objects tied to this spawner instance
             try:
                 removed_count = 0

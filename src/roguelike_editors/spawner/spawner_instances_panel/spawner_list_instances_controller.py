@@ -32,6 +32,7 @@ class SpawnerListInstancesController:
         self._instances: List[Dict[str, Any]] = []
         # Map from visual row index -> instance index (None for headers)
         self._row_to_instance_idx: Dict[int, int] = {}
+        self._hidden_ids: set[str] = set()
         # Grouping toggle: when True, list is grouped under zone headers
         self.group_by_zone: bool = False
         # Optional callback set by parent to react on selection change
@@ -75,6 +76,11 @@ class SpawnerListInstancesController:
             prev_selected_id = None
 
         data = load_instances_json()
+        try:
+            hid = {str(x) for x in getattr(self, '_hidden_ids', set())}
+        except Exception:
+            hid = set()
+        data = [inst for inst in data if str(inst.get('id')) not in hid]
         self._instances = data
         # Rebuild items and row mapping (optionally grouped)
         items: List[str] = []
@@ -212,6 +218,15 @@ class SpawnerListInstancesController:
             self.group_by_zone = not bool(self.group_by_zone)
         except Exception:
             self.group_by_zone = False
+        self.refresh_from_disk()
+
+    def hide_instance_by_id(self, inst_id: Optional[str]) -> None:
+        try:
+            if inst_id is None:
+                return
+            self._hidden_ids.add(str(inst_id))
+        except Exception:
+            return
         self.refresh_from_disk()
 
 

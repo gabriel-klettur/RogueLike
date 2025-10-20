@@ -1,6 +1,9 @@
 import pygame
 import types
 import pytest
+from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
+from roguelike_game.ecs.components.spawner.spawner_child import SpawnerChild
+from roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_controller import SpawnerListInstancesController
 
 from roguelike_editors.spawner.spawner_editor_model import SpawnerEditorModel
 from roguelike_editors.spawner.events.handlers.mouse_left import handle_mousedown_left
@@ -157,7 +160,6 @@ def test_delete_confirm_removes_entity_and_visuals_runtime(monkeypatch):
         store.extend(data)
 
     monkeypatch.setattr('roguelike_editors.spawner.events.confirmations.find_instance_in_json', _find_instance_in_json)
-    monkeypatch.setattr('roguelike_editors.spawner.events.confirmations.write_instances_json', _write_instances_json)
 
     # KeyDown Y should accept and remove both entity and visuals in runtime
     e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_y})
@@ -165,7 +167,7 @@ def test_delete_confirm_removes_entity_and_visuals_runtime(monkeypatch):
     assert handled is True
 
     # Store should be empty
-    assert store == []
+    assert len(store) == 1
     # Entity removed from world
     assert eid not in world.entities
     assert eid not in world.components['SpawnerConfig']
@@ -198,3 +200,69 @@ def test_remove_mode_toggle_debounce(monkeypatch):
     monkeypatch.setattr('roguelike_editors.spawner.spawner_instance_toolbar.spawner_instance_toolbar_controller.time.time', lambda: t0 + 1.1)
     ctrl.on_remove_spawner()
     assert editor.model.remove_mode_active is False
+
+
+def test_delete_confirm_removes_requests_and_children(monkeypatch):
+    ctrl = DummyController()
+    h = DummyHandler(ctrl)
+    ctx = DummyCtx(ctrl.game.ecs.ecs_world, ctrl)
+
+    world = ctx.world
+    eid = world.create_entity()
+    inst_id = 'inst_rm_1'
+    cfg = types.SimpleNamespace(template_id='tpl_y', zone='lobby', anchor_tile=(50, 50))
+    world.components['SpawnerConfig'][eid] = cfg
+    world.components['SpawnerState'][eid] = types.SimpleNamespace()
+
+    req_eid = world.create_entity()
+    world.components.setdefault('SpawnRequest', {})[req_eid] = SpawnRequest(
+        prototype='goblin', position=(5, 6), spawner_eid=eid, wave_idx=0
+    )
+    npc_eid = world.create_entity()
+    world.components.setdefault('SpawnerChild', {})[npc_eid] = SpawnerChild(eid, 0)
+
+    h.model.pending_delete_confirm = {
+        'eid': eid,
+        'template_id': 'tpl_y',
+        'zone': 'lobby',
+        'local_tile': (1, 1),
+    }
+
+    store = [{'id': inst_id, 'template_id': 'tpl_y', 'zone': 'lobby', 'tile': [1, 1]}]
+
+    def _find_instance_in_json(tpl_id, zone, local_tile):
+        return store, 0, None
+
+    calls = []
+    ctrl.spawner_instances = types.SimpleNamespace(
+        hide_instance_by_id=lambda i: calls.append(('hide', i)),
+        refresh_from_disk=lambda: None,
+    )
+
+    monkeypatch.setattr('roguelike_editors.spawner.events.confirmations.find_instance_in_json', _find_instance_in_json)
+
+    e = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_y})
+    handled = h_helpers.handle_keydown(h, ctx, e)
+    assert handled is True
+
+    assert req_eid not in world.entities
+    assert req_eid not in world.components.get('SpawnRequest', {})
+    assert npc_eid not in world.entities
+    assert npc_eid not in world.components.get('SpawnerChild', {})
+    assert ('hide', inst_id) in calls
+
+
+def test_instances_panel_hide_filter(monkeypatch):
+    ctrl = SpawnerListInstancesController()
+    data = [
+        {'id': 'abc', 'template_id': 'tpl', 'zone': 'lobby', 'tile': [0, 0]},
+        {'id': 'def', 'template_id': 'tpl', 'zone': 'lobby', 'tile': [1, 1]},
+    ]
+    monkeypatch.setattr(
+        'roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_controller.load_instances_json',
+        lambda: list(data),
+    )
+    ctrl.refresh_from_disk()
+    assert len(ctrl.model.items) >= 2
+    ctrl.hide_instance_by_id('abc')
+    assert all('abc' not in s for s in ctrl.model.items)
