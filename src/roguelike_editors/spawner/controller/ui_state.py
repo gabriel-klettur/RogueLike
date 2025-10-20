@@ -85,7 +85,7 @@ def apply_ui_state(controller, state: UIState) -> None:
         pass
     # Instance Toolbar visible whenever the editor is visible
     try:
-        controller.instance_toolbar.model.visible = bool(controller.model.visible)
+        controller.instance_toolbar.model.visible = bool(controller.model.visible and not state.manager_visible)
     except Exception:
         pass
     # Instance Properties visibility depends on selection and Instances visibility
