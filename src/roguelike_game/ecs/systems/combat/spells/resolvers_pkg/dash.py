@@ -33,7 +33,8 @@ class DashResolver(BaseSpellResolver):
         dir_x, dir_y, _ = direction_from_to(cx, cy, wx, wy)
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
-        world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
+        knockback = cfg.get('knockback')
+        world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration, knockback=knockback)
         # Particles: allow overrides via SpellConfig (flattened from vfx.particles)
         try:
             count = int(cfg.get('particle_count', 10) or 10)

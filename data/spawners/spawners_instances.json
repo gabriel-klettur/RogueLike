@@ -156,14 +156,5 @@
       13
     ],
     "id": "barbol_periodic_no_stack_forest_45_13"
-  },
-  {
-    "template_id": "vendor_valeria_respawn_5m",
-    "zone": "zone_100_50",
-    "tile": [
-      7,
-      21
-    ],
-    "id": "vendor_valeria_respawn_5m_zone_100_50_7_21"
   }
 ]
