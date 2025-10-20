@@ -89,13 +89,10 @@ class UnconsciousState(State):
         elapsed = now - dt_cmp.start_time
         duration = dt_cmp.duration
         if elapsed >= duration:
+            logger.debug(f"[Unconscious.execute] eid={eid}, elapsed={duration:.1f}/{duration:.1f}")
             from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
             world.components['NPCState'][eid].fsm.change_state(DeathState(), entity)
             return
-        # Logs esporádicos
-        if now - dt_cmp.last_log_time >= 1.0:
-            logger.debug(f"[Unconscious.execute] eid={eid}, elapsed={elapsed:.2f}/{duration}")
-            dt_cmp.last_log_time = now
 
     def exit(self, entity):
         logger.debug(f"[Unconscious.exit] eid={entity.id}")
