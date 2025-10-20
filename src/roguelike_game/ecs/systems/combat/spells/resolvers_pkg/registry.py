@@ -10,7 +10,6 @@ from .smoke import SmokeResolver
 from .teleport import TeleportResolver
 from .smoke_emitter import SmokeEmitterResolver
 from .sphere_magic_shield import SphereMagicShieldResolver
-from .hostile_dash import HostileDashResolver
 
 
 default_resolvers = {
@@ -20,7 +19,6 @@ default_resolvers = {
     'aura': AuraResolver(),
     'beam': BeamResolver(),
     'dash': DashResolver(),
-    'hostile_dash': HostileDashResolver(),
     'slash': SlashResolver(),
     'lightning': LightningResolver(),
     'arcane_flame': ArcaneFlameResolver(),

@@ -22,9 +22,9 @@ class WorldStub:
 
 class TestHostileDashResolver(unittest.TestCase):
     def test_resolver_spawns_dash_and_green_emitter(self):
-        # Ensure spell exists and resolver is registered
+        # Ensure spell exists and dash resolver is registered
         self.assertIn('hostile_dash', SPELLS)
-        self.assertIn('hostile_dash', SPELL_RESOLVERS)
+        self.assertIn('dash', SPELL_RESOLVERS)
 
         world = WorldStub()
         caster = world.create_entity()
@@ -32,7 +32,7 @@ class TestHostileDashResolver(unittest.TestCase):
         world.components['Position'][caster] = Position(100.0, 100.0)
         world.components['Position'][target] = Position(140.0, 100.0)
 
-        resolver = SPELL_RESOLVERS['hostile_dash']
+        resolver = SPELL_RESOLVERS['dash']
         cfg = SPELLS['hostile_dash']
         spawn_meta = {'target_eid': target}
 

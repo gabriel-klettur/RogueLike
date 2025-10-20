@@ -448,25 +448,28 @@
         "default_name": "Barbol Boss",
         "stats": {
           "hp": 2000,
-          "speed": 4.0,
+          "speed": 1.5,
           "faction": "EVIL",
-          "aggro_range": 10,
-          "melee_range": 3,
-          "melee_damage": 5,
+          "aggro_range": 20,
+          "melee_range": 7,
+          "melee_damage": 50,
           "melee_cooldown": 1.0,
           "defense": 5,
           "power": 10,
           "damage_duration": 0.5,
-          "chasing_speed": 1.5,
+          "chasing_speed": 3.5,
           "feet_width_factor": 0.5,
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
           "death_dissapear_time": 5.0,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.05
         },
         "fsm_set": "Monster_Default",
+        "patrol": {
+          "id": "line"
+        },
         "assets": {
           "active_set": "no-sets",
           "sets": {
@@ -1270,33 +1273,28 @@
       "barbol_gigante": {
         "default_name": "Barbol Gigante",
         "stats": {
-          "hp": 1000,
-          "speed": 0.75,
+          "hp": 10000,
+          "speed": 0.35,
           "faction": "EVIL",
-          "aggro_range": 10,
+          "aggro_range": 30,
           "melee_range": 3,
-          "melee_damage": 5,
+          "melee_damage": 50,
           "melee_cooldown": 1.0,
           "defense": 5,
           "power": 10,
           "damage_duration": 0.5,
-          "chasing_speed": 1.5,
+          "chasing_speed": 1.2,
           "feet_width_factor": 0.5,
           "feet_height_factor": 0.2,
           "spawn_padding": 3,
           "spawn_count": 10,
           "spawn_margin": 0,
           "death_dissapear_time": 10.0,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0
         },
         "fsm_set": "Monster_Default",
         "patrol": {
-          "id": "figure_eight",
-          "params": {
-            "radius_tiles": 4,
-            "points_per_loop": 16,
-            "gap_tiles": 2
-          }
+          "id": "line"
         },
         "assets": {
           "active_set": "no-sets",

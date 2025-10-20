@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import uuid
 from roguelike_engine.config.config import DATA_DIR, PROJECT_ROOT
 from roguelike_ui.services.json_persistence import load_from_json
 import logging
@@ -62,6 +63,11 @@ class DataController:
             self.logger.warning(f"ensure_player_classes failed: {e}")
 
         logger.debug(f" DataController.load_data complete. Categories loaded: {list(self.model.default_data.keys())}")
+        # Saneado previo: asegurar template_id válido en entradas activas (evita warnings de schema)
+        try:
+            self._sanitize_template_ids()
+        except Exception as e:
+            self.logger.warning(f"sanitize_template_ids failed: {e}")
         # Validate JSON schemas if available
         try:
             import jsonschema
@@ -149,3 +155,31 @@ class DataController:
             'classes': classes,
             'schema_version': str((self.model.default_data.get('player') or {}).get('schema_version', '1.1.0'))
         }
+
+    def _sanitize_template_ids(self) -> None:
+        """Ensure all active entries in monsters/hostile have a valid string UUID template_id.
+
+        This runs in-memory prior to schema validation to avoid warnings when legacy data has nulls.
+        """
+        for cat in ('monsters', 'hostile'):
+            entries = self.model.active_data.get(cat)
+            if not isinstance(entries, dict):
+                continue
+            changed = False
+            for key, entry in entries.items():
+                if not isinstance(entry, dict):
+                    continue
+                tid = entry.get('template_id')
+                if not isinstance(tid, str) or not tid:
+                    entry['template_id'] = str(uuid.uuid4())
+                    changed = True
+            # Optional: if 'hostile' is alias to 'monsters', writing once is enough; we keep in-memory only.
+            if changed and cat == 'monsters':
+                # Persist sanitized entries to disk so warnings don't reappear on next launch
+                try:
+                    out_path = self.paths['monsters']['active']
+                    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                    with open(out_path, 'w', encoding='utf-8') as f:
+                        json.dump(entries, f, ensure_ascii=False, indent=2)
+                except Exception as e:
+                    self.logger.warning(f"Failed to persist sanitized template_id for monsters: {e}")

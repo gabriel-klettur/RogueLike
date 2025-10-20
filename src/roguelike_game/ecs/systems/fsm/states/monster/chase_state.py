@@ -10,6 +10,10 @@ class ChaseState(State):
     """
     Estado Chase: persigue activamente al jugador.
     """
+    AGGRO_EXIT_HYSTERESIS: float = 1.15
+    CHASE_SPEED_MULTIPLIER: float = 1.5
+    DEFEND_LEASH_TOLERANCE: float = 1.05
+
     def enter(self, entity):
         # Se podría iniciar animación de correr
         pass
@@ -81,7 +85,7 @@ class ChaseState(State):
                 shape = str(getattr(defend_cmp, 'shape', 'circle') or 'circle').lower()
                 ddx = pos.x - cx
                 ddy = pos.y - cy
-                tol = 1.05
+                tol = self.DEFEND_LEASH_TOLERANCE
                 if shape == 'square':
                     # Fuera si excede media-lado en cualquiera de los ejes (con tolerancia)
                     if abs(ddx) > r * tol or abs(ddy) > r * tol:
@@ -112,15 +116,15 @@ class ChaseState(State):
         # Si jugador sale de rango de aggro, volver a patrulla SOLO si no hay área de defensa
         has_defend = world.components.get('DefendArea', {}).get(eid) is not None
         if not has_defend:
-            aggro_radius = world.components['AggroRange'][eid].radius * TILE_SIZE
-            if dist_sq > aggro_radius**2:            
-                npc_state = world.components['NPCState'][eid]            
+            aggro_exit_radius = world.components['AggroRange'][eid].radius * TILE_SIZE * self.AGGRO_EXIT_HYSTERESIS
+            if dist_sq > aggro_exit_radius * aggro_exit_radius:
+                npc_state = world.components['NPCState'][eid]
                 from roguelike_game.ecs.systems.fsm.states.monster.patrol_state import PatrolState
                 npc_state.fsm.change_state(PatrolState(), entity)
                 return
         speed_cmp = world.components['MovementSpeed'][eid]
-        # Aumentar 50% de velocidad en chase
-        chase_speed = speed_cmp.speed * 1.5
+        # Aumentar velocidad en chase
+        chase_speed = speed_cmp.speed * self.CHASE_SPEED_MULTIPLIER
         step = chase_speed * dt if dt else chase_speed
         if dist_sq > step*step:
             dist = math.sqrt(dist_sq)
