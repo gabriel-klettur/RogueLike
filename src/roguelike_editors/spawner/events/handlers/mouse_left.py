@@ -18,8 +18,10 @@ from ...services.persistence import (
 )
 from ...services.persistence import zone_for_global_tile
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_game.ecs.systems.spawner.spawner_placement_system import SpawnerPlacementSystem
 from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
+from roguelike_game.ecs.systems.spawner.placement.loaders import load_waves
+from roguelike_game.ecs.systems.spawner.placement.config_resolver import resolve_config
+from roguelike_game.ecs.systems.spawner.placement.visuals import auto_repair_state_visuals
 
 
 def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -> bool:
@@ -28,6 +30,16 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
     world, camera = ctx.world, ctx.camera
     ip = getattr(h.controller, 'instance_properties', None)
     mx, my = event.pos
+
+    try:
+        if getattr(h.model, 'placing_template_id', None) and getattr(h.model, 'skip_first_placement_click', False):
+            try:
+                h.model.skip_first_placement_click = False
+            except Exception:
+                pass
+            return True
+    except Exception:
+        pass
 
     # - - - Placement Mode: place new spawner instance on LMB - - -
     # When a template was selected from the Add dropdown, we store `placing_template_id` in the editor model.
@@ -60,7 +72,6 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
             inst = arr2[idx_found] if idx_found is not None else new_entry
 
             # 4) Create ECS entity now using the same resolution logic as the placement system
-            #    (reuses internal _resolve_config and auto-repair visuals)
             try:
                 tpls = load_spawners_json()
                 tpl = None
@@ -72,14 +83,13 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
                     except Exception:
                         continue
                 if tpl is not None and world is not None:
-                    sps = SpawnerPlacementSystem()
-                    cfg = sps._resolve_config(tpl, inst)
+                    waves = load_waves()
+                    cfg = resolve_config(tpl, inst, waves)
                     eid = world.create_entity()
                     world.components['SpawnerConfig'][eid] = cfg
                     world.components['SpawnerState'][eid] = SpawnerState()
-                    # Attempt to auto-generate/link visuals mappings if needed
                     try:
-                        sps._auto_repair_state_visuals(world, eid, cfg, inst)
+                        auto_repair_state_visuals(world, eid, cfg, inst)
                     except Exception:
                         pass
             except Exception:
@@ -114,6 +124,10 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
             try:
                 if hasattr(world, 'state'):
                     setattr(world.state, 'spawner_input_suppressed', False)
+            except Exception:
+                pass
+            try:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
             except Exception:
                 pass
         except Exception:

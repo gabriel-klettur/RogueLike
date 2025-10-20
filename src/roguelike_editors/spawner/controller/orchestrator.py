@@ -151,5 +151,11 @@ def render(controller: Any, screen: pygame.Surface) -> None:
                 controller.tutorial.render(screen)
         except Exception:
             pass
+        try:
+            if state.placing_active:
+                mx, my = pygame.mouse.get_pos()
+                pygame.draw.circle(screen, (0, 255, 255), (int(mx), int(my)), 10, 2)
+        except Exception:
+            pass
     except Exception:
         pass

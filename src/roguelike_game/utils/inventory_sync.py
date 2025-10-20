@@ -6,6 +6,9 @@ from typing import Any, Dict, Optional
 import hashlib
 
 ACTIVE_PATH = Path('data/inventory/active/inventory_player.json')
+_CACHE: Optional[Dict[str, Any]] = None
+_CACHE_PATH: Optional[Path] = None
+_ENSURED_PARENT_PATH: Optional[Path] = None
 
 
 def _valid_uuid(x: Any) -> bool:
@@ -17,17 +20,36 @@ def _valid_uuid(x: Any) -> bool:
 
 
 def _read_active() -> Dict[str, Any]:
+    global _CACHE, _CACHE_PATH
+    if _CACHE is not None and _CACHE_PATH == ACTIVE_PATH:
+        return _CACHE
     if not ACTIVE_PATH.exists():
-        return {}
+        _CACHE = {}
+        _CACHE_PATH = ACTIVE_PATH
+        return _CACHE
     try:
-        return json.loads(ACTIVE_PATH.read_text(encoding='utf-8'))
+        data = json.loads(ACTIVE_PATH.read_text(encoding='utf-8'))
+        if not isinstance(data, dict):
+            data = {}
     except Exception:
-        return {}
+        data = {}
+    _CACHE = data
+    _CACHE_PATH = ACTIVE_PATH
+    return _CACHE
 
 
 def _write_active(data: Dict[str, Any]) -> None:
-    ACTIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ACTIVE_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+    global _CACHE, _CACHE_PATH, _ENSURED_PARENT_PATH
+    _CACHE = data
+    _CACHE_PATH = ACTIVE_PATH
+    parent = ACTIVE_PATH.parent
+    if _ENSURED_PARENT_PATH != parent:
+        parent.mkdir(parents=True, exist_ok=True)
+        _ENSURED_PARENT_PATH = parent
+    ACTIVE_PATH.write_text(
+        json.dumps(data, ensure_ascii=False, separators=(',', ':'), sort_keys=True),
+        encoding='utf-8',
+    )
 
 def _canonical_snapshot(snapshot: Dict[str, Any]) -> Dict[str, Any]:
     """Reduce snapshot a un dict canónico para hashing/comparación."""
@@ -77,10 +99,8 @@ def write_active_for_player(entity_id: Any, snapshot: Dict[str, Any]) -> None:
     old = data.get(key)
     if isinstance(old, dict):
         try:
-            old_hash = content_hash(old)
-            new_hash = content_hash(new_entry)
-            if old_hash == new_hash:
-                return  # Sin cambios relevantes
+            if _canonical_snapshot(old) == _canonical_snapshot(new_entry):
+                return
         except Exception:
             pass
 

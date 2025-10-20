@@ -9,6 +9,10 @@ def begin_place_template(controller: Any, template_id: str) -> None:
     try:
         controller.model.visible = True
         controller.model.placing_template_id = str(template_id)
+        try:
+            controller.model.skip_first_placement_click = True
+        except Exception:
+            pass
         # Limpiar hold-to-focus para que la vista no oculte overlays
         try:
             controller.model.hold_focus_active = False
@@ -30,5 +34,10 @@ def begin_place_template(controller: Any, template_id: str) -> None:
         world = getattr(getattr(controller.game, 'ecs', None), 'ecs_world', None)
         if world is not None and hasattr(world, 'state'):
             setattr(world.state, 'spawner_input_suppressed', True)
+        try:
+            import pygame  # type: ignore
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_CROSSHAIR)
+        except Exception:
+            pass
     except Exception:
         pass

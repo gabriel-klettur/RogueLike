@@ -32,6 +32,27 @@ class ListTemplatesView(ListPanelView):
             start = max(0, int(getattr(model, 'scroll_offset', 0) or 0))
             end = min(start + visible_rows, len(items))
 
+            try:
+                blink_idx = getattr(model, '_blink_row_index', None)
+                blink_end = getattr(model, '_blink_end_ticks', 0)
+                now = pygame.time.get_ticks()
+                if blink_idx is not None and now < int(blink_end):
+                    if start <= int(blink_idx) < end:
+                        i = int(blink_idx) - start
+                        row_y = y + header_h + i * row_h
+                        row_rect = pygame.Rect(x + 6, row_y - 2, width - 12, row_h)
+                        phase_on = ((now // 120) % 2) == 0
+                        if phase_on:
+                            pygame.draw.rect(screen, (255, 230, 80), row_rect, 3)
+                elif blink_idx is not None and now >= int(blink_end):
+                    try:
+                        setattr(model, '_blink_row_index', None)
+                        setattr(model, '_blink_end_ticks', 0)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
             # Draw per-row buttons on top of the already blitted panel
             # We will draw directly to the screen using absolute coordinates
             # Button sizes

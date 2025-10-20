@@ -156,5 +156,61 @@
       13
     ],
     "id": "barbol_periodic_no_stack_forest_45_13"
+  },
+  {
+    "template_id": "barbol_periodic_no_stack",
+    "zone": "zone_100_50",
+    "tile": [
+      11,
+      7
+    ],
+    "id": "barbol_periodic_no_stack_zone_100_50_10_7",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      24,
+      21
+    ],
+    "id": "vendor_valeria_respawn_5m_zone_100_50_10_12"
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      17,
+      18
+    ],
+    "id": "vendor_valeria_respawn_5m_zone_100_50_10_11",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      11,
+      11
+    ],
+    "id": "vendor_valeria_respawn_5m_zone_100_50_11_11"
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      14,
+      16
+    ],
+    "id": "vendor_valeria_respawn_5m_zone_100_50_14_16"
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      7,
+      24
+    ],
+    "id": "vendor_valeria_respawn_5m_zone_100_50_7_24"
   }
 ]
