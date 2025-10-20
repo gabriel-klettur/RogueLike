@@ -51,6 +51,7 @@ class DashSystem:
                     dnx = dmx / mag
                     dny = dmy / mag
                     if collides_at(cx, cy):
+                        # 1) Try a small retreat opposite to dash
                         retreat = 6.0
                         rcx = cx - dnx * retreat
                         rcy = cy - dny * retreat
@@ -58,10 +59,48 @@ class DashSystem:
                             pos.x += (rcx - cx)
                             pos.y += (rcy - cy)
                             cx, cy = rcx, rcy
-                        else:
-                            to_remove.append(eid)
-                            dash.last_update = now
-                            continue
+                        # 2) If still colliding, perform MTV-based ejection
+                        if collides_at(cx, cy):
+                            aabb0 = pygame.Rect(math.floor(cx - r - 1), math.floor(cy - r - 1), math.ceil(2 * r) + 2, math.ceil(2 * r) + 2)
+                            tiles0 = world.get_solid_tiles_for_rect(aabb0)
+                            ex, ey = 0.0, 0.0
+                            for tile in tiles0:
+                                if circle_overlaps_rect(cx, cy, r, tile):
+                                    mx, my = circle_rect_mtv(cx, cy, r, tile)
+                                    ex += mx
+                                    ey += my
+                            # Add epsilon beyond MTV to avoid tangency registered as overlap
+                            mag = (ex * ex + ey * ey) ** 0.5
+                            if mag > 1e-6:
+                                extra = 1.0
+                                sx = ex * ((mag + extra) / mag)
+                                sy = ey * ((mag + extra) / mag)
+                            else:
+                                sx, sy = ex, ey
+                            nx = cx + sx
+                            ny = cy + sy
+                            if collides_at(nx, ny):
+                                # Fallback: push opposite dash direction by ~1.6 radii
+                                nx = cx - dnx * (r * 1.6)
+                                ny = cy - dny * (r * 1.6)
+                            pos.x += (nx - cx)
+                            pos.y += (ny - cy)
+                            cx, cy = nx, ny
+                            # Emergency: if still colliding, step back opposite to dash until free
+                            if collides_at(cx, cy):
+                                max_steps = int(r * 3 + 4)
+                                for i in range(max_steps):
+                                    tx = cx - dnx * float(i + 1)
+                                    ty = cy - dny * float(i + 1)
+                                    if not collides_at(tx, ty):
+                                        pos.x += (tx - cx)
+                                        pos.y += (ty - cy)
+                                        cx, cy = tx, ty
+                                        break
+                        # 3) Cancel dash after resolving overlap to avoid further motion this frame
+                        to_remove.append(eid)
+                        dash.last_update = now
+                        continue
                     # Compute substeps based on tile size and radius
                     step_len = max(1.0, min(float(r) * 0.5, float(TILE_SIZE) * 0.5, 8.0))
                     dist = (total_vx * total_vx + total_vy * total_vy) ** 0.5
@@ -113,6 +152,33 @@ class DashSystem:
                                 cand_x, cand_y = out_x, out_y
                         pos.x += (cand_x - cx)
                         pos.y += (cand_y - cy)
+                        # On dash impact, apply configurable collision damage to the dasher (Player or hostile)
+                        try:
+                            is_player = eid in world.components.get('PlayerTagComponent', {})
+                            dmg = int(getattr(dash, 'collision_damage', 2.0))
+                            health = world.components.get('Health', {}).get(eid)
+                            if health is not None and dmg > 0:
+                                if is_player:
+                                    godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
+                                    if not godmode:
+                                        health.current_hp = max(0, int(health.current_hp) - dmg)
+                                else:
+                                    # Hostiles and other entities always take collision damage
+                                    health.current_hp = max(0, int(health.current_hp) - dmg)
+                                # Emit OnHit/OnDeath to drive animations/state (for both)
+                                qmap = world.components.setdefault('FSMEventQueue', {})
+                                q = qmap.setdefault(eid, [])
+                                from_left = bool(dash.dir_x < 0)
+                                q.append({"type": "OnHit", "from_left": from_left})
+                                if health.current_hp <= 0:
+                                    q.append({"type": "OnDeath"})
+                                # Break combo on self-damage only for player
+                                if is_player:
+                                    combo_q = world.components.setdefault('ComboEventQueue', [])
+                                    combo_q.append({'type': 'break', 'entity': int(eid)})
+                        except Exception:
+                            # Never fail dash resolution due to damage/event side-effects
+                            pass
                         collided = True
                         break
                     if collided:

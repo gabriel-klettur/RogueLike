@@ -33,8 +33,22 @@ class DashResolver(BaseSpellResolver):
         dir_x, dir_y, _ = direction_from_to(cx, cy, wx, wy)
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
+        # Read flattened values then prefer nested effect overrides if provided
         knockback = cfg.get('knockback')
-        world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration, knockback=knockback)
+        collision_damage = cfg.get('collision_damage')
+        try:
+            eff = getattr(cfg, 'extra', {}).get('effect', {})
+            if 'knockback' in eff:
+                knockback = eff.get('knockback')
+            if 'collision_damage' in eff:
+                collision_damage = eff.get('collision_damage')
+        except Exception:
+            pass
+        world.components.setdefault('DashComponent', {})[caster] = DashComponent(
+            dir_x, dir_y, speed, duration,
+            knockback=knockback,
+            collision_damage=collision_damage,
+        )
         # Particles: allow overrides via SpellConfig (flattened from vfx.particles)
         try:
             count = int(cfg.get('particle_count', 10) or 10)

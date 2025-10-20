@@ -497,6 +497,12 @@
       "channel": 0.0,
       "cooldown": 1.0
     },
+    "effect": {
+      "duration": 0.1,
+      "speed": 2000,
+      "knockback": 4,
+      "collision_damage": 2
+    },
     "rules": {
       "lock_cast_direction": true,
       "interruptible": true,
@@ -508,9 +514,13 @@
       "max_instances": 1,
       "allow_overlap": false
     },
-    "effect": {
-      "duration": 0.1,
-      "speed": 2000
+    "vfx": {
+      "particles": {
+        "count": 22,
+        "lifespan": 16,
+        "size_range": [8, 18],
+        "color": [255, 255, 255]
+      }
     }
   },
   "hostile_dash": {
@@ -523,6 +533,12 @@
       "channel": 0.0,
       "cooldown": 1.2
     },
+    "effect": {
+      "duration": 0.22,
+      "speed": 4800,
+      "knockback": 4,
+      "collision_damage": 2
+    },
     "rules": {
       "lock_cast_direction": true,
       "interruptible": true,
@@ -533,10 +549,6 @@
     "constraints": {
       "max_instances": 1,
       "allow_overlap": false
-    },
-    "effect": {
-      "duration": 0.22,
-      "speed": 4800
     },
     "vfx": {
       "particles": {
