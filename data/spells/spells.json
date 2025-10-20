@@ -31,6 +31,49 @@
         "path": "assets/projectiles/fireball.png",
         "scale": 0.05
       },
+  "hostile_slash_giant": {
+    "id": "hostile_slash_giant",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Giant)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 50,
+      "arc_range_degrees": 180,
+      "radius": 180,
+      "hit_radius": 320,
+      "hit_arc_degrees": 180,
+      "lifetime": 18
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 80,
+        "size_range": [4, 9],
+        "color": [0, 255, 100],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 40
+    }
+  },
       "preset": "fireball_trail",
       "impact": {
         "preset": "explosion_small",
@@ -41,6 +84,221 @@
           "colors": [[255, 180, 80], [255, 120, 60], [255, 220, 120]]
         }
       }
+    }
+  },
+  "hostile_slash_dark": {
+    "id": "hostile_slash_dark",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Dark)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.6
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 16,
+      "arc_range_degrees": 130,
+      "radius": 60,
+      "hit_radius": 112,
+      "hit_arc_degrees": 130,
+      "lifetime": 14
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [6, 14],
+        "color": [10, 10, 10],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 14
+    }
+  },
+  "hostile_slash_purple": {
+    "id": "hostile_slash_purple",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Purple)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 130,
+      "radius": 34,
+      "hit_radius": 60,
+      "hit_arc_degrees": 130,
+      "lifetime": 15
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 26,
+        "size_range": [4, 8],
+        "color": [128, 0, 128],
+        "speed": 6.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 16
+    }
+  },
+  "hostile_slash_red": {
+    "id": "hostile_slash_red",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Red)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.9
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 24,
+      "arc_range_degrees": 160,
+      "radius": 220,
+      "hit_radius": 220,
+      "hit_arc_degrees": 160,
+      "lifetime": 18
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 32,
+        "size_range": [12, 24],
+        "color": [255, 0, 0],
+        "speed": 6.2
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 40
+    }
+  },
+  "hostile_slash_cyan": {
+    "id": "hostile_slash_cyan",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Cyan)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 120,
+      "radius": 32,
+      "hit_radius": 58,
+      "hit_arc_degrees": 120,
+      "lifetime": 15
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [3, 7],
+        "color": [0, 255, 255],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 15
+    }
+  },
+  "hostile_slash_gray": {
+    "id": "hostile_slash_gray",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Gray)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 125,
+      "radius": 30,
+      "hit_radius": 56,
+      "hit_arc_degrees": 125,
+      "lifetime": 15
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [3, 7],
+        "color": [150, 150, 150],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 14
     }
   },
   "iceball": {
@@ -257,7 +515,7 @@
   },
   "hostile_dash": {
     "id": "hostile_dash",
-    "type": "hostile_dash",
+    "type": "dash",
     "mana_cost": 0,
     "name": "Hostile Dash",
     "timings": {
@@ -278,13 +536,13 @@
     },
     "effect": {
       "duration": 0.22,
-      "speed": 2400
+      "speed": 4800
     },
     "vfx": {
       "particles": {
         "count": 22,
         "lifespan": 16,
-        "size_range": [4, 9],
+        "size_range": [8, 18],
         "colors": [[0, 255, 120], [0, 200, 80], [0, 220, 100]]
       }
     }

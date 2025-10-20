@@ -8,19 +8,22 @@ def draw_legend(model: Any, screen: Any, x: int, y: int, w: int, h: int, view: A
     except Exception:
         return None
     try:
+        # Legend entries requested for FSM editor debug overlays
+        # Each item is (shape_kind, color_rgb, label)
         legend_items = [
-            ((160, 80, 200), "Damage"),
-            ((220, 100, 180), "Alert"),
-            ((90, 200, 220), "Interrupt/External"),
+            ("circle", (0, 0, 255), "Círculo azul — MeleeRange (rango de ataque)"),
+            ("square", (255, 255, 0), "Cuadrado amarillo — Borde del sprite del NPC"),
+            ("square", (255, 0, 0), "Cuadrado rojo — Tile del monstruo"),
+            ("line",   (0, 0, 255), "Línea azul — Dirección NPC → objetivo"),
         ]
         lfont = pygame.font.SysFont(None, 16)
         small_font = pygame.font.SysFont(None, 14)
-        swatch_w, swatch_h = 14, 8
+        swatch_w, swatch_h = 18, 12
         gap_x, gap_y = 8, 6
         margin = 8
         if getattr(model, 'legend_collapsed', False):
             # Collapsed pill with a [+] button
-            label = "Legend"
+            label = "Leyenda"
             txt = lfont.render(label, True, (210, 210, 215))
             btn_w = txt.get_height() + 6
             btn_h = txt.get_height() + 2
@@ -46,10 +49,10 @@ def draw_legend(model: Any, screen: Any, x: int, y: int, w: int, h: int, view: A
             view.legend_button_rect = pygame.Rect(box_x + btn_rect_local.left, box_y + btn_rect_local.top, btn_w, btn_h)
         else:
             # Expanded panel with a minimize button [−]
-            header = lfont.render("Legend (special)", True, (200, 200, 210))
+            header = lfont.render("Leyenda", True, (200, 200, 210))
             max_item_w = 0
             item_h = max(swatch_h, lfont.get_height())
-            for color, label in legend_items:
+            for _kind, _color, label in legend_items:
                 tw = lfont.size(label)[0]
                 max_item_w = max(max_item_w, swatch_w + 6 + tw)
             # Minimize button size
@@ -73,8 +76,25 @@ def draw_legend(model: Any, screen: Any, x: int, y: int, w: int, h: int, view: A
             bg.blit(minus, mr)
             # Items
             iy = gap_y + header.get_height()
-            for color, label in legend_items:
-                pygame.draw.rect(bg, color, pygame.Rect(gap_x, iy + (item_h - swatch_h)//2, swatch_w, swatch_h))
+            for kind, color, label in legend_items:
+                # Swatch rect local
+                sw_r = pygame.Rect(gap_x, iy + (item_h - swatch_h)//2, swatch_w, swatch_h)
+                if kind == "circle":
+                    # Draw a blue circle outline centered in the swatch
+                    cx = sw_r.left + sw_r.width // 2
+                    cy = sw_r.top + sw_r.height // 2
+                    radius = max(3, min(sw_r.width, sw_r.height) // 2 - 1)
+                    pygame.draw.circle(bg, color, (cx, cy), radius, 2)
+                elif kind == "square":
+                    # Draw a square outline using the swatch rect
+                    pygame.draw.rect(bg, color, sw_r, 2)
+                elif kind == "line":
+                    # Draw a horizontal line across the swatch
+                    ymid = sw_r.top + sw_r.height // 2
+                    pygame.draw.line(bg, color, (sw_r.left, ymid), (sw_r.right, ymid), 2)
+                else:
+                    # Fallback: filled rect in color
+                    pygame.draw.rect(bg, color, sw_r)
                 txt = lfont.render(label, True, (210, 210, 215))
                 bg.blit(txt, (gap_x + swatch_w + 6, iy - 1))
                 iy += item_h + 2
