@@ -139,7 +139,8 @@ class AttackState(State):
             cd = cd_map.get(eid)
             # Determinar cooldown del slash desde config (fallback 1.0s)
             try:
-                cfg = SPELLS.get('slash')
+                # Preferir el slash de hostiles por defecto; si falta, usar 'slash'
+                cfg = SPELLS.get('hostile_slash') or SPELLS.get('slash')
                 cd_secs = float(cfg.get('cooldown_duration', 1.0)) if cfg else 1.0
             except Exception:
                 cd_secs = 1.0
