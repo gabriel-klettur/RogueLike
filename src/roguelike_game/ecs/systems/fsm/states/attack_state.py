@@ -7,6 +7,8 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 import time
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim, primary_direction_from_vector
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
+from roguelike_game.config.spells_config import SPELLS
+from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 
 class AttackState(State):
     """
@@ -131,74 +133,30 @@ class AttackState(State):
         # Si dentro de rango melee: atacar y quedarse en AttackState
         mr_cmp = world.components['MeleeRange'][eid]
         if dist_sq <= (mr_cmp.range * TILE_SIZE) ** 2:
-            # Daño periódico al jugador cada 1s en AttackState
+            # Disparar slash del NPC con cooldown del hechizo
             now = time.time()
             cd_map = world.components.setdefault('NPCAttackCooldown', {})
             cd = cd_map.get(eid)
-            if cd is None:
-                # establecer primera oportunidad tras 1s
-                cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
-            elif now >= cd.next_time:
-                # respetar godmode: no aplicar daño ni eventos si jugador es inmortal
-                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
-                if not godmode:
-                    # aplicar daño al jugador
-                    ph = world.components['Health'][world.player_entity]
-                    ph.current_hp = max(0, ph.current_hp - 10)
-                    # Publicar evento de depuración para visualizar origen e impacto del daño NPC->Player (centro a centro)
-                    try:
-                        dbg = world.components.setdefault('DebugAttackEvents', {})
-                        q = dbg.setdefault('_queue', [])
-                        pos_map = world.components.get('Position', {})
-                        spr_map = world.components.get('Sprite', {})
-                        scl_map = world.components.get('Scale', {})
-                        ap = pos_map.get(eid)
-                        aspr = spr_map.get(eid)
-                        ascl = scl_map.get(eid)
-                        pid = world.player_entity
-                        pp = pos_map.get(pid)
-                        pspr = spr_map.get(pid)
-                        pscl = scl_map.get(pid)
-                        if ap and pp:
-                            try:
-                                if aspr:
-                                    ac = compute_entity_center(ap, aspr, ascl)
-                                    ax, ay = float(ac.x), float(ac.y)
-                                else:
-                                    ax, ay = float(ap.x), float(ap.y)
-                                if pspr:
-                                    pc = compute_entity_center(pp, pspr, pscl)
-                                    px, py = float(pc.x), float(pc.y)
-                                else:
-                                    px, py = float(pp.x), float(pp.y)
-                                q.append({
-                                    'type': 'NPC_MELEE',
-                                    'attacker': int(eid),
-                                    'target': int(pid),
-                                    'posA': (ax, ay),
-                                    'posB': (px, py),
-                                    'damage': float(10),
-                                    'time': float(now),
-                                })
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
-                    # publicar eventos FSM para que el jugador entre a DamageState
-                    try:
-                        from_left = x1 < x2
-                        qmap = world.components.setdefault('FSMEventQueue', {})
-                        q = qmap.setdefault(world.player_entity, [])
-                        q.append({"type": "OnHit", "from_left": from_left})
-                        if ph.current_hp <= 0:
-                            q.append({"type": "OnDeath"})
-                        # Break player's combo upon taking damage
-                        combo_q = world.components.setdefault('ComboEventQueue', [])
-                        combo_q.append({'type': 'break', 'entity': world.player_entity})
-                    except Exception:
-                        pass
-                # reset cooldown
-                cd_map[eid] = NPCAttackCooldown(next_time=now + 1)
+            # Determinar cooldown del slash desde config (fallback 1.0s)
+            try:
+                cfg = SPELLS.get('slash')
+                cd_secs = float(cfg.get('cooldown_duration', 1.0)) if cfg else 1.0
+            except Exception:
+                cd_secs = 1.0
+            if (cd is None) or (now >= cd.next_time):
+                # Preparar spawn_meta para que el slash apunte al jugador y no rote con el mouse
+                try:
+                    spawn_meta = {
+                        'target_eid': int(world.player_entity),
+                        'rotate_with_owner': False,
+                    }
+                    resolver = SPELL_RESOLVERS.get('slash')
+                    if resolver is not None:
+                        resolver.resolve(world, eid, spawn_meta, cfg, None)
+                except Exception:
+                    pass
+                # reset cooldown según el hechizo
+                cd_map[eid] = NPCAttackCooldown(next_time=now + cd_secs)
             return
         # Fuera de rango: cambiar a ChaseState
         from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState

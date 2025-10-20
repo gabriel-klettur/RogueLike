@@ -5,6 +5,7 @@ from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
+from roguelike_game.ecs.components.core.identity import Faction
 
 import logging
 logger = logging.getLogger(__name__)
@@ -254,6 +255,22 @@ class HitboxSystem:
                 identity = world.components.get('Identity', {}).get(target)
                 name = identity.name if identity else 'Unknown'
                 logger.debug(f"[DEBUG][HitboxSystem] Hit! target {target} ({name}), hp_before={healths[target].current_hp}, damage={hb.damage}")
+                # Friendly-fire filter: prevent monsters of the same faction from damaging each other
+                try:
+                    monsters = world.components.get('MonsterArchetype', {})
+                    if (hb.owner in monsters) and (target in monsters):
+                        # If attacker has AllowFriendlyFire enabled, bypass this filter
+                        aff = world.components.get('AllowFriendlyFire', {}).get(hb.owner)
+                        allow_ff = bool(getattr(aff, 'enabled', False))
+                        if not allow_ff:
+                            owner_idt = world.components.get('Identity', {}).get(hb.owner)
+                            target_idt = identity
+                            if owner_idt and target_idt and owner_idt.faction == target_idt.faction:
+                                # Mark as processed for this hitbox to avoid re-evaluating and skip damage/events
+                                hb.hit_targets.add(target)
+                                continue
+                except Exception:
+                    pass
                 # apply damage (omit if player in godmode)
                 is_player_target = target in world.components.get('PlayerTagComponent', {})
                 godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
