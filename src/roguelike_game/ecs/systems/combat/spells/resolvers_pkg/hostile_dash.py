@@ -37,7 +37,22 @@ class HostileDashResolver(BaseSpellResolver):
         dir_x, dir_y = self._resolve_direction(world, caster, spawn_meta, camera)
         speed = float(cfg.get('speed', 2200))
         duration = float(cfg.get('duration', 0.18))
-        world.components.setdefault('DashComponent', {})[caster] = DashComponent(dir_x, dir_y, speed, duration)
+        # Read flattened values then prefer nested effect overrides if provided
+        knockback = cfg.get('knockback')
+        collision_damage = cfg.get('collision_damage')
+        try:
+            eff = getattr(cfg, 'extra', {}).get('effect', {})
+            if 'knockback' in eff:
+                knockback = eff.get('knockback')
+            if 'collision_damage' in eff:
+                collision_damage = eff.get('collision_damage')
+        except Exception:
+            pass
+        world.components.setdefault('DashComponent', {})[caster] = DashComponent(
+            dir_x, dir_y, speed, duration,
+            knockback=knockback,
+            collision_damage=collision_damage,
+        )
 
         # Partículas verdes, más anchas y numerosas.
         # Leer posibles overrides desde cfg (flattened por SpellConfig)

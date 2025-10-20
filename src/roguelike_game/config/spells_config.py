@@ -84,6 +84,10 @@ class SpellConfig:
     # Optional decoupled arc for hitbox (degrees); falls back to arc_range_degrees when unset
     hit_arc_degrees: float = 0.0
 
+    # Dash-specific (flattened from effect)
+    knockback: float = 0.0
+    collision_damage: float = 0.0
+
     # Smoke emitter
     particle_color: List[int] = field(default_factory=lambda: [200, 200, 200])
     emit_rate: int = 0
@@ -134,6 +138,8 @@ SCHEMA_KEYS: List[str] = [
     "distance",
     # Slash
     "size_range", "color", "speed_multiplier", "arc_range_degrees", "hit_arc_degrees",
+    # Dash
+    "knockback", "collision_damage",
     # Smoke emitter
     "particle_color", "emit_rate",
     # FSM phase durations & controls
@@ -194,7 +200,8 @@ def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(effect, dict):
         # Copy recognized keys directly
         for k in ("speed", "damage", "range", "distance", "radius",
-                  "hit_radius", "arc_range_degrees", "hit_arc_degrees", "duration", "lifetime"):
+                  "hit_radius", "arc_range_degrees", "hit_arc_degrees", "duration", "lifetime",
+                  "knockback", "collision_damage"):
             if k in effect:
                 flat[k] = effect.get(k)
         # Backward compat: mirror lifetime->lifespan
