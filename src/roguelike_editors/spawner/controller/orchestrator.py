@@ -201,6 +201,16 @@ def render(controller: Any, screen: pygame.Surface) -> None:
 
         # Render principal
         controller.view.render(screen)
+        # Keep tutorial active state consistent when toolbar selects it
+        try:
+            tbm = getattr(getattr(controller, 'spawner_toolbar', None), 'model', None)
+            active_tool = getattr(tbm, 'active_tool', None)
+            tut = getattr(controller, 'tutorial', None)
+            if tut is not None:
+                if active_tool == 'tutorial_spawner' and not tut.is_active():
+                    tut.activate()
+        except Exception:
+            pass
         # Overlay tutorial encima
         try:
             if hasattr(controller, 'tutorial'):

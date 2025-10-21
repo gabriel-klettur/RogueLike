@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Optional
+import pygame
 
 from .spawner_tutorial_panel_model import SpawnerTutorialPanelModel
 from .spawner_tutorial_panel_view import SpawnerTutorialPanelView
@@ -19,6 +20,7 @@ class SpawnerTutorialPanelController:
         self.events = SpawnerTutorialPanelEventHandler(self, self.model)
         # Step tracking to clear hover/highlights between steps if needed
         self._last_step_index: Optional[int] = None
+        self._last_activated_ticks: Optional[int] = None
 
     # State ------------------------------------------------------------------
     def is_active(self) -> bool:
@@ -31,6 +33,10 @@ class SpawnerTutorialPanelController:
         self._consume_all_pulses(reset_only=True)
         self._last_step_index = self.model.step_index
         try:
+            self._last_activated_ticks = pygame.time.get_ticks()
+        except Exception:
+            self._last_activated_ticks = None
+        try:
             # Wire toolbar views for precise highlights
             if hasattr(self.editor, 'spawner_toolbar') and getattr(self.editor.spawner_toolbar, 'view', None) is not None:
                 self.view.spawner_toolbar_view = self.editor.spawner_toolbar.view
@@ -40,19 +46,18 @@ class SpawnerTutorialPanelController:
             pass
         logger.info("[SpawnerTutorial] Activated at step %s", self.model.step_index)
 
-    def deactivate(self) -> None:
+    def deactivate(self, *, force: bool = False) -> None:
+        try:
+            now = pygame.time.get_ticks()
+            if not force and self._last_activated_ticks is not None and (now - self._last_activated_ticks) < 250:
+                return
+        except Exception:
+            pass
         self.model.active = False
         self.model.panel_rect = None
         self.model.button_rects.clear()
         self._consume_all_pulses(reset_only=True)
         self._last_step_index = None
-        # Clear toolbar toggle if it points to tutorial
-        try:
-            tbm = getattr(getattr(self.editor, 'spawner_toolbar', None), 'model', None)
-            if tbm is not None and getattr(tbm, 'active_tool', None) == 'tutorial_spawner':
-                tbm.active_tool = None
-        except Exception:
-            pass
         logger.info("[SpawnerTutorial] Deactivated")
 
     def toggle(self) -> None:

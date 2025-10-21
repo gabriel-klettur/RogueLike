@@ -13,7 +13,7 @@ class SpawnerTutorialPanelEventHandler:
             return False
         # Close with ESC
         if getattr(event, 'type', None) == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_ESCAPE:
-            self.controller.deactivate()
+            self.controller.deactivate(force=True)
             return True
         # LMB inside panel: handle buttons and always consume
         if getattr(event, 'type', None) == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
@@ -49,7 +49,7 @@ class SpawnerTutorialPanelEventHandler:
                 # Close
                 r = rects.get('close')
                 if r and r.collidepoint(pos):
-                    self.controller.deactivate()
+                    self.controller.deactivate(force=True)
                     return True
                 return True
         return False

@@ -51,6 +51,23 @@ class SpawnerToolbarEventHandler:
             logger.debug("[SpawnerToolbar][KEY M] toggled 'spawner_instances'")
             return bool(ok)
 
+        # Toggle tutorial panel with 'T' key
+        if getattr(event, 'type', None) == pygame.KEYDOWN and getattr(event, 'key', None) == pygame.K_t:
+            try:
+                editor = getattr(controller, 'editor_controller', None)
+                tut = getattr(editor, 'tutorial', None)
+                if tut is not None:
+                    new_state = None if controller.is_active(TOOL_TUTORIAL_SPAWNER) else TOOL_TUTORIAL_SPAWNER
+                    controller.set_active(new_state)
+                    if new_state is None:
+                        tut.deactivate()
+                    else:
+                        logger.debug("[SpawnerToolbar][KEY T] 'tutorial_spawner' -> toggle on")
+                        tut.activate()
+                    return True
+            except Exception:
+                pass
+
         toolbar = getattr(controller.view, 'toolbar', None)
         if toolbar is None:
             return False
@@ -88,6 +105,10 @@ class SpawnerToolbarEventHandler:
                         ly = edge_padding + idx * (size + padding)
                         rect_local = pygame.Rect(lx, ly, size, size)
                         icon_rects[tool] = rect_local.move(panel_pos)
+                    try:
+                        toolbar.icon_rects = icon_rects
+                    except Exception:
+                        pass
             except Exception:
                 pass
             # Tutorial (toggle Spawner Tutorial panel)
@@ -103,6 +124,7 @@ class SpawnerToolbarEventHandler:
                         if new_state is None:
                             tut.deactivate()
                         else:
+                            logger.debug("[SpawnerToolbar][CLICK ICON] 'tutorial_spawner' -> activate")
                             tut.activate()
                 except Exception:
                     pass
