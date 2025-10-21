@@ -30,13 +30,25 @@ class SpawnerInfoOverlaySystem:
             self._font = ensure_font("Arial", 14)
 
     def update(self, world, screen, camera):
-        # Gate
+        # Gate: only show when Spawner Editor is active AND Alt is held
         editor_active = False
         try:
             editor_active = bool(getattr(getattr(world, 'state', None), 'spawner_editor_active', False))
         except Exception:
             editor_active = False
-        if not editor_active and not getattr(config, 'DEBUG_SPAWNER', False):
+        alt_down = False
+        try:
+            mods = pygame.key.get_mods()
+            KMOD_ALT = getattr(pygame, 'KMOD_ALT', 0)
+            if KMOD_ALT:
+                alt_down = bool(mods & KMOD_ALT)
+            else:
+                KMOD_LALT = getattr(pygame, 'KMOD_LALT', 0)
+                KMOD_RALT = getattr(pygame, 'KMOD_RALT', 0)
+                alt_down = bool(mods & (KMOD_LALT | KMOD_RALT))
+        except Exception:
+            alt_down = False
+        if not (editor_active and alt_down):
             return
 
         comps = world.components

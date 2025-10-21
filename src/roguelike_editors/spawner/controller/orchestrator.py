@@ -68,13 +68,7 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
         if hasattr(controller, 'spawner_toolbar') and controller.spawner_toolbar.handle_event(event):
             return True
 
-        # Toolbar de instancias (puede estar visible durante Add Mode para cancelar)
-        try:
-            if getattr(getattr(controller.instance_toolbar, 'model', None), 'visible', False):
-                if controller.instance_toolbar.handle_event(event):
-                    return True
-        except Exception:
-            pass
+        # Instance toolbar removed
 
         # Manager (Templates)
         if getattr(controller.spawner_manager.model, 'visible', False):

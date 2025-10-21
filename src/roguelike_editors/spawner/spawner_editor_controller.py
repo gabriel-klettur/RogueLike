@@ -18,7 +18,6 @@ from roguelike_editors.spawner.spawner_toolbar.spawner_toolbar_controller import
 from roguelike_editors.spawner.spawner_templates_panel.spawner_manager_controller import SpawnerManagerController
 from roguelike_editors.spawner.spawner_instances_panel.spawner_list_instances_controller import SpawnerListInstancesController
 from roguelike_editors.spawner.spawner_instance_properties_panel.instance_properties_controller import InstancePropertiesController
-from roguelike_editors.spawner.spawner_instance_toolbar.spawner_instance_toolbar_controller import SpawnerInstanceToolbarController
 from roguelike_editors.spawner.spawner_tutorial_panel import SpawnerTutorialPanelController
 from roguelike_editors.spawner.controller import (
     # Focus
@@ -67,11 +66,14 @@ class SpawnerEditorController:
         self.title_controller = SpawnerTitleController(self, self.model.title_model, self.font)
         # Toolbar (undo/spawner_manager/redo)
         self.spawner_toolbar = SpawnerToolbarController(self)
-        # Instance Toolbar (add/remove spawner instances)
-        self.instance_toolbar = SpawnerInstanceToolbarController(self)
+        # Instance Toolbar removed (actions moved to Instances list rows)
         # Spawner lists:
         # - Instances list (data/spawners/spawners_instances.json)
         self.spawner_instances = SpawnerListInstancesController()
+        try:
+            self.spawner_instances.editor = self
+        except Exception:
+            pass
         # - Manager (templates list, data/spawners/spawners_templates.json)
         self.spawner_manager = SpawnerManagerController()
         # - Instance Properties panel (details of selected entry in spawners_instances.json)
