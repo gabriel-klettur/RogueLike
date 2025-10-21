@@ -407,6 +407,10 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
             lambda: overlays.render_hint_overlay(view, screen, title_rect, tb_rect, mgr_rect, inst_rect)
         ))
         overlay_calls.append((
+            'spawner_info_panel', _z_of('spawner_info_panel'),
+            lambda: overlays.render_spawner_info_panel(view, screen)
+        ))
+        overlay_calls.append((
             'zone_change_confirmation', _z_of('zone_change_confirmation'),
             lambda: overlays.render_zone_change_confirmation(view, screen)
         ))
