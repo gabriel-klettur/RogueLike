@@ -236,28 +236,6 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
 
     panel_calls.append(("spawner_toolbar", _z_of("spawner_toolbar"), _draw_toolbar))
 
-    # Instance toolbar (to the right of main toolbar)
-    def _draw_instance_toolbar():
-        inst_tb_rect_local = None
-        try:
-            if hasattr(c, 'instance_toolbar') and getattr(getattr(c.instance_toolbar, 'model', None), 'visible', False):
-                last_tb = getattr(view, '_last_toolbar_rect', None)
-                last_title = getattr(view, '_last_title_rect', None)
-                if last_tb is not None:
-                    anchor = (last_tb.right + 8, last_tb.top)
-                else:
-                    base_x = last_title.left if last_title else 20
-                    anchor = (base_x, (last_title.bottom + 8) if last_title else 90)
-                c.instance_toolbar.render(screen, anchor=anchor)
-                inst_tb_rect_local = getattr(getattr(c.instance_toolbar, 'view', None), 'last_rect', None)
-        except (AttributeError, TypeError, pygame.error):
-            logger.debug("orchestrate_render: instance_toolbar render failed", exc_info=True)
-        try:
-            view._last_instance_toolbar_rect = inst_tb_rect_local
-        except AttributeError:
-            logger.debug("orchestrate_render: failed to store last_instance_toolbar_rect", exc_info=True)
-
-    panel_calls.append(("spawner_instance_toolbar", _z_of("spawner_instance_toolbar"), _draw_instance_toolbar))
 
     # Spawner Manager (Templates list)
     def _draw_manager():
@@ -326,30 +304,23 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
             if hasattr(c, 'spawner_instances') and getattr(getattr(c.spawner_instances, 'model', None), 'visible', True):
                 if not getattr(getattr(c.spawner_manager, 'model', None), 'visible', False):
                     width = 720
-                    try:
-                        width = int(getattr(getattr(c.spawner_instances, 'model', None), 'panel_width', 720) or 720)
-                    except Exception:
-                        width = 720
-                    last_inst_tb = getattr(view, '_last_instance_toolbar_rect', None)
-                    last_tb = getattr(view, '_last_toolbar_rect', None)
-                    last_title = getattr(view, '_last_title_rect', None)
-                    if last_inst_tb is not None:
-                        ax, ay = last_inst_tb.right + 8, last_inst_tb.top
-                    elif last_tb is not None:
-                        ax, ay = last_tb.right + 8, last_tb.top
-                    else:
-                        base_x = last_title.left if last_title else 20
-                        ax, ay = base_x, (last_title.bottom + 8) if last_title else 90
-                    try:
-                        sw = screen.get_width()
-                        if ax + width > sw - 4:
-                            base = last_inst_tb or last_tb
-                            if base is not None:
-                                ax = max(20, base.left - width - 8)
-                    except Exception:
-                        pass
-                    anchor = (ax, ay)
-                    inst_rect_local = c.spawner_instances.render(screen, anchor=anchor)
+                last_tb = getattr(view, '_last_toolbar_rect', None)
+                last_title = getattr(view, '_last_title_rect', None)
+                if last_tb is not None:
+                    ax, ay = last_tb.right + 8, last_tb.top
+                else:
+                    base_x = last_title.left if last_title else 20
+                    ax, ay = base_x, (last_title.bottom + 8) if last_title else 90
+                try:
+                    sw = screen.get_width()
+                    if ax + width > sw - 4:
+                        base = last_tb
+                        if base is not None:
+                            ax = max(20, base.left - width - 8)
+                except Exception:
+                    pass
+                anchor = (ax, ay)
+                inst_rect_local = c.spawner_instances.render(screen, anchor=anchor)
         except (AttributeError, TypeError, pygame.error):
             logger.debug("orchestrate_render: spawner_instances render failed", exc_info=True)
         try:
@@ -365,13 +336,10 @@ def orchestrate_render(view, screen: pygame.Surface) -> None:
             ip = getattr(c, 'instance_properties', None)
             if ip is not None and getattr(getattr(ip, 'model', None), 'visible', False):
                 last_inst = getattr(view, '_last_instances_rect', None)
-                last_inst_tb = getattr(view, '_last_instance_toolbar_rect', None)
                 last_tb = getattr(view, '_last_toolbar_rect', None)
                 last_title = getattr(view, '_last_title_rect', None)
                 if last_inst is not None:
                     anchor = (last_inst.right + 8, last_inst.top)
-                elif last_inst_tb is not None:
-                    anchor = (last_inst_tb.right + 8, last_inst_tb.top)
                 elif last_tb is not None:
                     anchor = (last_tb.right + 8, last_tb.top)
                 else:

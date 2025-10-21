@@ -4,11 +4,21 @@ from typing import Optional, List, Dict, Any, Callable
 
 from roguelike_editors.spawner.common import (
     ListPanelModel as SpawnerListInstancesModel,
-    ListPanelView as SpawnerListInstancesView,
 )
+from .spawner_list_instances_view import SpawnerListInstancesView
 from .spawner_list_instances_events import SpawnerListInstancesEventHandler
 from roguelike_engine.config.map_config import global_map_settings
-from roguelike_editors.spawner.services.persistence import load_instances_json, zone_for_global_tile
+from roguelike_editors.spawner.services.persistence import (
+    load_instances_json,
+    write_instances_json,
+    find_instance_in_json,
+    load_spawners_json,
+    zone_for_global_tile,
+)
+from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
+from roguelike_game.ecs.systems.spawner.placement.loaders import load_waves
+from roguelike_game.ecs.systems.spawner.placement.config_resolver import resolve_config
+from roguelike_game.ecs.systems.spawner.placement.visuals import auto_repair_state_visuals
 
 
 class SpawnerListInstancesController:
@@ -25,7 +35,7 @@ class SpawnerListInstancesController:
         self.events = SpawnerListInstancesEventHandler()
         # Narrower panel width for Instances list as requested (default is 720 in ListPanelView)
         try:
-            setattr(self.model, 'panel_width', 420)
+            setattr(self.model, 'panel_width', 840)
         except Exception:
             pass
         # Raw instances cache corresponding to rows in model.items
@@ -42,6 +52,55 @@ class SpawnerListInstancesController:
         # Signatures: on_start_hold_focus(x_px: float, y_px: float) and on_end_hold_focus()
         self.on_start_hold_focus: Optional[Callable[[float, float], None]] = None
         self.on_end_hold_focus: Optional[Callable[[], None]] = None
+
+    def select_by_tpl_zone_tile(self, tpl_id: str, zone: str, local_tile: tuple[int, int]) -> None:
+        try:
+            self.refresh_from_disk()
+        except Exception:
+            pass
+        try:
+            idx = None
+            for i, e in enumerate(self._instances or []):
+                try:
+                    if str(e.get('template_id')) == str(tpl_id) and str(e.get('zone')) == str(zone):
+                        t = e.get('tile') or [0, 0]
+                        tx = int(t[0]) if isinstance(t, (list, tuple)) and len(t) >= 1 else 0
+                        ty = int(t[1]) if isinstance(t, (list, tuple)) and len(t) >= 2 else 0
+                        if (tx, ty) == (int(local_tile[0]), int(local_tile[1])):
+                            idx = i
+                            break
+                except Exception:
+                    continue
+            if idx is None:
+                return
+            row = None
+            for r, ii in (self._row_to_instance_idx or {}).items():
+                if ii == idx:
+                    row = r
+                    break
+            if row is None:
+                return
+            self.model.selected_index = int(row)
+            # Ensure row is visible by adjusting scroll
+            try:
+                visible_rows = int(getattr(self.model, 'visible_rows', 11) or 11)
+                start = int(getattr(self.model, 'scroll_offset', 0) or 0)
+                if not (start <= int(row) < start + visible_rows):
+                    new_off = max(0, int(row) - visible_rows // 2)
+                    max_off = max(0, len(self.model.items) - visible_rows)
+                    self.model.scroll_offset = min(new_off, max_off)
+            except Exception:
+                pass
+            # Optional blink feedback
+            try:
+                import pygame  # type: ignore
+                now = pygame.time.get_ticks()
+                setattr(self.model, '_blink_row_index', int(row))
+                setattr(self.model, '_blink_end_ticks', int(now + 450))
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def render(self, screen, *, anchor=None):
         if anchor is None:
@@ -228,6 +287,158 @@ class SpawnerListInstancesController:
         except Exception:
             return
         self.refresh_from_disk()
+
+    def duplicate_instance_at(self, row_index: int) -> None:
+        try:
+            idx = self.instance_index_for_row(row_index)
+        except Exception:
+            idx = None
+        if idx is None:
+            return
+        try:
+            orig = dict(self._instances[idx])
+        except Exception:
+            return
+        try:
+            tpl = str(orig.get('template_id'))
+            zone = str(orig.get('zone'))
+            tile = orig.get('tile') or [0, 0]
+            ox, oy = int(tile[0]), int(tile[1])
+        except Exception:
+            return
+        try:
+            existing = {
+                (str(e.get('template_id')), str(e.get('zone')), int((e.get('tile') or [0, 0])[0]), int((e.get('tile') or [0, 0])[1]))
+                for e in (load_instances_json() or [])
+            }
+        except Exception:
+            existing = set()
+        candidates = [(1, 0), (0, 1), (-1, 0), (0, -1), (1, 1), (2, 0), (0, 2), (-2, 0), (0, -2)]
+        nx, ny = ox, oy
+        for dx, dy in candidates:
+            cx, cy = ox + dx, oy + dy
+            if (tpl, zone, cx, cy) not in existing:
+                nx, ny = cx, cy
+                break
+        new_entry: Dict[str, Any] = {
+            'template_id': tpl,
+            'zone': zone,
+            'tile': [int(nx), int(ny)],
+        }
+        try:
+            ov = orig.get('overrides')
+            if isinstance(ov, dict) and ov:
+                new_entry['overrides'] = dict(ov)
+        except Exception:
+            pass
+        try:
+            data = load_instances_json()
+            data.append(new_entry)
+            write_instances_json(data)
+        except Exception:
+            return
+        try:
+            data2 = load_instances_json()
+            _data2, idx_found, _ = find_instance_in_json(tpl, zone, (int(nx), int(ny)))
+            inst_norm = data2[idx_found] if idx_found is not None else new_entry
+        except Exception:
+            inst_norm = new_entry
+        try:
+            editor = getattr(self, 'editor', None)
+            world = getattr(getattr(getattr(editor, 'game', None), 'ecs', None), 'ecs_world', None)
+            if world is not None:
+                tpls = load_spawners_json()
+                tpl_def = None
+                for t in (tpls or []):
+                    try:
+                        if str(t.get('id')) == tpl:
+                            tpl_def = t
+                            break
+                    except Exception:
+                        continue
+                if tpl_def is not None:
+                    waves = load_waves()
+                    cfg = resolve_config(tpl_def, inst_norm, waves)
+                    eid = world.create_entity()
+                    world.components.setdefault('SpawnerConfig', {})[eid] = cfg
+                    world.components.setdefault('SpawnerState', {})[eid] = SpawnerState()
+                    try:
+                        auto_repair_state_visuals(world, eid, cfg, inst_norm)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        try:
+            self.refresh_from_disk()
+            new_id = str(inst_norm.get('id')) if inst_norm.get('id') is not None else None
+            if new_id is not None:
+                i_idx = None
+                for i, e in enumerate(self._instances):
+                    try:
+                        if str(e.get('id')) == new_id:
+                            i_idx = i
+                            break
+                    except Exception:
+                        continue
+                if i_idx is not None:
+                    for row, ii in self._row_to_instance_idx.items():
+                        if ii == i_idx:
+                            self.model.selected_index = row
+                            break
+        except Exception:
+            pass
+
+    def prepare_delete_at(self, row_index: int) -> None:
+        try:
+            idx = self.instance_index_for_row(row_index)
+        except Exception:
+            idx = None
+        if idx is None:
+            return
+        try:
+            inst = self._instances[idx]
+            tpl = str(inst.get('template_id'))
+            zone = str(inst.get('zone'))
+            tile = inst.get('tile') or [0, 0]
+            lt = (int(tile[0]), int(tile[1]))
+        except Exception:
+            return
+        eid = None
+        try:
+            editor = getattr(self, 'editor', None)
+            world = getattr(getattr(getattr(editor, 'game', None), 'ecs', None), 'ecs_world', None)
+            if world is not None:
+                comps = getattr(world, 'components', {})
+                cfgs = comps.get('SpawnerConfig', {})
+                off = global_map_settings.zone_offsets.get(zone, (0, 0))
+                gx = int(off[0]) + lt[0]
+                gy = int(off[1]) + lt[1]
+                for cand_eid, cfg in list(cfgs.items()):
+                    try:
+                        if str(getattr(cfg, 'template_id', '')) != tpl:
+                            continue
+                        tx, ty = getattr(cfg, 'anchor_tile', (None, None))
+                        if int(tx) == gx and int(ty) == gy:
+                            eid = cand_eid
+                            break
+                    except Exception:
+                        continue
+        except Exception:
+            eid = None
+        try:
+            editor = getattr(self, 'editor', None)
+            if editor is not None:
+                payload = {'eid': eid, 'template_id': tpl, 'zone': zone, 'local_tile': (lt[0], lt[1])}
+                editor.model.pending_delete_confirm = payload
+                world = getattr(getattr(getattr(editor, 'game', None), 'ecs', None), 'ecs_world', None)
+                if world is not None and hasattr(world, 'state'):
+                    try:
+                        setattr(world.state, 'spawner_remove_candidate_eid', eid)
+                        setattr(world.state, 'spawner_input_suppressed', True)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
 
 __all__ = ["SpawnerListInstancesController"]

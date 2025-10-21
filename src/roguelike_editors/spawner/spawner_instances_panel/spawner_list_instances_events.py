@@ -13,6 +13,8 @@ class SpawnerListInstancesEventHandler(ListPanelEventHandler):
     def __init__(self) -> None:
         super().__init__()
         self._hold_pressed: bool = False
+        self._last_dup_ms: int = 0
+        self._last_dup_row: int | None = None
 
     def handle_event(self, controller, event) -> bool:
         try:
@@ -28,6 +30,48 @@ class SpawnerListInstancesEventHandler(ListPanelEventHandler):
             return False
         et = getattr(event, 'type', None)
         pos = getattr(event, 'pos', None) or pygame.mouse.get_pos()
+        # Per-row buttons: handle before other logic
+        if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+            if rect.collidepoint(pos):
+                for info in getattr(view, 'row_button_rects', []) or []:
+                    gidx = info.get('gidx')
+                    if gidx is None or not controller.is_row_instance(gidx):
+                        continue
+                    if info.get('dup') and info['dup'].collidepoint(pos):
+                        model.selected_index = int(gidx)
+                        # Debounce: avoid firing twice for the same click
+                        try:
+                            now = pygame.time.get_ticks()
+                            if self._last_dup_row == int(gidx) and (now - int(self._last_dup_ms)) < 300:
+                                return True
+                            self._last_dup_row = int(gidx)
+                            self._last_dup_ms = int(now)
+                        except Exception:
+                            pass
+                        try:
+                            now = pygame.time.get_ticks()
+                            setattr(model, '_blink_row_index', int(gidx))
+                            setattr(model, '_blink_end_ticks', int(now + 450))
+                        except Exception:
+                            pass
+                        try:
+                            controller.duplicate_instance_at(int(gidx))
+                        except Exception:
+                            pass
+                        return True
+                    if info.get('delete') and info['delete'].collidepoint(pos):
+                        model.selected_index = int(gidx)
+                        try:
+                            now = pygame.time.get_ticks()
+                            setattr(model, '_blink_row_index', int(gidx))
+                            setattr(model, '_blink_end_ticks', int(now + 450))
+                        except Exception:
+                            pass
+                        try:
+                            controller.prepare_delete_at(int(gidx))
+                        except Exception:
+                            pass
+                        return True
         header_h = int(getattr(model, 'header_height', 28) or 28)
         row_h = int(getattr(model, 'row_height', 20) or 20)
         visible_rows = int(getattr(model, 'visible_rows', 11) or 11)

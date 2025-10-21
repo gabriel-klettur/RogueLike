@@ -18,6 +18,7 @@ from ...services.persistence import (
 )
 from ...services.persistence import zone_for_global_tile
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.components.spawner.spawner_state import SpawnerState
 from roguelike_game.ecs.systems.spawner.placement.loaders import load_waves
 from roguelike_game.ecs.systems.spawner.placement.config_resolver import resolve_config
@@ -381,6 +382,44 @@ def handle_mousedown_left(h, ctx: etypes.EditorCtx, event: pygame.event.Event) -
             try:
                 if hasattr(world, 'state'):
                     setattr(world.state, 'spawner_selected_eid', eid)
+            except Exception:
+                pass
+            # Center camera and select corresponding row in Instances panel
+            try:
+                cfg = world.components['SpawnerConfig'][eid]
+                tpl = str(getattr(cfg, 'template_id', ''))
+                zone = str(getattr(cfg, 'zone', 'lobby'))
+                tx, ty = getattr(cfg, 'anchor_tile', (0, 0))
+                # Center camera to tile center in pixel space
+                try:
+                    zoom = float(getattr(camera, 'zoom', 1.0) or 1.0)
+                    x_px = (float(tx) + 0.5) * float(TILE_SIZE)
+                    y_px = (float(ty) + 0.5) * float(TILE_SIZE)
+                    sw = float(getattr(camera, 'screen_width', 0) or 0)
+                    sh = float(getattr(camera, 'screen_height', 0) or 0)
+                    camera.offset_x = x_px - (sw / (2.0 * zoom))
+                    camera.offset_y = y_px - (sh / (2.0 * zoom))
+                except Exception:
+                    pass
+                # Compute local tile for selection mapping
+                try:
+                    off_x, off_y = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    local = (int(tx - int(off_x)), int(ty - int(off_y)))
+                except Exception:
+                    local = (0, 0)
+                try:
+                    editor = h.controller
+                    if hasattr(editor, 'spawner_instances') and hasattr(editor.spawner_instances, 'select_by_tpl_zone_tile'):
+                        editor.spawner_instances.select_by_tpl_zone_tile(tpl, zone, local)
+                    # Ensure Instances tool is active so panel is visible
+                    try:
+                        st = getattr(editor, 'spawner_toolbar', None)
+                        if st is not None and hasattr(st, 'model'):
+                            st.model.active_tool = 'spawner_instances'
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
             except Exception:
                 pass
             try:
