@@ -4,14 +4,23 @@ from roguelike_game.managers.items.loader import ItemsLoader
 import logging
 logger = logging.getLogger(__name__)
 
+def load_items(_path: str | None = None):
+    """Compatibility wrapper for tests to stub items catalog.
+
+    Delegates to ItemsLoader().load() and returns only the items dict.
+    The `_path` is ignored for backward compatibility with tests.
+    """
+    items, _assets = ItemsLoader().load()
+    return items
+
 class ConsumeSystem:
     """
     Sistema ECS que maneja uso de consumibles (curación, stat buffs).
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-        # Cargar definiciones de ítems desde SQLite para consumo
-        self.items, _assets = ItemsLoader().load()
+        # Cargar definiciones de ítems (permite monkeypatch de cs.load_items en tests)
+        self.items = load_items(None)
 
     def update(self, world, *args):
         components = world.components

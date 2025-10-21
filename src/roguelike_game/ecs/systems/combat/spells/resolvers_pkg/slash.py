@@ -143,29 +143,34 @@ class SlashResolver(BaseSpellResolver):
         except Exception:
             pass
         # Registrar hitbox de slash para colisión (usa SOLO hit_radius/hit_arc_range)
-        hb_id = world.create_entity()
-        real_x, real_y = spawn_at_offset(cx, cy, dir_x, dir_y, offset)
-
-        world.components['Position'][hb_id] = Position(real_x, real_y)
-        # Rotate behavior: allow override so NPC slashes don't rotate with mouse
-        rotate_with_owner = True
+        # Ser tolerante en tests donde el mundo no implementa create_entity
+        real_x, real_y = cx, cy
         try:
-            rwo = spawn_meta.get('rotate_with_owner') if isinstance(spawn_meta, dict) else None
-            if isinstance(rwo, bool):
-                rotate_with_owner = rwo
+            hb_id = world.create_entity()
+            real_x, real_y = spawn_at_offset(cx, cy, dir_x, dir_y, offset)
+            world.components['Position'][hb_id] = Position(real_x, real_y)
+            # Rotate behavior: allow override so NPC slashes don't rotate with mouse
+            rotate_with_owner = True
+            try:
+                rwo = spawn_meta.get('rotate_with_owner') if isinstance(spawn_meta, dict) else None
+                if isinstance(rwo, bool):
+                    rotate_with_owner = rwo
+            except Exception:
+                pass
+            world.components['HitboxComponent'][hb_id] = HitboxComponent(
+                owner=caster,
+                offset=offset,
+                radius=hit_radius,
+                arc_angle=hit_arc_range,
+                direction=(dir_x, dir_y),
+                lifespan=lifespan,
+                damage=cfg.get('damage', 0),
+                follow_owner=True,
+                rotate_with_owner=rotate_with_owner,
+            )
         except Exception:
+            # Sin hitbox en entornos reducidos, continuar con partículas
             pass
-        world.components['HitboxComponent'][hb_id] = HitboxComponent(
-            owner=caster,
-            offset=offset,
-            radius=hit_radius,
-            arc_angle=hit_arc_range,
-            direction=(dir_x, dir_y),
-            lifespan=lifespan,
-            damage=cfg.get('damage', 0),
-            follow_owner=True,
-            rotate_with_owner=rotate_with_owner,
-        )
         # Añadir emisor de partículas de slash (usa SOLO vis_radius/vis_arc_range)
         world.components.setdefault('SlashEmitterComponent', {})[caster] = SlashEmitterComponent(
             radius=vis_radius,

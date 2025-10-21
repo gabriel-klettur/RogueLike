@@ -102,20 +102,6 @@ class SpawnerWaves(Base):
     idx: Mapped[int] = mapped_column(Integer)
     spawns_json: Mapped[str] = mapped_column(Text)
 
-
-class SpawnTableEntry(Base):
-    """Weighted entries for a spawn table to pick entities and quantities."""
-
-    __tablename__ = "spawn_table_entries"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    spawn_table_id: Mapped[str] = mapped_column(String)
-    entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
-    weight: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    min_qty: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    max_qty: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
-
 class BuildingInstance(Base):
     """Placed building instance on a map with references to assets/spawns."""
 
