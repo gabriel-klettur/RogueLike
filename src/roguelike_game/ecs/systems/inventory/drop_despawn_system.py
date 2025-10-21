@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +14,8 @@ class DropDespawnSystem:
     """
     def __init__(self, perf_log=None, items_path=None, drop_path=None):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Load items from SQLite
+        self.items, _assets = ItemsLoader().load()
         if drop_path is None:
             drop_path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(drop_path)

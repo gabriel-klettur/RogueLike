@@ -29,8 +29,25 @@ class DashResolver(BaseSpellResolver):
             except Exception:
                 pass
         cx, cy = get_entity_center(world, caster)
-        wx, wy = mouse_world(camera)
-        dir_x, dir_y, _ = direction_from_to(cx, cy, wx, wy)
+        # Prefer explicit direction/target from spawn_meta; fallback to mouse
+        if isinstance(spawn_meta, dict):
+            dir_override = spawn_meta.get('direction')
+            if isinstance(dir_override, (list, tuple)) and len(dir_override) >= 2:
+                dx, dy = float(dir_override[0]), float(dir_override[1])
+                mag = (dx * dx + dy * dy) ** 0.5 or 1.0
+                dir_x, dir_y = dx / mag, dy / mag
+            else:
+                target_eid = spawn_meta.get('target_eid')
+                pos_tbl = world.components.get('Position', {})
+                if isinstance(target_eid, int) and target_eid in pos_tbl:
+                    tx, ty = get_entity_center(world, target_eid)
+                    dir_x, dir_y, _ = direction_from_to(cx, cy, tx, ty)
+                else:
+                    wx, wy = mouse_world(camera)
+                    dir_x, dir_y, _ = direction_from_to(cx, cy, wx, wy)
+        else:
+            wx, wy = mouse_world(camera)
+            dir_x, dir_y, _ = direction_from_to(cx, cy, wx, wy)
         speed = cfg.get('speed', 0)
         duration = cfg.get('duration', 0)
         # Read flattened values then prefer nested effect overrides if provided

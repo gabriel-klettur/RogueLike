@@ -6,7 +6,7 @@ from roguelike_editors.inventory.right_panel.item_selection_panel.item_selection
 import os
 import logging
 from roguelike_editors.inventory.editor_model import InventoryEditorModel
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 import logging
 logger = logging.getLogger(__name__)
 from roguelike_editors.inventory.left_panel.panel_model import InventoryPanelModel
@@ -33,9 +33,10 @@ class InventoryEditorView:
         self.show_default_rect = None
         self.show_active_rect = None
         # Cargar íconos de ítems
-        cwd = os.getcwd()
-        items_path = os.path.join(cwd, 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        try:
+            self.items, _assets = ItemsLoader().load()
+        except Exception:
+            self.items = {}
         self.images = {}
 
         # Paneles y botones para flujo Add Item

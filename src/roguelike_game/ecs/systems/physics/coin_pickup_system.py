@@ -1,5 +1,5 @@
 import os
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
@@ -7,14 +7,22 @@ from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 import logging
 logger = logging.getLogger(__name__)
 
+def load_items(_path: str | None = None):
+    """Compatibility wrapper for tests to stub items catalog.
+
+    Delegates to ItemsLoader().load() and returns only the items dict.
+    The `_path` is ignored for backward compatibility with tests.
+    """
+    items, _assets = ItemsLoader().load()
+    return items
+
 class CoinPickupSystem:
     """
     Sistema ECS que automáticamente recoge monedas al colisionar con el jugador.
     """
     def __init__(self, perf_log=None, items_path=None):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
+        # Ignore items_path; load via wrapper so tests can monkeypatch cps.load_items
         self.items = load_items(items_path)
         # Gestor de drops en mapa para persistir recogidas
         path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')

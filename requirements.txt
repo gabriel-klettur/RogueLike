@@ -11,3 +11,5 @@ pytest
 pydantic
 jsonschema
 check-jsonschema
+alembic
+sqlalchemy

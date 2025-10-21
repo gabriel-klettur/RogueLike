@@ -13,7 +13,7 @@ from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.ecs.components.transform.temp_z_layer import TempZLayer
 import pygame
 from roguelike_engine.config.config_z_layer import DEFAULT_Z
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 
@@ -51,8 +51,8 @@ class MapLoadDropsSystem:
             self.drop_manager._persist()
         if self.drop_manager.path != path:
             self.drop_manager = ItemDropManager(self.drop_manager.path)
-        items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Load items from SQLite
+        self.items, _assets = ItemsLoader().load()
         self._initial_path = path
         self._loaded = False
 

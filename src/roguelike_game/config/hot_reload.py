@@ -336,9 +336,9 @@ def reload_all_game_data(game, *, force: bool = False) -> Dict[str, int]:
         ))
     except Exception:
         pass
-    # 4) Items (catalog + prices)
+    # 4) Items (now DB-backed): watch SQLite DB file instead of JSONs
     groups.append((
-        'Items', [base / 'items' / 'items.json', base / 'items' / 'items_price.json'],
+        'Items', [base / 'roguelike.sqlite3'],
         lambda: _reload_items(game)
     ))
     # 5) Tiles (assets-based; no JSON dependency -> always safe to clear caches when anything else changed)

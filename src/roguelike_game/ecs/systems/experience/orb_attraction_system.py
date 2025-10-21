@@ -1,6 +1,6 @@
 import os
 import math
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 
 
@@ -10,9 +10,8 @@ class OrbAttractionSystem:
     """
     def __init__(self, perf_log=None, items_path=None, attract_radius: float = 100.0, speed: float = 5.0):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Load items from SQLite
+        self.items, _assets = ItemsLoader().load()
         self.attract_radius = attract_radius
         self.speed = speed
         # Gestor de drops en mapa para persistir orbes recogidos

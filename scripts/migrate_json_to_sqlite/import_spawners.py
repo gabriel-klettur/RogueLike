@@ -14,9 +14,8 @@ Mappings:
   - `Spawner.respawn_seconds` <- template.policy.cooldown_s (int)
   - `Spawner.conditions_json` <- JSON dump of trigger/policy/overrides relevant bits
   - `Spawner.spawn_table_id`  <- instance.template_id (string)
-- Spawn table entries come from template.waves (or referenced waves_id),
-  flattened per template. We clear existing entries for that spawn_table_id
-  before inserting to keep idempotency.
+  Note: We no longer materialize spawn entries; consumers should resolve
+  spawns at query time via `spawner_templates.waves_id` and `spawner_waves`.
 
 Idempotency:
 - Composite content hash built from the three JSON files.
@@ -30,17 +29,17 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List
 
 from sqlalchemy.dialects.sqlite import insert
-from sqlalchemy import select, delete
+from sqlalchemy import select
 
 # Ensure src/ is importable (repo_root/src)
 import sys
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
 from roguelike_engine.db.engine import session_scope
-from roguelike_engine.db.models import SpawnerInstance, SpawnTableEntry, ImportLog
+from roguelike_engine.db.models import SpawnerInstance, ImportLog
 
 
 INSTANCES_PATH = Path("data/spawners/spawners_instances.json")
@@ -52,7 +51,6 @@ WAVES_PATH = Path("data/spawners/spawners_waves.json")
 class ImportResult:
     imported: bool
     row_count_spawners: int
-    row_count_entries: int
     content_hash: str
     reason: str
 
@@ -91,6 +89,9 @@ def _radius_value(val: Any) -> int | None:
 
 
 def _waves_for_template(template: Dict[str, Any], waves_catalog: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return waves list for a template (inline or via waves_id);
+    kept for potential future validation or runtime utilities.
+    """
     if "waves" in template and isinstance(template["waves"], list):
         return template["waves"]
     waves_id = template.get("waves_id")
@@ -99,25 +100,6 @@ def _waves_for_template(template: Dict[str, Any], waves_catalog: Dict[str, Any])
         if isinstance(seq, list):
             return seq
     return []
-
-
-def _collect_entries_for_waves(waves: List[Dict[str, Any]]) -> List[Tuple[str, int, int]]:
-    """Return list of (entity_id, min_qty, max_qty) aggregated across waves.
-
-    We use count as both min/max for simplicity.
-    """
-    out: List[Tuple[str, int, int]] = []
-    for wave in waves:
-        spawns = wave.get("spawns") or []
-        if not isinstance(spawns, list):
-            continue
-        for sp in spawns:
-            ent_id = sp.get("id")
-            if not isinstance(ent_id, str):
-                continue
-            count = _num(sp.get("count")) or 1
-            out.append((ent_id, count, count))
-    return out
 
 
 def import_spawners() -> ImportResult:
@@ -139,7 +121,7 @@ def import_spawners() -> ImportResult:
                 templates[tid] = t
 
     sp_count = 0
-    entry_count = 0
+    # entries are no longer materialized; only count spawner instances
 
     with session_scope() as s:
         # Idempotency on the composite input set
@@ -150,7 +132,7 @@ def import_spawners() -> ImportResult:
             .limit(1)
         ).scalar_one_or_none()
         if last_hash == composite_hash:
-            return ImportResult(False, 0, 0, composite_hash, "unchanged: composite hash matches")
+            return ImportResult(False, 0, composite_hash, "unchanged: composite hash matches")
 
         if not isinstance(instances, list):
             raise ValueError("spawners_instances.json must be a list")
@@ -209,23 +191,8 @@ def import_spawners() -> ImportResult:
             s.execute(stmt)
             sp_count += 1
 
-            # Prepare entries for this template (collect waves explicitly)
-            waves = _waves_for_template(t, waves_catalog)
-            entries = _collect_entries_for_waves(waves)
-
-            # Clear existing entries for this spawn_table_id, then insert
-            stid = str(template_id)
-            s.execute(delete(SpawnTableEntry).where(SpawnTableEntry.spawn_table_id == stid))
-            for ent_id, min_qty, max_qty in entries:
-                e_stmt = insert(SpawnTableEntry).values(
-                    spawn_table_id=stid,
-                    entity_id=ent_id,
-                    weight=None,
-                    min_qty=min_qty,
-                    max_qty=max_qty,
-                )
-                s.execute(e_stmt)
-                entry_count += 1
+            # Previously we materialized entries into spawn_table_entries.
+            # Now we rely on spawner_templates.waves_id + spawner_waves at query time.
 
         # Log composite import
         s.add(
@@ -233,19 +200,19 @@ def import_spawners() -> ImportResult:
                 source_path="spawners_instances:composite",
                 content_hash=composite_hash,
                 imported_at=datetime.now(timezone.utc).isoformat(),
-                row_count=sp_count + entry_count,
+                row_count=sp_count,
                 version="spawners_v1",
             )
         )
 
-    return ImportResult(True, sp_count, entry_count, composite_hash, "imported")
+    return ImportResult(True, sp_count, composite_hash, "imported")
 
 
 def run() -> None:
     res = import_spawners()
     status = "imported" if res.imported else "skipped"
     print(
-        f"[spawners_instances] {status} instances={res.row_count_spawners} entries={res.row_count_entries} "
+        f"[spawners_instances] {status} instances={res.row_count_spawners} "
         f"hash={res.content_hash} reason={res.reason}"
     )
 

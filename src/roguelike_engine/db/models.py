@@ -102,20 +102,6 @@ class SpawnerWaves(Base):
     idx: Mapped[int] = mapped_column(Integer)
     spawns_json: Mapped[str] = mapped_column(Text)
 
-
-class SpawnTableEntry(Base):
-    """Weighted entries for a spawn table to pick entities and quantities."""
-
-    __tablename__ = "spawn_table_entries"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    spawn_table_id: Mapped[str] = mapped_column(String)
-    entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
-    weight: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    min_qty: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    max_qty: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
-
 class BuildingInstance(Base):
     """Placed building instance on a map with references to assets/spawns."""
 
@@ -153,3 +139,42 @@ class ImportLog(Base):
     imported_at: Mapped[str] = mapped_column(String)  # ISO-8601 string
     row_count: Mapped[int] = mapped_column(Integer)
     version: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class Item(Base):
+    """Item catalog definition migrated from JSON files.
+
+    Minimal stable columns are modeled; the rest is preserved in `extra_json`.
+    Icons may come as small/large or as a list; we store structured forms in
+    dedicated columns and keep the full payload in `extra_json`.
+    """
+
+    __tablename__ = "items"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    stackable: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    max_stack: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    z_layer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    despawn_time: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    equip_slot: Mapped[str | None] = mapped_column(String, nullable=True)
+    rarity: Mapped[str | None] = mapped_column(String, nullable=True)
+    level_requirement: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    icon_small: Mapped[str | None] = mapped_column(String, nullable=True)
+    icon_large: Mapped[str | None] = mapped_column(String, nullable=True)
+    icon_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ItemPrice(Base):
+    """Item prices table with a single currency (gold) for now.
+
+    Columns requested: id_item, buy_price, sell_price.
+    """
+
+    __tablename__ = "item_prices"
+
+    id_item: Mapped[str] = mapped_column(String, ForeignKey("items.id"), primary_key=True)
+    buy_price: Mapped[int] = mapped_column(Integer)
+    sell_price: Mapped[int] = mapped_column(Integer)

@@ -11,7 +11,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.config_z_layer import DEFAULT_Z
 from roguelike_engine.map.utils import get_zone_for_tile
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.rendering.sprite import Sprite
@@ -163,9 +163,8 @@ class DropService:
             pass
         controller = self.controller
         if not hasattr(controller, '_items_models') or not controller._items_models:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
             try:
-                controller._items_models = load_items(items_path)
+                controller._items_models, _assets = ItemsLoader().load()
             except Exception:
                 controller._items_models = {}
         model = controller._items_models.get(item_id)

@@ -1,7 +1,16 @@
-import os
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
+
+
+def load_items(_path: str | None = None):
+    """Compatibility wrapper expected by tests.
+
+    Delegates to ItemsLoader().load() and returns only the items dict.
+    The `_path` parameter is ignored (kept for backward compatibility with tests).
+    """
+    items, _assets = ItemsLoader().load()
+    return items
 
 
 class ExperienceSystem:
@@ -11,8 +20,7 @@ class ExperienceSystem:
     """
     def __init__(self, perf_log=None, items_path=None):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
+        # Load items via wrapper (allows tests to monkeypatch xs.load_items)
         self.items = load_items(items_path)
         # Persistencia eliminada: ahora el XP/Nivel se guarda en el archivo de partida (meta)
         # mediante ShutdownManager y se restaura al cargar la partida desde el menú.

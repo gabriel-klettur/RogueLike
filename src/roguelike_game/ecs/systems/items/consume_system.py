@@ -1,9 +1,17 @@
 
-import os
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 
 import logging
 logger = logging.getLogger(__name__)
+
+def load_items(_path: str | None = None):
+    """Compatibility wrapper for tests to stub items catalog.
+
+    Delegates to ItemsLoader().load() and returns only the items dict.
+    The `_path` is ignored for backward compatibility with tests.
+    """
+    items, _assets = ItemsLoader().load()
+    return items
 
 class ConsumeSystem:
     """
@@ -11,9 +19,8 @@ class ConsumeSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-        # Cargar definiciones de ítems para consumo
-        items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Cargar definiciones de ítems (permite monkeypatch de cs.load_items en tests)
+        self.items = load_items(None)
 
     def update(self, world, *args):
         components = world.components

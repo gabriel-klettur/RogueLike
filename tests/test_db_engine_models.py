@@ -104,9 +104,6 @@ class TestModelsCRUD(unittest.TestCase):
             s.add(M.SpawnerInstance(id=spawner_id, map_id="TestMap", x=5, y=7, radius=10,
                             max_count=3, respawn_seconds=5, conditions_json="{}",
                             spawn_table_id=spawn_table_id))
-            # SpawnTableEntry
-            s.add(M.SpawnTableEntry(spawn_table_id=spawn_table_id, entity_id=ent_id,
-                                    weight=1, min_qty=1, max_qty=2))
             # BuildingInstance
             s.add(M.BuildingInstance(instance_id=building_instance_id, image_id=None,
                                      spawn_id=None, zone_id="ZoneA"))
@@ -130,9 +127,6 @@ class TestModelsCRUD(unittest.TestCase):
             # SpawnerInstance
             sp = s.execute(select(M.SpawnerInstance).where(M.SpawnerInstance.id == spawner_id)).scalar_one()
             self.assertEqual(sp.map_id, "TestMap")
-            # SpawnTableEntry
-            ste = s.execute(select(M.SpawnTableEntry).where(M.SpawnTableEntry.spawn_table_id == spawn_table_id)).scalar_one()
-            self.assertEqual(ste.entity_id, ent_id)
             # BuildingInstance
             bi = s.execute(select(M.BuildingInstance).where(M.BuildingInstance.instance_id == building_instance_id)).scalar_one()
             self.assertEqual(bi.zone_id, "ZoneA")
@@ -148,7 +142,6 @@ class TestModelsCRUD(unittest.TestCase):
 
         # Cleanup
         with session_scope() as s:
-            s.execute(text("DELETE FROM spawn_table_entries WHERE spawn_table_id = :id"), {"id": spawn_table_id})
             s.execute(text("DELETE FROM spawners_instances WHERE id = :id"), {"id": spawner_id})
             s.execute(text("DELETE FROM building_collisions WHERE instance_id = :id"), {"id": building_instance_id})
             s.execute(text("DELETE FROM building_instances WHERE instance_id = :id"), {"id": building_instance_id})

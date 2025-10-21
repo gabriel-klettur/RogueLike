@@ -2,7 +2,7 @@ import os
 import json
 import pygame
 
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.components.item_models import ItemStack
 
 import logging
@@ -39,9 +39,8 @@ class InventoryEditorSystem:
         except Exception:
             # No bloquear el editor por permisos/rutas; se manejará al usar los archivos
             pass
-        # Load item models
-        items_path = os.path.join(cwd, 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Load item models from SQLite
+        self.items, _assets = ItemsLoader().load()
         # Drag state
         self.drag_item = None  # (item_id, quantity)
         self.drag_slot = None

@@ -1,10 +1,11 @@
 import os
 import pygame
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 
 
 def load_items_and_icons(items_path: str):
-    items = load_items(items_path)
+    # Ignore items_path and load from SQLite
+    items, _assets = ItemsLoader().load()
     pygame.font.init()
     icon_surfaces: dict[str, pygame.Surface | None] = {}
     for item_id, model in items.items():

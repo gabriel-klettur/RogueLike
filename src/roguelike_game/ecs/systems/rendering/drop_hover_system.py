@@ -8,7 +8,7 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_ui.ui_helpers import draw_highlight_rect, draw_tooltip
 from roguelike_ui.ui_blocker import is_blocked
 
@@ -20,9 +20,8 @@ class DropHoverRenderSystem:
     """
     def __init__(self, perf_log=None, items_path=None):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Ignorar items_path, cargar desde SQLite
+        self.items, _assets = ItemsLoader().load()
     
     def update(self, world, screen, camera):
         # Bloqueo genérico para cualquier panel UI
