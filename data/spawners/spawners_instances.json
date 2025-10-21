@@ -155,16 +155,6 @@
       44,
       13
     ],
-    "id": "barbol_periodic_no_stack_forest_45_13",
-    "visuals": {}
-  },
-  {
-    "template_id": "barbol_periodic_no_stack",
-    "zone": "zone_100_50",
-    "tile": [
-      9,
-      17
-    ],
-    "id": "barbol_periodic_no_stack_zone_100_50_9_17"
+    "id": "barbol_periodic_no_stack_forest_45_13"
   }
 ]
