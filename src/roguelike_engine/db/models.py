@@ -7,7 +7,7 @@ We favor natural keys (slug-like `id` strings) where they already exist in JSON.
 Unknown/volatile attributes are preserved in `extra_json` to avoid over-modeling early.
 """
 
-from sqlalchemy import Integer, String, Text, Float, ForeignKey
+from sqlalchemy import Integer, String, Text, Float, ForeignKey, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -53,10 +53,10 @@ class Entity(Base):
     extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
-class Spawner(Base):
-    """Spawner configuration per map/zone for entities or groups."""
+class SpawnerInstance(Base):
+    """Spawner instance placed on a map/zone (was `spawners`)."""
 
-    __tablename__ = "spawners"
+    __tablename__ = "spawners_instances"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     map_id: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -67,6 +67,40 @@ class Spawner(Base):
     respawn_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     conditions_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     spawn_table_id: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class SpawnerTemplate(Base):
+    """Spawner template definition migrated from JSON templates.
+
+    Stores raw trigger/policy as JSON and preserves spawn_radius textual form.
+    """
+
+    __tablename__ = "spawner_templates"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    spawner_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    spawner_shape: Mapped[str | None] = mapped_column(String, nullable=True)
+    spawn_radius_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    defend_spawn: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    defend_leash: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    visible_in_game: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    trigger_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    policy_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    waves_id: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class SpawnerWaves(Base):
+    """Waves sequences migrated from JSON waves catalog.
+
+    Each row stores the spawns for a given `waves_id` and index.
+    """
+
+    __tablename__ = "spawner_waves"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    waves_id: Mapped[str] = mapped_column(String)
+    idx: Mapped[int] = mapped_column(Integer)
+    spawns_json: Mapped[str] = mapped_column(Text)
 
 
 class SpawnTableEntry(Base):

@@ -39,9 +39,36 @@ def _load_module_from_path(mod_name: str, rel_path: str):
     spec.loader.exec_module(mod)  # type: ignore[attr-defined]
     return mod
 
-imp_entities = _load_module_from_path("import_entities", "scripts/import_entities.py")
-imp_spawners = _load_module_from_path("import_spawners", "scripts/import_spawners.py")
-imp_buildings = _load_module_from_path("import_buildings", "scripts/import_buildings.py")
+def _try_load_any(mod_name: str, rel_paths: list[str]):
+    last_err: Exception | None = None
+    for rp in rel_paths:
+        try:
+            return _load_module_from_path(mod_name, rp)
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+    raise last_err if last_err else ImportError(f"Could not load {mod_name} from candidates: {rel_paths}")
+
+imp_entities = _try_load_any(
+    "import_entities",
+    [
+        "scripts/migrate_json_to_sqlite/import_entities.py",
+        "scripts/import_entities.py",
+    ],
+)
+imp_spawners = _try_load_any(
+    "import_spawners",
+    [
+        "scripts/migrate_json_to_sqlite/import_spawners.py",
+        "scripts/import_spawners.py",
+    ],
+)
+imp_buildings = _try_load_any(
+    "import_buildings",
+    [
+        "scripts/migrate_json_to_sqlite/import_buildings.py",
+        "scripts/import_buildings.py",
+    ],
+)
 
 
 class TestReferentialIntegrity(unittest.TestCase):

@@ -35,12 +35,12 @@ from typing import Any, Dict, Iterable, List, Tuple
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy import select, delete
 
-# Ensure src/ is importable
+# Ensure src/ is importable (repo_root/src)
 import sys
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src"))
 
 from roguelike_engine.db.engine import session_scope
-from roguelike_engine.db.models import Spawner, SpawnTableEntry, ImportLog
+from roguelike_engine.db.models import SpawnerInstance, SpawnTableEntry, ImportLog
 
 
 INSTANCES_PATH = Path("data/spawners/spawners_instances.json")
@@ -145,7 +145,7 @@ def import_spawners() -> ImportResult:
         # Idempotency on the composite input set
         last_hash = s.execute(
             select(ImportLog.content_hash)
-            .where(ImportLog.source_path == "spawners:composite")
+            .where(ImportLog.source_path == "spawners_instances:composite")
             .order_by(ImportLog.id.desc())
             .limit(1)
         ).scalar_one_or_none()
@@ -181,8 +181,8 @@ def import_spawners() -> ImportResult:
                 "visuals": inst.get("visuals"),
             }
 
-            # Upsert Spawner
-            stmt = insert(Spawner).values(
+            # Upsert SpawnerInstance
+            stmt = insert(SpawnerInstance).values(
                 id=sp_id,
                 map_id=inst.get("zone"),
                 x=x,
@@ -194,7 +194,7 @@ def import_spawners() -> ImportResult:
                 spawn_table_id=str(template_id) if isinstance(template_id, str) else None,
             )
             stmt = stmt.on_conflict_do_update(
-                index_elements=[Spawner.id],
+                index_elements=[SpawnerInstance.id],
                 set_={
                     "map_id": stmt.excluded.map_id,
                     "x": stmt.excluded.x,
@@ -230,7 +230,7 @@ def import_spawners() -> ImportResult:
         # Log composite import
         s.add(
             ImportLog(
-                source_path="spawners:composite",
+                source_path="spawners_instances:composite",
                 content_hash=composite_hash,
                 imported_at=datetime.now(timezone.utc).isoformat(),
                 row_count=sp_count + entry_count,
@@ -245,7 +245,7 @@ def run() -> None:
     res = import_spawners()
     status = "imported" if res.imported else "skipped"
     print(
-        f"[spawners] {status} spawners={res.row_count_spawners} entries={res.row_count_entries} "
+        f"[spawners_instances] {status} instances={res.row_count_spawners} entries={res.row_count_entries} "
         f"hash={res.content_hash} reason={res.reason}"
     )
 

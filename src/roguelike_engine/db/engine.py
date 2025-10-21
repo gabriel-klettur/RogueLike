@@ -17,8 +17,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 
-# Database path: data/cache/roguelike.sqlite3
-DB_PATH = Path("data/cache/roguelike.sqlite3")
+# Database path: data/roguelike.sqlite3
+DB_PATH = Path("data/roguelike.sqlite3")
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # SQLite URL format: sqlite:///absolute_or_relative_path

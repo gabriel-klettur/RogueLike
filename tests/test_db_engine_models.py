@@ -100,8 +100,8 @@ class TestModelsCRUD(unittest.TestCase):
             s.add(M.Entity(id=ent_id, kind="hostile", name="Test Entity", level=1,
                            hp=10, atk=2, def_=1, speed=1.5, ai_behavior="idle",
                            loot_table_id=None, extra_json=None))
-            # Spawner
-            s.add(M.Spawner(id=spawner_id, map_id="TestMap", x=5, y=7, radius=10,
+            # SpawnerInstance
+            s.add(M.SpawnerInstance(id=spawner_id, map_id="TestMap", x=5, y=7, radius=10,
                             max_count=3, respawn_seconds=5, conditions_json="{}",
                             spawn_table_id=spawn_table_id))
             # SpawnTableEntry
@@ -127,8 +127,8 @@ class TestModelsCRUD(unittest.TestCase):
             e = s.execute(select(M.Entity).where(M.Entity.id == ent_id)).scalar_one()
             self.assertEqual(e.name, "Test Entity")
             self.assertEqual(e.hp, 10)
-            # Spawner
-            sp = s.execute(select(M.Spawner).where(M.Spawner.id == spawner_id)).scalar_one()
+            # SpawnerInstance
+            sp = s.execute(select(M.SpawnerInstance).where(M.SpawnerInstance.id == spawner_id)).scalar_one()
             self.assertEqual(sp.map_id, "TestMap")
             # SpawnTableEntry
             ste = s.execute(select(M.SpawnTableEntry).where(M.SpawnTableEntry.spawn_table_id == spawn_table_id)).scalar_one()
@@ -149,7 +149,7 @@ class TestModelsCRUD(unittest.TestCase):
         # Cleanup
         with session_scope() as s:
             s.execute(text("DELETE FROM spawn_table_entries WHERE spawn_table_id = :id"), {"id": spawn_table_id})
-            s.execute(text("DELETE FROM spawners WHERE id = :id"), {"id": spawner_id})
+            s.execute(text("DELETE FROM spawners_instances WHERE id = :id"), {"id": spawner_id})
             s.execute(text("DELETE FROM building_collisions WHERE instance_id = :id"), {"id": building_instance_id})
             s.execute(text("DELETE FROM building_instances WHERE instance_id = :id"), {"id": building_instance_id})
             s.execute(text("DELETE FROM entities WHERE id = :id"), {"id": ent_id})
