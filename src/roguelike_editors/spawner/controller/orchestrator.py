@@ -23,6 +23,16 @@ from .ui_state import (
 def handle_event(controller: Any, event: pygame.event.Event) -> bool:
     """Orquesta el enrutado de eventos hacia toolbars, paneles y lógica del editor."""
     try:
+        try:
+            if getattr(getattr(controller, 'model', None), 'hold_focus_active', False):
+                if getattr(event, 'type', None) == pygame.MOUSEBUTTONUP and getattr(event, 'button', None) == 1:
+                    try:
+                        controller._on_end_hold_focus()
+                    except Exception:
+                        pass
+                    return True
+        except Exception:
+            pass
         # Overlay Visuals Picker tiene prioridad (modal)
         try:
             ip = getattr(controller, 'instance_properties', None)
@@ -52,6 +62,45 @@ def handle_event(controller: Any, event: pygame.event.Event) -> bool:
         # Estado de UI (cálculo/aplicación/pulsos/refresh inicial)
         state: UIState = compute_ui_state(controller)
         apply_ui_state(controller, state)
+        try:
+            was_hold = bool(getattr(controller, '_was_hold_active', False))
+            setattr(controller, '_was_hold_active', bool(state.hold))
+            if was_hold and not state.hold:
+                try:
+                    world = getattr(getattr(controller, 'game', None), 'ecs', None)
+                    world = getattr(world, 'ecs_world', None)
+                    if world is not None and hasattr(world, 'state'):
+                        setattr(world.state, 'spawner_input_suppressed', False)
+                        setattr(world.state, 'spawner_hold_focus', False)
+                except Exception:
+                    pass
+                try:
+                    cam = getattr(getattr(controller, 'game', None), 'camera', None)
+                    if cam is not None and world is not None:
+                        comps = getattr(world, 'components', {}) or {}
+                        eid = getattr(world, 'player_entity', None)
+                        if not isinstance(eid, int):
+                            tags = comps.get('PlayerTagComponent', {}) or {}
+                            try:
+                                eid = next(iter(tags.keys())) if tags else None
+                            except Exception:
+                                eid = None
+                        if isinstance(eid, int):
+                            pos_map = comps.get('Position', {}) or {}
+                            p = pos_map.get(eid)
+                            if p is not None and hasattr(p, 'x') and hasattr(p, 'y'):
+                                try:
+                                    zoom = getattr(cam, 'zoom', 1.0) or 1.0
+                                    cam.offset_x = float(getattr(p, 'x', 0.0)) - (cam.screen_width / (2 * zoom))
+                                    cam.offset_y = float(getattr(p, 'y', 0.0)) - (cam.screen_height / (2 * zoom))
+                                    if hasattr(cam, '_snap_offsets_to_pixel_grid'):
+                                        cam._snap_offsets_to_pixel_grid()
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
         update_tutorial_pulses(controller, state)
         maybe_refresh_instances_on_first_show(controller, state)
         controller._instances_visible_last = bool(controller.model.visible and (state.active_tool == 'spawner_instances'))
@@ -117,6 +166,19 @@ def render(controller: Any, screen: pygame.Surface) -> None:
         # Sincronización de estado antes de render (por si hay toggles externos)
         state: UIState = compute_ui_state(controller)
         apply_ui_state(controller, state)
+        try:
+            if bool(state.hold):
+                pressed = pygame.mouse.get_pressed()
+                if not pressed[0]:
+                    try:
+                        controller._on_end_hold_focus()
+                    except Exception:
+                        pass
+                    # Refresh state after ending hold
+                    state = compute_ui_state(controller)
+                    apply_ui_state(controller, state)
+        except Exception:
+            pass
         if (controller.model.visible and (state.active_tool == 'spawner_instances')) and not controller._instances_visible_last:
             try:
                 controller.spawner_instances.refresh_from_disk()
