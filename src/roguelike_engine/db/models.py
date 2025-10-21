@@ -50,7 +50,59 @@ class Entity(Base):
     speed: Mapped[float | None] = mapped_column(Float, nullable=True)
     ai_behavior: Mapped[str | None] = mapped_column(String, nullable=True)
     loot_table_id: Mapped[str | None] = mapped_column(String, nullable=True)
-    extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Flattened stats (hostiles/neutrals)
+    faction: Mapped[str | None] = mapped_column(String, nullable=True)
+    aggro_range: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    melee_range: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    melee_damage: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    melee_cooldown: Mapped[float | None] = mapped_column(Float, nullable=True)
+    power: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    damage_duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+    chasing_speed: Mapped[float | None] = mapped_column(Float, nullable=True)
+    feet_width_factor: Mapped[float | None] = mapped_column(Float, nullable=True)
+    feet_height_factor: Mapped[float | None] = mapped_column(Float, nullable=True)
+    spawn_padding: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    spawn_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    spawn_margin: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    death_dissapear_time: Mapped[float | None] = mapped_column(Float, nullable=True)
+    damage_stop_probability: Mapped[float | None] = mapped_column(Float, nullable=True)
+    chat_range: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Flattened player-specific stats
+    max_strength: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_intelligence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_dexterity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    initial_strength: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    initial_intelligence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    initial_dexterity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    basic_speed: Mapped[float | None] = mapped_column(Float, nullable=True)
+    basic_attack: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    basic_armor: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    basic_death_timer_duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+    drag_drop_range: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dash_charges: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    mana_regen_per_second: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attack_duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # basic_trail sub-structure
+    trail_interval: Mapped[float | None] = mapped_column(Float, nullable=True)
+    trail_life_time: Mapped[float | None] = mapped_column(Float, nullable=True)
+    trail_max_trails: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Patrol flattening
+    patrol_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    patrol_radius_tiles: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_points: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_clockwise: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    patrol_width_tiles: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_height_tiles: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_points_per_edge: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_segments: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_step_tiles: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_amplitude_tiles: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    patrol_axis: Mapped[str | None] = mapped_column(String, nullable=True)
+
 
 
 class SpawnerInstance(Base):
@@ -178,3 +230,60 @@ class ItemPrice(Base):
     id_item: Mapped[str] = mapped_column(String, ForeignKey("items.id"), primary_key=True)
     buy_price: Mapped[int] = mapped_column(Integer)
     sell_price: Mapped[int] = mapped_column(Integer)
+
+
+class EntityAssetSet(Base):
+    """Assets for entities when using 'sets.sprites_set' (lists per action).
+
+    One row per (entity, action, idx). Direction is optional for future-proofing.
+    Scale/tint columns duplicate the per-action config for convenient querying.
+    """
+
+    __tablename__ = "entities_assets_set"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
+    action: Mapped[str | None] = mapped_column(String, nullable=True)
+    direction: Mapped[str | None] = mapped_column(String, nullable=True)
+    idx: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    path: Mapped[str | None] = mapped_column(String, nullable=True)
+    scale: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tint_r: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tint_g: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tint_b: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class EntityPayloadArchive(Base):
+    """Archive of full JSON payloads for entities.
+
+    Keeps a copy of the original JSON per entity as a safety net when
+    we progressively flatten schema. This allows dropping `entities.extra_json`
+    without losing information.
+    """
+
+    __tablename__ = "entities_payload_archive"
+
+    entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"), primary_key=True)
+    extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    imported_at: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class EntityAssetNoSet(Base):
+    """Assets for entities when using 'assets.no-sets' (single path per direction).
+
+    One row per (entity, action, direction). Scale/tint per action are repeated
+    in each row for easy filtering/joins.
+    """
+
+    __tablename__ = "entities_assets_no_set"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entity_id: Mapped[str] = mapped_column(String, ForeignKey("entities.id"))
+    action: Mapped[str | None] = mapped_column(String, nullable=True)
+    direction: Mapped[str | None] = mapped_column(String, nullable=True)
+    path: Mapped[str | None] = mapped_column(String, nullable=True)
+    scale: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tint_r: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tint_g: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    tint_b: Mapped[int | None] = mapped_column(Integer, nullable=True)
