@@ -14,6 +14,8 @@ from typing import Any, Dict, Optional
 import jsonschema
 
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
+from roguelike_engine.db.engine import session_scope
+from roguelike_engine.db.models import Item as ItemRow
 
 
 class VendorSupport:
@@ -82,22 +84,34 @@ class VendorSupport:
 
     # ---- Items Catalog ----------------------------------------------------
     def _ensure_items_catalog_loaded(self) -> None:
-        path = self.items_catalog_path
-        try:
-            st = os.stat(path)
-            mtime = st.st_mtime
-        except FileNotFoundError:
-            self._items_catalog = {}
-            self._items_catalog_mtime = None
+        """Build a lightweight items catalog from SQLite for seeding purposes.
+
+        The catalog dict format mirrors the legacy JSON enough for seeding:
+        { item_id: { 'stackable': bool, 'max_stack': int | None, 'quest_id': str | None } }
+        """
+        if self._items_catalog is not None:
             return
-        if self._items_catalog is None or self._items_catalog_mtime != mtime:
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                self._items_catalog = data if isinstance(data, dict) else {}
-            except Exception:
-                self._items_catalog = {}
-            self._items_catalog_mtime = mtime
+        cat: Dict[str, Dict[str, Any]] = {}
+        try:
+            with session_scope() as s:
+                rows = s.query(ItemRow).all()
+                for r in rows:
+                    try:
+                        payload = {}
+                        if r.extra_json:
+                            payload = json.loads(r.extra_json)
+                    except Exception:
+                        payload = {}
+                    cat[str(r.id)] = {
+                        'stackable': bool(payload.get('stackable', getattr(r, 'stackable', False) or False)),
+                        'max_stack': int(payload.get('max_stack', getattr(r, 'max_stack', 0) or 0) or 0) or None,
+                        'quest_id': payload.get('quest_id'),
+                    }
+            self._items_catalog = cat
+            self._items_catalog_mtime = 0.0  # DB-sourced; mtime not applicable
+        except Exception:
+            self._items_catalog = {}
+            self._items_catalog_mtime = 0.0
 
     # ---- Build inventory from seed ---------------------------------------
     def try_build_inventory_from_seed(

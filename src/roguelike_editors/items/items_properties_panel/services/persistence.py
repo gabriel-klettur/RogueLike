@@ -7,6 +7,13 @@ import logging
 from typing import Any, Dict, Tuple
 
 from roguelike_ui.services.json_persistence import save_to_json, load_from_json
+from roguelike_editors.items.services.items_repository import (
+    all_items_dict as db_all_items_dict,
+    upsert_entry as db_upsert_entry,
+    update_field as db_update_field,
+    save_asset_field as db_save_asset_field,
+    rename_item_id as db_rename_item_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,63 +28,35 @@ def get_items_json_path() -> str:
 # ------------------------- Load/Save ops ------------------------
 
 def load_items_data(path: str | None = None) -> Dict[str, Any]:
-    path = path or get_items_json_path()
+    # Ignore path; load from DB repository
     try:
-        data = load_from_json(path)
-        return data or {}
+        return db_all_items_dict() or {}
     except Exception:
-        logger.exception("[ItemsPersistence] Failed to load items JSON")
+        logger.exception("[ItemsPersistence] Failed to load items from DB")
         return {}
 
 
 def save_field(path: str, item_id: str, key: str, value: Any) -> None:
-    data_json = load_items_data(path)
-    entry = data_json.get(item_id, {})
-    entry[key] = value
-    save_to_json(path, item_id, entry)
+    # Persist field directly to DB
+    db_update_field(item_id, key, value)
 
 
 def save_asset_field(path: str, item_id: str, key: str, value: Any) -> None:
-    """Save an asset field, preserving list vs scalar based on current JSON entry."""
-    data_json = load_items_data(path)
-    entry = data_json.get(item_id, {})
-    if isinstance(entry.get(key), list):
-        if len(entry[key]) > 0:
-            entry[key][0] = value
-        else:
-            entry[key] = [value]
-    else:
-        entry[key] = value
-    save_to_json(path, item_id, entry)
+    """Save an asset field, preserving list vs scalar semantics (DB-backed)."""
+    db_save_asset_field(item_id, key, value)
 
 
 def save_entry(path: str, item_id: str, entry: Dict[str, Any]) -> None:
-    save_to_json(path, item_id, entry)
+    # Upsert full entry into DB
+    db_upsert_entry(entry)
 
 
 # ------------------------- Rename ID ops ------------------------
 
 def rename_item_id(path: str, old_id: str, new_id: str) -> Tuple[bool, str]:
-    """Rename an item id inside the JSON file atomically.
-
-    Returns (success, message). On success, message is "ok".
-    """
-    if not new_id:
-        return False, "empty_new_id"
+    """Rename an item id in DB (preserving data and price). Returns (ok, msg)."""
     try:
-        data_json = load_items_data(path)
-        if new_id in data_json:
-            return False, "id_collision"
-        entry = data_json.get(old_id)
-        if entry is None:
-            return False, "old_id_missing"
-        entry['id'] = new_id
-        data_json[new_id] = entry
-        if old_id in data_json:
-            del data_json[old_id]
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(data_json, f, ensure_ascii=False, indent=2)
-        return True, "ok"
+        return db_rename_item_id(old_id, new_id)
     except Exception as e:
         logger.exception(f"[ItemsPersistence] Failed to rename id {old_id}->{new_id}: {e}")
         return False, "exception"

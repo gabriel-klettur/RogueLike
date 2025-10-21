@@ -1,5 +1,5 @@
 import os
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
@@ -13,9 +13,8 @@ class CoinPickupSystem:
     """
     def __init__(self, perf_log=None, items_path=None):
         self.perf_log = perf_log
-        if items_path is None:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Ignore items_path and load from SQLite
+        self.items, _assets = ItemsLoader().load()
         # Gestor de drops en mapa para persistir recogidas
         path = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')
         self.drop_manager = ItemDropManager(path)

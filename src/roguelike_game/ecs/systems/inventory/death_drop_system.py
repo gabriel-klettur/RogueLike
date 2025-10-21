@@ -8,7 +8,7 @@ from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.utils.map_utils import get_zone_offset
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.utils.loader import load_image
@@ -40,8 +40,7 @@ class DeathDropSystem:
         self.temp_drop_layer_ms = temp_drop_layer_ms
         # Cargar modelos de ítems para poder calcular tamaño del sprite del orbe
         try:
-            items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-            self.items = load_items(items_path)
+            self.items, _assets = ItemsLoader().load()
         except Exception:
             self.items = {}
 

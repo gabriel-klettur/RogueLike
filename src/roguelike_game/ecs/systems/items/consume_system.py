@@ -1,6 +1,5 @@
 
-import os
-from roguelike_game.ecs.components.item_models import load_items
+from roguelike_game.managers.items.loader import ItemsLoader
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,9 +10,8 @@ class ConsumeSystem:
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
-        # Cargar definiciones de ítems para consumo
-        items_path = os.path.join(os.getcwd(), 'data', 'items', 'items.json')
-        self.items = load_items(items_path)
+        # Cargar definiciones de ítems desde SQLite para consumo
+        self.items, _assets = ItemsLoader().load()
 
     def update(self, world, *args):
         components = world.components
