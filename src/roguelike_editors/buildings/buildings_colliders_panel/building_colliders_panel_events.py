@@ -385,13 +385,21 @@ class BuildingCollidersPanelEventHandler:
                 w, h = self.model.picker_panel_size
                 if x0 <= mx <= x0 + w and y0 <= my <= y0 + h:
                     if event.button == 1:
-                        # Botón 'Save CU' (guardar overrides por instancia en archivos split)
+                        # Botón 'Save CU' (persistir solo colisiones CU por instancia)
                         try:
                             save_rect = self.model.picker_rects.get('save_cu')
                             if save_rect and save_rect.collidepoint((mx, my)):
-                                # Persistir SIEMPRE en archivos split
-                                save_buildings_split(buildings)
-                                logger.info("[Colliders][CU] Overrides guardados en archivos split")
+                                # Forzar alcance CU temporalmente y persistir solo en by_building_instance_id
+                                prev_scope = getattr(self.editor_state, 'collider_scope', 'CG')
+                                try:
+                                    self.editor_state.collider_scope = 'CU'
+                                    self._save_collisions(buildings)
+                                finally:
+                                    try:
+                                        self.editor_state.collider_scope = prev_scope
+                                    except Exception:
+                                        pass
+                                logger.info("[Colliders][CU] Guardado per-instance en buildings_collisions_by_building_instance_id.json")
                                 # Tutorial: pulso de guardado por botón
                                 try:
                                     setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', True)
