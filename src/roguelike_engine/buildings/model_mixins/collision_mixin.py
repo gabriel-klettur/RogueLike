@@ -54,12 +54,23 @@ class BuildingCollisionMixin:
         de self._collision_map. Crea también objetos envoltorio con flag 'solid'.
         """
         if self._collision_tiles_cache is None:
-            cache: list[pygame.Rect] = _mu_build_collision_tiles(
-                self._collision_map,
-                base_x=self.x,
-                base_y=self.y,
-                tile_size=TILE_SIZE,
-            )
+            cmap = self._collision_map or []
+            rows = len(cmap)
+            cols = len(cmap[0]) if rows > 0 else 0
+            if rows <= 0 or cols <= 0 or self.image is None:
+                cache: list[pygame.Rect] = []
+            else:
+                img_w = float(self.image.get_width())
+                img_h = float(self.image.get_height())
+                tile_w = max(1.0, img_w / cols)
+                tile_h = max(1.0, img_h / rows)
+                cache = _mu_build_collision_tiles(
+                    cmap,
+                    base_x=self.x,
+                    base_y=self.y,
+                    tile_w=tile_w,
+                    tile_h=tile_h,
+                )
             self._collision_tiles_cache = cache
             # También creamos una lista de SimpleNamespace para quien necesite .solid y .rect
             self._collision_tile_objs = _mu_build_collision_tile_objs(cache)

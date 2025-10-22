@@ -51,21 +51,51 @@ class BuildingCollidersPanelEventHandler:
             w_img, h_img = b.image.get_size()
             rect = pygame.Rect(x_b, y_b, w_img, h_img)
             if rect.collidepoint(world_x, world_y):
-                # Restringir el pintado únicamente al edificio actualmente activo (selección persistente)
+                # Asegurar que el edificio bajo cursor sea el activo para pintar
                 try:
                     active = getattr(self.editor_state, 'active_building', None)
                 except Exception:
                     active = None
                 if active is None or active is not b:
                     try:
-                        logger.info("[Colliders] Ignorado pintado: el edificio bajo el cursor no es el activo")
+                        self.editor_state.active_building = b
+                        logger.info("[Colliders] Seleccionado edificio ID %s para pintar", getattr(b, 'id', None))
                     except Exception:
                         pass
-                    # Continuar buscando por si hay otro edificio solapado que sí sea el seleccionado
-                    continue
                 self.model.active_building = b
-                col = int((world_x - x_b) // TILE_SIZE)
-                row = int((world_y - y_b) // TILE_SIZE)
+                # Asegurar grilla por defecto 15x15 si no existe o es 1x1/invalid
+                try:
+                    cmap = getattr(b, 'collision_map', None)
+                    need_init = False
+                    if not cmap or not isinstance(cmap, list) or not cmap or not isinstance(cmap[0], list):
+                        need_init = True
+                    else:
+                        r0 = len(cmap)
+                        c0 = len(cmap[0]) if r0 > 0 else 0
+                        if r0 <= 1 or c0 <= 1:
+                            need_init = True
+                    if need_init:
+                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+                except Exception:
+                    try:
+                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+                    except Exception:
+                        pass
+                # Calcular índice de celda proporcional a imagen y grilla actual
+                try:
+                    rows = len(b.collision_map)
+                    cols = len(b.collision_map[0]) if rows > 0 else 0
+                    if rows > 0 and cols > 0 and w_img > 0 and h_img > 0:
+                        cw = max(1.0, w_img / float(cols))
+                        ch = max(1.0, h_img / float(rows))
+                        col = int((world_x - x_b) / cw)
+                        row = int((world_y - y_b) / ch)
+                    else:
+                        col = int((world_x - x_b) // TILE_SIZE)
+                        row = int((world_y - y_b) // TILE_SIZE)
+                except Exception:
+                    col = int((world_x - x_b) // TILE_SIZE)
+                    row = int((world_y - y_b) // TILE_SIZE)
                 if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                     # Pinta en el edificio activo
                     try:
@@ -186,10 +216,15 @@ class BuildingCollidersPanelEventHandler:
             if target_img and getattr(active, 'collision_map', None) is not None:
                 # Escribir a partir del edificio activo únicamente (fuente de verdad del CG)
                 key = target_img
+                try:
+                    giw, gih = active.image.get_size()
+                except Exception:
+                    giw, gih = (0, 0)
                 by_image[key] = {
                     'width': len(active.collision_map[0]) if active.collision_map else 0,
                     'height': len(active.collision_map),
                     'collision': active.collision_map,
+                    'grid_ref_size': [int(giw), int(gih)],
                 }
                 updated_by_img.append(key)
             else:
@@ -204,10 +239,15 @@ class BuildingCollidersPanelEventHandler:
                     key = getattr(b, 'image_path', '')
                     if not key:
                         continue
+                    try:
+                        giw, gih = b.image.get_size()
+                    except Exception:
+                        giw, gih = (0, 0)
                     by_image[key] = {
                         'width': len(b.collision_map[0]) if b.collision_map else 0,
                         'height': len(b.collision_map),
                         'collision': b.collision_map,
+                        'grid_ref_size': [int(giw), int(gih)],
                     }
                     updated_by_img.append(key)
 
@@ -217,10 +257,15 @@ class BuildingCollidersPanelEventHandler:
                 bid = getattr(active, 'id', None)
                 if bid is not None:
                     bid_str = str(bid)
+                    try:
+                        giw, gih = active.image.get_size()
+                    except Exception:
+                        giw, gih = (0, 0)
                     by_binst[bid_str] = {
                         'width': len(active.collision_map[0]) if active.collision_map else 0,
                         'height': len(active.collision_map),
                         'collision': active.collision_map,
+                        'grid_ref_size': [int(giw), int(gih)],
                     }
                     updated_by_inst.append(bid_str)
             except Exception:
@@ -340,13 +385,21 @@ class BuildingCollidersPanelEventHandler:
                 w, h = self.model.picker_panel_size
                 if x0 <= mx <= x0 + w and y0 <= my <= y0 + h:
                     if event.button == 1:
-                        # Botón 'Save CU' (guardar overrides por instancia en archivos split)
+                        # Botón 'Save CU' (persistir solo colisiones CU por instancia)
                         try:
                             save_rect = self.model.picker_rects.get('save_cu')
                             if save_rect and save_rect.collidepoint((mx, my)):
-                                # Persistir SIEMPRE en archivos split
-                                save_buildings_split(buildings)
-                                logger.info("[Colliders][CU] Overrides guardados en archivos split")
+                                # Forzar alcance CU temporalmente y persistir solo en by_building_instance_id
+                                prev_scope = getattr(self.editor_state, 'collider_scope', 'CG')
+                                try:
+                                    self.editor_state.collider_scope = 'CU'
+                                    self._save_collisions(buildings)
+                                finally:
+                                    try:
+                                        self.editor_state.collider_scope = prev_scope
+                                    except Exception:
+                                        pass
+                                logger.info("[Colliders][CU] Guardado per-instance en buildings_collisions_by_building_instance_id.json")
                                 # Tutorial: pulso de guardado por botón
                                 try:
                                     setattr(self.editor_state, 'tutorial_colliders_saved_button_pulse', True)

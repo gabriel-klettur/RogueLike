@@ -299,12 +299,13 @@ class Building:
             parts.append(part)
         return parts
 
-    def resize(self, new_width: int, new_height: int) -> None:
+    def resize(self, new_width: int, new_height: int, *, resample_collision: bool = True) -> None:
         """
         Redimensiona la imagen del edificio delegando en el modelo y refresca
         los caches de vista/controlador para que el cambio se refleje de inmediato.
+        Si resample_collision=False, no re-muestrea la grilla de colisiones (se hará luego).
         """
-        self.model.resize(new_width, new_height)
+        self.model.resize(new_width, new_height, resample_collision=resample_collision)
         if self.controller:
             # Limpiar caches de la vista y forzar re-escalado en próximo render
             self.controller.update_on_camera_change()

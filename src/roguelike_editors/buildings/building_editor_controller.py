@@ -11,6 +11,7 @@ from roguelike_editors.buildings.tools.placer_tool.placer_tool import PlacerTool
 from roguelike_editors.buildings.tools.delete_tool.delete_tool import DeleteTool
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
 from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeTool
+from roguelike_engine.buildings.services.collisions import resample_collision_map
 from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
@@ -199,6 +200,14 @@ class BuildingEditorController:
         self.editor.dragging = False
         self.editor.resizing = False
         self.editor.split_dragging = False
+
+        # 2.5) Si veníamos redimensionando, no remuestrear el collision_map: mantener filas/cols
+        #       y que el tamaño de celda escale con la imagen. Sólo marcar dirty para rebuild.
+        try:
+            if was_resizing and (building is not None) and getattr(building, 'image', None) is not None:
+                setattr(self.editor, 'colliders_dirty', True)
+        except Exception:
+            pass
 
         # 3) Si había un building arrastrado, le asignamos zona/relativos
         if building is not None:

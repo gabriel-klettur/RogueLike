@@ -283,16 +283,10 @@ def save_buildings_split(
                 pass
             try:
                 if getattr(b, 'collider_scope', 'CG') == 'CU' and getattr(b, 'collision_map', None):
-                    rows = len(b.collision_map)
-                    cols = len(b.collision_map[0]) if rows > 0 else 0
                     overrides['collider_scope'] = 'CU'
-                    overrides['collision_override'] = {
-                        'width': cols,
-                        'height': rows,
-                        'collision': b.collision_map,
-                    }
             except Exception:
                 pass
+
             if not overrides:
                 overrides = None
 

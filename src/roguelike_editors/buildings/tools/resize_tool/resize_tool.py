@@ -41,7 +41,10 @@ class ResizeTool:
             cur_size = b.image.get_size() if getattr(b, 'image', None) is not None else None
         except Exception:
             cur_size = None
-        b.resize(new_width, new_height)
+        # Durante el drag no re-muestrearemos la grilla de colisiones para evitar
+        # cambios en cada frame; se realizará al soltar el mouse.
+        b.resize(new_width, new_height, resample_collision=False)
+
         try:
             if cur_size is not None and (new_width, new_height) != cur_size:
                 setattr(self.editor, 'tutorial_resized_pulse', True)

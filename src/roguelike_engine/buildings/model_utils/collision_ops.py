@@ -10,23 +10,27 @@ def build_collision_tiles(
     *,
     base_x: int,
     base_y: int,
-    tile_size: int,
+    tile_w: float,
+    tile_h: float,
 ) -> list[pygame.Rect]:
-    """Create a list of pygame.Rect for each '#' tile in the collision map.
+    """Create a list of pygame.Rect for each '#' tile using per-axis tile sizes.
 
     Parameters
     ----------
     collision_map: 2D grid of characters, where '#' means solid.
     base_x, base_y: world-space origin (top-left) for the building.
-    tile_size: size of a single tile (pixels).
+    tile_w, tile_h: size in pixels for each grid cell along X/Y (derived from image size / grid cols/rows).
     """
     rects: list[pygame.Rect] = []
+    w = max(1, int(tile_w))
+    h = max(1, int(tile_h))
     for row_idx, row in enumerate(collision_map):
         for col_idx, cell in enumerate(row):
             if cell == '#':
-                x = base_x + col_idx * tile_size
-                y = base_y + row_idx * tile_size
-                rects.append(pygame.Rect(x, y, tile_size, tile_size))
+                # Use truncation for stable alignment with overlay and camera scaling
+                x = base_x + int(col_idx * tile_w)
+                y = base_y + int(row_idx * tile_h)
+                rects.append(pygame.Rect(x, y, w, h))
     return rects
 
 

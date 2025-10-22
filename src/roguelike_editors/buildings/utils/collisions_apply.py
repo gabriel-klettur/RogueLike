@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Set
 from roguelike_engine.buildings.building import Building
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from .asset_paths import normalize_asset_path
+from roguelike_engine.buildings.services.collisions import resample_collision_map
 
 
 def apply_collision_for_building(
@@ -43,36 +44,17 @@ def apply_collision_for_building(
     except Exception:
         coll_entry = collisions_global.get(_img_path) or collisions_global.get((_img_path or "").replace("/", "\\"))
 
-    desired_cols = max(1, (b.image.get_width() + TILE_SIZE - 1) // TILE_SIZE)
-    desired_rows = max(1, (b.image.get_height() + TILE_SIZE - 1) // TILE_SIZE)
+    # New policy: keep saved grid as-is; runtime scales cell size with image.
+    # Ignore grid_ref_size for sizing; no resample on apply.
 
     if coll_entry and "collision" in coll_entry:
         src = [row[:] for row in coll_entry["collision"]]
-        cur_rows = len(src)
-        cur_cols = len(src[0]) if cur_rows > 0 else 0
-        # Normalize rows
-        if cur_rows < desired_rows:
-            for _ in range(desired_rows - cur_rows):
-                src.append(["." for _ in range(cur_cols or desired_cols)])
-            cur_rows = desired_rows
-        elif cur_rows > desired_rows:
-            src = src[:desired_rows]
-            cur_rows = desired_rows
-        # Normalize cols
-        if cur_cols < desired_cols:
-            for r in range(cur_rows):
-                if cur_cols == 0:
-                    src[r] = ["."] * desired_cols
-                else:
-                    src[r].extend(["."] * (desired_cols - cur_cols))
-        elif cur_cols > desired_cols:
-            for r in range(cur_rows):
-                src[r] = src[r][:desired_cols]
-        b.collision_map = src
+        # If collision is present, use it exactly as saved (respect explicit sizes);
+        # when empty or invalid, fall back to a standard 15x15 grid.
+        b.collision_map = src if src else [["." for _ in range(15)] for _ in range(15)]
     else:
-        # default empty map sized to image ceil
-        w, h = desired_cols, desired_rows
-        b.collision_map = [["." for _ in range(w)] for _ in range(h)]
+        # Default policy: initialize a standard 15x15 empty grid when missing
+        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
 
     # Inline override for CU
     try:
@@ -80,25 +62,7 @@ def apply_collision_for_building(
             ov = entry.get("collision_override")
             if ov and "collision" in ov:
                 src = [row[:] for row in ov["collision"]]
-                cur_rows = len(src)
-                cur_cols = len(src[0]) if cur_rows > 0 else 0
-                if cur_rows < desired_rows:
-                    for _ in range(desired_rows - cur_rows):
-                        src.append(["." for _ in range(cur_cols or desired_cols)])
-                    cur_rows = desired_rows
-                elif cur_rows > desired_rows:
-                    src = src[:desired_rows]
-                    cur_rows = desired_rows
-                if cur_cols < desired_cols:
-                    for r in range(cur_rows):
-                        if cur_cols == 0:
-                            src[r] = ["."] * desired_cols
-                        else:
-                            src[r].extend(["."] * (desired_cols - cur_cols))
-                elif cur_cols > desired_cols:
-                    for r in range(cur_rows):
-                        src[r] = src[r][:desired_cols]
-                b.collision_map = src
+                b.collision_map = src if src else b.collision_map
     except Exception:
         pass
 
@@ -108,31 +72,13 @@ def _apply_entry_to_building(b: Building, coll_entry: Dict) -> None:
 
     This mirrors the normalization logic used during initial assembly.
     """
-    desired_cols = max(1, (b.image.get_width() + TILE_SIZE - 1) // TILE_SIZE)
-    desired_rows = max(1, (b.image.get_height() + TILE_SIZE - 1) // TILE_SIZE)
+    # New policy: apply saved grid as-is (no resample). Runtime scales cells.
     src = [row[:] for row in coll_entry.get("collision", [])]
-    cur_rows = len(src)
-    cur_cols = len(src[0]) if cur_rows > 0 else 0
-    # Normalize rows
-    if cur_rows < desired_rows:
-        for _ in range(desired_rows - cur_rows):
-            src.append(["." for _ in range(cur_cols or desired_cols)])
-        cur_rows = desired_rows
-    elif cur_rows > desired_rows:
-        src = src[:desired_rows]
-        cur_rows = desired_rows
-    # Normalize cols
-    if cur_cols < desired_cols:
-        for r in range(cur_rows):
-            if cur_cols == 0:
-                src[r] = ["."] * desired_cols
-            else:
-                src[r].extend(["."] * (desired_cols - cur_cols))
-    elif cur_cols > desired_cols:
-        for r in range(cur_rows):
-            src[r] = src[r][:desired_cols]
-    # Use setter to invalidate caches
-    b.collision_map = src
+    if src:
+        b.collision_map = src
+    else:
+        # Default 15x15 when entry lacks a collision grid
+        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
 
 
 def apply_collisions_to_loaded_buildings(
