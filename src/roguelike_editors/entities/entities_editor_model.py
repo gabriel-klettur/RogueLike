@@ -44,6 +44,11 @@ class EntitiesEditorModel:
         neutrals_root = load_from_json(str(neutrals_path)) if neutrals_path.exists() else {"neutrals": {"classes": {}}}
         self.neutrals = neutrals_root.get('neutrals', {}).get('classes', {})
 
+        # Specials (bosses)
+        specials_path = data_dir / 'entities' / 'news_specials.json'
+        specials_root = load_from_json(str(specials_path)) if specials_path.exists() else {"specials": {"classes": {}}}
+        self.specials = specials_root.get('specials', {}).get('classes', {})
+
         # Alias de compatibilidad: 'monsters' referencia combinada para consumo general
         self.monsters = {**self.hostiles, **self.neutrals}
 
@@ -81,18 +86,27 @@ class EntitiesEditorModel:
             except Exception:
                 pass
             # Monstruos: cargar imagenes de idle y aplicar tint desde JSON
-        # Hostiles + Neutrales: cargar sprites con la factory
+        # Hostiles + Neutrals: cargar sprites con la factory
         for mid in self.monsters.keys():
             try:
                 sprite, _ = create_sprite_component(mid)
                 self.assets[mid] = sprite.image
             except Exception:
                 pass
+        # Specials: cargar sprites con la factory
+        for sid in self.specials.keys():
+            if sid in self.assets:
+                continue
+            try:
+                sprite, _ = create_sprite_component(sid)
+                self.assets[sid] = sprite.image
+            except Exception:
+                pass
         # submodelos MVC
         self.title_model = EntitiesTitleModel()
         self.toolbar_model = EntitiesToolBarPanelModel()
         self.add_remove_model = EntitiesAddRemovePanelModel()
-        self.picker_model = EntityPickerPanelModel(self.player_stats, self.hostiles, self.neutrals, self.assets)
+        self.picker_model = EntityPickerPanelModel(self.player_stats, self.hostiles, self.neutrals, self.specials, self.assets)
         # Properties usa el conjunto combinado para editar tanto hostiles como neutrales
         self.properties_model = EntityPropertiesPanelModel(self.player_stats, self.player_assets, self.monsters)
         # Cámara y arrastre

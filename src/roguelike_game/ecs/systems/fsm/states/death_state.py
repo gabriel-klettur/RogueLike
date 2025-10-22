@@ -3,6 +3,8 @@ from roguelike_game.ecs.components.rendering.grayscale_component import Grayscal
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.factories.monster.builder import MonsterBuilder
+from roguelike_game.factories.monster.config import MONSTER_DEFS
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -41,6 +43,23 @@ class DeathState(State):
         world.components.get('AnimationTimer', {}).pop(eid, None)
         # NPCs: persist quick-death flag and remove immediately
         if eid not in world.components.get('PlayerTagComponent', {}):
+            # Fases de boss: si esta entidad define next_phase, spawnear la siguiente fase en la misma posición
+            try:
+                at = world.components.get('MonsterArchetype', {}).get(eid)
+                cur_type = getattr(at, 'type', None) if at is not None else None
+                nxt = MONSTER_DEFS.get(cur_type, {}).get('next_phase') if cur_type else None
+                if nxt:
+                    pos = world.components.get('Position', {}).get(eid)
+                    if pos is not None:
+                        inst = world.components.get('MonsterInstanceComponent', {}).get(eid)
+                        instance_id = getattr(inst, 'instance_id', None) if inst is not None else None
+                        try:
+                            MonsterBuilder(world).build(int(pos.x), int(pos.y), str(nxt), instance_id=instance_id)
+                        except Exception:
+                            logger.exception("[DeathState.enter] Failed to spawn next phase '%s' for type '%s'", nxt, cur_type)
+            except Exception:
+                # No bloquear flujo de muerte por errores de transición de fase
+                logger.exception("[DeathState.enter] Error while handling boss phase transition")
             # Registrar muerte en el estado local del mapa para evitar respawns no deseados
             try:
                 inst_cmp = world.components.get('MonsterInstanceComponent', {}).get(eid)
@@ -64,29 +83,36 @@ class DeathState(State):
                                 proto = str(getattr(ident, 'name', None) or '')
                             except Exception:
                                 proto = None
-                    st = {
-                        'level': level_name,
-                        'tile': [int(tx), int(ty)] if tx is not None and ty is not None else None,
-                        'hp': 0,
-                        'dead': True,
-                        'prototype': proto,
-                    }
+                    # Solo persistir 'dead' si no hay una siguiente fase configurada
                     try:
-                        m = getattr(world, 'map_manager', None)
-                        if m is not None:
-                            ls = getattr(m, '_local_state', None)
-                            if isinstance(ls, dict):
-                                npc_states = ls.setdefault('npc_states', {})
-                                npc_states[str(instance_id)] = st
-                                try:
-                                    logger.info(
-                                        "[DeathState] Marked NPC instance_id=%s dead at level=%s tile=%s",
-                                        instance_id, level_name, st.get('tile')
-                                    )
-                                except Exception:
-                                    pass
+                        cur_type2 = proto
+                        nxt2 = MONSTER_DEFS.get(cur_type2, {}).get('next_phase') if cur_type2 else None
                     except Exception:
-                        pass
+                        nxt2 = None
+                    if not nxt2:
+                        st = {
+                            'level': level_name,
+                            'tile': [int(tx), int(ty)] if tx is not None and ty is not None else None,
+                            'hp': 0,
+                            'dead': True,
+                            'prototype': proto,
+                        }
+                        try:
+                            m = getattr(world, 'map_manager', None)
+                            if m is not None:
+                                ls = getattr(m, '_local_state', None)
+                                if isinstance(ls, dict):
+                                    npc_states = ls.setdefault('npc_states', {})
+                                    npc_states[str(instance_id)] = st
+                                    try:
+                                        logger.info(
+                                            "[DeathState] Marked NPC instance_id=%s dead at level=%s tile=%s",
+                                            instance_id, level_name, st.get('tile')
+                                        )
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
             except Exception:
                 pass
             world.remove_entity(eid)

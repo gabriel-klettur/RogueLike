@@ -51,7 +51,7 @@ class EntitiesEditorController:
         )
         # Picker
         self.picker_controller = EntityPickerPanelController(
-            self.model.player_stats, self.model.hostiles, self.model.neutrals, self.model.assets, self.font
+            self.model.player_stats, self.model.hostiles, self.model.neutrals, self.model.specials, self.model.assets, self.font
         )
         # Inicializar posición del picker panel a la derecha del add/remove panel
         margin = UI_MARGIN

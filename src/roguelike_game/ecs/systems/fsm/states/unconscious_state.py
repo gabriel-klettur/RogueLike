@@ -29,9 +29,13 @@ class UnconsciousState(State):
             if cls_name and cls_name in PLAYER_STATS:
                 duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
         else:
-            identity = world.components.get('Identity', {}).get(eid)
-            monster_class = getattr(identity, 'name', None) if identity else None
-            stats = MONSTER_STATS.get(monster_class, {}) if (monster_class and monster_class in MONSTER_STATS) else {}
+            # Preferir el arquetipo (id de clase) si está disponible; si no, usar nombre de identidad
+            arche = world.components.get('MonsterArchetype', {}).get(eid)
+            monster_class = getattr(arche, 'type', None) if arche is not None else None
+            if not monster_class:
+                identity = world.components.get('Identity', {}).get(eid)
+                monster_class = getattr(identity, 'name', None) if identity else None
+            stats = MONSTER_STATS.get(monster_class, {}) if (monster_class in MONSTER_STATS) else {}
             duration = stats.get('death_dissapear_time')
             if duration is None:
                 duration = MONSTER_DEFAULTS.get('death_dissapear_time')

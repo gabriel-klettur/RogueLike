@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class EntityPickerPanelController:
-    """Controller para editor de entidades: jugadores y hostiles."""
-    def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], neutrals: dict[str, any], assets: dict[str, pygame.Surface], font: pygame.font.Font):
-        # EntityPickerPanelModel ahora recibe también 'neutrals' además de 'hostiles'
-        self.model = EntityPickerPanelModel(player_stats=player_stats, hostiles=monsters, neutrals=neutrals, assets=assets)
+    """Controller para editor de entidades: jugadores, hostiles, neutrales y specials."""
+    def __init__(self, player_stats: dict[str, any], monsters: dict[str, any], neutrals: dict[str, any], specials: dict[str, any], assets: dict[str, pygame.Surface], font: pygame.font.Font):
+        # EntityPickerPanelModel ahora recibe también 'neutrals' y 'specials'
+        self.model = EntityPickerPanelModel(player_stats=player_stats, hostiles=monsters, neutrals=neutrals, specials=specials, assets=assets)
         self.view = EntityPickerPanelView(assets, font)
 
         self.event_handler = EntitiesPickerEventHandler(self)

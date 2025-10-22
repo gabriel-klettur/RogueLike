@@ -104,7 +104,7 @@ class EntityPickerPanelView:
             self._picker_logged = False
             return
 
-        # Lista completa de entidades (jugador + hostiles)
+        # Lista completa de entidades (jugador + hostiles + neutrals + specials)
         if model.active_tab == "Players":
             entity_ids = list(model.player_stats.keys())
         elif model.active_tab == "Hostile":
@@ -118,6 +118,11 @@ class EntityPickerPanelView:
             entity_ids = [
                 mid for mid, m in model.neutrals.items()
                 if not (isinstance(m, dict) and m.get('__pending__'))
+            ]
+        elif model.active_tab == "Specials":
+            entity_ids = [
+                sid for sid, s in model.specials.items()
+                if not (isinstance(s, dict) and s.get('__pending__'))
             ]
         else:
             # Otras pestañas aún no implementadas

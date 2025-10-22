@@ -17,6 +17,15 @@ with open(_DATA_DIR / "entities/new_hostiles.json", encoding="utf-8-sig") as f:
                 _neutrals_cfg = json.load(nf)
         except Exception:
             _neutrals_cfg = None
+    # Try to also load specials (bosses) and merge their classes into a combined view
+    _specials_path = _DATA_DIR / "entities/news_specials.json"
+    _specials_cfg = None
+    if _specials_path.exists():
+        try:
+            with open(_specials_path, encoding="utf-8-sig") as sf:
+                _specials_cfg = json.load(sf)
+        except Exception:
+            _specials_cfg = None
 
 # Validate against schema
 _schema_path = _SCHEMAS_DIR / "NewHostilesSchema.json"
@@ -30,6 +39,8 @@ _raw_classes: Dict[str, Any] = {}
 _raw_classes.update(_monster_cfg.get("hostiles", {}).get("classes", {}))
 if '_neutrals_cfg' in locals() and _neutrals_cfg:
     _raw_classes.update(_neutrals_cfg.get("neutrals", {}).get("classes", {}))
+if '_specials_cfg' in locals() and _specials_cfg:
+    _raw_classes.update(_specials_cfg.get("specials", {}).get("classes", {}))
 
 # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
 MONSTER_DEFS: Dict[str, Any] = {}
@@ -39,7 +50,9 @@ for class_name, class_cfg in _raw_classes.items():
     fsm_set = class_cfg.get("fsm_set")
     patrol = class_cfg.get("patrol")
     default_name = class_cfg.get("default_name")
-    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name}
+    next_phase = class_cfg.get("next_phase")
+    phase_index = class_cfg.get("phase_index")
+    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index}
 
 # Separate mappings for stats and assets
 MONSTER_STATS: Dict[str, Any] = {class_name: class_cfg.get("stats", {}) for class_name, class_cfg in _raw_classes.items()}
@@ -71,6 +84,15 @@ def reload_monster_defs() -> None:
                 neutrals_cfg = json.load(nf)
         except Exception:
             neutrals_cfg = None
+    specials_cfg = None
+    specials_path = _DATA_DIR / "entities/news_specials.json"
+    if specials_path.exists():
+        try:
+            with open(specials_path, encoding="utf-8-sig") as sf:
+                specials_cfg = json.load(sf)
+        except Exception:
+            specials_cfg = None
+
     # Validate against schema if present
     if _schema_path.exists():
         with open(_schema_path, encoding="utf-8-sig") as sf:
@@ -80,6 +102,8 @@ def reload_monster_defs() -> None:
     _raw_classes.update(monster_cfg.get("hostiles", {}).get("classes", {}))
     if neutrals_cfg:
         _raw_classes.update(neutrals_cfg.get("neutrals", {}).get("classes", {}))
+    if specials_cfg:
+        _raw_classes.update(specials_cfg.get("specials", {}).get("classes", {}))
     # Flatten stats into top-level and keep assets nested; include optional fsm_set per class
     MONSTER_DEFS.clear()
     for class_name, class_cfg in _raw_classes.items():
@@ -88,7 +112,9 @@ def reload_monster_defs() -> None:
         fsm_set = class_cfg.get("fsm_set")
         patrol = class_cfg.get("patrol")
         default_name = class_cfg.get("default_name")
-        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name}
+        next_phase = class_cfg.get("next_phase")
+        phase_index = class_cfg.get("phase_index")
+        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index}
 
     # Update stats and assets mappings
     MONSTER_STATS.clear()

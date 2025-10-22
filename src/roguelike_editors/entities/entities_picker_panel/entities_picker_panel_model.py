@@ -14,6 +14,7 @@ class EntityPickerPanelModel:
     player_stats: Dict[str, Any]
     hostiles: Dict[str, Any]
     neutrals: Dict[str, Any]
+    specials: Dict[str, Any]
     assets: Dict[str, pygame.Surface]
     # Área del panel para interacción y arrastre
     panel_rect: Optional[pygame.Rect] = None
