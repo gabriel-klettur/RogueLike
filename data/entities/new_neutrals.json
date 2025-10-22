@@ -38,13 +38,13 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
-              "scale_death": 0.15,
+              "scale_idle": 0.2,
+              "scale_walk": 0.2,
+              "scale_chase": 0.2,
+              "scale_cast": 0.2,
+              "scale_attack": 0.2,
+              "scale_damage": 0.2,
+              "scale_death": 0.2,
               "tint": null
             }
           },
@@ -74,13 +74,13 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
-              "scale_death": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
+              "scale_death": 0.3,
               "tint": null
             }
           }
@@ -123,12 +123,12 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.15,
               "tint": null
             }
@@ -159,12 +159,12 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.05,
               "tint": null
             }
@@ -208,12 +208,12 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.15,
               "tint": null
             }
@@ -244,12 +244,12 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.05,
               "tint": null
             }
@@ -293,12 +293,12 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.15,
               "tint": null
             }
@@ -329,12 +329,12 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.05,
               "tint": null
             }
@@ -378,12 +378,12 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.15,
               "tint": null
             }
@@ -414,12 +414,12 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.05,
               "tint": null
             }
@@ -463,12 +463,12 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.15,
-              "scale_walk": 0.15,
-              "scale_chase": 0.15,
-              "scale_cast": 0.15,
-              "scale_attack": 0.15,
-              "scale_damage": 0.15,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.15,
               "tint": null
             }
@@ -499,12 +499,12 @@
             "damage": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "casting": {"s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null},
             "sprites_data_no-set": {
-              "scale_idle": 0.05,
-              "scale_walk": 0.05,
-              "scale_chase": 0.05,
-              "scale_cast": 0.05,
-              "scale_attack": 0.05,
-              "scale_damage": 0.05,
+              "scale_idle": 0.3,
+              "scale_walk": 0.3,
+              "scale_chase": 0.3,
+              "scale_cast": 0.3,
+              "scale_attack": 0.3,
+              "scale_damage": 0.3,
               "scale_death": 0.05,
               "tint": null
             }

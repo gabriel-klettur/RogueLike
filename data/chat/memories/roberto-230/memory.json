@@ -1,0 +1,15 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Buenas roberto"
+    },
+    {
+      "role": "assistant",
+      "content": "Puedo ayudarte con 'stock', 'buy <n> <item>' o 'sell <n> <item>'."
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

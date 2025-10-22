@@ -156,5 +156,54 @@
       13
     ],
     "id": "barbol_periodic_no_stack_forest_45_13"
+  },
+  {
+    "template_id": "vendor_gatita_respawn_5m",
+    "zone": "lobby",
+    "tile": [
+      18,
+      38
+    ],
+    "id": "vendor_gatita_respawn_5m_lobby_20_38",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_smith_respawn_5m",
+    "zone": "lobby",
+    "tile": [
+      13,
+      7
+    ],
+    "id": "vendor_smith_respawn_5m_lobby_22_40",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_abigail_respawn_5m",
+    "zone": "lobby",
+    "tile": [
+      43,
+      22
+    ],
+    "id": "vendor_abigail_respawn_5m_lobby_17_39",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_roberto_respawn_5m",
+    "zone": "lobby",
+    "tile": [
+      11,
+      20
+    ],
+    "id": "vendor_roberto_respawn_5m_lobby_21_42",
+    "visuals": {}
+  },
+  {
+    "template_id": "vendor_valeria_respawn_5m",
+    "zone": "lobby",
+    "tile": [
+      44,
+      6
+    ],
+    "id": "vendor_valeria_respawn_5m_lobby_44_7"
   }
 ]
