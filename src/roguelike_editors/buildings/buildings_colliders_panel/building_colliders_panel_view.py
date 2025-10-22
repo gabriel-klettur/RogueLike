@@ -20,14 +20,26 @@ class BuildingCollidersPanelView:
     def _render_building_collision_overlay(self, screen, camera, building):
         if not getattr(building, 'collision_map', None):
             return
-        cell_w, cell_h = camera.scale((TILE_SIZE, TILE_SIZE))
+        try:
+            rows = len(building.collision_map)
+            cols = len(building.collision_map[0]) if rows > 0 else 0
+            if rows <= 0 or cols <= 0:
+                return
+            img_w = float(building.image.get_width())
+            img_h = float(building.image.get_height())
+            cw_pix = max(1.0, img_w / cols)
+            ch_pix = max(1.0, img_h / rows)
+        except Exception:
+            cw_pix = float(TILE_SIZE)
+            ch_pix = float(TILE_SIZE)
+        cell_w, cell_h = camera.scale((int(cw_pix), int(ch_pix)))
         for ry, row in enumerate(building.collision_map):
             for cx, val in enumerate(row):
                 if val == "#":
-                    wx = building.x + cx * TILE_SIZE
-                    wy = building.y + ry * TILE_SIZE
+                    wx = building.x + int(cx * cw_pix)
+                    wy = building.y + int(ry * ch_pix)
                     sx, sy = camera.apply((wx, wy))
-                    overlay = pygame.Surface((cell_w, cell_h), pygame.SRCALPHA)
+                    overlay = pygame.Surface((max(1, cell_w), max(1, cell_h)), pygame.SRCALPHA)
                     overlay.fill((255, 0, 0, 100))
                     screen.blit(overlay, (sx, sy))
 

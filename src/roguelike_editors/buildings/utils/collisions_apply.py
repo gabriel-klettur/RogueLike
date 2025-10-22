@@ -44,64 +44,17 @@ def apply_collision_for_building(
     except Exception:
         coll_entry = collisions_global.get(_img_path) or collisions_global.get((_img_path or "").replace("/", "\\"))
 
-    # Compute desired grid using grid_ref_size if present, else TILE_SIZE
-    def _target_dims_from_entry(img_w: int, img_h: int, entry: Dict) -> tuple[int, int]:
-        try:
-            ref = entry.get('grid_ref_size')
-            if isinstance(ref, (list, tuple)) and len(ref) == 2 and int(ref[0]) > 0 and int(ref[1]) > 0:
-                ref_w = int(ref[0]); ref_h = int(ref[1])
-                src_rows = int(entry.get('height') or 0)
-                src_cols = int(entry.get('width') or 0)
-                if src_rows <= 0 or src_cols <= 0:
-                    # derive from collision array if needed
-                    cc = entry.get('collision') or []
-                    src_rows = len(cc)
-                    src_cols = len(cc[0]) if src_rows > 0 else 0
-                if src_rows > 0 and src_cols > 0:
-                    sx = img_w / float(ref_w)
-                    sy = img_h / float(ref_h)
-                    tr = max(1, int(round(src_rows * sy)))
-                    tc = max(1, int(round(src_cols * sx)))
-                    return tc, tr
-        except Exception:
-            pass
-        # Fallback: TILE_SIZE grid
-        tc = max(1, (img_w + TILE_SIZE - 1) // TILE_SIZE)
-        tr = max(1, (img_h + TILE_SIZE - 1) // TILE_SIZE)
-        return tc, tr
-
-    desired_cols, desired_rows = _target_dims_from_entry(b.image.get_width(), b.image.get_height(), coll_entry or {})
+    # New policy: keep saved grid as-is; runtime scales cell size with image.
+    # Ignore grid_ref_size for sizing; no resample on apply.
 
     if coll_entry and "collision" in coll_entry:
         src = [row[:] for row in coll_entry["collision"]]
-        # Prefer proportional remapping to match desired grid size
-        try:
-            b.collision_map = resample_collision_map(src, desired_rows, desired_cols)
-        except Exception:
-            # Fallback to simple normalization
-            cur_rows = len(src)
-            cur_cols = len(src[0]) if cur_rows > 0 else 0
-            if cur_rows < desired_rows:
-                for _ in range(desired_rows - cur_rows):
-                    src.append(["." for _ in range(cur_cols or desired_cols)])
-                cur_rows = desired_rows
-            elif cur_rows > desired_rows:
-                src = src[:desired_rows]
-                cur_rows = desired_rows
-            if cur_cols < desired_cols:
-                for r in range(cur_rows):
-                    if cur_cols == 0:
-                        src[r] = ["."] * desired_cols
-                    else:
-                        src[r].extend(["."] * (desired_cols - cur_cols))
-            elif cur_cols > desired_cols:
-                for r in range(cur_rows):
-                    src[r] = src[r][:desired_cols]
-            b.collision_map = src
+        # If collision is present, use it exactly as saved (respect explicit sizes);
+        # when empty or invalid, fall back to a standard 15x15 grid.
+        b.collision_map = src if src else [["." for _ in range(15)] for _ in range(15)]
     else:
-        # default empty map sized to image ceil
-        w, h = desired_cols, desired_rows
-        b.collision_map = [["." for _ in range(w)] for _ in range(h)]
+        # Default policy: initialize a standard 15x15 empty grid when missing
+        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
 
     # Inline override for CU
     try:
@@ -109,30 +62,7 @@ def apply_collision_for_building(
             ov = entry.get("collision_override")
             if ov and "collision" in ov:
                 src = [row[:] for row in ov["collision"]]
-                # Recompute desired grid using override's own grid_ref_size when present
-                o_cols, o_rows = _target_dims_from_entry(b.image.get_width(), b.image.get_height(), ov)
-                try:
-                    b.collision_map = resample_collision_map(src, o_rows, o_cols)
-                except Exception:
-                    cur_rows = len(src)
-                    cur_cols = len(src[0]) if cur_rows > 0 else 0
-                    if cur_rows < o_rows:
-                        for _ in range(o_rows - cur_rows):
-                            src.append(["." for _ in range(cur_cols or o_cols)])
-                        cur_rows = o_rows
-                    elif cur_rows > o_rows:
-                        src = src[:o_rows]
-                        cur_rows = o_rows
-                    if cur_cols < o_cols:
-                        for r in range(cur_rows):
-                            if cur_cols == 0:
-                                src[r] = ["."] * o_cols
-                            else:
-                                src[r].extend(["."] * (o_cols - cur_cols))
-                    elif cur_cols > o_cols:
-                        for r in range(cur_rows):
-                            src[r] = src[r][:o_cols]
-                    b.collision_map = src
+                b.collision_map = src if src else b.collision_map
     except Exception:
         pass
 
@@ -142,54 +72,13 @@ def _apply_entry_to_building(b: Building, coll_entry: Dict) -> None:
 
     This mirrors the normalization logic used during initial assembly.
     """
-    # Use grid_ref_size scaling if available
-    def _target_dims(img_w: int, img_h: int, entry: Dict) -> tuple[int, int]:
-        try:
-            ref = entry.get('grid_ref_size')
-            if isinstance(ref, (list, tuple)) and len(ref) == 2 and int(ref[0]) > 0 and int(ref[1]) > 0:
-                ref_w = int(ref[0]); ref_h = int(ref[1])
-                src_rows = int(entry.get('height') or 0)
-                src_cols = int(entry.get('width') or 0)
-                if src_rows <= 0 or src_cols <= 0:
-                    cc = entry.get('collision') or []
-                    src_rows = len(cc)
-                    src_cols = len(cc[0]) if src_rows > 0 else 0
-                if src_rows > 0 and src_cols > 0:
-                    sx = img_w / float(ref_w)
-                    sy = img_h / float(ref_h)
-                    tr = max(1, int(round(src_rows * sy)))
-                    tc = max(1, int(round(src_cols * sx)))
-                    return tc, tr
-        except Exception:
-            pass
-        tc = max(1, (img_w + TILE_SIZE - 1) // TILE_SIZE)
-        tr = max(1, (img_h + TILE_SIZE - 1) // TILE_SIZE)
-        return tc, tr
-
-    desired_cols, desired_rows = _target_dims(b.image.get_width(), b.image.get_height(), coll_entry or {})
+    # New policy: apply saved grid as-is (no resample). Runtime scales cells.
     src = [row[:] for row in coll_entry.get("collision", [])]
-    try:
-        b.collision_map = resample_collision_map(src, desired_rows, desired_cols)
-    except Exception:
-        cur_rows = len(src)
-        cur_cols = len(src[0]) if cur_rows > 0 else 0
-        if cur_rows < desired_rows:
-            for _ in range(desired_rows - cur_rows):
-                src.append(["." for _ in range(cur_cols or desired_cols)])
-            cur_rows = desired_rows
-        elif cur_rows > desired_rows:
-            src = src[:desired_rows]
-            cur_rows = desired_rows
-        if cur_cols < desired_cols:
-            for r in range(cur_rows):
-                if cur_cols == 0:
-                    src[r] = ["."] * desired_cols
-                else:
-                    src[r].extend(["."] * (desired_cols - cur_cols))
-        elif cur_cols > desired_cols:
-            for r in range(cur_rows):
-                src[r] = src[r][:desired_cols]
+    if src:
         b.collision_map = src
+    else:
+        # Default 15x15 when entry lacks a collision grid
+        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
 
 
 def apply_collisions_to_loaded_buildings(

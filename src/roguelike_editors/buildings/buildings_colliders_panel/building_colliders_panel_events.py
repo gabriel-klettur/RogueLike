@@ -51,21 +51,51 @@ class BuildingCollidersPanelEventHandler:
             w_img, h_img = b.image.get_size()
             rect = pygame.Rect(x_b, y_b, w_img, h_img)
             if rect.collidepoint(world_x, world_y):
-                # Restringir el pintado únicamente al edificio actualmente activo (selección persistente)
+                # Asegurar que el edificio bajo cursor sea el activo para pintar
                 try:
                     active = getattr(self.editor_state, 'active_building', None)
                 except Exception:
                     active = None
                 if active is None or active is not b:
                     try:
-                        logger.info("[Colliders] Ignorado pintado: el edificio bajo el cursor no es el activo")
+                        self.editor_state.active_building = b
+                        logger.info("[Colliders] Seleccionado edificio ID %s para pintar", getattr(b, 'id', None))
                     except Exception:
                         pass
-                    # Continuar buscando por si hay otro edificio solapado que sí sea el seleccionado
-                    continue
                 self.model.active_building = b
-                col = int((world_x - x_b) // TILE_SIZE)
-                row = int((world_y - y_b) // TILE_SIZE)
+                # Asegurar grilla por defecto 15x15 si no existe o es 1x1/invalid
+                try:
+                    cmap = getattr(b, 'collision_map', None)
+                    need_init = False
+                    if not cmap or not isinstance(cmap, list) or not cmap or not isinstance(cmap[0], list):
+                        need_init = True
+                    else:
+                        r0 = len(cmap)
+                        c0 = len(cmap[0]) if r0 > 0 else 0
+                        if r0 <= 1 or c0 <= 1:
+                            need_init = True
+                    if need_init:
+                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+                except Exception:
+                    try:
+                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+                    except Exception:
+                        pass
+                # Calcular índice de celda proporcional a imagen y grilla actual
+                try:
+                    rows = len(b.collision_map)
+                    cols = len(b.collision_map[0]) if rows > 0 else 0
+                    if rows > 0 and cols > 0 and w_img > 0 and h_img > 0:
+                        cw = max(1.0, w_img / float(cols))
+                        ch = max(1.0, h_img / float(rows))
+                        col = int((world_x - x_b) / cw)
+                        row = int((world_y - y_b) / ch)
+                    else:
+                        col = int((world_x - x_b) // TILE_SIZE)
+                        row = int((world_y - y_b) // TILE_SIZE)
+                except Exception:
+                    col = int((world_x - x_b) // TILE_SIZE)
+                    row = int((world_y - y_b) // TILE_SIZE)
                 if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
                     # Pinta en el edificio activo
                     try:
