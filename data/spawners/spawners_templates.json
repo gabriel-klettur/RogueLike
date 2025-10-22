@@ -247,17 +247,127 @@
       "mode": "periodic",
       "advance_on": "cooldown",
       "cooldown_s": 0.0,
-      "max_active": 1,
-      "persistent": true,
-      "restart_on_done": true,
-      "restart_cooldown_s": 300.0
-    },
-    "waves": [
-      {
-        "spawns": [
-          { "kind": "monster", "id": "vendor_alchemist_valeria", "count": 1, "spread_radius": 0 }
-        ]
-      }
-    ]
+      "max_active": 1
   }
+},
+{
+  "id": "vendor_gatita_respawn_5m",
+  "spawner_type": "invisible",
+  "spawner_shape": "circle",
+  "spawn_radius": 0,
+  "defend_spawn": false,
+  "trigger": { "type": "auto" },
+  "policy": {
+    "mode": "periodic",
+    "advance_on": "cooldown",
+    "cooldown_s": 0.0,
+    "max_active": 1,
+    "persistent": true,
+    "restart_on_done": true,
+    "restart_cooldown_s": 300.0
+  },
+  "waves": [
+    {
+      "spawns": [
+        { "kind": "monster", "id": "vendor_cheff_gatita", "count": 1, "spread_radius": 0 }
+      ]
+    }
+  ]
+},
+{
+  "id": "vendor_smith_respawn_5m",
+  "spawner_type": "invisible",
+  "spawner_shape": "circle",
+  "spawn_radius": 0,
+  "defend_spawn": false,
+  "trigger": { "type": "auto" },
+  "policy": {
+    "mode": "periodic",
+    "advance_on": "cooldown",
+    "cooldown_s": 0.0,
+    "max_active": 1,
+    "persistent": true,
+    "restart_on_done": true,
+    "restart_cooldown_s": 300.0
+  },
+  "waves": [
+    {
+      "spawns": [
+        { "kind": "monster", "id": "vendor_blacksmith_smith", "count": 1, "spread_radius": 0 }
+      ]
+    }
+  ]
+},
+{
+  "id": "vendor_abigail_respawn_5m",
+  "spawner_type": "invisible",
+  "spawner_shape": "circle",
+  "spawn_radius": 0,
+  "defend_spawn": false,
+  "trigger": { "type": "auto" },
+  "policy": {
+    "mode": "periodic",
+    "advance_on": "cooldown",
+    "cooldown_s": 0.0,
+    "max_active": 1,
+    "persistent": true,
+    "restart_on_done": true,
+    "restart_cooldown_s": 300.0
+  },
+  "waves": [
+    {
+      "spawns": [
+        { "kind": "monster", "id": "vendor_banker_abigail", "count": 1, "spread_radius": 0 }
+      ]
+    }
+  ]
+},
+{
+  "id": "vendor_pavel_respawn_5m",
+  "spawner_type": "invisible",
+  "spawner_shape": "circle",
+  "spawn_radius": 0,
+  "defend_spawn": false,
+  "trigger": { "type": "auto" },
+  "policy": {
+    "mode": "periodic",
+    "advance_on": "cooldown",
+    "cooldown_s": 0.0,
+    "max_active": 1,
+    "persistent": true,
+    "restart_on_done": true,
+    "restart_cooldown_s": 300.0
+  },
+  "waves": [
+    {
+      "spawns": [
+        { "kind": "monster", "id": "vendor_lumberjack_pavel", "count": 1, "spread_radius": 0 }
+      ]
+    }
+  ]
+},
+{
+  "id": "vendor_roberto_respawn_5m",
+  "spawner_type": "invisible",
+  "spawner_shape": "circle",
+  "spawn_radius": 0,
+  "defend_spawn": false,
+  "trigger": { "type": "auto" },
+  "policy": {
+    "mode": "periodic",
+    "advance_on": "cooldown",
+    "cooldown_s": 0.0,
+    "max_active": 1,
+    "persistent": true,
+    "restart_on_done": true,
+    "restart_cooldown_s": 300.0
+  },
+  "waves": [
+    {
+      "spawns": [
+        { "kind": "monster", "id": "vendor_mague_roberto", "count": 1, "spread_radius": 0 }
+      ]
+    }
+  ]
+}
 ]
