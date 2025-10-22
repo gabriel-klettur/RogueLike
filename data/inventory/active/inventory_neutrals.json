@@ -1,5 +1,5 @@
 {
-  "011bb8d9-bfa7-4deb-a3fc-03ab843d435f": {
+  "ee8dd15e-88fa-40b9-b8ea-237cbe09ae79": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -40,7 +40,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "411b7f78-0173-45e5-a905-fea54d7f414e": {
+  "2c2f6a2d-b461-4a8e-94f1-49e506c41d48": {
     "template_id": null,
     "slots": [
       {
@@ -49,15 +49,15 @@
       },
       {
         "item": "health_potion",
-        "quantity": 5
+        "quantity": 2
       },
       {
-        "item": "mana_potion",
-        "quantity": 1
+        "item": "food_chicken",
+        "quantity": 2
       },
       {
-        "item": "explosion_potion",
-        "quantity": 1
+        "item": "wood",
+        "quantity": 3
       },
       null,
       null,
@@ -78,7 +78,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "71191213-faa7-40d3-9f9b-9b48dd087806": {
+  "dbee6859-5f29-48da-891f-7e634cba708a": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -86,16 +86,16 @@
         "quantity": 1000
       },
       {
-        "item": "iron_ingot",
+        "item": "wood",
+        "quantity": 4
+      },
+      {
+        "item": "explosion_potion",
         "quantity": 1
       },
       {
-        "item": "poison_potion",
-        "quantity": 5
-      },
-      {
-        "item": "food_chicken",
-        "quantity": 2
+        "item": "mana_potion",
+        "quantity": 1
       },
       null,
       null,
@@ -116,7 +116,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "e6b08a16-6b9b-4bf8-b655-fdee3984f9e4": {
+  "3eebb729-9ef6-4135-87e7-4f7bc78e9751": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -148,7 +148,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "051d74e4-5772-4b19-bd86-5e6fff0f5fea": {
+  "0fc5cd56-f117-40d1-ab40-10a02def1459": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {

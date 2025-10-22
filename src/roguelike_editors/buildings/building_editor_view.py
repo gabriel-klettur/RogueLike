@@ -3,6 +3,11 @@ from roguelike_editors.buildings.tools.default_tool.default_tool_view import Def
 from roguelike_editors.buildings.buildings_title_panel.buildings_title_view import BuildingsTitleView
 from roguelike_ui.ui_blocker import is_blocked
 
+try:
+    from roguelike_engine.config.config_tiles import TILE_SIZE
+except Exception:
+    TILE_SIZE = 32
+
 from roguelike_editors.buildings.tools.split_z_tool.split_tool_view   import SplitToolView
 from roguelike_editors.buildings.tools.z_tool.z_tool_view       import ZToolView
 from roguelike_editors.buildings.tools.collider_scope_tool.collider_scope_tool_view import ColliderScopeToolView
@@ -35,6 +40,20 @@ class BuildingEditorView:
         self._modal_text_cache = {}
         self._button_label_cache = {}
 
+
+    def _render_building_collision_overlay(self, screen, camera, building):
+        if not getattr(building, 'collision_map', None):
+            return
+        cell_w, cell_h = camera.scale((TILE_SIZE, TILE_SIZE))
+        for ry, row in enumerate(building.collision_map):
+            for cx, val in enumerate(row):
+                if val == "#":
+                    wx = building.x + cx * TILE_SIZE
+                    wy = building.y + ry * TILE_SIZE
+                    sx, sy = camera.apply((wx, wy))
+                    overlay = pygame.Surface((cell_w, cell_h), pygame.SRCALPHA)
+                    overlay.fill((255, 0, 0, 100))
+                    screen.blit(overlay, (sx, sy))
 
     def render(self, screen, camera, buildings):
         if not self.editor.active:
@@ -137,9 +156,13 @@ class BuildingEditorView:
             x, y = camera.apply((b.x, b.y))
             w, h = camera.scale(b.image.get_size())
             rect = pygame.Rect(x, y, w, h)
-            # Exponer el rect del edificio activo para overlays (tutorial)
             try:
                 self._last_active_building_rect = rect
+            except Exception:
+                pass
+            try:
+                if not getattr(self.editor, 'colliders_mode', False) and getattr(b, 'collision_map', None):
+                    self._render_building_collision_overlay(screen, camera, b)
             except Exception:
                 pass
             # Active selection outline: yellow, thicker

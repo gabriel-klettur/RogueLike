@@ -1,69 +1,5 @@
 [
     {
-        "id": 1,
-        "template_id": 1,
-        "zone": "lobby",
-        "rel_x": 961,
-        "rel_y": 383,
-        "overrides": {
-            "scale": [
-                353,
-                528
-            ],
-            "z_bottom": 3,
-            "z_top": 9,
-            "z": 3
-        }
-    },
-    {
-        "id": 2,
-        "template_id": 185,
-        "zone": "lobby",
-        "rel_x": 1437,
-        "rel_y": 1191,
-        "overrides": {
-            "scale": [
-                166,
-                225
-            ],
-            "z_bottom": 4,
-            "z_top": 6,
-            "z": 4
-        }
-    },
-    {
-        "id": 3,
-        "template_id": 3,
-        "zone": "lobby",
-        "rel_x": 1500,
-        "rel_y": -169,
-        "overrides": {
-            "scale": [
-                180,
-                244
-            ],
-            "z_bottom": 2,
-            "z_top": 2,
-            "z": 2
-        }
-    },
-    {
-        "id": 4,
-        "template_id": 4,
-        "zone": "lobby",
-        "rel_x": 565,
-        "rel_y": 189,
-        "overrides": {
-            "scale": [
-                189,
-                239
-            ],
-            "z_bottom": 4,
-            "z_top": 6,
-            "z": 4
-        }
-    },
-    {
         "id": 5,
         "template_id": 5,
         "zone": "lobby",
@@ -1819,12 +1755,12 @@
         "id": 230,
         "template_id": 238,
         "zone": "zone_100_50",
-        "rel_x": 205,
-        "rel_y": -110,
+        "rel_x": 204,
+        "rel_y": -82,
         "overrides": {
             "scale": [
-                328,
-                328
+                301,
+                301
             ],
             "z_bottom": 3,
             "z_top": 5,
@@ -1961,7 +1897,7 @@
     },
     {
         "id": 311,
-        "template_id": 175,
+        "template_id": 259,
         "zone": "zone_100_50",
         "rel_x": -48,
         "rel_y": 207,
@@ -1972,6 +1908,85 @@
             ],
             "z_bottom": 3,
             "z_top": 5,
+            "collider_scope": "CU",
+            "collision_override": {
+                "width": 6,
+                "height": 8,
+                "collision": [
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "#",
+                        "#",
+                        "#",
+                        "#"
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "#",
+                        "#",
+                        "#",
+                        "#"
+                    ],
+                    [
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        "."
+                    ]
+                ]
+            },
             "z": 3
         }
     },
@@ -1979,8 +1994,8 @@
         "id": 314,
         "template_id": 176,
         "zone": "zone_100_50",
-        "rel_x": 81,
-        "rel_y": -154,
+        "rel_x": -29,
+        "rel_y": -186,
         "overrides": {
             "scale": [
                 210,
@@ -2360,6 +2375,23 @@
             "scale": [
                 183,
                 250
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 3
+        }
+    },
+    {
+        "id": 372,
+        "template_id": 158,
+        "zone": "Forest",
+        "rel_x": 688,
+        "rel_y": 395,
+        "spawn_id": "survival_10_forest_14_9",
+        "overrides": {
+            "scale": [
+                256,
+                384
             ],
             "z_bottom": 3,
             "z_top": 5,

@@ -1,0 +1,15 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Hola gatita cuanto es 0/0?"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, corazón! 0/0 es indeterminado, no tiene un valor único . Si te llevas canasta, te hago precio de vecina."
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}
