@@ -186,10 +186,15 @@ class BuildingCollidersPanelEventHandler:
             if target_img and getattr(active, 'collision_map', None) is not None:
                 # Escribir a partir del edificio activo únicamente (fuente de verdad del CG)
                 key = target_img
+                try:
+                    giw, gih = active.image.get_size()
+                except Exception:
+                    giw, gih = (0, 0)
                 by_image[key] = {
                     'width': len(active.collision_map[0]) if active.collision_map else 0,
                     'height': len(active.collision_map),
                     'collision': active.collision_map,
+                    'grid_ref_size': [int(giw), int(gih)],
                 }
                 updated_by_img.append(key)
             else:
@@ -204,10 +209,15 @@ class BuildingCollidersPanelEventHandler:
                     key = getattr(b, 'image_path', '')
                     if not key:
                         continue
+                    try:
+                        giw, gih = b.image.get_size()
+                    except Exception:
+                        giw, gih = (0, 0)
                     by_image[key] = {
                         'width': len(b.collision_map[0]) if b.collision_map else 0,
                         'height': len(b.collision_map),
                         'collision': b.collision_map,
+                        'grid_ref_size': [int(giw), int(gih)],
                     }
                     updated_by_img.append(key)
 
@@ -217,10 +227,15 @@ class BuildingCollidersPanelEventHandler:
                 bid = getattr(active, 'id', None)
                 if bid is not None:
                     bid_str = str(bid)
+                    try:
+                        giw, gih = active.image.get_size()
+                    except Exception:
+                        giw, gih = (0, 0)
                     by_binst[bid_str] = {
                         'width': len(active.collision_map[0]) if active.collision_map else 0,
                         'height': len(active.collision_map),
                         'collision': active.collision_map,
+                        'grid_ref_size': [int(giw), int(gih)],
                     }
                     updated_by_inst.append(bid_str)
             except Exception:

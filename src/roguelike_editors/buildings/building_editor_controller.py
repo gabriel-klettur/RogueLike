@@ -11,6 +11,7 @@ from roguelike_editors.buildings.tools.placer_tool.placer_tool import PlacerTool
 from roguelike_editors.buildings.tools.delete_tool.delete_tool import DeleteTool
 from roguelike_editors.buildings.tools.default_tool.default_tool_view import DefaultToolView
 from roguelike_editors.buildings.tools.collider_scope_tool import ColliderScopeTool
+from roguelike_engine.buildings.services.collisions import resample_collision_map
 from roguelike_ui.ui_blocker import is_blocked
 
 from roguelike_editors.buildings.utils.zone_helpers import assign_zone_and_relatives
@@ -199,6 +200,24 @@ class BuildingEditorController:
         self.editor.dragging = False
         self.editor.resizing = False
         self.editor.split_dragging = False
+
+        # 2.5) Si veníamos redimensionando, aplicar remuestreo final de la grilla
+        try:
+            if was_resizing and (building is not None) and getattr(building, 'image', None) is not None:
+                new_w, new_h = building.image.get_size()
+                old_w, old_h = getattr(self.editor, 'initial_size', (new_w, new_h))
+                cmap = getattr(building, 'collision_map', None)
+                if isinstance(cmap, list) and cmap:
+                    old_rows = len(cmap)
+                    old_cols = len(cmap[0]) if old_rows > 0 else 0
+                    if old_rows > 0 and old_cols > 0 and old_w > 0 and old_h > 0:
+                        scale_y = new_h / float(old_h)
+                        scale_x = new_w / float(old_w)
+                        new_rows = max(1, int(round(old_rows * scale_y)))
+                        new_cols = max(1, int(round(old_cols * scale_x)))
+                        building.collision_map = resample_collision_map(cmap, new_rows, new_cols)
+        except Exception:
+            pass
 
         # 3) Si había un building arrastrado, le asignamos zona/relativos
         if building is not None:

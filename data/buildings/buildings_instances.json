@@ -1755,12 +1755,12 @@
         "id": 230,
         "template_id": 238,
         "zone": "zone_100_50",
-        "rel_x": 204,
-        "rel_y": -82,
+        "rel_x": 151,
+        "rel_y": -150,
         "overrides": {
             "scale": [
-                301,
-                301
+                392,
+                392
             ],
             "z_bottom": 3,
             "z_top": 5,

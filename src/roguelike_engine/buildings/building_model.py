@@ -170,28 +170,29 @@ class BuildingModel(BuildingCollisionMixin):
         self._mask_full = None
 
     # ───────────── Métodos de redimensionamiento ─────────────
-    def resize(self, new_width: int, new_height: int):
+    def resize(self, new_width: int, new_height: int, *, resample_collision: bool = True):
         """
-        Redimensiona a new_width×new_height recargando la imagen desde disco:
-        • Limpia caches relacionados con el renderizado.
-        • Recalcula self._cut_world para el split.
+        Redimensiona a new_width×new_height. Si el tamaño es distinto, recarga y escala
+        la imagen desde disco; si es igual, evita recargar. Controla el remuestreo de la
+        grilla de colisiones vía `resample_collision`.
         """
-        surf = load_image(self.image_path)
-        surf = pygame.transform.scale(surf, (new_width, new_height))
-        self.image = surf
+        cur_w = int(self.image.get_width()) if self.image is not None else None
+        cur_h = int(self.image.get_height()) if self.image is not None else None
+        if cur_w != new_width or cur_h != new_height:
+            surf = load_image(self.image_path)
+            surf = pygame.transform.scale(surf, (new_width, new_height))
+            self.image = surf
         # Importante: no sobrescribir original_scale aquí.
-        # original_scale representa el tamaño inicial al cargar el edificio
-        # y es el objetivo de reset_to_original_size().
         self._cut_world = int(new_height * self.split_ratio)
-        # Ajustar el collision_map al nuevo tamaño de imagen (grid por TILE_SIZE)
-        try:
-            new_rows, new_cols = self._image_to_grid_size()
-            self._resample_collision_map(new_rows, new_cols)
-        except Exception:
-            # Si algo falla, al menos garantizamos un mapa válido
-            if not self._collision_map:
-                self._collision_map = [["."]]
-        # Invalidar caches de colisión y renderizado (se regenerarán cuando sea necesario)
+        # Remuestrear sólo si así se solicita
+        if resample_collision:
+            try:
+                new_rows, new_cols = self._image_to_grid_size()
+                self._resample_collision_map(new_rows, new_cols)
+            except Exception:
+                if not self._collision_map:
+                    self._collision_map = [["."]]
+        # Invalidar caches derivados
         self._collision_tiles_cache = None
         self._collision_tile_objs = None
         self._mask_full = None
