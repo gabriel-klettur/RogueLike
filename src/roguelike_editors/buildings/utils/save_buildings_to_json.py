@@ -286,7 +286,6 @@ def save_buildings_split(
                     overrides['collider_scope'] = 'CU'
                     cm = getattr(b, 'collision_map', None)
                     try:
-                        # Compute dimensions robustly: height = rows, width = max row length
                         height = len(cm) if isinstance(cm, list) else 0
                         width = 0
                         if isinstance(cm, list):
@@ -297,7 +296,6 @@ def save_buildings_split(
                             'collision': cm,
                         }
                     except Exception:
-                        # If computing dimensions fails, still persist scope flag
                         pass
             except Exception:
                 pass
