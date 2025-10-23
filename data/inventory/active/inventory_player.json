@@ -4,10 +4,7 @@
     "player_id": "49587a3b-0089-4b91-a24a-be466e684bd0",
     "schema_version": "1.0.0",
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 10
-      },
+      null,
       null,
       null,
       null,

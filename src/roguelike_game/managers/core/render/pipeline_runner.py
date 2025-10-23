@@ -47,6 +47,10 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         ):
             manager._render_z_entities(state, camera, screen, entities)
 
+    def _step_attack_telegraphs():
+        from .pipeline_helpers import render_attack_telegraphs
+        render_attack_telegraphs(manager, screen, camera)
+
     def _step_tile_editor():
         # Skip tile editor UI in collision-only mode
         if not (
@@ -78,6 +82,7 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         ("3.1. map", _step_map),
         ("3.5. ecs_trail", _step_ecs_trail),
         ("3.2. z_entities", _step_z_entities),
+        ("3.35. attack_telegraphs", _step_attack_telegraphs),
         ("3.4. tile_editor", _step_tile_editor),
         ("3.55. spell_debug", _step_spell_debug),
         ("3.6. crosshair", _step_crosshair),

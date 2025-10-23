@@ -98,3 +98,16 @@ def render_spell_debug_overlays(manager, screen, camera, perf_log=None) -> None:
     except Exception:
         # Never break main render due to optional debug overlays
         pass
+
+
+def render_attack_telegraphs(manager, screen, camera) -> None:
+    """Render semi-transparent cones for upcoming NPC attacks (TelegraphArc)."""
+    try:
+        if getattr(manager, "_telegraph_render_system", None) is None:
+            from roguelike_game.ecs.systems.rendering.telegraph_render_system import TelegraphRenderSystem
+            manager._telegraph_render_system = TelegraphRenderSystem(perf_log=None)
+        world = manager.ecs.ecs_world
+        manager._telegraph_render_system.update(world, screen, camera)
+    except Exception:
+        # Do not disrupt main render if telegraph rendering fails
+        pass
