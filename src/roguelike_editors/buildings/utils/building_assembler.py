@@ -142,6 +142,27 @@ def load_from_split(z_state=None) -> List[Building]:
                     entry.update(overrides)
                 except Exception:
                     pass
+            # If this instance is a spawner visual, enforce safe defaults
+            is_spawner_visual = False
+            try:
+                root_flag = bool(inst.get("spawner_visual", False))
+            except Exception:
+                root_flag = False
+            try:
+                override_flag = bool((inst.get("overrides") or {}).get("_is_spawner_visual", False))
+            except Exception:
+                override_flag = False
+            is_spawner_visual = bool(root_flag or override_flag)
+            if is_spawner_visual:
+                # Non-solid, no collisions by default for spawner visuals
+                try:
+                    entry["solid"] = False
+                except Exception:
+                    pass
+                try:
+                    entry["collider_scope"] = "CU"
+                except Exception:
+                    pass
 
             # Position/zone from instance
             rel_x = inst.get("rel_x")
@@ -199,8 +220,9 @@ def load_from_split(z_state=None) -> List[Building]:
             except Exception:
                 pass
 
-            # Collision map selection and overrides
-            apply_collision_for_building(b, entry, collisions_global, collisions_instances, collisions_by_id)
+            # Collision map selection and overrides (skip for spawner visuals)
+            if not is_spawner_visual:
+                apply_collision_for_building(b, entry, collisions_global, collisions_instances, collisions_by_id)
 
             # Apply Z-layer
             if z_state:
@@ -229,6 +251,16 @@ def load_from_split(z_state=None) -> List[Building]:
                 pass
             if entry.get("original_scale"):
                 b.original_scale = tuple(entry["original_scale"])  # type: ignore[assignment]
+
+            # Spawner visuals: tag and keep hidden by default until the spawner selects them
+            if is_spawner_visual:
+                try:
+                    setattr(b, "_is_spawner_visual", True)
+                    setattr(b, "runtime_hidden", True)
+                    # Ensure non-solid at runtime too (in case of late overrides)
+                    setattr(b, "solid", False)
+                except Exception:
+                    pass
 
             buildings.append(b)
         except Exception as e:

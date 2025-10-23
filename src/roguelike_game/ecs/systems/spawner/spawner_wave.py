@@ -6,7 +6,7 @@ from typing import Any, Iterable, Set, Tuple
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
 from .placement_utils import choose_spawn_tile
-from .spawner_utils import get_policy_flags, prune_tracking_sets, compute_defend_metadata
+from .spawner_utils import get_policy_flags, prune_tracking_sets, prune_tracking_sets_ko, compute_defend_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def process_spawner(
 
     Mirrors original behavior while being easier to read and test.
     """
-    looping, max_active, advance_on_cooldown, proximity_initial_only = get_policy_flags(cfg)
+    looping, max_active, advance_on_cooldown, proximity_initial_only, count_ko_as_clear = get_policy_flags(cfg)
 
     # Finished handling (restart if looping)
     if getattr(st, 'finished', False):
@@ -72,7 +72,10 @@ def process_spawner(
 
     # Advance on clear: wait for elimination of current wave
     if st.spawned_this_wave and not advance_on_cooldown:
-        prune_tracking_sets(st, ents_set)
+        if count_ko_as_clear:
+            prune_tracking_sets_ko(world, st, ents_set)
+        else:
+            prune_tracking_sets(st, ents_set)
         if st.expected_this_wave > 0 and len(st.current_wave_entities) == 0:
             wave_num = st.current_wave_idx + 1
             total_waves = len(cfg.waves)
@@ -120,7 +123,10 @@ def process_spawner(
 
     # Advance on cooldown: after all waves spawned, wait for active clear
     if advance_on_cooldown and st.current_wave_idx >= len(cfg.waves):
-        prune_tracking_sets(st, ents_set)
+        if count_ko_as_clear:
+            prune_tracking_sets_ko(world, st, ents_set)
+        else:
+            prune_tracking_sets(st, ents_set)
         try:
             active_count = len(getattr(st, 'active_entities', set()) or [])
         except Exception:
@@ -211,7 +217,10 @@ def process_spawner(
 
     capacity_left = None
     if max_active > 0 and getattr(st, 'active_entities', None) is not None:
-        prune_tracking_sets(st, ents_set)
+        if count_ko_as_clear:
+            prune_tracking_sets_ko(world, st, ents_set)
+        else:
+            prune_tracking_sets(st, ents_set)
         try:
             capacity_left = max(0, max_active - len(st.active_entities))
         except Exception:

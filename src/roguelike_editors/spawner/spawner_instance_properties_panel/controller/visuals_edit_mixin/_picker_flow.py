@@ -53,6 +53,73 @@ def set_visual_template_via_picker_flow(owner: Any, state_key: str, new_tpl_id: 
     if cur_inst_int is not None and new_tpl_id is not None:
         desired = int(new_tpl_id)
         if (getattr(owner, "_building_index", None) or {}).get(cur_inst_int, None) == str(desired):
+            # Even if template matches, ensure tagging and visuals mapping are persisted
+            try:
+                data = owner._load_buildings_instances()
+                sid = None
+                try:
+                    inst_sel = owner.model.selected_instance
+                    if isinstance(inst_sel, dict) and inst_sel.get("id") is not None:
+                        sid = str(inst_sel.get("id"))
+                except (AttributeError, TypeError, ValueError):
+                    sid = None
+                if data is not None:
+                    for e in data:
+                        try:
+                            if int(e.get("id")) != int(cur_inst_int):
+                                continue
+                        except (AttributeError, TypeError, ValueError):
+                            continue
+                        e["template_id"] = int(desired)
+                        try:
+                            e["spawner_visual"] = True
+                        except Exception:
+                            pass
+                        ov = e.get("overrides") or {}
+                        ov["_is_spawner_visual"] = True
+                        if sid:
+                            ov["spawner_instance_id"] = sid
+                        e["overrides"] = ov
+                        if sid:
+                            e["spawn_id"] = sid
+                            e["spawner_instance_id"] = sid
+                        break
+                    owner._write_buildings_instances(data)
+            except (AttributeError, TypeError, ValueError):
+                pass
+            visuals = getattr(owner.model, "visuals", {}) or {}
+            key_map = getattr(owner.model, "visuals_key_map", {}) or {}
+            json_key = key_map.get(state_key, state_key)
+            visuals[json_key] = {"instance_id": int(cur_inst_int), "template_id": int(desired)}
+            owner.model.visuals = visuals
+            try:
+                inst = owner.model.selected_instance
+                if isinstance(inst, dict):
+                    ov2 = dict(inst.get("overrides") or {})
+                    ov2["visible_in_game"] = True
+                    inst["overrides"] = ov2
+            except (AttributeError, TypeError, ValueError):
+                pass
+            try:
+                if owner.model.selected_instance is not None:
+                    owner.model.selected_instance["visuals"] = visuals
+            except AttributeError:
+                pass
+            owner._build_visuals_rows()
+            try:
+                owner._persist_instance()
+            except (AttributeError, TypeError, ValueError):
+                pass
+            try:
+                owner._tag_and_reveal_building(int(cur_inst_int), state_key)
+            except (AttributeError, TypeError, ValueError):
+                pass
+            try:
+                owner._log.info(
+                    f"[InstanceProps] Retagged existing instance {cur_inst_int} with template {desired} for state {state_key}"
+                )
+            except Exception:
+                pass
             return
         if owner._count_instance_refs_in_visuals(cur_inst_int) <= 1:
             data = owner._load_buildings_instances()

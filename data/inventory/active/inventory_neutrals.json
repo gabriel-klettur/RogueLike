@@ -1,5 +1,5 @@
 {
-  "88171e10-be76-43bb-8115-13bb45ff7c46": {
+  "1b13f3d1-d0ac-45cb-8553-905c7bdc1f85": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -40,45 +40,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "38c32029-4c1d-46fd-8e33-af8f689c630f": {
-    "template_id": null,
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 50
-      },
-      {
-        "item": "energy_potion",
-        "quantity": 2
-      },
-      {
-        "item": "health_potion",
-        "quantity": 5
-      },
-      {
-        "item": "poison_potion",
-        "quantity": 4
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "6162de68-4021-47a4-8dd9-7b26cf607fbe": {
+  "af3629bd-d2d8-4a12-8b7f-036ebe6bfeba": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -86,16 +48,16 @@
         "quantity": 1000
       },
       {
-        "item": "food_chicken",
-        "quantity": 4
+        "item": "poison_potion",
+        "quantity": 5
       },
       {
-        "item": "mana_potion",
-        "quantity": 4
+        "item": "health_potion",
+        "quantity": 3
       },
       {
         "item": "explosion_potion",
-        "quantity": 2
+        "quantity": 1
       },
       null,
       null,
@@ -116,7 +78,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0e5c70c9-beae-4b5a-9f2e-dc55599d7ddb": {
+  "2d96677a-df4e-4539-bc8c-fca73dc346a5": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -148,7 +110,39 @@
     ],
     "schema_version": "1.0.0"
   },
-  "cc2ebd1e-d7e3-4822-a368-87d377c60b3f": {
+  "ba46d135-b4d1-46ae-9b30-71312618e2f6": {
+    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "slots": [
+      {
+        "item": "health_potion",
+        "quantity": 40
+      },
+      {
+        "item": "gold",
+        "quantity": 300
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "fcc2c1e7-5bae-4219-8795-aa739990ea40": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {
