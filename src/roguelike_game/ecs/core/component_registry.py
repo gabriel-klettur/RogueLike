@@ -16,6 +16,7 @@ def create_empty_component_store():
         'LastAttacker': {},
         'SpawnRequest': {}, 'CombatStats': {}, 'MeleeWeapon': {}, 'MeleeRange': {},
         'WantsToMelee': {}, 'AttackCooldown': {}, 'WantsToCastSpell': {}, 'AggroRange': {},
+        'AutoCastComponent': {},
         # AI defend/leash area per NPC
         'DefendArea': {},
         'ChaseTarget': {}, 'FacingCooldown': {}, 'InputComponent': {}, 'InventoryComponent': {}, 'PhysicalItemComponent': {}, 'CollectibleComponent': {}, 'ExperienceComponent': {},

@@ -12,6 +12,11 @@ from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 from roguelike_engine.utils.benchmark import benchmark
 import math
 from roguelike_game.config.spells_config import SPELLS
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.transform.velocity import Velocity
+from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.scale import Scale
 import pygame
 
 import logging
@@ -133,18 +138,95 @@ class SpellCastingSystem:
                 # fallback duro: no bloquear por errores de lectura
                 pass
 
-            # Permitir castear solo si Idle o (allow_movement y MoveState)
-            state_comp = npcs.get(eid)
+            # Evaluar movilidad del hechizo una sola vez
             allow_mov = cfg.get('allow_movement', False)
+
+            # Si el hechizo permite movimiento y es un proyectil, realizar "inline cast" para NPCs
+            # sin cambiar el estado global (mantiene ChaseState activo y no corta el movimiento).
+            player_eid = getattr(world, 'player_entity', None)
+            if eid in npcs and eid != player_eid and allow_mov and spell_type == 'projectile':
+                try:
+                    # Mana: cobrar aquí porque no pasaremos por ReleaseSpellState
+                    godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (eid == getattr(world, 'player_entity', None))
+                    mana_comp = world.components.get('Mana', {}).get(eid)
+                    mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
+                    if not godmode and mana_comp is not None and mana_cost > 0:
+                        if float(mana_comp.current_mana) < mana_cost:
+                            wants.pop(eid, None)
+                            continue
+                        mana_comp.current_mana = int(max(0, float(mana_comp.current_mana) - mana_cost))
+
+                    # Spawn center del caster
+                    pos_cmp = world.components['Position'][eid]
+                    spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+                    sprite_cmp = world.components.get('Sprite', {}).get(eid)
+                    if sprite_cmp:
+                        w, h = sprite_cmp.image.get_size()
+                        spawn_x += w/2; spawn_y += h/2
+                    # Objetivo: centro del player
+                    player_eid = getattr(world, 'player_entity', None)
+                    ppos = world.components['Position'].get(player_eid)
+                    if ppos is not None:
+                        px, py = ppos.x, ppos.y
+                        ps = world.components.get('Sprite', {}).get(player_eid)
+                        if ps:
+                            pw, ph = ps.image.get_size()
+                            px += pw/2; py += ph/2
+                    else:
+                        # Fallback: mismo punto (evita div/0)
+                        px, py = spawn_x + 1, spawn_y
+                    dx, dy = px - spawn_x, py - spawn_y
+                    length = math.hypot(dx, dy) or 1
+                    dx, dy = dx/length, dy/length
+
+                    # Crear proyectil (fireball genérico)
+                    fid = world.create_entity()
+                    world.components['Position'][fid] = Position(spawn_x, spawn_y)
+                    speed = cfg.get('speed', 0)
+                    world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
+                    world.components['FireballComponent'][fid] = FireballComponent(
+                        dx * speed, dy * speed,
+                        damage=cfg.get('damage', 0),
+                        lifespan=cfg.get('lifespan', cfg.get('lifetime', 0)),
+                        caster=eid,
+                        spell_key=intent.spell,
+                        spawn_pos=(spawn_x, spawn_y)
+                    )
+                    # Sprite/scale si está definido
+                    sprite_path = cfg.get('sprite')
+                    if sprite_path:
+                        try:
+                            img = pygame.image.load(sprite_path).convert_alpha()
+                            world.components['Sprite'][fid] = Sprite(img)
+                            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+                        except Exception:
+                            pass
+                    # Consumir intención y saltar siguiente
+                    wants.pop(eid, None)
+                    logger.debug(f" [InlineCast] NPC {eid} -> fireball fid={fid} pos=({spawn_x:.1f},{spawn_y:.1f}) vel=({dx*speed:.2f},{dy*speed:.2f})")
+                    continue
+                except Exception:
+                    # Si algo falla, caer al flujo normal (con cambio a CastState)
+                    pass
+
+            # Permitir castear solo si Idle o (allow_movement y movimiento)
+            state_comp = npcs.get(eid)
             if state_comp:
                 current = state_comp.fsm.current_state
-                # salto si no está en IdleState o MoveState con permiso
-                if not (isinstance(current, IdleState) or (allow_mov and isinstance(current, MoveState))):
+                # Permitir también castear durante ChaseState cuando el hechizo permite movimiento
+                try:
+                    current_name = getattr(getattr(current, '__class__', type(current)), '__name__', '')
+                except Exception:
+                    current_name = ''
+                moving_ok = allow_mov and (isinstance(current, MoveState) or current_name == 'ChaseState')
+                # salto si no está en IdleState o movimiento permitido
+                if not (isinstance(current, IdleState) or moving_ok):
                     # en medio de cast; verificar interruptibilidad
                     if not cfg.get('interruptible', False):
                         # descartar intención si no es interruptible
                         wants.pop(eid, None)
                         continue
+
             # Si tiene FSM global (NPC o jugador), iniciar sub-FSM de hechizo
             if eid in npcs:
                 npc_state = npcs[eid]
@@ -165,7 +247,8 @@ class SpellCastingSystem:
                         world_x = mx / camera.zoom + camera.offset_x
                         world_y = my / camera.zoom + camera.offset_y
                     else:
-                        world_x, world_y = mx, my
+                        mx, my = pygame.mouse.get_pos()
+                        world_x, world_y = float(mx), float(my)
                     dx, dy = world_x - spawn_x, world_y - spawn_y
                     length = math.hypot(dx, dy) or 1
                     new_state.spell_fsm.context['direction'] = (dx/length, dy/length)

@@ -18,6 +18,7 @@ from roguelike_game.ecs.systems.physics.player_facing_system import PlayerFacing
 from roguelike_game.ecs.systems.core.spawn_system import SpawnSystem
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.combat.spells.spell_casting_system import SpellCastingSystem
+from roguelike_game.ecs.systems.ai.auto_cast_system import AutoCastSystem
 from roguelike_game.ecs.systems.combat.spells.fireball_system import FireballSystem
 from roguelike_game.ecs.systems.combat.spells.arcane_flame_system import ArcaneFlameSystem
 from roguelike_game.ecs.systems.combat.spells.firework_launch_system import FireworkLaunchSystem
@@ -154,8 +155,8 @@ def get_update_system_classes():
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
-        # Combat & spells
-        MeleeCombatSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, ComboSystem, BuildingDamageSystem,
+        # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
+        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem,
         AnimationSystem, FlashSystem, 
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)

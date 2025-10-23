@@ -32,6 +32,8 @@ from roguelike_game.ecs.components.monster_instance_component import MonsterInst
 from roguelike_game.ecs.components.chat.chat_component import ChatComponent
 from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
 from roguelike_game.ecs.components.monster_archetype import MonsterArchetype
+from roguelike_game.ecs.components.ai.auto_cast_component import AutoCastComponent
+from roguelike_game.ecs.components.combat.mana import Mana
 
 
 class MonsterBuilder:
@@ -125,6 +127,24 @@ class MonsterBuilder:
         # Configuración de daño: duración y probabilidad de detenerse al recibir daño
         stop_prob = float(cfg.get("damage_stop_probability", MONSTER_DEFAULTS.get("damage_stop_probability", 0.25)))
         world.components["DamageConfig"][eid] = DamageConfig(cfg["damage_duration"], stop_probability=stop_prob)
+
+        # Mana (opcional). Si el JSON define 'mana' o 'max_mana', registrar componente.
+        mana_val = cfg.get("mana")
+        max_mana = cfg.get("max_mana")
+        if mana_val is not None or max_mana is not None:
+            max_m = int(max_mana if max_mana is not None else mana_val)
+            cur_m = int(mana_val if mana_val is not None else max_m)
+            world.components["Mana"][eid] = Mana(current_mana=cur_m, max_mana=max_m)
+
+        # Auto-cast de hechizos (por ejemplo, disparar fireball cada N segundos)
+        ac_cfg = cfg.get("auto_cast")
+        if isinstance(ac_cfg, dict):
+            try:
+                spell = str(ac_cfg.get("spell") or "fireball")
+                period_s = float(ac_cfg.get("period_s", 2.0))
+            except Exception:
+                spell, period_s = "fireball", 2.0
+            world.components.setdefault("AutoCastComponent", {})[eid] = AutoCastComponent(spell=spell, period_s=period_s)
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")

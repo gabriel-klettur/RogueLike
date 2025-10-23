@@ -148,7 +148,10 @@ class AttackState(State):
                 except Exception:
                     mtype = None
                 spell_id = 'hostile_slash'
-                if mtype in ('barbol_oscuro', 'oscuro', 'dark'):
+                # Final Boss Barbol: usar slash gigante dedicado
+                if isinstance(mtype, str) and mtype.startswith('final_boss_barbol'):
+                    spell_id = 'boss_barbol_slash'
+                elif mtype in ('barbol_oscuro', 'oscuro', 'dark'):
                     spell_id = 'hostile_slash_dark'
                 elif mtype in ('barbol_morado', 'morado', 'purple'):
                     spell_id = 'hostile_slash_purple'

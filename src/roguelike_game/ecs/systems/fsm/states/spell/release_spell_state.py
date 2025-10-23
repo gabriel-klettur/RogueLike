@@ -131,8 +131,14 @@ class ReleaseSpellState(State):
                 spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
         else:
             spawn_x, spawn_y = ctx.get('spawn_pos', (0, 0))
-        # Recalcular dirección si no lock_cast_direction
+        # Recalcular dirección si no lock_cast_direction (permitir override por contexto NPC)
         lock = cfg.get('lock_cast_direction', True)
+        try:
+            ctx = self.fsm.context
+            if bool(ctx.get('force_lock_direction', False)):
+                lock = True
+        except Exception:
+            pass
         if not lock:
             camera = ctx.get('camera')
             mx, my = pygame.mouse.get_pos()

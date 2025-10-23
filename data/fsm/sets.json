@@ -180,6 +180,13 @@
           "terminal": false
         },
         {
+          "class": "CastState",
+          "id": "Cast",
+          "label": "Cast",
+          "props": {},
+          "terminal": false
+        },
+        {
           "class": "FleeState",
           "id": "Flee",
           "label": "Flee",

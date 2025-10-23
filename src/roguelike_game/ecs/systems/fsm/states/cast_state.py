@@ -18,24 +18,33 @@ class CastState(State):
             self.direction, self.spawn_pos = ctx['direction'], ctx['spawn_pos']
         else:
             world = entity.world
+            # Centro del caster (boss)
             pos_cmp = world.components['Position'][entity.id]
-            player_pos = world.player_position
-            if player_pos:
-                dx = player_pos.x - pos_cmp.x
-                dy = player_pos.y - pos_cmp.y
-                length = (dx*dx + dy*dy) ** 0.5 or 1
-                self.direction = (dx/length, dy/length)
-            else:
-                self.direction = (1, 0)
             spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
             sprite_cmp = world.components['Sprite'].get(entity.id)
             if sprite_cmp:
                 w, h = sprite_cmp.image.get_size()
                 spawn_x += w/2; spawn_y += h/2
             self.spawn_pos = (spawn_x, spawn_y)
+            # Centro del jugador como objetivo
+            player_pos = world.player_position
+            if player_pos:
+                px, py = player_pos.x, player_pos.y
+                ps = world.components.get('Sprite', {}).get(getattr(world, 'player_entity', None))
+                if ps:
+                    pw, ph = ps.image.get_size()
+                    px += pw/2; py += ph/2
+                dx = px - spawn_x
+                dy = py - spawn_y
+                length = (dx*dx + dy*dy) ** 0.5 or 1
+                self.direction = (dx/length, dy/length)
+            else:
+                self.direction = (1, 0)
             # Almacenar dirección y posición en contexto de la sub-FSM para ReleaseSpellState y ResolveSpellState
             self.spell_fsm.context['direction'] = self.direction
             self.spell_fsm.context['spawn_pos'] = self.spawn_pos
+            # Forzar uso de dirección precomputada (ignorar ratón) en NPCs
+            self.spell_fsm.context['force_lock_direction'] = True
         # Iniciar sub-FSM de hechizo
         self.spell_fsm.current_state.enter(entity)
 

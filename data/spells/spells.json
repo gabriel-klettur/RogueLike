@@ -215,6 +215,49 @@
       "offset": 40
     }
   },
+  "boss_barbol_slash": {
+    "id": "boss_barbol_slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Barbol Boss Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 40,
+      "arc_range_degrees": 260,
+      "radius": 300,
+      "hit_radius": 420,
+      "hit_arc_degrees": 280,
+      "lifetime": 22
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 140,
+        "size_range": [12, 28],
+        "color": [255, 120, 60],
+        "speed": 7.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 60
+    }
+  },
   "hostile_slash_cyan": {
     "id": "hostile_slash_cyan",
     "type": "slash",
