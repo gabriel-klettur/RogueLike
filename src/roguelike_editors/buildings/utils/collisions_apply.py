@@ -49,9 +49,20 @@ def apply_collision_for_building(
 
     if coll_entry and "collision" in coll_entry:
         src = [row[:] for row in coll_entry["collision"]]
-        # If collision is present, use it exactly as saved (respect explicit sizes);
-        # when empty or invalid, fall back to a standard 15x15 grid.
-        b.collision_map = src if src else [["." for _ in range(15)] for _ in range(15)]
+        if src:
+            try:
+                desired_rows = max(1, (int(b.image.get_height()) + TILE_SIZE - 1) // TILE_SIZE)
+                desired_cols = max(1, (int(b.image.get_width()) + TILE_SIZE - 1) // TILE_SIZE)
+                cur_rows = len(src)
+                cur_cols = len(src[0]) if cur_rows > 0 else 0
+                if cur_rows != desired_rows or cur_cols != desired_cols:
+                    b.collision_map = resample_collision_map(src, desired_rows, desired_cols)
+                else:
+                    b.collision_map = src
+            except Exception:
+                b.collision_map = src
+        else:
+            b.collision_map = [["." for _ in range(15)] for _ in range(15)]
     else:
         # Default policy: initialize a standard 15x15 empty grid when missing
         b.collision_map = [["." for _ in range(15)] for _ in range(15)]
@@ -62,7 +73,20 @@ def apply_collision_for_building(
             ov = entry.get("collision_override")
             if ov and "collision" in ov:
                 src = [row[:] for row in ov["collision"]]
-                b.collision_map = src if src else b.collision_map
+                if src:
+                    try:
+                        desired_rows = max(1, (int(b.image.get_height()) + TILE_SIZE - 1) // TILE_SIZE)
+                        desired_cols = max(1, (int(b.image.get_width()) + TILE_SIZE - 1) // TILE_SIZE)
+                        cur_rows = len(src)
+                        cur_cols = len(src[0]) if cur_rows > 0 else 0
+                        if cur_rows != desired_rows or cur_cols != desired_cols:
+                            b.collision_map = resample_collision_map(src, desired_rows, desired_cols)
+                        else:
+                            b.collision_map = src
+                    except Exception:
+                        b.collision_map = src
+                else:
+                    b.collision_map = b.collision_map
     except Exception:
         pass
 

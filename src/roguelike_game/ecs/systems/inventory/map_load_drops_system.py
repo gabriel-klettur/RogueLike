@@ -2,7 +2,7 @@ import os
 import json
 import jsonschema
 from pathlib import Path
-from jsonschema import Draft7Validator, RefResolver
+from jsonschema import Draft7Validator
 from roguelike_game.managers.map.item_drop_manager import ItemDropManager
 from roguelike_game.ecs.components.physical_item_component import PhysicalItemComponent
 from roguelike_game.ecs.components.collectible_component import CollectibleComponent
@@ -32,8 +32,12 @@ class MapLoadDropsSystem:
         with open(schema_path, 'r', encoding='utf-8') as sf:
             drop_schema = json.load(sf)
         schema_uri = Path(schema_path).resolve().as_uri()
-        resolver = RefResolver(base_uri=schema_uri, referrer=drop_schema)
-        validator = Draft7Validator(drop_schema, resolver=resolver)
+        try:
+            from referencing import Registry, Resource  # type: ignore
+            registry = Registry().with_resources({schema_uri: Resource.from_contents(drop_schema)})
+            validator = Draft7Validator(drop_schema, registry=registry)
+        except Exception:
+            validator = Draft7Validator(drop_schema)
         with open(path, 'r', encoding='utf-8') as df:
             drops_raw = json.load(df)
         # Compatibilidad con formato legado con clave 'map'

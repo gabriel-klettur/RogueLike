@@ -23,6 +23,7 @@ class SpawnerVisualSync:
         self._dup_warned: Set[Tuple[int, int]] = set()
         self._visual_enabled_last: Dict[int, bool] = {}
         self._log_interval_frames: int = 30
+        self._missing_warned: Set[Tuple[int, int]] = set()
 
     # ---------------------- Visual helpers ----------------------
     @staticmethod
@@ -123,7 +124,10 @@ class SpawnerVisualSync:
         except Exception:
             editor_active = False
 
-        if editor_active:
+        # Only enable multi-visual preview when both the editor is active and DEBUG_SPAWNER is on
+        editor_preview = bool(editor_active and getattr(config, 'DEBUG_SPAWNER', False))
+
+        if editor_preview:
             try:
                 for ob in getattr(world, 'buildings', []) or []:
                     try:
@@ -282,6 +286,14 @@ class SpawnerVisualSync:
                         pass
                     if getattr(config, 'DEBUG_SPAWNER', False):
                         logger.debug(f"[SpawnerRuntime] Linked spawner eid={eid} to building id={desired}")
+                except Exception:
+                    pass
+            else:
+                try:
+                    key = (eid, int(desired))
+                    if key not in self._missing_warned:
+                        logger.warning(f"[SpawnerRuntime] Missing Building id={desired} for spawner eid={eid}. It may be created by preflight or editor flow.")
+                        self._missing_warned.add(key)
                 except Exception:
                     pass
         try:

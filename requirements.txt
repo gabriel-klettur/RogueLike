@@ -13,3 +13,4 @@ jsonschema
 check-jsonschema
 alembic
 sqlalchemy
+referencing 

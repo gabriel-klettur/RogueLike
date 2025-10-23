@@ -241,6 +241,12 @@ def _reload_spawners(game) -> int:
                 world.remove_entity(eid)
             except Exception:
                 continue
+        # Preflight: ensure spawner visuals have backing building instances
+        try:
+            from roguelike_game.ecs.systems.spawner.placement.visuals import preflight_validate_spawner_visuals
+            _ = int(preflight_validate_spawner_visuals() or 0)
+        except Exception:
+            pass
         # Find placement system and reset its state
         created = 0
         try:
@@ -536,16 +542,15 @@ def reload_all_game_data_and_code(game, *, force: bool = False) -> Dict[str, int
     # Restore flags/state so overlays continue to render without requiring another F3
     try:
         import roguelike_engine.config.config as _cfg2
-        # If either gate was previously on, force DEBUG_SPAWNER True to ensure overlays draw
-        force_on = bool(prev_debug_spawner or prev_spawner_editor_active)
-        setattr(_cfg2, 'DEBUG_SPAWNER', bool(prev_debug_spawner or force_on))
+        # Restore DEBUG_SPAWNER exactly as it was before reload (do not elevate from editor flag)
+        setattr(_cfg2, 'DEBUG_SPAWNER', bool(prev_debug_spawner))
     except Exception:
         pass
     try:
         world2 = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
         if world2 is not None and hasattr(world2, 'state'):
-            # If either gate was previously on, keep editor_active True for robust gating
-            setattr(world2.state, 'spawner_editor_active', bool(prev_spawner_editor_active or prev_debug_spawner))
+            # Keep editor_active only if it was previously active or the editor UI remains visible
+            setattr(world2.state, 'spawner_editor_active', bool(prev_spawner_editor_active or prev_spawner_editor_visible))
             # Restore UI state snapshot
             try:
                 for k, v in (prev_spawner_ui_state or {}).items():
@@ -556,12 +561,12 @@ def reload_all_game_data_and_code(game, *, force: bool = False) -> Dict[str, int
         try:
             se2 = getattr(game, 'spawner_editor', None)
             if se2 is not None and hasattr(se2, 'model'):
-                setattr(se2.model, 'visible', bool(prev_spawner_editor_visible or prev_spawner_editor_active or prev_debug_spawner))
+                setattr(se2.model, 'visible', bool(prev_spawner_editor_visible or prev_spawner_editor_active))
         except Exception:
             pass
         # Force-enable DEBUG_SPAWNER on any overlay modules that kept old config alias
         try:
-            if prev_spawner_editor_active or prev_debug_spawner:
+            if prev_spawner_editor_active:
                 for _mn in (
                     'roguelike_game.ecs.systems.rendering.spawner.spawner_anchor_debug_system',
                     'roguelike_game.ecs.systems.rendering.spawner.spawner_info_overlay_system',

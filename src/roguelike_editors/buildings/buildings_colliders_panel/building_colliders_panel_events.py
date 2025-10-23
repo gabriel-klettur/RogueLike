@@ -30,6 +30,7 @@ except Exception:
 
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 from roguelike_editors.buildings.utils.collisions_apply import apply_collisions_to_loaded_buildings
+from roguelike_editors.buildings.utils.asset_paths import normalize_asset_path
 
 logger = logging.getLogger(__name__)
 
@@ -46,142 +47,147 @@ class BuildingCollidersPanelEventHandler:
         mx, my = pygame.mouse.get_pos()
         world_x = mx / camera.zoom + camera.offset_x
         world_y = my / camera.zoom + camera.offset_y
-        for b in reversed(buildings):
-            x_b, y_b = b.x, b.y
-            w_img, h_img = b.image.get_size()
-            rect = pygame.Rect(x_b, y_b, w_img, h_img)
-            if rect.collidepoint(world_x, world_y):
-                # Asegurar que el edificio bajo cursor sea el activo para pintar
-                try:
-                    active = getattr(self.editor_state, 'active_building', None)
-                except Exception:
-                    active = None
-                if active is None or active is not b:
+
+        # Usar exclusivamente el edificio seleccionado/activo (no el hover bajo el cursor)
+        try:
+            b = getattr(self.model, 'active_building', None) or getattr(self.editor_state, 'active_building', None)
+        except Exception:
+            b = None
+        if b is None:
+            return False
+
+        x_b, y_b = b.x, b.y
+        w_img, h_img = b.image.get_size()
+        rect = pygame.Rect(x_b, y_b, w_img, h_img)
+        if not rect.collidepoint(world_x, world_y):
+            return False
+
+        # Asegurar grilla por defecto 15x15 si no existe o es 1x1/invalid
+        try:
+            cmap = getattr(b, 'collision_map', None)
+            need_init = False
+            if not cmap or not isinstance(cmap, list) or not cmap or not isinstance(cmap[0], list):
+                need_init = True
+            else:
+                r0 = len(cmap)
+                c0 = len(cmap[0]) if r0 > 0 else 0
+                if r0 <= 1 or c0 <= 1:
+                    need_init = True
+            if need_init:
+                b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+        except Exception:
+            try:
+                b.collision_map = [["." for _ in range(15)] for _ in range(15)]
+            except Exception:
+                pass
+
+        # Calcular índice de celda proporcional a imagen y grilla actual
+        try:
+            rows = len(b.collision_map)
+            cols = len(b.collision_map[0]) if rows > 0 else 0
+            if rows > 0 and cols > 0 and w_img > 0 and h_img > 0:
+                cw = max(1.0, w_img / float(cols))
+                ch = max(1.0, h_img / float(rows))
+                col = int((world_x - x_b) / cw)
+                row = int((world_y - y_b) / ch)
+            else:
+                col = int((world_x - x_b) // TILE_SIZE)
+                row = int((world_y - y_b) // TILE_SIZE)
+        except Exception:
+            col = int((world_x - x_b) // TILE_SIZE)
+            row = int((world_y - y_b) // TILE_SIZE)
+
+        if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
+            # Pinta en el edificio seleccionado/activo
+            try:
+                prev = b.collision_map[row][col]
+            except Exception:
+                prev = None
+            b.collision_map[row][col] = self.model.choice
+
+            # Aggregate stroke stats
+            try:
+                if not getattr(self.editor_state, '_colliders_stroke_started', False):
+                    self.editor_state._colliders_stroke_started = True
+                    self.editor_state._colliders_stroke_cells = 0
+                    self.editor_state._colliders_stroke_buildings = set()
+                    self.editor_state._colliders_stroke_scope = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
+                self.editor_state._colliders_stroke_cells += 1
+                bid = getattr(b, 'id', None)
+                if bid is not None:
+                    self.editor_state._colliders_stroke_buildings.add(bid)
+            except Exception:
+                pass
+
+            # Tutorial pulses
+            try:
+                setattr(self.editor_state, 'tutorial_colliders_painted_pulse', True)
+                setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', True)
+            except Exception:
+                pass
+
+            # Invalidate caches
+            try:
+                if hasattr(b, 'model'):
+                    b.model.invalidate_collision_caches()
+            except Exception:
+                pass
+            try:
+                setattr(self.editor_state, 'colliders_dirty', True)
+            except Exception:
+                pass
+
+            # Propagación CG desde el edificio activo seleccionado
+            scope_b = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
+            if scope_b == 'CG':
+                rows_ref = len(b.collision_map)
+                cols_ref = len(b.collision_map[0]) if rows_ref > 0 else 0
+                img_key_b = normalize_asset_path(getattr(b, 'image_path', None))
+                for other in buildings:
+                    if other is b:
+                        continue
+                    other_key = normalize_asset_path(getattr(other, 'image_path', None))
+                    if not img_key_b or other_key != img_key_b:
+                        continue
+                    # No sobrescribir instancias marcadas como CU
+                    if getattr(other, 'collider_scope', 'CG') == 'CU':
+                        continue
+                    # Mapear índice (row,col) proporcionalmente si tamaños difieren
                     try:
-                        self.editor_state.active_building = b
-                        logger.info("[Colliders] Seleccionado edificio ID %s para pintar", getattr(b, 'id', None))
+                        rows2 = len(other.collision_map)
+                        cols2 = len(other.collision_map[0]) if rows2 > 0 else 0
+                        if rows2 <= 0 or cols2 <= 0:
+                            continue
+                        r2 = int(row * rows2 / max(1, rows_ref))
+                        c2 = int(col * cols2 / max(1, cols_ref))
+                        if r2 >= rows2: r2 = rows2 - 1
+                        if c2 >= cols2: c2 = cols2 - 1
+                        other.collision_map[r2][c2] = self.model.choice
+                        # Contabilizar buildings afectados
+                        try:
+                            if not getattr(self.editor_state, '_colliders_stroke_started', False):
+                                self.editor_state._colliders_stroke_started = True
+                                self.editor_state._colliders_stroke_cells = 0
+                                self.editor_state._colliders_stroke_buildings = set()
+                                self.editor_state._colliders_stroke_scope = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
+                            obid = getattr(other, 'id', None)
+                            if obid is not None:
+                                self.editor_state._colliders_stroke_buildings.add(obid)
+                        except Exception:
+                            pass
+                        try:
+                            if hasattr(other, 'model'):
+                                other.model.invalidate_collision_caches()
+                        except Exception:
+                            pass
                     except Exception:
-                        pass
-                self.model.active_building = b
-                # Asegurar grilla por defecto 15x15 si no existe o es 1x1/invalid
-                try:
-                    cmap = getattr(b, 'collision_map', None)
-                    need_init = False
-                    if not cmap or not isinstance(cmap, list) or not cmap or not isinstance(cmap[0], list):
-                        need_init = True
-                    else:
-                        r0 = len(cmap)
-                        c0 = len(cmap[0]) if r0 > 0 else 0
-                        if r0 <= 1 or c0 <= 1:
-                            need_init = True
-                    if need_init:
-                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
-                except Exception:
-                    try:
-                        b.collision_map = [["." for _ in range(15)] for _ in range(15)]
-                    except Exception:
-                        pass
-                # Calcular índice de celda proporcional a imagen y grilla actual
-                try:
-                    rows = len(b.collision_map)
-                    cols = len(b.collision_map[0]) if rows > 0 else 0
-                    if rows > 0 and cols > 0 and w_img > 0 and h_img > 0:
-                        cw = max(1.0, w_img / float(cols))
-                        ch = max(1.0, h_img / float(rows))
-                        col = int((world_x - x_b) / cw)
-                        row = int((world_y - y_b) / ch)
-                    else:
-                        col = int((world_x - x_b) // TILE_SIZE)
-                        row = int((world_y - y_b) // TILE_SIZE)
-                except Exception:
-                    col = int((world_x - x_b) // TILE_SIZE)
-                    row = int((world_y - y_b) // TILE_SIZE)
-                if 0 <= row < len(b.collision_map) and 0 <= col < len(b.collision_map[0]):
-                    # Pinta en el edificio activo
-                    try:
-                        prev = b.collision_map[row][col]
-                    except Exception:
-                        prev = None
-                    b.collision_map[row][col] = self.model.choice
-                    # Aggregate stroke stats instead of per-cell INFO logs
-                    try:
-                        if not getattr(self.editor_state, '_colliders_stroke_started', False):
-                            self.editor_state._colliders_stroke_started = True
-                            self.editor_state._colliders_stroke_cells = 0
-                            self.editor_state._colliders_stroke_buildings = set()
-                            self.editor_state._colliders_stroke_scope = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
-                        self.editor_state._colliders_stroke_cells += 1
-                        bid = getattr(b, 'id', None)
-                        if bid is not None:
-                            self.editor_state._colliders_stroke_buildings.add(bid)
-                    except Exception:
-                        pass
-                    # Tutorial: marcar pulso de pintado
-                    try:
-                        setattr(self.editor_state, 'tutorial_colliders_painted_pulse', True)
-                        setattr(self.editor_state, 'tutorial_colliders_painted_on_selected_pulse', True)
-                    except Exception:
-                        pass
-                    # Invalida caches de colisión del edificio editado (en el modelo)
-                    try:
-                        if hasattr(b, 'model'):
-                            b.model.invalidate_collision_caches()
-                    except Exception:
-                        pass
-                    try:
-                        setattr(self.editor_state, 'colliders_dirty', True)
-                    except Exception:
-                        pass
-                    # Según alcance seleccionado en la UI (editor_state), propagar a todos los que comparten image_path
-                    scope_b = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
-                    if scope_b == 'CG':
-                        rows_ref = len(b.collision_map)
-                        cols_ref = len(b.collision_map[0]) if rows_ref > 0 else 0
-                        for other in buildings:
-                            if other is b:
-                                continue
-                            if getattr(other, 'image_path', None) != getattr(b, 'image_path', None):
-                                continue
-                            # No sobrescribir instancias marcadas como CU
-                            if getattr(other, 'collider_scope', 'CG') == 'CU':
-                                continue
-                            # Mapear índice (row,col) proporcionalmente si tamaños difieren
-                            try:
-                                rows2 = len(other.collision_map)
-                                cols2 = len(other.collision_map[0]) if rows2 > 0 else 0
-                                if rows2 <= 0 or cols2 <= 0:
-                                    continue
-                                r2 = int(row * rows2 / max(1, rows_ref))
-                                c2 = int(col * cols2 / max(1, cols_ref))
-                                if r2 >= rows2: r2 = rows2 - 1
-                                if c2 >= cols2: c2 = cols2 - 1
-                                other.collision_map[r2][c2] = self.model.choice
-                                # Do not spam per-cell propagate logs; count affected buildings only
-                                try:
-                                    if not getattr(self.editor_state, '_colliders_stroke_started', False):
-                                        self.editor_state._colliders_stroke_started = True
-                                        self.editor_state._colliders_stroke_cells = 0
-                                        self.editor_state._colliders_stroke_buildings = set()
-                                        self.editor_state._colliders_stroke_scope = getattr(self.editor_state, 'collider_scope', getattr(b, 'collider_scope', 'CG'))
-                                    obid = getattr(other, 'id', None)
-                                    if obid is not None:
-                                        self.editor_state._colliders_stroke_buildings.add(obid)
-                                except Exception:
-                                    pass
-                                try:
-                                    if hasattr(other, 'model'):
-                                        other.model.invalidate_collision_caches()
-                                except Exception:
-                                    pass
-                            except Exception:
-                                # Si algún edificio no tiene mapa válido, lo omitimos
-                                continue
-                return True
+                        continue
+            return True
         return False
 
     def _save_collisions(self, buildings, force: bool = False):
         # Persistir ahora en archivos divididos.
-        active = getattr(self.model, 'active_building', None)
+        active = getattr(self.model, 'active_building', None) or getattr(self.editor_state, 'active_building', None)
         eff_scope = getattr(self.editor_state, 'collider_scope', 'CG')
         # Single concise summary for the stroke
         try:
@@ -211,8 +217,11 @@ class BuildingCollidersPanelEventHandler:
         updated_by_inst = []
 
         # Guardar CG globales SOLO por image_path (no por instancia)
-        if force or eff_scope == 'CG':
-            target_img = getattr(active, 'image_path', None)
+        # Importante: nunca escribir CG si el alcance efectivo es 'CU',
+        # incluso si se llama con force=True desde el gestor de salida.
+        if eff_scope == 'CG':
+            raw_target_img = getattr(active, 'image_path', None)
+            target_img = normalize_asset_path(raw_target_img)
             if target_img and getattr(active, 'collision_map', None) is not None:
                 # Escribir a partir del edificio activo únicamente (fuente de verdad del CG)
                 key = target_img
@@ -234,9 +243,9 @@ class BuildingCollidersPanelEventHandler:
                         continue
                     if getattr(b, '_is_spawner_visual', False) or getattr(b, 'spawner_instance_id', None):
                         continue
-                    if target_img and getattr(b, 'image_path', None) != target_img:
+                    if target_img and normalize_asset_path(getattr(b, 'image_path', None)) != target_img:
                         continue
-                    key = getattr(b, 'image_path', '')
+                    key = normalize_asset_path(getattr(b, 'image_path', ''))
                     if not key:
                         continue
                     try:

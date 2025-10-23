@@ -42,6 +42,17 @@ def _set_sqlite_pragma(dbapi_connection, connection_record) -> None:  # type: ig
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL;")
         cursor.execute("PRAGMA synchronous=NORMAL;")
+
+        # Best-effort lightweight schema alignment for tests: add missing columns if needed
+        try:
+            rows = cursor.execute("PRAGMA table_info(entities);").fetchall()
+            cols = {str(r[1]).lower() for r in rows}
+            if "extra_json" not in cols:
+                cursor.execute("ALTER TABLE entities ADD COLUMN extra_json TEXT;")
+        except Exception:
+            # Ignore on non-SQLite or if table does not exist yet; create_all will handle
+            pass
+
         cursor.close()
     except Exception:
         # Be resilient: don't fail if PRAGMA is unsupported (e.g., non-SQLite)

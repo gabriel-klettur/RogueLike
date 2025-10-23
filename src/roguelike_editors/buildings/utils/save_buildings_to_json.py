@@ -284,6 +284,19 @@ def save_buildings_split(
             try:
                 if getattr(b, 'collider_scope', 'CG') == 'CU' and getattr(b, 'collision_map', None):
                     overrides['collider_scope'] = 'CU'
+                    cm = getattr(b, 'collision_map', None)
+                    try:
+                        height = len(cm) if isinstance(cm, list) else 0
+                        width = 0
+                        if isinstance(cm, list):
+                            width = max((len(r) for r in cm if isinstance(r, list)), default=0)
+                        overrides['collision_override'] = {
+                            'width': int(width),
+                            'height': int(height),
+                            'collision': cm,
+                        }
+                    except Exception:
+                        pass
             except Exception:
                 pass
 

@@ -50,6 +50,7 @@ class Entity(Base):
     speed: Mapped[float | None] = mapped_column(Float, nullable=True)
     ai_behavior: Mapped[str | None] = mapped_column(String, nullable=True)
     loot_table_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Flattened stats (hostiles/neutrals)
     faction: Mapped[str | None] = mapped_column(String, nullable=True)

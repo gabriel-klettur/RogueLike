@@ -415,3 +415,201 @@ def auto_repair_state_visuals(world, eid: int, cfg, inst: dict) -> None:
             persist_spawner_instance_visuals(str(inst.get('id')) if inst.get('id') is not None else None, vis, ensure_visible_in_game=True)
         except Exception:
             pass
+
+
+def preflight_validate_spawner_visuals() -> int:
+    """Batch-validate and repair spawner visuals across all instances on disk.
+
+    - Ensures that every visuals[*] mapping points to an existing building instance id.
+    - Creates missing building instances from template_id with `_is_spawner_visual: true`.
+    - Persists updated visuals maps back to spawners_instances.json.
+
+    Returns the number of spawner instances updated.
+    """
+    try:
+        # Load data sources
+        instances = load_instances() or []
+        b_arr = load_buildings_instances_json()
+        templates = load_buildings_templates_json()
+        tmap: Dict[int, dict] = {}
+        for t in templates:
+            try:
+                tmap[int(t.get('id'))] = t
+            except Exception:
+                continue
+        existing_ids = set()
+        max_id = 0
+        for e in b_arr:
+            try:
+                bid = int(e.get('id'))
+                existing_ids.add(bid)
+                if bid > max_id:
+                    max_id = bid
+            except Exception:
+                continue
+
+        total_updated = 0
+        for inst in instances:
+            try:
+                vis = inst.get('visuals') if isinstance(inst, dict) else None
+                if not isinstance(vis, dict) or not vis:
+                    continue
+                zone = str(inst.get('zone')) if inst.get('zone') is not None else 'lobby'
+                try:
+                    local_tile = inst.get('tile') or (0, 0)
+                    local_tile = (int(local_tile[0]), int(local_tile[1]))
+                except Exception:
+                    local_tile = (0, 0)
+                inst_updated = False
+                for key, val in list(vis.items()):
+                    cur_iid = None
+                    tpl_id = None
+                    visuals_scale: Optional[Tuple[int, int]] = None
+                    if isinstance(val, dict):
+                        try:
+                            cur_iid = int(val.get('instance_id') or val.get('id') or val.get('building_instance_id'))
+                        except Exception:
+                            cur_iid = None
+                        try:
+                            tpl_id = int(val.get('template_id')) if val.get('template_id') is not None else None
+                        except Exception:
+                            tpl_id = None
+                        sc = val.get('scale') if isinstance(val, dict) else None
+                        if isinstance(sc, (list, tuple)) and len(sc) == 2:
+                            try:
+                                sw, sh = int(sc[0]), int(sc[1])
+                                if sw > 0 and sh > 0:
+                                    visuals_scale = (sw, sh)
+                            except Exception:
+                                visuals_scale = None
+                    else:
+                        try:
+                            cur_iid = int(val)
+                        except Exception:
+                            cur_iid = None
+
+                    # If we already have a valid building instance id, enforce schema tags and optional scale
+                    if cur_iid is not None and cur_iid in existing_ids:
+                        try:
+                            changed_bi = False
+                            for e in b_arr:
+                                try:
+                                    if int(e.get('id')) != int(cur_iid):
+                                        continue
+                                except Exception:
+                                    continue
+                                if not bool(e.get('spawner_visual', False)):
+                                    e['spawner_visual'] = True
+                                    changed_bi = True
+                                ov = e.get('overrides') or {}
+                                if not isinstance(ov, dict):
+                                    ov = {}
+                                if not bool(ov.get('_is_spawner_visual', False)):
+                                    ov['_is_spawner_visual'] = True
+                                    changed_bi = True
+                                sid = str(inst.get('id')) if inst.get('id') is not None else None
+                                if sid:
+                                    if str(e.get('spawn_id') or '') != sid:
+                                        e['spawn_id'] = sid
+                                        changed_bi = True
+                                    if str(e.get('spawner_instance_id') or '') != sid:
+                                        e['spawner_instance_id'] = sid
+                                        changed_bi = True
+                                    if str((ov or {}).get('spawner_instance_id') or '') != sid:
+                                        ov['spawner_instance_id'] = sid
+                                        changed_bi = True
+                                # Enforce scale when visuals include scale
+                                if visuals_scale is not None:
+                                    try:
+                                        cur_sc = ov.get('scale')
+                                        cur_sc_t = (int(cur_sc[0]), int(cur_sc[1])) if isinstance(cur_sc, (list, tuple)) and len(cur_sc) == 2 else None
+                                    except Exception:
+                                        cur_sc_t = None
+                                    if cur_sc_t != visuals_scale:
+                                        ov['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]
+                                        changed_bi = True
+                                e['overrides'] = ov
+                                break
+                            if changed_bi:
+                                write_buildings_instances_json(b_arr)
+                        except Exception:
+                            pass
+                        continue
+
+                    # Need template to create a new instance
+                    if tpl_id is None or tpl_id not in tmap:
+                        continue
+                    tpl_entry = tmap.get(tpl_id)
+                    img_path = get_template_image_path(templates, tpl_id)
+                    rel_x, rel_y, scale = calc_centered_rel(local_tile, tpl_entry, img_path)
+                    new_id = max_id + 1
+                    max_id = new_id
+                    entry = {
+                        'id': int(new_id),
+                        'template_id': int(tpl_id),
+                        'zone': zone,
+                        'rel_x': int(rel_x),
+                        'rel_y': int(rel_y),
+                        'spawner_visual': True,
+                        'overrides': {
+                            '_is_spawner_visual': True,
+                        },
+                        'spawn_id': str(inst.get('id')) if inst.get('id') is not None else None,
+                        'spawner_instance_id': str(inst.get('id')) if inst.get('id') is not None else None,
+                    }
+                    if visuals_scale is not None:
+                        try:
+                            entry['overrides']['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]  # type: ignore[index]
+                        except Exception:
+                            pass
+                    elif scale is not None:
+                        try:
+                            entry['overrides']['scale'] = [int(scale[0]), int(scale[1])]  # type: ignore[index]
+                        except Exception:
+                            pass
+                    try:
+                        if inst.get('id') is not None:
+                            entry['overrides']['spawner_instance_id'] = str(inst.get('id'))
+                    except Exception:
+                        pass
+                    b_arr.append(entry)
+                    try:
+                        write_buildings_instances_json(b_arr)
+                        existing_ids.add(int(new_id))
+                    except Exception:
+                        logger.warning("[SpawnerPlacementSystem][preflight] Could not persist buildings_instances for auto-repair")
+                    # Update visuals mapping on the spawner instance
+                    try:
+                        preserved_offset = None
+                        try:
+                            if isinstance(val, dict) and isinstance(val.get('offset'), (list, tuple)) and len(val.get('offset')) == 2:
+                                preserved_offset = [int(val['offset'][0]), int(val['offset'][1])]
+                        except Exception:
+                            preserved_offset = None
+                        entry_map = dict(val) if isinstance(val, dict) else {}
+                        entry_map['instance_id'] = int(new_id)
+                        entry_map['template_id'] = int(tpl_id)
+                        if preserved_offset is not None:
+                            entry_map['offset'] = preserved_offset  # type: ignore[index]
+                        vis[str(key)] = entry_map
+                        inst_updated = True
+                    except Exception:
+                        pass
+                if inst_updated:
+                    try:
+                        persist_spawner_instance_visuals(str(inst.get('id')) if inst.get('id') is not None else None, vis, ensure_visible_in_game=True)
+                        total_updated += 1
+                    except Exception:
+                        pass
+            except Exception:
+                # best-effort: continue with next instance
+                continue
+        try:
+            if total_updated:
+                logger.info("[SpawnerPlacementSystem][preflight] Updated %s spawner visuals", total_updated)
+        except Exception:
+            pass
+        return total_updated
+    except Exception:
+        logger.exception("[SpawnerPlacementSystem][preflight] Failed preflight spawner visuals", exc_info=False)
+        return 0
