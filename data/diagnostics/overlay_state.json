@@ -90,5 +90,8 @@
     "DropDragSystem",
     "DropHoverRenderSystem",
     "InventoryDragSystem"
-  ]
+  ],
+  "ui": {
+    "minimized": true
+  }
 }

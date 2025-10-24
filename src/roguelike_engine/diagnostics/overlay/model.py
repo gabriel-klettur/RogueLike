@@ -48,6 +48,19 @@ class DiagnosticsOverlayModel:
     collapsed_groups: Set[str] = field(default_factory=set)
     initially_collapsed: bool = True
 
+    # Minimize/restore UI state
+    is_minimized: bool = False
+    header_rect: Optional[object] = None
+    btn_min_rect: Optional[object] = None
+    btn_restore_rect: Optional[object] = None
+    minimized_height: int = 0
+
+    # Animation state
+    animating: bool = False
+    anim_mode: str = ""  # "minimize" or "restore"
+    anim_start_time: float = 0.0
+    anim_duration: float = 0.15
+
     # Safety/config limits
     # Máximo de líneas a renderizar en el panel para evitar superficies gigantes
     max_lines: int = 400
@@ -70,6 +83,9 @@ class DiagnosticsOverlayModel:
         self.line_keys.clear()
         self.line_levels.clear()
         self.value_colors.clear()
+        self.header_rect = None
+        self.btn_min_rect = None
+        self.btn_restore_rect = None
 
     def load_persisted_state(self) -> None:
         try:
@@ -78,13 +94,16 @@ class DiagnosticsOverlayModel:
                 self.collapsed_groups = set(cols)
                 # Disable auto-collapse if we have a persisted state
                 self.initially_collapsed = False
+            ui = persist.load_overlay_ui_state()
+            if isinstance(ui, dict):
+                self.is_minimized = bool(ui.get("minimized", False))
         except Exception:
             # Fail silently; diagnostics overlay should not crash the game
             pass
 
     def save_persisted_state(self) -> None:
         try:
-            persist.save_overlay_state(self.collapsed_groups)
+            persist.save_overlay_state(self.collapsed_groups, ui={"minimized": self.is_minimized})
         except Exception:
             # Fail silently to avoid impacting runtime
             pass

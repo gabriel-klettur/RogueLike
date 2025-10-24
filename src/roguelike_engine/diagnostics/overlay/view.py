@@ -20,6 +20,35 @@ class DiagnosticsOverlayView:
         font = self._get_font(model.font_name, model.font_size)
         return font.get_height() + model.padding_y * 2 + model.spacing
 
+    def rebuild_minimized(self, model: DiagnosticsOverlayModel, position: Tuple[int, int]) -> None:
+        font = self._get_font(model.font_name, model.font_size, bold=True)
+        title = "Diagnostics"
+        title_surf = font.render(title, True, model.text_color)
+        # Layout: [ title ][ spacer ][ restore button ]
+        btn_w = max(20, title_surf.get_height())
+        btn_h = max(20, title_surf.get_height())
+        padding = model.padding_x
+        w = max(120, title_surf.get_width() + padding * 3 + btn_w)
+        h = max(btn_h + model.padding_y * 2, self.line_height(model))
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        surf.fill(model.bg_color)
+        # Draw title
+        surf.blit(title_surf, (padding, (h - title_surf.get_height()) // 2))
+        # Draw restore button (▢)
+        btn_x = w - padding - btn_w
+        btn_y = (h - btn_h) // 2
+        btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        pygame.draw.rect(surf, (220, 220, 220), btn_rect, border_radius=4)
+        sym_font = self._get_font(model.font_name, max(12, min(18, model.font_size)), bold=True)
+        sym_surf = sym_font.render("▢", True, (30, 30, 30))
+        surf.blit(sym_surf, (btn_x + (btn_w - sym_surf.get_width()) // 2, btn_y + (btn_h - sym_surf.get_height()) // 2))
+        # Update model rects
+        model.panel_surf = surf
+        model.panel_rect = surf.get_rect(topleft=position)
+        model.header_rect = pygame.Rect(model.panel_rect.left, model.panel_rect.top, w, h)
+        model.btn_restore_rect = pygame.Rect(model.panel_rect.left + btn_rect.left, model.panel_rect.top + btn_rect.top, btn_w, btn_h)
+        model.minimized_height = h
+
     def rebuild_panel(
         self,
         model: DiagnosticsOverlayModel,

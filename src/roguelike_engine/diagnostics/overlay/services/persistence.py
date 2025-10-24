@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Dict
 import os
 import json
 import tempfile
@@ -41,11 +41,34 @@ def load_overlay_state(base_path: Optional[str] = None) -> List[str]:
     return []
 
 
-def save_overlay_state(collapsed_groups: Iterable[str], base_path: Optional[str] = None) -> None:
-    """Persist collapsed group ids to disk (sorted for stability)."""
+def load_overlay_ui_state(base_path: Optional[str] = None) -> Dict:
     try:
         fp = get_state_file_path(base_path)
-        data = {"collapsed_groups": sorted(list(collapsed_groups))}
+        if os.path.exists(fp):
+            with open(fp, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            ui = data.get("ui", {})
+            if isinstance(ui, dict):
+                return ui
+    except Exception:
+        pass
+    return {}
+
+
+def save_overlay_state(collapsed_groups: Iterable[str], base_path: Optional[str] = None, ui: Optional[Dict] = None) -> None:
+    try:
+        fp = get_state_file_path(base_path)
+        existing = {}
+        if os.path.exists(fp):
+            try:
+                with open(fp, "r", encoding="utf-8") as rf:
+                    existing = json.load(rf) or {}
+            except Exception:
+                existing = {}
+        data = dict(existing)
+        data["collapsed_groups"] = sorted(list(collapsed_groups))
+        if ui is not None and isinstance(ui, dict):
+            data["ui"] = dict(ui)
         # Atomic write: write to a temp file in the same directory, then replace.
         target_dir = os.path.dirname(fp)
         os.makedirs(target_dir, exist_ok=True)
