@@ -77,6 +77,31 @@ class DiagnosticsOverlayModel:
     lines_per_page: int = 0
     total_pages: int = 1
 
+    # Toolbar (bottom-right) state
+    toolbar_enabled: bool = True
+    toolbar_minimized: bool = False
+    toolbar_rect: Optional[object] = None
+    toolbar_header_rect: Optional[object] = None
+    toolbar_btn_min_rect: Optional[object] = None
+    # Map button key -> rect
+    toolbar_buttons: Dict[str, object] = field(default_factory=dict)
+    # Anchor bottom-right with margin
+    toolbar_anchor_bottom_right: bool = True
+    toolbar_margin: int = 8
+    # Per-system debug toggles (default all enabled)
+    toolbar_toggles: Dict[str, bool] = field(
+        default_factory=lambda: {
+            "spell_collision": True,
+            "npc_attack": True,
+            "hitbox": True,
+            "patrol": True,
+            "defend_area": True,
+            "telegraph": True,
+            "trail": True,
+            "building_collision": True,
+        }
+    )
+
     def reset_panel(self):
         self.panel_surf = None
         self.panel_rect = None
@@ -97,13 +122,30 @@ class DiagnosticsOverlayModel:
             ui = persist.load_overlay_ui_state()
             if isinstance(ui, dict):
                 self.is_minimized = bool(ui.get("minimized", False))
+                # Toolbar UI
+                tb = ui.get("toolbar", {}) if isinstance(ui.get("toolbar", {}), dict) else {}
+                self.toolbar_minimized = bool(tb.get("minimized", False))
+                tgl = tb.get("toggles", {}) if isinstance(tb.get("toggles", {}), dict) else {}
+                # Merge persisted toggles with defaults; unknown keys are ignored
+                for k, v in tgl.items():
+                    if k in self.toolbar_toggles and isinstance(v, bool):
+                        self.toolbar_toggles[k] = v
         except Exception:
             # Fail silently; diagnostics overlay should not crash the game
             pass
 
     def save_persisted_state(self) -> None:
         try:
-            persist.save_overlay_state(self.collapsed_groups, ui={"minimized": self.is_minimized})
+            persist.save_overlay_state(
+                self.collapsed_groups,
+                ui={
+                    "minimized": self.is_minimized,
+                    "toolbar": {
+                        "minimized": self.toolbar_minimized,
+                        "toggles": dict(self.toolbar_toggles),
+                    },
+                },
+            )
         except Exception:
             # Fail silently to avoid impacting runtime
             pass

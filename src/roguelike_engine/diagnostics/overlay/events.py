@@ -98,7 +98,7 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
             # Be conservative if any issue occurs
             pass
         return True
-    # Minimize/restore buttons
+    # Minimize/restore buttons (overlay panel)
     if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
         pos = getattr(event, 'pos', None)
         if pos and model.panel_rect and model.panel_rect.collidepoint(pos):
@@ -113,9 +113,8 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
                     model.anim_start_time = time.perf_counter()
                     model.reset_panel()
                     return True
-                # Consume other clicks on the pill
-                return True
             else:
+                # Minimize from expanded panel when clicking the minimize button
                 if getattr(model, 'btn_min_rect', None) and model.btn_min_rect.collidepoint(pos):
                     try:
                         model.minimized_height = max(1, int(getattr(model, 'minimized_height', 0) or view.line_height(model)))
@@ -125,6 +124,39 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
                     model.anim_mode = "minimize"
                     model.anim_start_time = time.perf_counter()
                     return True
+    # Toolbar interactions (bottom-right): minimize/restore and button toggles
+    if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+        pos = getattr(event, 'pos', None)
+        if pos and getattr(model, 'toolbar_enabled', True):
+            # Minimize/restore header button
+            try:
+                if getattr(model, 'toolbar_btn_min_rect', None) and model.toolbar_btn_min_rect.collidepoint(pos):
+                    model.toolbar_minimized = not bool(getattr(model, 'toolbar_minimized', False))
+                    try:
+                        model.save_persisted_state()
+                    except Exception:
+                        pass
+                    return True
+            except Exception:
+                pass
+            # Per-system toggle buttons
+            try:
+                buttons = getattr(model, 'toolbar_buttons', {}) or {}
+                for key, rect in list(buttons.items()):
+                    try:
+                        if rect and rect.collidepoint(pos):
+                            cur = bool(model.toolbar_toggles.get(key, True))
+                            model.toolbar_toggles[key] = not cur
+                            # Persist toggle state
+                            try:
+                                model.save_persisted_state()
+                            except Exception:
+                                pass
+                            return True
+                    except Exception:
+                        continue
+            except Exception:
+                pass
     # Click toggles collapse/expand per group (only when expanded)
     if et == pygame.MOUSEBUTTONDOWN and event.button == 1 and not getattr(model, 'is_minimized', False):
         lx, ly = event.pos

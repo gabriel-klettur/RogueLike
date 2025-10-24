@@ -4,7 +4,10 @@ import roguelike_engine.config.config as config
 
 
 def draw_debug_rect(screen, camera, rect, color=(255, 255, 255), width=1):
-    if not config.DEBUG:
+    # Respect global DEBUG and optional feature flag for building collision overlay
+    if not getattr(config, 'DEBUG', False):
+        return
+    if not getattr(config, 'DEBUG_BUILDING_COLLISION', True):
         return
     scaled_rect = pygame.Rect(camera.apply(rect.topleft), camera.scale(rect.size))
     pygame.draw.rect(screen, color, scaled_rect, width)

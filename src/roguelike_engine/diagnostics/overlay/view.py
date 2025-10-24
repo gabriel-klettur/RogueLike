@@ -139,3 +139,92 @@ class DiagnosticsOverlayView:
         model.panel_rect = surf.get_rect(topleft=position)
         model.label_w = used_label_w
         model.value_w = min(value_w, total_w - model.label_w - model.padding_x * 2 - 8)
+
+    def rebuild_toolbar(self, model: DiagnosticsOverlayModel) -> tuple[pygame.Surface, pygame.Rect]:
+        # Build a simple vertical toolbar with header and buttons, anchored bottom-right
+        font = self._get_font(model.font_name, max(12, model.font_size))
+        bold = self._get_font(model.font_name, max(12, model.font_size), bold=True)
+
+        # Content definition: list of (key, display_name)
+        items = [
+            ("spell_collision", "SpellCollision"),
+            ("npc_attack", "NpcAttack"),
+            ("hitbox", "Hitbox"),
+            ("patrol", "Patrol"),
+            ("defend_area", "DefendArea"),
+            ("telegraph", "Telegraph"),
+            ("trail", "Trail"),
+            ("building_collision", "BuildingCollision"),
+        ]
+
+        # Compute sizes
+        label = "Debug Tools"
+        title_surf = bold.render(label, True, model.text_color)
+        btn_h = max(22, font.get_height() + 8)
+        btn_w = 0
+        btn_g = 6
+        pad = 8
+        statestr = {True: "mostrando", False: "oculto"}
+        # Measure widest button
+        for key, name in items:
+            text = f"{name} - {statestr.get(bool(model.toolbar_toggles.get(key, True)), 'oculto')}"
+            tw, th = font.size(text)
+            btn_w = max(btn_w, tw + 16)
+        width = max(180, title_surf.get_width() + pad * 2, btn_w + pad * 2)
+        # Height depends on minimized
+        if model.toolbar_minimized:
+            height = title_surf.get_height() + pad * 2
+        else:
+            height = title_surf.get_height() + pad * 2 + btn_g
+            height += len(items) * (btn_h + btn_g)
+        surf = pygame.Surface((width, height), pygame.SRCALPHA)
+        surf.fill(model.bg_color)
+
+        # Position bottom-right
+        screen = pygame.display.get_surface()
+        left = model.toolbar_margin
+        top = model.toolbar_margin
+        if screen is not None and getattr(model, 'toolbar_anchor_bottom_right', True):
+            sw, sh = screen.get_size()
+            left = max(0, sw - width - model.toolbar_margin)
+            top = max(0, sh - height - model.toolbar_margin)
+
+        # Header and minimize button
+        surf.blit(title_surf, (pad, pad))
+        btn_size = max(18, title_surf.get_height())
+        min_rect = pygame.Rect(width - pad - btn_size, pad, btn_size, btn_size)
+        pygame.draw.rect(surf, (220, 220, 220), min_rect, border_radius=4)
+        sym = bold.render("–" if not model.toolbar_minimized else "+", True, (30, 30, 30))
+        surf.blit(sym, (min_rect.left + (btn_size - sym.get_width()) // 2, min_rect.top + (btn_size - sym.get_height()) // 2))
+
+        # Store rects on model
+        rect = pygame.Rect(left, top, width, height)
+        model.toolbar_rect = rect
+        model.toolbar_header_rect = pygame.Rect(rect.left, rect.top, width, title_surf.get_height() + pad * 2)
+        model.toolbar_btn_min_rect = pygame.Rect(rect.left + min_rect.left, rect.top + min_rect.top, btn_size, btn_size)
+        model.toolbar_buttons.clear()
+
+        # Buttons (only if expanded)
+        if not model.toolbar_minimized:
+            y = title_surf.get_height() + pad * 2 + btn_g
+            for key, name in items:
+                text = f"{name} - {statestr.get(bool(model.toolbar_toggles.get(key, True)), 'oculto')}"
+                bx = pad
+                by = y
+                bw = width - pad * 2
+                bh = btn_h
+                brect = pygame.Rect(bx, by, bw, bh)
+                # Visual
+                pygame.draw.rect(surf, (240, 240, 240), brect, border_radius=4)
+                if model.toolbar_toggles.get(key, True):
+                    pygame.draw.rect(surf, (60, 180, 75), brect, width=2, border_radius=4)
+                else:
+                    pygame.draw.rect(surf, (160, 160, 160), brect, width=2, border_radius=4)
+                ts = font.render(text, True, (30, 30, 30))
+                surf.blit(ts, (bx + 8, by + (bh - ts.get_height()) // 2))
+                # Save absolute rect (in screen coords)
+                abs_rect = pygame.Rect(rect.left + brect.left, rect.top + brect.top, bw, bh)
+                model.toolbar_buttons[key] = abs_rect
+                y += bh + btn_g
+
+        return surf, rect

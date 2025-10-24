@@ -78,7 +78,12 @@ class DiagnosticsOverlay:
         return self.model.panel_rect
 
     def hit_test(self, pos) -> bool:
-        return bool(self.model.panel_rect and self.model.panel_rect.collidepoint(pos))
+        try:
+            pr = getattr(self.model, 'panel_rect', None)
+            tr = getattr(self.model, 'toolbar_rect', None)
+            return bool((pr and pr.collidepoint(pos)) or (tr and tr.collidepoint(pos)))
+        except Exception:
+            return bool(self.model.panel_rect and self.model.panel_rect.collidepoint(pos))
 
     def handle_event(self, event) -> bool:
         return handle_overlay_event(self.model, self.view, event)
