@@ -16,6 +16,14 @@ class ParticlesPickerModel:
         self.columns: int = 8
         self.grid_origin: Tuple[int, int] = (16, 16)
         self.grid_rect: Optional[pygame.Rect] = None
+        # Grouping and hit testing
+        self.group_by_kind: bool = True
+        self.cell_rects: Dict[str, pygame.Rect] = {}
+        self.toggle_rect: Optional[pygame.Rect] = None
+        # Scrolling
+        self.scroll_y: int = 0
+        self.content_height: int = 0
+        self.viewport_height: int = 0
         # Hover/selection (future use)
         self.hovered_id: Optional[str] = None
         self.selected_id: Optional[str] = None
