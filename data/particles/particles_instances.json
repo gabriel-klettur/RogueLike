@@ -1419,26 +1419,5 @@
     "zone": "Forest",
     "rel_x": 1454,
     "rel_y": 412
-  },
-  {
-    "id": 216,
-    "preset_id": "darkball_trail",
-    "zone": "zone_150_50",
-    "rel_x": 441,
-    "rel_y": 164
-  },
-  {
-    "id": 217,
-    "preset_id": "smoke_emitter",
-    "zone": "zone_150_50",
-    "rel_x": 401,
-    "rel_y": 233
-  },
-  {
-    "id": 218,
-    "preset_id": "fireball_trail",
-    "zone": "zone_150_50",
-    "rel_x": 447,
-    "rel_y": 122
   }
 ]

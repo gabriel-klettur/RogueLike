@@ -9,7 +9,12 @@ class LightningComponent:
                  *, preset_id: str | None = None,
                  colors_palette: list[tuple[int, int, int]] | None = None,
                  particle_size: int = 2,
-                 particle_lifespan: int = 1):
+                 particle_lifespan: int = 1,
+                 particle_emit_rate: int = 2,
+                 particle_speed: float = 0.0,
+                 particle_dispersion: float = 0.0,
+                 size_min: int | None = None,
+                 size_max: int | None = None):
         # Modelo de los puntos del rayo
         self.model = LightningModel(start_pos, end_pos, segments=segments, offset=offset, lifetime=lifetime)
         # Parámetros opcionales para emisión de partículas
@@ -23,6 +28,27 @@ class LightningComponent:
             self.particle_lifespan = int(particle_lifespan)
         except Exception:
             self.particle_lifespan = 1
+        # Emisión desde preset
+        try:
+            self.particle_emit_rate = int(particle_emit_rate)
+        except Exception:
+            self.particle_emit_rate = 2
+        try:
+            self.particle_speed = float(particle_speed)
+        except Exception:
+            self.particle_speed = 0.0
+        try:
+            # Interpretado como desviación angular (radianes) para la dirección de la partícula
+            self.particle_dispersion = float(particle_dispersion)
+        except Exception:
+            self.particle_dispersion = 0.0
+        # Rango de tamaños opcional
+        try:
+            self.size_min = int(size_min) if size_min is not None else None
+            self.size_max = int(size_max) if size_max is not None else None
+        except Exception:
+            self.size_min = None
+            self.size_max = None
 
     def update(self):
         self.model.update()

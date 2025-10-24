@@ -3,6 +3,7 @@ from .base import BaseSpellResolver
 from .utils import mouse_world
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
 from roguelike_game.config.particles_config import get_preset
+import math
 
 
 class LightningResolver(BaseSpellResolver):
@@ -24,6 +25,13 @@ class LightningResolver(BaseSpellResolver):
         except Exception:
             preset_id = None
         palette = None
+        particle_size = 2
+        particle_lifespan = 1
+        emit_rate = 2
+        particle_speed = 0.0
+        dispersion_rad = 0.0
+        size_min = None
+        size_max = None
         try:
             if isinstance(preset_id, str):
                 p = get_preset(preset_id)
@@ -33,14 +41,52 @@ class LightningResolver(BaseSpellResolver):
                         cols = parts.get('colors')
                         if isinstance(cols, (list, tuple)) and cols:
                             palette = [tuple(int(c[i]) for i in range(3)) for c in cols if isinstance(c, (list, tuple)) and len(c) >= 3]
+                        er = parts.get('emit_rate')
+                        if isinstance(er, int) and er > 0:
+                            emit_rate = er
+                        spd = parts.get('speed')
+                        if isinstance(spd, (int, float)):
+                            particle_speed = float(spd)
+                        disp = parts.get('dispersion')
+                        if isinstance(disp, (int, float)):
+                            # Interpret dispersion from degrees to radians if large, otherwise keep as small rad
+                            dispersion_rad = math.radians(disp) if abs(disp) > 0.5 else float(disp)
+                        sz = parts.get('size')
+                        if isinstance(sz, (int, float)):
+                            particle_size = max(1, int(sz))
+                        else:
+                            sr = parts.get('size_range')
+                            if isinstance(sr, (list, tuple)) and len(sr) >= 2:
+                                try:
+                                    a, b = float(sr[0]), float(sr[1])
+                                    particle_size = max(1, int((a + b) / 2.0))
+                                    size_min = max(1, int(min(a, b)))
+                                    size_max = max(1, int(max(a, b)))
+                                except Exception:
+                                    pass
+                        life = parts.get('lifespan')
+                        if isinstance(life, (int, float)):
+                            particle_lifespan = max(1, int(life))
         except Exception:
             palette = None
+            particle_size = 2
+            particle_lifespan = 1
+            emit_rate = 2
+            particle_speed = 0.0
+            dispersion_rad = 0.0
+            size_min = None
+            size_max = None
         comp = LightningComponent(start, (wx, wy),
                                    cfg.get('segments', 10),
                                    cfg.get('offset', 0),
                                    cfg.get('lifetime', 0),
                                    preset_id=preset_id,
                                    colors_palette=palette,
-                                   particle_size=2,
-                                   particle_lifespan=1)
+                                   particle_size=particle_size,
+                                   particle_lifespan=particle_lifespan,
+                                   particle_emit_rate=emit_rate,
+                                   particle_speed=particle_speed,
+                                   particle_dispersion=dispersion_rad,
+                                   size_min=size_min,
+                                   size_max=size_max)
         world.components.setdefault('LightningComponent', {})[caster] = comp
