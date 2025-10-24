@@ -135,6 +135,19 @@ class FireballTrailEmitterSystem:
             except Exception:
                 pass
 
+            # Aplicar multiplicadores por escala visual del proyectil
+            try:
+                scale_mul = float(getattr(fcmp, 'vfx_scale_multiplier', 1.0))
+            except Exception:
+                scale_mul = 1.0
+            # Grosor: escalar el tamaño de partícula linealmente con la escala visual
+            if scale_mul and abs(scale_mul - 1.0) > 1e-3:
+                smin = max(1, int(round(size_range[0] * max(0.25, min(8.0, scale_mul)))))
+                smax = max(smin, int(round(size_range[1] * max(0.25, min(8.0, scale_mul)))))
+                size_range = (smin, smax)
+                # Cantidad: escalar emit_rate con un clamp conservador para evitar desbordes
+                emit_rate = int(max(1, min(64, round(emit_rate * max(0.5, min(6.0, scale_mul))))))
+
             colors = [(255, 200, 120), (255, 170, 60), (255, 240, 160)]
             try:
                 if isinstance(parts.get("color"), (list, tuple)) and len(parts.get("color")) >= 3:

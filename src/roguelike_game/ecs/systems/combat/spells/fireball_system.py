@@ -18,6 +18,8 @@ class FireballSystem:
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
+        # Cache de máscaras circulares por radio entero para pruebas rápidas de colisión máscara<->círculo
+        self._circle_masks: dict[int, pygame.mask.Mask] = {}
     
     def update(self, world, camera=None):
         # Actualizar cada fireball
@@ -36,6 +38,28 @@ class FireballSystem:
             pos.x += vel.vx
             pos.y += vel.vy
             comp.age += 1
+            # Radio efectivo de colisión (escala con meta)
+            try:
+                hit_radius = float(getattr(comp, 'hit_radius', 2.0))
+            except Exception:
+                hit_radius = 2.0
+            # Trayectoria del frame para evitar tunneling
+            prev_x = pos.x - vel.vx
+            prev_y = pos.y - vel.vy
+            dx = pos.x - prev_x
+            dy = pos.y - prev_y
+            dist = (dx*dx + dy*dy) ** 0.5
+            step = max(2.0, float(hit_radius) * 0.5)
+            samples = max(1, int(dist / step))
+            if samples <= 1:
+                sample_points = [(pos.x, pos.y)]
+            else:
+                sample_points = []
+                for i in range(samples + 1):
+                    t = i / samples
+                    sx = prev_x + dx * t
+                    sy = prev_y + dy * t
+                    sample_points.append((sx, sy))
             # Destruir si supera rango configurado
             cfg = SPELLS.get(getattr(comp, 'spell_key', ''), {})
             max_range = cfg.get('range', 0)
@@ -64,23 +88,7 @@ class FireballSystem:
             try:
                 # Evitar colisiones con edificios ocultos o que no sean visuals de spawner
                 hit_spawner_eid = None
-                # Compute previous position to sweep between frames (reduce tunneling)
-                prev_x = pos.x - vel.vx
-                prev_y = pos.y - vel.vy
-                dx = pos.x - prev_x
-                dy = pos.y - prev_y
-                dist = (dx*dx + dy*dy) ** 0.5
-                samples = max(1, int(dist / 2))  # ~2px step
-                # Generate sample points including end point
-                sample_points = []
-                if samples <= 1:
-                    sample_points = [(pos.x, pos.y)]
-                else:
-                    for i in range(samples + 1):
-                        t = i / samples
-                        sx = prev_x + dx * t
-                        sy = prev_y + dy * t
-                        sample_points.append((sx, sy))
+                # sample_points precomputados arriba
                 for b in getattr(world, 'buildings', []) or []:
                     try:
                         if getattr(b, 'runtime_hidden', False):
@@ -97,10 +105,21 @@ class FireballSystem:
                         if bmask is not None and getattr(bm, 'image', None) is not None:
                             iw, ih = bm.image.get_size()
                             hit = False
+                            # Preparar máscara circular
+                            r = max(1, int(round(hit_radius)))
+                            cmask = self._circle_masks.get(r)
+                            if cmask is None:
+                                surf = pygame.Surface((2*r+1, 2*r+1), pygame.SRCALPHA)
+                                pygame.draw.circle(surf, (255, 255, 255, 255), (r, r), r)
+                                cmask = pygame.mask.from_surface(surf)
+                                self._circle_masks[r] = cmask
                             for (sx, sy) in sample_points:
-                                lx = int(sx - b.x)
-                                ly = int(sy - b.y)
-                                if 0 <= lx < iw and 0 <= ly < ih and bmask.get_at((lx, ly)):
+                                lx = int(round(sx - b.x))
+                                ly = int(round(sy - b.y))
+                                # Offset del círculo respecto a la máscara del edificio
+                                offx = lx - r
+                                offy = ly - r
+                                if bmask.overlap(cmask, (offx, offy)) is not None:
                                     hit = True
                                     break
                             if not hit:
@@ -108,7 +127,13 @@ class FireballSystem:
                         else:
                             # Fallback: bounding rect + tiles
                             rect = getattr(b, 'rect', None) or b.collision_rect
-                            rect_hit = any(rect.collidepoint(sx, sy) for (sx, sy) in sample_points)
+                            # Aproximar círculo por un rectángulo envolvente y probar intersección
+                            rect_hit = False
+                            for (sx, sy) in sample_points:
+                                circle_rect = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                                if rect.colliderect(circle_rect):
+                                    rect_hit = True
+                                    break
                             if not rect_hit:
                                 continue
                             tiles = list(getattr(b, 'collision_tiles', []) or [])
@@ -116,7 +141,8 @@ class FireballSystem:
                                 matched = False
                                 for r in tiles:
                                     for (sx, sy) in sample_points:
-                                        if r.collidepoint(sx, sy):
+                                        circle_rect = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                                        if r.colliderect(circle_rect):
                                             matched = True
                                             break
                                     if matched:
@@ -161,21 +187,55 @@ class FireballSystem:
                 hit_shape = None
                 # Determinar si el target tiene al menos un MaskCollider
                 has_mask = any(hasattr(c, 'mask') for c in multi.colliders.values())
-                # 1) Intentar con máscaras (pixel-perfect) si existen
+                # 1) Intentar con máscaras (pixel-perfect) si existen (usar círculo y sweep por sample_points)
                 if has_mask:
                     for col in multi.colliders.values():
                         if hasattr(col, 'mask'):
                             bx = tpos.x + col.offset_x
                             by = tpos.y + col.offset_y
-                            lx = int(pos.x - bx)
-                            ly = int(pos.y - by)
-                            mw, mh = col.mask.get_size()
-                            if 0 <= lx < mw and 0 <= ly < mh and col.mask.get_at((lx, ly)):
-                                hit = True
-                                hit_pos = (float(pos.x), float(pos.y))
-                                hit_shape = 'mask'
+                            # Preparar máscara circular
+                            r = max(1, int(round(hit_radius)))
+                            cmask = self._circle_masks.get(r)
+                            if cmask is None:
+                                surf = pygame.Surface((2*r+1, 2*r+1), pygame.SRCALPHA)
+                                pygame.draw.circle(surf, (255, 255, 255, 255), (r, r), r)
+                                cmask = pygame.mask.from_surface(surf)
+                                self._circle_masks[r] = cmask
+                            # Probar a lo largo de la trayectoria
+                            for (sx, sy) in sample_points:
+                                lx = int(round(sx - bx))
+                                ly = int(round(sy - by))
+                                offx = lx - r
+                                offy = ly - r
+                                if col.mask.overlap(cmask, (offx, offy)) is not None:
+                                    hit = True
+                                    hit_pos = (float(sx), float(sy))
+                                    hit_shape = 'mask'
+                                    break
+                            if hit:
                                 break
-                # 2) Solo si NO hay máscaras, usar fallback a rectángulos
+                # 2) Si no hubo hit con máscaras, probar círculos (feet) si existen
+                if not hit:
+                    for col in multi.colliders.values():
+                        if hasattr(col, 'radius'):
+                            cx = float(tpos.x + getattr(col, 'offset_x', 0))
+                            cy = float(tpos.y + getattr(col, 'offset_y', 0))
+                            cr = float(getattr(col, 'radius', 0))
+                            if cr <= 0:
+                                continue
+                            # Probar a lo largo de la trayectoria
+                            for (sx, sy) in sample_points:
+                                dx2 = sx - cx
+                                dy2 = sy - cy
+                                # Colisión de dos círculos: distancia <= suma de radios
+                                if (dx2*dx2 + dy2*dy2) <= (hit_radius + cr) * (hit_radius + cr):
+                                    hit = True
+                                    hit_pos = (float(sx), float(sy))
+                                    hit_shape = 'circle'
+                                    break
+                            if hit:
+                                break
+                # 3) Solo si NO hay máscaras ni círculos o no hubo hit, usar fallback a rectángulos
                 if not hit and not has_mask:
                     for col in multi.colliders.values():
                         if hasattr(col, 'mask'):
@@ -186,10 +246,14 @@ class FireballSystem:
                             getattr(col, 'width', 0),
                             getattr(col, 'height', 0)
                         )
-                        if rect.collidepoint(pos.x, pos.y):
-                            hit = True
-                            hit_pos = (float(pos.x), float(pos.y))
-                            hit_shape = 'rect'
+                        for (sx, sy) in sample_points:
+                            circle_rect = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                            if rect.colliderect(circle_rect):
+                                hit = True
+                                hit_pos = (float(sx), float(sy))
+                                hit_shape = 'rect'
+                                break
+                        if hit:
                             break
 
                 if hit:
@@ -225,7 +289,12 @@ class FireballSystem:
                             x, y = hit_pos if hit_pos else (pos.x, pos.y)
                             peid = world.create_entity()
                             world.components.setdefault('Position', {})[peid] = Position(x, y)
-                            world.components.setdefault('ParticlePresetComponent', {})[peid] = ParticlePresetComponent(preset_id)
+                            # Escalar impacto según multiplicador del proyectil
+                            try:
+                                smul = float(getattr(comp, 'vfx_scale_multiplier', 1.0))
+                            except Exception:
+                                smul = 1.0
+                            world.components.setdefault('ParticlePresetComponent', {})[peid] = ParticlePresetComponent(preset_id, scale_multiplier=smul)
                             world.components.setdefault('ExplosionComponent', {})[peid] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
                     except Exception:
                         pass
@@ -302,11 +371,17 @@ class FireballSystem:
                     break
 
             # Colisión con tiles sólidos
-            px = int(round(pos.x))
-            py = int(round(pos.y))
-            point = pygame.Rect(px - 1, py - 1, 3, 3)
-            nearby = world.get_solid_tiles_for_rect(point)
-            if nearby and point.collidelist(nearby) != -1:
+            # Colisiones contra tiles a lo largo de la trayectoria
+            collided = False
+            for (sx, sy) in sample_points:
+                px = int(round(sx))
+                py = int(round(sy))
+                circle_rect = pygame.Rect(int(px - hit_radius), int(py - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                nearby = world.get_solid_tiles_for_rect(circle_rect)
+                if nearby and any(r.colliderect(circle_rect) for r in nearby):
+                    collided = True
+                    break
+            if collided:
                 # Spawn preset-based explosion at collision point (only if preset explicitly configured)
                 try:
                     preset_id = None
@@ -337,7 +412,12 @@ class FireballSystem:
                         x, y = float(px), float(py)
                         eid2 = world.create_entity()
                         world.components.setdefault('Position', {})[eid2] = Position(x, y)
-                        world.components.setdefault('ParticlePresetComponent', {})[eid2] = ParticlePresetComponent(preset_id)
+                        # Escalar impacto según multiplicador del proyectil
+                        try:
+                            smul = float(getattr(comp, 'vfx_scale_multiplier', 1.0))
+                        except Exception:
+                            smul = 1.0
+                        world.components.setdefault('ParticlePresetComponent', {})[eid2] = ParticlePresetComponent(preset_id, scale_multiplier=smul)
                         world.components.setdefault('ExplosionComponent', {})[eid2] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
                 except Exception:
                     pass

@@ -86,19 +86,25 @@ class ParticlePresetRenderSystem:
                 continue
             try:
                 sx, sy = camera.apply((pos.x, pos.y))
+                # Efecto de escala por instancia (impacto más grande/pequeño)
+                try:
+                    inst_mul = float(getattr(comp, 'scale_multiplier', 1.0))
+                except Exception:
+                    inst_mul = 1.0
+                eff_zoom = max(0.05, base_zoom * max(0.05, inst_mul))
                 # Offscreen culling BEFORE calling provider to skip unnecessary work
-                bw = int(self._cell_size * base_zoom)
-                bh = int(self._cell_size * base_zoom)
+                bw = int(self._cell_size * eff_zoom)
+                bh = int(self._cell_size * eff_zoom)
                 if (sx + bw // 2) < screen_rect.left or (sx - bw // 2) > screen_rect.right or (sy + bh // 2) < screen_rect.top or (sy - bh // 2) > screen_rect.bottom:
                     continue
                 base_size = (self._cell_size, self._cell_size)
                 surf = provider(base_size, dt_ms)
                 if surf is not None:
-                    if abs(base_zoom - 1.0) > 0.01:
-                        tw = max(1, int(surf.get_width() * base_zoom))
-                        th = max(1, int(surf.get_height() * base_zoom))
+                    if abs(eff_zoom - 1.0) > 0.01:
+                        tw = max(1, int(surf.get_width() * eff_zoom))
+                        th = max(1, int(surf.get_height() * eff_zoom))
                         try:
-                            if is_integer_zoom:
+                            if is_integer_zoom and abs(inst_mul - 1.0) < 0.01:
                                 scaled = pygame.transform.scale(surf, (tw, th))
                             else:
                                 scaled = pygame.transform.smoothscale(surf, (tw, th))

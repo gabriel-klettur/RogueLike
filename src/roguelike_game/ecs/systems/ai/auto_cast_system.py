@@ -88,7 +88,7 @@ class AutoCastSystem:
                 except Exception:
                     # En caso de error al calcular, no bloquear la lógica previa
                     pass
-                wants[eid] = WantsToCastSpell(caster=eid, spell=spell)
+                wants[eid] = WantsToCastSpell(caster=eid, spell=spell, meta=getattr(ac, 'meta', None))
                 ac.last_cast_ts = now
             except Exception:
                 logger.exception("[AutoCastSystem] Error processing eid=%s", eid)

@@ -184,13 +184,69 @@ class SpellCastingSystem:
                     world.components['Position'][fid] = Position(spawn_x, spawn_y)
                     speed = cfg.get('speed', 0)
                     world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
+                    # Damage base y overrides por meta
+                    base_damage = cfg.get('damage', 0)
+                    try:
+                        meta = getattr(intent, 'meta', None)
+                        if isinstance(meta, dict):
+                            if isinstance(meta.get('damage'), (int, float)):
+                                base_damage = float(meta.get('damage'))
+                            else:
+                                dmul = meta.get('damage_multiplier')
+                                if isinstance(dmul, (int, float)):
+                                    base_damage = float(base_damage) * float(dmul)
+                    except Exception:
+                        pass
+
+                    # vfx scale multiplier: mantener el impacto consistente con el tamaño del proyectil
+                    vfx_scale_mul = 1.0
+                    try:
+                        # Si meta.scale está definido, interpretarlo como escala absoluta del sprite;
+                        # convertirlo a multiplicador relativo respecto al scale de la spell
+                        meta = getattr(intent, 'meta', None)
+                        if isinstance(meta, dict):
+                            base_scale = float(cfg.get('scale', 1.0))
+                            if isinstance(meta.get('scale'), (int, float)):
+                                abs_scale = float(meta.get('scale'))
+                                vfx_scale_mul = (abs_scale / base_scale) if base_scale > 0 else 1.0
+                            else:
+                                mul = meta.get('scale_multiplier')
+                                if isinstance(mul, (int, float)):
+                                    vfx_scale_mul = float(mul)
+                    except Exception:
+                        vfx_scale_mul = 1.0
+
+                    # Radio base de colisión configurable por spell, escalado por multiplicador visual
+                    try:
+                        base_hit_radius = float(cfg.get('hit_radius', 2.0))
+                    except Exception:
+                        base_hit_radius = 2.0
+                    # Detectar si hubo override explícito de hit_radius en meta
+                    hit_radius_overridden = False
+                    try:
+                        meta = getattr(intent, 'meta', None)
+                        if isinstance(meta, dict):
+                            if isinstance(meta.get('hit_radius'), (int, float)):
+                                base_hit_radius = float(meta.get('hit_radius'))
+                                hit_radius_overridden = True
+                            else:
+                                hmul = meta.get('hit_radius_multiplier')
+                                if isinstance(hmul, (int, float)):
+                                    base_hit_radius = float(base_hit_radius) * float(hmul)
+                                    hit_radius_overridden = True
+                    except Exception:
+                        pass
+                    hit_radius = float(base_hit_radius) * float(vfx_scale_mul)
+
                     world.components['FireballComponent'][fid] = FireballComponent(
                         dx * speed, dy * speed,
-                        damage=cfg.get('damage', 0),
+                        damage=base_damage,
                         lifespan=cfg.get('lifespan', cfg.get('lifetime', 0)),
                         caster=eid,
                         spell_key=intent.spell,
-                        spawn_pos=(spawn_x, spawn_y)
+                        spawn_pos=(spawn_x, spawn_y),
+                        vfx_scale_multiplier=vfx_scale_mul,
+                        hit_radius=hit_radius
                     )
                     # Sprite/scale si está definido
                     sprite_path = cfg.get('sprite')
@@ -198,7 +254,31 @@ class SpellCastingSystem:
                         try:
                             img = pygame.image.load(sprite_path).convert_alpha()
                             world.components['Sprite'][fid] = Sprite(img)
-                            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+                            # Base scale from spell cfg (flattened from vfx.sprite.scale)
+                            scale_value = cfg.get('scale', 1.0)
+                            # Apply per-cast overrides from intent.meta (e.g., scale or scale_multiplier)
+                            try:
+                                meta = getattr(intent, 'meta', None)
+                                if isinstance(meta, dict):
+                                    if isinstance(meta.get('scale'), (int, float)):
+                                        scale_value = float(meta.get('scale'))
+                                    else:
+                                        mul = meta.get('scale_multiplier')
+                                        if isinstance(mul, (int, float)):
+                                            scale_value = float(scale_value) * float(mul)
+                            except Exception:
+                                pass
+                            world.components['Scale'][fid] = Scale(scale=scale_value)
+                            # Autoajustar hit_radius al tamaño visual si no hubo override explícito
+                            try:
+                                if not hit_radius_overridden and img is not None:
+                                    iw, ih = img.get_size()
+                                    # Aproximamos radio como ~45% del diámetro mayor escalado
+                                    visual_radius = 0.45 * float(max(iw, ih)) * float(scale_value)
+                                    fb = world.components['FireballComponent'][fid]
+                                    fb.hit_radius = max(fb.hit_radius, visual_radius)
+                            except Exception:
+                                pass
                         except Exception:
                             pass
                     # Consumir intención y saltar siguiente

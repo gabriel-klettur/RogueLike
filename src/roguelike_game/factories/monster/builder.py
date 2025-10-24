@@ -142,9 +142,11 @@ class MonsterBuilder:
             try:
                 spell = str(ac_cfg.get("spell") or "fireball")
                 period_s = float(ac_cfg.get("period_s", 2.0))
+                # Copiar claves extra como metadatos (e.g., scale, scale_multiplier)
+                meta = {k: v for k, v in ac_cfg.items() if k not in ("spell", "period_s")}
             except Exception:
-                spell, period_s = "fireball", 2.0
-            world.components.setdefault("AutoCastComponent", {})[eid] = AutoCastComponent(spell=spell, period_s=period_s)
+                spell, period_s, meta = "fireball", 2.0, {}
+            world.components.setdefault("AutoCastComponent", {})[eid] = AutoCastComponent(spell=spell, period_s=period_s, meta=meta)
 
         # FSM: PatrolRoute & NPCState
         patrol_cfg = cfg.get("patrol")
