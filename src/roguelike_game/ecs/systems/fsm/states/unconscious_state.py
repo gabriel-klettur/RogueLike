@@ -3,8 +3,7 @@ from roguelike_game.ecs.components.combat.death_timer import DeathTimer
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
 from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.config.players_config import PLAYER_STATS
-from roguelike_game.factories.monster.config import MONSTER_STATS, MONSTER_DEFAULTS
+from roguelike_game.ecs.utils.health_utils import resolve_death_duration
 
 import time
 import logging
@@ -21,24 +20,8 @@ class UnconsciousState(State):
         world = entity.world
         eid = entity.id
         logger.debug(f"[Unconscious.enter] eid={eid}, is_player={eid in world.components.get('PlayerTagComponent', {})}")
-        # Determinar duración del temporizador de inconsciencia/desaparición
-        duration = None
-        pt = world.components.get('PlayerTagComponent', {}).get(eid)
-        if pt:
-            cls_name = getattr(pt, 'class_name', None)
-            if cls_name and cls_name in PLAYER_STATS:
-                duration = PLAYER_STATS[cls_name].get('basic_death_timer_duration', 60.0)
-        else:
-            # Preferir el arquetipo (id de clase) si está disponible; si no, usar nombre de identidad
-            arche = world.components.get('MonsterArchetype', {}).get(eid)
-            monster_class = getattr(arche, 'type', None) if arche is not None else None
-            if not monster_class:
-                identity = world.components.get('Identity', {}).get(eid)
-                monster_class = getattr(identity, 'name', None) if identity else None
-            stats = MONSTER_STATS.get(monster_class, {}) if (monster_class in MONSTER_STATS) else {}
-            duration = stats.get('death_dissapear_time')
-            if duration is None:
-                duration = MONSTER_DEFAULTS.get('death_dissapear_time')
+        # Determinar duración del temporizador de inconsciencia/desaparición (helper unificado)
+        duration = resolve_death_duration(world, eid)
         logger.debug(f"[Unconscious.enter] eid={eid} death_timer_duration={duration}")
         world.components.setdefault('DeathTimer', {})[eid] = DeathTimer(time.time(), duration)
         # Limpiar flash

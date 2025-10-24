@@ -152,6 +152,8 @@ class DeathState(State):
                 if center_tx-1 <= tx <= center_tx+1 and center_ty-1 <= ty <= center_ty+1:
                     # Revivir: quitar grayscale y restaurar vida
                     comps['GrayscaleComponent'].pop(nid, None)
+                    # Limpiar DyingTag al revivir
+                    comps.get('DyingTag', {}).pop(nid, None)
                     hp = world.components.get('Health', {}).get(nid)
                     if hp:
                         hp.current_hp = hp.max_hp
