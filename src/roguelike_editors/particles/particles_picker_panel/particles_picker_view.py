@@ -91,3 +91,9 @@ class ParticlesPickerView:
                     pygame.draw.rect(screen, (255, 220, 0), rect, width=3, border_radius=6)
                 except Exception:
                     pass
+            # Always draw a yellow border for the selected cell (regardless of add-mode)
+            elif self.model.selected_id == pid:
+                try:
+                    pygame.draw.rect(screen, (255, 220, 0), rect, width=3, border_radius=6)
+                except Exception:
+                    pass

@@ -158,8 +158,24 @@ class ParticlesEditorController:
                 try:
                     sel_id = getattr(self.model, 'selected_instance_id', None)
                     self.particles_properties_controller.set_anchor_from_editor(self)
-                    self.particles_properties_controller.model.visible = sel_id is not None
-                    self.particles_properties_controller.show_for_id(sel_id)
+                    # Determine visibility: map selection or picker selection
+                    picker_sel = None
+                    try:
+                        picker_sel = getattr(getattr(self.particles_picker_controller, 'model', None), 'selected_id', None)
+                    except Exception:
+                        picker_sel = None
+                    vis = (sel_id is not None) or (isinstance(picker_sel, str))
+                    self.particles_properties_controller.model.visible = bool(vis)
+                    # Update map selection details only when present; otherwise clear
+                    if sel_id is not None:
+                        self.particles_properties_controller.show_for_id(sel_id)
+                    else:
+                        try:
+                            m = self.particles_properties_controller.model
+                            m.selected_id = None
+                            m.entry = None
+                        except Exception:
+                            pass
                     self.particles_properties_controller.draw(screen)
                 except Exception:
                     pass

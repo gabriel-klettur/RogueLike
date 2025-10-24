@@ -3,38 +3,38 @@
   "player": {
     "level": "global_map",
     "pos": [
-      132,
-      85
+      162,
+      58
     ]
   },
   "npcs": {
-    "20c3fae5-5849-42ca-8ca9-3f6c8de93218": {
+    "00c27096-a921-49fe-bb91-c05861ff732d": {
       "level": "global_map",
       "tile": [
-        201,
-        103
+        223,
+        80
       ],
-      "hp": 1400,
+      "hp": 2440,
       "dead": false,
-      "prototype": "final_boss_barbol_lvl2"
+      "prototype": "final_boss_barbol"
     }
   },
   "levels": {
     "global_map": {
       "player_pos": [
-        132,
-        85
+        162,
+        58
       ],
       "npc_states": {
-        "20c3fae5-5849-42ca-8ca9-3f6c8de93218": {
+        "00c27096-a921-49fe-bb91-c05861ff732d": {
           "level": "global_map",
           "tile": [
-            201,
-            103
+            223,
+            80
           ],
-          "hp": 1400,
+          "hp": 2440,
           "dead": false,
-          "prototype": "final_boss_barbol_lvl2"
+          "prototype": "final_boss_barbol"
         }
       }
     }
@@ -70,14 +70,24 @@
       "player_id": null,
       "capacity": 20,
       "slots": []
+    },
+    "107a82d8-1721-4bcb-8560-a62e8d148baa": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "00c27096-a921-49fe-bb91-c05861ff732d": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
     }
   },
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-24T16:09:57",
+    "last_played": "2025-10-24T20:32:01",
     "player": {
-      "xp": 40,
+      "xp": 20,
       "level": 0
     },
     "items_summary": {

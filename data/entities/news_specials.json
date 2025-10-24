@@ -88,7 +88,7 @@
         "default_name": "Final Boss Barbol II",
         "phase_index": 2,
         "next_phase": "final_boss_barbol_lvl3",
-        "auto_cast": { "spell": "fireball", "period_s": 2.0, "scale_multiplier": 5.0, "hit_radius": 10.0, "damage": 60 },
+        "auto_cast": { "spell": "fireball", "period_s": 2.0, "scale_multiplier": 2.5, "hit_radius": 6.0, "damage": 30 },
         "stats": {
           "hp": 3000,
           "speed": 1.6,
@@ -173,7 +173,7 @@
         "default_name": "Final Boss Barbol III",
         "phase_index": 3,
         "next_phase": null,
-        "auto_cast": { "spell": "fireball", "period_s": 2.0 },
+        "auto_cast": { "spell": "fireball", "period_s": 2.0, "scale_multiplier": 5.0, "hit_radius": 10.0, "damage": 60 },
         "stats": {
           "hp": 4000,
           "speed": 1.7,

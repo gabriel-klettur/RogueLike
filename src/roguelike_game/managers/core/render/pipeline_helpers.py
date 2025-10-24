@@ -64,6 +64,7 @@ def should_render_minimap(manager, state, menu) -> bool:
         and not getattr(state, "spells_editor_visible", False)
         and not getattr(state, "fsm_editor_visible", False)
         and not getattr(state, "class_selector_visible", False)
+        and not (hasattr(state, "particles_editor_state") and getattr(state.particles_editor_state, "visible", False))
         and not (menu and getattr(menu, "show_menu", False))
         and not spawner_editor_active
     )
