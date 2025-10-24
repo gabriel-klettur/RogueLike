@@ -17,37 +17,76 @@ class ParticlesPickerEventHandler:
         self.controller = controller
 
     def _id_at_pos(self, pos: tuple[int, int]) -> Optional[str]:
-        grid = self.model.grid_rect
-        if grid is None or not grid.collidepoint(pos):
+        """Hit-test using precomputed cell_rects for robust grouped/flat layouts."""
+        if not isinstance(self.model.cell_rects, dict) or not self.model.cell_rects:
             return None
-        x, y = pos
-        rel_x = x - grid.x
-        rel_y = y - grid.y
-        cell = self.model.cell_size
-        margin = self.model.cell_margin
-        cols = max(1, int(self.model.columns))
-        stride = cell + margin
-        col = rel_x // stride
-        row = rel_y // stride
-        # inside cell bounds?
-        cx = int(col) * stride
-        cy = int(row) * stride
-        if rel_x - cx >= cell or rel_y - cy >= cell:
-            return None  # over a margin slot
-        idx = int(row) * cols + int(col)
-        if idx < 0:
-            return None
-        keys = list(self.model.items.keys())
-        if idx >= len(keys):
-            return None
-        return keys[idx]
+        for pid, rect in self.model.cell_rects.items():
+            try:
+                if rect.collidepoint(pos):
+                    return str(pid)
+            except Exception:
+                continue
+        return None
+
+    def _toggle_hit(self, pos: tuple[int, int]) -> bool:
+        rect = getattr(self.model, 'toggle_rect', None)
+        try:
+            return rect is not None and rect.collidepoint(pos)
+        except Exception:
+            return False
 
     def handle(self, event: pygame.event.Event) -> bool:
+        # Scroll helpers
+        def _can_scroll_at(pos: tuple[int, int]) -> bool:
+            rect = getattr(self.model, 'grid_rect', None)
+            try:
+                return rect is not None and rect.collidepoint(pos)
+            except Exception:
+                return False
+
+        def _scroll_by(dy_px: int) -> None:
+            try:
+                sy = int(getattr(self.model, 'scroll_y', 0)) + int(dy_px)
+                max_scroll = max(0, int(getattr(self.model, 'content_height', 0)) - int(getattr(self.model, 'viewport_height', 0)))
+                if sy < 0:
+                    sy = 0
+                if sy > max_scroll:
+                    sy = max_scroll
+                self.model.scroll_y = int(sy)
+            except Exception:
+                pass
+
+        # Mouse wheel (new pygame event)
+        if event.type == pygame.MOUSEWHEEL:
+            # Positive y means wheel up (scroll content down -> decrease scroll_y)
+            step = 48
+            if _can_scroll_at(pygame.mouse.get_pos()):
+                _scroll_by(int(-event.y * step))
+                return True
+
+        # Legacy wheel buttons (4=up,5=down)
+        if event.type == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) in (4, 5):
+            step = 48
+            if _can_scroll_at(getattr(event, 'pos', pygame.mouse.get_pos())):
+                if event.button == 4:
+                    _scroll_by(-step)
+                else:
+                    _scroll_by(step)
+                return True
+
         if event.type == pygame.MOUSEMOTION:
             pid = self._id_at_pos(event.pos)
             self.model.hovered_id = pid
             return False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Grouping toggle button
+            if self._toggle_hit(event.pos):
+                try:
+                    self.model.group_by_kind = not bool(getattr(self.model, 'group_by_kind', False))
+                except Exception:
+                    self.model.group_by_kind = True
+                # No need to rebuild providers; layout will refresh on next draw
+                return True
             pid = self._id_at_pos(event.pos)
             if pid:
                 # Deletion flow when delete mode is active

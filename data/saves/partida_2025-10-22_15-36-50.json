@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      162,
-      58
+      161,
+      57
     ]
   },
   "npcs": {
     "00c27096-a921-49fe-bb91-c05861ff732d": {
       "level": "global_map",
       "tile": [
-        226,
-        81
+        238,
+        83
       ],
       "hp": 2440,
       "dead": false,
@@ -22,15 +22,15 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        162,
-        58
+        161,
+        57
       ],
       "npc_states": {
         "00c27096-a921-49fe-bb91-c05861ff732d": {
           "level": "global_map",
           "tile": [
-            226,
-            81
+            238,
+            83
           ],
           "hp": 2440,
           "dead": false,
@@ -85,7 +85,7 @@
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-24T20:34:38",
+    "last_played": "2025-10-24T20:56:58",
     "player": {
       "xp": 20,
       "level": 0
