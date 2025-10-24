@@ -9,7 +9,7 @@ class ParticlesPickerView:
 
     def __init__(self, model: ParticlesPickerModel, font: pygame.font.Font | None):
         self.model = model
-        self.font = font
+        self.font = None  # disable labels under cells
         self.title_font = font
 
     def draw(self, screen: pygame.Surface, dt_ms: int = 16) -> None:
@@ -87,6 +87,12 @@ class ParticlesPickerView:
                 except Exception:
                     pass
                 # Yellow border
+                try:
+                    pygame.draw.rect(screen, (255, 220, 0), rect, width=3, border_radius=6)
+                except Exception:
+                    pass
+            # Always draw a yellow border for the selected cell (regardless of add-mode)
+            elif self.model.selected_id == pid:
                 try:
                     pygame.draw.rect(screen, (255, 220, 0), rect, width=3, border_radius=6)
                 except Exception:

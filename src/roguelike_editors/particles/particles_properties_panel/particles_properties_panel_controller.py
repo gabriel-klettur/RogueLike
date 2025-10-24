@@ -48,46 +48,34 @@ class ParticlesPropertiesPanelController:
         self.model.visible = True
 
     def set_anchor_from_editor(self, editor_controller) -> None:
-        """Place the panel near the picker if visible, otherwise near the toolbar.
-        Fallback below the editor title.
+        """Anchor the panel to the top-right corner and sync picker selection info.
+
+        - Position: top-right of the screen with UI margin.
+        - Picker data: copy selected id/def from the picker model when available.
         """
-        x = 16
-        y = 80
-        # Prefer below the picker grid
+        # 1) Top-right anchor using the game's screen size
+        try:
+            game = getattr(editor_controller, "game", None)
+            screen = getattr(game, "screen", None)
+            if screen is not None:
+                w = int(getattr(self.model, "width", 260))
+                self.model.x = int(screen.get_width() - w - UI_MARGIN)
+                self.model.y = int(UI_MARGIN)
+        except Exception:
+            # Fallback: keep previous position or defaults
+            pass
+
+        # 2) Feed picker selection info into the model
         try:
             picker = getattr(editor_controller, "particles_picker_controller", None)
-            grid_rect = getattr(getattr(picker, "view", None), "model", None)
-            grid_rect = getattr(grid_rect, "grid_rect", None)
-            if grid_rect is not None:
-                x = int(grid_rect.left)
-                y = int(grid_rect.bottom + UI_MARGIN)
+            p_model = getattr(picker, "model", None)
+            pid = getattr(p_model, "selected_id", None)
+            items = getattr(p_model, "items", {}) if p_model else {}
+            self.model.picker_selected_id = pid if isinstance(pid, str) else None
+            self.model.picker_selected_def = dict(items.get(pid)) if isinstance(items.get(pid), dict) else None
         except Exception:
-            pass
-        # Else, place to the right of the Add/Remove panel
-        if x == 16 and y == 80:
-            try:
-                ar_view = getattr(editor_controller, "particles_add_remove_view", None)
-                if ar_view is not None:
-                    tb_view = getattr(editor_controller, "particles_toolbar_view", None)
-                    tb_widget = getattr(tb_view, "widget", None)
-                    if tb_widget is not None:
-                        panel_pos = tb_widget.panel.pos or (tb_widget.x, tb_widget.y)
-                        panel_w, _ = tb_widget.panel.surface.get_size()
-                        x = int(panel_pos[0] + panel_w + UI_MARGIN)
-                        y = int(panel_pos[1] + 64 + UI_MARGIN)
-            except Exception:
-                pass
-        # Fallback: below editor title
-        if x == 16 and y == 80:
-            try:
-                title_rect = getattr(getattr(editor_controller, "view", None), "title_rect", None)
-                if title_rect is not None:
-                    x = int(title_rect.left)
-                    y = int(title_rect.bottom + UI_MARGIN)
-            except Exception:
-                pass
-        self.model.x = x
-        self.model.y = y
+            self.model.picker_selected_id = None
+            self.model.picker_selected_def = None
 
     # ---- Wiring to editor ----
     def draw(self, screen: pygame.Surface) -> None:

@@ -1419,5 +1419,19 @@
     "zone": "Forest",
     "rel_x": 1454,
     "rel_y": 412
+  },
+  {
+    "id": 217,
+    "preset_id": "explosion_ice_large",
+    "zone": "zone_150_50",
+    "rel_x": 342,
+    "rel_y": 364
+  },
+  {
+    "id": 220,
+    "preset_id": "explosion_light_small",
+    "zone": "zone_150_50",
+    "rel_x": 336,
+    "rel_y": 311
   }
 ]

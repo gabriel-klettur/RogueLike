@@ -9,6 +9,9 @@ class ParticlesPropertiesPanelModel:
         self.visible: bool = False
         self.selected_id: int | None = None
         self.entry: dict | None = None
+        # Picker selection (preset) info
+        self.picker_selected_id: str | None = None
+        self.picker_selected_def: dict | None = None
         # Anchor position (screen coords)
         self.x: int = 0
         self.y: int = 0
