@@ -60,6 +60,8 @@
       "hit_arc_degrees": 180,
       "lifetime": 18
     },
+    "telegraph_color": [120, 230, 160],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -115,6 +117,8 @@
       "hit_arc_degrees": 130,
       "lifetime": 14
     },
+    "telegraph_color": [60, 60, 60],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -158,6 +162,8 @@
       "hit_arc_degrees": 130,
       "lifetime": 15
     },
+    "telegraph_color": [180, 100, 180],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -201,6 +207,8 @@
       "hit_arc_degrees": 160,
       "lifetime": 18
     },
+    "telegraph_color": [220, 120, 120],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -244,12 +252,15 @@
       "hit_arc_degrees": 280,
       "lifetime": 22
     },
+    "telegraph_color": [200, 100, 120],
+    "telegraph_alpha": 70,
+    "color": [220, 20, 60],
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
-        "count": 140,
-        "size_range": [12, 28],
-        "color": [255, 120, 60],
+        "count": 280,
+        "size_range": [20, 40],
+        "color": [220, 20, 60],
         "speed": 7.0
       }
     },
@@ -287,6 +298,8 @@
       "hit_arc_degrees": 120,
       "lifetime": 15
     },
+    "telegraph_color": [120, 240, 240],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -330,6 +343,8 @@
       "hit_arc_degrees": 125,
       "lifetime": 15
     },
+    "telegraph_color": [180, 180, 180],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {
@@ -817,6 +832,8 @@
       "hit_arc_degrees": 140,
       "lifetime": 16
     },
+    "telegraph_color": [120, 230, 160],
+    "telegraph_alpha": 80,
     "vfx": {
       "preset": "slash_emitter",
       "particles": {

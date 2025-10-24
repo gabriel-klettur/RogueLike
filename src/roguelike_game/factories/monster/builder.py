@@ -168,6 +168,13 @@ class MonsterBuilder:
                     attack_duration = cfg.get("damage_duration")
                     if attack_duration is not None:
                         fsm.context["attack_duration"] = float(attack_duration)
+                    # Inject configurable wind-up delay before attacking
+                    windup = cfg.get("attack_windup_s")
+                    if windup is not None:
+                        fsm.context["attack_windup_s"] = float(windup)
+                    else:
+                        # Default global wind-up for hostiles if not specified
+                        fsm.context.setdefault("attack_windup_s", 1.0)
                     world.components["NPCState"][eid] = NPCState(fsm, initial_name)
                     return eid
             except Exception:
@@ -187,6 +194,12 @@ class MonsterBuilder:
             attack_duration = cfg.get("damage_duration")
             if attack_duration is not None:
                 fsm.context["attack_duration"] = float(attack_duration)
+            # Inject configurable wind-up delay before attacking
+            windup = cfg.get("attack_windup_s")
+            if windup is not None:
+                fsm.context["attack_windup_s"] = float(windup)
+            else:
+                fsm.context.setdefault("attack_windup_s", 1.0)
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
             if explicit_null_patrol:
@@ -201,5 +214,11 @@ class MonsterBuilder:
             attack_duration = cfg.get("damage_duration")
             if attack_duration is not None:
                 fsm.context["attack_duration"] = float(attack_duration)
+            # Provide wind-up default or per-class override in fallback path as well
+            windup = cfg.get("attack_windup_s")
+            if windup is not None:
+                fsm.context["attack_windup_s"] = float(windup)
+            else:
+                fsm.context.setdefault("attack_windup_s", 1.0)
 
         return eid

@@ -47,7 +47,8 @@
           "spawn_count": 10,
           "spawn_margin": 0,
           "death_dissapear_time": 5.0,
-          "damage_stop_probability": 0.1
+          "damage_stop_probability": 0.1,
+          "attack_windup_s": 0.5
         },
         "fsm_set": "Monster_Default",
         "patrol": {
@@ -180,7 +181,8 @@
           "spawn_count": 10,
           "spawn_margin": 0,
           "death_dissapear_time": 2.5,
-          "damage_stop_probability": 0.25
+          "damage_stop_probability": 0.25,
+          "attack_windup_s": 0.0
         },
         "fsm_set": "Monster_Default",
         "patrol": {

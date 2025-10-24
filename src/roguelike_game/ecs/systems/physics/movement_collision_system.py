@@ -5,6 +5,7 @@ Checks collisions against solid tiles and buildings, resolving movement per axis
 """
 import pygame
 import math
+import time
 from typing import Dict, Optional, Tuple
 from roguelike_game.ecs.utils.collider_utils import (
     build_collider_rect,
@@ -202,6 +203,26 @@ class MovementCollisionSystem:
             pos   = pos_map[eid]
             vel   = vel_map[eid]
             multi = multi_map[eid]
+
+            # Robust movement lock: prevent final_boss_barbol from moving during wind-up and post-fire lock
+            try:
+                mt = comps.get('MonsterArchetype', {}).get(eid)
+                mtype = (getattr(mt, 'type', None) or '').lower() if mt else None
+                if isinstance(mtype, str) and mtype.startswith('final_boss_barbol'):
+                    npc_state = comps.get('NPCState', {}).get(eid)
+                    fsm = getattr(npc_state, 'fsm', None)
+                    ctx = getattr(fsm, 'context', {}) if fsm else {}
+                    now = time.time()
+                    start_t = float(ctx.get('attack_start') or 0.0)
+                    windup_s = float(ctx.get('attack_windup_s', 0.0))
+                    lock_until = float(ctx.get('lock_move_until', 0.0) or 0.0)
+                    in_windup = (windup_s > 0.0) and (now - start_t < windup_s)
+                    locked = in_windup or (now < lock_until)
+                    if locked:
+                        vel.vx = 0
+                        vel.vy = 0
+            except Exception:
+                pass
 
             # 2a) Obtener el collider de los pies; si no existe, saltar
             feet = multi.colliders.get('feet')
