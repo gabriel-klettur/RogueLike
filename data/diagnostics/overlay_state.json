@@ -92,6 +92,19 @@
     "InventoryDragSystem"
   ],
   "ui": {
-    "minimized": true
+    "minimized": false,
+    "toolbar": {
+      "minimized": false,
+      "toggles": {
+        "spell_collision": false,
+        "npc_attack": false,
+        "hitbox": false,
+        "patrol": false,
+        "defend_area": false,
+        "telegraph": false,
+        "trail": false,
+        "building_collision": false
+      }
+    }
   }
 }

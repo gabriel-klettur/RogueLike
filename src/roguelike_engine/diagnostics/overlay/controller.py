@@ -198,3 +198,13 @@ class DiagnosticsOverlayController:
             if not (map_manager and camera):
                 raise ValueError("Para dibujar bordes debe proporcionar map_manager y camera")
             self.draw_borders(screen, camera, map_manager)
+
+        # Render diagnostics toolbar (bottom-right)
+        try:
+            if getattr(self.model, 'toolbar_enabled', True):
+                tb_surf, tb_rect = self.view.rebuild_toolbar(self.model)
+                # The rebuild function positions rect in screen coords; just blit
+                screen.blit(tb_surf, (tb_rect.left, tb_rect.top))
+        except Exception:
+            # Do not disrupt main render on toolbar issues
+            pass

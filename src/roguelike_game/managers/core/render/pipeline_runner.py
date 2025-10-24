@@ -25,6 +25,15 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
 
     manager._last_state = state
 
+    # Sync Debug Tools -> building collision overlay flag
+    try:
+        import roguelike_engine.config.config as cfg
+        toggles = getattr(getattr(manager, 'diagnostics_overlay', None), 'model', None)
+        toggles = getattr(toggles, 'toolbar_toggles', {}) or {}
+        cfg.DEBUG_BUILDING_COLLISION = bool(toggles.get('building_collision', True))
+    except Exception:
+        pass
+
     def _step_init_and_cleaning():
         screen.fill((0, 0, 0))
         manager._dirty_rects = []

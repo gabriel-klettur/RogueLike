@@ -2187,7 +2187,7 @@
         "template_id": 158,
         "zone": "Forest",
         "rel_x": 688,
-        "rel_y": 395,
+        "rel_y": 391,
         "overrides": {
             "_is_spawner_visual": true,
             "scale": [
@@ -2203,8 +2203,8 @@
         "id": 379,
         "template_id": 157,
         "zone": "Forest",
-        "rel_x": 688,
-        "rel_y": 397,
+        "rel_x": 689,
+        "rel_y": 400,
         "overrides": {
             "_is_spawner_visual": true,
             "scale": [
@@ -2237,8 +2237,8 @@
         "id": 381,
         "template_id": 157,
         "zone": "Forest",
-        "rel_x": 688,
-        "rel_y": 397,
+        "rel_x": 689,
+        "rel_y": 400,
         "overrides": {
             "_is_spawner_visual": true,
             "scale": [
