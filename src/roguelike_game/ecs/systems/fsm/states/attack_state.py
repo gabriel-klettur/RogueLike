@@ -266,10 +266,14 @@ class AttackState(State):
                     mag = (dx*dx + dy*dy) ** 0.5
                     ndx, ndy = (dx / mag, dy / mag) if mag > 1e-6 else (1.0, 0.0)
                     # Color desde cfg.color (si no, fallback). alpha semitransparente
-                    col = cfg.get('color', None) if cfg else None
+                    col = cfg.get('telegraph_color', None) if cfg else None
+                    if not (isinstance(col, (list, tuple)) and len(col) >= 3):
+                        col = cfg.get('color', None) if cfg else None
                     if not (isinstance(col, (list, tuple)) and len(col) >= 3):
                         col = [255, 230, 150]
-                    rgba = (int(col[0]), int(col[1]), int(col[2]), 90)
+                    a = int(cfg.get('telegraph_alpha', 90)) if cfg else 90
+                    a = max(0, min(255, a))
+                    rgba = (int(col[0]), int(col[1]), int(col[2]), a)
                     # Offset visual coherente con el slash
                     offset = float(cfg.get('offset', 0.0)) if cfg else 0.0
                     # Progreso radial 0..1 del wind-up
@@ -388,10 +392,14 @@ class AttackState(State):
                     arc_rad = math.radians(arc_deg)
                     mag = (dx*dx + dy*dy) ** 0.5
                     ndx, ndy = (dx / mag, dy / mag) if mag > 1e-6 else (1.0, 0.0)
-                    col = cfg.get('color', None) if cfg else None
+                    col = cfg.get('telegraph_color', None) if cfg else None
+                    if not (isinstance(col, (list, tuple)) and len(col) >= 3):
+                        col = cfg.get('color', None) if cfg else None
                     if not (isinstance(col, (list, tuple)) and len(col) >= 3):
                         col = [255, 230, 150]
-                    rgba = (int(col[0]), int(col[1]), int(col[2]), 90)
+                    a = int(cfg.get('telegraph_alpha', 90)) if cfg else 90
+                    a = max(0, min(255, a))
+                    rgba = (int(col[0]), int(col[1]), int(col[2]), a)
                     offset = float(cfg.get('offset', 0.0)) if cfg else 0.0
                     try:
                         prog = max(0.0, min(1.0, (now - start_t) / max(1e-6, windup_s)))
