@@ -1,4 +1,5 @@
 import pygame
+import time
 from .model import DiagnosticsOverlayModel
 from .view import DiagnosticsOverlayView
 
@@ -62,6 +63,8 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
             return True
     # Scroll wheel moves panel content
     if et == pygame.MOUSEWHEEL:
+        if getattr(model, 'is_minimized', False):
+            return True
         # Ctrl + wheel => cambiar página (si paginación activa y el ratón está sobre el panel)
         mods = pygame.key.get_mods()
         if getattr(model, 'paging_enabled', False) and model.panel_rect and model.panel_rect.collidepoint(pygame.mouse.get_pos()) and (mods & pygame.KMOD_CTRL):
@@ -95,8 +98,35 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
             # Be conservative if any issue occurs
             pass
         return True
-    # Click toggles collapse/expand per group
-    if et == pygame.MOUSEBUTTONDOWN and event.button == 1:
+    # Minimize/restore buttons
+    if et == pygame.MOUSEBUTTONDOWN and getattr(event, 'button', None) == 1:
+        pos = getattr(event, 'pos', None)
+        if pos and model.panel_rect and model.panel_rect.collidepoint(pos):
+            if getattr(model, 'animating', False):
+                return True
+            if getattr(model, 'is_minimized', False):
+                # Entire pill (header_rect) or button restores
+                if (getattr(model, 'btn_restore_rect', None) and model.btn_restore_rect.collidepoint(pos)) or \
+                   (getattr(model, 'header_rect', None) and model.header_rect.collidepoint(pos)):
+                    model.animating = True
+                    model.anim_mode = "restore"
+                    model.anim_start_time = time.perf_counter()
+                    model.reset_panel()
+                    return True
+                # Consume other clicks on the pill
+                return True
+            else:
+                if getattr(model, 'btn_min_rect', None) and model.btn_min_rect.collidepoint(pos):
+                    try:
+                        model.minimized_height = max(1, int(getattr(model, 'minimized_height', 0) or view.line_height(model)))
+                    except Exception:
+                        pass
+                    model.animating = True
+                    model.anim_mode = "minimize"
+                    model.anim_start_time = time.perf_counter()
+                    return True
+    # Click toggles collapse/expand per group (only when expanded)
+    if et == pygame.MOUSEBUTTONDOWN and event.button == 1 and not getattr(model, 'is_minimized', False):
         lx, ly = event.pos
         if model.panel_rect and model.panel_rect.collidepoint((lx, ly)):
             local_y = ly - model.panel_rect.top + model.scroll_offset
@@ -119,7 +149,7 @@ def handle_event(model: DiagnosticsOverlayModel, view: DiagnosticsOverlayView, e
                         pass
                     return True
     # Navegación por teclas de paginación cuando el cursor está sobre el panel
-    if et == pygame.KEYDOWN and model.panel_rect and model.panel_rect.collidepoint(pygame.mouse.get_pos()):
+    if et == pygame.KEYDOWN and model.panel_rect and model.panel_rect.collidepoint(pygame.mouse.get_pos()) and not getattr(model, 'is_minimized', False):
         if getattr(model, 'paging_enabled', False):
             if event.key in (pygame.K_PAGEUP, pygame.K_UP):
                 model.page_index = max(0, model.page_index - 1)

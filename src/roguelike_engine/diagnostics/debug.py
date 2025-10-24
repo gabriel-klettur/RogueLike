@@ -60,6 +60,11 @@ class DiagnosticsOverlay:
             self.model.load_persisted_state()
         except Exception:
             pass
+        # Always start expanded on new runs, regardless of last persisted minimized state
+        try:
+            self.model.is_minimized = False
+        except Exception:
+            pass
         self.view = DiagnosticsOverlayView()
         self.controller = DiagnosticsOverlayController(self.model, self.view)
 
