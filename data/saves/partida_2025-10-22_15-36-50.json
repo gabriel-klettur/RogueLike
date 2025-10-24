@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      161,
-      57
+      160,
+      61
     ]
   },
   "npcs": {
     "00c27096-a921-49fe-bb91-c05861ff732d": {
       "level": "global_map",
       "tile": [
-        238,
-        83
+        264,
+        88
       ],
       "hp": 2440,
       "dead": false,
@@ -22,15 +22,15 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        161,
-        57
+        160,
+        61
       ],
       "npc_states": {
         "00c27096-a921-49fe-bb91-c05861ff732d": {
           "level": "global_map",
           "tile": [
-            238,
-            83
+            264,
+            88
           ],
           "hp": 2440,
           "dead": false,
@@ -80,14 +80,19 @@
       "player_id": null,
       "capacity": 20,
       "slots": []
+    },
+    "6bfdadf4-5cd0-481d-85c2-0ec46e08a10a": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
     }
   },
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-24T20:56:58",
+    "last_played": "2025-10-24T21:46:56",
     "player": {
-      "xp": 20,
+      "xp": 30,
       "level": 0
     },
     "items_summary": {

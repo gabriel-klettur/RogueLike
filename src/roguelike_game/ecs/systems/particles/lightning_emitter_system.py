@@ -21,10 +21,19 @@ class LightningEmitterSystem:
                 py = y + random.uniform(-2, 2)
                 pid = world.create_entity()
                 world.components.setdefault('Position', {})[pid] = Position(px, py)
-                # Particle is static, lives one frame
-                lifespan_frames = 1
-                color = (random.randint(80, 120), random.randint(180, 230), 255)
-                size = 2
+                # Particle parameters: prefer resolver-passed values
+                lifespan_frames = getattr(comp, 'particle_lifespan', 1) if hasattr(comp, 'particle_lifespan') else 1
+                size = getattr(comp, 'particle_size', 2) if hasattr(comp, 'particle_size') else 2
+                palette = getattr(comp, 'colors_palette', None) if hasattr(comp, 'colors_palette') else None
+                if isinstance(palette, (list, tuple)) and palette:
+                    try:
+                        color = random.choice(palette)
+                        # clamp to RGB
+                        color = tuple(int(max(0, min(255, c))) for c in color[:3])
+                    except Exception:
+                        color = (random.randint(80, 120), random.randint(180, 230), 255)
+                else:
+                    color = (random.randint(80, 120), random.randint(180, 230), 255)
                 world.components.setdefault('ParticleComponent', {})[pid] = ParticleComponent(
                     0, 0, color, size, lifespan_frames
                 )

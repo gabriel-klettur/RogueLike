@@ -158,8 +158,27 @@ def build_preview_for_definition(defn: Dict[str, Any]):
                 cnt = parts.get("count")
                 if isinstance(cnt, int) and cnt > 0:
                     emit_rate = max(1, min(8, cnt // 2))
+            # Optional parameters used by trail-like presets
+            spd = parts.get("speed")
+            speed = float(spd) if isinstance(spd, (int, float)) else 1.0
+            life = parts.get("lifespan")
+            lifespan = float(life) if isinstance(life, (int, float)) else 100.0
+            sr = parts.get("size_range") if isinstance(parts.get("size_range"), (list, tuple)) and len(parts.get("size_range")) >= 2 else None
+            # Map degrees-based dispersion (if provided) to a gaussian jitter sigma
+            disp = parts.get("dispersion")
+            dispersion = float(disp) * 0.025 if isinstance(disp, (int, float)) else 0.3
             warm_steps = min(24, 6 + emit_rate * 2)
-            return ParticlePreviewSmoke(color=color if color_explicit else (200, 200, 200), emit_rate=emit_rate, warm_start_steps=warm_steps)
+            palette = palette_colors if palette_colors else None
+            return ParticlePreviewSmoke(
+                color=color if color_explicit else (200, 200, 200),
+                emit_rate=emit_rate,
+                warm_start_steps=warm_steps,
+                palette=palette,
+                speed=speed,
+                lifespan=lifespan,
+                size_range=sr,
+                dispersion=dispersion,
+            )
         if kind in ("smoke",):
             cnt = parts.get("count") if isinstance(parts.get("count"), int) else 12
             cnt = max(1, min(40, cnt))

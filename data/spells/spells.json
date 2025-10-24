@@ -869,6 +869,9 @@
     "meta": {
       "segments": 12,
       "offset": 15
+    },
+    "vfx": {
+      "preset": "lightning_emitter"
     }
   },
   "arcane_flame": {

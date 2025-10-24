@@ -43,8 +43,35 @@ class ParticlePreviewSmoke:
     offscreen Surface with transparent background.
     """
 
-    def __init__(self, color=(200, 200, 200), emit_rate: int = 2, warm_start_steps: int = 10) -> None:
-        self.model = SmokeEmitterModel(0, 0, color=color, emit_rate=emit_rate)
+    def __init__(
+        self,
+        color=(200, 200, 200),
+        emit_rate: int = 2,
+        warm_start_steps: int = 10,
+        *,
+        palette: list[tuple[int, int, int]] | None = None,
+        speed: float = 1.0,
+        lifespan: int | float = 100.0,
+        size_range: tuple[int, int] | list[int] | None = None,
+        dispersion: float = 0.3,
+    ) -> None:
+        if isinstance(size_range, (list, tuple)) and len(size_range) >= 2:
+            smin = max(1, int(size_range[0]))
+            smax = max(smin, int(size_range[1]))
+            sr = (smin, smax)
+        else:
+            sr = (8, 16)
+        self.model = SmokeEmitterModel(
+            0,
+            0,
+            color=color,
+            emit_rate=emit_rate,
+            speed=float(speed),
+            lifespan=float(lifespan),
+            size_range=sr,
+            dispersion=float(dispersion),
+            colors_palette=palette,
+        )
         self._camera = _DummyCamera()
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None

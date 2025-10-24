@@ -22,6 +22,9 @@ from .particles_add_remove_panel.particles_add_remove_panel_controller import (
 from .particles_properties_panel.particles_properties_panel_controller import (
     ParticlesPropertiesPanelController,
 )
+from .particles_spells_list_panel.particles_spells_list_panel_controller import (
+    ParticlesSpellsListPanelController,
+)
 
 class ParticlesEditorController:
     """Minimal controller for Particles Editor."""
@@ -65,6 +68,12 @@ class ParticlesEditorController:
             self.particles_properties_controller.editor_controller = self
         except Exception:
             pass
+        # Spells-usage list panel MVC (shows spells referencing selected preset)
+        self.particles_spells_list_controller = ParticlesSpellsListPanelController(self.font)
+        try:
+            self.particles_spells_list_controller.editor_controller = self
+        except Exception:
+            pass
 
     def toggle_visible(self):
         self.model.visible = not bool(self.model.visible)
@@ -91,6 +100,12 @@ class ParticlesEditorController:
                 # Finalmente, properties panel (no interactivo por ahora)
                 if self.particles_properties_controller.handle_event(event):
                     return
+                # Spells usage panel (toggle expand/collapse)
+                try:
+                    if self.particles_spells_list_controller.handle_event(event):
+                        return
+                except Exception:
+                    pass
             else:
                 # AÚN ASÍ: permitir interacciones con el mapa (selección/mover) aunque el panel esté oculto
                 try:
@@ -177,6 +192,15 @@ class ParticlesEditorController:
                         except Exception:
                             pass
                     self.particles_properties_controller.draw(screen)
+                    # Spells-usage panel: visible only when a picker preset is selected
+                    try:
+                        self.particles_spells_list_controller.set_anchor_from_editor(self)
+                        self.particles_spells_list_controller.model.visible = bool(isinstance(picker_sel, str))
+                        if self.particles_spells_list_controller.model.visible:
+                            self.particles_spells_list_controller.update_usages()
+                            self.particles_spells_list_controller.render(screen)
+                    except Exception:
+                        pass
                 except Exception:
                     pass
             else:
