@@ -16,10 +16,22 @@ class HitboxDebugSystem:
         self.font_cache = {}
         # cache circle surfaces by radius to avoid per-frame draw
         self.circle_surfs = {}
+        # Reusable per-frame alpha overlay (screen-sized) to draw translucent shapes
+        self._overlay = None
+        self._overlay_size = (0, 0)
     
     def update(self, world, screen, camera):
         # view frustum culling
         view_rect = pygame.Rect(0, 0, camera.screen_width, camera.screen_height)
+        # Ensure/reuse a screen-sized alpha surface for translucent draws
+        sw, sh = screen.get_size()
+        if self._overlay is None or self._overlay_size != (sw, sh):
+            self._overlay = pygame.Surface((sw, sh), flags=pygame.SRCALPHA)
+            self._overlay_size = (sw, sh)
+        else:
+            # Clear overlay (alpha=0)
+            self._overlay.fill((0, 0, 0, 0))
+        overlay = self._overlay
         # Siempre dibujar hitbox shapes cada frame en la superficie dada
         pos_store = world.components.get('Position', {})
         hb_store = world.components.get('HitboxComponent', {})
@@ -55,12 +67,10 @@ class HitboxDebugSystem:
                 pts_world.append((px, py))
             # Convert to screen coordinates
             pts_screen = [camera.apply(p) for p in pts_world]
-            # Draw filled sector with transparency on a temporary surface
-            poly_surf = pygame.Surface((camera.screen_width, camera.screen_height), flags=pygame.SRCALPHA)
-            pygame.draw.polygon(poly_surf, (0, 255, 0, 64), [(int(x), int(y)) for (x, y) in pts_screen])
-            screen.blit(poly_surf, (0, 0))
-            # Outline the sector for clarity
-            pygame.draw.lines(screen, (0, 200, 0), False, [(int(x), int(y)) for (x, y) in pts_screen[1:]], 2)
+            # Draw filled sector with transparency onto the reusable overlay
+            pygame.draw.polygon(overlay, (0, 255, 0, 64), [(int(x), int(y)) for (x, y) in pts_screen])
+            # Outline the sector for clarity (on overlay so it's above the fill)
+            pygame.draw.lines(overlay, (0, 200, 0), False, [(int(x), int(y)) for (x, y) in pts_screen[1:]], 2)
             # 2) Draw outer circle (radius) as thin red outline (cached)
             radius = int(r)
             if radius > 0:
@@ -71,15 +81,17 @@ class HitboxDebugSystem:
                     pygame.draw.circle(surf, (255, 0, 0), (radius + 1, radius + 1), radius, 1)
                     self.circle_surfs[radius] = surf
                 cx_scr, cy_scr = camera.apply((cx, cy))
-                screen.blit(surf, (int(cx_scr - (radius + 1)), int(cy_scr - (radius + 1))))
+                overlay.blit(surf, (int(cx_scr - (radius + 1)), int(cy_scr - (radius + 1))))
             # 3) Draw origin crosshair and direction arrow for orientation debugging
             cx_scr, cy_scr = camera.apply((cx, cy))
-            pygame.draw.line(screen, (255, 255, 0), (int(cx_scr) - 3, int(cy_scr)), (int(cx_scr) + 3, int(cy_scr)), 1)
-            pygame.draw.line(screen, (255, 255, 0), (int(cx_scr), int(cy_scr) - 3), (int(cx_scr), int(cy_scr) + 3), 1)
+            pygame.draw.line(overlay, (255, 255, 0), (int(cx_scr) - 3, int(cy_scr)), (int(cx_scr) + 3, int(cy_scr)), 1)
+            pygame.draw.line(overlay, (255, 255, 0), (int(cx_scr), int(cy_scr) - 3), (int(cx_scr), int(cy_scr) + 3), 1)
             tip_x = cx + dir_x * r
             tip_y = cy + dir_y * r
             tx, ty = camera.apply((tip_x, tip_y))
-            pygame.draw.line(screen, (255, 215, 0), (int(cx_scr), int(cy_scr)), (int(tx), int(ty)), 2)
+            pygame.draw.line(overlay, (255, 215, 0), (int(cx_scr), int(cy_scr)), (int(tx), int(ty)), 2)
+        # Blit the accumulated translucent overlay once
+        screen.blit(overlay, (0, 0))
         # Draw all colliders (bounding rect) in blue for debugging
         multi_store = world.components.get('MultiCollider', {})
         for tid, multi in multi_store.items():

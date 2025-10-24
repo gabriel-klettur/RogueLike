@@ -1,5 +1,5 @@
 {
-  "e53c3ba3-9319-42e4-84c8-6be3df485403": {
+  "07b29b7c-10f4-4041-8b6b-ec81aa2a7797": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -40,7 +40,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "46b44e9e-b176-409a-aa3f-c44c244d4cb6": {
+  "a67bbd12-27e7-4ec1-8a9b-c9a571ffa772": {
     "template_id": null,
     "slots": [
       {
@@ -48,53 +48,15 @@
         "quantity": 50
       },
       {
+        "item": "energy_potion",
+        "quantity": 3
+      },
+      {
         "item": "explosion_potion",
         "quantity": 2
       },
       {
-        "item": "wood",
-        "quantity": 3
-      },
-      {
-        "item": "mana_potion",
-        "quantity": 3
-      },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "976ce287-a283-4594-a824-3b5efded2768": {
-    "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
-    "slots": [
-      {
-        "item": "gold",
-        "quantity": 1000
-      },
-      {
-        "item": "energy_potion",
-        "quantity": 4
-      },
-      {
-        "item": "wood",
-        "quantity": 3
-      },
-      {
-        "item": "poison_potion",
+        "item": "iron_ingot",
         "quantity": 1
       },
       null,
@@ -116,7 +78,45 @@
     ],
     "schema_version": "1.0.0"
   },
-  "93803f10-4819-46c1-a519-24390e3d7446": {
+  "7b62e3f7-8e4d-41d2-a4a0-a8bc3d4432df": {
+    "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1000
+      },
+      {
+        "item": "energy_potion",
+        "quantity": 4
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 2
+      },
+      {
+        "item": "poison_potion",
+        "quantity": 5
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "c965d233-f9f7-4749-859d-2b0d2ab0d996": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -148,7 +148,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "a6ae46df-0cea-4397-9ed3-d0ee0e546504": {
+  "69a350b5-ab0a-4740-8e04-03b9e8d60b5d": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {

@@ -96,7 +96,7 @@
     "toolbar": {
       "minimized": false,
       "toggles": {
-        "spell_collision": false,
+        "spell_collision": true,
         "npc_attack": false,
         "hitbox": false,
         "patrol": false,
