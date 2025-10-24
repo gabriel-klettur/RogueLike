@@ -11,8 +11,8 @@
     "00c27096-a921-49fe-bb91-c05861ff732d": {
       "level": "global_map",
       "tile": [
-        223,
-        80
+        226,
+        81
       ],
       "hp": 2440,
       "dead": false,
@@ -29,8 +29,8 @@
         "00c27096-a921-49fe-bb91-c05861ff732d": {
           "level": "global_map",
           "tile": [
-            223,
-            80
+            226,
+            81
           ],
           "hp": 2440,
           "dead": false,
@@ -85,7 +85,7 @@
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-24T20:32:01",
+    "last_played": "2025-10-24T20:34:38",
     "player": {
       "xp": 20,
       "level": 0

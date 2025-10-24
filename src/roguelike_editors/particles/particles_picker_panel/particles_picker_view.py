@@ -9,7 +9,7 @@ class ParticlesPickerView:
 
     def __init__(self, model: ParticlesPickerModel, font: pygame.font.Font | None):
         self.model = model
-        self.font = font
+        self.font = None  # disable labels under cells
         self.title_font = font
 
     def draw(self, screen: pygame.Surface, dt_ms: int = 16) -> None:
