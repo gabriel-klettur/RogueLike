@@ -86,6 +86,10 @@ class MeleeCombatSystem:
             # NPC recibe daño de jugador -> publicar evento OnHit y posible OnDeath
             if intent.attacker in world.components.get('PlayerTagComponent', {}):
                 target_eid = intent.target
+                # Skip post-mortem effects if target is already dying
+                if target_eid in world.components.get('DeathTimer', {}) or target_eid in world.components.get('DyingTag', {}):
+                    del world.components['WantsToMelee'][eid]
+                    continue
                 # determinar dirección de daño usando centros de sprite si están disponibles
                 pos_map = world.components.get('Position', {})
                 spr_map = world.components.get('Sprite', {})
@@ -117,11 +121,7 @@ class MeleeCombatSystem:
                 q = qmap.setdefault(target_eid, [])
                 q.append({"type": "OnHit", "from_left": from_left})
                 if not godmode and defender_stats.current_hp <= 0:
-                    q.append({"type": "OnDeath"})
-                    # Evento de kill para combo basado en muertes
-                    combo_q = world.components.setdefault('ComboEventQueue', [])
-                    combo_q.append({'type': 'kill', 'entity': intent.attacker, 'target': target_eid})
-                    world.components.setdefault('ComboKillCounted', set()).add(target_eid)
+                    pass
                 # Publicar evento de COMBO para el atacante (jugador)
                 if not godmode:
                     combo_q = world.components.setdefault('ComboEventQueue', [])
@@ -143,6 +143,10 @@ class MeleeCombatSystem:
             elif is_player_target:
                 if not godmode:
                     target_eid = intent.target
+                    # Skip post-mortem effects if target is already dying
+                    if target_eid in world.components.get('DeathTimer', {}) or target_eid in world.components.get('DyingTag', {}):
+                        del world.components['WantsToMelee'][eid]
+                        continue
                     # determinar dirección de daño usando centros
                     pos_map = world.components.get('Position', {})
                     spr_map = world.components.get('Sprite', {})
@@ -174,7 +178,7 @@ class MeleeCombatSystem:
                     q = qmap.setdefault(target_eid, [])
                     q.append({"type": "OnHit", "from_left": from_left})
                     if defender_stats.current_hp <= 0:
-                        q.append({"type": "OnDeath"})
+                        pass
                     # Romper combo del jugador al recibir daño
                     combo_q = world.components.setdefault('ComboEventQueue', [])
                     combo_q.append({'type': 'break', 'entity': target_eid})

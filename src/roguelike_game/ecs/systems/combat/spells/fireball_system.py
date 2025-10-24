@@ -152,7 +152,7 @@ class FireballSystem:
                 # Saltar self, caster y cadáveres con DeathTimer
                 if target == eid or target == comp.caster:
                     continue
-                if target in world.components.get('DeathTimer', {}):
+                if target in world.components.get('DeathTimer', {}) or target in world.components.get('DyingTag', {}):
                     continue
                 multi = world.components['MultiCollider'][target]
                 tpos = world.components['Position'][target]
@@ -261,11 +261,7 @@ class FireballSystem:
                         if not godmode:
                             hp = world.components['Health'][target]
                             if hp.current_hp <= 0:
-                                q.append({"type": "OnDeath"})
-                                # Evento de kill para combo basado en muertes
-                                combo_q = world.components.setdefault('ComboEventQueue', [])
-                                combo_q.append({'type': 'kill', 'entity': caster, 'target': target})
-                                world.components.setdefault('ComboKillCounted', set()).add(target)
+                                pass
                             # Evento de COMBO
                             combo_q = world.components.setdefault('ComboEventQueue', [])
                             combo_q.append({
@@ -298,9 +294,10 @@ class FireballSystem:
                             q.append({"type": "OnHit", "from_left": from_left})
                             hp = world.components['Health'][target]
                             if hp.current_hp <= 0:
-                                q.append({"type": "OnDeath"})
+                                pass
                             # Romper combo del jugador al recibir daño
                             combo_q = world.components.setdefault('ComboEventQueue', [])
+
                             combo_q.append({'type': 'break', 'entity': target})
                     break
 

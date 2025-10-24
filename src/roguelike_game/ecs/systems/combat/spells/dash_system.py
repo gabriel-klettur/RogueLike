@@ -171,7 +171,7 @@ class DashSystem:
                                 from_left = bool(dash.dir_x < 0)
                                 q.append({"type": "OnHit", "from_left": from_left})
                                 if health.current_hp <= 0:
-                                    q.append({"type": "OnDeath"})
+                                    pass
                                 # Break combo on self-damage only for player
                                 if is_player:
                                     combo_q = world.components.setdefault('ComboEventQueue', [])
