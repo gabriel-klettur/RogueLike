@@ -1,32 +1,29 @@
-from __future__ import annotations
-
-# Thin facade to keep backward compatibility while using modular previews
-# Expose the same classes that were originally defined here
-
-from .particle_previews import (
-    DummyCamera as _DummyCamera,
-    ParticlePreviewSmoke,
-    ParticlePreviewSmokeBurst,
-    ParticlePreviewHealingAura,
+from .base import DummyCamera, TextureFlipbookHelper, eval_curve, eval_color_gradient
+from .smoke import ParticlePreviewSmoke, ParticlePreviewSmokeBurst
+from .healing import ParticlePreviewHealingAura
+from .aura_dash_slash_laser import (
     ParticlePreviewAura,
     ParticlePreviewDash,
     ParticlePreviewSlash,
     ParticlePreviewLaser,
-    ParticlePreviewExplosion,
+)
+from .arcane_lightning_firework import (
     ParticlePreviewArcaneFlame,
     ParticlePreviewFirework,
     ParticlePreviewLightning,
-    ParticlePreviewTeleport,
+)
+from .combat_misc import ParticlePreviewExplosion, ParticlePreviewTeleport
+from .water_foliage import (
     ParticlePreviewWaterFountain,
     ParticlePreviewFallingLeaf,
     ParticlePreviewWaterFlow,
 )
 
-# Backwards-compatibility alias
-_DummyCamera = _DummyCamera
-
 __all__ = [
-    "_DummyCamera",
+    "DummyCamera",
+    "TextureFlipbookHelper",
+    "eval_curve",
+    "eval_color_gradient",
     "ParticlePreviewSmoke",
     "ParticlePreviewSmokeBurst",
     "ParticlePreviewHealingAura",
@@ -34,10 +31,10 @@ __all__ = [
     "ParticlePreviewDash",
     "ParticlePreviewSlash",
     "ParticlePreviewLaser",
-    "ParticlePreviewExplosion",
     "ParticlePreviewArcaneFlame",
     "ParticlePreviewFirework",
     "ParticlePreviewLightning",
+    "ParticlePreviewExplosion",
     "ParticlePreviewTeleport",
     "ParticlePreviewWaterFountain",
     "ParticlePreviewFallingLeaf",
