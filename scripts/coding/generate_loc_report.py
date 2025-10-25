@@ -232,6 +232,19 @@ def write_reports(
     # Markdown
     with md_path.open("w", encoding="utf-8") as md:
         md.write(f"# Informe de Líneas de Código por Carpeta y Archivo\n\n")
+
+        all_files_list = [fs for files in dir_files.values() for fs in files]
+        top_n = sorted(all_files_list, key=lambda fs: fs.loc, reverse=True)[:10]
+        if top_n:
+            md.write("## Top 10 archivos con más líneas de código\n\n")
+            md.write("Archivo | Ruta | LOC\n")
+            md.write("--- | --- | ---:\n")
+            for fs in top_n:
+                abs_path = (root / fs.rel_path).resolve()
+                uri = abs_path.as_uri()
+                md.write(f"`{Path(fs.rel_path).name}` | [`{fs.rel_path}`]({uri}) | {fs.loc}\n")
+            md.write("\n")
+
         md.write(f"- Proyecto: `{normalize_rel(root, root)}`\n")
         md.write(f"- Generado: {datetime.now().isoformat(timespec='seconds')}\n")
         md.write(
