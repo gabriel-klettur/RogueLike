@@ -52,6 +52,7 @@ from roguelike_game.ecs.systems.rendering.particles.particle_render_system impor
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
 from roguelike_game.ecs.systems.rendering.flash_system import FlashSystem
 from roguelike_game.ecs.systems.rendering.trail_system import TrailSystem
+from roguelike_game.ecs.systems.rendering.ribbon_system import RibbonSystem
 from roguelike_game.ecs.systems.fsm.fsm_system import FSMSystem
 from roguelike_game.ecs.systems.combat.spells.dash_system import DashSystem
 from roguelike_game.ecs.systems.combat.hitbox_system import HitboxSystem
@@ -157,7 +158,7 @@ def get_update_system_classes():
         MovementCollisionSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
         MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
-        TrailSystem,
+        TrailSystem, RibbonSystem,
         AnimationSystem, FlashSystem, 
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,

@@ -72,9 +72,39 @@ class SlashEmitterSystem:
                 off = 0.0
             base_cx = cx + dir_x * off
             base_cy = cy + dir_y * off
+            # Optional cap when anchoring locally: respect max_particles
+            sim_space = getattr(emitter, 'particle_simulation_space', getattr(emitter, 'simulation_space', None))
+            anchor_local = isinstance(sim_space, str) and sim_space.lower() == 'local'
+            max_particles = getattr(emitter, 'max_particles', None)
+            try:
+                max_particles = int(max_particles) if max_particles is not None else None
+            except Exception:
+                max_particles = None
+            if isinstance(sim_space, str) and sim_space.lower() not in ('local', 'world') and not getattr(emitter, '_warned_simspace', False):
+                try:
+                    logger.warning("[SlashEmitter] unknown simulation_space='%s' (expected 'local'|'world')", sim_space)
+                except Exception:
+                    pass
+                setattr(emitter, '_warned_simspace', True)
+            if isinstance(max_particles, int) and max_particles <= 0 and not getattr(emitter, '_warned_nonpos_max', False):
+                try:
+                    logger.warning("[SlashEmitter] non-positive max_particles=%s ignored", max_particles)
+                except Exception:
+                    pass
+                setattr(emitter, '_warned_nonpos_max', True)
+            budget = None
+            if anchor_local and isinstance(max_particles, int) and max_particles > 0:
+                active = 0
+                for pc in world.components.get('ParticleComponent', {}).values():
+                    if getattr(pc, 'anchor_eid', None) == caster:
+                        active += 1
+                budget = max_particles - active
+            emit_n = count
+            if isinstance(budget, int):
+                emit_n = max(0, min(count, budget))
             # Emitir partículas
             emitted = 0
-            for i in range(count):
+            for i in range(emit_n):
                 t = (i / (count - 1)) - 0.5 if count > 1 else 0
                 angle = math.atan2(dir_y, dir_x) + t * arc_range
                 # Perfil de tamaño/velocidad a lo largo del arco
@@ -92,13 +122,26 @@ class SlashEmitterSystem:
                 color = base_color
                 pid = world.create_entity()
                 world.components['Position'][pid] = Position(base_cx + ox, base_cy + oy)
+                # Optional advanced params from emitter component (dynamic attributes supported)
+                blend_mode = getattr(emitter, 'particle_blend_mode', None)
+                size_ol = getattr(emitter, 'particle_size_over_life', None)
+                alpha_ol = getattr(emitter, 'particle_alpha_over_life', None)
+                color_ol = getattr(emitter, 'particle_color_over_life', None)
+                grav = getattr(emitter, 'particle_gravity', None)
+                drg = getattr(emitter, 'particle_drag', None)
                 world.components['ParticleComponent'][pid] = ParticleComponent(
                     math.cos(angle) * speed,
                     math.sin(angle) * speed,
                     color,
                     size,
                     lifespan,
-                    anchor_eid=caster
+                    anchor_eid=caster,
+                    blend_mode=blend_mode,
+                    size_over_life=size_ol,
+                    alpha_over_life=alpha_ol,
+                    color_over_life=color_ol,
+                    gravity=grav,
+                    drag=drg,
                 )
                 emitted += 1
             try:

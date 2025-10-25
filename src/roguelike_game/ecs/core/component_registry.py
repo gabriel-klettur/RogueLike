@@ -25,7 +25,7 @@ def create_empty_component_store():
         # Chat & Vendor
         'ChatComponent': {}, 'VendorComponent': {},
         'TempZLayer': {},
-        'FlashComponent': {}, 'TrailComponent': {}, 'GrayscaleComponent': {},
+        'FlashComponent': {}, 'TrailComponent': {}, 'RibbonComponent': {}, 'GrayscaleComponent': {},
         # Abilities / Resources
         'DashMeterComponent': {},
         # Combo system

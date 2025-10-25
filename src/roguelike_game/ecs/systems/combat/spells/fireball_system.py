@@ -4,7 +4,7 @@ import math
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.explosion_component import ExplosionComponent
-from roguelike_game.ecs.systems.combat.explosions_models import TimedEffectModel
+from roguelike_game.ecs.systems.combat.explosions_models import TimedEffectModel, FireExplosionModel
 from roguelike_game.ecs.components.particles.particle_preset_component import ParticlePresetComponent
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 import time
@@ -165,7 +165,74 @@ class FireballSystem:
                         x, y = pos.x, pos.y
                         eid2 = world.create_entity()
                         world.components['Position'][eid2] = Position(x, y)
-                        world.components['ExplosionComponent'][eid2] = ExplosionComponent(FireExplosionModel(x, y))
+                        # Gather optional advanced explosion params from cfg
+                        exp_cfg = None
+                        try:
+                            vfx_obj = None
+                            vfx_attr = getattr(cfg, 'vfx', None)
+                            if isinstance(vfx_attr, dict):
+                                vfx_obj = vfx_attr
+                            else:
+                                vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                            impact = vfx_obj.get('impact') if isinstance(vfx_obj, dict) else None
+                            exp_cfg = impact.get('explosion') if isinstance(impact, dict) else None
+                        except Exception:
+                            exp_cfg = None
+                        # Defaults
+                        pcount = None
+                        pscale = None
+                        colors = None
+                        gravity = None
+                        drag = None
+                        blend_mode = None
+                        sol = None
+                        aol = None
+                        col_ol = None
+                        if isinstance(exp_cfg, dict):
+                            # particle count/scale (optional)
+                            if isinstance(exp_cfg.get('particle_count'), int):
+                                pcount = int(exp_cfg.get('particle_count'))
+                            if isinstance(exp_cfg.get('scale'), (int, float)):
+                                pscale = float(exp_cfg.get('scale'))
+                            # colors palette
+                            cols = exp_cfg.get('colors')
+                            if isinstance(cols, (list, tuple)) and len(cols) > 0:
+                                tmp = []
+                                for c in cols:
+                                    if isinstance(c, (list, tuple)) and len(c) >= 3:
+                                        tmp.append((int(c[0]), int(c[1]), int(c[2])))
+                                colors = tmp if tmp else None
+                            # forces
+                            gv = exp_cfg.get('gravity')
+                            if isinstance(gv, (int, float)):
+                                gravity = (0.0, float(gv))
+                            elif isinstance(gv, (list, tuple)) and len(gv) >= 2:
+                                gravity = (float(gv[0]), float(gv[1]))
+                            dg = exp_cfg.get('drag')
+                            if isinstance(dg, (int, float)):
+                                drag = float(dg)
+                            # blend mode
+                            if isinstance(exp_cfg.get('blend_mode'), str):
+                                blend_mode = exp_cfg.get('blend_mode')
+                            # curves
+                            sol = exp_cfg.get('size_over_life') if isinstance(exp_cfg.get('size_over_life'), (list, tuple)) else None
+                            aol = exp_cfg.get('alpha_over_life') if isinstance(exp_cfg.get('alpha_over_life'), (list, tuple)) else None
+                            col_ol = exp_cfg.get('color_over_life') if isinstance(exp_cfg.get('color_over_life'), (list, tuple)) else None
+                        # Instantiate explosion model with advanced params (fallbacks inside model/Particle)
+                        model = FireExplosionModel(
+                            x,
+                            y,
+                            particle_count=pcount if isinstance(pcount, int) and pcount > 0 else 100,
+                            scale=pscale if isinstance(pscale, (int, float)) and pscale > 0 else 1.0,
+                            colors=colors,
+                            gravity=gravity,
+                            drag=drag,
+                            blend_mode=blend_mode,
+                            size_over_life=sol,
+                            alpha_over_life=aol,
+                            color_over_life=col_ol,
+                        )
+                        world.components['ExplosionComponent'][eid2] = ExplosionComponent(model)
                     except Exception:
                         pass
                     world.remove_entity(eid)
@@ -296,6 +363,57 @@ class FireballSystem:
                                 smul = 1.0
                             world.components.setdefault('ParticlePresetComponent', {})[peid] = ParticlePresetComponent(preset_id, scale_multiplier=smul)
                             world.components.setdefault('ExplosionComponent', {})[peid] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
+                        else:
+                            # Fallback: if explosion config present but no preset, spawn native FireExplosionModel with advanced params
+                            try:
+                                exp_cfg2 = None
+                                if isinstance(vfx_obj, dict):
+                                    impact2 = vfx_obj.get('impact') or {}
+                                    if isinstance(impact2, dict):
+                                        exp_cfg2 = impact2.get('explosion')
+                                if isinstance(exp_cfg2, dict):
+                                    # Extract advanced params
+                                    pcount = int(exp_cfg2.get('particle_count')) if isinstance(exp_cfg2.get('particle_count'), int) else 100
+                                    pscale = float(exp_cfg2.get('scale')) if isinstance(exp_cfg2.get('scale'), (int, float)) else 1.0
+                                    colors = None
+                                    cols = exp_cfg2.get('colors')
+                                    if isinstance(cols, (list, tuple)) and len(cols) > 0:
+                                        tmp = []
+                                        for c in cols:
+                                            if isinstance(c, (list, tuple)) and len(c) >= 3:
+                                                tmp.append((int(c[0]), int(c[1]), int(c[2])))
+                                        colors = tmp if tmp else None
+                                    gv = exp_cfg2.get('gravity')
+                                    if isinstance(gv, (int, float)):
+                                        gravity = (0.0, float(gv))
+                                    elif isinstance(gv, (list, tuple)) and len(gv) >= 2:
+                                        gravity = (float(gv[0]), float(gv[1]))
+                                    else:
+                                        gravity = None
+                                    drag = float(exp_cfg2.get('drag')) if isinstance(exp_cfg2.get('drag'), (int, float)) else None
+                                    blend_mode = exp_cfg2.get('blend_mode') if isinstance(exp_cfg2.get('blend_mode'), str) else None
+                                    sol = exp_cfg2.get('size_over_life') if isinstance(exp_cfg2.get('size_over_life'), (list, tuple)) else None
+                                    aol = exp_cfg2.get('alpha_over_life') if isinstance(exp_cfg2.get('alpha_over_life'), (list, tuple)) else None
+                                    col_ol = exp_cfg2.get('color_over_life') if isinstance(exp_cfg2.get('color_over_life'), (list, tuple)) else None
+                                    x2, y2 = hit_pos if hit_pos else (pos.x, pos.y)
+                                    peid2 = world.create_entity()
+                                    world.components.setdefault('Position', {})[peid2] = Position(x2, y2)
+                                    model2 = FireExplosionModel(
+                                        x2,
+                                        y2,
+                                        particle_count=pcount,
+                                        scale=pscale,
+                                        colors=colors,
+                                        gravity=gravity,
+                                        drag=drag,
+                                        blend_mode=blend_mode,
+                                        size_over_life=sol,
+                                        alpha_over_life=aol,
+                                        color_over_life=col_ol,
+                                    )
+                                    world.components.setdefault('ExplosionComponent', {})[peid2] = ExplosionComponent(model2)
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                     # Inmortalidad del jugador en godmode
@@ -419,6 +537,56 @@ class FireballSystem:
                             smul = 1.0
                         world.components.setdefault('ParticlePresetComponent', {})[eid2] = ParticlePresetComponent(preset_id, scale_multiplier=smul)
                         world.components.setdefault('ExplosionComponent', {})[eid2] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
+                    else:
+                        # Fallback: spawn native FireExplosionModel with advanced params if configured
+                        try:
+                            exp_cfg2 = None
+                            if isinstance(vfx_obj, dict):
+                                impact2 = vfx_obj.get('impact') or {}
+                                if isinstance(impact2, dict):
+                                    exp_cfg2 = impact2.get('explosion')
+                            if isinstance(exp_cfg2, dict):
+                                pcount = int(exp_cfg2.get('particle_count')) if isinstance(exp_cfg2.get('particle_count'), int) else 100
+                                pscale = float(exp_cfg2.get('scale')) if isinstance(exp_cfg2.get('scale'), (int, float)) else 1.0
+                                colors = None
+                                cols = exp_cfg2.get('colors')
+                                if isinstance(cols, (list, tuple)) and len(cols) > 0:
+                                    tmp = []
+                                    for c in cols:
+                                        if isinstance(c, (list, tuple)) and len(c) >= 3:
+                                            tmp.append((int(c[0]), int(c[1]), int(c[2])))
+                                    colors = tmp if tmp else None
+                                gv = exp_cfg2.get('gravity')
+                                if isinstance(gv, (int, float)):
+                                    gravity = (0.0, float(gv))
+                                elif isinstance(gv, (list, tuple)) and len(gv) >= 2:
+                                    gravity = (float(gv[0]), float(gv[1]))
+                                else:
+                                    gravity = None
+                                drag = float(exp_cfg2.get('drag')) if isinstance(exp_cfg2.get('drag'), (int, float)) else None
+                                blend_mode = exp_cfg2.get('blend_mode') if isinstance(exp_cfg2.get('blend_mode'), str) else None
+                                sol = exp_cfg2.get('size_over_life') if isinstance(exp_cfg2.get('size_over_life'), (list, tuple)) else None
+                                aol = exp_cfg2.get('alpha_over_life') if isinstance(exp_cfg2.get('alpha_over_life'), (list, tuple)) else None
+                                col_ol = exp_cfg2.get('color_over_life') if isinstance(exp_cfg2.get('color_over_life'), (list, tuple)) else None
+                                x2, y2 = float(px), float(py)
+                                eid3 = world.create_entity()
+                                world.components.setdefault('Position', {})[eid3] = Position(x2, y2)
+                                model3 = FireExplosionModel(
+                                    x2,
+                                    y2,
+                                    particle_count=pcount,
+                                    scale=pscale,
+                                    colors=colors,
+                                    gravity=gravity,
+                                    drag=drag,
+                                    blend_mode=blend_mode,
+                                    size_over_life=sol,
+                                    alpha_over_life=aol,
+                                    color_over_life=col_ol,
+                                )
+                                world.components.setdefault('ExplosionComponent', {})[eid3] = ExplosionComponent(model3)
+                        except Exception:
+                            pass
                 except Exception:
                     pass
                 world.remove_entity(eid)

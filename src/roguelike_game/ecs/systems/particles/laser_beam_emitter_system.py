@@ -49,8 +49,42 @@ class LaserBeamEmitterSystem:
             dx = x2 - x1
             dy = y2 - y1
             length = (dx*dx + dy*dy) ** 0.5 or 1
+            # Determine simulation_space and max_particles (optional)
+            sim_space = getattr(beam, 'particle_simulation_space', None)
+            if sim_space is None:
+                sim_space = getattr(beam, 'simulation_space', None)
+            anchor_local = isinstance(sim_space, str) and sim_space.lower() == 'local'
+            max_particles = getattr(beam, 'max_particles', None)
+            try:
+                max_particles = int(max_particles) if max_particles is not None else None
+            except Exception:
+                max_particles = None
+            if isinstance(sim_space, str) and sim_space.lower() not in ('local', 'world') and not getattr(beam, '_warned_simspace', False):
+                try:
+                    logger.warning("[LaserBeamEmitter] unknown simulation_space='%s' (expected 'local'|'world')", sim_space)
+                except Exception:
+                    pass
+                setattr(beam, '_warned_simspace', True)
+            if isinstance(max_particles, int) and max_particles <= 0 and not getattr(beam, '_warned_nonpos_max', False):
+                try:
+                    logger.warning("[LaserBeamEmitter] non-positive max_particles=%s ignored", max_particles)
+                except Exception:
+                    pass
+                setattr(beam, '_warned_nonpos_max', True)
+            # Compute current active anchored count for budget
+            if anchor_local and isinstance(max_particles, int) and max_particles > 0:
+                active = 0
+                for pc in world.components.get('ParticleComponent', {}).values():
+                    if getattr(pc, 'anchor_eid', None) == caster:
+                        active += 1
+                budget = max_particles - active
+            else:
+                budget = None
             # 1. Generar partículas a lo largo de la línea
-            for i in range(beam.particle_count):
+            emit_n = int(getattr(beam, 'particle_count', 0) or 0)
+            if isinstance(budget, int):
+                emit_n = max(0, min(emit_n, budget))
+            for i in range(emit_n):
                 t = i / beam.particle_count
                 px = x1 + t * dx + random.uniform(-beam.dispersion, beam.dispersion)
                 py = y1 + t * dy + random.uniform(-beam.dispersion, beam.dispersion)
@@ -60,7 +94,24 @@ class LaserBeamEmitterSystem:
                 size = thickness_px
                 # beam particles live only one frame to avoid trails
                 lifespan_frames = 1
-                world.components['ParticleComponent'][pid] = ParticleComponent(0, 0, color, size, lifespan_frames)
+                # Optional advanced fields on beam component
+                blend_mode = getattr(beam, 'particle_blend_mode', None)
+                size_ol = getattr(beam, 'particle_size_over_life', None)
+                alpha_ol = getattr(beam, 'particle_alpha_over_life', None)
+                color_ol = getattr(beam, 'particle_color_over_life', None)
+                grav = getattr(beam, 'particle_gravity', None)
+                drg = getattr(beam, 'particle_drag', None)
+                anchor = caster if anchor_local else None
+                world.components['ParticleComponent'][pid] = ParticleComponent(
+                    0, 0, color, size, lifespan_frames,
+                    anchor_eid=anchor,
+                    blend_mode=blend_mode,
+                    size_over_life=size_ol,
+                    alpha_over_life=alpha_ol,
+                    color_over_life=color_ol,
+                    gravity=grav,
+                    drag=drg,
+                )
             # 2. Aplicar daño a entidades en el haz (una vez por caster)
             for target in world.get_entities_with('Position', 'Health'):
                 pos_t = world.components['Position'][target]

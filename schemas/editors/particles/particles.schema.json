@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/particles.schema.json",
+  "title": "RogueLike Particles File",
+  "description": "Top-level map of particle presets. Keys are preset ids.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/definitions/particleDef" },
+  "definitions": {
+    "rgb": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "rgbList": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/rgb" },
+      "minItems": 1
+    },
+    "vec2": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "curve01": {
+      "type": "array",
+      "description": "Piecewise linear curve: [[t,value], ...], with t in [0,1]",
+      "items": {
+        "type": "array",
+        "items": [
+          { "type": "number", "minimum": 0, "maximum": 1 },
+          { "type": "number" }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "minItems": 2
+    },
+    "colorGradient": {
+      "type": "array",
+      "description": "Gradient over life: [[t,[r,g,b]], ...] with t in [0,1]",
+      "items": {
+        "type": "array",
+        "items": [
+          { "type": "number", "minimum": 0, "maximum": 1 },
+          { "$ref": "#/definitions/rgb" }
+        ],
+        "minItems": 2,
+        "maxItems": 2
+      },
+      "minItems": 2
+    },
+    "gravity": {
+      "oneOf": [
+        { "type": "number", "description": "Scalar Y gravity" },
+        { "$ref": "#/definitions/vec2" }
+      ]
+    },
+    "blendMode": {
+      "type": "string",
+      "enum": ["alpha", "additive", "premultiplied_alpha"]
+    },
+    "flipbookDef": {
+      "type": "object",
+      "description": "Sprite sheet animation descriptor for particles.",
+      "properties": {
+        "cols": { "type": "integer", "minimum": 1 },
+        "rows": { "type": "integer", "minimum": 1 },
+        "total": { "type": "integer", "minimum": 1 },
+        "frame_w": { "type": "integer", "minimum": 1 },
+        "frame_h": { "type": "integer", "minimum": 1 },
+        "loop": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "emissionShape": {
+      "type": "string",
+      "enum": ["point", "circle", "ring", "line", "box", "cone", "mesh"]
+    },
+    "emissionExtent": {
+      "description": "Extent of emission shape: radius (number), [inner,outer] for ring, [w,h] for box/line span or fraction when <=1",
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 1,
+          "maxItems": 3
+        }
+      ]
+    },
+    "bursts": {
+      "type": "array",
+      "description": "Burst schedule entries",
+      "items": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": [
+              { "type": "number", "description": "time_s" },
+              { "type": "integer", "minimum": 0, "description": "count" }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          {
+            "type": "object",
+            "properties": {
+              "time_s": { "type": "number", "minimum": 0 },
+              "count": { "type": "integer", "minimum": 0 },
+              "loop": { "type": "boolean" }
+            },
+            "required": ["time_s", "count"],
+            "additionalProperties": true
+          }
+        ]
+      }
+    },
+    "simulationSpace": {
+      "type": "string",
+      "enum": ["local", "world"]
+    },
+    "particleParts": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "aura", "smoke_emitter", "smoke", "firework", "firework_launch",
+            "lightning", "dash", "slash", "laser", "arcane_flame",
+            "teleport", "water_fountain", "falling_leaf", "explosion", "water_flow"
+          ]
+        },
+        "emit_rate": { "type": "integer", "minimum": 0 },
+        "count": { "type": "integer", "minimum": 0 },
+        "speed": { "type": "number" },
+        "lifespan": { "type": "number" },
+        "size_range": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "color": { "$ref": "#/definitions/rgb" },
+        "colors": { "$ref": "#/definitions/rgbList" },
+        "direction": { "$ref": "#/definitions/vec2" },
+        "dispersion": { "type": "number" },
+
+        "gravity": { "$ref": "#/definitions/gravity" },
+        "drag": { "type": "number", "minimum": 0, "maximum": 1 },
+        "blend_mode": { "$ref": "#/definitions/blendMode" },
+
+        "size_over_life": { "$ref": "#/definitions/curve01" },
+        "alpha_over_life": { "$ref": "#/definitions/curve01" },
+        "color_over_life": { "$ref": "#/definitions/colorGradient" },
+
+        "texture_path": { "type": "string", "description": "File path to a texture or sprite sheet for the particle." },
+        "flipbook": { "$ref": "#/definitions/flipbookDef" },
+
+        "emission_shape": { "$ref": "#/definitions/emissionShape" },
+        "emission_extent": { "$ref": "#/definitions/emissionExtent" },
+        "emission_direction": { "$ref": "#/definitions/vec2" },
+        "emission_angle_spread_deg": { "type": "number" },
+        "speed_variance": { "type": "number" },
+        "lifetime_jitter": { "type": "number" },
+        "size_start": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "array", "items": { "type": "number" }, "minItems": 1, "maxItems": 2 }
+          ]
+        },
+        "bursts": { "$ref": "#/definitions/bursts" },
+        "simulation_space": { "$ref": "#/definitions/simulationSpace" },
+        "inherit_velocity": { "type": "number" },
+        "max_particles": { "type": "integer", "minimum": 0 },
+
+        "radius": { "type": "integer", "minimum": 0 },
+        "speed_px": { "type": "number" },
+        "segments": { "type": "integer", "minimum": 1 },
+        "offset": { "type": "integer" },
+        "lifetime": { "type": "integer" },
+        "thickness": { "type": "integer", "minimum": 1 },
+
+        "spouts": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0, "maximum": 1 },
+          "minItems": 1
+        },
+        "droplet_size": { "type": "integer", "minimum": 1 },
+        "splash_count": { "type": "integer", "minimum": 0 },
+        "stripe_gap": { "type": "integer", "minimum": 1 },
+        "ripple_amp": { "type": "number", "minimum": 0 },
+        "alpha_base": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "alpha_wave": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "highlight_color": { "$ref": "#/definitions/rgb" },
+        "interval_ms": { "type": "integer", "minimum": 1 },
+        "life_ms": { "type": "integer", "minimum": 1 },
+        "sway_amp": { "type": "number" },
+        "sway_speed": { "type": "number" },
+        "size": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": true
+    },
+    "vfx": {
+      "type": "object",
+      "properties": {
+        "preview": { "type": "string" },
+        "particles": { "$ref": "#/definitions/particleParts" }
+      },
+      "required": ["particles"],
+      "additionalProperties": true
+    },
+    "particleDef": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "system": { "type": "object" },
+        "model": { "type": "object" },
+        "effect": { "type": "object" },
+        "vfx": { "$ref": "#/definitions/vfx" }
+      },
+      "required": ["id", "name", "type", "vfx"],
+      "additionalProperties": true
+    }
+  }
+}

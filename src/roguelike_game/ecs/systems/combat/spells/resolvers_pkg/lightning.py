@@ -67,6 +67,20 @@ class LightningResolver(BaseSpellResolver):
                         life = parts.get('lifespan')
                         if isinstance(life, (int, float)):
                             particle_lifespan = max(1, int(life))
+                        # Advanced particle params for lightning particles
+                        particle_blend_mode = parts.get('blend_mode') if isinstance(parts.get('blend_mode'), str) else None
+                        particle_size_over_life = parts.get('size_over_life') if isinstance(parts.get('size_over_life'), (list, tuple)) else None
+                        particle_alpha_over_life = parts.get('alpha_over_life') if isinstance(parts.get('alpha_over_life'), (list, tuple)) else None
+                        particle_color_over_life = parts.get('color_over_life') if isinstance(parts.get('color_over_life'), (list, tuple)) else None
+                        gval = parts.get('gravity')
+                        if isinstance(gval, (int, float)):
+                            particle_gravity = (0.0, float(gval))
+                        elif isinstance(gval, (list, tuple)) and len(gval) >= 2:
+                            particle_gravity = (float(gval[0]), float(gval[1]))
+                        else:
+                            particle_gravity = None
+                        dval = parts.get('drag')
+                        particle_drag = float(dval) if isinstance(dval, (int, float)) else None
         except Exception:
             palette = None
             particle_size = 2
@@ -76,6 +90,12 @@ class LightningResolver(BaseSpellResolver):
             dispersion_rad = 0.0
             size_min = None
             size_max = None
+            particle_blend_mode = None
+            particle_size_over_life = None
+            particle_alpha_over_life = None
+            particle_color_over_life = None
+            particle_gravity = None
+            particle_drag = None
         comp = LightningComponent(start, (wx, wy),
                                    cfg.get('segments', 10),
                                    cfg.get('offset', 0),
@@ -88,5 +108,11 @@ class LightningResolver(BaseSpellResolver):
                                    particle_speed=particle_speed,
                                    particle_dispersion=dispersion_rad,
                                    size_min=size_min,
-                                   size_max=size_max)
+                                   size_max=size_max,
+                                   particle_blend_mode=particle_blend_mode,
+                                   particle_size_over_life=particle_size_over_life,
+                                   particle_alpha_over_life=particle_alpha_over_life,
+                                   particle_color_over_life=particle_color_over_life,
+                                   particle_gravity=particle_gravity,
+                                   particle_drag=particle_drag)
         world.components.setdefault('LightningComponent', {})[caster] = comp

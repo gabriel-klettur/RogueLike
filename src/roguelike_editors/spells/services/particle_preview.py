@@ -54,6 +54,20 @@ class ParticlePreviewSmoke:
         lifespan: int | float = 100.0,
         size_range: tuple[int, int] | list[int] | None = None,
         dispersion: float = 0.3,
+        # Advanced, optional params (preview-only, backward compatible)
+        gravity: tuple[float, float] | list[float] | None = None,
+        drag: float | None = None,
+        blend_mode: str | None = None,
+        size_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        alpha_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        color_over_life: list[list] | list[tuple] | None = None,
+        # Textured flipbook (optional)
+        texture_path: str | None = None,
+        flipbook: dict | None = None,
+        # Init parity (optional)
+        speed_variance: float | int | None = None,
+        lifetime_jitter: float | int | None = None,
+        size_start: int | float | list | tuple | None = None,
     ) -> None:
         if isinstance(size_range, (list, tuple)) and len(size_range) >= 2:
             smin = max(1, int(size_range[0]))
@@ -72,6 +86,8 @@ class ParticlePreviewSmoke:
             dispersion=float(dispersion),
             colors_palette=palette,
         )
+        # Store base lifespan to compute normalized age in preview
+        self._life0: float = float(lifespan) if isinstance(lifespan, (int, float)) else 100.0
         self._camera = _DummyCamera()
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
@@ -80,6 +96,245 @@ class ParticlePreviewSmoke:
         # Fixed-timestep accumulator for stable speed (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        # Rendering options
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._blend_premul = isinstance(blend_mode, str) and blend_mode.lower() == "premultiplied_alpha"
+        self._tex_path = texture_path if isinstance(texture_path, str) else None
+        self._flipbook = dict(flipbook) if isinstance(flipbook, dict) else None
+        self._sheet: pygame.Surface | None = None
+        self._frame_cache: dict[tuple[int, int], pygame.Surface] = {}
+
+    def _ensure_sheet(self) -> None:
+        if self._sheet is None and isinstance(self._tex_path, str):
+            try:
+                img = pygame.image.load(self._tex_path)
+                self._sheet = img.convert_alpha()
+            except Exception:
+                self._sheet = None
+
+    def _get_frame(self, t: float, size_px: int) -> pygame.Surface | None:
+        self._ensure_sheet()
+        if self._sheet is None:
+            return None
+        sheet = self._sheet
+        fb = self._flipbook
+        if isinstance(fb, dict):
+            sw, sh = sheet.get_size()
+            cols = int(fb.get('cols', 1) or 1)
+            rows = int(fb.get('rows', 1) or 1)
+            total = int(fb.get('total', max(1, cols * rows)) or max(1, cols * rows))
+            fw = int(fb.get('frame_w', sw // max(1, cols)))
+            fh = int(fb.get('frame_h', sh // max(1, rows)))
+            loop = bool(fb.get('loop', True))
+            idx = int(min(0.999, max(0.0, t)) * total)
+            if loop and total > 0:
+                idx = idx % total
+            idx = max(0, min(total - 1, idx)) if total > 0 else 0
+            col = (idx % cols)
+            row = (idx // cols)
+            rx = col * fw
+            ry = row * fh
+            rect = pygame.Rect(rx, ry, fw, fh)
+        else:
+            rect = sheet.get_rect()
+        key = (hash((rect.x, rect.y, rect.w, rect.h)), int(size_px))
+        frm = self._frame_cache.get(key)
+        if frm is None:
+            try:
+                raw = sheet.subsurface(rect).copy()
+            except Exception:
+                raw = sheet.copy()
+            if (raw.get_width(), raw.get_height()) != (size_px, size_px):
+                try:
+                    raw = pygame.transform.smoothscale(raw, (size_px, size_px))
+                except Exception:
+                    raw = pygame.transform.scale(raw, (size_px, size_px))
+            frm = raw
+            if len(self._frame_cache) > 256:
+                self._frame_cache.clear()
+            self._frame_cache[key] = frm
+        return frm
+        # Advanced options
+        # Physics (optional): gravity and drag per fixed step
+        if isinstance(gravity, (list, tuple)) and len(gravity) >= 2:
+            self._gravity = (float(gravity[0]), float(gravity[1]))
+        else:
+            self._gravity = (0.0, 0.0)
+        try:
+            dval = float(drag) if isinstance(drag, (int, float)) else 0.0
+        except Exception:
+            dval = 0.0
+        self._drag = max(0.0, min(0.98, dval))
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._blend_premul = isinstance(blend_mode, str) and blend_mode.lower() == "premultiplied_alpha"
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        self._size_curve = size_over_life if isinstance(size_over_life, (list, tuple)) else None
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        # Texture sheet (optional)
+        self._tex_path = texture_path if isinstance(texture_path, str) else None
+        self._flipbook = dict(flipbook) if isinstance(flipbook, dict) else None
+        self._sheet: pygame.Surface | None = None
+        self._frame_cache: dict[tuple[int, int], pygame.Surface] = {}
+        # Init parity
+        try:
+            self._speed_var = float(speed_variance) if isinstance(speed_variance, (int, float)) else 0.0
+        except Exception:
+            self._speed_var = 0.0
+        try:
+            self._life_jitter = float(lifetime_jitter) if isinstance(lifetime_jitter, (int, float)) else 0.0
+        except Exception:
+            self._life_jitter = 0.0
+        self._size_start = size_start
+
+    def _apply_init_customization(self) -> None:
+        """Apply one-time init tweaks to new particles: speed variance, lifetime jitter, size start.
+        We tag particles via attribute to ensure idempotency.
+        """
+        var = max(-0.95, min(0.95, float(self._speed_var))) if isinstance(self._speed_var, (int, float)) else 0.0
+        for p in list(getattr(self.model, 'particles', []) or []):
+            if getattr(p, '_rl_tag', False):
+                continue
+            try:
+                # Speed variance: scale velocity vector
+                if var != 0.0:
+                    vx = getattr(p.velocity, 'x', 0.0); vy = getattr(p.velocity, 'y', 0.0)
+                    if (vx * vx + vy * vy) > 0.0:
+                        k = (1.0 + random.uniform(-var, var))
+                        p.velocity.x = vx * k
+                        p.velocity.y = vy * k
+                # Lifetime jitter: <1 as ratio, >=1 as frames approximation
+                lj = float(self._life_jitter) if isinstance(self._life_jitter, (int, float)) else 0.0
+                if lj != 0.0:
+                    try:
+                        base = int(getattr(p, 'lifespan', 60))
+                        jit = int(abs(lj) * base) if 0.0 < abs(lj) < 1.0 else int(abs(lj))
+                        delta = random.randint(-jit, jit)
+                        nl = max(4, base + delta)
+                        p.lifespan = nl
+                    except Exception:
+                        pass
+                # Size start override
+                ss = self._size_start
+                if isinstance(ss, (int, float)):
+                    p.size = max(1, int(ss))
+                elif isinstance(ss, (list, tuple)) and ss:
+                    try:
+                        p.size = max(1, int(sum(float(v) for v in ss[:2]) / min(2, len(ss))))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            try:
+                p._rl_tag = True
+            except Exception:
+                pass
+
+    def _ensure_sheet(self) -> None:
+        if self._sheet is None and isinstance(self._tex_path, str):
+            try:
+                img = pygame.image.load(self._tex_path)
+                self._sheet = img.convert_alpha()
+            except Exception:
+                self._sheet = None
+
+    def _get_frame(self, t: float, size_px: int) -> pygame.Surface | None:
+        self._ensure_sheet()
+        if self._sheet is None:
+            return None
+        sheet = self._sheet
+        fb = self._flipbook
+        if isinstance(fb, dict):
+            sw, sh = sheet.get_size()
+            cols = int(fb.get('cols', 1) or 1)
+            rows = int(fb.get('rows', 1) or 1)
+            total = int(fb.get('total', max(1, cols * rows)) or max(1, cols * rows))
+            fw = int(fb.get('frame_w', sw // max(1, cols)))
+            fh = int(fb.get('frame_h', sh // max(1, rows)))
+            loop = bool(fb.get('loop', True))
+            idx = int(min(0.999, max(0.0, t)) * total)
+            if loop and total > 0:
+                idx = idx % total
+            idx = max(0, min(total - 1, idx)) if total > 0 else 0
+            col = (idx % cols)
+            row = (idx // cols)
+            rx = col * fw
+            ry = row * fh
+            rect = pygame.Rect(rx, ry, fw, fh)
+        else:
+            rect = sheet.get_rect()
+        # Cache by (frame hash via rect.topleft and size)
+        key = (hash((rect.x, rect.y, rect.w, rect.h)), int(size_px))
+        frm = self._frame_cache.get(key)
+        if frm is None:
+            try:
+                raw = sheet.subsurface(rect).copy()
+            except Exception:
+                raw = sheet.copy()
+            if (raw.get_width(), raw.get_height()) != (size_px, size_px):
+                try:
+                    raw = pygame.transform.smoothscale(raw, (size_px, size_px))
+                except Exception:
+                    raw = pygame.transform.scale(raw, (size_px, size_px))
+            frm = raw
+            if len(self._frame_cache) > 256:
+                self._frame_cache.clear()
+            self._frame_cache[key] = frm
+        return frm
+
+    def _eval_curve(self, curve, t: float, default: float) -> float:
+        if not isinstance(curve, (list, tuple)) or len(curve) == 0:
+            return float(default)
+        pts = []
+        for pt in curve:
+            try:
+                pts.append((float(pt[0]), float(pt[1])))
+            except Exception:
+                continue
+        if not pts:
+            return float(default)
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, v0 = pts[i-1]
+            t1, v1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                return v0 * (1 - k) + v1 * k
+        return float(default)
+
+    def _eval_color_gradient(self, grad, t: float, base: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        if not isinstance(grad, (list, tuple)) or len(grad) == 0:
+            return base
+        pts = []
+        for pt in grad:
+            try:
+                col = pt[1]
+                if isinstance(col, (list, tuple)) and len(col) >= 3:
+                    pts.append((float(pt[0]), (int(col[0]), int(col[1]), int(col[2]))))
+            except Exception:
+                continue
+        if not pts:
+            return base
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, c0 = pts[i-1]
+            t1, c1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                r = int(c0[0] * (1 - k) + c1[0] * k)
+                g = int(c0[1] * (1 - k) + c1[1] * k)
+                b = int(c0[2] * (1 - k) + c1[2] * k)
+                return (r, g, b)
+        return base
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -98,28 +353,93 @@ class ParticlePreviewSmoke:
         if not self._warm_started:
             for _ in range(self._warm_steps):
                 self.model.update()
+                # Apply optional forces on warm steps too
+                if (self._gravity != (0.0, 0.0)) or (self._drag > 0.0):
+                    gx, gy = self._gravity
+                    for p in self.model.particles:
+                        if self._gravity != (0.0, 0.0):
+                            p.velocity.x += gx
+                            p.velocity.y += gy
+                        if self._drag > 0.0:
+                            p.velocity.x *= (1.0 - self._drag)
+                            p.velocity.y *= (1.0 - self._drag)
             self._warm_started = True
         # Step simulation using accumulator (~30 Hz)
         self._acc_ms += max(0, dt_ms)
         while self._acc_ms >= self._step_ms:
             self.model.update()
+            # Inject optional simple forces per fixed step (preview only)
+            if (self._gravity != (0.0, 0.0)) or (self._drag > 0.0):
+                gx, gy = self._gravity
+                for p in self.model.particles:
+                    if self._gravity != (0.0, 0.0):
+                        p.velocity.x += gx
+                        p.velocity.y += gy
+                    if self._drag > 0.0:
+                        p.velocity.x *= (1.0 - self._drag)
+                        p.velocity.y *= (1.0 - self._drag)
             self._acc_ms -= self._step_ms
+            # One-time init customization for new particles
+            self._apply_init_customization()
 
         # Clear and draw
         self._surf.fill((0, 0, 0, 0))
+        # Ensure new particles receive init tweaks before drawing
+        self._apply_init_customization()
         # Inline render to avoid importing the full View class
         for p in self.model.particles:
             if p.is_dead():
                 continue
-            # Adapted from SmokeParticle.render but without screen camera mapping
-            alpha = max(0, min(255, int(p.lifespan * 2.55)))
-            sz = max(1, int(p.size))
-            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
-            blob.fill((*p.color, alpha))
+            # Normalized age in [0,1]: 0 at birth, 1 at death (approx using model lifespan)
+            t = 1.0 - max(0.0, min(1.0, (p.lifespan / max(1e-3, self._life0))))
+            # Size over life (scale original size)
+            scale = self._eval_curve(self._size_curve, t, 1.0)
+            sz = max(1, int(max(1.0, float(p.size)) * max(0.05, scale)))
+            # Alpha over life (overrides default fade if provided)
+            if self._alpha_curve is not None:
+                alpha = max(0, min(255, int(255.0 * max(0.0, min(1.0, self._eval_curve(self._alpha_curve, t, 1.0))))))
+            else:
+                alpha = max(0, min(255, int(p.lifespan * 2.55)))
+            # Color over life (gradient), fallback to particle color
+            col = self._eval_color_gradient(self._color_grad, t, p.color) if self._color_grad is not None else p.color
             x, y = self._camera.apply((p.pos.x, p.pos.y))
-            # Clamp inside surface bounds to avoid blits outside
             if 0 <= x < w and 0 <= y < h:
-                self._surf.blit(blob, (x, y))
+                # Textured path
+                frm = self._get_frame(t, sz)
+                if frm is not None:
+                    try:
+                        if col is not None:
+                            tint = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                            tint.fill((*col, 255))
+                            frm = frm.copy()
+                            frm.blit(tint, (0, 0), special_flags=pygame.BLEND_MULT)
+                    except Exception:
+                        pass
+                    # Premultiplied alpha branch: modulate RGB instead of set_alpha
+                    if getattr(self, '_blend_premul', False):
+                        try:
+                            mod = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                            mod.fill((alpha, alpha, alpha, 255))
+                            frm.blit(mod, (0, 0), special_flags=pygame.BLEND_MULT)
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            frm.set_alpha(alpha)
+                        except Exception:
+                            pass
+                    if self._blend_add:
+                        self._surf.blit(frm, (x, y), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(frm, (x, y))
+                else:
+                    # Fallback square
+                    blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+                    blob.fill((*col, alpha))
+                    if self._blend_add:
+                        self._surf.blit(blob, (x, y), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(blob, (x, y))
         return self._surf
 
 
@@ -136,6 +456,10 @@ class ParticlePreviewSmokeBurst:
         count: int = 12,
         direction: tuple[float, float] | None = None,
         warm_start_steps: int = 6,
+        *,
+        blend_mode: str | None = None,
+        texture_path: str | None = None,
+        flipbook: dict | None = None,
     ) -> None:
         self._color = color
         self._count = max(1, int(count))
@@ -205,11 +529,41 @@ class ParticlePreviewSmokeBurst:
                 continue
             alpha = max(0, min(255, int(p.lifespan * 2.55)))
             sz = max(1, int(p.size))
-            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
-            blob.fill((*p.color, alpha))
             x, y = int(p.pos.x), int(p.pos.y)
             if 0 <= x < w and 0 <= y < h:
-                self._surf.blit(blob, (x, y))
+                frm = self._get_frame(1.0 - max(0.0, min(1.0, p.lifespan / 100.0)), sz)
+                if frm is not None:
+                    # Tint and alpha
+                    try:
+                        tint = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                        tint.fill((*p.color, 255))
+                        frm = frm.copy()
+                        frm.blit(tint, (0, 0), special_flags=pygame.BLEND_MULT)
+                    except Exception:
+                        pass
+                    if self._blend_premul:
+                        try:
+                            mod = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                            mod.fill((alpha, alpha, alpha, 255))
+                            frm.blit(mod, (0, 0), special_flags=pygame.BLEND_MULT)
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            frm.set_alpha(alpha)
+                        except Exception:
+                            pass
+                    if self._blend_add:
+                        self._surf.blit(frm, (x, y), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(frm, (x, y))
+                else:
+                    blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
+                    blob.fill((*p.color, alpha))
+                    if self._blend_add:
+                        self._surf.blit(blob, (x, y), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(blob, (x, y))
         return self._surf
 
 # -------- Generic lightweight previews for more particle-based effects --------
@@ -231,6 +585,23 @@ class ParticlePreviewHealingAura:
         lifespan: int = 60,
         size_range: tuple[int, int] | list[int] | None = (4, 8),
         warm_start_steps: int = 10,
+        *,
+        blend_mode: str | None = None,
+        size_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        alpha_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        color_over_life: list[list] | list[tuple] | None = None,
+        # AAA emitter/init subset (optional)
+        emission_shape: str | None = None,
+        emission_extent: tuple | list | int | float | None = None,
+        emission_direction: tuple | list | None = None,
+        emission_angle_spread_deg: float | int | None = None,
+        speed_variance: float | int | None = None,
+        lifetime_jitter: float | int | None = None,
+        size_start: int | float | list | tuple | None = None,
+        bursts: list | tuple | None = None,
+        # Textured flipbook (optional)
+        texture_path: str | None = None,
+        flipbook: dict | None = None,
     ) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
@@ -252,6 +623,117 @@ class ParticlePreviewHealingAura:
         # Fixed-timestep accumulator for stable speed (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        # Advanced options (blend and curves)
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._blend_premul = isinstance(blend_mode, str) and blend_mode.lower() == "premultiplied_alpha"
+        self._size_curve = size_over_life if isinstance(size_over_life, (list, tuple)) else None
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        # AAA emitter/init subset
+        self._emit_shape = str(emission_shape).lower() if isinstance(emission_shape, str) else None
+        self._emit_extent = emission_extent
+        if isinstance(emission_direction, (list, tuple)) and len(emission_direction) >= 2:
+            try:
+                bx, by = float(emission_direction[0]), float(emission_direction[1])
+            except Exception:
+                bx, by = 0.0, -1.0
+        else:
+            bx, by = 0.0, -1.0
+        base = pygame.math.Vector2(bx, by)
+        if base.length_squared() == 0:
+            base = pygame.math.Vector2(0.0, -1.0)
+        self._emit_dir = base.normalize()
+        try:
+            self._emit_spread_deg = float(emission_angle_spread_deg) if isinstance(emission_angle_spread_deg, (int, float)) else 0.0
+        except Exception:
+            self._emit_spread_deg = 0.0
+        try:
+            self._speed_var = float(speed_variance) if isinstance(speed_variance, (int, float)) else 0.0
+        except Exception:
+            self._speed_var = 0.0
+        # lifetime_jitter: support small values as ratio and large as frames approximation
+        try:
+            self._life_jitter = float(lifetime_jitter) if isinstance(lifetime_jitter, (int, float)) else 0.0
+        except Exception:
+            self._life_jitter = 0.0
+        self._size_start = size_start
+        # Bursts (optional): list of {time_s, count, loop?}
+        self._burst_events: list[tuple[int, int]] = []  # (time_ms, count)
+        self._burst_loop: bool = False
+        if isinstance(bursts, (list, tuple)):
+            for ev in bursts:
+                try:
+                    if isinstance(ev, dict):
+                        t = float(ev.get('time_s', ev.get('time', 0.0)))
+                        c = int(ev.get('count', 0))
+                        if ev.get('loop') is True:
+                            self._burst_loop = True
+                    else:
+                        t = float(ev[0]); c = int(ev[1])
+                    if c > 0 and t >= 0.0:
+                        self._burst_events.append((int(t * 1000.0), c))
+                except Exception:
+                    continue
+            self._burst_events.sort(key=lambda x: x[0])
+        self._burst_start_ms = 0
+        self._burst_cursor = 0
+        self._burst_elapsed_ms = 0
+        # Textures
+        self._tex_path = texture_path if isinstance(texture_path, str) else None
+        self._flipbook = dict(flipbook) if isinstance(flipbook, dict) else None
+        self._sheet: pygame.Surface | None = None
+        self._frame_cache: dict[tuple[int, int], pygame.Surface] = {}
+
+    def _ensure_sheet(self) -> None:
+        if self._sheet is None and isinstance(self._tex_path, str):
+            try:
+                img = pygame.image.load(self._tex_path)
+                self._sheet = img.convert_alpha()
+            except Exception:
+                self._sheet = None
+
+    def _get_frame(self, t: float, size_px: int) -> pygame.Surface | None:
+        self._ensure_sheet()
+        if self._sheet is None:
+            return None
+        sheet = self._sheet
+        fb = self._flipbook
+        if isinstance(fb, dict):
+            sw, sh = sheet.get_size()
+            cols = int(fb.get('cols', 1) or 1)
+            rows = int(fb.get('rows', 1) or 1)
+            total = int(fb.get('total', max(1, cols * rows)) or max(1, cols * rows))
+            fw = int(fb.get('frame_w', sw // max(1, cols)))
+            fh = int(fb.get('frame_h', sh // max(1, rows)))
+            loop = bool(fb.get('loop', True))
+            idx = int(min(0.999, max(0.0, t)) * total)
+            if loop and total > 0:
+                idx = idx % total
+            idx = max(0, min(total - 1, idx)) if total > 0 else 0
+            col = (idx % cols)
+            row = (idx // cols)
+            rx = col * fw
+            ry = row * fh
+            rect = pygame.Rect(rx, ry, fw, fh)
+        else:
+            rect = sheet.get_rect()
+        key = (hash((rect.x, rect.y, rect.w, rect.h)), int(size_px))
+        frm = self._frame_cache.get(key)
+        if frm is None:
+            try:
+                raw = sheet.subsurface(rect).copy()
+            except Exception:
+                raw = sheet.copy()
+            if (raw.get_width(), raw.get_height()) != (size_px, size_px):
+                try:
+                    raw = pygame.transform.smoothscale(raw, (size_px, size_px))
+                except Exception:
+                    raw = pygame.transform.scale(raw, (size_px, size_px))
+            frm = raw
+            if len(self._frame_cache) > 256:
+                self._frame_cache.clear()
+            self._frame_cache[key] = frm
+        return frm
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -277,21 +759,137 @@ class ParticlePreviewHealingAura:
     def _spawn(self, w: int, h: int) -> None:
         cx, cy, hw, hh, top, bottom = self._ellipse_dims(w, h)
         for _ in range(self._emit):
-            # Rejection sample inside ellipse
-            for _tries in range(8):
-                dx = random.uniform(-hw, hw)
-                dy = random.uniform(-hh, hh)
-                if (dx / hw) ** 2 + (dy / hh) ** 2 <= 1:
-                    break
-            x = cx + dx
-            y = max(top, min(bottom, cy + dy))
-            spd = abs(self._speed)
-            vy = -spd if spd > 0 else -1.0
-            vx = random.uniform(-0.3, 0.3) * (self._speed if self._speed != 0 else 1.0)
-            # Frames until reaching the top bound
-            frames_to_top = int((y - top) / max(0.001, abs(vy)))
+            # Choose spawn based on emission_shape (default ellipse)
+            dx = dy = 0.0
+            shape = self._emit_shape
+            if shape == "point":
+                x = float(cx)
+                y = float(cy)
+            elif shape == "line":
+                # emission_extent: span across X (px or fraction)
+                if isinstance(self._emit_extent, (int, float)):
+                    span = float(self._emit_extent)
+                    if 0.0 < span <= 1.0:
+                        span = 2.0 * hw * span
+                else:
+                    span = 2.0 * hw
+                half_span = max(2.0, span / 2.0)
+                x = cx + random.uniform(-half_span, half_span)
+                y = cy
+            elif shape == "box":
+                # emission_extent ~ [w,h] (full diameters). fall back to ellipse box
+                ex = ey = None
+                if isinstance(self._emit_extent, (list, tuple)) and len(self._emit_extent) >= 2:
+                    try:
+                        ex = float(self._emit_extent[0])
+                        ey = float(self._emit_extent[1])
+                    except Exception:
+                        ex = ey = None
+                bx = (ex / 2.0) if ex else hw
+                by = (ey / 2.0) if ey else hh
+                dx = random.uniform(-bx, bx)
+                dy = random.uniform(-by, by)
+                x = cx + dx
+                y = max(top, min(bottom, cy + dy))
+            elif shape == "circle":
+                # emission_extent ~ radius
+                if isinstance(self._emit_extent, (int, float)):
+                    r = float(self._emit_extent)
+                elif isinstance(self._emit_extent, (list, tuple)) and len(self._emit_extent) >= 1:
+                    r = float(self._emit_extent[0])
+                else:
+                    r = float(min(hw, hh))
+                ang = random.uniform(0.0, 2 * math.pi)
+                rr = random.uniform(0.0, r)
+                x = cx + math.cos(ang) * rr
+                y = cy + math.sin(ang) * rr
+                y = max(top, min(bottom, y))
+            elif shape == "ring":
+                # emission_extent ~ [inner_radius, outer_radius]
+                if isinstance(self._emit_extent, (list, tuple)) and len(self._emit_extent) >= 2:
+                    rin = max(0.0, float(self._emit_extent[0]))
+                    rout = max(rin, float(self._emit_extent[1]))
+                else:
+                    rin = float(min(hw, hh) * 0.6)
+                    rout = float(min(hw, hh))
+                ang = random.uniform(0.0, 2 * math.pi)
+                rr = random.uniform(rin, rout)
+                x = cx + math.cos(ang) * rr
+                y = cy + math.sin(ang) * rr
+                y = max(top, min(bottom, y))
+            elif shape == "cone":
+                # Sector oriented along emission_direction with spread; extent as radius
+                if isinstance(self._emit_extent, (int, float)):
+                    radius = float(self._emit_extent)
+                elif isinstance(self._emit_extent, (list, tuple)) and len(self._emit_extent) >= 1:
+                    radius = float(self._emit_extent[0])
+                else:
+                    radius = float(min(hw, hh) * 0.6)
+                base = pygame.math.Vector2(self._emit_dir.x, self._emit_dir.y)
+                spr = math.radians(self._emit_spread_deg if self._emit_spread_deg else 30.0)
+                ang = random.uniform(-spr, spr)
+                ca = math.cos(ang); sa = math.sin(ang)
+                vx0 = base.x * ca - base.y * sa
+                vy0 = base.x * sa + base.y * ca
+                rr = random.uniform(0.0, radius)
+                x = cx + vx0 * rr
+                y = cy + vy0 * rr
+                y = max(top, min(bottom, y))
+            else:
+                # Default: rejection sample inside ellipse
+                for _tries in range(8):
+                    dx = random.uniform(-hw, hw)
+                    dy = random.uniform(-hh, hh)
+                    if (dx / hw) ** 2 + (dy / hh) ** 2 <= 1:
+                        break
+                x = cx + dx
+                y = max(top, min(bottom, cy + dy))
+
+            # Initial velocity from emission_direction + angular spread
+            base = pygame.math.Vector2(self._emit_dir.x, self._emit_dir.y)
+            # Convert spread to radians and rotate
+            spr = math.radians(self._emit_spread_deg)
+            if spr > 0.0:
+                ang = random.uniform(-spr, spr)
+                ca = math.cos(ang)
+                sa = math.sin(ang)
+                vx0 = base.x * ca - base.y * sa
+                vy0 = base.x * sa + base.y * ca
+                vdir = pygame.math.Vector2(vx0, vy0)
+            else:
+                vdir = base
+            # Speed with variance factor
+            var = max(-0.95, min(0.95, float(self._speed_var))) if isinstance(self._speed_var, (int, float)) else 0.0
+            spd = abs(self._speed) * (1.0 + random.uniform(-var, var))
+            if spd <= 0.0:
+                spd = 1.0
+            vx = vdir.x * spd
+            vy = vdir.y * spd
+            # Frames until reaching top (for upward motion), fallback to lifespan
+            if vy < 0:
+                frames_to_top = int((y - top) / max(0.001, abs(vy)))
+            else:
+                frames_to_top = self._lifespan
             life = min(self._lifespan, max(8, frames_to_top))
-            size = random.randint(self._smin, self._smax)
+            # Lifetime jitter: treat <1 as ratio of life, >=1 as frames
+            lj = float(self._life_jitter)
+            if lj != 0.0:
+                if 0.0 < abs(lj) < 1.0:
+                    jit = int(abs(lj) * life)
+                else:
+                    jit = int(abs(lj))
+                delta = random.randint(-jit, jit)
+                life = max(4, min(self._lifespan, life + delta))
+            # Size: allow size_start override
+            if isinstance(self._size_start, (int, float)):
+                size = max(1, int(self._size_start))
+            elif isinstance(self._size_start, (list, tuple)) and self._size_start:
+                try:
+                    size = max(1, int(sum(float(v) for v in self._size_start[:2]) / min(2, len(self._size_start))))
+                except Exception:
+                    size = random.randint(self._smin, self._smax)
+            else:
+                size = random.randint(self._smin, self._smax)
             col = self._color
             if self._palette:
                 col = self._palette[random.randrange(len(self._palette))]
@@ -314,6 +912,25 @@ class ParticlePreviewHealingAura:
             self._warm_started = True
         # Step simulation using accumulator (~30 Hz)
         self._acc_ms += max(0, dt_ms)
+        # Bursts timeline
+        self._burst_elapsed_ms += max(0, dt_ms)
+        # Fire scheduled bursts
+        if self._burst_events:
+            last_time = self._burst_events[-1][0]
+            # Loop handling: wrap elapsed into cycle window
+            if self._burst_loop and last_time > 0:
+                while self._burst_elapsed_ms >= last_time:
+                    self._burst_elapsed_ms -= last_time
+                    self._burst_cursor = 0
+            # Emit due bursts
+            while self._burst_cursor < len(self._burst_events) and self._burst_elapsed_ms >= self._burst_events[self._burst_cursor][0]:
+                count = self._burst_events[self._burst_cursor][1]
+                if count > 0:
+                    orig_emit = self._emit
+                    self._emit = count
+                    self._spawn(w, h)
+                    self._emit = orig_emit
+                self._burst_cursor += 1
         while self._acc_ms >= self._step_ms:
             self._spawn(w, h)
             self._parts = [
@@ -326,18 +943,61 @@ class ParticlePreviewHealingAura:
         # Draw
         self._surf.fill((0, 0, 0, 0))
         for (x, y, vx, vy, age, life, sz, col) in self._parts:
-            alpha = max(0, min(255, int(255 * (1 - age / max(1, life)))))
-            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
-            blob.fill((*col, alpha))
+            t = max(0.0, min(1.0, age / max(1, life)))
+            # size curve scales base size
+            if self._size_curve is not None:
+                scale = max(0.05, self._eval_curve(self._size_curve, t, 1.0))
+                draw_sz = max(1, int(sz * scale))
+            else:
+                draw_sz = sz
+            # alpha curve override
+            if self._alpha_curve is not None:
+                alpha = max(0, min(255, int(255.0 * max(0.0, min(1.0, self._eval_curve(self._alpha_curve, t, 1.0))))))
+            else:
+                alpha = max(0, min(255, int(255 * (1 - t))))
+            # color gradient override
+            dcol = self._eval_color_gradient(self._color_grad, t, col) if self._color_grad is not None else col
             ix, iy = int(x), int(y)
             if 0 <= ix < w and 0 <= iy < h:
-                self._surf.blit(blob, (ix, iy))
+                frm = self._get_frame(t, draw_sz)
+                if frm is not None:
+                    try:
+                        if dcol is not None:
+                            tint = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                            tint.fill((*dcol, 255))
+                            frm = frm.copy()
+                            frm.blit(tint, (0, 0), special_flags=pygame.BLEND_MULT)
+                    except Exception:
+                        pass
+                    if getattr(self, '_blend_premul', False):
+                        try:
+                            mod = pygame.Surface(frm.get_size(), pygame.SRCALPHA)
+                            mod.fill((alpha, alpha, alpha, 255))
+                            frm.blit(mod, (0, 0), special_flags=pygame.BLEND_MULT)
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            frm.set_alpha(alpha)
+                        except Exception:
+                            pass
+                    if self._blend_add:
+                        self._surf.blit(frm, (ix, iy), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(frm, (ix, iy))
+                else:
+                    blob = pygame.Surface((draw_sz, draw_sz), pygame.SRCALPHA)
+                    blob.fill((*dcol, alpha))
+                    if self._blend_add:
+                        self._surf.blit(blob, (ix, iy), special_flags=pygame.BLEND_ADD)
+                    else:
+                        self._surf.blit(blob, (ix, iy))
         return self._surf
 
 class ParticlePreviewAura:
     """Pulsing circular aura made of small fading dots around center."""
 
-    def __init__(self, color: Tuple[int, int, int] = (120, 255, 180), radius: int | None = None, speed: float = 1.0, count: int = 24, palette: list[Tuple[int, int, int]] | None = None) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (120, 255, 180), radius: int | None = None, speed: float = 1.0, count: int = 24, palette: list[Tuple[int, int, int]] | None = None, *, blend_mode: str | None = None) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
@@ -346,6 +1006,7 @@ class ParticlePreviewAura:
         self._theta = 0.0
         self._speed = speed
         self._count = count
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -377,14 +1038,17 @@ class ParticlePreviewAura:
             dot = pygame.Surface((3, 3), pygame.SRCALPHA)
             dot.fill((*col, max(0, min(255, alpha))))
             if 0 <= x < w and 0 <= y < h:
-                self._surf.blit(dot, (x, y))
+                if self._blend_add:
+                    self._surf.blit(dot, (x, y), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(dot, (x, y))
         return self._surf
 
 
 class ParticlePreviewDash:
     """Trailing streaks behind a moving dot to suggest dash movement."""
 
-    def __init__(self, color: Tuple[int, int, int] = (180, 220, 255), speed_px: float = 60.0) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (180, 220, 255), speed_px: float = 60.0, *, blend_mode: str | None = None) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
@@ -394,6 +1058,7 @@ class ParticlePreviewDash:
         # Fixed-timestep accumulator for stable trail timing (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -430,23 +1095,30 @@ class ParticlePreviewDash:
             surf.fill((*self._color, alpha))
             x0 = int(x - length)
             if 0 <= x0 < w and 0 <= y < h:
-                self._surf.blit(surf, (x0, y))
+                if self._blend_add:
+                    self._surf.blit(surf, (x0, y), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(surf, (x0, y))
         # head
         head = pygame.Surface((3, 3), pygame.SRCALPHA)
         head.fill((*self._color, 255))
-        self._surf.blit(head, (px, py))
+        if self._blend_add:
+            self._surf.blit(head, (px, py), special_flags=pygame.BLEND_ADD)
+        else:
+            self._surf.blit(head, (px, py))
         return self._surf
 
 
 class ParticlePreviewSlash:
     """Curved arc particles to suggest a slash swing."""
 
-    def __init__(self, color: Tuple[int, int, int] = (255, 230, 150), speed: float = 2.5) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (255, 230, 150), speed: float = 2.5, *, blend_mode: str | None = None) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
         self._angle = 0.0
         self._speed = speed
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -470,14 +1142,17 @@ class ParticlePreviewSlash:
             dot = pygame.Surface((3, 3), pygame.SRCALPHA)
             dot.fill((*self._color, max(0, alpha)))
             if 0 <= x < w and 0 <= y < h:
-                self._surf.blit(dot, (x, y))
+                if self._blend_add:
+                    self._surf.blit(dot, (x, y), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(dot, (x, y))
         return self._surf
 
 
 class ParticlePreviewLaser:
     """Simple horizontal laser bar with random spark particles."""
 
-    def __init__(self, color: Tuple[int, int, int] = (120, 200, 255)) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (120, 200, 255), *, blend_mode: str | None = None) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
@@ -485,6 +1160,7 @@ class ParticlePreviewLaser:
         # Fixed-timestep accumulator for stable spark timing (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -504,18 +1180,21 @@ class ParticlePreviewLaser:
                 self._sparks.append((random.randint(4, max(4, w_step - 5)), y_step + random.randint(-4, 4), 0))
             self._sparks = [(x, sy, age + 1) for (x, sy, age) in self._sparks if age + 1 < 20]
             self._acc_ms -= self._step_ms
-        # Draw after updates
+        # Draw after updates (compose into tmp when additive)
         w, h = self._size
         self._surf.fill((0, 0, 0, 0))
+        tmp = self._surf if not self._blend_add else pygame.Surface((w, h), pygame.SRCALPHA)
         y = h // 2
         # laser bar
-        pygame.draw.rect(self._surf, (*self._color, 200), pygame.Rect(2, y-1, max(1, w-4), 2))
+        pygame.draw.rect(tmp, (*self._color, 200), pygame.Rect(2, y-1, max(1, w-4), 2))
         # sparks
         for (x, sy, age) in self._sparks:
             alpha = max(0, 200 - age * 10)
             dot = pygame.Surface((2, 2), pygame.SRCALPHA)
             dot.fill((*self._color, alpha))
-            self._surf.blit(dot, (x, sy))
+            tmp.blit(dot, (x, sy))
+        if self._blend_add and tmp is not self._surf:
+            self._surf.blit(tmp, (0, 0), special_flags=pygame.BLEND_ADD)
         return self._surf
 
 
@@ -529,7 +1208,18 @@ class ParticlePreviewExplosion:
     - speed_range: (min,max) speed for radial particles
     """
 
-    def __init__(self, color: Tuple[int, int, int] = (255, 180, 80), palette: list[Tuple[int, int, int]] | None = None, count: int = 24, speed_range: tuple[float, float] = (0.8, 2.5)) -> None:
+    def __init__(
+        self,
+        color: Tuple[int, int, int] = (255, 180, 80),
+        palette: list[Tuple[int, int, int]] | None = None,
+        count: int = 24,
+        speed_range: tuple[float, float] = (0.8, 2.5),
+        *,
+        blend_mode: str | None = None,
+        size_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        alpha_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        color_over_life: list[list] | list[tuple] | None = None,
+    ) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
@@ -542,6 +1232,12 @@ class ParticlePreviewExplosion:
         # Fixed-timestep accumulator for stable speed (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        # Advanced options
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._size_curve = size_over_life if isinstance(size_over_life, (list, tuple)) else None
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        self._life_frames = 30
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -581,16 +1277,105 @@ class ParticlePreviewExplosion:
             self._acc_ms -= self._step_ms
         # Draw after updates
         for (x, y, dx, dy, age) in self._parts:
-            alpha = max(0, 220 - age * 7)
-            dot = pygame.Surface((3, 3), pygame.SRCALPHA)
-            if self._palette and len(self._palette) > 0:
+            # Normalized age in [0,1]
+            t = max(0.0, min(1.0, age / max(1, self._life_frames)))
+            # Size over life: base 3px
+            base_sz = 3.0
+            if self._size_curve is not None:
+                scale = 1.0
+                # reuse smoke evaluator via local inline implementation
+                def _eval_curve(curve, tt: float, default: float) -> float:
+                    pts = []
+                    for pt in curve:
+                        try:
+                            pts.append((float(pt[0]), float(pt[1])))
+                        except Exception:
+                            continue
+                    if not pts:
+                        return default
+                    pts.sort(key=lambda x: x[0])
+                    if tt <= pts[0][0]:
+                        return pts[0][1]
+                    if tt >= pts[-1][0]:
+                        return pts[-1][1]
+                    for i in range(1, len(pts)):
+                        t0, v0 = pts[i-1]
+                        t1, v1 = pts[i]
+                        if t0 <= tt <= t1 and t1 > t0:
+                            k = (tt - t0) / (t1 - t0)
+                            return v0 * (1 - k) + v1 * k
+                    return default
+                scale = max(0.05, _eval_curve(self._size_curve, t, 1.0))
+                sz = max(1, int(base_sz * scale))
+            else:
+                sz = int(base_sz)
+            # Alpha over life override
+            if self._alpha_curve is not None:
+                def _eval_curve_alpha(curve, tt: float, default: float) -> float:
+                    pts = []
+                    for pt in curve:
+                        try:
+                            pts.append((float(pt[0]), float(pt[1])))
+                        except Exception:
+                            continue
+                    if not pts:
+                        return default
+                    pts.sort(key=lambda x: x[0])
+                    if tt <= pts[0][0]:
+                        return pts[0][1]
+                    if tt >= pts[-1][0]:
+                        return pts[-1][1]
+                    for i in range(1, len(pts)):
+                        t0, v0 = pts[i-1]
+                        t1, v1 = pts[i]
+                        if t0 <= tt <= t1 and t1 > t0:
+                            k = (tt - t0) / (t1 - t0)
+                            return v0 * (1 - k) + v1 * k
+                    return default
+                alpha = max(0, min(255, int(255.0 * max(0.0, min(1.0, _eval_curve_alpha(self._alpha_curve, t, 1.0))))))
+            else:
+                alpha = max(0, 220 - age * 7)
+            # Color over life gradient or palette/base
+            if self._color_grad is not None:
+                # evaluate gradient
+                def _eval_grad(grad, tt: float, base):
+                    pts = []
+                    for pt in grad:
+                        try:
+                            col = pt[1]
+                            pts.append((float(pt[0]), (int(col[0]), int(col[1]), int(col[2]))))
+                        except Exception:
+                            continue
+                    if not pts:
+                        return base
+                    pts.sort(key=lambda x: x[0])
+                    if tt <= pts[0][0]:
+                        return pts[0][1]
+                    if tt >= pts[-1][0]:
+                        return pts[-1][1]
+                    for i in range(1, len(pts)):
+                        t0, c0 = pts[i-1]
+                        t1, c1 = pts[i]
+                        if t0 <= tt <= t1 and t1 > t0:
+                            k = (tt - t0) / (t1 - t0)
+                            r = int(c0[0] * (1 - k) + c1[0] * k)
+                            g = int(c0[1] * (1 - k) + c1[1] * k)
+                            b = int(c0[2] * (1 - k) + c1[2] * k)
+                            return (r, g, b)
+                    return base
+                col = _eval_grad(self._color_grad, t, self._color)
+            elif self._palette and len(self._palette) > 0:
                 col = random.choice(self._palette)
             else:
                 col = self._color
+            dot = pygame.Surface((sz, sz), pygame.SRCALPHA)
             dot.fill((*col, alpha))
             ix, iy = int(x), int(y)
             if 0 <= ix < w and 0 <= iy < h:
-                self._surf.blit(dot, (ix, iy))
+                if self._blend_add:
+                    self._surf.blit(dot, (ix, iy), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(dot, (ix, iy))
         return self._surf
 
 
@@ -791,7 +1576,7 @@ class ParticlePreviewFirework:
 class ParticlePreviewLightning:
     """Simple lightning bolt preview using LightningModel with looping."""
 
-    def __init__(self, color: Tuple[int, int, int] = (120, 200, 255), segments: int = 10, offset: int = 10, lifetime: int = 8, thickness: int = 2) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (120, 200, 255), segments: int = 10, offset: int = 10, lifetime: int = 8, thickness: int = 2, *, blend_mode: str | None = None, alpha_over_life=None, color_over_life=None) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._model: LightningModel | None = None
@@ -803,6 +1588,7 @@ class ParticlePreviewLightning:
         # Fixed-timestep accumulator for stable speed (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -833,14 +1619,78 @@ class ParticlePreviewLightning:
         self._surf.fill((0, 0, 0, 0))
         if self._model:
             frac = max(0.0, min(1.0, self._model.lifetime / max(1, self._model.max_lifetime)))
-            alpha = int(80 + 175 * frac)
-            col = (*self._color, alpha)
+            # alpha via curve if present
+            if self._alpha_curve is not None:
+                def _eval_curve(curve, t: float, default: float) -> float:
+                    pts = []
+                    for pt in curve:
+                        try:
+                            pts.append((float(pt[0]), float(pt[1])))
+                        except Exception:
+                            continue
+                    if not pts:
+                        return default
+                    pts.sort(key=lambda x: x[0])
+                    if t <= pts[0][0]:
+                        return pts[0][1]
+                    if t >= pts[-1][0]:
+                        return pts[-1][1]
+                    for i in range(1, len(pts)):
+                        t0, v0 = pts[i-1]
+                        t1, v1 = pts[i]
+                        if t0 <= t <= t1 and t1 > t0:
+                            k = (t - t0) / (t1 - t0)
+                            return v0 * (1 - k) + v1 * k
+                    return default
+                a = max(0.0, min(1.0, _eval_curve(self._alpha_curve, frac, 1.0)))
+                alpha = int(255.0 * a)
+            else:
+                alpha = int(80 + 175 * frac)
+            # color via gradient if present
+            if self._color_grad is not None:
+                def _eval_grad(grad, t: float, base):
+                    pts = []
+                    for pt in grad:
+                        try:
+                            col = pt[1]
+                            if isinstance(col, (list, tuple)) and len(col) >= 3:
+                                pts.append((float(pt[0]), (int(col[0]), int(col[1]), int(col[2]))))
+                        except Exception:
+                            continue
+                    if not pts:
+                        return base
+                    pts.sort(key=lambda x: x[0])
+                    if t <= pts[0][0]:
+                        return pts[0][1]
+                    if t >= pts[-1][0]:
+                        return pts[-1][1]
+                    for i in range(1, len(pts)):
+                        t0, c0 = pts[i-1]
+                        t1, c1 = pts[i]
+                        if t0 <= t <= t1 and t1 > t0:
+                            k = (t - t0) / (t1 - t0)
+                            r = int(c0[0] * (1 - k) + c1[0] * k)
+                            g = int(c0[1] * (1 - k) + c1[1] * k)
+                            b = int(c0[2] * (1 - k) + c1[2] * k)
+                            return (r, g, b)
+                    return base
+                dcol = _eval_grad(self._color_grad, frac, self._color)
+            else:
+                dcol = self._color
+            col = (*dcol, alpha)
             # Draw thick line by multiple offsets for a glow-ish look
             pts = [(int(x), int(y)) for (x, y) in getattr(self._model, 'points', [])]
             if len(pts) >= 2:
-                for dx in (-1, 0, 1):
-                    for dy in (-1, 0, 1):
-                        pygame.draw.lines(self._surf, col, False, [(x+dx, y+dy) for (x, y) in pts], self._thickness)
+                if self._blend_add:
+                    tmp = pygame.Surface(self._size, pygame.SRCALPHA)
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            pygame.draw.lines(tmp, col, False, [(x+dx, y+dy) for (x, y) in pts], self._thickness)
+                    self._surf.blit(tmp, (0, 0), special_flags=pygame.BLEND_ADD)
+                else:
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            pygame.draw.lines(self._surf, col, False, [(x+dx, y+dy) for (x, y) in pts], self._thickness)
         return self._surf
 
 
@@ -915,6 +1765,15 @@ class ParticlePreviewWaterFountain:
         gravity: float = 0.25,
         droplet_size: int = 2,
         splash_count: int = 2,
+        *,
+        blend_mode: str | None = None,
+        alpha_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        # AAA subset (optional)
+        size_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        color_over_life: list[list] | list[tuple] | None = None,
+        emission_shape: str | None = None,
+        emission_extent: list | tuple | int | float | None = None,
+        speed_variance: float | int | None = None,
     ) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
@@ -934,6 +1793,17 @@ class ParticlePreviewWaterFountain:
         # Fixed-timestep accumulator (~30 Hz)
         self._acc_ms = 0
         self._step_ms = 33
+        # Advanced
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._size_curve = size_over_life if isinstance(size_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        self._emit_shape = str(emission_shape).lower() if isinstance(emission_shape, str) else None
+        self._emit_extent = emission_extent
+        try:
+            self._speed_var = float(speed_variance) if isinstance(speed_variance, (int, float)) else 0.0
+        except Exception:
+            self._speed_var = 0.0
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -944,12 +1814,29 @@ class ParticlePreviewWaterFountain:
 
     def _spawn_droplets(self, w: int, h: int) -> None:
         top_y = max(2, int(h * 0.18))
-        for s in self._spouts:
-            x = int(2 + s * max(1, w - 4))
+        # Decide spout x positions: use configured spouts if present; else build from emission_shape/extent
+        if self._spouts:
+            xs = [int(2 + s * max(1, w - 4)) for s in self._spouts]
+        else:
+            # derive three equidistant spouts along top within extent (0..1 fraction or pixels)
+            if isinstance(self._emit_extent, (int, float)):
+                # interpret 0..1 as fraction of width when <=1.0, else pixels
+                if 0.0 < float(self._emit_extent) <= 1.0:
+                    span = int(max(4, (w - 4) * float(self._emit_extent)))
+                else:
+                    span = int(max(4, min(w - 4, float(self._emit_extent))))
+            else:
+                span = w - 4
+            left = 2 + (w - 4 - span) // 2
+            step = max(1, span // 4)
+            xs = [left + step, left + 2 * step, left + 3 * step]
+        var = max(-0.95, min(0.95, float(self._speed_var))) if isinstance(self._speed_var, (int, float)) else 0.0
+        for x in xs:
             for _ in range(self._emit):
                 # small x-offset to create thin stream and flicker
                 vx = random.uniform(-0.2, 0.2) * max(0.5, self._speed * 0.35)
-                vy = abs(self._speed) + random.uniform(-0.2, 0.2)
+                # apply variance multiplicatively to base speed (downwards)
+                vy = abs(self._speed) * (1.0 + random.uniform(-var, var)) + random.uniform(-0.2, 0.2)
                 size = max(1, int(self._sz + random.choice((-1, 0, 0, 1))))
                 life = 120  # upper bound; most will end on impact earlier
                 self._drops.append((float(x), float(top_y), float(vx), float(vy), size, 0, life))
@@ -1010,24 +1897,106 @@ class ParticlePreviewWaterFountain:
                 pygame.draw.line(self._surf, (*base, 40), (x, int(h * 0.18)), (x, h - 3), 1)
         except Exception:
             pass
-        # droplets (slightly translucent)
+        # droplets (apply curves if configured)
         for (x, y, vx, vy, sz, age, life) in self._drops:
-            alpha = max(80, min(255, 220 - age))
-            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
-            blob.fill((*base, alpha))
+            t = max(0.0, min(1.0, age / max(1, life)))
+            # alpha
+            if self._alpha_curve is not None:
+                alpha = max(0, min(255, int(255.0 * max(0.0, min(1.0, self._eval_curve(self._alpha_curve, t, 1.0))))))
+            else:
+                alpha = max(80, min(255, 220 - age))
+            # size
+            draw_sz = sz
+            if self._size_curve is not None:
+                scale = max(0.05, self._eval_curve(self._size_curve, t, 1.0))
+                draw_sz = max(1, int(sz * scale))
+            # color
+            dcol = self._eval_color_gradient(self._color_grad, t, base) if self._color_grad is not None else base
+            blob = pygame.Surface((draw_sz, draw_sz), pygame.SRCALPHA)
+            blob.fill((*dcol, alpha))
             ix, iy = int(x), int(y)
             if 0 <= ix < w and 0 <= iy < h:
-                self._surf.blit(blob, (ix, iy))
+                if self._blend_add:
+                    self._surf.blit(blob, (ix, iy), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(blob, (ix, iy))
         # splashes brighter but short-lived
         for (x, y, vx, vy, sz, age, life) in self._spl:
-            alpha = max(0, min(255, int(255 * (1 - age / max(1, life)))))
-            blob = pygame.Surface((sz, sz), pygame.SRCALPHA)
-            col = (min(255, base[0] + 20), min(255, base[1] + 20), min(255, base[2] + 20))
-            blob.fill((*col, alpha))
+            t = max(0.0, min(1.0, age / max(1, life)))
+            if self._alpha_curve is not None:
+                alpha = max(0, min(255, int(255.0 * max(0.0, min(1.0, self._eval_curve(self._alpha_curve, t, 1.0))))))
+            else:
+                alpha = max(0, min(255, int(255 * (1 - age / max(1, life)))))
+            # size
+            draw_sz = sz
+            if self._size_curve is not None:
+                scale = max(0.05, self._eval_curve(self._size_curve, t, 1.0))
+                draw_sz = max(1, int(sz * scale))
+            # color (slightly brighter base)
+            base2 = (min(255, base[0] + 20), min(255, base[1] + 20), min(255, base[2] + 20))
+            dcol = self._eval_color_gradient(self._color_grad, t, base2) if self._color_grad is not None else base2
+            blob = pygame.Surface((draw_sz, draw_sz), pygame.SRCALPHA)
+            blob.fill((*dcol, alpha))
             ix, iy = int(x), int(y)
             if 0 <= ix < w and 0 <= iy < h:
-                self._surf.blit(blob, (ix, iy))
+                if self._blend_add:
+                    self._surf.blit(blob, (ix, iy), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(blob, (ix, iy))
         return self._surf
+
+    def _eval_curve(self, curve, t: float, default: float) -> float:
+        if not isinstance(curve, (list, tuple)) or len(curve) == 0:
+            return float(default)
+        pts = []
+        for pt in curve:
+            try:
+                pts.append((float(pt[0]), float(pt[1])))
+            except Exception:
+                continue
+        if not pts:
+            return float(default)
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, v0 = pts[i-1]
+            t1, v1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                return v0 * (1 - k) + v1 * k
+        return float(default)
+
+    def _eval_color_gradient(self, grad, t: float, base: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        if not isinstance(grad, (list, tuple)) or len(grad) == 0:
+            return base
+        pts = []
+        for pt in grad:
+            try:
+                col = pt[1]
+                if isinstance(col, (list, tuple)) and len(col) >= 3:
+                    pts.append((float(pt[0]), (int(col[0]), int(col[1]), int(col[2]))))
+            except Exception:
+                continue
+        if not pts:
+            return base
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, c0 = pts[i-1]
+            t1, c1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                r = int(c0[0] * (1 - k) + c1[0] * k)
+                g = int(c0[1] * (1 - k) + c1[1] * k)
+                b = int(c0[2] * (1 - k) + c1[2] * k)
+                return (r, g, b)
+        return base
 
 
 class ParticlePreviewFallingLeaf:
@@ -1048,6 +2017,13 @@ class ParticlePreviewFallingLeaf:
         sway_amp: float = 0.6,
         sway_speed: float = 0.15,
         size: Tuple[int, int] = (3, 2),
+        *,
+        blend_mode: str | None = None,
+        alpha_over_life: list[list[float]] | list[tuple[float, float]] | None = None,
+        color_over_life: list[list] | list[tuple] | None = None,
+        # AAA subset (optional)
+        lifetime_jitter: int | float | None = None,
+        size_start: int | float | list | tuple | None = None,
     ) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
@@ -1067,6 +2043,69 @@ class ParticlePreviewFallingLeaf:
         # current leaf (None or tuple fields)
         self._leaf: tuple[float, float, float, float, float, int] | None = None
         # x, y, vx, vy, sway_phase, age_ms
+        self._blend_add = isinstance(blend_mode, str) and blend_mode.lower() == "additive"
+        self._alpha_curve = alpha_over_life if isinstance(alpha_over_life, (list, tuple)) else None
+        self._color_grad = color_over_life if isinstance(color_over_life, (list, tuple)) else None
+        # Advanced
+        try:
+            self._life_jitter = float(lifetime_jitter) if isinstance(lifetime_jitter, (int, float)) else 0.0
+        except Exception:
+            self._life_jitter = 0.0
+        self._size_start = size_start
+        self._leaf_life_ms = self._life_ms
+
+    def _eval_curve(self, curve, t: float, default: float) -> float:
+        if not isinstance(curve, (list, tuple)) or len(curve) == 0:
+            return float(default)
+        pts = []
+        for pt in curve:
+            try:
+                pts.append((float(pt[0]), float(pt[1])))
+            except Exception:
+                continue
+        if not pts:
+            return float(default)
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, v0 = pts[i-1]
+            t1, v1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                return v0 * (1 - k) + v1 * k
+        return float(default)
+
+    def _eval_color_gradient(self, grad, t: float, base: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        if not isinstance(grad, (list, tuple)) or len(grad) == 0:
+            return base
+        pts = []
+        for pt in grad:
+            try:
+                col = pt[1]
+                if isinstance(col, (list, tuple)) and len(col) >= 3:
+                    pts.append((float(pt[0]), (int(col[0]), int(col[1]), int(col[2]))))
+            except Exception:
+                continue
+        if not pts:
+            return base
+        pts.sort(key=lambda x: x[0])
+        if t <= pts[0][0]:
+            return pts[0][1]
+        if t >= pts[-1][0]:
+            return pts[-1][1]
+        for i in range(1, len(pts)):
+            t0, c0 = pts[i-1]
+            t1, c1 = pts[i]
+            if t0 <= t <= t1 and t1 > t0:
+                k = (t - t0) / (t1 - t0)
+                r = int(c0[0] * (1 - k) + c1[0] * k)
+                g = int(c0[1] * (1 - k) + c1[1] * k)
+                b = int(c0[2] * (1 - k) + c1[2] * k)
+                return (r, g, b)
+        return base
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -1082,6 +2121,29 @@ class ParticlePreviewFallingLeaf:
         vx = 0.0
         vy = max(0.1, self._base_vy)
         sway_phase = random.random() * 6.28318
+        # lifetime jitter: treat <1 as ratio, >=1 as ms
+        lj = float(self._life_jitter)
+        life_ms = self._life_ms
+        if lj != 0.0:
+            if 0.0 < abs(lj) < 1.0:
+                jit = int(abs(lj) * life_ms)
+            else:
+                jit = int(abs(lj))
+            delta = random.randint(-jit, jit)
+            life_ms = max(500, min(int(self._life_ms * 2), life_ms + delta))
+        self._leaf_life_ms = life_ms
+        # size_start override
+        if isinstance(self._size_start, (int, float)):
+            self._leaf_w = max(2, int(self._size_start))
+            self._leaf_h = max(2, int(self._size_start))
+        elif isinstance(self._size_start, (list, tuple)) and self._size_start:
+            try:
+                w0 = int(self._size_start[0])
+                h0 = int(self._size_start[1] if len(self._size_start) > 1 else self._size_start[0])
+                self._leaf_w = max(2, w0)
+                self._leaf_h = max(2, h0)
+            except Exception:
+                pass
         self._leaf = (x, y, vx, vy, sway_phase, 0)
 
     def _step(self, w: int, h: int, steps: int) -> None:
@@ -1103,7 +2165,7 @@ class ParticlePreviewFallingLeaf:
             y += vy
             age += self._step_ms
             # stop if out or lifetime exceeded
-            if y >= h - 2 or age >= self._life_ms:
+            if y >= h - 2 or age >= self._leaf_life_ms:
                 self._leaf = None
                 return
         self._leaf = (x, y, vx, vy, phase, age)
@@ -1123,13 +2185,21 @@ class ParticlePreviewFallingLeaf:
         self._surf.fill((0, 0, 0, 0))
         if self._leaf is not None:
             x, y, vx, vy, phase, age = self._leaf
-            # subtle alpha fade with age
-            a = max(80, min(255, 255 - int(255 * (age / max(1, self._life_ms)))))
+            # subtle alpha fade with age or curve override
+            t = max(0.0, min(1.0, age / max(1, self._leaf_life_ms)))
+            if self._alpha_curve is not None:
+                a = max(0, min(255, int(255.0 * max(0.0, min(1.0, self._eval_curve(self._alpha_curve, t, 1.0))))))
+            else:
+                a = max(80, min(255, 255 - int(255 * t)))
             leaf = pygame.Surface((self._leaf_w, self._leaf_h), pygame.SRCALPHA)
-            leaf.fill((*self._color, a))
+            dcol = self._eval_color_gradient(self._color_grad, t, self._color) if self._color_grad is not None else self._color
+            leaf.fill((*dcol, a))
             ix, iy = int(x), int(y)
             if 0 <= ix < w and 0 <= iy < h:
-                self._surf.blit(leaf, (ix, iy))
+                if self._blend_add:
+                    self._surf.blit(leaf, (ix, iy), special_flags=pygame.BLEND_ADD)
+                else:
+                    self._surf.blit(leaf, (ix, iy))
         return self._surf
 
 

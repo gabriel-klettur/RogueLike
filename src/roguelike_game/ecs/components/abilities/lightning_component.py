@@ -14,7 +14,15 @@ class LightningComponent:
                  particle_speed: float = 0.0,
                  particle_dispersion: float = 0.0,
                  size_min: int | None = None,
-                 size_max: int | None = None):
+                 size_max: int | None = None,
+                 # Advanced optional particle params
+                 particle_blend_mode: str | None = None,
+                 particle_size_over_life: list | tuple | None = None,
+                 particle_alpha_over_life: list | tuple | None = None,
+                 particle_color_over_life: list | tuple | None = None,
+                 particle_gravity: tuple[float, float] | list[float] | float | None = None,
+                 particle_drag: float | None = None,
+                 ):
         # Modelo de los puntos del rayo
         self.model = LightningModel(start_pos, end_pos, segments=segments, offset=offset, lifetime=lifetime)
         # Parámetros opcionales para emisión de partículas
@@ -49,6 +57,13 @@ class LightningComponent:
         except Exception:
             self.size_min = None
             self.size_max = None
+        # Advanced particle fields (optional)
+        self.particle_blend_mode = particle_blend_mode if isinstance(particle_blend_mode, str) else None
+        self.particle_size_over_life = particle_size_over_life if isinstance(particle_size_over_life, (list, tuple)) else None
+        self.particle_alpha_over_life = particle_alpha_over_life if isinstance(particle_alpha_over_life, (list, tuple)) else None
+        self.particle_color_over_life = particle_color_over_life if isinstance(particle_color_over_life, (list, tuple)) else None
+        self.particle_gravity = particle_gravity
+        self.particle_drag = float(particle_drag) if isinstance(particle_drag, (int, float)) else None
 
     def update(self):
         self.model.update()

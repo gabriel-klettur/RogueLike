@@ -25,6 +25,7 @@ from roguelike_game.ecs.components.combat.energy import Energy
 from roguelike_game.ecs.components.combat.hunger import Hunger
 from roguelike_game.ecs.components.combat.melee_weapon import MeleeWeapon
 from roguelike_game.ecs.components.rendering.trail_component import TrailComponent, TrailConfig
+from roguelike_game.ecs.components.rendering.ribbon_component import RibbonComponent
 from roguelike_game.ecs.components.ai.damage_config import DamageConfig
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
@@ -100,6 +101,26 @@ class PlayerBuilder:
         trail_params = PLAYER_STATS[class_player].get("basic_trail", DEFAULT_TRAIL)
         trail_cfg = TrailConfig(interval=trail_params["interval"], life_time=trail_params["life_time"], max_trails=trail_params["max_trails"])
         comps["TrailComponent"][eid] = TrailComponent(config=trail_cfg)
+        # Optional ribbon trail (AAA): enabled only if present in player stats
+        ribbon_cfg = PLAYER_STATS[class_player].get("ribbon_trail")
+        if isinstance(ribbon_cfg, dict):
+            try:
+                color = ribbon_cfg.get("color", (255, 255, 255))
+                if isinstance(color, (list, tuple)):
+                    color = (int(color[0]), int(color[1]), int(color[2]))
+                comps["RibbonComponent"][eid] = RibbonComponent(
+                    max_points=int(ribbon_cfg.get("max_points", 24)),
+                    min_distance=float(ribbon_cfg.get("min_distance", 2.0)),
+                    width_px=int(ribbon_cfg.get("width_px", 6)),
+                    color=color,
+                    alpha=int(ribbon_cfg.get("alpha", 200)),
+                    life_time=float(ribbon_cfg.get("life_time", 0.35)),
+                    texture_path=ribbon_cfg.get("texture_path"),
+                    blend_mode=ribbon_cfg.get("blend_mode"),
+                )
+            except Exception:
+                # Do not fail player construction due to optional ribbon config
+                pass
         # Dash charges (sequential policy): total y recarga por carga
         try:
             dash_total = int(PLAYER_STATS[class_player].get("dash_charges", 1))

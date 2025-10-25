@@ -3,7 +3,21 @@ import math
 from roguelike_game.ecs.systems.particles.particle import Particle
 
 class FireExplosionModel:
-    def __init__(self, x, y, particle_count=100, scale=1.0, colors=None):
+    def __init__(
+        self,
+        x,
+        y,
+        particle_count=100,
+        scale=1.0,
+        colors=None,
+        *,
+        gravity=None,
+        drag=None,
+        blend_mode=None,
+        size_over_life=None,
+        alpha_over_life=None,
+        color_over_life=None,
+    ):
         self.x = x
         self.y = y
         # Allow scalable explosion size via 'scale' factor (>=0.1)
@@ -30,12 +44,19 @@ class FireExplosionModel:
             palette = default_palette
         self.particles = [
             Particle(
-                x, y,
+                x,
+                y,
                 angle=random.uniform(0, 2 * math.pi),
                 speed=random.uniform(4, 8),
                 color=random.choice(palette),
                 size=random.randint(size_min, size_max),
-                lifespan=random.randint(20, 35)
+                lifespan=random.randint(20, 35),
+                gravity=gravity,
+                drag=drag,
+                blend_mode=blend_mode,
+                size_over_life=size_over_life,
+                alpha_over_life=alpha_over_life,
+                color_over_life=color_over_life,
             )
             for _ in range(count)
         ]
@@ -77,17 +98,36 @@ class TimedEffectModel:
         # Rendered by ParticlePresetRenderSystem; nothing to draw here.
         return None
 class ElectricExplosionModel:
-    def __init__(self, x, y, particle_count=35):
+    def __init__(
+        self,
+        x,
+        y,
+        particle_count=35,
+        *,
+        gravity=None,
+        drag=None,
+        blend_mode=None,
+        size_over_life=None,
+        alpha_over_life=None,
+        color_over_life=None,
+    ):
         self.x = x
         self.y = y
         self.particles = [
             Particle(
-                x, y,
+                x,
+                y,
                 angle=random.uniform(0, 2 * math.pi),
                 speed=random.uniform(3, 6),
                 color=random.choice([(0, 255, 255), (150, 255, 255), (255, 255, 255)]),
                 size=random.randint(1, 4),
-                lifespan=random.randint(10, 20)
+                lifespan=random.randint(10, 20),
+                gravity=gravity,
+                drag=drag,
+                blend_mode=blend_mode,
+                size_over_life=size_over_life,
+                alpha_over_life=alpha_over_life,
+                color_over_life=color_over_life,
             )
             for _ in range(particle_count)
         ]
@@ -104,17 +144,36 @@ class ElectricExplosionModel:
             p.render(screen, camera)
 
 class DarkExplosionModel:
-    def __init__(self, x, y, particle_count=25):
+    def __init__(
+        self,
+        x,
+        y,
+        particle_count=25,
+        *,
+        gravity=None,
+        drag=None,
+        blend_mode=None,
+        size_over_life=None,
+        alpha_over_life=None,
+        color_over_life=None,
+    ):
         self.x = x
         self.y = y
         self.particles = [
             Particle(
-                x, y,
+                x,
+                y,
                 angle=random.uniform(0, 2 * math.pi),
                 speed=random.uniform(1, 3),
                 color=random.choice([(40, 0, 40), (60, 0, 60), (20, 20, 20)]),
                 size=random.randint(5, 10),
-                lifespan=random.randint(40, 60)
+                lifespan=random.randint(40, 60),
+                gravity=gravity,
+                drag=drag,
+                blend_mode=blend_mode,
+                size_over_life=size_over_life,
+                alpha_over_life=alpha_over_life,
+                color_over_life=color_over_life,
             )
             for _ in range(particle_count)
         ]
@@ -131,7 +190,19 @@ class DarkExplosionModel:
             p.render(screen, camera)
 
 class MagicExplosionModel:
-    def __init__(self, x, y, particle_count=30):
+    def __init__(
+        self,
+        x,
+        y,
+        particle_count=30,
+        *,
+        gravity=None,
+        drag=None,
+        blend_mode=None,
+        size_over_life=None,
+        alpha_over_life=None,
+        color_over_life=None,
+    ):
         self.x = x
         self.y = y
         self.particles = []
@@ -147,7 +218,23 @@ class MagicExplosionModel:
                 (50, 255, 255),
                 (255, 255, 255)
             ])
-            self.particles.append(Particle(x, y, angle, speed, color, size, lifespan))
+            self.particles.append(
+                Particle(
+                    x,
+                    y,
+                    angle,
+                    speed,
+                    color,
+                    size,
+                    lifespan,
+                    gravity=gravity,
+                    drag=drag,
+                    blend_mode=blend_mode,
+                    size_over_life=size_over_life,
+                    alpha_over_life=alpha_over_life,
+                    color_over_life=color_over_life,
+                )
+            )
 
     def update(self):
         for p in self.particles:

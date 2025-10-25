@@ -166,6 +166,24 @@ class FireballTrailEmitterSystem:
             if not isinstance(dispersion, (int, float)):
                 dispersion = float((getattr(cfg, "particle_dispersion", 8.0) or (cfg.get("particle_dispersion", 8.0) if cfg else 8.0)) if cfg else 8.0)
 
+            # Advanced particle params (optional)
+            blend_mode = parts.get("blend_mode") if isinstance(parts.get("blend_mode"), str) else None
+            size_ol = parts.get("size_over_life") if isinstance(parts.get("size_over_life"), (list, tuple)) else None
+            alpha_ol = parts.get("alpha_over_life") if isinstance(parts.get("alpha_over_life"), (list, tuple)) else None
+            color_ol = parts.get("color_over_life") if isinstance(parts.get("color_over_life"), (list, tuple)) else None
+            gval = parts.get("gravity")
+            if isinstance(gval, (int, float)):
+                grav = (0.0, float(gval))
+            elif isinstance(gval, (list, tuple)) and len(gval) >= 2:
+                try:
+                    grav = (float(gval[0]), float(gval[1]))
+                except Exception:
+                    grav = None
+            else:
+                grav = None
+            dval = parts.get("drag")
+            drg = float(dval) if isinstance(dval, (int, float)) else None
+
             # Dirección base: opuesta a la velocidad del proyectil (con fallback a FireballComponent)
             vx = getattr(vel, "vx", None) if vel is not None else None
             vy = getattr(vel, "vy", None) if vel is not None else None
@@ -178,7 +196,37 @@ class FireballTrailEmitterSystem:
             # Punto de spawn ligeramente detrás del centro (usar vx,vy robustos)
             spawn_x = pos.x - float(vx) * 0.2
             spawn_y = pos.y - float(vy) * 0.2
+            # Optional simulation space/cap/inherit
+            sim_space = parts.get("simulation_space") if isinstance(parts.get("simulation_space"), str) else getattr(fcmp, 'particle_simulation_space', getattr(fcmp, 'simulation_space', None))
+            anchor_local = isinstance(sim_space, str) and sim_space.lower() == 'local'
+            max_particles = parts.get("max_particles") if isinstance(parts.get("max_particles"), int) else getattr(fcmp, 'max_particles', None)
+            try:
+                max_particles = int(max_particles) if max_particles is not None else None
+            except Exception:
+                max_particles = None
+            if isinstance(sim_space, str) and sim_space.lower() not in ('local', 'world') and not getattr(fcmp, '_warned_simspace', False):
+                try:
+                    self._logger.warning("[FireballTrailEmitter] unknown simulation_space='%s' (expected 'local'|'world')", sim_space)
+                except Exception:
+                    pass
+                setattr(fcmp, '_warned_simspace', True)
+            if isinstance(max_particles, int) and max_particles <= 0 and not getattr(fcmp, '_warned_nonpos_max', False):
+                try:
+                    self._logger.warning("[FireballTrailEmitter] non-positive max_particles=%s ignored", max_particles)
+                except Exception:
+                    pass
+                setattr(fcmp, '_warned_nonpos_max', True)
+            if anchor_local and isinstance(max_particles, int) and max_particles > 0:
+                active = 0
+                for pc in comps.get('ParticleComponent', {}).values():
+                    if getattr(pc, 'anchor_eid', None) == eid:
+                        active += 1
+                budget = max_particles - active
+            else:
+                budget = None
             emit_n = int(max(1, emit_rate))
+            if isinstance(budget, int):
+                emit_n = max(0, min(emit_n, budget))
             # Log detallado solo en los primeros frames de cada fireball para no hacer ruido
             try:
                 if getattr(fcmp, 'age', 0) <= 2:
@@ -189,11 +237,23 @@ class FireballTrailEmitterSystem:
             except Exception:
                 pass
 
+            inherit_v = 0.0
+            try:
+                inherit_v = float(parts.get("inherit_velocity")) if isinstance(parts.get("inherit_velocity"), (int, float)) else float(getattr(fcmp, 'inherit_velocity', 0.0) or 0.0)
+            except Exception:
+                inherit_v = 0.0
             for _ in range(emit_n):
                 ang = math.radians(base_angle + random.uniform(-dispersion, dispersion))
                 spd = random.uniform(0.4 * speed, 1.0 * speed)
                 dx = math.cos(ang) * spd
                 dy = math.sin(ang) * spd
+                if inherit_v and vel is not None:
+                    fac = max(0.0, min(1.0, inherit_v))
+                    try:
+                        dx += float(vel.vx) * fac
+                        dy += float(vel.vy) * fac
+                    except Exception:
+                        pass
                 size = random.randint(size_range[0], size_range[1])
                 color = random.choice(colors)
 
@@ -202,4 +262,14 @@ class FireballTrailEmitterSystem:
                     spawn_x + random.uniform(-1.5, 1.5),
                     spawn_y + random.uniform(-1.5, 1.5),
                 )
-                comps.setdefault("ParticleComponent", {})[peid] = ParticleComponent(dx, dy, color, size, lifespan)
+                anchor = eid if anchor_local else None
+                comps.setdefault("ParticleComponent", {})[peid] = ParticleComponent(
+                    dx, dy, color, size, lifespan,
+                    anchor_eid=anchor,
+                    blend_mode=blend_mode,
+                    size_over_life=size_ol,
+                    alpha_over_life=alpha_ol,
+                    color_over_life=color_ol,
+                    gravity=grav,
+                    drag=drg,
+                )
