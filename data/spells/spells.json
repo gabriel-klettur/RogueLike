@@ -1011,5 +1011,45 @@
       "duration": 5.0,
       "radius": 80
     }
+  },
+  "puddle_lava": {
+    "id": "puddle_lava",
+    "type": "puddle",
+    "name": "Lava Puddle",
+    "mana_cost": 10,
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.0,
+      "cooldown": 2.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "allow_movement": true,
+      "interruptible": false,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "effect": {
+      "radius": 64,
+      "duration": 6.0,
+      "tick_period": 0.25,
+      "damage": 0,
+      "element": "lava",
+      "status": {
+        "burn": {
+          "dps": 5,
+          "duration": 3.0,
+          "tick_period": 1.0
+        }
+      }
+    },
+    "vfx": {
+      "particles": {
+        "color": [255, 120, 60]
+      },
+      "alpha": 96
+    }
   }
 }

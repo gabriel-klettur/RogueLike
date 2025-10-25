@@ -45,5 +45,7 @@
     "reload_data": "K_F1",
     "spell_firework_launch": "K_v",
     "spell_smoke": "K_f",
-    "spell_smoke_emitter": "K_g"
+    "spell_smoke_emitter": "K_g",
+    "spell_root_whip": "",
+    "spell_puddle_lava": "K_4"
 }

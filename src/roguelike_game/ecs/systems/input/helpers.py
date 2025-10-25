@@ -116,6 +116,7 @@ def map_keyboard_spells(inp, any_pressed) -> None:
     inp.spell_smoke_emitter = any_pressed("spell_smoke_emitter")
     inp.spell_sphere_magic_shield = any_pressed("spell_sphere_magic_shield")
     inp.spell_teleport = any_pressed("spell_teleport")
+    inp.spell_puddle_lava = any_pressed("spell_puddle_lava")
 
 
 def process_spell_edges(system, world, eid: int, inp) -> None:

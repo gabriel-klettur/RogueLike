@@ -17,7 +17,8 @@
         "smoke",
         "smoke_emitter",
         "sphere_magic_shield",
-        "teleport"
+        "teleport",
+        "puddle"
       ]
     },
     "rgbColor": {
@@ -84,7 +85,24 @@
         "hit_arc_degrees": { "type": "number" },
         "duration": { "type": "number" },
         "lifetime": { "type": "number" },
-        "buff": { "type": "object", "additionalProperties": {"type": ["number", "integer", "boolean", "string"]} }
+        "buff": { "type": "object", "additionalProperties": {"type": ["number", "integer", "boolean", "string"]} },
+        "element": { "type": ["string", "null"] },
+        "tick_period": { "type": ["number", "null"] },
+        "status": {
+          "type": "object",
+          "properties": {
+            "burn": {
+              "type": "object",
+              "properties": {
+                "dps": { "type": "number" },
+                "duration": { "type": "number" },
+                "tick_period": { "type": "number" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },

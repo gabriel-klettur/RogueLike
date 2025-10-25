@@ -77,6 +77,30 @@ class _NPCWrapper:
                 _NPCWrapper._tinted_cache[tkey] = tinted
             image = tinted
 
+        # Red tint blink when burning
+        try:
+            burns = self.world.components.get('BurnComponent', {})
+            burn = burns.get(eid)
+        except Exception:
+            burn = None
+        if burn is not None:
+            try:
+                import time as _t
+                start = float(getattr(burn, 'start_time', 0.0))
+                tick = float(getattr(burn, 'tick_period', 1.0)) or 1.0
+                elapsed = max(0.0, _t.time() - start)
+                blink_interval = max(0.1, min(0.25, tick / 2.0))
+                if int(elapsed / blink_interval) % 2 == 0:
+                    color = (255, 64, 64)
+                    tkey = (id(image), color[0], color[1], color[2])
+                    tinted = _NPCWrapper._tinted_cache.get(tkey)
+                    if tinted is None:
+                        tinted = self._tint_surface(image, color)
+                        _NPCWrapper._tinted_cache[tkey] = tinted
+                    image = tinted
+            except Exception:
+                pass
+
         blit(image, apply((self.x, self.y)))
 
     @staticmethod

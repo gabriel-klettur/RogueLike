@@ -11,6 +11,7 @@ SPELL_ATTRS = [
     "smoke_emitter",
     "sphere_magic_shield",
     "teleport",
+    "puddle_lava",
 ]
 
 ACTION_BASES = [

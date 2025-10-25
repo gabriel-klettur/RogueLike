@@ -10,6 +10,7 @@ from .smoke import SmokeResolver
 from .teleport import TeleportResolver
 from .smoke_emitter import SmokeEmitterResolver
 from .sphere_magic_shield import SphereMagicShieldResolver
+from .puddle import PuddleResolver
 
 
 default_resolvers = {
@@ -25,6 +26,7 @@ default_resolvers = {
     'firework_launch': FireworkLaunchResolver(),
     'smoke': SmokeResolver(),
     'smoke_emitter': SmokeEmitterResolver(),
+    'puddle': PuddleResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers

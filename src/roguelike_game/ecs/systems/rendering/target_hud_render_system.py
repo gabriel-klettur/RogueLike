@@ -98,39 +98,55 @@ class TargetHudRenderSystem:
         return base
 
     def _get_state_label(self, world, eid: int) -> Optional[str]:
+        labels: list[str] = []
+        # FSM-based label
         npc_state = world.components.get('NPCState', {}).get(eid)
-        if not npc_state:
-            return None
+        if npc_state:
+            try:
+                st = npc_state.fsm.current_state
+            except Exception:
+                st = None
+            if st is not None:
+                try:
+                    if DeathState and isinstance(st, DeathState):
+                        labels.append("Muerto")
+                except Exception:
+                    pass
+                try:
+                    if UnconsciousState and isinstance(st, UnconsciousState):
+                        labels.append("Inconsciente")
+                except Exception:
+                    pass
+                if not labels:
+                    # Fallback: readable class name
+                    try:
+                        name = type(st).__name__
+                        out = []
+                        prev_lower = False
+                        for ch in name:
+                            if ch.isupper() and prev_lower:
+                                out.append(' ')
+                            out.append(ch)
+                            prev_lower = ch.islower()
+                        labels.append(''.join(out))
+                    except Exception:
+                        pass
+        # Status effects: show 'Quemado' if entity has BurnComponent
         try:
-            st = npc_state.fsm.current_state
-        except Exception:
-            st = None
-        if st is None:
-            return None
-        try:
-            if DeathState and isinstance(st, DeathState):
-                return "Muerto"
+            if eid in (world.components.get('BurnComponent', {}) or {}):
+                labels.append("Quemado")
         except Exception:
             pass
-        try:
-            if UnconsciousState and isinstance(st, UnconsciousState):
-                return "Inconsciente"
-        except Exception:
-            pass
-        # Fallback: nombre de clase legible
-        try:
-            name = type(st).__name__
-            # Insertar espacios en CamelCase rudimentariamente
-            out = []
-            prev_lower = False
-            for ch in name:
-                if ch.isupper() and prev_lower:
-                    out.append(' ')
-                out.append(ch)
-                prev_lower = ch.islower()
-            return ''.join(out)
-        except Exception:
+        if not labels:
             return None
+        # Deduplicate while preserving order
+        seen = set()
+        uniq = []
+        for s in labels:
+            if s not in seen:
+                seen.add(s)
+                uniq.append(s)
+        return ' · '.join(uniq)
 
     def _blit_text(self, screen: pygame.Surface, font: pygame.font.Font, text: str, x: int, y: int, color) -> pygame.Surface:
         # Sombra ligera para legibilidad

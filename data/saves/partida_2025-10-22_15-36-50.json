@@ -3,25 +3,50 @@
   "player": {
     "level": "global_map",
     "pos": [
-      180,
-      59
+      190,
+      83
     ]
   },
-  "npcs": {},
+  "npcs": {
+    "473d7621-292f-4264-8ed2-5a853ded3e4a": {
+      "level": "global_map",
+      "tile": [
+        177,
+        88
+      ],
+      "hp": 55,
+      "dead": false,
+      "prototype": "barbol"
+    }
+  },
   "levels": {
     "global_map": {
       "player_pos": [
-        180,
-        59
+        190,
+        83
       ],
-      "npc_states": {}
+      "npc_states": {
+        "473d7621-292f-4264-8ed2-5a853ded3e4a": {
+          "level": "global_map",
+          "tile": [
+            177,
+            88
+          ],
+          "hp": 55,
+          "dead": false,
+          "prototype": "barbol"
+        }
+      }
     }
   },
   "player_inventory": {
     "player_id": "49587a3b-0089-4b91-a24a-be466e684bd0",
     "capacity": 20,
     "slots": [
-      null,
+      {
+        "item": "gold",
+        "quantity": 1
+      },
       null,
       null,
       null,
@@ -63,19 +88,78 @@
       "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       "capacity": 20,
       "slots": []
+    },
+    "f83eb568-8722-4e14-9a36-c135a6a625ce": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "58d2f99f-4023-4a76-a836-699e266ef30d": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "gold",
+          "quantity": 1
+        },
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        },
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
+    },
+    "2f55243d-5ca6-42e5-91c1-d1622c2f8768": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "c4c84696-60ea-451d-b26f-b6f63854bcf9": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "7dfcc55e-4a0d-4b55-b5f3-5ec3de4fda5e": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        },
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
+    },
+    "473d7621-292f-4264-8ed2-5a853ded3e4a": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        }
+      ]
     }
   },
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-25T12:00:27",
+    "last_played": "2025-10-25T21:45:44",
     "player": {
-      "xp": 20,
+      "xp": 40,
       "level": 0
     },
     "items_summary": {
-      "stacks": 0,
-      "top_items": []
+      "stacks": 1,
+      "top_items": [
+        "gold"
+      ]
     }
   }
 }

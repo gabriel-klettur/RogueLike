@@ -110,6 +110,12 @@ class ReleaseSpellState(State):
             resolver = SPELL_RESOLVERS.get('smoke_emitter')
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'puddle':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('puddle')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
 
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
