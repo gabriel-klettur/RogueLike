@@ -1,5 +1,5 @@
 {
-  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-10-22_15-36-50.json",
+  "current_path": "C:\\Project\\RogueLike\\data\\saves\\partida_2025-10-22_15-36-50.json",
   "slots": [
     {
       "slot_id": "partida_2025-09-08_14-35-12",
@@ -355,7 +355,7 @@
       "slot_id": "partida_2025-10-22_15-36-50",
       "path": "C:\\Project\\RogueLike\\data\\saves\\partida_2025-10-22_15-36-50.json",
       "created_at": "2025-10-22T15:36:50",
-      "size_bytes": 1589,
+      "size_bytes": 1408,
       "summary": null
     }
   ]
