@@ -10,6 +10,7 @@ from .pipeline_helpers import (
     render_ecs_trail,
     should_render_minimap,
     render_spell_debug_overlays,
+    render_game_clock,
 )
 
 
@@ -106,7 +107,7 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
                 return
             sz = screen.get_size()
             t0 = time.perf_counter()
-            lr = lm.compose_lightmap(sz, camera)
+            lr = lm.compose_lightmap(sz, camera, map_manager=manager.map)
             t1 = time.perf_counter()
             if lr is None:
                 return
@@ -136,6 +137,13 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         if should_render_minimap(manager, state, menu):
             manager._render_minimap(screen)
 
+    def _step_clock():
+        # Draw a small clock HUD under the minimap
+        try:
+            render_game_clock(manager, screen)
+        except Exception:
+            pass
+
     def _step_editors():
         manager._render_editors()
 
@@ -152,6 +160,7 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         ("3.6. crosshair", _step_crosshair),
         ("3.7. menu", _step_menu),
         ("3.8. minimap", _step_minimap),
+        ("3.85. clock", _step_clock),
         ("3.11. editors", _step_editors),
     ]
 

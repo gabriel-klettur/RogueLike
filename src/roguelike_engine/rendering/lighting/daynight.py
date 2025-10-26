@@ -36,7 +36,10 @@ class DayNightSystem:
         self.config_path = config_path or _DEFAULT_CONFIG_PATH
         self.enabled: bool = True
         self.ambient_only: bool = True
-        self.time_scale_minutes_per_second: float = 120.0  # 1s real = 2m game
+        # 0.4 min/s => 24h (1440 min) por 3600 s (1h real)
+        self.time_scale_minutes_per_second: float = 0.4
+        # Minuto del día al inicio (offset), 0..1439
+        self._start_minute: int = 0
         self._keyframes: List[Tuple[int, float, Tuple[int, int, int]]] = []
         self._lut: List[Tuple[float, Tuple[int, int, int]]] = [(1.0, (255, 255, 255))] * 1440
         self._start_ticks: int = pygame.time.get_ticks()
@@ -71,11 +74,13 @@ class DayNightSystem:
         Uses BLEND_RGBA_MULT when applied to dim the scene.
         """
         w, h = size
+        # Capture previous tint before computing a potentially new one to detect changes
+        prev_color = self._overlay_color_cache
         color = self._compute_overlay_color()
         if (
             self._overlay_cache is None
             or self._overlay_size_cache != (w, h)
-            or self._overlay_color_cache != color
+            or prev_color != color
         ):
             surf = pygame.Surface((w, h), flags=pygame.SRCALPHA)
             # Full alpha to ensure multiplication takes effect
@@ -98,6 +103,14 @@ class DayNightSystem:
         # In fase 1 usamos solo overlay ambiental aunque ambient_only sea False
         self.ambient_only = bool(data.get("ambient_only", True))
         self.time_scale_minutes_per_second = float(data.get("time_scale", 120.0) or 120.0)
+        # Si el config anterior trae valores antiguos absurdos (e.g., 120.0), normaliza a 0.4 por defecto
+        if self.time_scale_minutes_per_second > 10.0:
+            self.time_scale_minutes_per_second = 0.4
+        # Minuto inicial del día (por defecto: 10:00 = 600 para arrancar en día)
+        try:
+            self._start_minute = int(data.get("start_minute", 600)) % 1440
+        except Exception:
+            self._start_minute = 600
         # Parse keyframes
         kf = []
         for rec in data.get("keyframes", []) or []:
@@ -113,13 +126,17 @@ class DayNightSystem:
         if not kf:
             # Fallback sensible
             kf = [
-                (300, 0.30, (180, 140, 120)),
-                (360, 0.55, (220, 180, 150)),
-                (420, 0.80, (230, 230, 235)),
-                (720, 1.00, (245, 245, 255)),
-                (1140, 0.55, (220, 170, 140)),
-                (1200, 0.30, (170, 140, 180)),
-                (1440, 0.20, (150, 170, 220)),
+                # Night absolute until 05:00 (00:00 and 05:00)
+                (0, 0.00, (150, 170, 220)),
+                (300, 0.00, (150, 170, 220)),
+                # Dawn 05:00 -> 07:00 ramps to full day with neutral color
+                (420, 1.00, (255, 255, 255)),
+                # Day 07:00 -> 19:00 no filter (pure white)
+                (1140, 1.00, (255, 255, 255)),
+                # Dusk 19:00 -> 21:00 ramps to absolute night
+                (1260, 0.00, (120, 140, 200)),
+                # Night 21:00 -> 24:00 remains absolute
+                (1440, 0.00, (120, 140, 200)),
             ]
         self._keyframes = sorted(kf, key=lambda k: k[0])
 
@@ -156,8 +173,54 @@ class DayNightSystem:
         # Minutes elapsed since start with time scale
         ticks = pygame.time.get_ticks() - self._start_ticks
         minutes = (ticks / 1000.0) * self.time_scale_minutes_per_second
-        minute_of_day = int(minutes) % 1440
+        minute_of_day = (int(minutes) + self._start_minute) % 1440
         return minute_of_day
+
+    # ---- Public helpers for HUD ---------------------------------------------
+    def get_minute_of_day(self) -> int:
+        """Return current minute of day [0..1439]."""
+        return self._current_minute()
+
+    def set_minute_of_day(self, minute: int) -> None:
+        """Set the simulated clock to a specific minute of day [0..1439].
+
+        Adjusts the internal start offset to preserve monotonic tick-based time.
+        """
+        try:
+            minute = int(minute) % 1440
+        except Exception:
+            minute = 0
+        # Compute elapsed minutes since start
+        ticks = pygame.time.get_ticks() - self._start_ticks
+        elapsed = int((ticks / 1000.0) * self.time_scale_minutes_per_second) % 1440
+        # Choose start offset so that current becomes desired minute
+        self._start_minute = (minute - elapsed) % 1440
+        # Invalidate overlay cache so changes reflect immediately
+        self._overlay_color_cache = None
+
+    def get_game_time_hms(self) -> Tuple[int, int, int]:
+        """Return current game time as (hour, minute, second)."""
+        ticks = pygame.time.get_ticks() - self._start_ticks
+        game_minutes_f = (ticks / 1000.0) * self.time_scale_minutes_per_second + float(self._start_minute)
+        total_seconds = int(game_minutes_f * 60.0) % (24 * 3600)
+        h = (total_seconds // 3600) % 24
+        m = (total_seconds % 3600) // 60
+        s = total_seconds % 60
+        return h, m, s
+
+    def get_phase(self) -> str:
+        """Return a textual phase based on keyframe/typical ranges: dawn/day/dusk/night."""
+        m = self._current_minute()
+        # Rangos exactos solicitados:
+        # Dawn: 05:00–07:00 (300–420), Day: 07:00–19:00 (420–1140),
+        # Dusk: 19:00–21:00 (1140–1260), Night: 21:00–05:00.
+        if 300 <= m < 420:
+            return "Dawn"
+        if 420 <= m < 1140:
+            return "Day"
+        if 1140 <= m < 1260:
+            return "Dusk"
+        return "Night"
 
     def _compute_overlay_color(self) -> Tuple[int, int, int]:
         # Recompute tint only every ~150 ms
@@ -167,10 +230,10 @@ class DayNightSystem:
         intensity = self.get_ambient_intensity()
         color = self.get_ambient_color()
         # Convert intensity & color into a multiplicative tint
-        # Scale color by intensity, but keep a minimum to avoid total black unless intended
-        r = max(8, min(255, int(color[0] * intensity)))
-        g = max(8, min(255, int(color[1] * intensity)))
-        b = max(8, min(255, int(color[2] * intensity)))
+        # Escalamos por intensidad; permitir 0 para noche absoluta
+        r = max(0, min(255, int(color[0] * intensity)))
+        g = max(0, min(255, int(color[1] * intensity)))
+        b = max(0, min(255, int(color[2] * intensity)))
         tint = (r, g, b)
         self._last_overlay_rebuild_ticks = now
         self._overlay_color_cache = tint

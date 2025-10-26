@@ -4,6 +4,8 @@ from datetime import datetime
 import time
 import logging
 from roguelike_engine.world.world_config import WORLD_CONFIG
+from roguelike_engine.rendering.lighting.daynight import get_global_daynight
+
 from roguelike_engine.world.models import WorldSnapshot, CURRENT_WORLD_SNAPSHOT_VERSION
 from roguelike_engine.world.repository import JSONWorldRepository, IWorldRepository
 from roguelike_engine.world.events import EventBus
@@ -80,6 +82,18 @@ class WorldManager:
         self.npc_inventories = data.get("npc_inventories")
         # Metadatos del guardado
         self.save_metadata = data.get("meta")
+        # Tiempo de juego (día/noche)
+        try:
+            tdata = data.get("time") or {}
+            minute = tdata.get("minute")
+            if minute is not None:
+                get_global_daynight().set_minute_of_day(int(minute))
+            ts = tdata.get("time_scale")
+            if ts is not None:
+                get_global_daynight().set_time_scale(float(ts))
+        except Exception:
+            pass
+
         # Niveles serializados
         levels_data = data.get("levels", {})
         # Determinar nivel actual guardado
@@ -395,6 +409,12 @@ class WorldManager:
             state_player = None
         # Memoria de NPCs y niveles
         levels = {name: mgr.serialize_state() for name, mgr in self.maps.items()}
+        # Day/Night time state
+        try:
+            dn = get_global_daynight()
+            time_state = {"minute": dn.get_minute_of_day(), "time_scale": dn.time_scale_minutes_per_second}
+        except Exception:
+            time_state = None
         snapshot = WorldSnapshot(
             version=CURRENT_WORLD_SNAPSHOT_VERSION,
             player=state_player,
@@ -403,6 +423,7 @@ class WorldManager:
             player_inventory=getattr(self, 'player_inventory', None),
             npc_inventories=getattr(self, 'npc_inventories', None),
             meta=getattr(self, 'save_metadata', None),
+            time=time_state,
         )
         return snapshot
 

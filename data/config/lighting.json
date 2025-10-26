@@ -5,14 +5,14 @@
   "low_res_scale": 2,
   "max_lights_visible": 12,
   "max_radius": 192,
-  "time_scale": 120.0,
+  "time_scale": 0.4,
+  "start_minute": 600,
   "keyframes": [
-    {"minute": 300,  "intensity": 0.30, "color": [180,140,120]},
-    {"minute": 360,  "intensity": 0.55, "color": [220,180,150]},
-    {"minute": 420,  "intensity": 0.80, "color": [230,230,235]},
-    {"minute": 720,  "intensity": 1.00, "color": [245,245,255]},
-    {"minute": 1140, "intensity": 0.55, "color": [220,170,140]},
-    {"minute": 1200, "intensity": 0.30, "color": [170,140,180]},
-    {"minute": 1440, "intensity": 0.20, "color": [150,170,220]}
+    {"minute": 0,    "intensity": 0.00, "color": [120,140,200]},   
+    {"minute": 300,  "intensity": 0.00, "color": [120,140,200]},   
+    {"minute": 420,  "intensity": 1.00, "color": [255,255,255]},   
+    {"minute": 1140, "intensity": 1.00, "color": [255,255,255]},   
+    {"minute": 1260, "intensity": 0.00, "color": [120,140,200]},   
+    {"minute": 1440, "intensity": 0.00, "color": [120,140,200]}
   ]
 }
