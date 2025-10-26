@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from types import SimpleNamespace
+import time
 
 from roguelike_engine.utils.benchmark import benchmark
 from .pipeline_helpers import (
@@ -72,6 +73,58 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
     def _step_spell_debug():
         render_spell_debug_overlays(manager, screen, camera, perf_log=perf_log)
 
+    def _step_ambient_overlay():
+        """Apply ambient day/night overlay before UI so HUD/menu are not dimmed."""
+        try:
+            from roguelike_engine.rendering.lighting.daynight import get_global_daynight
+            import pygame
+            dn = get_global_daynight()
+            if not dn.ambient_enabled():
+                return
+            t0 = time.perf_counter()
+            overlay = dn.get_overlay_surface(screen.get_size())
+            t1 = time.perf_counter()
+            screen.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            t2 = time.perf_counter()
+            try:
+                if perf_log is not None:
+                    perf_log.setdefault("3.565.a ambient_get_overlay", []).append(t1 - t0)
+                    perf_log.setdefault("3.565.b ambient_blit", []).append(t2 - t1)
+            except Exception:
+                pass
+        except Exception:
+            # Do not disrupt main render if ambient overlay fails
+            pass
+
+    def _step_point_lights():
+        """Compose low-res additive lightmap and apply it over the scene."""
+        try:
+            from roguelike_engine.rendering.lighting import get_global_lighting
+            import pygame
+            lm = get_global_lighting()
+            if not lm.should_render():
+                return
+            sz = screen.get_size()
+            t0 = time.perf_counter()
+            lr = lm.compose_lightmap(sz, camera)
+            t1 = time.perf_counter()
+            if lr is None:
+                return
+            scaled = lm.get_scaled(sz)
+            if scaled is None:
+                return
+            screen.blit(scaled, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+            t2 = time.perf_counter()
+            try:
+                if perf_log is not None:
+                    perf_log.setdefault("3.57.a lights_compose", []).append(t1 - t0)
+                    perf_log.setdefault("3.57.b lights_blit", []).append(t2 - t1)
+            except Exception:
+                pass
+        except Exception:
+            # Keep rendering robust even if lighting fails
+            pass
+
     def _step_crosshair():
         from roguelike_engine.utils.mouse import draw_mouse_crosshair
         draw_mouse_crosshair(screen, camera)
@@ -94,6 +147,8 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         ("3.35. attack_telegraphs", _step_attack_telegraphs),
         ("3.4. tile_editor", _step_tile_editor),
         ("3.55. spell_debug", _step_spell_debug),
+        ("3.565. ambient_overlay", _step_ambient_overlay),
+        ("3.57. point_lights", _step_point_lights),
         ("3.6. crosshair", _step_crosshair),
         ("3.7. menu", _step_menu),
         ("3.8. minimap", _step_minimap),

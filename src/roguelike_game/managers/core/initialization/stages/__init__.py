@@ -19,6 +19,7 @@ from .editors import (
     init_spells_editor,
     init_spawner_editor,
     init_particles_editor,
+    init_lighting_editor,
 )
 from .minimap import init_minimap
 from .ecs import init_ecs
@@ -46,6 +47,7 @@ __all__ = [
     "init_spells_editor",
     "init_spawner_editor",
     "init_particles_editor",
+    "init_lighting_editor",
     "init_minimap",
     "init_ecs",
     "init_items",

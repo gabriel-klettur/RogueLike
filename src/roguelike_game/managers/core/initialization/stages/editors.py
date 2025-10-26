@@ -21,6 +21,9 @@ from roguelike_game.managers.editors.spells_editor_manager import (
     SpellsEditorManager,
 )
 from roguelike_game.managers.editors.tiles_editor_manager import TilesEditorManager
+from roguelike_game.managers.editors.lighting_editor_manager import (
+    LightingEditorManager,
+)
 
 from ..types import InitContext
 
@@ -59,3 +62,7 @@ def init_particles_editor(ctx: InitContext) -> None:
 
 def init_item_editor(ctx: InitContext) -> None:
     ctx.game.item_editor = ItemsEditorManager(ctx.game)
+
+
+def init_lighting_editor(ctx: InitContext) -> None:
+    ctx.game.lighting_editor = LightingEditorManager(ctx.game)

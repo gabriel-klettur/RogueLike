@@ -80,6 +80,32 @@ def handle_events(game):
         if game.console_events.process_event(event):
             return
 
+    # Early toggle for Lighting Editor: Alt+F3 open/close (before class selector/menu handlers)
+    try:
+        import pygame as _pg
+        for ev in events:
+            if ev.type == _pg.KEYDOWN and ev.key == _pg.K_F3:
+                try:
+                    mods = _pg.key.get_mods()
+                except Exception:
+                    mods = 0
+                if mods & _pg.KMOD_ALT:
+                    le = getattr(game, 'lighting_editor', None)
+                    if le is not None:
+                        vis = bool(getattr(getattr(le, 'model', None), 'visible', False))
+                        if vis:
+                            le.model.visible = False
+                        else:
+                            try:
+                                from .handlers.editors_common import close_all_editors as _close_all
+                                _close_all(game)
+                            except Exception:
+                                pass
+                            le.model.visible = True
+                        return
+    except Exception:
+        pass
+
     # ESC: si el selector de clase está abierto, ciérralo; si no, comportamiento según modo de menú
     for event in events:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:

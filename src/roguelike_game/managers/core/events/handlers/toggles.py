@@ -7,6 +7,57 @@ def handle_toggles(game, events, close_all_editors, open_editor_exclusive) -> bo
     for event in events:
         if event.type != pygame.KEYDOWN:
             continue
+        # Lighting: Alt+F2 toggles point lights manager (independent from overlay)
+        if event.key == pygame.K_F2:
+            try:
+                mods = pygame.key.get_mods()
+            except Exception:
+                mods = 0
+            if mods & pygame.KMOD_ALT:
+                try:
+                    from roguelike_engine.rendering.lighting import get_global_lighting
+                    lm = get_global_lighting()
+                    lm.set_enabled(not lm.enabled)
+                except Exception:
+                    pass
+                return True
+        # Lighting Editor: Alt+F3 open/close editor panel (place before class selector to avoid conflicts)
+        if event.key == pygame.K_F3:
+            try:
+                mods = pygame.key.get_mods()
+            except Exception:
+                mods = 0
+            if mods & pygame.KMOD_ALT:
+                try:
+                    le = getattr(game, 'lighting_editor', None)
+                    if le is None:
+                        try:
+                            from roguelike_game.managers.editors.lighting_editor_manager import LightingEditorManager
+                            game.lighting_editor = LightingEditorManager(game)
+                            le = game.lighting_editor
+                            try:
+                                # Attach to renderer for drawing
+                                if hasattr(game, 'renderer') and game.renderer is not None:
+                                    game.renderer.lighting_editor = le
+                            except Exception:
+                                pass
+                        except Exception:
+                            le = None
+                    if le is not None:
+                        vis = bool(getattr(getattr(le, 'model', None), 'visible', False))
+                        if vis:
+                            le.model.visible = False
+                        else:
+                            # Close other editors, then show lighting editor
+                            try:
+                                from .editors_common import close_all_editors
+                                close_all_editors(game)
+                            except Exception:
+                                pass
+                            le.model.visible = True
+                except Exception:
+                    pass
+                return True
         # Toggle class selector
         if event.key == game.input_config.get_key('select_class'):
             game.class_selector.show = not game.class_selector.show

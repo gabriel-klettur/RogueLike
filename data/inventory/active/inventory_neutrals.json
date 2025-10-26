@@ -1,5 +1,5 @@
 {
-  "4c7ce2d2-e5c4-4aa0-93a6-6d055d065e05": {
+  "7d7a55af-6011-4f8d-b756-dd28e39236ce": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -40,7 +40,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "39ef97dd-728a-4cbd-9d42-a8e0d44b62ce": {
+  "0900b9cf-3846-4d13-bd1d-04fb2c2a441e": {
     "template_id": null,
     "slots": [
       {
@@ -48,16 +48,16 @@
         "quantity": 50
       },
       {
-        "item": "wood",
-        "quantity": 2
-      },
-      {
-        "item": "energy_potion",
+        "item": "mana_potion",
         "quantity": 5
       },
       {
-        "item": "explosion_potion",
-        "quantity": 1
+        "item": "poison_potion",
+        "quantity": 3
+      },
+      {
+        "item": "iron_sword_1",
+        "quantity": 3
       },
       null,
       null,
@@ -78,7 +78,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "7b110e80-457d-46b6-a477-0ff167937761": {
+  "613531b0-8be8-463f-a5b6-d5eb18a7e75d": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -86,16 +86,16 @@
         "quantity": 1000
       },
       {
+        "item": "explosion_potion",
+        "quantity": 1
+      },
+      {
         "item": "health_potion",
+        "quantity": 3
+      },
+      {
+        "item": "bucket_water_1",
         "quantity": 5
-      },
-      {
-        "item": "food_chicken",
-        "quantity": 2
-      },
-      {
-        "item": "energy_potion",
-        "quantity": 2
       },
       null,
       null,
@@ -116,7 +116,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "2cddb7e1-48e4-4cbf-9900-012ca7898a18": {
+  "748177e0-fcf7-4c6c-a8cf-60489175658e": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -148,7 +148,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "f321f538-b8df-4694-ad3e-1b909ff70693": {
+  "fca0618a-7d28-4116-b2a4-25befc4854db": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {

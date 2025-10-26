@@ -5,6 +5,18 @@ from ..utils import is_mmb_held as _is_mmb_held
 
 
 def handle_active_editors(game, events, overlay) -> bool:
+    # Lighting editor: when visible, delegate its events
+    try:
+        le = getattr(game, 'lighting_editor', None)
+        if le and getattr(getattr(le, 'model', None), 'visible', False):
+            for event in events:
+                try:
+                    le.handle_event(event)
+                except Exception:
+                    pass
+            return True
+    except Exception:
+        pass
     # Si el editor de ítems está activo, permitir MMB pan (pase al engine) y delegar sus eventos
     if getattr(getattr(game, 'item_editor', None), 'model', None) and game.item_editor.model.visible:
         for event in events:

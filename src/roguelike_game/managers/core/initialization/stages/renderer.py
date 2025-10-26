@@ -24,3 +24,8 @@ def init_renderer(ctx: InitContext) -> None:
         g.minimap,
         g.ecs,
     )
+    # Attach optional editors so editors_renderer can find them via the renderer instance
+    try:
+        g.renderer.lighting_editor = getattr(g, "lighting_editor", None)
+    except Exception:
+        pass

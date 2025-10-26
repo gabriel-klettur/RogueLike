@@ -34,5 +34,7 @@ def create_empty_component_store():
         'SpawnerConfig': {}, 'SpawnerState': {}, 'SpawnerChild': {},
         # Buildings
         'BuildingHealth': {},            # key -> { current_hp, max_hp }
+        # Lighting
+        'LightComponent': {},
     }
 # Path: src/roguelike_game/ecs/core/component_registry.py

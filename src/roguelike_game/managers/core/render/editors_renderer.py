@@ -18,6 +18,14 @@ def render_editors(manager) -> None:
     if manager.map_editor.editor_state.active:
         manager.map_editor.render(manager.screen, manager.camera, manager.map)
 
+    # Lighting Editor panel
+    try:
+        le = getattr(manager, 'lighting_editor', None)
+        if le and getattr(getattr(le, 'model', None), 'visible', False):
+            le.draw(manager.screen)
+    except Exception:
+        pass
+
     try:
         import roguelike_engine.config.config as config
         if getattr(config, "DEBUG_ENTITIES", False):

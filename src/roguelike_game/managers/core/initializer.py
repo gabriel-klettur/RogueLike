@@ -109,6 +109,7 @@ class GameInitializer:
             ("Cargando editor de hechizos", stage_funcs.init_spells_editor),
             ("Cargando editor de partículas", stage_funcs.init_particles_editor),
             ("Cargando editor de spawner", stage_funcs.init_spawner_editor),
+            ("Cargando editor de iluminación", stage_funcs.init_lighting_editor),
             ("Cargando minimapa", stage_funcs.init_minimap),
             ("Inicializando renderizador", stage_funcs.init_renderer),
             ("Inicializando menú", stage_funcs.init_menu),
