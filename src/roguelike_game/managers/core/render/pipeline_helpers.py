@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import pygame
 
 import roguelike_engine.config.config as config
@@ -29,6 +30,73 @@ def log_tile_editor_debug(manager, camera) -> None:
                 logger.debug("[Render] TileEditor inactive; zoom=%.2f", key[4])
             manager._last_render_debug_key = key
     except Exception:
+        pass
+
+
+def render_game_clock(manager, screen: pygame.Surface) -> None:
+    """Render a small clock HUD under the minimap showing real and game time.
+
+    Draws only when the minimap is visible to respect layout.
+    """
+    try:
+        if not should_render_minimap(manager, manager._last_state, None):
+            return
+        # Get minimap rect position
+        try:
+            mm_rect = manager.minimap.get_rect(screen)
+        except Exception:
+            return
+        # Build strings: real time and game time
+        try:
+            real_str = time.strftime("%H:%M:%S", time.localtime())
+        except Exception:
+            real_str = "--:--:--"
+        try:
+            from roguelike_engine.rendering.lighting.daynight import get_global_daynight
+            dn = get_global_daynight()
+            gh, gm, gs = dn.get_game_time_hms()
+            phase = dn.get_phase()
+            game_str = f"{gh:02d}:{gm:02d}:{gs:02d} ({phase})"
+        except Exception:
+            game_str = "--:--:--"
+        # Compose surface
+        pad = 8
+        gap = 6
+        try:
+            font = pygame.font.SysFont("consolas", 16)
+        except Exception:
+            font = pygame.font.Font(None, 16)
+        t1 = font.render(f"Real: {real_str}", True, (235, 235, 240))
+        t2 = font.render(f"Game: {game_str}", True, (235, 235, 240))
+        w = max(t1.get_width(), t2.get_width()) + pad * 2
+        h = t1.get_height() + t2.get_height() + pad * 2 + gap
+        box = pygame.Surface((w, h), pygame.SRCALPHA)
+        box.fill((20, 20, 28, 210))
+        # Border
+        pygame.draw.rect(box, (180, 180, 200), box.get_rect(), width=1)
+        # Blit texts
+        box.blit(t1, (pad, pad))
+        box.blit(t2, (pad, pad + t1.get_height() + gap))
+        # Position under minimap
+        sw, sh = screen.get_size()
+        # Anchor to right edge of minimap, prefer below; clamp to screen; if overflow bottom, place above
+        px = mm_rect.right - w
+        py = mm_rect.bottom + 8
+        # If would overflow bottom, move above
+        if py + h > sh - 4:
+            py = mm_rect.top - h - 8
+        # Clamp to screen with small margins
+        px = max(4, min(px, sw - w - 4))
+        py = max(4, min(py, sh - h - 4))
+        dest = (px, py)
+        screen.blit(box, dest)
+        # Register dirty rect
+        try:
+            manager._dirty_rects.append(pygame.Rect(dest, (w, h)))
+        except Exception:
+            pass
+    except Exception:
+        # Silent failure: HUD is optional
         pass
 
 

@@ -20,6 +20,8 @@ class WorldSnapshot:
     player_inventory: Optional[Dict[str, Any]] = None
     npc_inventories: Optional[Dict[str, Any]] = None
     meta: Optional[Dict[str, Any]] = None
+    # Persisted game time (minute of day)
+    time: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

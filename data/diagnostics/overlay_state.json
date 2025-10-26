@@ -6,6 +6,7 @@
     "2.1",
     "2.3",
     "2.5",
+    "3",
     "3.0",
     "3.1",
     "3.11",
@@ -94,7 +95,7 @@
   "ui": {
     "minimized": false,
     "toolbar": {
-      "minimized": false,
+      "minimized": true,
       "toggles": {
         "spell_collision": true,
         "npc_attack": false,

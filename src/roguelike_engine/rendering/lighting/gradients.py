@@ -15,6 +15,7 @@ def get_radial_gradient(radius: int, falloff: float = 2.0) -> pygame.Surface:
     size = r * 2
     surf = pygame.Surface((size, size), flags=pygame.SRCALPHA)
     px = pygame.surfarray.pixels_alpha(surf)
+    rgb = pygame.surfarray.pixels3d(surf)
     cx = cy = r
     rf = float(r)
     fo = max(0.1, float(falloff))
@@ -28,10 +29,10 @@ def get_radial_gradient(radius: int, falloff: float = 2.0) -> pygame.Surface:
             # Sharpen/soften with exponent
             a = int(max(0.0, min(1.0, t ** fo)) * 255)
             px[x, y] = a
+            # Encode intensity into RGB so additive blending uses the radial falloff
+            rgb[x, y, 0] = a
+            rgb[x, y, 1] = a
+            rgb[x, y, 2] = a
     del px
-    # Set RGB to white (255,255,255) so we can tint via MULT quickly
-    # Note: we could leave RGB at 0 and only rely on alpha, but MULT of color needs white base
-    tint = pygame.Surface((size, size), flags=pygame.SRCALPHA)
-    tint.fill((255, 255, 255, 255))
-    surf.blit(tint, (0, 0), special_flags=pygame.BLEND_RGBA_MAX)
+    del rgb
     return surf
