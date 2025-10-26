@@ -171,7 +171,7 @@ def _to_item_id(basename: str, existing_ids: Set[str]) -> str:
     return slug
 
 
-def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int, List[str]]:
+def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int, List[str], int]:
     """Insert stub items for the given asset relpaths if id does not exist.
     Returns (inserted_count, inserted_ids)
     """
@@ -182,6 +182,7 @@ def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int,
         existing_ids = {row[0] for row in cur.execute("SELECT id FROM items").fetchall()}
         inserted = 0
         inserted_ids: List[str] = []
+        prices_inserted = 0
         for rel in assets:
             basename = Path(rel).name
             item_id = _to_item_id(basename, existing_ids)
@@ -216,8 +217,31 @@ def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int,
             existing_ids.add(item_id)
             inserted += 1
             inserted_ids.append(item_id)
+
+        # Also insert default prices for newly created items if item_prices table exists
+        try:
+            has_prices = cur.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='item_prices'"
+            ).fetchone() is not None
+        except Exception:
+            has_prices = False
+
+        if has_prices and inserted_ids:
+            for iid in inserted_ids:
+                try:
+                    cur.execute(
+                        "INSERT OR IGNORE INTO item_prices (id_item, buy_price, sell_price) VALUES (?, ?, ?)",
+                        (iid, 1, 1),
+                    )
+                    # If a row was actually inserted (not ignored), rowcount will be 1
+                    if cur.rowcount == 1:
+                        prices_inserted += 1
+                except Exception:
+                    # Ignore per-row failures to avoid aborting the whole apply
+                    pass
+
         con.commit()
-        return inserted, inserted_ids
+        return inserted, inserted_ids, prices_inserted
     finally:
         con.close()
 
@@ -293,6 +317,51 @@ def clean_missing_db_icon_paths(db_path: Path, missing_refs: Iterable[DbRef]) ->
         con.close()
 
 
+def fill_missing_item_prices(db_path: Path, default_buy: int = 1, default_sell: int = 1) -> int:
+    """Insert default prices for any items that lack an entry in item_prices.
+    Returns the number of rows inserted.
+    """
+    con = sqlite3.connect(db_path)
+    try:
+        cur = con.cursor()
+        # Ensure item_prices table exists
+        has_prices = (
+            cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='item_prices'").fetchone()
+            is not None
+        )
+        if not has_prices:
+            return 0
+        # Find items without a price row
+        missing_ids = [
+            row[0]
+            for row in cur.execute(
+                """
+                SELECT i.id
+                FROM items AS i
+                LEFT JOIN item_prices AS p ON p.id_item = i.id
+                WHERE p.id_item IS NULL
+                """
+            ).fetchall()
+        ]
+        inserted = 0
+        for iid in missing_ids:
+            try:
+                cur.execute(
+                    "INSERT OR IGNORE INTO item_prices (id_item, buy_price, sell_price) VALUES (?, ?, ?)",
+                    (iid, default_buy, default_sell),
+                )
+                if cur.rowcount == 1:
+                    inserted += 1
+            except Exception:
+                # Continue on per-row errors
+                pass
+        if inserted:
+            con.commit()
+        return inserted
+    finally:
+        con.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Audit and reconcile item assets with DB")
     ap.add_argument("--assets-dir", default=str(ASSETS_DEFAULT), help="Root directory for item assets (default: assets/items)")
@@ -342,8 +411,10 @@ def main() -> None:
             print("[WARN] --apply will not resolve duplicate basenames. Resolve duplicates first.")
         to_insert = report.unregistered_images
         if to_insert:
-            inserted, ids = apply_fixes_insert_stubs(db_path, to_insert)
+            inserted, ids, prices = apply_fixes_insert_stubs(db_path, to_insert)
             print(f"Applied: inserted {inserted} stub items")
+            if prices:
+                print(f"Also inserted {prices} item_prices rows (buy_price=1, sell_price=1)")
             if ids:
                 for iid in ids[:50]:
                     print(f"  + {iid}")
@@ -351,6 +422,11 @@ def main() -> None:
                     print(f"  ... and {len(ids) - 50} more")
         else:
             print("No unregistered images to insert.")
+
+        # Backfill prices for any existing items that still lack an entry in item_prices
+        backfilled = fill_missing_item_prices(db_path, 1, 1)
+        if backfilled:
+            print(f"Also backfilled {backfilled} missing item_prices rows (buy_price=1, sell_price=1)")
 
     if args.clean:
         if not report.missing_paths:
