@@ -4,6 +4,8 @@ import json
 import logging
 import os
 from typing import Any, Dict, Optional
+from roguelike_engine.db.engine import session_scope
+from roguelike_engine.db.models import Item as ItemRow
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,8 @@ class EconomyService:
         self._vendors_registry: Dict[str, Any] | None = None
         self._vendors_registry_mtime: float | None = None
         self._economy_cache: Dict[str, Dict[str, Any]] = {}
+        # Cache de filtros por tipo resolvidos desde SQLite por vendor identity key
+        self._type_filter_cache: Dict[str, set[str]] = {}
 
     # ------------------- Registry access -------------------
     def load_vendors_registry(self) -> Optional[Dict[str, Any]]:
@@ -76,9 +80,112 @@ class EconomyService:
             self._economy_cache[group] = {'mtime': mtime, 'profile': prof}
         return self._economy_cache[group]['profile']
 
+    # ------------------- Type-filter by SQLite -------------------
+    def _determine_allowed_types(self, entry: Optional[Dict[str, Any]]) -> set[str]:
+        """Infer allowed item 'type' values for a vendor.
+
+        Current behavior: force {'food'} for ALL vendors.
+        This is a temporary global default until more types are defined in the DB.
+        """
+        try:
+            return {'food'}
+        except Exception:
+            # Fallback remains 'food' to keep safe default
+            return {'food'}
+
+    def get_allowed_item_ids_by_type(self, world, vendor_eid: int) -> Optional[set[str]]:
+        """Return allowed item IDs for this vendor based on Items.type from SQLite.
+
+        None means 'no restriction'. Otherwise, set of allowed item ids (lowercased).
+        """
+        key = self.get_vendor_identity_key(world, vendor_eid)
+        if not key:
+            return None
+        if key in self._type_filter_cache:
+            return self._type_filter_cache.get(key)
+        entry = self.get_vendor_entry(world, vendor_eid)
+        allowed_types = self._determine_allowed_types(entry)
+        if not allowed_types:
+            self._type_filter_cache[key] = None  # type: ignore
+            return None
+        ids: set[str] = set()
+        # Consultar SQLite: escanear todo y aplicar filtro + heurística
+        try:
+            with session_scope() as s:
+                rows = s.query(ItemRow).all()
+                allowed_items_meta = []
+                for r in rows:
+                    try:
+                        iid = str(getattr(r, 'id'))
+                        tval = str(getattr(r, 'type', '') or '')
+                        try:
+                            nm = str(getattr(r, 'name', '') or '')
+                        except Exception:
+                            nm = ''
+                        # Heurística ampliada para 'food' si la columna 'type' está vacía en el dataset importado
+                        is_food = False
+                        if 'food' in allowed_types:
+                            if iid.lower().startswith('food_'):
+                                is_food = True
+                            # Revisar rutas de iconos por carpeta Cook
+                            icon_small = str(getattr(r, 'icon_small', '') or '')
+                            icon_large = str(getattr(r, 'icon_large', '') or '')
+                            icon_json  = str(getattr(r, 'icon_json', '') or '')
+                            icon_blob = (icon_small + ' ' + icon_large + ' ' + icon_json).lower()
+                            if '/cook/' in icon_blob or '\\cook\\' in icon_blob:
+                                is_food = True
+                            # Palabras clave comunes en IDs/nombres para comidas importadas
+                            kw = (
+                                'borsh', 'borscht', 'varenyky', 'perogi', 'pierogi', 'paella', 'tortilla', 'completo', 'hakarl'
+                            )
+                            text_blob = (iid + ' ' + nm).lower()
+                            if any(k in text_blob for k in kw):
+                                is_food = True
+                        # Regla principal: si type coincide, aceptar; si no, usar heurística anterior
+                        if tval in allowed_types or is_food:
+                            ids.add(iid.lower())
+                            allowed_items_meta.append({'id': iid.lower(), 'name': nm, 'type': tval})
+                    except Exception:
+                        continue
+        except Exception:
+            logger.exception("Failed to resolve allowed item ids by type for vendor %s", key)
+        try:
+            scanned = len(rows) if 'rows' in locals() and isinstance(rows, list) else -1
+            allowed_count = len(ids)
+            logger.info(
+                "[Economy][AllowedItems] vendor=%s types=%s scanned=%s allowed=%s",
+                key, sorted(list(allowed_types)), scanned, allowed_count,
+            )
+            if 'allowed_items_meta' in locals() and allowed_items_meta:
+                lines = []
+                for m in sorted(allowed_items_meta, key=lambda x: x.get('id', ''))[:100]:
+                    nm = m.get('name') or m.get('id')
+                    lines.append(f"- {nm} ({m.get('id')}) type={m.get('type','')}")
+                logger.info("[Economy][AllowedItems][Details]\n%s", "\n\n".join(lines))
+        except Exception:
+            pass
+        self._type_filter_cache[key] = ids
+        return ids
+
+    def preload_allowed_ids(self, world, vendor_eid: int) -> None:
+        """Warm up cache for allowed item ids (no-op if unrestricted)."""
+        try:
+            _ = self.get_allowed_item_ids_by_type(world, vendor_eid)
+        except Exception:
+            pass
+
     # ------------------- Rules -------------------
     def is_allowed(self, world, vendor_eid: int, item_id: str, side: str) -> bool:
         entry = self.get_vendor_entry(world, vendor_eid)
+        # Filtro por tipo desde SQLite (permitir siempre 'gold')
+        try:
+            allowed_ids = self.get_allowed_item_ids_by_type(world, vendor_eid)
+            if isinstance(allowed_ids, set):
+                iid = (item_id or '').lower()
+                if iid != 'gold' and iid not in allowed_ids:
+                    return False
+        except Exception:
+            pass
         group = entry.get('economy_group') if entry else None
         profile = self._load_economy_profile(group) if group else None
         if not isinstance(profile, dict):
@@ -93,6 +200,14 @@ class EconomyService:
 
     def apply_margins(self, world, vendor_eid: int, item_id: str, base_price: float, side: str) -> Optional[float]:
         entry = self.get_vendor_entry(world, vendor_eid)
+        # Respetar filtro por tipo desde SQLite
+        try:
+            allowed_ids = self.get_allowed_item_ids_by_type(world, vendor_eid)
+            if isinstance(allowed_ids, set):
+                if (item_id or '').lower() != 'gold' and (item_id or '').lower() not in allowed_ids:
+                    return None
+        except Exception:
+            pass
         group = entry.get('economy_group') if entry else None
         profile = self._load_economy_profile(group) if group else None
         if not isinstance(profile, dict):

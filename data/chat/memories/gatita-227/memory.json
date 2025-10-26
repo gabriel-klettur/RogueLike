@@ -3,11 +3,51 @@
   "ephemeral_history": [
     {
       "role": "user",
-      "content": "Hola gatita cuanto es 0/0?"
+      "content": "confirmo si"
     },
     {
       "role": "assistant",
-      "content": "¡Hola, corazón! 0/0 es indeterminado, no tiene un valor único . Si te llevas canasta, te hago precio de vecina."
+      "content": "Por favor responde \"sí\" para confirmar o \"no\" para cancelar."
+    },
+    {
+      "role": "user",
+      "content": "si"
+    },
+    {
+      "role": "assistant",
+      "content": "Hecho. Compraste 1x tortilla_spain_01 por 1.0 gold."
+    },
+    {
+      "role": "user",
+      "content": "que vendes?"
+    },
+    {
+      "role": "assistant",
+      "content": "Tengo estos items disponibles:\n- Borsh 01 (borsh_01) x100 PC=1 PV=1 oro/u\n- Completo Chileno 01 (completo_chileno_01) x100 PC=1 PV=1 oro/u\n- Muslo de Pollo (food_chicken) x100 PC=1 PV=1 oro/u\n- Hakarl 01 (hakarl_01) x99 PC=1 PV=1 oro/u\n- Paella 01 (paella_01) x100 PC=1 PV=1 oro/u\n- Perogi 01 (perogi_01) x100 PC=1 PV=1 oro/u\n- Tortilla Spain 01 (tortilla_spain_01) x99 PC=1 PV=1 oro/u"
+    },
+    {
+      "role": "user",
+      "content": "Quiero Borsh"
+    },
+    {
+      "role": "assistant",
+      "content": "Tengo Borsh 01 (borsh_01) disponible, x100. 1 oro por unidad. ¿Cuántos quieres, tesoro? 🙂"
+    },
+    {
+      "role": "user",
+      "content": "dame 5"
+    },
+    {
+      "role": "assistant",
+      "content": "Vas a comprar 5 de borsh_01 a 1 oro/u (total 5). ¿Confirmas? (sí/no)"
+    },
+    {
+      "role": "user",
+      "content": "si"
+    },
+    {
+      "role": "assistant",
+      "content": "Hecho. Compraste 5x borsh_01 por 5.0 gold."
     }
   ],
   "preferred_language": "es",

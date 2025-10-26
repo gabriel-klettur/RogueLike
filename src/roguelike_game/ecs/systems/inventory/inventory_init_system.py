@@ -104,7 +104,7 @@ class InventoryInitSystem:
         self.vendor_support._ensure_items_catalog_loaded()
         self._items_catalog = self.vendor_support._items_catalog
 
-    def _maybe_seed_trader(self, eid: int, inv_comp: InventoryComponent, *, is_neutral: bool, active_store: dict, iid: str):
+    def _maybe_seed_trader(self, eid: int, inv_comp: InventoryComponent, *, is_neutral: bool, active_store: dict, iid: str, allowed_ids: set[str] | None = None):
         """Garantiza que un NPC con chat tenga oro y algo de stock vendible.
 
         Reglas:
@@ -119,6 +119,7 @@ class InventoryInitSystem:
             active_store=active_store,
             iid=iid,
             schema_version=self.schema_version,
+            allowed_ids=allowed_ids,
         )
         if is_neutral:
             self.dirty_neutrals = True

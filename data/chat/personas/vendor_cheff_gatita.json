@@ -36,7 +36,8 @@
   ],
   "knowledge": {
     "domain": ["cocina", "frutas", "verduras", "conservas"],
-    "product_catalog": ["food_apple", "food_bread", "food_chicken", "food_borscht", "food_varenyky"],
+    "allowed_types": ["food"],
+    "catalog_policy": "El catálogo es dinámico y proviene de la base de datos (SQLite). No enumeres ni prometas artículos fuera del stock real. Para listar, usa la respuesta de sistema de stock y menciona solo lo disponible.",
     "taboo_topics": ["alimentos en mal estado"],
     "local_lore": ["El horno de piedra del pueblo guarda el calor perfecto para el pan"]
   },

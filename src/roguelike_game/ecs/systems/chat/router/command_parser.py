@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Literal, Optional, Tuple
 
-VendorIntent = Literal['stock', 'stock_q', 'gold', 'restock', 'add_wood', 'buy', 'sell']
+VendorIntent = Literal['stock', 'stock_q', 'stock_list', 'gold', 'restock', 'add_wood', 'buy', 'sell']
 
 
 def parse_vendor_intent(text: str) -> Optional[Tuple[VendorIntent, tuple]]:
@@ -14,6 +14,15 @@ def parse_vendor_intent(text: str) -> Optional[Tuple[VendorIntent, tuple]]:
     m_stock_q = re.match(r"^(?:qu[eé]\s+stock\s+tienes\??|cu[aá]nt[oa]\s+(?:stock|madera|maderas)\s+(?:tienes|ten[ée]s)(?:\s+de\s+(\w+))?\??)$", t, flags=re.IGNORECASE)
     if m_stock_q:
         return 'stock_q', ((m_stock_q.group(1) or 'wood').lower(),)
+    # Listado completo de items en venta
+    m_list_1 = re.match(r"^(?:dime|di)\s+(?:todos\s+los\s+)?(?:items|ítems)\s+que\s+vendes\??$", t, flags=re.IGNORECASE)
+    m_list_2 = re.match(r"^(?:qu[eé]|que)\s+(?:vendes|vend[eé]s|vendas|ofreces|ofrec[eé]s)\??$", t, flags=re.IGNORECASE)
+    m_list_3 = re.match(r"^(?:lista|listado)\s+de\s+(?:items|ítems)(?:\s+a\s+la\s+venta)?\??$", t, flags=re.IGNORECASE)
+    m_list_items = re.match(r"^(?:items|ítems)(?:\s+disponibles)?\s*\??$", t, flags=re.IGNORECASE)
+    # Fallback: detectar 'que vendes' embebido, con texto antes/después y puntuación final opcional
+    m_list_fallback = re.match(r"^.*\b(?:lista|listado|que|qu[eé]?)\b.*\b(?:vendes|vend[eé]s|vendas|ofreces|ofrec[eé]s)\b.*[\?\!\/\.]*$", t, flags=re.IGNORECASE)
+    if m_list_1 or m_list_2 or m_list_3 or m_list_items or m_list_fallback:
+        return 'stock_list', tuple()
     m_gold = re.match(r"^(?:!gold|ver\s+oro|muestra\s+oro|cu[aá]nto\s+oro\s+(?:tienes|ten[ée]s)\??)$", t, flags=re.IGNORECASE)
     if m_gold:
         return 'gold', tuple()

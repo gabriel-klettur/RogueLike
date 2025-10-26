@@ -32,6 +32,13 @@ class VendorTradeSystem:
         return
 
     # --- API -----------------------------------------------------------------
+    def normalize_ids(self, world, vendor_eid: int, item_id: str) -> tuple[str, str]:
+        """Normaliza el id del item y resuelve la moneda según VendorComponent y catálogo.
+
+        Devuelve (item_id_normalizado, currency_id_normalizada).
+        """
+        return self._id_normalizer.normalize_ids(world, vendor_eid, item_id)
+
     def buy(self, world, vendor_eid: int, item_id: str, qty: int) -> str:
         """El jugador compra `qty` del `item_id` al vendedor.
         Mueve item del vendedor -> jugador, y oro del jugador -> vendedor.
@@ -191,6 +198,12 @@ class VendorTradeSystem:
         adjusted = self._economy_service.apply_margins(world, vendor_eid, item_id, base, side)
         # 4) Negociación por persona
         adjusted = self._persona_service.apply_negotiation(world, vendor_eid, item_id, adjusted, side)
+        # 5) Precio mínimo de seguridad
+        try:
+            if adjusted is not None and float(adjusted) < 1.0:
+                adjusted = 1.0
+        except Exception:
+            pass
         return adjusted
 
     # Precios globales manejados por PriceService

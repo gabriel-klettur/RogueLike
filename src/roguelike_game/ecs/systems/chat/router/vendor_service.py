@@ -5,6 +5,8 @@ from typing import Any
 
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from .io_utils import ChatIO
+from roguelike_engine.db.engine import session_scope
+from roguelike_engine.db.models import Item as ItemRow
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,85 @@ class VendorService:
             return False
 
     # ---- Admin/queries ------------------------------------------------------
+    def vendor_list_stock(self, world: Any, vendor_eid: int) -> str:
+        """Lista el stock actual del vendedor con nombres desde SQLite y precios actuales.
+
+        - Filtra por economía (type permitido) a través de VendorTradeSystem._get_price.
+        - Obtiene nombres de la tabla items.
+        """
+        try:
+            invs = world.components.get('InventoryComponent', {})
+            inv = invs.get(vendor_eid)
+            if not inv or not hasattr(inv, 'slots'):
+                lang = self.io.lang_for(world, vendor_eid, None)
+                return 'No tengo stock disponible.' if lang == 'es' else 'I have no stock available.'
+            # Reunir items del inventario (excluyendo gold y nulos)
+            counts: dict[str, int] = {}
+            for st in getattr(inv, 'slots', []) or []:
+                if not st:
+                    continue
+                iid = str(getattr(st, 'item_id', '')).lower()
+                if not iid or iid == 'gold':
+                    continue
+                counts[iid] = counts.get(iid, 0) + int(getattr(st, 'quantity', 0) or 0)
+            if not counts:
+                lang = self.io.lang_for(world, vendor_eid, None)
+                return 'No tengo stock disponible.' if lang == 'es' else 'I have no stock available.'
+            # Nombres desde SQLite
+            names: dict[str, str] = {}
+            try:
+                with session_scope() as s:
+                    rows = s.query(ItemRow).filter(ItemRow.id.in_(list(counts.keys()))).all()
+                    for r in rows:
+                        try:
+                            names[str(r.id).lower()] = str(getattr(r, 'name', '') or '')
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            # Filtrar por economía y calcular precios
+            vts = self._get_vendor_trade_system(world)
+            lines = []
+            for iid, qty in sorted(counts.items()):
+                try:
+                    price_buy = vts._get_price(world, vendor_eid, iid, op='buy')
+                    if price_buy is None:
+                        continue  # no permitido por economía
+                    price_sell = vts._get_price(world, vendor_eid, iid, op='sell')
+                    # mínimos de seguridad
+                    try:
+                        pb = max(1, int(price_buy))
+                    except Exception:
+                        pb = 1
+                    try:
+                        ps = max(1, int(price_sell)) if price_sell is not None else pb
+                    except Exception:
+                        ps = pb
+                    # nombre limpio
+                    raw_name = names.get(iid) or ''
+                    nm = raw_name.strip()
+                    if not nm or nm.lower().endswith('.png'):
+                        # Construir desde id: quitar prefijos comunes y formatear
+                        base = iid
+                        if base.startswith('food_'):
+                            base = base[len('food_'):]
+                        nm = base.replace('_', ' ').strip().title()
+                    # línea por idioma
+                    if self.io.lang_for(world, vendor_eid, None) == 'es':
+                        lines.append(f"- {nm} ({iid}) x{int(qty)} PC={pb} PV={ps} oro/u")
+                    else:
+                        lines.append(f"- {nm} ({iid}) x{int(qty)} buy={pb} sell={ps} gold/ea")
+                except Exception:
+                    continue
+            lang = self.io.lang_for(world, vendor_eid, None)
+            if not lines:
+                return 'No tengo stock disponible.' if lang == 'es' else 'I have no stock available.'
+            header = 'Tengo estos items disponibles:' if lang == 'es' else 'I have these items available:'
+            return "\n".join([header] + lines)
+        except Exception:
+            lang = self.io.lang_for(world, vendor_eid, None)
+            return 'No tengo stock disponible.' if lang == 'es' else 'I have no stock available.'
+
     def vendor_stock(self, world: Any, vendor_eid: int, item_id: str = 'wood') -> str:
         try:
             invs = world.components.get('InventoryComponent', {})
@@ -42,14 +123,14 @@ class VendorService:
                 for st in getattr(inv, 'slots', []) or []:
                     try:
                         vts = self._get_vendor_trade_system(world)
-                        norm_target, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
+                        norm_target, _ = vts.normalize_ids(world, vendor_eid, (item_id or 'wood'))
                         iid = str(getattr(st, 'item_id', '')).lower()
                         if st and iid == str(norm_target).lower():
                             qty += int(getattr(st, 'quantity', 0) or 0)
                     except Exception:
                         pass
             vts = self._get_vendor_trade_system(world)
-            target_item, _ = vts._normalize_ids(world, vendor_eid, (item_id or 'wood'))
+            target_item, _ = vts.normalize_ids(world, vendor_eid, (item_id or 'wood'))
             price = vts._get_price(world, vendor_eid, target_item, op='buy') or 1
             lang = self.io.lang_for(world, vendor_eid, None)
             if lang == 'es':
@@ -134,7 +215,7 @@ class VendorService:
 
     def ask_confirm(self, world: Any, state: Any, vendor_eid: int, *, op: str, item: str, qty: int, pending_confirms: dict[int, dict]) -> None:
         vts = self._get_vendor_trade_system(world)
-        item_norm, _ = vts._normalize_ids(world, vendor_eid, (item or 'wood'))
+        item_norm, _ = vts.normalize_ids(world, vendor_eid, (item or 'wood'))
         try:
             unit = vts._get_price(world, vendor_eid, item_norm, op=op) or 1
         except Exception:

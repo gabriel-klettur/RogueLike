@@ -112,6 +112,8 @@ class VendorSupport:
         self,
         identity_key: str,
         template_id: Optional[str],
+        *,
+        allowed_ids: Optional[set[str]] = None,
     ) -> Optional[InventoryComponent]:
         """Try to build an inventory for a vendor using available seed files.
 
@@ -158,7 +160,15 @@ class VendorSupport:
                 inv_comp = InventoryComponent(player_id=file_tid)
                 for slot in slots:
                     if slot:
-                        inv_comp.add(slot.get("item"), int(slot.get("quantity", 0)))
+                        try:
+                            iid = str(slot.get("item")).lower()
+                            qty = int(slot.get("quantity", 0))
+                        except Exception:
+                            iid, qty = slot.get("item"), slot.get("quantity", 0)
+                        # Filtrar por ids permitidos si corresponde (siempre permitir 'gold')
+                        if allowed_ids is not None and iid != 'gold' and iid not in allowed_ids:
+                            continue
+                        inv_comp.add(iid, qty)
                 return inv_comp
             except Exception:
                 # Skip invalid candidates and continue
@@ -173,6 +183,7 @@ class VendorSupport:
         active_store: Dict[str, Any],
         iid: str,
         schema_version: str,
+        allowed_ids: Optional[set[str]] = None,
     ) -> bool:
         """Ensure a trader has minimum gold and some stock; persist to active store.
 
@@ -205,6 +216,9 @@ class VendorSupport:
                 if iid_item in {"gold", "experience_orb"}:
                     continue
                 if bool(node.get("stackable", False)):
+                    # Respetar filtro de ids permitidos si existe
+                    if allowed_ids is not None and str(iid_item).lower() not in allowed_ids:
+                        continue
                     candidates.append((iid_item, int(node.get("max_stack", 10) or 10)))
             random.shuffle(candidates)
             to_add = candidates[:MAX_SEED_ITEMS]

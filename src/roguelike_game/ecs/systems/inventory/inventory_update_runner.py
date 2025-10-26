@@ -7,6 +7,7 @@ from typing import Any
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.core.identity import Faction
 from .inventory_io import write_json
+from roguelike_game.ecs.systems.vendors.services import EconomyService
 
 
 def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
@@ -167,8 +168,18 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
                 identity_key = (template_key or '').lower()
                 is_vendor = (eid in comps.get('VendorComponent', {})) or ('vendor' in identity_key)
                 if is_vendor and identity_key:
+                    # Resolver ids permitidos por tipo desde SQLite para este vendor
+                    eco = getattr(system, '_economy_service_for_seed', None)
+                    if eco is None:
+                        eco = EconomyService()
+                        setattr(system, '_economy_service_for_seed', eco)
+                    allowed_ids = None
+                    try:
+                        allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+                    except Exception:
+                        allowed_ids = None
                     # Cargar registry para obtener semilla específica y grupo
-                    inv_from_seed = system.vendor_support.try_build_inventory_from_seed(identity_key, template_id)
+                    inv_from_seed = system.vendor_support.try_build_inventory_from_seed(identity_key, template_id, allowed_ids=allowed_ids)
                     if inv_from_seed is not None:
                         inv_comp = inv_from_seed
                         # Persistir inventario inicializado en activos para esta instancia
@@ -211,7 +222,62 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
         except Exception:
             has_chat = False
         if has_chat:
-            system._maybe_seed_trader(eid, inv_comp, is_neutral=is_neutral, active_store=active_store, iid=iid)
+            # Usar los ids permitidos por tipo también para sembrado adicional
+            allowed_ids = None
+            try:
+                eco = getattr(system, '_economy_service_for_seed', None)
+                if eco is None:
+                    eco = EconomyService()
+                    setattr(system, '_economy_service_for_seed', eco)
+                allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+            except Exception:
+                allowed_ids = None
+            # Si tenemos lista de ids permitidos (type=food), asegurar capacidad y restock completo (100 c/u)
+            try:
+                if isinstance(allowed_ids, set) and allowed_ids:
+                    # 1) Asegurar capacidad suficiente para una pila por cada item permitido + margen
+                    try:
+                        current_cap = int(getattr(inv_comp, 'capacity', 20) or 20)
+                    except Exception:
+                        current_cap = 20
+                    target_cap = max(current_cap, len(allowed_ids) + 10)
+                    if target_cap > current_cap:
+                        # Reconstruir inventario con mayor capacidad y copiar contenido
+                        new_inv = InventoryComponent(capacity=target_cap, player_id=getattr(inv_comp, 'player_id', None))
+                        try:
+                            for st in getattr(inv_comp, 'slots', []) or []:
+                                if st:
+                                    new_inv.add(getattr(st, 'item_id', ''), int(getattr(st, 'quantity', 0) or 0))
+                            inv_comp = new_inv
+                            world.components['InventoryComponent'][eid] = inv_comp
+                        except Exception:
+                            # si falla la copia, mantenemos el original
+                            pass
+                    # 2) Restock: garantizar al menos 100 unidades de cada item permitido
+                    for aid in sorted(allowed_ids):
+                        try:
+                            # calcular cantidad actual
+                            current_qty = 0
+                            for st in getattr(inv_comp, 'slots', []) or []:
+                                if st and str(getattr(st, 'item_id', '')).lower() == str(aid).lower():
+                                    current_qty += int(getattr(st, 'quantity', 0) or 0)
+                            if current_qty < 100:
+                                inv_comp.add(str(aid), 100 - current_qty)
+                        except Exception:
+                            continue
+                    # Persistir después del restock completo
+                    active_store[iid] = {
+                        'template_id': inv_comp.player_id,
+                        'slots': inv_comp.serialize().get('slots'),
+                        'schema_version': system.schema_version
+                    }
+                    if is_neutral:
+                        system.dirty_neutrals = True
+                    else:
+                        system.dirty_monsters = True
+            except Exception:
+                pass
+            system._maybe_seed_trader(eid, inv_comp, is_neutral=is_neutral, active_store=active_store, iid=iid, allowed_ids=allowed_ids)
         system.initialized.add(eid)
 
     # Remove entries for monsters/neutrals no longer present

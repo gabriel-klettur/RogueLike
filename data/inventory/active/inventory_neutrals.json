@@ -1,30 +1,39 @@
 {
-  "7d7a55af-6011-4f8d-b756-dd28e39236ce": {
+  "1505c8be-e48b-4daf-8d98-efb0db6a47b3": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
-        "item": "food_apple",
-        "quantity": 40
-      },
-      {
-        "item": "food_bread",
-        "quantity": 25
-      },
-      {
-        "item": "food_borscht",
-        "quantity": 15
-      },
-      {
-        "item": "food_varenyky",
-        "quantity": 20
-      },
-      {
         "item": "gold",
-        "quantity": 200
+        "quantity": 207.0
       },
-      null,
-      null,
-      null,
+      {
+        "item": "borsh_01",
+        "quantity": 95
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 99
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 99
+      },
       null,
       null,
       null,
@@ -40,29 +49,41 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0900b9cf-3846-4d13-bd1d-04fb2c2a441e": {
+  "21b2de0d-d2c2-407e-975c-a7136333aee0": {
     "template_id": null,
     "slots": [
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
       {
         "item": "gold",
         "quantity": 50
       },
-      {
-        "item": "mana_potion",
-        "quantity": 5
-      },
-      {
-        "item": "poison_potion",
-        "quantity": 3
-      },
-      {
-        "item": "iron_sword_1",
-        "quantity": 3
-      },
-      null,
-      null,
-      null,
-      null,
       null,
       null,
       null,
@@ -78,7 +99,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "613531b0-8be8-463f-a5b6-d5eb18a7e75d": {
+  "5827d17f-1d0a-41c6-9f59-7adf64c054d1": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -86,21 +107,33 @@
         "quantity": 1000
       },
       {
-        "item": "explosion_potion",
-        "quantity": 1
+        "item": "borsh_01",
+        "quantity": 100
       },
       {
-        "item": "health_potion",
-        "quantity": 3
+        "item": "completo_chileno_01",
+        "quantity": 100
       },
       {
-        "item": "bucket_water_1",
-        "quantity": 5
+        "item": "food_chicken",
+        "quantity": 100
       },
-      null,
-      null,
-      null,
-      null,
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
       null,
       null,
       null,
@@ -116,23 +149,41 @@
     ],
     "schema_version": "1.0.0"
   },
-  "748177e0-fcf7-4c6c-a8cf-60489175658e": {
+  "0100d06e-df32-4cda-99c9-2c329967f6a7": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
-      {
-        "item": "wood",
-        "quantity": 80
-      },
       {
         "item": "gold",
         "quantity": 180
       },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
       null,
       null,
       null,
@@ -148,23 +199,41 @@
     ],
     "schema_version": "1.0.0"
   },
-  "fca0618a-7d28-4116-b2a4-25befc4854db": {
+  "56ffeba0-8920-4b58-b0b0-70f17507d445": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
-      {
-        "item": "health_potion",
-        "quantity": 40
-      },
       {
         "item": "gold",
         "quantity": 300
       },
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
       null,
       null,
       null,

@@ -12,6 +12,7 @@ from .io_utils import ChatIO
 from .message_scheduler import MessageScheduler
 from .vendor_service import VendorService
 from .command_parser import parse_vendor_intent, is_affirmative, is_negative
+from roguelike_game.ecs.systems.vendors.services import EconomyService
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,8 @@ class ChatRouterSystem:
         self.io = ChatIO(self._root)
         self.scheduler = MessageScheduler()
         self.vendor = VendorService(self.io)
+        # Preloader para allowed ids por tipo desde SQLite
+        self._economy_preloader = EconomyService()
 
     # ------------------------------------------------------------------
     def update(self, world: Any, *args: Any) -> None:
@@ -72,6 +75,12 @@ class ChatRouterSystem:
         chat = world.components.get('ChatComponent', {}).get(target)
         role = getattr(chat, 'role', 'generic') if chat else 'generic'
         persona_id = self.io.resolve_persona_id(world, target, chat)
+        # Precargar ids permitidos por tipo para vendors (consulta a SQLite)
+        if role == 'vendor':
+            try:
+                self._economy_preloader.preload_allowed_ids(world, target)
+            except Exception:
+                pass
         for msg in commits:
             self._route_message(world, state, role, persona_id, target, msg)
 
@@ -166,6 +175,21 @@ class ChatRouterSystem:
                         pass
                     try:
                         push_bubble(world, target_eid, txt, color=(255, 235, 180), ttl_ms=2600)
+                    except Exception:
+                        pass
+                    return
+                if typ == 'stock_list':
+                    txt = self.vendor.vendor_list_stock(world, target_eid)
+                    state.chat_add_message('NPC', txt)
+                    try:
+                        if self.io.mem_store is not None:
+                            mem_key = self.io.memory_key(world, target_eid)
+                            self.io.mem_store.append_ephemeral(mem_key, 'assistant', txt)
+                        self.io.log_line(world, target_eid, 'NPC', txt, role)
+                    except Exception:
+                        pass
+                    try:
+                        push_bubble(world, target_eid, txt, color=(255, 235, 180), ttl_ms=3000)
                     except Exception:
                         pass
                     return
