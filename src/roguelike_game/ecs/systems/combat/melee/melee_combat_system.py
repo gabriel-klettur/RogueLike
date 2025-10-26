@@ -9,6 +9,7 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
+from roguelike_game.ecs.components.combat.dying_tag import DyingTag
 import time
  
  
@@ -121,7 +122,23 @@ class MeleeCombatSystem:
                 q = qmap.setdefault(target_eid, [])
                 q.append({"type": "OnHit", "from_left": from_left})
                 if not godmode and defender_stats.current_hp <= 0:
-                    pass
+                    # Encolar evento de muerte para la FSM del objetivo
+                    q.append({"type": "OnDeath"})
+                    # Marcar entidad como en proceso de muerte para evitar duplicados
+                    try:
+                        world.components.setdefault('DyingTag', {})[target_eid] = DyingTag()
+                    except Exception:
+                        pass
+                    # Publicar evento de combo de tipo 'kill' para el atacante jugador
+                    try:
+                        combo_q_kill = world.components.setdefault('ComboEventQueue', [])
+                        combo_q_kill.append({
+                            'type': 'kill',
+                            'attacker': intent.attacker,
+                            'target': target_eid
+                        })
+                    except Exception:
+                        pass
                 # Publicar evento de COMBO para el atacante (jugador)
                 if not godmode:
                     combo_q = world.components.setdefault('ComboEventQueue', [])
@@ -178,7 +195,13 @@ class MeleeCombatSystem:
                     q = qmap.setdefault(target_eid, [])
                     q.append({"type": "OnHit", "from_left": from_left})
                     if defender_stats.current_hp <= 0:
-                        pass
+                        # Encolar evento de muerte para la FSM del objetivo (jugador)
+                        q.append({"type": "OnDeath"})
+                        # Marcar entidad como en proceso de muerte para evitar duplicados
+                        try:
+                            world.components.setdefault('DyingTag', {})[target_eid] = DyingTag()
+                        except Exception:
+                            pass
                     # Romper combo del jugador al recibir daño
                     combo_q = world.components.setdefault('ComboEventQueue', [])
                     combo_q.append({'type': 'break', 'entity': target_eid})

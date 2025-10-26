@@ -222,8 +222,8 @@ class AttackState(State):
                 # Mantener jefe inmóvil y sin ChaseTarget bajo lock posterior al disparo
                 world.components['Velocity'][eid] = Velocity(0, 0)
                 world.components.get('ChaseTarget', {}).pop(eid, None)
-            # Si no ha transcurrido el wind-up, esperar en AttackState sin atacar
-            if now - start_t < windup_s:
+            # Si no ha transcurrido el wind-up, esperar en AttackState sin atacar (solo para jefe final)
+            if is_final_boss and (now - start_t < windup_s):
                 # Inmovilizar al jefe durante el wind-up
                 if is_final_boss:
                     world.components['Velocity'][eid] = Velocity(0, 0)
