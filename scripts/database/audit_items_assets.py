@@ -195,16 +195,14 @@ def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int,
                     icon_small, icon_large, icon_json,
                     threshold, experience, effect, durability, damage, attack_speed, range,
                     crit_chance, crit_multiplier, weight, value, quest_id,
-                    scale_editor, scale_map, scale_inventory,
-                    extra_json
+                    scale_editor, scale_map, scale_inventory
                 ) VALUES (
                     ?, ?, ?, NULL, NULL, NULL, NULL,
                     NULL, NULL, NULL,
                     ?, NULL, NULL,
                     NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                     NULL, NULL, NULL, NULL, NULL,
-                    NULL, NULL, NULL,
-                    NULL
+                    NULL, NULL, NULL
                 )
                 """,
                 (

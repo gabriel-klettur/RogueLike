@@ -53,6 +53,8 @@ def _set_sqlite_pragma(dbapi_connection, connection_record) -> None:  # type: ig
             # Ignore on non-SQLite or if table does not exist yet; create_all will handle
             pass
 
+        # Note: items.extra_json intentionally not enforced; column was dropped
+
         cursor.close()
     except Exception:
         # Be resilient: don't fail if PRAGMA is unsupported (e.g., non-SQLite)

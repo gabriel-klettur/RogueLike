@@ -1,13 +1,13 @@
 {
-  "fdfef33f-e7e8-469d-97c7-9c7de48e425a": {
+  "b872e864-cb8a-4fef-8f02-c77ba38368f1": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       {
-        "item": "experience_orb",
+        "item": "gold",
         "quantity": 1
       },
       {
-        "item": "wood",
+        "item": "experience_orb",
         "quantity": 1
       },
       null,

@@ -142,8 +142,6 @@ def upsert_entry(entry: Dict[str, Any]) -> None:
     scale_map = _safe_float(entry.get("scale_map"))
     scale_inventory = _safe_float(entry.get("scale_inventory"))
 
-    extra_json = _json_dumps(entry)
-
     with session_scope() as s:
         row = s.get(ItemRow, item_id)
         if row is None:
@@ -178,7 +176,6 @@ def upsert_entry(entry: Dict[str, Any]) -> None:
         row.scale_editor = scale_editor
         row.scale_map = scale_map
         row.scale_inventory = scale_inventory
-        row.extra_json = extra_json
         # Committed by session_scope
 
 

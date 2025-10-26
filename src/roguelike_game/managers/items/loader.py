@@ -83,6 +83,14 @@ class ItemsLoader:
                     except Exception:
                         pass
 
+                # Ensure required fields for ItemModel have safe defaults
+                if payload.get("name") is None:
+                    payload["name"] = str(row.id)
+                if payload.get("description") is None:
+                    payload["description"] = ""
+                if payload.get("stackable") is None:
+                    payload["stackable"] = True
+
                 model_cls = self._select_model_cls(payload)
                 try:
                     model = model_cls(**payload)

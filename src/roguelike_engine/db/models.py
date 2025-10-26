@@ -235,8 +235,6 @@ class Item(Base):
     scale_editor: Mapped[float | None] = mapped_column(Float, nullable=True)
     scale_map: Mapped[float | None] = mapped_column(Float, nullable=True)
     scale_inventory: Mapped[float | None] = mapped_column(Float, nullable=True)
-    # Archive only (not used at runtime)
-    extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class ItemPrice(Base):

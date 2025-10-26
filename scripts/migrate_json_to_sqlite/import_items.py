@@ -164,7 +164,6 @@ def _insert_item_stmt(item_id: str, data: Dict[str, Any]):
         scale_editor=scale_editor,
         scale_map=scale_map,
         scale_inventory=scale_inventory,
-        extra_json=_json_str(data),
     )
 
     stmt = stmt.on_conflict_do_update(
@@ -197,7 +196,6 @@ def _insert_item_stmt(item_id: str, data: Dict[str, Any]):
             "scale_editor": stmt.excluded.scale_editor,
             "scale_map": stmt.excluded.scale_map,
             "scale_inventory": stmt.excluded.scale_inventory,
-            "extra_json": stmt.excluded.extra_json,
         },
     )
     return stmt
@@ -234,7 +232,6 @@ def _insert_item_stub_stmt(item_id: str):
         scale_editor=None,
         scale_map=None,
         scale_inventory=None,
-        extra_json=None,
     )
     return stmt.on_conflict_do_nothing(index_elements=[Item.id])
 
