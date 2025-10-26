@@ -40,6 +40,8 @@ class DayNightSystem:
         self.time_scale_minutes_per_second: float = 0.4
         # Minuto del día al inicio (offset), 0..1439
         self._start_minute: int = 0
+        # Piso mínimo de intensidad ambiental (nunca oscuridad total)
+        self._min_intensity: float = 0.2
         self._keyframes: List[Tuple[int, float, Tuple[int, int, int]]] = []
         self._lut: List[Tuple[float, Tuple[int, int, int]]] = [(1.0, (255, 255, 255))] * 1440
         self._start_ticks: int = pygame.time.get_ticks()
@@ -57,14 +59,99 @@ class DayNightSystem:
     def set_keyframes(self, keyframes: List[Tuple[int, float, Tuple[int, int, int]]]) -> None:
         self._keyframes = sorted(keyframes, key=lambda k: k[0])
         self._rebuild_lut()
+        self._overlay_color_cache = None
+
+    def get_keyframes(self) -> List[Tuple[int, float, Tuple[int, int, int]]]:
+        return list(self._keyframes)
+
+    def set_keyframe(self, minute: int, intensity: Optional[float] = None, color: Optional[Tuple[int, int, int]] = None) -> None:
+        try:
+            minute = int(minute) % 1440
+        except Exception:
+            minute = 0
+        # Find existing keyframe
+        idx = None
+        for i, (m, _i, _c) in enumerate(self._keyframes):
+            if m == minute:
+                idx = i
+                break
+        if idx is None:
+            # Create from current sampled values
+            cur_i = self._lut[minute][0]
+            cur_c = self._lut[minute][1]
+            if intensity is not None:
+                cur_i = float(intensity)
+            if color is not None:
+                cur_c = tuple(color)
+            self._keyframes.append((minute, _clamp(cur_i, 0.0, 1.0), (int(cur_c[0]), int(cur_c[1]), int(cur_c[2]))))
+        else:
+            m, i0, c0 = self._keyframes[idx]
+            if intensity is not None:
+                i0 = _clamp(float(intensity), 0.0, 1.0)
+            if color is not None:
+                c0 = (int(color[0]), int(color[1]), int(color[2]))
+            self._keyframes[idx] = (m, i0, c0)
+        self._keyframes = sorted(self._keyframes, key=lambda k: k[0])
+        self._rebuild_lut()
+        self._overlay_color_cache = None
+
+    def get_min_intensity(self) -> float:
+        return float(self._min_intensity)
+
+    def set_min_intensity(self, v: float) -> None:
+        self._min_intensity = max(0.0, min(1.0, float(v)))
+        self._overlay_color_cache = None
+
+    def save_config(self) -> None:
+        try:
+            data = {
+                "enabled": bool(self.enabled),
+                "ambient_only": bool(self.ambient_only),
+                "time_scale": float(self.time_scale_minutes_per_second),
+                "start_minute": int(self._start_minute),
+                "min_intensity": float(self._min_intensity),
+                "keyframes": [
+                    {"minute": m, "intensity": float(i), "color": [int(c[0]), int(c[1]), int(c[2])]} for (m, i, c) in self._keyframes
+                ],
+            }
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
 
     def get_ambient_intensity(self) -> float:
         minute = self._current_minute()
-        return float(self._lut[minute][0])
+        val = float(self._lut[minute][0])
+        # Aplica piso mínimo configurable
+        if val < self._min_intensity:
+            val = self._min_intensity
+        return val
 
     def get_ambient_color(self) -> Tuple[int, int, int]:
         minute = self._current_minute()
         return self._lut[minute][1]
+
+    # ---- Public sampling helpers -------------------------------------------
+    def get_intensity_at_minute(self, minute: int, apply_floor: bool = False) -> float:
+        try:
+            m = int(minute) % 1440
+        except Exception:
+            m = 0
+        v = float(self._lut[m][0])
+        if apply_floor and v < self._min_intensity:
+            v = self._min_intensity
+        return v
+
+    def get_color_at_minute(self, minute: int) -> Tuple[int, int, int]:
+        try:
+            m = int(minute) % 1440
+        except Exception:
+            m = 0
+        return self._lut[m][1]
+
+    def common_minutes(self) -> Tuple[int, int, int, int, int, int]:
+        """Return commonly edited minutes: 00:00, 05:00, 07:00, 12:00, 19:00, 21:00."""
+        return (0, 300, 420, 720, 1140, 1260)
 
     def ambient_enabled(self) -> bool:
         return bool(self.enabled)
@@ -83,6 +170,11 @@ class DayNightSystem:
             or prev_color != color
         ):
             surf = pygame.Surface((w, h), flags=pygame.SRCALPHA)
+            try:
+                # Convert to display format for faster blits
+                surf = surf.convert_alpha()
+            except Exception:
+                pass
             # Full alpha to ensure multiplication takes effect
             surf.fill((color[0], color[1], color[2], 255))
             self._overlay_cache = surf
@@ -111,6 +203,12 @@ class DayNightSystem:
             self._start_minute = int(data.get("start_minute", 600)) % 1440
         except Exception:
             self._start_minute = 600
+        # Piso mínimo de intensidad
+        try:
+            self._min_intensity = float(data.get("min_intensity", 0.2))
+            self._min_intensity = max(0.0, min(1.0, self._min_intensity))
+        except Exception:
+            self._min_intensity = 0.2
         # Parse keyframes
         kf = []
         for rec in data.get("keyframes", []) or []:

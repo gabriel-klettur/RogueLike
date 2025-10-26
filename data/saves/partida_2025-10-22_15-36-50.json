@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      17,
-      60
+      45,
+      83
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        17,
-        60
+        45,
+        83
       ],
       "npc_states": {}
     }
@@ -21,14 +21,8 @@
     "player_id": "49587a3b-0089-4b91-a24a-be466e684bd0",
     "capacity": 20,
     "slots": [
-      {
-        "item": "gold",
-        "quantity": 1
-      },
-      {
-        "item": "wood",
-        "quantity": 1
-      },
+      null,
+      null,
       null,
       null,
       null,
@@ -74,21 +68,18 @@
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-26T21:50:26",
+    "last_played": "2025-10-26T22:42:36",
     "player": {
-      "xp": 30,
-      "level": 1
+      "xp": 50,
+      "level": 2
     },
     "items_summary": {
-      "stacks": 2,
-      "top_items": [
-        "gold",
-        "wood"
-      ]
+      "stacks": 0,
+      "top_items": []
     }
   },
   "time": {
-    "minute": 357,
-    "time_scale": 0.1
+    "minute": 60,
+    "time_scale": 1.5500000000000007
   }
 }

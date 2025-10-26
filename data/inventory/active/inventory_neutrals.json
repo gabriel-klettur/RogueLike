@@ -1,5 +1,5 @@
 {
-  "91649f26-e6c8-4338-a68a-63fb8f9a4748": {
+  "9df541b6-1154-4ccb-98d2-75c0238166a9": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -40,7 +40,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "ee3501e9-4114-4f49-be48-7eb597a27965": {
+  "482cb0fe-f28b-4740-9744-64c7c4ccf16b": {
     "template_id": null,
     "slots": [
       {
@@ -48,16 +48,16 @@
         "quantity": 50
       },
       {
-        "item": "backpack_open",
+        "item": "energy_potion",
         "quantity": 5
       },
       {
-        "item": "food_chicken",
-        "quantity": 3
+        "item": "health_potion",
+        "quantity": 2
       },
       {
-        "item": "iron_sword_1",
-        "quantity": 2
+        "item": "mana_potion",
+        "quantity": 3
       },
       null,
       null,
@@ -78,7 +78,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "d0aaa431-c03a-43ae-9f8f-9c3665d38edf": {
+  "175d4f69-86a0-443b-b901-0cc8881e0cbb": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -86,16 +86,16 @@
         "quantity": 1000
       },
       {
-        "item": "tortilla_spain_01",
-        "quantity": 3
+        "item": "bucket_water_1",
+        "quantity": 2
       },
       {
-        "item": "explosion_potion",
+        "item": "iron_ingot",
         "quantity": 1
       },
       {
-        "item": "food_chicken",
-        "quantity": 1
+        "item": "backpack_open",
+        "quantity": 5
       },
       null,
       null,
@@ -116,7 +116,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "61d9fad7-00cf-4d04-8a1a-760465156ee7": {
+  "4b1fcf65-72ef-4403-8469-02f642714bdf": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -148,7 +148,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "48555682-b1ec-4b68-b1e5-dcea2a89a69b": {
+  "7dbad4fa-e5a3-4ffa-90cc-03852e0d51b7": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {

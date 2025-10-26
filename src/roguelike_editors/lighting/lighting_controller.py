@@ -90,8 +90,17 @@ class LightingEditorController:
             if getattr(event, 'button', None) == 1:
                 # If spawn mode is active and click is outside the panel -> place light on map
                 st = self.model
-                pan = getattr(st, '_panel_rect', None)
-                if getattr(st, 'spawn_mode', False) and (not isinstance(pan, pygame.Rect) or not pan.collidepoint(event.pos)):
+                pan_left = getattr(st, '_panel_rect', None)
+                pan_right = getattr(st, '_panel_time_rect', None)
+                outside_left = not (isinstance(pan_left, pygame.Rect) and pan_left.collidepoint(event.pos))
+                outside_right = not (isinstance(pan_right, pygame.Rect) and pan_right.collidepoint(event.pos))
+                if getattr(st, 'spawn_mode', False) and outside_left and outside_right:
+                    # Ensure point lights manager is enabled so debug lights are visible
+                    try:
+                        from roguelike_engine.rendering.lighting import get_global_lighting
+                        get_global_lighting().set_enabled(True)
+                    except Exception:
+                        pass
                     self._spawn_at_screen(event.pos)
                     # Single-shot exits spawn mode automatically
                     if bool(getattr(st, 'spawn_single_shot', False)):
@@ -163,6 +172,15 @@ class LightingEditorController:
         # Toggle Spawn Debug Light mode (map click placement)
         if isinstance(st._btn_spawn, pygame.Rect) and st._btn_spawn.collidepoint(x, y):
             st.spawn_mode = not bool(getattr(st, 'spawn_mode', False))
+            if st.spawn_mode:
+                try:
+                    from roguelike_engine.rendering.lighting import get_global_lighting
+                    lm = get_global_lighting()
+                    lm.set_enabled(True)
+                    if not lm.should_render():
+                        lm.set_quality('lights_low')
+                except Exception:
+                    pass
             return
         # Clear Debug Lights
         if isinstance(st._btn_clear, pygame.Rect) and st._btn_clear.collidepoint(x, y):
@@ -314,6 +332,49 @@ class LightingEditorController:
                 _set_minute(1260); return
             if hasattr(st, '_btn_time_00') and isinstance(st._btn_time_00, pygame.Rect) and st._btn_time_00.collidepoint(x, y):
                 _set_minute(0); return
+            # Min intensity stepper (floor)
+            def _step_min_intensity(delta: float):
+                try:
+                    cur = float(dn.get_min_intensity())
+                except Exception:
+                    cur = 0.2
+                dn.set_min_intensity(max(0.0, min(1.0, cur + delta)))
+            if hasattr(st, '_btn_minI_minus') and isinstance(st._btn_minI_minus, pygame.Rect) and st._btn_minI_minus.collidepoint(x, y):
+                _step_min_intensity(-0.05); return
+            if hasattr(st, '_btn_minI_plus') and isinstance(st._btn_minI_plus, pygame.Rect) and st._btn_minI_plus.collidepoint(x, y):
+                _step_min_intensity(+0.05); return
+            # Keyframe intensity steppers
+            def _kf(minute: int, delta: float):
+                try:
+                    val = float(dn.get_intensity_at_minute(minute, apply_floor=False))
+                except Exception:
+                    val = 0.0
+                val = max(0.0, min(1.0, val + delta))
+                dn.set_keyframe(minute, intensity=val)
+            mapping = [
+                (getattr(st, '_btn_i_0000_minus', None), 0, -0.05),
+                (getattr(st, '_btn_i_0000_plus', None), 0, +0.05),
+                (getattr(st, '_btn_i_0500_minus', None), 300, -0.05),
+                (getattr(st, '_btn_i_0500_plus', None), 300, +0.05),
+                (getattr(st, '_btn_i_0700_minus', None), 420, -0.05),
+                (getattr(st, '_btn_i_0700_plus', None), 420, +0.05),
+                (getattr(st, '_btn_i_1200_minus', None), 720, -0.05),
+                (getattr(st, '_btn_i_1200_plus', None), 720, +0.05),
+                (getattr(st, '_btn_i_1900_minus', None), 1140, -0.05),
+                (getattr(st, '_btn_i_1900_plus', None), 1140, +0.05),
+                (getattr(st, '_btn_i_2100_minus', None), 1260, -0.05),
+                (getattr(st, '_btn_i_2100_plus', None), 1260, +0.05),
+            ]
+            for rect, minute, delta in mapping:
+                if isinstance(rect, pygame.Rect) and rect.collidepoint(x, y):
+                    _kf(minute, delta); return
+            # Save config
+            if hasattr(st, '_btn_time_save') and isinstance(st._btn_time_save, pygame.Rect) and st._btn_time_save.collidepoint(x, y):
+                try:
+                    dn.save_config()
+                except Exception:
+                    pass
+                return
         # Color steppers (RGB)
         r, g, b = self.model.spawn_color
         def _cs(v):
@@ -368,7 +429,15 @@ class LightingEditorController:
             else:
                 wx, wy = float(mx), float(my)
             st = self.model
-            get_global_lighting().add(
+            lm = get_global_lighting()
+            # Ensure lights system is visible
+            lm.set_enabled(True)
+            if not lm.should_render():
+                try:
+                    lm.set_quality('lights_low')
+                except Exception:
+                    pass
+            lm.add(
                 Light(
                     x=wx,
                     y=wy,

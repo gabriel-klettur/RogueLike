@@ -93,3 +93,21 @@ class LightingEditorState:
         self._lbl_time_now = None
         self._lbl_time_phase = None
         self._lbl_time_intensity = None
+        # Daytime intensity controls
+        self._btn_minI_minus = None
+        self._btn_minI_plus = None
+        # Keyframe intensity steppers for common minutes: 00:00, 05:00, 07:00, 12:00, 19:00, 21:00
+        self._btn_i_0000_minus = None
+        self._btn_i_0000_plus = None
+        self._btn_i_0500_minus = None
+        self._btn_i_0500_plus = None
+        self._btn_i_0700_minus = None
+        self._btn_i_0700_plus = None
+        self._btn_i_1200_minus = None
+        self._btn_i_1200_plus = None
+        self._btn_i_1900_minus = None
+        self._btn_i_1900_plus = None
+        self._btn_i_2100_minus = None
+        self._btn_i_2100_plus = None
+        # Save button
+        self._btn_time_save = None

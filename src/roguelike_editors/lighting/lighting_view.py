@@ -166,13 +166,7 @@ class LightingEditorView:
         draw_stepper("Max Radius", str(mr), "_btn_mr_minus", "_btn_mr_plus")
         draw_stepper("Shadow Heroes", str(shn), "_btn_sh_hero_minus", "_btn_sh_hero_plus")
         draw_stepper("Shadow Rays", str(shr), "_btn_sh_rays_minus", "_btn_sh_rays_plus")
-        # Time scale (minutes per real second)
-        try:
-            from roguelike_engine.rendering.lighting.daynight import get_global_daynight
-            ts_val = float(get_global_daynight().time_scale_minutes_per_second)
-        except Exception:
-            ts_val = 0.4
-        draw_stepper("Time Scale (min/s)", f"{ts_val:.2f}", "_btn_ts_minus", "_btn_ts_plus")
+        # Time scale moved to Daytime Tools panel
         # --- Color steppers ---------------------------------------------------
         by += row
         labc = self._draw_label(screen, x + 8, by - row // 2, "Color (RGB)", (200, 200, 210))
@@ -263,6 +257,69 @@ class LightingEditorView:
         st._btn_time_19 = self._draw_button(screen, rx + 12 + (jb + 4) * 0, ty, jb, rrow - 10, "19:00", False)
         st._btn_time_21 = self._draw_button(screen, rx + 12 + (jb + 4) * 1, ty, jb, rrow - 10, "21:00", False)
         st._btn_time_00 = self._draw_button(screen, rx + 12 + (jb + 4) * 2, ty, jb, rrow - 10, "00:00", False)
+        ty += rrow
+        # --- Min intensity stepper -------------------------------------------
+        try:
+            min_i = float(dn.get_min_intensity()) if dn else 0.2
+        except Exception:
+            min_i = 0.2
+        lab_min = self._draw_label(screen, rx + 12, ty - rrow // 2, "Min Intensity", (200, 200, 210))
+        bw = 36
+        vwx = rx + 12 + bw + 6
+        st._btn_minI_minus = self._draw_button(screen, rx + 12, ty, bw, rrow - 10, "-", False)
+        vb = pygame.Surface((rw - 24 - (bw * 2) - 24, rrow - 10), pygame.SRCALPHA)
+        vb.fill((35, 35, 42, 220))
+        screen.blit(vb, (vwx, ty))
+        vt = self.font.render(f"{min_i:.2f}", True, (230, 230, 240))
+        screen.blit(vt, (vwx + 8, ty + (rrow - 10 - vt.get_height()) // 2))
+        st._btn_minI_plus = self._draw_button(screen, rx + rw - 12 - bw, ty, bw, rrow - 10, "+", False)
+        ty += rrow
+        # --- Time Scale (min/s) stepper --------------------------------------
+        try:
+            ts_val = float(dn.time_scale_minutes_per_second) if dn else 0.4
+        except Exception:
+            ts_val = 0.4
+        self._draw_label(screen, rx + 12, ty - rrow // 2, "Time Scale (min/s)", (200, 200, 210))
+        st._btn_ts_minus = self._draw_button(screen, rx + 100, ty, bw, rrow - 10, "-", False)
+        vb = pygame.Surface((rw - 24 - 100 - (bw * 2) - 24, rrow - 10), pygame.SRCALPHA)
+        vb.fill((35, 35, 42, 220))
+        screen.blit(vb, (rx + 100 + bw + 6, ty))
+        vt = self.font.render(f"{ts_val:.2f}", True, (230, 230, 240))
+        screen.blit(vt, (rx + 100 + bw + 14, ty + (rrow - 10 - vt.get_height()) // 2))
+        st._btn_ts_plus = self._draw_button(screen, rx + rw - 12 - bw, ty, bw, rrow - 10, "+", False)
+        ty += rrow
+        # --- Keyframe intensities -------------------------------------------
+        self._draw_label(screen, rx + 12, ty - rrow // 2, "Keyframes (intensity)", (200, 200, 210))
+        ty += rrow
+        def draw_kf_row(lbl: str, val: float, minus_attr: str, plus_attr: str):
+            nonlocal ty
+            bw = 36
+            self._draw_label(screen, rx + 12, ty - rrow // 2, lbl, (200, 200, 210))
+            st.__dict__[minus_attr] = self._draw_button(screen, rx + 100, ty, bw, rrow - 10, "-", False)
+            vb = pygame.Surface((rw - 24 - 100 - (bw * 2) - 24, rrow - 10), pygame.SRCALPHA)
+            vb.fill((35, 35, 42, 220))
+            screen.blit(vb, (rx + 100 + bw + 6, ty))
+            vt = self.font.render(f"{val:.2f}", True, (230, 230, 240))
+            screen.blit(vt, (rx + 100 + bw + 14, ty + (rrow - 10 - vt.get_height()) // 2))
+            st.__dict__[plus_attr] = self._draw_button(screen, rx + rw - 12 - bw, ty, bw, rrow - 10, "+", False)
+            ty += rrow
+        # Sample intensities without floor for curve editing
+        def gi(m):
+            try:
+                return float(dn.get_intensity_at_minute(m, apply_floor=False)) if dn else 0.0
+            except Exception:
+                return 0.0
+        for label, minute, mi_attr, pl_attr in (
+            ("00:00", 0, "_btn_i_0000_minus", "_btn_i_0000_plus"),
+            ("05:00", 300, "_btn_i_0500_minus", "_btn_i_0500_plus"),
+            ("07:00", 420, "_btn_i_0700_minus", "_btn_i_0700_plus"),
+            ("12:00", 720, "_btn_i_1200_minus", "_btn_i_1200_plus"),
+            ("19:00", 1140, "_btn_i_1900_minus", "_btn_i_1900_plus"),
+            ("21:00", 1260, "_btn_i_2100_minus", "_btn_i_2100_plus"),
+        ):
+            draw_kf_row(label, gi(minute), mi_attr, pl_attr)
+        # Save button
+        st._btn_time_save = self._draw_button(screen, rx + 12, ty, rw - 24, rrow - 10, "Save lighting.json", False)
         # Scrollbar
         track = pygame.Rect(x + w - 8, y + 6, 6, vp_h - 12)
         st._scrollbar_track = track
@@ -298,6 +355,20 @@ class LightingEditorView:
         add_tip(st._btn_time_19, "Ir a 19:00 (Dusk start).")
         add_tip(st._btn_time_21, "Ir a 21:00 (Night).")
         add_tip(st._btn_time_00, "Ir a 00:00 (Midnight).")
+        add_tip(st._btn_minI_minus, "Bajar intensidad mínima (piso de noche).")
+        add_tip(st._btn_minI_plus, "Subir intensidad mínima (piso de noche).")
+        add_tip(st._btn_ts_minus, "Disminuir la velocidad del día (minutos por segundo).")
+        add_tip(st._btn_ts_plus, "Aumentar la velocidad del día (minutos por segundo).")
+        for r in [
+            st._btn_i_0000_minus, st._btn_i_0000_plus,
+            st._btn_i_0500_minus, st._btn_i_0500_plus,
+            st._btn_i_0700_minus, st._btn_i_0700_plus,
+            st._btn_i_1200_minus, st._btn_i_1200_plus,
+            st._btn_i_1900_minus, st._btn_i_1900_plus,
+            st._btn_i_2100_minus, st._btn_i_2100_plus,
+        ]:
+            add_tip(r, "Ajustar intensidad del keyframe seleccionado.")
+        add_tip(st._btn_time_save, "Guardar configuración en data/config/lighting.json")
         try:
             mx, my = pygame.mouse.get_pos()
             tip = None
