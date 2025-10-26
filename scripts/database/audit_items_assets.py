@@ -27,6 +27,7 @@ import argparse
 import json
 import re
 import sqlite3
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
@@ -221,11 +222,83 @@ def apply_fixes_insert_stubs(db_path: Path, assets: Iterable[str]) -> Tuple[int,
         con.close()
 
 
+def clean_missing_db_icon_paths(db_path: Path, missing_refs: Iterable[DbRef]) -> Tuple[int, int, int, int]:
+    grouped: Dict[str, List[DbRef]] = defaultdict(list)
+    for r in missing_refs:
+        grouped[r.item_id].append(r)
+    con = sqlite3.connect(db_path)
+    try:
+        cur = con.cursor()
+        cleared_small = 0
+        cleared_large = 0
+        removed_json = 0
+        rows_updated = 0
+        for iid, refs in grouped.items():
+            row = cur.execute(
+                "SELECT icon_small, icon_large, icon_json FROM items WHERE id = ?",
+                (iid,),
+            ).fetchone()
+            if row is None:
+                continue
+            icon_small, icon_large, icon_json = row
+            changed = False
+
+            # Clear icon_small if it matches any missing ref for this item
+            if icon_small:
+                p_small = _normalize_db_path(str(icon_small))
+                if any(r.column == "icon_small" and r.path == p_small for r in refs):
+                    icon_small = None
+                    cleared_small += 1
+                    changed = True
+
+            # Clear icon_large if it matches any missing ref for this item
+            if icon_large:
+                p_large = _normalize_db_path(str(icon_large))
+                if any(r.column == "icon_large" and r.path == p_large for r in refs):
+                    icon_large = None
+                    cleared_large += 1
+                    changed = True
+
+            # Remove entries from icon_json list that match missing refs
+            if icon_json:
+                try:
+                    lst = json.loads(icon_json)
+                    if isinstance(lst, list):
+                        paths_to_remove = {r.path for r in refs if r.column.startswith("icon_json")}
+                        new_lst: List[str] = []
+                        removed_here = 0
+                        for val in lst:
+                            if isinstance(val, str) and val:
+                                norm_val = _normalize_db_path(val)
+                                if norm_val in paths_to_remove:
+                                    removed_here += 1
+                                    continue
+                            new_lst.append(val)
+                        if removed_here:
+                            removed_json += removed_here
+                            icon_json = None if not new_lst else json.dumps(new_lst)
+                            changed = True
+                except Exception:
+                    pass
+
+            if changed:
+                cur.execute(
+                    "UPDATE items SET icon_small = ?, icon_large = ?, icon_json = ? WHERE id = ?",
+                    (icon_small, icon_large, icon_json, iid),
+                )
+                rows_updated += 1
+        con.commit()
+        return rows_updated, cleared_small, cleared_large, removed_json
+    finally:
+        con.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Audit and reconcile item assets with DB")
     ap.add_argument("--assets-dir", default=str(ASSETS_DEFAULT), help="Root directory for item assets (default: assets/items)")
     ap.add_argument("--db", default=str(DB_DEFAULT), help="SQLite database path (default: data/roguelike.sqlite3)")
     ap.add_argument("--apply", action="store_true", help="Apply fixes: insert stub items for unregistered images")
+    ap.add_argument("--clean", action="store_true", help="Clean DB icon fields that reference missing asset paths")
     args = ap.parse_args()
 
     assets_dir = Path(args.assets_dir)
@@ -278,6 +351,16 @@ def main() -> None:
                     print(f"  ... and {len(ids) - 50} more")
         else:
             print("No unregistered images to insert.")
+
+    if args.clean:
+        if not report.missing_paths:
+            print("No missing DB icon paths to clean.")
+        else:
+            rows, c_small, c_large, c_json = clean_missing_db_icon_paths(db_path, report.missing_paths)
+            print(
+                "Cleaned: updated rows="
+                f"{rows}, icon_small cleared={c_small}, icon_large cleared={c_large}, icon_json entries removed={c_json}"
+            )
 
     # Keep non-zero exit to integrate with CI checks
     raise SystemExit(exit_code)
