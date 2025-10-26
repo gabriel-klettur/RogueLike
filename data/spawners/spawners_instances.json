@@ -1,1 +1,209 @@
-[]
+[
+    {
+        "template_id": "survival_10",
+        "zone": "Forest",
+        "tile": [
+            25,
+            18
+        ],
+        "overrides": {
+            "visible_in_game": true,
+            "hp_scope": "per_state",
+            "life_defaults": {
+                "damageable": true,
+                "max_hp": 1000,
+                "flash_on_hit": true,
+                "flash_color": [
+                    255,
+                    255,
+                    255
+                ],
+                "flash_duration_s": 0.08,
+                "hp_reset_on_enter": "set_to_max"
+            }
+        },
+        "visuals": {
+            "Finished": {
+                "instance_id": 378,
+                "template_id": 158,
+                "offset": [
+                    -119,
+                    -302
+                ]
+            },
+            "WaitClear": {
+                "instance_id": 379,
+                "template_id": 157,
+                "offset": [
+                    -126,
+                    -309
+                ]
+            },
+            "WaitCooldown": {
+                "instance_id": 380,
+                "template_id": 155,
+                "offset": [
+                    -122,
+                    -323
+                ]
+            },
+            "AwaitTrigger": {
+                "instance_id": 381,
+                "template_id": 157,
+                "offset": [
+                    -121,
+                    -297
+                ]
+            }
+        },
+        "id": "survival_10_forest_14_9"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            5,
+            1
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_4"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            4,
+            12
+        ],
+        "id": "barbol_periodic_no_stack_forest_4_12"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            11,
+            18
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_18"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            4,
+            35
+        ],
+        "id": "barbol_periodic_no_stack_forest_4_35"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            9,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_10_43"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            19,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_21_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            29,
+            32
+        ],
+        "id": "barbol_periodic_no_stack_forest_28_32"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            30,
+            44
+        ],
+        "id": "barbol_periodic_no_stack_forest_29_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            41,
+            43
+        ],
+        "id": "barbol_periodic_no_stack_forest_38_44"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            43,
+            22
+        ],
+        "id": "barbol_periodic_no_stack_forest_44_19"
+    },
+    {
+        "template_id": "barbol_periodic_no_stack",
+        "zone": "Forest",
+        "tile": [
+            44,
+            13
+        ],
+        "id": "barbol_periodic_no_stack_forest_45_13"
+    },
+    {
+        "template_id": "vendor_gatita_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            18,
+            38
+        ],
+        "id": "vendor_gatita_respawn_5m_lobby_20_38",
+        "visuals": {}
+    },
+    {
+        "template_id": "vendor_smith_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            13,
+            7
+        ],
+        "id": "vendor_smith_respawn_5m_lobby_22_40",
+        "visuals": {}
+    },
+    {
+        "template_id": "vendor_abigail_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            43,
+            22
+        ],
+        "id": "vendor_abigail_respawn_5m_lobby_17_39",
+        "visuals": {}
+    },
+    {
+        "template_id": "vendor_roberto_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            11,
+            20
+        ],
+        "id": "vendor_roberto_respawn_5m_lobby_21_42",
+        "visuals": {}
+    },
+    {
+        "template_id": "vendor_valeria_respawn_5m",
+        "zone": "lobby",
+        "tile": [
+            44,
+            6
+        ],
+        "id": "vendor_valeria_respawn_5m_lobby_44_7"
+    }
+]

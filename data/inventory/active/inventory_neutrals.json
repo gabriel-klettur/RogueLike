@@ -1,1 +1,183 @@
-{}
+{
+  "9c36a814-7e01-4051-aa4f-7b252a9a89c1": {
+    "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
+    "slots": [
+      {
+        "item": "food_apple",
+        "quantity": 40
+      },
+      {
+        "item": "food_bread",
+        "quantity": 25
+      },
+      {
+        "item": "food_borscht",
+        "quantity": 15
+      },
+      {
+        "item": "food_varenyky",
+        "quantity": 20
+      },
+      {
+        "item": "gold",
+        "quantity": 200
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "79d0c52c-879d-4478-8dcf-d96ac9d0dc95": {
+    "template_id": null,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 50
+      },
+      {
+        "item": "health_potion",
+        "quantity": 3
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 1
+      },
+      {
+        "item": "poison_potion",
+        "quantity": 2
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "edfffeb2-93ff-409a-8a34-242fde5970eb": {
+    "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1000
+      },
+      {
+        "item": "health_potion",
+        "quantity": 3
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 4
+      },
+      {
+        "item": "poison_potion",
+        "quantity": 3
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "af62b384-254c-4f97-8de5-6e642a243b80": {
+    "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
+    "slots": [
+      {
+        "item": "wood",
+        "quantity": 80
+      },
+      {
+        "item": "gold",
+        "quantity": 180
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "0663e909-5660-4dcd-9e9e-56b0fe416029": {
+    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "slots": [
+      {
+        "item": "health_potion",
+        "quantity": 40
+      },
+      {
+        "item": "gold",
+        "quantity": 300
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

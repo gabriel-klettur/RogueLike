@@ -44,12 +44,12 @@ def _json_loads(text: str | None) -> Dict[str, Any]:
 
 
 def _merge_row_payload(row: ItemRow) -> Dict[str, Any]:
-    """Return a JSON-like item entry merging DB columns into extra_json."""
-    payload = _json_loads(getattr(row, "extra_json", None))
-    # Overlay stable columns (prefer explicit DB fields when present)
+    """Return a JSON-like item entry built only from normalized DB columns."""
+    payload: Dict[str, Any] = {}
     def _put(key: str, value: Any) -> None:
         if value is not None:
             payload[key] = value
+    # Core
     _put("id", row.id)
     _put("name", getattr(row, "name", None))
     _put("description", getattr(row, "description", None))
@@ -60,15 +60,22 @@ def _merge_row_payload(row: ItemRow) -> Dict[str, Any]:
     _put("equip_slot", getattr(row, "equip_slot", None))
     _put("rarity", getattr(row, "rarity", None))
     _put("level_requirement", getattr(row, "level_requirement", None))
+    # Icons
     _put("icon_small", getattr(row, "icon_small", None))
     _put("icon_large", getattr(row, "icon_large", None))
-    # icon list stored in icon_json
     try:
         icon_json = getattr(row, "icon_json", None)
         if icon_json:
             payload["icon"] = json.loads(icon_json)
     except Exception:
         pass
+    # Gameplay normalized
+    for k in (
+        "threshold","experience","effect","durability","damage","attack_speed","range",
+        "crit_chance","crit_multiplier","weight","value","quest_id",
+        "scale_editor","scale_map","scale_inventory",
+    ):
+        _put(k, getattr(row, k, None))
     return payload
 
 
@@ -118,6 +125,23 @@ def upsert_entry(entry: Dict[str, Any]) -> None:
     elif isinstance(icon, str) and not icon_small:
         icon_small = icon
 
+    # Normalized gameplay fields
+    threshold = _safe_int(entry.get("threshold"))
+    experience = _safe_int(entry.get("experience"))
+    effect = entry.get("effect")
+    durability = _safe_int(entry.get("durability"))
+    damage = _safe_int(entry.get("damage"))
+    attack_speed = _safe_float(entry.get("attack_speed"))
+    range_ = _safe_int(entry.get("range"))
+    crit_chance = _safe_float(entry.get("crit_chance"))
+    crit_multiplier = _safe_float(entry.get("crit_multiplier"))
+    weight = _safe_float(entry.get("weight"))
+    value = _safe_int(entry.get("value"))
+    quest_id = entry.get("quest_id")
+    scale_editor = _safe_float(entry.get("scale_editor"))
+    scale_map = _safe_float(entry.get("scale_map"))
+    scale_inventory = _safe_float(entry.get("scale_inventory"))
+
     extra_json = _json_dumps(entry)
 
     with session_scope() as s:
@@ -138,6 +162,22 @@ def upsert_entry(entry: Dict[str, Any]) -> None:
         row.icon_small = icon_small
         row.icon_large = icon_large
         row.icon_json = icon_json
+        # Normalized gameplay
+        row.threshold = threshold
+        row.experience = experience
+        row.effect = effect
+        row.durability = durability
+        row.damage = damage
+        row.attack_speed = attack_speed
+        row.range = range_
+        row.crit_chance = crit_chance
+        row.crit_multiplier = crit_multiplier
+        row.weight = weight
+        row.value = value
+        row.quest_id = quest_id
+        row.scale_editor = scale_editor
+        row.scale_map = scale_map
+        row.scale_inventory = scale_inventory
         row.extra_json = extra_json
         # Committed by session_scope
 

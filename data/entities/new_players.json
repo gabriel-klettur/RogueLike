@@ -81,30 +81,30 @@
             "idle": {
               "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
               "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
-              "e": "assets/items/exp_orb_1.png",
+              "e": "assets/items/experience/exp_orb_1.png",
               "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
               "n": "assets/items/backpack_close.png",
-              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "nw": "assets/items/magic/wizard_staff_lvl_1.png",
               "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
               "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },
             "walk": {
               "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
               "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
-              "e": "assets/items/exp_orb_1.png",
+              "e": "assets/items/experience/exp_orb_1.png",
               "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
               "n": "assets/items/backpack_close.png",
-              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "nw": "assets/items/magic/wizard_staff_lvl_1.png",
               "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
               "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },
             "chase": {
               "s": "assets/items/ChatGPT Image Jul 25, 2025, 05_14_20 PM.png",
               "se": "assets/items/ChatGPT Image Jul 25, 2025, 10_38_33 AM.png",
-              "e": "assets/items/exp_orb_1.png",
+              "e": "assets/items/experience/exp_orb_1.png",
               "ne": "assets/items/ChatGPT Image Jul 25, 2025, 04_18_18 PM.png",
               "n": "assets/items/backpack_close.png",
-              "nw": "assets/items/wizard_staff_lvl_1.png",
+              "nw": "assets/items/magic/wizard_staff_lvl_1.png",
               "w": "assets/items/ChatGPT Image Jul 25, 2025, 03_51_51 PM.png",
               "sw": "assets/items/ChatGPT Image Jul 25, 2025, 10_42_17 AM.png"
             },

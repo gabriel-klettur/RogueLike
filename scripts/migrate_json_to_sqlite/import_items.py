@@ -79,6 +79,13 @@ def _str_or_none(v: Any) -> str | None:
     return str(v) if isinstance(v, str) else None
 
 
+def _float_or_none(v: Any) -> float | None:
+    try:
+        return float(v) if isinstance(v, (int, float)) else None
+    except Exception:
+        return None
+
+
 def _extract_icons(payload: Dict[str, Any]) -> tuple[str | None, str | None, str | None]:
     """Return (icon_small, icon_large, icon_json) normalized from mixed inputs."""
     icon_small = _str_or_none(payload.get("icon_small"))
@@ -111,6 +118,23 @@ def _insert_item_stmt(item_id: str, data: Dict[str, Any]):
 
     icon_small, icon_large, icon_json = _extract_icons(data)
 
+    # Normalized gameplay fields
+    threshold = _int_or_none(data.get("threshold"))
+    experience = _int_or_none(data.get("experience"))
+    effect = _str_or_none(data.get("effect"))
+    durability = _int_or_none(data.get("durability"))
+    damage = _int_or_none(data.get("damage"))
+    attack_speed = _float_or_none(data.get("attack_speed"))
+    range_ = _int_or_none(data.get("range"))
+    crit_chance = _float_or_none(data.get("crit_chance"))
+    crit_multiplier = _float_or_none(data.get("crit_multiplier"))
+    weight = _float_or_none(data.get("weight"))
+    value = _int_or_none(data.get("value"))
+    quest_id = _str_or_none(data.get("quest_id"))
+    scale_editor = _float_or_none(data.get("scale_editor"))
+    scale_map = _float_or_none(data.get("scale_map"))
+    scale_inventory = _float_or_none(data.get("scale_inventory"))
+
     stmt = insert(Item).values(
         id=item_id,
         name=name,
@@ -125,6 +149,21 @@ def _insert_item_stmt(item_id: str, data: Dict[str, Any]):
         icon_small=icon_small,
         icon_large=icon_large,
         icon_json=icon_json,
+        threshold=threshold,
+        experience=experience,
+        effect=effect,
+        durability=durability,
+        damage=damage,
+        attack_speed=attack_speed,
+        range=range_,
+        crit_chance=crit_chance,
+        crit_multiplier=crit_multiplier,
+        weight=weight,
+        value=value,
+        quest_id=quest_id,
+        scale_editor=scale_editor,
+        scale_map=scale_map,
+        scale_inventory=scale_inventory,
         extra_json=_json_str(data),
     )
 
@@ -143,6 +182,21 @@ def _insert_item_stmt(item_id: str, data: Dict[str, Any]):
             "icon_small": stmt.excluded.icon_small,
             "icon_large": stmt.excluded.icon_large,
             "icon_json": stmt.excluded.icon_json,
+            "threshold": stmt.excluded.threshold,
+            "experience": stmt.excluded.experience,
+            "effect": stmt.excluded.effect,
+            "durability": stmt.excluded.durability,
+            "damage": stmt.excluded.damage,
+            "attack_speed": stmt.excluded.attack_speed,
+            "range": stmt.excluded.range,
+            "crit_chance": stmt.excluded.crit_chance,
+            "crit_multiplier": stmt.excluded.crit_multiplier,
+            "weight": stmt.excluded.weight,
+            "value": stmt.excluded.value,
+            "quest_id": stmt.excluded.quest_id,
+            "scale_editor": stmt.excluded.scale_editor,
+            "scale_map": stmt.excluded.scale_map,
+            "scale_inventory": stmt.excluded.scale_inventory,
             "extra_json": stmt.excluded.extra_json,
         },
     )
@@ -165,6 +219,21 @@ def _insert_item_stub_stmt(item_id: str):
         icon_small=None,
         icon_large=None,
         icon_json=None,
+        threshold=None,
+        experience=None,
+        effect=None,
+        durability=None,
+        damage=None,
+        attack_speed=None,
+        range=None,
+        crit_chance=None,
+        crit_multiplier=None,
+        weight=None,
+        value=None,
+        quest_id=None,
+        scale_editor=None,
+        scale_map=None,
+        scale_inventory=None,
         extra_json=None,
     )
     return stmt.on_conflict_do_nothing(index_elements=[Item.id])

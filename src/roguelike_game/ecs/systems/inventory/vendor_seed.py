@@ -96,16 +96,10 @@ class VendorSupport:
             with session_scope() as s:
                 rows = s.query(ItemRow).all()
                 for r in rows:
-                    try:
-                        payload = {}
-                        if r.extra_json:
-                            payload = json.loads(r.extra_json)
-                    except Exception:
-                        payload = {}
                     cat[str(r.id)] = {
-                        'stackable': bool(payload.get('stackable', getattr(r, 'stackable', False) or False)),
-                        'max_stack': int(payload.get('max_stack', getattr(r, 'max_stack', 0) or 0) or 0) or None,
-                        'quest_id': payload.get('quest_id'),
+                        'stackable': bool(getattr(r, 'stackable', False) or False),
+                        'max_stack': int(getattr(r, 'max_stack', 0) or 0) or None,
+                        # quest_id intentionally omitted to avoid dependency on extra_json
                     }
             self._items_catalog = cat
             self._items_catalog_mtime = 0.0  # DB-sourced; mtime not applicable
@@ -209,8 +203,6 @@ class VendorSupport:
                 if not isinstance(node, dict):
                     continue
                 if iid_item in {"gold", "experience_orb"}:
-                    continue
-                if node.get("quest_id"):
                     continue
                 if bool(node.get("stackable", False)):
                     candidates.append((iid_item, int(node.get("max_stack", 10) or 10)))

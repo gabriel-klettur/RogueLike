@@ -1,14 +1,1 @@
-{
-  "601d985c-8143-43a3-81cb-edf242069d90": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "zone_150_50",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 16,
-      "y": 29
-    },
-    "created_at": 1761428723.8048046
-  }
-}
+{}

@@ -1,9 +1,13 @@
 import sys
 import os
+import warnings
 
 os.system('cls' if os.name == 'nt' else 'clear')    #TODO Limpiamos la terminal mediante (clear), antes de ejecutar el main
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Silence the pkg_resources deprecation warning emitted by pygame.pkgdata
+warnings.filterwarnings("ignore", category=UserWarning, module=r"pygame\.pkgdata")
 
 from roguelike_engine.log_config import init_logging, build_log_filepath
 # Initialize logging: console and rotating file handler with standardized filename under logs/engine

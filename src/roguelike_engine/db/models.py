@@ -214,9 +214,28 @@ class Item(Base):
     equip_slot: Mapped[str | None] = mapped_column(String, nullable=True)
     rarity: Mapped[str | None] = mapped_column(String, nullable=True)
     level_requirement: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Icons
     icon_small: Mapped[str | None] = mapped_column(String, nullable=True)
     icon_large: Mapped[str | None] = mapped_column(String, nullable=True)
     icon_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Normalized gameplay columns (migrated from extra_json)
+    threshold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    experience: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    effect: Mapped[str | None] = mapped_column(String, nullable=True)
+    durability: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    damage: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    attack_speed: Mapped[float | None] = mapped_column(Float, nullable=True)
+    range: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    crit_chance: Mapped[float | None] = mapped_column(Float, nullable=True)
+    crit_multiplier: Mapped[float | None] = mapped_column(Float, nullable=True)
+    weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    value: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quest_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Scales
+    scale_editor: Mapped[float | None] = mapped_column(Float, nullable=True)
+    scale_map: Mapped[float | None] = mapped_column(Float, nullable=True)
+    scale_inventory: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Archive only (not used at runtime)
     extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 

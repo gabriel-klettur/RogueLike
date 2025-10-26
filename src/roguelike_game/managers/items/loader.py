@@ -41,11 +41,6 @@ class ItemsLoader:
             rows = s.query(ItemRow).all()
             for row in rows:
                 payload: Dict[str, Any] = {}
-                try:
-                    if row.extra_json:
-                        payload = json.loads(row.extra_json)
-                except Exception:
-                    payload = {}
 
                 # Overlay stable columns from DB over payload
                 payload.update({k: v for k, v in {
@@ -59,8 +54,26 @@ class ItemsLoader:
                     "equip_slot": row.equip_slot,
                     "rarity": row.rarity,
                     "level_requirement": row.level_requirement,
+                    # Icons
                     "icon_small": row.icon_small,
                     "icon_large": row.icon_large,
+                    # Normalized gameplay fields
+                    "threshold": getattr(row, "threshold", None),
+                    "experience": getattr(row, "experience", None),
+                    "effect": getattr(row, "effect", None),
+                    "durability": getattr(row, "durability", None),
+                    "damage": getattr(row, "damage", None),
+                    "attack_speed": getattr(row, "attack_speed", None),
+                    "range": getattr(row, "range", None),
+                    "crit_chance": getattr(row, "crit_chance", None),
+                    "crit_multiplier": getattr(row, "crit_multiplier", None),
+                    "weight": getattr(row, "weight", None),
+                    "value": getattr(row, "value", None),
+                    "quest_id": getattr(row, "quest_id", None),
+                    # Scales
+                    "scale_editor": getattr(row, "scale_editor", None),
+                    "scale_map": getattr(row, "scale_map", None),
+                    "scale_inventory": getattr(row, "scale_inventory", None),
                 }.items() if v is not None})
 
                 # Handle icon list stored in icon_json
@@ -80,14 +93,14 @@ class ItemsLoader:
                 items[row.id] = model
 
                 # Load one icon asset per item if available
+                # Prefer normalized DB columns over legacy 'icon' from extra_json
                 icon_paths = []
-                if getattr(model, "icon", None):
+                if model.icon_small:
+                    icon_paths.append(model.icon_small)
+                if not icon_paths and model.icon_large:
+                    icon_paths.append(model.icon_large)
+                if not icon_paths and getattr(model, "icon", None):
                     icon_paths = model.icon if isinstance(model.icon, list) else [model.icon]
-                else:
-                    if model.icon_small:
-                        icon_paths.append(model.icon_small)
-                    if model.icon_large:
-                        icon_paths.append(model.icon_large)
                 if icon_paths:
                     try:
                         assets[row.id] = load_image(icon_paths[0])

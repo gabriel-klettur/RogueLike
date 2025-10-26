@@ -1,9 +1,38 @@
 import pygame
 import os
 import logging
+from typing import Optional, Dict
 from roguelike_engine.config.config import ASSETS_DIR
 _IMAGE_CACHE = {}
 logger = logging.getLogger(__name__)
+
+# Cache to speed up basename -> absolute path remaps per top-level folder
+_ASSET_REMAP_CACHE: Dict[str, Dict[str, Optional[str]]] = {}
+# Cache to remember full legacy rel paths (e.g., "items/foo.png") -> resolved absolute path
+_PATH_REMAP_CACHE: Dict[str, str] = {}
+
+def _find_asset_by_basename(top_dir: str, basename: str) -> Optional[str]:
+    """
+    Busca de forma perezosa un archivo por su basename (insensible a mayúsculas)
+    dentro de ASSETS_DIR/top_dir y cachea el primer match.
+    Devuelve la ruta absoluta si encuentra algo, o None.
+    """
+    root = os.path.join(ASSETS_DIR, top_dir)
+    if not os.path.isdir(root):
+        return None
+    cache = _ASSET_REMAP_CACHE.setdefault(top_dir, {})
+    key = basename.lower()
+    if key in cache:
+        return cache[key]
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for fname in filenames:
+            if fname.lower() == key:
+                found = os.path.join(dirpath, fname)
+                cache[key] = found
+                return found
+    # Cache negative lookups to avoid repeated walks
+    cache[key] = None  # type: ignore[assignment]
+    return None
 
 def load_image(path: str, scale=None) -> pygame.Surface:
     """
@@ -39,6 +68,31 @@ def load_image(path: str, scale=None) -> pygame.Surface:
             rel = rel[len("assets/") :]
         # Construimos la ruta absoluta relativa a ASSETS_DIR
         full_path = os.path.join(ASSETS_DIR, *rel.split("/"))
+
+    # Fallback: si la ruta no existe y el recurso estaba bajo 'items',
+    # buscar por basename dentro de subcarpetas de assets/items.
+    if not os.path.isfile(full_path):
+        try:
+            # Primero, revisar si ya mapeamos esta ruta relativa previamente
+            mapped = _PATH_REMAP_CACHE.get(rel)
+            if mapped and os.path.isfile(mapped):
+                full_path = mapped
+            else:
+                # Determinar carpeta top-level del path relativo (sin prefijo assets/)
+                rel_no_assets = rel[7:] if rel.startswith("assets/") else rel
+                parts = [p for p in rel_no_assets.split("/") if p]
+                if "items" in parts:
+                    basename = os.path.basename(full_path)
+                    candidate = _find_asset_by_basename("items", basename)
+                    if candidate and os.path.isfile(candidate):
+                        # Guardar el remapeo para evitar nuevos walks y warnings
+                        _PATH_REMAP_CACHE[rel] = candidate
+                        logger.warning(
+                            f"[loader.load_image] Remapeado recurso movido '{full_path}' -> '{candidate}'"
+                        )
+                        full_path = candidate
+        except Exception as e:
+            logger.debug(f"[loader.load_image] Fallback remap error: {e}")
 
     # Cache images to avoid redundant I/O
     key = (full_path, scale)

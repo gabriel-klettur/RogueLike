@@ -66,16 +66,8 @@ class PriceService:
                 it = s.get(ItemRow, item_id)
                 if it is None:
                     return None
-                # Prefer explicit value in extra_json if present
-                try:
-                    import json as _json
-                    payload = _json.loads(it.extra_json or '{}') if getattr(it, 'extra_json', None) else {}
-                except Exception:
-                    payload = {}
-                v = payload.get('value')
-                if self._is_number(v):
-                    return float(v)
-                stackable = bool(payload.get('stackable', False)) if isinstance(payload, dict) else False
+                # Heurística basada solo en columnas normalizadas
+                stackable = bool(getattr(it, 'stackable', False) or False)
                 return 1.0 if stackable else 10.0
         except Exception:
             logger.exception("_fallback_price_from_db_catalog failed")
