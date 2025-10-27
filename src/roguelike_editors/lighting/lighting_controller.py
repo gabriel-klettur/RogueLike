@@ -8,6 +8,9 @@ from .lighting_view import LightingEditorView
 from .panels.day_time_panel.day_time_panel_state import DayTimePanelState
 from .panels.day_time_panel.day_time_panel_view import DayTimePanelView
 from .panels.day_time_panel.day_time_panel_controller import DayTimePanelController
+from .panels.light_presets_panel.light_presets_panel_state import LightPresetsPanelState
+from .panels.light_presets_panel.light_presets_panel_view import LightPresetsPanelView
+from .panels.light_presets_panel.light_presets_panel_controller import LightPresetsPanelController
 
 
 class LightingEditorController:
@@ -19,6 +22,10 @@ class LightingEditorController:
         self.daytime_state = DayTimePanelState()
         self.daytime_view = DayTimePanelView(self.daytime_state, font=font)
         self.daytime_controller = DayTimePanelController(self.daytime_state)
+        # Light Presets (delegated panel MVC)
+        self.presets_state = LightPresetsPanelState()
+        self.presets_view = LightPresetsPanelView(self.presets_state, font=font)
+        self.presets_controller = LightPresetsPanelController(self.presets_state)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if not getattr(self.model, 'visible', False):
@@ -98,18 +105,28 @@ class LightingEditorController:
                 # If spawn mode is active and click is outside the panel -> place light on map
                 st = self.model
                 pan_left = getattr(st, '_panel_rect', None)
-                pan_right = getattr(self.daytime_state, 'panel_rect', None)
+                pan_day = getattr(self.daytime_state, 'panel_rect', None)
+                pan_preset = getattr(self.presets_state, 'panel_rect', None)
                 # If click is inside the DayTime panel, delegate and return
-                if isinstance(pan_right, pygame.Rect) and pan_right.collidepoint(event.pos):
+                if isinstance(pan_day, pygame.Rect) and pan_day.collidepoint(event.pos):
                     try:
                         from .panels.day_time_panel.day_time_panel_events import DayTimePanelEventHandler
                         DayTimePanelEventHandler.handle_event(self.daytime_controller, event)
                     except Exception:
                         pass
                     return
+                # If click is inside the Presets panel, delegate and return
+                if isinstance(pan_preset, pygame.Rect) and pan_preset.collidepoint(event.pos):
+                    try:
+                        from .panels.light_presets_panel.light_presets_panel_events import LightPresetsPanelEventHandler
+                        LightPresetsPanelEventHandler.handle_event(self.presets_controller, event)
+                    except Exception:
+                        pass
+                    return
                 outside_left = not (isinstance(pan_left, pygame.Rect) and pan_left.collidepoint(event.pos))
-                outside_right = not (isinstance(pan_right, pygame.Rect) and pan_right.collidepoint(event.pos))
-                if getattr(st, 'spawn_mode', False) and outside_left and outside_right:
+                outside_day = not (isinstance(pan_day, pygame.Rect) and pan_day.collidepoint(event.pos))
+                outside_preset = not (isinstance(pan_preset, pygame.Rect) and pan_preset.collidepoint(event.pos))
+                if getattr(st, 'spawn_mode', False) and outside_left and outside_day and outside_preset:
                     # Ensure point lights manager is enabled so debug lights are visible
                     try:
                         from roguelike_engine.rendering.lighting import get_global_lighting
@@ -118,8 +135,11 @@ class LightingEditorController:
                         pass
                     self._spawn_at_screen(event.pos)
                     # Single-shot exits spawn mode automatically
-                    if bool(getattr(st, 'spawn_single_shot', False)):
-                        st.spawn_mode = False
+                    try:
+                        if bool(getattr(self.presets_state, 'spawn_single_shot', False)):
+                            st.spawn_mode = False
+                    except Exception:
+                        pass
                     return
                 # Otherwise, treat as UI click
                 self._on_click(event.pos)
@@ -132,39 +152,7 @@ class LightingEditorController:
             return
         st = self.model
         x, y = pos
-        # Spawn Type combo: toggle open/close
-        try:
-            if isinstance(getattr(st, '_combo_spawn_type', None), pygame.Rect) and st._combo_spawn_type.collidepoint(x, y):
-                st.spawn_combo_open = not bool(getattr(st, 'spawn_combo_open', False))
-                return
-            # If open, check dropdown items selection
-            if bool(getattr(st, 'spawn_combo_open', False)):
-                items = getattr(st, '_combo_spawn_items', []) or []
-                hit_any = False
-                for ir, it in items:
-                    if isinstance(ir, pygame.Rect) and ir.collidepoint(x, y):
-                        st.spawn_preset = str(it)
-                        # Apply preset values (Custom leaves current values)
-                        if it == "Torch":
-                            st.spawn_radius = 160; st.spawn_intensity = 1.0; st.spawn_falloff = 2.0
-                            st.spawn_color = (255, 200, 140); st.spawn_flicker_amp = 0.15; st.spawn_flicker_speed = 2.5
-                        elif it == "Lamp":
-                            st.spawn_radius = 120; st.spawn_intensity = 0.9; st.spawn_falloff = 2.2
-                            st.spawn_color = (255, 240, 200); st.spawn_flicker_amp = 0.05; st.spawn_flicker_speed = 1.2
-                        elif it == "Magic":
-                            st.spawn_radius = 180; st.spawn_intensity = 1.1; st.spawn_falloff = 1.6
-                            st.spawn_color = (120, 200, 255); st.spawn_flicker_amp = 0.20; st.spawn_flicker_speed = 3.2
-                        # Custom keeps current adjustments
-                        st.spawn_combo_open = False
-                        hit_any = True
-                        return
-                # Clicked elsewhere inside panel: close combo
-                pan = getattr(st, '_panel_rect', None)
-                if isinstance(pan, pygame.Rect) and pan.collidepoint(x, y) and not hit_any:
-                    st.spawn_combo_open = False
-                    # Don't return; allow other controls below to process
-        except Exception:
-            pass
+        # Preset UI interactions are delegated to LightPresetsPanelController; nothing to handle here
         # Toggle Ambient
         if isinstance(st._btn_ambient, pygame.Rect) and st._btn_ambient.collidepoint(x, y):
             try:
@@ -218,53 +206,7 @@ class LightingEditorController:
             except Exception:
                 pass
             return
-        # Presets
-        if hasattr(st, '_btn_preset_torch') and isinstance(st._btn_preset_torch, pygame.Rect) and st._btn_preset_torch.collidepoint(x, y):
-            st.spawn_preset = "Torch"
-            st.spawn_radius = 160; st.spawn_intensity = 1.0; st.spawn_falloff = 2.0
-            st.spawn_color = (255, 200, 140); st.spawn_flicker_amp = 0.15; st.spawn_flicker_speed = 2.5
-            return
-        if hasattr(st, '_btn_preset_lamp') and isinstance(st._btn_preset_lamp, pygame.Rect) and st._btn_preset_lamp.collidepoint(x, y):
-            st.spawn_preset = "Lamp"
-            st.spawn_radius = 120; st.spawn_intensity = 0.9; st.spawn_falloff = 2.2
-            st.spawn_color = (255, 240, 200); st.spawn_flicker_amp = 0.05; st.spawn_flicker_speed = 1.2
-            return
-        if hasattr(st, '_btn_preset_magic') and isinstance(st._btn_preset_magic, pygame.Rect) and st._btn_preset_magic.collidepoint(x, y):
-            st.spawn_preset = "Magic"
-            st.spawn_radius = 180; st.spawn_intensity = 1.1; st.spawn_falloff = 1.6
-            st.spawn_color = (120, 200, 255); st.spawn_flicker_amp = 0.20; st.spawn_flicker_speed = 3.2
-            return
-        # Spawn steppers
-        def _clamp(v, lo, hi):
-            return lo if v < lo else hi if v > hi else v
-        # Radius
-        if hasattr(st, '_btn_sr_minus') and isinstance(st._btn_sr_minus, pygame.Rect) and st._btn_sr_minus.collidepoint(x, y):
-            st.spawn_radius = _clamp(st.spawn_radius - 8, 16, 2048); return
-        if hasattr(st, '_btn_sr_plus') and isinstance(st._btn_sr_plus, pygame.Rect) and st._btn_sr_plus.collidepoint(x, y):
-            st.spawn_radius = _clamp(st.spawn_radius + 8, 16, 2048); return
-        # Intensity
-        if hasattr(st, '_btn_si_minus') and isinstance(st._btn_si_minus, pygame.Rect) and st._btn_si_minus.collidepoint(x, y):
-            st.spawn_intensity = _clamp(st.spawn_intensity - 0.1, 0.0, 2.5); return
-        if hasattr(st, '_btn_si_plus') and isinstance(st._btn_si_plus, pygame.Rect) and st._btn_si_plus.collidepoint(x, y):
-            st.spawn_intensity = _clamp(st.spawn_intensity + 0.1, 0.0, 2.5); return
-        # Falloff
-        if hasattr(st, '_btn_sf_minus') and isinstance(st._btn_sf_minus, pygame.Rect) and st._btn_sf_minus.collidepoint(x, y):
-            st.spawn_falloff = _clamp(st.spawn_falloff - 0.1, 0.5, 4.0); return
-        if hasattr(st, '_btn_sf_plus') and isinstance(st._btn_sf_plus, pygame.Rect) and st._btn_sf_plus.collidepoint(x, y):
-            st.spawn_falloff = _clamp(st.spawn_falloff + 0.1, 0.5, 4.0); return
-        # Flicker amp
-        if hasattr(st, '_btn_fa_minus') and isinstance(st._btn_fa_minus, pygame.Rect) and st._btn_fa_minus.collidepoint(x, y):
-            st.spawn_flicker_amp = _clamp(st.spawn_flicker_amp - 0.05, 0.0, 1.0); return
-        if hasattr(st, '_btn_fa_plus') and isinstance(st._btn_fa_plus, pygame.Rect) and st._btn_fa_plus.collidepoint(x, y):
-            st.spawn_flicker_amp = _clamp(st.spawn_flicker_amp + 0.05, 0.0, 1.0); return
-        # Flicker speed
-        if hasattr(st, '_btn_fs_minus') and isinstance(st._btn_fs_minus, pygame.Rect) and st._btn_fs_minus.collidepoint(x, y):
-            st.spawn_flicker_speed = _clamp(st.spawn_flicker_speed - 0.2, 0.0, 10.0); return
-        if hasattr(st, '_btn_fs_plus') and isinstance(st._btn_fs_plus, pygame.Rect) and st._btn_fs_plus.collidepoint(x, y):
-            st.spawn_flicker_speed = _clamp(st.spawn_flicker_speed + 0.2, 0.0, 10.0); return
-        # Single-shot toggle
-        if hasattr(st, '_btn_single_shot') and isinstance(st._btn_single_shot, pygame.Rect) and st._btn_single_shot.collidepoint(x, y):
-            st.spawn_single_shot = not bool(st.spawn_single_shot); return
+        # Preset buttons and steppers are handled by LightPresetsPanel; no-op here
         # Manager tunables (quality/limits)
         try:
             from roguelike_engine.rendering.lighting import get_global_lighting
@@ -297,23 +239,7 @@ class LightingEditorController:
                 lm.set_shadow_rays(max(8, lm.get_shadow_rays() - 8)); return
             if hasattr(st, '_btn_sh_rays_plus') and isinstance(st._btn_sh_rays_plus, pygame.Rect) and st._btn_sh_rays_plus.collidepoint(x, y):
                 lm.set_shadow_rays(min(256, lm.get_shadow_rays() + 8)); return
-        # DayTime Tools are delegated to DayTimePanelController; no handling here
-        # Color steppers (RGB)
-        r, g, b = self.model.spawn_color
-        def _cs(v):
-            return max(0, min(255, int(v)))
-        if hasattr(st, '_btn_r_minus') and isinstance(st._btn_r_minus, pygame.Rect) and st._btn_r_minus.collidepoint(x, y):
-            self.model.spawn_color = (_cs(r - 5), g, b); return
-        if hasattr(st, '_btn_r_plus') and isinstance(st._btn_r_plus, pygame.Rect) and st._btn_r_plus.collidepoint(x, y):
-            self.model.spawn_color = (_cs(r + 5), g, b); return
-        if hasattr(st, '_btn_g_minus') and isinstance(st._btn_g_minus, pygame.Rect) and st._btn_g_minus.collidepoint(x, y):
-            self.model.spawn_color = (r, _cs(g - 5), b); return
-        if hasattr(st, '_btn_g_plus') and isinstance(st._btn_g_plus, pygame.Rect) and st._btn_g_plus.collidepoint(x, y):
-            self.model.spawn_color = (r, _cs(g + 5), b); return
-        if hasattr(st, '_btn_b_minus') and isinstance(st._btn_b_minus, pygame.Rect) and st._btn_b_minus.collidepoint(x, y):
-            self.model.spawn_color = (r, g, _cs(b - 5)); return
-        if hasattr(st, '_btn_b_plus') and isinstance(st._btn_b_plus, pygame.Rect) and st._btn_b_plus.collidepoint(x, y):
-            self.model.spawn_color = (r, g, _cs(b + 5)); return
+        # DayTime Tools and Presets are delegated to their panels; no color handling here
 
     def render(self, screen: pygame.Surface) -> None:
         if not getattr(self.model, 'visible', False):
@@ -338,6 +264,9 @@ class LightingEditorController:
         # Render DayTime Tools panel anchored to the main panel
         if isinstance(getattr(self.model, '_panel_rect', None), pygame.Rect):
             self.daytime_view.render(screen, anchor_rect=self.model._panel_rect, row_h=self.model.row_h)
+        # Render Light Presets panel anchored to the DayTime Tools panel
+        if isinstance(getattr(self.daytime_state, 'panel_rect', None), pygame.Rect):
+            self.presets_view.render(screen, anchor_rect=self.daytime_state.panel_rect, row_h=self.model.row_h)
 
     def _spawn_at_screen(self, pos: tuple[int, int]) -> None:
         """Convert screen pos to world and spawn a debug light."""
@@ -354,7 +283,7 @@ class LightingEditorController:
                 wy = (my / z) + oy
             else:
                 wx, wy = float(mx), float(my)
-            st = self.model
+            stp = self.presets_state
             lm = get_global_lighting()
             # Ensure lights system is visible
             lm.set_enabled(True)
@@ -367,12 +296,12 @@ class LightingEditorController:
                 Light(
                     x=wx,
                     y=wy,
-                    radius=int(getattr(st, 'spawn_radius', 160)),
-                    color=tuple(getattr(st, 'spawn_color', (255, 200, 140))),
-                    intensity=float(getattr(st, 'spawn_intensity', 1.0)),
-                    falloff=float(getattr(st, 'spawn_falloff', 2.0)),
-                    flicker_amp=float(getattr(st, 'spawn_flicker_amp', 0.15)),
-                    flicker_speed=float(getattr(st, 'spawn_flicker_speed', 2.5)),
+                    radius=int(getattr(stp, 'spawn_radius', 160)),
+                    color=tuple(getattr(stp, 'spawn_color', (255, 200, 140))),
+                    intensity=float(getattr(stp, 'spawn_intensity', 1.0)),
+                    falloff=float(getattr(stp, 'spawn_falloff', 2.0)),
+                    flicker_amp=float(getattr(stp, 'spawn_flicker_amp', 0.15)),
+                    flicker_speed=float(getattr(stp, 'spawn_flicker_speed', 2.5)),
                 )
             )
         except Exception:

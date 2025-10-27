@@ -55,74 +55,12 @@ class LightingEditorView:
         st._btn_occlusion = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Tile Occlusion: {'ON' if occlusion_on else 'OFF'}", occlusion_on)
         by += row
         st._btn_shadows = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Shadows (stub): {'ON' if shadows_on else 'OFF'}", shadows_on)
-        # --- Presets ---------------------------------------------------------
-        by += row
-        lab = self._draw_label(screen, x + 8, by - row // 2, "Presets", (200, 200, 210))
-        try:
-            st._tooltips.append((lab, "Presets: Configuraciones rápidas de color/radio/flicker."))
-        except Exception:
-            pass
-        # Spawn Type combo (professional selector)
-        combo_h = row - 8
-        combo_rect = pygame.Rect(x + 8, by, (w - 16), combo_h)
-        # Draw combo box background
-        combo_bg = pygame.Surface(combo_rect.size, pygame.SRCALPHA)
-        combo_bg.fill((35, 35, 42, 230))
-        screen.blit(combo_bg, combo_rect.topleft)
-        # Value text
-        val_text = f"Spawn Type: {st.spawn_preset}"
-        vt = self.font.render(val_text, True, (230, 230, 240))
-        screen.blit(vt, (combo_rect.x + 8, combo_rect.y + (combo_rect.height - vt.get_height()) // 2))
-        # Arrow
-        ax = combo_rect.right - 16
-        ay = combo_rect.y + combo_rect.height // 2
-        tri = [(ax - 6, ay - 3), (ax + 6, ay - 3), (ax, ay + 4)] if not getattr(st, 'spawn_combo_open', False) else [(ax - 6, ay + 3), (ax + 6, ay + 3), (ax, ay - 4)]
-        pygame.draw.polygon(screen, (200, 200, 210), tri)
-        st._combo_spawn_type = combo_rect
-        try:
-            st._tooltips.append((combo_rect, "Spawn Type: Selecciona el tipo de luz a spawnear."))
-        except Exception:
-            pass
-        # Dropdown items
-        st._combo_spawn_items = []
-        if getattr(st, 'spawn_combo_open', False):
-            items = list(getattr(st, 'spawn_types', ["Torch", "Lamp", "Magic", "Custom"]))
-            item_h = combo_h
-            drop_h = item_h * len(items)
-            drop_rect = pygame.Rect(combo_rect.x, combo_rect.bottom + 2, combo_rect.width, drop_h)
-            # Container
-            dd = pygame.Surface(drop_rect.size, pygame.SRCALPHA)
-            dd.fill((28, 28, 34, 245))
-            screen.blit(dd, drop_rect.topleft)
-            for idx, it in enumerate(items):
-                ir = pygame.Rect(drop_rect.x, drop_rect.y + idx * item_h, drop_rect.width, item_h)
-                # Highlight hovered
-                try:
-                    mx, my = pygame.mouse.get_pos()
-                    if ir.collidepoint(mx, my):
-                        pygame.draw.rect(screen, (60, 60, 80, 255), ir)
-                except Exception:
-                    pass
-                it_s = self.font.render(it, True, (230, 230, 240))
-                screen.blit(it_s, (ir.x + 10, ir.y + (item_h - it_s.get_height()) // 2))
-                st._combo_spawn_items.append((ir, it))
-        by += row
-        pw = (w - 16 - 16) // 3  # 3 buttons with small gaps
-        st._btn_preset_torch = self._draw_button(screen, x + 8, by, pw, row - 8, "Torch", st.spawn_preset == "Torch")
-        st._btn_preset_lamp = self._draw_button(screen, x + 8 + pw + 8, by, pw, row - 8, "Lamp", st.spawn_preset == "Lamp")
-        st._btn_preset_magic = self._draw_button(screen, x + 8 + (pw + 8) * 2, by, pw, row - 8, "Magic", st.spawn_preset == "Magic")
-        by += row
-        # --- Spawn params (steppers) ----------------------------------------
+        # Helper for manager tunables
         def draw_stepper(label: str, val_text: str, minus_attr: str, plus_attr: str) -> None:
             nonlocal by
             labr = self._draw_label(screen, x + 8, by - row // 2, label, (200, 200, 210))
             try:
                 tips = {
-                    "Radius": "Radio de la luz en píxeles (coste ↑ con radios grandes).",
-                    "Intensity": "Intensidad 0..~2.5 (escala el color de la luz).",
-                    "Falloff": "Atenuación exponencial: mayor = borde más suave.",
-                    "Flicker Amp": "Amplitud del parpadeo (0..1).",
-                    "Flicker Spd": "Velocidad del parpadeo (Hz aprox.).",
                     "LowRes Scale": "Resolución del lightmap (↑ = más rápido y borroso).",
                     "Max Lights": "Límite de luces visibles (cap de rendimiento).",
                     "Max Radius": "Límite de radio por luz (cap artístico/técnico).",
@@ -135,7 +73,6 @@ class LightingEditorView:
             bw = 36
             vwx = x + 8 + bw + 6
             st.__dict__[minus_attr] = self._draw_button(screen, x + 8, by, bw, row - 10, "-", False)
-            # Value box (non-clickable)
             vb = pygame.Surface((w - 16 - (bw * 2) - 24, row - 10), pygame.SRCALPHA)
             vb.fill((35, 35, 42, 220))
             screen.blit(vb, (vwx, by))
@@ -143,13 +80,6 @@ class LightingEditorView:
             screen.blit(vt, (vwx + 8, by + (row - 10 - vt.get_height()) // 2))
             st.__dict__[plus_attr] = self._draw_button(screen, x + w - 8 - bw, by, bw, row - 10, "+", False)
             by += row
-        draw_stepper("Radius", str(st.spawn_radius), "_btn_sr_minus", "_btn_sr_plus")
-        draw_stepper("Intensity", f"{st.spawn_intensity:.2f}", "_btn_si_minus", "_btn_si_plus")
-        draw_stepper("Falloff", f"{st.spawn_falloff:.2f}", "_btn_sf_minus", "_btn_sf_plus")
-        draw_stepper("Flicker Amp", f"{st.spawn_flicker_amp:.2f}", "_btn_fa_minus", "_btn_fa_plus")
-        draw_stepper("Flicker Spd", f"{st.spawn_flicker_speed:.2f}", "_btn_fs_minus", "_btn_fs_plus")
-        st._btn_single_shot = self._draw_button(screen, x + 8, by, w - 16, row - 8, f"Single-shot: {'ON' if st.spawn_single_shot else 'OFF'}", st.spawn_single_shot)
-        by += row
         # --- Manager tunables -------------------------------------------------
         try:
             from roguelike_engine.rendering.lighting import get_global_lighting
@@ -167,35 +97,6 @@ class LightingEditorView:
         draw_stepper("Shadow Heroes", str(shn), "_btn_sh_hero_minus", "_btn_sh_hero_plus")
         draw_stepper("Shadow Rays", str(shr), "_btn_sh_rays_minus", "_btn_sh_rays_plus")
         # Time scale moved to Daytime Tools panel
-        # --- Color steppers ---------------------------------------------------
-        by += row
-        labc = self._draw_label(screen, x + 8, by - row // 2, "Color (RGB)", (200, 200, 210))
-        try:
-            st._tooltips.append((labc, "Color (RGB): Tono de la luz (0..255 por canal)."))
-        except Exception:
-            pass
-        r, g, b = st.spawn_color
-        def draw_color_stepper(name: str, val: int, minus_attr: str, plus_attr: str):
-            nonlocal by
-            bw = 36
-            vwx = x + 8 + bw + 6
-            self._draw_label(screen, x + 8, by - row // 2, name, (200, 200, 210))
-            st.__dict__[minus_attr] = self._draw_button(screen, x + 8, by, bw, row - 10, "-", False)
-            vb = pygame.Surface((w - 16 - (bw * 2) - 24, row - 10), pygame.SRCALPHA)
-            vb.fill((35, 35, 42, 220))
-            screen.blit(vb, (vwx, by))
-            vt = self.font.render(str(val), True, (230, 230, 240))
-            screen.blit(vt, (vwx + 8, by + (row - 10 - vt.get_height()) // 2))
-            st.__dict__[plus_attr] = self._draw_button(screen, x + w - 8 - bw, by, bw, row - 10, "+", False)
-            by += row
-        draw_color_stepper("R", int(r), "_btn_r_minus", "_btn_r_plus")
-        draw_color_stepper("G", int(g), "_btn_g_minus", "_btn_g_plus")
-        draw_color_stepper("B", int(b), "_btn_b_minus", "_btn_b_plus")
-        # Swatch
-        sw = pygame.Surface((w - 16, row - 8))
-        sw.fill((int(r), int(g), int(b)))
-        screen.blit(sw, (x + 8, by))
-        by += row
         # Update content height and restore clip
         st._content_height = max(0, int(by - (list_y - so)))
         screen.set_clip(old_clip)
