@@ -68,9 +68,7 @@ class LightingEditorState:
         self._btn_sh_hero_plus = None   # shadow hero count +
         self._btn_sh_rays_minus = None  # shadow rays -
         self._btn_sh_rays_plus = None   # shadow rays +
-        # UI rects for time scale (game minutes per real second)
-        self._btn_ts_minus = None
-        self._btn_ts_plus = None
+        # Time scale moved to DayTimePanel
         # UI rects for color steppers
         self._btn_r_minus = None
         self._btn_r_plus = None
@@ -78,36 +76,3 @@ class LightingEditorState:
         self._btn_g_plus = None
         self._btn_b_minus = None
         self._btn_b_plus = None
-        # --- Daytime panel (right side): buttons and info rects ---------------
-        self._panel_time_rect = None
-        self._btn_time_m5 = None
-        self._btn_time_p5 = None
-        self._btn_time_m30 = None
-        self._btn_time_p30 = None
-        self._btn_time_05 = None
-        self._btn_time_07 = None
-        self._btn_time_12 = None
-        self._btn_time_19 = None
-        self._btn_time_21 = None
-        self._btn_time_00 = None
-        self._lbl_time_now = None
-        self._lbl_time_phase = None
-        self._lbl_time_intensity = None
-        # Daytime intensity controls
-        self._btn_minI_minus = None
-        self._btn_minI_plus = None
-        # Keyframe intensity steppers for common minutes: 00:00, 05:00, 07:00, 12:00, 19:00, 21:00
-        self._btn_i_0000_minus = None
-        self._btn_i_0000_plus = None
-        self._btn_i_0500_minus = None
-        self._btn_i_0500_plus = None
-        self._btn_i_0700_minus = None
-        self._btn_i_0700_plus = None
-        self._btn_i_1200_minus = None
-        self._btn_i_1200_plus = None
-        self._btn_i_1900_minus = None
-        self._btn_i_1900_plus = None
-        self._btn_i_2100_minus = None
-        self._btn_i_2100_plus = None
-        # Save button
-        self._btn_time_save = None

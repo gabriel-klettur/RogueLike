@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      69,
-      89
+      74,
+      94
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        69,
-        89
+        74,
+        94
       ],
       "npc_states": {}
     }
@@ -80,7 +80,7 @@
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-10-26T22:40:22",
+    "last_played": "2025-10-27T16:21:00",
     "player": {
       "xp": 0,
       "level": 0
@@ -94,5 +94,9 @@
         "borsh_01"
       ]
     }
+  },
+  "time": {
+    "minute": 1235,
+    "time_scale": 0.4
   }
 }

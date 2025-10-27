@@ -1,14 +1,14 @@
 {
-  "1505c8be-e48b-4daf-8d98-efb0db6a47b3": {
+  "6f470507-148a-4553-828f-6f26657bfef0": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
         "item": "gold",
-        "quantity": 207.0
+        "quantity": 200
       },
       {
         "item": "borsh_01",
-        "quantity": 95
+        "quantity": 100
       },
       {
         "item": "completo_chileno_01",
@@ -20,7 +20,7 @@
       },
       {
         "item": "hakarl_01",
-        "quantity": 99
+        "quantity": 100
       },
       {
         "item": "paella_01",
@@ -32,7 +32,7 @@
       },
       {
         "item": "tortilla_spain_01",
-        "quantity": 99
+        "quantity": 100
       },
       null,
       null,
@@ -49,7 +49,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "21b2de0d-d2c2-407e-975c-a7136333aee0": {
+  "0330fe09-081e-4e33-9907-d4a52a48b37c": {
     "template_id": null,
     "slots": [
       {
@@ -99,7 +99,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "5827d17f-1d0a-41c6-9f59-7adf64c054d1": {
+  "7b40cbf3-330b-420c-b5db-875eb66a4a53": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -149,7 +149,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0100d06e-df32-4cda-99c9-2c329967f6a7": {
+  "b02f1d27-b0a3-4808-b251-1a4eaa70cd3a": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -199,7 +199,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "56ffeba0-8920-4b58-b0b0-70f17507d445": {
+  "302e4b52-af7e-4f55-86b2-79bcd4918a54": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {

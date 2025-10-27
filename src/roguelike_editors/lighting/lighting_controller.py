@@ -5,6 +5,9 @@ from typing import Any
 
 from .lighting_state import LightingEditorState
 from .lighting_view import LightingEditorView
+from .panels.day_time_panel.day_time_panel_state import DayTimePanelState
+from .panels.day_time_panel.day_time_panel_view import DayTimePanelView
+from .panels.day_time_panel.day_time_panel_controller import DayTimePanelController
 
 
 class LightingEditorController:
@@ -12,6 +15,10 @@ class LightingEditorController:
         self.model = LightingEditorState()
         self.view = LightingEditorView(self.model, font=font)
         self.game: Any | None = None  # set by manager
+        # DayTime Tools (delegated panel MVC)
+        self.daytime_state = DayTimePanelState()
+        self.daytime_view = DayTimePanelView(self.daytime_state, font=font)
+        self.daytime_controller = DayTimePanelController(self.daytime_state)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if not getattr(self.model, 'visible', False):
@@ -91,7 +98,15 @@ class LightingEditorController:
                 # If spawn mode is active and click is outside the panel -> place light on map
                 st = self.model
                 pan_left = getattr(st, '_panel_rect', None)
-                pan_right = getattr(st, '_panel_time_rect', None)
+                pan_right = getattr(self.daytime_state, 'panel_rect', None)
+                # If click is inside the DayTime panel, delegate and return
+                if isinstance(pan_right, pygame.Rect) and pan_right.collidepoint(event.pos):
+                    try:
+                        from .panels.day_time_panel.day_time_panel_events import DayTimePanelEventHandler
+                        DayTimePanelEventHandler.handle_event(self.daytime_controller, event)
+                    except Exception:
+                        pass
+                    return
                 outside_left = not (isinstance(pan_left, pygame.Rect) and pan_left.collidepoint(event.pos))
                 outside_right = not (isinstance(pan_right, pygame.Rect) and pan_right.collidepoint(event.pos))
                 if getattr(st, 'spawn_mode', False) and outside_left and outside_right:
@@ -111,17 +126,14 @@ class LightingEditorController:
 
     def _on_click(self, pos: tuple[int, int]) -> None:
         try:
-            import pygame
             from roguelike_engine.rendering.lighting import get_global_lighting
             from roguelike_engine.rendering.lighting.daynight import get_global_daynight
-            from roguelike_engine.rendering.lighting.light_types import Light
         except Exception:
             return
         st = self.model
         x, y = pos
         # Spawn Type combo: toggle open/close
         try:
-            import pygame  # ensure type
             if isinstance(getattr(st, '_combo_spawn_type', None), pygame.Rect) and st._combo_spawn_type.collidepoint(x, y):
                 st.spawn_combo_open = not bool(getattr(st, 'spawn_combo_open', False))
                 return
@@ -285,96 +297,7 @@ class LightingEditorController:
                 lm.set_shadow_rays(max(8, lm.get_shadow_rays() - 8)); return
             if hasattr(st, '_btn_sh_rays_plus') and isinstance(st._btn_sh_rays_plus, pygame.Rect) and st._btn_sh_rays_plus.collidepoint(x, y):
                 lm.set_shadow_rays(min(256, lm.get_shadow_rays() + 8)); return
-        # Time Scale steppers (game minutes per real second)
-        try:
-            from roguelike_engine.rendering.lighting.daynight import get_global_daynight
-            dn = get_global_daynight()
-        except Exception:
-            dn = None
-        if dn is not None:
-            def _ts_clamp(v: float) -> float:
-                return max(0.05, min(5.0, float(v)))
-            if hasattr(st, '_btn_ts_minus') and isinstance(st._btn_ts_minus, pygame.Rect) and st._btn_ts_minus.collidepoint(x, y):
-                dn.set_time_scale(_ts_clamp(dn.time_scale_minutes_per_second - 0.05)); return
-            if hasattr(st, '_btn_ts_plus') and isinstance(st._btn_ts_plus, pygame.Rect) and st._btn_ts_plus.collidepoint(x, y):
-                dn.set_time_scale(_ts_clamp(dn.time_scale_minutes_per_second + 0.05)); return
-            # Daytime Tools: step +/- minutes
-            def _set_minute(m: int):
-                try:
-                    # Ensure ambient overlay is enabled so changes are visible
-                    dn.enabled = True
-                    dn.set_minute_of_day(int(m) % 1440)
-                except Exception:
-                    pass
-            def _get_minute() -> int:
-                try:
-                    return int(dn.get_minute_of_day())
-                except Exception:
-                    return 0
-            if hasattr(st, '_btn_time_m5') and isinstance(st._btn_time_m5, pygame.Rect) and st._btn_time_m5.collidepoint(x, y):
-                _set_minute(_get_minute() - 5); return
-            if hasattr(st, '_btn_time_p5') and isinstance(st._btn_time_p5, pygame.Rect) and st._btn_time_p5.collidepoint(x, y):
-                _set_minute(_get_minute() + 5); return
-            if hasattr(st, '_btn_time_m30') and isinstance(st._btn_time_m30, pygame.Rect) and st._btn_time_m30.collidepoint(x, y):
-                _set_minute(_get_minute() - 30); return
-            if hasattr(st, '_btn_time_p30') and isinstance(st._btn_time_p30, pygame.Rect) and st._btn_time_p30.collidepoint(x, y):
-                _set_minute(_get_minute() + 30); return
-            # Jumps
-            if hasattr(st, '_btn_time_05') and isinstance(st._btn_time_05, pygame.Rect) and st._btn_time_05.collidepoint(x, y):
-                _set_minute(300); return
-            if hasattr(st, '_btn_time_07') and isinstance(st._btn_time_07, pygame.Rect) and st._btn_time_07.collidepoint(x, y):
-                _set_minute(420); return
-            if hasattr(st, '_btn_time_12') and isinstance(st._btn_time_12, pygame.Rect) and st._btn_time_12.collidepoint(x, y):
-                _set_minute(720); return
-            if hasattr(st, '_btn_time_19') and isinstance(st._btn_time_19, pygame.Rect) and st._btn_time_19.collidepoint(x, y):
-                _set_minute(1140); return
-            if hasattr(st, '_btn_time_21') and isinstance(st._btn_time_21, pygame.Rect) and st._btn_time_21.collidepoint(x, y):
-                _set_minute(1260); return
-            if hasattr(st, '_btn_time_00') and isinstance(st._btn_time_00, pygame.Rect) and st._btn_time_00.collidepoint(x, y):
-                _set_minute(0); return
-            # Min intensity stepper (floor)
-            def _step_min_intensity(delta: float):
-                try:
-                    cur = float(dn.get_min_intensity())
-                except Exception:
-                    cur = 0.2
-                dn.set_min_intensity(max(0.0, min(1.0, cur + delta)))
-            if hasattr(st, '_btn_minI_minus') and isinstance(st._btn_minI_minus, pygame.Rect) and st._btn_minI_minus.collidepoint(x, y):
-                _step_min_intensity(-0.05); return
-            if hasattr(st, '_btn_minI_plus') and isinstance(st._btn_minI_plus, pygame.Rect) and st._btn_minI_plus.collidepoint(x, y):
-                _step_min_intensity(+0.05); return
-            # Keyframe intensity steppers
-            def _kf(minute: int, delta: float):
-                try:
-                    val = float(dn.get_intensity_at_minute(minute, apply_floor=False))
-                except Exception:
-                    val = 0.0
-                val = max(0.0, min(1.0, val + delta))
-                dn.set_keyframe(minute, intensity=val)
-            mapping = [
-                (getattr(st, '_btn_i_0000_minus', None), 0, -0.05),
-                (getattr(st, '_btn_i_0000_plus', None), 0, +0.05),
-                (getattr(st, '_btn_i_0500_minus', None), 300, -0.05),
-                (getattr(st, '_btn_i_0500_plus', None), 300, +0.05),
-                (getattr(st, '_btn_i_0700_minus', None), 420, -0.05),
-                (getattr(st, '_btn_i_0700_plus', None), 420, +0.05),
-                (getattr(st, '_btn_i_1200_minus', None), 720, -0.05),
-                (getattr(st, '_btn_i_1200_plus', None), 720, +0.05),
-                (getattr(st, '_btn_i_1900_minus', None), 1140, -0.05),
-                (getattr(st, '_btn_i_1900_plus', None), 1140, +0.05),
-                (getattr(st, '_btn_i_2100_minus', None), 1260, -0.05),
-                (getattr(st, '_btn_i_2100_plus', None), 1260, +0.05),
-            ]
-            for rect, minute, delta in mapping:
-                if isinstance(rect, pygame.Rect) and rect.collidepoint(x, y):
-                    _kf(minute, delta); return
-            # Save config
-            if hasattr(st, '_btn_time_save') and isinstance(st._btn_time_save, pygame.Rect) and st._btn_time_save.collidepoint(x, y):
-                try:
-                    dn.save_config()
-                except Exception:
-                    pass
-                return
+        # DayTime Tools are delegated to DayTimePanelController; no handling here
         # Color steppers (RGB)
         r, g, b = self.model.spawn_color
         def _cs(v):
@@ -412,6 +335,9 @@ class LightingEditorController:
         except Exception:
             shadows_on = False
         self.view.render(screen, ambient_on=ambient_on, lights_on=lights_on, occlusion_on=occlusion_on, shadows_on=shadows_on)
+        # Render DayTime Tools panel anchored to the main panel
+        if isinstance(getattr(self.model, '_panel_rect', None), pygame.Rect):
+            self.daytime_view.render(screen, anchor_rect=self.model._panel_rect, row_h=self.model.row_h)
 
     def _spawn_at_screen(self, pos: tuple[int, int]) -> None:
         """Convert screen pos to world and spawn a debug light."""
