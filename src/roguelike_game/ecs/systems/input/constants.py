@@ -12,6 +12,7 @@ SPELL_ATTRS = [
     "sphere_magic_shield",
     "teleport",
     "puddle_lava",
+    "mine_basic",
 ]
 
 ACTION_BASES = [
