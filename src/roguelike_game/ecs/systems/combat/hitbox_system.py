@@ -6,6 +6,7 @@ import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
+from roguelike_game.ecs.utils.health_utils import is_neutral
 
 import logging
 logger = logging.getLogger(__name__)
@@ -272,6 +273,13 @@ class HitboxSystem:
                                 # Mark as processed for this hitbox to avoid re-evaluating and skip damage/events
                                 hb.hit_targets.add(target)
                                 continue
+                except Exception:
+                    pass
+                # Neutral immunity: skip applying damage and events
+                try:
+                    if is_neutral(world, target):
+                        hb.hit_targets.add(target)
+                        continue
                 except Exception:
                     pass
                 # apply damage (omit if player in godmode)

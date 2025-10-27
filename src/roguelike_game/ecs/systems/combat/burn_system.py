@@ -1,6 +1,7 @@
 import time
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.combat.burn import BurnComponent
+from roguelike_game.ecs.utils.health_utils import is_neutral
 
 
 class BurnSystem:
@@ -24,6 +25,12 @@ class BurnSystem:
             # Skip dead/dying entities
             if eid in dead_map or eid in dying_map:
                 continue
+            # Skip burn ticks for neutral entities
+            try:
+                if is_neutral(world, eid):
+                    continue
+            except Exception:
+                pass
             start = float(getattr(comp, 'start_time', 0.0))
             dur = float(getattr(comp, 'duration', 0.0))
             period = max(1e-6, float(getattr(comp, 'tick_period', 1.0)))

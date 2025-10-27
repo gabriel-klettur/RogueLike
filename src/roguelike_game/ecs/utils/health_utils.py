@@ -1,5 +1,6 @@
 from roguelike_game.config.players_config import PLAYER_STATS
 from roguelike_game.factories.monster.config import MONSTER_STATS, MONSTER_DEFAULTS
+from roguelike_game.ecs.components.core.identity import Faction
 
 
 def get_current_hp(world, eid):
@@ -70,3 +71,14 @@ def resolve_death_duration(world, eid) -> float:
     except Exception:
         # Fallbacks seguros
         return 60.0 if is_player(world, eid) else 30.0
+
+
+def is_neutral(world, eid) -> bool:
+    """
+    True si la entidad tiene Identity con facción NEUTRAL.
+    """
+    try:
+        idt = world.components.get('Identity', {}).get(eid)
+        return bool(idt and getattr(idt, 'faction', None) == Faction.NEUTRAL)
+    except Exception:
+        return False

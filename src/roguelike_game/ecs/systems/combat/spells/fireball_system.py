@@ -9,6 +9,7 @@ from roguelike_game.ecs.components.particles.particle_preset_component import Pa
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+from roguelike_game.ecs.utils.health_utils import is_neutral
 import logging
 logger = logging.getLogger(__name__)
 
@@ -324,6 +325,10 @@ class FireballSystem:
                             break
 
                 if hit:
+                    # Inmunidad de neutrales: saltar daños/efectos
+                    if is_neutral(world, target):
+                        world.remove_entity(eid)
+                        break
                     # Spawn preset-based explosion VFX at impact point (only if preset explicitly configured)
                     try:
                         preset_id = None

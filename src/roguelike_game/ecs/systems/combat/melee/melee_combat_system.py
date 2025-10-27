@@ -10,6 +10,7 @@ from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
 from roguelike_game.ecs.components.combat.dying_tag import DyingTag
+from roguelike_game.ecs.utils.health_utils import is_neutral
 import time
  
  
@@ -35,6 +36,13 @@ class MeleeCombatSystem:
         """
         # Iterar sobre una copia de los items para poder eliminar sobre la marcha
         for eid, intent in list(world.components['WantsToMelee'].items()):
+            # Inmunidad para neutrales: saltar completamente el daño y limpiar el evento
+            try:
+                if is_neutral(world, intent.target):
+                    del world.components['WantsToMelee'][eid]
+                    continue
+            except Exception:
+                pass
             # Obtener estadísticas de atacante y defensor
             attacker_stats: CombatStats = world.components['CombatStats'][intent.attacker]
             defender_stats: CombatStats = world.components['CombatStats'][intent.target]

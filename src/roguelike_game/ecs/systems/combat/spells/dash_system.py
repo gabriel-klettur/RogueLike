@@ -11,6 +11,7 @@ from roguelike_game.ecs.utils.collider_utils import (
     circle_overlaps_rect,
     circle_rect_mtv,
 )
+from roguelike_game.ecs.utils.health_utils import is_neutral
 
 class DashSystem:
     """
@@ -158,7 +159,10 @@ class DashSystem:
                             dmg = int(getattr(dash, 'collision_damage', 2.0))
                             health = world.components.get('Health', {}).get(eid)
                             if health is not None and dmg > 0:
-                                if is_player:
+                                # Skip collision damage to neutral entities
+                                if is_neutral(world, eid):
+                                    pass
+                                elif is_player:
                                     godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False))
                                     if not godmode:
                                         health.current_hp = max(0, int(health.current_hp) - dmg)
