@@ -3,6 +3,7 @@ import math
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.puddle_component import PuddleComponent
 from roguelike_game.ecs.components.combat.burn import BurnComponent
+from roguelike_game.ecs.utils.health_utils import is_neutral
 
 
 class PuddleSystem:
@@ -116,12 +117,16 @@ class PuddleSystem:
                 eff_r = float(puddle.radius) + max(0.0, entity_radius)
                 # Inclusive boundary check with tiny epsilon for float math stability
                 if dx*dx + dy*dy <= eff_r * eff_r + 1e-6:
-                    if dmg > 0:
+                    # Skip damage to neutral entities
+                    if dmg > 0 and not is_neutral(world, target):
                         thp.current_hp = max(0, thp.current_hp - int(dmg))
                     if heal > 0:
                         thp.current_hp = min(thp.max_hp, thp.current_hp + int(heal))
                     # Apply/refresh burn when inside lava puddle
                     if str(getattr(puddle, 'element', '')).lower() == 'lava':
+                        # Do not apply burn to neutral entities
+                        if is_neutral(world, target):
+                            continue
                         # Defaults: 5 dmg per second for 3 seconds, 1s tick
                         dps = 5
                         dur = 3.0

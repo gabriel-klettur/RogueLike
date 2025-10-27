@@ -4,6 +4,7 @@ import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
+from roguelike_game.ecs.utils.health_utils import is_neutral
 
 import logging
 logger = logging.getLogger(__name__)
@@ -138,6 +139,9 @@ class LaserBeamEmitterSystem:
                     gm_target = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and is_player_target
                     # One-shot si el caster es jugador y godmode activo
                     gm_attacker = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (caster in world.components.get('PlayerTagComponent', {}))
+                    # Inmunidad de neutrales: no aplicar daño
+                    if is_neutral(world, target):
+                        continue
                     if not gm_target:
                         hp = world.components['Health'][target]
                         if gm_attacker:
