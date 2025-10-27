@@ -1051,5 +1051,40 @@
       },
       "alpha": 96
     }
+  },
+  "mine_basic": {
+    "id": "mine_basic",
+    "type": "mine",
+    "mana_cost": 6,
+    "name": "Basic Mine",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.8
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 3,
+      "allow_overlap": true
+    },
+    "effect": {
+      "trigger_radius": 60,
+      "arming_time": 0.5,
+      "ttl": 14,
+      "payload": {
+        "explosion": {
+          "radius": 140,
+          "damage": 28
+        }
+      }
+    },
+    "vfx": {
+      "preset": "explosion_small"
+    }
   }
 }
