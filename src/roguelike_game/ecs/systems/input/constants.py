@@ -15,6 +15,8 @@ SPELL_ATTRS = [
     "mine_basic",
     "boomerang",
     "chain_lightning",
+    "vortex_pull",
+    "vortex_push",
 ]
 
 ACTION_BASES = [

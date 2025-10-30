@@ -95,6 +95,12 @@ class ReleaseSpellState(State):
             if resolver is not None:
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'vortex_field':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('vortex_field')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
         if spell_type == 'arcane_flame':
             world = entity.world
             resolver = SPELL_RESOLVERS.get('arcane_flame')

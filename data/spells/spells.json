@@ -1107,5 +1107,27 @@
     "constraints": { "max_instances": 1, "allow_overlap": true },
     "effect": { "damage": 18, "range": 420, "speed": 22, "return_speed": 28, "passes_through": false, "hit_radius": 12.0 },
     "vfx": { "sprite": { "scale": 0.8 } }
+  },
+  "vortex_pull": {
+    "id": "vortex_pull",
+    "type": "vortex_field",
+    "mana_cost": 10,
+    "name": "Vortex Pull",
+    "timings": { "prepare": 0.1, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "radius": 280, "force": 1400, "mode": "pull", "duration": 2.2, "spawn_at": "mouse", "follow_caster": false },
+    "vfx": { "preset": "vortex_dark" }
+  },
+  "vortex_push": {
+    "id": "vortex_push",
+    "type": "vortex_field",
+    "mana_cost": 10,
+    "name": "Vortex Push",
+    "timings": { "prepare": 0.1, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "radius": 280, "force": 1200, "mode": "push", "duration": 2.0, "spawn_at": "caster", "follow_caster": true },
+    "vfx": { "preset": "vortex_dark" }
   }
 }

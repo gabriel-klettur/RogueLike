@@ -25,6 +25,8 @@ class InputComponent:
         self.spell_smoke_emitter: bool = False
         self.spell_sphere_magic_shield: bool = False
         self.spell_teleport: bool = False
+        self.spell_vortex_pull: bool = False
+        self.spell_vortex_push: bool = False
         self.click: bool = False
         self.drop: bool = False
         self.toggle_editor: bool = False

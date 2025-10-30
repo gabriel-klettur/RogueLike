@@ -28,6 +28,8 @@ DEFAULT_BINDINGS: dict[str, str] = {
     "spell_lightning": "K_r",
     "spell_boomerang": "K_6",
     "spell_chain_lightning": "K_7",
+    "spell_vortex_pull": "K_8",
+    "spell_vortex_push": "K_9",
     # Game
     "pause": "K_ESCAPE",
     "toggle_inventory": "K_i",

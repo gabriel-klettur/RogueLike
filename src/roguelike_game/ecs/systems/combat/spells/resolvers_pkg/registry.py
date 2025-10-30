@@ -14,6 +14,7 @@ from .puddle import PuddleResolver
 from .mine import MineResolver
 from .boomerang import BoomerangResolver
 from .chain_lightning import ChainLightningResolver
+from .vortex_field import VortexFieldResolver
 
 
 default_resolvers = {
@@ -33,6 +34,7 @@ default_resolvers = {
     'mine': MineResolver(),
     'boomerang': BoomerangResolver(),
     'chain_lightning': ChainLightningResolver(),
+    'vortex_field': VortexFieldResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers
