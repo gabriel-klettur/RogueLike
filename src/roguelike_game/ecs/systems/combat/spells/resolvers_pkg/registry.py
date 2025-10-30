@@ -12,6 +12,7 @@ from .smoke_emitter import SmokeEmitterResolver
 from .sphere_magic_shield import SphereMagicShieldResolver
 from .puddle import PuddleResolver
 from .mine import MineResolver
+from .boomerang import BoomerangResolver
 
 
 default_resolvers = {
@@ -29,6 +30,7 @@ default_resolvers = {
     'smoke_emitter': SmokeEmitterResolver(),
     'puddle': PuddleResolver(),
     'mine': MineResolver(),
+    'boomerang': BoomerangResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers

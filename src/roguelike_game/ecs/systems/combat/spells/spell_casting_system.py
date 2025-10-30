@@ -51,6 +51,7 @@ class SpellCastingSystem:
         'sphere_magic_shield': 'SphereMagicShieldComponent',
         'teleport': 'TeleportComponent',
         'mine': 'MineComponent',
+        'boomerang': 'BoomerangComponent',
     }
 
     def _count_active(self, world, eid, intent, spell_type: str) -> int:

@@ -13,6 +13,7 @@ SPELL_ATTRS = [
     "teleport",
     "puddle_lava",
     "mine_basic",
+    "boomerang",
 ]
 
 ACTION_BASES = [

@@ -1086,5 +1086,16 @@
     "vfx": {
       "preset": "explosion_small"
     }
+  },
+  "boomerang": {
+    "id": "boomerang",
+    "type": "boomerang",
+    "mana_cost": 8,
+    "name": "Boomerang",
+    "timings": { "prepare": 0.05, "channel": 0.0, "cooldown": 0.8 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "damage": 18, "range": 420, "speed": 22, "return_speed": 28, "passes_through": false, "hit_radius": 12.0 },
+    "vfx": { "sprite": { "scale": 0.8 } }
   }
 }

@@ -22,6 +22,7 @@ from roguelike_game.ecs.systems.ai.auto_cast_system import AutoCastSystem
 from roguelike_game.ecs.systems.combat.spells.fireball_system import FireballSystem
 from roguelike_game.ecs.systems.combat.spells.arcane_flame_system import ArcaneFlameSystem
 from roguelike_game.ecs.systems.combat.spells.firework_launch_system import FireworkLaunchSystem
+from roguelike_game.ecs.systems.combat.spells.boomerang_system import BoomerangSystem
 from roguelike_game.ecs.systems.combat.spells.aura_system import AuraSystem
 from roguelike_game.ecs.systems.particles.healing_aura_emitter_system import HealingAuraEmitterSystem
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
@@ -29,6 +30,7 @@ from roguelike_game.ecs.systems.rendering.particles.particle_render_system impor
 from roguelike_game.ecs.systems.rendering.particles.particle_preset_render_system import ParticlePresetRenderSystem
 from roguelike_game.ecs.systems.particles.laser_beam_emitter_system import LaserBeamEmitterSystem
 from roguelike_game.ecs.systems.particles.fireball_trail_emitter_system import FireballTrailEmitterSystem
+from roguelike_game.ecs.systems.particles.boomerang_glow_emitter_system import BoomerangGlowEmitterSystem
 # from roguelike_game.ecs.systems.particles.arcane_flame_emitter_system import ArcaneFlameEmitterSystem
 from roguelike_game.ecs.systems.particles.slash_emitter_system import SlashEmitterSystem
 from roguelike_game.ecs.systems.particles.dash_emitter_system import DashEmitterSystem
@@ -39,6 +41,7 @@ from roguelike_game.ecs.systems.rendering.combat.spells.fireball_render_system i
 from roguelike_game.ecs.systems.rendering.combat.spells.lightning_render_system import LightningRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame_render_system import ArcaneFlameRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.firework_launch_render_system import FireworkLaunchRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.boomerang_render_system import BoomerangRenderSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_system import SmokeSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_emitter_system import SmokeEmitterSystem
 from roguelike_game.ecs.systems.combat.spells.teleport_system import TeleportSystem
@@ -164,7 +167,7 @@ def get_update_system_classes():
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
-        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
+        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,
         AnimationSystem, FlashSystem, TorchLightSystem, LightingSyncSystem,
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
@@ -182,7 +185,7 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
-        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, PuddleRenderSystem, MineRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem,
+        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, PuddleRenderSystem, MineRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem, BoomerangRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]
