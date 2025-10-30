@@ -141,6 +141,10 @@ class ReleaseSpellState(State):
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
 
+        # Avoid default projectile fallback for cone_breath: effect handled during channel
+        if spell_type == 'cone_breath':
+            return
+
         # Evitar crear más instancias si se alcanzó el máximo en spells.json para proyectiles
         if spell_type == 'projectile':
             max_inst = cfg.get('max_instances', 0)

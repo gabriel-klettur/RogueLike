@@ -1,1 +1,86 @@
-{}
+{
+  "28a78744-37b2-46a1-ac20-d078d7ba0e3a": {
+    "item_id": "gold",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 31,
+      "y": 15
+    },
+    "created_at": 1761864673.3872256
+  },
+  "e2023f14-43f7-449a-826c-6cdc5b43ca28": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 748,
+      "y": 2125
+    },
+    "created_at": 1761864692.9872098
+  },
+  "48376a45-bf1d-4aac-8767-17b5e35d7228": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 463,
+      "y": 1974
+    },
+    "created_at": 1761864695.8578699
+  },
+  "7f11463a-b5d6-4bc4-987d-c0a00e71a151": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 15,
+      "y": 19
+    },
+    "created_at": 1761864696.3002245
+  },
+  "3eefb981-348d-4acd-9878-971b5c03002c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 521,
+      "y": 2245
+    },
+    "created_at": 1761864696.3022077
+  },
+  "25e769ca-1b62-4ed6-8cef-fc679cb24a4c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 34,
+      "y": 21
+    },
+    "created_at": 1761864698.3826458
+  },
+  "7d6660b6-8343-44ee-a4dd-3d36520ecd3c": {
+    "item_id": "experience_orb",
+    "quantity": 1,
+    "zone_id": "Forest",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "position": {
+      "x": 1123,
+      "y": 2299
+    },
+    "created_at": 1761864698.3841813
+  }
+}

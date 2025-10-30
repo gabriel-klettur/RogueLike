@@ -52,5 +52,6 @@
     "spell_boomerang": "K_6",
     "spell_chain_lightning": "K_7",
     "spell_vortex_pull": "K_8",
-    "spell_vortex_push": "K_9"
+    "spell_vortex_push": "K_9",
+    "spell_flame_breath": "K_0"
 }

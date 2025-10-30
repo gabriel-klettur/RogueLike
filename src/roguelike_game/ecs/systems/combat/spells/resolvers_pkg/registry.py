@@ -15,6 +15,7 @@ from .mine import MineResolver
 from .boomerang import BoomerangResolver
 from .chain_lightning import ChainLightningResolver
 from .vortex_field import VortexFieldResolver
+from .cone_breath import ConeBreathResolver
 
 
 default_resolvers = {
@@ -35,6 +36,7 @@ default_resolvers = {
     'boomerang': BoomerangResolver(),
     'chain_lightning': ChainLightningResolver(),
     'vortex_field': VortexFieldResolver(),
+    'cone_breath': ConeBreathResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers

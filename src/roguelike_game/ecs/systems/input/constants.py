@@ -17,6 +17,7 @@ SPELL_ATTRS = [
     "chain_lightning",
     "vortex_pull",
     "vortex_push",
+    "flame_breath",
 ]
 
 ACTION_BASES = [

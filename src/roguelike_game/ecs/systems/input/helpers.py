@@ -122,6 +122,7 @@ def map_keyboard_spells(inp, any_pressed) -> None:
     inp.spell_chain_lightning = any_pressed("spell_chain_lightning")
     inp.spell_vortex_pull = any_pressed("spell_vortex_pull")
     inp.spell_vortex_push = any_pressed("spell_vortex_push")
+    inp.spell_flame_breath = any_pressed("spell_flame_breath")
 
 
 def process_spell_edges(system, world, eid: int, inp) -> None:

@@ -1129,5 +1129,16 @@
     "constraints": { "max_instances": 1, "allow_overlap": true },
     "effect": { "radius": 280, "force": 1200, "mode": "push", "duration": 2.0, "spawn_at": "caster", "follow_caster": true },
     "vfx": { "preset": "vortex_dark" }
+  },
+  "flame_breath": {
+    "id": "flame_breath",
+    "type": "cone_breath",
+    "mana_cost": 12,
+    "name": "Flame Breath",
+    "timings": { "prepare": 0.1, "channel": 0.2, "cooldown": 1.6 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "arc_range_degrees": 60, "length": 260, "damage_per_tick": 4, "tick_period": 0.2, "duration": 2.0, "element": "fire" },
+    "vfx": { "preset": "breath_fire" }
   }
 }
