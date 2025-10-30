@@ -874,6 +874,16 @@
       "preset": "lightning_emitter"
     }
   },
+  "chain_lightning": {
+    "id": "chain_lightning",
+    "type": "chain_lightning",
+    "mana_cost": 14,
+    "name": "Chain Lightning",
+    "timings": { "prepare": 0.1, "channel": 0.1, "cooldown": 1.4 },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "damage": 12, "max_bounces": 4, "range": 360, "damage_decay": 0.8 },
+    "vfx": { "preset": "lightning_emitter" }
+  },
   "arcane_flame": {
     "id": "arcane_flame",
     "type": "arcane_flame",

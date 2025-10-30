@@ -89,6 +89,12 @@ class ReleaseSpellState(State):
             resolver = SPELL_RESOLVERS.get('lightning')
             resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+        if spell_type == 'chain_lightning':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('chain_lightning')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
         if spell_type == 'arcane_flame':
             world = entity.world
             resolver = SPELL_RESOLVERS.get('arcane_flame')

@@ -14,6 +14,7 @@ SPELL_ATTRS = [
     "puddle_lava",
     "mine_basic",
     "boomerang",
+    "chain_lightning",
 ]
 
 ACTION_BASES = [

@@ -27,6 +27,7 @@ DEFAULT_BINDINGS: dict[str, str] = {
     "spell_teleport": "K_j",
     "spell_lightning": "K_r",
     "spell_boomerang": "K_6",
+    "spell_chain_lightning": "K_7",
     # Game
     "pause": "K_ESCAPE",
     "toggle_inventory": "K_i",

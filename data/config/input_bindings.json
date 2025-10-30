@@ -49,5 +49,6 @@
     "spell_root_whip": "",
     "spell_puddle_lava": "K_4",
     "spell_mine_basic": "K_5",
-    "spell_boomerang": "K_6"
+    "spell_boomerang": "K_6",
+    "spell_chain_lightning": "K_7"
 }

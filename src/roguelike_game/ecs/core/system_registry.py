@@ -57,6 +57,7 @@ from roguelike_game.ecs.systems.rendering.combat.spells.puddle_render_system imp
 from roguelike_game.ecs.systems.rendering.combat.spells.mine_render_system import MineRenderSystem
 from roguelike_game.ecs.systems.combat.burn_system import BurnSystem
 from roguelike_game.ecs.systems.combat.spells.mine_system import MineSystem
+from roguelike_game.ecs.systems.combat.spells.chain_lightning_system import ChainLightningSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -167,7 +168,7 @@ def get_update_system_classes():
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
-        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
+        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,
         AnimationSystem, FlashSystem, TorchLightSystem, LightingSyncSystem,
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)

@@ -19,7 +19,15 @@
         "sphere_magic_shield",
         "teleport",
         "puddle",
-        "mine"
+        "mine",
+        "boomerang",
+        "chain_lightning",
+        "wall",
+        "summon",
+        "vortex_field",
+        "cone_breath",
+        "meteor_shower",
+        "totem"
       ]
     },
     "rgbColor": {

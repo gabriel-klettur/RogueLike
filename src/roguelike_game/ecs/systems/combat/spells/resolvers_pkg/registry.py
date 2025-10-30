@@ -13,6 +13,7 @@ from .sphere_magic_shield import SphereMagicShieldResolver
 from .puddle import PuddleResolver
 from .mine import MineResolver
 from .boomerang import BoomerangResolver
+from .chain_lightning import ChainLightningResolver
 
 
 default_resolvers = {
@@ -31,6 +32,7 @@ default_resolvers = {
     'puddle': PuddleResolver(),
     'mine': MineResolver(),
     'boomerang': BoomerangResolver(),
+    'chain_lightning': ChainLightningResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers
