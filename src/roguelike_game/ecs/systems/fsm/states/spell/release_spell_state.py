@@ -141,6 +141,13 @@ class ReleaseSpellState(State):
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
 
+        if spell_type == 'meteor_shower':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('meteor_shower')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
         # Avoid default projectile fallback for cone_breath: effect handled during channel
         if spell_type == 'cone_breath':
             return

@@ -1140,5 +1140,16 @@
     "constraints": { "max_instances": 1, "allow_overlap": true },
     "effect": { "arc_range_degrees": 60, "length": 260, "damage_per_tick": 4, "tick_period": 0.2, "duration": 2.0, "element": "fire" },
     "vfx": { "preset": "breath_fire" }
+  },
+  "meteor_shower": {
+    "id": "meteor_shower",
+    "type": "meteor_shower",
+    "mana_cost": 18,
+    "name": "Meteor Shower",
+    "timings": { "prepare": 0.3, "channel": 0.2, "cooldown": 6.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "count": 8, "interval": 0.25, "area_radius": 520, "impact_damage": 30, "impact_radius": 160, "spawn_at": "mouse" },
+    "vfx": { "impact": { "preset": "explosion_small", "ttl": 24, "explosion": { "scale": 1.0 } } }
   }
 }

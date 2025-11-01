@@ -18,6 +18,7 @@ SPELL_ATTRS = [
     "vortex_pull",
     "vortex_push",
     "flame_breath",
+    "meteor_shower",
 ]
 
 ACTION_BASES = [
