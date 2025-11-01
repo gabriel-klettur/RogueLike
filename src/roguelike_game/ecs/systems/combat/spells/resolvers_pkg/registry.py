@@ -19,6 +19,7 @@ from .cone_breath import ConeBreathResolver
 from .meteor_shower import MeteorShowerResolver
 from .summon import SummonResolver
 from .totem import TotemResolver
+from .wall import WallResolver
 
 
 default_resolvers = {
@@ -43,6 +44,7 @@ default_resolvers = {
     'meteor_shower': MeteorShowerResolver(),
     'summon': SummonResolver(),
     'totem': TotemResolver(),
+    'wall': WallResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers

@@ -162,6 +162,13 @@ class ReleaseSpellState(State):
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
 
+        if spell_type == 'wall':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('wall')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
         # Avoid default projectile fallback for cone_breath: effect handled during channel
         if spell_type == 'cone_breath':
             return

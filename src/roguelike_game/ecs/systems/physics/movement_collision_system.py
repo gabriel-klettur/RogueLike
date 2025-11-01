@@ -14,6 +14,7 @@ from roguelike_game.ecs.utils.collider_utils import (
     circle_overlaps_circle,
     circle_rect_mtv,
     circle_circle_mtv,
+    circle_obb_mtv,
 )
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_engine.utils.benchmark import benchmark
@@ -36,6 +37,7 @@ class MovementCollisionSystem:
                       dx: float,
                       dy: float,
                       tile_query,
+                      walls_data,
                       npc_circles: Optional[Dict[int, Tuple[float, float, float]]],
                       npc_rects: Optional[Dict[int, pygame.Rect]],
                       max_iters: int = 5) -> Tuple[float, float]:
@@ -68,7 +70,7 @@ class MovementCollisionSystem:
             sum_mtv_y = 0.0
             coll_count = 0
 
-            # Tiles
+            # Tiles (AABB obstacles)
             for tile in tiles:
                 if circle_overlaps_rect(nx, ny, r, tile):
                     collided = True
@@ -84,6 +86,38 @@ class MovementCollisionSystem:
                     sum_mtv_x += mtv[0]
                     sum_mtv_y += mtv[1]
                     coll_count += 1
+
+            # Walls (OBB obstacles)
+            if walls_data:
+                for w in walls_data:
+                    try:
+                        if not w.get('blocks_units', True):
+                            continue
+                        # Broad-phase culling by OBB's AABB
+                        waabb = w['aabb']
+                        if not aabb.colliderect(waabb):
+                            continue
+                        mtw_x, mtw_y = circle_obb_mtv(
+                            nx, ny, r,
+                            w['wx'], w['wy'], w['half_w'], w['half_h'], w['cos'], w['sin']
+                        )
+                        if mtw_x != 0.0 or mtw_y != 0.0:
+                            collided = True
+                            mtv = (mtw_x, mtw_y)
+                            ml2 = mtv[0]*mtv[0] + mtv[1]*mtv[1]
+                            if ml2 > mag_best_len2:
+                                mag_best_mtv = mtv
+                                mag_best_len2 = ml2
+                            dot = vx * mtv[0] + vy * mtv[1]
+                            if dot < oppose_best_dot:
+                                oppose_best_dot = dot
+                                oppose_best_mtv = mtv
+                            sum_mtv_x += mtv[0]
+                            sum_mtv_y += mtv[1]
+                            coll_count += 1
+                    except Exception:
+                        # Ignorar muros mal formados o datos incompletos
+                        continue
 
             # Other NPC circles
             if npc_circles:
@@ -195,6 +229,33 @@ class MovementCollisionSystem:
                 else:
                     npc_feet_rects[nid] = build_collider_rect(npos.x, npos.y, nfeet)
 
+        # Precompute walls data for OBB collisions
+        walls_data = []
+        try:
+            wmap = comps.get('WallSegmentComponent', {})
+            pmap = comps.get('Position', {})
+            for wid, w in list(wmap.items()):
+                posw = pmap.get(wid)
+                if posw is None:
+                    continue
+                half_w = float(getattr(w, 'half_w', getattr(w, 'width', 0.0) * 0.5) or 0.0)
+                half_h = float(getattr(w, 'half_h', getattr(w, 'height', 0.0) * 0.5) or 0.0)
+                cos_a = float(getattr(w, 'cos_a', 1.0))
+                sin_a = float(getattr(w, 'sin_a', 0.0))
+                # AABB bounding box of the OBB for broad-phase
+                ext_x = abs(cos_a) * half_w + abs(sin_a) * half_h
+                ext_y = abs(sin_a) * half_w + abs(cos_a) * half_h
+                aabb = pygame.Rect(int(posw.x - ext_x), int(posw.y - ext_y), int(ext_x * 2), int(ext_y * 2))
+                walls_data.append({
+                    'wx': float(posw.x), 'wy': float(posw.y),
+                    'half_w': half_w, 'half_h': half_h,
+                    'cos': cos_a, 'sin': sin_a,
+                    'blocks_units': bool(getattr(w, 'blocks_units', True)),
+                    'aabb': aabb,
+                })
+        except Exception:
+            walls_data = []
+
         # 2) Iterar sobre entidades que puedan moverse y colisionar
         for eid in world.get_entities_with('Position', 'Velocity', 'MultiCollider'):
             # No mover entidades que están en proceso de muerte (cadáveres)
@@ -237,7 +298,7 @@ class MovementCollisionSystem:
                 others_circles = {i: c for i, c in npc_feet_circles.items() if i != eid and i not in stabilized_ids}
                 others_rects   = {i: rr for i, rr in npc_feet_rects.items() if i != eid and i not in stabilized_ids}
 
-                nx, ny = self._slide_circle(cx, cy, r, vel.vx, vel.vy, tile_query, others_circles, others_rects)
+                nx, ny = self._slide_circle(cx, cy, r, vel.vx, vel.vy, tile_query, walls_data, others_circles, others_rects)
                 # Aplicar delta a Position (mantener vel para coherencia con comportamiento previo)
                 pos.x += (nx - cx)
                 pos.y += (ny - cy)
@@ -248,7 +309,7 @@ class MovementCollisionSystem:
             # Rectangular fallback
             feet.rect = build_collider_rect(pos.x, pos.y, feet)
 
-            # 3) Resolver movimiento en X
+            # 3) Resolver movimiento en X (AABB tiles; OBB walls no soportado para feet rect)
             if vel.vx != 0:
                 # Guardar la posición original en caso de colisión
                 old_x = feet.rect.x

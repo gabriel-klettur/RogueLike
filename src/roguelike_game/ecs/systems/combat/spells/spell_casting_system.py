@@ -55,6 +55,7 @@ class SpellCastingSystem:
         'chain_lightning': 'ChainLightningComponent',
         'totem': 'TotemComponent',
         'summon': 'SummonedUnitComponent',
+        'wall': 'WallSegmentComponent',
     }
 
     def _count_active(self, world, eid, intent, spell_type: str) -> int:
@@ -71,6 +72,19 @@ class SpellCastingSystem:
         if spell_type == 'slash':
             return sum(1 for comp in world.components.get('HitboxComponent', {}).values()
                        if getattr(comp, 'owner', None) == eid)
+        # Walls: consider one active instance per caster+spell if any segment exists
+        if spell_type == 'wall':
+            segs = world.components.get('WallSegmentComponent', {})
+            if not segs:
+                return 0
+            try:
+                s_key = getattr(intent, 'spell', '')
+            except Exception:
+                s_key = ''
+            for _wid, w in list(segs.items()):
+                if getattr(w, 'owner', None) == eid and (not s_key or getattr(w, 'spell_key', '') == s_key):
+                    return 1
+            return 0
         # Per-caster counting for dash: component vive en el caster
         if spell_type == 'dash':
             return 1 if eid in world.components.get('DashComponent', {}) else 0

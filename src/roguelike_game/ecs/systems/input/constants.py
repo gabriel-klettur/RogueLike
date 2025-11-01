@@ -21,6 +21,7 @@ SPELL_ATTRS = [
     "meteor_shower",
     "healing_totem",
     "summon_barbol",
+    "wall_ice",
 ]
 
 ACTION_BASES = [

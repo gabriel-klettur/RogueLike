@@ -8,6 +8,7 @@ from roguelike_game.ecs.systems.combat.explosions_models import TimedEffectModel
 from roguelike_game.ecs.components.particles.particle_preset_component import ParticlePresetComponent
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 import time
+from roguelike_game.ecs.utils.collider_utils import circle_overlaps_obb
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.health_utils import is_neutral
 import logging
@@ -241,6 +242,94 @@ class FireballSystem:
             except Exception:
                 # No romper la lógica de fireball si hay fallo al procesar buildings
                 pass
+            # Colisión con muros dinámicos OBB (wall segments) que bloquean proyectiles
+            try:
+                wmap = world.components.get('WallSegmentComponent', {})
+                if wmap:
+                    pmap = world.components.get('Position', {})
+                    # Precompute walls data (AABB broad-phase, OBB narrow)
+                    walls_data = []
+                    for wid, w in list(wmap.items()):
+                        try:
+                            if not bool(getattr(w, 'blocks_projectiles', True)):
+                                continue
+                            wpos = pmap.get(wid)
+                            if wpos is None:
+                                continue
+                            half_w = float(getattr(w, 'half_w', getattr(w, 'width', 0.0) * 0.5) or 0.0)
+                            half_h = float(getattr(w, 'half_h', getattr(w, 'height', 0.0) * 0.5) or 0.0)
+                            cos_a = float(getattr(w, 'cos_a', 1.0))
+                            sin_a = float(getattr(w, 'sin_a', 0.0))
+                            ext_x = abs(cos_a) * half_w + abs(sin_a) * half_h
+                            ext_y = abs(sin_a) * half_w + abs(cos_a) * half_h
+                            aabb = pygame.Rect(int(wpos.x - ext_x), int(wpos.y - ext_y), int(ext_x * 2), int(ext_y * 2))
+                            walls_data.append({
+                                'wx': float(wpos.x), 'wy': float(wpos.y),
+                                'half_w': half_w, 'half_h': half_h,
+                                'cos': cos_a, 'sin': sin_a,
+                                'aabb': aabb,
+                            })
+                        except Exception:
+                            continue
+                    # Test sampled trajectory against walls
+                    hit = False
+                    hit_point = None
+                    for (sx, sy) in sample_points:
+                        # Broad-phase: projectile circle AABB vs wall AABB
+                        c_aabb = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                        for w in walls_data:
+                            if not c_aabb.colliderect(w['aabb']):
+                                continue
+                            if circle_overlaps_obb(sx, sy, hit_radius, w['wx'], w['wy'], w['half_w'], w['half_h'], w['cos'], w['sin']):
+                                hit = True
+                                hit_point = (float(sx), float(sy))
+                                break
+                        if hit:
+                            break
+                    if hit:
+                        # Spawn impact VFX like tile collision (preset-based if defined)
+                        try:
+                            preset_id = None
+                            ttl_ticks = None
+                            vfx_obj = None
+                            try:
+                                vfx_attr = getattr(cfg, 'vfx', None)
+                                if isinstance(vfx_attr, dict):
+                                    vfx_obj = vfx_attr
+                                else:
+                                    vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                            except Exception:
+                                vfx_obj = None
+                            if isinstance(vfx_obj, dict):
+                                impact = vfx_obj.get('impact') or {}
+                                if isinstance(impact, dict):
+                                    if isinstance(impact.get('preset'), str):
+                                        preset_id = impact.get('preset')
+                                    if isinstance(impact.get('ttl'), (int, float)):
+                                        ttl_ticks = int(impact.get('ttl'))
+                                    exp = impact.get('explosion') or {}
+                                    if isinstance(exp, dict):
+                                        if isinstance(exp.get('preset'), str):
+                                            preset_id = exp.get('preset')
+                                        if isinstance(exp.get('ttl'), (int, float)):
+                                            ttl_ticks = int(exp.get('ttl'))
+                            if isinstance(preset_id, str) and preset_id:
+                                x, y = hit_point if hit_point else (pos.x, pos.y)
+                                eid2 = world.create_entity()
+                                world.components.setdefault('Position', {})[eid2] = Position(x, y)
+                                try:
+                                    smul = float(getattr(comp, 'vfx_scale_multiplier', 1.0))
+                                except Exception:
+                                    smul = 1.0
+                                world.components.setdefault('ParticlePresetComponent', {})[eid2] = ParticlePresetComponent(preset_id, scale_multiplier=smul)
+                                world.components.setdefault('ExplosionComponent', {})[eid2] = ExplosionComponent(TimedEffectModel(ttl_ticks if ttl_ticks else 30))
+                        except Exception:
+                            pass
+                        world.remove_entity(eid)
+                        continue
+            except Exception:
+                pass
+
             # Colisión con NPCs (usar MaskCollider pixel-perfect siempre que exista)
             for target in world.get_entities_with('Position', 'MultiCollider', 'Health'):
                 # Saltar self, caster y cadáveres con DeathTimer

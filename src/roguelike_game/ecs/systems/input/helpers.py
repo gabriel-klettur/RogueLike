@@ -126,6 +126,7 @@ def map_keyboard_spells(inp, any_pressed) -> None:
     inp.spell_meteor_shower = any_pressed("spell_meteor_shower")
     inp.spell_healing_totem = any_pressed("spell_healing_totem")
     inp.spell_summon_barbol = any_pressed("spell_summon_barbol")
+    inp.spell_wall_ice = any_pressed("spell_wall_ice")
 
 
 def process_spell_edges(system, world, eid: int, inp) -> None:

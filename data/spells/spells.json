@@ -1171,5 +1171,15 @@
     "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
     "constraints": { "max_instances": 1, "allow_overlap": true },
     "effect": { "template_id": "barbol", "duration": 20.0, "count": 1, "spread_radius": 0 }
+  },
+  "wall_ice": {
+    "id": "wall_ice",
+    "type": "wall",
+    "mana_cost": 0,
+    "name": "Ice Wall",
+    "timings": { "prepare": 0.0, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": false },
+    "effect": { "duration": 6.0, "hp": 100, "width": 200, "height": 50, "blocks_projectiles": true, "blocks_units": true }
   }
 }
