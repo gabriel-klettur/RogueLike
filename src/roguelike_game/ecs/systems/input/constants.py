@@ -19,6 +19,8 @@ SPELL_ATTRS = [
     "vortex_push",
     "flame_breath",
     "meteor_shower",
+    "healing_totem",
+    "summon_barbol",
 ]
 
 ACTION_BASES = [

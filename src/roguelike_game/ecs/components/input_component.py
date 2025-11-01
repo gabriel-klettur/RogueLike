@@ -27,6 +27,8 @@ class InputComponent:
         self.spell_teleport: bool = False
         self.spell_vortex_pull: bool = False
         self.spell_vortex_push: bool = False
+        self.spell_healing_totem: bool = False
+        self.spell_summon_barbol: bool = False
         self.click: bool = False
         self.drop: bool = False
         self.toggle_editor: bool = False

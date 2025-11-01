@@ -46,6 +46,7 @@ from roguelike_game.ecs.systems.rendering.combat.spells.boomerang_render_system 
 from roguelike_game.ecs.systems.rendering.combat.spells.cone_breath_render_system import ConeBreathRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.meteor_shower_render_system import MeteorShowerRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.meteor_fall_render_system import MeteorFallRenderSystem
+from roguelike_game.ecs.systems.rendering.combat.spells.totem_render_system import TotemRenderSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_system import SmokeSystem
 from roguelike_game.ecs.systems.combat.spells.smoke_emitter_system import SmokeEmitterSystem
 from roguelike_game.ecs.systems.combat.spells.teleport_system import TeleportSystem
@@ -67,6 +68,8 @@ from roguelike_game.ecs.systems.combat.spells.force_field_system import ForceFie
 from roguelike_game.ecs.systems.combat.spells.cone_breath_system import ConeBreathSystem
 from roguelike_game.ecs.systems.combat.spells.meteor_shower_system import MeteorShowerSystem
 from roguelike_game.ecs.systems.combat.spells.meteor_fall_system import MeteorFallSystem
+from roguelike_game.ecs.systems.combat.spells.summon_system import SummonSystem
+from roguelike_game.ecs.systems.combat.spells.totem_system import TotemSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -177,7 +180,7 @@ def get_update_system_classes():
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem, ForceFieldSystem,
         MovementCollisionSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
-        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
+        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, TotemSystem, SummonSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,
         AnimationSystem, FlashSystem, TorchLightSystem, LightingSyncSystem,
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)
@@ -195,7 +198,7 @@ def get_render_system_classes():
     """
     base = [
         HealthBarSystem, DashBarRenderSystem, ManaBarRenderSystem, ManaRegenAuraRenderSystem, GodmodeAuraRenderSystem, NamePlateSystem, ChatBubbleRenderSystem, ExperienceRenderSystem, ComboBarRenderSystem, MagicSpellBarRenderSystem,
-        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, PuddleRenderSystem, MeteorShowerRenderSystem, VortexFieldRenderSystem, MineRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem, BoomerangRenderSystem, ConeBreathRenderSystem, MeteorFallRenderSystem,
+        FireballRenderSystem, ArcaneFlameRenderSystem, FireworkLaunchRenderSystem, SmokeRenderSystem, PuddleRenderSystem, TotemRenderSystem, MeteorShowerRenderSystem, VortexFieldRenderSystem, MineRenderSystem, SmokeEmitterRenderSystem, SphereMagicShieldRenderSystem, TeleportRenderSystem, ParticleRenderSystem, ParticlePresetRenderSystem, LightningRenderSystem, BoomerangRenderSystem, ConeBreathRenderSystem, MeteorFallRenderSystem,
         DeathTimerBarSystem,
         # DropRenderSystem removed: drops rendered via RenderSystem
     ]

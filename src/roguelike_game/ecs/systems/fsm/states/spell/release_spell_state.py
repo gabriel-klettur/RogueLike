@@ -148,6 +148,20 @@ class ReleaseSpellState(State):
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
 
+        if spell_type == 'summon':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('summon')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
+        if spell_type == 'totem':
+            world = entity.world
+            resolver = SPELL_RESOLVERS.get('totem')
+            if resolver is not None:
+                resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            return
+
         # Avoid default projectile fallback for cone_breath: effect handled during channel
         if spell_type == 'cone_breath':
             return

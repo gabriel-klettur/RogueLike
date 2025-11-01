@@ -17,6 +17,8 @@ from .chain_lightning import ChainLightningResolver
 from .vortex_field import VortexFieldResolver
 from .cone_breath import ConeBreathResolver
 from .meteor_shower import MeteorShowerResolver
+from .summon import SummonResolver
+from .totem import TotemResolver
 
 
 default_resolvers = {
@@ -39,6 +41,8 @@ default_resolvers = {
     'vortex_field': VortexFieldResolver(),
     'cone_breath': ConeBreathResolver(),
     'meteor_shower': MeteorShowerResolver(),
+    'summon': SummonResolver(),
+    'totem': TotemResolver(),
 }
 
 SPELL_RESOLVERS = default_resolvers

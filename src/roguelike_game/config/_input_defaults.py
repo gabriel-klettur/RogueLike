@@ -31,7 +31,9 @@ DEFAULT_BINDINGS: dict[str, str] = {
     "spell_vortex_pull": "K_8",
     "spell_vortex_push": "K_9",
     "spell_flame_breath": "K_0",
-    "spell_meteor_shower": "K_l",
+    "spell_meteor_shower": "K_p",
+    "spell_healing_totem": "K_L",
+    "spell_summon_barbol": "K_U",
     # Game
     "pause": "K_ESCAPE",
     "toggle_inventory": "K_i",

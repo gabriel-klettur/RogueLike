@@ -53,6 +53,8 @@ class SpellCastingSystem:
         'mine': 'MineComponent',
         'boomerang': 'BoomerangComponent',
         'chain_lightning': 'ChainLightningComponent',
+        'totem': 'TotemComponent',
+        'summon': 'SummonedUnitComponent',
     }
 
     def _count_active(self, world, eid, intent, spell_type: str) -> int:
