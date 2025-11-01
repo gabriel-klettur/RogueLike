@@ -12,8 +12,21 @@ except Exception as e:
 
 ASSETS_DIR = Path(config.ASSETS_DIR)
 PROJECT_ROOT = Path(config.PROJECT_ROOT)
-TEMPLATES_PATH = Path(config.BUILDINGS_TEMPLATES_PATH)
-INSTANCES_PATH = Path(config.BUILDINGS_INSTANCES_PATH)
+
+def _get_templates_path() -> Path:
+    """Retorna la ruta actual de templates desde config (redirigida por WorldService)."""
+    try:
+        return Path(getattr(config, 'BUILDINGS_TEMPLATES_PATH'))
+    except Exception:
+        # Fallback defensivo a carpeta legacy
+        return Path(getattr(config, 'DATA_DIR')) / 'buildings' / 'buildings_templates.json'
+
+def _get_instances_path() -> Path:
+    """Retorna la ruta actual de instances desde config (redirigida por WorldService)."""
+    try:
+        return Path(getattr(config, 'BUILDINGS_INSTANCES_PATH'))
+    except Exception:
+        return Path(getattr(config, 'DATA_DIR')) / 'buildings' / 'buildings_instances.json'
 
 EXCLUDES = list(getattr(config, 'DEV_AUTO_IMPORT_EXCLUDES', []) or [])
 CREATE_INSTANCES = bool(getattr(config, 'DEV_AUTO_IMPORT_CREATE_INSTANCES', False))
@@ -141,8 +154,8 @@ def auto_import_building_templates() -> Tuple[int, int]:
     if not assets:
         return 0, 0
 
-    templates = _read_json_list(TEMPLATES_PATH)
-    instances = _read_json_list(INSTANCES_PATH) if CREATE_INSTANCES else []
+    templates = _read_json_list(_get_templates_path())
+    instances = _read_json_list(_get_instances_path()) if CREATE_INSTANCES else []
 
     existing = _existing_idle_set(templates)
 
@@ -170,9 +183,9 @@ def auto_import_building_templates() -> Tuple[int, int]:
         next_tid += 1
 
     if created_t > 0:
-        _write_json_list(TEMPLATES_PATH, templates)
+        _write_json_list(_get_templates_path(), templates)
         if CREATE_INSTANCES:
-            _write_json_list(INSTANCES_PATH, instances)
+            _write_json_list(_get_instances_path(), instances)
 
     return created_t, created_i
 

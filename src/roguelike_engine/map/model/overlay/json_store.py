@@ -4,7 +4,6 @@ from typing import Optional, List
 from pathlib import Path
 
 from .interfaces import OverlayStore
-from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
 
 import logging
@@ -16,9 +15,8 @@ class JsonOverlayStore(OverlayStore):
     con soporte para overlays globales y por-zona.
     """
     def __init__(self, directory: str = None):
-        # Directorio de overlays individuales por zona
-        self.zones_dir  = Path(DATA_DIR) / "map" / "zones" / "overlays"
-
+        # Directorio de overlays individuales por zona (dependiente del mundo activo)
+        self.zones_dir  = global_map_settings.overlays_dir
         os.makedirs(self.zones_dir,  exist_ok=True)
 
     def load(self, map_name: str) -> Optional[List[List[str]]]:

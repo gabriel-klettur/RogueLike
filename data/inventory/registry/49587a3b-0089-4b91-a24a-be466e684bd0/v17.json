@@ -4,15 +4,24 @@
   "slots": [
     {
       "item": "gold",
-      "quantity": 2
+      "quantity": 95.0
+    },
+    {
+      "item": "hakarl_01",
+      "quantity": 1
+    },
+    {
+      "item": "tortilla_spain_01",
+      "quantity": 1
+    },
+    {
+      "item": "borsh_01",
+      "quantity": 5
     },
     {
       "item": "wood",
       "quantity": 1
     },
-    null,
-    null,
-    null,
     null,
     null,
     null,

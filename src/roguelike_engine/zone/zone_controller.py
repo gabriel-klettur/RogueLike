@@ -150,9 +150,14 @@ class ZonesService:
         self._save_json(json_path, offsets)
 
         # Borrar archivos asociados
-        coll_path = os.path.join(DATA_DIR, "map", "collisions", f"{name}.json")
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            coll_path = str((global_map_settings.collisions_dir / f"{name}.json"))
+            overlay_path = str((global_map_settings.overlays_dir / f"{name}.overlay.json"))
+        except Exception:
+            coll_path = os.path.join(DATA_DIR, "map", "collisions", f"{name}.json")
+            overlay_path = os.path.join(DATA_DIR, "map", "zones", "overlays", f"{name}.overlay.json")
         self._safe_remove_file(coll_path, "[ZonesService.delete_zone]")
-        overlay_path = os.path.join(DATA_DIR, "map", "zones", "overlays", f"{name}.overlay.json")
         self._safe_remove_file(overlay_path, "[ZonesService.delete_zone]")
 
         global_map_settings.__dict__.pop("zone_offsets", None)
@@ -236,7 +241,12 @@ class ZonesService:
     # Helpers privados
     # ------------------------------
     def _zones_json_path(self) -> str:
-        return os.path.join(DATA_DIR, "map", "zones", "zones.json")
+        # Path al índice de zonas del mundo activo
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            return str(global_map_settings.ZONES_INDEX)
+        except Exception:
+            return os.path.join(DATA_DIR, "map", "zones", "zones.json")
 
     def _is_sentinel(self, name: str) -> bool:
         return name in ("no zone", "no-zone")
@@ -270,8 +280,23 @@ class ZonesService:
                 logger.debug(f"DEBUG {debug_tag} failed to remove file {file_path}: {e}")
 
     def _rename_zone_file(self, subdir: str, old: str, new: str, suffix: str = ".json", debug_tag: str = "") -> None:
-        old_file = os.path.join(DATA_DIR, subdir, f"{old}{suffix}")
-        new_file = os.path.join(DATA_DIR, subdir, f"{new}{suffix}")
+        # subdir esperado: "map/collisions" o "map/zones/overlays"
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            base_dir = None
+            if 'collisions' in subdir:
+                base_dir = global_map_settings.collisions_dir
+            elif 'overlays' in subdir:
+                base_dir = global_map_settings.overlays_dir
+            if base_dir is not None:
+                old_file = str(base_dir / f"{old}{suffix}")
+                new_file = str(base_dir / f"{new}{suffix}")
+            else:
+                old_file = os.path.join(DATA_DIR, subdir, f"{old}{suffix}")
+                new_file = os.path.join(DATA_DIR, subdir, f"{new}{suffix}")
+        except Exception:
+            old_file = os.path.join(DATA_DIR, subdir, f"{old}{suffix}")
+            new_file = os.path.join(DATA_DIR, subdir, f"{new}{suffix}")
         if os.path.exists(old_file):
             try:
                 os.makedirs(os.path.dirname(new_file), exist_ok=True)

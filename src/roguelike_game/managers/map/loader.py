@@ -34,8 +34,13 @@ class MapLoader:
         global_map_settings.use_zones_json = True
         global_map_settings.__dict__.pop('zone_offsets', None)
 
-        cache_file = self.cache_dir / f'map_{map_name}.pkl'
-        overlays_dir = global_map_settings.ZONES_INDEX.parent / 'overlays'
+        # Cache por mundo
+        try:
+            world_id = getattr(global_map_settings, 'current_world', 'base')
+        except Exception:
+            world_id = 'base'
+        cache_file = self.cache_dir / f'map_{world_id}_{map_name}.pkl'
+        overlays_dir = global_map_settings.overlays_dir
         # Invalidar cache si hay overlays más recientes
         try:
             cache_mtime = cache_file.stat().st_mtime

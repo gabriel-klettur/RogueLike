@@ -11,6 +11,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 
 from .loader import MapLoader
+from roguelike_engine.worlds.service import world_service
 from .generator import MapGenerator
 from .collision import CollisionManager
 from .pathfinding import PathFinder
@@ -162,3 +163,34 @@ class MapManager:
         zone = get_zone_for_tile(col, row)
         offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
         return zone, offx, offy
+
+    # --- Multi-world swap API -------------------------------------------------
+    def swap_world_and_spawn(self, world_id: str, tile_pos: tuple[int, int]) -> None:
+        """Cambia el mundo activo y reaparece al jugador en tile_pos.
+
+        - Actualiza rutas (overlays/collisions/zones/buildings) vía WorldService.
+        - Recarga el mapa desde el mundo activo y recalcula colisiones.
+        - Reposiciona al jugador y fuerza invalidación de la vista.
+        """
+        try:
+            world_service.activate(world_id)
+        except Exception:
+            pass
+        # Recargar mapa con nuevas rutas
+        try:
+            self.reload_map()
+        except Exception:
+            pass
+        # Reaparecer jugador y recalcular colisiones
+        try:
+            self.spawn_player(tile_pos)
+        except Exception:
+            pass
+        try:
+            self.collision_manager.load(self)
+        except Exception:
+            pass
+        try:
+            self.view.invalidate_cache()
+        except Exception:
+            pass

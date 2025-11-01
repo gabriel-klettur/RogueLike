@@ -5,6 +5,8 @@ import time
 from types import SimpleNamespace
 
 from roguelike_game.managers.map import MapManager
+from roguelike_engine.worlds.service import world_service
+from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.world.world import WorldManager
 from roguelike_engine.world.world_config import WORLD_CONFIG
 
@@ -15,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 def setup_world(ctx: InitContext) -> None:
     g = ctx.game
+    # Activar mundo actual para redirigir rutas (incluye buildings en fase transición)
+    try:
+        world_service.activate(getattr(global_map_settings, 'current_world', 'base'))
+    except Exception:
+        pass
     g.world = WorldManager(WORLD_CONFIG, load_state_on_init=False)
     g._last_autosave_time = time.time()
 

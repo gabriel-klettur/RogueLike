@@ -98,10 +98,11 @@ class MapSettings:
         Path(__file__).resolve().parent.parent.parent / 'data' / 'debug_maps'
     )
 
-    # Ruta al índice de zonas dinámico (data/map/zones/zones.json)
-    ZONES_INDEX: Path = field(default_factory=lambda:
-        Path(DATA_DIR) / 'map' / 'zones' / 'zones.json'
-    )    
+    # Mundo activo y carpeta raíz de mundos
+    current_world: str = "base"
+    worlds_dir: Path = field(default_factory=lambda:
+        Path(DATA_DIR) / 'worlds'
+    )
 
     def __setattr__(self, name, value):
         if name == "zone_offsets" and not isinstance(value, _OffsetsDict):
@@ -175,6 +176,27 @@ class MapSettings:
         except Exception:
             # En caso de fallo, usar dinámico
             return _OffsetsDict(self, self._dynamic_offsets())
+
+    # Rutas dependientes del mundo activo
+    @property
+    def ZONES_INDEX(self) -> Path:
+        """Ruta al índice de zonas del mundo activo."""
+        return (self.worlds_dir / self.current_world / 'zones' / 'zones.json')
+
+    @property
+    def overlays_dir(self) -> Path:
+        """Directorio de overlays por zona del mundo activo."""
+        return (self.worlds_dir / self.current_world / 'zones' / 'overlays')
+
+    @property
+    def collisions_dir(self) -> Path:
+        """Directorio de colisiones por zona del mundo activo."""
+        return (self.worlds_dir / self.current_world / 'collisions')
+
+    @property
+    def buildings_dir(self) -> Path:
+        """Directorio de persistencia de edificios del mundo activo."""
+        return (self.worlds_dir / self.current_world / 'buildings')
 
     def _dynamic_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
@@ -297,6 +319,15 @@ class MapSettings:
             self.__dict__.pop('zone_offsets', None)
         except Exception:
             pass
+
+    # Cambio de mundo (API pública)
+    def set_world(self, world_id: str) -> None:
+        try:
+            self.current_world = str(world_id or self.current_world)
+        except Exception:
+            self.current_world = world_id
+        # Invalidate cached offsets and any dependent properties
+        self.refresh_zone_offsets()
 
 # Instancia global para uso en toda la aplicación
 global_map_settings = MapSettings()

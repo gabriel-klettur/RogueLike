@@ -3,7 +3,6 @@ Módulo de gestión de colisiones por zona.
 """
 from pathlib import Path
 import json
-from roguelike_engine.config.config import DATA_DIR
 from roguelike_engine.config.map_config import global_map_settings
 
 import logging
@@ -22,7 +21,7 @@ class CollisionManager:
         Carga colisiones desde JSON o de la matriz global.
         """
         self.manager = manager
-        collisions_dir = Path(DATA_DIR) / "map" / "collisions"
+        collisions_dir = global_map_settings.collisions_dir
         collisions_dir.mkdir(parents=True, exist_ok=True)
 
         for zone, tiles in manager.tiles_by_zone.items():
@@ -69,7 +68,7 @@ class CollisionManager:
         """
         if zone_name == 'dungeon':
             return
-        collisions_dir = Path(DATA_DIR) / "map" / "collisions"
+        collisions_dir = global_map_settings.collisions_dir
         collisions_dir.mkdir(parents=True, exist_ok=True)
         data = self.collision_layers.get(zone_name)
         if data is None:
