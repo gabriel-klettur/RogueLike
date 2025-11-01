@@ -39,6 +39,9 @@ class ConeBreathResolver(BaseSpellResolver):
         damage_per_tick = float(dpt or 0)
         tick_period = float(effect.get('tick_period', 0.2))
         duration = float(effect.get('duration', cfg.get('duration', 0)))
+        # Elemento/Status opcional
+        element = str(effect.get('element', cfg.get('element', ''))) if (isinstance(effect.get('element', None), (str,))) or (isinstance(cfg.get('element', None), (str,))) else ''
+        status = effect.get('status') if isinstance(effect.get('status'), dict) else None
         # Flags de seguimiento/rotación
         follow_owner = True
         rotate_with_owner = True
@@ -79,6 +82,8 @@ class ConeBreathResolver(BaseSpellResolver):
             rotate_with_owner=rotate_with_owner,
             offset=off,
             initial_direction=initial_dir,
+            element=element,
+            status=status,
         )
         try:
             logger.info(

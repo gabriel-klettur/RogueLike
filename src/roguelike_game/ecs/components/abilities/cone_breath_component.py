@@ -25,6 +25,8 @@ class ConeBreathComponent:
         rotate_with_owner: bool = True,
         offset: float = 0.0,
         initial_direction: Optional[tuple[float, float]] = None,
+        element: str = "",
+        status: Optional[dict] = None,
     ) -> None:
         self.owner = int(owner)
         self.arc_degrees = float(arc_degrees)
@@ -48,6 +50,8 @@ class ConeBreathComponent:
         self.last_tick_time = 0.0  # primer tick inmediato
         # Posición actual (actualizada por el sistema)
         self.current_pos = (0.0, 0.0)
+        self.element = str(element) if isinstance(element, str) else ""
+        self.status = dict(status) if isinstance(status, dict) else None
 
     def is_finished(self) -> bool:
         return (time.time() >= (self.start_time + self.duration)) if self.duration > 0 else False

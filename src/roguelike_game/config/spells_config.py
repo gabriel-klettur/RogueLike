@@ -53,6 +53,8 @@ class SpellConfig:
     damage: float = 0.0
     lifespan: float = 0.0
     range: float = 0.0
+    # Generic length (used by cones/walls/etc.)
+    length: float = 0.0
     sprite: Optional[str] = None
     scale: float = 1.0
 
@@ -61,6 +63,11 @@ class SpellConfig:
     # Optional decoupled hitbox fields for melee/area spells
     hit_radius: float = 0.0
     duration: float = 0.0
+    # Periodic effect helpers
+    damage_per_tick: float = 0.0
+    tick_period: float = 0.0
+    # Element typing ("fire", "ice", etc.)
+    element: str = ""
     buff: Dict[str, Any] = field(default_factory=dict)
 
     # Particles / beam
@@ -127,9 +134,9 @@ SCHEMA_KEYS: List[str] = [
     # Costs
     "mana_cost",
     # Common
-    "speed", "damage", "lifespan", "range", "sprite", "scale",
+    "speed", "damage", "lifespan", "range", "length", "sprite", "scale",
     # Areas / durations
-    "radius", "hit_radius", "duration", "buff",
+    "radius", "hit_radius", "duration", "damage_per_tick", "tick_period", "element", "buff",
     # Particles / beams
     "particle_count", "particle_dispersion", "particle_colors",
     # Lightning
@@ -200,8 +207,8 @@ def _flatten_new_style(data: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(effect, dict):
         # Copy recognized keys directly
         for k in ("speed", "damage", "range", "distance", "radius",
-                  "hit_radius", "arc_range_degrees", "hit_arc_degrees", "duration", "lifetime",
-                  "knockback", "collision_damage"):
+                  "length", "hit_radius", "arc_range_degrees", "hit_arc_degrees", "duration", "lifetime",
+                  "damage_per_tick", "tick_period", "element", "knockback", "collision_damage"):
             if k in effect:
                 flat[k] = effect.get(k)
         # Backward compat: mirror lifetime->lifespan

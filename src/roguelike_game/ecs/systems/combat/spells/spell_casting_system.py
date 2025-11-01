@@ -56,6 +56,11 @@ class SpellCastingSystem:
         'totem': 'TotemComponent',
         'summon': 'SummonedUnitComponent',
         'wall': 'WallSegmentComponent',
+        # New spell types counting
+        'cone_breath': 'ConeBreathComponent',
+        'puddle': 'PuddleComponent',
+        'meteor_shower': 'MeteorShowerComponent',
+        'vortex_field': 'ForceFieldComponent',
     }
 
     def _count_active(self, world, eid, intent, spell_type: str) -> int:

@@ -4,6 +4,7 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 import time
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+from roguelike_game.ecs.components.combat.burn import BurnComponent
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
 from roguelike_game.ecs.utils.health_utils import is_neutral
@@ -273,6 +274,59 @@ class HitboxSystem:
                                 # Mark as processed for this hitbox to avoid re-evaluating and skip damage/events
                                 hb.hit_targets.add(target)
                                 continue
+                except Exception:
+                    pass
+                # Apply status based on element/status metadata
+                try:
+                    elem = str(getattr(hb, 'element', '') or '').lower()
+                    st = getattr(hb, 'status', None)
+                    burn_cfg = None
+                    if isinstance(st, dict) and isinstance(st.get('burn'), dict):
+                        burn_cfg = st.get('burn')
+                    elif elem == 'fire':
+                        burn_cfg = {}
+                    if burn_cfg is not None and not is_neutral(world, target):
+                        dps = int(burn_cfg.get('dps', 5)) if isinstance(burn_cfg, dict) else 5
+                        dur = float(burn_cfg.get('duration', 3.0)) if isinstance(burn_cfg, dict) else 3.0
+                        tper = float(burn_cfg.get('tick_period', 1.0)) if isinstance(burn_cfg, dict) else 1.0
+                        burns = world.components.setdefault('BurnComponent', {})
+                        bc = burns.get(target)
+                        now = time.time()
+                        owner = hb.owner
+                        if bc is None:
+                            burns[target] = BurnComponent(
+                                damage_per_tick=dps,
+                                duration=dur,
+                                tick_period=tper,
+                                start_time=now,
+                                last_tick_time=now,
+                                applier=owner,
+                            )
+                            try:
+                                player_id = getattr(world, 'player_entity', None)
+                                if player_id is not None and owner is not None and int(owner) == int(player_id):
+                                    hud = world.components.setdefault('TargetHUD', {})
+                                    hud['target_eid'] = int(target)
+                                    hud['last_hit_time'] = float(now)
+                                    if 'ttl_s' not in hud:
+                                        hud['ttl_s'] = 3.0
+                            except Exception:
+                                pass
+                        else:
+                            bc.start_time = max(bc.start_time, now)
+                            bc.damage_per_tick = max(bc.damage_per_tick, int(dps))
+                            bc.tick_period = min(bc.tick_period, float(tper))
+                            bc.duration = max(bc.duration, float(dur))
+                            try:
+                                player_id = getattr(world, 'player_entity', None)
+                                if player_id is not None and owner is not None and int(owner) == int(player_id):
+                                    hud = world.components.setdefault('TargetHUD', {})
+                                    hud['target_eid'] = int(target)
+                                    hud['last_hit_time'] = float(now)
+                                    if 'ttl_s' not in hud:
+                                        hud['ttl_s'] = 3.0
+                            except Exception:
+                                pass
                 except Exception:
                     pass
                 # Neutral immunity: skip applying damage and events

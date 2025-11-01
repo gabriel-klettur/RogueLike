@@ -83,6 +83,8 @@ class ConeBreathSystem:
                 damage=float(dmg),
                 follow_owner=bool(follow_owner),
                 rotate_with_owner=bool(rotate_with_owner),
+                element=str(getattr(comp, 'element', '')),
+                status=getattr(comp, 'status', None),
             )
             # VFX opcional: emitir partículas estilo 'slash' si el sistema existe
             try:
