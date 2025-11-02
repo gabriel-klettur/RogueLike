@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      29,
-      90
+      38,
+      87
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        29,
-        90
+        38,
+        87
       ],
       "npc_states": {}
     }
@@ -23,7 +23,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 98.0
+        "quantity": 99.0
       },
       {
         "item": "tortilla_spain_01",
@@ -90,9 +90,9 @@
   "meta": {
     "name": "partida_2025-10-22_15-36-50",
     "created_at": "2025-10-22T15:36:50",
-    "last_played": "2025-11-02T10:06:42",
+    "last_played": "2025-11-02T12:38:14",
     "player": {
-      "xp": 20,
+      "xp": 50,
       "level": 3
     },
     "items_summary": {
@@ -106,7 +106,7 @@
     }
   },
   "time": {
-    "minute": 1328,
+    "minute": 789,
     "time_scale": 0.4
   }
 }

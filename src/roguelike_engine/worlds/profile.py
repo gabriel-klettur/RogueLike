@@ -14,6 +14,7 @@ class WorldProfile:
     - overlays_dir: directorio de overlays por zona
     - collisions_dir: directorio de colisiones por zona
     - buildings_dir: directorio de persistencia de edificios
+    - particles_dir: directorio de persistencia de partículas
     """
     world_id: str
     worlds_root: Path | None = None
@@ -38,3 +39,7 @@ class WorldProfile:
     @property
     def buildings_dir(self) -> Path:
         return self.base_dir / "buildings"
+
+    @property
+    def particles_dir(self) -> Path:
+        return self.base_dir / "particles"

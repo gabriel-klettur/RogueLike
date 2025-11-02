@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 from typing import List
+from roguelike_engine.config.map_config import global_map_settings
+from pathlib import Path
+import logging
 
 
 def render_map(manager, camera, screen, map_) -> List[object]:
@@ -11,6 +14,27 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     preserve previous behavior and test hooks.
     """
     dirty_rects: list = []
+    # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
+    try:
+        if getattr(global_map_settings, 'use_zones_json', False):
+            odir = global_map_settings.overlays_dir
+            if odir and list(Path(odir).glob('*.overlay.json')) == []:
+                # Count user-defined zones (exclude sentinels)
+                try:
+                    offsets = getattr(global_map_settings, 'zone_offsets', {})
+                    user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                except Exception:
+                    user_keys = []
+                if len(user_keys) == 0:
+                    try:
+                        logging.getLogger(__name__).info(
+                            "[Render][Map] overlays-driven: no overlay files in %s -> skip draw", odir
+                        )
+                    except Exception:
+                        pass
+                    return dirty_rects
+    except Exception:
+        pass
 
     # Map Editor: filter by visible_layers and invalidate cache only on change
     if manager.map_editor.editor_state.active:

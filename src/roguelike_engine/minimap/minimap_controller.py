@@ -38,12 +38,33 @@ class MinimapController:
         if (now - model.last_tiles_ms >= MINIMAP_TILE_UPDATE_MS) or (model.last_player_tile != (px, py)):
             model.last_tiles_ms = now
             vis = []
+            # Determine overlays presence and whether zones.json has user-defined zones
+            try:
+                has_overlays = False
+                user_keys_count = 0
+                if getattr(global_map_settings, 'use_zones_json', False):
+                    from pathlib import Path as _P
+                    odir = getattr(global_map_settings, 'overlays_dir', None)
+                    has_overlays = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
+                    try:
+                        offsets = getattr(global_map_settings, 'zone_offsets', {})
+                        user_keys_count = len([k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')])
+                    except Exception:
+                        user_keys_count = 0
+            except Exception:
+                has_overlays = False
+                user_keys_count = 0
             for t in tiles:
                 try:
                     tx = (t.x // TILE_SIZE)
                     ty = (t.y // TILE_SIZE)
                 except Exception:
                     continue
+                # Overlays-driven policy: suppress tiles with no overlay_code ONLY IF there are no overlays AND no user zones.
+                # Otherwise allow fallback (e.g., generated dungeon/lobby) as in main renderer.
+                if getattr(global_map_settings, 'use_zones_json', False):
+                    if (not has_overlays and user_keys_count == 0) and not getattr(t, 'overlay_code', None):
+                        continue
                 if abs(tx - px) <= half_x and abs(ty - py) <= half_y:
                     vis.append(t)
             model.visible_tiles = vis

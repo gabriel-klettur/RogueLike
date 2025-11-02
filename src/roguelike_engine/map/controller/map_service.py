@@ -42,20 +42,20 @@ class MapService:
         except Exception:
             user_zone_keys = list(offsets.keys())
         if global_map_settings.use_zones_json and len(user_zone_keys) == 0:
-            # 2) Crear zona 'world' y devolver mapa en blanco (sin sprites)
+            # Mundo en blanco: sin zonas definidas en zones.json -> matriz vacía, sin sprites
             world = Zone(
                 key,
                 (0, 0),
                 global_map_settings.global_width,
                 global_map_settings.global_height
             )
-            # Generar filas con espacios (sin mapeo de sprite) para que el render quede negro
             target_w = world.width
             target_h = world.height
-            blank_row = " " * target_w
-            rows: List[str] = [blank_row for _ in range(target_h)]
+            rows: List[str] = [" " * target_w for _ in range(target_h)]
             _, tiles_by_layer, layers = self.loader.load(rows, key)
-            result_meta = {"lobby_offset": (0, 0)}
+            # lobby_offset si existe; de lo contrario, (0,0)
+            lob_off = offsets.get('lobby', (0, 0)) if isinstance(offsets, dict) else (0, 0)
+            result_meta = {"lobby_offset": lob_off}
             return Map(rows, layers, tiles_by_layer, result_meta, key)
 
         # Determine actual keys for base zones in case they were renamed

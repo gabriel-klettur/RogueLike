@@ -4,6 +4,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.utils.loader import get_sprite_for_tile
+from roguelike_engine.config.map_config import global_map_settings
 
 import logging
 import math as _math
@@ -50,6 +51,21 @@ class ChunkedMapView:
         n_chunks_x = math.ceil(width  / cs)
         n_chunks_y = math.ceil(height / cs)
         chunk_dict: dict[tuple[int,int], pygame.Surface] = {}
+
+        # Precompute overlay policy once (avoid expensive checks in inner loops)
+        try:
+            use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
+            if use_ov:
+                from pathlib import Path as _P
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
+                offsets = getattr(global_map_settings, 'zone_offsets', {})
+                user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
+            else:
+                overlay_blank_world = False
+        except Exception:
+            overlay_blank_world = False
 
         # Precompute sprites for each unique (char, overlay) pair with bounds check
         sprite_map: dict[tuple[str, str|None], pygame.Surface|None] = {}
@@ -104,9 +120,12 @@ class ChunkedMapView:
                         char = map_model.matrix[ty][tx]
                         for layer in layers_ordered:
                             code = map_model.layers[layer][ty][tx]
-                            # Skip fallback drawing for blank overlay on non-Ground layers
-                            if not code and layer != Layer.Ground:
-                                continue
+                            # Draw policy: if it's a truly blank overlays-world, skip empty codes; else allow Ground fallback
+                            if not code:
+                                if overlay_blank_world:
+                                    continue
+                                if layer != Layer.Ground:
+                                    continue
                             sprite = sprite_map.get((char, code))
                             if sprite is None and DEBUG_CHUNKED:
                                 logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
@@ -143,6 +162,11 @@ class ChunkedMapView:
 
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
+        # Limpiar caché global de sprites escalados para evitar artefactos entre mundos/zooms
+        try:
+            _SCALED_CACHE.clear()
+        except Exception:
+            pass
 
     def update_chunks(self, map_model, camera, cells):
         """
@@ -154,6 +178,20 @@ class ChunkedMapView:
         # Ensure base cache exists
         if zoom not in self.chunks_by_zoom:
             self._build_chunk_surfaces(map_model, zoom)
+        # Precompute overlay policy once (avoid expensive checks in inner loops)
+        try:
+            use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
+            if use_ov:
+                from pathlib import Path as _P
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
+                offsets = getattr(global_map_settings, 'zone_offsets', {})
+                user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
+            else:
+                overlay_blank_world = False
+        except Exception:
+            overlay_blank_world = False
         cs = self.chunk_size
         # Use a local lazy sprite cache only for tiles encountered in the chunks
         matrix = map_model.matrix
@@ -178,8 +216,11 @@ class ChunkedMapView:
                     char = matrix[ty][tx]
                     for layer in layers_ordered:
                         code = map_model.layers[layer][ty][tx]
-                        if not code and layer != Layer.Ground:
-                            continue
+                        if not code:
+                            if overlay_blank_world:
+                                continue
+                            if layer != Layer.Ground:
+                                continue
                         key = (char, code)
                         sprite = local_sprite_cache.get(key)
                         if sprite is None and key not in local_sprite_cache:
@@ -221,6 +262,20 @@ class ChunkedMapView:
             # Ensure base cache exists for this zoom
             if zoom not in self.chunks_by_zoom:
                 self._build_chunk_surfaces(map_model, zoom)
+            # Precompute overlay policy per zoom rebuild
+            try:
+                use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
+                if use_ov:
+                    from pathlib import Path as _P
+                    odir = getattr(global_map_settings, 'overlays_dir', None)
+                    has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
+                    offsets = getattr(global_map_settings, 'zone_offsets', {})
+                    user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                    overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
+                else:
+                    overlay_blank_world = False
+            except Exception:
+                overlay_blank_world = False
             # Local lazy sprite cache per zoom update
             local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
 
@@ -235,15 +290,17 @@ class ChunkedMapView:
                 tile_h = min(cs, height - cy*cs)
                 pix_w = int(round(tile_w * TILE_SIZE * zoom))
                 pix_h = int(round(tile_h * TILE_SIZE * zoom))
-
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
                 for ty in range(cy*cs, cy*cs + tile_h):
                     for tx in range(cx*cs, cx*cs + tile_w):
                         char = matrix[ty][tx]
                         for layer in layers_ordered:
                             code = map_model.layers[layer][ty][tx]
-                            if not code and layer != Layer.Ground:
-                                continue
+                            if not code:
+                                if overlay_blank_world:
+                                    continue
+                                if layer != Layer.Ground:
+                                    continue
                             key = (char, code)
                             sprite = local_sprite_cache.get(key)
                             if sprite is None and key not in local_sprite_cache:
@@ -279,6 +336,23 @@ class ChunkedMapView:
         devolviendo la lista de dirty rects.
         """
         dirty_rects: list[pygame.Rect] = []
+        # Hard guard: if overlays-driven AND there are no overlay files AND no user-defined zones, render nothing
+        try:
+            from pathlib import Path as _P
+            if getattr(global_map_settings, 'use_zones_json', False):
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                if odir and len(list(_P(odir).glob('*.overlay.json'))) == 0:
+                    try:
+                        offsets = getattr(global_map_settings, 'zone_offsets', {})
+                        user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                    except Exception:
+                        user_keys = []
+                    if len(user_keys) == 0:
+                        if DEBUG_CHUNKED:
+                            logger.debug(f"[ChunkedMapView] overlays-driven + no overlay files in {odir} -> skip render")
+                        return dirty_rects
+        except Exception:
+            pass
         screen_w, screen_h = screen.get_size()
         # Use clamped zoom to avoid extreme surface sizes
         zoom = min(max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1), MAX_ZOOM)

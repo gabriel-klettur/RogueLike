@@ -201,6 +201,38 @@ class MapManager:
             world_service.activate(world_id)
         except Exception:
             pass
+        # Forzar invalidación de caches antes de recargar
+        try:
+            # 1) Limpiar cache de chunks/sprites de la vista actual
+            try:
+                self.view.invalidate_cache()
+            except Exception:
+                pass
+            # 2) Borrar cache de mapa del mundo destino si existe
+            try:
+                cache_file = Path(getattr(self.loader, 'cache_dir', Path('data/cache'))) / f"map_{world_id}_{self.map_name}.pkl"
+                if cache_file.exists():
+                    cache_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        # Refrescar offsets y reiniciar sistemas dependientes para evitar estado residual
+        try:
+            global_map_settings.refresh_zone_offsets()
+        except Exception:
+            pass
+        try:
+            # Re-crear renderer y vista para descartar cualquier cache residual
+            self.renderer = MapRenderer()
+            self.view = self.renderer.view
+        except Exception:
+            pass
+        try:
+            # Re-crear collision manager para limpiar capas previas
+            self.collision_manager = CollisionManager()
+        except Exception:
+            pass
         # Recargar mapa con nuevas rutas
         try:
             self.reload_map()

@@ -27,7 +27,8 @@ class CollisionManager:
         for zone, tiles in manager.tiles_by_zone.items():
             file_path = collisions_dir / f"{zone}.json"
             data = None
-            if zone != "dungeon" and file_path.exists():
+            # Permitir lectura desde archivo para cualquier zona si existe (incluido 'dungeon')
+            if file_path.exists():
                 try:
                     data = json.loads(file_path.read_text(encoding='utf-8'))
                 except Exception as e:

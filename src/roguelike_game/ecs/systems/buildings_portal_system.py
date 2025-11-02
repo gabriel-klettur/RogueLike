@@ -3,6 +3,7 @@ from __future__ import annotations
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.buildings.utils.load_buildings_from_json import load_buildings_from_json
+from roguelike_game.managers.ecs.particles_loader import refresh_particles_from_world as _refresh_particles_from_world
 
 import logging
 logger = logging.getLogger(__name__)
@@ -87,6 +88,11 @@ class BuildingPortalSystem:
                             logger.info("[BuildingPortalSystem] Reloaded buildings from destination world: n=%d", len(world.buildings or []))
                         except Exception:
                             pass
+                    except Exception:
+                        pass
+                    # Refresh particle instances for destination world
+                    try:
+                        _refresh_particles_from_world(world)
                     except Exception:
                         pass
                     # Reset spawners to the new world's data: remove existing spawner entities and NPC children

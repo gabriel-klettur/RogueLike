@@ -42,3 +42,19 @@ def spawn_particles_from_instances(world) -> int:
         except Exception:
             continue
     return spawned
+
+
+def refresh_particles_from_world(world) -> int:
+    """Clear existing particle preset entities and respawn from per-world JSON.
+
+    Returns the number of entities spawned after refresh.
+    """
+    # Remove existing particle preset entities (placed instances only)
+    try:
+        presets = world.components.get('ParticlePresetComponent', {})
+        for eid in list(presets.keys()):
+            world.remove_entity(eid)
+    except Exception:
+        pass
+    # Spawn from the active world's instances file (cfg.PARTICLES_INSTANCES_PATH)
+    return spawn_particles_from_instances(world)

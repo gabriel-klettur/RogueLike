@@ -65,6 +65,19 @@ class WorldService:
                     json.dump([], f, indent=2)
         except Exception:
             pass
+        # Crear archivo vacío de instancias de partículas por mundo
+        try:
+            pdir = self.worlds_root / world_id / 'particles'
+            try:
+                pdir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            p = pdir / 'particles_instances.json'
+            if not p.exists():
+                with p.open('w', encoding='utf-8') as f:
+                    json.dump([], f, indent=2)
+        except Exception:
+            pass
 
         # Si el mundo destino es "en blanco" (zones.json vacío), limpiar instancias de buildings
         try:
@@ -105,6 +118,11 @@ class WorldService:
             self._set_buildings_paths_for_world(self.current)
         except Exception as e:
             logger.debug(f"[WorldService] Skipped buildings path redirection: {e}")
+        # Redirigir rutas de partículas (instances por mundo; templates globales)
+        try:
+            self._set_particles_paths_for_world(self.current)
+        except Exception as e:
+            logger.debug(f"[WorldService] Skipped particles path redirection: {e}")
         # Reinicializar overlay store para usar el overlays_dir del mundo activo
         try:
             from roguelike_engine.map.model.overlay import overlay_manager as _ovmgr
@@ -221,6 +239,21 @@ class WorldService:
                 _panel.BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = cfg.BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH
             if hasattr(_panel, 'BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH'):
                 _panel.BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = cfg.BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH
+        except Exception:
+            pass
+
+    def _set_particles_paths_for_world(self, profile: WorldProfile) -> None:
+        """Redirige rutas de partículas a la carpeta del mundo activo.
+        - Templates siguen siendo globales en data/particles/particles.json
+        - Instances son por mundo: worlds/<world_id>/particles/particles_instances.json
+        """
+        pdir = profile.particles_dir
+        try:
+            pdir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+        try:
+            cfg.PARTICLES_INSTANCES_PATH = str(pdir / "particles_instances.json")
         except Exception:
             pass
 

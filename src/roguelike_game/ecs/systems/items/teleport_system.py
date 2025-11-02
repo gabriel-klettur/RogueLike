@@ -1,5 +1,6 @@
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_game.managers.ecs.particles_loader import refresh_particles_from_world as _refresh_particles_from_world
 
 import logging
 logger = logging.getLogger(__name__)
@@ -51,6 +52,11 @@ class TeleportSystem:
                     try:
                         tile_pos = None if (tx_raw is None or ty_raw is None) else (int(tx_raw), int(ty_raw))
                         world.map_manager.swap_world_and_spawn(dest_world, tile_pos)
+                        # Refresh particle instances for destination world
+                        try:
+                            _refresh_particles_from_world(world)
+                        except Exception:
+                            pass
                         # Marcar índice espacial para reconstrucción tras el swap
                         try:
                             world.invalidate_spatial_index()

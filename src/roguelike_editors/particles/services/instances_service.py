@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Dict, Any, Optional, Tuple
 import json
 import os
-from roguelike_engine.config.config import PARTICLES_INSTANCES_PATH
+import roguelike_engine.config.config as cfg
 from roguelike_editors.buildings.utils.zone_helpers import detect_zone_from_px
 from roguelike_engine.config.config_tiles import TILE_SIZE
 import logging
@@ -12,7 +12,7 @@ _log = logging.getLogger(__name__)
 
 def load_particles_instances() -> List[Dict[str, Any]]:
     """Read particles instances JSON. Always returns a list (possibly empty)."""
-    path = PARTICLES_INSTANCES_PATH
+    path = cfg.PARTICLES_INSTANCES_PATH
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -30,7 +30,7 @@ def write_particles_instances(data: List[Dict[str, Any]]) -> None:
     """Write particles instances JSON with indent and UTF-8. Creates parent dir.
     Performs basic deduplication by (zone, rel_x, rel_y, preset_id). Stable sort by id.
     """
-    path = PARTICLES_INSTANCES_PATH
+    path = cfg.PARTICLES_INSTANCES_PATH
     os.makedirs(os.path.dirname(path), exist_ok=True)
     try:
         # Snapshot for audit
