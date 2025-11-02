@@ -72,6 +72,7 @@ from roguelike_game.ecs.systems.combat.spells.meteor_fall_system import MeteorFa
 from roguelike_game.ecs.systems.combat.spells.summon_system import SummonSystem
 from roguelike_game.ecs.systems.combat.spells.totem_system import TotemSystem
 from roguelike_game.ecs.systems.combat.spells.wall_system import WallSystem
+from roguelike_game.ecs.systems.buildings_portal_system import BuildingPortalSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -181,6 +182,8 @@ def get_update_system_classes():
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem, ForceFieldSystem,
         MovementCollisionSystem,
+        # Buildings portals (trigger after movement/collision resolution)
+        BuildingPortalSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
         MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, WallSystem, TotemSystem, SummonSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,

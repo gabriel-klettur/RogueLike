@@ -40,11 +40,7 @@ class CollisionManager:
                     list(manager.matrix[offy + y][offx:offx + width])
                     for y in range(height)
                 ]
-                if zone != "dungeon":
-                    try:
-                        file_path.write_text(json.dumps(data), encoding='utf-8')
-                    except Exception as e:
-                        logger.warning(f"No se pudo escribir colisiones para zona {zone}: {e}")
+                # No auto-escribir archivos: persistir solo al guardar explícitamente
 
             self.collision_layers[zone] = data
             # Aplicar a tiles

@@ -3,10 +3,13 @@ Package de gestión de mapas refactorizado.
 """
 from pathlib import Path
 import logging
+import os
+import json
 
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.map.utils import calculate_dungeon_offset, get_zone_for_tile
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config import config as cfg
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 
@@ -165,13 +168,35 @@ class MapManager:
         return zone, offx, offy
 
     # --- Multi-world swap API -------------------------------------------------
-    def swap_world_and_spawn(self, world_id: str, tile_pos: tuple[int, int]) -> None:
+    def swap_world_and_spawn(self, world_id: str, tile_pos: tuple[int, int] | None) -> None:
         """Cambia el mundo activo y reaparece al jugador en tile_pos.
 
         - Actualiza rutas (overlays/collisions/zones/buildings) vía WorldService.
         - Recarga el mapa desde el mundo activo y recalcula colisiones.
         - Reposiciona al jugador y fuerza invalidación de la vista.
         """
+        # --- Structured debug trace (only on teleport) ---
+        trace_id = None
+        try:
+            import time as _t
+            trace_id = f"TP{int(_t.time()*1000)}"
+            logger.info(
+                f"[{trace_id}] BEGIN swap: cur_world={getattr(global_map_settings,'current_world','?')} -> dest_world={world_id} map={self.map_name}"
+            )
+            # Snapshot BEFORE
+            try:
+                overlays = list(global_map_settings.overlays_dir.glob('*.overlay.json'))
+                collisions = list(global_map_settings.collisions_dir.glob('*.json'))
+                bdir = global_map_settings.buildings_dir
+                sdir = (global_map_settings.worlds_dir / world_id / 'spawners')
+                cache_file = Path(getattr(self.loader, 'cache_dir', Path('data/cache'))) / f"map_{getattr(global_map_settings,'current_world','base')}_{self.map_name}.pkl"
+                logger.info(
+                    f"[{trace_id}] BEFORE: zones_index={global_map_settings.ZONES_INDEX} overlays_dir={global_map_settings.overlays_dir} overlays={len(overlays)} collisions_dir={global_map_settings.collisions_dir} collisions={len(collisions)} buildings_dir={bdir} spawners_dir={sdir} cache_exists={cache_file.exists()} zone_keys={list(getattr(global_map_settings,'zone_offsets',{}).keys())[:4]}.."
+                )
+            except Exception:
+                pass
+        except Exception:
+            pass
         try:
             world_service.activate(world_id)
         except Exception:
@@ -181,6 +206,21 @@ class MapManager:
             self.reload_map()
         except Exception:
             pass
+        # Si el mundo destino está en blanco (zones.json vacío), limpiar instancias de edificios per-world
+        try:
+            ztxt = global_map_settings.ZONES_INDEX.read_text(encoding='utf-8').strip()
+            zkeys = list(json.loads(ztxt).keys()) if ztxt else []
+            if len(zkeys) == 0:
+                inst_path = global_map_settings.buildings_dir / 'buildings_instances.json'
+                with inst_path.open('w', encoding='utf-8') as f:
+                    json.dump([], f, indent=2)
+                if trace_id:
+                    logger.info(f"[{trace_id}] Cleared buildings instances for blank world: {inst_path}")
+        except Exception:
+            pass
+        # Si no hay tile_pos, usar (0,0) como spawn por defecto (mundo vacío sin zonas)
+        if tile_pos is None:
+            tile_pos = (0, 0)
         # Reaparecer jugador y recalcular colisiones
         try:
             self.spawn_player(tile_pos)
@@ -192,5 +232,26 @@ class MapManager:
             pass
         try:
             self.view.invalidate_cache()
+        except Exception:
+            pass
+        # Snapshot AFTER
+        try:
+            if trace_id:
+                overlays = list(global_map_settings.overlays_dir.glob('*.overlay.json'))
+                collisions = list(global_map_settings.collisions_dir.glob('*.json'))
+                bdir = global_map_settings.buildings_dir
+                sdir = (global_map_settings.worlds_dir / world_id / 'spawners')
+                cache_file = Path(getattr(self.loader, 'cache_dir', Path('data/cache'))) / f"map_{getattr(global_map_settings,'current_world','base')}_{self.map_name}.pkl"
+                # zones.json size and parsed keys
+                try:
+                    ztxt = global_map_settings.ZONES_INDEX.read_text(encoding='utf-8').strip()
+                    zsize = len(ztxt)
+                    zkeys = list(json.loads(ztxt).keys()) if ztxt else []
+                except Exception:
+                    zsize, zkeys = -1, []
+                logger.info(
+                    f"[{trace_id}] AFTER: cur_world={getattr(global_map_settings,'current_world','?')} zones_index={global_map_settings.ZONES_INDEX} zsize={zsize} zkeys={zkeys} overlays_dir={global_map_settings.overlays_dir} overlays={len(overlays)} collisions_dir={global_map_settings.collisions_dir} collisions={len(collisions)} buildings_dir={bdir} spawners_dir={sdir} cache_exists={cache_file.exists()}"
+                )
+                logger.info(f"[{trace_id}] END swap")
         except Exception:
             pass

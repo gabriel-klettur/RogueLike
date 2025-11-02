@@ -19,23 +19,31 @@ def _ensure_base_zones_in_offsets() -> None:
         # Ensure sentinel names exist
         offsets.setdefault("no zone", (0, 0))
         offsets.setdefault("no-zone", (0, 0))
-        # If base zones are missing, derive from dynamic layout and add aliases
-        if "lobby" not in offsets or "dungeon" not in offsets:
-            try:
-                dyn = global_map_settings._dynamic_offsets()
-                if "lobby" not in offsets and "lobby" in dyn:
-                    offsets["lobby"] = dyn["lobby"]
-                if "dungeon" not in offsets and "dungeon" in dyn:
-                    offsets["dungeon"] = dyn["dungeon"]
-            except Exception:
-                # Minimal fallback if dynamic computation fails
+        # Do NOT inject 'lobby'/'dungeon' when using zones.json (multi-world mode)
+        # This allows worlds with an empty zones.json to remain truly empty.
+        use_json = True
+        try:
+            use_json = bool(getattr(global_map_settings, 'use_zones_json', True))
+        except Exception:
+            use_json = True
+        if not use_json:
+            # If base zones are missing, derive from dynamic layout and add aliases
+            if "lobby" not in offsets or "dungeon" not in offsets:
                 try:
-                    lob = global_map_settings.lobby_offset
-                    dun = global_map_settings.calculate_dungeon_offset(lob)
-                    offsets.setdefault("lobby", lob)
-                    offsets.setdefault("dungeon", dun)
+                    dyn = global_map_settings._dynamic_offsets()
+                    if "lobby" not in offsets and "lobby" in dyn:
+                        offsets["lobby"] = dyn["lobby"]
+                    if "dungeon" not in offsets and "dungeon" in dyn:
+                        offsets["dungeon"] = dyn["dungeon"]
                 except Exception:
-                    pass
+                    # Minimal fallback if dynamic computation fails
+                    try:
+                        lob = global_map_settings.lobby_offset
+                        dun = global_map_settings.calculate_dungeon_offset(lob)
+                        offsets.setdefault("lobby", lob)
+                        offsets.setdefault("dungeon", dun)
+                    except Exception:
+                        pass
     except Exception:
         # Best-effort guard; do not raise on import
         pass

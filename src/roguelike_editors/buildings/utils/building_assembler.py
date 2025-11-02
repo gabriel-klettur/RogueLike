@@ -262,6 +262,26 @@ def load_from_split(z_state=None) -> List[Building]:
                 except Exception:
                     pass
 
+            # Portal config: accept nested 'portal' dict or flat keys on entry
+            try:
+                portal_cfg = entry.get("portal") if isinstance(entry.get("portal"), dict) else None
+            except Exception:
+                portal_cfg = None
+            if portal_cfg is None:
+                # Fallback to flat keys
+                flat_keys = ("dest_world", "dest_zone", "dest_x", "dest_y")
+                if any(k in entry for k in flat_keys):
+                    portal_cfg = {k: entry.get(k) for k in flat_keys}
+            if isinstance(portal_cfg, dict) and any(v is not None for v in portal_cfg.values()):
+                try:
+                    setattr(b, "is_portal", True)
+                    setattr(b, "portal_dest_world", portal_cfg.get("dest_world"))
+                    setattr(b, "portal_dest_zone", portal_cfg.get("dest_zone"))
+                    setattr(b, "portal_dest_x", portal_cfg.get("dest_x"))
+                    setattr(b, "portal_dest_y", portal_cfg.get("dest_y"))
+                except Exception:
+                    pass
+
             buildings.append(b)
         except Exception as e:
             logger.error("[Buildings][split] Error creating building from instance: %s", e)

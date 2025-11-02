@@ -157,7 +157,13 @@ class MapSettings:
                     offsets['dungeon'] = off
                 else:
                     offsets[name] = off
-            # Asegurar zonas base si faltan
+            # Caso especial: zones.json vacío => no auto-inyectar lobby/dungeon
+            if not offsets:
+                # Solo sentinelas; no expand/validate
+                offsets.setdefault('no zone', (0, 0))
+                offsets.setdefault('no-zone', (0, 0))
+                return _OffsetsDict(self, offsets)
+            # Asegurar zonas base si faltan (solo si hay algo definido por el usuario)
             if 'lobby' not in offsets:
                 lobby_off = self.lobby_offset
                 offsets['lobby'] = lobby_off

@@ -421,6 +421,24 @@ def save_buildings_split(
     except Exception:
         pass
 
+    # If current world is blank (zones.json == {}), do not persist instances
+    try:
+        from roguelike_engine.config.map_config import global_map_settings
+        try:
+            ztxt = global_map_settings.ZONES_INDEX.read_text(encoding='utf-8-sig')
+        except Exception:
+            ztxt = global_map_settings.ZONES_INDEX.read_text(encoding='utf-8')
+        ztxt = (ztxt or '').strip()
+        is_blank_world = (not ztxt) or (json.loads(ztxt) == {})
+    except Exception:
+        is_blank_world = False
+    if is_blank_world:
+        try:
+            logger.info("[Buildings][SaveSplit] Blank world detected; forcing empty instances save.")
+        except Exception:
+            pass
+        instances_out = []
+
     # Write instances (ordered by id for stability)
     try:
         instances_out.sort(key=lambda x: int(x.get('id') or 0))

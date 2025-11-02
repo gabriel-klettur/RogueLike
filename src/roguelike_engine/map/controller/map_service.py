@@ -36,6 +36,28 @@ class MapService:
         key = map_name or "global_map"
         # 1) Calcular offsets (auto-ajuste si corresponde)
         offsets = global_map_settings.zone_offsets
+        # EARLY: Mundo vacío si zones.json no define zonas (solo sentinelas)
+        try:
+            user_zone_keys = [k for k in offsets.keys() if k not in ("no zone", "no-zone")]
+        except Exception:
+            user_zone_keys = list(offsets.keys())
+        if global_map_settings.use_zones_json and len(user_zone_keys) == 0:
+            # 2) Crear zona 'world' y devolver mapa en blanco (sin sprites)
+            world = Zone(
+                key,
+                (0, 0),
+                global_map_settings.global_width,
+                global_map_settings.global_height
+            )
+            # Generar filas con espacios (sin mapeo de sprite) para que el render quede negro
+            target_w = world.width
+            target_h = world.height
+            blank_row = " " * target_w
+            rows: List[str] = [blank_row for _ in range(target_h)]
+            _, tiles_by_layer, layers = self.loader.load(rows, key)
+            result_meta = {"lobby_offset": (0, 0)}
+            return Map(rows, layers, tiles_by_layer, result_meta, key)
+
         # Determine actual keys for base zones in case they were renamed
         # Lobby
         if 'lobby' not in offsets:
@@ -62,8 +84,10 @@ class MapService:
             global_map_settings.global_width,
             global_map_settings.global_height
         )
+
         # 3) Generar y colocar 'lobby'
         lobby_rows = generate_lobby_matrix()
+
         lobby_w = len(lobby_rows[0]) if lobby_rows else global_map_settings.zone_width
         lobby_h = len(lobby_rows)
         lobby = Zone(lobby_key, offsets[lobby_key], lobby_w, lobby_h)

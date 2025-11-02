@@ -22,10 +22,37 @@ class SpawnerPlacementSystem:
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
         self._loaded = False
+        self._world_loaded: str | None = None
         self._templates: dict = {}
         self._waves: dict = {}
 
     def update(self, world, camera=None):
+        # World-awareness: if the active world changed since last load, purge and force reload
+        try:
+            from roguelike_engine.config.map_config import global_map_settings
+            cur_world = getattr(global_map_settings, 'current_world', 'base')
+        except Exception:
+            cur_world = 'base'
+        if self._world_loaded is not None and self._world_loaded != cur_world:
+            try:
+                comps = world.components
+                # Remove NPCs created by spawners
+                for eid in list(comps.get('SpawnerChild', {}).keys()):
+                    world.remove_entity(eid)
+                # Remove spawner entities (SpawnerConfig/SpawnerState holders)
+                to_remove = set()
+                for eid in list(comps.get('SpawnerConfig', {}).keys()):
+                    to_remove.add(eid)
+                for eid in list(comps.get('SpawnerState', {}).keys()):
+                    to_remove.add(eid)
+                for eid in to_remove:
+                    world.remove_entity(eid)
+            except Exception:
+                pass
+            # Force reload
+            self._loaded = False
+            self._templates = {}
+            self._waves = {}
         # Robust option: allow MenuManager to request an empty start without spawners
         # by setting a transient flag on the ECS world. If present, consume it and
         # skip this frame only, without marking the system as loaded. This allows
@@ -50,6 +77,7 @@ class SpawnerPlacementSystem:
         self._waves = load_waves()
         instances = load_instances()
         if not instances or not self._templates:
+            self._world_loaded = cur_world
             return
 
         comps = world.components
@@ -142,3 +170,5 @@ class SpawnerPlacementSystem:
                             setattr(target, "spawn_id", str(inst_id))
                     except Exception:
                         pass
+        # Mark world of last successful placement
+        self._world_loaded = cur_world

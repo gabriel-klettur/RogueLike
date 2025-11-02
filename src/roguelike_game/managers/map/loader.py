@@ -41,6 +41,26 @@ class MapLoader:
             world_id = 'base'
         cache_file = self.cache_dir / f'map_{world_id}_{map_name}.pkl'
         overlays_dir = global_map_settings.overlays_dir
+        # Si zones.json está vacío, no reutilizar cache (mundo en blanco editable)
+        try:
+            zindex = global_map_settings.ZONES_INDEX
+            if zindex.exists():
+                import json as _json
+                txt = zindex.read_text(encoding='utf-8').strip()
+                is_empty = False
+                if txt == "{}" or txt == "":
+                    is_empty = True
+                else:
+                    try:
+                        data = _json.loads(txt)
+                        is_empty = isinstance(data, dict) and len(data) == 0
+                    except Exception:
+                        pass
+                if is_empty and cache_file.exists():
+                    cache_file.unlink(missing_ok=True)
+                    logger.info(" Cache invalidated: empty zones.json (blank world)")
+        except Exception:
+            pass
         # Invalidar cache si hay overlays más recientes
         try:
             cache_mtime = cache_file.stat().st_mtime

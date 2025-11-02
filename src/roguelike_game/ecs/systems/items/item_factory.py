@@ -29,9 +29,13 @@ class ItemFactory:
         world.components['Position'][eid] = Position(pos_data['x'], pos_data['y'])
         # Componentes específicos según params
         params = instance_data.get('params', {})
-        if 'dest_map' in params:
+        if 'dest_map' in params or 'dest_world' in params or 'dest_zone' in params:
             world.components['TeleportComponent'][eid] = TeleportComponent(
-                params['dest_map'], params['dest_x'], params['dest_y']
+                params.get('dest_map'),
+                params.get('dest_x', 0),
+                params.get('dest_y', 0),
+                params.get('dest_world'),
+                params.get('dest_zone'),
             )
         if 'healing' in params:
             world.components['HealingComponent'][eid] = HealingComponent(params['healing'])

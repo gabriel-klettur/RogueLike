@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 from typing import Dict
 import logging
 
@@ -46,6 +47,51 @@ class WorldService:
         if world_id not in self.registry:
             # Crear entrada on-the-fly
             self.registry[world_id] = WorldProfile(world_id, self.worlds_root)
+        # Asegurar estructura mínima del mundo antes de activar
+        try:
+            self.scaffold_world_if_missing(world_id)
+        except Exception:
+            pass
+        # Crear archivo vacío de instancias en spawners (solo per-world instances)
+        try:
+            sdir = self.worlds_root / world_id / 'spawners'
+            try:
+                sdir.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            p = sdir / 'spawners_instances.json'
+            if not p.exists():
+                with p.open('w', encoding='utf-8') as f:
+                    json.dump([], f, indent=2)
+        except Exception:
+            pass
+
+        # Si el mundo destino es "en blanco" (zones.json vacío), limpiar instancias de buildings
+        try:
+            wdir = self.worlds_root / world_id
+            zindex = wdir / 'zones' / 'zones.json'
+            blank = False
+            if zindex.exists():
+                try:
+                    txt = zindex.read_text(encoding='utf-8').strip()
+                    blank = (not txt) or (json.loads(txt) == {})
+                except Exception:
+                    blank = False
+            else:
+                # No hay índice aún: trátalo como en blanco
+                blank = True
+            if blank:
+                bdir = wdir / 'buildings'
+                try:
+                    bdir.mkdir(parents=True, exist_ok=True)
+                except Exception:
+                    pass
+                inst_path = bdir / 'buildings_instances.json'
+                with inst_path.open('w', encoding='utf-8') as f:
+                    json.dump([], f, indent=2)
+                logger.info(f"[WorldService] Blank world detected; cleared buildings instances: {inst_path}")
+        except Exception:
+            pass
         self.current = self.registry[world_id]
         # Actualizar MapSettings
         try:
@@ -59,7 +105,73 @@ class WorldService:
             self._set_buildings_paths_for_world(self.current)
         except Exception as e:
             logger.debug(f"[WorldService] Skipped buildings path redirection: {e}")
+        # Reinicializar overlay store para usar el overlays_dir del mundo activo
+        try:
+            from roguelike_engine.map.model.overlay import overlay_manager as _ovmgr
+            from roguelike_engine.map.model.overlay.json_store import JsonOverlayStore as _JS
+            # Reinstanciar el store con la ruta actual del mundo
+            _ovmgr.set_overlay_store(_JS())
+        except Exception as e:
+            logger.debug(f"[WorldService] Could not reset overlay store for world '{world_id}': {e}")
         logger.info(f"[WorldService] Mundo activo: {world_id}")
+
+    # ---------------------------------------------------------------------
+    # Scaffolding
+    # ---------------------------------------------------------------------
+    def scaffold_world_if_missing(self, world_id: str) -> None:
+        """Crea estructura mínima para un mundo nuevo para que el editor funcione.
+
+        Estructura:
+        - worlds/<world_id>/zones/zones.json (si no existe)
+        - worlds/<world_id>/zones/overlays/
+        - worlds/<world_id>/collisions/
+        - worlds/<world_id>/buildings/
+        """
+        if not world_id:
+            return
+        wdir = self.worlds_root / world_id
+        zdir = wdir / 'zones'
+        odir = zdir / 'overlays'
+        cdir = wdir / 'collisions'
+        bdir = wdir / 'buildings'
+        sdir = wdir / 'spawners'
+        try:
+            zdir.mkdir(parents=True, exist_ok=True)
+            odir.mkdir(parents=True, exist_ok=True)
+            cdir.mkdir(parents=True, exist_ok=True)
+            bdir.mkdir(parents=True, exist_ok=True)
+            sdir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+        zindex = zdir / 'zones.json'
+        if not zindex.exists():
+            # Crear índice de zonas vacío; el editor creará zonas luego
+            try:
+                with zindex.open('w', encoding='utf-8') as f:
+                    json.dump({}, f, indent=2)
+            except Exception:
+                pass
+
+        # Crear archivos vacíos en buildings para compatibilidad inmediata con el editor
+        try:
+            # Solo instances por mundo; templates permanecen globales en data/buildings/
+            empty_list_files = [
+                bdir / 'buildings_instances.json',
+            ]
+            empty_dict_files = [
+                bdir / 'buildings_collisions_by_spawn_id.json',
+                bdir / 'buildings_collisions_by_building_instance_id.json',
+            ]
+            for p in empty_list_files:
+                if not p.exists():
+                    with p.open('w', encoding='utf-8') as f:
+                        json.dump([], f, indent=2)
+            for p in empty_dict_files:
+                if not p.exists():
+                    with p.open('w', encoding='utf-8') as f:
+                        json.dump({}, f, indent=2)
+        except Exception:
+            pass
 
     def _set_buildings_paths_for_world(self, profile: WorldProfile) -> None:
         """Redirige rutas de buildings a la carpeta del mundo activo (modo transición).
@@ -72,9 +184,7 @@ class WorldService:
             pass
         # Reasignar constantes en config
         try:
-            cfg.BUILDINGS_TEMPLATES_PATH = str(bdir / "buildings_templates.json")
             cfg.BUILDINGS_INSTANCES_PATH = str(bdir / "buildings_instances.json")
-            cfg.BUILDINGS_COLLISIONS_BY_IMAGE_PATH = str(bdir / "buildings_collisions_by_image.json")
             cfg.BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = str(bdir / "buildings_collisions_by_spawn_id.json")
             cfg.BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = str(bdir / "buildings_collisions_by_building_instance_id.json")
         except Exception:
@@ -82,13 +192,11 @@ class WorldService:
         # Propagar (si módulos ayudantes capturaron a import-time). Best-effort.
         try:
             import roguelike_editors.buildings.utils.split_io as _splitio
-            _splitio.BUILDINGS_TEMPLATES_PATH = cfg.BUILDINGS_TEMPLATES_PATH
             _splitio.BUILDINGS_INSTANCES_PATH = cfg.BUILDINGS_INSTANCES_PATH
         except Exception:
             pass
         try:
             import roguelike_editors.buildings.utils.collisions_io as _collio
-            _collio.BUILDINGS_COLLISIONS_BY_IMAGE_PATH = cfg.BUILDINGS_COLLISIONS_BY_IMAGE_PATH
             _collio.BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH = cfg.BUILDINGS_COLLISIONS_BY_SPAWN_ID_PATH
             _collio.BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH = cfg.BUILDINGS_COLLISIONS_BY_BUILDING_INSTANCE_ID_PATH
         except Exception:
@@ -96,13 +204,11 @@ class WorldService:
         # Propagar a módulos públicos de save/load que importaron constantes por nombre
         try:
             import roguelike_editors.buildings.utils.save_buildings_to_json as _save_mod
-            _save_mod.BUILDINGS_TEMPLATES_PATH = cfg.BUILDINGS_TEMPLATES_PATH
             _save_mod.BUILDINGS_INSTANCES_PATH = cfg.BUILDINGS_INSTANCES_PATH
         except Exception:
             pass
         try:
             import roguelike_editors.buildings.utils.load_buildings_from_json as _load_mod
-            _load_mod.BUILDINGS_TEMPLATES_PATH = cfg.BUILDINGS_TEMPLATES_PATH
             _load_mod.BUILDINGS_INSTANCES_PATH = cfg.BUILDINGS_INSTANCES_PATH
         except Exception:
             pass

@@ -15,4 +15,9 @@ class MapRenderer:
         """
         Dibuja el mapa en pantalla usando la vista por chunks.
         """
+        # Limpiar fondo a negro antes de dibujar (importante cuando no hay chunks visibles)
+        try:
+            surface.fill((0, 0, 0))
+        except Exception:
+            pass
         return self.view.render(surface, camera, map_model)

@@ -6,8 +6,40 @@ import logging
 from typing import Any, Dict, List
 
 from roguelike_engine.config import config
+from roguelike_engine.config.map_config import global_map_settings
 
 logger = logging.getLogger(__name__)
+
+
+def _world_spawners_dir() -> str:
+    try:
+        wdir = global_map_settings.worlds_dir / global_map_settings.current_world / 'spawners'
+        return str(wdir)
+    except Exception:
+        return os.path.join(config.DATA_DIR, 'spawners')
+
+
+def _world_file(fname: str) -> str:
+    return os.path.join(_world_spawners_dir(), fname)
+
+
+def _global_file(fname: str) -> str:
+    return os.path.join(config.DATA_DIR, 'spawners', fname)
+
+
+def _has_nonempty_json(path: str) -> bool:
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return len(data) > 0
+        if isinstance(data, dict):
+            return len(data.keys()) > 0
+        return False
+    except Exception:
+        return False
 
 
 def load_templates() -> Dict[str, Dict[str, Any]]:
@@ -15,8 +47,8 @@ def load_templates() -> Dict[str, Dict[str, Any]]:
 
     Accepts list format and normalizes to {id: template}.
     """
-    base = config.DATA_DIR
-    path = os.path.join(base, "spawners", "spawners_templates.json")
+    # Global-only: data/spawners/spawners_templates.json
+    path = _global_file('spawners_templates.json')
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -32,8 +64,8 @@ def load_waves() -> Dict[str, List[Dict[str, Any]]]:
 
     Supports either { id: [ ...waves... ] } or { id: { "waves": [ ... ] } } formats.
     """
-    base = config.DATA_DIR
-    path = os.path.join(base, "spawners", "spawners_waves.json")
+    # Global-only: data/spawners/spawners_waves.json
+    path = _global_file('spawners_waves.json')
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -54,8 +86,10 @@ def load_waves() -> Dict[str, List[Dict[str, Any]]]:
 
 
 def load_instances() -> List[Dict[str, Any]]:
-    base = config.DATA_DIR
-    path = os.path.join(base, "spawners", "spawners_instances.json")
+    world_path = _world_file('spawners_instances.json')
+    if not os.path.exists(world_path):
+        return []
+    path = world_path
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)

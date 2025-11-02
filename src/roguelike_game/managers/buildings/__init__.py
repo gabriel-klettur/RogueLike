@@ -2,6 +2,7 @@
 Package de gestión de edificios refactorizado.
 """
 import logging
+from roguelike_engine.config.map_config import global_map_settings
 
 from ..map import MapManager
 from .loader import BuildingsLoader
@@ -24,6 +25,7 @@ class BuildingsManager:
         self.updater = BuildingsUpdater()
 
         self.buildings = []
+        self._world_loaded: str | None = getattr(global_map_settings, 'current_world', 'base')
         self.init_buildings()
 
     def init_buildings(self):
@@ -38,4 +40,12 @@ class BuildingsManager:
         """
         Actualiza edificios.
         """
+        # If world changed, reload buildings from the new world's instances
+        try:
+            cur_world = getattr(global_map_settings, 'current_world', 'base')
+            if self._world_loaded != cur_world:
+                self.init_buildings()
+                self._world_loaded = cur_world
+        except Exception:
+            pass
         self.updater.update(self.buildings, state, game_map, perf_log)

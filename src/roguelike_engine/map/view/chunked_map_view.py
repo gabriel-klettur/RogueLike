@@ -90,6 +90,12 @@ class ChunkedMapView:
                 except Exception:
                     # Fallback ultra defensivo
                     surf = pygame.Surface((1, 1), pygame.SRCALPHA)
+                # Fondo negro opaco para limpiar el contenido previo cuando no hay sprites
+                try:
+                    surf.fill((0, 0, 0, 255))
+                except Exception:
+                    pass
+
                 zkey = float(zoom)
 
                 # dibujar cada tile por capa en orden usando raw_layers
