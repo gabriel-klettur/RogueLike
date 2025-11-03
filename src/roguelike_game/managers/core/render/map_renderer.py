@@ -27,12 +27,23 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                     user_keys = []
                 if len(user_keys) == 0:
                     try:
-                        logging.getLogger(__name__).info(
-                            "[Render][Map] overlays-driven: no overlay files in %s -> skip draw", odir
-                        )
+                        last = getattr(manager, "_last_no_overlay_dir", None)
+                        if last != odir:
+                            logging.getLogger(__name__).info(
+                                "[Render][Map] overlays-driven: no overlay files in %s -> skip draw", odir
+                            )
+                            try:
+                                manager._last_no_overlay_dir = odir
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                     return dirty_rects
+            try:
+                if getattr(manager, "_last_no_overlay_dir", None) is not None:
+                    manager._last_no_overlay_dir = None
+            except Exception:
+                pass
     except Exception:
         pass
 

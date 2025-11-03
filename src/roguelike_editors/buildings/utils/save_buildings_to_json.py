@@ -299,6 +299,21 @@ def save_buildings_split(
                         pass
             except Exception:
                 pass
+            
+            try:
+                pw = getattr(b, 'portal_dest_world', None)
+                pz = getattr(b, 'portal_dest_zone', None)
+                px_ = getattr(b, 'portal_dest_x', None)
+                py_ = getattr(b, 'portal_dest_y', None)
+                if getattr(b, 'is_portal', False) or any(v is not None for v in (pw, pz, px_, py_)):
+                    overrides['portal'] = {
+                        'dest_world': pw,
+                        'dest_zone': pz,
+                        'dest_x': int(px_) if px_ is not None else None,
+                        'dest_y': int(py_) if py_ is not None else None,
+                    }
+            except Exception:
+                pass
 
             if not overrides:
                 overrides = None
