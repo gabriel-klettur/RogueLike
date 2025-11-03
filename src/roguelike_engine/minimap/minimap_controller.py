@@ -34,6 +34,38 @@ class MinimapController:
         py = int(player_pos[1]) // TILE_SIZE
         half_x, half_y = model.visible_half_tiles
 
+        # Reset duro al cambiar de mundo: limpiar capas y cachés para evitar artefactos
+        try:
+            cur_world_id = getattr(global_map_settings, 'current_world', None)
+        except Exception:
+            cur_world_id = None
+        if getattr(model, 'last_world_id', None) != cur_world_id:
+            model.last_world_id = cur_world_id
+            # Limpiar superficies de capas
+            try:
+                model.bg_tiles_surface.fill(MINIMAP_COLORS["bg"])
+            except Exception:
+                pass
+            try:
+                model.buildings_surface.fill((0, 0, 0, 0))
+            except Exception:
+                pass
+            try:
+                model.entities_surface.fill((0, 0, 0, 0))
+            except Exception:
+                pass
+            try:
+                model.zones_surface.fill((0, 0, 0, 0))
+            except Exception:
+                pass
+            # Reset de caches/estados para forzar recomputo inmediato
+            model.visible_tiles = []
+            model.last_player_tile = None
+            model.last_tiles_ms = 0
+            model.last_buildings_ms = 0
+            model.last_entities_ms = 0
+            model.last_zones_ms = 0
+
         # 1) Tiles (fondo)
         if (now - model.last_tiles_ms >= MINIMAP_TILE_UPDATE_MS) or (model.last_player_tile != (px, py)):
             model.last_tiles_ms = now

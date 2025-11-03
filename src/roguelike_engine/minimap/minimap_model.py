@@ -39,6 +39,7 @@ class MinimapModel:
 
         # Cache de últimos parámetros relevantes
         self.last_player_tile: Optional[Tuple[int, int]] = None
+        self.last_world_id: Optional[str] = None
         self.visible_half_tiles: Tuple[int, int] = (
             (self.width // self.zoom) // 2,
             (self.height // self.zoom) // 2,
