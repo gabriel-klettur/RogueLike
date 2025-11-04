@@ -12,6 +12,7 @@ from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config import config as cfg
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
+from roguelike_engine.tile.utils.assets import clear_sprite_caches
 
 from .loader import MapLoader
 from roguelike_engine.worlds.service import world_service
@@ -206,6 +207,11 @@ class MapManager:
             # 1) Limpiar cache de chunks/sprites de la vista actual
             try:
                 self.view.invalidate_cache()
+            except Exception:
+                pass
+            # 1b) Limpiar caches de sprites base/overlay para evitar artefactos entre mundos
+            try:
+                clear_sprite_caches()
             except Exception:
                 pass
             # 2) Borrar cache de mapa del mundo destino si existe

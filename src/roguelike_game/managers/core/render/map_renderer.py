@@ -15,6 +15,35 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     preserve previous behavior and test hooks.
     """
     dirty_rects: list = []
+    # Early guard for blank worlds: if zones.json has no user-defined zones,
+    # and there are no overlay files (or only the sentinel), skip drawing to avoid base fallback visuals
+    try:
+        if getattr(global_map_settings, 'use_zones_json', False) and getattr(global_map_settings, 'is_blank_world', None):
+            if global_map_settings.is_blank_world():
+                odir = global_map_settings.overlays_dir
+                files = list(Path(odir).glob('*.overlay.json')) if odir else []
+                if not files:
+                    # Return full-screen rect so the black clear is presented
+                    try:
+                        return [screen.get_rect()]
+                    except Exception:
+                        return dirty_rects
+                # If only sentinel overlays are present, also skip drawing
+                try:
+                    # Normalize names: 'no zone.overlay.json' -> 'no zone'
+                    stems = {
+                        (s[:-8] if s.endswith('.overlay') else s)
+                        for s in (f.stem.lower().replace('_', ' ') for f in files)
+                    }
+                    if stems.issubset({'no zone', 'no-zone'}):
+                        try:
+                            return [screen.get_rect()]
+                        except Exception:
+                            return dirty_rects
+                except Exception:
+                    pass
+    except Exception:
+        pass
     # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
     try:
         if getattr(global_map_settings, 'use_zones_json', False):
@@ -49,7 +78,10 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                                 pass
                     except Exception:
                         pass
-                    return dirty_rects
+                    try:
+                        return [screen.get_rect()]
+                    except Exception:
+                        return dirty_rects
             try:
                 if getattr(manager, "_last_no_overlay_dir", None) is not None:
                     manager._last_no_overlay_dir = None

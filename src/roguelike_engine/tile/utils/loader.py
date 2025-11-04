@@ -1,4 +1,5 @@
 from typing import List, Optional
+import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.tile.tile_model import Tile
 from .assets import get_sprite_for_tile
@@ -28,6 +29,15 @@ def load_tiles_from_text(
         for x, char in enumerate(row):
             code = overlay_map[y][x]
             sprite = sprite_map[(char, code)]
+            # En políticas overlay-only, get_sprite_for_tile puede devolver None.
+            # Para mantener la compatibilidad con rutas que dibujan desde tiles_by_layer,
+            # usamos una surface totalmente transparente como placeholder.
+            if sprite is None:
+                try:
+                    sprite = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+                    sprite.fill((0, 0, 0, 0))
+                except Exception:
+                    sprite = None
             tile = Tile(x * TILE_SIZE, y * TILE_SIZE, char, sprite)
             tile.overlay_code = code
             tile_row.append(tile)

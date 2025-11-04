@@ -3,6 +3,7 @@ import pygame
 
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.utils.loader import load_image
+from roguelike_engine.config.map_config import global_map_settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -70,6 +71,13 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
     if DEBUG_TILES:
         logger.debug(f" get_sprite_for_tile called with char={char!r}, overlay_code={overlay_code!r}")
 
+    # Política overlay-only: cuando el mundo activo es "blank" (zones.json sin zonas de usuario)
+    overlay_only = False
+    try:
+        overlay_only = bool(global_map_settings.is_blank_world())
+    except Exception:
+        overlay_only = False
+
     # 1) Si hay código de overlay
     if overlay_code:
         name = OVERLAY_CODE_MAP.get(overlay_code)
@@ -78,11 +86,19 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
                 logger.debug(f" overlay_code {overlay_code!r} mapped to asset {name!r}")
             else:
                 logger.debug(f" overlay_code {overlay_code!r} NOT in OVERLAY_CODE_MAP")
-
         if name:
             sprite = load_image(f"tiles/{name}.png", (TILE_SIZE, TILE_SIZE))
+        else:
+            # En overlay-only, no caer al sprite base si el código es desconocido
+            if overlay_only:
+                _SPRITE_CACHE[(char, overlay_code)] = None
+                return None
 
     if sprite is None:
+        # En overlay-only, no dibujar nada si no hay overlay (o si el código fue inválido)
+        if overlay_only:
+            _SPRITE_CACHE[(char, overlay_code)] = None
+            return None
         base_images = load_base_tile_images()
         imgs = base_images.get(char)
         if imgs is None:
@@ -95,3 +111,17 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
     # Guardar en cache y devolver
     _SPRITE_CACHE[key] = sprite
     return sprite
+
+
+def clear_sprite_caches() -> None:
+    """Limpia caches de sprites para evitar artefactos entre mundos."""
+    try:
+        _SPRITE_CACHE.clear()
+    except Exception:
+        pass
+    # Reiniciar cache de imágenes base para permitir re-carga si fuera necesario
+    try:
+        global _BASE_TILE_IMAGES_CACHE
+        _BASE_TILE_IMAGES_CACHE = None
+    except Exception:
+        pass

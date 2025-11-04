@@ -56,24 +56,49 @@ class ChunkedMapView:
         # Precompute overlay policy once (avoid expensive checks in inner loops)
         try:
             cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-            zones_empty = False
-            z = getattr(global_map_settings, 'ZONES_INDEX', None)
+            # Prefer MapSettings.is_blank_world() for a robust decision
             try:
-                if z and z.exists():
-                    txt = z.read_text(encoding='utf-8').strip()
-                    if txt:
-                        try:
-                            data = json.loads(txt)
-                            zones_empty = isinstance(data, dict) and len(data) == 0
-                        except Exception:
-                            zones_empty = False
+                overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
+            except Exception:
+                overlay_no_fallback = False
+            # Fallback to zones.json direct check if helper not available
+            if overlay_no_fallback is False:
+                zones_empty = False
+                z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                try:
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        if txt:
+                            try:
+                                data = json.loads(txt)
+                                zones_empty = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                zones_empty = False
+                        else:
+                            zones_empty = True
                     else:
                         zones_empty = True
-                else:
+                except Exception:
                     zones_empty = True
+                overlay_no_fallback = zones_empty
+            # If overlays directory has no files or only sentinel overlays, force overlay-only policy
+            try:
+                from pathlib import Path as _P
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                files = list(_P(odir).glob('*.overlay.json')) if odir else []
+                if files:
+                    # Normalize names: 'no zone.overlay.json' -> 'no zone'
+                    stems = {
+                        (s[:-8] if s.endswith('.overlay') else s)
+                        for s in (f.stem.lower().replace('_', ' ') for f in files)
+                    }
+                    if stems.issubset({'no zone', 'no-zone'}):
+                        overlay_no_fallback = True
+                else:
+                    # No overlays at all in this world
+                    overlay_no_fallback = True
             except Exception:
-                zones_empty = True
-            overlay_no_fallback = zones_empty
+                pass
         except Exception:
             overlay_no_fallback = False
         try:
@@ -227,24 +252,45 @@ class ChunkedMapView:
         # Precompute overlay policy once (avoid expensive checks in inner loops)
         try:
             cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-            zones_empty = False
-            z = getattr(global_map_settings, 'ZONES_INDEX', None)
             try:
-                if z and z.exists():
-                    txt = z.read_text(encoding='utf-8').strip()
-                    if txt:
-                        try:
-                            data = json.loads(txt)
-                            zones_empty = isinstance(data, dict) and len(data) == 0
-                        except Exception:
-                            zones_empty = False
+                overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
+            except Exception:
+                overlay_no_fallback = False
+            if overlay_no_fallback is False:
+                zones_empty = False
+                z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                try:
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        if txt:
+                            try:
+                                data = json.loads(txt)
+                                zones_empty = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                zones_empty = False
+                        else:
+                            zones_empty = True
                     else:
                         zones_empty = True
-                else:
+                except Exception:
                     zones_empty = True
+                overlay_no_fallback = zones_empty
+            # Overlays directory sentinel-only or empty -> force overlay-only
+            try:
+                from pathlib import Path as _P
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                files = list(_P(odir).glob('*.overlay.json')) if odir else []
+                if files:
+                    stems = {
+                        (s[:-8] if s.endswith('.overlay') else s)
+                        for s in (f.stem.lower().replace('_', ' ') for f in files)
+                    }
+                    if stems.issubset({'no zone', 'no-zone'}):
+                        overlay_no_fallback = True
+                else:
+                    overlay_no_fallback = True
             except Exception:
-                zones_empty = True
-            overlay_no_fallback = zones_empty
+                pass
         except Exception:
             overlay_no_fallback = False
         cs = self.chunk_size
@@ -266,6 +312,12 @@ class ChunkedMapView:
             pix_h = int(round(tile_h * TILE_SIZE * zoom))
 
             surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
+            # Match _build_chunk_surfaces: start from opaque black background so
+            # empty/overlay-only chunks remain solid black rather than transparent
+            try:
+                surf.fill((0, 0, 0, 255))
+            except Exception:
+                pass
             for ty in range(cy*cs, cy*cs + tile_h):
                 for tx in range(cx*cs, cx*cs + tile_w):
                     char = matrix[ty][tx]
@@ -323,24 +375,45 @@ class ChunkedMapView:
             # Precompute overlay policy per zoom rebuild
             try:
                 cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-                zones_empty = False
-                z = getattr(global_map_settings, 'ZONES_INDEX', None)
                 try:
-                    if z and z.exists():
-                        txt = z.read_text(encoding='utf-8').strip()
-                        if txt:
-                            try:
-                                data = json.loads(txt)
-                                zones_empty = isinstance(data, dict) and len(data) == 0
-                            except Exception:
-                                zones_empty = False
+                    overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
+                except Exception:
+                    overlay_no_fallback = False
+                if overlay_no_fallback is False:
+                    zones_empty = False
+                    z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                    try:
+                        if z and z.exists():
+                            txt = z.read_text(encoding='utf-8').strip()
+                            if txt:
+                                try:
+                                    data = json.loads(txt)
+                                    zones_empty = isinstance(data, dict) and len(data) == 0
+                                except Exception:
+                                    zones_empty = False
+                            else:
+                                zones_empty = True
                         else:
                             zones_empty = True
-                    else:
+                    except Exception:
                         zones_empty = True
+                    overlay_no_fallback = zones_empty
+                # Overlays directory sentinel-only or empty -> force overlay-only
+                try:
+                    from pathlib import Path as _P
+                    odir = getattr(global_map_settings, 'overlays_dir', None)
+                    files = list(_P(odir).glob('*.overlay.json')) if odir else []
+                    if files:
+                        stems = {
+                            (s[:-8] if s.endswith('.overlay') else s)
+                            for s in (f.stem.lower().replace('_', ' ') for f in files)
+                        }
+                        if stems.issubset({'no zone', 'no-zone'}):
+                            overlay_no_fallback = True
+                    else:
+                        overlay_no_fallback = True
                 except Exception:
-                    zones_empty = True
-                overlay_no_fallback = zones_empty
+                    pass
             except Exception:
                 overlay_no_fallback = False
             # Local lazy sprite cache per zoom update
@@ -358,6 +431,11 @@ class ChunkedMapView:
                 pix_w = int(round(tile_w * TILE_SIZE * zoom))
                 pix_h = int(round(tile_h * TILE_SIZE * zoom))
                 surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
+                # Keep consistency with initial chunk build: opaque black background
+                try:
+                    surf.fill((0, 0, 0, 255))
+                except Exception:
+                    pass
                 for ty in range(cy*cs, cy*cs + tile_h):
                     for tx in range(cx*cs, cx*cs + tile_w):
                         char = matrix[ty][tx]
@@ -405,7 +483,7 @@ class ChunkedMapView:
         devolviendo la lista de dirty rects.
         """
         dirty_rects: list[pygame.Rect] = []
-        # Hard guard: if overlays-driven AND there are no overlay files AND no user-defined zones, render nothing
+        # Hard guard 1: if overlays-driven AND there are no overlay files AND no user-defined zones, render nothing
         try:
             from pathlib import Path as _P
             if getattr(global_map_settings, 'use_zones_json', False):
@@ -425,7 +503,24 @@ class ChunkedMapView:
                     if len(user_keys) == 0:
                         if DEBUG_CHUNKED:
                             logger.debug(f"[ChunkedMapView] overlays-driven + no overlay files in {odir} -> skip render")
-                        return dirty_rects
+                        return [screen.get_rect()]
+        except Exception:
+            pass
+        # Hard guard 2: if world is blank AND overlays directory contains only sentinel overlays, skip drawing
+        try:
+            if getattr(global_map_settings, 'is_blank_world', None) and global_map_settings.is_blank_world():
+                from pathlib import Path as _P
+                odir = getattr(global_map_settings, 'overlays_dir', None)
+                files = list(_P(odir).glob('*.overlay.json')) if odir else []
+                if files:
+                    stems = {
+                        (s[:-8] if s.endswith('.overlay') else s)
+                        for s in (f.stem.lower().replace('_', ' ') for f in files)
+                    }
+                    if stems.issubset({'no zone', 'no-zone'}):
+                        if DEBUG_CHUNKED:
+                            logger.debug(f"[ChunkedMapView] blank world + only sentinel overlays in {odir} -> skip render")
+                        return [screen.get_rect()]
         except Exception:
             pass
         screen_w, screen_h = screen.get_size()

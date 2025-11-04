@@ -326,6 +326,22 @@ class MapSettings:
         except Exception:
             pass
 
+    def is_blank_world(self) -> bool:
+        try:
+            z = self.ZONES_INDEX
+            if not z.exists():
+                return True
+            txt = z.read_text(encoding='utf-8').strip()
+            if not txt:
+                return True
+            data = json.loads(txt)
+            if isinstance(data, dict):
+                user_keys = [k for k in data.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                return len(user_keys) == 0
+            return True
+        except Exception:
+            return True
+
     # Cambio de mundo (API pública)
     def set_world(self, world_id: str) -> None:
         try:
