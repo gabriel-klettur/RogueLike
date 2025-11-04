@@ -37,6 +37,11 @@ class TextMapLoader(MapLoader):
         # 2) Cargar todas las capas (nuevo o legacy)
         raw_layers = load_layers(map_name)
         logger.debug(f" raw_layers for '{map_name}': {[ (layer.name, len(grid)) for layer,grid in raw_layers.items() ]}")
+        try:
+            initial_counts = {layer.name: sum(1 for row in grid for v in row if v) for layer, grid in raw_layers.items()}
+            logger.info(f"[TextMapLoader] initial counts for '{map_name}': {initial_counts}")
+        except Exception:
+            pass
         height = len(map_data)
         width = len(map_data[0]) if height > 0 else 0
         # Si no hay capas, inicializar Ground vacío
@@ -67,6 +72,11 @@ class TextMapLoader(MapLoader):
             logger.debug(f" merging zone '{zone_name}' overlay")
             zone_layers = load_layers(zone_name)
             logger.debug(f" zone_layers for '{zone_name}': {[ (layer.name, len(grid)) for layer,grid in zone_layers.items() ]}")
+            try:
+                zcounts = {layer.name: sum(1 for row in grid for v in row if v) for layer, grid in zone_layers.items()}
+                logger.info(f"[TextMapLoader] zone counts for '{zone_name}': {zcounts}")
+            except Exception:
+                pass
             if not zone_layers:
                 continue
             for layer, zgrid in zone_layers.items():
@@ -79,9 +89,36 @@ class TextMapLoader(MapLoader):
                         tx = off_x + x0
                         if 0 <= ty < height and 0 <= tx < width and code:
                             base[ty][tx] = code
+        # Merge overlays globales bajo la clave sentinela 'no_zone' (mundo en blanco)
+        try:
+            nz_layers = load_layers('no_zone')
+        except Exception:
+            nz_layers = {}
+        if nz_layers:
+            try:
+                nzcounts = {layer.name: sum(1 for row in grid for v in row if v) for layer, grid in nz_layers.items()}
+                logger.info(f"[TextMapLoader] sentinel 'no_zone' counts: {nzcounts}")
+            except Exception:
+                pass
+            for layer, zgrid in nz_layers.items():
+                base = raw_layers.setdefault(layer, [["" for _ in range(width)] for _ in range(height)])
+                for y0, zrow in enumerate(zgrid):
+                    if y0 >= height:
+                        break
+                    for x0, code in enumerate(zrow):
+                        if x0 >= width:
+                            break
+                        if code:
+                            base[y0][x0] = code
+
         # 4) Asegurar todas las capas (incluso vacías) antes de generar tiles por capa
         for layer in Layer:
             raw_layers.setdefault(layer, [["" for _ in range(width)] for _ in range(height)])
+        try:
+            final_counts = {layer.name: sum(1 for row in grid for v in row if v) for layer, grid in raw_layers.items()}
+            logger.info(f"[TextMapLoader] final counts for '{map_name}': {final_counts}")
+        except Exception:
+            pass
         # Generar tiles por capa
         tiles_by_layer: Dict[Layer, List[List[Tile]]] = {}
         for layer, grid in raw_layers.items():

@@ -19,7 +19,7 @@ from roguelike_engine.config.config_tiles import DEFAULT_TILE_MAP
 from roguelike_editors.tiles.common.controller import flood_fill
 from roguelike_editors.tiles.common.view import screen_to_tile
 from roguelike_engine.config.map_config import global_map_settings
-import threading
+
 from roguelike_ui.ui_blocker import is_blocked
 
 import logging
@@ -159,13 +159,36 @@ class TileEditorController:
             now = pygame.time.get_ticks()
             if now - self._last_chunk_update_ms >= BRUSH_UPDATE_THROTTLE_MS:
                 unique_cells = list(set(changed_cells))
+                # If current world is blank (zones.json empty), skip partial updates and rely on full rebuild after flush
+                skip_partial = False
                 try:
-                    map.view.update_chunks(map, camera, unique_cells)
-                    self._did_partial_updates = True
-                    self._last_chunk_update_ms = now
+                    from roguelike_engine.config.map_config import global_map_settings as _ms
+                    z = getattr(_ms, 'ZONES_INDEX', None)
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        skip_partial = (txt == "" or txt == "{}")
+                        if not skip_partial and txt:
+                            import json as _json
+                            try:
+                                data = _json.loads(txt)
+                                skip_partial = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                skip_partial = False
+                    else:
+                        skip_partial = True
                 except Exception:
-                    # Fallback to full invalidation only if partial update fails
-                    map.view.invalidate_cache()
+                    skip_partial = False
+                if not skip_partial:
+                    try:
+                        map.view.update_chunks(map, camera, unique_cells)
+                        self._did_partial_updates = True
+                        self._last_chunk_update_ms = now
+                    except Exception:
+                        # Fallback to full invalidation only if partial update fails
+                        map.view.invalidate_cache()
+                        self._did_partial_updates = False
+                else:
+                    # Force full rebuild path on flush
                     self._did_partial_updates = False
             # Debug perf log for brush inner loop
             try:
@@ -292,30 +315,68 @@ class TileEditorController:
         if not collision_zones and not tile_zones and not cells:
             return
 
-
         # Synchronously save collision changes
         for zone in collision_zones:
             map.collision_manager.save(zone)
 
-        # Asynchronously save overlay changes
+        # Persist only changed cells into current layer, merging with existing overlay
         def _save_overlays(zones):
-            from roguelike_engine.map.model.overlay.overlay_manager import save_layers
+            from roguelike_engine.map.model.overlay.overlay_manager import save_layers, load_layers
+            SENTINELS = {"no zone", "no-zone", "no_zone"}
+            cur_layer = self.editor.current_layer
+            try:
+                uniq_codes = sorted({map.layers[cur_layer][r][c] for (r, c) in cells}) if cells else []
+                logger.info(f"[TileEditor] flush save: zones={zones} cells={len(cells)} layer={cur_layer.name if hasattr(cur_layer,'name') else cur_layer} unique_codes={uniq_codes}")
+            except Exception:
+                pass
             for zone in zones:
-                offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
-                if zone != 'no_zone':
-                    zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
-                else:
+                if zone in SENTINELS:
+                    offx, offy = 0, 0
                     zh = len(map.tiles)
                     zw = len(map.tiles[0]) if map.tiles else 0
-                zone_layers = {}
-                for l, full in map.layers.items():
-                    sub = []
-                    for ry in range(zh):
-                        y = offy + ry
-                        sub.append(full[y][offx:offx+zw] if 0 <= y < len(full) else [''] * zw)
-                    zone_layers[l] = sub
-                save_layers(zone, zone_layers)
-        threading.Thread(target=_save_overlays, args=(tile_zones,), daemon=True).start()
+                else:
+                    offx, offy = global_map_settings.zone_offsets.get(zone, (0, 0))
+                    zh, zw = global_map_settings.zone_height, global_map_settings.zone_width
+                # Detect blank world (empty zones.json) and replace sentinel overlay instead of merging
+                zones_empty = False
+                try:
+                    z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        if txt:
+                            import json as _json
+                            try:
+                                data = _json.loads(txt)
+                                zones_empty = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                zones_empty = False
+                        else:
+                            zones_empty = True
+                    else:
+                        zones_empty = True
+                except Exception:
+                    zones_empty = False
+                try:
+                    logger.info(f"[TileEditor] zone='{zone}' zones_empty={zones_empty} offsets=({offx},{offy}) dims=({zw}x{zh})")
+                except Exception:
+                    pass
+                # If blank world and sentinel zone, start from empty payload to avoid dragging previous content
+                if zones_empty and zone in SENTINELS:
+                    existing = {}
+                else:
+                    existing = load_layers(zone) or {}
+                base = existing.get(cur_layer)
+                if not base:
+                    base = [["" for _ in range(zw)] for _ in range(zh)]
+                    existing[cur_layer] = base
+                for (r, c) in cells:
+                    if 0 <= r < len(map.layers[cur_layer]) and 0 <= c < len(map.layers[cur_layer][0]):
+                        ty = r - offy
+                        tx = c - offx
+                        if 0 <= ty < zh and 0 <= tx < zw:
+                            base[ty][tx] = map.layers[cur_layer][r][c]
+                save_layers(zone, existing)
+        _save_overlays(tile_zones)
 
         # Update caches
         try:
@@ -325,7 +386,27 @@ class TileEditorController:
         map.collision_layers = map.collision_manager.load(map)
         try:
             if not self._did_partial_updates and cells:
-                map.view.update_chunks(map, camera, cells)
+                # Skip partial updates in blank worlds, force full rebuild next frame
+                skip_partial = False
+                try:
+                    from roguelike_engine.config.map_config import global_map_settings as _ms
+                    z = getattr(_ms, 'ZONES_INDEX', None)
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        skip_partial = (txt == "" or txt == "{}")
+                        if not skip_partial and txt:
+                            import json as _json
+                            try:
+                                data = _json.loads(txt)
+                                skip_partial = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                skip_partial = False
+                    else:
+                        skip_partial = True
+                except Exception:
+                    skip_partial = False
+                if not skip_partial:
+                    map.view.update_chunks(map, camera, cells)
         except Exception:
             map.view.invalidate_cache()
         # Ensure immediate on-screen refresh regardless of partial update path
@@ -339,10 +420,7 @@ class TileEditorController:
         if hasattr(self, "ecs_world"):
             try:
                 # Ensure ECS rebuild uses the same MapManager instance being edited
-                try:
-                    self.ecs_world.map_manager = map
-                except Exception:
-                    pass
+                self.ecs_world.map_manager = map
                 self.ecs_world.rebuild_spatial_index()
             except Exception:
                 # Fallback: at least mark dirty

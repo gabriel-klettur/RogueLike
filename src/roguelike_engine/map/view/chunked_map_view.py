@@ -1,6 +1,7 @@
 import pygame
 import math
-from roguelike_engine.config.config_tiles import TILE_SIZE
+import json
+from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
 from roguelike_engine.tile.utils.loader import get_sprite_for_tile
@@ -54,18 +55,56 @@ class ChunkedMapView:
 
         # Precompute overlay policy once (avoid expensive checks in inner loops)
         try:
-            use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
-            if use_ov:
-                from pathlib import Path as _P
-                odir = getattr(global_map_settings, 'overlays_dir', None)
-                has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
-                offsets = getattr(global_map_settings, 'zone_offsets', {})
-                user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
-                overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
-            else:
-                overlay_blank_world = False
+            cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
+            zones_empty = False
+            z = getattr(global_map_settings, 'ZONES_INDEX', None)
+            try:
+                if z and z.exists():
+                    txt = z.read_text(encoding='utf-8').strip()
+                    if txt:
+                        try:
+                            data = json.loads(txt)
+                            zones_empty = isinstance(data, dict) and len(data) == 0
+                        except Exception:
+                            zones_empty = False
+                    else:
+                        zones_empty = True
+                else:
+                    zones_empty = True
+            except Exception:
+                zones_empty = True
+            overlay_no_fallback = zones_empty
         except Exception:
-            overlay_blank_world = False
+            overlay_no_fallback = False
+        try:
+            last = getattr(self, "_last_policy_log", None)
+            if last is not overlay_no_fallback:
+                logger.info(f"[ChunkedMapView] overlay_no_fallback={overlay_no_fallback} world={getattr(global_map_settings,'current_world','?')}")
+                self._last_policy_log = overlay_no_fallback
+                # Diagnostic: when enabled, report counts of Ground codes
+                if overlay_no_fallback:
+                    try:
+                        g = map_model.layers.get(Layer.Ground)
+                        if g:
+                            nonempty = 0
+                            empty = 0
+                            valid = 0
+                            invalid = 0
+                            for row in g:
+                                for v in row:
+                                    if not v:
+                                        empty += 1
+                                    else:
+                                        nonempty += 1
+                                        if v in OVERLAY_CODE_MAP:
+                                            valid += 1
+                                        else:
+                                            invalid += 1
+                            logger.info(f"[ChunkedMapView] ground_counts empty={empty} nonempty={nonempty} valid={valid} invalid={invalid}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
         # Precompute sprites for each unique (char, overlay) pair with bounds check
         sprite_map: dict[tuple[str, str|None], pygame.Surface|None] = {}
@@ -83,7 +122,11 @@ class ChunkedMapView:
                     char = row_str[x]
                     key = (char, code)
                     if key not in sprite_map:
-                        sprite_map[key] = get_sprite_for_tile(char, code)
+                        # In overlay-only mode, do not fallback to base sprite if overlay code is unknown
+                        if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                            sprite_map[key] = None
+                        else:
+                            sprite_map[key] = get_sprite_for_tile(char, code)
 
         # Debug opcional: imprimir claves sin sprite en sprite_map
         if DEBUG_CHUNKED:
@@ -120,12 +163,15 @@ class ChunkedMapView:
                         char = map_model.matrix[ty][tx]
                         for layer in layers_ordered:
                             code = map_model.layers[layer][ty][tx]
-                            # Draw policy: if it's a truly blank overlays-world, skip empty codes; else allow Ground fallback
+                            # Draw policy: in overlays-driven mode for non-base or blank worlds, draw only explicit overlay codes (no Ground fallback)
                             if not code:
-                                if overlay_blank_world:
+                                if overlay_no_fallback:
                                     continue
                                 if layer != Layer.Ground:
                                     continue
+                            # If code is invalid and we're in overlay-only policy, skip (avoid base fallback)
+                            if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                                continue
                             sprite = sprite_map.get((char, code))
                             if sprite is None and DEBUG_CHUNKED:
                                 logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
@@ -180,18 +226,27 @@ class ChunkedMapView:
             self._build_chunk_surfaces(map_model, zoom)
         # Precompute overlay policy once (avoid expensive checks in inner loops)
         try:
-            use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
-            if use_ov:
-                from pathlib import Path as _P
-                odir = getattr(global_map_settings, 'overlays_dir', None)
-                has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
-                offsets = getattr(global_map_settings, 'zone_offsets', {})
-                user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
-                overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
-            else:
-                overlay_blank_world = False
+            cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
+            zones_empty = False
+            z = getattr(global_map_settings, 'ZONES_INDEX', None)
+            try:
+                if z and z.exists():
+                    txt = z.read_text(encoding='utf-8').strip()
+                    if txt:
+                        try:
+                            data = json.loads(txt)
+                            zones_empty = isinstance(data, dict) and len(data) == 0
+                        except Exception:
+                            zones_empty = False
+                    else:
+                        zones_empty = True
+                else:
+                    zones_empty = True
+            except Exception:
+                zones_empty = True
+            overlay_no_fallback = zones_empty
         except Exception:
-            overlay_blank_world = False
+            overlay_no_fallback = False
         cs = self.chunk_size
         # Use a local lazy sprite cache only for tiles encountered in the chunks
         matrix = map_model.matrix
@@ -217,10 +272,13 @@ class ChunkedMapView:
                     for layer in layers_ordered:
                         code = map_model.layers[layer][ty][tx]
                         if not code:
-                            if overlay_blank_world:
+                            if overlay_no_fallback:
                                 continue
                             if layer != Layer.Ground:
                                 continue
+                        # If code is invalid under overlay-only policy, skip drawing
+                        if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                            continue
                         key = (char, code)
                         sprite = local_sprite_cache.get(key)
                         if sprite is None and key not in local_sprite_cache:
@@ -264,18 +322,27 @@ class ChunkedMapView:
                 self._build_chunk_surfaces(map_model, zoom)
             # Precompute overlay policy per zoom rebuild
             try:
-                use_ov = bool(getattr(global_map_settings, 'use_zones_json', False))
-                if use_ov:
-                    from pathlib import Path as _P
-                    odir = getattr(global_map_settings, 'overlays_dir', None)
-                    has_ov = bool(odir and len(list(_P(odir).glob('*.overlay.json'))) > 0)
-                    offsets = getattr(global_map_settings, 'zone_offsets', {})
-                    user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
-                    overlay_blank_world = (not has_ov) and (len(user_keys) == 0)
-                else:
-                    overlay_blank_world = False
+                cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
+                zones_empty = False
+                z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                try:
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        if txt:
+                            try:
+                                data = json.loads(txt)
+                                zones_empty = isinstance(data, dict) and len(data) == 0
+                            except Exception:
+                                zones_empty = False
+                        else:
+                            zones_empty = True
+                    else:
+                        zones_empty = True
+                except Exception:
+                    zones_empty = True
+                overlay_no_fallback = zones_empty
             except Exception:
-                overlay_blank_world = False
+                overlay_no_fallback = False
             # Local lazy sprite cache per zoom update
             local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
 
@@ -297,10 +364,12 @@ class ChunkedMapView:
                         for layer in layers_ordered:
                             code = map_model.layers[layer][ty][tx]
                             if not code:
-                                if overlay_blank_world:
+                                if overlay_no_fallback:
                                     continue
                                 if layer != Layer.Ground:
                                     continue
+                            if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                                continue
                             key = (char, code)
                             sprite = local_sprite_cache.get(key)
                             if sprite is None and key not in local_sprite_cache:
@@ -342,9 +411,15 @@ class ChunkedMapView:
             if getattr(global_map_settings, 'use_zones_json', False):
                 odir = getattr(global_map_settings, 'overlays_dir', None)
                 if odir and len(list(_P(odir).glob('*.overlay.json'))) == 0:
+                    user_keys = []
                     try:
-                        offsets = getattr(global_map_settings, 'zone_offsets', {})
-                        user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                        z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                        if z and z.exists():
+                            txt = z.read_text(encoding='utf-8').strip()
+                            if txt:
+                                data = json.loads(txt)
+                                if isinstance(data, dict):
+                                    user_keys = [k for k in data.keys() if str(k).lower() not in ('no zone', 'no-zone')]
                     except Exception:
                         user_keys = []
                     if len(user_keys) == 0:

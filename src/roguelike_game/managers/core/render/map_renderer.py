@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import List
 from roguelike_engine.config.map_config import global_map_settings
+import json
 from pathlib import Path
 import logging
 
@@ -19,10 +20,20 @@ def render_map(manager, camera, screen, map_) -> List[object]:
         if getattr(global_map_settings, 'use_zones_json', False):
             odir = global_map_settings.overlays_dir
             if odir and list(Path(odir).glob('*.overlay.json')) == []:
-                # Count user-defined zones (exclude sentinels)
+                # Count user-defined zones from ZONES_INDEX (exclude sentinels)
+                user_keys = []
                 try:
-                    offsets = getattr(global_map_settings, 'zone_offsets', {})
-                    user_keys = [k for k in offsets.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                    z = getattr(global_map_settings, 'ZONES_INDEX', None)
+                    if z and z.exists():
+                        txt = z.read_text(encoding='utf-8').strip()
+                        if txt:
+                            data = json.loads(txt)
+                            if isinstance(data, dict):
+                                user_keys = [k for k in data.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                        else:
+                            user_keys = []
+                    else:
+                        user_keys = []
                 except Exception:
                     user_keys = []
                 if len(user_keys) == 0:

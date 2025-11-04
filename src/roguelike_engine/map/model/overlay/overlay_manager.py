@@ -51,6 +51,12 @@ def load_layers(map_name: str) -> Dict[Layer, List[List[str]]]:
         except KeyError:
             continue
         result[layer] = grid
+    try:
+        # diagnostic: count non-empty codes per layer
+        counts = {layer.name: sum(1 for row in grid for v in row if v) for layer, grid in result.items()}
+        logger.info(f"[OverlayManager] loaded layers for '{map_name}': {counts}")
+    except Exception:
+        pass
     logger.debug(f" parsed layers for '{map_name}': {list(result.keys())}")
     return result
 
