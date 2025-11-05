@@ -27,7 +27,7 @@ def handle_toggles(game, events, close_all_editors, open_editor_exclusive) -> bo
                 mods = pygame.key.get_mods()
             except Exception:
                 mods = 0
-            if mods & pygame.KMOD_ALT:
+            if mods & pygame.KMOD_LCTRL:
                 try:
                     le = getattr(game, 'lighting_editor', None)
                     if le is None:

@@ -89,7 +89,7 @@ def handle_events(game):
                     mods = _pg.key.get_mods()
                 except Exception:
                     mods = 0
-                if mods & _pg.KMOD_ALT:
+                if mods & _pg.KMOD_LCTRL:
                     le = getattr(game, 'lighting_editor', None)
                     if le is not None:
                         vis = bool(getattr(getattr(le, 'model', None), 'visible', False))

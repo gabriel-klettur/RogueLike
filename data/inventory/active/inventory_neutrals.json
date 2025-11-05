@@ -1,1 +1,252 @@
-{}
+{
+  "953b40e2-57af-436c-95b7-ccbc5cd06b9c": {
+    "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 200
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "3c8af9fa-904f-4ec5-a94f-8cf630fd112f": {
+    "template_id": null,
+    "slots": [
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      {
+        "item": "gold",
+        "quantity": 50
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "5be8cbda-a4a8-46e3-84b9-c75e4bc454f7": {
+    "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1000
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "c00b80ea-ae1b-4a5d-939f-ca64c558e55a": {
+    "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 180
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "e6f81b24-005d-4cfe-867b-18706a706214": {
+    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 300
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

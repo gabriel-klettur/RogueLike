@@ -1,1 +1,24 @@
-{}
+{
+  "2428b2b1-8f0f-4546-8480-50cc7d3ca054": {
+    "item_id": "borsh_01",
+    "quantity": 1,
+    "zone_id": "lobby",
+    "schema_version": "1.0.0",
+    "tile": {
+      "x": 19,
+      "y": 42
+    },
+    "created_at": 1762351347.3812928
+  },
+  "86707670-ad67-4807-9d4c-0a4fe9dbc4ff": {
+    "item_id": "completo_chileno_01",
+    "quantity": 1,
+    "zone_id": "lobby",
+    "schema_version": "1.0.0",
+    "tile": {
+      "x": 15,
+      "y": 41
+    },
+    "created_at": 1762351348.8929303
+  }
+}

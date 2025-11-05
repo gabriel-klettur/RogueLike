@@ -3,11 +3,11 @@
   "ephemeral_history": [
     {
       "role": "user",
-      "content": "confirmo si"
+      "content": "confirmo"
     },
     {
       "role": "assistant",
-      "content": "Por favor responde \"sí\" para confirmar o \"no\" para cancelar."
+      "content": "Vas a comprar 1 de paella_01 a 1 oro/u (total 1). ¿Confirmas? (sí/no)"
     },
     {
       "role": "user",
@@ -15,31 +15,23 @@
     },
     {
       "role": "assistant",
-      "content": "Hecho. Compraste 1x tortilla_spain_01 por 1.0 gold."
+      "content": "Hecho. Compraste 1x paella_01 por 1.0 gold."
     },
     {
       "role": "user",
-      "content": "que vendes?"
+      "content": "que mas vendes?"
     },
     {
       "role": "assistant",
-      "content": "Tengo estos items disponibles:\n- Borsh 01 (borsh_01) x100 PC=1 PV=1 oro/u\n- Completo Chileno 01 (completo_chileno_01) x100 PC=1 PV=1 oro/u\n- Muslo de Pollo (food_chicken) x100 PC=1 PV=1 oro/u\n- Hakarl 01 (hakarl_01) x99 PC=1 PV=1 oro/u\n- Paella 01 (paella_01) x100 PC=1 PV=1 oro/u\n- Perogi 01 (perogi_01) x100 PC=1 PV=1 oro/u\n- Tortilla Spain 01 (tortilla_spain_01) x99 PC=1 PV=1 oro/u"
+      "content": "Tengo estos items disponibles:\n- Borsh 01 (borsh_01) x100 PC=1 PV=1 oro/u\n- Completo Chileno 01 (completo_chileno_01) x100 PC=1 PV=1 oro/u\n- Muslo de Pollo (food_chicken) x100 PC=1 PV=1 oro/u\n- Hakarl 01 (hakarl_01) x100 PC=1 PV=1 oro/u\n- Paella 01 (paella_01) x99 PC=1 PV=1 oro/u\n- Perogi 01 (perogi_01) x100 PC=1 PV=1 oro/u\n- Tortilla Spain 01 (tortilla_spain_01) x100 PC=1 PV=1 oro/u"
     },
     {
       "role": "user",
-      "content": "Quiero Borsh"
+      "content": "dame tres tortillas de patatas"
     },
     {
       "role": "assistant",
-      "content": "Tengo Borsh 01 (borsh_01) disponible, x100. 1 oro por unidad. ¿Cuántos quieres, tesoro? 🙂"
-    },
-    {
-      "role": "user",
-      "content": "dame 5"
-    },
-    {
-      "role": "assistant",
-      "content": "Vas a comprar 5 de borsh_01 a 1 oro/u (total 5). ¿Confirmas? (sí/no)"
+      "content": "Tres Tortillas de patatas (tortilla_spain_01) x3 por 3 oro. ¿Confirmas? (sí/no)"
     },
     {
       "role": "user",
@@ -47,7 +39,15 @@
     },
     {
       "role": "assistant",
-      "content": "Hecho. Compraste 5x borsh_01 por 5.0 gold."
+      "content": "Vas a comprar 3 de tortilla_spain_01 a 1 oro/u (total 3). ¿Confirmas? (sí/no)"
+    },
+    {
+      "role": "user",
+      "content": "si"
+    },
+    {
+      "role": "assistant",
+      "content": "Hecho. Compraste 3x tortilla_spain_01 por 3.0 gold."
     }
   ],
   "preferred_language": "es",
