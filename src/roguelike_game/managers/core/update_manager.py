@@ -2,6 +2,10 @@ from roguelike_engine.utils.benchmark import benchmark
 import pygame
 import types
 import logging
+try:
+    from roguelike_ui.hud.orchestrator.hud_orchestrator import HudOrchestrator
+except Exception:
+    HudOrchestrator = None
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +242,27 @@ def update_game(
     def _step_entities():
         buildings.update(state, map, perf_log)
 
+    def _step_hud_update():
+        """Update HUD orchestrator state before minimap (compute pressed, layout)."""
+        try:
+            orch = getattr(ecs, 'hud_orchestrator', None)
+            if orch is None:
+                if HudOrchestrator is not None:
+                    try:
+                        orch = HudOrchestrator(minimap=minimap, systems=None)
+                        setattr(ecs, 'hud_orchestrator', orch)
+                    except Exception:
+                        orch = None
+            if orch is not None:
+                try:
+                    world = getattr(ecs, 'ecs_world', None)
+                except Exception:
+                    world = None
+                orch.update(world=world, screen=screen, camera=camera)
+        except Exception:
+            # HUD is optional; never break update loop
+            pass
+
     def _step_minimap():
         # Actualizar minimapa solo si el jugador todavía existe (tiene Position)
         eid = ecs.ecs_world.player_entity
@@ -254,6 +279,7 @@ def update_game(
     steps = [
         ("2.1.camera.update", _step_camera),
         ("2.3.entities.update", _step_entities),
+        ("2.45.hud.update", _step_hud_update),
         ("2.5.minimap.update", _step_minimap),
     ]
 

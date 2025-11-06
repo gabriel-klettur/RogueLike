@@ -9,9 +9,14 @@ from .pipeline_helpers import (
     log_tile_editor_debug,
     render_ecs_trail,
     should_render_minimap,
+    should_render_hud_widget,
     render_spell_debug_overlays,
     render_game_clock,
 )
+try:
+    from roguelike_ui.hud.orchestrator.hud_orchestrator import HudOrchestrator
+except Exception:
+    HudOrchestrator = None
 
 
 def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=None, entities=None):
@@ -134,16 +139,53 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         manager._render_menu(screen, menu)
 
     def _step_minimap():
+        try:
+            orch = getattr(manager, 'hud_orchestrator', None)
+            if orch is not None and hasattr(orch, 'render_minimap'):
+                orch.render_minimap(manager, screen, state=state, menu=menu)
+                return
+        except Exception:
+            pass
+        # Fallback to legacy behavior
         if should_render_minimap(manager, state, menu):
             manager._render_minimap(screen)
 
     def _step_clock():
         # Draw a small clock HUD under the minimap
         try:
+            orch = getattr(manager, 'hud_orchestrator', None)
+            if orch is not None and hasattr(orch, 'render_clock'):
+                orch.render_clock(manager, screen, state=state, menu=menu)
+                return
+        except Exception:
+            pass
+        # Fallback to legacy behavior
+        try:
             render_game_clock(manager, screen)
         except Exception:
             pass
 
+    def _step_hud():
+        """Render HUD orchestrator widgets after the clock (UI layer)."""
+        try:
+            orch = getattr(manager, 'hud_orchestrator', None)
+            if orch is None:
+                if HudOrchestrator is not None:
+                    try:
+                        orch = HudOrchestrator(minimap=manager.minimap, systems=None)
+                        manager.hud_orchestrator = orch
+                        # Also expose via ecs for update_manager hook
+                        try:
+                            setattr(manager.ecs, 'hud_orchestrator', orch)
+                        except Exception:
+                            pass
+                    except Exception:
+                        orch = None
+            if orch is not None and should_render_hud_widget('grid', manager, state, menu):
+                orch.render(screen)
+        except Exception:
+            # Never disrupt main render due to optional HUD
+            pass
     def _step_editors():
         manager._render_editors()
 
@@ -161,6 +203,7 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         ("3.7. menu", _step_menu),
         ("3.8. minimap", _step_minimap),
         ("3.85. clock", _step_clock),
+        ("3.87. hud_orchestrator", _step_hud),
         ("3.11. editors", _step_editors),
     ]
 

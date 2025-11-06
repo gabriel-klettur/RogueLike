@@ -1,6 +1,12 @@
 import pygame
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
 from roguelike_game.ecs.components.core.player_tag import PlayerTagComponent
+from types import SimpleNamespace
+try:
+    from roguelike_game.managers.core.render.pipeline_helpers import should_render_hud_widget
+except Exception:
+    def should_render_hud_widget(widget_id, manager, state, menu):  # type: ignore
+        return True
 
 
 class ExperienceRenderSystem:
@@ -24,6 +30,18 @@ class ExperienceRenderSystem:
         # Selector de clase visible
         if state and getattr(state, 'class_selector_visible', False):
             return
+        # Política de visibilidad unificada (minimapa baseline)
+        try:
+            mgr = SimpleNamespace(
+                tiles_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                buildings_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                map_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                ecs=SimpleNamespace(ecs_world=world),
+            )
+            if not should_render_hud_widget('xp', mgr, state, None):
+                return
+        except Exception:
+            pass
         # Buscar el jugador con ExperienceComponent
         xp_comps = world.components.get('ExperienceComponent', {})
         tags = world.components.get('PlayerTagComponent', {})

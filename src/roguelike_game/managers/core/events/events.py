@@ -4,8 +4,14 @@ Centraliza la lógica de captura y despacho de eventos extraída de Game.
 
 import pygame
 import os
+from types import SimpleNamespace
 import roguelike_engine.config.config as config
 from roguelike_engine.input.events import handle_events as engine_handle_events
+try:
+    from roguelike_game.managers.core.render.pipeline_helpers import should_render_hud_widget
+except Exception:
+    def should_render_hud_widget(widget_id: str, manager, state, menu) -> bool:  # type: ignore
+        return False
 from roguelike_editors.buildings.utils.save_buildings_to_json import save_buildings_split
 from roguelike_engine.config.config import BUILDINGS_TEMPLATES_PATH, BUILDINGS_INSTANCES_PATH
 from roguelike_engine.config.map_config import global_map_settings
@@ -287,6 +293,27 @@ def handle_events(game):
 
     # Detección de clic en halo de NPC para abrir chat (consumir evento)
     consumed_idx = _consume_npc_halo_click(game, events, consumed_idx)
+
+    # HUD Orchestrator: allow UI to consume pagination clicks when grid is visible
+    try:
+        orch = getattr(getattr(game, 'ecs', None), 'hud_orchestrator', None)
+        if orch is not None:
+            # Build a lightweight manager proxy expected by visibility helper
+            mgr = SimpleNamespace(
+                tiles_editor=getattr(game, 'tiles_editor', None),
+                buildings_editor=getattr(game, 'buildings_editor', None),
+                map_editor=getattr(game, 'map_editor', None),
+                ecs=getattr(game, 'ecs', None),
+            )
+            if should_render_hud_widget('grid', mgr, getattr(game, 'state', None), getattr(game, 'menu', None)):
+                for i, ev in enumerate(events):
+                    try:
+                        if orch.handle_event(ev):
+                            consumed_idx.add(i)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
 
     # Filtrado UI para obtener remaining_events
     remaining_events = _build_remaining_events(game, events, consumed_idx)

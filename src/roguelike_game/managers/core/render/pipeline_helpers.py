@@ -212,3 +212,25 @@ def render_attack_telegraphs(manager, screen, camera) -> None:
     except Exception:
         # Do not disrupt main render if telegraph rendering fails
         pass
+
+
+def should_render_hud_widget(widget_id: str, manager, state, menu) -> bool:
+    """Unified HUD visibility policy.
+
+    Minimal implementation leveraging should_render_minimap for modal/editor checks,
+    plus a world-level `suppress_hud` flag.
+    """
+    try:
+        world = getattr(manager.ecs, 'ecs_world', None)
+        if world is not None and bool(getattr(world, 'suppress_hud', False)):
+            return False
+    except Exception:
+        pass
+    wid = (widget_id or '').lower()
+    if wid in ('minimap', 'clock'):
+        return should_render_minimap(manager, state, menu)
+    # For grid and other HUD widgets, reuse minimap rules as baseline
+    if wid in ('grid', 'xp', 'hpmp', 'target', 'toasts'):
+        return should_render_minimap(manager, state, menu)
+    # Default: visible unless suppressed by minimap rules
+    return should_render_minimap(manager, state, menu)

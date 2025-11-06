@@ -1,6 +1,12 @@
 import pygame
 import time
 from typing import Optional
+from types import SimpleNamespace
+try:
+    from roguelike_game.managers.core.render.pipeline_helpers import should_render_hud_widget
+except Exception:
+    def should_render_hud_widget(widget_id, manager, state, menu):  # type: ignore
+        return True
 
 from roguelike_game.ecs.components.combat.health import Health
 from roguelike_game.ecs.components.combat.mana import Mana
@@ -79,6 +85,19 @@ class HUDStatsRenderSystem:
                     return
             except Exception:
                 pass
+            # Política de visibilidad unificada (baseline minimapa)
+            try:
+                mgr = SimpleNamespace(
+                    tiles_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                    buildings_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                    map_editor=SimpleNamespace(editor_state=SimpleNamespace(active=False)),
+                    ecs=SimpleNamespace(ecs_world=world),
+                )
+                if not should_render_hud_widget('hpmp', mgr, state, None):
+                    return
+            except Exception:
+                pass
+
             player_eid = self._find_player_eid(world)
             if player_eid is None:
                 return
