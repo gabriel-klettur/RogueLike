@@ -136,9 +136,40 @@ class MonsterBuilder:
             cur_m = int(mana_val if mana_val is not None else max_m)
             world.components["Mana"][eid] = Mana(current_mana=cur_m, max_mana=max_m)
 
-        # Auto-cast de hechizos (por ejemplo, disparar fireball cada N segundos)
+        # Auto-cast de hechizos: soporta modo legado (auto_cast) y lista (auto_cast_list)
+        ac_added = False
         ac_cfg = cfg.get("auto_cast")
-        if isinstance(ac_cfg, dict):
+        ac_list = cfg.get("auto_cast_list")
+        if isinstance(ac_list, list) and len(ac_list) > 0:
+            try:
+                entries = []
+                for item in ac_list:
+                    if not isinstance(item, dict):
+                        continue
+                    e = {
+                        'spell': str(item.get('spell') or 'fireball'),
+                    }
+                    # Aceptar periodo fijo o rango [min,max]
+                    if 'min_period_s' in item or 'max_period_s' in item:
+                        if 'min_period_s' in item: e['min_period_s'] = float(item.get('min_period_s'))
+                        if 'max_period_s' in item: e['max_period_s'] = float(item.get('max_period_s'))
+                    elif 'period_s' in item:
+                        e['period_s'] = float(item.get('period_s'))
+                    # Canalizado y wire
+                    if 'channel_s' in item: e['channel_s'] = float(item.get('channel_s'))
+                    if 'wire_from' in item: e['wire_from'] = list(item.get('wire_from'))
+                    if 'wire_to' in item: e['wire_to'] = list(item.get('wire_to'))
+                    if 'target' in item: e['target'] = str(item.get('target'))
+                    # Meta opcional
+                    meta = {k: v for k, v in item.items() if k not in ('spell','period_s','min_period_s','max_period_s','channel_s','wire_from','wire_to','target')}
+                    if meta: e['meta'] = meta
+                    entries.append(e)
+                if entries:
+                    world.components.setdefault("AutoCastComponent", {})[eid] = AutoCastComponent(entries=entries)
+                    ac_added = True
+            except Exception:
+                pass
+        if not ac_added and isinstance(ac_cfg, dict):
             try:
                 spell = str(ac_cfg.get("spell") or "fireball")
                 period_s = float(ac_cfg.get("period_s", 2.0))

@@ -5,11 +5,14 @@ Crea WantsToCastSpell para que SpellCastingSystem lo procese.
 from __future__ import annotations
 
 import time
+import random
 import logging
 
 from roguelike_game.ecs.components.ai.wants_to_cast import WantsToCastSpell
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
+from roguelike_game.ecs.components.combat.cast_outline import CastOutline
+from roguelike_game.ecs.components.status.stun_component import StunComponent
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +35,174 @@ class AutoCastSystem:
             try:
                 if not getattr(ac, 'enabled', True):
                     continue
-                # Respetar periodo en segundos
+                wants = comps.setdefault('WantsToCastSpell', {})
+
+                # Si estamos canalizando, mantener outline, frenar y castear al terminar
+                chan = getattr(ac, 'active_channel', None)
+                if isinstance(chan, dict):
+                    # Congelar movimiento durante canalizado
+                    try:
+                        vel = comps.get('Velocity', {}).get(eid)
+                        if vel is not None:
+                            vel.vx = 0.0
+                            vel.vy = 0.0
+                    except Exception:
+                        pass
+                    # ¿Finalizó el canalizado?
+                    st = float(chan.get('start_ts', now) or now)
+                    dur = float(chan.get('duration', 0.0) or 0.0)
+                    if now >= st + dur:
+                        # Remover outline visual
+                        comps.get('CastOutline', {}).pop(eid, None)
+                        # Resolver target
+                        target = str(chan.get('target', 'player'))
+                        spawn_pos = None
+                        if target == 'player' and player_eid is not None:
+                            # Calcular centro del player
+                            pos_map = comps.get('Position', {})
+                            spr_map = comps.get('Sprite', {})
+                            scl_map = comps.get('Scale', {})
+                            dpos = pos_map.get(player_eid)
+                            if dpos is not None:
+                                try:
+                                    dspr = spr_map.get(player_eid)
+                                    dscl = scl_map.get(player_eid)
+                                    if dspr:
+                                        dc = compute_entity_center(dpos, dspr, dscl)
+                                        spawn_pos = (float(dc.x), float(dc.y))
+                                    else:
+                                        spawn_pos = (float(dpos.x), float(dpos.y))
+                                except Exception:
+                                    spawn_pos = (float(dpos.x), float(dpos.y))
+                        # Crear intención de cast si no hay una ya pendiente para este eid
+                        if eid not in wants:
+                            # Combinar meta de la entrada con spawn_pos y target
+                            entry = chan.get('entry') or {}
+                            meta = dict(entry.get('meta') or {})
+                            # Explicitar target para que el resolver lo pueda honrar en ausencia de spawn_pos
+                            meta.setdefault('target', target)
+                            if spawn_pos:
+                                meta['spawn_pos'] = spawn_pos
+                            wants[eid] = WantsToCastSpell(caster=eid, spell=str(chan.get('spell')), meta=meta)
+                        # Programar siguiente periodo aleatorio (si corresponde) para la entrada usada
+                        try:
+                            entry = chan.get('entry')
+                            if isinstance(entry, dict):
+                                entry['last_cast_ts'] = now
+                                mn = entry.get('min_period_s')
+                                mx = entry.get('max_period_s')
+                                if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mx >= mn:
+                                    entry['next_ready_ts'] = now + random.uniform(float(mn), float(mx))
+                                else:
+                                    per = float(entry.get('period_s', 2.0) or 2.0)
+                                    entry['next_ready_ts'] = now + per
+                        except Exception:
+                            pass
+                        # Limpiar canalizado activo
+                        ac.active_channel = None
+                    # Durante canalizado no iniciar otros
+                    continue
+
+                # Modo multi-entrada: entries
+                entries = getattr(ac, 'entries', None)
+                if isinstance(entries, list) and entries:
+                    # Elegir la primera entrada lista (orden estable)
+                    for entry in entries:
+                        try:
+                            # Calcular next_ready_ts si no existe
+                            nrt = entry.get('next_ready_ts')
+                            if nrt is None:
+                                # Inicial: usar rango aleatorio si hay min/max; si no, period_s
+                                mn = entry.get('min_period_s')
+                                mx = entry.get('max_period_s')
+                                if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mx >= mn:
+                                    entry['next_ready_ts'] = now + random.uniform(float(mn), float(mx))
+                                else:
+                                    per = float(entry.get('period_s', 2.0) or 2.0)
+                                    entry['next_ready_ts'] = now + per
+                                continue  # no arrancar en el mismo frame de inicialización
+                            if now < float(nrt):
+                                continue
+                            # Gateo por aggro
+                            # Verificar vida del jugador
+                            ph = comps.get('Health', {}).get(player_eid)
+                            player_dead = (ph is None) or (ph.current_hp <= 0)
+                            has_death_timer = player_eid in comps.get('DeathTimer', {})
+                            if player_dead or has_death_timer:
+                                continue
+                            # Iniciar canalizado o castear inmediato si channel_s <= 0
+                            spell = str(entry.get('spell'))
+                            chan_s = float(entry.get('channel_s', 0.0) or 0.0)
+                            color_from = tuple(entry.get('wire_from') or (0, 128, 255))
+                            color_to = tuple(entry.get('wire_to') or (0, 255, 0))
+                            target = str(entry.get('target', 'player'))
+                            if chan_s > 1e-6:
+                                ac.active_channel = {
+                                    'spell': spell,
+                                    'start_ts': now,
+                                    'duration': chan_s,
+                                    'wire_from': color_from,
+                                    'wire_to': color_to,
+                                    'target': target,
+                                    'entry': entry,
+                                }
+                                # Adjuntar CastOutline para renderizar el wire azul->verde
+                                comps.setdefault('CastOutline', {})[eid] = CastOutline.create(duration=chan_s, color_from=color_from, color_to=color_to, start_time=now)
+                                # Aplicar stun al caster para inmovilizar durante el canalizado
+                                try:
+                                    comps.setdefault('StunComponent', {})[eid] = StunComponent.create(chan_s)
+                                except Exception:
+                                    pass
+                                break
+                            else:
+                                # Cast inmediato sin canalizado
+                                if eid in wants:
+                                    break
+                                # Resolver spawn_pos si target es player
+                                spawn_pos = None
+                                if target == 'player' and player_eid is not None:
+                                    pos_map = comps.get('Position', {})
+                                    spr_map = comps.get('Sprite', {})
+                                    scl_map = comps.get('Scale', {})
+                                    dpos = pos_map.get(player_eid)
+                                    if dpos is not None:
+                                        try:
+                                            dspr = spr_map.get(player_eid)
+                                            dscl = scl_map.get(player_eid)
+                                            if dspr:
+                                                dc = compute_entity_center(dpos, dspr, dscl)
+                                                spawn_pos = (float(dc.x), float(dc.y))
+                                            else:
+                                                spawn_pos = (float(dpos.x), float(dpos.y))
+                                        except Exception:
+                                            spawn_pos = (float(dpos.x), float(dpos.y))
+                                meta = dict(entry.get('meta') or {})
+                                # Explicitar el mismo target evaluado para esta entrada
+                                meta.setdefault('target', target)
+                                if spawn_pos:
+                                    meta['spawn_pos'] = spawn_pos
+                                wants[eid] = WantsToCastSpell(caster=eid, spell=spell, meta=meta)
+                                # Programar siguiente disponibilidad
+                                mn = entry.get('min_period_s')
+                                mx = entry.get('max_period_s')
+                                if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mx >= mn:
+                                    entry['next_ready_ts'] = now + random.uniform(float(mn), float(mx))
+                                else:
+                                    per = float(entry.get('period_s', 2.0) or 2.0)
+                                    entry['next_ready_ts'] = now + per
+                                break
+                        except Exception:
+                            continue
+                    # Siguiente entidad
+                    continue
+
+                # Legado: un solo autocast fijo
                 last_ts = float(getattr(ac, 'last_cast_ts', 0.0) or 0.0)
                 period = max(0.0, float(getattr(ac, 'period_s', 2.0) or 2.0))
                 if now - last_ts < period:
                     continue
                 spell = getattr(ac, 'spell', None) or 'fireball'
                 # Evitar duplicar intención si ya existe para este eid
-                wants = comps.setdefault('WantsToCastSpell', {})
                 if eid in wants:
                     continue
                 # Gateo por aggro: sólo autocastear si el jugador está dentro del radio de aggro del NPC

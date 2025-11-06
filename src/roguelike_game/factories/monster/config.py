@@ -53,8 +53,9 @@ for class_name, class_cfg in _raw_classes.items():
     next_phase = class_cfg.get("next_phase")
     phase_index = class_cfg.get("phase_index")
     auto_cast = class_cfg.get("auto_cast")
+    auto_cast_list = class_cfg.get("auto_cast_list")
     use_attack_telegraph = class_cfg.get("use_attack_telegraph")
-    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index, "auto_cast": auto_cast, "use_attack_telegraph": use_attack_telegraph}
+    MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index, "auto_cast": auto_cast, "auto_cast_list": auto_cast_list, "use_attack_telegraph": use_attack_telegraph}
 
 # Separate mappings for stats and assets
 MONSTER_STATS: Dict[str, Any] = {class_name: class_cfg.get("stats", {}) for class_name, class_cfg in _raw_classes.items()}
@@ -117,8 +118,9 @@ def reload_monster_defs() -> None:
         next_phase = class_cfg.get("next_phase")
         phase_index = class_cfg.get("phase_index")
         auto_cast = class_cfg.get("auto_cast")
+        auto_cast_list = class_cfg.get("auto_cast_list")
         use_attack_telegraph = class_cfg.get("use_attack_telegraph")
-        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index, "auto_cast": auto_cast, "use_attack_telegraph": use_attack_telegraph}
+        MONSTER_DEFS[class_name] = {**stats, "assets": assets, "fsm_set": fsm_set, "patrol": patrol, "default_name": default_name, "next_phase": next_phase, "phase_index": phase_index, "auto_cast": auto_cast, "auto_cast_list": auto_cast_list, "use_attack_telegraph": use_attack_telegraph}
 
     # Update stats and assets mappings
     MONSTER_STATS.clear()

@@ -73,6 +73,7 @@ from roguelike_game.ecs.systems.combat.spells.summon_system import SummonSystem
 from roguelike_game.ecs.systems.combat.spells.totem_system import TotemSystem
 from roguelike_game.ecs.systems.combat.spells.wall_system import WallSystem
 from roguelike_game.ecs.systems.buildings_portal_system import BuildingPortalSystem
+from roguelike_game.ecs.systems.status.stun_system import StunSystem
 
 from roguelike_game.ecs.systems.rendering.particles.particle_render_system import ParticleRenderSystem
 from roguelike_game.ecs.systems.rendering.death_timer_bar_system import DeathTimerBarSystem
@@ -130,6 +131,7 @@ from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
 from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
+from roguelike_game.ecs.systems.rendering.cast_outline_render_system import CastOutlineRenderSystem
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +182,7 @@ def get_update_system_classes():
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
         # Player & input
-        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem, ForceFieldSystem,
+        PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, StunSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem, ForceFieldSystem,
         MovementCollisionSystem,
         # Buildings portals (trigger after movement/collision resolution)
         BuildingPortalSystem,
@@ -212,6 +214,8 @@ def get_render_system_classes():
     base.append(EntitiesDebugSystem)
     base.append(GrayscaleRenderSystem)
     base.append(ResurrectionAreaSystem)
+    base.append(CastOutlineRenderSystem)
+    base.append(ExperienceRenderSystem)
     # HUD textual overlay (bottom-left): HP/MP values
     base.append(HUDStatsRenderSystem)
     # HUD de objetivo (centrado arriba)

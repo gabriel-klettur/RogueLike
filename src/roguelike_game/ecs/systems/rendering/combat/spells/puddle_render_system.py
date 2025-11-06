@@ -2,6 +2,7 @@ import pygame
 from roguelike_engine.utils.benchmark import benchmark
 
 from roguelike_game.ecs.components.abilities.puddle_component import PuddleComponent
+from roguelike_game.ecs.components.transform.scale import Scale
 
 
 _DEFAULT_COLORS = {
@@ -24,23 +25,32 @@ class PuddleRenderSystem:
     def update(self, world, screen: pygame.Surface, camera):
         pos_map = world.components.get('Position', {})
         puddles = world.components.get('PuddleComponent', {})
+        sprite_map = world.components.get('Sprite', {})
+        scale_map = world.components.get('Scale', {})
         if not puddles:
             return
         for eid, comp in list(puddles.items()):
             pos = pos_map.get(eid)
             if pos is None:
                 continue
-            # Color y alpha
+            # Si existe Sprite: dibujar sprite escalado centrado en Position
+            sprite = sprite_map.get(eid)
+            if sprite is not None and hasattr(sprite, 'image'):
+                entity_scale = scale_map.get(eid, Scale()).scale
+                scale_factor = float(entity_scale) * float(camera.zoom)
+                image = pygame.transform.rotozoom(sprite.image, 0, scale_factor) if scale_factor != 1.0 else sprite.image
+                cx, cy = camera.apply((pos.x, pos.y))
+                rect = image.get_rect(center=(int(cx), int(cy)))
+                screen.blit(image, rect.topleft)
+                continue
+            # Fallback: círculo translúcido usando radius/alpha/color
             color = comp.color or _DEFAULT_COLORS.get((comp.element or '').lower(), (120, 200, 220))
             alpha = max(0, min(255, int(comp.alpha)))
-            # Radio escalado por zoom
             radius_px = int(comp.radius * camera.zoom)
             if radius_px <= 0:
                 continue
-            # Construir surface temporal para alpha
             diam = radius_px * 2
             surf = pygame.Surface((diam, diam), pygame.SRCALPHA)
             pygame.draw.circle(surf, (*color, alpha), (radius_px, radius_px), radius_px)
-            # Posicionar en pantalla centrado en el Position
             sx, sy = camera.apply((pos.x - comp.radius, pos.y - comp.radius))
             screen.blit(surf, (int(sx), int(sy)))

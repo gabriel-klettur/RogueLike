@@ -117,6 +117,7 @@ def map_keyboard_spells(inp, any_pressed) -> None:
     inp.spell_sphere_magic_shield = any_pressed("spell_sphere_magic_shield")
     inp.spell_teleport = any_pressed("spell_teleport")
     inp.spell_puddle_lava = any_pressed("spell_puddle_lava")
+    inp.spell_root_whip = any_pressed("spell_root_whip")
     inp.spell_mine_basic = any_pressed("spell_mine_basic")
     inp.spell_boomerang = any_pressed("spell_boomerang")
     inp.spell_chain_lightning = any_pressed("spell_chain_lightning")

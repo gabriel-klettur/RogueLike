@@ -21,6 +21,12 @@ class PuddleComponent:
         alpha: int = 80,
         owner: Optional[int] = None,
         spell_key: str = "",
+        # Opcionales para animación por secuencia de sprites
+        sequence_frames: Optional[list] = None,  # list[pygame.Surface]
+        sequence_times: Optional[list] = None,   # cumulative seconds [0, t1, t2, ...]
+        hold_last_frame: bool = True,
+        # Expiración por colisión específica (e.g., jugador)
+        expire_on_player_collision: bool = False,
     ) -> None:
         now = time.time()
         self.radius = float(radius)
@@ -37,3 +43,10 @@ class PuddleComponent:
         self.spell_key = spell_key
         self.start_time = now
         self.last_tick_time = now
+        # Animación
+        self.sequence_frames = list(sequence_frames) if isinstance(sequence_frames, list) else []
+        self.sequence_times = list(sequence_times) if isinstance(sequence_times, list) else []
+        self.sequence_idx = 0
+        self.hold_last_frame = bool(hold_last_frame)
+        # Reglas de expiración
+        self.expire_on_player_collision = bool(expire_on_player_collision)

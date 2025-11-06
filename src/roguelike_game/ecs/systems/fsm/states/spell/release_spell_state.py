@@ -10,6 +10,7 @@ from roguelike_game.ecs.components.rendering.sprite import Sprite
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
+from roguelike_game.ecs.utils.position_utils import compute_entity_center
 import logging
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,29 @@ class ReleaseSpellState(State):
             return
         if spell_type == 'puddle':
             world = entity.world
+            # Si no hay spawn_pos definido (por ejemplo, autocast de NPC), fijarlo al centro del Player
+            try:
+                has_spawn = isinstance(ctx.get('spawn_pos'), (tuple, list)) and len(ctx.get('spawn_pos')) == 2
+            except Exception:
+                has_spawn = False
+            if not has_spawn and entity.id != getattr(world, 'player_entity', None):
+                try:
+                    player_id = getattr(world, 'player_entity', None)
+                    if player_id is not None:
+                        pos_map = world.components.get('Position', {})
+                        spr_map = world.components.get('Sprite', {})
+                        scl_map = world.components.get('Scale', {})
+                        ppos = pos_map.get(player_id)
+                        if ppos is not None:
+                            pspr = spr_map.get(player_id)
+                            pscl = scl_map.get(player_id)
+                            if pspr is not None:
+                                cen = compute_entity_center(ppos, pspr, pscl)
+                                ctx['spawn_pos'] = (float(cen.x), float(cen.y))
+                            else:
+                                ctx['spawn_pos'] = (float(ppos.x), float(ppos.y))
+                except Exception:
+                    pass
             resolver = SPELL_RESOLVERS.get('puddle')
             if resolver is not None:
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
@@ -134,6 +158,7 @@ class ReleaseSpellState(State):
             if resolver is not None:
                 resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
             return
+
         if spell_type == 'boomerang':
             world = entity.world
             resolver = SPELL_RESOLVERS.get('boomerang')

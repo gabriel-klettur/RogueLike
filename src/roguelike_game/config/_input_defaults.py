@@ -25,6 +25,7 @@ DEFAULT_BINDINGS: dict[str, str] = {
     "spell_smoke_emitter": "K_g",
     "spell_sphere_magic_shield": "K_t",
     "spell_teleport": "K_j",
+    "spell_root_whip": "K_h",
     "spell_lightning": "K_r",
     "spell_boomerang": "K_6",
     "spell_chain_lightning": "K_7",

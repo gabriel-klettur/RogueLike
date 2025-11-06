@@ -12,6 +12,7 @@ SPELL_ATTRS = [
     "sphere_magic_shield",
     "teleport",
     "puddle_lava",
+    "root_whip",
     "mine_basic",
     "boomerang",
     "chain_lightning",

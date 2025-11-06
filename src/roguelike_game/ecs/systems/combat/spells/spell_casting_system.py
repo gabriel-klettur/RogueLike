@@ -97,267 +97,59 @@ class SpellCastingSystem:
         if comp_key:
             return len(world.components.get(comp_key, {}))
         return 0
-    
+
     def update(self, world, camera=None):
+        """Procesa 'WantsToCastSpell' y encola la sub-FSM adecuada.
+        Para NPCs, inyecta intent.meta (incluido 'spawn_pos') en el contexto para que los resolvers lo usen.
         """
-        Recorre todas las entidades que tengan el componente 'WantsToCastSpell'.
-
-        - 'wants' es el diccionario de intenciones de hechizo:
-          key: entity_id, value: instancia de WantsToCastSpell
-        - 'npcs' es el diccionario de componentes NPCState, se usa para distinguir NPCs de jugador.
-
-        Args:
-            world: instancia de ECSWorld, contenedor de entidades y componentes.
-            camera: objeto de cámara, usado para convertir coordenadas de pantalla a mundo.
-        """
-        # Obtener diccionario actual de intenciones de hechizo
         wants = world.components.get('WantsToCastSpell', {})
         npcs = world.components.get('NPCState', {})
+        player_eid = getattr(world, 'player_entity', None)
 
-        #logger.debug(f" Inicio update: {len(wants)} intenciones detectadas.")
-
-        # Iterar sobre una copia de las llaves, porque vamos a eliminar intenciones mientras iteramos
         for eid in list(wants.keys()):
-            intent = wants[eid]
-            # Validar max_instances y allow_overlap segun spells.json
+            intent = wants.get(eid)
+            if intent is None:
+                continue
             cfg = SPELLS.get(intent.spell, {})
             spell_type = cfg.get('type')
-            max_inst = cfg.get('max_instances', 0)
-            # Contar instancias activas (centralizado)
-            active = self._count_active(world, eid, intent, spell_type)
 
-            if max_inst and active >= max_inst:
-                continue
-            allow_overlap = cfg.get('allow_overlap', True)
-            if not allow_overlap and active > 0:
-                continue
-            # Verificar coste de maná (si el caster tiene maná)
+            # Limites de instancias / overlap
             try:
-                godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (eid == getattr(world, 'player_entity', None))
-                if not godmode:
-                    mana_comp = world.components.get('Mana', {}).get(eid)
-                    mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
-                    if mana_comp is not None and mana_cost > 0:
-                        if float(mana_comp.current_mana) < mana_cost:
-                            # Notificar falta de maná al jugador mediante burbuja
-                            try:
-                                from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
-                                push_bubble(world, eid, 'No tengo suficiente maná', color=(240, 200, 200), ttl_ms=1800)
-                            except Exception:
-                                pass
-                            # Disparar flash azul en la barra de maná durante 600ms
-                            try:
-                                import time as _time
-                                flash_store = getattr(world, '_mana_flash_until', None)
-                                if not isinstance(flash_store, dict):
-                                    flash_store = {}
-                                    setattr(world, '_mana_flash_until', flash_store)
-                                flash_store[eid] = _time.time() + 0.6
-                            except Exception:
-                                pass
-                            # Descartar intención y continuar
-                            wants.pop(eid, None)
-                            continue
+                active = self._count_active(world, eid, intent, spell_type)
+                max_inst = int(cfg.get('max_instances', 0) or 0)
+                if max_inst and active >= max_inst:
+                    wants.pop(eid, None)
+                    continue
+                if not bool(cfg.get('allow_overlap', True)) and active > 0:
+                    wants.pop(eid, None)
+                    continue
             except Exception:
-                # fallback duro: no bloquear por errores de lectura
                 pass
 
-            # Evaluar movilidad del hechizo una sola vez
-            allow_mov = cfg.get('allow_movement', False)
-
-            # Si el hechizo permite movimiento y es un proyectil, realizar "inline cast" para NPCs
-            # sin cambiar el estado global (mantiene ChaseState activo y no corta el movimiento).
-            player_eid = getattr(world, 'player_entity', None)
-            if eid in npcs and eid != player_eid and allow_mov and spell_type == 'projectile':
-                try:
-                    # Mana: cobrar aquí porque no pasaremos por ReleaseSpellState
-                    godmode = bool(getattr(getattr(world, 'state', None), 'godmode', False)) and (eid == getattr(world, 'player_entity', None))
-                    mana_comp = world.components.get('Mana', {}).get(eid)
-                    mana_cost = float(getattr(cfg, 'mana_cost', cfg.get('mana_cost', 0)))
-                    if not godmode and mana_comp is not None and mana_cost > 0:
-                        if float(mana_comp.current_mana) < mana_cost:
-                            wants.pop(eid, None)
-                            continue
-                        mana_comp.current_mana = int(max(0, float(mana_comp.current_mana) - mana_cost))
-
-                    # Spawn center del caster
-                    pos_cmp = world.components['Position'][eid]
-                    spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
-                    sprite_cmp = world.components.get('Sprite', {}).get(eid)
-                    if sprite_cmp:
-                        w, h = sprite_cmp.image.get_size()
-                        spawn_x += w/2; spawn_y += h/2
-                    # Objetivo: centro del player
-                    player_eid = getattr(world, 'player_entity', None)
-                    ppos = world.components['Position'].get(player_eid)
-                    if ppos is not None:
-                        px, py = ppos.x, ppos.y
-                        ps = world.components.get('Sprite', {}).get(player_eid)
-                        if ps:
-                            pw, ph = ps.image.get_size()
-                            px += pw/2; py += ph/2
-                    else:
-                        # Fallback: mismo punto (evita div/0)
-                        px, py = spawn_x + 1, spawn_y
-                    dx, dy = px - spawn_x, py - spawn_y
-                    length = math.hypot(dx, dy) or 1
-                    dx, dy = dx/length, dy/length
-
-                    # Crear proyectil (fireball genérico)
-                    fid = world.create_entity()
-                    world.components['Position'][fid] = Position(spawn_x, spawn_y)
-                    speed = cfg.get('speed', 0)
-                    world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
-                    # Damage base y overrides por meta
-                    base_damage = cfg.get('damage', 0)
-                    try:
-                        meta = getattr(intent, 'meta', None)
-                        if isinstance(meta, dict):
-                            if isinstance(meta.get('damage'), (int, float)):
-                                base_damage = float(meta.get('damage'))
-                            else:
-                                dmul = meta.get('damage_multiplier')
-                                if isinstance(dmul, (int, float)):
-                                    base_damage = float(base_damage) * float(dmul)
-                    except Exception:
-                        pass
-
-                    # vfx scale multiplier: mantener el impacto consistente con el tamaño del proyectil
-                    vfx_scale_mul = 1.0
-                    try:
-                        # Si meta.scale está definido, interpretarlo como escala absoluta del sprite;
-                        # convertirlo a multiplicador relativo respecto al scale de la spell
-                        meta = getattr(intent, 'meta', None)
-                        if isinstance(meta, dict):
-                            base_scale = float(cfg.get('scale', 1.0))
-                            if isinstance(meta.get('scale'), (int, float)):
-                                abs_scale = float(meta.get('scale'))
-                                vfx_scale_mul = (abs_scale / base_scale) if base_scale > 0 else 1.0
-                            else:
-                                mul = meta.get('scale_multiplier')
-                                if isinstance(mul, (int, float)):
-                                    vfx_scale_mul = float(mul)
-                    except Exception:
-                        vfx_scale_mul = 1.0
-
-                    # Radio base de colisión configurable por spell, escalado por multiplicador visual
-                    try:
-                        base_hit_radius = float(cfg.get('hit_radius', 2.0))
-                    except Exception:
-                        base_hit_radius = 2.0
-                    # Detectar si hubo override explícito de hit_radius en meta
-                    hit_radius_overridden = False
-                    try:
-                        meta = getattr(intent, 'meta', None)
-                        if isinstance(meta, dict):
-                            if isinstance(meta.get('hit_radius'), (int, float)):
-                                base_hit_radius = float(meta.get('hit_radius'))
-                                hit_radius_overridden = True
-                            else:
-                                hmul = meta.get('hit_radius_multiplier')
-                                if isinstance(hmul, (int, float)):
-                                    base_hit_radius = float(base_hit_radius) * float(hmul)
-                                    hit_radius_overridden = True
-                    except Exception:
-                        pass
-                    hit_radius = float(base_hit_radius) * float(vfx_scale_mul)
-
-                    world.components['FireballComponent'][fid] = FireballComponent(
-                        dx * speed, dy * speed,
-                        damage=base_damage,
-                        lifespan=cfg.get('lifespan', cfg.get('lifetime', 0)),
-                        caster=eid,
-                        spell_key=intent.spell,
-                        spawn_pos=(spawn_x, spawn_y),
-                        vfx_scale_multiplier=vfx_scale_mul,
-                        hit_radius=hit_radius
-                    )
-                    # Sprite/scale si está definido
-                    sprite_path = cfg.get('sprite')
-                    if sprite_path:
-                        try:
-                            img = pygame.image.load(sprite_path).convert_alpha()
-                            world.components['Sprite'][fid] = Sprite(img)
-                            # Base scale from spell cfg (flattened from vfx.sprite.scale)
-                            scale_value = cfg.get('scale', 1.0)
-                            # Apply per-cast overrides from intent.meta (e.g., scale or scale_multiplier)
-                            try:
-                                meta = getattr(intent, 'meta', None)
-                                if isinstance(meta, dict):
-                                    if isinstance(meta.get('scale'), (int, float)):
-                                        scale_value = float(meta.get('scale'))
-                                    else:
-                                        mul = meta.get('scale_multiplier')
-                                        if isinstance(mul, (int, float)):
-                                            scale_value = float(scale_value) * float(mul)
-                            except Exception:
-                                pass
-                            world.components['Scale'][fid] = Scale(scale=scale_value)
-                            # Autoajustar hit_radius al tamaño visual si no hubo override explícito
-                            try:
-                                if not hit_radius_overridden and img is not None:
-                                    iw, ih = img.get_size()
-                                    # Aproximamos radio como ~45% del diámetro mayor escalado
-                                    visual_radius = 0.45 * float(max(iw, ih)) * float(scale_value)
-                                    fb = world.components['FireballComponent'][fid]
-                                    fb.hit_radius = max(fb.hit_radius, visual_radius)
-                            except Exception:
-                                pass
-                        except Exception:
-                            pass
-                    # Consumir intención y saltar siguiente
-                    wants.pop(eid, None)
-                    logger.debug(f" [InlineCast] NPC {eid} -> fireball fid={fid} pos=({spawn_x:.1f},{spawn_y:.1f}) vel=({dx*speed:.2f},{dy*speed:.2f})")
-                    continue
-                except Exception:
-                    # Si algo falla, caer al flujo normal (con cambio a CastState)
-                    pass
-
-            # Permitir castear solo si Idle o (allow_movement y movimiento)
-            state_comp = npcs.get(eid)
-            if state_comp:
-                current = state_comp.fsm.current_state
-                # Permitir también castear durante ChaseState cuando el hechizo permite movimiento
-                try:
-                    current_name = getattr(getattr(current, '__class__', type(current)), '__name__', '')
-                except Exception:
-                    current_name = ''
-                moving_ok = allow_mov and (isinstance(current, MoveState) or current_name == 'ChaseState')
-                # salto si no está en IdleState o movimiento permitido
-                if not (isinstance(current, IdleState) or moving_ok):
-                    # en medio de cast; verificar interruptibilidad
-                    if not cfg.get('interruptible', False):
-                        # descartar intención si no es interruptible
-                        wants.pop(eid, None)
-                        continue
-
-            # Si tiene FSM global (NPC o jugador), iniciar sub-FSM de hechizo
+            # Lanzar FSM
             if eid in npcs:
-                npc_state = npcs[eid]
                 proxy = _EntityProxy(world, eid)
-                # Elegir estado inicial según tipo de entidad
-                if eid == world.player_entity:
+                if eid == player_eid:
                     new_state = PlayerSpellCastState()
-                    # Compute direction and spawn center
+                    # Dirección basada en ratón (mantiene comportamiento previo)
                     pos_cmp = world.components['Position'][eid]
-                    sprite_cmp = world.components.get('Sprite', {}).get(eid)
-                    if sprite_cmp:
-                        w, h = sprite_cmp.image.get_size()
-                        spawn_x, spawn_y = pos_cmp.x + w/2, pos_cmp.y + h/2
+                    spr = world.components.get('Sprite', {}).get(eid)
+                    if spr:
+                        w, h = spr.image.get_size()
+                        sx, sy = pos_cmp.x + w/2, pos_cmp.y + h/2
                     else:
-                        spawn_x, spawn_y = pos_cmp.x, pos_cmp.y
+                        sx, sy = pos_cmp.x, pos_cmp.y
                     if camera:
                         mx, my = pygame.mouse.get_pos()
-                        world_x = mx / camera.zoom + camera.offset_x
-                        world_y = my / camera.zoom + camera.offset_y
+                        wx = mx / camera.zoom + camera.offset_x
+                        wy = my / camera.zoom + camera.offset_y
                     else:
                         mx, my = pygame.mouse.get_pos()
-                        world_x, world_y = float(mx), float(my)
-                    dx, dy = world_x - spawn_x, world_y - spawn_y
-                    length = math.hypot(dx, dy) or 1
+                        wx, wy = float(mx), float(my)
+                    dx, dy = wx - sx, wy - sy
+                    length = math.hypot(dx, dy) or 1.0
                     new_state.spell_fsm.context['direction'] = (dx/length, dy/length)
-                    new_state.spell_fsm.context['spawn_pos'] = (spawn_x, spawn_y)
-                    # Guardar camera y spell para recalcular aiming dinámico
+                    new_state.spell_fsm.context['spawn_pos'] = (sx, sy)
                     new_state.spell_fsm.context['camera'] = camera
                     new_state.spell_fsm.context['spell'] = intent.spell
                     new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
@@ -367,10 +159,47 @@ class SpellCastingSystem:
                     new_state.spell_fsm.context['spell'] = intent.spell
                     new_state.spell_fsm.context['automatic'] = cfg.get('automatic', False)
                     new_state.spell_fsm.context['automatic_cast_punish'] = cfg.get('automatic_cast_punish', 1.0)
-                logger.debug(f" Entidad {eid} inicia hechizo '{intent.spell}' via FSM.")
-                npc_state.fsm.change_state(new_state, proxy)
-            # Limpiar intención
+                    new_state.spell_fsm.context['camera'] = camera
+                    # Inyectar meta (incluye spawn_pos desde AutoCastSystem)
+                    try:
+                        meta = getattr(intent, 'meta', None)
+                        if isinstance(meta, dict):
+                            for k, v in meta.items():
+                                new_state.spell_fsm.context[k] = v
+                    except Exception:
+                        pass
+                    # Si viene spawn_pos pero no direction, fija una dirección neutra para evitar que CastState.enter lo sobreescriba
+                    try:
+                        if ('spawn_pos' in new_state.spell_fsm.context) and ('direction' not in new_state.spell_fsm.context):
+                            new_state.spell_fsm.context['direction'] = (1.0, 0.0)
+                            new_state.spell_fsm.context['force_lock_direction'] = True
+                    except Exception:
+                        pass
+                    # Fallback robusto: si es un puddle (o root_whip) y no hay spawn_pos, usar centro del Player
+                    try:
+                        has_spawn = isinstance(new_state.spell_fsm.context.get('spawn_pos'), (tuple, list)) and len(new_state.spell_fsm.context.get('spawn_pos')) == 2
+                    except Exception:
+                        has_spawn = False
+                    if (not has_spawn) and (cfg.get('type') == 'puddle' or intent.spell == 'root_whip'):
+                        try:
+                            peid = player_eid
+                            if peid is not None:
+                                pos_map = world.components.get('Position', {})
+                                spr_map = world.components.get('Sprite', {})
+                                scl_map = world.components.get('Scale', {})
+                                ppos = pos_map.get(peid)
+                                if ppos is not None:
+                                    pspr = spr_map.get(peid)
+                                    pscl = scl_map.get(peid)
+                                    if pspr is not None:
+                                        from roguelike_game.ecs.utils.position_utils import compute_entity_center
+                                        cen = compute_entity_center(ppos, pspr, pscl)
+                                        new_state.spell_fsm.context['spawn_pos'] = (float(cen.x), float(cen.y))
+                                    else:
+                                        new_state.spell_fsm.context['spawn_pos'] = (float(ppos.x), float(ppos.y))
+                        except Exception:
+                            pass
+                npcs[eid].fsm.change_state(new_state, proxy)
+            # Consumir intención y continuar
             wants.pop(eid, None)
-            logger.debug(f" Intención de hechizo de entidad {eid} eliminada.\n")
-
-        # Nota: pulse la FSM de hechizo (prepare/channel/release/cooldown) en CastState y subestados
+            continue

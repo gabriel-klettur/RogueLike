@@ -1,14 +1,74 @@
 {
-  "2769a8ff-afd3-4e8c-94c1-2e92db0d9b08": {
+  "a7c009de-60f1-4caa-9cc0-667ff45c9b3f": {
+    "item_id": "gold",
+    "quantity": 11.0,
+    "zone_id": "zone_150_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 12,
+      "y": 21
+    },
+    "created_at": 1762468182.2744257
+  },
+  "d6742681-90bc-42c9-9bad-b11ea96f1648": {
     "item_id": "wood",
     "quantity": 1,
     "zone_id": "zone_150_50",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 17,
-      "y": 11
+      "x": 12,
+      "y": 23
     },
-    "created_at": 1762460086.9157722
+    "created_at": 1762468182.2749245
+  },
+  "c82e5caa-6cd5-4a00-97d5-4e676377e051": {
+    "item_id": "paella_01",
+    "quantity": 1,
+    "zone_id": "zone_150_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 13,
+      "y": 21
+    },
+    "created_at": 1762468182.2752461
+  },
+  "d94674ad-30c9-4184-95ba-08ed0244d27b": {
+    "item_id": "tortilla_spain_01",
+    "quantity": 3,
+    "zone_id": "zone_150_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 13,
+      "y": 23
+    },
+    "created_at": 1762468182.2755675
+  },
+  "ac165de3-33b4-47cc-b875-c6bdcc72efb2": {
+    "item_id": "borsh_01",
+    "quantity": 1,
+    "zone_id": "zone_150_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 14,
+      "y": 21
+    },
+    "created_at": 1762468182.2759132
+  },
+  "afe30588-4555-43ec-bad1-8e8a13c51b2e": {
+    "item_id": "completo_chileno_01",
+    "quantity": 1,
+    "zone_id": "zone_150_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 14,
+      "y": 23
+    },
+    "created_at": 1762468182.2762492
   }
 }
