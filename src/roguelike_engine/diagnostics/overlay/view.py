@@ -153,6 +153,7 @@ class DiagnosticsOverlayView:
             ("patrol", "Patrol"),
             ("defend_area", "DefendArea"),
             ("telegraph", "Telegraph"),
+            ("windup_outline", "WindupOutline"),
             ("trail", "Trail"),
             ("building_collision", "BuildingCollision"),
         ]

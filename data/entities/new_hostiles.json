@@ -50,6 +50,7 @@
           "damage_stop_probability": 0.1,
           "attack_windup_s": 0.5
         },
+        "use_attack_telegraph": true,
         "fsm_set": "Monster_Default",
         "patrol": {
           "id": "line"

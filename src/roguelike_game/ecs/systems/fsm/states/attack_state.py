@@ -10,6 +10,7 @@ from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 from roguelike_game.ecs.components.combat.telegraph_arc import TelegraphArc
+from roguelike_game.ecs.components.combat.windup_outline import WindupOutline
 
 class AttackState(State):
     """
@@ -135,6 +136,10 @@ class AttackState(State):
                         world.components.get('TelegraphArc', {}).pop(eid, None)
                     except Exception:
                         pass
+                    try:
+                        world.components.get('WindupOutline', {}).pop(eid, None)
+                    except Exception:
+                        pass
                     world.components.get('ChaseTarget', {}).pop(eid, None)
                     from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
                     world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)
@@ -194,97 +199,78 @@ class AttackState(State):
                 start_t = now
                 windup_s = 1.0
                 lock_until = 0.0
-            # Detectar si es Final Boss Barbol
-            try:
-                arche_map = world.components.get('MonsterArchetype', {})
-                mt = arche_map.get(eid)
-                mtype = (getattr(mt, 'type', None) or '').lower() if mt else None
-                is_final_boss = bool(isinstance(mtype, str) and mtype.startswith('final_boss_barbol'))
-            except Exception:
-                is_final_boss = False
-            # Si el jefe ya disparó y el lock terminó, salir a ChaseState
-            if is_final_boss:
-                try:
-                    fired = bool(world.components['NPCState'][eid].fsm.context.get('attack_fired', False))
-                except Exception:
-                    fired = False
-                if fired and now >= lock_until:
-                    try:
-                        world.components.get('TelegraphArc', {}).pop(eid, None)
-                    except Exception:
-                        pass
-                    world.components.get('ChaseTarget', {}).pop(eid, None)
-                    from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
-                    world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)
-                    return
-            # Si está bajo lock posterior al disparo, mantener velocidad 0
-            if is_final_boss and (now < lock_until):
-                # Mantener jefe inmóvil y sin ChaseTarget bajo lock posterior al disparo
+            # Wind-up para TODOS los NPCs: inmovilizar y esperar antes de ejecutar el ataque
+            if now - start_t < windup_s:
+                # Inmovilizar durante el wind-up y evitar que sistemas de persecución reintroduzcan movimiento
                 world.components['Velocity'][eid] = Velocity(0, 0)
                 world.components.get('ChaseTarget', {}).pop(eid, None)
-            # Si no ha transcurrido el wind-up, esperar en AttackState sin atacar (solo para jefe final)
-            if is_final_boss and (now - start_t < windup_s):
-                # Inmovilizar al jefe durante el wind-up
-                if is_final_boss:
-                    world.components['Velocity'][eid] = Velocity(0, 0)
-                    # Evitar que sistemas de persecución reintroduzcan movimiento
-                    world.components.get('ChaseTarget', {}).pop(eid, None)
-                # Actualizar/crear telegraph del cono de ataque con los parámetros del slash
+                # Registrar/actualizar outline amarillo del collider mientras dura el wind-up
                 try:
-                    arche_map = world.components.get('MonsterArchetype', {})
-                    mt = arche_map.get(eid)
-                    mtype = (getattr(mt, 'type', None) or '').lower() if mt else None
-                except Exception:
-                    mtype = None
-                spell_id = 'hostile_slash'
-                if isinstance(mtype, str) and mtype.startswith('final_boss_barbol'):
-                    spell_id = 'boss_barbol_slash'
-                elif mtype in ('barbol_oscuro', 'oscuro', 'dark'):
-                    spell_id = 'hostile_slash_dark'
-                elif mtype in ('barbol_morado', 'morado', 'purple'):
-                    spell_id = 'hostile_slash_purple'
-                elif mtype in ('barbol_boss', 'boss'):
-                    spell_id = 'hostile_slash_red'
-                elif mtype in ('barbol_cyan', 'cyan'):
-                    spell_id = 'hostile_slash_cyan'
-                elif mtype in ('barbol_gris', 'gris', 'gray', 'grey'):
-                    spell_id = 'hostile_slash_gray'
-                elif mtype in ('barbol_gigante', 'gigante', 'giant'):
-                    spell_id = 'hostile_slash_giant'
-                cfg = SPELLS.get(spell_id) or SPELLS.get('hostile_slash') or SPELLS.get('slash')
-                # Usar hit_radius/hit_arc_degrees si existen, si no, radius/arc_range_degrees
-                try:
-                    import math
-                    hit_radius = float(cfg.get('hit_radius', 0.0)) if cfg else 0.0
-                    if hit_radius <= 0.0:
-                        hit_radius = float(cfg.get('radius', 0.0)) if cfg else 0.0
-                    arc_deg = float(cfg.get('hit_arc_degrees', 0.0)) if cfg else 0.0
-                    if arc_deg <= 0.0:
-                        arc_deg = float(cfg.get('arc_range_degrees', 0.0)) if cfg else 0.0
-                    arc_rad = math.radians(arc_deg)
-                    # Dirección normalizada hacia el jugador
-                    mag = (dx*dx + dy*dy) ** 0.5
-                    ndx, ndy = (dx / mag, dy / mag) if mag > 1e-6 else (1.0, 0.0)
-                    # Color desde cfg.color (si no, fallback). alpha semitransparente
-                    col = cfg.get('telegraph_color', None) if cfg else None
-                    if not (isinstance(col, (list, tuple)) and len(col) >= 3):
-                        col = cfg.get('color', None) if cfg else None
-                    if not (isinstance(col, (list, tuple)) and len(col) >= 3):
-                        col = [255, 230, 150]
-                    a = int(cfg.get('telegraph_alpha', 90)) if cfg else 90
-                    a = max(0, min(255, a))
-                    rgba = (int(col[0]), int(col[1]), int(col[2]), a)
-                    # Offset visual coherente con el slash
-                    offset = float(cfg.get('offset', 0.0)) if cfg else 0.0
-                    # Progreso radial 0..1 del wind-up
-                    try:
-                        prog = max(0.0, min(1.0, (now - start_t) / max(1e-6, windup_s)))
-                    except Exception:
-                        prog = 0.0
-                    arc_map = world.components.setdefault('TelegraphArc', {})
-                    arc_map[eid] = TelegraphArc(radius=hit_radius, arc_angle=arc_rad, direction=(ndx, ndy), color=rgba, offset=offset, progress=prog)
+                    world.components.setdefault('WindupOutline', {})[eid] = WindupOutline()
                 except Exception:
                     pass
+                # Telegraph para jefe final o para clases con flag use_attack_telegraph
+                show_flag = False
+                try:
+                    show_flag = bool(world.components['NPCState'][eid].fsm.context.get('use_attack_telegraph', False))
+                except Exception:
+                    show_flag = False
+                if is_final_boss or show_flag:
+                    try:
+                        arche_map = world.components.get('MonsterArchetype', {})
+                        mt = arche_map.get(eid)
+                        mtype = (getattr(mt, 'type', None) or '').lower() if mt else None
+                    except Exception:
+                        mtype = None
+                    spell_id = 'hostile_slash'
+                    if isinstance(mtype, str) and mtype.startswith('final_boss_barbol'):
+                        spell_id = 'boss_barbol_slash'
+                    elif mtype in ('barbol_oscuro', 'oscuro', 'dark'):
+                        spell_id = 'hostile_slash_dark'
+                    elif mtype in ('barbol_morado', 'morado', 'purple'):
+                        spell_id = 'hostile_slash_purple'
+                    elif mtype in ('barbol_boss', 'boss'):
+                        spell_id = 'hostile_slash_red'
+                    elif mtype in ('barbol_cyan', 'cyan'):
+                        spell_id = 'hostile_slash_cyan'
+                    elif mtype in ('barbol_gris', 'gris', 'gray', 'grey'):
+                        spell_id = 'hostile_slash_gray'
+                    elif mtype in ('barbol_gigante', 'gigante', 'giant'):
+                        spell_id = 'hostile_slash_giant'
+                    cfg = SPELLS.get(spell_id) or SPELLS.get('hostile_slash') or SPELLS.get('slash')
+                    # Usar hit_radius/hit_arc_degrees si existen, si no, radius/arc_range_degrees
+                    try:
+                        import math
+                        hit_radius = float(cfg.get('hit_radius', 0.0)) if cfg else 0.0
+                        if hit_radius <= 0.0:
+                            hit_radius = float(cfg.get('radius', 0.0)) if cfg else 0.0
+                        arc_deg = float(cfg.get('hit_arc_degrees', 0.0)) if cfg else 0.0
+                        if arc_deg <= 0.0:
+                            arc_deg = float(cfg.get('arc_range_degrees', 0.0)) if cfg else 0.0
+                        arc_rad = math.radians(arc_deg)
+                        # Dirección normalizada hacia el jugador
+                        mag = (dx*dx + dy*dy) ** 0.5
+                        ndx, ndy = (dx / mag, dy / mag) if mag > 1e-6 else (1.0, 0.0)
+                        # Color desde cfg.color (si no, fallback). alpha semitransparente
+                        col = cfg.get('telegraph_color', None) if cfg else None
+                        if not (isinstance(col, (list, tuple)) and len(col) >= 3):
+                            col = cfg.get('color', None) if cfg else None
+                        if not (isinstance(col, (list, tuple)) and len(col) >= 3):
+                            col = [255, 230, 150]
+                        a = int(cfg.get('telegraph_alpha', 90)) if cfg else 90
+                        a = max(0, min(255, a))
+                        rgba = (int(col[0]), int(col[1]), int(col[2]), a)
+                        # Offset visual coherente con el slash
+                        offset = float(cfg.get('offset', 0.0)) if cfg else 0.0
+                        # Progreso radial 0..1 del wind-up
+                        try:
+                            prog = max(0.0, min(1.0, (now - start_t) / max(1e-6, windup_s)))
+                        except Exception:
+                            prog = 0.0
+                        arc_map = world.components.setdefault('TelegraphArc', {})
+                        arc_map[eid] = TelegraphArc(radius=hit_radius, arc_angle=arc_rad, direction=(ndx, ndy), color=rgba, offset=offset, progress=prog)
+                    except Exception:
+                        pass
                 return
             # Determinar cooldown del slash desde config (fallback 1.0s)
             try:
@@ -323,6 +309,10 @@ class AttackState(State):
                     # Limpiar telegraph al ejecutar el ataque
                     try:
                         world.components.get('TelegraphArc', {}).pop(eid, None)
+                    except Exception:
+                        pass
+                    try:
+                        world.components.get('WindupOutline', {}).pop(eid, None)
                     except Exception:
                         pass
                     spawn_meta = {
@@ -423,6 +413,10 @@ class AttackState(State):
                     world.components.get('TelegraphArc', {}).pop(eid, None)
                 except Exception:
                     pass
+                try:
+                    world.components.get('WindupOutline', {}).pop(eid, None)
+                except Exception:
+                    pass
                 spawn_meta = {
                     'target_eid': int(world.player_entity),
                     'rotate_with_owner': False,
@@ -469,6 +463,10 @@ class AttackState(State):
             world.components.get('TelegraphArc', {}).pop(eid, None)
         except Exception:
             pass
+        try:
+            world.components.get('WindupOutline', {}).pop(eid, None)
+        except Exception:
+            pass
         from roguelike_game.ecs.systems.fsm.states.monster.chase_state import ChaseState
         world.components['NPCState'][eid].fsm.change_state(ChaseState(), entity)
 
@@ -477,3 +475,11 @@ class AttackState(State):
         world = entity.world
         world.components.get('ChaseTarget', {}).pop(entity.id, None)
         # Resetear velocidad al salir de AttackState
+        try:
+            world.components.get('TelegraphArc', {}).pop(entity.id, None)
+        except Exception:
+            pass
+        try:
+            world.components.get('WindupOutline', {}).pop(entity.id, None)
+        except Exception:
+            pass

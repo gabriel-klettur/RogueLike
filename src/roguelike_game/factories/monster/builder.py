@@ -177,6 +177,13 @@ class MonsterBuilder:
                     else:
                         # Default global wind-up for hostiles if not specified
                         fsm.context.setdefault("attack_windup_s", 1.0)
+                    # Inject optional per-class telegraph flag
+                    try:
+                        tele = cfg.get("use_attack_telegraph")
+                        if tele is not None:
+                            fsm.context["use_attack_telegraph"] = bool(tele)
+                    except Exception:
+                        pass
                     world.components["NPCState"][eid] = NPCState(fsm, initial_name)
                     return eid
             except Exception:
@@ -202,6 +209,13 @@ class MonsterBuilder:
                 fsm.context["attack_windup_s"] = float(windup)
             else:
                 fsm.context.setdefault("attack_windup_s", 1.0)
+            # Inject optional per-class telegraph flag
+            try:
+                tele = cfg.get("use_attack_telegraph")
+                if tele is not None:
+                    fsm.context["use_attack_telegraph"] = bool(tele)
+            except Exception:
+                pass
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
             if explicit_null_patrol:
@@ -222,5 +236,12 @@ class MonsterBuilder:
                 fsm.context["attack_windup_s"] = float(windup)
             else:
                 fsm.context.setdefault("attack_windup_s", 1.0)
+            # Inject optional per-class telegraph flag
+            try:
+                tele = cfg.get("use_attack_telegraph")
+                if tele is not None:
+                    fsm.context["use_attack_telegraph"] = bool(tele)
+            except Exception:
+                pass
 
         return eid

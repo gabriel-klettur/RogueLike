@@ -201,14 +201,20 @@ def render_attack_telegraphs(manager, screen, camera) -> None:
         toggles = getattr(toggles, 'toolbar_toggles', {}) or {}
     except Exception:
         toggles = {}
-    if not toggles.get('telegraph', True):
-        return
     try:
-        if getattr(manager, "_telegraph_render_system", None) is None:
-            from roguelike_game.ecs.systems.rendering.telegraph_render_system import TelegraphRenderSystem
-            manager._telegraph_render_system = TelegraphRenderSystem(perf_log=None)
         world = manager.ecs.ecs_world
-        manager._telegraph_render_system.update(world, screen, camera)
+        # Telegraph cones
+        if toggles.get('telegraph', True):
+            if getattr(manager, "_telegraph_render_system", None) is None:
+                from roguelike_game.ecs.systems.rendering.telegraph_render_system import TelegraphRenderSystem
+                manager._telegraph_render_system = TelegraphRenderSystem(perf_log=None)
+            manager._telegraph_render_system.update(world, screen, camera)
+        # Wind-up collider outlines
+        if toggles.get('windup_outline', True):
+            if getattr(manager, "_windup_outline_render_system", None) is None:
+                from roguelike_game.ecs.systems.rendering.windup_outline_render_system import WindupOutlineRenderSystem
+                manager._windup_outline_render_system = WindupOutlineRenderSystem(perf_log=None)
+            manager._windup_outline_render_system.update(world, screen, camera)
     except Exception:
         # Do not disrupt main render if telegraph rendering fails
         pass

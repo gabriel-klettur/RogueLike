@@ -3,18 +3,40 @@
   "player": {
     "level": "global_map",
     "pos": [
-      205,
-      80
+      166,
+      60
     ]
   },
-  "npcs": {},
+  "npcs": {
+    "2e895fd3-1024-468c-9f8b-357b69f8eb32": {
+      "level": "global_map",
+      "tile": [
+        173,
+        75
+      ],
+      "hp": 1900,
+      "dead": false,
+      "prototype": "final_boss_barbol"
+    }
+  },
   "levels": {
     "global_map": {
       "player_pos": [
-        205,
-        80
+        166,
+        60
       ],
-      "npc_states": {}
+      "npc_states": {
+        "2e895fd3-1024-468c-9f8b-357b69f8eb32": {
+          "level": "global_map",
+          "tile": [
+            173,
+            75
+          ],
+          "hp": 1900,
+          "dead": false,
+          "prototype": "final_boss_barbol"
+        }
+      }
     }
   },
   "player_inventory": {
@@ -23,7 +45,7 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 9.0
+        "quantity": 11.0
       },
       {
         "item": "wood",
@@ -61,14 +83,54 @@
       null
     ]
   },
-  "npc_inventories": {},
+  "npc_inventories": {
+    "c09cf693-f261-4d49-96db-9761d901f947": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "cbcc8fd9-46a1-496c-9554-efda972222e7": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "d5ef56cd-c6c0-4047-a5e5-874cc4de56c3": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "gold",
+          "quantity": 1
+        },
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        }
+      ]
+    },
+    "2e895fd3-1024-468c-9f8b-357b69f8eb32": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "9e2b848a-9016-4dc4-b4dc-57d049e9a9de": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
+    }
+  },
   "meta": {
     "name": "partida_2025-11-02_12-39-16",
     "created_at": "2025-11-02T12:39:16",
-    "last_played": "2025-11-06T18:10:50",
+    "last_played": "2025-11-06T20:14:54",
     "player": {
-      "xp": 70,
-      "level": 1
+      "xp": 20,
+      "level": 0
     },
     "items_summary": {
       "stacks": 6,
@@ -82,7 +144,7 @@
     }
   },
   "time": {
-    "minute": 958,
+    "minute": 509,
     "time_scale": 0.4
   }
 }

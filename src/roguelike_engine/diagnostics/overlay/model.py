@@ -97,6 +97,7 @@ class DiagnosticsOverlayModel:
             "patrol": True,
             "defend_area": True,
             "telegraph": True,
+            "windup_outline": True,
             "trail": True,
             "building_collision": True,
         }
