@@ -103,10 +103,11 @@ def _waves_for_template(template: Dict[str, Any], waves_catalog: Dict[str, Any])
 
 
 def import_spawners() -> ImportResult:
-    if not INSTANCES_PATH.exists() or not TEMPLATES_PATH.exists():
-        raise SystemExit("Missing spawners JSON files")
-
+    # Compute composite hash even if inputs are missing (idempotent skip behavior)
     composite_hash = _content_hash_composite([INSTANCES_PATH, TEMPLATES_PATH, WAVES_PATH])
+    if not INSTANCES_PATH.exists() or not TEMPLATES_PATH.exists():
+        # Non-fatal: indicate skipped import due to missing inputs
+        return ImportResult(False, 0, composite_hash, "missing input files")
 
     instances = _json_load(INSTANCES_PATH)
     templates_list = _json_load(TEMPLATES_PATH)

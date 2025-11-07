@@ -187,16 +187,36 @@ class MapSettings:
     @property
     def ZONES_INDEX(self) -> Path:
         """Ruta al índice de zonas del mundo activo."""
+        override = self.__dict__.get('_zones_index_override')
+        if override is not None:
+            return override
         return (self.worlds_dir / self.current_world / 'zones' / 'zones.json')
+
+    @ZONES_INDEX.setter
+    def ZONES_INDEX(self, value: Union[str, Path, None]) -> None:
+        if value is None:
+            self.__dict__.pop('_zones_index_override', None)
+        else:
+            try:
+                self.__dict__['_zones_index_override'] = Path(value)
+            except Exception:
+                self.__dict__['_zones_index_override'] = value
+        self.refresh_zone_offsets()
 
     @property
     def overlays_dir(self) -> Path:
         """Directorio de overlays por zona del mundo activo."""
+        override = self.__dict__.get('_zones_index_override')
+        if override is not None:
+            return override.parent / 'overlays'
         return (self.worlds_dir / self.current_world / 'zones' / 'overlays')
 
     @property
     def collisions_dir(self) -> Path:
         """Directorio de colisiones por zona del mundo activo."""
+        override = self.__dict__.get('_zones_index_override')
+        if override is not None:
+            return override.parent.parent / 'collisions'
         return (self.worlds_dir / self.current_world / 'collisions')
 
     @property
@@ -350,6 +370,11 @@ class MapSettings:
             self.current_world = world_id
         # Invalidate cached offsets and any dependent properties
         self.refresh_zone_offsets()
+        # Clear any ZONES_INDEX override to avoid leaking paths across worlds in tests
+        try:
+            self.__dict__.pop('_zones_index_override', None)
+        except Exception:
+            pass
 
 # Instancia global para uso en toda la aplicación
 global_map_settings = MapSettings()

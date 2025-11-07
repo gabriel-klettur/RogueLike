@@ -323,7 +323,10 @@ class TileEditorController:
         def _save_overlays(zones):
             from roguelike_engine.map.model.overlay.overlay_manager import save_layers, load_layers
             SENTINELS = {"no zone", "no-zone", "no_zone"}
-            cur_layer = self.editor.current_layer
+            editor = getattr(self, "editor", None)
+            if editor is None or not hasattr(editor, "current_layer"):
+                return
+            cur_layer = editor.current_layer
             try:
                 uniq_codes = sorted({map.layers[cur_layer][r][c] for (r, c) in cells}) if cells else []
                 logger.info(f"[TileEditor] flush save: zones={zones} cells={len(cells)} layer={cur_layer.name if hasattr(cur_layer,'name') else cur_layer} unique_codes={uniq_codes}")
@@ -423,7 +426,6 @@ class TileEditorController:
                 self.ecs_world.map_manager = map
                 self.ecs_world.rebuild_spatial_index()
             except Exception:
-                # Fallback: at least mark dirty
                 try:
                     self.ecs_world.invalidate_spatial_index()
                 except Exception:

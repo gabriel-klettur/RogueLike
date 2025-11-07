@@ -15,12 +15,44 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     preserve previous behavior and test hooks.
     """
     dirty_rects: list = []
+    # Collision-only mode takes precedence over any early guard
+    try:
+        co_mode = (
+            manager.tiles_editor.editor_state.active
+            and manager.tiles_editor.editor_state.toolbar_state.show_collisions
+            and not manager.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
+        )
+        if co_mode:
+            dirty = manager._render_collisions(screen, camera, map_)
+            try:
+                manager._last_collision_only = co_mode
+            except Exception:
+                pass
+            return dirty
+    except Exception:
+        pass
+    # Early tiles editor invalidation: ensure visible_layers changes invalidate cache even with minimal map objects
+    try:
+        editor_state = getattr(manager.tiles_editor, "editor_state", None)
+        if editor_state and editor_state.active:
+            visible = editor_state.toolbar_state.visible_layers
+            if visible != getattr(manager, "_last_visible_layers", None):
+                try:
+                    map_.view.invalidate_cache()
+                finally:
+                    try:
+                        manager._last_visible_layers = visible.copy()
+                    except Exception:
+                        manager._last_visible_layers = dict(visible)
+    except Exception:
+        pass
     # Early guard for blank worlds: if zones.json has no user-defined zones,
     # and there are no overlay files (or only the sentinel), skip drawing to avoid base fallback visuals
     try:
-        if getattr(global_map_settings, 'use_zones_json', False) and getattr(global_map_settings, 'is_blank_world', None):
+        te_active = bool(getattr(getattr(manager, 'tiles_editor', None), 'editor_state', None) and manager.tiles_editor.editor_state.active)
+        if not te_active and getattr(global_map_settings, 'is_blank_world', None):
             if global_map_settings.is_blank_world():
-                odir = global_map_settings.overlays_dir
+                odir = getattr(global_map_settings, 'overlays_dir', None)
                 files = list(Path(odir).glob('*.overlay.json')) if odir else []
                 if not files:
                     # Return full-screen rect so the black clear is presented
@@ -35,7 +67,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                         (s[:-8] if s.endswith('.overlay') else s)
                         for s in (f.stem.lower().replace('_', ' ') for f in files)
                     }
-                    if stems.issubset({'no zone', 'no-zone'}):
+                    if stems.issubset({'no zone', 'no-zone', 'no_zone'}):
                         try:
                             return [screen.get_rect()]
                         except Exception:
@@ -44,9 +76,18 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                     pass
     except Exception:
         pass
+    # Defensive guard: minimal map objects (no 'matrix') should not call view.render
+    try:
+        if not te_active and not hasattr(map_, 'matrix'):
+            try:
+                return [screen.get_rect()]
+            except Exception:
+                return dirty_rects
+    except Exception:
+        pass
     # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
     try:
-        if getattr(global_map_settings, 'use_zones_json', False):
+        if not te_active and getattr(global_map_settings, 'use_zones_json', False):
             odir = global_map_settings.overlays_dir
             if odir and list(Path(odir).glob('*.overlay.json')) == []:
                 # Count user-defined zones from ZONES_INDEX (exclude sentinels)

@@ -4,10 +4,14 @@ from typing import Optional, List
 from pathlib import Path
 
 from .interfaces import OverlayStore
-from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.config import map_config
+from roguelike_engine.config import config as engine_config
 
 import logging
 logger = logging.getLogger(__name__)
+
+# Expose DATA_DIR for tests to monkeypatch; default to engine config
+DATA_DIR = getattr(engine_config, "DATA_DIR", ".")
 
 class JsonOverlayStore(OverlayStore):
     """
@@ -23,24 +27,29 @@ class JsonOverlayStore(OverlayStore):
         """
         Carga la capa overlay para `map_name`, usando configuración de zonas.
         """
-        # Directorio dinámico por mundo activo
-        zones_dir = global_map_settings.overlays_dir
+        # Directorio dinámico por mundo activo, con fallback a DATA_DIR
+        zones_dir = getattr(map_config.global_map_settings, 'overlays_dir', None)
+        if not zones_dir:
+            zones_dir = Path(DATA_DIR) / 'map' / 'zones' / 'overlays'
+        zones_dir = Path(zones_dir)
         os.makedirs(zones_dir, exist_ok=True)
+
         # Determinar zona según configuración (normalizar sentinelas)
         zn = str(map_name)
         zl = zn.replace('_', ' ').lower()
-        if zl in ("no zone", "no-zone"):
-            zone_name = "no zone"
-        elif zn in global_map_settings.zone_offsets.keys():
+        if zl in ("no zone", "no-zone", "no_zone"):
+            zone_name = "no_zone"
+        elif zn in map_config.global_map_settings.zone_offsets.keys():
             zone_name = zn
         else:
-            zone_name = "no zone"
+            zone_name = "no_zone"
         zone_path = zones_dir / f"{zone_name}.overlay.json"
+
         if zone_path.is_file():
             with open(zone_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 try:
-                    world = getattr(global_map_settings, 'current_world', '?')
+                    world = getattr(map_config.global_map_settings, 'current_world', '?')
                     if isinstance(data, dict) and 'layers' in data:
                         layers = data.get('layers', {})
                         counts = {k: sum(1 for row in v for x in row if x) for k, v in layers.items() if isinstance(v, list)}
@@ -56,23 +65,28 @@ class JsonOverlayStore(OverlayStore):
         """
         Guarda el overlay usando configuración de zonas.
         """
-        # Directorio dinámico por mundo activo
-        zones_dir = global_map_settings.overlays_dir
+        # Directorio dinámico por mundo activo, con fallback a DATA_DIR
+        zones_dir = getattr(map_config.global_map_settings, 'overlays_dir', None)
+        if not zones_dir:
+            zones_dir = Path(DATA_DIR) / 'map' / 'zones' / 'overlays'
+        zones_dir = Path(zones_dir)
         os.makedirs(zones_dir, exist_ok=True)
         # Determinar zona según configuración (normalizar sentinelas)
         zn = str(map_name)
         zl = zn.replace('_', ' ').lower()
-        if zl in ("no zone", "no-zone"):
-            zone_name = "no zone"
-        elif zn in global_map_settings.zone_offsets.keys():
+        if zl in ("no zone", "no-zone", "no_zone"):
+            zone_name = "no_zone"
+        elif zn in map_config.global_map_settings.zone_offsets.keys():
             zone_name = zn
         else:
-            zone_name = "no zone"
+            zone_name = "no_zone"
         out_path = zones_dir / f"{zone_name}.overlay.json"
+        # Ensure parent directories exist (belt and suspenders)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(overlay, f, ensure_ascii=False, indent=2)
             try:
-                world = getattr(global_map_settings, 'current_world', '?')
+                world = getattr(map_config.global_map_settings, 'current_world', '?')
                 if isinstance(overlay, dict) and 'layers' in overlay:
                     layers = overlay.get('layers', {})
                     counts = {k: sum(1 for row in v for x in row if x) for k, v in layers.items() if isinstance(v, list)}

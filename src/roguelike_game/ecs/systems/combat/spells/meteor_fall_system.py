@@ -195,80 +195,74 @@ class MeteorFallSystem:
 
                 try:
                     # Guardar contra duplicados: si ya existe un puddle en el mismo punto (±1px) para este spell, no crear otro
-                    try:
-                        existing = False
-                        puddles_map = world.components.get('PuddleComponent', {})
-                        pos_map_all = world.components.get('Position', {})
-                        skey = getattr(m, 'spell_key', '')
-                        for pid, pc in list(puddles_map.items()):
-                            ppos = pos_map_all.get(pid)
-                            if ppos is None:
-                                continue
-                            if abs(ppos.x - m.target_x) <= 1.0 and abs(ppos.y - m.target_y) <= 1.0:
-                                if getattr(pc, 'spell_key', '') == skey:
-                                    existing = True
-                                    break
-                        if existing:
-                            raise RuntimeError('skip_mark_duplicate')
-                    except Exception as _e:
-                        if str(_e) != 'skip_mark_duplicate':
-                            # proceed to create if check failed unexpectedly
-                            pass
+                    existing = False
+                    puddles_map = world.components.get('PuddleComponent', {})
+                    pos_map_all = world.components.get('Position', {})
+                    skey = getattr(m, 'spell_key', '')
+                    for pid, pc in list(puddles_map.items()):
+                        ppos = pos_map_all.get(pid)
+                        if ppos is None:
+                            continue
+                        if abs(ppos.x - m.target_x) <= 1.0 and abs(ppos.y - m.target_y) <= 1.0:
+                            if getattr(pc, 'spell_key', '') == skey:
+                                existing = True
+                                break
 
-                    mark = world.create_entity()
-                    world.components.setdefault('Position', {})[mark] = Position(m.target_x, m.target_y)
-                    world.components.setdefault('ZLayer', {})[mark] = ZLayer(Z_LAYERS.get('ground', 1))
-                    # Leer escala del impacto desde spells.json con múltiples fallbacks
-                    try:
-                        cfg = SPELLS.get(getattr(m, 'spell_key', ''), {})
-                    except Exception:
-                        cfg = {}
-                    impact_scale = 0.10
-                    try:
-                        vfx_obj = getattr(cfg, 'vfx', None)
-                        if not isinstance(vfx_obj, dict):
-                            vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
-                    except Exception:
-                        vfx_obj = None
-                    try:
-                        if isinstance(vfx_obj, dict):
-                            impact = vfx_obj.get('impact') or {}
-                            # 1) vfx.impact.sprite.scale
-                            if isinstance(impact, dict):
-                                spr = impact.get('sprite') or {}
-                                if isinstance(spr, dict) and isinstance(spr.get('scale'), (int, float)):
-                                    impact_scale = float(spr.get('scale'))
-                                elif isinstance(impact.get('impact_scale'), (int, float)):
-                                    impact_scale = float(impact.get('impact_scale'))
-                            # 2) vfx.impact_scale en raíz de vfx
-                            if impact_scale == 0.10 and isinstance(vfx_obj.get('impact_scale'), (int, float)):
-                                impact_scale = float(vfx_obj.get('impact_scale'))
-                            # 3) vfx.sprite.scale (escalado general)
+                    if not existing:
+                        mark = world.create_entity()
+                        world.components.setdefault('Position', {})[mark] = Position(m.target_x, m.target_y)
+                        world.components.setdefault('ZLayer', {})[mark] = ZLayer(Z_LAYERS.get('ground', 1))
+                        # Leer escala del impacto desde spells.json con múltiples fallbacks
+                        try:
+                            cfg = SPELLS.get(getattr(m, 'spell_key', ''), {})
+                        except Exception:
+                            cfg = {}
+                        impact_scale = 0.10
+                        try:
+                            vfx_obj = getattr(cfg, 'vfx', None)
+                            if not isinstance(vfx_obj, dict):
+                                vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                        except Exception:
+                            vfx_obj = None
+                        try:
+                            if isinstance(vfx_obj, dict):
+                                impact = vfx_obj.get('impact') or {}
+                                # 1) vfx.impact.sprite.scale
+                                if isinstance(impact, dict):
+                                    spr = impact.get('sprite') or {}
+                                    if isinstance(spr, dict) and isinstance(spr.get('scale'), (int, float)):
+                                        impact_scale = float(spr.get('scale'))
+                                    elif isinstance(impact.get('impact_scale'), (int, float)):
+                                        impact_scale = float(impact.get('impact_scale'))
+                                # 2) vfx.impact_scale en raíz de vfx
+                                if impact_scale == 0.10 and isinstance(vfx_obj.get('impact_scale'), (int, float)):
+                                    impact_scale = float(vfx_obj.get('impact_scale'))
+                                # 3) vfx.sprite.scale (escalado general)
+                                if impact_scale == 0.10:
+                                    spr2 = vfx_obj.get('sprite') or {}
+                                    if isinstance(spr2, dict) and isinstance(spr2.get('scale'), (int, float)):
+                                        impact_scale = float(spr2.get('scale'))
+                            # 4) cfg.scale (ya aplanado desde vfx.sprite.scale por spells_config)
                             if impact_scale == 0.10:
-                                spr2 = vfx_obj.get('sprite') or {}
-                                if isinstance(spr2, dict) and isinstance(spr2.get('scale'), (int, float)):
-                                    impact_scale = float(spr2.get('scale'))
-                        # 4) cfg.scale (ya aplanado desde vfx.sprite.scale por spells_config)
-                        if impact_scale == 0.10:
-                            impact_scale = float(getattr(cfg, 'scale', impact_scale))
-                    except Exception:
-                        pass
-                    world.components.setdefault('Scale', {})[mark] = Scale(impact_scale)
-                    # Usar sequence_frames del PuddleComponent para que lo dibuje PuddleRenderSystem centrado
-                    impact_path = get_impact_sprite_path(cfg, METEOR_IMPACT_IMAGE)
-                    frame = load_image(impact_path)
-                    world.components.setdefault('PuddleComponent', {})[mark] = PuddleComponent(
-                        radius=float(m.impact_radius),
-                        duration=10.0,
-                        tick_period=9999.0,
-                        damage=0.0,
-                        heal=0.0,
-                        owner=m.owner,
-                        spell_key=getattr(m, 'spell_key', ''),
-                        sequence_frames=[frame],
-                        sequence_times=[0.0],
-                        hold_last_frame=True,
-                    )
+                                impact_scale = float(getattr(cfg, 'scale', impact_scale))
+                        except Exception:
+                            pass
+                        world.components.setdefault('Scale', {})[mark] = Scale(impact_scale)
+                        # Usar sequence_frames del PuddleComponent para que lo dibuje PuddleRenderSystem centrado
+                        impact_path = get_impact_sprite_path(cfg, METEOR_IMPACT_IMAGE)
+                        frame = load_image(impact_path)
+                        world.components.setdefault('PuddleComponent', {})[mark] = PuddleComponent(
+                            radius=float(m.impact_radius),
+                            duration=10.0,
+                            tick_period=9999.0,
+                            damage=0.0,
+                            heal=0.0,
+                            owner=m.owner,
+                            spell_key=getattr(m, 'spell_key', ''),
+                            sequence_frames=[frame],
+                            sequence_times=[0.0],
+                            hold_last_frame=True,
+                        )
                 except Exception:
                     pass
 

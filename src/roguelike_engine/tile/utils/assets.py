@@ -1,5 +1,7 @@
 import random
 import pygame
+import json
+from pathlib import Path
 
 from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
 from roguelike_engine.utils.loader import load_image
@@ -62,21 +64,69 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
     Determina y devuelve el sprite para un carácter de mapa y código de overlay opcional.
     con cache para evitar recomputar/randomizar múltiples veces.
     """
-    # Intentar cache
-    key = (char, overlay_code)
-    if key in _SPRITE_CACHE:
-        return _SPRITE_CACHE[key]
-
     sprite: pygame.Surface | None = None
+    # Deferred cache lookup until after policy is established
+    key = (char, overlay_code)
     if DEBUG_TILES:
         logger.debug(f" get_sprite_for_tile called with char={char!r}, overlay_code={overlay_code!r}")
 
-    # Política overlay-only: cuando el mundo activo es "blank" (zones.json sin zonas de usuario)
+    # Política overlay-only: detectar mundo en blanco o overlays sentinela sin depender únicamente de is_blank_world
     overlay_only = False
+    # 1) Preferir MapSettings.is_blank_world() si existe
     try:
-        overlay_only = bool(global_map_settings.is_blank_world())
+        overlay_only = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
     except Exception:
         overlay_only = False
+    # 2) Fallback: inspeccionar ZONES_INDEX para ver si no hay zonas de usuario (excluyendo sentinelas)
+    if overlay_only is False:
+        try:
+            z = getattr(global_map_settings, 'ZONES_INDEX', None)
+            zones_empty = False
+            if z and hasattr(z, 'exists') and z.exists():
+                txt = z.read_text(encoding='utf-8').strip()
+                if txt:
+                    try:
+                        data = json.loads(txt)
+                        if isinstance(data, dict):
+                            user_keys = [k for k in data.keys() if str(k).lower() not in ('no zone', 'no-zone', 'no_zone')]
+                            zones_empty = len(user_keys) == 0
+                        else:
+                            zones_empty = True
+                    except Exception:
+                        zones_empty = False
+                else:
+                    zones_empty = True
+            else:
+                zones_empty = True
+            if zones_empty:
+                overlay_only = True
+        except Exception:
+            pass
+    # 3) Fallback adicional: si la carpeta de overlays está vacía o solo hay sentinelas, forzar overlay-only
+    try:
+        odir = getattr(global_map_settings, 'overlays_dir', None)
+        files = list(Path(odir).glob('*.overlay.json')) if odir else []
+        if not files:
+            overlay_only = True
+        else:
+            stems = {
+                (s[:-8] if s.endswith('.overlay') else s)
+                for s in (f.stem.lower().replace('_', ' ') for f in files)
+            }
+            if stems.issubset({'no zone', 'no-zone', 'no_zone'}):
+                overlay_only = True
+    except Exception:
+        pass
+
+    # If overlay-only policy is active and there's no valid overlay code, do not fallback to base sprite
+    if overlay_only and (not overlay_code or overlay_code not in OVERLAY_CODE_MAP):
+        _SPRITE_CACHE[key] = None
+        return None
+
+    # Cache fast path (only after enforcing overlay-only policy)
+    cached = _SPRITE_CACHE.get(key, None)
+    if cached is not None:
+        return cached
 
     # 1) Si hay código de overlay
     if overlay_code:
@@ -88,17 +138,9 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
                 logger.debug(f" overlay_code {overlay_code!r} NOT in OVERLAY_CODE_MAP")
         if name:
             sprite = load_image(f"tiles/{name}.png", (TILE_SIZE, TILE_SIZE))
-        else:
-            # En overlay-only, no caer al sprite base si el código es desconocido
-            if overlay_only:
-                _SPRITE_CACHE[(char, overlay_code)] = None
-                return None
 
     if sprite is None:
-        # En overlay-only, no dibujar nada si no hay overlay (o si el código fue inválido)
-        if overlay_only:
-            _SPRITE_CACHE[(char, overlay_code)] = None
-            return None
+        # En overlay-only ya se aplicó la política arriba
         base_images = load_base_tile_images()
         imgs = base_images.get(char)
         if imgs is None:

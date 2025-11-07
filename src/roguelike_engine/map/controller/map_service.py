@@ -41,7 +41,7 @@ class MapService:
             user_zone_keys = [k for k in offsets.keys() if k not in ("no zone", "no-zone")]
         except Exception:
             user_zone_keys = list(offsets.keys())
-        if global_map_settings.use_zones_json and len(user_zone_keys) == 0:
+        if getattr(global_map_settings, 'use_zones_json', False) and len(user_zone_keys) == 0:
             # Mundo en blanco: sin zonas definidas en zones.json -> matriz vacía, sin sprites
             world = Zone(
                 key,
@@ -222,7 +222,7 @@ class MapService:
                 continue
             # Si estamos usando zones.json, solo colocar zonas adicionales que estén
             # explícitamente definidas en offsets; no derivar nuevas.
-            if global_map_settings.use_zones_json and zone_name not in offsets:
+            if getattr(global_map_settings, 'use_zones_json', False) and zone_name not in offsets:
                 logger.debug(f"Omitiendo zona adicional '{zone_name}' (use_zones_json=True y no definida en zones.json)")
                 continue
             # Resolver nombre efectivo del padre en offsets (manejar mayúsculas/minúsculas
@@ -250,7 +250,7 @@ class MapService:
             # Obtener/derivar offset de la zona si no está en offsets
             offset = offsets.get(zone_name)
             if offset is None:
-                if global_map_settings.use_zones_json:
+                if getattr(global_map_settings, 'use_zones_json', False):
                     # En modo JSON no derivamos zonas implícitas
                     logger.debug(f"Sin offset definido para '{zone_name}' y use_zones_json=True; se omite")
                     continue

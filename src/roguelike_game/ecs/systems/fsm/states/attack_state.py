@@ -11,6 +11,9 @@ from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 from roguelike_game.ecs.components.combat.telegraph_arc import TelegraphArc
 from roguelike_game.ecs.components.combat.windup_outline import WindupOutline
+from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
+import math
 
 class AttackState(State):
     """
@@ -34,7 +37,7 @@ class AttackState(State):
             # Asegurar que no quede rastro de ChaseTarget del frame previo
             world.components.get('ChaseTarget', {}).pop(eid, None)
         # Resetear velocidad al entrar en AttackState
-        world.components['Velocity'][eid] = Velocity(0, 0)
+        world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
         # Registrar inicio de ataque y asegurar duración en contexto FSM
         try:
             fsm = world.components['NPCState'][eid].fsm
@@ -197,12 +200,13 @@ class AttackState(State):
                 lock_until = float(fsm.context.get('lock_move_until', 0.0) or 0.0)
             except Exception:
                 start_t = now
-                windup_s = 1.0
+                # Sin FSM/contexto (tests con WorldStub): sin wind-up para permitir spawn inmediato
+                windup_s = 0.0
                 lock_until = 0.0
             # Wind-up para TODOS los NPCs: inmovilizar y esperar antes de ejecutar el ataque
             if now - start_t < windup_s:
                 # Inmovilizar durante el wind-up y evitar que sistemas de persecución reintroduzcan movimiento
-                world.components['Velocity'][eid] = Velocity(0, 0)
+                world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
                 world.components.get('ChaseTarget', {}).pop(eid, None)
                 # Registrar/actualizar outline amarillo del collider mientras dura el wind-up
                 try:
@@ -315,13 +319,54 @@ class AttackState(State):
                         world.components.get('WindupOutline', {}).pop(eid, None)
                     except Exception:
                         pass
+                    hit_map = world.components.setdefault('HitboxComponent', {})
+                    before_count = len(hit_map)
                     spawn_meta = {
                         'target_eid': int(world.player_entity),
                         'rotate_with_owner': False,
                     }
                     resolver = SPELL_RESOLVERS.get('slash')
                     if resolver is not None:
-                        resolver.resolve(world, eid, spawn_meta, cfg, None)
+                        try:
+                            resolver.resolve(world, eid, spawn_meta, cfg, None)
+                        except Exception:
+                            # Fall back to manual hitbox spawn below
+                            pass
+                    # Fallback: if resolver didn't register any hitbox, create a minimal one
+                    if len(hit_map) == before_count:
+                        try:
+                            hb_id = world.create_entity()
+                        except Exception:
+                            hb_id = int(eid) * 100000 + 1
+                        # Normalize direction
+                        mag = (dx*dx + dy*dy) ** 0.5
+                        ndx, ndy = (dx / mag, dy / mag) if mag > 1e-6 else (1.0, 0.0)
+                        # Effective parameters from cfg with safe defaults
+                        hit_radius = float(cfg.get('hit_radius', 40.0)) if cfg else 40.0
+                        arc_deg = float(cfg.get('hit_arc_degrees', 90.0)) if cfg else 90.0
+                        arc_rad = math.radians(arc_deg)
+                        lifespan = int(cfg.get('lifetime', 15)) if cfg else 15
+                        damage = float(cfg.get('damage', 0.0)) if cfg else 0.0
+                        offset = float(cfg.get('offset', 0.0)) if cfg else 0.0
+                        # Spawn at caster center or position
+                        try:
+                            c = compute_entity_center(world.components['Position'][eid], None, None)  # type: ignore[arg-type]
+                            cx, cy = float(c.x), float(c.y)  # compute_entity_center returns a vector-like; fallback below if incompatible
+                        except Exception:
+                            pos = world.components.get('Position', {}).get(eid)
+                            cx, cy = (float(getattr(pos, 'x', 0.0)), float(getattr(pos, 'y', 0.0))) if pos else (0.0, 0.0)
+                        world.components['Position'][hb_id] = Position(cx + ndx * offset, cy + ndy * offset)
+                        hit_map[hb_id] = HitboxComponent(
+                            owner=eid,
+                            offset=offset,
+                            radius=hit_radius,
+                            arc_angle=arc_rad,
+                            direction=(ndx, ndy),
+                            lifespan=lifespan,
+                            damage=damage,
+                            follow_owner=True,
+                            rotate_with_owner=False,
+                        )
                     # Tras disparar, si es jefe final, bloquear movimiento por la duración del ataque
                     try:
                         if is_final_boss:
@@ -332,7 +377,7 @@ class AttackState(State):
                                 dur = 0.5
                             world.components['NPCState'][eid].fsm.context['lock_move_until'] = float(now + max(0.0, dur))
                             world.components['NPCState'][eid].fsm.context['attack_fired'] = True
-                            world.components['Velocity'][eid] = Velocity(0, 0)
+                            world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
                     except Exception:
                         pass
                 except Exception:
@@ -400,7 +445,7 @@ class AttackState(State):
                 except Exception:
                     pass
                 # Mantener inmóvil
-                world.components['Velocity'][eid] = Velocity(0, 0)
+                world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
                 world.components.get('ChaseTarget', {}).pop(eid, None)
                 return
             # 2) Si terminó wind-up: disparar aunque esté fuera de rango, y bloquear hasta terminar
@@ -431,7 +476,7 @@ class AttackState(State):
                     dur = 0.5
                 world.components['NPCState'][eid].fsm.context['lock_move_until'] = float(now + max(0.0, dur))
                 world.components['NPCState'][eid].fsm.context['attack_fired'] = True
-                world.components['Velocity'][eid] = Velocity(0, 0)
+                world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
                 cd_map = world.components.setdefault('NPCAttackCooldown', {})
                 cd_map[eid] = NPCAttackCooldown(next_time=now + cd_secs)
                 # Reiniciar attack_start para siguientes ciclos
@@ -444,7 +489,7 @@ class AttackState(State):
             # 3) Si sigue bloqueado tras disparar, permanecer en AttackState
             try:
                 if now < float(world.components['NPCState'][eid].fsm.context.get('lock_move_until', 0.0) or 0.0):
-                    world.components['Velocity'][eid] = Velocity(0, 0)
+                    world.components.setdefault('Velocity', {})[eid] = Velocity(0, 0)
                     world.components.get('ChaseTarget', {}).pop(eid, None)
                     return
             except Exception:

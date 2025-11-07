@@ -151,9 +151,8 @@ class ZonesService:
 
         # Borrar archivos asociados
         try:
-            from roguelike_engine.config.map_config import global_map_settings
-            coll_path = str((global_map_settings.collisions_dir / f"{name}.json"))
-            overlay_path = str((global_map_settings.overlays_dir / f"{name}.overlay.json"))
+            coll_path = str(global_map_settings.collisions_dir / f"{name}.json")
+            overlay_path = str(global_map_settings.overlays_dir / f"{name}.overlay.json")
         except Exception:
             coll_path = os.path.join(DATA_DIR, "map", "collisions", f"{name}.json")
             overlay_path = os.path.join(DATA_DIR, "map", "zones", "overlays", f"{name}.overlay.json")
@@ -272,7 +271,8 @@ class ZonesService:
         return new_key
 
     def _safe_remove_file(self, file_path: str, debug_tag: str = "") -> None:
-        if os.path.isfile(file_path):
+        # Use exists() instead of isfile() to be resilient to platform quirks and path types
+        if os.path.exists(file_path):
             try:
                 os.remove(file_path)
                 logger.debug(f"DEBUG {debug_tag} Removed file {file_path}")

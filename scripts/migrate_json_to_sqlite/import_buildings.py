@@ -92,10 +92,11 @@ def _multipolygon_from_grid(collision_grid: List[List[str]]) -> str:
 
 
 def import_buildings() -> ImportResult:
-    if not INSTANCES_PATH.exists() or not COLLISIONS_BY_INSTANCE_PATH.exists():
-        raise SystemExit("Missing buildings JSON files")
-
+    # Compute composite hash even if inputs are missing (idempotent skip behavior)
     composite_hash = _content_hash_composite([INSTANCES_PATH, COLLISIONS_BY_INSTANCE_PATH])
+    if not INSTANCES_PATH.exists() or not COLLISIONS_BY_INSTANCE_PATH.exists():
+        # Non-fatal: indicate skipped import due to missing inputs
+        return ImportResult(False, 0, 0, composite_hash, "missing input files")
 
     instances_json = _json_load(INSTANCES_PATH)
     collisions_by_instance = _json_load(COLLISIONS_BY_INSTANCE_PATH)
