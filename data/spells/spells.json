@@ -1149,8 +1149,24 @@
     "timings": { "prepare": 0.3, "channel": 0.2, "cooldown": 6.0 },
     "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
     "constraints": { "max_instances": 1, "allow_overlap": true },
-    "effect": { "count": 8, "interval": 0.25, "area_radius": 520, "impact_damage": 30, "impact_radius": 160, "spawn_at": "mouse" },
-    "vfx": { "impact": { "preset": "explosion_small", "ttl": 24, "explosion": { "scale": 1.0 } } }
+    "effect": { "count": 8, "interval": 0.25, "area_radius": 520, "impact_damage": 40, "impact_radius": 160, "spawn_at": "mouse" },
+    "vfx": {
+      "meteor": {
+        "sprite": {
+          "path": "assets/spells/meteor/meteor.png",
+          "scale": 0.15
+        }
+      },
+      "impact": {
+        "sprite": {
+          "path": "assets/spells/meteor/meteor_impact.png",
+          "scale": 0.15
+        },
+        "preset": "explosion_small",
+        "ttl": 24,
+        "explosion": { "scale": 1.0 }
+      }
+    }
   },
   "healing_totem": {
     "id": "healing_totem",

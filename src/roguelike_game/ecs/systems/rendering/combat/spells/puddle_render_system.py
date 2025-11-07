@@ -33,6 +33,7 @@ class PuddleRenderSystem:
             pos = pos_map.get(eid)
             if pos is None:
                 continue
+            did_draw = False
             # Si existe Sprite: dibujar sprite escalado centrado en Position
             sprite = sprite_map.get(eid)
             if sprite is not None and hasattr(sprite, 'image'):
@@ -42,6 +43,35 @@ class PuddleRenderSystem:
                 cx, cy = camera.apply((pos.x, pos.y))
                 rect = image.get_rect(center=(int(cx), int(cy)))
                 screen.blit(image, rect.topleft)
+                did_draw = True
+            # Si no hay Sprite pero hay frames de secuencia: dibujar frame actual centrado
+            try:
+                frames = getattr(comp, 'sequence_frames', []) or []
+                if frames:
+                    idx = int(getattr(comp, 'sequence_idx', 0))
+                    if idx < 0 or idx >= len(frames):
+                        idx = 0
+                    frame = frames[idx]
+                    entity_scale = scale_map.get(eid, Scale()).scale
+                    scale_factor = float(entity_scale) * float(camera.zoom)
+                    image = pygame.transform.rotozoom(frame, 0, scale_factor) if scale_factor != 1.0 else frame
+                    cx, cy = camera.apply((pos.x, pos.y))
+                    rect = image.get_rect(center=(int(cx), int(cy)))
+                    screen.blit(image, rect.topleft)
+                    did_draw = True
+            except Exception:
+                pass
+            # Si ya dibujamos imagen/frame, podemos superponer un anillo de depuración por radius y saltar fallback
+            if did_draw:
+                try:
+                    radius_px = int(getattr(comp, 'radius', 0.0) * float(camera.zoom))
+                    if radius_px > 0:
+                        # Dibuja un anillo naranja semi-opaco centrado
+                        cx, cy = camera.apply((pos.x, pos.y))
+                        ring_color = (255, 120, 0)
+                        pygame.draw.circle(screen, ring_color, (int(cx), int(cy)), radius_px, 2)
+                except Exception:
+                    pass
                 continue
             # Fallback: círculo translúcido usando radius/alpha/color
             color = comp.color or _DEFAULT_COLORS.get((comp.element or '').lower(), (120, 200, 220))

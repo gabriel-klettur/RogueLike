@@ -16,9 +16,13 @@ class MeteorFallRenderSystem:
         if not comps:
             return
         pos_map = world.components.get('Position', {})
+        sprite_map = world.components.get('Sprite', {})
         for eid, comp in list(comps.items()):
             pos = pos_map.get(eid)
             if pos is None:
+                continue
+            # If a Sprite is present for this meteor, rely on the generic RenderSystem and skip debug drawing
+            if eid in sprite_map:
                 continue
             # Meteor (filled red circle)
             mr = max(1, int(self._meteor_radius_px * camera.zoom))

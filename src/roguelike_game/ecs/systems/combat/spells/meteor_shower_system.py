@@ -6,8 +6,14 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.meteor_fall_component import MeteorFallComponent
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_engine.config.config_z_layer import Z_LAYERS
+from roguelike_game.ecs.components.transform.scale import Scale
+from roguelike_game.ecs.utils.spell_vfx import get_meteor_scale, get_meteor_sprite_path
 
 logger = logging.getLogger(__name__)
+METEOR_IMAGE = "assets/spells/meteor/meteor.png"
 
 class MeteorShowerSystem:
     """
@@ -64,6 +70,14 @@ class MeteorShowerSystem:
                     owner=shower.owner,
                     spell_key=getattr(shower, 'spell_key', ''),
                 )
+                try:
+                    meteor_scale = float(get_meteor_scale(cfg, 0.10))
+                    meteor_path = get_meteor_sprite_path(cfg, METEOR_IMAGE)
+                    world.components.setdefault('Sprite', {})[me] = Sprite(meteor_path)
+                    world.components.setdefault('ZLayer', {})[me] = ZLayer(Z_LAYERS.get('sky', 6))
+                    world.components.setdefault('Scale', {})[me] = Scale(meteor_scale)
+                except Exception:
+                    pass
 
                 shower.spawns_done += 1
                 shower.last_spawn_time = now

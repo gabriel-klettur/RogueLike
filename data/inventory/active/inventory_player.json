@@ -1,1 +1,32 @@
-{"1":{"capacity":20,"player_id":"48123e7b-8448-4c58-a3cb-9837cd927ff0","schema_version":"1.0.0","slots":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}}
+{
+  "1": {
+    "capacity": 20,
+    "player_id": "48123e7b-8448-4c58-a3cb-9837cd927ff0",
+    "schema_version": "1.0.0",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 11.0
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  }
+}

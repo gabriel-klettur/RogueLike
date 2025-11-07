@@ -59,16 +59,18 @@ class RenderSystem:
         world_rect = pygame.Rect(world_left, world_top, world_w, world_h)
 
         # 2) Acceso rápido a componentes
-        comps      = world.components
-        pos_map    = comps['Position']
-        sprite_map = comps['Sprite']
-        z_map      = comps.get('ZLayer', {})
-        scale_map  = comps.get('Scale', {})
+        comps       = world.components
+        pos_map     = comps['Position']
+        sprite_map  = comps['Sprite']
+        z_map       = comps.get('ZLayer', {})
+        scale_map   = comps.get('Scale', {})
+        puddle_map  = comps.get('PuddleComponent', {})
 
         # 3) Filtrar entidades visibles en el viewport
         visible_eids = [
             eid for eid, pos in pos_map.items()
-            if eid in sprite_map
+            if (eid in sprite_map)
+               and (eid not in puddle_map)
                and world_rect.collidepoint(pos.x, pos.y)
         ]
 
