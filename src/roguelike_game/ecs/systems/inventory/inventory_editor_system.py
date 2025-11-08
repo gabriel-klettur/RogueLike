@@ -1,6 +1,7 @@
 import os
 import json
 import pygame
+from roguelike_engine.config import config
 
 from roguelike_game.managers.items.loader import ItemsLoader
 from roguelike_game.ecs.components.item_models import ItemStack
@@ -18,12 +19,12 @@ class InventoryEditorSystem:
         self.active = False
         self.selected_eid = None
         self.entities = []
-        cwd = os.getcwd()
-        # Unificar rutas: usar data/inventory/defaults en vez de data/defaults
-        self.default_monster_path = os.path.join(cwd, 'data', 'inventory', 'defaults', 'inventory_monsters.json')
-        self.default_player_path = os.path.join(cwd, 'data', 'inventory', 'defaults', 'inventory_player.json')
-        self.active_monster_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_monsters.json')
-        self.active_player_path = os.path.join(cwd, 'data', 'inventory', 'active', 'inventory_player.json')
+        base_dir = config.DATA_DIR
+        # Unificar rutas bajo DATA_DIR configurable
+        self.default_monster_path = os.path.join(base_dir, 'inventory', 'defaults', 'inventory_monsters.json')
+        self.default_player_path = os.path.join(base_dir, 'inventory', 'defaults', 'inventory_player.json')
+        self.active_monster_path = os.path.join(base_dir, 'inventory', 'active', 'inventory_monsters.json')
+        self.active_player_path = os.path.join(base_dir, 'inventory', 'active', 'inventory_player.json')
         # Asegurar que los archivos de defaults existan para evitar fallos en arranque sin defaults
         try:
             os.makedirs(os.path.dirname(self.default_monster_path), exist_ok=True)

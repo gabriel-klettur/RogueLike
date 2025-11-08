@@ -147,8 +147,8 @@ class ChunkedMapView:
                     char = row_str[x]
                     key = (char, code)
                     if key not in sprite_map:
-                        # In overlay-only mode, do not fallback to base sprite if overlay code is unknown
-                        if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                        # In overlay-only mode, restrict invalid-code skip to Ground layer only.
+                        if overlay_no_fallback and code and layer == Layer.Ground and code not in OVERLAY_CODE_MAP:
                             sprite_map[key] = None
                         else:
                             sprite_map[key] = get_sprite_for_tile(char, code)
@@ -194,9 +194,10 @@ class ChunkedMapView:
                                     continue
                                 if layer != Layer.Ground:
                                     continue
-                            # If code is invalid and we're in overlay-only policy, skip (avoid base fallback)
-                            if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
+                            # If code is invalid and we're in overlay-only policy, skip only for Ground layer
+                            if overlay_no_fallback and code and layer == Layer.Ground and code not in OVERLAY_CODE_MAP:
                                 continue
+
                             sprite = sprite_map.get((char, code))
                             if sprite is None and DEBUG_CHUNKED:
                                 logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
@@ -483,6 +484,43 @@ class ChunkedMapView:
         devolviendo la lista de dirty rects.
         """
         dirty_rects: list[pygame.Rect] = []
+        # Use clamped zoom and ensure cache exists before any early returns
+        zoom = min(max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1), MAX_ZOOM)
+        if zoom not in self.chunks_by_zoom:
+            self._build_chunk_surfaces(map_model, zoom)
+        # Detect if the provided map has any non-ground overlay codes; if so, do not early-return
+        has_non_ground_codes = False
+        try:
+            for lyr, grid in getattr(map_model, 'layers', {}).items():
+                if lyr == Layer.Ground:
+                    continue
+                for row in grid:
+                    for v in row:
+                        if v:
+                            has_non_ground_codes = True
+                            raise StopIteration  # break all loops
+        except StopIteration:
+            pass
+
+        # Si la vista de cámara no intersecta con los límites del mapa, no hay chunks visibles
+        # y debemos devolver [] (ningún dirty rect), incluso en mundos overlay-only.
+        try:
+            screen_w, screen_h = screen.get_size()
+            width_tiles = len(map_model.matrix[0]) if map_model.matrix else 0
+            height_tiles = len(map_model.matrix)
+            left = float(getattr(camera, 'offset_x', 0) or 0)
+            top = float(getattr(camera, 'offset_y', 0) or 0)
+            right = left + (screen_w / zoom)
+            bottom = top + (screen_h / zoom)
+            map_right = width_tiles * TILE_SIZE
+            map_bottom = height_tiles * TILE_SIZE
+            # No intersección de rectángulos en coordenadas de mundo
+            if right <= 0 or bottom <= 0 or left >= map_right or top >= map_bottom:
+                return []
+        except Exception:
+            # En caso de cualquier problema de cálculo, continuamos con la ruta normal
+            pass
+
         # Hard guard 1: if overlays-driven AND there are no overlay files AND no user-defined zones, render nothing
         try:
             from pathlib import Path as _P
@@ -495,12 +533,16 @@ class ChunkedMapView:
                         if z and z.exists():
                             txt = z.read_text(encoding='utf-8').strip()
                             if txt:
-                                data = json.loads(txt)
-                                if isinstance(data, dict):
+                                try:
+                                    data = json.loads(txt)
                                     user_keys = [k for k in data.keys() if str(k).lower() not in ('no zone', 'no-zone')]
+                                except Exception:
+                                    user_keys = []
+                            else:
+                                user_keys = []
                     except Exception:
                         user_keys = []
-                    if len(user_keys) == 0:
+                    if len(user_keys) == 0 and not has_non_ground_codes:
                         if DEBUG_CHUNKED:
                             logger.debug(f"[ChunkedMapView] overlays-driven + no overlay files in {odir} -> skip render")
                         return [screen.get_rect()]
@@ -517,19 +559,13 @@ class ChunkedMapView:
                         (s[:-8] if s.endswith('.overlay') else s)
                         for s in (f.stem.lower().replace('_', ' ') for f in files)
                     }
-                    if stems.issubset({'no zone', 'no-zone'}):
+                    if stems.issubset({'no zone', 'no-zone'}) and not has_non_ground_codes:
                         if DEBUG_CHUNKED:
                             logger.debug(f"[ChunkedMapView] blank world + only sentinel overlays in {odir} -> skip render")
                         return [screen.get_rect()]
         except Exception:
             pass
         screen_w, screen_h = screen.get_size()
-        # Use clamped zoom to avoid extreme surface sizes
-        zoom = min(max(float(getattr(camera, 'zoom', 1.0)) or 1.0, 0.1), MAX_ZOOM)
-
-        # rebuild cache para este zoom si falta
-        if zoom not in self.chunks_by_zoom:
-            self._build_chunk_surfaces(map_model, zoom)
 
         chunks = self.chunks_by_zoom[zoom]
         cs = self.chunk_size

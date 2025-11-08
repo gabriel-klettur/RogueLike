@@ -12,13 +12,14 @@ This module is intentionally small and import-safe for Alembic's `env.py`.
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
+from roguelike_engine.config.config import DATA_DIR
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 
-# Database path: data/roguelike.sqlite3
-DB_PATH = Path("data/roguelike.sqlite3")
+# Database path under configurable DATA_DIR
+DB_PATH = Path(DATA_DIR) / "roguelike.sqlite3"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # SQLite URL format: sqlite:///absolute_or_relative_path

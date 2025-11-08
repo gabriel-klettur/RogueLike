@@ -1,5 +1,6 @@
 import os
 import json
+from roguelike_engine.config import config
 
 from roguelike_game.ecs.components.inventory_component import InventoryComponent
 from roguelike_game.ecs.components.core.identity import Faction
@@ -10,12 +11,13 @@ logger = logging.getLogger(__name__)
 class InventoryTransferSystem:
 
     def __init__(self,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json'),
-                 active_neutral_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_neutrals.json')):
-        self.active_monster_path = active_monster_path
-        self.active_player_path = active_player_path
-        self.active_neutral_path = active_neutral_path
+                 active_monster_path: str | None = None,
+                 active_player_path: str | None = None,
+                 active_neutral_path: str | None = None):
+        base = config.DATA_DIR
+        self.active_monster_path = active_monster_path or os.path.join(base, 'inventory', 'active', 'inventory_monsters.json')
+        self.active_player_path = active_player_path or os.path.join(base, 'inventory', 'active', 'inventory_player.json')
+        self.active_neutral_path = active_neutral_path or os.path.join(base, 'inventory', 'active', 'inventory_neutrals.json')
         self.world = None
 
     def update(self, world, *args):

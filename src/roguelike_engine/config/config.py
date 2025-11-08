@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 #! ------------------------ MAIN GAME SETTINGS ------------------------
 
@@ -32,8 +33,12 @@ ASSETS_DIR = PROJECT_ROOT / "assets"
 ASSETS_DIR = str(ASSETS_DIR)
 
 # Carpeta donde se almacenan datos persistentes 
-DATA_DIR = PROJECT_ROOT / "data"
-DATA_DIR = str(DATA_DIR)
+# Permite override por variable de entorno RL_DATA_DIR para aislar entornos de test/CI
+_DATA_ENV = os.environ.get("RL_DATA_DIR")
+if _DATA_ENV:
+    DATA_DIR = str(Path(_DATA_ENV))
+else:
+    DATA_DIR = str(PROJECT_ROOT / "data")
 
 
 #!------------------------ BUILDINGS CONFIG ------------------------

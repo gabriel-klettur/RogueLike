@@ -8,6 +8,16 @@ SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "s
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
+# Isolate data writes during tests: redirect DATA_DIR via environment
+if "RL_DATA_DIR" not in os.environ:
+    from pathlib import Path
+    TEST_ACTIVE_DATA = Path(__file__).resolve().parents[1] / "data" / "_pytest_active"
+    try:
+        os.makedirs(TEST_ACTIVE_DATA, exist_ok=True)
+    except Exception:
+        pass
+    os.environ["RL_DATA_DIR"] = str(TEST_ACTIVE_DATA)
+
 @pytest.fixture(scope="session", autouse=True)
 def pygame_headless():
     os.environ.setdefault("SDL_AUDIODRIVER", "dummy")

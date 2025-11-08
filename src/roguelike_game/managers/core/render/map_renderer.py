@@ -15,6 +15,11 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     preserve previous behavior and test hooks.
     """
     dirty_rects: list = []
+    # Estado de Map Editor (para omitir guards globales cuando el editor está activo)
+    try:
+        me_active = bool(getattr(getattr(manager, 'map_editor', None), 'editor_state', None) and manager.map_editor.editor_state.active)
+    except Exception:
+        me_active = False
     # Collision-only mode takes precedence over any early guard
     try:
         co_mode = (
@@ -50,7 +55,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     # and there are no overlay files (or only the sentinel), skip drawing to avoid base fallback visuals
     try:
         te_active = bool(getattr(getattr(manager, 'tiles_editor', None), 'editor_state', None) and manager.tiles_editor.editor_state.active)
-        if not te_active and getattr(global_map_settings, 'is_blank_world', None):
+        if not te_active and not me_active and getattr(global_map_settings, 'is_blank_world', None):
             if global_map_settings.is_blank_world():
                 odir = getattr(global_map_settings, 'overlays_dir', None)
                 files = list(Path(odir).glob('*.overlay.json')) if odir else []
@@ -78,7 +83,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
         pass
     # Defensive guard: minimal map objects (no 'matrix') should not call view.render
     try:
-        if not te_active and not hasattr(map_, 'matrix'):
+        if not te_active and not me_active and not hasattr(map_, 'matrix'):
             try:
                 return [screen.get_rect()]
             except Exception:
@@ -87,7 +92,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
         pass
     # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
     try:
-        if not te_active and getattr(global_map_settings, 'use_zones_json', False):
+        if not te_active and not me_active and getattr(global_map_settings, 'use_zones_json', False):
             odir = global_map_settings.overlays_dir
             if odir and list(Path(odir).glob('*.overlay.json')) == []:
                 # Count user-defined zones from ZONES_INDEX (exclude sentinels)

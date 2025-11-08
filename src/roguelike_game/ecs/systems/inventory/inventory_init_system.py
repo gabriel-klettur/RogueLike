@@ -1,5 +1,6 @@
 import os
 import json
+from roguelike_engine.config import config
 
 from .inventory_io import ensure_active_file, read_json_or
 from .vendor_seed import VendorSupport
@@ -21,12 +22,30 @@ class InventoryInitSystem:
                  active_neutral_path: str = 'data/inventory/active/inventory_neutrals.json',
                  schema_version: str = '1.0.0'):
         self.perf_log = perf_log
-        self.default_monster_path = default_monster_path
-        self.active_monster_path = active_monster_path
-        self.default_player_path = default_player_path
-        self.active_player_path = active_player_path
-        self.default_neutral_path = default_neutral_path
-        self.active_neutral_path = active_neutral_path
+        # Normalizar rutas: defaults desde repo (PROJECT_ROOT/data), activos bajo DATA_DIR configurable
+        def _norm_default(p: str) -> str:
+            if os.path.isabs(p):
+                return p
+            # Strip leading 'data' if present and anchor to PROJECT_ROOT/data
+            rel = p.replace('\\', '/').lstrip('/')
+            if rel.startswith('data/'):
+                rel = rel[len('data/'):]
+            return os.path.join(str(config.PROJECT_ROOT), 'data', rel)
+
+        def _norm_active(p: str) -> str:
+            if os.path.isabs(p):
+                return p
+            rel = p.replace('\\', '/').lstrip('/')
+            if rel.startswith('data/'):
+                rel = rel[len('data/'):]
+            return os.path.join(config.DATA_DIR, rel)
+
+        self.default_monster_path = _norm_default(default_monster_path)
+        self.active_monster_path = _norm_active(active_monster_path)
+        self.default_player_path = _norm_default(default_player_path)
+        self.active_player_path = _norm_active(active_player_path)
+        self.default_neutral_path = _norm_default(default_neutral_path)
+        self.active_neutral_path = _norm_active(active_neutral_path)
         self.schema_version = schema_version
         self.initialized = set()
 

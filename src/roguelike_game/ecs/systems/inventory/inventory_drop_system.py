@@ -1,6 +1,7 @@
 import os
 import uuid
 import json
+from roguelike_engine.config import config
 
 from roguelike_engine.map.utils import get_zone_for_tile
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -16,12 +17,14 @@ class InventoryDropSystem:
     ECS system to handle manual inventory drop action.
     """
     def __init__(self,
-                 active_monster_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'),
-                 active_player_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_player.json'),
-                 drop_path: str = os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_map.json')):
-        self.active_monster_path = active_monster_path
-        self.active_player_path = active_player_path
-        self.drop_manager = ItemDropManager(drop_path)
+                 active_monster_path: str | None = None,
+                 active_player_path: str | None = None,
+                 drop_path: str | None = None):
+        base = config.DATA_DIR
+        self.active_monster_path = active_monster_path or os.path.join(base, 'inventory', 'active', 'inventory_monsters.json')
+        self.active_player_path = active_player_path or os.path.join(base, 'inventory', 'active', 'inventory_player.json')
+        drop_json = drop_path or os.path.join(base, 'inventory', 'active', 'inventory_map.json')
+        self.drop_manager = ItemDropManager(drop_json)
 
     def update(self, world, *args):
         comps = world.components

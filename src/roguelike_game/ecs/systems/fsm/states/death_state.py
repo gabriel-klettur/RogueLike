@@ -8,8 +8,8 @@ from roguelike_game.factories.monster.config import MONSTER_DEFS
 
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config import config
 import json
-import os
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 
 import logging
@@ -118,12 +118,17 @@ class DeathState(State):
             world.remove_entity(eid)
             # Limpiar inventario activo para este monstruo
             try:
-                with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'r') as f:
+                inv_path = os.path.join(config.DATA_DIR, 'inventory', 'active', 'inventory_monsters.json')
+                with open(inv_path, 'r') as f:
                     inv = json.load(f)
             except (json.JSONDecodeError, FileNotFoundError):
                 inv = {}
             inv.pop(str(eid), None)
-            with open(os.path.join(os.getcwd(), 'data', 'inventory', 'active', 'inventory_monsters.json'), 'w') as f:
+            try:
+                os.makedirs(os.path.dirname(inv_path), exist_ok=True)
+            except Exception:
+                pass
+            with open(inv_path, 'w') as f:
                 json.dump(inv, f, indent=2)
             return
         # Player: aplicar grayscale si no presente
