@@ -145,6 +145,17 @@ class LightPresetsPanelView:
         swatch = pygame.Surface((rw - 24, rrow - 8))
         swatch.fill((int(r), int(g), int(b)))
         screen.blit(swatch, (rx + 12, by))
+        by += rrow
+
+        # Debug controls moved from main panel
+        spawn_label = "Spawn Debug Light (Click map)"
+        st._btn_spawn_debug = self._draw_button(
+            screen, rx + 12, by, rw - 24, rrow - 8, spawn_label, bool(getattr(st, 'spawn_mode', False))
+        )
+        by += rrow
+        st._btn_clear_debug = self._draw_button(
+            screen, rx + 12, by, rw - 24, rrow - 8, "Clear Debug Lights", False
+        )
 
     def _draw_label(self, screen: pygame.Surface, x: int, y: int, text: str, color: Tuple[int, int, int]) -> pygame.Rect:
         surf = self.font.render(text, True, color)

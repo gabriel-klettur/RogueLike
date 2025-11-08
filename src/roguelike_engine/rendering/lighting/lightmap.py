@@ -54,6 +54,11 @@ class LightingManager:
         self._grid: dict[Tuple[int, int], list[Light]] = {}
         self._grid_dirty: bool = True
         self._grid_age: int = 0
+        # Staggered enable for persistent lights
+        self._stagger_targets: list[Light] = []
+        self._stagger_cursor: int = 0
+        self._stagger_next_ms: int = 0
+        self._stagger_interval_ms: int = 3000
 
     # ---- Public API --------------------------------------------------------
     def clear(self) -> None:
@@ -82,7 +87,7 @@ class LightingManager:
         kept: list[Light] = []
         for l in self._lights:
             try:
-                if isinstance(l.id, str) and l.id.startswith("ecs:"):
+                if isinstance(l.id, str) and (l.id.startswith("ecs:") or l.id.startswith("persist:")):
                     kept.append(l)
             except Exception:
                 # If id access fails, treat as debug and drop it
@@ -201,6 +206,38 @@ class LightingManager:
         """
         if not self.should_render():
             return None
+        # Auto-disable point lights during configured day window to save resources
+        try:
+            from .daynight import get_global_daynight
+            dn = get_global_daynight()
+            if dn.is_lights_disabled_now():
+                # Ensure persistent lights are disabled and reset schedule for next enable cycle
+                try:
+                    for l in self._lights:
+                        if isinstance(l.id, str) and l.id.startswith("persist:"):
+                            l.enabled = False
+                except Exception:
+                    pass
+                self._stagger_targets = []
+                self._stagger_cursor = 0
+                self._stagger_next_ms = pygame.time.get_ticks()
+                return None
+        except Exception:
+            pass
+        # Lazy-load persistent lights once the lighting system is actively rendering
+        try:
+            from .light_instances_loader import load_persistent_to_manager
+            load_persistent_to_manager(self)
+        except Exception:
+            pass
+        # Update staggered enabling of persistent lights using configured interval/order
+        try:
+            from .daynight import get_global_daynight
+            dn = get_global_daynight()
+            self._stagger_interval_ms = int(dn.get_lights_stagger_interval_ms())
+        except Exception:
+            pass
+        self._update_persistent_stagger()
         w, h = screen_size
         scale = max(1, int(self._scale))
         lw = max(1, w // scale)
@@ -317,7 +354,8 @@ class LightingManager:
             else:
                 tint_to_blit = tint
             try:
-                self._lr_surface.blit(tint_to_blit, blit_pos, special_flags=pygame.BLEND_RGBA_ADD)
+                # Use per-channel maximum (lighten) so overlapping lights do not sum brightness
+                self._lr_surface.blit(tint_to_blit, blit_pos, special_flags=pygame.BLEND_RGBA_MAX)
             except Exception:
                 # Be robust against out-of-bounds blits
                 pass
@@ -368,6 +406,53 @@ class LightingManager:
             # Be robust; occlusion is optional
             pass
         return self._lr_surface
+
+    # --- Internals: staggered enabling ---------------------------------------
+    def _prepare_stagger_targets(self) -> None:
+        # Collect persistent lights and sort by numeric id (asc/desc from config)
+        items: list[tuple[int, Light]] = []
+        for l in self._lights:
+            try:
+                if isinstance(l.id, str) and l.id.startswith("persist:"):
+                    num = int(l.id.split(":", 1)[1])
+                    items.append((num, l))
+            except Exception:
+                continue
+        order_desc = False
+        try:
+            from .daynight import get_global_daynight
+            dn = get_global_daynight()
+            order_desc = (dn.get_lights_stagger_order() == "desc")
+        except Exception:
+            order_desc = False
+        if items:
+            items.sort(key=lambda it: it[0], reverse=order_desc)
+            self._stagger_targets = [l for _, l in items]
+        else:
+            self._stagger_targets = []
+        self._stagger_cursor = 0
+        self._stagger_next_ms = pygame.time.get_ticks()
+
+    def _update_persistent_stagger(self) -> None:
+        # Prepare target list if empty
+        if not self._stagger_targets:
+            self._prepare_stagger_targets()
+            if not self._stagger_targets:
+                return
+        now = pygame.time.get_ticks()
+        # Enable one light every interval
+        while self._stagger_cursor < len(self._stagger_targets) and now >= self._stagger_next_ms:
+            # Find next still-disabled target
+            idx = self._stagger_cursor
+            light = self._stagger_targets[idx]
+            try:
+                if not getattr(light, 'enabled', False):
+                    light.enabled = True
+                # Advance cursor regardless to avoid stalls on already-enabled
+                self._stagger_cursor += 1
+            except Exception:
+                self._stagger_cursor += 1
+            self._stagger_next_ms = now + self._stagger_interval_ms
 
     def get_scaled(self, screen_size: Tuple[int, int]) -> Optional[pygame.Surface]:
         if self._lr_surface is None:

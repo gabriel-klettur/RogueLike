@@ -31,6 +31,8 @@ class LightPresetsPanelState:
         self.spawn_flicker_speed: float = 2.5
         self.spawn_center_scale: float = 1.0
         self.spawn_single_shot: bool = False
+        # Spawn mode (click on map to place light) controlled from Presets panel
+        self.spawn_mode: bool = False
         # Preset buttons
         self._btn_preset_torch: pygame.Rect | None = None
         self._btn_preset_lamp: pygame.Rect | None = None
@@ -56,6 +58,9 @@ class LightPresetsPanelState:
         self._btn_g_plus: pygame.Rect | None = None
         self._btn_b_minus: pygame.Rect | None = None
         self._btn_b_plus: pygame.Rect | None = None
+        # Debug spawn/clear buttons inside Presets panel
+        self._btn_spawn_debug: pygame.Rect | None = None
+        self._btn_clear_debug: pygame.Rect | None = None
 
         # Local tooltips list for the panel
         self._tooltips: List[Tuple[pygame.Rect, str]] = []

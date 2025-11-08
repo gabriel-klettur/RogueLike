@@ -67,6 +67,13 @@ BUILDINGS_INSTANCES_PATH = str(BUILDINGS_INSTANCES_PATH)
 PARTICLES_INSTANCES_PATH = Path(DATA_DIR) / "particles" / "particles_instances.json"
 PARTICLES_INSTANCES_PATH = str(PARTICLES_INSTANCES_PATH)
 
+#!------------------------ LIGHTS CONFIG ------------------------
+# Archivo de presets de luces y persistencia de instancias colocadas
+LIGHT_PRESETS_PATH = Path(DATA_DIR) / "light" / "presets.json"
+LIGHT_PRESETS_PATH = str(LIGHT_PRESETS_PATH)
+
+LIGHT_INSTANCES_PATH = Path(DATA_DIR) / "light" / "light_instances.json"
+LIGHT_INSTANCES_PATH = str(LIGHT_INSTANCES_PATH)
 
 #! ------------------------ DEV/TOOLS FLAGS -----------------------
 # Auto-importar nuevas imágenes de assets/buildings como plantillas al iniciar (solo DEV)

@@ -40,3 +40,19 @@ class LightingEditorState:
         self._btn_sh_rays_minus = None  # shadow rays -
         self._btn_sh_rays_plus = None   # shadow rays +
         # Time scale moved to DayTimePanel
+        # Overlay controls and selection state
+        self.overlay_visible: bool = True
+        self.overlay_labels: bool = True
+        self._btn_overlay = None
+        self._btn_labels = None
+        self.selected_light_id: int | None = None
+        self.selected_light_ids: set[int] = set()
+        self._dragging_inst: bool = False
+        self._drag_world_x: float | None = None
+        self._drag_world_y: float | None = None
+        # Overlay palette: preset_id -> (r,g,b); if absent, use light color
+        self.overlay_palette: dict[str, tuple[int, int, int]] = {}
+        self._btn_delete_selected = None
+        self._btn_palette_prev = None
+        self._btn_palette_next = None
+        self._hovered_preset_id: str | None = None

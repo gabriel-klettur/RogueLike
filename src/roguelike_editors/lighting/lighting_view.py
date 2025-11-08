@@ -38,20 +38,7 @@ class LightingEditorView:
         by += row
         st._btn_lights = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Point Lights: {'ON' if lights_on else 'OFF'}", lights_on)
         by += row
-        # Spawn button: when active, blink in yellow
-        spawn_label = "Spawn Debug Light (Click map)"
-        if getattr(st, 'spawn_mode', False):
-            t = pygame.time.get_ticks() * 0.012
-            pulse = 0.5 + 0.5 * math.sin(t)
-            base = 140 + int(80 * pulse)
-            bg_col = (base, base, 40, 230)
-            border_col = (255, 235, 80)
-            st._btn_spawn = self._draw_button(screen, x + 8, by, w - 16, row - 6, spawn_label, True, bg_color=bg_col, border_color=border_col)
-        else:
-            st._btn_spawn = self._draw_button(screen, x + 8, by, w - 16, row - 6, spawn_label, False)
-        by += row
-        st._btn_clear = self._draw_button(screen, x + 8, by, w - 16, row - 6, "Clear Debug Lights", False)
-        by += row
+        # Spawn/Clear controls moved to Light Presets panel
         st._btn_occlusion = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Tile Occlusion: {'ON' if occlusion_on else 'OFF'}", occlusion_on)
         by += row
         st._btn_shadows = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Shadows (stub): {'ON' if shadows_on else 'OFF'}", shadows_on)
@@ -80,6 +67,19 @@ class LightingEditorView:
             screen.blit(vt, (vwx + 8, by + (row - 10 - vt.get_height()) // 2))
             st.__dict__[plus_attr] = self._draw_button(screen, x + w - 8 - bw, by, bw, row - 10, "+", False)
             by += row
+        # Overlay toggles
+        by += row
+        st._btn_overlay = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Overlay: {'ON' if getattr(st, 'overlay_visible', True) else 'OFF'}", bool(getattr(st, 'overlay_visible', True)))
+        by += row
+        st._btn_labels = self._draw_button(screen, x + 8, by, w - 16, row - 6, f"Labels: {'ON' if getattr(st, 'overlay_labels', True) else 'OFF'}", bool(getattr(st, 'overlay_labels', True)))
+        by += row
+        st._btn_delete_selected = self._draw_button(screen, x + 8, by, w - 16, row - 6, "Delete Selected", False)
+        by += row
+        # Preset color palette controls (for current hovered/selected preset)
+        bw = (w - 16 - 8) // 2
+        st._btn_palette_prev = self._draw_button(screen, x + 8, by, bw, row - 6, "Preset Color <", False)
+        st._btn_palette_next = self._draw_button(screen, x + 16 + bw, by, bw, row - 6, "Preset Color >", False)
+        by += row
         # --- Manager tunables -------------------------------------------------
         try:
             from roguelike_engine.rendering.lighting import get_global_lighting
@@ -124,6 +124,11 @@ class LightingEditorView:
             if isinstance(rect, pygame.Rect):
                 st._tooltips.append((rect, text))
         add_tip(st._btn_ambient, "Ambient: Multiplica la escena por un tinte global (día/noche).")
+        add_tip(st._btn_overlay, "Overlay: Muestra bordes de instancias persistentes de luz.")
+        add_tip(st._btn_labels, "Labels: Muestra #id, preset y radio junto a cada borde.")
+        add_tip(st._btn_delete_selected, "Delete Selected: Elimina todas las instancias seleccionadas.")
+        add_tip(st._btn_palette_prev, "Preset Color <: Cambia al color anterior para el preset actual.")
+        add_tip(st._btn_palette_next, "Preset Color >: Cambia al siguiente color para el preset actual.")
         try:
             mx, my = pygame.mouse.get_pos()
             tip = None

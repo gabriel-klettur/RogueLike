@@ -2,6 +2,14 @@ from __future__ import annotations
 
 import pygame
 from typing import Any
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_editors.lighting.services.light_instances_service import (
+    load_light_instances,
+    _load_presets,
+    update_instance_position,
+    delete_instances,
+)
 
 from .lighting_state import LightingEditorState
 from .lighting_view import LightingEditorView
@@ -25,7 +33,7 @@ class LightingEditorController:
         # Light Presets (delegated panel MVC)
         self.presets_state = LightPresetsPanelState()
         self.presets_view = LightPresetsPanelView(self.presets_state, font=font)
-        self.presets_controller = LightPresetsPanelController(self.presets_state)
+        self.presets_controller = LightPresetsPanelController(self.presets_state, editor_controller=self)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if not getattr(self.model, 'visible', False):
@@ -34,6 +42,14 @@ class LightingEditorController:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             try:
                 self.model.spawn_mode = False
+                # Cancel dragging and selection
+                if getattr(self.model, '_dragging_inst', False):
+                    self.model._dragging_inst = False
+                self.model.selected_light_id = None
+                try:
+                    self.model.selected_light_ids.clear()
+                except Exception:
+                    pass
             except Exception:
                 pass
             return
@@ -138,11 +154,141 @@ class LightingEditorController:
                     try:
                         if bool(getattr(self.presets_state, 'spawn_single_shot', False)):
                             st.spawn_mode = False
+                            # Keep Presets panel toggle in sync
+                            setattr(self.presets_state, 'spawn_mode', False)
                     except Exception:
                         pass
                     return
+                # Selection/drag start when overlay is visible and clicking on a light outline
+                if bool(getattr(st, 'overlay_visible', True)) and outside_left and outside_day and outside_preset:
+                    mx, my = int(event.pos[0]), int(event.pos[1])
+                    # Compute camera params
+                    cam = getattr(self.game, 'camera', None)
+                    if cam is not None:
+                        z = float(getattr(cam, 'zoom', 1.0) or 1.0)
+                        ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
+                        oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
+                        # Pick first matching instance
+                        hit_id = None
+                        presets = _load_presets()
+                        for e in (load_light_instances() or []):
+                            try:
+                                zone = str(e.get('zone') or 'no zone')
+                                rel_x = int(e.get('rel_x') or 0)
+                                rel_y = int(e.get('rel_y') or 0)
+                                off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+                                wx = int(off_tx) * TILE_SIZE + rel_x
+                                wy = int(off_ty) * TILE_SIZE + rel_y
+                                sx = int((wx - ox) * z)
+                                sy = int((wy - oy) * z)
+                                preset_id = str(e.get('preset_id') or '')
+                                base = presets.get(preset_id, {}) if isinstance(presets, dict) else {}
+                                params = dict(base)
+                                ov = e.get('overrides') if isinstance(e, dict) else None
+                                if isinstance(ov, dict):
+                                    for k, v in ov.items():
+                                        params[k] = v
+                                radius = int(params.get('radius', 160))
+                                rr = int(max(1, radius) * z)
+                                dx, dy = mx - sx, my - sy
+                                if dx * dx + dy * dy <= rr * rr:
+                                    hit_id = int(e.get('id')) if e.get('id') is not None else None
+                                    break
+                            except Exception:
+                                continue
+                        if hit_id is not None:
+                            # Multi-select with CTRL: toggle membership; else select single
+                            ctrl = False
+                            try:
+                                mods = getattr(event, 'mod', 0) or pygame.key.get_mods()
+                                ctrl = bool(mods & pygame.KMOD_CTRL)
+                            except Exception:
+                                ctrl = False
+                            try:
+                                sel_set = getattr(st, 'selected_light_ids', set())
+                            except Exception:
+                                sel_set = set()
+                            if ctrl:
+                                if hit_id in sel_set:
+                                    try:
+                                        sel_set.remove(hit_id)
+                                    except Exception:
+                                        pass
+                                else:
+                                    sel_set.add(hit_id)
+                                st.selected_light_ids = sel_set
+                                st.selected_light_id = hit_id  # focus moves to last
+                                return
+                            else:
+                                st.selected_light_ids = {hit_id}
+                                st.selected_light_id = hit_id
+                                # Start dragging only for single selection
+                                st._dragging_inst = True
+                                st._drag_world_x = mx / z + ox
+                                st._drag_world_y = my / z + oy
+                                return
                 # Otherwise, treat as UI click
                 self._on_click(event.pos)
+        # Dragging
+        if event.type == pygame.MOUSEMOTION and bool(getattr(self.model, '_dragging_inst', False)):
+            try:
+                cam = getattr(self.game, 'camera', None)
+                if cam is None:
+                    return
+                z = float(getattr(cam, 'zoom', 1.0) or 1.0)
+                ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
+                oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
+                mx, my = int(getattr(event, 'pos', (0, 0))[0]), int(getattr(event, 'pos', (0, 0))[1])
+                self.model._drag_world_x = mx / z + ox
+                self.model._drag_world_y = my / z + oy
+                # Live-move the corresponding persistent light in the manager (visual feedback)
+                lid = getattr(self.model, 'selected_light_id', None)
+                if lid is not None:
+                    try:
+                        from roguelike_engine.rendering.lighting import get_global_lighting
+                        lm = get_global_lighting()
+                        pid = f"persist:{int(lid)}"
+                        for lt in getattr(lm, '_lights', []):
+                            try:
+                                if getattr(lt, 'id', None) == pid:
+                                    lt.x = float(self.model._drag_world_x)
+                                    lt.y = float(self.model._drag_world_y)
+                                    break
+                            except Exception:
+                                continue
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return
+        if event.type == pygame.MOUSEBUTTONUP and getattr(self.model, '_dragging_inst', False):
+            # Persist new position and update live light
+            st = self.model
+            st._dragging_inst = False
+            lid = getattr(st, 'selected_light_id', None)
+            wx = getattr(st, '_drag_world_x', None)
+            wy = getattr(st, '_drag_world_y', None)
+            if lid is not None and wx is not None and wy is not None:
+                try:
+                    update_instance_position(int(lid), float(wx), float(wy))
+                except Exception:
+                    pass
+                # Move live light in manager if present
+                try:
+                    from roguelike_engine.rendering.lighting import get_global_lighting
+                    lm = get_global_lighting()
+                    pid = f"persist:{int(lid)}"
+                    for lt in getattr(lm, '_lights', []):
+                        try:
+                            if getattr(lt, 'id', None) == pid:
+                                lt.x = float(wx)
+                                lt.y = float(wy)
+                                break
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+            return
 
     def _on_click(self, pos: tuple[int, int]) -> None:
         try:
@@ -206,6 +352,45 @@ class LightingEditorController:
             except Exception:
                 pass
             return
+        # Toggle Overlay visibility
+        if hasattr(st, '_btn_overlay') and isinstance(st._btn_overlay, pygame.Rect) and st._btn_overlay.collidepoint(x, y):
+            try:
+                st.overlay_visible = not bool(getattr(st, 'overlay_visible', True))
+            except Exception:
+                pass
+            return
+        # Toggle Labels visibility
+        if hasattr(st, '_btn_labels') and isinstance(st._btn_labels, pygame.Rect) and st._btn_labels.collidepoint(x, y):
+            try:
+                st.overlay_labels = not bool(getattr(st, 'overlay_labels', True))
+            except Exception:
+                pass
+            return
+        # Delete Selected
+        if hasattr(st, '_btn_delete_selected') and isinstance(st._btn_delete_selected, pygame.Rect) and st._btn_delete_selected.collidepoint(x, y):
+            try:
+                ids = list(getattr(st, 'selected_light_ids', set()) or [])
+                if ids:
+                    deleted = delete_instances(ids)
+                    # Remove from manager now
+                    try:
+                        from roguelike_engine.rendering.lighting import get_global_lighting
+                        lm = get_global_lighting()
+                        for i in ids:
+                            lm.remove_by_id(f"persist:{int(i)}")
+                    except Exception:
+                        pass
+                    # Clear selection
+                    st.selected_light_ids.clear()
+                    st.selected_light_id = None
+            except Exception:
+                pass
+            return
+        # Palette cycle for hovered/selected preset
+        if hasattr(st, '_btn_palette_prev') and isinstance(st._btn_palette_prev, pygame.Rect) and st._btn_palette_prev.collidepoint(x, y):
+            self._cycle_overlay_preset_color(prev=True); return
+        if hasattr(st, '_btn_palette_next') and isinstance(st._btn_palette_next, pygame.Rect) and st._btn_palette_next.collidepoint(x, y):
+            self._cycle_overlay_preset_color(prev=False); return
         # Preset buttons and steppers are handled by LightPresetsPanel; no-op here
         # Manager tunables (quality/limits)
         try:
@@ -260,6 +445,8 @@ class LightingEditorController:
             shadows_on = bool(lm.shadow_polygons_enabled())
         except Exception:
             shadows_on = False
+        # Draw overlays for persistent lights before panels so UI remains on top
+        self._render_instances_overlay(screen)
         self.view.render(screen, ambient_on=ambient_on, lights_on=lights_on, occlusion_on=occlusion_on, shadows_on=shadows_on)
         # Render DayTime Tools panel anchored to the main panel
         if isinstance(getattr(self.model, '_panel_rect', None), pygame.Rect):
@@ -273,6 +460,7 @@ class LightingEditorController:
         try:
             from roguelike_engine.rendering.lighting import get_global_lighting
             from roguelike_engine.rendering.lighting.light_types import Light
+            from roguelike_editors.lighting.services.light_instances_service import append_instance as persist_light_instance
             mx, my = int(pos[0]), int(pos[1])
             cam = getattr(self.game, 'camera', None)
             if cam is not None:
@@ -305,5 +493,165 @@ class LightingEditorController:
                     center_scale=float(getattr(stp, 'spawn_center_scale', 1.0)),
                 )
             )
+            # Persist to light_instances.json using preset id and overrides vs preset
+            try:
+                preset_id = str(getattr(stp, 'spawn_preset', 'Custom'))
+                params = {
+                    'radius': int(getattr(stp, 'spawn_radius', 160)),
+                    'color': tuple(getattr(stp, 'spawn_color', (255, 200, 140))),
+                    'intensity': float(getattr(stp, 'spawn_intensity', 1.0)),
+                    'falloff': float(getattr(stp, 'spawn_falloff', 2.0)),
+                    'flicker_amp': float(getattr(stp, 'spawn_flicker_amp', 0.15)),
+                    'flicker_speed': float(getattr(stp, 'spawn_flicker_speed', 2.5)),
+                    'center_scale': float(getattr(stp, 'spawn_center_scale', 1.0)),
+                }
+                persist_light_instance(preset_id, float(wx), float(wy), params=params)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _render_instances_overlay(self, screen: pygame.Surface) -> None:
+        try:
+            # Honor overlay visibility toggle
+            if not bool(getattr(self.model, 'overlay_visible', True)):
+                return
+            cam = getattr(self.game, 'camera', None)
+            if cam is None:
+                return
+            z = float(getattr(cam, 'zoom', 1.0) or 1.0)
+            ox = float(getattr(cam, 'offset_x', 0.0) or 0.0)
+            oy = float(getattr(cam, 'offset_y', 0.0) or 0.0)
+            presets = _load_presets()
+            insts = load_light_instances() or []
+        except Exception:
+            return
+        sw, sh = screen.get_size()
+        rect_screen = pygame.Rect(0, 0, sw, sh)
+        try:
+            font = getattr(self.view, 'font', None) or pygame.font.Font(None, 14)
+        except Exception:
+            font = None
+        try:
+            mx, my = pygame.mouse.get_pos()
+        except Exception:
+            mx = my = -9999
+        show_labels = bool(getattr(self.model, 'overlay_labels', True))
+        hovered_preset: str | None = None
+        for e in insts:
+            try:
+                zone = str(e.get('zone') or 'no zone')
+                rel_x = int(e.get('rel_x') or 0)
+                rel_y = int(e.get('rel_y') or 0)
+                off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+                wx = int(off_tx) * TILE_SIZE + rel_x
+                wy = int(off_ty) * TILE_SIZE + rel_y
+                sx = int((wx - ox) * z)
+                sy = int((wy - oy) * z)
+                preset_id = str(e.get('preset_id') or '')
+                base = presets.get(preset_id, {}) if isinstance(presets, dict) else {}
+                params = dict(base)
+                ov = e.get('overrides') if isinstance(e, dict) else None
+                if isinstance(ov, dict):
+                    for k, v in ov.items():
+                        params[k] = v
+                radius = int(params.get('radius', 160))
+                # Overlay palette override
+                pal = getattr(self.model, 'overlay_palette', {}) or {}
+                color = pal.get(preset_id, params.get('color', (255, 200, 140)))
+                try:
+                    cr = int(color[0]); cg = int(color[1]); cb = int(color[2])
+                except Exception:
+                    cr, cg, cb = 255, 200, 140
+                rr = int(max(1, radius) * z)
+                if rr <= 1:
+                    continue
+                bb = pygame.Rect(sx - rr, sy - rr, rr * 2, rr * 2)
+                if not rect_screen.colliderect(bb):
+                    continue
+                # Selection ring and drag preview
+                try:
+                    lid_int = int(e.get('id')) if e.get('id') is not None else None
+                except Exception:
+                    lid_int = None
+                is_selected = lid_int is not None and lid_int == getattr(self.model, 'selected_light_id', None)
+                if is_selected and bool(getattr(self.model, '_dragging_inst', False)):
+                    wx_drag = getattr(self.model, '_drag_world_x', None)
+                    wy_drag = getattr(self.model, '_drag_world_y', None)
+                    if wx_drag is not None and wy_drag is not None:
+                        sx = int((float(wx_drag) - ox) * z)
+                        sy = int((float(wy_drag) - oy) * z)
+                        bb = pygame.Rect(sx - rr, sy - rr, rr * 2, rr * 2)
+                        if not rect_screen.colliderect(bb):
+                            continue
+                # Hover highlight
+                dx = mx - sx; dy = my - sy
+                hovered = (dx * dx + dy * dy) <= (rr * rr)
+                if hovered:
+                    hovered_preset = preset_id
+                col = (80, 240, 255) if is_selected else ((255, 245, 120) if hovered else (cr, cg, cb))
+                w_main = 3 if is_selected else (2 if hovered else 1)
+                pygame.draw.circle(screen, col, (sx, sy), rr, width=w_main)
+                pygame.draw.circle(screen, col, (sx, sy), max(1, int(2 * z)), width=1)
+                # Id label near the circumference
+                if font is not None and show_labels:
+                    try:
+                        lid = e.get('id')
+                        label = f"#{int(lid)} {preset_id} (r={radius})" if lid is not None else f"{preset_id} (r={radius})"
+                    except Exception:
+                        label = f"{preset_id} (r={radius})"
+                    ts = font.render(label, True, (10, 10, 14))
+                    tw, th = ts.get_width(), ts.get_height()
+                    lx = sx + rr + 6
+                    ly = sy - th // 2
+                    # Clamp inside screen
+                    if lx + tw > sw - 4:
+                        lx = max(4, sx - rr - 6 - tw)
+                    if ly + th > sh - 4:
+                        ly = max(4, sh - th - 4)
+                    bg = pygame.Surface((tw + 6, th + 4), pygame.SRCALPHA)
+                    bg.fill((245, 245, 250, 220))
+                    screen.blit(bg, (lx - 3, ly - 2))
+                    screen.blit(ts, (lx, ly))
+            except Exception:
+                continue
+        # Save hovered preset id for palette UI
+        try:
+            self.model._hovered_preset_id = hovered_preset
+        except Exception:
+            pass
+
+    def _cycle_overlay_preset_color(self, *, prev: bool) -> None:
+        st = self.model
+        try:
+            # Determine target preset: hovered first, else from selected id
+            pid = getattr(st, '_hovered_preset_id', None)
+            if not pid and getattr(st, 'selected_light_id', None) is not None:
+                sel_id = int(st.selected_light_id)
+                for e in (load_light_instances() or []):
+                    try:
+                        if int(e.get('id')) == sel_id:
+                            pid = str(e.get('preset_id') or '')
+                            break
+                    except Exception:
+                        continue
+            if not pid:
+                return
+            # Cycle through a fixed palette
+            palette = [
+                (255, 200, 140), (255, 255, 255), (120, 200, 255), (255, 120, 120), (120, 255, 160), (200, 140, 255), (255, 240, 120)
+            ]
+            pal_map = getattr(st, 'overlay_palette', {}) or {}
+            cur = pal_map.get(pid)
+            try:
+                idx = palette.index(cur) if cur in palette else -1
+            except Exception:
+                idx = -1
+            if prev:
+                idx = (idx - 1) % len(palette)
+            else:
+                idx = (idx + 1) % len(palette)
+            pal_map[pid] = palette[idx]
+            st.overlay_palette = pal_map
         except Exception:
             pass

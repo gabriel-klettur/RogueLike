@@ -6,8 +6,10 @@ from .light_presets_panel_state import LightPresetsPanelState
 
 
 class LightPresetsPanelController:
-    def __init__(self, state: LightPresetsPanelState) -> None:
+    def __init__(self, state: LightPresetsPanelState, editor_controller: object | None = None) -> None:
         self.state = state
+        # Optional back-reference to the main LightingEditorController to sync spawn_mode
+        self._editor = editor_controller
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type != pygame.MOUSEBUTTONDOWN or getattr(event, "button", None) != 1:
@@ -101,6 +103,34 @@ class LightPresetsPanelController:
         # Single-shot toggle
         if isinstance(st._btn_single_shot, pygame.Rect) and st._btn_single_shot.collidepoint(x, y):
             st.spawn_single_shot = not bool(st.spawn_single_shot); return
+
+        # Debug controls: spawn/clear moved here from main panel
+        if isinstance(getattr(st, '_btn_spawn_debug', None), pygame.Rect) and st._btn_spawn_debug.collidepoint(x, y):
+            # Toggle spawn mode, sync to main editor model if available
+            st.spawn_mode = not bool(getattr(st, 'spawn_mode', False))
+            try:
+                ed = getattr(self, '_editor', None)
+                if ed is not None and hasattr(ed, 'model'):
+                    setattr(ed.model, 'spawn_mode', bool(st.spawn_mode))
+                # Ensure lights manager is enabled and has a visible tier
+                from roguelike_engine.rendering.lighting import get_global_lighting
+                lm = get_global_lighting()
+                lm.set_enabled(True)
+                if not lm.should_render():
+                    try:
+                        lm.set_quality('lights_low')
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return
+        if isinstance(getattr(st, '_btn_clear_debug', None), pygame.Rect) and st._btn_clear_debug.collidepoint(x, y):
+            try:
+                from roguelike_engine.rendering.lighting import get_global_lighting
+                get_global_lighting().clear_debug_lights()
+            except Exception:
+                pass
+            return
 
         # Color steppers
         r, g, b = st.spawn_color

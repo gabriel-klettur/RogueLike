@@ -51,6 +51,16 @@ class DayNightSystem:
         self._overlay_size_cache: Optional[Tuple[int, int]] = None
         self._load_config()
         self._rebuild_lut()
+        # Lights disable window defaults (09:00–19:00) unless overridden by config
+        if not hasattr(self, "_lights_disable_start_minute"):
+            self._lights_disable_start_minute: int = 540
+        if not hasattr(self, "_lights_disable_end_minute"):
+            self._lights_disable_end_minute: int = 1140
+        # Stagger defaults unless overridden by config
+        if not hasattr(self, "_lights_stagger_interval_ms"):
+            self._lights_stagger_interval_ms: int = 3000
+        if not hasattr(self, "_lights_stagger_order"):
+            self._lights_stagger_order: str = "asc"
 
     # ---- Public API ----
     def set_time_scale(self, minutes_per_second: float) -> None:
@@ -109,6 +119,11 @@ class DayNightSystem:
                 "ambient_only": bool(self.ambient_only),
                 "time_scale": float(self.time_scale_minutes_per_second),
                 "start_minute": int(self._start_minute),
+                # Persist lights schedule as HH:MM strings
+                "lights_disable_start": f"{(self._lights_disable_start_minute//60)%24:02d}:{self._lights_disable_start_minute%60:02d}",
+                "lights_disable_end": f"{(self._lights_disable_end_minute//60)%24:02d}:{self._lights_disable_end_minute%60:02d}",
+                "lights_stagger_interval_ms": int(self._lights_stagger_interval_ms),
+                "lights_stagger_order": str(self._lights_stagger_order),
                 "min_intensity": float(self._min_intensity),
                 "keyframes": [
                     {"minute": m, "intensity": float(i), "color": [int(c[0]), int(c[1]), int(c[2])]} for (m, i, c) in self._keyframes
@@ -209,6 +224,40 @@ class DayNightSystem:
             self._min_intensity = max(0.0, min(1.0, self._min_intensity))
         except Exception:
             self._min_intensity = 0.2
+        # Optional lights disable window: strings "HH:MM" or minute integers
+        def _parse_hhmm(v) -> int:
+            try:
+                if isinstance(v, str):
+                    parts = v.strip().split(":")
+                    if len(parts) == 2:
+                        h = max(0, min(23, int(parts[0])))
+                        m = max(0, min(59, int(parts[1])))
+                        return (h * 60 + m) % 1440
+                if isinstance(v, (int, float)):
+                    return int(v) % 1440
+            except Exception:
+                pass
+            return 540  # default 09:00
+        try:
+            self._lights_disable_start_minute = _parse_hhmm(data.get("lights_disable_start", 540))
+        except Exception:
+            self._lights_disable_start_minute = 540
+        try:
+            self._lights_disable_end_minute = _parse_hhmm(data.get("lights_disable_end", 1140))
+        except Exception:
+            self._lights_disable_end_minute = 1140
+        # Stagger settings (interval and order)
+        try:
+            iv = int(data.get("lights_stagger_interval_ms", 3000))
+            # Clamp to reasonable bounds (0..10 min)
+            self._lights_stagger_interval_ms = max(0, min(600000, iv))
+        except Exception:
+            self._lights_stagger_interval_ms = 3000
+        try:
+            ord_raw = str(data.get("lights_stagger_order", "asc") or "asc").strip().lower()
+            self._lights_stagger_order = "desc" if ord_raw.startswith("desc") else "asc"
+        except Exception:
+            self._lights_stagger_order = "asc"
         # Parse keyframes
         kf = []
         for rec in data.get("keyframes", []) or []:
@@ -319,6 +368,33 @@ class DayNightSystem:
         if 1140 <= m < 1260:
             return "Dusk"
         return "Night"
+
+    # ---- Lights schedule helpers -------------------------------------------
+    def get_lights_disable_window(self) -> Tuple[int, int]:
+        """Return (start_minute, end_minute) in [0..1439]."""
+        return int(self._lights_disable_start_minute) % 1440, int(self._lights_disable_end_minute) % 1440
+
+    def set_lights_disable_window(self, start_minute: int, end_minute: int) -> None:
+        self._lights_disable_start_minute = int(start_minute) % 1440
+        self._lights_disable_end_minute = int(end_minute) % 1440
+        # No overlay invalidation needed; affects only point lights schedule
+
+    def is_lights_disabled_now(self) -> bool:
+        """True if current minute falls inside the disable window (supports wrap)."""
+        m = self._current_minute()
+        a, b = self.get_lights_disable_window()
+        if a == b:
+            return False  # degenerate -> never disable
+        if a < b:
+            return a <= m < b
+        # Wrapped window (e.g., 22:00..06:00)
+        return m >= a or m < b
+
+    def get_lights_stagger_interval_ms(self) -> int:
+        return int(self._lights_stagger_interval_ms)
+
+    def get_lights_stagger_order(self) -> str:
+        return "desc" if str(self._lights_stagger_order).lower().startswith("desc") else "asc"
 
     def _compute_overlay_color(self) -> Tuple[int, int, int]:
         # Recompute tint only every ~150 ms
