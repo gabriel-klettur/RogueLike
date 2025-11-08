@@ -31,6 +31,27 @@ def pygame_headless():
     finally:
         pygame.quit()
 
+# --- ECS test fakes ---
+try:
+    from tests.utils.fakes import FakeWorld, FakeCamera  # type: ignore
+except Exception:
+    FakeWorld = None  # type: ignore
+    FakeCamera = None  # type: ignore
+
+
+@pytest.fixture()
+def world():
+    if FakeWorld is None:
+        raise RuntimeError("tests.utils.fakes.FakeWorld no disponible")
+    return FakeWorld()
+
+
+@pytest.fixture()
+def camera():
+    if FakeCamera is None:
+        raise RuntimeError("tests.utils.fakes.FakeCamera no disponible")
+    return FakeCamera()
+
 
 # Ensure robustness if individual tests call pygame.quit() mid-suite.
 # This re-initializes pygame subsystems as needed before each test.

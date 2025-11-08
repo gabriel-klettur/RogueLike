@@ -5,6 +5,7 @@ from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 from roguelike_game.ecs.utils.health_utils import is_neutral
+from roguelike_game.ecs.systems.input.input_system import InputSystem
 
 import logging
 logger = logging.getLogger(__name__)
@@ -19,14 +20,45 @@ class LaserBeamEmitterSystem:
 
     def update(self, world, camera=None):
         now = time.time()
-        # Remove beam when middle mouse is released
-        if not pygame.mouse.get_pressed()[1]:
+        # Remove beam when neither configured mouse nor keyboard bindings are held
+        keys = pygame.key.get_pressed()
+        mouse = pygame.mouse.get_pressed(5)
+        holding = False
+        try:
+            cfg = None
+            for s in getattr(world, 'update_systems', []):
+                if isinstance(s, InputSystem):
+                    cfg = getattr(s, 'config', None)
+                    break
+            if cfg is not None:
+                lb_btn = cfg.get_mouse_button_for_binding('mouse_laser_beam')
+                if isinstance(lb_btn, int) and lb_btn < len(mouse):
+                    holding = holding or bool(mouse[lb_btn])
+                code_a = getattr(cfg, 'get_key_for_binding', lambda *_: None)('kb_laser_beam_a')
+                code_b = getattr(cfg, 'get_key_for_binding', lambda *_: None)('kb_laser_beam_b')
+                if isinstance(code_a, int):
+                    holding = holding or bool(keys[code_a])
+                if isinstance(code_b, int):
+                    holding = holding or bool(keys[code_b])
+            else:
+                # Fallback to middle button index
+                holding = bool(mouse[1])
+        except Exception:
+            holding = bool(mouse[1])
+        if not holding:
             world.components.get('LaserBeamComponent', {}).clear()
             return
         # Debug beam presence
         beam_count = len(world.components.get('LaserBeamComponent', {}))
         if beam_count:
-            logger.debug(f"[LaserBeamEmitter] frame={now:.3f} beams={beam_count}")
+            # Low-frequency INFO to confirm emitter active
+            last = getattr(self, '_last_info_ts', 0.0)
+            if now - float(last) > 1.0:
+                try:
+                    logger.info("[LaserBeamEmitter] beams=%d", beam_count)
+                except Exception:
+                    pass
+                setattr(self, '_last_info_ts', now)
         to_remove = []
         for caster, beam in list(world.components.get('LaserBeamComponent', {}).items()):
             # dynamic thickness from beam.scale
@@ -41,8 +73,11 @@ class LaserBeamEmitterSystem:
                     w, h = sprite_cmp.image.get_size()
                     cx += w/2; cy += h/2
                 mx, my = pygame.mouse.get_pos()
-                wx = mx / camera.zoom + camera.offset_x
-                wy = my / camera.zoom + camera.offset_y
+                if camera is not None:
+                    wx = mx / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_x', 0.0)
+                    wy = my / getattr(camera, 'zoom', 1.0) + getattr(camera, 'offset_y', 0.0)
+                else:
+                    wx, wy = float(mx), float(my)
                 beam.origin = (cx, cy)
                 beam.target = (wx, wy)
             x1, y1 = beam.origin
@@ -93,8 +128,7 @@ class LaserBeamEmitterSystem:
                 world.components['Position'][pid] = Position(px, py)
                 color = random.choice(beam.colors)
                 size = thickness_px
-                # beam particles live only one frame to avoid trails
-                lifespan_frames = 1
+                lifespan_frames = max(2, int(getattr(beam, 'lifespan', 0) or 0))
                 # Optional advanced fields on beam component
                 blend_mode = getattr(beam, 'particle_blend_mode', None)
                 size_ol = getattr(beam, 'particle_size_over_life', None)
@@ -113,6 +147,14 @@ class LaserBeamEmitterSystem:
                     gravity=grav,
                     drag=drg,
                 )
+            # Low-frequency INFO to confirm emission count
+            last_e = getattr(self, '_last_emit_info_ts', 0.0)
+            if now - float(last_e) > 1.0:
+                try:
+                    logger.info("[LaserBeamEmitter] emit_n=%d thickness=%d", emit_n, thickness_px)
+                except Exception:
+                    pass
+                setattr(self, '_last_emit_info_ts', now)
             # 2. Aplicar daño a entidades en el haz (una vez por caster)
             for target in world.get_entities_with('Position', 'Health'):
                 pos_t = world.components['Position'][target]
