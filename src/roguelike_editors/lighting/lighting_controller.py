@@ -302,6 +302,7 @@ class LightingEditorController:
                     falloff=float(getattr(stp, 'spawn_falloff', 2.0)),
                     flicker_amp=float(getattr(stp, 'spawn_flicker_amp', 0.15)),
                     flicker_speed=float(getattr(stp, 'spawn_flicker_speed', 2.5)),
+                    center_scale=float(getattr(stp, 'spawn_center_scale', 1.0)),
                 )
             )
         except Exception:

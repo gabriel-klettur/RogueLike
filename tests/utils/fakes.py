@@ -23,6 +23,30 @@ class FakeWorld:
         for cmap in self.components.values():
             cmap.pop(eid, None)
 
+    def get_entities_with(self, *component_names: str) -> list[int]:
+        """Return entity ids that have ALL the requested components.
+
+        Minimal helper to support systems that need to iterate over entities with
+        certain components (e.g., Position & Health). It intersects the sets of
+        eids present in each requested component map.
+        """
+        if not component_names:
+            return []
+        sets = []
+        for name in component_names:
+            cmap = self.components.get(name, {})
+            if not isinstance(cmap, dict):
+                cmap = {}
+            sets.append(set(cmap.keys()))
+        if not sets:
+            return []
+        common = sets[0]
+        for s in sets[1:]:
+            common = common & s
+            if not common:
+                break
+        return list(common)
+
 
 class FakeCamera:
     def __init__(self, zoom: float = 1.0):

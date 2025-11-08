@@ -1196,7 +1196,14 @@
     "timings": { "prepare": 0.0, "channel": 0.0, "cooldown": 2.0 },
     "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
     "constraints": { "max_instances": 1, "allow_overlap": false },
-    "effect": { "duration": 6.0, "hp": 100, "width": 200, "height": 50, "blocks_projectiles": true, "blocks_units": true }
+    "effect": { "duration": 6.0, "hp": 100, "width": 200, "height": 50, "blocks_projectiles": true, "blocks_units": true },
+    "vfx": {
+      "sprite": {
+        "path": "assets/spells/walls/ice_wall/large_ice_wall.png",
+        "scale": 0.25,
+        "reveal_duration_sec": 2.0
+      }
+    }
   },
   "root_whip": {
     "id": "root_whip",

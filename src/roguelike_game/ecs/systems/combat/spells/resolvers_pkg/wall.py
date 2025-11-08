@@ -5,6 +5,9 @@ from .base import BaseSpellResolver
 from .utils import get_entity_center, mouse_world, direction_from_to
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.wall_segment_component import WallSegmentComponent
+import pygame
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.transform.scale import Scale
 
 
 class WallResolver(BaseSpellResolver):
@@ -67,4 +70,44 @@ class WallResolver(BaseSpellResolver):
             orient=orient,
             angle_deg=angle_deg,
         )
+        # 6) Si hay sprite configurado en spells.json, adjuntarlo junto con Scale
+        try:
+            sprite_path = cfg.get('sprite') if hasattr(cfg, 'get') else getattr(cfg, 'sprite', None)
+            if isinstance(sprite_path, str) and sprite_path:
+                sp = Sprite(sprite_path)
+                # Intentar leer un offset de rotación opcional desde spells.json: vfx.sprite.rotation_offset_deg
+                try:
+                    vfx_obj = getattr(cfg, 'vfx', None)
+                    if not isinstance(vfx_obj, dict):
+                        vfx_obj = getattr(cfg, 'extra', {}).get('vfx')
+                    rot_off = 0.0
+                    rev_dur = None
+                    if isinstance(vfx_obj, dict):
+                        spr_cfg = vfx_obj.get('sprite') or {}
+                        val = spr_cfg.get('rotation_offset_deg')
+                        if isinstance(val, (int, float)):
+                            rot_off = float(val)
+                        val2 = spr_cfg.get('reveal_duration_sec')
+                        if isinstance(val2, (int, float)):
+                            rev_dur = float(val2)
+                    setattr(sp, 'rotation_offset_deg', rot_off)
+                    if rev_dur is not None:
+                        setattr(sp, 'reveal_duration_sec', rev_dur)
+                except Exception:
+                    pass
+                # Flag de flip vertical: si el spawn está por debajo de la línea horizontal del jugador
+                try:
+                    # usamos cy calculado antes (centro del caster)
+                    setattr(sp, 'flip_y', bool(spawn_y > cy))
+                except Exception:
+                    pass
+                world.components.setdefault('Sprite', {})[eid] = sp
+                try:
+                    sc = float(getattr(cfg, 'scale', 1.0))
+                except Exception:
+                    sc = 1.0
+                world.components.setdefault('Scale', {})[eid] = Scale(sc)
+        except Exception:
+            # Ignorar fallos al cargar sprite para no bloquear el gameplay del muro
+            pass
         return [eid]

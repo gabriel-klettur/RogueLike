@@ -81,9 +81,11 @@ class ReleaseSpellState(State):
             return
         if spell_type == 'beam':
             world = entity.world
-            # Resolver beam: registra LaserBeamComponent según cfg
-            resolver = SPELL_RESOLVERS.get('beam')
-            resolver.resolve(world, entity.id, ctx, cfg, ctx.get('camera'))
+            # En release: asegurar que el láser se detiene limpiamente (hold-to-fire)
+            try:
+                world.components.get('LaserBeamComponent', {}).pop(entity.id, None)
+            except Exception:
+                pass
             return
         if spell_type == 'lightning':
             world = entity.world

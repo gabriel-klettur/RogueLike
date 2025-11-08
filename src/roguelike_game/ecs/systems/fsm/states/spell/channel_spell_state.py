@@ -1,5 +1,6 @@
 from roguelike_game.ecs.systems.fsm.state import State
 import time
+import pygame
 
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.magic_spell_bar_component import MagicSpellBarComponent
@@ -30,6 +31,11 @@ class ChannelSpellState(State):
                 self.fsm.context['_cone_base_len'] = base_len
                 self.fsm.context['_cone_max_len'] = max_len = max(base_len, base_len * max_mul)
                 self.fsm.context['_cone_max_grow_time'] = max(0.0, max_time)
+            # beam: iniciar el láser al comienzo del canalizado (hold-to-fire)
+            if cfg.get('type') == 'beam':
+                resolver = SPELL_RESOLVERS.get('beam')
+                if resolver is not None:
+                    resolver.resolve(world, entity.id, self.fsm.context, cfg, self.fsm.context.get('camera'))
         except Exception:
             pass
 
@@ -43,8 +49,9 @@ class ChannelSpellState(State):
             world = entity.world
             # Si jugador soltó la tecla o alcanzó su duración máxima opcional, finalizar canalización
             try:
-                inp = world.components.get('InputComponent', {}).get(entity.id)
-                holding = bool(getattr(inp, f'spell_{spell}', False)) if inp is not None else False
+                keys = pygame.key.get_pressed()
+                mouse = pygame.mouse.get_pressed(5)
+                holding = bool(keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT] or mouse[0])
             except Exception:
                 holding = False
             elapsed = time.time() - self.fsm.context.get('channel_start', time.time())
@@ -53,6 +60,7 @@ class ChannelSpellState(State):
                 from roguelike_game.ecs.systems.fsm.states.spell.release_spell_state import ReleaseSpellState
                 self.fsm.change_state(ReleaseSpellState(), entity)
                 return
+
             # Actualizar longitud dinámica del cono para todos los componentes del caster de este spell
             try:
                 base_len = float(self.fsm.context.get('_cone_base_len', 0.0))
@@ -77,6 +85,42 @@ class ChannelSpellState(State):
                             pass
             except Exception:
                 pass
+            return
+        # beam: mantener mientras el binding esté presionado; salir a release al soltar
+        if spell_type == 'beam':
+            world = entity.world
+            holding = False
+            try:
+                keys = pygame.key.get_pressed()
+                mouse = pygame.mouse.get_pressed(5)
+                # Localizar InputSystem para obtener bindings configurados
+                cfg_in = None
+                for s in getattr(world, 'update_systems', []):
+                    try:
+                        from roguelike_game.ecs.systems.input.input_system import InputSystem as _IS
+                        if isinstance(s, _IS):
+                            cfg_in = getattr(s, 'config', None)
+                            break
+                    except Exception:
+                        continue
+                if cfg_in is not None:
+                    lb_btn = getattr(cfg_in, 'get_mouse_button_for_binding', lambda *_: None)('mouse_laser_beam')
+                    if isinstance(lb_btn, int) and lb_btn < len(mouse):
+                        holding = holding or bool(mouse[lb_btn])
+                    code_a = getattr(cfg_in, 'get_key_for_binding', lambda *_: None)('kb_laser_beam_a')
+                    code_b = getattr(cfg_in, 'get_key_for_binding', lambda *_: None)('kb_laser_beam_b')
+                    if isinstance(code_a, int):
+                        holding = holding or bool(keys[code_a])
+                    if isinstance(code_b, int):
+                        holding = holding or bool(keys[code_b])
+                else:
+                    # Fallback: botón central
+                    holding = bool(mouse[1])
+            except Exception:
+                holding = False
+            if not holding:
+                from roguelike_game.ecs.systems.fsm.states.spell.release_spell_state import ReleaseSpellState
+                self.fsm.change_state(ReleaseSpellState(), entity)
             return
         # Default: duración de canalización temporal
         base = cfg.get('channel_duration', 0)
