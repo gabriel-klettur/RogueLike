@@ -87,8 +87,8 @@
     "id": 7,
     "preset_id": "Torch",
     "zone": "lobby",
-    "rel_x": 371,
-    "rel_y": 1445,
+    "rel_x": 170,
+    "rel_y": 1099,
     "overrides": {
       "color": [
         255,
@@ -143,8 +143,8 @@
     "id": 13,
     "preset_id": "Torch",
     "zone": "lobby",
-    "rel_x": 1089,
-    "rel_y": 833,
+    "rel_x": 585,
+    "rel_y": 1144,
     "overrides": {
       "color": [
         255,

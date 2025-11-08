@@ -37,13 +37,13 @@ class TorchLightSystem:
         # Preset antorcha (coherente con Editor)
         return LightComponent(
             radius=160,
-            color=(255, 200, 140),
+            color=(255, 180, 90),
             intensity=1.0,
-            falloff=2.0,
+            falloff=2.2,
             enabled=True,
-            flicker_amp=0.15,
-            flicker_speed=0.75,
-            center_scale=0.85,
+            flicker_amp=0.18,
+            flicker_speed=1.2,
+            center_scale=1.1,
         )
 
     # ---- Update --------------------------------------------------------------

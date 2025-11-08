@@ -40,6 +40,9 @@ class LightingManager:
         self._lr_size: Optional[Tuple[int, int]] = None
         self._last_scale: int = self._scale
         self._lights: List[Light] = []
+        # Composition mode for multiple lights on the low-res buffer: 'add' or 'max'
+        # 'add' removes dark seams in overlaps (recommended); 'max' avoids hotspots.
+        self._compose_mode: str = "add"
         # Small LRU cache for tinted gradients to avoid per-light copies/fills
         # Key: (radius_bucket, falloff_2dec, center_scale_2dec, r_tint, g_tint, b_tint)
         self._tinted_cache: "OrderedDict[Tuple[int, int, int, int, int, int], pygame.Surface]" = OrderedDict()
@@ -96,6 +99,11 @@ class LightingManager:
 
     def set_quality(self, tier: str) -> None:
         self._tier = tier
+
+    def set_compose_mode(self, mode: str) -> None:
+        """Set light composition on the low-res lightmap: 'add' or 'max'."""
+        m = str(mode or "add").lower()
+        self._compose_mode = "max" if m.startswith("max") else "add"
 
     def set_tile_occlusion(self, enabled: bool) -> None:
         try:
@@ -354,8 +362,11 @@ class LightingManager:
             else:
                 tint_to_blit = tint
             try:
-                # Use per-channel maximum (lighten) so overlapping lights do not sum brightness
-                self._lr_surface.blit(tint_to_blit, blit_pos, special_flags=pygame.BLEND_RGBA_MAX)
+                # Compose multiple lights. 'add' removes dark seams in overlaps.
+                if self._compose_mode == "add":
+                    self._lr_surface.blit(tint_to_blit, blit_pos, special_flags=pygame.BLEND_RGBA_ADD)
+                else:
+                    self._lr_surface.blit(tint_to_blit, blit_pos, special_flags=pygame.BLEND_RGBA_MAX)
             except Exception:
                 # Be robust against out-of-bounds blits
                 pass

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pygame
 from typing import Any
+import math
+import random
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_editors.lighting.services.light_instances_service import (
@@ -490,6 +492,7 @@ class LightingEditorController:
                     falloff=float(getattr(stp, 'spawn_falloff', 2.0)),
                     flicker_amp=float(getattr(stp, 'spawn_flicker_amp', 0.15)),
                     flicker_speed=float(getattr(stp, 'spawn_flicker_speed', 2.5)),
+                    flicker_phase_rad=random.Random().uniform(0.0, 2.0 * math.pi),
                     center_scale=float(getattr(stp, 'spawn_center_scale', 1.0)),
                 )
             )

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 import pygame
+import math
+import random
 
 from roguelike_engine.rendering.lighting import get_global_lighting
 from roguelike_engine.rendering.lighting.light_types import Light
@@ -107,6 +109,8 @@ class LightingSyncSystem:
                 continue
             try:
                 lid = f"ecs:{eid}"
+                # Deterministic per-entity phase so flicker is not synchronized
+                phase = random.Random(int(eid)).uniform(0.0, 2.0 * math.pi)
                 lm.add(
                     Light(
                         x=float(getattr(p, 'x', 0.0)),
@@ -118,6 +122,7 @@ class LightingSyncSystem:
                         enabled=bool(getattr(lc, 'enabled', True)),
                         flicker_amp=float(getattr(lc, 'flicker_amp', 0.0)),
                         flicker_speed=float(getattr(lc, 'flicker_speed', 2.3)),
+                        flicker_phase_rad=float(getattr(lc, 'flicker_phase_rad', phase)),
                         center_scale=float(getattr(lc, 'center_scale', 1.0)),
                         id=lid,
                     )

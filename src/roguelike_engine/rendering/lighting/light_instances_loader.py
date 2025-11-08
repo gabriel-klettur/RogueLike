@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, List
 import json
 import logging
+import math
+import random
 
 from roguelike_engine.config.config import LIGHT_INSTANCES_PATH, LIGHT_PRESETS_PATH
 from roguelike_engine.config.config_tiles import TILE_SIZE
@@ -62,6 +64,12 @@ def load_persistent_to_manager(lm) -> int:
             flicker_amp = float(params.get("flicker_amp", 0.0))
             flicker_speed = float(params.get("flicker_speed", 2.3))
             center_scale = float(params.get("center_scale", 1.0))
+            # Deterministic per-instance phase so persistent lights are not synchronized
+            try:
+                id_num = int(e.get("id", idx + 1))
+            except Exception:
+                id_num = idx + 1
+            phase = random.Random(id_num).uniform(0.0, 2.0 * math.pi)
             # Compute world coords from zone offsets
             off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
             origin_px_x = int(off_tx) * TILE_SIZE
@@ -80,6 +88,7 @@ def load_persistent_to_manager(lm) -> int:
                     enabled=False,
                     flicker_amp=flicker_amp,
                     flicker_speed=flicker_speed,
+                    flicker_phase_rad=phase,
                     center_scale=center_scale,
                     id=lid,
                 )
