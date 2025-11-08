@@ -57,15 +57,8 @@ def close_all_editors(game) -> None:
     try:
         te = getattr(game, 'tiles_editor', None)
         if te and getattr(getattr(te, 'editor_state', None), 'active', False):
-            te.editor_state.active = False
-            try:
-                te.editor_state.picker_state.open = False
-                te.editor_state.selected_tile = None
-                te.editor_state.brush_dragging = False
-                te.editor_state.default_dragging = False
-                te.editor_state.delete_dragging = False
-            except Exception:
-                pass
+            # USAR toggle() para ejecutar limpieza al cerrar
+            te.toggle()
     except Exception:
         pass
     try:
@@ -176,15 +169,9 @@ def open_editor_exclusive(game, target: str) -> None:
             pass
     elif target == 'tiles':
         try:
-            game.tiles_editor.editor_state.active = True
-            try:
-                game.tiles_editor.editor_state.toolbar_state.view_active = True
-            except Exception:
-                pass
-            try:
-                game.tiles_editor.editor_state.size_panel_state.visible = True
-            except Exception:
-                pass
+            # USAR toggle() para ejecutar limpieza de caches y recarga de mapa
+            if not game.tiles_editor.editor_state.active:
+                game.tiles_editor.toggle()
         except Exception:
             pass
     elif target == 'buildings':

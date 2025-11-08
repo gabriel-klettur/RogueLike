@@ -198,8 +198,27 @@ class MapManager:
                 pass
         except Exception:
             pass
+        # Activar mundo destino y validar
         try:
             world_service.activate(world_id)
+        except Exception as e:
+            try:
+                logger.error(f"[{trace_id}] CRITICAL: world_service.activate('{world_id}') failed: {e}")
+            except Exception:
+                pass
+            raise  # No silenciar este error crítico
+        # Validar que current_world se actualizó correctamente
+        try:
+            actual_world = getattr(global_map_settings, 'current_world', None)
+            if actual_world != world_id:
+                msg = f"World activation failed: expected '{world_id}', got '{actual_world}'"
+                try:
+                    logger.error(f"[{trace_id}] {msg}")
+                except Exception:
+                    pass
+                raise RuntimeError(msg)
+        except RuntimeError:
+            raise
         except Exception:
             pass
         # Forzar invalidación de caches antes de recargar
@@ -214,11 +233,31 @@ class MapManager:
                 clear_sprite_caches()
             except Exception:
                 pass
-            # 2) Borrar cache de mapa del mundo destino si existe
+            # 2) Borrar cache de mapa del mundo destino y origen para evitar contaminación
             try:
-                cache_file = Path(getattr(self.loader, 'cache_dir', Path('data/cache'))) / f"map_{world_id}_{self.map_name}.pkl"
-                if cache_file.exists():
-                    cache_file.unlink(missing_ok=True)
+                cache_dir = Path(getattr(self.loader, 'cache_dir', Path('data/cache')))
+                # Borrar cache del mundo DESTINO
+                dest_cache = cache_dir / f"map_{world_id}_{self.map_name}.pkl"
+                if dest_cache.exists():
+                    dest_cache.unlink(missing_ok=True)
+                    try:
+                        logger.info(f"[{trace_id}] Cleared dest cache: {dest_cache}")
+                    except Exception:
+                        pass
+                # Borrar cache del mundo ORIGEN para prevenir carga incorrecta
+                try:
+                    # current_world ya fue actualizado a world_id en activate()
+                    # pero guardamos una referencia al mundo previo si existe
+                    for cache_file in cache_dir.glob(f"map_*_{self.map_name}.pkl"):
+                        # Borrar todos los caches para este mapa excepto el que acabamos de borrar
+                        if cache_file != dest_cache and cache_file.exists():
+                            try:
+                                cache_file.unlink(missing_ok=True)
+                                logger.info(f"[{trace_id}] Cleared old cache: {cache_file}")
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
             except Exception:
                 pass
         except Exception:
@@ -229,12 +268,6 @@ class MapManager:
         except Exception:
             pass
         try:
-            # Re-crear renderer y vista para descartar cualquier cache residual
-            self.renderer = MapRenderer()
-            self.view = self.renderer.view
-        except Exception:
-            pass
-        try:
             # Re-crear collision manager para limpiar capas previas
             self.collision_manager = CollisionManager()
         except Exception:
@@ -242,6 +275,22 @@ class MapManager:
         # Recargar mapa con nuevas rutas
         try:
             self.reload_map()
+            # CRÍTICO: Limpiar sprite caches DESPUÉS de reload para eliminar referencias al mundo anterior
+            try:
+                clear_sprite_caches()
+                if trace_id:
+                    logger.info(f"[{trace_id}] Cleared sprite caches after reload_map()")
+            except Exception:
+                pass
+            # CRÍTICO: Re-crear renderer y vista DESPUÉS de limpiar sprites
+            # para forzar reconstrucción de chunks desde cero sin sprites cacheados
+            try:
+                self.renderer = MapRenderer()
+                self.view = self.renderer.view
+                if trace_id:
+                    logger.info(f"[{trace_id}] Recreated renderer and view after sprite cache clear")
+            except Exception:
+                pass
         except Exception:
             pass
         # Si el mundo destino está en blanco (zones.json vacío), limpiar instancias de edificios per-world
