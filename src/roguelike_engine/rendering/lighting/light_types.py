@@ -26,6 +26,7 @@ class Light:
     enabled: bool = True
     flicker_amp: float = 0.0
     flicker_speed: float = 2.3
+    center_scale: float = 1.0
     id: Optional[str] = None
 
     def current_intensity(self) -> float:

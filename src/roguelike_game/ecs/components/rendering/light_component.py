@@ -8,6 +8,7 @@ class LightComponent:
         enabled: bool = True,
         flicker_amp: float = 0.0,
         flicker_speed: float = 2.3,
+        center_scale: float = 1.0,
     ):
         self.radius = int(radius)
         self.color = (int(color[0]), int(color[1]), int(color[2]))
@@ -16,3 +17,4 @@ class LightComponent:
         self.enabled = bool(enabled)
         self.flicker_amp = float(flicker_amp)
         self.flicker_speed = float(flicker_speed)
+        self.center_scale = float(center_scale)

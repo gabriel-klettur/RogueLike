@@ -71,6 +71,8 @@ def reset_entity_inputs(system, world, eid: int, inp) -> None:
     # Memorias de ratón
     system.prev_mouse[(eid, "fireball")] = False
     system.prev_mouse[(eid, "dash")] = False
+    # Laser beam hold memory (use rising-edge to start spell)
+    system.prev_mouse[(eid, "laser_beam")] = False
     # Resetear ratón para todos los hechizos mapeables por mouse
     for name in SPELL_ATTRS:
         system.prev_mouse[(eid, f"spell_{name}")] = False
@@ -233,7 +235,7 @@ def handle_mouse_actions(system, world, eid: int, keys, mx: int, my: int) -> Non
         world.components.setdefault("WantsToCastSpell", {})[eid] = WantsToCastSpell(caster=eid, spell="fireball")
     system.prev_mouse[(eid, "fireball")] = curr_fb_mouse
 
-    # Laser beam (hold)
+    # Laser beam (rising-edge to start channel; hold managed by ChannelSpellState/Emitter)
     curr_lb_mouse = bool(mouse_pressed[lb_btn]) if isinstance(lb_btn, int) else False
     curr_lb_mouse = curr_lb_mouse and not ui_blocked
     curr_lb = curr_lb_mouse
@@ -241,9 +243,12 @@ def handle_mouse_actions(system, world, eid: int, keys, mx: int, my: int) -> Non
         code = kb_codes.get(("laser_beam", slot))
         if code is not None:
             curr_lb = curr_lb or (bool(keys[code]) and not ui_blocked)
-    if curr_lb:
+    prev_lb = system.prev_mouse.get((eid, "laser_beam"), False)
+    lb_edge = curr_lb and not prev_lb
+    if lb_edge:
         logger.debug(f"[DEBUG][{time.time():.3f}] eid={eid} mouse-button({lb_btn}) -> laser_beam")
         world.components.setdefault("WantsToCastSpell", {})[eid] = WantsToCastSpell(caster=eid, spell="laser_beam")
+    system.prev_mouse[(eid, "laser_beam")] = curr_lb
 
     # Dash (edge) con supresión sobre panel de inventario
     curr_dash_mouse = bool(mouse_pressed[dash_btn]) if isinstance(dash_btn, int) else False

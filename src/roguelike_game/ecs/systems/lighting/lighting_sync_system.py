@@ -61,6 +61,7 @@ class LightingSyncSystem:
                         enabled=bool(getattr(lc, 'enabled', True)),
                         flicker_amp=float(getattr(lc, 'flicker_amp', 0.0)),
                         flicker_speed=float(getattr(lc, 'flicker_speed', 2.3)),
+                        center_scale=float(getattr(lc, 'center_scale', 1.0)),
                         id=lid,
                     )
                 )

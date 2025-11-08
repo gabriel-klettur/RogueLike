@@ -42,7 +42,8 @@ class TorchLightSystem:
             falloff=2.0,
             enabled=True,
             flicker_amp=0.15,
-            flicker_speed=2.5,
+            flicker_speed=0.75,
+            center_scale=0.85,
         )
 
     # ---- Update --------------------------------------------------------------

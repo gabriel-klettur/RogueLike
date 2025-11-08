@@ -29,21 +29,30 @@ class LightPresetsPanelController:
             st.spawn_combo_open = not bool(getattr(st, "spawn_combo_open", False))
             return
 
+        # Helper to apply a preset from state.presets
+        def _apply_preset(name: str) -> None:
+            st.spawn_preset = name
+            p = getattr(st, 'presets', {}).get(name, {}) if hasattr(st, 'presets') else {}
+            try:
+                st.spawn_radius = int(p.get("radius", st.spawn_radius))
+                st.spawn_intensity = float(p.get("intensity", st.spawn_intensity))
+                st.spawn_falloff = float(p.get("falloff", st.spawn_falloff))
+                c = p.get("color", st.spawn_color)
+                if isinstance(c, (list, tuple)) and len(c) == 3:
+                    st.spawn_color = (int(c[0]), int(c[1]), int(c[2]))
+                st.spawn_flicker_amp = float(p.get("flicker_amp", st.spawn_flicker_amp))
+                st.spawn_flicker_speed = float(p.get("flicker_speed", st.spawn_flicker_speed))
+                st.spawn_center_scale = float(p.get("center_scale", st.spawn_center_scale))
+            except Exception:
+                # Keep current values on any conversion error
+                pass
+
         # Dropdown item selection
         if bool(getattr(st, "spawn_combo_open", False)):
             items = getattr(st, "_combo_spawn_items", []) or []
             for ir, it in items:
                 if isinstance(ir, pygame.Rect) and ir.collidepoint(x, y):
-                    st.spawn_preset = str(it)
-                    if it == "Torch":
-                        st.spawn_radius = 160; st.spawn_intensity = 1.0; st.spawn_falloff = 2.0
-                        st.spawn_color = (255, 200, 140); st.spawn_flicker_amp = 0.15; st.spawn_flicker_speed = 2.5
-                    elif it == "Lamp":
-                        st.spawn_radius = 120; st.spawn_intensity = 0.9; st.spawn_falloff = 2.2
-                        st.spawn_color = (255, 240, 200); st.spawn_flicker_amp = 0.05; st.spawn_flicker_speed = 1.2
-                    elif it == "Magic":
-                        st.spawn_radius = 180; st.spawn_intensity = 1.1; st.spawn_falloff = 1.6
-                        st.spawn_color = (120, 200, 255); st.spawn_flicker_amp = 0.20; st.spawn_flicker_speed = 3.2
+                    _apply_preset(str(it))
                     st.spawn_combo_open = False
                     return
             # Clicked elsewhere inside panel closes combo; allow other controls to process
@@ -52,19 +61,13 @@ class LightPresetsPanelController:
 
         # Preset buttons
         if isinstance(st._btn_preset_torch, pygame.Rect) and st._btn_preset_torch.collidepoint(x, y):
-            st.spawn_preset = "Torch"
-            st.spawn_radius = 160; st.spawn_intensity = 1.0; st.spawn_falloff = 2.0
-            st.spawn_color = (255, 200, 140); st.spawn_flicker_amp = 0.15; st.spawn_flicker_speed = 2.5
+            _apply_preset("Torch")
             return
         if isinstance(st._btn_preset_lamp, pygame.Rect) and st._btn_preset_lamp.collidepoint(x, y):
-            st.spawn_preset = "Lamp"
-            st.spawn_radius = 120; st.spawn_intensity = 0.9; st.spawn_falloff = 2.2
-            st.spawn_color = (255, 240, 200); st.spawn_flicker_amp = 0.05; st.spawn_flicker_speed = 1.2
+            _apply_preset("Lamp")
             return
         if isinstance(st._btn_preset_magic, pygame.Rect) and st._btn_preset_magic.collidepoint(x, y):
-            st.spawn_preset = "Magic"
-            st.spawn_radius = 180; st.spawn_intensity = 1.1; st.spawn_falloff = 1.6
-            st.spawn_color = (120, 200, 255); st.spawn_flicker_amp = 0.20; st.spawn_flicker_speed = 3.2
+            _apply_preset("Magic")
             return
 
         # Param steppers
@@ -88,6 +91,12 @@ class LightPresetsPanelController:
             st.spawn_flicker_speed = _clamp(st.spawn_flicker_speed - 0.2, 0.0, 10.0); return
         if isinstance(st._btn_fs_plus, pygame.Rect) and st._btn_fs_plus.collidepoint(x, y):
             st.spawn_flicker_speed = _clamp(st.spawn_flicker_speed + 0.2, 0.0, 10.0); return
+
+        # Center Scale steppers
+        if isinstance(st._btn_cs_minus, pygame.Rect) and st._btn_cs_minus.collidepoint(x, y):
+            st.spawn_center_scale = _clamp(st.spawn_center_scale - 0.05, 0.1, 2.0); return
+        if isinstance(st._btn_cs_plus, pygame.Rect) and st._btn_cs_plus.collidepoint(x, y):
+            st.spawn_center_scale = _clamp(st.spawn_center_scale + 0.05, 0.1, 2.0); return
 
         # Single-shot toggle
         if isinstance(st._btn_single_shot, pygame.Rect) and st._btn_single_shot.collidepoint(x, y):

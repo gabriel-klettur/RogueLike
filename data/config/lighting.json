@@ -4,7 +4,7 @@
   "quality": "lights_low",
   "low_res_scale": 2,
   "max_lights_visible": 12,
-  "max_radius": 192,
+  "max_radius": 1024,
   "time_scale": 0.4,
   "start_minute": 600,
   "keyframes": [

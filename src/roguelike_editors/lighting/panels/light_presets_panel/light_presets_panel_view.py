@@ -113,6 +113,7 @@ class LightPresetsPanelView:
         draw_stepper("Falloff", f"{st.spawn_falloff:.2f}", "_btn_sf_minus", "_btn_sf_plus")
         draw_stepper("Flicker Amp", f"{st.spawn_flicker_amp:.2f}", "_btn_fa_minus", "_btn_fa_plus")
         draw_stepper("Flicker Spd", f"{st.spawn_flicker_speed:.2f}", "_btn_fs_minus", "_btn_fs_plus")
+        draw_stepper("Center Scale", f"{getattr(st, 'spawn_center_scale', 1.0):.2f}", "_btn_cs_minus", "_btn_cs_plus")
 
         # Single-shot toggle
         st._btn_single_shot = self._draw_button(

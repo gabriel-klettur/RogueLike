@@ -41,7 +41,8 @@ class LightingManager:
         self._last_scale: int = self._scale
         self._lights: List[Light] = []
         # Small LRU cache for tinted gradients to avoid per-light copies/fills
-        self._tinted_cache: "OrderedDict[Tuple[int, int, int, int, int], pygame.Surface]" = OrderedDict()
+        # Key: (radius_bucket, falloff_2dec, center_scale_2dec, r_tint, g_tint, b_tint)
+        self._tinted_cache: "OrderedDict[Tuple[int, int, int, int, int, int], pygame.Surface]" = OrderedDict()
         self._tinted_cache_max: int = 64
         # Autoscaler state
         self._autoscale_enabled: bool = True
@@ -279,12 +280,15 @@ class LightingManager:
             r = min(255, int(lt.color[0] * (ib / 15.0)))
             g = min(255, int(lt.color[1] * (ib / 15.0)))
             b = min(255, int(lt.color[2] * (ib / 15.0)))
-            # Include falloff bucket with 2 decimals to align with gradient cache variability
+            # Include falloff and center_scale buckets with 2 decimals to align with gradient cache variability
             fkey = int(round(float(lt.falloff) * 100))
-            tkey = (rr, fkey, r, g, b)
+            ckey = int(round(float(getattr(lt, 'center_scale', 1.0)) * 100))
+            tkey = (rr, fkey, ckey, r, g, b)
             tint = self._tinted_cache.get(tkey)
             if tint is None:
-                base = get_radial_gradient(rr, lt.falloff)
+                # Use quantized center_scale for cache friendliness
+                cs = ckey / 100.0
+                base = get_radial_gradient(rr, lt.falloff, cs)
                 tint = base.copy()
                 tint.fill((r, g, b, 255), special_flags=pygame.BLEND_RGBA_MULT)
                 # LRU insert

@@ -119,7 +119,9 @@
       "type": "object",
       "properties": {
         "path": { "type": ["string", "null"] },
-        "scale": { "type": "number" }
+        "scale": { "type": "number" },
+        "rotation_offset_deg": { "type": "number" },
+        "reveal_duration_sec": { "type": "number" }
       },
       "additionalProperties": false
     },

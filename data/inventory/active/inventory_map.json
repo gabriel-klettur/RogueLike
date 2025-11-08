@@ -11,18 +11,6 @@
     },
     "created_at": 1762468182.2752461
   },
-  "d94674ad-30c9-4184-95ba-08ed0244d27b": {
-    "item_id": "tortilla_spain_01",
-    "quantity": 3,
-    "zone_id": "zone_150_50",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 13,
-      "y": 23
-    },
-    "created_at": 1762468182.2755675
-  },
   "ac165de3-33b4-47cc-b875-c6bdcc72efb2": {
     "item_id": "borsh_01",
     "quantity": 1,
@@ -34,17 +22,5 @@
       "y": 21
     },
     "created_at": 1762468182.2759132
-  },
-  "afe30588-4555-43ec-bad1-8e8a13c51b2e": {
-    "item_id": "completo_chileno_01",
-    "quantity": 1,
-    "zone_id": "zone_150_50",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 14,
-      "y": 23
-    },
-    "created_at": 1762468182.2762492
   }
 }
