@@ -1211,7 +1211,7 @@
     "mana_cost": 0,
     "name": "Root Whip",
     "timings": { "prepare": 0.0, "channel": 0.0, "cooldown": 0.6 },
-    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "rules": { "lock_cast_direction": true, "interruptible": false, "allow_movement": true, "automatic": false },
     "constraints": { "allow_overlap": true, "max_instances": 0 },
     "effect": {
       "radius": 0,

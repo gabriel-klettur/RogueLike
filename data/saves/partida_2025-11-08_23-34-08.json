@@ -3,18 +3,18 @@
   "player": {
     "level": "global_map",
     "pos": [
-      217,
-      85
+      209,
+      86
     ]
   },
   "npcs": {
-    "bc7e2103-7970-49ee-9698-95441a31dce5": {
+    "d84ba932-25f3-4a53-884e-00610f487c47": {
       "level": "global_map",
       "tile": [
-        218,
-        78
+        197,
+        87
       ],
-      "hp": 3000,
+      "hp": 2980,
       "dead": false,
       "prototype": "final_boss_barbol_lvl2"
     }
@@ -22,17 +22,17 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        217,
-        85
+        209,
+        86
       ],
       "npc_states": {
-        "bc7e2103-7970-49ee-9698-95441a31dce5": {
+        "d84ba932-25f3-4a53-884e-00610f487c47": {
           "level": "global_map",
           "tile": [
-            218,
-            78
+            197,
+            87
           ],
-          "hp": 3000,
+          "hp": 2980,
           "dead": false,
           "prototype": "final_boss_barbol_lvl2"
         }
@@ -47,14 +47,8 @@
         "item": "gold",
         "quantity": 10
       },
-      {
-        "item": "borsh_01",
-        "quantity": 1
-      },
-      {
-        "item": "paella_01",
-        "quantity": 1
-      },
+      null,
+      null,
       null,
       null,
       null,
@@ -79,27 +73,40 @@
       "player_id": null,
       "capacity": 20,
       "slots": []
+    },
+    "fbdc5923-28d7-4ee3-99f9-089ff1672e95": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "9a0bcdbb-90f1-4344-b485-7a92fa6e262d": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "d84ba932-25f3-4a53-884e-00610f487c47": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
     }
   },
   "meta": {
     "name": "partida_2025-11-08_23-34-08",
     "created_at": "2025-11-08T23:34:08",
-    "last_played": "2025-11-10T16:31:28",
+    "last_played": "2025-11-10T18:51:08",
     "player": {
-      "xp": 0,
+      "xp": 20,
       "level": 0
     },
     "items_summary": {
-      "stacks": 3,
+      "stacks": 1,
       "top_items": [
-        "gold",
-        "borsh_01",
-        "paella_01"
+        "gold"
       ]
     }
   },
   "time": {
-    "minute": 717,
+    "minute": 1044,
     "time_scale": 0.4
   }
 }

@@ -113,6 +113,34 @@ class SpellCastingSystem:
             cfg = SPELLS.get(intent.spell, {})
             spell_type = cfg.get('type')
 
+            # No interrumpir un cast no-interruptible en curso (p. ej., root_whip)
+            try:
+                npc_state = world.components.get('NPCState', {}).get(eid)
+                if npc_state is not None:
+                    # Bloquear si está en canalización activa de un hechizo no-interrumpible (AutoCast)
+                    ac = world.components.get('AutoCastComponent', {}).get(eid)
+                    chan = getattr(ac, 'active_channel', None) if ac is not None else None
+                    if isinstance(chan, dict):
+                        ch_spell = str(chan.get('spell', ''))
+                        if ch_spell:
+                            ch_cfg = SPELLS.get(ch_spell, {})
+                            if not bool(ch_cfg.get('interruptible', False)):
+                                continue
+                    cur_state = getattr(npc_state, 'fsm', None)
+                    cur_state = getattr(cur_state, 'current_state', None)
+                    if isinstance(cur_state, CastState):
+                        cur_ctx = getattr(cur_state, 'spell_fsm', None)
+                        cur_ctx = getattr(cur_ctx, 'context', {}) if cur_ctx is not None else {}
+                        cur_spell = cur_ctx.get('spell')
+                        if cur_spell:
+                            cur_cfg = SPELLS.get(cur_spell, {})
+                            # Si el hechizo actual NO es interruptible, saltar este intent y dejarlo pendiente
+                            if not bool(cur_cfg.get('interruptible', False)):
+                                # Mantener wants[eid] para que se procese cuando termine el cast actual
+                                continue
+            except Exception:
+                pass
+
             # Limites de instancias / overlap
             try:
                 active = self._count_active(world, eid, intent, spell_type)
@@ -168,11 +196,70 @@ class SpellCastingSystem:
                                 new_state.spell_fsm.context[k] = v
                     except Exception:
                         pass
-                    # Si viene spawn_pos pero no direction, fija una dirección neutra para evitar que CastState.enter lo sobreescriba
+                    # Si viene spawn_pos pero no direction:
+                    # - Para proyectiles: calcular dirección hacia el Player
+                    # - Para otros: usar (1, 0) como neutra para evitar overrides
                     try:
                         if ('spawn_pos' in new_state.spell_fsm.context) and ('direction' not in new_state.spell_fsm.context):
-                            new_state.spell_fsm.context['direction'] = (1.0, 0.0)
-                            new_state.spell_fsm.context['force_lock_direction'] = True
+                            if cfg.get('type') == 'projectile':
+                                # Calcular vector caster -> player (centros)
+                                pos_map = world.components.get('Position', {})
+                                spr_map = world.components.get('Sprite', {})
+                                scl_map = world.components.get('Scale', {})
+                                cpos = pos_map.get(eid)
+                                ppos = pos_map.get(player_eid) if player_eid is not None else None
+                                if (cpos is not None) and (ppos is not None):
+                                    # Centro caster
+                                    cspr = spr_map.get(eid)
+                                    if cspr:
+                                        w, h = cspr.image.get_size()
+                                        cx, cy = float(cpos.x) + w/2, float(cpos.y) + h/2
+                                    else:
+                                        cx, cy = float(cpos.x), float(cpos.y)
+                                    # Centro player
+                                    pspr = spr_map.get(player_eid)
+                                    if pspr:
+                                        w2, h2 = pspr.image.get_size()
+                                        px, py = float(ppos.x) + w2/2, float(ppos.y) + h2/2
+                                    else:
+                                        px, py = float(ppos.x), float(ppos.y)
+                                    dx, dy = px - cx, py - cy
+                                    length = math.hypot(dx, dy) or 1.0
+                                    new_state.spell_fsm.context['direction'] = (dx/length, dy/length)
+                                    # Asegurar que ReleaseSpellState no recalcula con ratón
+                                    new_state.spell_fsm.context['force_lock_direction'] = True
+                                else:
+                                    new_state.spell_fsm.context['direction'] = (1.0, 0.0)
+                                    new_state.spell_fsm.context['force_lock_direction'] = True
+                            else:
+                                new_state.spell_fsm.context['direction'] = (1.0, 0.0)
+                                new_state.spell_fsm.context['force_lock_direction'] = True
+                    except Exception:
+                        pass
+                    # Fallback adicional: si es proyectil y aún no hay direction, calcular hacia el Player
+                    try:
+                        if (cfg.get('type') == 'projectile') and ('direction' not in new_state.spell_fsm.context):
+                            pos_map = world.components.get('Position', {})
+                            spr_map = world.components.get('Sprite', {})
+                            cpos = pos_map.get(eid)
+                            ppos = pos_map.get(player_eid) if player_eid is not None else None
+                            if (cpos is not None) and (ppos is not None):
+                                cspr = spr_map.get(eid)
+                                if cspr:
+                                    w, h = cspr.image.get_size()
+                                    cx, cy = float(cpos.x) + w/2, float(cpos.y) + h/2
+                                else:
+                                    cx, cy = float(cpos.x), float(cpos.y)
+                                pspr = spr_map.get(player_eid)
+                                if pspr:
+                                    w2, h2 = pspr.image.get_size()
+                                    px, py = float(ppos.x) + w2/2, float(ppos.y) + h2/2
+                                else:
+                                    px, py = float(ppos.x), float(ppos.y)
+                                dx, dy = px - cx, py - cy
+                                length = math.hypot(dx, dy) or 1.0
+                                new_state.spell_fsm.context['direction'] = (dx/length, dy/length)
+                                new_state.spell_fsm.context['force_lock_direction'] = True
                     except Exception:
                         pass
                     # Fallback robusto: si es un puddle (o root_whip) y no hay spawn_pos, usar centro del Player

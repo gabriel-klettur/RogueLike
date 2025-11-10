@@ -36,6 +36,27 @@ class AutoCastSystem:
                 if not getattr(ac, 'enabled', True):
                     continue
                 wants = comps.setdefault('WantsToCastSpell', {})
+                # No iniciar otros casts si el NPC está ejecutando un slash (wind-up o swing activo)
+                try:
+                    # Señal visual del wind-up
+                    if eid in comps.get('TelegraphArc', {}):
+                        continue
+                    # Slash activo: emisor de partículas presente en el caster durante la vida del golpe
+                    if eid in comps.get('SlashEmitterComponent', {}):
+                        continue
+                    # Alternativa: usar contexto del NPCState para ventana de wind-up
+                    npc_state = comps.get('NPCState', {}).get(eid)
+                    if npc_state is not None:
+                        fsm = getattr(npc_state, 'fsm', None)
+                        if fsm is not None:
+                            now_ts = time.time()
+                            ctx = getattr(fsm, 'context', {}) or {}
+                            start_t = float(ctx.get('attack_start') or 0.0)
+                            windup_s = float(ctx.get('attack_windup_s', 0.0) or 0.0)
+                            if windup_s > 0.0 and start_t > 0.0 and (now_ts - start_t) < windup_s:
+                                continue
+                except Exception:
+                    pass
 
                 # Si estamos canalizando, mantener outline, frenar y castear al terminar
                 chan = getattr(ac, 'active_channel', None)
@@ -79,6 +100,14 @@ class AutoCastSystem:
                             # Combinar meta de la entrada con spawn_pos y target
                             entry = chan.get('entry') or {}
                             meta = dict(entry.get('meta') or {})
+                            # Flatten nested meta (builder may wrap under 'meta')
+                            try:
+                                inner = meta.get('meta')
+                                if isinstance(inner, dict):
+                                    meta.update(inner)
+                                    meta.pop('meta', None)
+                            except Exception:
+                                pass
                             # Explicitar target para que el resolver lo pueda honrar en ausencia de spawn_pos
                             meta.setdefault('target', target)
                             if spawn_pos:
@@ -130,6 +159,74 @@ class AutoCastSystem:
                             has_death_timer = player_eid in comps.get('DeathTimer', {})
                             if player_dead or has_death_timer:
                                 continue
+                            # Gateo por distancia por-entrada (min/max en px o en tiles)
+                            try:
+                                pos_map = comps.get('Position', {})
+                                spr_map = comps.get('Sprite', {})
+                                scl_map = comps.get('Scale', {})
+                                apos = pos_map.get(eid)
+                                dpos = pos_map.get(player_eid)
+                                if apos is not None and dpos is not None:
+                                    try:
+                                        aspr = spr_map.get(eid)
+                                        ascl = scl_map.get(eid)
+                                        if aspr:
+                                            acxcy = compute_entity_center(apos, aspr, ascl)
+                                            ax, ay = float(acxcy.x), float(acxcy.y)
+                                        else:
+                                            ax, ay = float(apos.x), float(apos.y)
+                                        dspr = spr_map.get(player_eid)
+                                        dscl = scl_map.get(player_eid)
+                                        if dspr:
+                                            dcxcy = compute_entity_center(dpos, dspr, dscl)
+                                            px, py = float(dcxcy.x), float(dcxcy.y)
+                                        else:
+                                            px, py = float(dpos.x), float(dpos.y)
+                                    except Exception:
+                                        ax, ay = float(apos.x), float(apos.y)
+                                        px, py = float(dpos.x), float(dpos.y)
+                                    dx = px - ax
+                                    dy = py - ay
+                                    dist_sq = dx*dx + dy*dy
+                                    # Umbrales en píxeles (permitir en entry o en entry.meta)
+                                    meta_obj = entry.get('meta') or {}
+                                    min_px = entry.get('min_distance')
+                                    if not isinstance(min_px, (int, float)):
+                                        min_px = meta_obj.get('min_distance')
+                                    max_px = entry.get('max_distance')
+                                    if not isinstance(max_px, (int, float)):
+                                        max_px = meta_obj.get('max_distance')
+                                    min_v = float(min_px) if isinstance(min_px, (int, float)) else 0.0
+                                    max_candidates = []
+                                    if isinstance(max_px, (int, float)):
+                                        max_candidates.append(float(max_px))
+                                    # Umbrales en tiles (entry o entry.meta)
+                                    mn_tiles = entry.get('min_distance_tiles')
+                                    if not isinstance(mn_tiles, (int, float)):
+                                        mn_tiles = meta_obj.get('min_distance_tiles')
+                                    mx_tiles = entry.get('max_distance_tiles')
+                                    if not isinstance(mx_tiles, (int, float)):
+                                        mx_tiles = meta_obj.get('max_distance_tiles')
+                                    if isinstance(mn_tiles, (int, float)):
+                                        try:
+                                            min_v = max(min_v, float(mn_tiles) * float(TILE_SIZE))
+                                        except Exception:
+                                            min_v = max(min_v, float(mn_tiles))
+                                    if isinstance(mx_tiles, (int, float)):
+                                        try:
+                                            max_candidates.append(float(mx_tiles) * float(TILE_SIZE))
+                                        except Exception:
+                                            max_candidates.append(float(mx_tiles))
+                                    max_v = 0.0
+                                    for c in max_candidates:
+                                        if isinstance(c, (int, float)) and c > 0:
+                                            max_v = c if (max_v <= 0 or c < max_v) else max_v
+                                    if min_v > 0.0 and dist_sq < (min_v * min_v):
+                                        continue
+                                    if max_v > 0.0 and dist_sq > (max_v * max_v):
+                                        continue
+                            except Exception:
+                                pass
                             # Iniciar canalizado o castear inmediato si channel_s <= 0
                             spell = str(entry.get('spell'))
                             chan_s = float(entry.get('channel_s', 0.0) or 0.0)
@@ -177,6 +274,14 @@ class AutoCastSystem:
                                         except Exception:
                                             spawn_pos = (float(dpos.x), float(dpos.y))
                                 meta = dict(entry.get('meta') or {})
+                                # Flatten nested meta (builder may wrap under 'meta')
+                                try:
+                                    inner = meta.get('meta')
+                                    if isinstance(inner, dict):
+                                        meta.update(inner)
+                                        meta.pop('meta', None)
+                                except Exception:
+                                    pass
                                 # Explicitar el mismo target evaluado para esta entrada
                                 meta.setdefault('target', target)
                                 if spawn_pos:

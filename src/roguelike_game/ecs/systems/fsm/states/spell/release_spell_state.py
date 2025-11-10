@@ -241,9 +241,16 @@ class ReleaseSpellState(State):
             dx, dy = dx/length, dy/length
         else:
             dx, dy = ctx.get('direction', (1, 0))
+        # Offset hacia delante para la fireball central (opcional)
+        try:
+            central_fwd = float(ctx.get('central_forward_offset', cfg.get('central_forward_offset', 0.0)) or 0.0)
+        except Exception:
+            central_fwd = 0.0
+        c_spawn_x = spawn_x + dx * central_fwd
+        c_spawn_y = spawn_y + dy * central_fwd
         fid = world.create_entity()
-        # Mantener spawn_pos como centro de la fireball
-        world.components['Position'][fid] = Position(spawn_x, spawn_y)
+        # Mantener spawn_pos real de la fireball central
+        world.components['Position'][fid] = Position(c_spawn_x, c_spawn_y)
         speed = cfg.get('speed', 0)
         world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
         world.components['FireballComponent'][fid] = FireballComponent(
@@ -252,7 +259,7 @@ class ReleaseSpellState(State):
             lifespan=cfg.get('lifespan', 0),
             caster=entity.id,
             spell_key=spell_key,
-            spawn_pos=(spawn_x, spawn_y)
+            spawn_pos=(c_spawn_x, c_spawn_y)
         )
         try:
             logger.debug(
@@ -274,6 +281,46 @@ class ReleaseSpellState(State):
             img = pygame.image.load(sprite_path).convert_alpha()
             world.components['Sprite'][fid] = Sprite(img)
             world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+        # Disparo paralelo: generar dos proyectiles adicionales a izquierda/derecha de la central
+        try:
+            par_count = int(ctx.get('parallel_count', cfg.get('parallel_count', 1)) or 1)
+        except Exception:
+            par_count = 1
+        if par_count > 1 and cfg.get('type') == 'projectile':
+            try:
+                spacing = float(ctx.get('parallel_spacing', cfg.get('parallel_spacing', 16.0)) or 16.0)
+            except Exception:
+                spacing = 16.0
+            # Offset hacia delante opcional para las laterales (por defecto 0)
+            try:
+                sides_fwd = float(ctx.get('sides_forward_offset', cfg.get('sides_forward_offset', 0.0)) or 0.0)
+            except Exception:
+                sides_fwd = 0.0
+            # Vector perpendicular normalizado a (dx,dy)
+            px, py = -dy, dx
+            plen = math.hypot(px, py) or 1.0
+            px, py = px / plen, py / plen
+            for side in (-1, 1):
+                ex = spawn_x + px * spacing * side + dx * sides_fwd
+                ey = spawn_y + py * spacing * side + dy * sides_fwd
+                eid2 = world.create_entity()
+                world.components['Position'][eid2] = Position(ex, ey)
+                world.components['Velocity'][eid2] = Velocity(dx * speed, dy * speed)
+                world.components['FireballComponent'][eid2] = FireballComponent(
+                    dx * speed, dy * speed,
+                    damage=cfg.get('damage', 0),
+                    lifespan=cfg.get('lifespan', 0),
+                    caster=entity.id,
+                    spell_key=spell_key,
+                    spawn_pos=(ex, ey)
+                )
+                if sprite_path:
+                    try:
+                        # Reusar misma imagen ya cargada para evitar IO repetido
+                        world.components['Sprite'][eid2] = Sprite(img)
+                        world.components['Scale'][eid2] = Scale(scale=cfg.get('scale', 1.0))
+                    except Exception:
+                        pass
         ctx['fireball_id'] = fid
 
     def execute(self, entity, dt):
