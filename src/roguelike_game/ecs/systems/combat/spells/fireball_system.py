@@ -32,6 +32,36 @@ class FireballSystem:
                 logger.debug("[FireballSystem] start update: fireballs=%d", len(fbd))
             except Exception:
                 pass
+        # Precompute walls (wall segments) data once per update to avoid O(F·W)
+        walls_data_cache = []
+        try:
+            wmap_all = world.components.get('WallSegmentComponent', {})
+            if wmap_all:
+                pmap_all = world.components.get('Position', {})
+                for wid, w in list(wmap_all.items()):
+                    try:
+                        if not bool(getattr(w, 'blocks_projectiles', True)):
+                            continue
+                        wpos = pmap_all.get(wid)
+                        if wpos is None:
+                            continue
+                        half_w = float(getattr(w, 'half_w', getattr(w, 'width', 0.0) * 0.5) or 0.0)
+                        half_h = float(getattr(w, 'half_h', getattr(w, 'height', 0.0) * 0.5) or 0.0)
+                        cos_a = float(getattr(w, 'cos_a', 1.0))
+                        sin_a = float(getattr(w, 'sin_a', 0.0))
+                        ext_x = abs(cos_a) * half_w + abs(sin_a) * half_h
+                        ext_y = abs(sin_a) * half_w + abs(cos_a) * half_h
+                        aabb = pygame.Rect(int(wpos.x - ext_x), int(wpos.y - ext_y), int(ext_x * 2), int(ext_y * 2))
+                        walls_data_cache.append({
+                            'wx': float(wpos.x), 'wy': float(wpos.y),
+                            'half_w': half_w, 'half_h': half_h,
+                            'cos': cos_a, 'sin': sin_a,
+                            'aabb': aabb,
+                        })
+                    except Exception:
+                        continue
+        except Exception:
+            walls_data_cache = []
         for eid in list(fbd):
             comp = world.components['FireballComponent'][eid]
             pos = world.components['Position'][eid]
@@ -51,8 +81,12 @@ class FireballSystem:
             dx = pos.x - prev_x
             dy = pos.y - prev_y
             dist = (dx*dx + dy*dy) ** 0.5
-            step = max(2.0, float(hit_radius) * 0.5)
+            # Paso de muestreo más fino para radios pequeños; evita tunneling con proyectiles rápidos
+            step = max(1.0, float(hit_radius) * 0.5)
+            # Limitar número máximo de muestras para reducir coste O(N*M), pero con mayor tope
             samples = max(1, int(dist / step))
+            if samples > 12:
+                samples = 12
             if samples <= 1:
                 sample_points = [(pos.x, pos.y)]
             else:
@@ -62,6 +96,12 @@ class FireballSystem:
                     sx = prev_x + dx * t
                     sy = prev_y + dy * t
                     sample_points.append((sx, sy))
+            # Broad-phase: AABB de la trayectoria expandida por el radio
+            left   = int(min(prev_x, pos.x) - hit_radius)
+            top    = int(min(prev_y, pos.y) - hit_radius)
+            right  = int(max(prev_x, pos.x) + hit_radius)
+            bottom = int(max(prev_y, pos.y) + hit_radius)
+            path_aabb = pygame.Rect(left, top, max(1, right - left + 1), max(1, bottom - top + 1))
             # Destruir si supera rango configurado
             cfg = SPELLS.get(getattr(comp, 'spell_key', ''), {})
             max_range = cfg.get('range', 0)
@@ -75,18 +115,7 @@ class FireballSystem:
                         pass
                     world.remove_entity(eid)
                     continue
-            # Evitar colisiones el primer frame para no impactar desde el spawn
-            if comp.age == 1:
-                continue
-            # Expirar por lifespan
-            if comp.age >= comp.lifespan:
-                try:
-                    logger.debug("[FireballSystem] remove eid=%s by lifespan age=%d lifespan=%d", eid, comp.age, comp.lifespan)
-                except Exception:
-                    pass
-                world.remove_entity(eid)
-                continue
-            # Colisión con visuals activos de Spawner (Buildings): probar punto contra collision_tiles o collision_rect
+            # Colisión con visuals activos de Spawner (Buildings): broad-phase con AABB de trayectoria
             try:
                 # Evitar colisiones con edificios ocultos o que no sean visuals de spawner
                 hit_spawner_eid = None
@@ -106,6 +135,10 @@ class FireballSystem:
                         bmask = bm.get_full_mask() if bm is not None else None
                         if bmask is not None and getattr(bm, 'image', None) is not None:
                             iw, ih = bm.image.get_size()
+                            # AABB del asset; filtrar por trayectoria
+                            b_full_rect = pygame.Rect(int(b.x), int(b.y), int(iw), int(ih))
+                            if not path_aabb.colliderect(b_full_rect):
+                                continue
                             hit = False
                             # Preparar máscara circular
                             r = max(1, int(round(hit_radius)))
@@ -129,6 +162,9 @@ class FireballSystem:
                         else:
                             # Fallback: bounding rect + tiles
                             rect = getattr(b, 'rect', None) or b.collision_rect
+                            # Filtrado broad-phase con path_aabb
+                            if rect and (not path_aabb.colliderect(rect)):
+                                continue
                             # Aproximar círculo por un rectángulo envolvente y probar intersección
                             rect_hit = False
                             for (sx, sy) in sample_points:
@@ -244,40 +280,16 @@ class FireballSystem:
                 pass
             # Colisión con muros dinámicos OBB (wall segments) que bloquean proyectiles
             try:
-                wmap = world.components.get('WallSegmentComponent', {})
-                if wmap:
-                    pmap = world.components.get('Position', {})
-                    # Precompute walls data (AABB broad-phase, OBB narrow)
-                    walls_data = []
-                    for wid, w in list(wmap.items()):
-                        try:
-                            if not bool(getattr(w, 'blocks_projectiles', True)):
-                                continue
-                            wpos = pmap.get(wid)
-                            if wpos is None:
-                                continue
-                            half_w = float(getattr(w, 'half_w', getattr(w, 'width', 0.0) * 0.5) or 0.0)
-                            half_h = float(getattr(w, 'half_h', getattr(w, 'height', 0.0) * 0.5) or 0.0)
-                            cos_a = float(getattr(w, 'cos_a', 1.0))
-                            sin_a = float(getattr(w, 'sin_a', 0.0))
-                            ext_x = abs(cos_a) * half_w + abs(sin_a) * half_h
-                            ext_y = abs(sin_a) * half_w + abs(cos_a) * half_h
-                            aabb = pygame.Rect(int(wpos.x - ext_x), int(wpos.y - ext_y), int(ext_x * 2), int(ext_y * 2))
-                            walls_data.append({
-                                'wx': float(wpos.x), 'wy': float(wpos.y),
-                                'half_w': half_w, 'half_h': half_h,
-                                'cos': cos_a, 'sin': sin_a,
-                                'aabb': aabb,
-                            })
-                        except Exception:
-                            continue
+                if walls_data_cache:
+                    # Pre-filtrado por AABB de trayectoria para reducir número de muros candidatos
+                    candidate_walls = [w for w in walls_data_cache if path_aabb.colliderect(w['aabb'])]
                     # Test sampled trajectory against walls
                     hit = False
                     hit_point = None
                     for (sx, sy) in sample_points:
                         # Broad-phase: projectile circle AABB vs wall AABB
                         c_aabb = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
-                        for w in walls_data:
+                        for w in candidate_walls:
                             if not c_aabb.colliderect(w['aabb']):
                                 continue
                             if circle_overlaps_obb(sx, sy, hit_radius, w['wx'], w['wy'], w['half_w'], w['half_h'], w['cos'], w['sin']):
@@ -317,6 +329,7 @@ class FireballSystem:
                                 x, y = hit_point if hit_point else (pos.x, pos.y)
                                 eid2 = world.create_entity()
                                 world.components.setdefault('Position', {})[eid2] = Position(x, y)
+                                # Escalar impacto según multiplicador del proyectil
                                 try:
                                     smul = float(getattr(comp, 'vfx_scale_multiplier', 1.0))
                                 except Exception:
@@ -339,6 +352,32 @@ class FireballSystem:
                     continue
                 multi = world.components['MultiCollider'][target]
                 tpos = world.components['Position'][target]
+                # Broad-phase: usar AABB unión de todos los colliders del target (no solo 'feet')
+                rects = []
+                try:
+                    for col in multi.colliders.values():
+                        if hasattr(col, 'radius'):
+                            cx = int(tpos.x + getattr(col, 'offset_x', 0))
+                            cy = int(tpos.y + getattr(col, 'offset_y', 0))
+                            cr = int(getattr(col, 'radius', 0))
+                            rects.append(pygame.Rect(cx - cr, cy - cr, cr * 2 + 1, cr * 2 + 1))
+                        else:
+                            ax = int(tpos.x + getattr(col, 'offset_x', 0))
+                            ay = int(tpos.y + getattr(col, 'offset_y', 0))
+                            aw = int(getattr(col, 'width', 0))
+                            ah = int(getattr(col, 'height', 0))
+                            rects.append(pygame.Rect(ax, ay, aw, ah))
+                except Exception:
+                    rects = []
+                if rects:
+                    minx = min(r.left for r in rects)
+                    miny = min(r.top for r in rects)
+                    maxr = max(r.right for r in rects)
+                    maxb = max(r.bottom for r in rects)
+                    aabb = pygame.Rect(minx, miny, max(1, maxr - minx), max(1, maxb - miny))
+                    aabb.inflate_ip(int(2*hit_radius)+1, int(2*hit_radius)+1)
+                    if not path_aabb.colliderect(aabb):
+                        continue
                 hit = False
                 hit_pos = None
                 hit_shape = None
@@ -358,10 +397,10 @@ class FireballSystem:
                                 pygame.draw.circle(surf, (255, 255, 255, 255), (r, r), r)
                                 cmask = pygame.mask.from_surface(surf)
                                 self._circle_masks[r] = cmask
-                            # Probar a lo largo de la trayectoria
                             for (sx, sy) in sample_points:
                                 lx = int(round(sx - bx))
                                 ly = int(round(sy - by))
+                                # Offset del círculo respecto a la máscara del edificio
                                 offx = lx - r
                                 offy = ly - r
                                 if col.mask.overlap(cmask, (offx, offy)) is not None:
@@ -583,15 +622,18 @@ class FireballSystem:
                     break
 
             # Colisión con tiles sólidos
-            # Colisiones contra tiles a lo largo de la trayectoria
+            # Consultar tiles una única vez para toda la trayectoria (broad-phase), luego probar muestras
             collided = False
+            hit_point_tile = None
+            try:
+                nearby_tiles = world.get_solid_tiles_for_rect(path_aabb)
+            except Exception:
+                nearby_tiles = None
             for (sx, sy) in sample_points:
-                px = int(round(sx))
-                py = int(round(sy))
-                circle_rect = pygame.Rect(int(px - hit_radius), int(py - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
-                nearby = world.get_solid_tiles_for_rect(circle_rect)
-                if nearby and any(r.colliderect(circle_rect) for r in nearby):
+                circle_rect = pygame.Rect(int(sx - hit_radius), int(sy - hit_radius), int(2*hit_radius)+1, int(2*hit_radius)+1)
+                if nearby_tiles and any(r.colliderect(circle_rect) for r in nearby_tiles):
                     collided = True
+                    hit_point_tile = (float(sx), float(sy))
                     break
             if collided:
                 # Spawn preset-based explosion at collision point (only if preset explicitly configured)
@@ -621,7 +663,7 @@ class FireballSystem:
                                 if isinstance(exp.get('ttl'), (int, float)):
                                     ttl_ticks = int(exp.get('ttl'))
                     if isinstance(preset_id, str) and preset_id:
-                        x, y = float(px), float(py)
+                        x, y = hit_point_tile if hit_point_tile else (pos.x, pos.y)
                         eid2 = world.create_entity()
                         world.components.setdefault('Position', {})[eid2] = Position(x, y)
                         # Escalar impacto según multiplicador del proyectil
@@ -662,7 +704,7 @@ class FireballSystem:
                                 sol = exp_cfg2.get('size_over_life') if isinstance(exp_cfg2.get('size_over_life'), (list, tuple)) else None
                                 aol = exp_cfg2.get('alpha_over_life') if isinstance(exp_cfg2.get('alpha_over_life'), (list, tuple)) else None
                                 col_ol = exp_cfg2.get('color_over_life') if isinstance(exp_cfg2.get('color_over_life'), (list, tuple)) else None
-                                x2, y2 = float(px), float(py)
+                                x2, y2 = hit_point_tile if hit_point_tile else (pos.x, pos.y)
                                 eid3 = world.create_entity()
                                 world.components.setdefault('Position', {})[eid3] = Position(x2, y2)
                                 model3 = FireExplosionModel(

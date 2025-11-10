@@ -241,6 +241,101 @@ class ReleaseSpellState(State):
             dx, dy = dx/length, dy/length
         else:
             dx, dy = ctx.get('direction', (1, 0))
+        # Escala efectiva del sprite del proyectil (permitir overrides por entrada/cast)
+        eff_scale = cfg.get('scale', 1.0)
+        try:
+            smul = float(ctx.get('scale_multiplier', cfg.get('scale_multiplier', 1.0)) or 1.0)
+        except Exception:
+            smul = 1.0
+        try:
+            eff_scale = float(eff_scale) * float(smul)
+        except Exception:
+            pass
+        # Radio de impacto efectivo del proyectil (permite override por entrada y multiplicador)
+        try:
+            base_hit_radius = float(ctx.get('hit_radius', cfg.get('hit_radius', 2.0)) or 2.0)
+        except Exception:
+            base_hit_radius = 2.0
+        try:
+            hitmul = float(ctx.get('hit_radius_multiplier', cfg.get('hit_radius_multiplier', 1.0)) or 1.0)
+        except Exception:
+            hitmul = 1.0
+        try:
+            eff_hit_radius = max(1.0, float(base_hit_radius) * float(hitmul))
+        except Exception:
+            eff_hit_radius = max(1.0, float(base_hit_radius))
+        # Soporte para ráfaga radial: si se especifica burst_directions o radial_count, generar múltiples proyectiles y salir
+        if cfg.get('type') == 'projectile':
+            try:
+                # Offset hacia delante reutilizando central_forward_offset (opcional)
+                try:
+                    burst_fwd = float(ctx.get('central_forward_offset', cfg.get('central_forward_offset', 0.0)) or 0.0)
+                except Exception:
+                    burst_fwd = 0.0
+                dirs = ctx.get('burst_directions')
+                radial_cnt = 0
+                if not isinstance(dirs, list):
+                    try:
+                        radial_cnt = int(ctx.get('radial_count', cfg.get('radial_count', 0)) or 0)
+                    except Exception:
+                        radial_cnt = 0
+                    if radial_cnt and radial_cnt >= 3:
+                        start_deg = 0.0
+                        try:
+                            start_deg = float(ctx.get('radial_start_deg', cfg.get('radial_start_deg', 0.0)) or 0.0)
+                        except Exception:
+                            start_deg = 0.0
+                        step = 360.0 / float(radial_cnt)
+                        dirs = []
+                        for k in range(radial_cnt):
+                            ang = math.radians(start_deg + k * step)
+                            dirs.append((math.cos(ang), math.sin(ang)))
+                # Si tenemos una lista de direcciones, disparar y retornar
+                if isinstance(dirs, list) and dirs:
+                    speed = cfg.get('speed', 0)
+                    sprite_path = cfg.get('sprite')
+                    img = None
+                    if sprite_path:
+                        try:
+                            img = pygame.image.load(sprite_path).convert_alpha()
+                        except Exception:
+                            img = None
+                    last_id = None
+                    for dvec in dirs:
+                        try:
+                            ux, uy = float(dvec[0]), float(dvec[1])
+                        except Exception:
+                            continue
+                        # Normalizar por seguridad
+                        mag = math.hypot(ux, uy) or 1.0
+                        ux, uy = ux / mag, uy / mag
+                        sx = spawn_x + ux * burst_fwd
+                        sy = spawn_y + uy * burst_fwd
+                        eidp = world.create_entity()
+                        world.components['Position'][eidp] = Position(sx, sy)
+                        world.components['Velocity'][eidp] = Velocity(ux * speed, uy * speed)
+                        world.components['FireballComponent'][eidp] = FireballComponent(
+                            ux * speed, uy * speed,
+                            damage=cfg.get('damage', 0),
+                            lifespan=cfg.get('lifespan', 0),
+                            caster=entity.id,
+                            spell_key=spell_key,
+                            spawn_pos=(sx, sy),
+                            vfx_scale_multiplier=smul,
+                            hit_radius=eff_hit_radius,
+                        )
+                        if img is not None:
+                            try:
+                                world.components['Sprite'][eidp] = Sprite(img)
+                                world.components['Scale'][eidp] = Scale(scale=eff_scale)
+                            except Exception:
+                                pass
+                        last_id = eidp
+                    if last_id is not None:
+                        ctx['fireball_id'] = last_id
+                    return
+            except Exception:
+                pass
         # Offset hacia delante para la fireball central (opcional)
         try:
             central_fwd = float(ctx.get('central_forward_offset', cfg.get('central_forward_offset', 0.0)) or 0.0)
@@ -259,7 +354,9 @@ class ReleaseSpellState(State):
             lifespan=cfg.get('lifespan', 0),
             caster=entity.id,
             spell_key=spell_key,
-            spawn_pos=(c_spawn_x, c_spawn_y)
+            spawn_pos=(c_spawn_x, c_spawn_y),
+            vfx_scale_multiplier=smul,
+            hit_radius=eff_hit_radius,
         )
         try:
             logger.debug(
@@ -280,7 +377,7 @@ class ReleaseSpellState(State):
         if sprite_path:
             img = pygame.image.load(sprite_path).convert_alpha()
             world.components['Sprite'][fid] = Sprite(img)
-            world.components['Scale'][fid] = Scale(scale=cfg.get('scale', 1.0))
+            world.components['Scale'][fid] = Scale(scale=eff_scale)
         # Disparo paralelo: generar dos proyectiles adicionales a izquierda/derecha de la central
         try:
             par_count = int(ctx.get('parallel_count', cfg.get('parallel_count', 1)) or 1)
@@ -312,13 +409,15 @@ class ReleaseSpellState(State):
                     lifespan=cfg.get('lifespan', 0),
                     caster=entity.id,
                     spell_key=spell_key,
-                    spawn_pos=(ex, ey)
+                    spawn_pos=(ex, ey),
+                    vfx_scale_multiplier=smul,
+                    hit_radius=eff_hit_radius,
                 )
                 if sprite_path:
                     try:
                         # Reusar misma imagen ya cargada para evitar IO repetido
                         world.components['Sprite'][eid2] = Sprite(img)
-                        world.components['Scale'][eid2] = Scale(scale=cfg.get('scale', 1.0))
+                        world.components['Scale'][eid2] = Scale(scale=eff_scale)
                     except Exception:
                         pass
         ctx['fireball_id'] = fid

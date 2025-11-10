@@ -3,38 +3,38 @@
   "player": {
     "level": "global_map",
     "pos": [
-      209,
-      86
+      232,
+      97
     ]
   },
   "npcs": {
     "d84ba932-25f3-4a53-884e-00610f487c47": {
       "level": "global_map",
       "tile": [
-        197,
-        87
+        219,
+        94
       ],
-      "hp": 2980,
+      "hp": 2360,
       "dead": false,
-      "prototype": "final_boss_barbol_lvl2"
+      "prototype": "final_boss_barbol_lvl3"
     }
   },
   "levels": {
     "global_map": {
       "player_pos": [
-        209,
-        86
+        232,
+        97
       ],
       "npc_states": {
         "d84ba932-25f3-4a53-884e-00610f487c47": {
           "level": "global_map",
           "tile": [
-            197,
-            87
+            219,
+            94
           ],
-          "hp": 2980,
+          "hp": 2360,
           "dead": false,
-          "prototype": "final_boss_barbol_lvl2"
+          "prototype": "final_boss_barbol_lvl3"
         }
       }
     }
@@ -93,9 +93,9 @@
   "meta": {
     "name": "partida_2025-11-08_23-34-08",
     "created_at": "2025-11-08T23:34:08",
-    "last_played": "2025-11-10T18:51:08",
+    "last_played": "2025-11-10T21:53:30",
     "player": {
-      "xp": 20,
+      "xp": 30,
       "level": 0
     },
     "items_summary": {
@@ -106,7 +106,7 @@
     }
   },
   "time": {
-    "minute": 1044,
+    "minute": 1227,
     "time_scale": 0.4
   }
 }

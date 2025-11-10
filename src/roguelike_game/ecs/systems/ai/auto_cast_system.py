@@ -141,7 +141,15 @@ class AutoCastSystem:
                             # Calcular next_ready_ts si no existe
                             nrt = entry.get('next_ready_ts')
                             if nrt is None:
-                                # Inicial: usar rango aleatorio si hay min/max; si no, period_s
+                                # Inicial: permitir initial_delay_s (entry o entry.meta) para escalonar arranques
+                                meta_obj = entry.get('meta') or {}
+                                init_delay = entry.get('initial_delay_s')
+                                if not isinstance(init_delay, (int, float)):
+                                    init_delay = meta_obj.get('initial_delay_s')
+                                if isinstance(init_delay, (int, float)) and init_delay >= 0.0:
+                                    entry['next_ready_ts'] = now + float(init_delay)
+                                    continue  # no arrancar en el mismo frame
+                                # Si no hay initial_delay_s, usar rango aleatorio si hay min/max; si no, period_s
                                 mn = entry.get('min_period_s')
                                 mx = entry.get('max_period_s')
                                 if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mx >= mn:
@@ -150,6 +158,26 @@ class AutoCastSystem:
                                     per = float(entry.get('period_s', 2.0) or 2.0)
                                     entry['next_ready_ts'] = now + per
                                 continue  # no arrancar en el mismo frame de inicialización
+                            # Trigger por pérdida de vida: si se cruza un múltiplo de on_hp_loss_step, forzar disponibilidad inmediata
+                            try:
+                                meta_obj = entry.get('meta') or {}
+                                step_val = entry.get('on_hp_loss_step')
+                                if not isinstance(step_val, (int, float)):
+                                    step_val = meta_obj.get('on_hp_loss_step')
+                                if isinstance(step_val, (int, float)) and step_val > 0:
+                                    h = comps.get('Health', {}).get(eid)
+                                    if h is not None:
+                                        max_hp = int(getattr(h, 'max_hp', 0))
+                                        cur_hp = int(getattr(h, 'current_hp', 0))
+                                        lost = max(0, max_hp - cur_hp)
+                                        bucket = int(lost // int(step_val))
+                                        prev_bucket = int(entry.get('_hp_loss_bucket', -1))
+                                        if bucket > prev_bucket:
+                                            entry['_hp_loss_bucket'] = bucket
+                                            entry['next_ready_ts'] = now  # permitir cast inmediato
+                                            nrt = now
+                            except Exception:
+                                pass
                             if now < float(nrt):
                                 continue
                             # Gateo por aggro

@@ -215,12 +215,29 @@
             "target": "player"
           },
           {
+            "spell": "meteor_shower",
+            "period_s": 9999.0,
+            "channel_s": 1.2,
+            "wire_from": [120, 120, 255],
+            "wire_to": [255, 180, 0],
+            "target": "player",
+            "meta": { "on_hp_loss_step": 500, "initial_delay_s": 0.0 }
+          },
+          {
             "spell": "fireball",
-            "period_s": 2.0,
-            "scale_multiplier": 5.0,
-            "hit_radius": 10.0,
+            "period_s": 4.0,
+            "scale_multiplier": 2.5,
+            "hit_radius": 2.5,
             "damage": 60,
-            "meta": { "parallel_count": 3, "parallel_spacing": 48, "central_forward_offset": 24 }
+            "meta": { "parallel_count": 3, "parallel_spacing": 48, "central_forward_offset": 24, "sides_forward_offset": 12, "hit_radius_multiplier": 2.0, "initial_delay_s": 0.0 }
+          },
+          {
+            "spell": "fireball",
+            "period_s": 2.5,
+            "scale_multiplier": 2.5,
+            "hit_radius": 4.0,
+            "damage": 60,
+            "meta": { "radial_count": 8, "radial_start_deg": 45.0, "central_forward_offset": 0.0, "hit_radius_multiplier": 2.0, "initial_delay_s": 2.0 }
           }
         ],
         "stats": {
@@ -243,7 +260,8 @@
           "spawn_count": 1,
           "spawn_margin": 0,
           "death_dissapear_time": 0.2,
-          "damage_stop_probability": 0.03
+          "damage_stop_probability": 0.03,
+          "attack_windup_s": 2.0
         },
         "fsm_set": "Monster_Default",
         "patrol": { "id": "line" },
