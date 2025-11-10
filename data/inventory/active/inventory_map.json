@@ -1,26 +1,14 @@
 {
-  "c82e5caa-6cd5-4a00-97d5-4e676377e051": {
-    "item_id": "paella_01",
+  "afb0feba-d6f0-4a31-9828-e78c9d21a884": {
+    "item_id": "experience_orb",
     "quantity": 1,
-    "zone_id": "zone_150_50",
+    "zone_id": "zone_200_50",
     "schema_version": "1.0.0",
     "z_layer": 3,
-    "tile": {
-      "x": 13,
-      "y": 21
+    "position": {
+      "x": 7094,
+      "y": 2075
     },
-    "created_at": 1762468182.2752461
-  },
-  "ac165de3-33b4-47cc-b875-c6bdcc72efb2": {
-    "item_id": "borsh_01",
-    "quantity": 1,
-    "zone_id": "zone_150_50",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 14,
-      "y": 21
-    },
-    "created_at": 1762468182.2759132
+    "created_at": 1762792281.5622458
   }
 }
