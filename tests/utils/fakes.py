@@ -19,9 +19,24 @@ class FakeWorld:
         return eid
 
     def remove_entity(self, eid: int) -> None:
-        # Remove entity id from all component maps
-        for cmap in self.components.values():
-            cmap.pop(eid, None)
+        # Remove entity id from all component maps.
+        # Some component maps are dicts (entity_id -> component), others may be lists (event queues).
+        # Be tolerant and handle both without raising.
+        for name, cmap in list(self.components.items()):
+            try:
+                if isinstance(cmap, dict):
+                    # Direct entity mapping
+                    cmap.pop(eid, None)
+                elif isinstance(cmap, list):
+                    # Remove any occurrences of eid in lists (usually no-ops)
+                    try:
+                        while True:
+                            cmap.remove(eid)
+                    except ValueError:
+                        pass
+            except Exception:
+                # Never break tests due to test-double cleanup
+                pass
 
     def get_entities_with(self, *component_names: str) -> list[int]:
         """Return entity ids that have ALL the requested components.

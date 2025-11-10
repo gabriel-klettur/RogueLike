@@ -70,6 +70,13 @@ class FireballSystem:
             pos.x += vel.vx
             pos.y += vel.vy
             comp.age += 1
+            # Lifespan: destruir si supera su vida útil configurada (>0)
+            try:
+                if getattr(comp, 'lifespan', 0) and comp.age >= int(getattr(comp, 'lifespan', 0)):
+                    world.remove_entity(eid)
+                    continue
+            except Exception:
+                pass
             # Radio efectivo de colisión (escala con meta)
             try:
                 hit_radius = float(getattr(comp, 'hit_radius', 2.0))
@@ -361,6 +368,14 @@ class FireballSystem:
                             cy = int(tpos.y + getattr(col, 'offset_y', 0))
                             cr = int(getattr(col, 'radius', 0))
                             rects.append(pygame.Rect(cx - cr, cy - cr, cr * 2 + 1, cr * 2 + 1))
+                        elif hasattr(col, 'mask'):
+                            ax = int(tpos.x + getattr(col, 'offset_x', 0))
+                            ay = int(tpos.y + getattr(col, 'offset_y', 0))
+                            try:
+                                mw, mh = col.mask.get_size()
+                            except Exception:
+                                mw, mh = 0, 0
+                            rects.append(pygame.Rect(ax, ay, int(mw), int(mh)))
                         else:
                             ax = int(tpos.x + getattr(col, 'offset_x', 0))
                             ay = int(tpos.y + getattr(col, 'offset_y', 0))
