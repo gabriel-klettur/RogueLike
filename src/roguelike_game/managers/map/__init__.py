@@ -77,8 +77,20 @@ class MapManager:
         return flatten_tiles(self.tiles)
 
     # Serialización / estado
-    def spawn_player(self, tile_pos: tuple[int, int]):
+    def spawn_player(self, tile_pos: tuple[int, int]) -> None:
+        """Persist tile spawn and, if it changed, rebuild cached map chunks."""
+        previous_tile = self._local_state.get("player_pos")
         self._local_state["player_pos"] = tile_pos
+
+        if tile_pos != previous_tile:
+            try:
+                self.view.invalidate_cache()
+            except Exception:
+                pass
+            try:
+                clear_sprite_caches()
+            except Exception:
+                pass
 
     def get_spawn_pixel(self, tile_pos: tuple[int, int]) -> tuple[int, int]:
         return tile_to_spawn_pixel(tile_pos, RENDERED_SPRITE_SIZE, TILE_SIZE)
