@@ -1,7 +1,7 @@
 import pygame
 from typing import Dict
 
-from roguelike_editors.particles.services.preview_builder import build_preview_for_definition
+from roguelike_editors.particles.services.preview import build_preview_for_definition
 from roguelike_game.config.particles_config import get_preset
 
 

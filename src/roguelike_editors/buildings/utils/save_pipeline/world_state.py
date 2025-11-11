@@ -10,7 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def is_blank_world() -> bool:
-    """Return True when the current world has no zones configured."""
+    """Return True when the current world has no zones configured.
+
+    Matches legacy behavior: if zones file is missing or unreadable, we DO NOT blank
+    instances (return False). Only an explicitly empty JSON ({} or empty text) is
+    considered a blank world.
+    """
 
     try:
         try:
@@ -19,8 +24,6 @@ def is_blank_world() -> bool:
             content = global_map_settings.ZONES_INDEX.read_text(encoding="utf-8")
         zones_text = (content or "").strip()
         return (not zones_text) or (json.loads(zones_text) == {})
-    except FileNotFoundError:
-        logger.info("[Buildings][SaveSplit] zones.json missing; treating as blank world.")
-        return True
     except Exception:
+        # Legacy fallback: any error -> treat as non-blank to avoid data loss in tests/tools
         return False

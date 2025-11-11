@@ -1,13 +1,13 @@
 """Helpers to resolve tile sprites with caching and overlay rules."""
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
+import sys
 
 import pygame
 
 from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.utils.loader import get_sprite_for_tile
 
 SpriteKey = Tuple[str, Optional[str]]
 
@@ -49,4 +49,22 @@ class SpriteResolver:
     ) -> Optional[pygame.Surface]:
         if not self.should_draw(layer, code):
             return None
-        return get_sprite_for_tile(char, code)
+        loader = _get_sprite_loader()
+        return loader(char, code)
+
+
+def _get_sprite_loader() -> Callable[[str, Optional[str]], Optional[pygame.Surface]]:
+    """Resolve the sprite loader function.
+
+    Prefer a function exported by chunked_map_view so tests can monkeypatch it.
+    Fallback to the canonical loader if not available.
+    """
+    try:
+        mod = sys.modules.get("roguelike_engine.map.view.chunked_map_view")
+        if mod is not None and hasattr(mod, "get_sprite_for_tile"):
+            return getattr(mod, "get_sprite_for_tile")
+    except Exception:
+        pass
+    # fallback to default loader
+    from roguelike_engine.tile.utils.loader import get_sprite_for_tile as _loader
+    return _loader

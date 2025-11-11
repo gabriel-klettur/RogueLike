@@ -66,8 +66,10 @@ def test_parallel_shot_spawns_three(world, monkeypatch, release_state):
     assert len(fbs) == 3, f"expected 3 projectiles, got {len(fbs)}"
     vels = [world.components['Velocity'][eid] for eid, _ in fbs]
     for v in vels:
-        assert pytest.approx(v.vx, abs=1e-6) > 0
-        assert pytest.approx(v.vy, abs=1e-6) == 0
+        # vx must be positive (projectiles fired along +x)
+        assert v.vx > 0
+        # vy should be zero within tolerance
+        assert v.vy == pytest.approx(0.0, abs=1e-6)
 
 
 def test_radial_burst_count(world, monkeypatch, release_state):

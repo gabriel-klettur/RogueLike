@@ -10,9 +10,13 @@ from roguelike_engine.map.view.sprite_cache import SpriteScaler
 from roguelike_engine.map.view.sprite_resolver import SpriteResolver
 from roguelike_engine.map.view.chunk_surface_builder import build_chunk_surface
 from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.tile.utils.loader import get_sprite_for_tile as _tile_get_sprite_for_tile
 
 import logging
 logger = logging.getLogger(__name__)
+
+# Expose a shim so tests can monkeypatch sprite loading at module level
+get_sprite_for_tile = _tile_get_sprite_for_tile
 
 class ChunkedMapView:
     """

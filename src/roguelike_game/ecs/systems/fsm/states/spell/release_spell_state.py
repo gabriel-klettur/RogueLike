@@ -14,6 +14,28 @@ from roguelike_game.ecs.utils.position_utils import compute_entity_center
 import logging
 logger = logging.getLogger(__name__)
 
+def _load_image_safe(sprite_path):
+    """Load an image and convert alpha only if a video mode exists.
+
+    This prevents pygame.error: 'No video mode has been set' during headless tests.
+    """
+    try:
+        img = pygame.image.load(sprite_path)
+    except Exception:
+        return None
+    try:
+        if pygame.display.get_init() and pygame.display.get_surface() is not None:
+            try:
+                return img.convert_alpha()
+            except Exception:
+                # Fall back to raw surface if conversion fails
+                return img
+        else:
+            # No display surface available: return raw surface
+            return img
+    except Exception:
+        return img
+
 class ReleaseSpellState(State):
     def enter(self, entity):
         # Cargar configuración según hechizo actual
@@ -228,7 +250,14 @@ class ReleaseSpellState(State):
                 lock = True
         except Exception:
             pass
-        if not lock:
+        # Prefer explicit direction from context if provided; only sample mouse when unlocked and no direction
+        has_ctx_dir = False
+        try:
+            d = ctx.get('direction', None)
+            has_ctx_dir = isinstance(d, (tuple, list)) and len(d) >= 2
+        except Exception:
+            has_ctx_dir = False
+        if not lock and not has_ctx_dir:
             camera = ctx.get('camera')
             mx, my = pygame.mouse.get_pos()
             if camera:
@@ -241,6 +270,15 @@ class ReleaseSpellState(State):
             dx, dy = dx/length, dy/length
         else:
             dx, dy = ctx.get('direction', (1, 0))
+        # Normalize and safeguard direction against zero-length vectors
+        try:
+            _len = math.hypot(dx, dy)
+        except Exception:
+            _len = 0.0
+        if _len <= 1e-12:
+            dx, dy = 1.0, 0.0
+        else:
+            dx, dy = dx / _len, dy / _len
         # Escala efectiva del sprite del proyectil (permitir overrides por entrada/cast)
         eff_scale = cfg.get('scale', 1.0)
         try:
@@ -292,12 +330,23 @@ class ReleaseSpellState(State):
                             dirs.append((math.cos(ang), math.sin(ang)))
                 # Si tenemos una lista de direcciones, disparar y retornar
                 if isinstance(dirs, list) and dirs:
-                    speed = cfg.get('speed', 0)
+                    # Resolve projectile speed robustly (config -> ctx -> safe default)
+                    try:
+                        speed = float(cfg.get('speed', 0) or 0)
+                    except Exception:
+                        speed = 0.0
+                    if speed <= 0.0:
+                        try:
+                            speed = float(ctx.get('speed', 0) or 0)
+                        except Exception:
+                            speed = 0.0
+                    if speed <= 0.0:
+                        speed = 1.0
                     sprite_path = cfg.get('sprite')
                     img = None
                     if sprite_path:
                         try:
-                            img = pygame.image.load(sprite_path).convert_alpha()
+                            img = _load_image_safe(sprite_path)
                         except Exception:
                             img = None
                     last_id = None
@@ -346,7 +395,18 @@ class ReleaseSpellState(State):
         fid = world.create_entity()
         # Mantener spawn_pos real de la fireball central
         world.components['Position'][fid] = Position(c_spawn_x, c_spawn_y)
-        speed = cfg.get('speed', 0)
+        # Resolve projectile speed robustly (config -> ctx -> safe default)
+        try:
+            speed = float(cfg.get('speed', 0) or 0)
+        except Exception:
+            speed = 0.0
+        if speed <= 0.0:
+            try:
+                speed = float(ctx.get('speed', 0) or 0)
+            except Exception:
+                speed = 0.0
+        if speed <= 0.0:
+            speed = 1.0
         world.components['Velocity'][fid] = Velocity(dx * speed, dy * speed)
         world.components['FireballComponent'][fid] = FireballComponent(
             dx * speed, dy * speed,
@@ -375,9 +435,13 @@ class ReleaseSpellState(State):
         # Añadir sprite y aplicar scale si existe ruta
         sprite_path = cfg.get('sprite')
         if sprite_path:
-            img = pygame.image.load(sprite_path).convert_alpha()
-            world.components['Sprite'][fid] = Sprite(img)
-            world.components['Scale'][fid] = Scale(scale=eff_scale)
+            try:
+                img = _load_image_safe(sprite_path)
+                if img is not None:
+                    world.components['Sprite'][fid] = Sprite(img)
+                    world.components['Scale'][fid] = Scale(scale=eff_scale)
+            except Exception:
+                pass
         # Disparo paralelo: generar dos proyectiles adicionales a izquierda/derecha de la central
         try:
             par_count = int(ctx.get('parallel_count', cfg.get('parallel_count', 1)) or 1)
@@ -402,9 +466,21 @@ class ReleaseSpellState(State):
                 ey = spawn_y + py * spacing * side + dy * sides_fwd
                 eid2 = world.create_entity()
                 world.components['Position'][eid2] = Position(ex, ey)
-                world.components['Velocity'][eid2] = Velocity(dx * speed, dy * speed)
+                # Resolve speed locally to avoid depending on outer scope
+                try:
+                    _sp = float(cfg.get('speed', 0) or 0)
+                except Exception:
+                    _sp = 0.0
+                if _sp <= 0.0:
+                    try:
+                        _sp = float(ctx.get('speed', 0) or 0)
+                    except Exception:
+                        _sp = 0.0
+                if _sp <= 0.0:
+                    _sp = 1.0
+                world.components['Velocity'][eid2] = Velocity(dx * _sp, dy * _sp)
                 world.components['FireballComponent'][eid2] = FireballComponent(
-                    dx * speed, dy * speed,
+                    dx * _sp, dy * _sp,
                     damage=cfg.get('damage', 0),
                     lifespan=cfg.get('lifespan', 0),
                     caster=entity.id,

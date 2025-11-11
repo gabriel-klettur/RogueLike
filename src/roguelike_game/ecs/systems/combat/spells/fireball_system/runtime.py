@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 import math
+import importlib
 import pygame
 
-from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.abilities.fireball_component import FireballComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.transform.velocity import Velocity
@@ -58,7 +58,7 @@ def build_runtime(world: Any, entity_id: int) -> Optional[FireballRuntime]:
     except Exception:
         return None
 
-    config = SPELLS.get(getattr(component, 'spell_key', ''), {})
+    config = _resolve_spells().get(getattr(component, 'spell_key', ''), {})
     try:
         hit_radius = float(getattr(component, 'hit_radius', 2.0))
     except Exception:
@@ -160,3 +160,23 @@ def get_scale_multiplier(component: FireballComponent) -> float:
         return float(getattr(component, "vfx_scale_multiplier", 1.0))
     except Exception:
         return 1.0
+
+
+def _resolve_spells() -> Dict[str, Any]:
+    """Resolve the SPELLS mapping.
+
+    Prefer the package-level attribute so tests can monkeypatch
+    ``fireball_system.SPELLS`` directly. Fall back to global config if absent.
+    """
+    try:
+        pkg = importlib.import_module('roguelike_game.ecs.systems.combat.spells.fireball_system')
+        spells = getattr(pkg, 'SPELLS', None)
+        if isinstance(spells, dict):
+            return spells
+    except Exception:
+        pass
+    try:
+        from roguelike_game.config.spells_config import SPELLS as CFG
+        return CFG
+    except Exception:
+        return {}
