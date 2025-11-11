@@ -1,8 +1,10 @@
 import pygame
 import time
+from typing import Any, Optional
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.config.config_z_layer import DEFAULT_Z
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
+from roguelike_engine.utils.benchmark import benchmark
 import roguelike_engine.config.config as config
 
 try:
@@ -23,7 +25,11 @@ class RenderSystem:
     usando culling y orden Z/Y para simular profundidad.
     """
 
-    def __init__(self, screen):
+    def __init__(
+        self,
+        screen: pygame.Surface,
+        perf_log: Optional[dict[str, list[float]]] = None,
+    ) -> None:
         """
         Inicializa el RenderSystem.
 
@@ -31,6 +37,7 @@ class RenderSystem:
             screen (pygame.Surface): Superficie principal de renderizado.
         """
         self.screen = screen
+        self.perf_log = perf_log
         # Cache de sprites escalados: clave = (entity_id, id(surface), scale_factor)
         self._scaled_sprite_cache: dict[tuple[int, int, float], pygame.Surface] = {}
         # Cache de sprites TEÑIDOS: clave = (id(surface_escalada), r, g, b)
@@ -44,7 +51,7 @@ class RenderSystem:
         self._half_surface = None
         self._half_shape = (0, 0)
 
-    def _ensure_gray_tmps(self, w: int, h: int):
+    def _ensure_gray_tmps(self, w: int, h: int) -> None:
         if not HAS_NUMPY:
             return
         if self._gray_tmp16 is None or self._gray_shape != (w, h):
@@ -52,12 +59,13 @@ class RenderSystem:
             self._gray_tmp16_b = np.empty((w, h), dtype=np.uint16)
             self._gray_shape = (w, h)
 
-    def _ensure_half_surface(self, w: int, h: int):
+    def _ensure_half_surface(self, w: int, h: int) -> None:
         if self._half_surface is None or self._half_shape != (w, h):
             self._half_surface = pygame.Surface((w, h), pygame.SRCALPHA, 32)
             self._half_shape = (w, h)
 
-    def update(self, world, screen, camera):
+    @benchmark(lambda self: self.perf_log, "RenderSystem.update")
+    def update(self, world: Any, screen: pygame.Surface, camera: Any) -> None:
         """
         Calcula y dibuja todos los sprites visibles, ordenados por capa Z y eje Y.
 
@@ -73,6 +81,9 @@ class RenderSystem:
            e. Acumular operaciones de blit.
         5. Ejecutar todas las operaciones de blit en batch para eficiencia.
         """
+        # Actualizar referencia de pantalla por si cambia en caliente
+        self.screen = screen
+
         # 1) Preparar parámetros de viewport y culling
         screen_rect = screen.get_rect()
         sw, sh = screen_rect.size
@@ -219,8 +230,15 @@ class RenderSystem:
         except Exception:
             return surface
 
-    def apply_grayscale(self, surface, perf_log=None):
+    @benchmark(lambda self: self.perf_log, "RenderSystem.apply_grayscale")
+    def apply_grayscale(
+        self,
+        surface: pygame.Surface,
+        perf_log: Optional[dict[str, list[float]]] = None,
+    ) -> None:
         """Convierte la superficie entera a escala de grises con métricas finas opcionales."""
+        if perf_log is None:
+            perf_log = self.perf_log
         if HAS_NUMPY:
             sw, sh = surface.get_size()
             mode = getattr(config, 'GRAYSCALE_LUT_MODE', 'index')
