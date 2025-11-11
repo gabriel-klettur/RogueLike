@@ -18,6 +18,7 @@
     "3.6",
     "3.7",
     "3.8",
+    "4",
     "4.01",
     "4.02",
     "4.03",
@@ -97,13 +98,13 @@
     "toolbar": {
       "minimized": true,
       "toggles": {
-        "spell_collision": true,
+        "spell_collision": false,
         "npc_attack": false,
         "hitbox": false,
         "patrol": false,
         "defend_area": false,
         "telegraph": false,
-        "windup_outline": true,
+        "windup_outline": false,
         "trail": false,
         "building_collision": false
       }

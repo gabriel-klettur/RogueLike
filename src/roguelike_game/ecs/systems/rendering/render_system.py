@@ -1,7 +1,9 @@
 import pygame
+import time
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.config.config_z_layer import DEFAULT_Z
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
+import roguelike_engine.config.config as config
 
 try:
     import numpy as np
@@ -9,6 +11,11 @@ try:
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
+
+if HAS_NUMPY:
+    _RL_LUT_R = (np.arange(256, dtype=np.uint16) * 77).astype(np.uint16)
+    _RL_LUT_G = (np.arange(256, dtype=np.uint16) * 150).astype(np.uint16)
+    _RL_LUT_B = (np.arange(256, dtype=np.uint16) * 29).astype(np.uint16)
 
 class RenderSystem:
     """
@@ -31,6 +38,24 @@ class RenderSystem:
         self._tinted_cache: dict[tuple[int, int, int, int], pygame.Surface] = {}
         # Rect reutilizable para culling y blit
         self._blit_rect = pygame.Rect(0, 0, 0, 0)
+        self._gray_tmp16 = None
+        self._gray_tmp16_b = None
+        self._gray_shape = (0, 0)
+        self._half_surface = None
+        self._half_shape = (0, 0)
+
+    def _ensure_gray_tmps(self, w: int, h: int):
+        if not HAS_NUMPY:
+            return
+        if self._gray_tmp16 is None or self._gray_shape != (w, h):
+            self._gray_tmp16 = np.empty((w, h), dtype=np.uint16)
+            self._gray_tmp16_b = np.empty((w, h), dtype=np.uint16)
+            self._gray_shape = (w, h)
+
+    def _ensure_half_surface(self, w: int, h: int):
+        if self._half_surface is None or self._half_shape != (w, h):
+            self._half_surface = pygame.Surface((w, h), pygame.SRCALPHA, 32)
+            self._half_shape = (w, h)
 
     def update(self, world, screen, camera):
         """
@@ -145,9 +170,6 @@ class RenderSystem:
         if blit_ops:
             screen.blits(blit_ops)
 
-        # Aplicar escala de grises si se ha marcado
-        if world.components.get('GrayscaleComponent'):
-            self.apply_grayscale(screen)
 
     def _tint_surface(self, surface: pygame.Surface, color: tuple[int, int, int]) -> pygame.Surface:
         """
@@ -197,19 +219,91 @@ class RenderSystem:
         except Exception:
             return surface
 
-    def apply_grayscale(self, surface):
-        """Convierte la superficie entera a escala de grises."""
+    def apply_grayscale(self, surface, perf_log=None):
+        """Convierte la superficie entera a escala de grises con métricas finas opcionales."""
         if HAS_NUMPY:
-            arr = surfarray.array3d(surface)
-            lum = (0.299 * arr[:, :, 0] + 0.587 * arr[:, :, 1] + 0.114 * arr[:, :, 2]).astype(np.uint8)
-            gray3 = np.stack((lum, lum, lum), axis=-1)
-            surfarray.blit_array(surface, gray3)
+            sw, sh = surface.get_size()
+            mode = getattr(config, 'GRAYSCALE_LUT_MODE', 'index')
+            if getattr(config, 'GRAYSCALE_HALF_RES', False):
+                hs_w = max(1, sw // 2)
+                hs_h = max(1, sh // 2)
+                tS0 = time.perf_counter()
+                self._ensure_half_surface(hs_w, hs_h)
+                pygame.transform.smoothscale(surface, (hs_w, hs_h), self._half_surface)
+                tS1 = time.perf_counter()
+
+                t0 = time.perf_counter()
+                rgb = surfarray.pixels3d(self._half_surface)
+                t1 = time.perf_counter()
+                if mode == 'index':
+                    # Direct indexing LUT path (fast default)
+                    lr = _RL_LUT_R[rgb[:, :, 0]]
+                    lg = _RL_LUT_G[rgb[:, :, 1]]
+                    lb = _RL_LUT_B[rgb[:, :, 2]]
+                    lum16 = (lr + lg + lb) >> 8
+                else:
+                    # out=/take path with reusable buffers
+                    self._ensure_gray_tmps(hs_w, hs_h)
+                    np.take(_RL_LUT_R, rgb[:, :, 0], out=self._gray_tmp16)
+                    np.take(_RL_LUT_G, rgb[:, :, 1], out=self._gray_tmp16_b)
+                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
+                    np.take(_RL_LUT_B, rgb[:, :, 2], out=self._gray_tmp16_b)
+                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
+                    np.right_shift(self._gray_tmp16, 8, out=self._gray_tmp16)
+                    lum16 = self._gray_tmp16
+                t2 = time.perf_counter()
+                rgb[:, :, 0] = lum16
+                rgb[:, :, 1] = lum16
+                rgb[:, :, 2] = lum16
+                t3 = time.perf_counter()
+
+                tS2 = time.perf_counter()
+                pygame.transform.smoothscale(self._half_surface, (sw, sh), surface)
+                tS3 = time.perf_counter()
+                try:
+                    if perf_log is not None:
+                        perf_log.setdefault("4.Grayscale.half.scale_down", []).append(tS1 - tS0)
+                        perf_log.setdefault("4.Grayscale.a pixels3d", []).append(t1 - t0)
+                        perf_log.setdefault("4.Grayscale.b luminance", []).append(t2 - t1)
+                        perf_log.setdefault("4.Grayscale.e writeback", []).append(t3 - t2)
+                        perf_log.setdefault("4.Grayscale.half.scale_up", []).append(tS3 - tS2)
+                except Exception:
+                    pass
+            else:
+                t0 = time.perf_counter()
+                rgb = surfarray.pixels3d(surface)
+                t1 = time.perf_counter()
+                if mode == 'index':
+                    lr = _RL_LUT_R[rgb[:, :, 0]]
+                    lg = _RL_LUT_G[rgb[:, :, 1]]
+                    lb = _RL_LUT_B[rgb[:, :, 2]]
+                    lum16 = (lr + lg + lb) >> 8
+                else:
+                    self._ensure_gray_tmps(sw, sh)
+                    np.take(_RL_LUT_R, rgb[:, :, 0], out=self._gray_tmp16)
+                    np.take(_RL_LUT_G, rgb[:, :, 1], out=self._gray_tmp16_b)
+                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
+                    np.take(_RL_LUT_B, rgb[:, :, 2], out=self._gray_tmp16_b)
+                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
+                    np.right_shift(self._gray_tmp16, 8, out=self._gray_tmp16)
+                    lum16 = self._gray_tmp16
+                t2 = time.perf_counter()
+                rgb[:, :, 0] = lum16
+                rgb[:, :, 1] = lum16
+                rgb[:, :, 2] = lum16
+                t3 = time.perf_counter()
+                try:
+                    if perf_log is not None:
+                        perf_log.setdefault("4.Grayscale.a pixels3d", []).append(t1 - t0)
+                        perf_log.setdefault("4.Grayscale.b luminance", []).append(t2 - t1)
+                        perf_log.setdefault("4.Grayscale.e writeback", []).append(t3 - t2)
+                except Exception:
+                    pass
         else:
+            t0 = time.perf_counter()
             pixels = pygame.PixelArray(surface)
             w, h = surface.get_size()
             for x in range(w):
                 for y in range(h):
                     color = surface.unmap_rgb(pixels[x, y])
                     lum = int(0.299*color.r + 0.587*color.g + 0.114*color.b)
-                    pixels[x, y] = surface.map_rgb((lum, lum, lum))
-            del pixels

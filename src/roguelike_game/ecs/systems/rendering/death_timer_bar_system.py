@@ -52,9 +52,17 @@ class DeathTimerBarSystem:
             return
 
         now = time.time()
+        perf_log = getattr(world, 'perf_log', None)
 
         # 1) Filtrar temporizadores activos
+        t0 = time.perf_counter()
         active = self._active_timers(world, now)
+        t1 = time.perf_counter()
+        try:
+            if perf_log is not None:
+                perf_log.setdefault("4.DeathTimer.a active_timers", []).append(t1 - t0)
+        except Exception:
+            pass
 
         # 2) Para cada temporizador, obtener parámetros de dibujo
         for eid, dt in active.items():
@@ -72,10 +80,24 @@ class DeathTimerBarSystem:
                 name_lower = ''
             if name_lower in EXCLUDED_IN_DEATH_TIMER_BAR:
                 continue
+            t2 = time.perf_counter()
             params = self._gather_draw_params(eid, world, now, dt, camera)
+            t3 = time.perf_counter()
+            try:
+                if perf_log is not None:
+                    perf_log.setdefault("4.DeathTimer.b gather_params", []).append(t3 - t2)
+            except Exception:
+                pass
             if params:
                 # 3) Dibujar la barra usando los parámetros calculados
+                t4 = time.perf_counter()
                 self._draw_bar(screen, **params)
+                t5 = time.perf_counter()
+                try:
+                    if perf_log is not None:
+                        perf_log.setdefault("4.DeathTimer.c draw_bar", []).append(t5 - t4)
+                except Exception:
+                    pass
 
     def _active_timers(self, world, now):
         """
