@@ -3,9 +3,26 @@ Comandos core de la consola (help, echo, quit, placeholders).
 """
 from __future__ import annotations
 import pygame
+import time
 from typing import TYPE_CHECKING, Any, Optional
 from roguelike_engine.db.engine import session_scope
 from roguelike_engine.db.models import Item as ItemRow
+from roguelike_game.factories.player.loader import (
+    load_and_scale_sprites,
+    extract_initial_frame,
+    build_animator_map,
+    build_masks_map,
+)
+from roguelike_game.factories.player.config import (
+    ANIMATION_INTERVAL,
+    INITIAL_ANIMATION_STATE,
+    DEFAULT_CLASS,
+)
+from roguelike_game.ecs.components.rendering.sprite import Sprite
+from roguelike_game.ecs.components.rendering.animator import Animator
+from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
+from roguelike_game.ecs.components.transform.z_layer import ZLayer
+from roguelike_engine.config.config_z_layer import Z_LAYERS
 
 if TYPE_CHECKING:  # solo para type hints sin dependencias en runtime
     from roguelike_engine.console.console_model import CommandRegistry
@@ -223,6 +240,168 @@ def register_core_commands(registry: 'CommandRegistry', game: Optional[Any] = No
         help='Añade N unidades de todos los items con type=food al vendor indicado (o al target actual).',
         category='cheats',
         aliases=['/restockvendorfood']
+    )
+
+    # --- PLAYER UTILS ---
+    def vida_cmd(*args: str) -> str:
+        """Rellena la vida (HP) del jugador al máximo."""
+        try:
+            world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+            if world is None:
+                return 'World no disponible'
+            player_eid = getattr(world, 'player_entity', None)
+            if player_eid is None:
+                return 'Jugador no disponible'
+            comps = world.components
+            # Determinar HP máximo desde Health o CombatStats
+            hp_cmp = comps.get('Health', {}).get(player_eid)
+            cs_cmp = comps.get('CombatStats', {}).get(player_eid)
+            max_hp = None
+            if hp_cmp is not None:
+                max_hp = getattr(hp_cmp, 'max_hp', None)
+            if max_hp is None and cs_cmp is not None:
+                max_hp = getattr(cs_cmp, 'max_hp', None)
+            if max_hp is None:
+                return 'No se pudo determinar max HP'
+            # Usar helper para soportar Health o CombatStats
+            try:
+                from roguelike_game.ecs.utils.health_utils import set_current_hp
+                ok = bool(set_current_hp(world, player_eid, int(max_hp)))
+            except Exception:
+                # Fallback directo
+                ok = False
+                try:
+                    if hp_cmp is not None:
+                        hp_cmp.current_hp = int(max_hp)
+                        ok = True
+                    elif cs_cmp is not None:
+                        cs_cmp.current_hp = int(max_hp)
+                        ok = True
+                except Exception:
+                    ok = False
+            return 'HP al máximo' if ok else 'No se pudo rellenar HP'
+        except Exception:
+            return 'Error al procesar vida'
+
+    registry.register(
+        'vida', vida_cmd,
+        usage='vida',
+        help='Rellena la vida del jugador al máximo.',
+        category='cheats',
+        aliases=['/vida']
+    )
+
+    def mana_cmd(*args: str) -> str:
+        """Rellena el maná del jugador al máximo."""
+        try:
+            world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+            if world is None:
+                return 'World no disponible'
+            player_eid = getattr(world, 'player_entity', None)
+            if player_eid is None:
+                return 'Jugador no disponible'
+            mana_cmp = world.components.get('Mana', {}).get(player_eid)
+            if not mana_cmp:
+                return 'Componente Mana no disponible'
+            max_mana = getattr(mana_cmp, 'max_mana', None)
+            if max_mana is None:
+                return 'No se pudo determinar max Mana'
+            try:
+                mana_cmp.current_mana = int(max_mana)
+                return 'Maná al máximo'
+            except Exception:
+                return 'No se pudo rellenar maná'
+        except Exception:
+            return 'Error al procesar maná'
+
+    registry.register(
+        'mana', mana_cmd,
+        usage='mana',
+        help='Rellena el maná del jugador al máximo.',
+        category='cheats',
+        aliases=['/mana']
+    )
+
+    def resurrect_cmd(*args: str) -> str:
+        """Resucita al jugador: limpia estados de muerte, restaura HP y reestablece animaciones."""
+        try:
+            world = getattr(getattr(game, 'ecs', None), 'ecs_world', None)
+            if world is None:
+                return 'World no disponible'
+            player_eid = getattr(world, 'player_entity', None)
+            if player_eid is None:
+                return 'Jugador no disponible'
+            comps = world.components
+            # Limpiar flags/estados de muerte
+            comps.get('GrayscaleComponent', {}).pop(player_eid, None)
+            comps.get('DeathTimer', {}).pop(player_eid, None)
+            comps.get('DyingTag', {}).pop(player_eid, None)
+
+            # Restaurar HP al máximo
+            hp_cmp = comps.get('Health', {}).get(player_eid)
+            cs_cmp = comps.get('CombatStats', {}).get(player_eid)
+            max_hp = None
+            if hp_cmp is not None:
+                max_hp = getattr(hp_cmp, 'max_hp', None)
+            if max_hp is None and cs_cmp is not None:
+                max_hp = getattr(cs_cmp, 'max_hp', None)
+            if max_hp is not None:
+                try:
+                    from roguelike_game.ecs.utils.health_utils import set_current_hp
+                    set_current_hp(world, player_eid, int(max_hp))
+                except Exception:
+                    try:
+                        if hp_cmp is not None:
+                            hp_cmp.current_hp = int(max_hp)
+                        elif cs_cmp is not None:
+                            cs_cmp.current_hp = int(max_hp)
+                    except Exception:
+                        pass
+
+            # Reconstruir Sprite/Animator/AnimationTimer (Death/Unconscious los habían eliminado)
+            try:
+                pt = comps.get('PlayerTagComponent', {}).get(player_eid)
+                class_name = getattr(pt, 'class_name', None) or DEFAULT_CLASS
+                sprites_dict = load_and_scale_sprites(class_name)
+                frame = extract_initial_frame(sprites_dict)
+                if frame is not None:
+                    comps.setdefault('Sprite', {})
+                    comps['Sprite'][player_eid] = Sprite(frame)
+                comps.setdefault('Animator', {})
+                comps['Animator'][player_eid] = Animator(
+                    animations=build_animator_map(sprites_dict),
+                    current_state=INITIAL_ANIMATION_STATE,
+                    masks=build_masks_map(sprites_dict),
+                )
+                comps.setdefault('AnimationTimer', {})
+                comps['AnimationTimer'][player_eid] = AnimationTimer(
+                    last_time=0.0, interval=ANIMATION_INTERVAL
+                )
+            except Exception:
+                # No bloquear resurrección por fallos de assets; el sistema de animación puede seguir con Sprite actual
+                pass
+
+            # Asegurar capa Z adecuada del jugador
+            comps.setdefault('ZLayer', {})[player_eid] = ZLayer(Z_LAYERS.get('player', 4))
+
+            # Cambiar FSM a IdleState si existe NPCState (después de restaurar animaciones)
+            try:
+                npc_state = comps.get('NPCState', {}).get(player_eid)
+                if npc_state and getattr(npc_state, 'fsm', None):
+                    from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
+                    npc_state.fsm.change_state(IdleState(), type('E', (), {'world': world, 'id': player_eid}))
+            except Exception:
+                pass
+            return 'Jugador resucitado'
+        except Exception:
+            return 'Error al resucitar'
+
+    registry.register(
+        'resurrect', resurrect_cmd,
+        usage='resurrect',
+        help='Resucita al jugador (limpia estados de muerte y restaura HP).',
+        category='cheats',
+        aliases=['/resurrect']
     )
 
     # --- PLACEHOLDERS de otras áreas (pueden migrar a sus módulos) ---
