@@ -73,7 +73,17 @@ class AutoCastSystem:
                     st = float(chan.get('start_ts', now) or now)
                     dur = float(chan.get('duration', 0.0) or 0.0)
                     if now >= st + dur:
-                        # Remover outline visual
+                        # Remover outlines visuales asociados a este canalizado
+                        try:
+                            lst = comps.get('CastOutlines', {}).get(eid)
+                            if isinstance(lst, list):
+                                # Filtrar por start_time coincidente con 'st'
+                                comps['CastOutlines'][eid] = [ol for ol in lst if float(getattr(ol, 'start_time', -1.0)) != float(st)]
+                                if not comps['CastOutlines'][eid]:
+                                    comps['CastOutlines'].pop(eid, None)
+                        except Exception:
+                            pass
+                        # Legacy: limpiar componente único si existiera
                         comps.get('CastOutline', {}).pop(eid, None)
                         # Resolver target
                         target = str(chan.get('target', 'player'))
@@ -271,8 +281,18 @@ class AutoCastSystem:
                                     'target': target,
                                     'entry': entry,
                                 }
-                                # Adjuntar CastOutline para renderizar el wire azul->verde
-                                comps.setdefault('CastOutline', {})[eid] = CastOutline.create(duration=chan_s, color_from=color_from, color_to=color_to, start_time=now)
+                                # Adjuntar uno o más CastOutlines para renderizar wires concurrentes
+                                try:
+                                    lst_map = comps.setdefault('CastOutlines', {})
+                                    lst = lst_map.setdefault(eid, [])
+                                    # Wire principal proveniente de la entrada
+                                    lst.append(CastOutline.create(duration=chan_s, color_from=color_from, color_to=color_to, start_time=now))
+                                    # Wire adicional blanco->negro para meteor_shower
+                                    if spell == 'meteor_shower':
+                                        lst.append(CastOutline.create(duration=chan_s, color_from=(255, 255, 255), color_to=(0, 0, 0), start_time=now))
+                                except Exception:
+                                    # Fallback legacy: componente único
+                                    comps.setdefault('CastOutline', {})[eid] = CastOutline.create(duration=chan_s, color_from=color_from, color_to=color_to, start_time=now)
                                 # Aplicar stun al caster para inmovilizar durante el canalizado
                                 try:
                                     comps.setdefault('StunComponent', {})[eid] = StunComponent.create(chan_s)

@@ -216,12 +216,12 @@
           },
           {
             "spell": "meteor_shower",
-            "period_s": 9999.0,
+            "period_s": 10.0,
             "channel_s": 1.2,
             "wire_from": [120, 120, 255],
             "wire_to": [255, 180, 0],
             "target": "player",
-            "meta": { "on_hp_loss_step": 500, "initial_delay_s": 0.0 }
+            "meta": { "initial_delay_s": 0.0 }
           },
           {
             "spell": "fireball",

@@ -127,6 +127,14 @@ class SpellCastingSystem:
                             if not bool(ch_cfg.get('interruptible', False)):
                                 continue
                     cur_state = getattr(npc_state, 'fsm', None)
+                    # Evitar preempt si el nuevo hechizo es 'non_preemptive' y ya se está casteando algo
+                    try:
+                        if bool(cfg.get('non_preemptive', False)):
+                            if isinstance(getattr(cur_state, 'current_state', None), CastState):
+                                # Mantener wants[eid] para que se procese cuando termine el cast actual
+                                continue
+                    except Exception:
+                        pass
                     cur_state = getattr(cur_state, 'current_state', None)
                     if isinstance(cur_state, CastState):
                         cur_ctx = getattr(cur_state, 'spell_fsm', None)
