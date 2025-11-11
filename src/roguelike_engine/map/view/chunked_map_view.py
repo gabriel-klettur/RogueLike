@@ -1,22 +1,18 @@
 import pygame
 import math
 import json
-from roguelike_engine.config.config_tiles import TILE_SIZE, OVERLAY_CODE_MAP
+from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_engine.map.model.map_model import Map as MapModel
 from roguelike_engine.map.model.layer import Layer
-from roguelike_engine.tile.utils.loader import get_sprite_for_tile
+from roguelike_engine.map.view.constants import DEBUG_CHUNKED, MAX_ZOOM
+from roguelike_engine.map.view.overlay_policy import resolve_overlay_policy
+from roguelike_engine.map.view.sprite_cache import SpriteScaler
+from roguelike_engine.map.view.sprite_resolver import SpriteResolver
+from roguelike_engine.map.view.chunk_surface_builder import build_chunk_surface
 from roguelike_engine.config.map_config import global_map_settings
 
 import logging
-import math as _math
 logger = logging.getLogger(__name__)
-# Disable very chatty map chunk build logs by default
-DEBUG_CHUNKED: bool = False
-MAX_ZOOM: float = 10.0
-MAX_SURFACE_DIM: int = 4096
-
-# Cache scaled sprites per (sprite_id, zoom)
-_SCALED_CACHE: dict[tuple[int, float], pygame.Surface] = {}
 
 class ChunkedMapView:
     """
@@ -28,6 +24,8 @@ class ChunkedMapView:
         self.chunk_size = chunk_size
         # cache: { zoom: { (chunk_x,chunk_y): Surface } }
         self.chunks_by_zoom: dict[float, dict[tuple[int,int], pygame.Surface]] = {}
+        # shared scaler cache for all chunks/zooms
+        self._scaler = SpriteScaler()
 
     def _build_chunk_surfaces(self, map_model: MapModel, zoom: float):
         if DEBUG_CHUNKED:
@@ -37,193 +35,33 @@ class ChunkedMapView:
         Pre-dibuja cada chunk (bloque de tiles) en una surface escalada
         y la guarda en self.chunks_by_zoom[zoom].
         """
-        # Clamp zoom locally for safety
-        try:
-            z = float(zoom)
-        except Exception:
-            z = 1.0
-        if not _math.isfinite(z):
-            z = 1.0
-        zoom = min(max(z or 1.0, 0.1), MAX_ZOOM)
-        width  = len(map_model.matrix[0])
-        height = len(map_model.matrix)
+        # Clamp zoom
+        zoom = min(max(float(zoom or 1.0), 0.1), MAX_ZOOM)
+        matrix = map_model.matrix
+        width  = len(matrix[0]) if matrix else 0
+        height = len(matrix)
         cs = self.chunk_size
 
-        n_chunks_x = math.ceil(width  / cs)
-        n_chunks_y = math.ceil(height / cs)
+        n_chunks_x = math.ceil(width  / cs) if cs else 0
+        n_chunks_y = math.ceil(height / cs) if cs else 0
         chunk_dict: dict[tuple[int,int], pygame.Surface] = {}
 
-        # Precompute overlay policy once (avoid expensive checks in inner loops)
-        try:
-            cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-            # Prefer MapSettings.is_blank_world() for a robust decision
-            try:
-                overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
-            except Exception:
-                overlay_no_fallback = False
-            # Fallback to zones.json direct check if helper not available
-            if overlay_no_fallback is False:
-                zones_empty = False
-                z = getattr(global_map_settings, 'ZONES_INDEX', None)
-                try:
-                    if z and z.exists():
-                        txt = z.read_text(encoding='utf-8').strip()
-                        if txt:
-                            try:
-                                data = json.loads(txt)
-                                zones_empty = isinstance(data, dict) and len(data) == 0
-                            except Exception:
-                                zones_empty = False
-                        else:
-                            zones_empty = True
-                    else:
-                        zones_empty = True
-                except Exception:
-                    zones_empty = True
-                overlay_no_fallback = zones_empty
-            # If overlays directory has no files or only sentinel overlays, force overlay-only policy
-            try:
-                from pathlib import Path as _P
-                odir = getattr(global_map_settings, 'overlays_dir', None)
-                files = list(_P(odir).glob('*.overlay.json')) if odir else []
-                if files:
-                    # Normalize names: 'no zone.overlay.json' -> 'no zone'
-                    stems = {
-                        (s[:-8] if s.endswith('.overlay') else s)
-                        for s in (f.stem.lower().replace('_', ' ') for f in files)
-                    }
-                    if stems.issubset({'no zone', 'no-zone'}):
-                        overlay_no_fallback = True
-                else:
-                    # No overlays at all in this world
-                    overlay_no_fallback = True
-            except Exception:
-                pass
-        except Exception:
-            overlay_no_fallback = False
-        try:
-            last = getattr(self, "_last_policy_log", None)
-            if last is not overlay_no_fallback:
-                logger.info(f"[ChunkedMapView] overlay_no_fallback={overlay_no_fallback} world={getattr(global_map_settings,'current_world','?')}")
-                self._last_policy_log = overlay_no_fallback
-                # Diagnostic: when enabled, report counts of Ground codes
-                if overlay_no_fallback:
-                    try:
-                        g = map_model.layers.get(Layer.Ground)
-                        if g:
-                            nonempty = 0
-                            empty = 0
-                            valid = 0
-                            invalid = 0
-                            for row in g:
-                                for v in row:
-                                    if not v:
-                                        empty += 1
-                                    else:
-                                        nonempty += 1
-                                        if v in OVERLAY_CODE_MAP:
-                                            valid += 1
-                                        else:
-                                            invalid += 1
-                            logger.info(f"[ChunkedMapView] ground_counts empty={empty} nonempty={nonempty} valid={valid} invalid={invalid}")
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-
-        # Precompute sprites for each unique (char, overlay) pair with bounds check
-        sprite_map: dict[tuple[str, str|None], pygame.Surface|None] = {}
-        matrix = map_model.matrix
-        height_m = len(matrix)
-        for layer, grid in map_model.layers.items():
-            for y, row in enumerate(grid):
-                if y >= height_m:
-                    continue
-                row_str = matrix[y]
-                width_m = len(row_str)
-                for x, code in enumerate(row):
-                    if x >= width_m:
-                        continue
-                    char = row_str[x]
-                    key = (char, code)
-                    if key not in sprite_map:
-                        # In overlay-only mode, restrict invalid-code skip to Ground layer only.
-                        if overlay_no_fallback and code and layer == Layer.Ground and code not in OVERLAY_CODE_MAP:
-                            sprite_map[key] = None
-                        else:
-                            sprite_map[key] = get_sprite_for_tile(char, code)
-
-        # Debug opcional: imprimir claves sin sprite en sprite_map
-        if DEBUG_CHUNKED:
-            missing = [k for k, s in sprite_map.items() if s is None]
-            logger.debug(f" claves sin sprite: {missing}")
-
+        overlay_only = resolve_overlay_policy()
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
+        resolver = SpriteResolver(overlay_only)
+
         for cy in range(n_chunks_y):
             for cx in range(n_chunks_x):
-                # tamaño en tiles de este chunk (puede recortarse al borde)
-                tile_w = min(cs, width  - cx*cs)
-                tile_h = min(cs, height - cy*cs)
-
-                # tamaño en píxeles tras escalar (usar redondeo y tamaño entre 1..MAX_SURFACE_DIM)
-                pix_w = min(MAX_SURFACE_DIM, max(1, int(round(tile_w * TILE_SIZE * zoom))))
-                pix_h = min(MAX_SURFACE_DIM, max(1, int(round(tile_h * TILE_SIZE * zoom))))
-
-                try:
-                    surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
-                except Exception:
-                    # Fallback ultra defensivo
-                    surf = pygame.Surface((1, 1), pygame.SRCALPHA)
-                # Fondo negro opaco para limpiar el contenido previo cuando no hay sprites
-                try:
-                    surf.fill((0, 0, 0, 255))
-                except Exception:
-                    pass
-
-                zkey = float(zoom)
-
-                # dibujar cada tile por capa en orden usando raw_layers
-                for ty in range(cy*cs, cy*cs + tile_h):
-                    for tx in range(cx*cs, cx*cs + tile_w):
-                        char = map_model.matrix[ty][tx]
-                        for layer in layers_ordered:
-                            code = map_model.layers[layer][ty][tx]
-                            # Draw policy: in overlays-driven mode for non-base or blank worlds, draw only explicit overlay codes (no Ground fallback)
-                            if not code:
-                                if overlay_no_fallback:
-                                    continue
-                                if layer != Layer.Ground:
-                                    continue
-                            # If code is invalid and we're in overlay-only policy, skip only for Ground layer
-                            if overlay_no_fallback and code and layer == Layer.Ground and code not in OVERLAY_CODE_MAP:
-                                continue
-
-                            sprite = sprite_map.get((char, code))
-                            if sprite is None and DEBUG_CHUNKED:
-                                logger.debug(f" sin sprite para tile ({ty},{tx}) char={char}, code={code}")
-
-                            if not sprite:
-                                continue
-                            # scaled cache (by sprite id and zoom)
-                            skey = (id(sprite), zkey)
-                            scaled = _SCALED_CACHE.get(skey)
-                            if scaled is None:
-                                sw, sh = sprite.get_size()
-                                tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
-                                th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
-                                try:
-                                    scaled = pygame.transform.scale(sprite, (tw, th))
-                                except Exception:
-                                    scaled = sprite
-                                _SCALED_CACHE[skey] = scaled
-                            # posición dentro del chunk
-                            px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
-                            py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
-                            try:
-                                surf.blit(scaled, (px, py))
-                            except Exception:
-                                pass
-
+                surf = build_chunk_surface(
+                    map_matrix=matrix,
+                    layers_by_type=map_model.layers,
+                    chunk=(cx, cy),
+                    chunk_size=cs,
+                    zoom=zoom,
+                    ordered_layers=layers_ordered,
+                    resolver=resolver,
+                    scaler=self._scaler,
+                )
                 chunk_dict[(cx, cy)] = surf
 
         self.chunks_by_zoom[zoom] = chunk_dict
@@ -234,11 +72,8 @@ class ChunkedMapView:
 
         """Forzar reconstrucción de todos los chunks en el próximo render."""
         self.chunks_by_zoom.clear()
-        # Limpiar caché global de sprites escalados para evitar artefactos entre mundos/zooms
-        try:
-            _SCALED_CACHE.clear()
-        except Exception:
-            pass
+        # Limpiar caché de escalados
+        self._scaler.clear()
 
     def update_chunks(self, map_model, camera, cells):
         """
@@ -250,111 +85,30 @@ class ChunkedMapView:
         # Ensure base cache exists
         if zoom not in self.chunks_by_zoom:
             self._build_chunk_surfaces(map_model, zoom)
-        # Precompute overlay policy once (avoid expensive checks in inner loops)
-        try:
-            cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-            try:
-                overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
-            except Exception:
-                overlay_no_fallback = False
-            if overlay_no_fallback is False:
-                zones_empty = False
-                z = getattr(global_map_settings, 'ZONES_INDEX', None)
-                try:
-                    if z and z.exists():
-                        txt = z.read_text(encoding='utf-8').strip()
-                        if txt:
-                            try:
-                                data = json.loads(txt)
-                                zones_empty = isinstance(data, dict) and len(data) == 0
-                            except Exception:
-                                zones_empty = False
-                        else:
-                            zones_empty = True
-                    else:
-                        zones_empty = True
-                except Exception:
-                    zones_empty = True
-                overlay_no_fallback = zones_empty
-            # Overlays directory sentinel-only or empty -> force overlay-only
-            try:
-                from pathlib import Path as _P
-                odir = getattr(global_map_settings, 'overlays_dir', None)
-                files = list(_P(odir).glob('*.overlay.json')) if odir else []
-                if files:
-                    stems = {
-                        (s[:-8] if s.endswith('.overlay') else s)
-                        for s in (f.stem.lower().replace('_', ' ') for f in files)
-                    }
-                    if stems.issubset({'no zone', 'no-zone'}):
-                        overlay_no_fallback = True
-                else:
-                    overlay_no_fallback = True
-            except Exception:
-                pass
-        except Exception:
-            overlay_no_fallback = False
+
         cs = self.chunk_size
-        # Use a local lazy sprite cache only for tiles encountered in the chunks
         matrix = map_model.matrix
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
-        local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
+        overlay_only = resolve_overlay_policy()
+        resolver = SpriteResolver(overlay_only)
+
         # Compute unique chunks to rebuild (coalesce many cells per chunk)
         dirty_chunks: set[tuple[int,int]] = set()
         for row, col in set(cells):
             dirty_chunks.add((col // cs, row // cs))
+
         # Rebuild each affected chunk only once
         for (cx, cy) in dirty_chunks:
-            width = len(matrix[0]) if matrix else 0
-            height = len(matrix)
-            tile_w = min(cs, width - cx*cs)
-            tile_h = min(cs, height - cy*cs)
-            pix_w = int(round(tile_w * TILE_SIZE * zoom))
-            pix_h = int(round(tile_h * TILE_SIZE * zoom))
-
-            surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
-            # Match _build_chunk_surfaces: start from opaque black background so
-            # empty/overlay-only chunks remain solid black rather than transparent
-            try:
-                surf.fill((0, 0, 0, 255))
-            except Exception:
-                pass
-            for ty in range(cy*cs, cy*cs + tile_h):
-                for tx in range(cx*cs, cx*cs + tile_w):
-                    char = matrix[ty][tx]
-                    for layer in layers_ordered:
-                        code = map_model.layers[layer][ty][tx]
-                        if not code:
-                            if overlay_no_fallback:
-                                continue
-                            if layer != Layer.Ground:
-                                continue
-                        # If code is invalid under overlay-only policy, skip drawing
-                        if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
-                            continue
-                        key = (char, code)
-                        sprite = local_sprite_cache.get(key)
-                        if sprite is None and key not in local_sprite_cache:
-                            sprite = get_sprite_for_tile(char, code)
-                            local_sprite_cache[key] = sprite
-                        if not sprite:
-                            continue
-                        skey = (id(sprite), zoom)
-                        scaled = _SCALED_CACHE.get(skey)
-                        if scaled is None:
-                            sw, sh = sprite.get_size()
-                            tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
-                            th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
-                            try:
-                                scaled = pygame.transform.scale(sprite, (tw, th))
-                            except Exception:
-                                scaled = sprite
-                            _SCALED_CACHE[skey] = scaled
-                        px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
-                        py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
-
-                        surf.blit(scaled, (px, py))
-            # Store updated chunk
+            surf = build_chunk_surface(
+                map_matrix=matrix,
+                layers_by_type=map_model.layers,
+                chunk=(cx, cy),
+                chunk_size=cs,
+                zoom=zoom,
+                ordered_layers=layers_ordered,
+                resolver=resolver,
+                scaler=self._scaler,
+            )
             self.chunks_by_zoom[zoom][(cx, cy)] = surf
 
     def update_cells_all_zooms(self, map_model, cells):
@@ -373,103 +127,24 @@ class ChunkedMapView:
             # Ensure base cache exists for this zoom
             if zoom not in self.chunks_by_zoom:
                 self._build_chunk_surfaces(map_model, zoom)
-            # Precompute overlay policy per zoom rebuild
-            try:
-                cur_world = str(getattr(global_map_settings, 'current_world', 'base'))
-                try:
-                    overlay_no_fallback = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
-                except Exception:
-                    overlay_no_fallback = False
-                if overlay_no_fallback is False:
-                    zones_empty = False
-                    z = getattr(global_map_settings, 'ZONES_INDEX', None)
-                    try:
-                        if z and z.exists():
-                            txt = z.read_text(encoding='utf-8').strip()
-                            if txt:
-                                try:
-                                    data = json.loads(txt)
-                                    zones_empty = isinstance(data, dict) and len(data) == 0
-                                except Exception:
-                                    zones_empty = False
-                            else:
-                                zones_empty = True
-                        else:
-                            zones_empty = True
-                    except Exception:
-                        zones_empty = True
-                    overlay_no_fallback = zones_empty
-                # Overlays directory sentinel-only or empty -> force overlay-only
-                try:
-                    from pathlib import Path as _P
-                    odir = getattr(global_map_settings, 'overlays_dir', None)
-                    files = list(_P(odir).glob('*.overlay.json')) if odir else []
-                    if files:
-                        stems = {
-                            (s[:-8] if s.endswith('.overlay') else s)
-                            for s in (f.stem.lower().replace('_', ' ') for f in files)
-                        }
-                        if stems.issubset({'no zone', 'no-zone'}):
-                            overlay_no_fallback = True
-                    else:
-                        overlay_no_fallback = True
-                except Exception:
-                    pass
-            except Exception:
-                overlay_no_fallback = False
-            # Local lazy sprite cache per zoom update
-            local_sprite_cache: dict[tuple[str, str|None], pygame.Surface|None] = {}
+            overlay_only = resolve_overlay_policy()
+            resolver = SpriteResolver(overlay_only)
 
             # Compute unique chunks to rebuild at this zoom
             dirty_chunks: set[tuple[int,int]] = set()
             for r, c in set(cells):
                 dirty_chunks.add((c // cs, r // cs))
             for (cx, cy) in dirty_chunks:
-                width = len(matrix[0]) if matrix else 0
-                height = len(matrix)
-                tile_w = min(cs, width - cx*cs)
-                tile_h = min(cs, height - cy*cs)
-                pix_w = int(round(tile_w * TILE_SIZE * zoom))
-                pix_h = int(round(tile_h * TILE_SIZE * zoom))
-                surf = pygame.Surface((pix_w, pix_h), pygame.SRCALPHA)
-                # Keep consistency with initial chunk build: opaque black background
-                try:
-                    surf.fill((0, 0, 0, 255))
-                except Exception:
-                    pass
-                for ty in range(cy*cs, cy*cs + tile_h):
-                    for tx in range(cx*cs, cx*cs + tile_w):
-                        char = matrix[ty][tx]
-                        for layer in layers_ordered:
-                            code = map_model.layers[layer][ty][tx]
-                            if not code:
-                                if overlay_no_fallback:
-                                    continue
-                                if layer != Layer.Ground:
-                                    continue
-                            if overlay_no_fallback and code and code not in OVERLAY_CODE_MAP:
-                                continue
-                            key = (char, code)
-                            sprite = local_sprite_cache.get(key)
-                            if sprite is None and key not in local_sprite_cache:
-                                sprite = get_sprite_for_tile(char, code)
-                                local_sprite_cache[key] = sprite
-                            if not sprite:
-                                continue
-                            skey = (id(sprite), zoom)
-                            scaled = _SCALED_CACHE.get(skey)
-                            if scaled is None:
-                                sw, sh = sprite.get_size()
-                                tw = min(MAX_SURFACE_DIM, max(1, int(round(sw * zoom))))
-                                th = min(MAX_SURFACE_DIM, max(1, int(round(sh * zoom))))
-                                try:
-                                    scaled = pygame.transform.scale(sprite, (tw, th))
-                                except Exception:
-                                    scaled = sprite
-                                _SCALED_CACHE[skey] = scaled
-                            px = int(round((tx - cx*cs) * TILE_SIZE * zoom))
-                            py = int(round((ty - cy*cs) * TILE_SIZE * zoom))
-                            surf.blit(scaled, (px, py))
+                surf = build_chunk_surface(
+                    map_matrix=matrix,
+                    layers_by_type=map_model.layers,
+                    chunk=(cx, cy),
+                    chunk_size=cs,
+                    zoom=zoom,
+                    ordered_layers=layers_ordered,
+                    resolver=resolver,
+                    scaler=self._scaler,
+                )
                 self.chunks_by_zoom[zoom][(cx, cy)] = surf
 
     def render(
