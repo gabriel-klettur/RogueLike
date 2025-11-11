@@ -144,6 +144,10 @@ class AutoCastSystem:
 
                 # Modo multi-entrada: entries
                 entries = getattr(ac, 'entries', None)
+                # Si ya hay una intención pendiente para este eid, no iniciar nuevos canalizados en este frame
+                # Evita que una entrada posterior sobrescriba wants[eid] (p. ej., root_whip justo tras canalizar)
+                if eid in wants:
+                    continue
                 if isinstance(entries, list) and entries:
                     # Elegir la primera entrada lista (orden estable)
                     for entry in entries:

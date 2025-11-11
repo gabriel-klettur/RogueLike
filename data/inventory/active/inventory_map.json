@@ -22,5 +22,17 @@
       "y": 26
     },
     "created_at": 1762795198.6239552
+  },
+  "0b024029-ee37-4f16-bd10-6c755d848987": {
+    "item_id": "gold",
+    "quantity": 10,
+    "zone_id": "zone_200_50",
+    "schema_version": "1.0.0",
+    "z_layer": 3,
+    "tile": {
+      "x": 33,
+      "y": 33
+    },
+    "created_at": 1762854907.100826
   }
 }
