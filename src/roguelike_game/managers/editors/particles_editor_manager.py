@@ -2,7 +2,7 @@ import pygame
 from roguelike_editors.particles.particles_controller import ParticlesEditorController
 from roguelike_editors.particles.services.instances_service import load_particles_instances
 from roguelike_editors.particles.services.instances_service import find_nearest_instance as _find_nearest_instance
-from roguelike_editors.particles.services.preview_builder import build_preview_for_definition
+from roguelike_editors.particles.services.preview import build_preview_for_definition
 from roguelike_game.config.particles_config import get_preset
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE

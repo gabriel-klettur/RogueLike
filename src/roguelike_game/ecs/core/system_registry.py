@@ -19,7 +19,7 @@ from roguelike_game.ecs.systems.core.spawn_system import SpawnSystem
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.combat.spells.spell_casting_system import SpellCastingSystem
 from roguelike_game.ecs.systems.ai.auto_cast_system import AutoCastSystem
-from roguelike_game.ecs.systems.combat.spells.fireball_system import FireballSystem
+from roguelike_game.ecs.systems.combat.spells.fireball_system.fireball_system import FireballSystem
 from roguelike_game.ecs.systems.combat.spells.arcane_flame_system import ArcaneFlameSystem
 from roguelike_game.ecs.systems.combat.spells.firework_launch_system import FireworkLaunchSystem
 from roguelike_game.ecs.systems.combat.spells.boomerang_system import BoomerangSystem
