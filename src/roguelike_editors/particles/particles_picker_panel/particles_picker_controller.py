@@ -6,7 +6,10 @@ from .particles_picker_model import ParticlesPickerModel
 from .particles_picker_view import ParticlesPickerView
 from .particles_picker_events import ParticlesPickerEventHandler
 from roguelike_game.config.particles_config import PARTICLES
-from roguelike_editors.particles.services.preview_builder import build_preview_for_definition, _resolve_particles_dict_from_definition
+from roguelike_editors.particles.services.preview import (
+    build_preview_for_definition,
+    resolve_particles_dict_from_definition,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +49,7 @@ class ParticlesPickerController:
                 }
                 # Resolve kind robustly for grouping
                 try:
-                    parts, _meta = _resolve_particles_dict_from_definition(defn)
+                    parts, _meta = resolve_particles_dict_from_definition(defn)
                     k = parts.get("kind")
                     if isinstance(k, str) and k:
                         defn["kind"] = k
