@@ -75,3 +75,16 @@ class StaggerScheduler:
 
     def needs_population(self) -> bool:
         return not self._targets
+
+    def force_enable_all(self) -> None:
+        """Enable every tracked light immediately and mark scheduling complete."""
+        if not self._targets:
+            return
+        now = pygame.time.get_ticks()
+        for light in self._targets:
+            try:
+                light.enabled = True
+            except Exception:
+                continue
+        self._cursor = len(self._targets)
+        self._next_tick = now

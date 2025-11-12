@@ -212,6 +212,8 @@ class LightingManager:
         if self._stagger.needs_population():
             order_desc = daynight.get_lights_stagger_order() == "desc"
             self._stagger.populate(self._lights, order_desc)
+            # When night is already active we want persistent lights on immediately.
+            self._stagger.force_enable_all()
         return True
 
     def _disable_persistent_lights(self) -> None:
