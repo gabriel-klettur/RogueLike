@@ -18,7 +18,7 @@ class FiniteStateMachine:
         self.current_state = initial_state
         initial_state.fsm = self
         # Debug tracking
-        self._seen_states = {initial_state}
+        self._seen_states = {type(initial_state)}
         self._history = []
         self.context = {}
 
@@ -48,8 +48,8 @@ class FiniteStateMachine:
                     logger.debug(f" Eid={entity.id} blocked transition {old_state_name} -> {new_state_name} (not allowed by set)")
                     return
         # Track debug history
-        self._seen_states.add(new_state)
-        self._history.append((self.current_state, new_state))
+        self._seen_states.add(type(new_state))
+        self._history.append((type(self.current_state), type(new_state)))
         # Debug con tiempos y tipo de hechizo si aplica
         ctx = getattr(self, 'context', {}) or {}
         spell = ctx.get('spell', '')
@@ -93,8 +93,8 @@ class FiniteStateMachine:
         font = pygame.font.SysFont(None, 24)
         for s in states:
             x, y = pos[s]
-            color = (0,255,0) if s == self.current_state else (100,100,100)
+            color = (0,255,0) if s is type(self.current_state) else (100,100,100)
             pygame.draw.circle(screen, color, (x,y), 30)
-            text = font.render(s.__class__.__name__, True, (255,255,255))
+            text = font.render(getattr(s, '__name__', s.__class__.__name__), True, (255,255,255))
             rect = text.get_rect(center=(x,y))
             screen.blit(text, rect)
