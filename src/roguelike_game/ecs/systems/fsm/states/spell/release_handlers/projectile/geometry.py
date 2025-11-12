@@ -57,7 +57,9 @@ def compute_direction(context: SpellReleaseContext, spawn: Tuple[float, float]) 
     raw_direction = context.context.get("direction")
     has_context_direction = isinstance(raw_direction, (tuple, list)) and len(raw_direction) >= 2
 
-    if not lock_direction and not has_context_direction:
+    # If lock_cast_direction is False, always re-aim using current mouse position
+    # for each release, regardless of any previously stored context direction.
+    if not lock_direction:
         try:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             camera = context.camera
@@ -74,7 +76,10 @@ def compute_direction(context: SpellReleaseContext, spawn: Tuple[float, float]) 
                 world_x, world_y = mouse_x, mouse_y
             direction = (world_x - spawn[0], world_y - spawn[1])
         except Exception:
-            direction = (1.0, 0.0)
-    else:
-        direction = raw_direction if has_context_direction else (1.0, 0.0)
+            # Fallback to any provided direction or a default
+            direction = raw_direction if has_context_direction else (1.0, 0.0)
+        return normalise_vector(direction)
+
+    # Locked direction: respect provided context direction; otherwise use a safe default
+    direction = raw_direction if has_context_direction else (1.0, 0.0)
     return normalise_vector(direction)
