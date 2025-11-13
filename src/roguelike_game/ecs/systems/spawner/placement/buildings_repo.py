@@ -5,14 +5,14 @@ import os
 import logging
 from typing import Any, Dict, List, Optional
 
-from roguelike_engine.config.config import BUILDINGS_INSTANCES_PATH, BUILDINGS_TEMPLATES_PATH
+import roguelike_engine.config.config as cfg
 
 logger = logging.getLogger(__name__)
 
 
 def load_buildings_instances_json() -> List[Dict[str, Any]]:
     try:
-        with open(BUILDINGS_INSTANCES_PATH, 'r', encoding='utf-8-sig') as f:
+        with open(cfg.BUILDINGS_INSTANCES_PATH, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
     except FileNotFoundError:
@@ -26,14 +26,14 @@ def write_buildings_instances_json(arr: List[Dict[str, Any]]) -> None:
         arr.sort(key=lambda e: int(e.get('id') or 0))
     except Exception:
         pass
-    os.makedirs(os.path.dirname(BUILDINGS_INSTANCES_PATH), exist_ok=True)
-    with open(BUILDINGS_INSTANCES_PATH, 'w', encoding='utf-8') as f:
+    os.makedirs(os.path.dirname(cfg.BUILDINGS_INSTANCES_PATH), exist_ok=True)
+    with open(cfg.BUILDINGS_INSTANCES_PATH, 'w', encoding='utf-8') as f:
         json.dump(arr or [], f, ensure_ascii=False, indent=4)
 
 
 def load_buildings_templates_json() -> List[Dict[str, Any]]:
     try:
-        with open(BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8-sig') as f:
+        with open(cfg.BUILDINGS_TEMPLATES_PATH, 'r', encoding='utf-8-sig') as f:
             data = json.load(f)
         return data if isinstance(data, list) else []
     except FileNotFoundError:
