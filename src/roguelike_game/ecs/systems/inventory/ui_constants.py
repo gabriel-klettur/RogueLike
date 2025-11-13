@@ -12,7 +12,8 @@ TEXT_COLOR = (255, 255, 255)
 GRID_COLS = 5
 GRID_ROWS = 5
 PADDING = 10
-SLOT_SIZE = 64
+SLOT_SIZE = 48
+CELL_GAP = 4  # Minimal spacing between cells (inventory and character grids)
 CLOSE_BUTTON_SIZE = 20
 GRAB_PROGRESS_COLOR = (255, 255, 0)
 GRAB_PROGRESS_ALPHA = 220
@@ -30,11 +31,13 @@ DECREASE_COLOR = (230, 90, 90)
 QUANTITY_FLASH_DURATION_MS = 900
 
 # Etiquetas de pestañas para el panel de inventario (categorías)
-# Orden: 0 = Equipo, 1 = Materiales, 2 = Consumibles
+# Orden: 0 = Equipo, 1 = Materiales, 2 = Consumibles, 3 = Otros, 4 = Quest
 TABS_LABELS = [
     "Equipo",
     "Materiales",
     "Consumibles",
+    "Otros",
+    "Quest",
 ]
 
 # Identificadores de ítems que se consideran moneda/oro para el footer del inventario.

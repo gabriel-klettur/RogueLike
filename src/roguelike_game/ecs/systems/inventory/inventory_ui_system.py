@@ -1,4 +1,5 @@
 import os
+import json
 
 import pygame
 import logging
@@ -16,6 +17,8 @@ from .ui_render import (
     measure_tabs_total_width,
     measure_footer_height,
     draw_footer_currency,
+    measure_character_height,
+    draw_character_section,
 )
 from .ui_constants import (
     GRID_COLS,
@@ -24,6 +27,7 @@ from .ui_constants import (
     DECREASE_COLOR,
     PADDING,
     SLOT_SIZE,
+    CELL_GAP,
     TABS_LABELS,
     CURRENCY_ITEM_IDS,
 )
@@ -63,6 +67,16 @@ class InventoryUISystem:
         self.double_click_threshold = 500
         pygame.font.init()
         self.font = pygame.font.SysFont(None, 24)
+        self.font_tabs = pygame.font.SysFont(None, 20)
+        # Valor por defecto de clase/tipo del jugador (para mostrar en el header)
+        self.default_player_class: str = "Adventurer"
+        try:
+            cfg_path = os.path.join(os.getcwd(), 'data', 'entities', 'new_players.json')
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                self.default_player_class = str(cfg.get('DEFAULT_CLASS', self.default_player_class) or self.default_player_class)
+        except Exception:
+            pass
         # Track de cantidades por slot para resaltar incrementos/decrementos
         self._slot_last_qty: dict[int, int] = {}
         # Map idx -> {'start': ms, 'color': (r,g,b), 'kind': 'inc'|'dec'}
@@ -188,16 +202,21 @@ class InventoryUISystem:
         if not slots:
             return
         # Reservar altura para cabecera + barra de pestañas y adaptar ancho mínimo al ancho de tabs
-        tabs_total_w, tab_h = measure_tabs_total_width(self.font, None, include_close=True)
+        tabs_total_w, tab_h = measure_tabs_total_width(self.font, None, include_close=True, tabs_font=self.font_tabs)
         header_h = self.font.get_height()
         header_top_gap = max(2, PADDING // 4)
-        # Debe coincidir con la fórmula de ui_render.draw_tabs (used_h)
-        tabs_reserved_h = (header_h + header_top_gap) + (tab_h + PADDING + PADDING // 2)
+        # Debe coincidir con la fórmula de ui_render.draw_tabs (used_h). Ahora tenemos dos filas (Otros/Quest).
+        row_gap = max(2, PADDING // 3)
+        rows = 2 if any(lbl in TABS_LABELS for lbl in ("Otros", "Quest")) else 1
+        tabs_reserved_h = (header_h + header_top_gap) + (tab_h * rows + (row_gap if rows > 1 else 0) + PADDING + PADDING // 2)
+        # Character reservado (arriba)
+        char_h = measure_character_height(self.font)
+        char_reserved_h = char_h + PADDING
         # Footer reservado (oro)
         footer_h = measure_footer_height(self.font)
         footer_reserved_h = footer_h + PADDING
         # Asegurar márgenes simétricos: forzar que (panel_w - grid_w) sea par
-        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS + 1) * PADDING
+        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS - 1) * CELL_GAP + 2 * PADDING
         desired_w = max(grid_w, tabs_total_w + 2 * PADDING)
         if (desired_w - grid_w) % 2 != 0:
             desired_w += 1
@@ -205,14 +224,14 @@ class InventoryUISystem:
         initial_rect = compute_panel_rect(
             screen,
             (self.drag_offset_x, self.drag_offset_y),
-            extra_h=tabs_reserved_h + footer_reserved_h,
+            extra_h=char_reserved_h + tabs_reserved_h + footer_reserved_h,
             min_w=min_panel_w,
         )
         self._handle_drag(initial_rect)
         panel_rect = compute_panel_rect(
             screen,
             (self.drag_offset_x, self.drag_offset_y),
-            extra_h=tabs_reserved_h + footer_reserved_h,
+            extra_h=char_reserved_h + tabs_reserved_h + footer_reserved_h,
             min_w=min_panel_w,
         )
         self.panel_rect = panel_rect
@@ -222,26 +241,92 @@ class InventoryUISystem:
             self.logger.debug("Inventory closed via close button")
             return
         # Calcular ancho de contenido de la rejilla para centrar tanto tabs como slots
-        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS + 1) * PADDING
+        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS - 1) * CELL_GAP + 2 * PADDING
         content_left = panel_rect.x + max(0, (panel_rect.w - grid_w) // 2)
         content_right = content_left + grid_w
         # Alinear header/tabs con el área interior de slots (sin el padding externo de la rejilla)
         tabs_bounds_left = content_left + PADDING
         tabs_bounds_right = content_right - PADDING
+        # Construir datos de personaje desde los componentes (con valores por defecto)
+        player_eid, _ = self._get_player_input(world)
+        comps = getattr(world, 'components', {})
+        portrait = None
+        body = None
+        spr = comps.get('Sprite', {}).get(player_eid) if player_eid is not None else None
+        if spr is not None:
+            body = getattr(spr, 'image', None)
+            portrait = body
+        pname = getattr(comps.get('Name', {}).get(player_eid), 'value', 'Hero') if comps else 'Hero'
+        pclass = getattr(comps.get('Class', {}).get(player_eid), 'value', None) if comps else None
+        # Mostrar el tipo de personaje (clase) en lugar del nombre
+        char_type = str(pclass or self.default_player_class or 'Adventurer')
+        display_name = char_type.replace('_', ' ').title()
+        plevel_comp = comps.get('Level', {}).get(player_eid) if comps else None
+        plevel = int(getattr(plevel_comp, 'level', 1) or 1)
+        pexp_pct = int(getattr(plevel_comp, 'exp_percent', 0) or 0)
+        # Extraer equipamiento básico desde slots por equip_slot del modelo
+        equipment_surfs: dict[str, pygame.Surface | None] = {}
+        equip_map = {
+            'weapon': {'keys': ['weapon', 'right_hand', 'main_hand']},
+            'offhand': {'keys': ['offhand', 'left_hand', 'shield', 'book']},
+            'chest': {'keys': ['chest', 'armor', 'torso']},
+            'helmet': {'keys': ['helmet', 'head']},
+            'boots': {'keys': ['boots', 'feet']},
+            'extra1': {'keys': ['ring', 'trinket', 'amulet', 'accessory']},
+            'extra2': {'keys': ['ring', 'trinket', 'amulet', 'accessory']},
+        }
+        try:
+            for st in slots:
+                if not st:
+                    continue
+                model = self.items.get(st.item_id)
+                slot_name = getattr(model, 'equip_slot', None)
+                if not slot_name:
+                    continue
+                for k, meta in equip_map.items():
+                    if k in equipment_surfs:
+                        continue
+                    if any(slot_name == key for key in meta['keys']) or slot_name == k:
+                        equipment_surfs[k] = self.icon_surfaces.get(st.item_id)
+                        break
+        except Exception:
+            pass
+        char_data = {
+            'portrait': portrait,
+            'name': display_name,
+            'class': "",
+            'level': plevel,
+            'exp_percent': pexp_pct,
+            'equipment': equipment_surfs,
+            'body': body,
+            'stats': [],
+        }
+        # Dibujar sección de personaje en la parte superior del panel
+        char_top_y = panel_rect.y + PADDING
+        char_used_h = draw_character_section(
+            screen=screen,
+            content_bounds=(tabs_bounds_left, tabs_bounds_right),
+            top_y=char_top_y,
+            font=self.font,
+            data=char_data,
+        )
         # Dibujar pestañas (centradas respecto al ancho de contenido) y desplazar rejilla
-        tab_rects, used_h, tabs_close_rect = draw_tabs(
+        tab_rects, used_h_tabs, tabs_close_rect = draw_tabs(
             screen,
             panel_rect,
             self.font,
             self.active_tab_index,
             content_bounds=(tabs_bounds_left, tabs_bounds_right),
+            top_offset=(char_used_h + PADDING),
+            tabs_font=self.font_tabs,
         )
         self._tab_rects = tab_rects
         # Centrar la rejilla (GRID_COLS x GRID_ROWS) bajo las pestañas
-        grid_h = GRID_ROWS * SLOT_SIZE + (GRID_ROWS + 1) * PADDING
-        remaining_h = max(0, panel_rect.h - used_h - footer_reserved_h)
+        grid_h = GRID_ROWS * SLOT_SIZE + (GRID_ROWS - 1) * CELL_GAP + 2 * PADDING
+        used_h_total = (char_used_h + PADDING) + used_h_tabs
+        remaining_h = max(0, panel_rect.h - used_h_total - footer_reserved_h)
         grid_origin_x = content_left
-        grid_origin_y = panel_rect.y + used_h + max(0, (remaining_h - grid_h) // 2)
+        grid_origin_y = panel_rect.y + used_h_total + max(0, (remaining_h - grid_h) // 2)
         # grid_panel_rect incluye el padding exterior; compute_slot_rect añadirá PADDING interno
         grid_panel_rect = pygame.Rect(
             grid_origin_x,
@@ -271,6 +356,14 @@ class InventoryUISystem:
                 return bool(getattr(model, 'stackable', False))
             if label == "Consumibles":
                 return bool(getattr(model, 'effect', None) is not None)
+            if label == "Quest":
+                return bool(getattr(model, 'quest_id', None) is not None)
+            if label == "Otros":
+                # Todo lo que no encaje en Equipo/Materiales/Consumibles
+                is_equipo = (getattr(model, 'equip_slot', None) is not None or getattr(model, 'durability', None) is not None)
+                is_consumible = (getattr(model, 'effect', None) is not None)
+                is_material = (getattr(model, 'effect', None) is None and getattr(model, 'equip_slot', None) is None and getattr(model, 'durability', None) is None and getattr(model, 'quest_id', None) is None and bool(getattr(model, 'stackable', False)))
+                return not (is_equipo or is_consumible or is_material)
             # Si la etiqueta no coincide, permitir por defecto
             return True
 
@@ -383,7 +476,7 @@ class InventoryUISystem:
             # Si el click cayó en el área reservada para tabs (pero no en ninguna pestaña/close), consumirlo para evitar
             # que se interprete como click en slots.
             if panel_rect.collidepoint(mouse_pos):
-                if panel_rect.y <= mouse_pos[1] <= panel_rect.y + used_h:
+                if panel_rect.y <= mouse_pos[1] <= panel_rect.y + used_h_total:
                     return
             if inp:
                 for idx, stack in enumerate(slots_to_draw):

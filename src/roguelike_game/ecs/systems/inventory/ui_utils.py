@@ -2,7 +2,7 @@ from __future__ import annotations
 import pygame
 from typing import Optional, Tuple
 
-from .ui_constants import GRID_COLS, GRID_ROWS, PADDING, SLOT_SIZE
+from .ui_constants import GRID_COLS, GRID_ROWS, PADDING, SLOT_SIZE, CELL_GAP
 
 
 def ease_out_cubic(x: float) -> float:
@@ -13,9 +13,10 @@ def ease_out_cubic(x: float) -> float:
 def compute_panel_rect(screen: pygame.Surface, drag_offset: Tuple[int, int], extra_h: int = 0, min_w: int = 0) -> pygame.Rect:
     cols, rows = GRID_COLS, GRID_ROWS
     padding, size = PADDING, SLOT_SIZE
-    panel_w_grid = cols * size + (cols + 1) * padding
+    # Width: outer margins use PADDING, inter-cell spacing uses CELL_GAP
+    panel_w_grid = cols * size + (cols - 1) * CELL_GAP + 2 * padding
     panel_w = max(panel_w_grid, int(min_w) if min_w else panel_w_grid)
-    panel_h = rows * size + (rows + 1) * padding + max(0, int(extra_h))
+    panel_h = rows * size + (rows - 1) * CELL_GAP + 2 * padding + max(0, int(extra_h))
     screen_w, screen_h = screen.get_size()
     center_x = (screen_w - panel_w) // 2
     center_y = (screen_h - panel_h) // 2
@@ -29,8 +30,9 @@ def compute_slot_rect(panel_rect: pygame.Rect, idx: int, top_offset: int = 0) ->
     padding, size = PADDING, SLOT_SIZE
     col = idx % cols
     row = idx // cols
-    x = panel_rect.x + padding + col * (size + padding)
-    y = panel_rect.y + padding + max(0, int(top_offset)) + row * (size + padding)
+    step = size + CELL_GAP
+    x = panel_rect.x + padding + col * step
+    y = panel_rect.y + padding + max(0, int(top_offset)) + row * step
     return pygame.Rect(x, y, size, size)
 
 
@@ -41,7 +43,7 @@ def idx_from_panel_mouse(panel_rect: pygame.Rect, mouse_pos: Tuple[int, int], to
     rel_y = mouse_pos[1] - panel_rect.y - PADDING - max(0, int(top_offset))
     if rel_x < 0 or rel_y < 0:
         return None
-    step = SLOT_SIZE + PADDING
+    step = SLOT_SIZE + CELL_GAP
     col = int(rel_x // step)
     row = int(rel_y // step)
     idx = row * GRID_COLS + col

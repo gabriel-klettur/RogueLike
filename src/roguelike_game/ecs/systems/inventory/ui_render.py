@@ -14,6 +14,7 @@ from .ui_constants import (
     GRID_ROWS,
     PADDING,
     SLOT_SIZE,
+    CELL_GAP,
     CLOSE_BUTTON_SIZE,
     GRAB_PROGRESS_COLOR,
     GRAB_PROGRESS_ALPHA,
@@ -32,23 +33,39 @@ from .ui_utils import ease_out_cubic, compute_slot_rect, idx_from_panel_mouse
 from .ui_constants import TABS_LABELS
 
 
-def measure_tabs_total_width(font: pygame.font.Font, labels: list[str] | None = None, include_close: bool = True) -> tuple[int, int]:
+def measure_tabs_total_width(
+    font: pygame.font.Font,
+    labels: list[str] | None = None,
+    include_close: bool = True,
+    tabs_font: Optional[pygame.font.Font] = None,
+) -> tuple[int, int]:
     """Measure total width required to render tabs (and optional close button).
 
     Returns (total_width_pixels, tab_height_pixels).
     """
     labels = labels or TABS_LABELS
-    tab_h = max(font.get_height() + 8, 26)
-    total_w = 0
+    f_tabs = tabs_font or font
+    tab_h = max(f_tabs.get_height() + 8, 26)
     spacing = max(4, PADDING // 2)
-    for i, label in enumerate(labels):
-        t = font.render(label, True, TEXT_COLOR)
-        w = t.get_width() + 16
-        total_w += w
-        if i < len(labels) - 1:
-            total_w += spacing  # spacing between tabs
+    # Split into two rows: main (all except Otros/Quest) and extra (Otros/Quest)
+    main_labels = [l for l in labels if l not in ("Otros", "Quest")]
+    extra_labels = [l for l in labels if l in ("Otros", "Quest")]
+    def row_total(row: list[str]) -> int:
+        if not row:
+            return 0
+        total = 0
+        for i, label in enumerate(row):
+            t = f_tabs.render(label, True, TEXT_COLOR)
+            w = t.get_width() + 16
+            total += w
+            if i < len(row) - 1:
+                total += spacing
+        return total
+    w_main = row_total(main_labels)
+    w_extra = row_total(extra_labels)
+    total_w = max(w_main, w_extra)
     if include_close:
-        total_w += 8 + CLOSE_BUTTON_SIZE  # spacing + button size
+        total_w += 8 + CLOSE_BUTTON_SIZE
     return total_w, tab_h
 
 
@@ -107,6 +124,130 @@ def draw_footer_currency(
     return pill_rect
 
 
+def measure_character_height(font: pygame.font.Font) -> int:
+    """Compute character section height aligned with draw metrics for 3x3 grid."""
+    header = max(font.get_height() + PADDING, 24)
+    body = SLOT_SIZE * 3 + CELL_GAP * 2
+    gap = PADDING // 2
+    return header + gap + body
+
+
+def draw_character_section(
+    screen: pygame.Surface,
+    content_bounds: tuple[int, int],
+    top_y: int,
+    font: pygame.font.Font,
+    data: dict,
+) -> int:
+    """Draw character section aligned to content bounds. Returns used height."""
+    left, right = content_bounds
+    width = max(0, right - left)
+    y = top_y
+    # Header: portrait + name/class + level/exp
+    portrait: Optional[pygame.Surface] = data.get('portrait')
+    name = str(data.get('name', 'Hero'))
+    clazz = str(data.get('class', 'Adventurer'))
+    level = int(data.get('level', 1))
+    exp_pct = max(0, min(100, int(data.get('exp_percent', 0))))
+    header_h = max(font.get_height() + PADDING, 24)
+    # portrait
+    p_size = header_h
+    px = left
+    py = y
+    p_rect = pygame.Rect(px, py, p_size, p_size)
+    pygame.draw.rect(screen, (70, 70, 70), p_rect)
+    pygame.draw.rect(screen, BORDER_COLOR, p_rect, 1)
+    if portrait:
+        spr = pygame.transform.smoothscale(portrait, (p_size - 2, p_size - 2))
+        screen.blit(spr, (p_rect.x + 1, p_rect.y + 1))
+    # texts
+    tx = p_rect.right + PADDING
+    ty = y + 2
+    name_s = font.render(name, True, TEXT_COLOR)
+    screen.blit(name_s, (tx, ty))
+    clazz_s = font.render(clazz, True, (*TEXT_COLOR,))
+    screen.blit(clazz_s, (tx, ty + name_s.get_height() + 2))
+    lvl_txt = f"Lvl {level} ({exp_pct}%)"
+    lvl_s = font.render(lvl_txt, True, TEXT_COLOR)
+    lvl_rect = lvl_s.get_rect(right=right, centery=y + header_h // 2)
+    screen.blit(lvl_s, lvl_rect)
+    y += header_h + PADDING // 2
+    # Body area: left equipment grid (3x3), center avatar, right stats
+    eq_cols = 3
+    eq_rows = 3
+    eq_w = eq_cols * SLOT_SIZE + (eq_cols - 1) * CELL_GAP
+    avatar_w = SLOT_SIZE * 2
+    right_w = max(0, width - (eq_w + avatar_w + PADDING * 4))
+    eq_x = left + PADDING
+    eq_y = y
+    # Draw equipment slots
+    equipment: dict = data.get('equipment', {}) or {}
+    slot_order = [
+        # Row 0
+        'weapon', 'offhand', 'helmet',
+        # Row 1
+        'chest', 'boots', 'extra1',
+        # Row 2
+        'extra2', 'unused', 'unused2',
+    ]
+    for i, slot_name in enumerate(slot_order):
+        r = i // eq_cols
+        c = i % eq_cols
+        sx = eq_x + c * (SLOT_SIZE + CELL_GAP)
+        sy = eq_y + r * (SLOT_SIZE + CELL_GAP)
+        rect = pygame.Rect(sx, sy, SLOT_SIZE, SLOT_SIZE)
+        pygame.draw.rect(screen, SLOT_BG_COLOR, rect)
+        pygame.draw.rect(screen, SLOT_BORDER_COLOR, rect, 1)
+        surf = equipment.get(slot_name)
+        if surf:
+            img = pygame.transform.smoothscale(surf, (SLOT_SIZE - 10, SLOT_SIZE - 10))
+            screen.blit(img, (rect.x + 5, rect.y + 5))
+    # Avatar frame in center
+    avatar_x = eq_x + eq_w + PADDING * 2
+    avatar_h = SLOT_SIZE * eq_rows + CELL_GAP * (eq_rows - 1)
+    avatar_rect = pygame.Rect(avatar_x, eq_y, avatar_w, avatar_h)
+    pygame.draw.rect(screen, (50, 50, 50), avatar_rect)
+    pygame.draw.rect(screen, BORDER_COLOR, avatar_rect, 1)
+    body: Optional[pygame.Surface] = data.get('body')
+    inner_w = max(1, avatar_w - 6)
+    inner_h = max(1, avatar_h - 6)
+    if body:
+        bw, bh = body.get_width(), body.get_height()
+        if bw > 0 and bh > 0:
+            scale = min(inner_w / float(bw), inner_h / float(bh))
+            target_w = max(1, int(bw * scale))
+            target_h = max(1, int(bh * scale))
+            spr = pygame.transform.smoothscale(body, (target_w, target_h))
+            dst = spr.get_rect(center=avatar_rect.center)
+            screen.blit(spr, dst)
+    # Right stats list
+    stats = data.get('stats', []) or []  # list of (icon_surface|None, label, value)
+    rx = avatar_rect.right + PADDING * 2
+    ry = eq_y
+    line_h = max(font.get_height(), 18) + 6
+    icon_sz = 18
+    for icon, label, value in stats:
+        if ry + line_h > eq_y + avatar_h:
+            break
+        if icon is not None:
+            ic = pygame.transform.smoothscale(icon, (icon_sz, icon_sz))
+            screen.blit(ic, (rx, ry + (line_h - icon_sz) // 2))
+            text_x = rx + icon_sz + 6
+        else:
+            text_x = rx
+        txt_s = font.render(f"{label}", True, TEXT_COLOR)
+        val_s = font.render(str(value), True, TEXT_COLOR)
+        screen.blit(txt_s, (text_x, ry))
+        screen.blit(val_s, (right - val_s.get_width(), ry))
+        ry += line_h
+    # Compute used height as the maximum bottom among equipment grid, avatar and stats
+    eq_bottom = eq_y + (eq_rows * SLOT_SIZE + (eq_rows - 1) * CELL_GAP)
+    stats_bottom = ry  # ry points to next line start after the last drawn
+    max_bottom = max(eq_bottom, avatar_rect.bottom, stats_bottom)
+    used_h = max_bottom - top_y
+    return used_h
+
+
 def draw_tabs(
     screen: pygame.Surface,
     panel_rect: pygame.Rect,
@@ -114,6 +255,8 @@ def draw_tabs(
     active_index: int,
     labels: list[str] | None = None,
     content_bounds: tuple[int, int] | None = None,
+    top_offset: int = 0,
+    tabs_font: Optional[pygame.font.Font] = None,
 ) -> tuple[list[pygame.Rect], int, pygame.Rect]:
     """Draw a simple tabs bar at the top inside panel.
 
@@ -121,10 +264,11 @@ def draw_tabs(
     """
     labels = labels or TABS_LABELS
     # Measure tab height and header
-    tab_h = max(font.get_height() + 8, 26)
+    tfont = tabs_font or font
+    tab_h = max(tfont.get_height() + 8, 26)
     header_h = font.get_height()
     header_top_gap = max(2, PADDING // 4)
-    header_y = panel_rect.y + header_top_gap
+    header_y = panel_rect.y + top_offset + header_top_gap
     # Draw centered header title (align to content bounds if provided)
     title = "Inventory"
     title_surf = font.render(title, True, TEXT_COLOR)
@@ -138,50 +282,51 @@ def draw_tabs(
     screen.blit(title_surf, title_rect)
     # Tabs y position below the header
     y = header_y + header_h + header_top_gap
-    # Close button anchored to the right padding of the panel (computed early to know available width)
+    # Close button anchored to the top-right corner of the whole panel (independent from tabs area)
     close_rect = pygame.Rect(
         panel_rect.right - PADDING - CLOSE_BUTTON_SIZE,
-        y + (tab_h - CLOSE_BUTTON_SIZE) // 2,
+        panel_rect.y + max(2, PADDING // 2),
         CLOSE_BUTTON_SIZE,
         CLOSE_BUTTON_SIZE,
     )
-    # Compute total width of tabs (without close) to optionally center them
-    tab_widths: list[int] = []
-    total_tabs_w = 0
+    # Prepare widths per row
     spacing = max(4, PADDING // 2)
-    for i, label in enumerate(labels):
-        t = font.render(label, True, TEXT_COLOR)
-        w = t.get_width() + 16
-        tab_widths.append(w)
-        total_tabs_w += w
-        if i < len(labels) - 1:
-            total_tabs_w += spacing
+    main_labels = [l for l in labels if l not in ("Otros", "Quest")]
+    extra_labels = [l for l in labels if l in ("Otros", "Quest")]
+    main_widths: list[int] = []
+    extra_widths: list[int] = []
+    def compute_total(row_labels: list[str], out_widths: list[int]) -> int:
+        total = 0
+        for i, label in enumerate(row_labels):
+            t = tfont.render(label, True, TEXT_COLOR)
+            w = t.get_width() + 16
+            out_widths.append(w)
+            total += w
+            if i < len(row_labels) - 1:
+                total += spacing
+        return total
+    total_main_w = compute_total(main_labels, main_widths)
+    total_extra_w = compute_total(extra_labels, extra_widths)
     # Determine available horizontal bounds for centering tabs
     panel_left = panel_rect.x + PADDING
-    panel_right = close_rect.x - 8
+    panel_right = panel_rect.right - PADDING
     if content_bounds is not None:
         cb_left, cb_right = content_bounds
-        cb_avail = max(0, cb_right - cb_left)
-        # If tabs fit into content bounds, use them exactly to align with grid width
-        if total_tabs_w <= cb_avail:
-            left_bound, right_bound = cb_left, cb_right
-        else:
-            # Fallback to panel bounds constrained by close button
-            left_bound, right_bound = panel_left, panel_right
+        left_bound, right_bound = cb_left, cb_right
     else:
         left_bound, right_bound = panel_left, panel_right
+    rects: list[pygame.Rect] = []
     avail = max(0, right_bound - left_bound)
-    if total_tabs_w <= avail:
-        x = left_bound + (avail - total_tabs_w) // 2
+    # Draw main row (first line)
+    if total_main_w <= avail:
+        x = left_bound + (avail - total_main_w) // 2
     else:
         x = left_bound
-    rects: list[pygame.Rect] = []
-    for i, label in enumerate(labels):
-        t = font.render(label, True, TEXT_COLOR)
-        w = tab_widths[i]
-        h = tab_h
-        r = pygame.Rect(x, y, w, h)
-        bg = (70, 70, 70) if i != active_index else (110, 90, 40)
+    for i, label in enumerate(main_labels):
+        t = tfont.render(label, True, TEXT_COLOR)
+        w = main_widths[i]
+        r = pygame.Rect(x, y, w, tab_h)
+        bg = (70, 70, 70) if labels.index(label) != active_index else (110, 90, 40)
         pygame.draw.rect(screen, bg, r, border_radius=8)
         pygame.draw.rect(screen, BORDER_COLOR, r, 2, border_radius=8)
         tx = r.x + (r.w - t.get_width()) // 2
@@ -189,8 +334,31 @@ def draw_tabs(
         screen.blit(t, (tx, ty))
         rects.append(r)
         x += w + spacing
-    # underline separator slightly below tabs for a clean gap, aligned to content bounds
-    sep_y = y + tab_h + max(4, PADDING // 2)
+    # Second row (Otros/Quest)
+    row_gap = max(2, PADDING // 3)
+    y2 = y + tab_h + row_gap
+    if total_extra_w > 0:
+        if total_extra_w <= avail:
+            x2 = left_bound + (avail - total_extra_w) // 2
+        else:
+            x2 = left_bound
+        for i, label in enumerate(extra_labels):
+            t = tfont.render(label, True, TEXT_COLOR)
+            w = extra_widths[i]
+            r = pygame.Rect(x2, y2, w, tab_h)
+            bg = (70, 70, 70) if labels.index(label) != active_index else (110, 90, 40)
+            pygame.draw.rect(screen, bg, r, border_radius=8)
+            pygame.draw.rect(screen, BORDER_COLOR, r, 2, border_radius=8)
+            tx = r.x + (r.w - t.get_width()) // 2
+            ty = r.y + (r.h - t.get_height()) // 2
+            screen.blit(t, (tx, ty))
+            rects.append(r)
+            x2 += w + spacing
+        sep_y = y2 + tab_h + max(4, PADDING // 2)
+        rows = 2
+    else:
+        sep_y = y + tab_h + max(4, PADDING // 2)
+        rows = 1
     if content_bounds is not None:
         sep_left, sep_right = content_bounds
     else:
@@ -198,7 +366,7 @@ def draw_tabs(
     pygame.draw.line(screen, BORDER_COLOR, (sep_left, sep_y), (sep_right, sep_y), 1)
     # Total area height reserved for header + tabs + separator + top padding before grid
     # We add header height and its gap to the previous formula to keep symmetry.
-    used_h = (header_h + header_top_gap) + (tab_h + PADDING + PADDING // 2)
+    used_h = (header_h + header_top_gap) + (tab_h * rows + (row_gap if rows > 1 else 0) + PADDING + PADDING // 2)
     # Close button (already positioned)
     pygame.draw.rect(screen, CLOSE_BUTTON_COLOR, close_rect, border_radius=4)
     t_close = font.render("X", True, TEXT_COLOR)
@@ -348,8 +516,8 @@ def draw_map_drop_feedback(
         return
     col = int(hover_idx % GRID_COLS)
     row = int(hover_idx // GRID_COLS)
-    x = panel_rect.x + PADDING + col * (SLOT_SIZE + PADDING)
-    y = panel_rect.y + PADDING + row * (SLOT_SIZE + PADDING)
+    x = panel_rect.x + PADDING + col * (SLOT_SIZE + CELL_GAP)
+    y = panel_rect.y + PADDING + row * (SLOT_SIZE + CELL_GAP)
 
     now_ts = pygame.time.get_ticks()
     p = max(0.0, min(1.0, (now_ts - hover_start) / max(1, hover_threshold)))
