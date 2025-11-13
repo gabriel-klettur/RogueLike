@@ -54,9 +54,7 @@ class SpawnerRuntimeSystem:
         for eid in world.get_entities_with('SpawnerConfig', 'SpawnerState'):
             cfg = comps['SpawnerConfig'][eid]
             st = comps['SpawnerState'][eid]
-            # Visual state sync per frame
-            self.visuals.sync(world, eid, cfg, st, self.caches.frame_idx)
-            # Wave/requests processing per spawner
+            # Wave/requests processing per spawner (updates FSM state first)
             process_spawner(
                 world=world,
                 eid=eid,
@@ -68,3 +66,5 @@ class SpawnerRuntimeSystem:
                 ents_set=ents_set,
                 reserved_global=reserved_global,
             )
+            # Visual state sync after FSM state changes, to reflect the correct initial state in the same frame
+            self.visuals.sync(world, eid, cfg, st, self.caches.frame_idx)

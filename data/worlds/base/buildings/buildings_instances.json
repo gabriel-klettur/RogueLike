@@ -1,37 +1,5 @@
 [
     {
-        "id": 5,
-        "template_id": 274,
-        "zone": "lobby",
-        "rel_x": 1481,
-        "rel_y": 626,
-        "overrides": {
-            "scale": [
-                181,
-                244
-            ],
-            "z_bottom": 1,
-            "z_top": 6,
-            "z": 1
-        }
-    },
-    {
-        "id": 6,
-        "template_id": 6,
-        "zone": "lobby",
-        "rel_x": 852,
-        "rel_y": 143,
-        "overrides": {
-            "scale": [
-                231,
-                282
-            ],
-            "z_bottom": 1,
-            "z_top": 7,
-            "z": 1
-        }
-    },
-    {
         "id": 7,
         "template_id": 269,
         "zone": "Forest",

@@ -27,6 +27,7 @@ from .items import init_items, init_item_editor
 from .renderer import init_renderer
 from .menu import init_menu
 from .audio import init_audio
+from .spawner_visuals import preflight_spawner_visuals
 
 __all__ = [
     "setup_display",
@@ -38,6 +39,7 @@ __all__ = [
     "init_state",
     "dev_auto_import_buildings",
     "init_buildings",
+    "preflight_spawner_visuals",
     "init_z_layer",
     "init_buildings_editor",
     "init_tile_editor",

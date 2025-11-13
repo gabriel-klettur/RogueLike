@@ -28,17 +28,36 @@ class SpawnerVisualSync:
     # ---------------------- Visual helpers ----------------------
     @staticmethod
     def current_state_key(st: Any) -> Optional[str]:
+        # 1) Explicit override takes precedence
         try:
             tok = getattr(st, 'visual_override_token', None)
-            if tok:
+            if tok is not None:
                 return str(tok).strip().lower()
         except Exception:
             pass
+        # 2) Derive a stable key from fsm_state supporting classes, instances, and strings
         try:
             cur = getattr(st, 'fsm_state', None)
-            return str(cur).strip().lower() if cur is not None else None
         except Exception:
+            cur = None
+        if cur is None:
             return None
+        try:
+            # If the FSM stores the state as a class, use its __name__ (e.g., IdleState)
+            if isinstance(cur, type):
+                name = getattr(cur, '__name__', None) or str(cur)
+            else:
+                # If it's an instance/dataclass, prefer its class name; if string, keep it
+                if isinstance(cur, str):
+                    name = cur
+                else:
+                    name = getattr(cur, '__class__', type(cur)).__name__
+            return str(name).strip().lower()
+        except Exception:
+            try:
+                return str(cur).strip().lower()
+            except Exception:
+                return None
 
     @staticmethod
     def desired_building_for_state(cfg: Any, st: Any) -> Optional[int]:
@@ -46,29 +65,44 @@ class SpawnerVisualSync:
         mapping = getattr(cfg, 'state_visuals', None)
         if not mapping:
             return desired
-        norm: Dict[str, int] = {}
+        # Normalize mapping values to integers when possible, accepting dict shapes
+        def _extract_bid(val: Any) -> Optional[int]:
+            try:
+                if isinstance(val, dict):
+                    cand = (
+                        val.get('instance_id')
+                        or val.get('id')
+                        or val.get('building_instance_id')
+                    )
+                    return int(cand) if cand is not None else None
+                return int(val) if val is not None else None
+            except Exception:
+                return None
+        norm: Dict[str, Optional[int]] = {}
         try:
             for k, v in mapping.items():
-                try:
-                    norm[str(k).strip().lower()] = int(v) if v is not None else None  # type: ignore
-                except Exception:
-                    norm[str(k).strip().lower()] = v  # type: ignore
+                norm[str(k).strip().lower()] = _extract_bid(v)
         except Exception:
             norm = {}
         key = SpawnerVisualSync.current_state_key(st)
+        # Try exact key
         if key and key in norm:
             return norm[key]
+        # Try without common suffix "state" (e.g., IdleState -> idle)
+        if key and key.endswith('state') and key[:-5] in norm:
+            return norm[key[:-5]]
+        # Try CamelCase/underscore variants
         if key:
             try:
                 camel = ''.join(part.title() for part in key.split('_'))
+                if camel.lower().endswith('state'):
+                    base = camel.lower()[:-5]
+                    if base in norm:
+                        return norm[base]
                 if camel.lower() in norm:
                     return norm[camel.lower()]
                 if camel in mapping:
-                    val = mapping[camel]
-                    try:
-                        return int(val) if val is not None else None
-                    except Exception:
-                        return val  # type: ignore
+                    return _extract_bid(mapping[camel])
             except Exception:
                 pass
         return desired

@@ -22,7 +22,56 @@
         "hp_reset_on_enter": "set_to_max"
       }
     },
-    "visuals": {},
+    "visuals": {
+      "WaitClear": {
+        "instance_id": 1,
+        "template_id": 157,
+        "offset": [
+          -109,
+          -173
+        ]
+      },
+      "WaitCooldown": {
+        "instance_id": 2,
+        "template_id": 155,
+        "offset": [
+          -115,
+          -177
+        ]
+      },
+      "Finished": {
+        "instance_id": 3,
+        "template_id": 158,
+        "offset": [
+          -120,
+          -191
+        ]
+      },
+      "AwaitTrigger": {
+        "instance_id": 4,
+        "template_id": 157,
+        "offset": [
+          -132,
+          -201
+        ]
+      },
+      "SpawningWave": {
+        "instance_id": 5,
+        "template_id": 157,
+        "offset": [
+          -124,
+          -186
+        ]
+      },
+      "WaitRestart": {
+        "instance_id": 6,
+        "template_id": 157,
+        "offset": [
+          37,
+          149
+        ]
+      }
+    },
     "id": "survival_10_forest_14_9"
   },
   {

@@ -96,6 +96,7 @@ class GameInitializer:
             ("Inicializando estado Principal", stage_funcs.init_state),
             ("Cargando mapa", stage_funcs.init_map),
             ("Auto-importar edificios (DEV)", stage_funcs.dev_auto_import_buildings),
+            ("Preflight visuals de spawner", stage_funcs.preflight_spawner_visuals),
             ("Cargando edificios", stage_funcs.init_buildings),
             ("Inicializando ECS", stage_funcs.init_ecs),
             ("Cargando catálogo de ítems", stage_funcs.init_items),

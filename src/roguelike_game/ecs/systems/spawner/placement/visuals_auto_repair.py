@@ -39,11 +39,46 @@ def auto_repair_state_visuals(world, eid: int, cfg, inst: dict) -> None:
         cur_iid, tpl_id, visuals_scale = extract_visual_fields(val, cfg, str(key), capture_offsets=True)
 
         if cur_iid is not None and cur_iid in existing_ids:
+            # Bind mapping to existing id
             try:
                 cfg.state_visuals[str(key)] = int(cur_iid)
             except Exception:
                 pass
+            # Ensure any scale override is persisted
             ensure_instance_scale_override(b_arr, int(cur_iid), visuals_scale)
+            # Ensure a Building object for this id exists in world memory; if not, reconstruct it
+            try:
+                missing = True
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        if getattr(ob, 'id', None) == int(cur_iid):
+                            missing = False
+                            break
+                    except Exception:
+                        continue
+                if missing:
+                    # Locate instance entry and its template, then append object to world
+                    entry = None
+                    for e in b_arr:
+                        try:
+                            if int(e.get('id')) == int(cur_iid):
+                                entry = e
+                                break
+                        except Exception:
+                            continue
+                    if entry is not None:
+                        try:
+                            tpl_id2 = int(entry.get('template_id')) if entry.get('template_id') is not None else None
+                        except Exception:
+                            tpl_id2 = None
+                        tpl_entry = tmap.get(tpl_id2) if tpl_id2 in tmap else None
+                        try:
+                            img_path = get_template_image_path(templates, int(tpl_id2)) if tpl_id2 is not None else None
+                        except Exception:
+                            img_path = None
+                        append_building_object_in_world(world, entry, tpl_entry, img_path)
+            except Exception:
+                pass
             continue
 
         if tpl_id is None or tpl_id not in tmap:
