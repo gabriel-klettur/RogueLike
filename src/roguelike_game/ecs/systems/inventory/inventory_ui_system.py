@@ -7,16 +7,25 @@ from .ui_assets import load_items_and_icons
 from .ui_utils import compute_panel_rect, compute_slot_rect
 from .ui_render import (
     draw_panel,
+    draw_tabs,
     draw_slots,
     draw_drag_ghost,
     draw_drag_destination_highlight,
     draw_map_drop_feedback,
     draw_map_drop_ghost,
+    measure_tabs_total_width,
+    measure_footer_height,
+    draw_footer_currency,
 )
 from .ui_constants import (
     GRID_COLS,
+    GRID_ROWS,
     INCREASE_COLOR,
     DECREASE_COLOR,
+    PADDING,
+    SLOT_SIZE,
+    TABS_LABELS,
+    CURRENCY_ITEM_IDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,6 +69,9 @@ class InventoryUISystem:
         self._slot_flash: dict[int, dict] = {}
         # Cambios detectados mientras la UI está cerrada: idx -> {'color':(r,g,b), 'kind':'inc'|'dec'}
         self._pending_flash_buffer: dict[int, dict] = {}
+        # Pestañas
+        self.active_tab_index: int = 0
+        self._tab_rects: list[pygame.Rect] = []
 
     # Easing y helpers de layout/dibujo ahora viven en ui_utils/ui_render.
 
@@ -175,19 +187,99 @@ class InventoryUISystem:
             self._pending_flash_buffer.clear()
         if not slots:
             return
-        initial_rect = compute_panel_rect(screen, (self.drag_offset_x, self.drag_offset_y))
+        # Reservar altura para cabecera + barra de pestañas y adaptar ancho mínimo al ancho de tabs
+        tabs_total_w, tab_h = measure_tabs_total_width(self.font, None, include_close=True)
+        header_h = self.font.get_height()
+        header_top_gap = max(2, PADDING // 4)
+        # Debe coincidir con la fórmula de ui_render.draw_tabs (used_h)
+        tabs_reserved_h = (header_h + header_top_gap) + (tab_h + PADDING + PADDING // 2)
+        # Footer reservado (oro)
+        footer_h = measure_footer_height(self.font)
+        footer_reserved_h = footer_h + PADDING
+        # Asegurar márgenes simétricos: forzar que (panel_w - grid_w) sea par
+        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS + 1) * PADDING
+        desired_w = max(grid_w, tabs_total_w + 2 * PADDING)
+        if (desired_w - grid_w) % 2 != 0:
+            desired_w += 1
+        min_panel_w = desired_w
+        initial_rect = compute_panel_rect(
+            screen,
+            (self.drag_offset_x, self.drag_offset_y),
+            extra_h=tabs_reserved_h + footer_reserved_h,
+            min_w=min_panel_w,
+        )
         self._handle_drag(initial_rect)
-        panel_rect = compute_panel_rect(screen, (self.drag_offset_x, self.drag_offset_y))
+        panel_rect = compute_panel_rect(
+            screen,
+            (self.drag_offset_x, self.drag_offset_y),
+            extra_h=tabs_reserved_h + footer_reserved_h,
+            min_w=min_panel_w,
+        )
         self.panel_rect = panel_rect
         # Panel and close button
         if draw_panel(screen, panel_rect, self.font):
             self.visible = False
             self.logger.debug("Inventory closed via close button")
             return
+        # Calcular ancho de contenido de la rejilla para centrar tanto tabs como slots
+        grid_w = GRID_COLS * SLOT_SIZE + (GRID_COLS + 1) * PADDING
+        content_left = panel_rect.x + max(0, (panel_rect.w - grid_w) // 2)
+        content_right = content_left + grid_w
+        # Alinear header/tabs con el área interior de slots (sin el padding externo de la rejilla)
+        tabs_bounds_left = content_left + PADDING
+        tabs_bounds_right = content_right - PADDING
+        # Dibujar pestañas (centradas respecto al ancho de contenido) y desplazar rejilla
+        tab_rects, used_h, tabs_close_rect = draw_tabs(
+            screen,
+            panel_rect,
+            self.font,
+            self.active_tab_index,
+            content_bounds=(tabs_bounds_left, tabs_bounds_right),
+        )
+        self._tab_rects = tab_rects
+        # Centrar la rejilla (GRID_COLS x GRID_ROWS) bajo las pestañas
+        grid_h = GRID_ROWS * SLOT_SIZE + (GRID_ROWS + 1) * PADDING
+        remaining_h = max(0, panel_rect.h - used_h - footer_reserved_h)
+        grid_origin_x = content_left
+        grid_origin_y = panel_rect.y + used_h + max(0, (remaining_h - grid_h) // 2)
+        # grid_panel_rect incluye el padding exterior; compute_slot_rect añadirá PADDING interno
+        grid_panel_rect = pygame.Rect(
+            grid_origin_x,
+            grid_origin_y,
+            grid_w,
+            grid_h,
+        )
         # Draw slots; hide dragging slot for visual clarity
         drag_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_idx')), None)
         drag_idx = getattr(drag_sys, 'dragging_idx', None) if drag_sys else None
-        slots_to_draw = list(slots)
+        # Filtrar por pestaña activa (sin modificar el inventario real, sólo render)
+        def _in_active_category(item_id: str) -> bool:
+            model = self.items.get(item_id)
+            if model is None:
+                return True
+            label = TABS_LABELS[self.active_tab_index] if 0 <= self.active_tab_index < len(TABS_LABELS) else ""
+            if label == "Equipo":
+                return bool(getattr(model, 'equip_slot', None) is not None or getattr(model, 'durability', None) is not None)
+            if label == "Materiales":
+                # Stackeables sin efecto, no equipables, no quest
+                if getattr(model, 'effect', None) is not None:
+                    return False
+                if getattr(model, 'equip_slot', None) is not None or getattr(model, 'durability', None) is not None:
+                    return False
+                if getattr(model, 'quest_id', None) is not None:
+                    return False
+                return bool(getattr(model, 'stackable', False))
+            if label == "Consumibles":
+                return bool(getattr(model, 'effect', None) is not None)
+            # Si la etiqueta no coincide, permitir por defecto
+            return True
+
+        slots_to_draw = []
+        for st in slots:
+            if st and not _in_active_category(st.item_id):
+                slots_to_draw.append(None)
+            else:
+                slots_to_draw.append(st)
         if drag_idx is not None and 0 <= drag_idx < len(slots_to_draw):
             slots_to_draw[drag_idx] = None
         # Hold-to-drag feedback before drag confirmation
@@ -204,7 +296,7 @@ class InventoryUISystem:
                 grab_progress = min(1.0, elapsed / max(1, threshold))
         draw_slots(
             screen=screen,
-            panel_rect=panel_rect,
+            panel_rect=grid_panel_rect,
             slots=slots_to_draw,
             icon_surfaces=self.icon_surfaces,
             font=self.font,
@@ -212,10 +304,10 @@ class InventoryUISystem:
             highlight_idx=highlight_idx,
             grab_progress=grab_progress,
         )
-        # Drag ghost and destination highlight
+        # Draw slots; hide dragging slot for visual clarity
         if drag_idx is not None:
             draw_drag_ghost(screen, slots, self.icon_surfaces, drag_idx)
-            draw_drag_destination_highlight(screen, panel_rect, drag_idx, len(slots))
+            draw_drag_destination_highlight(screen, grid_panel_rect, drag_idx, len(slots))
         # Map->Inventory drag feedback: overlay on hovered slot + ghost sprite
         drop_sys = next((s for s in getattr(world, 'update_systems', []) if hasattr(s, 'dragging_eid')), None)
         drop_eid = getattr(drop_sys, 'dragging_eid', None) if drop_sys else None
@@ -224,10 +316,10 @@ class InventoryUISystem:
                 hover_idx = getattr(drop_sys, 'hover_slot_idx', None)
                 hover_start = getattr(drop_sys, 'hover_start_time', None)
                 hover_threshold = getattr(drop_sys, 'hover_fill_threshold', 300)
-                if hover_idx is not None and hover_start is not None and panel_rect:
+                if hover_idx is not None and hover_start is not None and grid_panel_rect:
                     draw_map_drop_feedback(
                         screen=screen,
-                        panel_rect=panel_rect,
+                        panel_rect=grid_panel_rect,
                         hover_idx=hover_idx,
                         hover_start=hover_start,
                         hover_threshold=hover_threshold,
@@ -246,14 +338,58 @@ class InventoryUISystem:
         mouse_pos = pygame.mouse.get_pos()
         left_clicked = left_pressed and not self.prev_left_pressed
         self.prev_left_pressed = left_pressed
+
+        # Footer: calcular oro total y dibujar
+        total_gold = 0
+        gold_icon = None
+        try:
+            for st in slots:
+                if not st:
+                    continue
+                if st.item_id in CURRENCY_ITEM_IDS:
+                    total_gold += int(getattr(st, 'quantity', 0) or 0)
+                    if gold_icon is None:
+                        gold_icon = self.icon_surfaces.get(st.item_id)
+        except Exception:
+            pass
+        footer_top_y = panel_rect.bottom - (PADDING + footer_h)
+        footer_rect = draw_footer_currency(
+            screen=screen,
+            content_bounds=(tabs_bounds_left, tabs_bounds_right),
+            top_y=footer_top_y,
+            font=self.font,
+            amount=total_gold,
+            icon=gold_icon,
+        )
         
         if left_clicked:
             player_eid, inp = self._get_player_input(world)
+            # Click sobre botón cerrar dentro de la barra de tabs
+            if tabs_close_rect and tabs_close_rect.collidepoint(mouse_pos):
+                self.visible = False
+                self.logger.debug("Inventory closed via tabs close button")
+                return
+            # Click sobre footer (informativo) => consumir
+            if footer_rect and footer_rect.collidepoint(mouse_pos):
+                return
+            # Click sobre pestañas
+            if self._tab_rects and any(r.collidepoint(mouse_pos) for r in self._tab_rects):
+                for i, r in enumerate(self._tab_rects):
+                    if r.collidepoint(mouse_pos):
+                        if i != self.active_tab_index:
+                            self.active_tab_index = i
+                        break
+                return
+            # Si el click cayó en el área reservada para tabs (pero no en ninguna pestaña/close), consumirlo para evitar
+            # que se interprete como click en slots.
+            if panel_rect.collidepoint(mouse_pos):
+                if panel_rect.y <= mouse_pos[1] <= panel_rect.y + used_h:
+                    return
             if inp:
-                for idx, stack in enumerate(slots):
+                for idx, stack in enumerate(slots_to_draw):
                     if not stack:
                         continue
-                    slot_rect = compute_slot_rect(panel_rect, idx)
+                    slot_rect = compute_slot_rect(grid_panel_rect, idx)
                     if slot_rect.collidepoint(mouse_pos):
                         # Detección de doble clic en mismo slot
                         last_idx = getattr(self, 'last_click_slot_idx', None)

@@ -10,11 +10,12 @@ def ease_out_cubic(x: float) -> float:
     return 1.0 - (1.0 - x) ** 3
 
 
-def compute_panel_rect(screen: pygame.Surface, drag_offset: Tuple[int, int]) -> pygame.Rect:
+def compute_panel_rect(screen: pygame.Surface, drag_offset: Tuple[int, int], extra_h: int = 0, min_w: int = 0) -> pygame.Rect:
     cols, rows = GRID_COLS, GRID_ROWS
     padding, size = PADDING, SLOT_SIZE
-    panel_w = cols * size + (cols + 1) * padding
-    panel_h = rows * size + (rows + 1) * padding
+    panel_w_grid = cols * size + (cols + 1) * padding
+    panel_w = max(panel_w_grid, int(min_w) if min_w else panel_w_grid)
+    panel_h = rows * size + (rows + 1) * padding + max(0, int(extra_h))
     screen_w, screen_h = screen.get_size()
     center_x = (screen_w - panel_w) // 2
     center_y = (screen_h - panel_h) // 2
@@ -23,21 +24,21 @@ def compute_panel_rect(screen: pygame.Surface, drag_offset: Tuple[int, int]) -> 
     return pygame.Rect(x, y, panel_w, panel_h)
 
 
-def compute_slot_rect(panel_rect: pygame.Rect, idx: int) -> pygame.Rect:
+def compute_slot_rect(panel_rect: pygame.Rect, idx: int, top_offset: int = 0) -> pygame.Rect:
     cols = GRID_COLS
     padding, size = PADDING, SLOT_SIZE
     col = idx % cols
     row = idx // cols
     x = panel_rect.x + padding + col * (size + padding)
-    y = panel_rect.y + padding + row * (size + padding)
+    y = panel_rect.y + padding + max(0, int(top_offset)) + row * (size + padding)
     return pygame.Rect(x, y, size, size)
 
 
-def idx_from_panel_mouse(panel_rect: pygame.Rect, mouse_pos: Tuple[int, int]) -> Optional[int]:
+def idx_from_panel_mouse(panel_rect: pygame.Rect, mouse_pos: Tuple[int, int], top_offset: int = 0) -> Optional[int]:
     if not panel_rect.collidepoint(mouse_pos):
         return None
     rel_x = mouse_pos[0] - panel_rect.x - PADDING
-    rel_y = mouse_pos[1] - panel_rect.y - PADDING
+    rel_y = mouse_pos[1] - panel_rect.y - PADDING - max(0, int(top_offset))
     if rel_x < 0 or rel_y < 0:
         return None
     step = SLOT_SIZE + PADDING
@@ -48,6 +49,6 @@ def idx_from_panel_mouse(panel_rect: pygame.Rect, mouse_pos: Tuple[int, int]) ->
         return None
     # Confirm exact tile hit
     slot_x = panel_rect.x + PADDING + col * step
-    slot_y = panel_rect.y + PADDING + row * step
+    slot_y = panel_rect.y + PADDING + max(0, int(top_offset)) + row * step
     slot_rect = pygame.Rect(slot_x, slot_y, SLOT_SIZE, SLOT_SIZE)
     return idx if slot_rect.collidepoint(mouse_pos) else None

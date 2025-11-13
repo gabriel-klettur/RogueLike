@@ -13,7 +13,7 @@ from roguelike_game.ecs.systems.spawner.spawner_placement_system import (
 from roguelike_game.ecs.systems.core.npc_restore_system import NpcRestoreSystem
 from roguelike_game.ecs.systems.core.npc_respawn_system import NpcRespawnSystem
 from roguelike_game.ecs.components.experience_component import ExperienceComponent
-from roguelike_game.utils.inventory_sync import write_active_for_player
+from roguelike_game.utils.inventory_sync import write_active_for_player, read_category_for_player
 
 logger = logging.getLogger(__name__)
 
@@ -199,10 +199,35 @@ class SaveService:
                     from roguelike_game.ecs.components.inventory_component import InventoryComponent
 
                     inv = InventoryComponent(capacity=pdata.get("capacity", 20), player_id=pdata.get("player_id"))
-                    for slot in pdata.get("slots", []):
-                        if slot:
-                            inv.add(slot["item"], slot.get("quantity", 0))
                     eid = g.ecs.ecs_world.player_entity
+                    # 1) Intentar cargar desde archivos por categoría; si no hay, usar snapshot clásico
+                    cat_payloads = []
+                    try:
+                        for cat in ("equipment", "materials", "consumables"):
+                            payload = read_category_for_player(eid, cat)
+                            if payload and (payload.get("items") or []):
+                                cat_payloads.append(payload)
+                    except Exception:
+                        cat_payloads = []
+                    if cat_payloads:
+                        try:
+                            for payload in cat_payloads:
+                                for row in payload.get("items", []) or []:
+                                    try:
+                                        item_id = row.get("item")
+                                        qty = int(row.get("quantity", 0))
+                                    except Exception:
+                                        item_id, qty = row.get("item"), row.get("quantity", 0)
+                                    if item_id and qty:
+                                        inv.add(item_id, qty)
+                        except Exception:
+                            pass
+                    else:
+                        # Fallback: snapshot clásico del save
+                        for slot in pdata.get("slots", []):
+                            if slot:
+                                inv.add(slot["item"], slot.get("quantity", 0))
+                    
                     g.ecs.ecs_world.components.setdefault("InventoryComponent", {})[eid] = inv
                     try:
                         snap = inv.serialize() if hasattr(inv, "serialize") else {}

@@ -2,7 +2,10 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 from datetime import datetime
 from pathlib import Path
-from roguelike_game.utils.inventory_sync import write_active_for_player
+from roguelike_game.utils.inventory_sync import write_active_for_player, write_category_for_player
+from roguelike_game.managers.items.loader import ItemsLoader
+from roguelike_game.ecs.systems.inventory.inventory_categories import split_slots_by_category
+
 from roguelike_game.utils.inventory_registry import publish_inventory
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.components.spawner.spawner_child import SpawnerChild
@@ -53,6 +56,30 @@ class ShutdownManager:
                     # Sincronizar también el perfil activo
                     try:
                         write_active_for_player(eid, g.world.player_inventory)
+                    except Exception:
+                        pass
+                    # Persistencia por pestañas/categorías en archivos separados
+                    try:
+                        items_dict, _assets = ItemsLoader().load()
+                    except Exception:
+                        items_dict = {}
+                    try:
+                        cat_map = split_slots_by_category(getattr(inv, 'slots', []) or [], items_dict)
+                        # Estructura de escritura por categoría: lista de items con slot original como hint
+                        for cat, rows in (cat_map or {}).items():
+                            payload = {
+                                'player_id': getattr(inv, 'player_id', None),
+                                'capacity_hint': getattr(inv, 'capacity', None),
+                                'schema_version': '1.0.0',
+                                'items': [
+                                    {'slot': idx, 'item': item_id, 'quantity': int(qty)}
+                                    for (idx, item_id, qty) in rows
+                                ],
+                            }
+                            try:
+                                write_category_for_player(eid, cat, payload)
+                            except Exception:
+                                pass
                     except Exception:
                         pass
                     # Publicar snapshot en registro versionado (opcional)

@@ -29,26 +29,182 @@ from .ui_constants import (
     QUANTITY_FLASH_DURATION_MS,
 )
 from .ui_utils import ease_out_cubic, compute_slot_rect, idx_from_panel_mouse
+from .ui_constants import TABS_LABELS
+
+
+def measure_tabs_total_width(font: pygame.font.Font, labels: list[str] | None = None, include_close: bool = True) -> tuple[int, int]:
+    """Measure total width required to render tabs (and optional close button).
+
+    Returns (total_width_pixels, tab_height_pixels).
+    """
+    labels = labels or TABS_LABELS
+    tab_h = max(font.get_height() + 8, 26)
+    total_w = 0
+    spacing = max(4, PADDING // 2)
+    for i, label in enumerate(labels):
+        t = font.render(label, True, TEXT_COLOR)
+        w = t.get_width() + 16
+        total_w += w
+        if i < len(labels) - 1:
+            total_w += spacing  # spacing between tabs
+    if include_close:
+        total_w += 8 + CLOSE_BUTTON_SIZE  # spacing + button size
+    return total_w, tab_h
 
 
 def draw_panel(screen: pygame.Surface, panel_rect: pygame.Rect, font: pygame.font.Font) -> bool:
-    """Draws the inventory panel and close button. Returns True if close was clicked."""
+    """Draws the inventory panel background and border. No internal close button.
+
+    Returns False (kept for backward compatibility with callers).
+    """
     pygame.draw.rect(screen, BGCOLOR, panel_rect)
     pygame.draw.rect(screen, BORDER_COLOR, panel_rect, 2)
-
-    size = CLOSE_BUTTON_SIZE
-    x = panel_rect.x + panel_rect.width - size - PADDING
-    y = panel_rect.y + PADDING
-    close_rect = pygame.Rect(x, y, size, size)
-    pygame.draw.rect(screen, CLOSE_BUTTON_COLOR, close_rect)
-
-    text_surf = font.render("X", True, TEXT_COLOR)
-    text_rect = text_surf.get_rect(center=close_rect.center)
-    screen.blit(text_surf, text_rect)
-
-    if pygame.mouse.get_pressed()[0] and close_rect.collidepoint(pygame.mouse.get_pos()):
-        return True
     return False
+
+
+def measure_footer_height(font: pygame.font.Font) -> int:
+    """Return the vertical space needed for the footer (currency bar)."""
+    return max(font.get_height() + 10, 28)
+
+
+def draw_footer_currency(
+    screen: pygame.Surface,
+    content_bounds: tuple[int, int],
+    top_y: int,
+    font: pygame.font.Font,
+    amount: int,
+    icon: Optional[pygame.Surface],
+) -> pygame.Rect:
+    """Draw a compact currency pill centered inside content_bounds at top_y.
+
+    Returns the rect occupied by the pill.
+    """
+    left, right = content_bounds
+    height = measure_footer_height(font)
+    max_w = max(0, right - left)
+    # Prepare text
+    txt = str(max(0, int(amount)))
+    text_surf = font.render(txt, True, TEXT_COLOR)
+    icon_size = max(16, height - 10)
+    has_icon = icon is not None
+    content_w = (icon_size if has_icon else 0) + (8 if has_icon else 0) + text_surf.get_width()
+    pad = 10
+    pill_w = min(max_w, content_w + pad * 2)
+    x = left + (max_w - pill_w) // 2
+    pill_rect = pygame.Rect(x, top_y, pill_w, height)
+    # Background and border
+    pygame.draw.rect(screen, (65, 65, 65), pill_rect, border_radius=height // 2)
+    pygame.draw.rect(screen, BORDER_COLOR, pill_rect, 1, border_radius=height // 2)
+    # Draw icon and text
+    cx = pill_rect.x + pad
+    cy = pill_rect.y + (pill_rect.h - icon_size) // 2
+    if has_icon:
+        icon_scaled = pygame.transform.smoothscale(icon, (icon_size, icon_size))
+        screen.blit(icon_scaled, (cx, cy))
+        cx += icon_size + 8
+    ty = pill_rect.y + (pill_rect.h - text_surf.get_height()) // 2
+    screen.blit(text_surf, (cx, ty))
+    return pill_rect
+
+
+def draw_tabs(
+    screen: pygame.Surface,
+    panel_rect: pygame.Rect,
+    font: pygame.font.Font,
+    active_index: int,
+    labels: list[str] | None = None,
+    content_bounds: tuple[int, int] | None = None,
+) -> tuple[list[pygame.Rect], int, pygame.Rect]:
+    """Draw a simple tabs bar at the top inside panel.
+
+    Returns (tab_rects_in_screen_coords, tabs_area_height)
+    """
+    labels = labels or TABS_LABELS
+    # Measure tab height and header
+    tab_h = max(font.get_height() + 8, 26)
+    header_h = font.get_height()
+    header_top_gap = max(2, PADDING // 4)
+    header_y = panel_rect.y + header_top_gap
+    # Draw centered header title (align to content bounds if provided)
+    title = "Inventory"
+    title_surf = font.render(title, True, TEXT_COLOR)
+    if content_bounds is not None:
+        cb_left, cb_right = content_bounds
+        title_cx = cb_left + (cb_right - cb_left) // 2
+    else:
+        title_cx = panel_rect.centerx
+    title_rect = title_surf.get_rect(center=(title_cx, header_y + header_h // 2))
+    pygame.draw.rect(screen, BGCOLOR, title_rect.inflate(8, 2))  # ensure readable over map
+    screen.blit(title_surf, title_rect)
+    # Tabs y position below the header
+    y = header_y + header_h + header_top_gap
+    # Close button anchored to the right padding of the panel (computed early to know available width)
+    close_rect = pygame.Rect(
+        panel_rect.right - PADDING - CLOSE_BUTTON_SIZE,
+        y + (tab_h - CLOSE_BUTTON_SIZE) // 2,
+        CLOSE_BUTTON_SIZE,
+        CLOSE_BUTTON_SIZE,
+    )
+    # Compute total width of tabs (without close) to optionally center them
+    tab_widths: list[int] = []
+    total_tabs_w = 0
+    spacing = max(4, PADDING // 2)
+    for i, label in enumerate(labels):
+        t = font.render(label, True, TEXT_COLOR)
+        w = t.get_width() + 16
+        tab_widths.append(w)
+        total_tabs_w += w
+        if i < len(labels) - 1:
+            total_tabs_w += spacing
+    # Determine available horizontal bounds for centering tabs
+    panel_left = panel_rect.x + PADDING
+    panel_right = close_rect.x - 8
+    if content_bounds is not None:
+        cb_left, cb_right = content_bounds
+        cb_avail = max(0, cb_right - cb_left)
+        # If tabs fit into content bounds, use them exactly to align with grid width
+        if total_tabs_w <= cb_avail:
+            left_bound, right_bound = cb_left, cb_right
+        else:
+            # Fallback to panel bounds constrained by close button
+            left_bound, right_bound = panel_left, panel_right
+    else:
+        left_bound, right_bound = panel_left, panel_right
+    avail = max(0, right_bound - left_bound)
+    if total_tabs_w <= avail:
+        x = left_bound + (avail - total_tabs_w) // 2
+    else:
+        x = left_bound
+    rects: list[pygame.Rect] = []
+    for i, label in enumerate(labels):
+        t = font.render(label, True, TEXT_COLOR)
+        w = tab_widths[i]
+        h = tab_h
+        r = pygame.Rect(x, y, w, h)
+        bg = (70, 70, 70) if i != active_index else (110, 90, 40)
+        pygame.draw.rect(screen, bg, r, border_radius=8)
+        pygame.draw.rect(screen, BORDER_COLOR, r, 2, border_radius=8)
+        tx = r.x + (r.w - t.get_width()) // 2
+        ty = r.y + (r.h - t.get_height()) // 2
+        screen.blit(t, (tx, ty))
+        rects.append(r)
+        x += w + spacing
+    # underline separator slightly below tabs for a clean gap, aligned to content bounds
+    sep_y = y + tab_h + max(4, PADDING // 2)
+    if content_bounds is not None:
+        sep_left, sep_right = content_bounds
+    else:
+        sep_left, sep_right = left_bound, right_bound
+    pygame.draw.line(screen, BORDER_COLOR, (sep_left, sep_y), (sep_right, sep_y), 1)
+    # Total area height reserved for header + tabs + separator + top padding before grid
+    # We add header height and its gap to the previous formula to keep symmetry.
+    used_h = (header_h + header_top_gap) + (tab_h + PADDING + PADDING // 2)
+    # Close button (already positioned)
+    pygame.draw.rect(screen, CLOSE_BUTTON_COLOR, close_rect, border_radius=4)
+    t_close = font.render("X", True, TEXT_COLOR)
+    t_rect = t_close.get_rect(center=close_rect.center)
+    screen.blit(t_close, t_rect)
+    return rects, used_h, close_rect
 
 
 def _apply_qty_flash_color(idx: int, base_color, slot_flash: Dict[int, dict]) -> Optional[tuple[int, int, int]]:
@@ -84,6 +240,9 @@ def draw_slots(
     total_slots = GRID_COLS * GRID_ROWS
     for idx in range(total_slots):
         stack = slots[idx] if idx < len(slots) else None
+        # The caller may have reserved a top_offset by translating panel_rect externally.
+        # We keep backward compatibility by not adding a top_offset parameter here: the
+        # panel_rect that arrives already includes the reserved space for tabs.
         slot_rect = compute_slot_rect(panel_rect, idx)
         pygame.draw.rect(screen, SLOT_BG_COLOR, slot_rect)
         pygame.draw.rect(screen, SLOT_BORDER_COLOR, slot_rect, 1)

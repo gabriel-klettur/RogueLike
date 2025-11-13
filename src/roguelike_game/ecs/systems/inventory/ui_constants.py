@@ -28,3 +28,20 @@ DRAG_READY_RATIO = 1.0
 INCREASE_COLOR = (80, 220, 120)
 DECREASE_COLOR = (230, 90, 90)
 QUANTITY_FLASH_DURATION_MS = 900
+
+# Etiquetas de pestañas para el panel de inventario (categorías)
+# Orden: 0 = Equipo, 1 = Materiales, 2 = Consumibles
+TABS_LABELS = [
+    "Equipo",
+    "Materiales",
+    "Consumibles",
+]
+
+# Identificadores de ítems que se consideran moneda/oro para el footer del inventario.
+# Se pueden adaptar a los IDs reales de tu catálogo.
+CURRENCY_ITEM_IDS = [
+    "gold",
+    "coins",
+    "coin",
+    "gold_coin",
+]

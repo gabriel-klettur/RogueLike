@@ -6,6 +6,11 @@ from typing import Any, Dict, Optional
 import hashlib
 
 ACTIVE_PATH = Path('data/inventory/active/inventory_player.json')
+CATEGORY_PATHS = {
+    'equipment': Path('data/inventory/active/inventory_equipment.json'),
+    'materials': Path('data/inventory/active/inventory_materials.json'),
+    'consumables': Path('data/inventory/active/inventory_consumables.json'),
+}
 _CACHE: Optional[Dict[str, Any]] = None
 _CACHE_PATH: Optional[Path] = None
 _ENSURED_PARENT_PATH: Optional[Path] = None
@@ -50,6 +55,22 @@ def _write_active(data: Dict[str, Any]) -> None:
         json.dumps(data, ensure_ascii=False, separators=(',', ':'), sort_keys=True),
         encoding='utf-8',
     )
+
+def _read_category(cat: str) -> Dict[str, Any]:
+    path = CATEGORY_PATHS[cat]
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def _write_category(cat: str, data: Dict[str, Any]) -> None:
+    path = CATEGORY_PATHS[cat]
+    parent = path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':'), sort_keys=True), encoding='utf-8')
 
 def _canonical_snapshot(snapshot: Dict[str, Any]) -> Dict[str, Any]:
     """Reduce snapshot a un dict canónico para hashing/comparación."""
@@ -110,4 +131,20 @@ def write_active_for_player(entity_id: Any, snapshot: Dict[str, Any]) -> None:
 
 def read_active_for_player(entity_id: Any) -> Optional[Dict[str, Any]]:
     data = _read_active()
+    return data.get(str(entity_id))
+
+
+def write_category_for_player(entity_id: Any, category: str, payload: Dict[str, Any]) -> None:
+    data = _read_category(category)
+    data[str(entity_id)] = {
+        'player_id': payload.get('player_id'),
+        'items': payload.get('items', []),
+        'capacity_hint': payload.get('capacity_hint'),
+        'schema_version': payload.get('schema_version') or '1.0.0',
+    }
+    _write_category(category, data)
+
+
+def read_category_for_player(entity_id: Any, category: str) -> Optional[Dict[str, Any]]:
+    data = _read_category(category)
     return data.get(str(entity_id))
