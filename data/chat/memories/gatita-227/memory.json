@@ -3,14 +3,6 @@
   "ephemeral_history": [
     {
       "role": "user",
-      "content": "confirmo"
-    },
-    {
-      "role": "assistant",
-      "content": "Vas a comprar 1 de paella_01 a 1 oro/u (total 1). ¿Confirmas? (sí/no)"
-    },
-    {
-      "role": "user",
       "content": "si"
     },
     {
@@ -48,6 +40,14 @@
     {
       "role": "assistant",
       "content": "Hecho. Compraste 3x tortilla_spain_01 por 3.0 gold."
+    },
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, tesoro! ¿Quieres algo más del mercado o una porción de borsch para empezar? 🙂✨"
     }
   ],
   "preferred_language": "es",

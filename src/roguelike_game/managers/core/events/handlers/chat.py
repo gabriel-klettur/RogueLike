@@ -2,6 +2,7 @@ import pygame
 from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
 from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
+from roguelike_game.ecs.systems.vendors.vendor_ui_system import handle_vendor_ui_events
 
 
 def handle_chat_open(game, events) -> bool:
@@ -20,6 +21,11 @@ def handle_chat_open(game, events) -> bool:
                 pass
             try:
                 handle_chat_ui_events(world, events)
+            except Exception:
+                pass
+            # Panel de comercio: manejar clicks/scroll cuando el chat está abierto
+            try:
+                handle_vendor_ui_events(world, events)
             except Exception:
                 pass
             return True
