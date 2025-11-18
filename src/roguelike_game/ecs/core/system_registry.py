@@ -62,7 +62,7 @@ from roguelike_game.ecs.systems.combat.spells.puddle_system import PuddleSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.puddle_render_system import PuddleRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.vortex_field_render_system import VortexFieldRenderSystem
 from roguelike_game.ecs.systems.rendering.combat.spells.mine_render_system import MineRenderSystem
-from roguelike_game.ecs.systems.combat.burn_system import BurnSystem
+from roguelike_game.ecs.systems.status.dot_system import DoTSystem
 from roguelike_game.ecs.systems.combat.spells.mine_system import MineSystem
 from roguelike_game.ecs.systems.combat.spells.chain_lightning_system import ChainLightningSystem
 from roguelike_game.ecs.systems.combat.spells.force_field_system import ForceFieldSystem
@@ -188,7 +188,7 @@ def get_update_system_classes():
         # Buildings portals (trigger after movement/collision resolution)
         BuildingPortalSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
-        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, WallSystem, TotemSystem, SummonSystem, BurnSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
+        MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, WallSystem, TotemSystem, SummonSystem, DoTSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,
         AnimationSystem, FlashSystem, TorchLightSystem, LightingSyncSystem,
         # Inventory & pickups (keyboard drop disabled; only drag-and-drop allowed)

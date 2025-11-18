@@ -1507,12 +1507,6 @@
             ],
             "z_bottom": 3,
             "z_top": 5,
-            "portal": {
-                "dest_world": "final_boss_barbol",
-                "dest_zone": null,
-                "dest_x": 25,
-                "dest_y": 25
-            },
             "z": 3
         }
     },

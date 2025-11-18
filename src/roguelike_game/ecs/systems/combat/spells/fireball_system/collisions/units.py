@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 import pygame
 
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
+from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.utils.health_utils import is_neutral
 
@@ -65,6 +66,12 @@ def apply_combat_effects(runtime: FireballRuntime, collision: CollisionResult) -
             health.current_hp = 0
         else:
             health.current_hp = max(0, health.current_hp - runtime.component.damage)
+        # White hit flash for any normal damage (status flashes take precedence in FlashSystem)
+        try:
+            flashes = world.components.setdefault("FlashComponent", {})
+            flashes[target] = FlashComponent((255, 255, 255), 0.12)
+        except Exception:
+            pass
         world.components.setdefault("LastAttacker", {})[target] = LastAttacker(runtime.component.caster, time.time())
 
     spawn_impact_effects(

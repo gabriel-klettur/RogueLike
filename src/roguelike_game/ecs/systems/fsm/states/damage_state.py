@@ -2,7 +2,6 @@ import time
 import logging
 from roguelike_game.ecs.systems.fsm.state import State
 from roguelike_game.ecs.components.transform.velocity import Velocity
-from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim
 
 import logging
@@ -24,11 +23,9 @@ class DamageState(State):
         # Detener movimiento
         world.components['Velocity'][eid] = Velocity(0, 0)
         logger.debug(f"[DamageState] Entity {eid} stopped for damage; from_left={self.from_left}")
-        # Aplicar flash blanco
-        damage_cfg = world.components['DamageConfig'][eid]
-        world.components.setdefault('FlashComponent', {})[eid] = FlashComponent((255,255,255), damage_cfg.duration)
         # Mostrar sprite de daño
         anim = world.components.get('Animator', {}).get(eid)
+
         if anim:
             # store previous animation state
             self.prev_anim_state = anim.current_state
