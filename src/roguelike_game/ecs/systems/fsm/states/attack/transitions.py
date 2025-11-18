@@ -85,11 +85,24 @@ def handle_windup_phase(
     windup_s: float,
 ) -> bool:
     if elapsed < windup_s:
-        ndx, ndy, _ = normalize_vector(*snapshot.delta)
-        reset_velocity(env)
-        env.remove_component("ChaseTarget")
+        # Lock direction on first wind-up tick and reuse it for visuals
+        try:
+            locked = context.get("locked_attack_dir", None)
+        except Exception:
+            locked = None
+        if not (isinstance(locked, (tuple, list)) and len(locked) >= 2):
+            ndx, ndy, _ = normalize_vector(*snapshot.delta)
+            locked = (ndx, ndy)
+            try:
+                context.set("locked_attack_dir", locked)
+            except Exception:
+                pass
+        # If attacks are not interruptible, freeze movement and cancel chase while winding up
+        if not context.get_bool("attack_interruptible", False):
+            reset_velocity(env)
+            env.remove_component("ChaseTarget")
         progress = elapsed / max(1e-6, windup_s)
-        update_windup_visuals(env, context, profile, (ndx, ndy), progress)
+        update_windup_visuals(env, context, profile, (float(locked[0]), float(locked[1])), progress)
         return True
     return False
 
@@ -101,8 +114,15 @@ def _new_windup_outline():
 
 
 def perform_attack(env: AttackEnvironment, context: AttackFSMContext, profile: MonsterProfile, snapshot: PositionSnapshot) -> None:
-    ndx, ndy, _ = normalize_vector(*snapshot.delta)
-    direction = (ndx, ndy)
+    # Use locked direction from wind-up if available to match telegraph/outline visuals
+    try:
+        d = context.get("locked_attack_dir", None)
+    except Exception:
+        d = None
+    if not (isinstance(d, (tuple, list)) and len(d) >= 2):
+        ndx, ndy, _ = normalize_vector(*snapshot.delta)
+        d = (ndx, ndy)
+    direction = (float(d[0]), float(d[1]))
     spell_cfg = _resolve_spell_config(profile.resolve_spell_id())
     cleanup_attack_effects(env)
     _spawn_slash(env, spell_cfg, direction)
@@ -111,6 +131,11 @@ def perform_attack(env: AttackEnvironment, context: AttackFSMContext, profile: M
         context.mark_attack_fired(env.now, lock_duration)
     reset_velocity(env)
     context.set("attack_start", env.now)
+    # Clear locked direction to compute afresh on next wind-up
+    try:
+        context.pop("locked_attack_dir", None)
+    except Exception:
+        pass
 
 
 def _resolve_spell_config(spell_id: str):
@@ -125,6 +150,7 @@ def _spawn_slash(env: AttackEnvironment, cfg, direction: Tuple[float, float]) ->
     spawn_meta = {
         "target_eid": int(env.player_id) if env.player_id is not None else 0,
         "rotate_with_owner": False,
+        "direction": (float(direction[0]), float(direction[1])),
     }
     resolver = SPELL_RESOLVERS.get("slash")
     if resolver is not None:

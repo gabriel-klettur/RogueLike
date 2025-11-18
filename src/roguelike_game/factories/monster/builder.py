@@ -215,6 +215,16 @@ class MonsterBuilder:
                             fsm.context["use_attack_telegraph"] = bool(tele)
                     except Exception:
                         pass
+                    # Default: show telegraph for hostiles unless explicitly disabled in JSON
+                    fsm.context.setdefault("use_attack_telegraph", True)
+                    # Inject optional per-class attack interruptibility (default False = uninterruptible wind-up)
+                    try:
+                        intr = cfg.get("attack_interruptible")
+                        if intr is not None:
+                            fsm.context["attack_interruptible"] = bool(intr)
+                    except Exception:
+                        pass
+                    fsm.context.setdefault("attack_interruptible", False)
                     world.components["NPCState"][eid] = NPCState(fsm, initial_name)
                     return eid
             except Exception:
@@ -247,6 +257,16 @@ class MonsterBuilder:
                     fsm.context["use_attack_telegraph"] = bool(tele)
             except Exception:
                 pass
+            # Default: show telegraph for hostiles unless explicitly disabled in JSON
+            fsm.context.setdefault("use_attack_telegraph", True)
+            # Inject optional per-class attack interruptibility (default False)
+            try:
+                intr = cfg.get("attack_interruptible")
+                if intr is not None:
+                    fsm.context["attack_interruptible"] = bool(intr)
+            except Exception:
+                pass
+            fsm.context.setdefault("attack_interruptible", False)
             world.components["NPCState"][eid] = NPCState(fsm, initial_name)
         else:
             if explicit_null_patrol:

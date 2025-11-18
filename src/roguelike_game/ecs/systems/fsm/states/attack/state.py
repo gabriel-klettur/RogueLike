@@ -42,6 +42,9 @@ class AttackState(State):
         prepare_chase_target(env, profile.is_final_boss)
         reset_velocity(env)
         context.pop("attack_fired", None)
+        # Reset wind-up session state on enter
+        context.pop("locked_attack_dir", None)
+        context.set("windup_active", False)
         context.mark_attack_start(env.now)
         context.ensure_attack_duration(self._derive_duration(env))
         self._update_animation(entity, env)
@@ -113,16 +116,24 @@ class AttackState(State):
         snapshot,
     ) -> bool:
         melee_range = self._lookup_melee_range(env)
-        if not within_melee_range(melee_range, snapshot.distance_sq):
-            return False
-        start_time = context.mark_attack_start(env.now)
-        windup_s = 0.0 if not context.has_context else context.get_float("attack_windup_s", self.windup_default)
+        # Only gate by range/cooldown BEFORE wind-up starts
+        if not context.get_bool("windup_active"):
+            if not within_melee_range(melee_range, snapshot.distance_sq):
+                return False
+            if not cooldown_ready(env):
+                return True
+            # Begin wind-up session and lock timer/direction
+            context.set("windup_active", True)
+            context.pop("locked_attack_dir", None)
+            context.set("attack_start", env.now)
+        start_time = context.get_float("attack_start", env.now)
+        windup_s = 0.0 if not context.has_context else max(0.2, context.get_float("attack_windup_s", self.windup_default))
         elapsed = env.now - start_time
         if handle_windup_phase(env, context, profile, snapshot, elapsed, windup_s):
             return True
-        if not cooldown_ready(env):
-            return True
+        # Cooldown was gated at wind-up start; proceed to attack now
         perform_attack(env, context, profile, snapshot)
+        context.set("windup_active", False)
         return True
 
     def _process_final_boss(
@@ -143,15 +154,25 @@ class AttackState(State):
                 env.remove_component("ChaseTarget")
             return True
 
-        start_time = context.mark_attack_start(env.now)
-        windup_s = 0.0 if not context.has_context else context.get_float("attack_windup_s", self.windup_default)
+        # Only gate by range/cooldown BEFORE wind-up starts (boss)
+        if not context.get_bool("windup_active"):
+            melee_range = self._lookup_melee_range(env)
+            if not within_melee_range(melee_range, snapshot.distance_sq):
+                return False
+            if not cooldown_ready(env):
+                return True
+            context.set("windup_active", True)
+            context.pop("locked_attack_dir", None)
+            context.set("attack_start", env.now)
+        start_time = context.get_float("attack_start", env.now)
+        windup_s = 0.0 if not context.has_context else max(0.2, context.get_float("attack_windup_s", self.windup_default))
         elapsed = env.now - start_time
         if handle_windup_phase(env, context, profile, snapshot, elapsed, windup_s):
             return True
-        if not cooldown_ready(env):
-            return True
+        # Cooldown was gated at wind-up start; proceed to attack now
         perform_attack(env, context, profile, snapshot)
         env.remove_component("ChaseTarget")
+        context.set("windup_active", False)
         return True
 
     def _to_unconscious(self, env: AttackEnvironment, entity: Any) -> None:

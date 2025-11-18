@@ -1,0 +1,38 @@
+{
+  "player_id": "d15ccecf-a784-48cd-92f9-63baec6064e3",
+  "capacity": 20,
+  "slots": [
+    {
+      "item": "gold",
+      "quantity": 1
+    },
+    {
+      "item": "wood",
+      "quantity": 3
+    },
+    {
+      "item": "food_chicken",
+      "quantity": 6
+    },
+    {
+      "item": "paella_01",
+      "quantity": 2
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

@@ -109,6 +109,32 @@ class AttackFSMContext:
         except Exception:
             return default
 
+    def get(self, key: str, default: Any = None) -> Any:
+        """Generic safe read from FSM context without coercion."""
+        if not self.has_context:
+            return default
+        try:
+            return self._context.get(key, default)
+        except Exception:
+            return default
+
+    def get_vector(self, key: str, default: tuple[float, float] | None = None) -> tuple[float, float]:
+        """Return a 2D vector stored in context under key, tolerating lists/tuples.
+
+        Falls back to the provided default or (1.0, 0.0) if malformed.
+        """
+        if default is None:
+            default = (1.0, 0.0)
+        if not self.has_context:
+            return default
+        try:
+            val = self._context.get(key)
+            if isinstance(val, (list, tuple)) and len(val) >= 2:
+                return float(val[0]), float(val[1])
+        except Exception:
+            pass
+        return default
+
     def set(self, key: str, value: Any) -> None:
         if self.has_context:
             self._context[key] = value

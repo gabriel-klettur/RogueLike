@@ -102,8 +102,8 @@
         "hitbox": false,
         "patrol": false,
         "defend_area": false,
-        "telegraph": false,
-        "windup_outline": false,
+        "telegraph": true,
+        "windup_outline": true,
         "trail": false,
         "building_collision": false
       }

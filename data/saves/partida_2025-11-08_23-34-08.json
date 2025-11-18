@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      72,
-      91
+      24,
+      60
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        72,
-        91
+        24,
+        60
       ],
       "npc_states": {}
     }
@@ -23,20 +23,14 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 6
-      },
-      {
-        "item": "wood",
-        "quantity": 3
-      },
-      {
-        "item": "food_chicken",
         "quantity": 1
       },
       {
         "item": "paella_01",
-        "quantity": 1
+        "quantity": 2
       },
+      null,
+      null,
       null,
       null,
       null,
@@ -90,23 +84,21 @@
   "meta": {
     "name": "partida_2025-11-08_23-34-08",
     "created_at": "2025-11-08T23:34:08",
-    "last_played": "2025-11-13T17:43:50",
+    "last_played": "2025-11-18T12:58:08",
     "player": {
-      "xp": 0,
-      "level": 0
+      "xp": 10,
+      "level": 2
     },
     "items_summary": {
-      "stacks": 4,
+      "stacks": 2,
       "top_items": [
         "gold",
-        "wood",
-        "food_chicken",
         "paella_01"
       ]
     }
   },
   "time": {
-    "minute": 778,
+    "minute": 714,
     "time_scale": 0.4
   }
 }
