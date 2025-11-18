@@ -253,14 +253,14 @@ class PuddleSystem:
                                 if cmask.overlap(bmask, off):
                                     se = getattr(b, '_spawner_eid', None)
                                     if se is not None:
-                                        world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None})
+                                        world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None, 'source': 'puddle'})
                                     continue
                             for rect_w in getattr(b, 'collision_tiles', []) or []:
                                 if not circle_rect.colliderect(rect_w):
                                     continue
                                 se = getattr(b, '_spawner_eid', None)
                                 if se is not None:
-                                    world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None})
+                                    world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None, 'source': 'puddle'})
                                     break
                         except Exception:
                             continue

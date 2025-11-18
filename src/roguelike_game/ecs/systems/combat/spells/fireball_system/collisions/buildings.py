@@ -71,6 +71,7 @@ def handle_building_collision(
             "spawner_eid": hit_spawner_eid,
             "damage": float(runtime.component.damage),
             "attacker": int(runtime.component.caster) if runtime.component.caster is not None else None,
+            "source": "fireball",
         }
     )
 

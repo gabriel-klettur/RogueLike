@@ -77,6 +77,24 @@ def resolve_config(tpl: Dict[str, Any], inst: Dict[str, Any], waves_by_id: Dict[
                         pass
                 if 'hp_reset_on_enter' in ld and isinstance(ld.get('hp_reset_on_enter'), str):
                     life_defaults['hp_reset_on_enter'] = str(ld.get('hp_reset_on_enter')).strip().lower()
+                if 'sources' in ld:
+                    try:
+                        srcs = ld.get('sources')
+                        norm: list[str] | None = None
+                        if isinstance(srcs, str):
+                            norm = [str(srcs).strip().lower()]
+                        elif isinstance(srcs, (list, tuple)):
+                            tmp = []
+                            for s in srcs:
+                                try:
+                                    tmp.append(str(s).strip().lower())
+                                except Exception:
+                                    continue
+                            norm = tmp
+                        if norm is not None:
+                            life_defaults['sources'] = norm
+                    except Exception:
+                        pass
     except Exception:
         life_defaults = life_defaults or None
 
@@ -238,6 +256,20 @@ def resolve_config(tpl: Dict[str, Any], inst: Dict[str, Any], waves_by_id: Dict[
                             eff['next_step_by_hp'] = str(life_block.get('next_step_by_hp'))
                         if life_block.get('end_logic') is not None:
                             eff['end_logic'] = bool(life_block.get('end_logic'))
+                        try:
+                            srcs2 = life_block.get('sources')
+                            if isinstance(srcs2, str):
+                                eff['sources'] = [str(srcs2).strip().lower()]
+                            elif isinstance(srcs2, (list, tuple)):
+                                tmp2 = []
+                                for s in srcs2:
+                                    try:
+                                        tmp2.append(str(s).strip().lower())
+                                    except Exception:
+                                        continue
+                                eff['sources'] = tmp2
+                        except Exception:
+                            pass
                         if eff:
                             visuals_life[key_norm] = eff
                 except Exception:

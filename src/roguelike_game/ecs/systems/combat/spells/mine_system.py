@@ -192,7 +192,8 @@ class MineSystem:
                                     world.components.setdefault('SpawnerDamageEvents', []).append({
                                         'spawner_eid': int(se),
                                         'damage': float(damage),
-                                        'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None
+                                        'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None,
+                                        'source': 'mine'
                                     })
                                 continue
                         for rect_w in getattr(b, 'collision_tiles', []) or []:
@@ -203,7 +204,8 @@ class MineSystem:
                                 world.components.setdefault('SpawnerDamageEvents', []).append({
                                     'spawner_eid': int(se),
                                     'damage': float(damage),
-                                    'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None
+                                    'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None,
+                                    'source': 'mine'
                                 })
                                 break
             except Exception:

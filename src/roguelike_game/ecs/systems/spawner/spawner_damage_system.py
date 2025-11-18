@@ -180,6 +180,11 @@ class SpawnerDamageSystem:
                         is_player_attacker = True
                 except Exception:
                     is_player_attacker = False
+                # Source filtering: when attacker is the player, honor allowed sources in life config
+                try:
+                    src_tag = str(evt.get('source', '') or '').strip().lower()
+                except Exception:
+                    src_tag = ''
                 # Godmode attacker: if the attacker is the player and godmode is active, one-shot the spawner
                 gm_attacker = False
                 try:
@@ -188,6 +193,15 @@ class SpawnerDamageSystem:
                     gm_attacker = False
                 token = self._cur_token(st)
                 eff = self._merge_life(cfg, token)
+                try:
+                    allowed = eff.get('sources')
+                    if is_player_attacker and isinstance(allowed, list):
+                        allowed_set = {str(x).strip().lower() for x in allowed}
+                        if ('player' not in allowed_set) and (not src_tag or src_tag not in allowed_set):
+                            # Skip this damage: not an allowed player source
+                            continue
+                except Exception:
+                    pass
                 if not bool(eff.get('damageable', False)):
                     continue
                 entry = health_map.setdefault(eid, {'scope': getattr(cfg, 'hp_scope', 'per_state'), 'last_token': token, 'shared': None, 'by_state': {}})
