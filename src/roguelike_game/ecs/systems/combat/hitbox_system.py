@@ -3,8 +3,11 @@ import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 import time
+from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.components.combat.burn import BurnComponent
+from roguelike_game.ecs.components.status.poison_component import PoisonComponent
+
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
 from roguelike_game.ecs.utils.health_utils import is_neutral
@@ -281,10 +284,15 @@ class HitboxSystem:
                     elem = str(getattr(hb, 'element', '') or '').lower()
                     st = getattr(hb, 'status', None)
                     burn_cfg = None
+                    poison_cfg = None
                     if isinstance(st, dict) and isinstance(st.get('burn'), dict):
                         burn_cfg = st.get('burn')
                     elif elem == 'fire':
                         burn_cfg = {}
+                    if isinstance(st, dict) and isinstance(st.get('poison'), dict):
+                        poison_cfg = st.get('poison')
+                    elif elem == 'poison':
+                        poison_cfg = {}
                     if burn_cfg is not None and not is_neutral(world, target):
                         dps = int(burn_cfg.get('dps', 5)) if isinstance(burn_cfg, dict) else 5
                         dur = float(burn_cfg.get('duration', 3.0)) if isinstance(burn_cfg, dict) else 3.0
@@ -327,8 +335,63 @@ class HitboxSystem:
                                         hud['ttl_s'] = 3.0
                             except Exception:
                                 pass
+                    if poison_cfg is not None and not is_neutral(world, target):
+                        # Robust defaults for poison. If element == 'poison' and no explicit config,
+                        # use a faster tick (0.5s). Merge provided dict over defaults for stability.
+                        poison_defaults_dps = 3
+                        poison_defaults_dur = 5.0
+                        poison_defaults_tper = 0.5 if elem == 'poison' else 1.0
+
+                        if isinstance(poison_cfg, dict):
+                            dps = int(poison_cfg.get('dps', poison_defaults_dps))
+                            dur = float(poison_cfg.get('duration', poison_defaults_dur))
+                            tper = float(poison_cfg.get('tick_period', poison_defaults_tper))
+                        else:
+                            dps = int(poison_defaults_dps)
+                            dur = float(poison_defaults_dur)
+                            tper = float(poison_defaults_tper)
+
+                        poisons = world.components.setdefault('PoisonComponent', {})
+                        pc = poisons.get(target)
+                        now = time.time()
+                        owner = hb.owner
+                        if pc is None:
+                            poisons[target] = PoisonComponent(
+                                damage_per_tick=dps,
+                                duration=dur,
+                                tick_period=tper,
+                                start_time=now,
+                                last_tick_time=now,
+                                applier=owner,
+                            )
+                            try:
+                                player_id = getattr(world, 'player_entity', None)
+                                if player_id is not None and owner is not None and int(owner) == int(player_id):
+                                    hud = world.components.setdefault('TargetHUD', {})
+                                    hud['target_eid'] = int(target)
+                                    hud['last_hit_time'] = float(now)
+                                    if 'ttl_s' not in hud:
+                                        hud['ttl_s'] = 3.0
+                            except Exception:
+                                pass
+                        else:
+                            pc.start_time = max(pc.start_time, now)
+                            pc.damage_per_tick = max(pc.damage_per_tick, int(dps))
+                            pc.tick_period = min(pc.tick_period, float(tper))
+                            pc.duration = max(pc.duration, float(dur))
+                            try:
+                                player_id = getattr(world, 'player_entity', None)
+                                if player_id is not None and owner is not None and int(owner) == int(player_id):
+                                    hud = world.components.setdefault('TargetHUD', {})
+                                    hud['target_eid'] = int(target)
+                                    hud['last_hit_time'] = float(now)
+                                    if 'ttl_s' not in hud:
+                                        hud['ttl_s'] = 3.0
+                            except Exception:
+                                pass
                 except Exception:
                     pass
+
                 # Neutral immunity: skip applying damage and events
                 try:
                     if is_neutral(world, target):
@@ -347,6 +410,13 @@ class HitboxSystem:
                         health.current_hp = 0
                     else:
                         health.current_hp = max(0, health.current_hp - hb.damage)
+                    # Flash blanco para TODAS las entidades que reciben daño normal
+                    try:
+                        flashes = world.components.setdefault('FlashComponent', {})
+                        # Duración breve; prioridad visual de estados la gestiona FlashSystem
+                        flashes[target] = FlashComponent((255, 255, 255), 0.12)
+                    except Exception:
+                        pass
                     # record last attacker for KO attribution
                     world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)

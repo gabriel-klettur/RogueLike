@@ -38,6 +38,12 @@ class VendorUISystem:
         invs = getattr(world, 'components', {}).get('InventoryComponent', {}) or {}
         if target not in invs:
             return
+        # Vincular el VTS al estado para que el manejador de eventos reutilice el mismo
+        try:
+            vts = self._get_vts(world)
+            setattr(state, '_vendor_ui_vts', vts)
+        except Exception:
+            pass
         # Fonts y filas primero (para medir contenido)
         fnt, small = self._fonts()
         rows = self._collect_rows(world, target)
@@ -408,6 +414,15 @@ def handle_vendor_ui_events(world: Any, events: List[pygame.event.Event]) -> Non
 
 
 def _get_vts(world: Any):
+    # Preferir instancia previamente vinculada por la UI (permite stubs en tests)
+    try:
+        st = getattr(world, 'state', None)
+        if st is not None:
+            vts = getattr(st, '_vendor_ui_vts', None)
+            if vts is not None:
+                return vts
+    except Exception:
+        pass
     for s in getattr(world, 'update_systems', []):
         if type(s).__name__ == 'VendorTradeSystem':
             return s
