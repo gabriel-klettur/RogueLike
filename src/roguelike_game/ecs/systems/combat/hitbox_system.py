@@ -133,20 +133,21 @@ class HitboxSystem:
                                     if se is not None:
                                         hit_spawners.add(int(se))
                                     continue
-                            # Fallback: per-tile rectangles if mask missing
-                            for rect_w in b.collision_tiles:
-                                if not arc_world_rect.colliderect(rect_w):
-                                    continue
-                                sx, sy = camera.apply((rect_w.x, rect_w.y))
-                                off = (int(sx - screen_left), int(sy - screen_top))
-                                tmp = pygame.Surface((rect_w.width, rect_w.height))
-                                tmp.fill((255,255,255))
-                                target_mask = pygame.mask.from_surface(tmp)
-                                if hitmask.overlap(target_mask, off):
-                                    se = getattr(b, '_spawner_eid', None)
-                                    if se is not None:
-                                        hit_spawners.add(int(se))
-                                    break
+                            else:
+                                # Fallback: per-tile rectangles only if mask is missing
+                                for rect_w in b.collision_tiles:
+                                    if not arc_world_rect.colliderect(rect_w):
+                                        continue
+                                    sx, sy = camera.apply((rect_w.x, rect_w.y))
+                                    off = (int(sx - screen_left), int(sy - screen_top))
+                                    tmp = pygame.Surface((rect_w.width, rect_w.height))
+                                    tmp.fill((255,255,255))
+                                    target_mask = pygame.mask.from_surface(tmp)
+                                    if hitmask.overlap(target_mask, off):
+                                        se = getattr(b, '_spawner_eid', None)
+                                        if se is not None:
+                                            hit_spawners.add(int(se))
+                                        break
                         else:
                             # Non-spawner buildings: keep per-tile rectangle checks
                             for rect_w in b.collision_tiles:

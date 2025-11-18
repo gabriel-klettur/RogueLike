@@ -1,5 +1,6 @@
 import time
 import math
+import pygame
 from roguelike_engine.utils.benchmark import benchmark
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position
@@ -159,6 +160,54 @@ class MineSystem:
                 eff_r = radius + max(0.0, entity_radius)
                 if dx*dx + dy*dy <= eff_r * eff_r + 1e-6:
                     thp.current_hp = max(0, thp.current_hp - int(damage))
+
+            try:
+                blds = getattr(world, 'buildings', []) or []
+                if blds and damage > 0:
+                    left = float(mpos.x) - float(radius)
+                    top = float(mpos.y) - float(radius)
+                    diam = int(float(radius) * 2)
+                    surf = pygame.Surface((diam, diam), pygame.SRCALPHA)
+                    pygame.draw.circle(surf, (255, 255, 255), (diam // 2, diam // 2), diam // 2)
+                    cmask = pygame.mask.from_surface(surf)
+                    circle_rect = pygame.Rect(int(left), int(top), int(diam), int(diam))
+                    for b in blds:
+                        if getattr(b, 'runtime_hidden', False):
+                            continue
+                        if not bool(getattr(b, '_is_spawner_visual', False)):
+                            continue
+                        eff = getattr(b, '_spawner_visual_life_cfg', None) or {}
+                        if not bool(eff.get('damageable', False)):
+                            continue
+                        quick_rect = getattr(b, 'rect', None)
+                        if quick_rect and not circle_rect.colliderect(quick_rect):
+                            continue
+                        bm = getattr(b, 'model', None)
+                        bmask = bm.get_full_mask() if bm is not None else None
+                        if bmask is not None:
+                            off = (int(b.x - left), int(b.y - top))
+                            if cmask.overlap(bmask, off):
+                                se = getattr(b, '_spawner_eid', None)
+                                if se is not None:
+                                    world.components.setdefault('SpawnerDamageEvents', []).append({
+                                        'spawner_eid': int(se),
+                                        'damage': float(damage),
+                                        'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None
+                                    })
+                                continue
+                        for rect_w in getattr(b, 'collision_tiles', []) or []:
+                            if not circle_rect.colliderect(rect_w):
+                                continue
+                            se = getattr(b, '_spawner_eid', None)
+                            if se is not None:
+                                world.components.setdefault('SpawnerDamageEvents', []).append({
+                                    'spawner_eid': int(se),
+                                    'damage': float(damage),
+                                    'attacker': int(getattr(mine, 'owner', 0)) if getattr(mine, 'owner', None) is not None else None
+                                })
+                                break
+            except Exception:
+                pass
 
             # Spawn VFX explosion (preset si está definido en spells.cfg[vfx.impact], si no FireExplosionModel)
             try:

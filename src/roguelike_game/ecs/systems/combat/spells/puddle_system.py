@@ -223,6 +223,47 @@ class PuddleSystem:
                                         hud['ttl_s'] = 3.0
                             except Exception:
                                 pass
+            
+            if dmg > 0:
+                blds = getattr(world, 'buildings', []) or []
+                if blds:
+                    left = float(pos.x) - float(puddle.radius)
+                    top = float(pos.y) - float(puddle.radius)
+                    diam = int(float(puddle.radius) * 2)
+                    surf = pygame.Surface((diam, diam), pygame.SRCALPHA)
+                    pygame.draw.circle(surf, (255, 255, 255), (diam // 2, diam // 2), diam // 2)
+                    cmask = pygame.mask.from_surface(surf)
+                    circle_rect = pygame.Rect(int(left), int(top), int(diam), int(diam))
+                    for b in blds:
+                        try:
+                            if getattr(b, 'runtime_hidden', False):
+                                continue
+                            if not bool(getattr(b, '_is_spawner_visual', False)):
+                                continue
+                            eff = getattr(b, '_spawner_visual_life_cfg', None) or {}
+                            if not bool(eff.get('damageable', False)):
+                                continue
+                            quick_rect = getattr(b, 'rect', None)
+                            if quick_rect and not circle_rect.colliderect(quick_rect):
+                                continue
+                            bm = getattr(b, 'model', None)
+                            bmask = bm.get_full_mask() if bm is not None else None
+                            if bmask is not None:
+                                off = (int(b.x - left), int(b.y - top))
+                                if cmask.overlap(bmask, off):
+                                    se = getattr(b, '_spawner_eid', None)
+                                    if se is not None:
+                                        world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None})
+                                    continue
+                            for rect_w in getattr(b, 'collision_tiles', []) or []:
+                                if not circle_rect.colliderect(rect_w):
+                                    continue
+                                se = getattr(b, '_spawner_eid', None)
+                                if se is not None:
+                                    world.components.setdefault('SpawnerDamageEvents', []).append({'spawner_eid': int(se), 'damage': float(dmg), 'attacker': int(owner) if owner is not None else None})
+                                    break
+                        except Exception:
+                            continue
 
             # Expiración por colisión con Player: si cualquier Player intersecta, aplicar efectos y remover el puddle
             if bool(getattr(puddle, 'expire_on_player_collision', False)) and player_tags:

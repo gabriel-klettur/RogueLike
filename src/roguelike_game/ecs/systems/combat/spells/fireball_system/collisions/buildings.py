@@ -42,14 +42,23 @@ def handle_building_collision(
             if not _path_intersects_building(path_aabb, building):
                 continue
 
+            model = getattr(building, "model", None)
+            mask_exists = False
+            if model is not None and hasattr(model, "get_full_mask"):
+                try:
+                    mask_exists = model.get_full_mask() is not None
+                except Exception:
+                    mask_exists = False
+
             impact_pos = _mask_collision(runtime, building, sample_points, mask_cache)
             if impact_pos is not None:
                 hit_spawner_eid = _get_spawner_eid(building)
                 break
-            impact_pos = _rect_collision(runtime, building, sample_points)
-            if impact_pos is not None:
-                hit_spawner_eid = _get_spawner_eid(building)
-                break
+            if not mask_exists:
+                impact_pos = _rect_collision(runtime, building, sample_points)
+                if impact_pos is not None:
+                    hit_spawner_eid = _get_spawner_eid(building)
+                    break
         except Exception:
             # Keep behaviour tolerant to malformed building instances.
             continue

@@ -22,17 +22,5 @@
       "y": 36
     },
     "created_at": 1762873865.4043996
-  },
-  "2650625d-40cd-4275-a63f-8e718a03d15c": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 44,
-      "y": 31
-    },
-    "created_at": 1763473837.2085075
   }
 }
