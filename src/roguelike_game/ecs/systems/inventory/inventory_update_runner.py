@@ -150,6 +150,55 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
                 'slots': inv_comp.serialize().get('slots'),
                 'schema_version': system.schema_version
             }
+            # Si tras cargar snapshot no hay stock vendible (según economía), intentar resembrar desde semilla
+            try:
+                eco = getattr(system, '_economy_service_for_seed', None)
+                if eco is None:
+                    eco = EconomyService()
+                    setattr(system, '_economy_service_for_seed', eco)
+                allowed_ids = None
+                try:
+                    allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+                except Exception:
+                    allowed_ids = None
+                if isinstance(allowed_ids, set):
+                    has_stock = any(
+                        st is not None
+                        and (iid := str(getattr(st, 'item_id', '')).lower()) != 'gold'
+                        and iid in allowed_ids
+                        for st in getattr(inv_comp, 'slots', []) or []
+                    )
+                else:
+                    has_stock = any(
+                        st is not None and str(getattr(st, 'item_id', '')).lower() != 'gold'
+                        for st in getattr(inv_comp, 'slots', []) or []
+                    )
+            except Exception:
+                has_stock = False
+            if not has_stock:
+                try:
+                    identity_key = (template_key or '').lower()
+                    is_vendor = (eid in comps.get('VendorComponent', {})) or ('vendor' in identity_key)
+                    if is_vendor and identity_key:
+                        eco = getattr(system, '_economy_service_for_seed', None)
+                        if eco is None:
+                            eco = EconomyService()
+                            setattr(system, '_economy_service_for_seed', eco)
+                        allowed_ids = None
+                        try:
+                            allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+                        except Exception:
+                            allowed_ids = None
+                        inv_from_seed = system.vendor_support.try_build_inventory_from_seed(identity_key, template_id, allowed_ids=allowed_ids)
+                        if inv_from_seed is not None:
+                            inv_comp = inv_from_seed
+                            active_store[iid] = {
+                                'template_id': inv_comp.player_id,
+                                'slots': inv_comp.serialize().get('slots'),
+                                'schema_version': system.schema_version
+                            }
+                except Exception:
+                    pass
             if is_neutral:
                 system.dirty_neutrals = True
             else:
@@ -161,6 +210,59 @@ def run_inventory_init_update(system: Any, world: Any, *args: Any) -> None:
             for slot in saved.get('slots', []):
                 if slot:
                     inv_comp.add(slot['item'], slot.get('quantity', 0))
+            # Si tras cargar activos no hay stock vendible (según economía), intentar resembrar desde semilla
+            try:
+                eco = getattr(system, '_economy_service_for_seed', None)
+                if eco is None:
+                    eco = EconomyService()
+                    setattr(system, '_economy_service_for_seed', eco)
+                allowed_ids = None
+                try:
+                    allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+                except Exception:
+                    allowed_ids = None
+                if isinstance(allowed_ids, set):
+                    has_stock = any(
+                        st is not None
+                        and (iid := str(getattr(st, 'item_id', '')).lower()) != 'gold'
+                        and iid in allowed_ids
+                        for st in getattr(inv_comp, 'slots', []) or []
+                    )
+                else:
+                    has_stock = any(
+                        st is not None and str(getattr(st, 'item_id', '')).lower() != 'gold'
+                        for st in getattr(inv_comp, 'slots', []) or []
+                    )
+            except Exception:
+                has_stock = False
+            if not has_stock:
+                try:
+                    identity_key = (template_key or '').lower()
+                    is_vendor = (eid in comps.get('VendorComponent', {})) or ('vendor' in identity_key)
+                    if is_vendor and identity_key:
+                        eco = getattr(system, '_economy_service_for_seed', None)
+                        if eco is None:
+                            eco = EconomyService()
+                            setattr(system, '_economy_service_for_seed', eco)
+                        allowed_ids = None
+                        try:
+                            allowed_ids = eco.get_allowed_item_ids_by_type(world, eid)
+                        except Exception:
+                            allowed_ids = None
+                        inv_from_seed = system.vendor_support.try_build_inventory_from_seed(identity_key, template_id, allowed_ids=allowed_ids)
+                        if inv_from_seed is not None:
+                            inv_comp = inv_from_seed
+                            active_store[iid] = {
+                                'template_id': inv_comp.player_id,
+                                'slots': inv_comp.serialize().get('slots'),
+                                'schema_version': system.schema_version
+                            }
+                            if is_neutral:
+                                system.dirty_neutrals = True
+                            else:
+                                system.dirty_monsters = True
+                except Exception:
+                    pass
         else:
             # Si no hay activo persistido, intentar cargar semilla específica de vendor
             loaded_from_seed = False

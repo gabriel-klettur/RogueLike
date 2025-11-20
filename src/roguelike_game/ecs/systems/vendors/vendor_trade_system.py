@@ -190,6 +190,20 @@ class VendorTradeSystem:
                 if isinstance(v, dict):
                     vv = v.get(side)
                     return float(vv) if self._is_number(vv) else None
+        # 1b) Override desde el registro de vendors (para partidas guardadas anteriores)
+        try:
+            entry = self._economy_service.get_vendor_entry(world, vendor_eid)
+            if isinstance(entry, dict):
+                ov = entry.get('prices_override') or {}
+                if item_id in ov:
+                    v = ov.get(item_id)
+                    if isinstance(v, (int, float)):
+                        return float(v)
+                    if isinstance(v, dict):
+                        vv = v.get(side)
+                        return float(vv) if self._is_number(vv) else None
+        except Exception:
+            pass
         # 2) Precio global
         base = self._price_service.get_global_price(item_id, side)
         if base is None:

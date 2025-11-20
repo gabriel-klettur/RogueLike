@@ -99,6 +99,9 @@ class EconomyService:
             # Mague (tienda mágica): permitir todo para no bloquear bastones/libros, etc.
             if group == 'vendor_mague':
                 return set()
+            # Lumberjack: permitir todo para no bloquear flechas/arcos/madera
+            if group == 'vendor_lumberjack':
+                return set()
             # Default temporary behavior for others: only 'food'
             return {'food'}
         except Exception:
@@ -118,6 +121,18 @@ class EconomyService:
         entry = self.get_vendor_entry(world, vendor_eid)
         allowed_types = self._determine_allowed_types(entry)
         if not allowed_types:
+            # No restriction by DB type: try to use economy profile whitelist as allowed_ids (for restock)
+            try:
+                group = entry.get('economy_group') if entry else None
+                profile = self._load_economy_profile(group) if group else None
+                if isinstance(profile, dict):
+                    wl = profile.get('whitelist') or []
+                    if wl:
+                        ids = {str(i).lower() for i in wl}
+                        self._type_filter_cache[key] = ids
+                        return ids
+            except Exception:
+                pass
             self._type_filter_cache[key] = None  # type: ignore
             return None
         ids: set[str] = set()

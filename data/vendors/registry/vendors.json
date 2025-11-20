@@ -70,7 +70,19 @@
       "seed_group": "vendor_lumberjack",
       "economy_group": "vendor_lumberjack",
       "prices_override": {
-        "wood": {"buy": 1, "sell": 1}
+        "arrow_01": {"buy": 1, "sell": 1},
+        "bow_01": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1}
+      }
+    },
+    "vendor_lumberjack_pavel": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_lumberjack_pavel.json",
+      "seed_group": "vendor_lumberjack",
+      "economy_group": "vendor_lumberjack",
+      "prices_override": {
+        "arrow_01": {"buy": 1, "sell": 1},
+        "bow_01": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1}
       }
     },
     "roberto": {
