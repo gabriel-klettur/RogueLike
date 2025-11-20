@@ -37,12 +37,26 @@
         "explosion_potion": {"buy": 1, "sell": 1}
       }
     },
-    "Smith": {
+    "vendor_blacksmith_smith": {
       "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
       "seed_group": "vendor_blacksmith",
       "economy_group": "vendor_blacksmith",
       "prices_override": {
-        "iron_sword": {"buy": 50, "sell": 50}
+        "simple_wooden_shield": {"buy": 1, "sell": 1},
+        "iron_ingot": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1},
+        "iron_sword": {"buy": 1, "sell": 1}
+      }
+    },
+    "smith": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
+      "seed_group": "vendor_blacksmith",
+      "economy_group": "vendor_blacksmith",
+      "prices_override": {
+        "simple_wooden_shield": {"buy": 1, "sell": 1},
+        "iron_ingot": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1},
+        "iron_sword": {"buy": 1, "sell": 1}
       }
     },
     "abigail": {

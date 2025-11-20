@@ -25,6 +25,8 @@ class VendorUISystem:
         # Fuente
         self.font_small: Optional[pygame.font.Font] = None
         self.font: Optional[pygame.font.Font] = None
+        # Índice perezoso de assets para fallback de iconos ausentes en DB
+        self._assets_index: Optional[Dict[str, str]] = None
 
     # --- API ECS --------------------------------------------------------------
     def update(self, world: Any, screen: pygame.Surface, camera: Any) -> None:
@@ -182,7 +184,7 @@ class VendorUISystem:
         for i in range(start, end):
             item_id, name, qty, p_buy, p_sell = rows[i]
             # Icono
-            icon = self.icon_surfaces.get(item_id)
+            icon = self._get_icon(item_id)
             if icon:
                 img = pygame.transform.smoothscale(icon, (col_icon_w, col_icon_w))
                 screen.blit(img, (panel_rect.x + pad, y + (row_h - col_icon_w) // 2))
@@ -324,6 +326,42 @@ class VendorUISystem:
                 name = iid.replace('_', ' ').title()
             rows.append((iid, name, int(qty), price_buy, price_sell))
         return rows
+
+    # --- Fallback de iconos ---------------------------------------------------
+    def _ensure_assets_index(self) -> None:
+        if isinstance(self._assets_index, dict):
+            return
+        idx: Dict[str, str] = {}
+        try:
+            root = os.path.join(os.getcwd(), 'assets')
+            for r, _d, files in os.walk(root):
+                for fn in files:
+                    if fn.lower().endswith('.png'):
+                        idx.setdefault(fn.lower(), os.path.join(r, fn))
+        except Exception:
+            idx = {}
+        self._assets_index = idx
+
+    def _get_icon(self, item_id: str) -> Optional[pygame.Surface]:
+        # 1) Catálogo precargado
+        icon = self.icon_surfaces.get(item_id)
+        if icon is not None:
+            return icon
+        # 2) Fallback por nombre de archivo <item_id>.png en assets
+        try:
+            self._ensure_assets_index()
+            idx = self._assets_index or {}
+            candidate = idx.get(f"{str(item_id).lower()}.png")
+            if candidate and os.path.exists(candidate):
+                surf = pygame.image.load(candidate).convert_alpha()
+                # Cachear para siguientes frames
+                self.icon_surfaces[item_id] = surf
+                return surf
+        except Exception:
+            pass
+        # Cachear None para evitar buscar cada frame
+        self.icon_surfaces[item_id] = None
+        return None
 
     def _draw_button(self, screen: pygame.Surface, rect: pygame.Rect, font: pygame.font.Font, label: str, *, enabled: bool) -> None:
         bg = (60, 60, 60) if enabled else (40, 40, 40)

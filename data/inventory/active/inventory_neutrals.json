@@ -1,5 +1,5 @@
 {
-  "13e0d860-4b5f-4fd3-9254-d5615b907f9d": {
+  "dbaa07e2-7478-4e34-9c76-7fd9c27ee5e9": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -49,41 +49,32 @@
     ],
     "schema_version": "1.0.0"
   },
-  "4f335819-3cb8-4acb-aeb9-97217830025d": {
-    "template_id": null,
+  "f2163679-ccfd-44af-805b-92b5c3b97166": {
+    "template_id": "9d2b3c54-2f0a-4a70-9e2c-4a4f8a8e7c31",
     "slots": [
       {
-        "item": "borsh_01",
-        "quantity": 100
+        "item": "simple_wooden_shield",
+        "quantity": 10
       },
       {
-        "item": "completo_chileno_01",
-        "quantity": 100
+        "item": "iron_ingot",
+        "quantity": 30
       },
       {
-        "item": "food_chicken",
-        "quantity": 100
+        "item": "wood_log_bundle",
+        "quantity": 49
       },
       {
-        "item": "hakarl_01",
-        "quantity": 100
-      },
-      {
-        "item": "paella_01",
-        "quantity": 100
-      },
-      {
-        "item": "perogi_01",
-        "quantity": 100
-      },
-      {
-        "item": "tortilla_spain_01",
-        "quantity": 100
+        "item": "iron_sword",
+        "quantity": 6
       },
       {
         "item": "gold",
-        "quantity": 50
+        "quantity": 501.0
       },
+      null,
+      null,
+      null,
       null,
       null,
       null,
@@ -99,7 +90,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "efb5daeb-dcc2-4eab-bb95-957a67bdcfa3": {
+  "bb6b6fef-141c-488d-a039-886cbdb671f4": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -149,7 +140,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "06af4c2f-1758-4ec5-9daf-ddb68562cdde": {
+  "f7da6203-89e4-4ee8-8602-6d3d4f742de9": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -199,7 +190,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "eb7899c2-9269-46e6-bdd5-109460c6b143": {
+  "a69e42cb-7392-43bc-a64f-21e808f434dd": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {
@@ -212,7 +203,7 @@
       },
       {
         "item": "energy_potion",
-        "quantity": 18
+        "quantity": 20
       },
       {
         "item": "poison_potion",
@@ -224,7 +215,7 @@
       },
       {
         "item": "gold",
-        "quantity": 302.0
+        "quantity": 300
       },
       null,
       null,

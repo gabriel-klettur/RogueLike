@@ -93,6 +93,9 @@ class EconomyService:
             # Alchemists: allow all (no restriction) so potions and similar items are permitted
             if group == 'vendor_alchemist':
                 return set()  # empty => treated as no restriction by caller
+            # Blacksmiths: allow all as well (no restriction) to permit shields/ingots/wood/swords, etc.
+            if group == 'vendor_blacksmith':
+                return set()
             # Default temporary behavior for others: only 'food'
             return {'food'}
         except Exception:

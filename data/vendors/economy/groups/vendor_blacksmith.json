@@ -1,9 +1,17 @@
 {
-  "whitelist": ["iron_sword"],
+  "whitelist": [
+    "simple_wooden_shield",
+    "iron_ingot",
+    "wood_log_bundle",
+    "iron_sword"
+  ],
   "blacklist": [],
   "margins": {
     "default": { "buy": 1.0, "sell": 1.0 },
     "items": {
+      "simple_wooden_shield": { "buy": 1.0, "sell": 1.0 },
+      "iron_ingot": { "buy": 1.0, "sell": 1.0 },
+      "wood_log_bundle": { "buy": 1.0, "sell": 1.0 },
       "iron_sword": { "buy": 1.0, "sell": 1.0 }
     }
   }

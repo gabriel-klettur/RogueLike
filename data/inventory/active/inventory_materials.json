@@ -1,1 +1,1 @@
-{"1":{"capacity_hint":20,"items":[{"item":"gold","quantity":4,"slot":0},{"item":"paella_01","quantity":2,"slot":1},{"item":"wood","quantity":1,"slot":2},{"item":"energy_potion","quantity":2,"slot":3}],"player_id":"d15ccecf-a784-48cd-92f9-63baec6064e3","schema_version":"1.0.0"}}
+{"1":{"capacity_hint":20,"items":[{"item":"gold","quantity":1,"slot":0},{"item":"paella_01","quantity":2,"slot":1},{"item":"wood","quantity":1,"slot":2},{"item":"energy_potion","quantity":2,"slot":3}],"player_id":"d15ccecf-a784-48cd-92f9-63baec6064e3","schema_version":"1.0.0"}}
