@@ -13,12 +13,28 @@
       "economy_group": "vendor_cheff",
       "prices_override": {}
     },
+    "vendor_alchemist_valeria": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
+      "seed_group": "vendor_alchemist",
+      "economy_group": "vendor_alchemist",
+      "prices_override": {
+        "health_potion": {"buy": 1, "sell": 1},
+        "mana_potion": {"buy": 1, "sell": 1},
+        "energy_potion": {"buy": 1, "sell": 1},
+        "poison_potion": {"buy": 1, "sell": 1},
+        "explosion_potion": {"buy": 1, "sell": 1}
+      }
+    },
     "valeria": {
       "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
       "seed_group": "vendor_alchemist",
       "economy_group": "vendor_alchemist",
       "prices_override": {
-        "health_potion": {"buy": 25, "sell": 25}
+        "health_potion": {"buy": 1, "sell": 1},
+        "mana_potion": {"buy": 1, "sell": 1},
+        "energy_potion": {"buy": 1, "sell": 1},
+        "poison_potion": {"buy": 1, "sell": 1},
+        "explosion_potion": {"buy": 1, "sell": 1}
       }
     },
     "Smith": {

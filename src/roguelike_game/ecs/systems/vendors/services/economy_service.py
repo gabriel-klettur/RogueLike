@@ -88,6 +88,12 @@ class EconomyService:
         This is a temporary global default until more types are defined in the DB.
         """
         try:
+            # If we have registry info, specialize by economy_group
+            group = (entry or {}).get('economy_group') if isinstance(entry, dict) else None
+            # Alchemists: allow all (no restriction) so potions and similar items are permitted
+            if group == 'vendor_alchemist':
+                return set()  # empty => treated as no restriction by caller
+            # Default temporary behavior for others: only 'food'
             return {'food'}
         except Exception:
             # Fallback remains 'food' to keep safe default

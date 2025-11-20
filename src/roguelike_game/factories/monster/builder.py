@@ -34,6 +34,7 @@ from roguelike_game.ecs.components.chat.vendor_component import VendorComponent
 from roguelike_game.ecs.components.monster_archetype import MonsterArchetype
 from roguelike_game.ecs.components.ai.auto_cast_component import AutoCastComponent
 from roguelike_game.ecs.components.combat.mana import Mana
+from roguelike_game.ecs.systems.vendors.services.economy_service import EconomyService
 
 
 class MonsterBuilder:
@@ -118,6 +119,19 @@ class MonsterBuilder:
             if is_vendor:
                 # Precios por defecto definidos en VendorComponent: {"wood": 1} usando moneda "gold".
                 world.components["VendorComponent"][eid] = VendorComponent()
+                # Aplicar overrides de precios desde el registro de vendors si existen
+                try:
+                    eco = EconomyService()
+                    entry = eco.get_vendor_entry(world, eid)
+                    if isinstance(entry, dict):
+                        overrides = entry.get('prices_override') or {}
+                        if isinstance(overrides, dict) and overrides:
+                            vc = world.components["VendorComponent"].get(eid)
+                            if vc is not None:
+                                vc.prices = overrides
+                except Exception:
+                    # Si falla, continuar con los precios por defecto
+                    pass
 
         # Combat & CombatStats
         world.components["CombatStats"][eid] = CombatStats(current_hp=cfg["hp"], max_hp=cfg["hp"], power=cfg["power"], defense=cfg["defense"])

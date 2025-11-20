@@ -1,10 +1,20 @@
 {
-  "whitelist": ["health_potion"],
+  "whitelist": [
+    "health_potion",
+    "mana_potion",
+    "energy_potion",
+    "poison_potion",
+    "explosion_potion"
+  ],
   "blacklist": [],
   "margins": {
     "default": { "buy": 1.0, "sell": 1.0 },
     "items": {
-      "health_potion": { "buy": 1.0, "sell": 1.0 }
+      "health_potion": { "buy": 1.0, "sell": 1.0 },
+      "mana_potion": { "buy": 1.0, "sell": 1.0 },
+      "energy_potion": { "buy": 1.0, "sell": 1.0 },
+      "poison_potion": { "buy": 1.0, "sell": 1.0 },
+      "explosion_potion": { "buy": 1.0, "sell": 1.0 }
     }
   }
 }
