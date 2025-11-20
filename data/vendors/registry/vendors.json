@@ -78,7 +78,21 @@
       "seed_group": "vendor_mague",
       "economy_group": "vendor_mague",
       "prices_override": {
-        "wood": {"buy": 1, "sell": 1}
+        "spellbook_simple": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_1": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_2": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_3": {"buy": 1, "sell": 1}
+      }
+    },
+    "vendor_mague_roberto": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_mague_roberto.json",
+      "seed_group": "vendor_mague",
+      "economy_group": "vendor_mague",
+      "prices_override": {
+        "spellbook_simple": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_1": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_2": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_3": {"buy": 1, "sell": 1}
       }
     }
   }

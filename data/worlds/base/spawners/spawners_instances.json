@@ -25,11 +25,7 @@
     "visuals": {
       "WaitClear": {
         "instance_id": 1,
-        "template_id": 157,
-        "offset": [
-          -109,
-          -173
-        ]
+        "template_id": 157
       },
       "WaitCooldown": {
         "instance_id": 2,
@@ -221,5 +217,14 @@
       6
     ],
     "id": "vendor_valeria_respawn_5m_lobby_44_7"
+  },
+  {
+    "template_id": "vendor_pavel_respawn_5m",
+    "zone": "zone_100_50",
+    "tile": [
+      12,
+      6
+    ],
+    "id": "vendor_pavel_respawn_5m_zone_100_50_12_6"
   }
 ]

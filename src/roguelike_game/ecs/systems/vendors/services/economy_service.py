@@ -96,6 +96,9 @@ class EconomyService:
             # Blacksmiths: allow all as well (no restriction) to permit shields/ingots/wood/swords, etc.
             if group == 'vendor_blacksmith':
                 return set()
+            # Mague (tienda mágica): permitir todo para no bloquear bastones/libros, etc.
+            if group == 'vendor_mague':
+                return set()
             # Default temporary behavior for others: only 'food'
             return {'food'}
         except Exception:
