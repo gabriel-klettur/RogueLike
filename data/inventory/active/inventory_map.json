@@ -22,17 +22,5 @@
       "y": 36
     },
     "created_at": 1762873865.4043996
-  },
-  "31df2ae6-de93-422c-a1ca-c44b9896e895": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "lobby",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": -1,
-      "y": 13
-    },
-    "created_at": 1763716532.997238
   }
 }
