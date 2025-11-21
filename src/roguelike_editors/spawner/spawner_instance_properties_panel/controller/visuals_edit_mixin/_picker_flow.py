@@ -77,8 +77,6 @@ def set_visual_template_via_picker_flow(owner: Any, state_key: str, new_tpl_id: 
                             pass
                         ov = e.get("overrides") or {}
                         ov["_is_spawner_visual"] = True
-                        if sid:
-                            ov["spawner_instance_id"] = sid
                         e["overrides"] = ov
                         if sid:
                             e["spawn_id"] = sid
@@ -152,7 +150,6 @@ def set_visual_template_via_picker_flow(owner: Any, state_key: str, new_tpl_id: 
                                     e["spawner_instance_id"] = sid
                                     ov = e.get("overrides") or {}
                                     ov["_is_spawner_visual"] = True
-                                    ov["spawner_instance_id"] = sid
                                     e["overrides"] = ov
                                     break
                             except (AttributeError, TypeError, ValueError):

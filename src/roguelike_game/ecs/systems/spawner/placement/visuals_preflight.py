@@ -11,6 +11,7 @@ from .visuals_common import (
     get_zone,
     get_local_tile,
     extract_visual_fields,
+    find_existing_instance_id_by_key,
     compute_new_entry,
     update_visuals_map_entry,
 )
@@ -49,6 +50,32 @@ def preflight_validate_spawner_visuals() -> int:
                     if tpl_id is None or tpl_id not in tmap:
                         continue
                     tpl_entry = tmap.get(tpl_id)
+                    # Try to reuse an existing building by composite key (zone, rel_x, rel_y, template_id)
+                    try:
+                        existing_iid = find_existing_instance_id_by_key(
+                            b_arr=b_arr,
+                            zone=zone,
+                            local_tile=local_tile,
+                            tpl_id=int(tpl_id),
+                            tpl_entry=tpl_entry,
+                            templates=templates,
+                        )
+                    except Exception:
+                        existing_iid = None
+                    if existing_iid is not None:
+                        # Ensure tags/scale and update visuals map to point to the reused instance
+                        ensure_spawner_tags_for_existing_instance(
+                            b_arr=b_arr,
+                            cur_iid=int(existing_iid),
+                            inst_id=str(inst.get('id')) if inst.get('id') is not None else None,
+                            visuals_scale=visuals_scale,
+                        )
+                        try:
+                            update_visuals_map_entry(vis, str(key), val, int(existing_iid), int(tpl_id))
+                            inst_updated = True
+                        except Exception:
+                            pass
+                        continue
                     entry, max_id = compute_new_entry(
                         zone=zone,
                         local_tile=local_tile,

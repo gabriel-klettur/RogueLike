@@ -3,8 +3,8 @@
     "id": 1,
     "template_id": 157,
     "zone": "Forest",
-    "rel_x": 816,
-    "rel_y": 592,
+    "rel_x": 688,
+    "rel_y": 406,
     "overrides": {
       "_is_spawner_visual": true,
       "spawner_instance_id": "survival_10_forest_14_9",
@@ -88,8 +88,8 @@
     "id": 6,
     "template_id": 157,
     "zone": "Forest",
-    "rel_x": 853,
-    "rel_y": 741,
+    "rel_x": 689,
+    "rel_y": 381,
     "overrides": {
       "_is_spawner_visual": true,
       "spawner_instance_id": "survival_10_forest_14_9",

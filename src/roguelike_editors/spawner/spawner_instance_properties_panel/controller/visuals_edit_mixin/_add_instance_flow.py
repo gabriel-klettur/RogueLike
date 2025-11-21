@@ -83,7 +83,7 @@ def add_building_instance_for_visual_flow(owner: Any, state_key: str, reveal: bo
                 tied = 0
                 try:
                     sid = str((getattr(owner.model, 'selected_instance', {}) or {}).get('id')) if (getattr(owner.model, 'selected_instance', {}) or {}).get('id') is not None else None
-                    if sid and (str(e.get('spawner_instance_id')) == sid or str((ov or {}).get('spawner_instance_id')) == sid):
+                    if sid and (str(e.get('spawner_instance_id')) == sid or str(e.get('spawn_id')) == sid):
                         tied = 1
                 except (AttributeError, TypeError, ValueError):
                     tied = 0
@@ -214,8 +214,6 @@ def add_building_instance_for_visual_flow(owner: Any, state_key: str, reveal: bo
             sid = None
         entry['overrides'] = entry.get('overrides') or {}
         entry['overrides']['_is_spawner_visual'] = True
-        if sid:
-            entry['overrides']['spawner_instance_id'] = sid
         try:
             if 'overrides' in entry:
                 if (

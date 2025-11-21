@@ -22,6 +22,17 @@ def load_buildings_instances_json() -> List[Dict[str, Any]]:
 
 
 def write_buildings_instances_json(arr: List[Dict[str, Any]]) -> None:
+    # Sanitize: remove redundant overrides['spawner_instance_id'] (root field is source of truth)
+    try:
+        for e in arr or []:
+            try:
+                ov = e.get('overrides')
+                if isinstance(ov, dict) and 'spawner_instance_id' in ov:
+                    ov.pop('spawner_instance_id', None)
+            except Exception:
+                continue
+    except Exception:
+        pass
     try:
         arr.sort(key=lambda e: int(e.get('id') or 0))
     except Exception:

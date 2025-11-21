@@ -12,10 +12,12 @@ from .visuals_common import (
     get_local_tile,
     extract_visual_fields,
     ensure_instance_scale_override,
+    find_existing_instance_id_by_key,
     compute_new_entry,
     update_visuals_map_entry,
 )
 from .buildings_repo import get_template_image_path
+from .visuals_tags import ensure_spawner_tags_for_existing_instance
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,78 @@ def auto_repair_state_visuals(world, eid: int, cfg, inst: dict) -> None:
         if tpl_id is None or tpl_id not in tmap:
             continue
         tpl_entry = tmap.get(tpl_id)
+        # Try to reuse an existing building by composite key (zone, rel_x, rel_y, template_id)
+        try:
+            existing_iid = find_existing_instance_id_by_key(
+                b_arr=b_arr,
+                zone=zone,
+                local_tile=local_tile,
+                tpl_id=int(tpl_id),
+                tpl_entry=tpl_entry,
+                templates=templates,
+            )
+        except Exception:
+            existing_iid = None
+        if existing_iid is not None:
+            # Bind mapping to existing id
+            try:
+                cfg.state_visuals[str(key)] = int(existing_iid)
+            except Exception:
+                pass
+            # Ensure proper spawner tags and scale override are persisted
+            try:
+                ensure_spawner_tags_for_existing_instance(
+                    b_arr=b_arr,
+                    cur_iid=int(existing_iid),
+                    inst_id=str(inst.get('id')) if inst.get('id') is not None else None,
+                    visuals_scale=visuals_scale,
+                )
+            except Exception:
+                pass
+            ensure_instance_scale_override(b_arr, int(existing_iid), visuals_scale)
+            # Ensure a Building object for this id exists in world memory; if not, reconstruct it
+            try:
+                missing = True
+                for ob in getattr(world, 'buildings', []) or []:
+                    try:
+                        if getattr(ob, 'id', None) == int(existing_iid):
+                            missing = False
+                            break
+                    except Exception:
+                        continue
+                if missing:
+                    # Locate instance entry and its template, then append object to world
+                    entry2 = None
+                    for e in b_arr:
+                        try:
+                            if int(e.get('id')) == int(existing_iid):
+                                entry2 = e
+                                break
+                        except Exception:
+                            continue
+                    if entry2 is not None:
+                        try:
+                            tpl_id2 = int(entry2.get('template_id')) if entry2.get('template_id') is not None else None
+                        except Exception:
+                            tpl_id2 = None
+                        tpl_entry2 = tmap.get(tpl_id2) if tpl_id2 in tmap else None
+                        try:
+                            img_path2 = get_template_image_path(templates, int(tpl_id2)) if tpl_id2 is not None else None
+                        except Exception:
+                            img_path2 = None
+                        append_building_object_in_world(world, entry2, tpl_entry2, img_path2)
+            except Exception:
+                pass
+            try:
+                update_visuals_map_entry(vis, str(key), val, int(existing_iid), int(tpl_id))
+            except Exception:
+                pass
+            try:
+                if not getattr(cfg, 'visible_in_game', False):
+                    cfg.visible_in_game = True
+            except Exception:
+                pass
+            continue
         entry, max_id = compute_new_entry(
             zone=zone,
             local_tile=local_tile,

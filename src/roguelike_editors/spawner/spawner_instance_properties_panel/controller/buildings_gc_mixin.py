@@ -90,7 +90,7 @@ class BuildingsGCMixin:
             def _is_spawner_linked(e: dict) -> bool:
                 try:
                     ov = e.get('overrides') if isinstance(e, dict) else None
-                    if isinstance(ov, dict) and (ov.get('_is_spawner_visual') or ov.get('spawner_instance_id')):
+                    if isinstance(ov, dict) and ov.get('_is_spawner_visual'):
                         return True
                     if str(e.get('spawner_instance_id') or '') or str(e.get('spawn_id') or ''):
                         return True

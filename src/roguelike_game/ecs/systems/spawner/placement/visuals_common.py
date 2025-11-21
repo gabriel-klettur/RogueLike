@@ -149,6 +149,59 @@ def ensure_instance_scale_override(
         return False
 
 
+def _compute_rel_key(
+    zone: str,
+    local_tile: Tuple[int, int],
+    tpl_id: int,
+    tpl_entry: dict | None,
+    templates: list[dict],
+) -> tuple[str, int, int, int]:
+    """Compute the composite key (zone, rel_x, rel_y, template_id) used to detect duplicates.
+
+    This mirrors the positioning logic used when creating new entries, ensuring we search
+    for an already-existing building with the exact same computed rel coordinates.
+    """
+    img_path = get_template_image_path(templates, tpl_id)
+    rel_x, rel_y, _scale = calc_centered_rel(local_tile, tpl_entry, img_path)
+    try:
+        z = str(zone)
+    except Exception:
+        z = str(zone)
+    return (z, int(rel_x), int(rel_y), int(tpl_id))
+
+
+def find_existing_instance_id_by_key(
+    b_arr: list[dict],
+    zone: str,
+    local_tile: Tuple[int, int],
+    tpl_id: int,
+    tpl_entry: dict | None,
+    templates: list[dict],
+) -> Optional[int]:
+    """Search in b_arr for an existing instance with same (zone, rel_x, rel_y, template_id).
+
+    Returns the instance id if found, otherwise None.
+    """
+    try:
+        z, rx, ry, tid = _compute_rel_key(zone, local_tile, tpl_id, tpl_entry, templates)
+    except Exception:
+        return None
+    for e in b_arr:
+        try:
+            ez = str(e.get('zone'))
+            erx = int(e.get('rel_x'))
+            ery = int(e.get('rel_y'))
+            etid = int(e.get('template_id'))
+            if ez == z and erx == rx and ery == ry and etid == tid:
+                try:
+                    return int(e.get('id'))
+                except Exception:
+                    continue
+        except Exception:
+            continue
+    return None
+
+
 def compute_new_entry(
     zone: str,
     local_tile: Tuple[int, int],
@@ -181,11 +234,6 @@ def compute_new_entry(
     }
     if include_spawner_visual_flag:
         entry['spawner_visual'] = True
-    try:
-        if inst_id is not None:
-            entry['overrides']['spawner_instance_id'] = str(inst_id)  # type: ignore[index]
-    except Exception:
-        pass
     if visuals_scale is not None:
         try:
             entry['overrides']['scale'] = [int(visuals_scale[0]), int(visuals_scale[1])]  # type: ignore[index]

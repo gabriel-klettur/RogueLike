@@ -67,14 +67,14 @@ def append_building_object_in_world(world, inst_entry: dict, tpl_entry: Optional
             pass
         try:
             setattr(b, '_is_spawner_visual', True)
-            sid = inst_entry.get('spawner_instance_id') or (inst_entry.get('overrides') or {}).get('spawner_instance_id')
+            sid = inst_entry.get('spawner_instance_id') or inst_entry.get('spawn_id')
             if sid is not None:
                 setattr(b, 'spawner_instance_id', sid)
                 setattr(b, 'spawn_id', sid)
         except Exception:
             pass
         try:
-            sid_val = inst_entry.get('spawner_instance_id') or (inst_entry.get('overrides') or {}).get('spawner_instance_id') or inst_entry.get('spawn_id')
+            sid_val = inst_entry.get('spawner_instance_id') or inst_entry.get('spawn_id')
             bid_val = inst_entry.get('id')
             if sid_val is not None and bid_val is not None:
                 try:

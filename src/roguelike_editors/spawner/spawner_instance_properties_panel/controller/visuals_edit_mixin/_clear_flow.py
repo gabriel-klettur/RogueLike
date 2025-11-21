@@ -98,8 +98,14 @@ def clear_visual_for_state_flow(owner: Any, state_key: str) -> None:
             ov = e.get('overrides') if isinstance(e, dict) else None
             is_tagged = False
             try:
-                if isinstance(ov, dict) and ov.get('_is_spawner_visual') and (sid is None or str(ov.get('spawner_instance_id')) == str(sid)):
-                    is_tagged = True
+                # Consider it a tagged spawner visual if it has the tag,
+                # and optionally matches this spawner via root link when available
+                if isinstance(ov, dict) and ov.get('_is_spawner_visual'):
+                    if sid is None:
+                        is_tagged = True
+                    else:
+                        if str(e.get('spawner_instance_id')) == str(sid) or str(e.get('spawn_id')) == str(sid):
+                            is_tagged = True
             except Exception:
                 is_tagged = False
 

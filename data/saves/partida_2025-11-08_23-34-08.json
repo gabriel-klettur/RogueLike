@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      93,
-      76
+      61,
+      84
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        93,
-        76
+        61,
+        84
       ],
       "npc_states": {}
     }
@@ -90,23 +90,15 @@
   "meta": {
     "name": "partida_2025-11-08_23-34-08",
     "created_at": "2025-11-08T23:34:08",
-    "last_played": "2025-11-20T20:25:48",
+    "last_played": "2025-11-21T08:42:51",
     "player": {
-      "xp": 40,
-      "level": 1
+      "xp": null,
+      "level": null
     },
-    "items_summary": {
-      "stacks": 4,
-      "top_items": [
-        "iron_sword",
-        "paella_01",
-        "wood",
-        "energy_potion"
-      ]
-    }
+    "items_summary": {}
   },
   "time": {
-    "minute": 21,
+    "minute": 559,
     "time_scale": 0.4
   }
 }

@@ -46,7 +46,7 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
         def _is_spawner_linked(e: Dict[str, Any]) -> bool:
             try:
                 ov = e.get('overrides') if isinstance(e, dict) else None
-                if isinstance(ov, dict) and (ov.get('_is_spawner_visual') or ov.get('spawner_instance_id')):
+                if isinstance(ov, dict) and ov.get('_is_spawner_visual'):
                     return True
                 if str(e.get('spawner_instance_id') or '') or str(e.get('spawn_id') or ''):
                     return True
@@ -150,6 +150,17 @@ def write_buildings_instances(data: List[Dict[str, Any]]) -> None:
         if modified:
             for iid, diffs in modified:
                 _log.debug(f"[BuildingsService][Audit] Modified ID {iid}: {diffs}")
+    except Exception:
+        pass
+    # Sanitize redundancy: drop overrides['spawner_instance_id'] (root field is authoritative)
+    try:
+        for e in data or []:
+            try:
+                ov = e.get('overrides')
+                if isinstance(ov, dict) and 'spawner_instance_id' in ov:
+                    ov.pop('spawner_instance_id', None)
+            except Exception:
+                continue
     except Exception:
         pass
     with open(path, 'w', encoding='utf-8') as f:

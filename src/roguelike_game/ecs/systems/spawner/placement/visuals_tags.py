@@ -32,9 +32,6 @@ def ensure_spawner_tags_for_existing_instance(
                 if str(e.get('spawner_instance_id') or '') != inst_id:
                     e['spawner_instance_id'] = inst_id
                     changed_bi = True
-                if str((ov or {}).get('spawner_instance_id') or '') != inst_id:
-                    ov['spawner_instance_id'] = inst_id
-                    changed_bi = True
             if visuals_scale is not None:
                 try:
                     cur_sc = ov.get('scale')
