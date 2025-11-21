@@ -124,6 +124,13 @@ def open_editor_exclusive(game, target: str) -> None:
     elif target == 'particles':
         try:
             game.particles_editor.model.visible = True
+            # Ensure picker rebuilds from current PARTICLES catalog on open
+            try:
+                picker = getattr(game.particles_editor, 'particles_picker_controller', None)
+                if picker is not None and hasattr(picker, 'rebuild'):
+                    picker.rebuild()
+            except Exception:
+                pass
         except Exception:
             pass
     elif target == 'entities':

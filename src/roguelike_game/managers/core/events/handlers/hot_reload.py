@@ -17,7 +17,8 @@ def handle_hot_reload_anywhere(game, events) -> bool:
                     mods = pygame.key.get_mods()
                 except Exception:
                     mods = 0
-                if not bool(mods & (pygame.KMOD_LALT | pygame.KMOD_RALT)):
+                # Only reload on F1 with NO modifiers (no Alt/Ctrl/Shift)
+                if not bool(mods & (pygame.KMOD_LALT | pygame.KMOD_RALT | pygame.KMOD_LCTRL | pygame.KMOD_RCTRL | pygame.KMOD_LSHIFT | pygame.KMOD_RSHIFT)):
                     try:
                         summary = reload_all_game_data_and_code(game)
                         try:

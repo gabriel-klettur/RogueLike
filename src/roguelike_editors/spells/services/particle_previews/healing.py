@@ -35,6 +35,7 @@ class ParticlePreviewHealingAura:
         bursts: list | tuple | None = None,
         texture_path: str | None = None,
         flipbook: dict | None = None,
+        ellipse_ratio: float = 1.0,
     ) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
@@ -106,6 +107,10 @@ class ParticlePreviewHealingAura:
         self._burst_cursor = 0
         self._burst_elapsed_ms = 0
         self._tex = TextureFlipbookHelper(texture_path=texture_path, flipbook=flipbook)
+        try:
+            self._ellipse = float(ellipse_ratio)
+        except Exception:
+            self._ellipse = 1.0
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -119,10 +124,20 @@ class ParticlePreviewHealingAura:
         if isinstance(self._radius, int):
             max_r = max(8, min(w, h) // 2 - 4)
             r = max(8, min(max_r, self._radius))
-            hw = hh = r
+            hw = r
+            try:
+                er = max(0.25, min(3.0, float(self._ellipse)))
+            except Exception:
+                er = 1.0
+            hh = int(max(8, r * er))
         else:
-            hw = max(12, min(w, h) // 3)
-            hh = max(12, min(w, h) // 3)
+            base = max(12, min(w, h) // 3)
+            hw = base
+            try:
+                er = max(0.25, min(3.0, float(self._ellipse)))
+            except Exception:
+                er = 1.0
+            hh = int(max(12, base * er))
         top = cy - hh
         bottom = cy + hh
         return cx, cy, hw, hh, top, bottom
@@ -328,16 +343,14 @@ class ParticlePreviewHealingAura:
                             frm.set_alpha(alpha)
                         except Exception:
                             pass
-                    if self._blend_add:
-                        self._surf.blit(frm, (ix, iy), special_flags=pygame.BLEND_ADD)
-                    else:
-                        self._surf.blit(frm, (ix, iy))
+                    # Preview surfaces are composited later without special flags.
+                    # Using BLEND_ADD here would not update destination alpha, making dots invisible.
+                    # Approximate additive by drawing the bright frame normally.
+                    self._surf.blit(frm, (ix, iy))
                 else:
                     import pygame
                     blob = pygame.Surface((draw_sz, draw_sz), pygame.SRCALPHA)
                     blob.fill((*dcol, alpha))
-                    if self._blend_add:
-                        self._surf.blit(blob, (ix, iy), special_flags=pygame.BLEND_ADD)
-                    else:
-                        self._surf.blit(blob, (ix, iy))
+                    # For previews, avoid BLEND_ADD to preserve alpha on the intermediate surface.
+                    self._surf.blit(blob, (ix, iy))
         return self._surf

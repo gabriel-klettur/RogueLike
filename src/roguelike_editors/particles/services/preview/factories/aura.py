@@ -19,10 +19,11 @@ def build_aura(context: ParticlePreviewContext) -> ParticlePreviewAura | Particl
     radius = context.get_int("radius")
     palette = context.palette_or_none()
     blend_mode = _string_or_none(parts.get("blend_mode"))
+    ellipse_ratio = context.get_number("ellipse_ratio", 1.0) or 1.0
 
     if _has_emitter_parameters(parts):
-        return _build_healing_aura(context, radius, palette, blend_mode)
-    return _build_generic_aura(context, radius, palette, blend_mode)
+        return _build_healing_aura(context, radius, palette, blend_mode, ellipse_ratio)
+    return _build_generic_aura(context, radius, palette, blend_mode, ellipse_ratio)
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +39,7 @@ def _build_healing_aura(
     radius: Optional[int],
     palette: Optional[Sequence[Tuple[int, int, int]]],
     blend_mode: Optional[str],
+    ellipse_ratio: float,
 ) -> ParticlePreviewHealingAura:
     parts = context.parts
     emit_rate = context.get_int("emit_rate", 3) or 3
@@ -86,6 +88,7 @@ def _build_healing_aura(
         bursts=bursts,
         texture_path=_string_or_none(parts.get("texture_path")),
         flipbook=context.get_dict("flipbook"),
+        ellipse_ratio=float(ellipse_ratio),
     )
 
 
@@ -94,6 +97,7 @@ def _build_generic_aura(
     radius: Optional[int],
     palette: Optional[Sequence[Tuple[int, int, int]]],
     blend_mode: Optional[str],
+    ellipse_ratio: float,
 ) -> ParticlePreviewAura:
     parts = context.parts
     speed = context.get_number("speed", 1.0) or 1.0
@@ -105,6 +109,8 @@ def _build_generic_aura(
         else:
             count = 24
     count = max(1, count)
+    ring_layers = context.get_int("ring_layers", 1) or 1
+    layer_spread = context.get_number("layer_spread", 0.3) or 0.3
 
     return ParticlePreviewAura(
         color=context.color_or((80, 200, 120)),
@@ -113,6 +119,9 @@ def _build_generic_aura(
         count=int(count),
         palette=palette,
         blend_mode=blend_mode,
+        ellipse_ratio=float(ellipse_ratio),
+        ring_layers=int(ring_layers),
+        layer_spread=float(layer_spread),
     )
 
 

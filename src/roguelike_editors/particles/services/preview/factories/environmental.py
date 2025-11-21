@@ -9,6 +9,7 @@ from roguelike_editors.spells.services.particle_preview import (
     ParticlePreviewWaterFlow,
     ParticlePreviewWaterFountain,
 )
+from roguelike_editors.spells.services.particle_previews.combat_misc import ParticlePreviewPortal
 
 from ..context import ParticlePreviewContext
 from ..validators import warn_curve, warn_emission
@@ -122,6 +123,43 @@ def build_water_flow(context: ParticlePreviewContext) -> ParticlePreviewWaterFlo
         alpha_wave=int(alpha_wave),
     )
 
+
+# ---------------------------------------------------------------------------
+# Stylized Portal
+# ---------------------------------------------------------------------------
+
+def build_portal(context: ParticlePreviewContext) -> ParticlePreviewPortal:
+    parts = context.parts
+    def _rgb(name: str, fallback: tuple[int, int, int]) -> tuple[int, int, int]:
+        v = parts.get(name)
+        if isinstance(v, (list, tuple)) and len(v) >= 3:
+            try:
+                return (int(v[0]), int(v[1]), int(v[2]))
+            except Exception:
+                return fallback
+        return fallback
+
+    rim_color = _rgb("rim_color", (180, 255, 120))
+    core_color = _rgb("core_color", (16, 36, 28))
+    swirl_color = _rgb("swirl_color", (150, 255, 100))
+    ellipse_ratio = context.get_number("ellipse_ratio", 1.8) or 1.8
+    outer_radius = context.get_int("outer_radius", 28) or 28
+    inner_radius = context.get_int("inner_radius", 14) or 14
+    swirl_width = context.get_int("swirl_width", 6) or 6
+    chips_count = context.get_int("chips_count", 4) or 4
+    angle_speed = context.get_number("angle_speed", 0.8) or 0.8
+
+    return ParticlePreviewPortal(
+        rim_color=rim_color,
+        core_color=core_color,
+        swirl_color=swirl_color,
+        ellipse_ratio=float(ellipse_ratio),
+        outer_radius=int(outer_radius),
+        inner_radius=int(inner_radius),
+        swirl_width=int(swirl_width),
+        chips_count=int(chips_count),
+        angle_speed=float(angle_speed),
+    )
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -778,4 +778,201 @@
       }
     }
   }
+  ,
+  "portal_oval_rim_add": {
+    "id": "portal_oval_rim_add",
+    "name": "Portal Oval Rim (Add)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 8,
+        "speed": 1.0,
+        "lifespan": 64,
+        "size_range": [2, 4],
+        "colors": [[120, 200, 255], [180, 230, 255], [255, 255, 255]],
+        "blend_mode": "additive",
+        "emission_shape": "ring",
+        "emission_extent": [26, 34],
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 16,
+        "bursts": [{"time_s": 0.0, "count": 6, "loop": true}],
+        "simulation_space": "local",
+        "max_particles": 110,
+        "inherit_velocity": 0.0,
+        "size_over_life": [[0.0, 0.8], [0.4, 1.1], [1.0, 0.6]],
+        "alpha_over_life": [[0.0, 0.0], [0.1, 0.9], [0.7, 0.5], [1.0, 0.0]],
+        "color_over_life": [[0.0, [160, 220, 255]], [0.5, [200, 240, 255]], [1.0, [255, 255, 255]]]
+      }
+    }
+  },
+  "portal_oval_core_soft": {
+    "id": "portal_oval_core_soft",
+    "name": "Portal Oval Core (Soft)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 5,
+        "speed": 0.6,
+        "lifespan": 50,
+        "size_range": [3, 6],
+        "colors": [[150, 220, 255], [210, 240, 255]],
+        "blend_mode": "alpha",
+        "emission_shape": "circle",
+        "emission_extent": 24,
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 10,
+        "simulation_space": "local",
+        "max_particles": 90,
+        "inherit_velocity": 0.0,
+        "size_over_life": [[0.0, 0.7], [0.5, 1.2], [1.0, 0.5]],
+        "alpha_over_life": [[0.0, 0.0], [0.2, 0.6], [0.8, 0.35], [1.0, 0.0]],
+        "color_over_life": [[0.0, [180, 230, 255]], [1.0, [255, 255, 255]]]
+      }
+    }
+  },
+  "portal_oval_sparks_add": {
+    "id": "portal_oval_sparks_add",
+    "name": "Portal Oval Sparks (Add)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 4,
+        "speed": 1.4,
+        "lifespan": 40,
+        "size_range": [2, 3],
+        "colors": [[180, 230, 255], [255, 255, 255]],
+        "blend_mode": "additive",
+        "emission_shape": "line",
+        "emission_extent": 0.9,
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 12,
+        "bursts": [{"time_s": 0.0, "count": 2, "loop": true}, {"time_s": 0.3, "count": 3, "loop": true}],
+        "simulation_space": "local",
+        "max_particles": 60,
+        "inherit_velocity": 0.0,
+        "size_over_life": [[0.0, 0.9], [1.0, 0.6]],
+        "alpha_over_life": [[0.0, 0.0], [0.1, 1.0], [0.7, 0.5], [1.0, 0.0]]
+      }
+    }
+  },
+  "portal_oval_auto": {
+    "id": "portal_oval_auto",
+    "name": "Portal Oval (Auto Ellipse)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 6,
+        "speed": 1.0,
+        "lifespan": 60,
+        "size_range": [2, 4],
+        "colors": [[140, 220, 255], [200, 240, 255], [255, 255, 255]],
+        "blend_mode": "additive",
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 14,
+        "simulation_space": "local",
+        "max_particles": 100,
+        "inherit_velocity": 0.0,
+        "size_over_life": [[0.0, 0.8], [0.5, 1.1], [1.0, 0.7]],
+        "alpha_over_life": [[0.0, 0.0], [0.1, 0.9], [0.8, 0.5], [1.0, 0.0]],
+        "color_over_life": [[0.0, [180, 230, 255]], [1.0, [255, 255, 255]]]
+      }
+    }
+  }
+  ,
+  "portal_green_rim_orbit": {
+    "id": "portal_green_rim_orbit",
+    "name": "Portal Green Rim (Orbit)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "speed": 1.1,
+        "radius": 28,
+        "count": 36,
+        "ellipse_ratio": 1.75,
+        "ring_layers": 15,
+        "layer_spread": 0.35,
+        "colors": [[160, 255, 120], [120, 240, 80], [210, 255, 150]],
+        "blend_mode": "additive"
+      }
+    }
+  },
+  "portal_green_swirl_core": {
+    "id": "portal_green_swirl_core",
+    "name": "Portal Green Core (Swirl)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 6,
+        "speed": 1.0,
+        "lifespan": 48,
+        "size_range": [2, 4],
+        "colors": [[120, 220, 90], [90, 200, 70], [70, 170, 60]],
+        "blend_mode": "alpha",
+        "emission_shape": "circle",
+        "emission_extent": 22,
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 18,
+        "size_over_life": [[0.0, 0.8], [0.3, 1.1], [1.0, 0.6]],
+        "alpha_over_life": [[0.0, 0.0], [0.15, 0.7], [0.8, 0.4], [1.0, 0.0]],
+        "color_over_life": [[0.0, [140, 255, 110]], [1.0, [90, 200, 80]]]
+      }
+    }
+  },
+  "portal_green_sparks": {
+    "id": "portal_green_sparks",
+    "name": "Portal Green Sparks",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "aura",
+        "emit_rate": 4,
+        "speed": 1.4,
+        "lifespan": 36,
+        "size_range": [2, 3],
+        "colors": [[180, 255, 120], [210, 255, 170], [240, 255, 200]],
+        "blend_mode": "additive",
+        "emission_shape": "ring",
+        "emission_extent": [24, 30],
+        "emission_direction": [0, -1],
+        "emission_angle_spread_deg": 14,
+        "bursts": [{"time_s": 0.0, "count": 2, "loop": true}, {"time_s": 0.35, "count": 3, "loop": true}],
+        "size_over_life": [[0.0, 0.9], [1.0, 0.6]],
+        "alpha_over_life": [[0.0, 0.0], [0.1, 1.0], [0.7, 0.45], [1.0, 0.0]]
+      }
+    }
+  }
+  ,
+  "portal_green_full": {
+    "id": "portal_green_full",
+    "name": "Portal Green (Full Stylized)",
+    "type": "aura",
+    "vfx": {
+      "preview": "particles",
+      "particles": {
+        "kind": "portal",
+        "rim_color": [185, 255, 120],
+        "core_color": [20, 36, 28],
+        "swirl_color": [160, 255, 110],
+        "ellipse_ratio": 1.9,
+        "outer_radius": 28,
+        "inner_radius": 12,
+        "swirl_width": 6,
+        "chips_count": 5,
+        "angle_speed": 0.9
+      }
+    }
+  }
 }

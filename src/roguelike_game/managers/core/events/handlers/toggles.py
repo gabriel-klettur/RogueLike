@@ -91,10 +91,10 @@ def handle_toggles(game, events, close_all_editors, open_editor_exclusive) -> bo
         # Particles (Left Alt required)
         if event.key == game.input_config.get_key('toggle_particles_editor'):
             try:
-                lalt = bool(pygame.key.get_mods() & pygame.KMOD_LALT)
+                ctrl = bool(pygame.key.get_mods() & pygame.KMOD_CTRL)
             except Exception:
-                lalt = False
-            if lalt:
+                ctrl = False
+            if ctrl:
                 try:
                     is_vis = bool(getattr(getattr(game, 'particles_editor', None), 'model', None) and getattr(game.particles_editor.model, 'visible', False))
                 except Exception:

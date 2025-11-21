@@ -155,3 +155,95 @@ class ParticlePreviewTeleport:
             r = max(1, min(radius, max(1, min(w, h) // 2 - 1)))
             pygame.draw.circle(self._surf, col, (cx, cy), r, width=3)
         return self._surf
+
+
+class ParticlePreviewPortal:
+    """Stylized oval portal with rim, dark core and inner swirl.
+
+    Parameters (all optional with sensible defaults):
+    - rim_color, core_color, swirl_color: RGB tuples
+    - ellipse_ratio: vertical squash/stretch factor (>1 = taller)
+    - outer_radius, inner_radius: control rim thickness
+    - swirl_width: pixels for the inner arc thickness
+    - chips_count: small exterior chips count
+    - angle_speed: radians/sec for subtle swirl motion
+    """
+
+    def __init__(
+        self,
+        rim_color: Tuple[int, int, int] = (180, 255, 120),
+        core_color: Tuple[int, int, int] = (16, 36, 28),
+        swirl_color: Tuple[int, int, int] = (150, 255, 100),
+        *,
+        ellipse_ratio: float = 1.8,
+        outer_radius: int = 28,
+        inner_radius: int = 14,
+        swirl_width: int = 6,
+        chips_count: int = 4,
+        angle_speed: float = 0.8,
+    ) -> None:
+        self._surf: pygame.Surface | None = None
+        self._size: Tuple[int, int] | None = None
+        self._rim = rim_color
+        self._core = core_color
+        self._swirl = swirl_color
+        self._er = float(max(0.5, min(3.0, ellipse_ratio)))
+        self._ro = int(max(8, outer_radius))
+        self._ri = int(max(2, min(inner_radius, self._ro - 2)))
+        self._sw = int(max(2, swirl_width))
+        self._chips = int(max(0, chips_count))
+        self._ang = 0.0
+        self._spd = float(max(0.0, angle_speed))
+
+    def _ensure_surface(self, size: Tuple[int, int]) -> None:
+        if self._size != size or self._surf is None:
+            self._size = size
+            self._surf = pygame.Surface(size, pygame.SRCALPHA)
+
+    def render(self, size: Tuple[int, int], dt_ms: int) -> pygame.Surface:
+        self._ensure_surface(size)
+        assert self._surf is not None and self._size is not None
+        w, h = self._size
+        self._surf.fill((0, 0, 0, 0))
+        self._ang += max(0, dt_ms) * 0.001 * self._spd
+        cx, cy = w // 2, h // 2
+        rx = self._ro
+        ry = int(self._ro * self._er)
+        # 1) Core dark fill (inner oval)
+        try:
+            core_rect = pygame.Rect(cx - self._ri, cy - int(self._ri * self._er), self._ri * 2, int(self._ri * self._er) * 2)
+            pygame.draw.ellipse(self._surf, (*self._core, 220), core_rect)
+        except Exception:
+            pass
+        # 2) Rim outline (outer oval minus inner)
+        try:
+            outer_rect = pygame.Rect(cx - rx, cy - ry, rx * 2, ry * 2)
+            pygame.draw.ellipse(self._surf, (*self._rim, 255), outer_rect, width=max(2, self._ro - self._ri))
+        except Exception:
+            pass
+        # 3) Inner swirl arc (draw small rectangles along an arc inside the oval)
+        try:
+            arc_r = (self._ri + self._ro) * 0.5
+            rx_i = int(arc_r)
+            ry_i = int(arc_r * self._er)
+            base = self._ang
+            for i in range(20):
+                t = base + (i / 20.0) * math.pi * 0.9
+                x = int(cx + rx_i * math.cos(t))
+                y = int(cy + ry_i * math.sin(t))
+                rect = pygame.Rect(x - self._sw // 2, y - self._sw // 2, self._sw, self._sw)
+                pygame.draw.rect(self._surf, (*self._swirl, 240), rect)
+        except Exception:
+            pass
+        # 4) Exterior chips
+        try:
+            for i in range(self._chips):
+                a = self._ang * 1.5 + (i / max(1, self._chips)) * 2 * math.pi
+                rr = self._ro + 6 + (i % 2) * 3
+                x = int(cx + rr * math.cos(a))
+                y = int(cy + int(rr * self._er) * math.sin(a))
+                s = 3 if (i % 3) else 4
+                pygame.draw.rect(self._surf, (*self._rim, 230), pygame.Rect(x - s // 2, y - s // 2, s, s))
+        except Exception:
+            pass
+        return self._surf

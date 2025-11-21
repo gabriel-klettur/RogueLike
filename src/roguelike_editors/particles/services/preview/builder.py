@@ -35,6 +35,8 @@ _FACTORY_MAP: Dict[str, Factory] = {
     "falling_leaf": environmental.build_falling_leaf,
     "explosion": projectile.build_explosion,
     "water_flow": environmental.build_water_flow,
+    # Stylized portal (rim + dark core + inner swirl)
+    "portal": environmental.build_portal,
 }
 
 

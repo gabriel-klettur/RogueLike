@@ -563,8 +563,8 @@
     "id": 88,
     "preset_id": "falling_leaf_30s",
     "zone": "Forest",
-    "rel_x": 209,
-    "rel_y": 1084
+    "rel_x": 217,
+    "rel_y": 1034
   },
   {
     "id": 89,
@@ -1419,5 +1419,138 @@
     "zone": "Forest",
     "rel_x": 1454,
     "rel_y": 412
+  },
+  {
+    "id": 216,
+    "preset_id": "portal_green_rim_orbit",
+    "zone": "Forest",
+    "rel_x": 377,
+    "rel_y": 1172
+  },
+  {
+    "id": 217,
+    "preset_id": "portal_green_swirl_core",
+    "zone": "Forest",
+    "rel_x": 377,
+    "rel_y": 1193
+  },
+  {
+    "id": 218,
+    "preset_id": "portal_green_sparks",
+    "zone": "Forest",
+    "rel_x": 379,
+    "rel_y": 1176
+  },
+  {
+    "id": 219,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 139,
+    "rel_y": 965
+  },
+  {
+    "id": 220,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 80,
+    "rel_y": 1062
+  },
+  {
+    "id": 221,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 86,
+    "rel_y": 984
+  },
+  {
+    "id": 222,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 355,
+    "rel_y": 805
+  },
+  {
+    "id": 223,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 464,
+    "rel_y": 792
+  },
+  {
+    "id": 224,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 413,
+    "rel_y": 730
+  },
+  {
+    "id": 225,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 450,
+    "rel_y": 594
+  },
+  {
+    "id": 226,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 760,
+    "rel_y": 10
+  },
+  {
+    "id": 227,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_0_0",
+    "rel_x": 1029,
+    "rel_y": 1570
+  },
+  {
+    "id": 228,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 949,
+    "rel_y": 25
+  },
+  {
+    "id": 229,
+    "preset_id": "falling_leaf_30s",
+    "zone": "Forest",
+    "rel_x": 1035,
+    "rel_y": 54
+  },
+  {
+    "id": 230,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_0_0",
+    "rel_x": 1520,
+    "rel_y": 1519
+  },
+  {
+    "id": 231,
+    "preset_id": "falling_leaf_30s",
+    "zone": "zone_0_0",
+    "rel_x": 1515,
+    "rel_y": 1420
+  },
+  {
+    "id": 232,
+    "preset_id": "falling_leaf_30s",
+    "zone": "lobby",
+    "rel_x": 83,
+    "rel_y": 118
+  },
+  {
+    "id": 233,
+    "preset_id": "falling_leaf_30s",
+    "zone": "lobby",
+    "rel_x": 178,
+    "rel_y": 138
+  },
+  {
+    "id": 234,
+    "preset_id": "falling_leaf_30s",
+    "zone": "lobby",
+    "rel_x": 136,
+    "rel_y": 54
   }
 ]
