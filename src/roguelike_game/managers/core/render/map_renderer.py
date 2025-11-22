@@ -14,7 +14,42 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     Returns a list of dirty rects. All stateful caches live on 'manager' to
     preserve previous behavior and test hooks.
     """
+    logger = logging.getLogger(__name__)
     dirty_rects: list = []
+    # Siempre limpiar la capa de mapa antes de cualquier early-return para evitar
+    # que se sigan mostrando los tiles del mundo anterior en mundos en blanco
+    # (sin zonas u overlays por mundo).
+    try:
+        screen.fill((0, 0, 0))
+    except Exception:
+        pass
+    # Logging de cabecera solo cuando cambia (world, tile_editor_active, map_editor_active)
+    try:
+        cur_world = getattr(global_map_settings, "current_world", "?")
+        te_active = bool(
+            getattr(getattr(manager, 'tiles_editor', None), 'editor_state', None)
+            and manager.tiles_editor.editor_state.active
+        )
+        me_active = bool(
+            getattr(getattr(manager, 'map_editor', None), 'editor_state', None)
+            and manager.map_editor.editor_state.active
+        )
+        header_key = (cur_world, te_active, me_active)
+        last_key = getattr(manager, "_last_render_header_key", None)
+        if header_key != last_key:
+            logger.info(
+                "[Render][Map] begin render_map world=%s te_active=%s me_active=%s",  # noqa: E501
+                cur_world,
+                te_active,
+                me_active,
+            )
+            try:
+                manager._last_render_header_key = header_key
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     # Estado de Map Editor (para omitir guards globales cuando el editor está activo)
     try:
         me_active = bool(getattr(getattr(manager, 'map_editor', None), 'editor_state', None) and manager.map_editor.editor_state.active)
@@ -28,6 +63,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
             and not manager.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
         )
         if co_mode:
+            logger.info("[Render][Map] collision-only mode -> render_collisions world=%s", getattr(global_map_settings, "current_world", "?"))  # noqa: E501
             dirty = manager._render_collisions(screen, camera, map_)
             try:
                 manager._last_collision_only = co_mode

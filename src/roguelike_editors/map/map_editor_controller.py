@@ -178,9 +178,23 @@ class MapEditorController:
         self.zones.load_zones()
 
     def _invalidate_map_cache(self) -> None:
+        """Invalidar todas las cachés de mapa para este map_name en todos los worlds.
+
+        MapLoader usa el patrón de nombre ``map_{world_id}_{map_name}.pkl`` para
+        soportar cachés por mundo. Aquí limpiamos cualquier variante existente
+        para forzar una reconstrucción coherente sin depender del world activo.
+        """
         try:
-            cache_file = self.map_manager.loader.cache_dir / f"map_{self.map_manager.map_name}.pkl"
-            cache_file.unlink(missing_ok=True)
+            cache_dir = self.map_manager.loader.cache_dir
+        except Exception:
+            return
+        try:
+            pattern = f"map_*_{self.map_manager.map_name}.pkl"
+            for cache_file in cache_dir.glob(pattern):
+                try:
+                    cache_file.unlink(missing_ok=True)
+                except Exception:
+                    continue
         except Exception:
             pass
 

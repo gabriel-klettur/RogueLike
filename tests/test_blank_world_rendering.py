@@ -128,6 +128,36 @@ class BlankWorldRenderingTests(unittest.TestCase):
                         spr = get_sprite_for_tile('.', valid_code)
                         self.assertIsInstance(spr, pygame.Surface)
 
+    def test_get_sprite_overlay_only_no_fallback_on_non_base_world(self):
+        """En cualquier mundo distinto de 'base' no debe haber fallback a tiles base.
+
+        Incluso si el mundo tiene zonas de usuario, mientras overlay_only esté activo
+        (política actual para worlds != 'base'), las consultas sin overlay_code o con
+        códigos inválidos deben devolver None, pero un overlay_code válido debe
+        producir un sprite.
+        """
+
+        def fake_load_image(_name, size):
+            surf = pygame.Surface(size, pygame.SRCALPHA)
+            surf.fill((0, 255, 0, 255))
+            return surf
+
+        # Mundo de prueba con una zona de usuario y un directorio de overlays no vacío
+        with temp_world(user_zones={"lobby": [0, 0]}, overlays={"lobby.overlay": {}}) as (wdir, wid):
+            with patched_world(wdir, wid):
+                clear_sprite_caches()
+                from unittest.mock import patch
+                with patch("roguelike_engine.tile.utils.assets.load_image", fake_load_image):
+                    # Sin overlay_code -> None en overlay-only
+                    self.assertIsNone(get_sprite_for_tile('.', None))
+                    # overlay_code inválido -> None en overlay-only
+                    self.assertIsNone(get_sprite_for_tile('.', 'invalid_code'))
+                    # overlay_code válido -> debe devolver surface
+                    valid_code = next(iter(OVERLAY_CODE_MAP), None)
+                    if valid_code is not None:
+                        spr = get_sprite_for_tile('.', valid_code)
+                        self.assertIsInstance(spr, pygame.Surface)
+
     def test_chunked_render_guard_returns_fullscreen_rect_on_blank_sentinel_only(self):
         with temp_world(user_zones={}, overlays={"no zone.overlay": {}}) as (wdir, wid):
             with patched_world(wdir, wid):

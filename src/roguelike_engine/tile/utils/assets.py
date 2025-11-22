@@ -72,11 +72,19 @@ def get_sprite_for_tile(char: str, overlay_code: str | None = None) -> pygame.Su
 
     # Política overlay-only: detectar mundo en blanco o overlays sentinela sin depender únicamente de is_blank_world
     overlay_only = False
-    # 1) Preferir MapSettings.is_blank_world() si existe
+    # 0) Forzar overlay-only en cualquier mundo distinto de 'base'
     try:
-        overlay_only = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
+        world_id = getattr(global_map_settings, 'current_world', 'base')
     except Exception:
-        overlay_only = False
+        world_id = 'base'
+    if world_id != 'base':
+        overlay_only = True
+    # 1) Preferir MapSettings.is_blank_world() si existe (solo cuando seguimos en modo base)
+    if overlay_only is False:
+        try:
+            overlay_only = bool(getattr(global_map_settings, 'is_blank_world', lambda: False)())
+        except Exception:
+            overlay_only = False
     # 2) Fallback: inspeccionar ZONES_INDEX para ver si no hay zonas de usuario (excluyendo sentinelas)
     if overlay_only is False:
         try:

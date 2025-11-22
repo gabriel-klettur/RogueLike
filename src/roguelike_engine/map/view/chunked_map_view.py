@@ -51,6 +51,16 @@ class ChunkedMapView:
         chunk_dict: dict[tuple[int,int], pygame.Surface] = {}
 
         overlay_only = resolve_overlay_policy()
+        try:
+            cur_world = getattr(global_map_settings, "current_world", "?")
+        except Exception:
+            cur_world = "?"
+        logger.info(
+            "[ChunkedMapView] _build_chunk_surfaces world=%s zoom=%.3f overlay_only=%s",  # noqa: E501
+            cur_world,
+            zoom,
+            overlay_only,
+        )
         layers_ordered = sorted(map_model.layers.keys(), key=lambda l: l.value)
         resolver = SpriteResolver(overlay_only)
 
@@ -132,12 +142,25 @@ class ChunkedMapView:
             if zoom not in self.chunks_by_zoom:
                 self._build_chunk_surfaces(map_model, zoom)
             overlay_only = resolve_overlay_policy()
+            try:
+                cur_world = getattr(global_map_settings, "current_world", "?")
+            except Exception:
+                cur_world = "?"
+            logger.info(
+                "[ChunkedMapView] update_cells_all_zooms world=%s zoom=%.3f overlay_only=%s cells=%d",  # noqa: E501
+                cur_world,
+                zoom,
+                overlay_only,
+                len(set(cells)) if cells else 0,
+            )
             resolver = SpriteResolver(overlay_only)
 
             # Compute unique chunks to rebuild at this zoom
             dirty_chunks: set[tuple[int,int]] = set()
             for r, c in set(cells):
                 dirty_chunks.add((c // cs, r // cs))
+
+            # Rebuild each affected chunk only once
             for (cx, cy) in dirty_chunks:
                 surf = build_chunk_surface(
                     map_matrix=matrix,
@@ -195,6 +218,11 @@ class ChunkedMapView:
             map_bottom = height_tiles * TILE_SIZE
             # No intersección de rectángulos en coordenadas de mundo
             if right <= 0 or bottom <= 0 or left >= map_right or top >= map_bottom:
+                logger.info(
+                    "[ChunkedMapView] render early-return: camera outside map bounds world=%s zoom=%.3f",  # noqa: E501
+                    getattr(global_map_settings, "current_world", "?"),
+                    zoom,
+                )
                 return []
         except Exception:
             # En caso de cualquier problema de cálculo, continuamos con la ruta normal
@@ -222,8 +250,11 @@ class ChunkedMapView:
                     except Exception:
                         user_keys = []
                     if len(user_keys) == 0 and not has_non_ground_codes:
-                        if DEBUG_CHUNKED:
-                            logger.debug(f"[ChunkedMapView] overlays-driven + no overlay files in {odir} -> skip render")
+                        logger.info(
+                            "[ChunkedMapView] render early-return: overlays-driven without overlay files world=%s dir=%s",  # noqa: E501
+                            getattr(global_map_settings, "current_world", "?"),
+                            odir,
+                        )
                         return [screen.get_rect()]
         except Exception:
             pass
@@ -239,8 +270,11 @@ class ChunkedMapView:
                         for s in (f.stem.lower().replace('_', ' ') for f in files)
                     }
                     if stems.issubset({'no zone', 'no-zone'}) and not has_non_ground_codes:
-                        if DEBUG_CHUNKED:
-                            logger.debug(f"[ChunkedMapView] blank world + only sentinel overlays in {odir} -> skip render")
+                        logger.info(
+                            "[ChunkedMapView] render early-return: blank world with only sentinel overlays world=%s dir=%s",  # noqa: E501
+                            getattr(global_map_settings, "current_world", "?"),
+                            odir,
+                        )
                         return [screen.get_rect()]
         except Exception:
             pass

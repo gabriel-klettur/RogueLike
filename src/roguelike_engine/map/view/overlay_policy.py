@@ -17,15 +17,33 @@ def resolve_overlay_policy() -> bool:
     methods. Centralising the logic keeps those call-sites slimmer while
     retaining the defensive fallbacks built over time.
     """
+    # Non-base worlds are always treated as overlay-only: their terrain visuals
+    # deben provenir exclusivamente de overlays per-world (zones/overlays), sin
+    # reutilizar el layout base (lobby/dungeon) del mundo "base".
+    try:
+        world_id = getattr(global_map_settings, "current_world", "base")
+    except Exception:
+        world_id = "base"
+    if world_id != "base":
+        logger.info("[OverlayPolicy] world=%s -> overlay_only=True (non-base world)", world_id)
+        return True
+
     overlay_only = _is_blank_world()
     if overlay_only:
         return True
 
     overlay_only = _zones_configuration_is_empty()
     if overlay_only:
+        logger.info("[OverlayPolicy] world=%s -> overlay_only=True (empty zones config)", world_id)
         return True
 
-    return _overlays_directory_is_effectively_empty()
+    overlay_only = _overlays_directory_is_effectively_empty()
+    if overlay_only:
+        logger.info("[OverlayPolicy] world=%s -> overlay_only=True (overlays dir effectively empty)", world_id)
+        return True
+
+    logger.info("[OverlayPolicy] world=%s -> overlay_only=False", world_id)
+    return False
 
 
 def _is_blank_world() -> bool:
