@@ -920,7 +920,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[50, 110, 200], [80, 140, 220], [110, 170, 235]],
+        "colors": [[30, 70, 170], [60, 120, 210], [100, 170, 240]],
         "blend_mode": "additive"
       }
     }
@@ -1116,9 +1116,9 @@
       "preview": "particles",
       "particles": {
         "kind": "portal",
-        "rim_color": [150, 210, 255],
-        "core_color": [10, 22, 40],
-        "swirl_color": [120, 200, 255],
+        "rim_color": [60, 120, 210],
+        "core_color": [8, 18, 40],
+        "swirl_color": [110, 170, 240],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 12,
