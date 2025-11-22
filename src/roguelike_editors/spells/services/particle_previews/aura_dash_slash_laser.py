@@ -8,7 +8,7 @@ import pygame
 
 
 class ParticlePreviewAura:
-    def __init__(self, color: Tuple[int, int, int] = (120, 255, 180), radius: int | None = None, speed: float = 1.0, count: int = 24, palette: list[Tuple[int, int, int]] | None = None, *, blend_mode: str | None = None, ellipse_ratio: float = 1.0, ring_layers: int = 1, layer_spread: float = 0.3) -> None:
+    def __init__(self, color: Tuple[int, int, int] = (120, 255, 180), radius: int | None = None, speed: float = 1.0, count: int = 24, palette: list[Tuple[int, int, int]] | None = None, *, blend_mode: str | None = None, ellipse_ratio: float = 1.0, ring_layers: int = 1, layer_spread: float = 0.3, fill_core: bool = False, core_fill_alpha: int = 190, core_fill_inner_ratio: float = 0.6) -> None:
         self._surf: pygame.Surface | None = None
         self._size: Tuple[int, int] | None = None
         self._color = color
@@ -30,6 +30,15 @@ class ParticlePreviewAura:
             self._layer_spread = float(layer_spread)
         except Exception:
             self._layer_spread = 0.3
+        self._fill_core = bool(fill_core)
+        try:
+            self._core_alpha = max(0, min(255, int(core_fill_alpha)))
+        except Exception:
+            self._core_alpha = 190
+        try:
+            self._core_inner_ratio = float(core_fill_inner_ratio)
+        except Exception:
+            self._core_inner_ratio = 0.6
 
     def _ensure_surface(self, size: Tuple[int, int]) -> None:
         if self._size != size or self._surf is None:
@@ -74,9 +83,43 @@ class ParticlePreviewAura:
         if outer_rx > max_rx or outer_ry > max_ry:
             scale = min(max_rx / float(outer_rx), max_ry / float(outer_ry))
         scaled_radii = [(int(r * scale), int(r * er * scale)) for r in ring_radii]
-        for (rx, ry) in scaled_radii:
+        if getattr(self, "_fill_core", False) and scaled_radii:
+            min_rx = min(rx for (rx, _ry) in scaled_radii)
+            min_ry = min(ry for (_rx, ry) in scaled_radii)
+            try:
+                ratio = float(self._core_inner_ratio)
+            except Exception:
+                ratio = 0.6
+            ratio = max(0.1, min(1.1, ratio))
+            inner_rx = int(min_rx * ratio)
+            inner_ry = int(min_ry * ratio)
+            if inner_rx > 0 and inner_ry > 0:
+                if self._palette and len(self._palette) > 0:
+                    base_col = self._palette[0]
+                else:
+                    base_col = self._color
+                try:
+                    cr = max(0, min(255, int(base_col[0])))
+                    cg = max(0, min(255, int(base_col[1])))
+                    cb = max(0, min(255, int(base_col[2])))
+                except Exception:
+                    cr, cg, cb = 255, 255, 255
+                try:
+                    ca = max(0, min(255, int(self._core_alpha)))
+                except Exception:
+                    ca = 190
+                rect = pygame.Rect(cx - inner_rx, cy - inner_ry, inner_rx * 2, inner_ry * 2)
+                pygame.draw.ellipse(self._surf, (cr, cg, cb, ca), rect)
+        base_theta = self._theta
+        for layer_index, (rx, ry) in enumerate(scaled_radii):
+            if layers > 1:
+                layer_t = layer_index / float(max(1, layers - 1))
+                speed_factor = 0.5 + 0.7 * layer_t
+            else:
+                speed_factor = 1.0
+            theta_layer = base_theta * speed_factor
             for i in range(self._count):
-                t = self._theta + (i / self._count) * (2 * 3.14159)
+                t = theta_layer + (i / self._count) * (2 * 3.14159)
                 x = int(cx + rx * math.cos(t))
                 y = int(cy + ry * math.sin(t))
                 alpha = 140 + int(100 * (0.5 + 0.5 * math.sin(t * 2)))

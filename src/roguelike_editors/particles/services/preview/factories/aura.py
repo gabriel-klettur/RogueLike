@@ -111,6 +111,9 @@ def _build_generic_aura(
     count = max(1, count)
     ring_layers = context.get_int("ring_layers", 1) or 1
     layer_spread = context.get_number("layer_spread", 0.3) or 0.3
+    fill_core = bool(parts.get("fill_core"))
+    core_fill_alpha = context.get_int("core_fill_alpha", 190) or 190
+    core_fill_inner_ratio = context.get_number("core_fill_inner_ratio", 0.6) or 0.6
 
     return ParticlePreviewAura(
         color=context.color_or((80, 200, 120)),
@@ -122,6 +125,9 @@ def _build_generic_aura(
         ellipse_ratio=float(ellipse_ratio),
         ring_layers=int(ring_layers),
         layer_spread=float(layer_spread),
+        fill_core=bool(fill_core),
+        core_fill_alpha=int(core_fill_alpha),
+        core_fill_inner_ratio=float(core_fill_inner_ratio),
     )
 
 

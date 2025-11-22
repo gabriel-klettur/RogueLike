@@ -3,16 +3,16 @@
   "player": {
     "level": "global_map",
     "pos": [
-      15,
-      86
+      14,
+      91
     ]
   },
   "npcs": {},
   "levels": {
     "global_map": {
       "player_pos": [
-        15,
-        86
+        14,
+        91
       ],
       "npc_states": {}
     }
@@ -47,10 +47,10 @@
   "meta": {
     "name": "partida_2025-11-21_08-43-46",
     "created_at": "2025-11-21T08:43:46",
-    "last_played": "2025-11-21T22:31:34",
+    "last_played": "2025-11-22T14:34:38",
     "player": {
-      "xp": 60,
-      "level": 0
+      "xp": 0,
+      "level": 1
     },
     "items_summary": {
       "stacks": 0,
@@ -58,7 +58,7 @@
     }
   },
   "time": {
-    "minute": 1279,
+    "minute": 1401,
     "time_scale": 0.4
   }
 }

@@ -21,6 +21,12 @@ class ParticlePresetRenderSystem:
         self._last_ticks = 0
         # Match picker default cell size minus padding
         self._cell_size = 56
+        # Persistent per-preset surface cache and accumulated dt to throttle
+        # expensive preview animation when many instances share a preset.
+        self._preset_surfaces: Dict[str, pygame.Surface] = {}
+        self._preset_accum_dt: Dict[str, int] = {}
+        # Target max FPS for preset animation (≈30 FPS -> 33 ms)
+        self._min_frame_ms = 33
 
     def _get_provider(self, cache_key: str, preset_id: str):
         prov = self._providers.get(cache_key)
@@ -70,6 +76,16 @@ class ParticlePresetRenderSystem:
         presets = world.components.get('ParticlePresetComponent', {})
         if not presets:
             return
+        # Per-frame cache: one rendered surface per preset id. This avoids
+        # re-running the heavy preview render for every single instance when
+        # many entities share the same preset (e.g. lots of portals).
+        frame_surfaces: Dict[str, pygame.Surface] = {}
+        # Per-frame cache for already scaled surfaces, keyed by (preset_id,
+        # integer_zoom). This ensures that when many instances share the same
+        # preset and effective zoom, we only perform the scale() once per
+        # frame and then reuse the result for all those instances.
+        frame_scaled_int: Dict[tuple[str, int], pygame.Surface] = {}
+
         for eid, comp in list(presets.items()):
             pos = pos_map.get(eid)
             if pos is None:
@@ -98,14 +114,45 @@ class ParticlePresetRenderSystem:
                 if (sx + bw // 2) < screen_rect.left or (sx - bw // 2) > screen_rect.right or (sy + bh // 2) < screen_rect.top or (sy - bh // 2) > screen_rect.bottom:
                     continue
                 base_size = (self._cell_size, self._cell_size)
-                surf = provider(base_size, dt_ms)
+                # Render at most once per preset per frame, and only when
+                # enough time has accumulated to hit the target FPS. This
+                # drastically reduces preview work when many instances share
+                # a preset (common with portals).
+                surf = frame_surfaces.get(pid)
+                if surf is None:
+                    acc = self._preset_accum_dt.get(pid, 0) + dt_ms
+                    cached = self._preset_surfaces.get(pid)
+                    if acc >= self._min_frame_ms or cached is None:
+                        surf = provider(base_size, acc)
+                        if surf is None:
+                            # Drop broken cache state for this preset
+                            self._preset_surfaces.pop(pid, None)
+                            self._preset_accum_dt[pid] = 0
+                            continue
+                        self._preset_surfaces[pid] = surf
+                        acc = 0
+                    else:
+                        surf = cached
+                    self._preset_accum_dt[pid] = acc
+                    frame_surfaces[pid] = surf
                 if surf is not None:
                     if abs(eff_zoom - 1.0) > 0.01:
                         tw = max(1, int(surf.get_width() * eff_zoom))
                         th = max(1, int(surf.get_height() * eff_zoom))
                         try:
-                            if is_integer_zoom and abs(inst_mul - 1.0) < 0.01:
-                                scaled = pygame.transform.scale(surf, (tw, th))
+                            # Prefer fast integer scaling whenever overall
+                            # zoom is effectively integral (covers portals
+                            # scaled by 2x, 3x, etc.). Additionally, reuse
+                            # the scaled surface across all instances that
+                            # share the same preset and integer zoom within
+                            # this frame.
+                            overall_int = int(round(eff_zoom))
+                            if overall_int >= 1 and abs(eff_zoom - float(overall_int)) < 0.01:
+                                key = (pid, overall_int)
+                                scaled = frame_scaled_int.get(key)
+                                if scaled is None:
+                                    scaled = pygame.transform.scale(surf, (tw, th))
+                                    frame_scaled_int[key] = scaled
                             else:
                                 scaled = pygame.transform.smoothscale(surf, (tw, th))
                         except Exception:

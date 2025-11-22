@@ -1424,22 +1424,8 @@
     "id": 216,
     "preset_id": "portal_green_rim_orbit",
     "zone": "Forest",
-    "rel_x": 377,
-    "rel_y": 1172
-  },
-  {
-    "id": 217,
-    "preset_id": "portal_green_swirl_core",
-    "zone": "Forest",
-    "rel_x": 377,
-    "rel_y": 1193
-  },
-  {
-    "id": 218,
-    "preset_id": "portal_green_sparks",
-    "zone": "Forest",
-    "rel_x": 379,
-    "rel_y": 1176
+    "rel_x": 491,
+    "rel_y": 1202
   },
   {
     "id": 219,
@@ -1552,5 +1538,33 @@
     "zone": "lobby",
     "rel_x": 136,
     "rel_y": 54
+  },
+  {
+    "id": 235,
+    "preset_id": "portal_blue_rim_orbit",
+    "zone": "Forest",
+    "rel_x": 379,
+    "rel_y": 1064
+  },
+  {
+    "id": 236,
+    "preset_id": "portal_green_rim_orbit",
+    "zone": "Forest",
+    "rel_x": 429,
+    "rel_y": 1114
+  },
+  {
+    "id": 237,
+    "preset_id": "portal_red_rim_orbit",
+    "zone": "Forest",
+    "rel_x": 518,
+    "rel_y": 1135
+  },
+  {
+    "id": 238,
+    "preset_id": "portal_yellow_rim_orbit",
+    "zone": "Forest",
+    "rel_x": 366,
+    "rel_y": 1175
   }
 ]

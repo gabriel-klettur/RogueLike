@@ -37,7 +37,20 @@ def spawn_particles_from_instances(world) -> int:
                 entry_id = int(e.get('id')) if e.get('id') is not None else None
             except Exception:
                 entry_id = None
-            world.components.setdefault('ParticlePresetComponent', {})[eid] = ParticlePresetComponent(str(preset_id), entry_id)
+            # Optional per-instance scale multiplier; make portals larger by default
+            try:
+                sval = e.get('scale_multiplier')
+                if sval is not None:
+                    scale_mul = float(sval)
+                else:
+                    pid = str(preset_id)
+                    scale_mul = 2.0 if pid.startswith('portal_') else 1.0
+            except Exception:
+                pid = str(preset_id)
+                scale_mul = 2.0 if pid.startswith('portal_') else 1.0
+            world.components.setdefault('ParticlePresetComponent', {})[eid] = ParticlePresetComponent(
+                str(preset_id), entry_id, scale_mul
+            )
             spawned += 1
         except Exception:
             continue

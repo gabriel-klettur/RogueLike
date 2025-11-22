@@ -135,12 +135,23 @@ class ParticlesAddRemovePanelEventHandler:
                 if wx is not None and wy is not None:
                     # Persist JSON entry
                     entry = _particles_append_instance(model.drag_pid, float(wx), float(wy))
-                    # Spawn runtime ECS entity
+                    # Spawn runtime ECS entity (respect optional per-preset scale)
                     try:
                         if world is not None and isinstance(entry, dict):
                             eid = world.create_entity()
                             world.components.setdefault('Position', {})[eid] = _EcsPosition(float(wx), float(wy))
-                            world.components.setdefault('ParticlePresetComponent', {})[eid] = _EcsParticlePresetComp(str(entry.get('preset_id')), int(entry.get('id')))
+                            pid = str(entry.get('preset_id'))
+                            try:
+                                sval = entry.get('scale_multiplier')
+                                if sval is not None:
+                                    scale_mul = float(sval)
+                                else:
+                                    scale_mul = 2.0 if pid.startswith('portal_') else 1.0
+                            except Exception:
+                                scale_mul = 2.0 if pid.startswith('portal_') else 1.0
+                            world.components.setdefault('ParticlePresetComponent', {})[eid] = _EcsParticlePresetComp(
+                                pid, int(entry.get('id')), scale_mul
+                            )
                     except Exception:
                         pass
                     # Select new instance
