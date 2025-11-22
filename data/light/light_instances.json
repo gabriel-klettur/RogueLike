@@ -42,34 +42,6 @@
     }
   },
   {
-    "id": 4,
-    "preset_id": "Torch",
-    "zone": "zone_100_50",
-    "rel_x": 568,
-    "rel_y": 1014,
-    "overrides": {
-      "color": [
-        255,
-        200,
-        140
-      ]
-    }
-  },
-  {
-    "id": 5,
-    "preset_id": "Torch",
-    "zone": "zone_100_50",
-    "rel_x": 482,
-    "rel_y": 1012,
-    "overrides": {
-      "color": [
-        255,
-        200,
-        140
-      ]
-    }
-  },
-  {
     "id": 6,
     "preset_id": "Torch",
     "zone": "lobby",

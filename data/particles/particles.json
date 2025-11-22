@@ -901,7 +901,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[160, 255, 120], [120, 240, 80], [210, 255, 150]],
+        "colors": [[70, 150, 60], [100, 190, 80], [130, 220, 95]],
         "blend_mode": "additive"
       }
     }
@@ -920,7 +920,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[140, 210, 255], [100, 180, 240], [200, 240, 255]],
+        "colors": [[50, 110, 200], [80, 140, 220], [110, 170, 235]],
         "blend_mode": "additive"
       }
     }
@@ -939,7 +939,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[255, 160, 130], [220, 90, 80], [255, 210, 170]],
+        "colors": [[130, 30, 30], [185, 40, 40], [230, 60, 60]],
         "blend_mode": "additive"
       }
     }
@@ -958,7 +958,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[255, 240, 150], [235, 210, 90], [255, 255, 200]],
+        "colors": [[200, 170, 70], [225, 195, 95], [245, 215, 120]],
         "blend_mode": "additive"
       }
     }
@@ -977,7 +977,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[235, 240, 255], [200, 210, 230], [255, 255, 255]],
+        "colors": [[220, 230, 245], [235, 240, 255], [245, 248, 255]],
         "blend_mode": "additive"
       }
     }
@@ -996,7 +996,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[150, 150, 180], [90, 90, 120], [210, 210, 230]],
+        "colors": [[70, 70, 110], [95, 95, 140], [120, 120, 170]],
         "blend_mode": "additive"
       }
     }
@@ -1015,7 +1015,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[210, 160, 255], [170, 110, 230], [235, 190, 255]],
+        "colors": [[150, 90, 210], [180, 120, 230], [205, 145, 245]],
         "blend_mode": "additive"
       }
     }
@@ -1034,7 +1034,7 @@
         "ellipse_ratio": 1.75,
         "ring_layers": 24,
         "layer_spread": 0.9,
-        "colors": [[150, 255, 255], [90, 220, 230], [200, 255, 255]],
+        "colors": [[40, 170, 210], [70, 200, 225], [100, 225, 235]],
         "blend_mode": "additive"
       }
     }
@@ -1098,7 +1098,7 @@
         "kind": "portal",
         "rim_color": [185, 255, 120],
         "core_color": [20, 36, 28],
-        "swirl_color": [160, 255, 110],
+        "swirl_color": [130, 235, 95],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 12,
@@ -1118,7 +1118,7 @@
         "kind": "portal",
         "rim_color": [150, 210, 255],
         "core_color": [10, 22, 40],
-        "swirl_color": [185, 235, 255],
+        "swirl_color": [120, 200, 255],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 12,
@@ -1136,9 +1136,9 @@
       "preview": "particles",
       "particles": {
         "kind": "portal",
-        "rim_color": [255, 150, 120],
-        "core_color": [30, 8, 10],
-        "swirl_color": [255, 210, 160],
+        "rim_color": [200, 40, 40],
+        "core_color": [30, 5, 8],
+        "swirl_color": [245, 70, 60],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 11,
@@ -1158,7 +1158,7 @@
         "kind": "portal",
         "rim_color": [255, 240, 150],
         "core_color": [32, 26, 5],
-        "swirl_color": [255, 255, 190],
+        "swirl_color": [245, 225, 145],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 12,
@@ -1218,7 +1218,7 @@
         "kind": "portal",
         "rim_color": [210, 160, 255],
         "core_color": [22, 10, 32],
-        "swirl_color": [235, 190, 255],
+        "swirl_color": [205, 150, 245],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 11,
@@ -1238,7 +1238,7 @@
         "kind": "portal",
         "rim_color": [150, 255, 255],
         "core_color": [8, 26, 32],
-        "swirl_color": [190, 255, 255],
+        "swirl_color": [120, 230, 245],
         "ellipse_ratio": 1.9,
         "outer_radius": 28,
         "inner_radius": 12,

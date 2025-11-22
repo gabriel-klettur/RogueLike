@@ -1421,13 +1421,6 @@
     "rel_y": 412
   },
   {
-    "id": 216,
-    "preset_id": "portal_green_rim_orbit",
-    "zone": "Forest",
-    "rel_x": 491,
-    "rel_y": 1202
-  },
-  {
     "id": 219,
     "preset_id": "falling_leaf_30s",
     "zone": "Forest",
@@ -1541,30 +1534,16 @@
   },
   {
     "id": 235,
-    "preset_id": "portal_blue_rim_orbit",
-    "zone": "Forest",
-    "rel_x": 379,
-    "rel_y": 1064
+    "preset_id": "portal_red_rim_orbit",
+    "zone": "zone_100_50",
+    "rel_x": 863,
+    "rel_y": 801
   },
   {
     "id": 236,
-    "preset_id": "portal_green_rim_orbit",
-    "zone": "Forest",
-    "rel_x": 429,
-    "rel_y": 1114
-  },
-  {
-    "id": 237,
-    "preset_id": "portal_red_rim_orbit",
-    "zone": "Forest",
-    "rel_x": 518,
-    "rel_y": 1135
-  },
-  {
-    "id": 238,
-    "preset_id": "portal_yellow_rim_orbit",
-    "zone": "Forest",
-    "rel_x": 366,
-    "rel_y": 1175
+    "preset_id": "portal_blue_rim_orbit",
+    "zone": "zone_100_50",
+    "rel_x": 1200,
+    "rel_y": 791
   }
 ]

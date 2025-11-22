@@ -1770,12 +1770,12 @@
         "id": 305,
         "template_id": 231,
         "zone": "zone_100_50",
-        "rel_x": 780,
-        "rel_y": 697,
+        "rel_x": 786,
+        "rel_y": 707,
         "overrides": {
             "scale": [
-                171,
-                256
+                160,
+                239
             ],
             "z_bottom": 3,
             "z_top": 5,
@@ -1786,12 +1786,12 @@
         "id": 306,
         "template_id": 232,
         "zone": "zone_100_50",
-        "rel_x": 1113,
-        "rel_y": 687,
+        "rel_x": 1123,
+        "rel_y": 698,
         "overrides": {
             "scale": [
-                177,
-                265
+                157,
+                235
             ],
             "z_bottom": 3,
             "z_top": 5,

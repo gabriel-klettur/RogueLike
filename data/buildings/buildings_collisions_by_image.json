@@ -6637,8 +6637,8 @@
             ]
         ],
         "grid_ref_size": [
-            171,
-            256
+            160,
+            239
         ]
     },
     "assets/buildings/portals/portal.png": {
@@ -6719,8 +6719,8 @@
             ]
         ],
         "grid_ref_size": [
-            177,
-            265
+            157,
+            235
         ]
     },
     "assets/buildings/others/guillotina.png": {
