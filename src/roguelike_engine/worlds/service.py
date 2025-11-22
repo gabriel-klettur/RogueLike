@@ -132,6 +132,14 @@ class WorldService:
         except Exception as e:
             logger.debug(f"[WorldService] Could not reset overlay store for world '{world_id}': {e}")
         logger.info(f"[WorldService] Mundo activo: {world_id}")
+        # Bootstrap layout for brand-new empty worlds: create a lobby zone at (0,0)
+        # and a default ground overlay so the player does not see an entirely
+        # black canvas on first teleport. This only applies when the world has
+        # no user-defined zones yet.
+        try:
+            self._ensure_default_lobby_for_empty_world()
+        except Exception as e:
+            logger.debug(f"[WorldService] Skipped default lobby bootstrap for world '{world_id}': {e}")
 
     # ---------------------------------------------------------------------
     # Scaffolding
@@ -188,6 +196,98 @@ class WorldService:
                 if not p.exists():
                     with p.open('w', encoding='utf-8') as f:
                         json.dump({}, f, indent=2)
+        except Exception:
+            pass
+
+    def _ensure_default_lobby_for_empty_world(self) -> None:
+        """Ensure a freshly created world has a minimal playable layout.
+
+        Policy:
+        - If ZONES_INDEX has no user-defined zones (only blank / sentinels),
+          create a 'lobby' zone at tile offset (0, 0).
+        - Persist a Ground overlay for 'lobby' using the default floor tile so
+          the player sees a basic floor instead of a fully black world.
+
+        This helper is intentionally conservative: if the world already has any
+        user zones, it does nothing to avoid overriding designer-authored data.
+        """
+        from roguelike_engine.config.map_config import global_map_settings
+
+        try:
+            zindex = global_map_settings.ZONES_INDEX
+        except Exception:
+            return
+
+        # Load current zones configuration
+        import json as _json
+        try:
+            if not zindex.exists():
+                data = {}
+            else:
+                txt = zindex.read_text(encoding="utf-8").strip()
+                data = _json.loads(txt) if txt else {}
+        except Exception:
+            return
+
+        user_keys = [k for k in data.keys() if str(k).lower() not in ("no zone", "no-zone", "no_zone")]
+        if user_keys:
+            # World already has user-defined zones; do not auto-bootstrap
+            return
+
+        # Create a simple lobby zone at (0,0) in tiles
+        data = {"lobby": [0, 0]}
+        try:
+            zindex.parent.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+        try:
+            zindex.write_text(_json.dumps(data, indent=2), encoding="utf-8")
+        except Exception:
+            return
+
+        # Refresh cached offsets so 'lobby' becomes a first-class zone
+        try:
+            global_map_settings.refresh_zone_offsets()
+        except Exception:
+            pass
+
+        # Build a default Ground overlay for the lobby using the configured
+        # default floor tile. If overlay codes are not available, we skip
+        # silently to avoid hard failures in unusual asset setups.
+        try:
+            from roguelike_engine.map.model.layer import Layer
+            import roguelike_engine.map.model.overlay.overlay_manager as _ovmgr
+            from roguelike_engine.config.config_tiles import OVERLAY_CODE_MAP, DEFAULT_TILE_MAP
+        except Exception:
+            return
+
+        try:
+            floor_asset = DEFAULT_TILE_MAP.get(".", "floor")
+        except Exception:
+            floor_asset = "floor"
+
+        default_code = None
+        try:
+            for code, name in OVERLAY_CODE_MAP.items():
+                if name == floor_asset:
+                    default_code = code
+                    break
+        except Exception:
+            default_code = None
+
+        if not default_code:
+            # No suitable overlay code found; rely on existing rendering fallback
+            return
+
+        try:
+            zone_w, zone_h = global_map_settings.zone_size
+        except Exception:
+            zone_w = zone_h = 50
+
+        grid = [[default_code for _ in range(zone_w)] for _ in range(zone_h)]
+        layers = {Layer.Ground: grid}
+        try:
+            _ovmgr.save_layers("lobby", layers)
         except Exception:
             pass
 

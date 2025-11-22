@@ -88,3 +88,30 @@ def test_refresh_particles_clears_existing_presets(monkeypatch: pytest.MonkeyPat
     assert calls["n"] == 1
     assert spawned == 3
     assert world.components.get("ParticlePresetComponent", {}) == {}
+
+
+def test_clear_runtime_particle_entities_removes_all_related_components() -> None:
+    """clear_runtime_particle_entities debe eliminar todas las entidades de partículas.
+
+    Verificamos que:
+    - Las entidades presentes en ParticleComponent, ParticlePresetComponent,
+      RibbonComponent, TrailComponent y FlashComponent se eliminan del world.
+    - La función devuelve el número total de entidades eliminadas.
+    """
+
+    world = DummyWorld()
+    # Simular 5 entidades distintas distribuidas entre los distintos componentes
+    world.components["ParticleComponent"] = {1: object()}
+    world.components["ParticlePresetComponent"] = {2: object()}
+    world.components["RibbonComponent"] = {3: object()}
+    world.components["TrailComponent"] = {4: object()}
+    world.components["FlashComponent"] = {5: object()}
+
+    removed = pl.clear_runtime_particle_entities(world)
+
+    assert removed == 5
+    assert world.components.get("ParticleComponent", {}) == {}
+    assert world.components.get("ParticlePresetComponent", {}) == {}
+    assert world.components.get("RibbonComponent", {}) == {}
+    assert world.components.get("TrailComponent", {}) == {}
+    assert world.components.get("FlashComponent", {}) == {}

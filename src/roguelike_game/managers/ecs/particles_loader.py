@@ -86,17 +86,55 @@ def spawn_particles_from_instances(world) -> int:
     return spawned
 
 
+def clear_runtime_particle_entities(world) -> int:
+    """Remove all particle-related runtime entities from the ECS world.
+
+    This is intended for world swaps so that no particle, trail, ribbon or flash
+    entity from the previous world survives into the destination world.
+
+    Returns the number of entities removed.
+    """
+    try:
+        comps = world.components
+    except Exception:
+        return 0
+    to_remove: set[int] = set()
+    for key in (
+        "ParticleComponent",
+        "ParticlePresetComponent",
+        "RibbonComponent",
+        "TrailComponent",
+        "FlashComponent",
+    ):
+        try:
+            for eid in list(comps.get(key, {}).keys()):
+                to_remove.add(eid)
+        except Exception:
+            continue
+    removed = 0
+    for eid in to_remove:
+        try:
+            world.remove_entity(eid)
+            removed += 1
+        except Exception:
+            continue
+    if removed:
+        try:
+            logger.info(
+                "[ParticlesLoader] Cleared %d particle-related entities before world swap",
+                removed,
+            )
+        except Exception:
+            pass
+    return removed
+
+
 def refresh_particles_from_world(world) -> int:
     """Clear existing particle preset entities and respawn from per-world JSON.
 
     Returns the number of entities spawned after refresh.
     """
-    # Remove existing particle preset entities (placed instances only)
-    try:
-        presets = world.components.get('ParticlePresetComponent', {})
-        for eid in list(presets.keys()):
-            world.remove_entity(eid)
-    except Exception:
-        pass
+    # Remove all particle-related entities from the previous world (effects + presets)
+    clear_runtime_particle_entities(world)
     # Spawn from the active world's instances file (cfg.PARTICLES_INSTANCES_PATH)
     return spawn_particles_from_instances(world)

@@ -228,12 +228,27 @@ class ChunkedMapView:
             # En caso de cualquier problema de cálculo, continuamos con la ruta normal
             pass
 
-        # Hard guard 1: if overlays-driven AND there are no overlay files AND no user-defined zones, render nothing
+        # Hard guard 1: overlays-driven worlds without overlay files.
+        #
+        # - Para mundos no-base (overlay-only), si no hay overlays y no existen
+        #   códigos en capas no-Ground, tratamos el mundo como "en blanco" y
+        #   devolvemos un solo dirty rect de pantalla completa.
+        # - Para el mundo base, se mantiene el comportamiento anterior: solo
+        #   se considera en blanco cuando tampoco hay zonas de usuario.
         try:
             from pathlib import Path as _P
             if getattr(global_map_settings, 'use_zones_json', False):
                 odir = getattr(global_map_settings, 'overlays_dir', None)
-                if odir and len(list(_P(odir).glob('*.overlay.json'))) == 0:
+                world_id = getattr(global_map_settings, 'current_world', 'base')
+                files = list(_P(odir).glob('*.overlay.json')) if odir else []
+                if world_id != 'base' and not files and not has_non_ground_codes:
+                    logger.info(
+                        "[ChunkedMapView] render early-return: non-base overlays-driven world without overlays world=%s dir=%s",  # noqa: E501
+                        world_id,
+                        odir,
+                    )
+                    return [screen.get_rect()]
+                if odir and len(files) == 0:
                     user_keys = []
                     try:
                         z = getattr(global_map_settings, 'ZONES_INDEX', None)
@@ -252,7 +267,7 @@ class ChunkedMapView:
                     if len(user_keys) == 0 and not has_non_ground_codes:
                         logger.info(
                             "[ChunkedMapView] render early-return: overlays-driven without overlay files world=%s dir=%s",  # noqa: E501
-                            getattr(global_map_settings, "current_world", "?"),
+                            world_id,
                             odir,
                         )
                         return [screen.get_rect()]
