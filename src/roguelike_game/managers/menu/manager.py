@@ -276,6 +276,31 @@ class MenuManager:
     # ---- ejecución de opción ----
     def execute_menu_option(self, selected, state) -> None:
         if selected == "Continuar":
+            # En el menú de inicio, "Continuar" intenta cargar la última partida.
+            if self.mode == "start":
+                try:
+                    service = getattr(self.saves, "service", None)
+                except Exception:
+                    service = None
+                entries = []
+                if service is not None:
+                    try:
+                        entries = service.list_saves()
+                    except Exception:
+                        entries = []
+                if entries:
+                    path = entries[0].get("path")
+                    if path:
+                        try:
+                            service.load_save(path)
+                        except Exception:
+                            # Si falla la carga, se comporta como un "Continuar" normal.
+                            pass
+                        # Tras cargar, volvemos al juego en modo pausa.
+                        self.show_menu = False
+                        self.mode = "pause"
+                        return
+            # En modo pausa, o si no hay partidas/carga falla, solo cerramos el menú.
             self.stop_music(fade_ms=None)
             self.show_menu = False
             return

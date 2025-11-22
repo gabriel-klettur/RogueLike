@@ -26,6 +26,7 @@ class MenuHandler:
             if self._has_saves():
                 # Insertar Cargar juego después de Nuevo juego
                 opts.insert(1, "Cargar juego")
+                opts.insert(0, "Continuar")
             return opts
         # pause menu
         mode_option = "Modo local" if self.state.mode == "online" else "Modo multijugador"
