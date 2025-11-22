@@ -47,6 +47,17 @@ def load_persistent_to_manager(lm) -> int:
     instances: List[Dict[str, Any]] = _read_json(LIGHT_INSTANCES_PATH, [])
     presets = _load_presets()
     added = 0
+    # Mapear offsets de zonas del mundo activo. Cuando usamos zones.json, esto
+    # nos permite descartar luces persistentes cuyas zonas no existan en el
+    # mundo actual (por ejemplo, luces diseñadas para 'base' que no deben
+    # mostrarse en un mundo en blanco).
+    try:
+        offsets = getattr(global_map_settings, "zone_offsets", {}) or {}
+    except Exception:
+        offsets = {}
+    use_zones = bool(getattr(global_map_settings, "use_zones_json", False))
+    unknown_zones: set[str] = set()
+
     for idx, e in enumerate(instances or []):
         try:
             preset_id = str(e.get("preset_id") or "")
@@ -64,6 +75,11 @@ def load_persistent_to_manager(lm) -> int:
             flicker_amp = float(params.get("flicker_amp", 0.0))
             flicker_speed = float(params.get("flicker_speed", 2.3))
             center_scale = float(params.get("center_scale", 1.0))
+            # Si estamos usando zones.json y la zona no existe en el mundo
+            # actual, omitir esta luz persistente.
+            if use_zones and isinstance(offsets, dict) and zone not in offsets:
+                unknown_zones.add(zone)
+                continue
             # Deterministic per-instance phase so persistent lights are not synchronized
             try:
                 id_num = int(e.get("id", idx + 1))
@@ -71,7 +87,7 @@ def load_persistent_to_manager(lm) -> int:
                 id_num = idx + 1
             phase = random.Random(id_num).uniform(0.0, 2.0 * math.pi)
             # Compute world coords from zone offsets
-            off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+            off_tx, off_ty = offsets.get(zone, (0, 0))
             origin_px_x = int(off_tx) * TILE_SIZE
             origin_px_y = int(off_ty) * TILE_SIZE
             wx = float(origin_px_x + rel_x)
@@ -97,5 +113,25 @@ def load_persistent_to_manager(lm) -> int:
         except Exception:
             continue
     _LOADED = True
+    if unknown_zones:
+        try:
+            _log.info(
+                "[Lighting] Skipped persistent lights for unknown zones=%s in world=%s",
+                sorted(unknown_zones),
+                getattr(global_map_settings, "current_world", "?"),
+            )
+        except Exception:
+            pass
     _log.info(f"[Lighting] Loaded {added} persistent light instance(s) from {LIGHT_INSTANCES_PATH}")
     return added
+
+
+def reset_persistent_loader() -> None:
+    """Reset internal loader state so persistent lights can be reloaded.
+
+    Útil al cambiar de mundo: el LightingManager puede llamar a este helper
+    tras limpiar sus luces para que la siguiente composición vuelva a cargar
+    las instancias persistentes con los offsets del mundo activo.
+    """
+    global _LOADED
+    _LOADED = False

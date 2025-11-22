@@ -13,6 +13,8 @@ from roguelike_engine.config import config as cfg
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.factories.player.config import RENDERED_SPRITE_SIZE
 from roguelike_engine.tile.utils.assets import clear_sprite_caches
+from roguelike_engine.rendering.lighting import get_global_lighting
+from roguelike_engine.rendering.lighting.light_instances_loader import reset_persistent_loader
 
 from .loader import MapLoader
 from roguelike_engine.worlds.service import world_service
@@ -327,6 +329,21 @@ class MapManager:
             pass
         try:
             self.collision_manager.load(self)
+        except Exception:
+            pass
+        # Reinicializar luces persistentes para el nuevo mundo: limpiar el
+        # LightingManager global y resetear el loader para que vuelva a cargar
+        # instancias usando los offsets del mundo activo.
+        try:
+            lm = get_global_lighting()
+            try:
+                lm.clear()
+            except Exception:
+                pass
+            try:
+                reset_persistent_loader()
+            except Exception:
+                pass
         except Exception:
             pass
         try:

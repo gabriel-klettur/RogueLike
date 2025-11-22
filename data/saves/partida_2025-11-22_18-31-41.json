@@ -3,7 +3,7 @@
   "player": {
     "level": "global_map",
     "pos": [
-      135,
+      131,
       81
     ]
   },
@@ -11,19 +11,19 @@
   "levels": {
     "global_map": {
       "player_pos": [
-        135,
+        131,
         81
       ],
       "npc_states": {}
     }
   },
   "player_inventory": {
-    "player_id": "686656f0-36e6-40d6-b1ea-4bc150d7bde5",
+    "player_id": "1f121967-d7ff-4aed-9603-02c675e032f8",
     "capacity": 20,
     "slots": [
       {
         "item": "gold",
-        "quantity": 1
+        "quantity": 10
       },
       null,
       null,
@@ -48,11 +48,11 @@
   },
   "npc_inventories": {},
   "meta": {
-    "name": "partida_2025-11-21_08-43-46",
-    "created_at": "2025-11-21T08:43:46",
-    "last_played": "2025-11-22T18:24:09",
+    "name": "partida_2025-11-22_18-31-41",
+    "created_at": "2025-11-22T18:31:41",
+    "last_played": "2025-11-22T19:21:07",
     "player": {
-      "xp": 60,
+      "xp": 0,
       "level": 1
     },
     "items_summary": {
@@ -63,7 +63,7 @@
     }
   },
   "time": {
-    "minute": 683,
+    "minute": 489,
     "time_scale": 0.4
   }
 }

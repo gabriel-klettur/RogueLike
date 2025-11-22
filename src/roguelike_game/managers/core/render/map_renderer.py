@@ -52,14 +52,36 @@ def render_map(manager, camera, screen, map_) -> List[object]:
     except Exception:
         pass
     # Early guard for blank worlds: if zones.json has no user-defined zones,
-    # and there are no overlay files (or only the sentinel), skip drawing to avoid base fallback visuals
+    # and there are no overlay files (or only the sentinel), skip drawing to avoid
+    # base fallback visuals. Esto debe aplicar incluso cuando el Map Editor está
+    # activo: en mundos en blanco queremos un lienzo vacío para editar zonas.
     try:
-        te_active = bool(getattr(getattr(manager, 'tiles_editor', None), 'editor_state', None) and manager.tiles_editor.editor_state.active)
-        if not te_active and not me_active and getattr(global_map_settings, 'is_blank_world', None):
+        te_active = bool(
+            getattr(getattr(manager, 'tiles_editor', None), 'editor_state', None)
+            and manager.tiles_editor.editor_state.active
+        )
+        if getattr(global_map_settings, 'is_blank_world', None):
             if global_map_settings.is_blank_world():
                 odir = getattr(global_map_settings, 'overlays_dir', None)
                 files = list(Path(odir).glob('*.overlay.json')) if odir else []
+                cur_world = getattr(global_map_settings, 'current_world', '?')
+                logger = logging.getLogger(__name__)
                 if not files:
+                    # Log solo cuando cambia (world, reason) para evitar spam por frame
+                    try:
+                        reason_key = (cur_world, 'no_overlays')
+                        last_reason = getattr(manager, '_last_blank_world_log', None)
+                        if last_reason != reason_key:
+                            logger.info(
+                                "[Render][BlankWorld] skip draw: world=%s (no overlays)",
+                                cur_world,
+                            )
+                            try:
+                                manager._last_blank_world_log = reason_key
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
                     # Return full-screen rect so the black clear is presented
                     try:
                         return [screen.get_rect()]
@@ -73,6 +95,20 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                         for s in (f.stem.lower().replace('_', ' ') for f in files)
                     }
                     if stems.issubset({'no zone', 'no-zone', 'no_zone'}):
+                        try:
+                            reason_key = (cur_world, 'sentinel_overlays')
+                            last_reason = getattr(manager, '_last_blank_world_log', None)
+                            if last_reason != reason_key:
+                                logger.info(
+                                    "[Render][BlankWorld] skip draw: world=%s (sentinel overlays only)",
+                                    cur_world,
+                                )
+                                try:
+                                    manager._last_blank_world_log = reason_key
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
                         try:
                             return [screen.get_rect()]
                         except Exception:
@@ -92,7 +128,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
         pass
     # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
     try:
-        if not te_active and not me_active and getattr(global_map_settings, 'use_zones_json', False):
+        if getattr(global_map_settings, 'use_zones_json', False):
             odir = global_map_settings.overlays_dir
             if odir and list(Path(odir).glob('*.overlay.json')) == []:
                 # Count user-defined zones from ZONES_INDEX (exclude sentinels)

@@ -116,6 +116,40 @@ class MapEditorManager:
                     px = center_tx * TILE_SIZE + TILE_SIZE / 2
                     py = center_ty * TILE_SIZE + TILE_SIZE / 2
                     cam.update(SimpleNamespace(x=px, y=py))
+            # Diagnóstico y recarga: asegurar que el Map Editor trabaja sobre el mundo activo
+            is_blank = False
+            try:
+                current_world = getattr(global_map_settings, "current_world", "?")
+                overlays_dir = getattr(global_map_settings, "overlays_dir", "?")
+                zones_index = getattr(global_map_settings, "ZONES_INDEX", None)
+                is_blank_fn = getattr(global_map_settings, "is_blank_world", None)
+                is_blank = bool(is_blank_fn() if callable(is_blank_fn) else False)
+                print("\n" + "=" * 70)
+                print("[MapEditor] ========== OPENING MAP EDITOR ==========")
+                print(f"[MapEditor] current_world={current_world}")
+                print(f"[MapEditor] overlays_dir={overlays_dir}")
+                print(f"[MapEditor] zones_index={zones_index}")
+                print(f"[MapEditor] is_blank_world={is_blank}")
+                logger.info(
+                    "[MapEditor] OPEN current_world=%s overlays_dir=%s zones_index=%s is_blank_world=%s",
+                    current_world,
+                    overlays_dir,
+                    zones_index,
+                    is_blank,
+                )
+            except Exception:
+                pass
+            # En mundos en blanco ya tenemos un mapa vacío cargado tras el teleport;
+            # no forzamos reload para evitar reintroducir tiles de otro contexto.
+            if not is_blank:
+                try:
+                    self.game.map.reload_map()
+                    try:
+                        self.game.map.view.invalidate_cache()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    logger.error("[MapEditor] Failed to reload map on open: %s", e, exc_info=True)
         else:
             # Guardar estado de cámara del editor
             self.editor_state.saved_editor_camera = (cam.offset_x, cam.offset_y, cam.zoom)

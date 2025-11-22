@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import roguelike_engine.config.config as config
 
 
 def toggle_visible(h) -> None:
@@ -42,6 +43,12 @@ def toggle_visible(h) -> None:
             setattr(h.model, '_split_propagation_key', None)
         except AttributeError:
             logger.debug("toggle_visible: failed to clear _split_propagation_key", exc_info=True)
+        # Ensure global DEBUG_SPAWNER is disabled when the editor is hidden so
+        # multi-visual preview and debug overlays revert to runtime behaviour.
+        try:
+            config.DEBUG_SPAWNER = False
+        except Exception:
+            logger.debug("toggle_visible: failed to reset DEBUG_SPAWNER on close", exc_info=True)
     else:
         # Mark editor as active globally
         try:
@@ -49,6 +56,13 @@ def toggle_visible(h) -> None:
                 setattr(world.state, 'spawner_editor_active', True)
         except AttributeError:
             logger.debug("toggle_visible: failed to set world.state.spawner_editor_active", exc_info=True)
+        # When the editor is made visible via internal UI actions (not only the
+        # global toggle), keep DEBUG_SPAWNER in sync so preview/debug systems
+        # behave consistently.
+        try:
+            config.DEBUG_SPAWNER = True
+        except Exception:
+            logger.debug("toggle_visible: failed to enable DEBUG_SPAWNER on open", exc_info=True)
         # Reveal all mapped visuals for the currently selected instance (if any)
         try:
             ip = getattr(h.controller, 'instance_properties', None)

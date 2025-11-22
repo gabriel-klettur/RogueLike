@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from typing import Optional
+import logging
 from roguelike_editors.particles.services.instances_service import load_particles_instances
 from roguelike_game.config.particles_config import get_preset
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_preset_component import ParticlePresetComponent
 from roguelike_engine.config.map_config import global_map_settings
 from roguelike_engine.config.config_tiles import TILE_SIZE
+
+logger = logging.getLogger(__name__)
 
 
 def spawn_particles_from_instances(world) -> int:
@@ -16,6 +19,17 @@ def spawn_particles_from_instances(world) -> int:
     """
     data = load_particles_instances() or []
     spawned = 0
+    # Mapear zonas válidas del mundo actual (cuando usamos zones.json). Esto
+    # evita que instancias declaradas para otros mundos (con nombres de zona
+    # que no existen en el mundo activo) aparezcan en mundos en blanco u otros
+    # worlds.
+    try:
+        offsets = getattr(global_map_settings, 'zone_offsets', {}) or {}
+    except Exception:
+        offsets = {}
+    use_zones = bool(getattr(global_map_settings, 'use_zones_json', False))
+    unknown_zones: set[str] = set()
+
     for e in data:
         try:
             preset_id = str(e.get('preset_id'))
@@ -24,8 +38,13 @@ def spawn_particles_from_instances(world) -> int:
             rel_y = int(e.get('rel_y') or 0)
         except Exception:
             continue
+        # Skip instances whose zone is not defined for the active world when
+        # using zones.json (defensive against cross-world JSON reuse).
+        if use_zones and isinstance(offsets, dict) and zone not in offsets:
+            unknown_zones.add(zone)
+            continue
         # Compute world coordinates from zone offsets (in tiles)
-        off_tx, off_ty = global_map_settings.zone_offsets.get(zone, (0, 0))
+        off_tx, off_ty = offsets.get(zone, (0, 0))
         wx = int(off_tx) * TILE_SIZE + int(rel_x)
         wy = int(off_ty) * TILE_SIZE + int(rel_y)
         # Create a persistent preset entity (rendered by ParticlePresetRenderSystem)
@@ -54,6 +73,16 @@ def spawn_particles_from_instances(world) -> int:
             spawned += 1
         except Exception:
             continue
+    # Log una sola vez qué zonas se omitieron, para diagnóstico ligero.
+    if unknown_zones:
+        try:
+            logger.info(
+                "[ParticlesLoader] Skipped particles for unknown zones=%s in world=%s",
+                sorted(unknown_zones),
+                getattr(global_map_settings, 'current_world', '?'),
+            )
+        except Exception:
+            pass
     return spawned
 
 

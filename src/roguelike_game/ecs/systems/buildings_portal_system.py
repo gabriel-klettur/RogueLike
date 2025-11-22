@@ -90,7 +90,37 @@ class BuildingPortalSystem:
                             pass
                     except Exception:
                         pass
-                    # Refresh particle instances for destination world
+                    # Clear all runtime particle/ribbon/trail entities from the previous world
+                    try:
+                        comps = world.components
+                        to_remove: set[int] = set()
+                        for key in (
+                            'ParticleComponent',
+                            'ParticlePresetComponent',
+                            'RibbonComponent',
+                            'TrailComponent',
+                            'FlashComponent',
+                        ):
+                            try:
+                                for eid in list(comps.get(key, {}).keys()):
+                                    to_remove.add(eid)
+                            except Exception:
+                                continue
+                        removed_cnt = 0
+                        for eid in to_remove:
+                            try:
+                                world.remove_entity(eid)
+                                removed_cnt += 1
+                            except Exception:
+                                continue
+                        if removed_cnt:
+                            try:
+                                logger.info("[BuildingPortalSystem] Cleared %d particle-related entities after world swap", removed_cnt)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    # Refresh per-world particle preset instances for the destination world
                     try:
                         _refresh_particles_from_world(world)
                     except Exception:
