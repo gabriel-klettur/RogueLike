@@ -252,6 +252,21 @@ class SpawnerVisualSync:
             except Exception:
                 eff_life = {}
 
+            eff_fx = None
+            try:
+                fx_map = getattr(cfg, 'visuals_fx', None) or {}
+                cur_fx_key = SpawnerVisualSync.current_state_key(st)
+                if cur_fx_key and isinstance(fx_map, dict):
+                    if cur_fx_key in fx_map and isinstance(fx_map[cur_fx_key], dict):
+                        eff_fx = fx_map[cur_fx_key]
+                    else:
+                        camel_fx = ''.join(part.title() for part in cur_fx_key.split('_'))
+                        key_fx = camel_fx.lower()
+                        if key_fx in fx_map and isinstance(fx_map[key_fx], dict):
+                            eff_fx = fx_map[key_fx]
+            except Exception:
+                eff_fx = None
+
             for ob in getattr(world, 'buildings', []) or []:
                 try:
                     bid = getattr(ob, 'id', None)
@@ -261,6 +276,10 @@ class SpawnerVisualSync:
                         setattr(ob, '_is_spawner_visual', True)
                         try:
                             setattr(ob, '_spawner_visual_life_cfg', eff_life if eff_life else None)
+                        except Exception:
+                            pass
+                        try:
+                            setattr(ob, '_spawner_visual_fx', eff_fx if eff_fx else None)
                         except Exception:
                             pass
                         visible_this = (bid == desired)

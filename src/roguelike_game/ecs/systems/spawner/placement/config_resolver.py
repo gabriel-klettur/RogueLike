@@ -277,6 +277,21 @@ def resolve_config(tpl: Dict[str, Any], inst: Dict[str, Any], waves_by_id: Dict[
     except Exception:
         visuals_life = visuals_life or {}
 
+    visuals_fx: Dict[str, Dict[str, Any]] = {}
+    try:
+        ivis3 = inst.get('visuals')
+        if isinstance(ivis3, dict):
+            for sk, sv in ivis3.items():
+                try:
+                    fx_block = sv.get('fx') if isinstance(sv, dict) else None
+                    if isinstance(fx_block, dict):
+                        key_norm_fx = str(sk).strip().lower()
+                        visuals_fx[key_norm_fx] = dict(fx_block)
+                except Exception:
+                    continue
+    except Exception:
+        visuals_fx = visuals_fx or {}
+
     return SpawnerConfig(
         template_id=tpl.get("id", ""),
         zone=inst.get("zone", tpl.get("zone", "lobby")),
@@ -299,4 +314,5 @@ def resolve_config(tpl: Dict[str, Any], inst: Dict[str, Any], waves_by_id: Dict[
         life_defaults=life_defaults or None,
         hp_scope=hp_scope or 'per_state',
         visuals_life=visuals_life or None,
+        visuals_fx=visuals_fx or None,
     )

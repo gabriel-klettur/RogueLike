@@ -65,6 +65,7 @@ class SpawnerConfig:
     visuals_offsets_px: Optional[Dict[str, Tuple[int, int]]] = None
     # Optional per-state split ratios for visuals; keys normalized to lowercase runtime tokens
     visuals_split_ratio: Optional[Dict[str, float]] = None
+    visuals_fx: Optional[Dict[str, Dict[str, Any]]] = None
     # Life/HP configuration defaults at instance level
     life_defaults: Optional[Dict[str, Any]] = None
     # HP scope: 'per_state' (default) or 'shared'
