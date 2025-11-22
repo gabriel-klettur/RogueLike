@@ -189,12 +189,19 @@ class MapEditorController:
         except Exception:
             return
         try:
-            pattern = f"map_*_{self.map_manager.map_name}.pkl"
-            for cache_file in cache_dir.glob(pattern):
-                try:
-                    cache_file.unlink(missing_ok=True)
-                except Exception:
-                    continue
+            map_name = getattr(self.map_manager, "map_name", None)
+            if not map_name:
+                return
+            patterns = [
+                f"map_*_{map_name}.pkl",   # world-aware cache files
+                f"map_{map_name}.pkl",     # legacy cache files without world prefix
+            ]
+            for pattern in patterns:
+                for cache_file in cache_dir.glob(pattern):
+                    try:
+                        cache_file.unlink(missing_ok=True)
+                    except Exception:
+                        continue
         except Exception:
             pass
 

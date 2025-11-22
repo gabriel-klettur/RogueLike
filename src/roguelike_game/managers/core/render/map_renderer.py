@@ -97,7 +97,7 @@ def render_map(manager, camera, screen, map_) -> List[object]:
             and manager.tiles_editor.editor_state.active
         )
         if getattr(global_map_settings, 'is_blank_world', None):
-            if global_map_settings.is_blank_world():
+            if (not hasattr(map_, "matrix") or not getattr(map_, "matrix")) and global_map_settings.is_blank_world():
                 odir = getattr(global_map_settings, 'overlays_dir', None)
                 files = list(Path(odir).glob('*.overlay.json')) if odir else []
                 cur_world = getattr(global_map_settings, 'current_world', '?')
@@ -162,9 +162,11 @@ def render_map(manager, camera, screen, map_) -> List[object]:
                 return dirty_rects
     except Exception:
         pass
-    # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing
+    # Hard guard: if overlays-driven AND (no overlay files) AND (no user-defined zones), render nothing.
+    # This guard must NOT apply when the Map Editor is active, because the editor
+    # can render maps that are not yet persisted as zones/overlays.
     try:
-        if getattr(global_map_settings, 'use_zones_json', False):
+        if getattr(global_map_settings, 'use_zones_json', False) and not me_active:
             odir = global_map_settings.overlays_dir
             if odir and list(Path(odir).glob('*.overlay.json')) == []:
                 # Count user-defined zones from ZONES_INDEX (exclude sentinels)
