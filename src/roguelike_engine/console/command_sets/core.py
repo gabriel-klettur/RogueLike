@@ -23,6 +23,10 @@ from roguelike_game.ecs.components.rendering.animator import Animator
 from roguelike_game.ecs.components.rendering.animation_timer import AnimationTimer
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_game.managers.ecs.particles_loader import (
+    refresh_particles_from_world as _refresh_particles_from_world,
+)
 
 if TYPE_CHECKING:  # solo para type hints sin dependencias en runtime
     from roguelike_engine.console.console_model import CommandRegistry
@@ -404,8 +408,82 @@ def register_core_commands(registry: 'CommandRegistry', game: Optional[Any] = No
         aliases=['/resurrect']
     )
 
+    def teleport_cmd(*args: str) -> str:
+        """Teletransporta al jugador a un tile (tile_x, tile_y) en el mundo indicado o actual."""
+        # Requiere contexto de juego
+        if game is None:
+            return 'Teleport no disponible (contexto no inicializado)'
+        # Obtener mundo ECS y map_manager
+        ecs = getattr(game, 'ecs', None)
+        world = getattr(ecs, 'ecs_world', None) if ecs is not None else None
+        if world is None or not hasattr(world, 'map_manager'):
+            return 'World/map_manager no disponible'
+        cur_world = getattr(global_map_settings, 'current_world', 'base')
+        if not args:
+            return 'Uso: teleport <world> <tile_x> <tile_y> | teleport <tile_x> <tile_y>'
+        dest_world = None
+        tile_pos = None
+        # Sintaxis corta: teleport <tile_x> <tile_y>  (mundo actual)
+        if len(args) == 2:
+            try:
+                tx = int(args[0])
+                ty = int(args[1])
+            except Exception:
+                return 'Coordenadas inválidas: espera enteros tile_x tile_y'
+            dest_world = cur_world
+            tile_pos = (tx, ty)
+        # Sintaxis larga: teleport <world> <tile_x> <tile_y>
+        elif len(args) >= 3:
+            dest_world = args[0]
+            try:
+                tx = int(args[1])
+                ty = int(args[2])
+            except Exception:
+                return 'Coordenadas inválidas: espera enteros tile_x tile_y'
+            tile_pos = (tx, ty)
+        else:
+            # teleport <world>  -> ir al spawn por defecto del mundo
+            dest_world = args[0]
+            tile_pos = None
+        dest_world = dest_world or cur_world
+        try:
+            # Cross-world
+            if dest_world != cur_world:
+                world.map_manager.swap_world_and_spawn(dest_world, tile_pos)
+                # Refrescar partículas y marcar índice espacial para reconstrucción
+                try:
+                    _refresh_particles_from_world(world)
+                except Exception:
+                    pass
+                try:
+                    world.invalidate_spatial_index()
+                except Exception:
+                    pass
+                return f"Teleport OK: {cur_world} -> {dest_world} tile={tile_pos}"
+            # Intra-world
+            if tile_pos is None:
+                # Fallback: usar spawn por defecto del mundo actual
+                world.map_manager.swap_world_and_spawn(cur_world, None)
+            else:
+                world.map_manager.spawn_player(tile_pos)
+            try:
+                world.invalidate_spatial_index()
+            except Exception:
+                pass
+            return f"Teleport OK: {dest_world} tile={tile_pos}"
+        except Exception:
+            return 'Error al procesar teleport'
+
+    registry.register(
+        'teleport', teleport_cmd,
+        usage='teleport <world> <tile_x> <tile_y> | teleport <tile_x> <tile_y>',
+        help='Teletransporta al jugador a un tile (tile_x,tile_y) en el mundo indicado o en el mundo actual.',
+        category='cheats',
+        aliases=['/teleport']
+    )
+
     # --- PLACEHOLDERS de otras áreas (pueden migrar a sus módulos) ---
-    for cmd in ['spawn','kill','teleport','listentities']:
+    for cmd in ['spawn','kill','listentities']:
         registry.register(cmd, lambda *a, name=cmd: f"[{name}] implementado próximamente.", category='entities')
     for cmd in ['setvar','getvar','listvars']:
         registry.register(cmd, lambda *a, name=cmd: f"[{name}] implementado próximamente.", category='vars')

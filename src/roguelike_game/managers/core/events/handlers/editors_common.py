@@ -98,7 +98,12 @@ def close_all_editors(game) -> None:
     try:
         me = getattr(game, 'map_editor', None)
         if me and getattr(getattr(me, 'editor_state', None), 'active', False):
-            me.editor_state.active = False
+            # USAR toggle() para ejecutar l1gica de cierre (c1mara, flags internos, etc.)
+            try:
+                me.toggle()
+            except Exception:
+                # Fallback: al menos desactivar el flag para no dejar el editor colgado
+                me.editor_state.active = False
     except Exception:
         pass
 
@@ -189,6 +194,10 @@ def open_editor_exclusive(game, target: str) -> None:
             pass
     elif target == 'map':
         try:
-            game.map_editor.editor_state.active = True
+            # Usar toggle() para abrir el Map Editor y ejecutar su l1gica de
+            # inicializaci1n (diagn1sticos, posible reload_map, etc.).
+            me = getattr(game, 'map_editor', None)
+            if me is not None and not getattr(getattr(me, 'editor_state', None), 'active', False):
+                me.toggle()
         except Exception:
             pass
