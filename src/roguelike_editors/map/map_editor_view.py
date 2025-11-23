@@ -1,3 +1,4 @@
+import pygame
 from pygame import Surface
 from roguelike_editors.map.map_title_panel.map_title_view import MapTitleView
 
@@ -9,7 +10,10 @@ from roguelike_editors.map.view import (
     DialogsView,
     ProgressView,
 )
-
+from roguelike_engine.config.config_tiles import TILE_SIZE
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_engine.map.utils import get_zone_for_tile
+from roguelike_editors.map.events.utils import screen_to_world
 
 class MapEditorView:
     """
@@ -70,6 +74,14 @@ class MapEditorView:
         # 5. Progreso inferior mientras corren herramientas asíncronas
         if self.state.executing_tool:
             self._draw_progress_bar(screen)
+
+        # 6. Overlay de depuración de coordenadas (tile interno/lógico/zona)
+        if getattr(self.state, "show_debug_overlay", False):
+            try:
+                self._draw_debug_coords(screen, camera)
+            except Exception:
+                # Nunca permitir que el overlay de debug rompa el render principal
+                pass
 
     # -------------------------------------------------------------
     # 1. Carga y Barra de Progreso (pantalla completa)
@@ -140,3 +152,100 @@ class MapEditorView:
             self.progress_view.draw_bottom_bar(screen, self.state)
         except Exception:
             pass
+
+    # -------------------------------------------------------------
+    # 7. Overlay de depuración de coordenadas (internas/lógicas/zona)
+    # -------------------------------------------------------------
+    def _draw_debug_coords(self, screen: Surface, camera) -> None:
+        """Dibuja un pequeño panel con coordenadas bajo el ratón.
+
+        Muestra:
+          - tile interna (tx, ty) en la malla world 0-based
+          - tile lógica (lx, ly) en espacio world_origin-aware
+          - zona y offset lógico de la zona
+        """
+        try:
+            mx, my = pygame.mouse.get_pos()
+        except Exception:
+            return
+
+        try:
+            world_x, world_y = screen_to_world((mx, my), camera)
+        except Exception:
+            return
+
+        try:
+            tx = int(world_x) // TILE_SIZE
+            ty = int(world_y) // TILE_SIZE
+        except Exception:
+            return
+
+        # Coordenadas lógicas de tile usando world_origin
+        try:
+            lx, ly = global_map_settings.internal_to_logical_tile(tx, ty)
+        except Exception:
+            lx, ly = tx, ty
+
+        # Zona y offset lógico de zona
+        try:
+            zone = get_zone_for_tile(tx, ty)
+        except Exception:
+            zone = "no zone"
+        try:
+            zx, zy = global_map_settings.logical_zone_offsets.get(zone, (0, 0))
+        except Exception:
+            zx, zy = 0, 0
+
+        line1 = f"tile={tx},{ty} logical={lx},{ly}"
+        line2 = f"zone={zone} z_off={zx},{zy}"
+        # Info global de mapa: origen lógico y dimensiones internas
+        try:
+            ox0 = getattr(global_map_settings, "world_origin_x", 0)
+            oy0 = getattr(global_map_settings, "world_origin_y", 0)
+            gw = int(getattr(global_map_settings, "global_width", 0))
+            gh = int(getattr(global_map_settings, "global_height", 0))
+            line3 = f"origin={ox0},{oy0} map={gw}x{gh}"
+        except Exception:
+            line3 = ""
+
+        font = self.fonts.small
+        try:
+            surf1 = font.render(line1, True, self.palette.text)
+            surf2 = font.render(line2, True, self.palette.text)
+            surf3 = font.render(line3, True, self.palette.text) if line3 else None
+        except Exception:
+            return
+
+        heights = [surf1.get_height(), surf2.get_height()] + ([surf3.get_height()] if surf3 else [])
+        w = max(
+            surf1.get_width(),
+            surf2.get_width(),
+            (surf3.get_width() if surf3 else 0),
+        ) + 8
+        h = sum(heights) + 8
+
+        try:
+            sw, sh = screen.get_size()
+        except Exception:
+            sw, sh = 800, 600
+
+        # Panel en esquina inferior izquierda
+        x = 10
+        y = sh - h - 10
+        bg_rect = pygame.Rect(x, y, w, h)
+
+        try:
+            # Fondo semioscuro para legibilidad
+            pygame.draw.rect(screen, (0, 0, 0), bg_rect)
+            pygame.draw.rect(screen, self.palette.border_default, bg_rect, 1)
+            cy = y + 2
+            screen.blit(surf1, (x + 4, cy))
+            cy += surf1.get_height()
+            screen.blit(surf2, (x + 4, cy))
+            if surf3 is not None:
+                cy += surf2.get_height()
+                screen.blit(surf3, (x + 4, cy))
+
+        except Exception:
+            # Best-effort: si algo falla al dibujar, no hacemos nada más
+            return

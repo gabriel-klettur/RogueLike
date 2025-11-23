@@ -34,6 +34,9 @@ class MapToolBarPanelModel:
             "clear_colliders": load_image("assets/ui/vaciar_colliders_zone.png", (self.size, self.size)),
             "paint_colliders": load_image("assets/ui/pintar_colliders_zone.png", (self.size, self.size)),
             "view_layers": load_image("assets/ui/layers_view_tool.png", (self.size, self.size)),
+            # Reutilizar el icono de tutorial para el toggle de debug de coords;
+            # si se desea, se puede sustituir por un asset específico más adelante.
+            "debug_coords": load_image("assets/ui/tutorials_button.png", (self.size, self.size)),
         }
 
     # ---------------------------

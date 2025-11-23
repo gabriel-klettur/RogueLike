@@ -3,10 +3,13 @@ from pathlib import Path
 from typing import Dict, Tuple, Union, Literal
 from collections.abc import Mapping
 import json
+import logging
 from functools import cached_property
 from collections import deque
 
 from roguelike_engine.config.config import DATA_DIR
+
+logger = logging.getLogger(__name__)
 
 # Dict wrapper that can synthesize base/sentinel zone keys on demand
 class _OffsetsDict(dict):
@@ -73,9 +76,17 @@ class MapSettings:
     # Auto-ajuste de límites: expande global_width/global_height si es necesario
     auto_expand: bool = True
 
+    # Modo avanzado: permitir offsets lógicos negativos sin recentrado interno
+    # (el runtime actual sigue usando índices 0-based; este flag se utilizará
+    # en fases posteriores para cambiar cómo interpretamos zone_offsets).
+    use_negative_offsets: bool = False
+
     # Tamaño total del mapa (en tiles)
     global_width: int = 150
     global_height: int = 150
+    # Origen lógico del mundo en coordenadas de tile (puede ser negativo)
+    world_origin_x: int = 0
+    world_origin_y: int = 0
 
     # Tamaño de cada zona (en tiles)
     zone_width: int = 50
@@ -130,6 +141,33 @@ class MapSettings:
         """Dimensiones de cada zona en tiles."""
         return (self.zone_width, self.zone_height)
 
+    # --- Helpers de conversión entre coordenadas lógicas e internas -------
+
+    def logical_to_internal_tile(self, tx: int, ty: int) -> Tuple[int, int]:
+        """Convierte (tx, ty) lógicos a índices internos de matriz.
+
+        En el diseño con offsets negativos, las coordenadas lógicas pueden ser
+        negativas. Internamente, la matriz del mundo sigue siendo 0-based;
+        usamos world_origin_x/world_origin_y como traslación.
+
+        En el runtime actual (solo offsets no negativos), world_origin_x/y
+        serán típicamente 0 y esta conversión es la identidad.
+        """
+        ox0 = getattr(self, "world_origin_x", 0)
+        oy0 = getattr(self, "world_origin_y", 0)
+        return tx - ox0, ty - oy0
+
+    def internal_to_logical_tile(self, ix: int, iy: int) -> Tuple[int, int]:
+        """Convierte índices internos (ix, iy) a coordenadas lógicas.
+
+        Inversa de logical_to_internal_tile. Útil para exponer coordenadas
+        de tiles en el espacio lógico (por ejemplo, para depuración o
+        herramientas de edición que necesitan trabajar con offsets negativos).
+        """
+        ox0 = getattr(self, "world_origin_x", 0)
+        oy0 = getattr(self, "world_origin_y", 0)
+        return ix + ox0, iy + oy0
+
     @cached_property
     def zone_offsets(self) -> Dict[str, Tuple[int, int]]:
         """
@@ -169,6 +207,10 @@ class MapSettings:
                 offsets['lobby'] = lobby_off
             if 'dungeon' not in offsets:
                 offsets['dungeon'] = self.calculate_dungeon_offset(offsets['lobby'])
+            # Colapsar entradas que compartan el mismo offset lógico en una sola zona.
+            # Esto evita que clones como "zone_150_0" y "zone_150_0_1" se dibujen
+            # superpuestos y asegura una vista coherente en todo el runtime.
+            offsets = self._dedupe_zone_offsets(offsets)
             # No inyectar zonas adicionales dinámicas aquí; dejamos que zones.json las defina
             # Ajustar límites del world para incluir todas las zonas definidas
             if self.auto_expand:
@@ -182,6 +224,124 @@ class MapSettings:
         except Exception:
             # En caso de fallo, usar dinámico
             return _OffsetsDict(self, self._dynamic_offsets())
+
+    @property
+    def zone_offsets_internal(self) -> Dict[str, Tuple[int, int]]:
+        """Offsets de zona en coordenadas internas (índices 0-based).
+
+        Por ahora, equivalen a ``zone_offsets`` ya que el runtime sigue
+        trabajando con offsets no negativos tras el auto_expand. Cuando
+        ``use_negative_offsets`` esté activo y cambiemos la semántica de
+        ``zone_offsets`` a coordenadas lógicas (potencialmente negativas),
+        esta propiedad será el punto único de conversión a índices internos.
+        """
+        try:
+            offsets = dict(self.zone_offsets)  # type: ignore[arg-type]
+        except Exception:
+            offsets = {}
+        return _OffsetsDict(self, offsets)
+
+    @property
+    def logical_zone_offsets(self) -> Dict[str, Tuple[int, int]]:
+        """Offsets lógicos de zonas en tiles antes del recentrado por auto_expand.
+
+        Se calculan combinando ``zone_offsets`` (ya normalizados a coordenadas
+        no negativas) con ``world_origin_x/world_origin_y`` registrados en
+        ``expand_limits``. Las zonas centinela ("no zone", "no-zone") se
+        mantienen siempre en (0, 0) para preservar su semántica.
+        """
+        try:
+            offsets = dict(self.zone_offsets)  # type: ignore[arg-type]
+        except Exception:
+            offsets = {}
+        logical: Dict[str, Tuple[int, int]] = {}
+        for name, (ox, oy) in offsets.items():
+            try:
+                low = str(name).lower()
+            except Exception:
+                low = name
+            if isinstance(low, str) and low in ("no zone", "no-zone"):
+                logical[name] = (0, 0)
+            else:
+                logical[name] = self.internal_to_logical_tile(ox, oy)
+        return logical
+
+    def _is_auto_zone_name(self, name: object) -> bool:
+        """Heurística para detectar nombres de zona auto-generados.
+
+        Considera automáticos los que siguen el patrón aproximado
+        ``zone_<x>_<y>[_idx]``, donde x, y e idx son enteros (x/y pueden ser negativos).
+        """
+        try:
+            s = str(name)
+        except Exception:
+            return False
+        if not s.startswith("zone_"):
+            return False
+        tail = s[len("zone_"):]
+        parts = tail.split("_")
+        if not (2 <= len(parts) <= 3):
+            return False
+        for part in parts:
+            # Permitir signo negativo en componentes de coordenadas
+            if not part or part == "-":
+                return False
+            if not part.lstrip("-").isdigit():
+                return False
+        return True
+
+    def _dedupe_zone_offsets(self, offsets: Dict[str, Tuple[int, int]]) -> Dict[str, Tuple[int, int]]:
+        """Colapsa entradas que comparten el mismo offset lógico en una sola zona.
+
+        Estrategia:
+          - Para cada par (x, y), se agrupan todos los nombres asociados.
+          - Si solo hay uno, se conserva sin cambios.
+          - Si hay varios:
+              * Se priorizan nombres "no automáticos" (no generados tipo zone_X_Y[_N]).
+              * Si todos son automáticos, se prioriza el que no tiene sufijo numérico;
+                en último término, se usa el alfabéticamente primero.
+          - Las zonas descartadas se ignoran en runtime y se registran por log.
+        """
+        if not offsets:
+            return offsets
+
+        by_coord: Dict[Tuple[int, int], list[str]] = {}
+        for name, off in offsets.items():
+            by_coord.setdefault(off, []).append(name)
+
+        changed = False
+        result: Dict[str, Tuple[int, int]] = {}
+        for off, names in by_coord.items():
+            if len(names) == 1:
+                result[names[0]] = off
+                continue
+
+            changed = True
+            # Preferir nombres no automáticos (renombrados por el usuario, p.ej. "Forest")
+            non_auto = [n for n in names if not self._is_auto_zone_name(n)]
+            if non_auto:
+                chosen = sorted(non_auto)[0]
+            else:
+                # Todos automáticos: preferir los que no terminan en sufijo numérico (_1, _2, ...)
+                no_suffix = [n for n in names if not str(n).split("_")[-1].lstrip("-").isdigit()]
+                if no_suffix:
+                    chosen = sorted(no_suffix)[0]
+                else:
+                    chosen = sorted(names)[0]
+
+            result[chosen] = off
+            dropped = [n for n in names if n != chosen]
+            if dropped:
+                try:
+                    logger.warning(
+                        "[MapSettings] Duplicate zones at offset (%s,%s): keeping '%s', ignoring %s",
+                        off[0], off[1], chosen, dropped,
+                    )
+                except Exception:
+                    # Fallback silencioso si el logging falla por cualquier motivo
+                    pass
+
+        return result if changed else offsets
 
     # Rutas dependientes del mundo activo
     @property
@@ -251,6 +411,9 @@ class MapSettings:
         missing = [z for z in self.additional_zones if z not in offsets]
         if missing:
             raise KeyError(f"Dependencias no satisfechas para zonas: {missing}")
+        # Asegurar que distintas claves no colapsan en el mismo offset
+        # (p.ej., configuraciones adicionales mal definidas).
+        offsets = self._dedupe_zone_offsets(offsets)
         if self.auto_expand:
             self.global_width, self.global_height, offsets = self.expand_limits(offsets)
         else:
@@ -328,13 +491,30 @@ class MapSettings:
                 )
 
     def expand_limits(self, offsets: Dict[str, Tuple[int, int]]) -> Tuple[int, int, Dict[str, Tuple[int, int]]]:
-        """Ajusta dimensiones y corrige offsets para incluir todas las zonas."""
+        """Ajusta dimensiones y corrige offsets para incluir todas las zonas.
+
+        Conserva el comportamiento previo (desplazar offsets a coordenadas
+        no negativas) pero además registra el mínimo offset lógico original en
+        ``world_origin_x/world_origin_y`` para usos futuros.
+        """
+        if not offsets:
+            return self.global_width, self.global_height, offsets
+
         xs = [ox for ox, _ in offsets.values()] + [ox + self.zone_width for ox, _ in offsets.values()]
         ys = [oy for _, oy in offsets.values()] + [oy + self.zone_height for _, oy in offsets.values()]
         min_x, max_x = min(xs), max(xs)
         min_y, max_y = min(ys), max(ys)
-        dx = -min(min_x, 0)
-        dy = -min(min_y, 0)
+
+        # Registrar el origen lógico previo al desplazamiento como el mínimo
+        # entre el valor real y 0. Así, cuando todos los offsets son
+        # no negativos, world_origin_* = 0 y la conversión interna↔lógica es
+        # la identidad; si hay valores negativos, world_origin_* coincide con
+        # el mínimo lógico y se convierte en el desplazamiento de referencia.
+        self.world_origin_x = min(min_x, 0)
+        self.world_origin_y = min(min_y, 0)
+
+        dx = -self.world_origin_x
+        dy = -self.world_origin_y
         new_w = max(self.global_width, max_x) + dx
         new_h = max(self.global_height, max_y) + dy
         new_offsets = {n: (ox + dx, oy + dy) for n, (ox, oy) in offsets.items()}

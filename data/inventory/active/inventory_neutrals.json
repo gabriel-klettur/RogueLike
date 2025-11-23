@@ -1,1 +1,266 @@
-{}
+{
+  "7d03485e-8e22-4e2b-a476-dba936c18f65": {
+    "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 200
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "ca0e53b7-352c-4c8f-bb11-430419d4fe1b": {
+    "template_id": "9d2b3c54-2f0a-4a70-9e2c-4a4f8a8e7c31",
+    "slots": [
+      {
+        "item": "simple_wooden_shield",
+        "quantity": 100
+      },
+      {
+        "item": "iron_ingot",
+        "quantity": 100
+      },
+      {
+        "item": "wood_log_bundle",
+        "quantity": 100
+      },
+      {
+        "item": "iron_sword",
+        "quantity": 100
+      },
+      {
+        "item": "gold",
+        "quantity": 500
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "a0864d92-97bc-4a9d-93e7-65abcb96437c": {
+    "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 1000
+      },
+      {
+        "item": "borsh_01",
+        "quantity": 100
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 100
+      },
+      {
+        "item": "food_chicken",
+        "quantity": 100
+      },
+      {
+        "item": "hakarl_01",
+        "quantity": 100
+      },
+      {
+        "item": "paella_01",
+        "quantity": 100
+      },
+      {
+        "item": "perogi_01",
+        "quantity": 100
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 100
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "01712832-e926-45ea-9018-bff6ab0f4fb4": {
+    "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
+    "slots": [
+      {
+        "item": "spellbook_simple",
+        "quantity": 100
+      },
+      {
+        "item": "wizard_staff_lvl_1",
+        "quantity": 100
+      },
+      {
+        "item": "wizard_staff_lvl_2",
+        "quantity": 100
+      },
+      {
+        "item": "wizard_staff_lvl_3",
+        "quantity": 100
+      },
+      {
+        "item": "gold",
+        "quantity": 250
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "e1be2475-d9c4-4c35-ae5e-12731191ea63": {
+    "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
+    "slots": [
+      {
+        "item": "health_potion",
+        "quantity": 100
+      },
+      {
+        "item": "mana_potion",
+        "quantity": 100
+      },
+      {
+        "item": "energy_potion",
+        "quantity": 100
+      },
+      {
+        "item": "poison_potion",
+        "quantity": 100
+      },
+      {
+        "item": "explosion_potion",
+        "quantity": 100
+      },
+      {
+        "item": "gold",
+        "quantity": 300
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  },
+  "0ef38448-d9f6-4c45-9167-82578a62f7a5": {
+    "template_id": "f1a2b3c4-d5e6-47f8-9012-abcdef123456",
+    "slots": [
+      {
+        "item": "arrow_01",
+        "quantity": 200
+      },
+      {
+        "item": "bow_01",
+        "quantity": 100
+      },
+      {
+        "item": "wood_log_bundle",
+        "quantity": 100
+      },
+      {
+        "item": "gold",
+        "quantity": 200
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "schema_version": "1.0.0"
+  }
+}

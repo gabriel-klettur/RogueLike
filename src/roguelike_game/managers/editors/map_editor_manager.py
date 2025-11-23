@@ -130,6 +130,15 @@ class MapEditorManager:
                 print(f"[MapEditor] overlays_dir={overlays_dir}")
                 print(f"[MapEditor] zones_index={zones_index}")
                 print(f"[MapEditor] is_blank_world={is_blank}")
+                # Trazas adicionales para razonar sobre offsets negativos
+                try:
+                    ox0 = getattr(global_map_settings, "world_origin_x", 0)
+                    oy0 = getattr(global_map_settings, "world_origin_y", 0)
+                    print(f"[MapEditor] world_origin=({ox0},{oy0})")
+                    logical_offs = getattr(global_map_settings, "logical_zone_offsets", {})
+                    print(f"[MapEditor] logical_zone_offsets={logical_offs}")
+                except Exception:
+                    pass
                 logger.info(
                     "[MapEditor] OPEN current_world=%s overlays_dir=%s zones_index=%s is_blank_world=%s",
                     current_world,

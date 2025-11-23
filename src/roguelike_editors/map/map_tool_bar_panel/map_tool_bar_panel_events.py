@@ -87,6 +87,15 @@ class MapToolBarPanelEvents:
                     # Delegate to the Paint Colliders tool controller, which enforces exclusivity
                     c.paint_colliders.toggle()
                     return True
+                if tool_name == "debug_coords":
+                    # Toggle simple boolean flag in editor state; no exclusividad con otros modos.
+                    try:
+                        cur = bool(getattr(editor, "show_debug_overlay", False))
+                        setattr(editor, "show_debug_overlay", not cur)
+                        logger.debug("[DEBUG][Toolbar/Events] show_debug_overlay -> %s", not cur)
+                    except Exception:
+                        pass
+                    return True
 
         # Dropdown de capas: delegar a ViewLayersEvents
         if editor.layers_view_open:

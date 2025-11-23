@@ -93,8 +93,12 @@ class ZonesService:
             zh = 50
         else:
             zw, zh = zone_w, zone_h
-        offx = (tx // zw) * zw
-        offy = (ty // zh) * zh
+        # Convertir coordenadas internas de tile (tx, ty) a coordenadas
+        # lógicas usando world_origin, para que zones.json siempre refleje
+        # el espacio lógico (que puede incluir negativos).
+        lx, ly = global_map_settings.internal_to_logical_tile(tx, ty)
+        offx = (lx // zw) * zw
+        offy = (ly // zh) * zh
         base_name = f"zone_{offx}_{offy}"
 
         json_path = self._zones_json_path()
@@ -117,7 +121,10 @@ class ZonesService:
         """
         if not name or self._is_sentinel(name):
             return None
-        offsets_cur = dict(global_map_settings.zone_offsets)
+        # Trabajar en espacio lógico para que las copias mantengan los
+        # mismos offsets que el diseño original, independientemente del
+        # recentrado interno.
+        offsets_cur = dict(global_map_settings.logical_zone_offsets)
         if name not in offsets_cur:
             return None
 
@@ -143,7 +150,8 @@ class ZonesService:
         offsets = self._load_json_or_empty(json_path)
         if name not in offsets:
             # Si no está en JSON, intentar reconstruir desde settings actuales
-            offsets = {k: list(v) for k, v in global_map_settings.zone_offsets.items() if not self._is_sentinel(k)}
+            logical = dict(global_map_settings.logical_zone_offsets)
+            offsets = {k: list(v) for k, v in logical.items() if not self._is_sentinel(k)}
             if name not in offsets:
                 return False
         offsets.pop(name, None)
@@ -175,7 +183,9 @@ class ZonesService:
         if self._is_sentinel(old) or self._is_sentinel(new):
             return False
 
-        offsets_cur = dict(global_map_settings.zone_offsets)
+        # Usar offsets lógicos para que el renombrado preserve las
+        # coordenadas de diseño tal y como se persisten en zones.json.
+        offsets_cur = dict(global_map_settings.logical_zone_offsets)
         if old not in offsets_cur:
             return False
         if new in offsets_cur:
@@ -217,7 +227,13 @@ class ZonesService:
     def save_zones(self) -> None:
         """Persiste zone_offsets filtrando el centinela en zones.json."""
         json_path = self._zones_json_path()
-        filtered = {k: v for k, v in global_map_settings.zone_offsets.items() if not self._is_sentinel(k)}
+        # Persistir siempre offsets en espacio lógico para que zones.json
+        # refleje el diseño original (incluyendo negativos cuando aplica).
+        try:
+            logical = dict(global_map_settings.logical_zone_offsets)
+        except Exception:
+            logical = {k: v for k, v in global_map_settings.zone_offsets.items()}
+        filtered = {k: list(v) for k, v in logical.items() if not self._is_sentinel(k)}
         self._save_json(json_path, filtered)
 
     def load_zones(self) -> None:

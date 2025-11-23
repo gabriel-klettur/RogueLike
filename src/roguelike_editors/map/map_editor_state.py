@@ -36,6 +36,8 @@ class MapEditorState:
         self.clear_colliders_mode: bool = False  # Modo: vaciar colliders
         self.paint_colliders_mode: bool = False  # Modo: pintar colliders
         self.layers_view_open: bool = False    # Modo: dropdown de visibilidad de capas
+        # Overlay de depuración de coordenadas (tiles internos/lógicos/zona)
+        self.show_debug_overlay: bool = False
         # Código de overlay activo para pintar tiles (por defecto, 'floor')
         self.tile_code: str | None = "floor"
 

@@ -2,13 +2,13 @@ from roguelike_ui.widgets.toolbar_panel import ToolbarView
 
 # Ordered list of tools for the Map toolbar
 TOOLS = [
-    
     "view_layers",
     "add_zone",
     "delete_zone",
     "paint_tiles",
     "clear_colliders",
     "paint_colliders",
+    "debug_coords",   # Toggle overlay de depuración de coords
     "map_tutorial",
 ]
 

@@ -104,6 +104,8 @@ class MapToolBarPanelController:
             return bool(getattr(self.editor, "clear_colliders_mode", False))
         if tool == "paint_colliders":
             return bool(getattr(self.editor, "paint_colliders_mode", False))
+        if tool == "debug_coords":
+            return bool(getattr(self.editor, "show_debug_overlay", False))
         return False
 
     def _toggle_mode(self, mode_attr: str, disable: list[str] = []) -> None:

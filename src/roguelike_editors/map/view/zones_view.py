@@ -21,6 +21,8 @@ class ZonesView:
     def render(self, screen: Surface, camera, state) -> Optional[pygame.Rect]:
         zones = global_map_settings.zone_offsets
         zone_w, zone_h = global_map_settings.zone_size
+        # Vista lógica de offsets (puede incluir negativos) para depuración/etiquetas
+        logical_offsets = getattr(global_map_settings, "logical_zone_offsets", {})
         last_selected_rect: Optional[pygame.Rect] = None
 
         for zone_name, (ox, oy) in zones.items():
@@ -71,7 +73,14 @@ class ZonesView:
             if state.renaming_zone == zone_name:
                 self._draw_renaming_overlay(screen, state, zone_name, screen_tl, screen_size)
             else:
-                self._draw_zone_label(screen, screen_tl, screen_size, zone_name)
+                # Mostrar también las coordenadas lógicas de la zona para
+                # razonar con offsets negativos sin alterar el runtime.
+                try:
+                    lx, ly = logical_offsets.get(zone_name, (ox, oy))
+                except Exception:
+                    lx, ly = ox, oy
+                label = f"{zone_name} ({lx},{ly})"
+                self._draw_zone_label(screen, screen_tl, screen_size, label)
 
         return last_selected_rect
 
