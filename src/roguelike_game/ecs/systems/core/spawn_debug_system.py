@@ -6,7 +6,7 @@ when the FSM Editor is active.
 import pygame
 import roguelike_engine.config.config as config
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class SpawnDebugSystem:
     """

@@ -4,7 +4,7 @@ from typing import Any, Optional
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_engine.config.config_z_layer import DEFAULT_Z
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
 
 try:

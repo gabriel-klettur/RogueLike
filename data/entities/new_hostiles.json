@@ -1410,6 +1410,127 @@
           }
         }
       },
+      "barbol_brother_felipondor": {
+        "default_name": "Felipondor",
+        "stats": {
+          "hp": 3000,
+          "speed": 0.6,
+          "faction": "NEUTRAL",
+          "aggro_range": 0,
+          "chat_range": 3,
+          "melee_range": 0,
+          "melee_damage": 0,
+          "melee_cooldown": 999.0,
+          "defense": 0,
+          "power": 0,
+          "damage_duration": 0.0,
+          "chasing_speed": 0.0,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.2,
+          "spawn_padding": 0,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 9999.0
+        },
+        "fsm_set": null,
+        "patrol": null,
+        "assets": {
+          "active_set": "no-sets",
+          "sets": {
+            "sprites_set": {
+              "idle": [],
+              "walk": [],
+              "chase": [],
+              "cast": [],
+              "attack": [],
+              "damage": [],
+              "death": []
+            },
+            "sprites_data_set": {
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
+              "tint": null
+            }
+          },
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol_brother_felipondor/felipondor_brother_final_boss.png",
+              "sw": null
+            },
+            "attack": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "death": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "damage": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "casting": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
+            },
+            "sprites_data_no-set": {
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
+              "tint": null
+            }
+          }
+        }
+      },
       "mon1": {
         "assets": {
           "no-sets": {

@@ -1,6 +1,6 @@
 import math
 import time
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.combat.hitbox import HitboxComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.systems.combat.spells.resolvers_pkg.utils import get_entity_center, mouse_world, direction_from_to, spawn_at_offset

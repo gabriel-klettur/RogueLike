@@ -1,5 +1,5 @@
 
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class ArcaneFlameSystem:
     """

@@ -15,9 +15,11 @@
     "3.5",
     "3.55",
     "3.565",
+    "3.57",
     "3.6",
     "3.7",
     "3.8",
+    "4",
     "4.01",
     "4.02",
     "4.03",
@@ -93,9 +95,9 @@
     "InventoryDragSystem"
   ],
   "ui": {
-    "minimized": false,
+    "minimized": true,
     "toolbar": {
-      "minimized": true,
+      "minimized": false,
       "toggles": {
         "spell_collision": false,
         "npc_attack": false,
@@ -103,7 +105,7 @@
         "patrol": false,
         "defend_area": false,
         "telegraph": true,
-        "windup_outline": true,
+        "windup_outline": false,
         "trail": false,
         "building_collision": false
       }

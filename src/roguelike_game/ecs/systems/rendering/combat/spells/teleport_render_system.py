@@ -1,4 +1,4 @@
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.teleport_component import TeleportComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.teleport.view import TeleportView
 

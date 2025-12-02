@@ -2,7 +2,7 @@ import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_foot_tile
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 

@@ -33,5 +33,10 @@
     "persona_id": "vendor_mague_roberto",
     "role": "vendor",
     "chat_range": 2
+  },
+  "Felipondor": {
+    "persona_id": "npc_barbol_brother_felipondor",
+    "role": "generic",
+    "chat_range": 3
   }
 }

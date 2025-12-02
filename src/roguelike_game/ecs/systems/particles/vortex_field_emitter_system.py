@@ -1,7 +1,7 @@
 import random
 import time
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
 

@@ -1,7 +1,7 @@
 import pygame
 from collections import OrderedDict, defaultdict
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class ParticleRenderSystem:
     """

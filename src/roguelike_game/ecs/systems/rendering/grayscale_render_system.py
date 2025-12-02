@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.systems.rendering.render_system import RenderSystem
 
 class GrayscaleRenderSystem:

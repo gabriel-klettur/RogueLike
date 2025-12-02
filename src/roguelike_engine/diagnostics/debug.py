@@ -1,4 +1,4 @@
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
 from roguelike_engine.diagnostics.overlay.model import DiagnosticsOverlayModel
 from roguelike_engine.diagnostics.overlay.view import DiagnosticsOverlayView

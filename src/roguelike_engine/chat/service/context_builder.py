@@ -156,6 +156,7 @@ class ContextBuilder:
                     "friendship_score": mem.friendship_score,
                     "friendship_level": _friendship_level(mem.friendship_score),
                     "has_greeted": bool(getattr(mem, 'has_greeted', False)),
+                    "visit_count": int(getattr(mem, 'visit_count', 0) or 0),
                 }, ensure_ascii=False)
             )
             # Política de presentación basada en memoria

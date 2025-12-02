@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Iterable
 
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 from .collisions.buildings import handle_building_collision
 from .collisions.tiles import handle_tile_collisions

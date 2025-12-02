@@ -3,7 +3,7 @@ from __future__ import annotations
 import pygame
 from typing import Any, Dict, Optional, Tuple
 
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 from roguelike_game.ecs.components.abilities.puddle_component import PuddleComponent
 from roguelike_game.ecs.components.transform.scale import Scale

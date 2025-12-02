@@ -4,7 +4,7 @@ import math
 import logging
 
 from pygame.math import Vector2
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.aura_component import AuraComponent
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent

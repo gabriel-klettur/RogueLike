@@ -1,6 +1,6 @@
 import math
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 import time
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent

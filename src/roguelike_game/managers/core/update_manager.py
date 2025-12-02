@@ -1,4 +1,4 @@
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark_groups import BenchmarkGroup
 import pygame
 import types
 import logging
@@ -34,6 +34,14 @@ def update_game(
     if not state.running:
         return
 
+    root_group = BenchmarkGroup(perf_log, "2")
+    editors_group = root_group.subgroup("0")
+    ecs_group = root_group.subgroup("2")
+    camera_group = root_group.subgroup("1")
+    entities_group = root_group.subgroup("3")
+    hud_group = root_group.subgroup("45")
+    minimap_group = root_group.subgroup("5")
+
     # Prioritized editor steps: execute first active and return
     def _step_tiles_editor():
         tiles_editor.update(camera, map)
@@ -55,21 +63,21 @@ def update_game(
         camera.offset_y += dy * pan_speed
 
     editor_steps = [
-        ("2.0.1.tiles_editor.update", _step_tiles_editor, tiles_editor.editor_state.active),
-        ("2.0.2.buildings_editor.update", _step_buildings_editor, buildings_editor.editor_state.active),
-        ("2.0.3.map_editor.update", _step_map_editor, map_editor.editor_state.active),
+        ("1.tiles_editor.update", _step_tiles_editor, tiles_editor.editor_state.active),
+        ("2.buildings_editor.update", _step_buildings_editor, buildings_editor.editor_state.active),
+        ("3.map_editor.update", _step_map_editor, map_editor.editor_state.active),
     ]
 
-    for key, fn, cond in editor_steps:
+    for name, fn, cond in editor_steps:
         if cond:
-            @benchmark(perf_log, key)
+            @editors_group.bench(name)
             def _run_editor(sfn=fn):
                 sfn()
             _run_editor()
             # If the Tiles Editor is active, still run ECS update so physics reflects edits in runtime
-            if key == "2.0.1.tiles_editor.update":
+            if fn is _step_tiles_editor:
                 try:
-                    @benchmark(perf_log, "2.2.ecs.update[while_tiles_editor]")
+                    @ecs_group.bench("ecs.update[while_tiles_editor]")
                     def _run_ecs_update():
                         ecs.ecs_world.update(camera)
                     _run_ecs_update()
@@ -77,7 +85,7 @@ def update_game(
                     pass
             # If the Buildings Editor is active, rebuild SpatialIndex only when there are pending collider changes
             # (colliders_dirty) and the throttle interval elapsed. Then run ECS update on those rebuild frames.
-            if key == "2.0.2.buildings_editor.update":
+            if fn is _step_buildings_editor:
                 try:
                     # Throttle parameters
                     ticks = pygame.time.get_ticks()
@@ -115,7 +123,7 @@ def update_game(
                                 be_state._colliders_dirty_logged = False
                         except Exception:
                             pass
-                        @benchmark(perf_log, "2.2.ecs.update[while_buildings_editor]")
+                        @ecs_group.bench("ecs.update[while_buildings_editor]")
                         def _run_ecs_update():
                             ecs.ecs_world.update(camera)
                         _run_ecs_update()
@@ -143,7 +151,7 @@ def update_game(
                             be_state.last_colliders_rebuild_ms = ticks
                         except Exception:
                             pass
-                        @benchmark(perf_log, "2.2.ecs.update[after_rebuild]")
+                        @ecs_group.bench("ecs.update[after_rebuild]")
                         def _run_ecs_update():
                             ecs.ecs_world.update(camera)
                         _run_ecs_update()
@@ -169,7 +177,7 @@ def update_game(
             except Exception:
                 pass
             # Ensure world state reflects new spatial index immediately in idle frames
-            @benchmark(perf_log, "2.2.ecs.update[after_rebuild]")
+            @ecs_group.bench("ecs.update[after_rebuild]")
             def _run_ecs_update():
                 ecs.ecs_world.update(camera)
             _run_ecs_update()
@@ -277,14 +285,14 @@ def update_game(
             )
 
     steps = [
-        ("2.1.camera.update", _step_camera),
-        ("2.3.entities.update", _step_entities),
-        ("2.45.hud.update", _step_hud_update),
-        ("2.5.minimap.update", _step_minimap),
+        (camera_group, "camera.update", _step_camera),
+        (entities_group, "entities.update", _step_entities),
+        (hud_group, "hud.update", _step_hud_update),
+        (minimap_group, "minimap.update", _step_minimap),
     ]
 
-    for key, fn in steps:
-        @benchmark(perf_log, key)
+    for grp, name, fn in steps:
+        @grp.bench(name)
         def _run(sfn=fn):
             sfn()
         _run()

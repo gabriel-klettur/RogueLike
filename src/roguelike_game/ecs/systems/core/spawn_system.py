@@ -5,7 +5,7 @@ using the entity factory.
 """
 from roguelike_game.factories.registry import get_factory
 from roguelike_game.ecs.components.spawn.spawn_stabilizer import SpawnStabilizer
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.ai.defend_area import DefendArea
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
 from roguelike_engine.config.config_tiles import TILE_SIZE

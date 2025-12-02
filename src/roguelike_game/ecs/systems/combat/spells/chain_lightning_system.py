@@ -1,6 +1,6 @@
 import math
 import time
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.abilities.chain_lightning_component import ChainLightningComponent
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent

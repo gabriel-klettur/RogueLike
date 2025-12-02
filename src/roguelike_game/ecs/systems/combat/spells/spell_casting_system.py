@@ -9,7 +9,7 @@ from roguelike_game.ecs.systems.fsm.states.idle_state import IdleState
 from roguelike_game.ecs.systems.fsm.states.player.move_state import MoveState
 from roguelike_game.ecs.systems.fsm.fsm_system import _EntityProxy
 
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import math
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position

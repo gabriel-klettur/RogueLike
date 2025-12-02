@@ -2,7 +2,7 @@ import pygame
 import roguelike_engine.config.config as config
 
 from roguelike_game.managers.core.events.events import handle_events as core_handle_events
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark_groups import BenchmarkGroup
 from roguelike_game.managers.core.update_manager import update_game
 from roguelike_game.managers.core.loop_manager import GameLoop
 from roguelike_game.managers.core.shutdown_manager import ShutdownManager
@@ -51,12 +51,16 @@ class Game:
     #!-------------------------------------------------- LOOP PRINCIPAL ---------------------------------------------------
     #!---------------------------------------------------------------------------------------------------------------------
 
-    @benchmark(lambda self: self.perf_log, "1.TOTAL: HANDLE EVENTS [CORE]")
+    _events_group = BenchmarkGroup(lambda self: self.perf_log, "1")
+
+    @_events_group.bench("TOTAL: HANDLE EVENTS [CORE]")
     def handle_events(self):
         core_handle_events(self)
         return
  
-    @benchmark(lambda self: self.perf_log, "2.TOTAL: UPDATE [EDITORS]")
+    _update_group = BenchmarkGroup(lambda self: self.perf_log, "2")
+
+    @_update_group.bench("TOTAL: UPDATE [EDITORS]")
     def update(self):        
         if self.inventory_editor.model.visible:
             return
@@ -86,7 +90,9 @@ class Game:
             item_editor=self.item_editor,
         )
 
-    @benchmark(lambda self: self.perf_log, "3.TOTAL: RENDER [EDITORSSSSS]")
+    _render_group = BenchmarkGroup(lambda self: self.perf_log, "3")
+
+    @_render_group.bench("TOTAL: RENDER [EDITORSSSSS]")
     def render(self):
         # Renderiza el mundo
         # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda

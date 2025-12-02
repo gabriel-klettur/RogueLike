@@ -1,7 +1,7 @@
 """
 Sistema ECS para actualizar la FSM de NPCs (y jugador) y evaluar transiciones JSON simples.
 """
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
 from roguelike_editors.fsm.services.fsm_registry import get_state_class
 from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState

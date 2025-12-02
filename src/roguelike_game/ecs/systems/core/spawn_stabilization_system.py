@@ -8,7 +8,7 @@ SpawnStabilizationSystem
 from __future__ import annotations
 
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
 
 

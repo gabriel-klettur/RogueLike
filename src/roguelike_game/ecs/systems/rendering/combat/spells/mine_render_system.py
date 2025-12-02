@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class MineRenderSystem:
     def __init__(self, perf_log=None):

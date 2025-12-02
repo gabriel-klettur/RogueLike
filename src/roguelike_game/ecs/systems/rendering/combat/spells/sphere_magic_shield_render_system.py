@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.sphere_magic_shield_component import SphereMagicShieldComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.sphere_magic_shield.view import SphereMagicShieldView
 

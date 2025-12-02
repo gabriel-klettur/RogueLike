@@ -2,7 +2,7 @@ import time
 import random
 import logging
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.abilities.meteor_fall_component import MeteorFallComponent

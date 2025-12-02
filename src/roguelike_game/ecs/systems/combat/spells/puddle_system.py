@@ -1,7 +1,7 @@
 import time
 import pygame
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.puddle_component import PuddleComponent
 from roguelike_game.ecs.components.combat.burn import BurnComponent
 from roguelike_game.ecs.components.status.stun_component import StunComponent

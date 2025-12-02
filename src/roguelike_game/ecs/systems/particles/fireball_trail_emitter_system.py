@@ -1,7 +1,7 @@
 import random
 import math
 import logging
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.config.particles_config import get_preset
 from roguelike_game.ecs.components.transform.position import Position

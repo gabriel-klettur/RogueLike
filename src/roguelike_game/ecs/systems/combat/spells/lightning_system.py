@@ -1,6 +1,6 @@
 import pygame
 import random
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.lightning_component import LightningComponent
 
 class LightningSystem:

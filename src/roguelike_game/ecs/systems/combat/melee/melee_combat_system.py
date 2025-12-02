@@ -5,7 +5,7 @@ and applies damage to targets based on attacker stats, weapon bonuses,
 and target defense.
 """
 from roguelike_game.ecs.components.combat.combat_stats import CombatStats
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.combat.last_attacker import LastAttacker
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction

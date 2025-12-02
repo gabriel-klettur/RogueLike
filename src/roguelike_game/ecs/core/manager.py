@@ -1,7 +1,7 @@
 from .component_registry import create_empty_component_store
 from .system_registry import get_update_system_classes, get_render_system_classes
 from .spatial_index import SpatialIndex
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark_groups import BenchmarkGroup
 import roguelike_engine.config.config as config
 import os
 from roguelike_game.ecs.systems.input.input_system import InputSystem
@@ -105,21 +105,26 @@ class ECSWorld:
             if all(eid in comps.get(ct, {}) for ct in component_types):
                 yield eid
     
-    @benchmark(lambda self: self.perf_log, "5.TOTAL: ECS UPDATE [CORE]")
+    _ecs_update_group = BenchmarkGroup(lambda self: self.perf_log, "5")
+
+    @_ecs_update_group.bench("TOTAL: ECS UPDATE [CORE]")
     def update(self, camera):
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
             self.rebuild_spatial_index()
         
         # Ejecutar cada sistema de update
-        for i, system in enumerate(self.update_systems, start=1):
+        systems_group = BenchmarkGroup(self.perf_log, "5", auto_index=True)
+        for system in self.update_systems:
             name = type(system).__name__
-            @benchmark(self.perf_log, f"5.{i:02d}.[UPDATE]{name}")
+            @systems_group.next(f"[UPDATE]{name}")
             def _update_sys(sys=system):
                 sys.update(self, camera)
             _update_sys()
     
-    @benchmark(lambda self: self.perf_log, "4.TOTAL: ECS RENDER [CORE]")
+    _ecs_render_group = BenchmarkGroup(lambda self: self.perf_log, "4")
+
+    @_ecs_render_group.bench("TOTAL: ECS RENDER [CORE]")
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
         # (barras de vida, debug, etc.) para que no se vean por encima del panel.
@@ -139,9 +144,10 @@ class ECSWorld:
         except Exception:
             pass
         # Ejecutar cada sistema de render
-        for i, system in enumerate(self.render_systems, start=1):
+        systems_group = BenchmarkGroup(self.perf_log, "4", auto_index=True)
+        for system in self.render_systems:
             name = type(system).__name__
-            @benchmark(self.perf_log, f"4.{i:02d}.[RENDER]{name}")
+            @systems_group.next(f"[RENDER]{name}")
             def _render_sys(sys=system):
                 sys.update(self, screen, camera)
             _render_sys()

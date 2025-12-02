@@ -1,6 +1,6 @@
 import pygame
 import roguelike_engine.config.config as config
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 # FSM-specific debug subsystems (now under FSM editor debug package)
 from .fsm_chase_debug import ChaseDebugSystem

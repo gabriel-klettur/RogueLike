@@ -1,4 +1,4 @@
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.smoke_component import SmokeComponent
 
 class SmokeSystem:

@@ -1,5 +1,5 @@
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.utils.health_utils import is_neutral
 
 

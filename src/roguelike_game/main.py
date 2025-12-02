@@ -6,7 +6,7 @@ from roguelike_game.utils.benchmark import setup_benchmark_logger
 from roguelike_game.managers.core.game import Game
 from typing import Tuple, Any, Dict, DefaultDict, List
 from collections import defaultdict
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark_groups import BenchmarkGroup
 
 import logging
 logger = logging.getLogger(__name__)
@@ -76,7 +76,10 @@ def create_game(screen: pygame.Surface,
         raise RuntimeError("Game state not initialized properly!")
     return game
 
-@benchmark(lambda: performance_log, "0. TOTAL: RUN GAME LOOP")
+main_group = BenchmarkGroup(lambda: None, "0")
+
+
+@main_group.bench(" TOTAL: RUN GAME LOOP")
 def run_game_loop(game: Game,
                   bench_logger: Any,
                   performance_log: Dict[str, list]) -> None:

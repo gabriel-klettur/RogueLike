@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.arcane_flame_component import ArcaneFlameComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.arcane_flame.view import ArcaneFlameView
 

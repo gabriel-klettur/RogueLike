@@ -1,5 +1,5 @@
 {
-  "7d03485e-8e22-4e2b-a476-dba936c18f65": {
+  "0b4913a1-1629-4c7e-9b4b-fb76c7a2aa63": {
     "template_id": "2c9f9b8a-b0a3-4e8c-9f32-9f6c6a51b5a1",
     "slots": [
       {
@@ -49,7 +49,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "ca0e53b7-352c-4c8f-bb11-430419d4fe1b": {
+  "4e37eaae-dc87-4676-92f7-072bb2d3b416": {
     "template_id": "9d2b3c54-2f0a-4a70-9e2c-4a4f8a8e7c31",
     "slots": [
       {
@@ -90,7 +90,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "a0864d92-97bc-4a9d-93e7-65abcb96437c": {
+  "d70871c6-8c9f-46db-8316-3f1be6dcae91": {
     "template_id": "5a7b8c9d-12ef-4a34-9bcd-00aa11bb22cc",
     "slots": [
       {
@@ -140,7 +140,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "01712832-e926-45ea-9018-bff6ab0f4fb4": {
+  "de160567-b560-426c-a905-bfd9e5a150db": {
     "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
     "slots": [
       {
@@ -181,7 +181,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "e1be2475-d9c4-4c35-ae5e-12731191ea63": {
+  "2171797a-b9a1-4801-b87f-b780db2c4f60": {
     "template_id": "c2a7f3a4-5f6b-4b8a-92b3-8a4dd6fb2e11",
     "slots": [
       {
@@ -225,7 +225,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "0ef38448-d9f6-4c45-9167-82578a62f7a5": {
+  "abde892b-cdcd-4d20-bbea-b7f756af5318": {
     "template_id": "f1a2b3c4-d5e6-47f8-9012-abcdef123456",
     "slots": [
       {

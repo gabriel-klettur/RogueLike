@@ -2,7 +2,7 @@ import time
 from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCombatSystem
 from roguelike_game.ecs.components.ai.wants_to_melee import WantsToMelee
 from roguelike_game.ecs.components.combat.attack_cooldown import AttackCooldown
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class CombatSystem:
     """

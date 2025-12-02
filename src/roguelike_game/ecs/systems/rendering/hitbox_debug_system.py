@@ -3,7 +3,7 @@ import pygame
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 
 class HitboxDebugSystem:

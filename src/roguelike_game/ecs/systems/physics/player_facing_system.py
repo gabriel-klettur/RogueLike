@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import math
 from roguelike_game.ecs.systems.fsm.anim_bridge import set_mapped_anim_for
 

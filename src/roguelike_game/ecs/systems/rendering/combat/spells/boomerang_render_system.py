@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.rendering.sprite import Sprite
 

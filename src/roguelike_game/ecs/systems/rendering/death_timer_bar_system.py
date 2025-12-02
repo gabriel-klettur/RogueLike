@@ -2,7 +2,7 @@ import pygame
 import time
 import roguelike_engine.config.config as config
 from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 # Entities (Identity.name, lowercase) excluded from death timer bar rendering
 EXCLUDED_IN_DEATH_TIMER_BAR = {

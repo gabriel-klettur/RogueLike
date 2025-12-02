@@ -7,7 +7,7 @@ import time
 import math
 
 from roguelike_game.ecs.components.combat.facing_cooldown import FacingCooldown
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 def get_direction_name(dx, dy):
     """Return one of 8 directions based on vector dx, dy."""

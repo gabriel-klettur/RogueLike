@@ -1054,11 +1054,11 @@
         "rel_y": 1329,
         "overrides": {
             "scale": [
-                186,
-                237
+                195,
+                247
             ],
             "z_bottom": 3,
-            "z_top": 5,
+            "z_top": 8,
             "z": 3
         }
     },
@@ -1081,9 +1081,9 @@
     {
         "id": 90,
         "template_id": 297,
-        "zone": "no zone",
-        "rel_x": 253,
-        "rel_y": 2955,
+        "zone": "Forest",
+        "rel_x": 7,
+        "rel_y": 1061,
         "overrides": {
             "scale": [
                 194,
@@ -1097,9 +1097,9 @@
     {
         "id": 93,
         "template_id": 296,
-        "zone": "no zone",
-        "rel_x": 415,
-        "rel_y": 2915,
+        "zone": "Forest",
+        "rel_x": 303,
+        "rel_y": 1280,
         "overrides": {
             "scale": [
                 224,
@@ -1146,24 +1146,24 @@
         "id": 96,
         "template_id": 294,
         "zone": "Forest",
-        "rel_x": 871,
-        "rel_y": 1212,
+        "rel_x": 888,
+        "rel_y": 1213,
         "overrides": {
             "scale": [
                 251,
                 324
             ],
             "z_bottom": 3,
-            "z_top": 5,
+            "z_top": 6,
             "z": 3
         }
     },
     {
         "id": 97,
         "template_id": 292,
-        "zone": "no zone",
-        "rel_x": 1001,
-        "rel_y": 2886,
+        "zone": "Forest",
+        "rel_x": 471,
+        "rel_y": 1180,
         "overrides": {
             "scale": [
                 251,
@@ -1208,10 +1208,10 @@
     },
     {
         "id": 100,
-        "template_id": 49,
-        "zone": "no zone",
-        "rel_x": 1244,
-        "rel_y": 2871,
+        "template_id": 312,
+        "zone": "Forest",
+        "rel_x": 1276,
+        "rel_y": 1248,
         "overrides": {
             "scale": [
                 233,
@@ -2101,9 +2101,9 @@
     {
         "id": 364,
         "template_id": 243,
-        "zone": "no zone",
-        "rel_x": 3467,
-        "rel_y": 2677,
+        "zone": "zone_100_100",
+        "rel_x": 273,
+        "rel_y": -518,
         "overrides": {
             "scale": [
                 364,
@@ -2287,6 +2287,22 @@
             ],
             "z_bottom": 3,
             "z_top": 5,
+            "z": 3
+        }
+    },
+    {
+        "id": 405,
+        "template_id": 313,
+        "zone": "Forest",
+        "rel_x": 1023,
+        "rel_y": 1282,
+        "overrides": {
+            "scale": [
+                236,
+                301
+            ],
+            "z_bottom": 3,
+            "z_top": 8,
             "z": 3
         }
     }

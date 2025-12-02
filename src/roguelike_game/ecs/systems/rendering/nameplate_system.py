@@ -3,7 +3,7 @@ from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.core.identity import Identity, Faction
 from roguelike_game.ecs.components.transform.scale import Scale
 import roguelike_engine.config.config as config
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.factories.monster.config import MONSTER_DEFS
 from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
 

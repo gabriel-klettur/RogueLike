@@ -4,7 +4,7 @@ Provides a debug system to visualize entity collision shapes when DEBUG mode is 
 """
 import pygame
 from roguelike_game.ecs.utils.collider_utils import build_collider_rect
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class CollisionDebugSystem:
     """

@@ -1,6 +1,6 @@
 import time
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.utils.health_utils import is_neutral
 from roguelike_game.ecs.systems.combat.spells.resolvers_pkg.utils import get_entity_center
 

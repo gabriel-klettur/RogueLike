@@ -4,7 +4,7 @@ import sys
 from types import SimpleNamespace
 import time
 
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark_groups import BenchmarkGroup
 from .pipeline_helpers import (
     log_tile_editor_debug,
     render_ecs_trail,
@@ -40,6 +40,8 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         cfg.DEBUG_BUILDING_COLLISION = bool(toggles.get('building_collision', True))
     except Exception:
         pass
+
+    render_group = BenchmarkGroup(perf_log, "3")
 
     def _step_init_and_cleaning():
         screen.fill((0, 0, 0))
@@ -190,25 +192,25 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
         manager._render_editors()
 
     steps = [
-        ("3.0. init_and_cleaning", _step_init_and_cleaning),
-        ("3.1. map", _step_map),
-        ("3.5. ecs_trail", _step_ecs_trail),
-        ("3.2. z_entities", _step_z_entities),
-        ("3.35. attack_telegraphs", _step_attack_telegraphs),
-        ("3.4. tile_editor", _step_tile_editor),
-        ("3.55. spell_debug", _step_spell_debug),
-        ("3.565. ambient_overlay", _step_ambient_overlay),
-        ("3.57. point_lights", _step_point_lights),
-        ("3.6. crosshair", _step_crosshair),
-        ("3.7. menu", _step_menu),
-        ("3.8. minimap", _step_minimap),
-        ("3.85. clock", _step_clock),
-        ("3.87. hud_orchestrator", _step_hud),
-        ("3.11. editors", _step_editors),
+        ("0. init_and_cleaning", _step_init_and_cleaning),
+        ("1. map", _step_map),
+        ("5. ecs_trail", _step_ecs_trail),
+        ("2. z_entities", _step_z_entities),
+        ("35. attack_telegraphs", _step_attack_telegraphs),
+        ("4. tile_editor", _step_tile_editor),
+        ("55. spell_debug", _step_spell_debug),
+        ("565. ambient_overlay", _step_ambient_overlay),
+        ("57. point_lights", _step_point_lights),
+        ("6. crosshair", _step_crosshair),
+        ("7. menu", _step_menu),
+        ("8. minimap", _step_minimap),
+        ("85. clock", _step_clock),
+        ("87. hud_orchestrator", _step_hud),
+        ("11. editors", _step_editors),
     ]
 
-    for key, fn in steps:
-        @benchmark(perf_log, key)
+    for name, fn in steps:
+        @render_group.bench(name)
         def _run(sfn=fn):
             sfn()
         _run()

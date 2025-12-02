@@ -1,7 +1,7 @@
 import pygame
 import time
 from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 """
 Módulo que provee un sistema de debug para mostrar contadores de muerte

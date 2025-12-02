@@ -17,7 +17,7 @@ from roguelike_game.ecs.utils.collider_utils import (
     circle_obb_mtv,
 )
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 
 class MovementCollisionSystem:

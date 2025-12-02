@@ -18,6 +18,7 @@ class ConversationMemory:
     ephemeral_history: List[Dict[str, str]] = None  # [{role, content}]
     preferred_language: str = ""  # 'es', 'en', etc. (opcional)
     has_greeted: bool = False  # True si ya se presentó en alguna ocasión
+    visit_count: int = 0  # Número total de veces que el jugador ha abierto chat con este NPC
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -25,6 +26,7 @@ class ConversationMemory:
             "ephemeral_history": self.ephemeral_history or [],
             "preferred_language": self.preferred_language or "",
             "has_greeted": bool(self.has_greeted),
+            "visit_count": int(getattr(self, "visit_count", 0) or 0),
         }
 
     @staticmethod
@@ -37,6 +39,10 @@ class ConversationMemory:
             cm.has_greeted = bool(data.get("has_greeted", False))
         except Exception:
             cm.has_greeted = False
+        try:
+            cm.visit_count = int(data.get("visit_count", 0) or 0)
+        except Exception:
+            cm.visit_count = 0
         return cm
 
 
@@ -87,6 +93,21 @@ class MemoryStore:
         mem.friendship_score = int(max(-100, min(100, mem.friendship_score + delta)))
         self.save(entity_id, mem)
         return mem.friendship_score
+
+    def increment_visit(self, entity_id: str) -> int:
+        """Incrementa el contador de visitas para un NPC y lo persiste.
+
+        Útil para que el LLM pueda saber cuántas veces el jugador ha iniciado
+        conversación con este NPC (campo visit_count en Memory).
+        """
+        mem = self.load(entity_id)
+        try:
+            current = int(getattr(mem, "visit_count", 0) or 0)
+        except Exception:
+            current = 0
+        mem.visit_count = current + 1
+        self.save(entity_id, mem)
+        return mem.visit_count
 
     def append_ephemeral(self, entity_id: str, role: str, content: str, max_len: int = 12) -> None:
         mem = self.load(entity_id)

@@ -1,6 +1,6 @@
 import pygame
 from roguelike_game.ecs.utils.render_utils import draw_sprite_bbox, draw_sprite_center
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 class PlayerDebugRenderSystem:
     """

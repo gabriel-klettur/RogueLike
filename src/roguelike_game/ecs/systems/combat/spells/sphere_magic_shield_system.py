@@ -1,5 +1,5 @@
 import math
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.sphere_magic_shield_component import SphereMagicShieldComponent
 
 class SphereMagicShieldSystem:

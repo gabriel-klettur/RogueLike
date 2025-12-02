@@ -2,7 +2,7 @@ import time
 import random
 import logging
 import os
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 try:
     from roguelike_engine.audio.api import get_bus

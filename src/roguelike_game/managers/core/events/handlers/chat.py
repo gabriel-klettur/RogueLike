@@ -1,8 +1,11 @@
 import pygame
+from pathlib import Path
 from roguelike_game.ecs.systems.chat.chat_input_controller import ChatInputController
 from roguelike_game.ecs.systems.chat.chat_ui_system import handle_chat_ui_events
 from roguelike_game.ecs.systems.chat.chat_bubble_utils import push_bubble
 from roguelike_game.ecs.systems.vendors.vendor_ui_system import handle_vendor_ui_events
+from roguelike_engine.chat.service.memory_store import MemoryStore
+import re
 
 
 def handle_chat_open(game, events) -> bool:
@@ -73,6 +76,42 @@ def handle_interact_open(game, events) -> bool:
                     state.chat_input_buffer = ""
                     state.chat_bind_target(target_eid)
                     if target_eid is not None:
+                        # Incrementar contador de visitas para este NPC en la memoria de chat
+                        try:
+                            def _find_repo_root() -> Path:
+                                here = Path(__file__).resolve()
+                                candidates = list(here.parents)
+                                try:
+                                    cwd = Path.cwd().resolve()
+                                    candidates.append(cwd)
+                                    candidates.extend(list(cwd.parents))
+                                except Exception:
+                                    pass
+                                for p in candidates:
+                                    if (p / 'data' / 'config' / 'chat.json').exists():
+                                        return p
+                                return here.parents[4] if len(here.parents) > 4 else Path('.')
+
+                            def _mem_key(world, eid: int) -> str:
+                                try:
+                                    ident = world.components.get('Identity', {}).get(eid)
+                                    if ident is not None:
+                                        name = str(getattr(ident, 'name', '') or '').strip().lower()
+                                        stable_id = getattr(ident, 'id', None)
+                                        if stable_id is not None:
+                                            slug = re.sub(r"[^a-z0-9]+", "-", name)
+                                            slug = re.sub(r"-+", "-", slug).strip('-') or 'npc'
+                                            return f"{slug}-{int(stable_id)}"
+                                except Exception:
+                                    pass
+                                return str(eid)
+
+                            root = _find_repo_root()
+                            ms = MemoryStore(root)
+                            ms.increment_visit(_mem_key(world, target_eid))
+                        except Exception:
+                            pass
+
                         greeting = getattr(chat_map.get(target_eid, None), 'greeting', None)
                         if greeting:
                             state.chat_add_message('NPC', str(greeting))

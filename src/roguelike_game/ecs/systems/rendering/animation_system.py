@@ -5,7 +5,7 @@ Updates entity animations by advancing frames and applying the current frame to 
 """
 import time
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
 
 _mask_cache = {}

@@ -1,5 +1,5 @@
 import pygame
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.smoke_emitter_component import SmokeEmitterComponent
 from roguelike_game.ecs.systems.rendering.combat.spells.smoke_emitter.view import SmokeEmitterView
 

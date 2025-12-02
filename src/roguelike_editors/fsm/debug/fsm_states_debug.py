@@ -1,7 +1,7 @@
 import pygame
 from roguelike_game.ecs.components.fsm.npc_state import NPCState
 from roguelike_game.ecs.components.transform.scale import Scale
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
 
 class StatesDebugRenderSystem:

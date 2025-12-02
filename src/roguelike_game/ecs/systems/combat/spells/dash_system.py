@@ -2,7 +2,7 @@ import time
 import math
 import pygame
 from roguelike_engine.config.config_tiles import TILE_SIZE
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.abilities.dash_component import DashComponent
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent

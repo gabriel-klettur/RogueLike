@@ -1,6 +1,6 @@
 import time
 from typing import Dict, Any
-from roguelike_engine.utils.benchmark import benchmark
+from roguelike_engine.utils.benchmark.benchmark import benchmark
 
 
 class DoTSystem:
