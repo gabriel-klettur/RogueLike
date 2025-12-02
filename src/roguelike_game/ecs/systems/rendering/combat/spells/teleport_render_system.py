@@ -12,6 +12,12 @@ class TeleportRenderSystem:
     def update(self, world, screen, camera):
         dirty_rects = []
         for eid, comp in world.components.get('TeleportComponent', {}).items():
-            view = TeleportView(comp.model)
+            # Solo renderizar TeleportComponent de habilidades (tiene atributo 'model').
+            if not isinstance(comp, TeleportComponent):
+                continue
+            model = getattr(comp, 'model', None)
+            if model is None:
+                continue
+            view = TeleportView(model)
             view.render(screen, camera)
         return dirty_rects

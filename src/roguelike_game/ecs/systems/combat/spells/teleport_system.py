@@ -10,8 +10,15 @@ class TeleportSystem:
         self.perf_log = perf_log
     
     def update(self, world, camera=None):
+        # Only process TeleportComponent instances from the abilities package.
+        # The same component key is also used by item teleports, which do not
+        # expose a 'model' attribute and are handled by the items.teleport_system.
         for eid, comp in list(world.components.get('TeleportComponent', {}).items()):
-            model = comp.model
+            if not isinstance(comp, TeleportComponent):
+                continue
+            model = getattr(comp, 'model', None)
+            if model is None:
+                continue
             # switch from 'out' to 'in'
             if model.phase == 'out' and model.should_switch_phase():
                 model.phase = 'in'

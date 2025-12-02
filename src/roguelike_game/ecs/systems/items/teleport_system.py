@@ -52,6 +52,21 @@ class TeleportSystem:
                     try:
                         tile_pos = None if (tx_raw is None or ty_raw is None) else (int(tx_raw), int(ty_raw))
                         world.map_manager.swap_world_and_spawn(dest_world, tile_pos)
+                        # Sincronizar también la Position del jugador con el nuevo tile
+                        try:
+                            mgr = getattr(world, 'map_manager', None)
+                            spawn_tile = tile_pos
+                            if mgr is not None and spawn_tile is None:
+                                try:
+                                    local_state = getattr(mgr, '_local_state', {}) or {}
+                                    spawn_tile = local_state.get('player_pos')
+                                except Exception:
+                                    spawn_tile = None
+                            if mgr is not None and spawn_tile is not None:
+                                px, py = mgr.get_spawn_pixel(tuple(spawn_tile))
+                                player_pos.x, player_pos.y = px, py
+                        except Exception:
+                            pass
                         # Refresh particle instances for destination world
                         try:
                             _refresh_particles_from_world(world)
@@ -75,11 +90,28 @@ class TeleportSystem:
                     pass
                 try:
                     tile_pos2 = None if (tx_raw is None or ty_raw is None) else (int(tx_raw), int(ty_raw))
+                    spawn_tile = None
                     if tile_pos2 is None:
                         # fallback: place at lobby center
                         world.map_manager.swap_world_and_spawn(cur_world, None)
+                        try:
+                            mgr2 = getattr(world, 'map_manager', None)
+                            if mgr2 is not None:
+                                local_state2 = getattr(mgr2, '_local_state', {}) or {}
+                                spawn_tile = local_state2.get('player_pos')
+                        except Exception:
+                            spawn_tile = None
                     else:
                         world.map_manager.spawn_player(tile_pos2)
+                        spawn_tile = tile_pos2
+                    # Mover la entidad del jugador al pixel correspondiente al tile de spawn
+                    try:
+                        mgr = getattr(world, 'map_manager', None)
+                        if mgr is not None and spawn_tile is not None:
+                            px, py = mgr.get_spawn_pixel(tuple(spawn_tile))
+                            player_pos.x, player_pos.y = px, py
+                    except Exception:
+                        pass
                     try:
                         world.invalidate_spatial_index()
                     except Exception:

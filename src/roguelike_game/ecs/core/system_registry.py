@@ -17,6 +17,7 @@ from roguelike_game.ecs.systems.combat.melee.melee_combat_system import MeleeCom
 from roguelike_game.ecs.systems.physics.facing_system import FacingSystem
 from roguelike_game.ecs.systems.physics.player_facing_system import PlayerFacingSystem
 from roguelike_game.ecs.systems.core.spawn_system import SpawnSystem
+from roguelike_game.ecs.systems.core.timed_despawn_system import TimedDespawnSystem
 from roguelike_game.ecs.systems.input.input_system import InputSystem
 from roguelike_game.ecs.systems.combat.spells.spell_casting_system import SpellCastingSystem
 from roguelike_game.ecs.systems.ai.auto_cast_system import AutoCastSystem
@@ -101,6 +102,7 @@ from roguelike_game.ecs.systems.inventory.inventory_init_system import Inventory
 from roguelike_game.ecs.systems.inventory.death_drop_system import DeathDropSystem
 from roguelike_game.ecs.systems.inventory.inventory_pickup_system import InventoryPickupSystem
 from roguelike_game.ecs.systems.items.consume_system import ConsumeSystem
+from roguelike_game.ecs.systems.items.teleport_system import TeleportSystem as ItemTeleportSystem
 from roguelike_game.ecs.systems.inventory.inventory_transfer_system import InventoryTransferSystem
 from roguelike_game.ecs.systems.inventory.map_load_drops_system import MapLoadDropsSystem
 from roguelike_game.ecs.systems.inventory.drop_despawn_system import DropDespawnSystem
@@ -181,13 +183,14 @@ def get_update_system_classes():
         # Process spawn requests and immediately stabilize overlapped spawns
         SpawnSystem,
         SpawnStabilizationSystem,
+        TimedDespawnSystem,
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, StunSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem, ForceFieldSystem,
         MovementCollisionSystem,
         # Buildings portals (trigger after movement/collision resolution)
-        BuildingPortalSystem,
+        BuildingPortalSystem, ItemTeleportSystem,
         # Combat & spells (AutoCast antes de SpellCasting para encolar intents)
         MeleeCombatSystem, AutoCastSystem, SpellCastingSystem, ArcaneFlameSystem, SmokeSystem, PuddleSystem, MineSystem, WallSystem, TotemSystem, SummonSystem, DoTSystem, SmokeEmitterSystem, SphereMagicShieldSystem, TeleportSystem, FireworkLaunchSystem, AuraSystem, MeteorShowerSystem, MeteorFallSystem, ParticleSystem, ExplosionSystem, FireballTrailEmitterSystem, LaserBeamEmitterSystem, HealingAuraEmitterSystem, SlashEmitterSystem, DashEmitterSystem, LightningEmitterSystem, VortexFieldEmitterSystem, BoomerangGlowEmitterSystem, BoomerangSystem, FireballSystem, ChainLightningSystem, LightningSystem, ConeBreathSystem, DashSystem, HitboxSystem, SpawnerDamageSystem, DeathSystem, FSMSystem, ComboSystem, BuildingDamageSystem,
         TrailSystem, RibbonSystem,

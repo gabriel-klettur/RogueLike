@@ -11,6 +11,9 @@ class SpawnRequest:
     # Metadata opcional para rastrear oleadas
     spawner_eid: Optional[int] = None
     wave_idx: Optional[int] = None
+    # Tiempo de vida opcional en segundos para el NPC creado (TTL). Si es None
+    # o <= 0, el NPC no se auto-destruye por tiempo.
+    ttl_seconds: Optional[float] = None
     # Metadata opcional de defensa: si se especifica, el NPC defenderá un área circular
     # center_x/center_y en píxeles y radio en píxeles
     defend_center: Optional[Tuple[float, float]] = None

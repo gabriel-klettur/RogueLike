@@ -3,18 +3,40 @@
   "player": {
     "level": "global_map",
     "pos": [
-      114,
-      63
+      174,
+      74
     ]
   },
-  "npcs": {},
+  "npcs": {
+    "b5f0f723-4851-4066-8ecf-81f8c3e65afd": {
+      "level": "global_map",
+      "tile": [
+        145,
+        128
+      ],
+      "hp": 3000,
+      "dead": false,
+      "prototype": "barbol_brother_felipondor"
+    }
+  },
   "levels": {
     "global_map": {
       "player_pos": [
-        114,
-        63
+        174,
+        74
       ],
-      "npc_states": {}
+      "npc_states": {
+        "b5f0f723-4851-4066-8ecf-81f8c3e65afd": {
+          "level": "global_map",
+          "tile": [
+            145,
+            128
+          ],
+          "hp": 3000,
+          "dead": false,
+          "prototype": "barbol_brother_felipondor"
+        }
+      }
     }
   },
   "player_inventory": {
@@ -23,9 +45,12 @@
     "slots": [
       {
         "item": "gold",
-        "quantity": 14
+        "quantity": 24
       },
-      null,
+      {
+        "item": "wood",
+        "quantity": 2
+      },
       null,
       null,
       null,
@@ -46,24 +71,64 @@
       null
     ]
   },
-  "npc_inventories": {},
+  "npc_inventories": {
+    "b5f0f723-4851-4066-8ecf-81f8c3e65afd": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "borsh_01",
+          "quantity": 100
+        },
+        {
+          "item": "completo_chileno_01",
+          "quantity": 100
+        },
+        {
+          "item": "food_chicken",
+          "quantity": 100
+        },
+        {
+          "item": "hakarl_01",
+          "quantity": 100
+        },
+        {
+          "item": "paella_01",
+          "quantity": 100
+        },
+        {
+          "item": "perogi_01",
+          "quantity": 100
+        },
+        {
+          "item": "tortilla_spain_01",
+          "quantity": 100
+        },
+        {
+          "item": "gold",
+          "quantity": 50
+        }
+      ]
+    }
+  },
   "meta": {
     "name": "partida_2025-11-22_21-40-06",
     "created_at": "2025-11-22T21:40:06",
-    "last_played": "2025-12-02T14:30:58",
+    "last_played": "2025-12-02T22:23:51",
     "player": {
-      "xp": 40,
-      "level": 0
+      "xp": 30,
+      "level": 1
     },
     "items_summary": {
-      "stacks": 1,
+      "stacks": 2,
       "top_items": [
-        "gold"
+        "gold",
+        "wood"
       ]
     }
   },
   "time": {
-    "minute": 777,
+    "minute": 934,
     "time_scale": 0.4
   }
 }

@@ -5,6 +5,8 @@ using the entity factory.
 """
 from roguelike_game.factories.registry import get_factory
 from roguelike_game.ecs.components.spawn.spawn_stabilizer import SpawnStabilizer
+from roguelike_game.ecs.components.core.timed_despawn import TimedDespawn
+
 from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.ai.defend_area import DefendArea
 from roguelike_game.ecs.components.fsm.patrol_route import PatrolRoute
@@ -121,6 +123,18 @@ class SpawnSystem:
                     # Si la FSM o el set de estados lo bloquea, continuar sin forzar
                     pass
 
+            # Si la solicitud define un TTL, adjuntar TimedDespawn al NPC creado
+            ttl = getattr(req, 'ttl_seconds', None)
+            try:
+                ttl_val = float(ttl) if ttl is not None else 0.0
+            except Exception:
+                ttl_val = 0.0
+            if ttl_val > 0.0:
+                try:
+                    world.components.setdefault('TimedDespawn', {})[new_eid] = TimedDespawn(ttl=ttl_val)
+                except Exception:
+                    pass
+
             # Si la solicitud tiene metadatos de spawner/oleada, registrar la entidad creada
             spawner_eid = getattr(req, 'spawner_eid', None)
             wave_idx = getattr(req, 'wave_idx', None)
@@ -136,7 +150,8 @@ class SpawnSystem:
                     except Exception:
                         # Backward compatibility if field missing
                         pass
-                # Marcar al NPC como hijo de spawner para evitar persistirlo en el guardado
+            # Marcar al NPC como hijo de spawner para evitar persistirlo en el guardado
+            if spawner_eid is not None:
                 try:
                     world.components.setdefault('SpawnerChild', {})[new_eid] = SpawnerChild(spawner_eid, wave_idx)
                     logger.info(

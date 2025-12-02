@@ -1,1 +1,1 @@
-{"1":{"capacity_hint":20,"items":[{"item":"gold","quantity":14,"slot":0}],"player_id":"6d566ea6-8cf2-4b3e-91cc-afe4042cc0d6","schema_version":"1.0.0"}}
+{"1":{"capacity_hint":20,"items":[{"item":"gold","quantity":24,"slot":0},{"item":"wood","quantity":2,"slot":1}],"player_id":"6d566ea6-8cf2-4b3e-91cc-afe4042cc0d6","schema_version":"1.0.0"}}

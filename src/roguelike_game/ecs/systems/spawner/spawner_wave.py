@@ -4,13 +4,93 @@ import logging
 from typing import Any, Iterable, Set, Tuple
 
 import roguelike_engine.config.config as config
+from roguelike_engine.config.map_config import global_map_settings
+from roguelike_game.ecs.components.items.teleport_component import TeleportComponent
+from roguelike_game.ecs.components.particles.particle_preset_component import ParticlePresetComponent
+from roguelike_game.ecs.components.core.timed_despawn import TimedDespawn
 from roguelike_game.ecs.components.spawn.spawn_request import SpawnRequest
+from roguelike_game.ecs.components.transform.position import Position
 from .placement_utils import choose_spawn_tile
 from .spawner_utils import get_policy_flags, prune_tracking_sets, prune_tracking_sets_ko, compute_defend_metadata
 
 logger = logging.getLogger(__name__)
 
 Tile = Tuple[int, int]
+
+
+def _spawn_felipondor_and_portal(world: Any, cfg: Any, st: Any, spawner_eid: int) -> None:
+    """Spawn Felipondor and a lobby portal when survival_10 completes.
+
+    This is a narrow, data-driven hook: only triggers for the 'survival_10'
+    spawner template and only once per spawner state.
+    """
+    try:
+        tpl_id = str(getattr(cfg, "template_id", "") or "")
+    except Exception:
+        tpl_id = ""
+    if tpl_id != "survival_10":
+        return
+    # Avoid duplicate spawns if the spawner finalization path is hit twice.
+    if getattr(st, "_felipondor_spawned", False):
+        return
+    try:
+        st._felipondor_spawned = True
+    except Exception:
+        pass
+    try:
+        ax, ay = getattr(cfg, "anchor_tile", (None, None))
+    except Exception:
+        ax, ay = (None, None)
+    if ax is None or ay is None:
+        return
+    comps = world.components
+    # 1) Spawn Felipondor via the regular SpawnRequest pipeline at the anchor tile.
+    try:
+        req_eid = world.create_entity()
+        comps.setdefault("SpawnRequest", {})[req_eid] = SpawnRequest(
+            prototype="barbol_brother_felipondor",
+            position=(int(ax), int(ay)),
+            spawner_eid=spawner_eid,
+            ttl_seconds=60.0,
+        )
+    except Exception:
+        # Do not block spawner completion if Felipondor fails to spawn.
+        logger.exception("[Spawner] Failed to enqueue SpawnRequest for Felipondor")
+    # 2) Spawn a teleport portal entity near the same anchor tile, with red rim particles.
+    try:
+        portal_eid = world.create_entity()
+        try:
+            # Place the portal centered on the anchor tile using map manager helpers.
+            px, py = world.map_manager.get_spawn_pixel((int(ax), int(ay)))
+        except Exception:
+            # Fallback: approximate tile center in pixels.
+            from roguelike_engine.config.config_tiles import TILE_SIZE as _TS  # type: ignore
+            px, py = int(ax * _TS), int(ay * _TS)
+        comps.setdefault("Position", {})[portal_eid] = Position(px, py)
+        # Compute a tile destination at the logical center of the lobby zone.
+        try:
+            lobby_off = global_map_settings.zone_offsets.get("lobby", (0, 0))
+            zone_w = int(getattr(global_map_settings, "zone_width", 50) or 50)
+            zone_h = int(getattr(global_map_settings, "zone_height", 50) or 50)
+            dest_tx = int(lobby_off[0] + zone_w // 2)
+            dest_ty = int(lobby_off[1] + zone_h // 2)
+        except Exception:
+            dest_tx, dest_ty = 0, 0
+        comps.setdefault("TeleportComponent", {})[portal_eid] = TeleportComponent(
+            dest_map=None,
+            dest_x=dest_tx,
+            dest_y=dest_ty,
+            dest_world=None,
+            dest_zone="lobby",
+        )
+        comps.setdefault("ParticlePresetComponent", {})[portal_eid] = ParticlePresetComponent(
+            preset_id="portal_red_rim_orbit",
+            entry_id=None,
+        )
+        # Lifetime of the visual portal (~60 seconds)
+        comps.setdefault("TimedDespawn", {})[portal_eid] = TimedDespawn(ttl=60.0)
+    except Exception:
+        logger.exception("[Spawner] Failed to create Felipondor lobby portal")
 
 
 def process_spawner(
@@ -105,6 +185,8 @@ def process_spawner(
                         st.fsm_state = 'finished'
                     except Exception:
                         pass
+                    # Hook: survival_10 completion spawns Felipondor + portal once.
+                    _spawn_felipondor_and_portal(world, cfg, st, eid)
                     if getattr(config, 'DEBUG_SPAWNER', False):
                         logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                     else:
@@ -318,6 +400,8 @@ def process_spawner(
                     logger.debug(f"[Spawner] {cfg.template_id}:{eid} cycle completed; scheduling restart in {st.restart_cooldown_remaining} frames")
             else:
                 st.finished = True
+                # Hook: survival_10 completion spawns Felipondor + portal once (empty/no-spots case).
+                _spawn_felipondor_and_portal(world, cfg, st, eid)
                 if getattr(config, 'DEBUG_SPAWNER', False):
                     logger.info(f"[Spawner] {cfg.template_id}:{eid} all waves completed")
                 else:
