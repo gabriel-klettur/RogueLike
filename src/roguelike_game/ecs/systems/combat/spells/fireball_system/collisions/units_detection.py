@@ -1,14 +1,67 @@
-"""Utilities to detect collisions between fireballs and units."""
+"""Utilities to detect collisions between fireballs and units.
+
+Optimizado con spatial hash para reducir complejidad de O(n) a O(1) amortizado.
+"""
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple, Set
 
 import pygame
 
 from roguelike_game.ecs.components.transform.position import Position
+from roguelike_game.ecs.utils.spatial_hash import get_combat_spatial_hash, SpatialHash
 
 from ..mask_cache import CircleMaskCache
 from ..runtime import FireballRuntime
+
+# Cache del spatial hash actualizado por frame
+_last_frame_hash_updated: int = -1
+
+
+def _update_combat_spatial_hash(world) -> SpatialHash:
+    """Actualiza el spatial hash con entidades de combate si es necesario."""
+    global _last_frame_hash_updated
+    
+    spatial = get_combat_spatial_hash()
+    
+    # Obtener frame actual (usar contador simple si no hay frame_count)
+    current_frame = getattr(world, '_frame_count', 0)
+    
+    # Solo actualizar una vez por frame
+    if current_frame == _last_frame_hash_updated:
+        return spatial
+    
+    _last_frame_hash_updated = current_frame
+    spatial.clear()
+    
+    positions = world.components.get("Position", {})
+    multi_colliders = world.components.get("MultiCollider", {})
+    healths = world.components.get("Health", {})
+    death_timers = world.components.get("DeathTimer", {})
+    dying_tags = world.components.get("DyingTag", {})
+    
+    for eid in healths:
+        if eid in death_timers or eid in dying_tags:
+            continue
+        pos = positions.get(eid)
+        multi = multi_colliders.get(eid)
+        if pos is None or multi is None:
+            continue
+        
+        # Calcular radio aproximado del collider
+        radius = 32.0  # Default
+        try:
+            for collider in multi.colliders.values():
+                if hasattr(collider, 'radius'):
+                    radius = max(radius, float(collider.radius))
+                elif hasattr(collider, 'width'):
+                    radius = max(radius, float(collider.width) / 2)
+        except Exception:
+            pass
+        
+        spatial.insert(eid, pos.x, pos.y, radius)
+    
+    return spatial
 
 
 def find_unit_collision(
@@ -16,19 +69,45 @@ def find_unit_collision(
     sample_points: Sequence[Tuple[float, float]],
     mask_cache: CircleMaskCache,
 ) -> Optional[Tuple[int, Tuple[float, float], str]]:
-    """Return the first collider hit by the projectile if any."""
-
+    """Return the first collider hit by the projectile if any.
+    
+    Optimizado: usa spatial hash para broad-phase culling.
+    """
     world = runtime.world
     hit_radius = runtime.hit_radius
-
-    for target in world.get_entities_with("Position", "MultiCollider", "Health"):
-        if target == runtime.entity_id or target == runtime.component.caster:
+    
+    # Obtener candidatos del spatial hash (broad-phase)
+    spatial = _update_combat_spatial_hash(world)
+    
+    # Calcular centro y radio de búsqueda desde sample_points
+    if sample_points:
+        min_x = min(p[0] for p in sample_points)
+        max_x = max(p[0] for p in sample_points)
+        min_y = min(p[1] for p in sample_points)
+        max_y = max(p[1] for p in sample_points)
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+        search_radius = max(max_x - min_x, max_y - min_y) / 2 + hit_radius + 64
+    else:
+        center_x = runtime.position.x
+        center_y = runtime.position.y
+        search_radius = hit_radius + 64
+    
+    # Obtener candidatos cercanos
+    candidates: Set[int] = spatial.query_radius(center_x, center_y, search_radius)
+    
+    # Excluir self y caster
+    candidates.discard(runtime.entity_id)
+    if runtime.component.caster is not None:
+        candidates.discard(runtime.component.caster)
+    
+    # Narrow-phase: verificar colisión precisa
+    for target in candidates:
+        multi = world.components.get("MultiCollider", {}).get(target)
+        position = world.components.get("Position", {}).get(target)
+        if multi is None or position is None:
             continue
-        if target in world.components.get("DeathTimer", {}) or target in world.components.get("DyingTag", {}):
-            continue
-
-        multi = world.components["MultiCollider"][target]
-        position = world.components["Position"][target]
+        
         if not _path_overlaps_entity(runtime.path_aabb, position, multi, hit_radius):
             continue
 

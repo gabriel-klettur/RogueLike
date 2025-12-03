@@ -38,6 +38,9 @@ class ECSWorld:
 
         # 2) Registrar componentes
         self.components = create_empty_component_store()
+        
+        # Contador de frames para caches de optimización
+        self._frame_count: int = 0
 
         # 3) Instanciar sistemas (update + render)
         self._init_systems()
@@ -109,6 +112,9 @@ class ECSWorld:
 
     @_ecs_update_group.bench("TOTAL: ECS UPDATE [CORE]")
     def update(self, camera):
+        # Incrementar contador de frames para caches de optimización
+        self._frame_count += 1
+        
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
             self.rebuild_spatial_index()

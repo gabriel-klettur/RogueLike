@@ -1,13 +1,17 @@
 from roguelike_engine.utils.benchmark.benchmark import benchmark
+from roguelike_game.ecs.utils.particle_pool import get_particle_pool
 import logging
 logger = logging.getLogger(__name__)
 
 class ParticleSystem:
     """
     ECS system to update particles: moves them and expires by lifespan.
+    Optimizado con particle pooling para reducir allocations.
     """
     def __init__(self, perf_log):
         self.perf_log = perf_log
+        self._particle_pool = None
+        self._curves_validated: set = set()  # Cache de entidades ya validadas
     
     def update(self, world, camera=None):
         # Obtener componentes de posición y partículas
@@ -25,33 +29,10 @@ class ParticleSystem:
             if pos is None:
                 world.remove_entity(eid)
                 continue
-            # One-time curve validation warnings (lightweight)
-            if not getattr(comp, '_validated_curves', False):
-                def _warn_curve(name, curve):
-                    if not isinstance(curve, (list, tuple)):
-                        return
-                    last_t = -1e9
-                    bad = False
-                    for pt in curve:
-                        try:
-                            t = float(pt[0])
-                        except Exception:
-                            bad = True
-                            continue
-                        if not (0.0 <= t <= 1.0):
-                            bad = True
-                        if t < last_t:
-                            bad = True
-                        last_t = t
-                    if bad:
-                        try:
-                            logger.warning("[ParticleSystem] curve '%s' unsorted/out-of-range; expected t in [0,1] ascending", name)
-                        except Exception:
-                            pass
-                _warn_curve('size_over_life', getattr(comp, 'size_over_life', None))
-                _warn_curve('alpha_over_life', getattr(comp, 'alpha_over_life', None))
-                _warn_curve('color_over_life', getattr(comp, 'color_over_life', None))
-                setattr(comp, '_validated_curves', True)
+            # One-time curve validation warnings (usando set en lugar de atributo)
+            if eid not in self._curves_validated:
+                self._curves_validated.add(eid)
+                self._validate_curves(comp)
             # Si la partícula está anclada a una entidad (ej. jugador en un slash),
             # trasladarla por el delta de movimiento del ancla antes de aplicar su propia velocidad.
             anchor_id = getattr(comp, 'anchor_eid', None)
@@ -95,4 +76,35 @@ class ParticleSystem:
             # Envejecer y expirar
             comp.age += 1
             if comp.age >= comp.lifespan:
-                world.remove_entity(eid)
+                # Liberar al pool en lugar de destruir
+                self._curves_validated.discard(eid)
+                try:
+                    if self._particle_pool is None:
+                        self._particle_pool = get_particle_pool(world)
+                    self._particle_pool.release(eid)
+                except Exception:
+                    # Fallback a remove_entity si el pool falla
+                    world.remove_entity(eid)
+    
+    def _validate_curves(self, comp) -> None:
+        """Valida curvas de partícula una sola vez."""
+        for name in ('size_over_life', 'alpha_over_life', 'color_over_life'):
+            curve = getattr(comp, name, None)
+            if not isinstance(curve, (list, tuple)):
+                continue
+            last_t = -1e9
+            bad = False
+            for pt in curve:
+                try:
+                    t = float(pt[0])
+                except Exception:
+                    bad = True
+                    continue
+                if not (0.0 <= t <= 1.0) or t < last_t:
+                    bad = True
+                last_t = t
+            if bad:
+                try:
+                    logger.warning("[ParticleSystem] curve '%s' unsorted/out-of-range", name)
+                except Exception:
+                    pass

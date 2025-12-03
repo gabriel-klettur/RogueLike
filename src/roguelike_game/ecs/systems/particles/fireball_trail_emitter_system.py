@@ -6,6 +6,7 @@ from roguelike_game.config.spells_config import SPELLS
 from roguelike_game.config.particles_config import get_preset
 from roguelike_game.ecs.components.transform.position import Position
 from roguelike_game.ecs.components.particles.particle_component import ParticleComponent
+from roguelike_game.ecs.utils.particle_pool import get_particle_pool
 
 
 class FireballTrailEmitterSystem:
@@ -27,6 +28,30 @@ class FireballTrailEmitterSystem:
         self.perf_log = perf_log
         self._dbg_logged = False
         self._logger = logging.getLogger(__name__)
+        self._particle_pool = None
+        self._last_fps: float = 60.0
+    
+    def _get_adaptive_emit_rate(self, base_rate: int, world) -> int:
+        """Reduce emit_rate dinámicamente si FPS está bajo."""
+        try:
+            # Intentar obtener FPS actual del world o state
+            fps = getattr(world, '_current_fps', None)
+            if fps is None:
+                fps = getattr(getattr(world, 'state', None), 'current_fps', None)
+            if fps is None:
+                fps = self._last_fps
+            else:
+                self._last_fps = float(fps)
+            
+            if fps < 25:
+                return max(1, base_rate // 4)
+            elif fps < 35:
+                return max(1, base_rate // 3)
+            elif fps < 45:
+                return max(1, base_rate // 2)
+            return base_rate
+        except Exception:
+            return base_rate
 
     def _get_cfg(self, comp):
         if not getattr(comp, "spell_key", None):
@@ -225,6 +250,8 @@ class FireballTrailEmitterSystem:
             else:
                 budget = None
             emit_n = int(max(1, emit_rate))
+            # Reducción dinámica según FPS
+            emit_n = self._get_adaptive_emit_rate(emit_n, world)
             if isinstance(budget, int):
                 emit_n = max(0, min(emit_n, budget))
             # Log detallado solo en los primeros frames de cada fireball para no hacer ruido
@@ -257,7 +284,15 @@ class FireballTrailEmitterSystem:
                 size = random.randint(size_range[0], size_range[1])
                 color = random.choice(colors)
 
-                peid = world.create_entity()
+                # Usar pool de partículas para mejor rendimiento
+                try:
+                    if self._particle_pool is None:
+                        self._particle_pool = get_particle_pool(world)
+                    peid = self._particle_pool.acquire()
+                except Exception:
+                    # Fallback a creación directa si el pool falla
+                    peid = world.create_entity()
+                
                 comps.setdefault("Position", {})[peid] = Position(
                     spawn_x + random.uniform(-1.5, 1.5),
                     spawn_y + random.uniform(-1.5, 1.5),

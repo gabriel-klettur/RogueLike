@@ -11,17 +11,25 @@ from roguelike_game.ecs.components.status.poison_component import PoisonComponen
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.core.identity import Faction
 from roguelike_game.ecs.utils.health_utils import is_neutral
+from roguelike_game.ecs.utils.hitbox_mask_cache import get_arc_mask
 
 import logging
 logger = logging.getLogger(__name__)
+
+# Cache de máscaras rotadas por (radius, arc_angle_key, direction_angle_key)
+_ROTATED_MASK_CACHE: dict = {}
 
 class HitboxSystem:
     """
     ECS system that processes HitboxComponent: decrements lifespan,
     detects collisions within an arc, applies damage once per target.
+    
+    Optimizado con cache de máscaras de arco para evitar recrearlas cada frame.
     """
     def __init__(self, perf_log=None):
         self.perf_log = perf_log
+        self._mask_cache_hits = 0
+        self._mask_cache_misses = 0
     
     def update(self, world, camera=None):
         positions = world.components.get('Position', {})
@@ -69,25 +77,19 @@ class HitboxSystem:
             except Exception:
                 # Si algo falla, mantenemos la posición actual para no romper combate
                 pass
-            # pixel-perfect collision using masks
+            # pixel-perfect collision using masks (OPTIMIZADO con cache)
             cx, cy = pos.x, pos.y
             dir_x, dir_y = hb.direction
             dir_ang = math.atan2(dir_y, dir_x)
             r = hb.radius
-            # build hitbox mask as filled sector
+            # build hitbox mask as filled sector - USAR CACHE
             left, top = cx - r, cy - r
             w, h = int(r*2), int(r*2)
             screen_left, screen_top = camera.apply((left, top))
-            surf = pygame.Surface((w, h), pygame.SRCALPHA)
-            start_ang = dir_ang - hb.arc_angle/2
-            end_ang = dir_ang + hb.arc_angle/2
-            pts = [(r, r)]
-            segs = max(4, int(hb.arc_angle/(2*math.pi)*16))
-            for i in range(segs+1):
-                ang = start_ang + (end_ang - start_ang)*i/segs
-                pts.append((r + math.cos(ang)*r, r + math.sin(ang)*r))
-            pygame.draw.polygon(surf, (255,255,255), pts)
-            hitmask = pygame.mask.from_surface(surf)
+            
+            # Obtener máscara del cache o generarla
+            hitmask = self._get_cached_rotated_mask(int(r), hb.arc_angle, dir_ang)
+            
             r2 = r*r
             multi_map = world.components.get('MultiCollider', {})
 
@@ -444,3 +446,38 @@ class HitboxSystem:
                             })
                 except Exception:
                     pass
+    
+    def _get_cached_rotated_mask(self, radius: int, arc_angle: float, direction_angle: float) -> pygame.mask.Mask:
+        """Obtiene máscara de arco rotada desde cache o la genera.
+        
+        Optimización: evita crear Surface y Mask cada frame para hitboxes
+        con los mismos parámetros (radio, ángulo de arco, dirección).
+        """
+        # Redondear ángulos para mejorar cache hits
+        arc_key = int(round(arc_angle * 100))
+        dir_key = int(round(direction_angle * 50))  # Menor precisión para dirección
+        
+        key = (radius, arc_key, dir_key)
+        
+        cached = _ROTATED_MASK_CACHE.get(key)
+        if cached is not None:
+            self._mask_cache_hits += 1
+            return cached
+        
+        self._mask_cache_misses += 1
+        
+        # Obtener máscara base (apuntando a la derecha)
+        base_mask, base_surf = get_arc_mask(radius, arc_angle, return_surface=True)
+        
+        # Rotar superficie
+        angle_deg = -math.degrees(direction_angle)
+        rotated_surf = pygame.transform.rotate(base_surf, angle_deg)
+        rotated_mask = pygame.mask.from_surface(rotated_surf)
+        
+        # Cachear (limitar tamaño del cache)
+        if len(_ROTATED_MASK_CACHE) > 500:
+            # Limpiar cache si es muy grande
+            _ROTATED_MASK_CACHE.clear()
+        
+        _ROTATED_MASK_CACHE[key] = rotated_mask
+        return rotated_mask

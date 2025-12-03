@@ -1,13 +1,22 @@
-"""Collision helpers for projectile-to-wall interactions."""
+"""Collision helpers for projectile-to-wall interactions.
+
+Optimizado con cache de wall data entre frames para evitar recalcular
+la geometría de muros cada frame.
+"""
 from __future__ import annotations
 
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 import pygame
 
 from ..effects import spawn_impact_effects
 from ..mask_cache import CircleMaskCache
 from ..runtime import FireballRuntime, get_scale_multiplier
+
+# Cache de wall data entre frames
+_wall_cache: List["WallCacheEntry"] = []
+_wall_cache_frame: int = -1
+_wall_cache_count: int = 0  # Número de muros en el último cálculo
 
 
 class WallCacheEntry:
@@ -34,13 +43,28 @@ class WallCacheEntry:
         self.sin = sin
 
 
-def precompute_wall_cache(world: object) -> list[WallCacheEntry]:
-    """Return cached wall data for the current frame."""
-
-    entries: list[WallCacheEntry] = []
+def precompute_wall_cache(world: object) -> List[WallCacheEntry]:
+    """Return cached wall data for the current frame.
+    
+    Optimización: reutiliza el cache si el frame no ha cambiado y
+    el número de muros es el mismo (heurística para detectar cambios).
+    """
+    global _wall_cache, _wall_cache_frame, _wall_cache_count
+    
+    # Obtener frame actual
+    current_frame = getattr(world, '_frame_count', 0)
     walls = world.components.get("WallSegmentComponent", {})
+    wall_count = len(walls)
+    
+    # Reutilizar cache si es el mismo frame y mismo número de muros
+    if current_frame == _wall_cache_frame and wall_count == _wall_cache_count:
+        return _wall_cache
+    
+    # Recalcular cache
+    entries: List[WallCacheEntry] = []
     positions = world.components.get("Position", {})
-    for wall_id, wall in list(walls.items()):
+    
+    for wall_id, wall in walls.items():
         try:
             if not bool(getattr(wall, "blocks_projectiles", True)):
                 continue
@@ -72,6 +96,12 @@ def precompute_wall_cache(world: object) -> list[WallCacheEntry]:
             )
         except Exception:
             continue
+    
+    # Actualizar cache
+    _wall_cache = entries
+    _wall_cache_frame = current_frame
+    _wall_cache_count = wall_count
+    
     return entries
 
 
