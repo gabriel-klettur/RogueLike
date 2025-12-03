@@ -95,9 +95,9 @@
     "InventoryDragSystem"
   ],
   "ui": {
-    "minimized": true,
+    "minimized": false,
     "toolbar": {
-      "minimized": false,
+      "minimized": true,
       "toggles": {
         "spell_collision": false,
         "npc_attack": false,

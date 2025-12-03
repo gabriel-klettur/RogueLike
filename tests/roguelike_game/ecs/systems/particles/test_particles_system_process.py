@@ -1,9 +1,13 @@
 import types
 
 from roguelike_game.ecs.systems.particles.particle_system import ParticleSystem
+from roguelike_game.ecs.utils.particle_pool import reset_particle_pool
 
 
 def test_particle_moves_ages_and_expires():
+    # Reset global pool to avoid interference from previous tests
+    reset_particle_pool()
+    
     removed = []
     def remove_entity(eid):
         removed.append(eid)
@@ -13,26 +17,33 @@ def test_particle_moves_ages_and_expires():
     pos = types.SimpleNamespace(x=0.0, y=0.0)
     comp = types.SimpleNamespace(dx=1.5, dy=-0.5, age=0, lifespan=2, anchor_eid=None)
 
+    particles_dict = {eid: comp}
     world = types.SimpleNamespace(
         components={
             'Position': {eid: pos},
-            'ParticleComponent': {eid: comp},
+            'ParticleComponent': particles_dict,
         },
         remove_entity=remove_entity,
     )
 
     sys = ParticleSystem(perf_log=None)
+    # Force pool to None so it falls back to remove_entity
+    sys._particle_pool = types.SimpleNamespace(release=lambda e: removed.append(e))
+    
     # 1st update: moves and ages -> age=1, not removed
     sys.update(world)
     assert pos.x == 1.5 and pos.y == -0.5
     assert comp.age == 1
     assert removed == []
-    # 2nd update: moves and ages -> age=2, removed
+    # 2nd update: moves and ages -> age=2, released via pool
     sys.update(world)
     assert removed == [eid]
 
 
 def test_particle_follows_anchor_delta():
+    # Reset global pool to avoid interference from previous tests
+    reset_particle_pool()
+    
     removed = []
     def remove_entity(eid):
         removed.append(eid)
@@ -53,6 +64,9 @@ def test_particle_follows_anchor_delta():
     )
 
     sys = ParticleSystem(perf_log=None)
+    # Mock the pool to avoid initialization issues
+    sys._particle_pool = types.SimpleNamespace(release=lambda e: removed.append(e))
+    
     # First update: initializes anchor_last and does not move by anchor delta
     sys.update(world)
     assert pos.x == 10.0 and pos.y == 10.0

@@ -23,88 +23,28 @@
     },
     "created_at": 1762873865.4043996
   },
-  "ef22b925-abae-4129-8fdb-b81d59f0b6fa": {
+  "8a4ce60f-2afc-4c9e-b213-6fa7dccf92aa": {
     "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 15,
-      "y": 20
+      "x": 7,
+      "y": 8
     },
-    "created_at": 1764762839.540044
+    "created_at": 1764771201.4599473
   },
-  "9cc36b4e-3991-49df-99cf-753d687dde31": {
+  "9ff675d5-ebd5-4a4f-a981-297833b791c8": {
     "item_id": "gold",
     "quantity": 1,
     "zone_id": "Forest",
     "schema_version": "1.0.0",
     "z_layer": 3,
     "tile": {
-      "x": 47,
-      "y": 5
+      "x": 7,
+      "y": 2
     },
-    "created_at": 1764762881.0562665
-  },
-  "d60863f7-493c-4f78-8133-5a3b7f76b5e0": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 47,
-      "y": 7
-    },
-    "created_at": 1764762881.056793
-  },
-  "c13c6871-4ff0-45a1-9e19-a2c58e783cf7": {
-    "item_id": "wood",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 17,
-      "y": 10
-    },
-    "created_at": 1764762891.2641225
-  },
-  "611c0ac3-453c-4766-bf7c-69c59ea78a16": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 30,
-      "y": 22
-    },
-    "created_at": 1764762898.0776381
-  },
-  "169149b7-0e0d-46f6-817c-9b48daa1209d": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "position": {
-      "x": 4180,
-      "y": 2317
-    },
-    "created_at": 1764762898.0782514
-  },
-  "3a874d6c-4ddc-4f30-8c53-21d0b281c78d": {
-    "item_id": "experience_orb",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "position": {
-      "x": 4317,
-      "y": 1825
-    },
-    "created_at": 1764762899.0707266
+    "created_at": 1764771202.6897864
   }
 }

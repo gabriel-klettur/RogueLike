@@ -66,10 +66,28 @@ def render_z_entities(manager: Any, state, camera, screen, entities) -> None:
                 all_entities.append(part)
 
     # ECS NPCs: wrap for uniform render API and assign Z-layer
-    for eid in manager.ecs.ecs_world.get_entities_with("Position", "Sprite", "ZLayer"):
-        layer = manager.ecs.ecs_world.components["ZLayer"][eid].layer
-        npc = _NPCWrapper(manager.ecs.ecs_world, eid)
+    # Apply view culling BEFORE creating wrappers to avoid unnecessary object creation
+    world = manager.ecs.ecs_world
+    pos_map = world.components.get("Position", {})
+    sprite_map = world.components.get("Sprite", {})
+    zlayer_map = world.components.get("ZLayer", {})
+    
+    for eid in world.get_entities_with("Position", "Sprite", "ZLayer"):
+        pos = pos_map.get(eid)
+        sprite = sprite_map.get(eid)
+        if pos is None or sprite is None:
+            continue
+        # Culling: skip entities outside camera view
+        img = sprite.image
+        if img is not None and not camera.is_in_view(pos.x, pos.y, img.get_size()):
+            continue
+        layer = zlayer_map[eid].layer
+        npc = _NPCWrapper(world, eid)
         state.z_state.set(npc, layer)
         all_entities.append(npc)
+
+    # Early exit if nothing to render
+    if not all_entities:
+        return
 
     render_z_ordered(all_entities, screen, camera, state.z_state)

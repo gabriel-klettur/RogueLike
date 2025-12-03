@@ -14,6 +14,11 @@ from roguelike_engine.config.config_minimap import (
     MINIMAP_ZONE_BORDER_WIDTH,
 )
 
+# Umbral de movimiento (en tiles) para forzar recálculo de capas estáticas
+# Solo si el jugador se mueve más de N tiles desde la última actualización
+# se fuerza un recálculo antes del rate-limit normal.
+_TILE_MOVE_THRESHOLD = 5
+
 
 class MinimapController:
     """
@@ -66,8 +71,13 @@ class MinimapController:
             model.last_entities_ms = 0
             model.last_zones_ms = 0
 
-        # 1) Tiles (fondo)
-        if (now - model.last_tiles_ms >= MINIMAP_TILE_UPDATE_MS) or (model.last_player_tile != (px, py)):
+        # Calcular distancia desde última actualización de capas estáticas
+        _last_tile = model.last_player_tile or (px, py)
+        _tile_dist = abs(px - _last_tile[0]) + abs(py - _last_tile[1])
+        _moved_significantly = _tile_dist >= _TILE_MOVE_THRESHOLD
+
+        # 1) Tiles (fondo) - solo recalcular por rate-limit O movimiento significativo
+        if (now - model.last_tiles_ms >= MINIMAP_TILE_UPDATE_MS) or _moved_significantly:
             model.last_tiles_ms = now
             vis = []
             # Determine overlays presence and whether zones.json has user-defined zones
@@ -112,10 +122,10 @@ class MinimapController:
                 except Exception:
                     pass
 
-        # 2) Edificios (semi-estático)
+        # 2) Edificios (semi-estático) - solo rate-limit O movimiento significativo
         if buildings is not None and (
             (now - model.last_buildings_ms >= MINIMAP_BUILDINGS_UPDATE_MS)
-            or (model.last_player_tile != (px, py))
+            or _moved_significantly
         ):
             model.last_buildings_ms = now
             model.buildings_surface.fill((0, 0, 0, 0))
@@ -141,8 +151,8 @@ class MinimapController:
                 except Exception:
                     pass
 
-        # 2.5) Zonas (semi-estático)
-        if (now - model.last_zones_ms >= MINIMAP_BUILDINGS_UPDATE_MS) or (model.last_player_tile != (px, py)):
+        # 2.5) Zonas (semi-estático) - solo rate-limit O movimiento significativo
+        if (now - model.last_zones_ms >= MINIMAP_BUILDINGS_UPDATE_MS) or _moved_significantly:
             model.last_zones_ms = now
             model.zones_surface.fill((0, 0, 0, 0))
             try:
@@ -172,11 +182,8 @@ class MinimapController:
             except Exception:
                 pass
 
-        # 3) Entidades (dinámico)
-        if world is not None and (
-            (now - model.last_entities_ms >= MINIMAP_ENTITIES_UPDATE_MS)
-            or (model.last_player_tile != (px, py))
-        ):
+        # 3) Entidades (dinámico) - solo rate-limit (150ms es suficiente para minimapa)
+        if world is not None and (now - model.last_entities_ms >= MINIMAP_ENTITIES_UPDATE_MS):
             model.last_entities_ms = now
             model.entities_surface.fill((0, 0, 0, 0))
             try:
@@ -212,4 +219,7 @@ class MinimapController:
             except Exception:
                 pass
 
-        model.last_player_tile = (px, py)
+        # Actualizar last_player_tile solo si hubo movimiento significativo
+        # (para que el threshold se calcule desde la última actualización real)
+        if _moved_significantly:
+            model.last_player_tile = (px, py)

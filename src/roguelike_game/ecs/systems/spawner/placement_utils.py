@@ -14,12 +14,21 @@ Tile = Tuple[int, int]
 
 def collect_blocked_tiles(world) -> tuple[Set[Tile], Set[Tile]]:
     """Return sets for solid tiles and building-collision tiles in global tile coords."""
-    solid_coords = {(t.rect.x // TILE_SIZE, t.rect.y // TILE_SIZE) for t in world.map_manager.solid_tiles}
-    building_coords = {
-        (r.x // TILE_SIZE, r.y // TILE_SIZE)
-        for b in getattr(world, 'buildings', [])
-        for r in getattr(b, 'collision_tiles', [])
-    }
+    # Optimize: use local variable for TILE_SIZE and avoid repeated attribute lookups
+    ts = TILE_SIZE
+    solid_coords: Set[Tile] = set()
+    for t in world.map_manager.solid_tiles:
+        r = t.rect
+        solid_coords.add((r.x // ts, r.y // ts))
+    
+    building_coords: Set[Tile] = set()
+    buildings = getattr(world, 'buildings', None)
+    if buildings:
+        for b in buildings:
+            collision_tiles = getattr(b, 'collision_tiles', None)
+            if collision_tiles:
+                for r in collision_tiles:
+                    building_coords.add((r.x // ts, r.y // ts))
     return solid_coords, building_coords
 
 
@@ -27,16 +36,16 @@ def collect_npc_tiles(world) -> Set[Tile]:
     """Return set of global tile coords occupied by existing NPCs/Player (alive)."""
     comps = world.components
     death_map = comps.get('DeathTimer', {})
+    pos_map = comps.get('Position', {})
+    ts = TILE_SIZE
     tiles: Set[Tile] = set()
     for nid in world.get_entities_with('Position', 'MultiCollider'):
         if nid in death_map:
             continue
-        p = comps.get('Position', {}).get(nid)
+        p = pos_map.get(nid)
         if not p:
             continue
-        tx = int(p.x // TILE_SIZE)
-        ty = int(p.y // TILE_SIZE)
-        tiles.add((tx, ty))
+        tiles.add((int(p.x // ts), int(p.y // ts)))
     return tiles
 
 
@@ -132,7 +141,10 @@ def choose_spawn_tile(
                 cy = ty * TILE_SIZE + TILE_SIZE // 2
                 if _too_close_px(cx, cy, min_px_dist_sq, npc_tiles):
                     continue
-                if _too_close_px(cx, cy, min_px_dist_sq, reserved_tiles.union(reserved_global)):
+                # Check reserved tiles without creating union each time
+                if _too_close_px(cx, cy, min_px_dist_sq, reserved_tiles):
+                    continue
+                if _too_close_px(cx, cy, min_px_dist_sq, reserved_global):
                     continue
             return (tx, ty)
 
@@ -153,7 +165,10 @@ def choose_spawn_tile(
             cy = ty * TILE_SIZE + TILE_SIZE // 2
             if _too_close_px(cx, cy, min_px_dist_sq, npc_tiles):
                 continue
-            if _too_close_px(cx, cy, min_px_dist_sq, reserved_tiles.union(reserved_global)):
+            # Check reserved tiles without creating union each time
+            if _too_close_px(cx, cy, min_px_dist_sq, reserved_tiles):
+                continue
+            if _too_close_px(cx, cy, min_px_dist_sq, reserved_global):
                 continue
         return (tx, ty)
 

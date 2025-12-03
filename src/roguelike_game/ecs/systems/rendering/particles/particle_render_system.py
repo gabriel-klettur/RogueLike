@@ -135,8 +135,13 @@ class ParticleRenderSystem:
                 return max(1, int(sz))
 
         draw_calls: list[tuple[tuple[int, str], pygame.Surface, tuple[int, int], bool]] = []
-        max_calls = int(getattr(self, 'max_draw_calls', 4000) or 4000)
-        for eid, comp in list(particles.items()):
+        max_calls = self.max_draw_calls
+        
+        # Early exit if no particles
+        if not particles:
+            return
+            
+        for eid, comp in particles.items():
             pos = positions.get(eid)
             if pos is None:
                 continue
@@ -298,7 +303,7 @@ class ParticleRenderSystem:
                     draw_calls.append(((is_add, ""), surf, dst, bool(is_add)))
         # Ribbon (trail) rendering from RibbonComponent (points are sampled elsewhere)
         ribbons = world.components.get('RibbonComponent', {})
-        for rid, rib in list(ribbons.items()):
+        for rid, rib in ribbons.items():
             pts = getattr(rib, 'points', [])
             if not isinstance(pts, list) or len(pts) < 2:
                 continue

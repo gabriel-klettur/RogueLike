@@ -16,7 +16,7 @@ DEBUG_ENTITIES_FRAME_SKIP = 2  # dibuja el overlay del FSM Editor cada N frames
 SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 800
 FPS = 60
-GRAYSCALE_HALF_RES = False
+GRAYSCALE_HALF_RES = True  # Process at half resolution for ~4x speedup
 GRAYSCALE_LUT_MODE = "index"  # "index" (fast default) or "take" (uses out= buffers)
 
 # Fuente principal

@@ -60,7 +60,7 @@ class Game:
  
     _update_group = BenchmarkGroup(lambda self: self.perf_log, "2")
 
-    @_update_group.bench("TOTAL: UPDATE [EDITORS]")
+    @_update_group.bench("TOTAL: UPDATE [GAME_LOGIC]")
     def update(self):        
         if self.inventory_editor.model.visible:
             return
@@ -92,45 +92,10 @@ class Game:
 
     _render_group = BenchmarkGroup(lambda self: self.perf_log, "3")
 
-    @_render_group.bench("TOTAL: RENDER [EDITORSSSSS]")
+    @_render_group.bench("TOTAL: RENDER [PIPELINE]")
     def render(self):
-        # Renderiza el mundo
-        # Propaga visibilidad del Spells Editor al estado para que el renderer pueda ocultar minimapa/leyenda
-        try:
-            self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
-        except Exception:
-            self.state.spells_editor_visible = False
-        # Propaga visibilidad del Particles Editor al game.state para que Update Manager pueda pausar el follow de cámara
-        try:
-            self.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
-        except Exception:
-            self.state.particles_editor_visible = False
-        # Propaga visibilidad del selector de clases para ocultar minimapa/leyendas cuando esté activo
-        try:
-            self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
-        except Exception:
-            self.state.class_selector_visible = False
-        # Suprimir HUD textual (HP/MP) cuando UI de menú o selector está activa
-        try:
-            self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
-        except Exception:
-            pass
-        # Propaga visibilidad del Spawner Editor para ocultar minimapa/HUD asociados
-        try:
-            w = self.ecs.ecs_world
-            if hasattr(w, 'state'):
-                setattr(
-                    w.state,
-                    'spawner_editor_active',
-                    bool(getattr(self, 'spawner_editor', None) and getattr(self.spawner_editor, 'model', None) and getattr(self.spawner_editor.model, 'visible', False))
-                )
-                # Propagar visibilidad del Particles Editor para suprimir gameplay input (laser en MMB) y habilitar MMB pan
-                try:
-                    w.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
-                except Exception:
-                    w.state.particles_editor_visible = False
-        except Exception:
-            pass
+        # Propagate editor visibility state (benchmarked)
+        self._propagate_editor_state()
         self.renderer.render_game(
             self.state,
             self.screen,
@@ -143,19 +108,60 @@ class Game:
         if hasattr(self, 'class_selector') and self.class_selector.show:
             self.class_selector.draw()
             return
-        # Overlay del Item Editor
+        # Overlay editors (benchmarked as a group)
+        self._render_overlay_editors()
+
+    @_render_group.bench("92. overlay_editors")
+    def _render_overlay_editors(self):
+        """Render overlay editors (item, inventory, entities, spells, particles, spawner, console)."""
         self.item_editor.draw(self.screen)
         self.inventory_editor.draw(self.screen)
         self.entities_editor.draw(self.screen)
         self.spells_editor.draw(self.screen)
-        # Particles Editor overlay
         if hasattr(self, 'particles_editor'):
             self.particles_editor.draw(self.screen)
-        # Spawner Editor overlay
         if hasattr(self, 'spawner_editor'):
             self.spawner_editor.draw(self.screen)
-        # Render consola
         self.console_view.render(self.screen)
+
+    @_render_group.bench("01. propagate_state")
+    def _propagate_editor_state(self):
+        """Propagate editor visibility flags to state objects."""
+        # Spells Editor visibility
+        try:
+            self.state.spells_editor_visible = bool(getattr(self, 'spells_editor', None) and self.spells_editor.model.visible)
+        except Exception:
+            self.state.spells_editor_visible = False
+        # Particles Editor visibility
+        try:
+            self.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
+        except Exception:
+            self.state.particles_editor_visible = False
+        # Class selector visibility
+        try:
+            self.state.class_selector_visible = bool(getattr(self, 'class_selector', None) and self.class_selector.show)
+        except Exception:
+            self.state.class_selector_visible = False
+        # Suppress HUD when menu/selector active
+        try:
+            self.ecs.ecs_world.suppress_hud = bool((self.menu and getattr(self.menu, 'show_menu', False)) or getattr(self.state, 'class_selector_visible', False))
+        except Exception:
+            pass
+        # Spawner Editor visibility
+        try:
+            w = self.ecs.ecs_world
+            if hasattr(w, 'state'):
+                setattr(
+                    w.state,
+                    'spawner_editor_active',
+                    bool(getattr(self, 'spawner_editor', None) and getattr(self.spawner_editor, 'model', None) and getattr(self.spawner_editor.model, 'visible', False))
+                )
+                try:
+                    w.state.particles_editor_visible = bool(getattr(self, 'particles_editor', None) and getattr(self.particles_editor, 'model', None) and getattr(self.particles_editor.model, 'visible', False))
+                except Exception:
+                    w.state.particles_editor_visible = False
+        except Exception:
+            pass
 
     #!---------------------------------------------------------------------------------------------------------------------
     #!-------------------------------------------------- LOOP ECS ---------------------------------------------------------

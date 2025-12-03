@@ -17,24 +17,32 @@ class ParticleSystem:
         # Obtener componentes de posición y partículas
         positions = world.components.get('Position', {})
         particles = world.components.get('ParticleComponent', {})
+        
+        # Early exit if no particles
+        if not particles:
+            return
+            
         # One-time debug of particle count to help diagnose emission
         if not getattr(self, '_dbg_logged_particles', False):
-            setattr(self, '_dbg_logged_particles', True)
-            try:
-                logger.debug("[ParticleSystem] start update: particles=%d", len(particles))
-            except Exception:
-                pass
-        for eid, comp in list(particles.items()):
+            self._dbg_logged_particles = True
+            logger.debug("[ParticleSystem] start update: particles=%d", len(particles))
+        
+        # Collect expired particles to remove after iteration (avoid dict mutation during iteration)
+        expired: list = []
+        curves_validated = self._curves_validated
+        
+        for eid, comp in particles.items():
             pos = positions.get(eid)
             if pos is None:
-                world.remove_entity(eid)
+                expired.append(eid)
                 continue
-            # One-time curve validation warnings (usando set en lugar de atributo)
-            if eid not in self._curves_validated:
-                self._curves_validated.add(eid)
+            
+            # One-time curve validation warnings
+            if eid not in curves_validated:
+                curves_validated.add(eid)
                 self._validate_curves(comp)
-            # Si la partícula está anclada a una entidad (ej. jugador en un slash),
-            # trasladarla por el delta de movimiento del ancla antes de aplicar su propia velocidad.
+            
+            # Anchor tracking (for particles attached to moving entities)
             anchor_id = getattr(comp, 'anchor_eid', None)
             if anchor_id is not None:
                 anchor_pos = positions.get(anchor_id)
@@ -45,45 +53,49 @@ class ParticleSystem:
                         comp.anchor_last_x = anchor_pos.x
                         comp.anchor_last_y = anchor_pos.y
                     else:
-                        dx_anchor = anchor_pos.x - last_x
-                        dy_anchor = anchor_pos.y - last_y
-                        pos.x += dx_anchor
-                        pos.y += dy_anchor
+                        pos.x += anchor_pos.x - last_x
+                        pos.y += anchor_pos.y - last_y
                         comp.anchor_last_x = anchor_pos.x
                         comp.anchor_last_y = anchor_pos.y
-            # Física opcional: gravedad y drag (retrocompatible si no están definidos)
-            try:
-                gx = float(getattr(comp, 'gx', 0.0) or 0.0)
-                gy = float(getattr(comp, 'gy', 0.0) or 0.0)
-            except Exception:
-                gx, gy = 0.0, 0.0
-            try:
-                drag = float(getattr(comp, 'drag', 0.0) or 0.0)
-            except Exception:
-                drag = 0.0
+            
+            # Physics: gravity and drag (use getattr with defaults, avoid try/except in hot loop)
+            gx = getattr(comp, 'gx', 0.0) or 0.0
+            gy = getattr(comp, 'gy', 0.0) or 0.0
+            drag = getattr(comp, 'drag', 0.0) or 0.0
+            
+            # Clamp drag
             if drag < 0.0:
                 drag = 0.0
-            if drag > 0.98:
+            elif drag > 0.98:
                 drag = 0.98
-            # Integración simple por tick
-            comp.dx += gx
-            comp.dy += gy
+            
+            # Simple integration
+            dx = comp.dx + gx
+            dy = comp.dy + gy
             if drag > 0.0:
-                comp.dx *= (1.0 - drag)
-                comp.dy *= (1.0 - drag)
-            pos.x += comp.dx
-            pos.y += comp.dy
-            # Envejecer y expirar
+                factor = 1.0 - drag
+                dx *= factor
+                dy *= factor
+            comp.dx = dx
+            comp.dy = dy
+            pos.x += dx
+            pos.y += dy
+            
+            # Age and expire
             comp.age += 1
             if comp.age >= comp.lifespan:
-                # Liberar al pool en lugar de destruir
-                self._curves_validated.discard(eid)
+                expired.append(eid)
+        
+        # Process expired particles outside the loop
+        if expired:
+            if self._particle_pool is None:
+                self._particle_pool = get_particle_pool(world)
+            pool = self._particle_pool
+            for eid in expired:
+                curves_validated.discard(eid)
                 try:
-                    if self._particle_pool is None:
-                        self._particle_pool = get_particle_pool(world)
-                    self._particle_pool.release(eid)
+                    pool.release(eid)
                 except Exception:
-                    # Fallback a remove_entity si el pool falla
                     world.remove_entity(eid)
     
     def _validate_curves(self, comp) -> None:

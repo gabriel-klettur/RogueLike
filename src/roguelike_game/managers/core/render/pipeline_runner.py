@@ -24,6 +24,8 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
 
     Returns the manager's dirty rects list (unchanged behavior for callers).
     """
+    t_setup_start = time.perf_counter()
+    
     # Sync latest references in case the game swapped map/entities (e.g., load/save)
     if map is not None:
         manager.map = map
@@ -41,6 +43,10 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
     except Exception:
         pass
 
+    t_setup_end = time.perf_counter()
+    if perf_log is not None:
+        perf_log.setdefault("3.00. pipeline_setup", []).append(t_setup_end - t_setup_start)
+
     render_group = BenchmarkGroup(perf_log, "3")
 
     def _step_init_and_cleaning():
@@ -51,7 +57,11 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
 
     def _step_map():
         log_tile_editor_debug(manager, camera)
+        t0 = time.perf_counter()
         manager._render_map(camera, screen, map)
+        t1 = time.perf_counter()
+        if perf_log is not None:
+            perf_log.setdefault("3.1.a map_render_impl", []).append(t1 - t0)
 
     def _step_ecs_trail():
         render_ecs_trail(manager, screen, camera)
@@ -63,17 +73,23 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
             and manager.tiles_editor.editor_state.toolbar_state.show_collisions
             and not manager.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
         ):
+            t0 = time.perf_counter()
             manager._render_z_entities(state, camera, screen, entities)
+            t1 = time.perf_counter()
+            if perf_log is not None:
+                perf_log.setdefault("3.2.a z_entities_impl", []).append(t1 - t0)
 
     def _step_attack_telegraphs():
         from .pipeline_helpers import render_attack_telegraphs
         render_attack_telegraphs(manager, screen, camera)
 
     def _step_tile_editor():
+        # Early exit if tiles editor is not active - avoid any processing
+        if not manager.tiles_editor.editor_state.active:
+            return
         # Skip tile editor UI in collision-only mode
         if not (
-            manager.tiles_editor.editor_state.active
-            and manager.tiles_editor.editor_state.toolbar_state.show_collisions
+            manager.tiles_editor.editor_state.toolbar_state.show_collisions
             and not manager.tiles_editor.editor_state.toolbar_state.show_collisions_overlay
         ):
             manager._render_tile_editor_layer(state, screen, camera, map)
@@ -215,20 +231,26 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
             sfn()
         _run()
 
-    # Diagnostics overlay
-    debug_entities = SimpleNamespace(player=manager.ecs.ecs_world.player_position)
-    try:
-        rm_mod = sys.modules.get('roguelike_game.managers.core.render_manager')
-        rd = getattr(rm_mod, 'render_diagnostics_overlay', None)
-    except Exception:
-        rd = None
-    if callable(rd):
-        rd(manager.diagnostics_overlay, screen, state, camera, manager.map, debug_entities, show_borders=True)
-    else:
-        from roguelike_engine.diagnostics import render_diagnostics_overlay as _rd
-        _rd(manager.diagnostics_overlay, screen, state, camera, manager.map, debug_entities, show_borders=True)
+    # Diagnostics overlay (benchmarked)
+    @render_group.bench("90. diagnostics_overlay")
+    def _step_diagnostics():
+        debug_entities = SimpleNamespace(player=manager.ecs.ecs_world.player_position)
+        try:
+            rm_mod = sys.modules.get('roguelike_game.managers.core.render_manager')
+            rd = getattr(rm_mod, 'render_diagnostics_overlay', None)
+        except Exception:
+            rd = None
+        if callable(rd):
+            rd(manager.diagnostics_overlay, screen, state, camera, manager.map, debug_entities, show_borders=True)
+        else:
+            from roguelike_engine.diagnostics import render_diagnostics_overlay as _rd
+            _rd(manager.diagnostics_overlay, screen, state, camera, manager.map, debug_entities, show_borders=True)
+    _step_diagnostics()
 
-    # Expand area overlay
-    manager._render_expand_area(manager._last_state)
+    # Expand area overlay (benchmarked)
+    @render_group.bench("91. expand_area")
+    def _step_expand_area():
+        manager._render_expand_area(manager._last_state)
+    _step_expand_area()
 
     return manager._dirty_rects

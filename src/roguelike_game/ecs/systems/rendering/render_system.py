@@ -254,11 +254,15 @@ class RenderSystem:
                 rgb = surfarray.pixels3d(self._half_surface)
                 t1 = time.perf_counter()
                 if mode == 'index':
-                    # Direct indexing LUT path (fast default)
-                    lr = _RL_LUT_R[rgb[:, :, 0]]
-                    lg = _RL_LUT_G[rgb[:, :, 1]]
-                    lb = _RL_LUT_B[rgb[:, :, 2]]
-                    lum16 = (lr + lg + lb) >> 8
+                    # Optimized: use reusable buffers to avoid allocations
+                    self._ensure_gray_tmps(hs_w, hs_h)
+                    np.take(_RL_LUT_R, rgb[:, :, 0], out=self._gray_tmp16)
+                    np.take(_RL_LUT_G, rgb[:, :, 1], out=self._gray_tmp16_b)
+                    self._gray_tmp16 += self._gray_tmp16_b
+                    np.take(_RL_LUT_B, rgb[:, :, 2], out=self._gray_tmp16_b)
+                    self._gray_tmp16 += self._gray_tmp16_b
+                    self._gray_tmp16 >>= 8
+                    lum16 = self._gray_tmp16
                 else:
                     # out=/take path with reusable buffers
                     self._ensure_gray_tmps(hs_w, hs_h)
@@ -291,20 +295,15 @@ class RenderSystem:
                 t0 = time.perf_counter()
                 rgb = surfarray.pixels3d(surface)
                 t1 = time.perf_counter()
-                if mode == 'index':
-                    lr = _RL_LUT_R[rgb[:, :, 0]]
-                    lg = _RL_LUT_G[rgb[:, :, 1]]
-                    lb = _RL_LUT_B[rgb[:, :, 2]]
-                    lum16 = (lr + lg + lb) >> 8
-                else:
-                    self._ensure_gray_tmps(sw, sh)
-                    np.take(_RL_LUT_R, rgb[:, :, 0], out=self._gray_tmp16)
-                    np.take(_RL_LUT_G, rgb[:, :, 1], out=self._gray_tmp16_b)
-                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
-                    np.take(_RL_LUT_B, rgb[:, :, 2], out=self._gray_tmp16_b)
-                    np.add(self._gray_tmp16, self._gray_tmp16_b, out=self._gray_tmp16, dtype=np.uint16)
-                    np.right_shift(self._gray_tmp16, 8, out=self._gray_tmp16)
-                    lum16 = self._gray_tmp16
+                # Always use optimized reusable buffers path
+                self._ensure_gray_tmps(sw, sh)
+                np.take(_RL_LUT_R, rgb[:, :, 0], out=self._gray_tmp16)
+                np.take(_RL_LUT_G, rgb[:, :, 1], out=self._gray_tmp16_b)
+                self._gray_tmp16 += self._gray_tmp16_b
+                np.take(_RL_LUT_B, rgb[:, :, 2], out=self._gray_tmp16_b)
+                self._gray_tmp16 += self._gray_tmp16_b
+                self._gray_tmp16 >>= 8
+                lum16 = self._gray_tmp16
                 t2 = time.perf_counter()
                 rgb[:, :, 0] = lum16
                 rgb[:, :, 1] = lum16

@@ -64,6 +64,6 @@ def test_map_view_returns_empty_dirty_when_not_in_view(monkeypatch):
     screen = pygame.Surface((50, 50))
     dirty = view.render(screen, camera, map_manager)
 
-    # No visible tiles -> no dirty rects; ZoneView still called with empty list
+    # No visible tiles -> no dirty rects; ZoneView NOT called (optimization: skip empty zones)
     assert dirty == []
-    assert len(view.zone_view.calls) == 1 and view.zone_view.calls[0][1] == 0
+    assert len(view.zone_view.calls) == 0

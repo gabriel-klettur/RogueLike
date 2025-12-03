@@ -26,14 +26,19 @@ class ZoneView:
         zone_name: str,
         tiles: list[Tile]
     ):
+        if not tiles:
+            return
         # 1) Dibujar todos los sprites de la zona
+        # Pre-calculate zoom key and cache camera.apply for performance
+        z = round(camera.zoom, 2)
+        blit = screen.blit
+        apply = camera.apply
         for tile in tiles:
             # Obtener sprite escalado o original
-            z = round(camera.zoom, 2)
             sprite = tile.scaled_cache.get(z)
             if sprite is None:
                 sprite = tile.sprite
-            screen.blit(sprite, camera.apply((tile.x, tile.y)))
+            blit(sprite, apply((tile.x, tile.y)))
 
         # 2) Dibujar contorno de la zona (usar helper centralizado)
         draw_zone_border(screen, camera, tiles, zone_name, self.colors, self.border_width)
