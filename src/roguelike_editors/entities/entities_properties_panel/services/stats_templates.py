@@ -3,6 +3,17 @@ from __future__ import annotations
 # Default templates for stats shown in the Properties tab
 # Values are None so the UI highlights them for editing.
 
+# Scale fields for sprite sizing per animation state
+SCALE_FIELDS: list[str] = [
+    "scale_idle",
+    "scale_walk",
+    "scale_chase",
+    "scale_cast",
+    "scale_attack",
+    "scale_damage",
+    "scale_death",
+]
+
 PLAYER_STATS_TEMPLATE: dict[str, object] = {
     "max_strength": None,
     "max_intelligence": None,

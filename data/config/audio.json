@@ -19,6 +19,46 @@
       "path": "assets/audio/music/pepitoria_theme_3.mp3",
       "title": "Pepitoria Theme 3"
     },
+    "pepitoria_theme_4": {
+      "path": "assets/audio/music/pepitoria_theme_4.mp3",
+      "title": "Pepitoria Theme 4"
+    },
+    "pepitoria_theme_5": {
+      "path": "assets/audio/music/pepitoria_theme_5.mp3",
+      "title": "Pepitoria Theme 5"
+    },
+    "pepitoria_theme_6": {
+      "path": "assets/audio/music/pepitoria_theme_6.mp3",
+      "title": "Pepitoria Theme 6"
+    },
+    "pepitoria_theme_7": {
+      "path": "assets/audio/music/pepitoria_theme_7.mp3",
+      "title": "Pepitoria Theme 7"
+    },
+    "pepitoria_theme_8": {
+      "path": "assets/audio/music/pepitoria_theme_8.mp3",
+      "title": "Pepitoria Theme 8"
+    },
+    "pepitoria_theme_9": {
+      "path": "assets/audio/music/pepitoria_theme_9.mp3",
+      "title": "Pepitoria Theme 9"
+    },
+    "pepitoria_theme_10": {
+      "path": "assets/audio/music/pepitoria_theme_10.mp3",
+      "title": "Pepitoria Theme 10"
+    },
+    "pepitoria_theme_11": {
+      "path": "assets/audio/music/pepitoria_theme_11.mp3",
+      "title": "Pepitoria Theme 11"
+    },
+    "pepitoria_theme_12": {
+      "path": "assets/audio/music/pepitoria_theme_12.mp3",
+      "title": "Pepitoria Theme 12"
+    },
+    "pepitoria_theme_13": {
+      "path": "assets/audio/music/pepitoria_theme_13.mp3",
+      "title": "Pepitoria Theme 13"
+    },
     "forest_main_theme": {
       "path": "assets/audio/music/Forest_main_theme.mp3",
       "title": "Forest Main Theme"
@@ -92,7 +132,17 @@
       "ingame_playlist": [
         "main_theme",
         "pepitoria_theme_2",
-        "pepitoria_theme_3"
+        "pepitoria_theme_3",
+        "pepitoria_theme_4",
+        "pepitoria_theme_5",
+        "pepitoria_theme_6",
+        "pepitoria_theme_7",
+        "pepitoria_theme_8",
+        "pepitoria_theme_9",
+        "pepitoria_theme_10",
+        "pepitoria_theme_11",
+        "pepitoria_theme_12",
+        "pepitoria_theme_13"
       ],
       "playlist_interval_s": 120,
       "playlist_mode": "shuffle",

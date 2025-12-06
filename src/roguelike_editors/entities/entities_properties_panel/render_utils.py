@@ -137,18 +137,33 @@ def draw_properties(
         if len(parts) != 2:
             continue
         key, val_str = parts[0], parts[1]
+        
+        # If this property is being edited, use the editing text instead
+        is_editing = model.editing_property == key
+        if is_editing:
+            val_str = model.editing_text
+        
         key_text = f"{key}: "
         key_surf = font.render(truncate_text(font, key_text, panel_w - pad * 2), True, (255, 255, 255))
         color = (128, 0, 128) if val_str == "None" else (255, 255, 0)
-        val_surf = font.render(
-            truncate_text(font, val_str, panel_w - pad * 2 - key_surf.get_width()), True, color
-        )
-        rect = pygame.Rect(tx, ty, key_surf.get_width() + val_surf.get_width(), font_h)
+        
+        # Calculate rect width based on editing text or original value
+        val_width = font.size(val_str)[0] if val_str else 0
+        rect = pygame.Rect(tx, ty, key_surf.get_width() + max(val_width, 50), font_h)
         model.property_entries.append((rect, key))
+        
         if key == model.hovered_property:
             draw_hover(screen, rect)
+        
+        # Always draw the key
         screen.blit(key_surf, (tx, ty))
-        screen.blit(val_surf, (tx + key_surf.get_width(), ty))
+        
+        # Only draw value if NOT being edited (TextInput will draw it)
+        if not is_editing:
+            val_surf = font.render(
+                truncate_text(font, val_str, panel_w - pad * 2 - key_surf.get_width()), True, color
+            )
+            screen.blit(val_surf, (tx + key_surf.get_width(), ty))
         ty += font_h + 2
 
     screen.set_clip(prev_clip)

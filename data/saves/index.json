@@ -1,5 +1,5 @@
 {
-  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-11-22_21-40-06.json",
+  "current_path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-39-13.json",
   "slots": [
     {
       "slot_id": "partida_2025-09-08_14-35-12",
@@ -404,7 +404,56 @@
       "slot_id": "partida_2025-12-06_11-18-47",
       "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-18-47.json",
       "created_at": "2025-12-06T11:18:47",
+      "size_bytes": 989,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-30-56",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-30-56.json",
+      "created_at": "2025-12-06T11:30:56",
+      "size_bytes": 989,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-32-17",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-32-17.json",
+      "created_at": "2025-12-06T11:32:17",
+      "size_bytes": 990,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-34-28",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-34-28.json",
+      "created_at": "2025-12-06T11:34:28",
+      "size_bytes": 1002,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-34-36",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-34-36.json",
+      "created_at": "2025-12-06T11:34:36",
+      "size_bytes": 1002,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-37-47",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-37-47.json",
+      "created_at": "2025-12-06T11:37:47",
       "size_bytes": 1001,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-38-07",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-38-07.json",
+      "created_at": "2025-12-06T11:38:07",
+      "size_bytes": 1001,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-39-13",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-39-13.json",
+      "created_at": "2025-12-06T11:39:13",
+      "size_bytes": 1032,
       "summary": null
     }
   ]

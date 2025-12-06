@@ -5,9 +5,15 @@ import logging
 
 from roguelike_editors.entities.services.constants import ADD_ENTITIES_ON_SYSTEM
 from .entity_properties_service import convert_value
+from .stats_templates import SCALE_FIELDS
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _is_scale_field(key: str) -> bool:
+    """Check if the key is a scale_* field that belongs in assets, not stats."""
+    return key in SCALE_FIELDS
 
 
 def _set_nested(stats: dict, key: str, value: Any) -> None:
@@ -90,6 +96,31 @@ def commit_edit(controller) -> None:
                 model.selected_id = new_id
                 controller._reset_edit_state()
                 return
+
+        # Handle scale fields in add-system mode (write to assets, not stats)
+        if _is_scale_field(key):
+            new_val = convert_value(new_text, 0.5)
+            if target_is_player:
+                assets = model.player_assets.setdefault(ent_id, {})
+                active_set = assets.get('active_set', 'sets')
+                if active_set == 'sets':
+                    meta = assets.setdefault('sets', {}).setdefault('sprites_data_set', {})
+                else:
+                    meta = assets.setdefault('no-sets', {}).setdefault('sprites_data_no-set', {})
+                meta[key] = new_val
+            else:
+                m_entry = model.monsters.setdefault(ent_id, {})
+                if isinstance(m_entry, dict):
+                    m_entry['__pending__'] = True
+                assets = m_entry.setdefault('assets', {})
+                active_set = assets.get('active_set', 'no-sets')
+                if active_set == 'sets':
+                    meta = assets.setdefault('sets', {}).setdefault('sprites_data_set', {})
+                else:
+                    meta = assets.setdefault('no-sets', {}).setdefault('sprites_data_no-set', {})
+                meta[key] = new_val
+            controller._reset_edit_state()
+            return
 
         if target_is_player:
             stats = model.player_stats.setdefault(ent_id, {})

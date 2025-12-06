@@ -183,7 +183,8 @@
           "drag_drop_range": 128,
           "dash_charges": 1,
           "damage_stop_probability": 0.25,
-          "mana_regen_per_second": 1.0
+          "mana_regen_per_second": 1.0,
+          "attack_duration": null
         },
         "assets": {
           "active_set": "sets",
@@ -202,13 +203,14 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_idle": 0.8,
+              "scale_walk": 0.8,
+              "scale_chase": 0.8,
+              "scale_cast": 0.8,
+              "scale_attack": 0.8,
+              "scale_damage": 0.8,
+              "scale_death": 0.8,
+              "tint": null
             }
           },
           "no-sets": {
@@ -285,7 +287,14 @@
             "sprites_data_no-set": {
               "scale": 0.35,
               "death_scale": 0.5,
-              "tint": null
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
             }
           }
         }
@@ -310,7 +319,8 @@
           "drag_drop_range": 128,
           "dash_charges": 1,
           "damage_stop_probability": 0.25,
-          "mana_regen_per_second": 1.0
+          "mana_regen_per_second": 1.0,
+          "attack_duration": null
         },
         "assets": {
           "active_set": "sets",
@@ -329,13 +339,14 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_idle": 0.66,
+              "scale_walk": 0.66,
+              "scale_chase": 0.66,
+              "scale_cast": 0.66,
+              "scale_attack": 0.66,
+              "scale_damage": 0.66,
+              "scale_death": 0.66,
+              "tint": null
             }
           },
           "no-sets": {
@@ -402,7 +413,24 @@
             "sprites_data_no-set": {
               "scale": 0.35,
               "death_scale": 0.5,
-              "tint": null
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
+            },
+            "walk": {
+              "s": null,
+              "se": null,
+              "e": null,
+              "ne": null,
+              "n": null,
+              "nw": null,
+              "w": null,
+              "sw": null
             }
           }
         }
@@ -427,7 +455,8 @@
           "drag_drop_range": 128,
           "dash_charges": 1,
           "damage_stop_probability": 0.25,
-          "mana_regen_per_second": 1.0
+          "mana_regen_per_second": 1.0,
+          "attack_duration": null
         },
         "assets": {
           "active_set": "sets",
@@ -446,13 +475,14 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_idle": 0.7,
+              "scale_walk": 0.7,
+              "scale_chase": 0.7,
+              "scale_cast": 0.7,
+              "scale_attack": 0.7,
+              "scale_damage": 0.7,
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -529,7 +559,14 @@
             "sprites_data_no-set": {
               "scale": 0.35,
               "death_scale": 0.5,
-              "tint": null
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
             }
           }
         }
@@ -554,7 +591,8 @@
           "drag_drop_range": 128,
           "dash_charges": 1,
           "damage_stop_probability": 0.25,
-          "mana_regen_per_second": 1.0
+          "mana_regen_per_second": 1.0,
+          "attack_duration": null
         },
         "assets": {
           "active_set": "sets",
@@ -573,13 +611,14 @@
               "death": []
             },
             "sprites_data_set": {
-              "scale_idle": 0.5,
-              "scale_walk": 0.5,
-              "scale_chase": 0.5,
-              "scale_cast": 0.5,
-              "scale_attack": 0.5,
-              "scale_damage": 0.5,
-              "scale_death": 0.5
+              "scale_idle": 0.8,
+              "scale_walk": 0.8,
+              "scale_chase": 0.8,
+              "scale_cast": 0.8,
+              "scale_attack": 0.8,
+              "scale_damage": 0.8,
+              "scale_death": 0.5,
+              "tint": null
             }
           },
           "no-sets": {
@@ -656,7 +695,14 @@
             "sprites_data_no-set": {
               "scale": 0.35,
               "death_scale": 0.5,
-              "tint": null
+              "tint": null,
+              "scale_idle": 0.5,
+              "scale_walk": 0.5,
+              "scale_chase": 0.5,
+              "scale_cast": 0.5,
+              "scale_attack": 0.5,
+              "scale_damage": 0.5,
+              "scale_death": 0.55
             }
           }
         }

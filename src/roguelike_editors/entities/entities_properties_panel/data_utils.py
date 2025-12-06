@@ -6,6 +6,7 @@ from roguelike_editors.entities.entities_properties_panel.services.entity_flatte
 from roguelike_editors.entities.entities_properties_panel.services.stats_templates import (
     PLAYER_STATS_TEMPLATE,
     MONSTER_STATS_TEMPLATE,
+    SCALE_FIELDS,
 )
 
 
@@ -36,11 +37,41 @@ def _flatten_once(d: dict) -> dict:
     return flat
 
 
+def _get_scale_data(model, ent_id: str, sel_type: str) -> dict:
+    """Extract scale_* fields from assets based on active_set."""
+    scale_data: dict = {}
+    try:
+        if sel_type == "Player":
+            assets = model.player_assets.get(ent_id, {})
+        else:
+            monster = model.monsters.get(ent_id, {}) or {}
+            assets = monster.get("assets", {})
+        
+        active_set = assets.get("active_set", "sets")
+        if active_set == "sets":
+            meta = assets.get("sets", {}).get("sprites_data_set", {})
+        else:
+            meta = assets.get("no-sets", {}).get("sprites_data_no-set", {})
+        
+        for field in SCALE_FIELDS:
+            if field in meta:
+                scale_data[field] = meta[field]
+            else:
+                # Default scale value
+                scale_data[field] = 0.55 if field == "scale_death" else 0.5
+    except Exception:
+        # Fallback defaults
+        for field in SCALE_FIELDS:
+            scale_data[field] = 0.55 if field == "scale_death" else 0.5
+    return scale_data
+
+
 def get_entity_stats_data(model) -> dict:
-    """Merge template + source stats and return a 1-level flattened dict.
+    """Merge template + source stats + scale fields and return a 1-level flattened dict.
 
     - Player uses PLAYER_STATS_TEMPLATE and player stats
     - Hostile uses MONSTER_STATS_TEMPLATE and monster['stats']
+    - Both include scale_* fields from assets for sprite sizing
     """
     ent_id = model.hovered_entity_id or model.selected_id
     if getattr(model, "show_add_system_selector", False):
@@ -63,5 +94,9 @@ def get_entity_stats_data(model) -> dict:
             merged[k].update(v)
         else:
             merged[k] = v
+
+    # Add scale fields from assets
+    scale_data = _get_scale_data(model, ent_id, sel_type)
+    merged.update(scale_data)
 
     return _flatten_once(merged)

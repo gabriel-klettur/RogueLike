@@ -78,6 +78,17 @@ def handle_key(ti, event: pygame.event.Event) -> bool:
         ti.selection_start = ti.cursor
         ti.selection_end = ti.cursor
         return True
+    # Delete (Supr key)
+    if event.key == pygame.K_DELETE:
+        if ti.selection_start != ti.selection_end:
+            i0, i1 = sorted((ti.selection_start, ti.selection_end))
+            ti.text = ti.text[:i0] + ti.text[i1:]
+            ti.cursor = i0
+        elif ti.cursor < len(ti.text):
+            ti.text = ti.text[:ti.cursor] + ti.text[ti.cursor + 1:]
+        ti.selection_start = ti.cursor
+        ti.selection_end = ti.cursor
+        return True
     # Character insertion
     ch = event.unicode
     if ch:
