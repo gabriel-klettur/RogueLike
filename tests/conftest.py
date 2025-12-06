@@ -53,6 +53,26 @@ except Exception:
 def world():
     if FakeWorld is None:
         raise RuntimeError("tests.utils.fakes.FakeWorld no disponible")
+    # Reset global caches that depend on frame counting
+    try:
+        from roguelike_game.ecs.utils.spatial_hash import reset_combat_spatial_hash
+        reset_combat_spatial_hash()
+    except Exception:
+        pass
+    try:
+        from roguelike_game.ecs.systems.combat.spells.fireball_system.collisions.units_detection import (
+            reset_unit_detection_cache,
+        )
+        reset_unit_detection_cache()
+    except Exception:
+        pass
+    try:
+        from roguelike_game.ecs.systems.combat.spells.fireball_system.collisions.walls import (
+            reset_wall_cache,
+        )
+        reset_wall_cache()
+    except Exception:
+        pass
     return FakeWorld()
 
 

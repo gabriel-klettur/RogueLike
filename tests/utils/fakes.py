@@ -12,6 +12,11 @@ class FakeWorld:
     def __init__(self) -> None:
         self.components: Dict[str, Dict[int, Any]] = {}
         self._next_eid: int = 1
+        self._frame_count: int = 0
+
+    def tick_frame(self) -> None:
+        """Increment frame counter. Call before each system update in tests."""
+        self._frame_count += 1
 
     def create_entity(self) -> int:
         eid = self._next_eid

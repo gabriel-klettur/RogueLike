@@ -22,6 +22,7 @@ def _ensure_maps(world):
 
 def _step_until_removed(world, sys_fb, eid, max_steps=60):
     for _ in range(max_steps):
+        world.tick_frame()  # Increment frame counter so spatial hash updates
         sys_fb.update(world)
         if eid not in world.components.get('FireballComponent', {}):
             return True
@@ -59,8 +60,10 @@ def test_fireball_passes_when_wall_does_not_block(world, sys_fb):
 
     # Advance a few steps; should NOT be removed by wall, only by lifespan
     for _ in range(5):
+        world.tick_frame()
         sys_fb.update(world)
         assert pid in world.components.get('FireballComponent', {})
     # Next step may expire by lifespan
+    world.tick_frame()
     sys_fb.update(world)
     assert pid not in world.components.get('FireballComponent', {})

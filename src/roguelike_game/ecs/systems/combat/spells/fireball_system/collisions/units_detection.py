@@ -18,6 +18,12 @@ from ..runtime import FireballRuntime
 _last_frame_hash_updated: int = -1
 
 
+def reset_unit_detection_cache() -> None:
+    """Reset the frame cache for unit detection. Call between tests."""
+    global _last_frame_hash_updated
+    _last_frame_hash_updated = -1
+
+
 def _update_combat_spatial_hash(world) -> SpatialHash:
     """Actualiza el spatial hash con entidades de combate si es necesario."""
     global _last_frame_hash_updated

@@ -29,6 +29,7 @@ def _ensure_maps(world):
 
 def _step_until_removed(world, sys_fb, eid, max_steps=120):
     for _ in range(max_steps):
+        world.tick_frame()  # Increment frame counter so spatial hash updates
         sys_fb.update(world)
         if eid not in world.components.get('FireballComponent', {}):
             return True

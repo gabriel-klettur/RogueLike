@@ -19,6 +19,14 @@ _wall_cache_frame: int = -1
 _wall_cache_count: int = 0  # Número de muros en el último cálculo
 
 
+def reset_wall_cache() -> None:
+    """Reset the wall cache. Call between tests."""
+    global _wall_cache, _wall_cache_frame, _wall_cache_count
+    _wall_cache = []
+    _wall_cache_frame = -1
+    _wall_cache_count = 0
+
+
 class WallCacheEntry:
     """Data snapshot for a wall segment used during collision checks."""
 
