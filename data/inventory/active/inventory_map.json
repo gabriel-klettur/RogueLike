@@ -22,29 +22,5 @@
       "y": 36
     },
     "created_at": 1762873865.4043996
-  },
-  "8a4ce60f-2afc-4c9e-b213-6fa7dccf92aa": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 7,
-      "y": 8
-    },
-    "created_at": 1764771201.4599473
-  },
-  "9ff675d5-ebd5-4a4f-a981-297833b791c8": {
-    "item_id": "gold",
-    "quantity": 1,
-    "zone_id": "Forest",
-    "schema_version": "1.0.0",
-    "z_layer": 3,
-    "tile": {
-      "x": 7,
-      "y": 2
-    },
-    "created_at": 1764771202.6897864
   }
 }

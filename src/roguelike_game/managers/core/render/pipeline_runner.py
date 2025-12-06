@@ -177,9 +177,10 @@ def run_pipeline(manager, state, screen, camera, perf_log=None, menu=None, map=N
                 return
         except Exception:
             pass
-        # Fallback to legacy behavior
+        # Fallback to legacy behavior - check HUD visibility first
         try:
-            render_game_clock(manager, screen)
+            if should_render_hud_widget('clock', manager, state, menu):
+                render_game_clock(manager, screen)
         except Exception:
             pass
 

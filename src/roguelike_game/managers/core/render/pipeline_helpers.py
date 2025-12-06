@@ -252,7 +252,20 @@ def should_render_hud_widget(widget_id: str, manager, state, menu) -> bool:
 
     Minimal implementation leveraging should_render_minimap for modal/editor checks,
     plus a world-level `suppress_hud` flag.
+    
+    HUD widgets (including clock) are hidden when:
+    - The menu is in 'start' or 'load_list' mode (pre-game menus)
+    - Any editor or modal is active
+    - The world-level suppress_hud flag is set
     """
+    # Hide HUD in pre-game menu modes (start screen, load list)
+    try:
+        if menu is not None:
+            menu_mode = getattr(menu, 'mode', None)
+            if menu_mode in ('start', 'load_list'):
+                return False
+    except Exception:
+        pass
     try:
         world = getattr(manager.ecs, 'ecs_world', None)
         if world is not None and bool(getattr(world, 'suppress_hud', False)):

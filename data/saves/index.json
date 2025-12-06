@@ -397,7 +397,14 @@
       "slot_id": "partida_2025-11-22_21-40-06",
       "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-11-22_21-40-06.json",
       "created_at": "2025-11-22T21:40:06",
-      "size_bytes": 1722,
+      "size_bytes": 1783,
+      "summary": null
+    },
+    {
+      "slot_id": "partida_2025-12-06_11-18-47",
+      "path": "D:\\Python\\RogueLike\\data\\saves\\partida_2025-12-06_11-18-47.json",
+      "created_at": "2025-12-06T11:18:47",
+      "size_bytes": 1001,
       "summary": null
     }
   ]
