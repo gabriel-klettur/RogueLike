@@ -1,6 +1,5 @@
 from roguelike_engine.utils.benchmark import benchmark
 import pygame
-import types
 import logging
 
 logger = logging.getLogger(__name__)
@@ -172,89 +171,14 @@ def update_game(
     except Exception:
         pass
 
-    # 3.1) Cámara sigue al jugador si está vivo (tiene Position),
-    #      salvo cuando el Items Editor está reteniendo enfoque manual (hold-focus)
-    def _step_camera():
-        try:
-            # Defer camera follow for N frames when requested (e.g., after MMB pan)
-            if getattr(state, 'defer_follow_frames', 0) > 0:
-                state.defer_follow_frames -= 1
-                return
-        except Exception:
-            pass
-        # Mientras el Particles Editor esté visible, no seguir al jugador (conservar la posición donde se soltó MMB)
-        try:
-            if bool(getattr(state, 'particles_editor_visible', False)):
-                return
-        except Exception:
-            pass
-        try:
-            # Respetar defer de follow tras salir del Map Editor
-            if getattr(getattr(map_editor, 'editor_state', None), 'defer_follow_frames', 0) > 0:
-                map_editor.editor_state.defer_follow_frames -= 1
-                return
-        except Exception:
-            pass
-        try:
-            if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'holding_pos_focus', False):
-                # Respetar enfoque manual del editor: no seguir jugador
-                return
-        except Exception:
-            pass
-        # No recentrar mientras hay editores overlay visibles (Item, Spawner, FSM)
-        try:
-            if item_editor is not None and getattr(getattr(item_editor, 'model', None), 'visible', False):
-                return
-        except Exception:
-            pass
-        try:
-            import roguelike_engine.config.config as cfg
-            if bool(getattr(cfg, 'DEBUG_SPAWNER', False)):
-                return
-            if bool(getattr(cfg, 'DEBUG_ENTITIES', False)):
-                return
-        except Exception:
-            pass
-        # Mientras el usuario arrastra con MMB, no recentrar la cámara al jugador
-        try:
-            if getattr(state, 'mmb_panning', False):
-                return
-        except Exception:
-            pass
-        # Respetar enfoque manual del Spawner Editor (hold-focus)
-        try:
-            if getattr(getattr(ecs, 'ecs_world', None), 'state', None) is not None:
-                st = ecs.ecs_world.state
-                if getattr(st, 'spawner_hold_focus', False):
-                    return
-        except Exception:
-            pass
-        eid = ecs.ecs_world.player_entity
-        pos_map = ecs.ecs_world.components.get('Position', {})
-        if eid in pos_map:
-            pos = pos_map[eid]
-            camera.update(types.SimpleNamespace(x=pos.x, y=pos.y))
+    # Camera follow is now handled by CameraFollowSystem inside ECS update.
+    # Minimap update is now handled by MinimapUpdateSystem inside ECS update.
 
     def _step_entities():
         buildings.update(state, map, perf_log)
 
-    def _step_minimap():
-        # Actualizar minimapa solo si el jugador todavía existe (tiene Position)
-        eid = ecs.ecs_world.player_entity
-        pos_map = ecs.ecs_world.components.get('Position', {})
-        if eid in pos_map:
-            pos = pos_map[eid]
-            minimap.update(
-                player_pos=(pos.x, pos.y),
-                tiles=map.tiles_in_region,
-                buildings=getattr(buildings, 'buildings', None),
-                world=ecs.ecs_world,
-            )
-
     steps = [
-        ("2.1.camera.update", _step_camera),
         ("2.3.entities.update", _step_entities),
-        ("2.5.minimap.update", _step_minimap),
     ]
 
     for key, fn in steps:

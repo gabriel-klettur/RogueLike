@@ -101,6 +101,9 @@ from roguelike_game.ecs.systems.abilities.combo_system import ComboSystem
 from roguelike_game.ecs.systems.rendering.combo_bar_render_system import ComboBarRenderSystem
 from roguelike_game.ecs.systems.rendering.toast_render_system import ToastRenderSystem
 from roguelike_game.ecs.systems.rendering.target_hud_render_system import TargetHudRenderSystem
+from roguelike_game.ecs.systems.core.camera_follow_system import CameraFollowSystem
+from roguelike_game.ecs.systems.core.minimap_update_system import MinimapUpdateSystem
+from roguelike_game.ecs.systems.core.class_change_system import ClassChangeSystem
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +154,10 @@ def get_update_system_classes():
         SpawnStabilizationSystem,
         # Apply restored state (position/hp) once entities exist and are stabilized
         NpcRestoreSystem,
+        # Class change (consumes ClassChangeRequest one-shot components)
+        ClassChangeSystem,
+        # Audio bridge
+        AudioSystem,
         # Player & input
         PlayerFacingSystem, FacingSystem, DropDragSystem, InputSystem, ChatProximitySystem, DashResourceSystem, ManaRegenSystem,
         MovementCollisionSystem,
@@ -162,8 +169,10 @@ def get_update_system_classes():
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
         # Chat & Trade
         ChatRouterSystem, VendorTradeSystem,
-        # Audio bridge
-        AudioSystem,
+        # Post-gameplay: camera follow after physics so it tracks final position
+        CameraFollowSystem,
+        # Minimap update (reads player Position, delegates to Minimap facade)
+        MinimapUpdateSystem,
     ]
 
 def get_render_system_classes():

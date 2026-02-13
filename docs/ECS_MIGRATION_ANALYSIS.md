@@ -232,4 +232,34 @@ Estos elementos **no deben** migrarse a ECS:
 | ❌ **No-ECS (gameplay)** | ~5 managers (GameState, UpdateManager, BuildingsManager, PlayerManager) | **~10%** |
 | ❌ **No-ECS (no migrable)** | Editores, UI, config, engine services, lifecycle | **~5% gameplay / 100% tooling** |
 
-**Conclusión**: El proyecto ya tiene una base ECS sólida (~65% del gameplay). Las áreas pendientes más importantes son: **Buildings** (la migración más compleja), **Render Pipeline** (unificación), y **Camera/Minimap** (quick wins). Los editores, UI y servicios de infraestructura no necesitan migración.
+**Conclusión**: El proyecto ya tiene una base ECS sólida (~65% del gameplay). Las áreas pendientes más importantes son: **Buildings** (la migración más compleja), **Render Pipeline** (unificación), y **GameState → ECS Resources**. Los editores, UI y servicios de infraestructura no necesitan migración.
+
+---
+
+## 7. Migración Ejecutada (2026-02-13)
+
+### Fase 1 — Completada ✅
+
+| # | Tarea | Archivos creados / modificados | Estado |
+|---|---|---|---|
+| 1.1 | **CameraFollowSystem** | `ecs/components/core/camera_follow.py` (extended), `ecs/systems/core/camera_follow_system.py` (new), `ecs/core/system_registry.py`, `managers/core/update_manager.py` (removed `_step_camera`) | ✅ Done |
+| 1.2 | **MinimapUpdateSystem** | `ecs/systems/core/minimap_update_system.py` (new), `ecs/core/system_registry.py`, `managers/core/initialization/stages/minimap.py` (wire to world), `managers/core/update_manager.py` (removed `_step_minimap`) | ✅ Done |
+| 1.3 | **ClassChangeSystem** | `ecs/components/core/class_change_request.py` (new), `ecs/systems/core/class_change_system.py` (new), `ecs/core/component_registry.py`, `ecs/core/system_registry.py`, `managers/player/player_manager.py` (thin facade) | ✅ Done |
+
+### Fase 2 — Evaluada y Resolved
+
+| # | Tarea | Decisión | Razón |
+|---|---|---|---|
+| 2.1 | Event dispatch cleanup | ⏭️ Skipped | NPC halo handler is an input-event consumer tightly coupled to pygame events and UI blocking — not pure gameplay logic suitable for ECS |
+| 2.2 | ItemDrop persistence | ⏭️ Skipped | `ItemDropManager` is already infrastructure consumed by 10+ ECS systems as a service. Wrapping it in another system adds indirection without benefit |
+| 2.3 | AudioManager bridge | ⏭️ Skipped | `AudioManager` handles init-time volume config for `MenuManager`. `AudioSystem` ECS handles runtime audio. They are complementary, not redundant |
+
+### Resumen de cambios
+
+- **`CameraFollowComponent`** extended with `enabled` and `defer_follow_frames` fields
+- **`CameraFollowSystem`** reads `CameraFollowComponent` + `Position`, respects all editor suppression flags (particles editor, map editor defer, item editor, spawner editor, MMB panning, debug overlays)
+- **`MinimapUpdateSystem`** reads player `Position`, delegates to `Minimap` facade stored on `world.minimap`
+- **`ClassChangeSystem`** consumes one-shot `ClassChangeRequest` components, applies full class change (sprites, stats, colliders, FSM context)
+- **`PlayerManager.change_class()`** reduced to thin facade that enqueues a `ClassChangeRequest`
+- **`update_manager.py`** cleaned: removed `_step_camera` and `_step_minimap`, only `_step_entities` (buildings) remains
+- All new systems registered in `system_registry.py` with correct execution order
