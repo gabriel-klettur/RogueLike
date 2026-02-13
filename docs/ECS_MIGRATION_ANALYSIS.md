@@ -1,19 +1,20 @@
 # Análisis ECS — Estado Actual y Plan de Migración
 
 > Generado: 2026-02-13  
+> Última actualización: 2026-02-13 (post-migración Fase 1)  
 > Proyecto: RogueLike  
-> Objetivo: Identificar qué partes del código ya siguen el patrón ECS y cuáles necesitan migración.
+> Objetivo: Documentar el estado ECS del proyecto y las áreas pendientes de migración.
 
 ---
 
 ## 1. Arquitectura General
 
-El proyecto se divide en 4 paquetes principales:
+El proyecto se divide en 5 paquetes principales:
 
 | Paquete | Rol | Patrón dominante |
 |---|---|---|
 | `roguelike_engine` | Infraestructura (audio, cámara, mapa, input, config, consola, minimap, buildings, chat, diagnostics) | **No-ECS** — Servicios, MVC, utilidades |
-| `roguelike_game` | Lógica de juego (ECS, managers, factories, game loop) | **Híbrido** — ECS + Managers procedurales |
+| `roguelike_game` | Lógica de juego (ECS, managers, factories, game loop) | **ECS-first** — ECS dominante + managers residuales |
 | `roguelike_editors` | Editores de contenido (buildings, entities, FSM, inventory, items, map, particles, spawner, spells, tiles) | **No-ECS** — MVC / Controllers |
 | `roguelike_ui` | Widgets UI reutilizables (botones, paneles, text input, menús) | **No-ECS** — UI pura |
 | `minigames` | Mini-juegos independientes (Pylos, Soluna) | **No-ECS** — Standalone |
@@ -27,11 +28,11 @@ El proyecto se divide en 4 paquetes principales:
 | Carpeta | Contenido | Estado |
 |---|---|---|
 | `ecs/core/manager.py` | `ECSWorld` — mundo, entidades, componentes, update/render loop | ✅ ECS |
-| `ecs/core/component_registry.py` | Registro de ~60 tipos de componentes | ✅ ECS |
-| `ecs/core/system_registry.py` | Registro de ~80+ sistemas (update + render) | ✅ ECS |
+| `ecs/core/component_registry.py` | Registro de ~62 tipos de componentes | ✅ ECS |
+| `ecs/core/system_registry.py` | Registro de ~85+ sistemas (update + render) | ✅ ECS |
 | `ecs/core/spatial_index.py` | Índice espacial para colisiones broad-phase | ✅ ECS |
 
-### 2.2 Componentes ECS (`ecs/components/`) — ~60 componentes
+### 2.2 Componentes ECS (`ecs/components/`) — ~62 componentes
 
 | Dominio | Componentes | Estado |
 |---|---|---|
@@ -46,16 +47,17 @@ El proyecto se divide en 4 paquetes principales:
 | **Experience** | `ExperienceComponent` | ✅ |
 | **Particles** | `ParticleComponent`, `ParticlePresetComponent`, `SlashEmitterComponent`, `DashEmitterComponent` | ✅ |
 | **Spawner** | `SpawnerConfig`, `SpawnerState`, `SpawnerChild`, `SpawnRequest` | ✅ |
-| **Tags** | `PlayerTagComponent`, `NPCTagComponent`, `CameraFollowComponent` | ✅ |
+| **Tags/Camera** | `PlayerTagComponent`, `NPCTagComponent`, `CameraFollowComponent` (con `enabled`, `defer_follow_frames`) | ✅ |
 | **Chat** | `ChatComponent`, `VendorComponent` | ✅ |
 | **Abilities** | `DashMeterComponent`, `ComboCounterComponent`, `ComboRulesComponent`, `MagicSpellBarComponent` | ✅ |
 | **Buildings** | `BuildingHealth` | ✅ |
+| **Class Change** | `ClassChangeRequest` (one-shot, consumido por `ClassChangeSystem`) | ✅ Nuevo |
 
-### 2.3 Sistemas ECS (`ecs/systems/`) — ~80+ sistemas
+### 2.3 Sistemas ECS (`ecs/systems/`) — ~85+ sistemas
 
 | Dominio | Sistemas Update | Sistemas Render |
 |---|---|---|
-| **Core** | `SpawnSystem`, `SpawnStabilizationSystem`, `NpcRestoreSystem`, `NpcRespawnSystem` | — |
+| **Core** | `SpawnSystem`, `SpawnStabilizationSystem`, `NpcRestoreSystem`, `NpcRespawnSystem`, `ClassChangeSystem`, `CameraFollowSystem`, `MinimapUpdateSystem` | — |
 | **FSM** | `FSMSystem` | — |
 | **Input** | `InputSystem` | — |
 | **Physics** | `MovementCollisionSystem`, `FacingSystem`, `PlayerFacingSystem`, `CoinPickupSystem` | — |
@@ -85,117 +87,90 @@ El proyecto se divide en 4 paquetes principales:
 
 ---
 
-## 3. Elementos que NO son ECS ❌
+## 3. Elementos que NO son ECS
 
-### 3.1 Managers Procedurales (`roguelike_game/managers/`)
+### 3.1 Managers (`roguelike_game/managers/`)
 
-| Manager | Archivo(s) | Responsabilidad | Migrable a ECS? |
+| Manager | Archivo(s) | Responsabilidad | Estado |
 |---|---|---|---|
-| **`GameState`** | `managers/core/state.py` | Estado global del juego (running, mode, chat state, editor states) | ⚠️ Parcial — El chat state ya tiene componentes ECS pero `GameState` sigue siendo el "hub" central |
-| **`Game`** | `managers/core/game.py` | Orquestador principal: init, loop, render, shutdown | ❌ No — Es el entry point, no es lógica de gameplay |
-| **`UpdateManager`** | `managers/core/update_manager.py` | Coordina update de cámara, editores, buildings, minimap | ⚠️ Parcial — Cámara y minimap podrían ser sistemas ECS |
-| **`RendererManager`** | `managers/core/render/render_manager.py` | Pipeline de render: mapa → buildings → entidades → ECS → HUD → editores | ⚠️ Parcial — El Z-ordering de buildings+NPCs es híbrido |
-| **`MapManager`** | `managers/map/__init__.py` | Carga, generación, colisiones, pathfinding, render de mapa | ❌ No migrable — Es infraestructura de datos del mundo |
-| **`CollisionManager`** | `managers/map/collision.py` | Colisiones tile-based por zona | ⚠️ Parcial — `SpatialIndex` ya es ECS, pero colisiones de tiles siguen en manager |
-| **`ItemDropManager`** | `managers/map/item_drop_manager.py` | Persistencia JSON de drops en el mapa | ⚠️ Parcial — Los drops ya son entidades ECS, pero la persistencia es procedural |
-| **`BuildingsManager`** | `managers/buildings/__init__.py` | Carga, calibración y update de edificios | ❌ Complejo — Buildings tienen su propio MVC en `roguelike_engine` |
-| **`PlayerManager`** | `managers/player/player_manager.py` | Cambio de clase del jugador (recarga sprites/stats) | ⚠️ Parcial — Opera sobre componentes ECS pero como procedimiento externo |
-| **`ClassSelectorManager`** | `managers/player/class_selector_manager.py` | UI de selección de clase | ❌ No — Es UI pura |
-| **`MenuManager`** | `managers/menu/manager.py` | Menú principal (fondo, música, saves, opciones) | ❌ No — Es UI/flujo de aplicación |
-| **`ECSManager`** | `managers/ecs/__init__.py` | Wrapper que orquesta ECSWorld (load, spawn, update, render) | ✅ Ya es ECS (es el bridge) |
-| **`ShutdownManager`** | `managers/core/shutdown_manager.py` | Guardado y limpieza al cerrar | ❌ No — Es lifecycle |
-| **`LoopManager`** | `managers/core/loop_manager.py` | Game loop (FPS, timing) | ❌ No — Es infraestructura |
-| **`AudioManager`** | `managers/core/audio_manager.py` | Bridge de audio | ⚠️ Parcial — Ya existe `AudioSystem` ECS |
+| **`GameState`** | `managers/core/state.py` | Estado global del juego (running, mode, chat state, editor states) | ⚠️ Híbrido — Hub central, parcialmente leído por sistemas ECS via `world.state` |
+| **`Game`** | `managers/core/game.py` | Orquestador principal: init, loop, render, shutdown | ❌ No migrable — Entry point |
+| **`UpdateManager`** | `managers/core/update_manager.py` | Coordina editores y buildings update | ✅ Migrado parcialmente — Cámara y minimap ya son ECS; solo queda `_step_entities` (buildings) |
+| **`RendererManager`** | `managers/core/render/render_manager.py` | Pipeline de render: mapa → buildings → entidades → ECS → HUD → editores | ⚠️ Híbrido — Z-ordering de buildings+NPCs es mixto |
+| **`MapManager`** | `managers/map/__init__.py` | Carga, generación, colisiones, pathfinding, render de mapa | ❌ No migrable — Infraestructura de datos del mundo |
+| **`CollisionManager`** | `managers/map/collision.py` | Colisiones tile-based por zona | ⚠️ Híbrido — `SpatialIndex` ya es ECS, colisiones de tiles siguen en manager |
+| **`ItemDropManager`** | `managers/map/item_drop_manager.py` | Persistencia JSON de drops en el mapa | ❌ No migrable — Infraestructura de I/O consumida por 10+ sistemas ECS como servicio |
+| **`BuildingsManager`** | `managers/buildings/__init__.py` | Carga, calibración y update de edificios | ⚠️ Pendiente — Buildings tienen MVC propio en `roguelike_engine` |
+| **`PlayerManager`** | `managers/player/player_manager.py` | Thin facade que encola `ClassChangeRequest` | ✅ Migrado — Lógica real en `ClassChangeSystem` ECS |
+| **`ClassSelectorManager`** | `managers/player/class_selector_manager.py` | UI de selección de clase | ❌ No migrable — UI pura |
+| **`MenuManager`** | `managers/menu/manager.py` | Menú principal (fondo, música, saves, opciones) | ❌ No migrable — UI/flujo de aplicación |
+| **`ECSManager`** | `managers/ecs/__init__.py` | Wrapper que orquesta ECSWorld (load, spawn, update, render) | ✅ Ya es ECS (bridge) |
+| **`ShutdownManager`** | `managers/core/shutdown_manager.py` | Guardado y limpieza al cerrar | ❌ No migrable — Lifecycle |
+| **`LoopManager`** | `managers/core/loop_manager.py` | Game loop (FPS, timing) | ❌ No migrable — Infraestructura |
+| **`AudioManager`** | `managers/core/audio_manager.py` | Volúmenes init-time para menú | ❌ No migrable — Complementario con `AudioSystem` ECS (init-time vs runtime) |
 
 ### 3.2 Engine (`roguelike_engine/`) — Infraestructura No-ECS
 
-| Módulo | Responsabilidad | Migrable? |
+| Módulo | Responsabilidad | Estado |
 |---|---|---|
-| **`camera/camera.py`** | Cámara con offset, zoom, follow | ⚠️ Podría ser un sistema ECS (`CameraSystem`) |
-| **`audio/`** | Servicio de audio (pygame backend, cache, config) | ❌ No — Es servicio de infraestructura; `AudioSystem` ECS ya lo consume |
-| **`buildings/`** | Modelo MVC de edificios (Building, BuildingModel, BuildingView, BuildingController) | ⚠️ Complejo — Los buildings son entidades complejas con su propio ciclo de vida |
-| **`chat/`** | Servicio de chat (providers IA, service layer) | ❌ No — Es servicio externo; `ChatRouterSystem` ECS ya lo consume |
-| **`config/`** | Configuración global (screen, tiles, map, input bindings) | ❌ No — Es configuración estática |
-| **`console/`** | Consola de debug (MVC: model, view, controller, commands) | ❌ No — Es herramienta de desarrollo |
-| **`diagnostics/`** | Overlay de diagnóstico, recorder, benchmarks | ❌ No — Es tooling |
-| **`input/`** | Captura de eventos pygame (keyboard, mouse) | ❌ No — Es infraestructura; `InputSystem` ECS ya lo consume |
-| **`map/`** | Modelo de mapa (layers, tiles, generación, cache) | ❌ No — Es datos del mundo |
-| **`minimap/`** | MVC del minimapa (model, view, controller) | ⚠️ Podría ser un sistema ECS de render |
-| **`tile/`** | Modelo de tiles | ❌ No — Es datos |
-| **`world/`** | Save/Load del mundo (WorldSnapshot, repository) | ❌ No — Es persistencia |
-| **`z_layer/`** | Sistema de Z-ordering para render | ⚠️ Parcial — Ya se usa desde ECS pero la lógica está en engine |
-| **`zone/`** | Vista de zonas del mapa | ❌ No — Es datos/render de mapa |
-| **`utils/`** | Utilidades (benchmark, mouse helpers) | ❌ No — Son helpers |
+| **`camera/camera.py`** | Cámara con offset, zoom, pixel-snap | ✅ Controlada por ECS — `CameraFollowSystem` invoca `camera.update()` |
+| **`audio/`** | Servicio de audio (pygame backend, cache, config) | ❌ No migrable — Servicio consumido por `AudioSystem` ECS |
+| **`buildings/`** | Modelo MVC de edificios (Building, BuildingModel, BuildingView, BuildingController) | ⚠️ Pendiente — Migración compleja a entidades ECS |
+| **`chat/`** | Servicio de chat (providers IA, service layer) | ❌ No migrable — Servicio consumido por `ChatRouterSystem` ECS |
+| **`config/`** | Configuración global (screen, tiles, map, input bindings) | ❌ No migrable — Configuración estática |
+| **`console/`** | Consola de debug (MVC: model, view, controller, commands) | ❌ No migrable — Tooling |
+| **`diagnostics/`** | Overlay de diagnóstico, recorder, benchmarks | ❌ No migrable — Tooling |
+| **`input/`** | Captura de eventos pygame (keyboard, mouse) | ❌ No migrable — Infraestructura consumida por `InputSystem` ECS |
+| **`map/`** | Modelo de mapa (layers, tiles, generación, cache) | ❌ No migrable — Datos del mundo |
+| **`minimap/`** | MVC del minimapa (model, view, controller) | ✅ Controlado por ECS — `MinimapUpdateSystem` invoca `minimap.update()` |
+| **`tile/`** | Modelo de tiles | ❌ No migrable — Datos |
+| **`world/`** | Save/Load del mundo (WorldSnapshot, repository) | ❌ No migrable — Persistencia |
+| **`z_layer/`** | Sistema de Z-ordering para render | ⚠️ Parcial — Usado desde ECS pero lógica en engine |
+| **`zone/`** | Vista de zonas del mapa | ❌ No migrable — Datos/render de mapa |
+| **`utils/`** | Utilidades (benchmark, mouse helpers) | ❌ No migrable — Helpers |
 
 ### 3.3 Event Handling (`managers/core/events/`)
 
-| Archivo | Responsabilidad | Migrable? |
+| Archivo | Responsabilidad | Estado |
 |---|---|---|
-| `events.py` | Dispatcher central de eventos pygame | ⚠️ Parcial — Parte ya delega a `InputSystem` ECS |
-| `handlers/active_editors.py` | Toggle de editores | ❌ No — Es UI/editor |
-| `handlers/chat.py` | Apertura de chat, interacción | ⚠️ Ya tiene bridge a ECS |
-| `handlers/menu.py` | Eventos de menú | ❌ No — Es UI |
-| `handlers/toggles.py` | Hotkeys de debug/editores | ❌ No — Es tooling |
-| `handlers/particles_map.py` | Input para colocar partículas en mapa | ⚠️ Parcial |
-| `handlers/npc_halo.py` | Click en halos de NPC | ⚠️ Podría ser sistema ECS |
+| `events.py` | Dispatcher central de eventos pygame | ⚠️ Híbrido — Delega a `InputSystem` ECS; NPC halo es input-consumer acoplado a pygame |
+| `handlers/active_editors.py` | Toggle de editores | ❌ No migrable — UI/editor |
+| `handlers/chat.py` | Apertura de chat, interacción | ✅ Bridge a ECS existente |
+| `handlers/menu.py` | Eventos de menú | ❌ No migrable — UI |
+| `handlers/toggles.py` | Hotkeys de debug/editores | ❌ No migrable — Tooling |
+| `handlers/particles_map.py` | Input para colocar partículas en mapa | ❌ No migrable — Editor tooling |
+| `handlers/npc_halo.py` | Click en halos de NPC | ❌ No migrable — Input-event consumer acoplado a pygame events y UI blocking |
 
-### 3.4 Editores (`roguelike_editors/`) — Completamente No-ECS
+### 3.4 Editores (`roguelike_editors/`) — No-ECS
 
-Todos los editores son herramientas de desarrollo con patrón MVC propio. **No necesitan migración a ECS** ya que son tooling, no gameplay.
+Herramientas de desarrollo con patrón MVC propio. **No necesitan migración a ECS** — son tooling, no gameplay.
 
-### 3.5 UI (`roguelike_ui/`) — Completamente No-ECS
+### 3.5 UI (`roguelike_ui/`) — No-ECS
 
-Widgets reutilizables (botones, paneles, grids, text input, menú renderer). **No necesitan migración** — son UI pura.
+Widgets reutilizables (botones, paneles, grids, text input, menú renderer). **No necesitan migración** — UI pura.
 
 ---
 
-## 4. Zonas Híbridas (ECS parcial) ⚠️
+## 4. Zonas Híbridas Pendientes ⚠️
 
-Estas áreas ya tienen presencia ECS pero mantienen lógica significativa fuera del ECS:
+Áreas que mantienen lógica significativa fuera del ECS:
 
 ### 4.1 Render Pipeline
-- **Problema**: `RendererManager` y `pipeline_runner.py` orquestan el render mezclando buildings (no-ECS) con entidades ECS usando `_NPCWrapper` como adaptador.
-- **Impacto**: Los buildings se renderizan como objetos MVC, no como entidades ECS.
-- **Migración**: Convertir buildings a entidades ECS con componentes `Position`, `Sprite`, `ZLayer`, `BuildingHealth`.
+- **Estado**: `RendererManager` y `pipeline_runner.py` mezclan buildings (no-ECS) con entidades ECS usando `_NPCWrapper`.
+- **Impacto**: Buildings se renderizan como objetos MVC, no como entidades ECS.
+- **Migración pendiente**: Convertir buildings a entidades ECS con `Position`, `Sprite`, `ZLayer`, `BuildingHealth`.
 
-### 4.2 Cámara
-- **Problema**: La cámara es un objeto standalone en `roguelike_engine/camera/camera.py`. El follow-player está en `update_manager.py` con ~60 líneas de condicionales.
-- **Migración**: Crear `CameraFollowSystem` que lea `CameraFollowComponent` + `Position`.
+### 4.2 Buildings
+- **Estado**: MVC completo en `roguelike_engine/buildings/` con `Building`, `BuildingModel`, `BuildingView`, `BuildingController`. Se actualizan desde `BuildingsManager.update()`.
+- **Migración pendiente**: Descomponer cada building en entidad ECS. Es la migración más compleja del proyecto.
 
-### 4.3 Minimap
-- **Problema**: El minimapa es MVC en `roguelike_engine/minimap/`. Se actualiza desde `update_manager.py`.
-- **Migración**: Crear `MinimapUpdateSystem` (update) y `MinimapRenderSystem` (render).
-
-### 4.4 Buildings
-- **Problema**: Los buildings tienen su propio modelo MVC completo en `roguelike_engine/buildings/` con `Building`, `BuildingModel`, `BuildingView`, `BuildingController`. Se actualizan desde `BuildingsManager.update()`.
-- **Migración**: Es la migración más compleja. Requiere descomponer cada building en entidad ECS con componentes apropiados.
-
-### 4.5 Event Dispatch
-- **Problema**: `events.py` es un dispatcher monolítico de ~290 líneas que mezcla lógica de gameplay (chat, NPC interaction) con lógica de editores.
-- **Migración**: Extraer eventos de gameplay a sistemas ECS (ej: `NPCInteractionSystem`).
-
-### 4.6 Item Drop Persistence
-- **Problema**: `ItemDropManager` persiste drops en JSON. Los drops ya son entidades ECS en runtime, pero la persistencia es procedural.
-- **Migración**: Crear `ItemPersistenceSystem` que serialice/deserialice drops desde componentes ECS.
+### 4.3 GameState
+- **Estado**: `GameState` es el hub central de estado global. Sistemas ECS lo leen via `world.state`.
+- **Migración pendiente**: Migrar campos de gameplay a recursos/singletons ECS. Campos de editor/UI permanecen en `GameState`.
 
 ---
 
-## 5. Plan de Migración Priorizado
-
-### Fase 1 — Quick Wins (Bajo riesgo, alto valor)
-| # | Tarea | Archivos afectados | Complejidad |
-|---|---|---|---|
-| 1.1 | **CameraFollowSystem** — Mover lógica de follow-player de `update_manager.py` a un sistema ECS | `update_manager.py`, nuevo `camera_follow_system.py` | 🟢 Baja |
-| 1.2 | **MinimapSystem** — Mover update del minimapa a sistema ECS | `update_manager.py`, nuevo `minimap_system.py` | 🟢 Baja |
-| 1.3 | **PlayerManager → ECS** — Refactorizar `change_class()` como sistema o comando ECS | `player_manager.py` | 🟢 Baja |
-
-### Fase 2 — Consolidación (Riesgo medio)
-| # | Tarea | Archivos afectados | Complejidad |
-|---|---|---|---|
-| 2.1 | **Event Dispatch cleanup** — Extraer lógica de gameplay de `events.py` a sistemas ECS existentes | `events.py`, `handlers/*.py` | 🟡 Media |
-| 2.2 | **ItemDrop Persistence** — Integrar `ItemDropManager` como sistema ECS | `item_drop_manager.py`, `MapLoadDropsSystem` | 🟡 Media |
-| 2.3 | **Collision unification** — Unificar `CollisionManager` con `SpatialIndex` | `collision.py`, `spatial_index.py` | 🟡 Media |
-| 2.4 | **AudioManager bridge cleanup** — Eliminar `AudioManager` redundante, usar solo `AudioSystem` ECS | `audio_manager.py` | 🟢 Baja |
+## 5. Plan de Migración Pendiente
 
 ### Fase 3 — Migración Mayor (Alto riesgo, alto impacto)
 | # | Tarea | Archivos afectados | Complejidad |
@@ -204,21 +179,15 @@ Estas áreas ya tienen presencia ECS pero mantienen lógica significativa fuera 
 | 3.2 | **Render Pipeline ECS-first** — Eliminar `_NPCWrapper`, render unificado desde ECS | `render_manager.py`, `pipeline_runner.py`, `entities_renderer.py` | 🔴 Alta |
 | 3.3 | **GameState → ECS Resources** — Migrar estado global a recursos/singletons ECS | `state.py`, múltiples sistemas | 🔴 Alta |
 
-### Fase 4 — No Migrar (Mantener como está)
-Estos elementos **no deben** migrarse a ECS:
+### No Migrar (Mantener como está)
 - `Game` (entry point / orchestrator)
 - `GameLoop` / `ShutdownManager` (lifecycle)
-- `MenuManager` (UI de aplicación)
-- `ClassSelectorManager` (UI)
+- `MenuManager`, `ClassSelectorManager` (UI)
+- `AudioManager` (init-time config, complementario con `AudioSystem` ECS)
+- `ItemDropManager` (infraestructura I/O consumida por sistemas ECS)
 - `roguelike_editors/*` (tooling de desarrollo)
 - `roguelike_ui/*` (widgets UI)
-- `roguelike_engine/config/*` (configuración)
-- `roguelike_engine/console/*` (debug tooling)
-- `roguelike_engine/diagnostics/*` (profiling)
-- `roguelike_engine/chat/` (servicio externo)
-- `roguelike_engine/audio/` (servicio de infraestructura)
-- `roguelike_engine/world/` (persistencia)
-- `roguelike_engine/map/` (datos del mundo)
+- `roguelike_engine/config/*`, `console/*`, `diagnostics/*`, `chat/*`, `audio/*`, `world/*`, `map/*`, `input/*` (infraestructura/servicios)
 - `minigames/*` (standalone)
 
 ---
@@ -227,39 +196,51 @@ Estos elementos **no deben** migrarse a ECS:
 
 | Categoría | Cantidad | % del código de gameplay |
 |---|---|---|
-| ✅ **Ya es ECS** (componentes + sistemas + factories) | ~60 componentes, ~80 sistemas | **~65%** |
-| ⚠️ **Híbrido / Parcialmente ECS** | ~10 módulos (camera, minimap, buildings, events, drops, render pipeline) | **~20%** |
-| ❌ **No-ECS (gameplay)** | ~5 managers (GameState, UpdateManager, BuildingsManager, PlayerManager) | **~10%** |
+| ✅ **Ya es ECS** (componentes + sistemas + factories + migrados) | ~62 componentes, ~85 sistemas | **~75%** |
+| ⚠️ **Híbrido / Pendiente** | ~5 módulos (buildings, render pipeline, GameState) | **~12%** |
+| ❌ **No-ECS (gameplay residual)** | ~3 managers (UpdateManager residual, BuildingsManager, CollisionManager) | **~8%** |
 | ❌ **No-ECS (no migrable)** | Editores, UI, config, engine services, lifecycle | **~5% gameplay / 100% tooling** |
 
-**Conclusión**: El proyecto ya tiene una base ECS sólida (~65% del gameplay). Las áreas pendientes más importantes son: **Buildings** (la migración más compleja), **Render Pipeline** (unificación), y **GameState → ECS Resources**. Los editores, UI y servicios de infraestructura no necesitan migración.
+**Conclusión**: Tras la migración de Fase 1, el proyecto tiene **~75% del gameplay en ECS**. Las áreas pendientes son: **Buildings → ECS** (la más compleja), **Render Pipeline unificado**, y **GameState → ECS Resources**. Todo lo demás (editores, UI, servicios de infraestructura) permanece correctamente fuera del ECS.
 
 ---
 
-## 7. Migración Ejecutada (2026-02-13)
+## 7. Historial de Migración
 
-### Fase 1 — Completada ✅
+### 2026-02-13 — Fase 1 Completada ✅
 
-| # | Tarea | Archivos creados / modificados | Estado |
-|---|---|---|---|
-| 1.1 | **CameraFollowSystem** | `ecs/components/core/camera_follow.py` (extended), `ecs/systems/core/camera_follow_system.py` (new), `ecs/core/system_registry.py`, `managers/core/update_manager.py` (removed `_step_camera`) | ✅ Done |
-| 1.2 | **MinimapUpdateSystem** | `ecs/systems/core/minimap_update_system.py` (new), `ecs/core/system_registry.py`, `managers/core/initialization/stages/minimap.py` (wire to world), `managers/core/update_manager.py` (removed `_step_minimap`) | ✅ Done |
-| 1.3 | **ClassChangeSystem** | `ecs/components/core/class_change_request.py` (new), `ecs/systems/core/class_change_system.py` (new), `ecs/core/component_registry.py`, `ecs/core/system_registry.py`, `managers/player/player_manager.py` (thin facade) | ✅ Done |
+**Sistemas creados:**
 
-### Fase 2 — Evaluada y Resolved
+| Sistema | Archivo | Descripción |
+|---|---|---|
+| `CameraFollowSystem` | `ecs/systems/core/camera_follow_system.py` | Lee `CameraFollowComponent` + `Position`, centra la cámara respetando flags de supresión de editores (particles, map, item, spawner, MMB pan, debug overlays) |
+| `MinimapUpdateSystem` | `ecs/systems/core/minimap_update_system.py` | Lee `Position` del jugador, delega a la fachada `Minimap` almacenada en `world.minimap` |
+| `ClassChangeSystem` | `ecs/systems/core/class_change_system.py` | Consume `ClassChangeRequest` one-shot, aplica cambio completo de clase (sprites, stats, colliders, contexto FSM) |
 
-| # | Tarea | Decisión | Razón |
-|---|---|---|---|
-| 2.1 | Event dispatch cleanup | ⏭️ Skipped | NPC halo handler is an input-event consumer tightly coupled to pygame events and UI blocking — not pure gameplay logic suitable for ECS |
-| 2.2 | ItemDrop persistence | ⏭️ Skipped | `ItemDropManager` is already infrastructure consumed by 10+ ECS systems as a service. Wrapping it in another system adds indirection without benefit |
-| 2.3 | AudioManager bridge | ⏭️ Skipped | `AudioManager` handles init-time volume config for `MenuManager`. `AudioSystem` ECS handles runtime audio. They are complementary, not redundant |
+**Componentes creados/modificados:**
 
-### Resumen de cambios
+| Componente | Archivo | Cambio |
+|---|---|---|
+| `CameraFollowComponent` | `ecs/components/core/camera_follow.py` | Extendido con `enabled` y `defer_follow_frames` |
+| `ClassChangeRequest` | `ecs/components/core/class_change_request.py` | Nuevo — one-shot request con `new_class: str` |
 
-- **`CameraFollowComponent`** extended with `enabled` and `defer_follow_frames` fields
-- **`CameraFollowSystem`** reads `CameraFollowComponent` + `Position`, respects all editor suppression flags (particles editor, map editor defer, item editor, spawner editor, MMB panning, debug overlays)
-- **`MinimapUpdateSystem`** reads player `Position`, delegates to `Minimap` facade stored on `world.minimap`
-- **`ClassChangeSystem`** consumes one-shot `ClassChangeRequest` components, applies full class change (sprites, stats, colliders, FSM context)
-- **`PlayerManager.change_class()`** reduced to thin facade that enqueues a `ClassChangeRequest`
-- **`update_manager.py`** cleaned: removed `_step_camera` and `_step_minimap`, only `_step_entities` (buildings) remains
-- All new systems registered in `system_registry.py` with correct execution order
+**Managers refactorizados:**
+
+| Manager | Cambio |
+|---|---|
+| `PlayerManager` | Reducido a thin facade que encola `ClassChangeRequest` |
+| `update_manager.py` | Eliminados `_step_camera` y `_step_minimap`; solo queda `_step_entities` (buildings) |
+
+**Inicialización:**
+
+| Stage | Cambio |
+|---|---|
+| `stages/minimap.py` | Wires `game.minimap` → `ecs_world.minimap` para que `MinimapUpdateSystem` lo acceda |
+
+### 2026-02-13 — Fase 2 Evaluada
+
+| Tarea | Decisión | Razón |
+|---|---|---|
+| Event dispatch cleanup | ⏭️ No migrable | NPC halo handler es input-event consumer acoplado a pygame events y UI blocking |
+| ItemDrop persistence | ⏭️ No migrable | `ItemDropManager` es infraestructura I/O consumida por 10+ sistemas ECS |
+| AudioManager bridge | ⏭️ No migrable | Complementario con `AudioSystem` ECS (init-time vs runtime) |
