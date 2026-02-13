@@ -6,6 +6,11 @@ class Camera:
         self.offset_y = 0
         self.zoom = 1.0
 
+    def resize(self, new_width, new_height):
+        """Update screen dimensions after a window resize."""
+        self.screen_width = new_width
+        self.screen_height = new_height
+
     def update(self, target):
         self.offset_x = target.x - (self.screen_width / (2 * self.zoom))
         self.offset_y = target.y - (self.screen_height / (2 * self.zoom))

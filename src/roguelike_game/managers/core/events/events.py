@@ -43,6 +43,7 @@ from .handlers.npc_halo import consume_npc_halo_click as _consume_npc_halo_click
 from .handlers.ui_filter import build_remaining_events as _build_remaining_events
 from .handlers.particles_map import process_particles_map_input as _process_particles_map_input
 from .handlers.toggles import handle_toggles as _handle_toggles
+from .handlers.resize import handle_resize as _handle_resize
 
 # --- Centralized editor visibility management ---------------------------------
 def _close_all_editors(game) -> None:
@@ -59,6 +60,9 @@ def handle_events(game):
 
     # Capturar eventos
     events = pygame.event.get()
+
+    # Procesar redimensionado de ventana antes que nada
+    events = _handle_resize(game, events)
 
     # Si el chat está abierto, enrutar todos los eventos al controlador de chat
     if _handle_chat_open(game, events):
