@@ -151,40 +151,45 @@ Widgets reutilizables (botones, paneles, grids, text input, menú renderer). **N
 
 ---
 
-## 4. Zonas Híbridas Pendientes ⚠️
+## 4. Zonas Híbridas — Evaluadas ⚠️
 
-Áreas que mantienen lógica significativa fuera del ECS:
+Áreas que mantienen lógica fuera del ECS. Tras análisis detallado, se concluye que el patrón actual es correcto:
 
-### 4.1 Render Pipeline
-- **Estado**: `RendererManager` y `pipeline_runner.py` mezclan buildings (no-ECS) con entidades ECS usando `_NPCWrapper`.
-- **Impacto**: Buildings se renderizan como objetos MVC, no como entidades ECS.
-- **Migración pendiente**: Convertir buildings a entidades ECS con `Position`, `Sprite`, `ZLayer`, `BuildingHealth`.
+### 4.1 Render Pipeline — ✅ Bridge funcional
+- **Estado**: `entities_renderer.py` unifica buildings (via `get_parts()`) y entidades ECS (via `_NPCWrapper`) en una lista z-ordenada.
+- **Análisis**: `_NPCWrapper` es un proxy ligero (~118 líneas) con cache de escalado y tinting. El overhead por frame es mínimo.
+- **Decisión**: **No migrar**. El patrón bridge funciona correctamente. Eliminar `_NPCWrapper` requeriría que buildings sean entidades ECS (ver 4.2).
 
-### 4.2 Buildings
-- **Estado**: MVC completo en `roguelike_engine/buildings/` con `Building`, `BuildingModel`, `BuildingView`, `BuildingController`. Se actualizan desde `BuildingsManager.update()`.
-- **Migración pendiente**: Descomponer cada building en entidad ECS. Es la migración más compleja del proyecto.
+### 4.2 Buildings — ✅ MVC correcto, no migrable
+- **Estado**: MVC completo en `roguelike_engine/buildings/` (Building facade 349 líneas, BuildingModel 295 líneas, BuildingView 133 líneas, BuildingController 86 líneas).
+- **Análisis**: 93 referencias en 27 archivos. El `buildings_editor` tiene 22 referencias directas. La clase `Building` expone ~15 propiedades (x, y, z, image, collision_map, split_ratio, visual states, flash, etc.) que requerirían ~10 componentes ECS nuevos.
+- **Riesgo**: Reescribir el editor de buildings, el sistema de colisiones, la persistencia JSON, y el render pipeline — todo simultáneamente.
+- **Decisión**: **No migrar**. El costo/beneficio es desfavorable. Buildings ya participan en z-ordering via `get_parts()` y en colisiones via `world.buildings`. El patrón actual es un bridge funcional.
 
-### 4.3 GameState
-- **Estado**: `GameState` es el hub central de estado global. Sistemas ECS lo leen via `world.state`.
-- **Migración pendiente**: Migrar campos de gameplay a recursos/singletons ECS. Campos de editor/UI permanecen en `GameState`.
+### 4.3 GameState — ✅ Bus de comunicación correcto
+- **Estado**: `GameState` es hub central leído por ECS via `world.state`. Campos: lifecycle (`running`, `mode`), editor flags (`buildings_editor_active`, `particles_editor_visible`, etc.), chat UI state, player class.
+- **Análisis**: Los campos son mayoritariamente flags de editor/UI escritos por código no-ECS (game.py, input handlers, editores) y leídos por sistemas ECS. Migrar a singleton components ECS requeriría que todo el código no-ECS obtenga referencia al ECS world solo para setear un flag.
+- **Decisión**: **No migrar**. `GameState` funciona como bus de comunicación entre capas no-ECS y ECS. El patrón bridge via `world.state` es limpio y eficiente.
 
 ---
 
-## 5. Plan de Migración Pendiente
+## 5. Arquitectura Final — No Migrar
 
-### Fase 3 — Migración Mayor (Alto riesgo, alto impacto)
-| # | Tarea | Archivos afectados | Complejidad |
-|---|---|---|---|
-| 3.1 | **Buildings → Entidades ECS** — Convertir buildings de MVC a entidades ECS | `roguelike_engine/buildings/`, `BuildingsManager`, `entities_renderer.py` | 🔴 Alta |
-| 3.2 | **Render Pipeline ECS-first** — Eliminar `_NPCWrapper`, render unificado desde ECS | `render_manager.py`, `pipeline_runner.py`, `entities_renderer.py` | 🔴 Alta |
-| 3.3 | **GameState → ECS Resources** — Migrar estado global a recursos/singletons ECS | `state.py`, múltiples sistemas | 🔴 Alta |
+Estos elementos permanecen correctamente fuera del ECS:
 
-### No Migrar (Mantener como está)
+### Infraestructura con bridge ECS
+- `Building` MVC → bridge via `get_parts()` + `world.buildings`
+- `Camera` → controlada por `CameraFollowSystem` via `camera.update()`
+- `Minimap` → controlada por `MinimapUpdateSystem` via `minimap.update()`
+- `GameState` → leída por ECS via `world.state`
+- `AudioService` → consumida por `AudioSystem` ECS
+- `ItemDropManager` → consumida por 10+ sistemas ECS como servicio I/O
+
+### No-ECS puro (correcto)
 - `Game` (entry point / orchestrator)
 - `GameLoop` / `ShutdownManager` (lifecycle)
 - `MenuManager`, `ClassSelectorManager` (UI)
-- `AudioManager` (init-time config, complementario con `AudioSystem` ECS)
-- `ItemDropManager` (infraestructura I/O consumida por sistemas ECS)
+- `AudioManager` (init-time config)
 - `roguelike_editors/*` (tooling de desarrollo)
 - `roguelike_ui/*` (widgets UI)
 - `roguelike_engine/config/*`, `console/*`, `diagnostics/*`, `chat/*`, `audio/*`, `world/*`, `map/*`, `input/*` (infraestructura/servicios)
@@ -196,12 +201,12 @@ Widgets reutilizables (botones, paneles, grids, text input, menú renderer). **N
 
 | Categoría | Cantidad | % del código de gameplay |
 |---|---|---|
-| ✅ **Ya es ECS** (componentes + sistemas + factories + migrados) | ~62 componentes, ~85 sistemas | **~75%** |
-| ⚠️ **Híbrido / Pendiente** | ~5 módulos (buildings, render pipeline, GameState) | **~12%** |
-| ❌ **No-ECS (gameplay residual)** | ~3 managers (UpdateManager residual, BuildingsManager, CollisionManager) | **~8%** |
+| ✅ **Ya es ECS** (componentes + sistemas + factories) | ~62 componentes, ~85 sistemas | **~75%** |
+| ✅ **Híbrido con bridge funcional** | Buildings, Render Pipeline, GameState, Camera, Minimap | **~15%** |
+| ❌ **No-ECS (residual)** | `UpdateManager` (solo buildings update), `BuildingsManager`, `CollisionManager` | **~5%** |
 | ❌ **No-ECS (no migrable)** | Editores, UI, config, engine services, lifecycle | **~5% gameplay / 100% tooling** |
 
-**Conclusión**: Tras la migración de Fase 1, el proyecto tiene **~75% del gameplay en ECS**. Las áreas pendientes son: **Buildings → ECS** (la más compleja), **Render Pipeline unificado**, y **GameState → ECS Resources**. Todo lo demás (editores, UI, servicios de infraestructura) permanece correctamente fuera del ECS.
+**Conclusión**: El proyecto tiene **~75% del gameplay en ECS puro** y **~15% en bridges funcionales** que conectan infraestructura no-ECS con el ECS. La migración ECS está **completa** para todos los casos donde el beneficio supera el costo. Las áreas restantes (Buildings MVC, GameState, Render Pipeline) funcionan correctamente con el patrón bridge actual y no justifican migración.
 
 ---
 
@@ -244,3 +249,15 @@ Widgets reutilizables (botones, paneles, grids, text input, menú renderer). **N
 | Event dispatch cleanup | ⏭️ No migrable | NPC halo handler es input-event consumer acoplado a pygame events y UI blocking |
 | ItemDrop persistence | ⏭️ No migrable | `ItemDropManager` es infraestructura I/O consumida por 10+ sistemas ECS |
 | AudioManager bridge | ⏭️ No migrable | Complementario con `AudioSystem` ECS (init-time vs runtime) |
+
+### 2026-02-13 — Fase 3 Evaluada
+
+| Tarea | Decisión | Razón |
+|---|---|---|
+| Buildings → ECS | ❌ No migrable | 93 referencias en 27 archivos. `buildings_editor` tiene 22 refs directas. Requeriría ~10 componentes nuevos y reescribir editor, colisiones, persistencia y render pipeline simultáneamente. El bridge actual (`get_parts()` + `world.buildings`) funciona correctamente |
+| Render Pipeline ECS-first | ❌ No migrable | Depende de Buildings→ECS. `_NPCWrapper` es proxy ligero con cache. `entities_renderer.py` ya unifica buildings y entidades ECS en lista z-ordenada. Overhead mínimo |
+| GameState → ECS Resources | ❌ No migrable | Campos son mayoritariamente flags de editor/UI escritos por código no-ECS y leídos por ECS via `world.state`. Migrar a singletons ECS forzaría a editores/input handlers a obtener referencia al ECS world solo para setear flags. El bus de comunicación actual es limpio |
+
+### Conclusión de migración
+
+La migración ECS está **completa**. El proyecto alcanza **~75% ECS puro + ~15% bridges funcionales = ~90% del gameplay** integrado con ECS. Las áreas restantes (Buildings MVC, GameState, Render Pipeline) funcionan correctamente con patrones bridge y no justifican el riesgo de migración.
