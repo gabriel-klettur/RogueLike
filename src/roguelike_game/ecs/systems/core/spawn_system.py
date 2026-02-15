@@ -18,6 +18,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+class _EntityProxy:
+    """Lightweight proxy for FSM state changes during spawn."""
+    __slots__ = ('world', 'id')
+    def __init__(self, world, entity_id):
+        self.world = world
+        self.id = entity_id
+
+
 class SpawnSystem:
     """
     Sistema que procesa componentes SpawnRequest y genera NPCs en el mundo.
@@ -127,10 +136,6 @@ class SpawnSystem:
                 try:
                     npc_state = world.components.get('NPCState', {}).get(new_eid)
                     if npc_state is not None:
-                        class _EntityProxy:
-                            def __init__(self, world, entity_id):
-                                self.world = world
-                                self.id = entity_id
                         npc_state.fsm.change_state(ChaseState(), _EntityProxy(world, new_eid))
                 except Exception:
                     # Si la FSM o el set de estados lo bloquea, continuar sin forzar
@@ -167,7 +172,7 @@ class SpawnSystem:
             if spawner_eid is not None:
                 try:
                     world.components.setdefault('SpawnerChild', {})[new_eid] = SpawnerChild(spawner_eid, wave_idx)
-                    logger.info(
+                    logger.debug(
                         "[SpawnSystem] eid=%s marked as SpawnerChild (spawner_eid=%s, wave=%s)",
                         new_eid, spawner_eid, wave_idx
                     )

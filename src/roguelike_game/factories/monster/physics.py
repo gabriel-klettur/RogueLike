@@ -5,6 +5,7 @@ from roguelike_game.ecs.components.transform.scale import Scale
 from roguelike_game.ecs.components.transform.velocity import Velocity
 from roguelike_game.ecs.components.physics.multi_collider import MultiCollider
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
+from roguelike_game.ecs.components.physics.collider import Collider
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_game.ecs.components.transform.z_layer import ZLayer
 from roguelike_engine.config.config_z_layer import Z_LAYERS
@@ -205,8 +206,14 @@ def _bottom_band_narrowest_row_center(mask: pygame.Mask) -> int | None:
     return best_center
 
 
-def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
-    """Construct body and feet colliders based on sprite surface."""
+# Cache of collider parameters per monster type to avoid recomputing
+# mask.from_surface + _auto_bottom_band_metrics pixel iteration on every spawn.
+# Key: (monster_type_or_cfg_id), Value: dict with body_rect and feet params.
+_COLLIDER_PARAMS_CACHE: Dict[int, Dict[str, Any]] = {}
+
+
+def _compute_collider_params(sprite, cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Compute collider geometry once from sprite + config. Cached per cfg id."""
     mask_surf = getattr(sprite, 'image', None)
     if not isinstance(mask_surf, pygame.Surface):
         mask_surf = pygame.Surface((16, 16), pygame.SRCALPHA)
@@ -223,35 +230,79 @@ def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
         w, h = mask_surf.get_size()
         mask_surf = pygame.transform.scale(mask_surf, (int(w*scale_val), int(h*scale_val)))
     mask = pygame.mask.from_surface(mask_surf)
-    body = MaskCollider(mask, 0, 0)
     w, h = mask_surf.get_size()
+
+    # Compute tight AABB from mask bounding rects for body collider
+    bounding = mask.get_bounding_rects()
+    if bounding:
+        # Union all bounding rects for a tight AABB
+        union = bounding[0]
+        for br in bounding[1:]:
+            union = union.union(br)
+        body_ox, body_oy = union.x, union.y
+        body_w, body_h = union.width, union.height
+    else:
+        body_ox, body_oy = 0, 0
+        body_w, body_h = w, h
+
     # Allow config overrides; otherwise use safe defaults for a bottom band
     width_factor = cfg.get("stats", {}).get("feet_width_factor")
     height_factor = cfg.get("stats", {}).get("feet_height_factor")
-
     if width_factor is None:
-        width_factor = 0.45  # ~45% of sprite width centered
+        width_factor = 0.45
     if height_factor is None:
-        height_factor = 0.22  # ~22% of sprite height at bottom
+        height_factor = 0.22
 
-    # Compute size with minimum pixel constraints to avoid zero-sized boxes on small sprites
     feet_w = max(8, int(w * float(width_factor)))
     feet_h = max(6, int(h * float(height_factor)))
-    # Optional overrides from config
     stats = cfg.get("stats", {})
     cfg_radius = stats.get("feet_radius")
     cfg_dx = int(stats.get("feet_center_dx", 0) or 0)
     cfg_dy = int(stats.get("feet_center_dy", 0) or 0)
     # Auto metrics from bottom band of the sprite mask (for radius heuristic only)
     auto_cx, band_avg_w = _auto_bottom_band_metrics(mask)
-    # Derive circle radius from band width; clamp with heuristic unless overridden
     heuristic_r = max(4, min(feet_w, feet_h) // 2)
     band_r = max(4, band_avg_w // 2) if band_avg_w > 0 else heuristic_r
     radius = int(cfg_radius) if cfg_radius is not None else max(4, min(heuristic_r, band_r))
-    # Center strictly at sprite bottom-center to align visually under trunk/feet (same as player)
     center_x = (w // 2) + cfg_dx
     center_y = (h - radius - 1) + cfg_dy
-    feet = CircleCollider(radius=radius, offset_x=center_x, offset_y=center_y)
+
+    return {
+        "body_ox": body_ox, "body_oy": body_oy,
+        "body_w": body_w, "body_h": body_h,
+        "feet_radius": radius,
+        "feet_ox": center_x, "feet_oy": center_y,
+    }
+
+
+def create_collider_components(sprite, cfg: Dict[str, Any]) -> MultiCollider:
+    """Construct body (AABB) and feet (circle) colliders.
+
+    Body uses a rectangular Collider (tight AABB from mask bounding box)
+    instead of a pixel-perfect MaskCollider. This is ~100x cheaper for
+    overlap checks in HitboxSystem while being visually indistinguishable
+    for damage detection.
+
+    Collider parameters are cached per cfg dict identity to avoid
+    recomputing mask.from_surface + pixel iteration on every spawn.
+    """
+    cfg_id = id(cfg)
+    params = _COLLIDER_PARAMS_CACHE.get(cfg_id)
+    if params is None:
+        params = _compute_collider_params(sprite, cfg)
+        _COLLIDER_PARAMS_CACHE[cfg_id] = params
+
+    body = Collider(
+        width=params["body_w"],
+        height=params["body_h"],
+        offset_x=params["body_ox"],
+        offset_y=params["body_oy"],
+    )
+    feet = CircleCollider(
+        radius=params["feet_radius"],
+        offset_x=params["feet_ox"],
+        offset_y=params["feet_oy"],
+    )
     return MultiCollider({"body": body, "feet": feet})
 
 
