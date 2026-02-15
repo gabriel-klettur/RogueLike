@@ -121,6 +121,7 @@ from roguelike_game.ecs.systems.rendering.experience_render_system import Experi
 from roguelike_game.ecs.systems.rendering.magic_spell_bar_render_system import MagicSpellBarRenderSystem
 from roguelike_game.ecs.systems.rendering.spawner_debug_system import SpawnerDebugRenderSystem
 from roguelike_game.ecs.systems.audio.audio_system import AudioSystem
+from roguelike_game.ecs.systems.audio.damage_sfx_system import DamageSfxSystem
 from roguelike_game.ecs.systems.chat.chat_proximity_system import ChatProximitySystem
 from roguelike_game.ecs.systems.chat.chat_router_system import ChatRouterSystem
 from roguelike_game.ecs.systems.chat.chat_ui_system import ChatUISystem
@@ -199,8 +200,8 @@ def get_update_system_classes():
         InventoryInitSystem, DeathDropSystem, InventoryPickupSystem, ConsumeSystem, InventoryTransferSystem, InventoryDragSystem, MapLoadDropsSystem, TempZLayerSystem, DropDespawnSystem, CoinPickupSystem, OrbAttractionSystem, ExperienceSystem, MagicSpellBarSystem, ExpansionSystem,
         # Chat & Trade
         ChatRouterSystem, VendorTradeSystem,
-        # Audio bridge
-        AudioSystem,
+        # Audio bridge (DamageSfxSystem queues events, AudioSystem consumes them)
+        DamageSfxSystem, AudioSystem,
     ]
 
 def get_render_system_classes():

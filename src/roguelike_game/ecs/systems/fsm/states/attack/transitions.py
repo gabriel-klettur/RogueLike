@@ -16,6 +16,7 @@ from roguelike_game.ecs.systems.combat.spells.resolvers import SPELL_RESOLVERS
 from .context import AttackEnvironment, AttackFSMContext, PositionSnapshot, normalize_vector
 from .monster_profile import MonsterProfile
 from .telegraph import apply_telegraph, build_telegraph_config, clear_telegraph
+from roguelike_game.ecs.systems.combat.combat_sfx import resolve_npc_attack_choices
 
 
 def should_abort_attack(env: AttackEnvironment) -> bool:
@@ -126,6 +127,15 @@ def perform_attack(env: AttackEnvironment, context: AttackFSMContext, profile: M
     spell_cfg = _resolve_spell_config(profile.resolve_spell_id())
     cleanup_attack_effects(env)
     _spawn_slash(env, spell_cfg, direction)
+    # --- NPC attack SFX ---
+    try:
+        archetype = env.world.components.get('MonsterArchetype', {}).get(env.entity_id)
+        atk_choices = resolve_npc_attack_choices(getattr(archetype, 'type', None))
+        if atk_choices:
+            aq = env.world.components.setdefault('AudioEventQueue', [])
+            aq.append({'type': 'play_sfx', 'choices': atk_choices, 'group': 'sfx'})
+    except Exception:
+        pass
     lock_duration = context.ensure_attack_duration(float(spell_cfg.get("cooldown_duration", 1.0)))
     if profile.is_final_boss:
         context.mark_attack_fired(env.now, lock_duration)

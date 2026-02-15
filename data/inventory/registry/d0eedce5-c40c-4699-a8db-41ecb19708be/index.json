@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "version": 1,
+      "hash": "5f6ae1be6697c6a4e49d0a109daea565cb304c850cb22a89a299331195c40d15",
+      "created_at": "2026-02-15T12:10:30"
+    },
+    {
+      "version": 2,
+      "hash": "2c444b3f8c8e75f97b05011c2daeaac3916357d4bfb27e0a17ecec8c7ab4ac2e",
+      "created_at": "2026-02-15T12:15:28"
+    }
+  ],
+  "last_version": 2
+}

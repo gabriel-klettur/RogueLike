@@ -420,8 +420,8 @@ class HitboxSystem:
                         flashes[target] = FlashComponent((255, 255, 255), 0.12)
                     except Exception:
                         pass
-                    # record last attacker for KO attribution
-                    world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
+                # record last attacker for KO attribution
+                world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
                 hb.hit_targets.add(target)
                 try:
                     if hb.owner in world.components.get('PlayerTagComponent', {}):
