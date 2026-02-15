@@ -261,7 +261,7 @@ class MovementCollisionSystem:
                     npc_state = comps.get('NPCState', {}).get(eid)
                     fsm = getattr(npc_state, 'fsm', None)
                     ctx = getattr(fsm, 'context', {}) if fsm else {}
-                    now = time.time()
+                    now = getattr(world, '_frame_time', None) or time.time()
                     start_t = float(ctx.get('attack_start') or 0.0)
                     windup_s = float(ctx.get('attack_windup_s', 0.0))
                     lock_until = float(ctx.get('lock_move_until', 0.0) or 0.0)

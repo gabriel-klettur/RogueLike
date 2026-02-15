@@ -13,6 +13,7 @@ from roguelike_engine.config.config_tiles import TILE_SIZE
 from roguelike_game.ecs.utils.position_utils import compute_entity_center
 from roguelike_game.ecs.components.combat.cast_outline import CastOutline
 from roguelike_game.ecs.components.status.stun_component import StunComponent
+from roguelike_game.ecs.utils.frustum_culling import get_active_entity_ids
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +30,14 @@ class AutoCastSystem:
         player_eid = getattr(world, 'player_entity', None)
         if player_eid is None:
             return
-        now = time.time()
+        now = getattr(world, '_frame_time', None) or time.time()
+        # Frustum culling: skip NPCs far from camera (player can't be near them)
+        active_ids = get_active_entity_ids(world, camera)
         # Iterar sobre entidades con componente de autocast
         for eid, ac in list(auto_map.items()):
+            # Skip offscreen NPCs entirely
+            if active_ids is not None and eid not in active_ids:
+                continue
             try:
                 if not getattr(ac, 'enabled', True):
                     continue

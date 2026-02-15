@@ -53,6 +53,9 @@ class AnimationSystem:
         frame_count = getattr(world, '_frame_count', 0)
         interval = self.OFFSCREEN_UPDATE_INTERVAL
 
+        # Cache time once per frame (avoid syscall per entity)
+        now = getattr(world, '_frame_time', None) or time.time()
+
         # 2) Iterar sobre cada Animator
         for eid, animator in anim_map.items():
             # Offscreen throttling
@@ -60,7 +63,6 @@ class AnimationSystem:
                 if (frame_count % interval) != (eid % interval):
                     continue
             timer = timer_map.get(eid)
-            now = time.time()
             if timer and now - timer.last_time < timer.interval:
                 continue
             if timer:

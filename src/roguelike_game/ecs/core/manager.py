@@ -68,6 +68,40 @@ class ECSWorld:
         self.render_systems = [cls(self.perf_log) for cls in render_classes]
         logger.debug(f" Update systems: {[type(s).__name__ for s in self.update_systems]}")
         logger.debug(f" Render systems: {[type(s).__name__ for s in self.render_systems]}")
+        # Pre-build benchmark-wrapped callables (avoids recreating closures every frame)
+        self._update_callables = self._build_benchmarked_callables(
+            self.update_systems, "5", "[UPDATE]"
+        )
+        self._render_callables = self._build_benchmarked_callables(
+            self.render_systems, "4", "[RENDER]"
+        )
+
+    def _build_benchmarked_callables(self, systems, prefix, tag):
+        """Pre-build a list of (system, benchmarked_fn) tuples.
+
+        Each benchmarked_fn wraps system.update with time.perf_counter
+        and appends to perf_log. Built once at init, reused every frame.
+        """
+        import time as _time
+        callables = []
+        for idx, system in enumerate(systems, 1):
+            name = type(system).__name__
+            key = f"{prefix}.{idx:02d}.{tag}{name}"
+            perf_log = self.perf_log
+            # Lightweight wrapper: just timing + append, no inspect/bind_partial
+            def _make_fn(sys=system, k=key, pl=perf_log):
+                def _benchmarked_update(world, *args):
+                    t0 = _time.perf_counter()
+                    sys.update(world, *args)
+                    elapsed = _time.perf_counter() - t0
+                    if pl is not None:
+                        lst = pl.setdefault(k, [])
+                        lst.append(elapsed)
+                        if len(lst) > 300:
+                            del lst[:-300]
+                return _benchmarked_update
+            callables.append((system, _make_fn()))
+        return callables
 
     def reinit_systems_preserving_state(self):
         """Reinstancia los sistemas de ECS manteniendo el estado del mundo.
@@ -112,29 +146,25 @@ class ECSWorld:
 
     @_ecs_update_group.bench("TOTAL: ECS UPDATE [CORE]")
     def update(self, camera):
+        import time as _time
         # Incrementar contador de frames para caches de optimización
         self._frame_count += 1
+        # Cache time.time() once per frame to avoid hundreds of syscalls
+        self._frame_time = _time.time()
         
         # Reconstruir SpatialIndex sólo si ha sido invalidado
         if self._spatial_index_dirty:
             self.rebuild_spatial_index()
         
-        # Ejecutar cada sistema de update
-        systems_group = BenchmarkGroup(self.perf_log, "5", auto_index=True)
-        for system in self.update_systems:
-            name = type(system).__name__
-            @systems_group.next(f"[UPDATE]{name}")
-            def _update_sys(sys=system):
-                sys.update(self, camera)
-            _update_sys()
+        # Ejecutar cada sistema de update (pre-built benchmarked callables)
+        for _sys, fn in self._update_callables:
+            fn(self, camera)
     
     _ecs_render_group = BenchmarkGroup(lambda self: self.perf_log, "4")
 
     @_ecs_render_group.bench("TOTAL: ECS RENDER [CORE]")
     def render(self, screen, camera):
         # Si el Graph Panel del FSM Editor está visible, no dibujar overlays del ECS
-        # (barras de vida, debug, etc.) para que no se vean por encima del panel.
-        # El mundo base ya se dibuja en RendererManager antes de la fase ECS.
         try:
             from roguelike_editors.fsm.fsm_editor_events import get_controller
             ctrl = get_controller()
@@ -149,14 +179,9 @@ class ECSWorld:
                     return
         except Exception:
             pass
-        # Ejecutar cada sistema de render
-        systems_group = BenchmarkGroup(self.perf_log, "4", auto_index=True)
-        for system in self.render_systems:
-            name = type(system).__name__
-            @systems_group.next(f"[RENDER]{name}")
-            def _render_sys(sys=system):
-                sys.update(self, screen, camera)
-            _render_sys()
+        # Ejecutar cada sistema de render (pre-built benchmarked callables)
+        for _sys, fn in self._render_callables:
+            fn(self, screen, camera)
         # Asegurar que la UI del FSM Editor quede SIEMPRE por encima de cualquier overlay del ECS
         # (barras de vida, depuración, etc.). Esto evita que elementos del juego se dibujen
         # sobre el panel del grafo o su toolbar cuando el editor está visible.

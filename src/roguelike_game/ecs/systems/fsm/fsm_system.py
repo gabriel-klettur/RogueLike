@@ -125,7 +125,7 @@ class FSMSystem:
         current_id = class_to_id.get(current_class)
         if not current_id:
             return
-        now = time.time()
+        now = getattr(world, '_frame_time', None) or time.time()
         for tr in transitions:
             try:
                 cond = tr.get('when')

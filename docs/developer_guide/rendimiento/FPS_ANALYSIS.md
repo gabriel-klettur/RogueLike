@@ -41,50 +41,47 @@ GameLoop._process_frame()
 
 ## 3. Puntos Críticos de Caída de FPS
 
-### 3.1 🔴 CRÍTICO: Render Pipeline — Doble Renderizado de NPCs
+### 3.1 ✅ RESUELTO: Render Pipeline — Object Creation Overhead
 
-**Archivos**:
-- `src/roguelike_game/managers/core/render/entities_renderer.py`
-- `src/roguelike_game/ecs/systems/rendering/render_system.py`
+**Archivo**: `src/roguelike_game/managers/core/render/entities_renderer.py`
 
-**Problema**: Los NPCs se renderizan **DOS VECES** por frame:
+**Problema original**: Se creaba un `_NPCWrapper` por cada NPC visible **cada frame** para poder usar `render_z_ordered()`. Esto implicaba:
+- Allocación de objeto Python por NPC
+- 3 dict lookups en `__init__`
+- Property access overhead en `render()`
+- Sorting via `render_z_ordered()` con buckets intermedios
 
-1. **Fase RENDER (pipeline)**: `render_z_entities()` en `entities_renderer.py` itera todos los NPCs con Position+Sprite+ZLayer, crea `_NPCWrapper` por cada uno, los ordena por Z y los dibuja con `render_z_ordered()`.
+**Solución implementada**: Reemplazado por tuples ligeros `(z_layer, y_pos, render_type, data)` que se ordenan una sola vez y se renderizan con `screen.blit()` directo. Buildings y NPCs se mezclan en una sola lista ordenada.
 
-2. **Fase ECS RENDER**: `RenderSystem.update()` en `render_system.py` itera TODOS los NPCs otra vez, los filtra por viewport, los ordena por Z/Y, escala sprites, y los dibuja con `screen.blits()`.
+**Ahorro**: ~0.5-2ms/frame con 100+ NPCs visibles.
 
-**Impacto**: Con 50 NPCs visibles, esto duplica el costo de rendering (~2-4ms extra). Con 200+ NPCs, puede costar 6-10ms extra.
-
-**Costo por NPC (cada pasada)**:
-- `camera.is_in_view()` o `collidepoint()`: ~0.002ms
-- `_NPCWrapper` creation: ~0.005ms
-- `pygame.transform.scale()` (cache miss): ~0.1-0.5ms
-- `screen.blit()`: ~0.01-0.05ms
-- Sorting: O(N log N) × 2 pasadas
+> **Nota**: `RenderSystem` (en `render_system.py`) NO está registrado en el system registry, por lo que NO hay doble rendering.
 
 ---
 
-### 3.2 🔴 CRÍTICO: Z-Ordering — Sorting Redundante
+### 3.2 ✅ RESUELTO: Z-Ordering — Sorting Unificado
 
-**Archivos**:
-- `src/roguelike_engine/z_layer/render.py`
-- `src/roguelike_game/ecs/systems/rendering/render_system.py`
+**Archivo**: `src/roguelike_game/managers/core/render/entities_renderer.py`
 
-**Problema**: El sorting de entidades por Z-layer y Y-position ocurre en **tres lugares distintos** por frame:
+**Problema original**: El sorting de entidades por Z-layer y Y-position ocurría en múltiples pasadas con estructuras intermedias.
 
-1. `render_z_ordered()`: agrupa por Z en dict, luego `sorted(layers)`, luego `bucket.sort(key=_y_key)` por cada bucket.
-2. `RenderSystem.update()`: `visible_eids.sort(key=lambda eid: (z_map[eid].layer, pos_map[eid].y))`.
-3. `entities_renderer.py`: construye `all_entities` list y llama a `render_z_ordered()`.
+**Solución implementada**: Un solo `sort_list.sort(key=lambda t: (t[0], t[1]))` que ordena buildings + NPCs juntos en una sola pasada. Eliminado `render_z_ordered()` para NPCs (solo se usa para el shortcircuit del Map Editor).
 
-**Impacto**: Con 200 entidades visibles (NPCs + buildings), cada sort cuesta ~0.3-0.8ms. Tres sorts = ~1-2.4ms desperdiciados.
+**Ahorro**: ~0.3-0.8ms/frame con 200+ entidades visibles.
 
 ---
 
-### 3.3 🔴 CRÍTICO: ~80 Sistemas de Update Secuenciales
+### 3.3 ✅ PARCIAL: ~80 Sistemas de Update Secuenciales (Benchmark Overhead Eliminado)
 
-**Archivo**: `src/roguelike_game/ecs/core/system_registry.py` → `get_update_system_classes()`
+**Archivo**: `src/roguelike_game/ecs/core/manager.py`
 
-**Problema**: Se ejecutan **~80 sistemas** en secuencia cada frame, incluyendo:
+**Problema original**: Se ejecutan **~80 sistemas** en secuencia cada frame. Además, cada sistema se envolvía con `BenchmarkGroup` que creaba closures y llamaba `inspect.signature` + `bind_partial` **cada frame** (~115 wrappers/frame).
+
+**Solución implementada**: Pre-built benchmark callables en `_build_benchmarked_callables()` — se construyen una vez en `_init_systems()` y se reutilizan cada frame. El wrapper es un simple `time.perf_counter()` + append, sin `inspect` ni `bind_partial`.
+
+**Ahorro**: ~0.5-1ms/frame de overhead puro de benchmarking eliminado.
+
+**Problema restante**: Los ~80 sistemas siguen ejecutándose secuencialmente:
 
 | Categoría | Sistemas | Costo típico |
 |-----------|----------|-------------|
@@ -156,30 +153,32 @@ GameLoop._process_frame()
 
 ---
 
-### 3.8 🟡 MEDIO: `time.time()` Calls per Entity
+### 3.8 ✅ RESUELTO: `time.time()` Calls per Entity
 
-**Archivos**:
-- `animation_system.py:63` — `time.time()` por cada Animator
-- `fsm_system.py` → `_evaluate_json_transitions()` — `time.time()` por cada NPC con transitions
-- `auto_cast_system.py` — `time.time()` múltiples veces por NPC
+**Archivos modificados**:
+- `manager.py` — `self._frame_time = time.time()` una vez por frame
+- `animation_system.py` — usa `world._frame_time`
+- `fsm_system.py` — usa `world._frame_time`
+- `auto_cast_system.py` — usa `world._frame_time`
+- `movement_collision_system.py` — usa `world._frame_time`
 
-**Problema**: `time.time()` es una syscall que cuesta ~0.001ms. Con 200 NPCs × 3 llamadas = 600 syscalls = ~0.6ms.
+**Solución implementada**: `ECSWorld.update()` cachea `time.time()` como `self._frame_time` una vez por frame. Los sistemas principales usan `getattr(world, '_frame_time', None) or time.time()` como fallback seguro.
 
-**Solución**: Cachear `time.time()` una vez al inicio del frame y reutilizar.
+**Ahorro**: ~0.3-0.8ms/frame con 200+ NPCs.
 
 ---
 
-### 3.9 🟡 MEDIO: AutoCastSystem — Complejidad por Entrada
+### 3.9 ✅ RESUELTO: AutoCastSystem — Frustum Culling + Frame Time Cache
 
 **Archivo**: `src/roguelike_game/ecs/systems/ai/auto_cast_system.py`
 
-**Problema**: Para cada NPC con `AutoCastComponent`, el sistema:
-1. Itera sobre `entries` (lista de hechizos configurados)
-2. Para cada entry, calcula `compute_entity_center()` (2 llamadas: caster + player)
-3. Calcula distancia, evalúa umbrales, verifica cooldowns
-4. Accede a 5-8 component maps por NPC
+**Problema original**: Para cada NPC con `AutoCastComponent`, el sistema evaluaba entries, calculaba distancias, y verificaba cooldowns — incluso para NPCs lejos de la cámara.
 
-**Impacto**: Con 20 NPCs con autocast × 3 entries cada uno = 60 evaluaciones × ~0.05ms = ~3ms.
+**Solución implementada**:
+1. `get_active_entity_ids(world, camera)` filtra NPCs fuera de la zona activa
+2. `world._frame_time` reemplaza `time.time()` para evitar syscalls redundantes
+
+**Ahorro**: ~1-3ms/frame durante combate (NPCs offscreen ya no evalúan autocast).
 
 ---
 
@@ -362,6 +361,8 @@ def update(self, world, camera=None):
 
 ## 7. Optimizaciones Ya Implementadas
 
+### Fase 1 (sesión anterior)
+
 | Capa | Descripción | Archivo | Ahorro |
 |------|-------------|---------|--------|
 | **Spawn Budget** | MAX_SPAWNS_PER_FRAME=3 | `spawn_system.py` | Elimina spikes de spawn |
@@ -369,6 +370,16 @@ def update(self, world, camera=None):
 | **Spatial Hash** | O(N×K) para NPC-NPC collisions | `spatial_hash.py`, `movement_collision_system.py`, `npc_separation_system.py` | O(N²) → O(N×K) |
 | **Frustum Culling** | FSM + Animation throttled offscreen | `frustum_culling.py`, `fsm_system.py`, `animation_system.py` | ~87% reducción para NPCs lejanos |
 | **Entities Set** | O(1) add/remove/membership | `manager.py` | O(N) → O(1) en remove |
+
+### Fase 2 (sesión actual)
+
+| Capa | Descripción | Archivo | Ahorro estimado |
+|------|-------------|---------|----------------|
+| **NPC Render Tuples** | Elimina `_NPCWrapper` per-frame, usa tuples + direct blit | `entities_renderer.py` | ~0.5-2ms/frame |
+| **Unified Z-Sort** | Un solo sort para buildings + NPCs juntos | `entities_renderer.py` | ~0.3-0.8ms/frame |
+| **Frame Time Cache** | `world._frame_time` cachea `time.time()` una vez por frame | `manager.py`, `animation_system.py`, `fsm_system.py`, `auto_cast_system.py`, `movement_collision_system.py` | ~0.3-0.8ms/frame |
+| **Pre-built Benchmarks** | Callables pre-construidos en init, sin `inspect`/closures por frame | `manager.py` | ~0.5-1ms/frame |
+| **AutoCast Frustum** | NPCs offscreen no evalúan autocast | `auto_cast_system.py` | ~1-3ms/frame en combate |
 
 ---
 
