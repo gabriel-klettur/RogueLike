@@ -20,7 +20,7 @@ class WorldStub:
     def __init__(self):
         self.components = {"SpawnerConfig": {}, "SpawnerState": {}}
         self.buildings = []
-        self.entities = []
+        self.entities: set[int] = set()
 
     def get_entities_with(self, *names: str) -> list[int]:
         if all(n in self.components for n in names):

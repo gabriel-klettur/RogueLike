@@ -28,7 +28,7 @@ class ECSWorld:
         # Control de verbosidad para reconstrucciones (evita spam en intervalos)
         self._log_rebuild_info: bool = False
 
-        self.entities = []
+        self.entities: set[int] = set()
         self.next_entity_id = 1
 
         # 1) Inicializar índice espacial
@@ -92,7 +92,7 @@ class ECSWorld:
     def create_entity(self):
         eid = self.next_entity_id
         self.next_entity_id += 1
-        self.entities.append(eid)
+        self.entities.add(eid)
         return eid
 
     def get_entities_with(self, *component_types):
@@ -168,8 +168,7 @@ class ECSWorld:
             pass
 
     def remove_entity(self, eid):
-        if eid in self.entities:
-            self.entities.remove(eid)
+        self.entities.discard(eid)
         for comp_dict in self.components.values():
             # Algunos "component stores" no son dicts (p.ej., colas de eventos como listas).
             # Asegurar eliminación segura según el tipo de contenedor.

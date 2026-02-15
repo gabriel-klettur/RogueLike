@@ -19,19 +19,18 @@ class DummyWorld:
             'SpawnerConfig': {},
             'SpawnerState': {},
         }
-        self.entities = []
+        self.entities: set[int] = set()
         self.buildings = []
         self.state = types.SimpleNamespace()
         self._spatial_invalidated = False
 
     def create_entity(self):
         eid = (max(self.entities) + 1) if self.entities else 1
-        self.entities.append(eid)
+        self.entities.add(eid)
         return eid
 
     def remove_entity(self, eid):
-        if eid in self.entities:
-            self.entities.remove(eid)
+        self.entities.discard(eid)
         for comp in self.components.values():
             try:
                 comp.pop(eid, None)

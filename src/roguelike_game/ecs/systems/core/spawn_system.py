@@ -21,7 +21,14 @@ logger = logging.getLogger(__name__)
 class SpawnSystem:
     """
     Sistema que procesa componentes SpawnRequest y genera NPCs en el mundo.
+
+    Usa un *spawn budget* para limitar cuántos NPCs se crean por frame,
+    distribuyendo el costo de creación a lo largo de varios frames y evitando
+    spikes de latencia.
     """
+
+    # Máximo de SpawnRequests procesados por frame (amortized spawning)
+    MAX_SPAWNS_PER_FRAME: int = 3
 
     def __init__(self, perf_log):
         self.perf_log = perf_log
@@ -29,8 +36,10 @@ class SpawnSystem:
     def update(self, world, camera=None):
         """
         1. Encuentra todas las entidades que solicitaron un spawn (SpawnRequest).
-        2. Para cada solicitud, crea un NPC usando spawn_monster y la información de la solicitud.
+        2. Para cada solicitud (hasta MAX_SPAWNS_PER_FRAME), crea un NPC usando
+           la fábrica y la información de la solicitud.
         3. Elimina la entidad que actuaba como request para limpiar el componente.
+        4. Las solicitudes restantes permanecen para el siguiente frame.
 
         Parámetros:
           world – El objeto World que contiene entidades y sus componentes.
@@ -38,7 +47,11 @@ class SpawnSystem:
         # Copiar las solicitudes actuales para evitar modificación durante la iteración
         requests = list(world.components.get('SpawnRequest', {}).items())
 
+        budget = self.MAX_SPAWNS_PER_FRAME
         for req_eid, req in requests:
+            if budget <= 0:
+                break
+            budget -= 1
             # req.prototype: identificador del tipo de NPC a generar
             # req.position: tupla (x, y) de coordenadas donde spawnar
             # Respetar instance_id si el SpawnRequest lo aporta para persistencia

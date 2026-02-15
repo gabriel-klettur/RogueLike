@@ -14,7 +14,7 @@ class DummyWorld:
     def __init__(self, editor_active: bool):
         # Minimal ECSWorld-like
         self.components = {}
-        self.entities = []
+        self.entities: set[int] = set()
         self.map_manager = DummyMapManager()
         self.buildings = []
         # Provide access path used by SpawnerRuntimeSystem for TTL logic

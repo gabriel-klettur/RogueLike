@@ -6,7 +6,7 @@ Checks collisions against solid tiles and buildings, resolving movement per axis
 import pygame
 import math
 import time
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Set
 from roguelike_game.ecs.utils.collider_utils import (
     build_collider_rect,
     get_circle_world,
@@ -18,6 +18,7 @@ from roguelike_game.ecs.utils.collider_utils import (
 )
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_engine.utils.benchmark.benchmark import benchmark
+from roguelike_game.ecs.utils.spatial_hash import build_npc_feet_hash
 
 
 class MovementCollisionSystem:
@@ -29,7 +30,7 @@ class MovementCollisionSystem:
     def __init__(self, perf_log):
         self.perf_log = perf_log
 
-    # --- Circle sliding helper (tiles + NPCs) ---
+    # --- Circle sliding helper (tiles + NPCs via spatial hash) ---
     def _slide_circle(self,
                       cx: float,
                       cy: float,
@@ -38,10 +39,12 @@ class MovementCollisionSystem:
                       dy: float,
                       tile_query,
                       walls_data,
-                      npc_circles: Optional[Dict[int, Tuple[float, float, float]]],
-                      npc_rects: Optional[Dict[int, pygame.Rect]],
+                      npc_circles: Dict[int, Tuple[float, float, float]],
+                      npc_rects: Dict[int, pygame.Rect],
+                      nearby_npc_ids: Set[int],
                       max_iters: int = 5) -> Tuple[float, float]:
         """Attempt to move a circle by (dx,dy), sliding along obstacles using MTV resolution.
+        Uses nearby_npc_ids (from spatial hash) instead of iterating all NPCs.
         Returns new (cx, cy)."""
         if (dx == 0 and dy == 0) or r <= 0:
             return cx, cy
@@ -119,9 +122,10 @@ class MovementCollisionSystem:
                         # Ignorar muros mal formados o datos incompletos
                         continue
 
-            # Other NPC circles
-            if npc_circles:
-                for _, c in npc_circles.items():
+            # Other NPC circles (only nearby from spatial hash)
+            for nid in nearby_npc_ids:
+                c = npc_circles.get(nid)
+                if c is not None:
                     if circle_overlaps_circle((nx, ny, r), c):
                         collided = True
                         mtv = circle_circle_mtv((nx, ny, r), c)
@@ -136,10 +140,9 @@ class MovementCollisionSystem:
                         sum_mtv_x += mtv[0]
                         sum_mtv_y += mtv[1]
                         coll_count += 1
-
-            # Other NPC rectangles (compat)
-            if npc_rects:
-                for _, rr in npc_rects.items():
+                    continue
+                rr = npc_rects.get(nid)
+                if rr is not None:
                     if circle_overlaps_rect(nx, ny, r, rr):
                         collided = True
                         mtv = circle_rect_mtv(nx, ny, r, rr)
@@ -209,25 +212,10 @@ class MovementCollisionSystem:
         multi_map = comps['MultiCollider']
         tile_query = world.get_solid_tiles_for_rect  # spatial index query
 
-        # Preparar rects de pies de NPCs para colisión mutua
-        npc_feet_rects = {}
-        npc_feet_circles = {}
+        # Build spatial hash for NPC feet (O(N) build, O(1) query per entity)
+        npc_hash, npc_feet_circles, npc_feet_rects = build_npc_feet_hash(world)
         stab_map = comps.get('SpawnStabilizer', {})
         stabilized_ids = set(stab_map.keys()) if stab_map else set()
-        for nid in world.get_entities_with('Position', 'MultiCollider'):
-            if nid in comps.get('PlayerTagComponent', {}):
-                continue
-            # Omitir colisiones con NPCs muertos
-            if nid in comps.get('DeathTimer', {}):
-                continue
-            npos = pos_map[nid]
-            nmulti = multi_map[nid]
-            nfeet = nmulti.colliders.get('feet')
-            if nfeet:
-                if hasattr(nfeet, "radius"):
-                    npc_feet_circles[nid] = get_circle_world(npos.x, npos.y, nfeet)
-                else:
-                    npc_feet_rects[nid] = build_collider_rect(npos.x, npos.y, nfeet)
 
         # Precompute walls data for OBB collisions
         walls_data = []
@@ -294,11 +282,13 @@ class MovementCollisionSystem:
             if hasattr(feet, "radius"):
                 # Centro y radio actuales
                 cx, cy, r = get_circle_world(pos.x, pos.y, feet)
-                # Preparar conjuntos de NPCs contra los que colisionar (excluyendo self y estabilizados)
-                others_circles = {i: c for i, c in npc_feet_circles.items() if i != eid and i not in stabilized_ids}
-                others_rects   = {i: rr for i, rr in npc_feet_rects.items() if i != eid and i not in stabilized_ids}
+                # Spatial hash query: only nearby NPCs (excluding self and stabilized)
+                search_r = r + max(abs(vel.vx), abs(vel.vy)) + 32  # expand by velocity + margin
+                nearby_ids = npc_hash.query_radius(cx, cy, search_r)
+                nearby_ids.discard(eid)
+                nearby_ids -= stabilized_ids
 
-                nx, ny = self._slide_circle(cx, cy, r, vel.vx, vel.vy, tile_query, walls_data, others_circles, others_rects)
+                nx, ny = self._slide_circle(cx, cy, r, vel.vx, vel.vy, tile_query, walls_data, npc_feet_circles, npc_feet_rects, nearby_ids)
                 # Aplicar delta a Position (mantener vel para coherencia con comportamiento previo)
                 pos.x += (nx - cx)
                 pos.y += (ny - cy)
@@ -323,11 +313,17 @@ class MovementCollisionSystem:
                     feet.rect.x = old_x
                     vel.vx = 0
                 else:
-                    # Sin colisión con tile, verificar NPCs (omitir mientras SpawnStabilizer activo)
+                    # Sin colisión con tile, verificar NPCs via spatial hash
                     check_npc = eid not in stabilized_ids
-                    if check_npc and any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid and id2 not in stabilized_ids):
-                        # Colisión con otro NPC: revertir
-                        feet.rect.x = old_x
+                    if check_npc:
+                        rect_nearby = npc_hash.query_rect(feet.rect.x, feet.rect.y, feet.rect.width, feet.rect.height)
+                        rect_nearby.discard(eid)
+                        rect_nearby -= stabilized_ids
+                        if any(feet.rect.colliderect(npc_feet_rects[nid]) for nid in rect_nearby if nid in npc_feet_rects):
+                            feet.rect.x = old_x
+                        else:
+                            pos.x += vel.vx
+                            npc_feet_rects[eid] = feet.rect.copy()
                     else:
                         pos.x += vel.vx
                         npc_feet_rects[eid] = feet.rect.copy()
@@ -344,9 +340,15 @@ class MovementCollisionSystem:
                     vel.vy = 0
                 else:
                     check_npc = eid not in stabilized_ids
-                    if check_npc and any(feet.rect.colliderect(r) for id2, r in npc_feet_rects.items() if id2 != eid and id2 not in stabilized_ids):
-                        # Colisión con otro NPC: revertir
-                        feet.rect.y = old_y
+                    if check_npc:
+                        rect_nearby = npc_hash.query_rect(feet.rect.x, feet.rect.y, feet.rect.width, feet.rect.height)
+                        rect_nearby.discard(eid)
+                        rect_nearby -= stabilized_ids
+                        if any(feet.rect.colliderect(npc_feet_rects[nid]) for nid in rect_nearby if nid in npc_feet_rects):
+                            feet.rect.y = old_y
+                        else:
+                            pos.y += vel.vy
+                            npc_feet_rects[eid] = feet.rect.copy()
                     else:
                         pos.y += vel.vy
                         npc_feet_rects[eid] = feet.rect.copy()

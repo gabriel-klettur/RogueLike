@@ -217,6 +217,87 @@ class SpatialHash:
         }
 
 
+# ── NPC feet spatial hash (rebuilt per frame by physics systems) ──
+
+_npc_feet_hash: Optional[SpatialHash] = None
+_npc_feet_hash_frame: int = -1  # frame counter when last rebuilt
+_npc_feet_circles_cache: Dict[int, Tuple[float, float, float]] = {}
+_npc_feet_rects_cache: Dict = {}
+
+
+def build_npc_feet_hash(
+    world,
+    *,
+    exclude_dead: bool = True,
+    exclude_player: bool = True,
+) -> Tuple[SpatialHash, Dict[int, Tuple[float, float, float]], Dict]:
+    """Build a SpatialHash of NPC feet colliders for broad-phase NPC-NPC queries.
+
+    Returns:
+        (spatial_hash, feet_circles, feet_rects)
+        - spatial_hash: SpatialHash populated with all qualifying NPCs.
+        - feet_circles: {eid: (cx, cy, radius)} for circle colliders.
+        - feet_rects: {eid: pygame.Rect} for rect colliders.
+
+    The hash is rebuilt at most once per frame (cached by world._frame_count).
+    """
+    global _npc_feet_hash, _npc_feet_hash_frame
+    global _npc_feet_circles_cache, _npc_feet_rects_cache
+
+    import pygame
+    from roguelike_game.ecs.utils.collider_utils import build_collider_rect, get_circle_world
+
+    frame = getattr(world, '_frame_count', -1)
+
+    # Return cached version if already built this frame
+    if (
+        _npc_feet_hash is not None
+        and _npc_feet_hash_frame == frame
+        and frame >= 0
+    ):
+        return _npc_feet_hash, _npc_feet_circles_cache, _npc_feet_rects_cache
+
+    comps = world.components
+    pos_map = comps.get('Position', {})
+    multi_map = comps.get('MultiCollider', {})
+    death_map = comps.get('DeathTimer', {})
+    player_map = comps.get('PlayerTagComponent', {})
+
+    sh = SpatialHash(cell_size=64)
+    feet_circles: Dict[int, Tuple[float, float, float]] = {}
+    feet_rects: Dict = {}
+
+    for eid in world.get_entities_with('Position', 'MultiCollider'):
+        if exclude_dead and eid in death_map:
+            continue
+        if exclude_player and eid in player_map:
+            continue
+        pos = pos_map[eid]
+        multi = multi_map[eid]
+        feet = multi.colliders.get('feet')
+        if not feet:
+            continue
+        if hasattr(feet, 'radius'):
+            cx, cy, r = get_circle_world(pos.x, pos.y, feet)
+            feet_circles[eid] = (cx, cy, r)
+            sh.insert(eid, cx, cy, r)
+        else:
+            rect = build_collider_rect(pos.x, pos.y, feet)
+            feet_rects[eid] = rect
+            rcx = rect.centerx
+            rcy = rect.centery
+            half_diag = ((rect.width ** 2 + rect.height ** 2) ** 0.5) * 0.5
+            sh.insert(eid, rcx, rcy, half_diag)
+
+    # Cache in module-level variables (SpatialHash uses __slots__)
+    _npc_feet_hash = sh
+    _npc_feet_hash_frame = frame
+    _npc_feet_circles_cache = feet_circles
+    _npc_feet_rects_cache = feet_rects
+
+    return sh, feet_circles, feet_rects
+
+
 # Cache global para entidades con Health (usada por FireballSystem)
 _combat_spatial_hash: Optional[SpatialHash] = None
 

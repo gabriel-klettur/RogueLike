@@ -3,6 +3,9 @@ Module: npc_separation_system.py
 Resolves inter-NPC overlaps by gently separating their 'feet' colliders.
 Runs after SpawnSystem so fresh spawns are de-overlapped immediately,
 and every frame to guarantee they never overlap again.
+
+Uses a SpatialHash for broad-phase to reduce complexity from O(N²) to O(N×K)
+where K is the average number of nearby neighbors (~4-8).
 """
 import pygame
 from roguelike_game.ecs.utils.collider_utils import (
@@ -15,6 +18,7 @@ from roguelike_game.ecs.utils.collider_utils import (
 )
 from roguelike_game.ecs.components.physics.circle_collider import CircleCollider
 from roguelike_engine.utils.benchmark.benchmark import benchmark
+from roguelike_game.ecs.utils.spatial_hash import SpatialHash
 
 
 class NpcSeparationSystem:
@@ -23,7 +27,11 @@ class NpcSeparationSystem:
     para que no compartan espacio. Respeta colisiones con el entorno sólido.
     - No mueve al jugador; sólo separa NPCs alrededor del jugador si fuera necesario.
     - Ejecuta varias iteraciones para resolver cadenas de solapes.
+    - Usa SpatialHash para broad-phase: solo compara NPCs en celdas cercanas.
     """
+
+    # Máximo radio de búsqueda para vecinos (px). Entidades más lejos no se comparan.
+    _SEARCH_MARGIN: float = 48.0
 
     def __init__(self, perf_log=None, max_iters: int = 3):
         self.perf_log = perf_log
@@ -39,38 +47,72 @@ class NpcSeparationSystem:
         if tile_query is None:
             return
 
-        # Construir geometrías actuales
-        entities = [eid for eid in world.get_entities_with('Position', 'MultiCollider') if eid not in death_map]
+        # Construir geometrías actuales y spatial hash
         feet_rects: dict[int, pygame.Rect] = {}
         feet_circles: dict[int, tuple[float, float, float]] = {}
-        for eid in entities:
+        sh = SpatialHash(cell_size=64)
+
+        for eid in world.get_entities_with('Position', 'MultiCollider'):
+            if eid in death_map:
+                continue
             feet = multi_map[eid].colliders.get('feet')
             if not feet:
                 continue
             pos = pos_map[eid]
             if hasattr(feet, "radius"):
-                feet_circles[eid] = get_circle_world(pos.x, pos.y, feet)
+                cx, cy, r = get_circle_world(pos.x, pos.y, feet)
+                feet_circles[eid] = (cx, cy, r)
+                sh.insert(eid, cx, cy, r + self._SEARCH_MARGIN)
             else:
-                feet_rects[eid] = build_collider_rect(pos.x, pos.y, feet)
+                rect = build_collider_rect(pos.x, pos.y, feet)
+                feet_rects[eid] = rect
+                half_diag = ((rect.width ** 2 + rect.height ** 2) ** 0.5) * 0.5
+                sh.insert(eid, rect.centerx, rect.centery, half_diag + self._SEARCH_MARGIN)
 
         if not feet_rects and not feet_circles:
             return
 
+        # Track processed pairs to avoid duplicate work
+        processed: set[tuple[int, int]] = set()
+
         # Varias pasadas de separación
         for _ in range(self.max_iters):
             moved_any = False
-            # Evaluar pares con solape
-            ids = sorted(set(list(feet_rects.keys()) + list(feet_circles.keys())))
-            for i in range(len(ids)):
-                a_id = ids[i]
+            processed.clear()
+
+            # Para cada entidad, consultar solo vecinos cercanos via spatial hash
+            all_ids = list(feet_circles.keys()) + list(feet_rects.keys())
+            for a_id in all_ids:
                 a_is_circle = a_id in feet_circles
                 a_geom = feet_circles[a_id] if a_is_circle else feet_rects[a_id]
                 a_is_player = a_id in player_map
-                for j in range(i + 1, len(ids)):
-                    b_id = ids[j]
+
+                # Query nearby from spatial hash
+                if a_is_circle:
+                    acx, acy, ar = a_geom
+                    nearby = sh.query_radius(acx, acy, ar + self._SEARCH_MARGIN)
+                else:
+                    nearby = sh.query_rect(
+                        a_geom.x - self._SEARCH_MARGIN,
+                        a_geom.y - self._SEARCH_MARGIN,
+                        a_geom.width + 2 * self._SEARCH_MARGIN,
+                        a_geom.height + 2 * self._SEARCH_MARGIN,
+                    )
+                nearby.discard(a_id)
+
+                for b_id in nearby:
+                    # Avoid processing same pair twice
+                    pair = (min(a_id, b_id), max(a_id, b_id))
+                    if pair in processed:
+                        continue
+                    processed.add(pair)
+
                     b_is_circle = b_id in feet_circles
+                    if not b_is_circle and b_id not in feet_rects:
+                        continue
                     b_geom = feet_circles[b_id] if b_is_circle else feet_rects[b_id]
                     b_is_player = b_id in player_map
+
                     # Detectar solape según tipos
                     overlap = False
                     if a_is_circle and b_is_circle:
@@ -98,7 +140,6 @@ class NpcSeparationSystem:
                         bx, by = (0.5 * mtv_x if move_a and move_b else (mtv_x if move_b else 0),
                                   0.5 * mtv_y if move_a and move_b else (mtv_y if move_b else 0))
 
-                        # Intentar aplicar, respetando tiles
                         if move_a and (ax != 0 or ay != 0):
                             acx, acy, ar = feet_circles[a_id]
                             naabb = pygame.Rect(int(acx + ax - ar), int(acy + ay - ar), int(ar * 2), int(ar * 2))
@@ -147,7 +188,6 @@ class NpcSeparationSystem:
                         # Rect-Rect fallback original
                         a_rect = a_geom
                         b_rect = b_geom
-                        # Calcular mínimo desplazamiento para separar por eje
                         dx1 = (b_rect.right - a_rect.left)
                         dx2 = (a_rect.right - b_rect.left)
                         dy1 = (b_rect.bottom - a_rect.top)

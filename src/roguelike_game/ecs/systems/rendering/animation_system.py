@@ -2,11 +2,14 @@
 """
 Module: animation_system.py
 Updates entity animations by advancing frames and applying the current frame to the Sprite component.
+
+Includes frustum culling: offscreen entities update animations at reduced frequency.
 """
 import time
 import pygame
 from roguelike_engine.utils.benchmark.benchmark import benchmark
 from roguelike_game.ecs.components.physics.mask_collider import MaskCollider
+from roguelike_game.ecs.utils.frustum_culling import get_active_entity_ids
 
 _mask_cache = {}
 
@@ -14,7 +17,11 @@ class AnimationSystem:
     """
     Sistema para actualizar animaciones y volcar el frame actual en Sprite.
     Recorre todos los Animator y, si hay un nuevo frame, lo aplica al componente Sprite correspondiente.
+    Usa frustum culling para reducir actualizaciones de entidades lejanas.
     """
+    # Offscreen entities update animations every N frames
+    OFFSCREEN_UPDATE_INTERVAL: int = 8
+
     def __init__(self, perf_log=None):
         """
         Inicializa el AnimationSystem.
@@ -29,7 +36,7 @@ class AnimationSystem:
 
         Pasos:
         1. Obtener referencias a los mapas de componentes Animator y Sprite.
-        2. Para cada entidad con Animator:
+        2. Para cada entidad con Animator (near camera every frame, far every N frames):
            a. Obtener el siguiente frame llamando a animator.next_frame().
            b. Si existe un frame y la entidad tiene Sprite, reemplazar sprite.image.
         """
@@ -41,8 +48,17 @@ class AnimationSystem:
         scale_map = comps.get('Scale', {})     # Map id -> Scale component (optional)
         mc_map = comps.get('MultiCollider', {})
 
+        # Frustum culling
+        active_ids = get_active_entity_ids(world, camera)
+        frame_count = getattr(world, '_frame_count', 0)
+        interval = self.OFFSCREEN_UPDATE_INTERVAL
+
         # 2) Iterar sobre cada Animator
         for eid, animator in anim_map.items():
+            # Offscreen throttling
+            if active_ids is not None and eid not in active_ids:
+                if (frame_count % interval) != (eid % interval):
+                    continue
             timer = timer_map.get(eid)
             now = time.time()
             if timer and now - timer.last_time < timer.interval:

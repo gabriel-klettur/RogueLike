@@ -41,7 +41,7 @@ def restore_entity(world, snap: EntitySnapshot) -> int:
         # Ensure next_entity_id is above eid so future create_entity() won't collide
         if eid >= world.next_entity_id:
             world.next_entity_id = eid + 1
-        world.entities.append(eid)
+        world.entities.add(eid)
     # Write components back
     for cname, cmp in snap.components.items():
         store = world.components.get(cname)

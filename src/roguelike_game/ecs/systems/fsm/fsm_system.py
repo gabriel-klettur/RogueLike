@@ -1,5 +1,9 @@
 """
 Sistema ECS para actualizar la FSM de NPCs (y jugador) y evaluar transiciones JSON simples.
+
+Incluye frustum culling: NPCs fuera de la zona activa de la cámara se actualizan
+a frecuencia reducida (cada OFFSCREEN_UPDATE_INTERVAL frames) para ahorrar CPU.
+Estados críticos (combate, muerte) siempre se actualizan.
 """
 from roguelike_engine.utils.benchmark.benchmark import benchmark
 import roguelike_engine.config.config as config
@@ -8,9 +12,13 @@ from roguelike_game.ecs.systems.fsm.states.attack_state import AttackState
 from roguelike_game.ecs.systems.fsm.states.damage_state import DamageState
 from roguelike_game.ecs.systems.fsm.states.death_state import DeathState
 from roguelike_game.ecs.systems.fsm.states.unconscious_state import UnconsciousState
+from roguelike_game.ecs.utils.frustum_culling import get_active_entity_ids
 import time
 import random
 from roguelike_game.ecs.components.rendering.flash_component import FlashComponent
+
+# States that must always update regardless of camera distance
+_CRITICAL_STATES = (AttackState, DamageState, DeathState, UnconsciousState)
 
 # Wrapper para pasar entidad con acceso a world e id como key en componentes
 class _EntityProxy:
@@ -27,6 +35,9 @@ class _EntityProxy:
         return f"<EntityProxy {self.id}>"
 
 class FSMSystem:
+    # Offscreen NPCs update every N frames (reduces CPU ~87% for distant NPCs)
+    OFFSCREEN_UPDATE_INTERVAL: int = 8
+
     def __init__(self, perf_log):
         self.perf_log = perf_log
     
@@ -36,8 +47,23 @@ class FSMSystem:
             eids = list(world.get_entities_with('NPCState'))
         except Exception:
             eids = list(world.components.get('NPCState', {}).keys())
+
+        # Frustum culling: determine which entities are near the camera
+        active_ids = get_active_entity_ids(world, camera)
+        frame = getattr(world, '_frame_count', 0)
+        interval = self.OFFSCREEN_UPDATE_INTERVAL
+
         for eid in eids:
-            npc_state = world.components['NPCState'][eid]
+            npc_state = world.components.get('NPCState', {}).get(eid)
+            if npc_state is None:
+                continue
+
+            # Offscreen throttling: skip distant NPCs unless critical state or interval hit
+            if active_ids is not None and eid not in active_ids:
+                is_critical = isinstance(npc_state.fsm.current_state, _CRITICAL_STATES)
+                if not is_critical and (frame % interval) != (eid % interval):
+                    continue
+
             entity = _EntityProxy(world, eid)
             # Consumir eventos de FSM antes de update() por entidad
             self._process_events(world, eid, npc_state, entity)
