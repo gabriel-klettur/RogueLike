@@ -18,6 +18,27 @@ logger = logging.getLogger(__name__)
 
 # Cache de máscaras rotadas por (radius, arc_angle_key, direction_angle_key)
 _ROTATED_MASK_CACHE: dict = {}
+# Cache de máscaras rectangulares por (width, height) — evita crear Surface+mask cada frame
+_RECT_MASK_CACHE: dict[tuple[int, int], pygame.mask.Mask] = {}
+
+def _get_rect_mask(w: int, h: int) -> pygame.mask.Mask:
+    """Return a cached filled rectangular mask of size (w, h).
+
+    Avoids creating a new pygame.Surface + pygame.mask.from_surface every frame
+    for building collision tiles and entity colliders without pre-built masks.
+    """
+    w, h = int(w), int(h)
+    if w <= 0 or h <= 0:
+        return pygame.mask.Mask((1, 1), fill=True)
+    key = (w, h)
+    mask = _RECT_MASK_CACHE.get(key)
+    if mask is None:
+        mask = pygame.mask.Mask((w, h), fill=True)
+        # Cap cache size to avoid unbounded growth
+        if len(_RECT_MASK_CACHE) > 256:
+            _RECT_MASK_CACHE.clear()
+        _RECT_MASK_CACHE[key] = mask
+    return mask
 
 class HitboxSystem:
     """
@@ -91,6 +112,8 @@ class HitboxSystem:
             hitmask = self._get_cached_rotated_mask(int(r), hb.arc_angle, dir_ang)
             
             r2 = r*r
+            # Broad-phase radius squared: hitbox radius + generous margin for target colliders
+            r2_broad = (r + 64) * (r + 64)
             multi_map = world.components.get('MultiCollider', {})
 
             # --- Buildings hit detection: generate BuildingDamageEvents and SpawnerDamageEvents ---
@@ -127,7 +150,6 @@ class HitboxSystem:
                             except Exception:
                                 bmask = None
                             if bmask is not None:
-                                # Offset from arc hitmask origin (screen_left, screen_top) to building top-left in screen coords
                                 bx, by = camera.apply((b.x, b.y))
                                 off = (int(bx - screen_left), int(by - screen_top))
                                 if hitmask.overlap(bmask, off):
@@ -136,30 +158,24 @@ class HitboxSystem:
                                         hit_spawners.add(int(se))
                                     continue
                             else:
-                                # Fallback: per-tile rectangles only if mask is missing
                                 for rect_w in b.collision_tiles:
                                     if not arc_world_rect.colliderect(rect_w):
                                         continue
                                     sx, sy = camera.apply((rect_w.x, rect_w.y))
                                     off = (int(sx - screen_left), int(sy - screen_top))
-                                    tmp = pygame.Surface((rect_w.width, rect_w.height))
-                                    tmp.fill((255,255,255))
-                                    target_mask = pygame.mask.from_surface(tmp)
+                                    target_mask = _get_rect_mask(rect_w.width, rect_w.height)
                                     if hitmask.overlap(target_mask, off):
                                         se = getattr(b, '_spawner_eid', None)
                                         if se is not None:
                                             hit_spawners.add(int(se))
                                         break
                         else:
-                            # Non-spawner buildings: keep per-tile rectangle checks
                             for rect_w in b.collision_tiles:
                                 if not arc_world_rect.colliderect(rect_w):
                                     continue
                                 sx, sy = camera.apply((rect_w.x, rect_w.y))
                                 off = (int(sx - screen_left), int(sy - screen_top))
-                                tmp = pygame.Surface((rect_w.width, rect_w.height))
-                                tmp.fill((255,255,255))
-                                target_mask = pygame.mask.from_surface(tmp)
+                                target_mask = _get_rect_mask(rect_w.width, rect_w.height)
                                 if hitmask.overlap(target_mask, off):
                                     bid = getattr(b, 'spawn_id', None) or getattr(b, 'id', None)
                                     if bid is not None:
@@ -208,14 +224,25 @@ class HitboxSystem:
                 # Nunca romper combate por fallos en limpieza de proyectiles
                 pass
 
+            # Pre-fetch dead/dying sets once per hitbox
+            death_timer_map = world.components.get('DeathTimer', {})
+            dying_tag_map = world.components.get('DyingTag', {})
+            hb_owner = hb.owner
+            hb_hit_targets = hb.hit_targets
+
             for target in list(healths.keys()):
-                if target == hb.owner or target in hb.hit_targets:
+                if target == hb_owner or target in hb_hit_targets:
                     continue
                 tpos = positions.get(target)
                 if tpos is None:
                     continue
+                # Spatial pre-filter: skip targets far from hitbox center
+                tdx = tpos.x - cx
+                tdy = tpos.y - cy
+                if tdx * tdx + tdy * tdy > r2_broad:
+                    continue
                 # Saltar cadáveres o entidades marcadas como "Dying"
-                if target in world.components.get('DeathTimer', {}) or target in world.components.get('DyingTag', {}):
+                if target in death_timer_map or target in dying_tag_map:
                     continue
                 hit_any = False
                 comp = multi_map.get(target)
@@ -227,9 +254,7 @@ class HitboxSystem:
                         if hasattr(collider, 'mask'):
                             target_mask = collider.mask
                         else:
-                            tmp = pygame.Surface((rect_w.width, rect_w.height))
-                            tmp.fill((255,255,255))
-                            target_mask = pygame.mask.from_surface(tmp)
+                            target_mask = _get_rect_mask(rect_w.width, rect_w.height)
                         overlap_pt = hitmask.overlap(target_mask, off)
                         if overlap_pt:
                             hit_any = True
@@ -302,7 +327,7 @@ class HitboxSystem:
                         tper = float(burn_cfg.get('tick_period', 1.0)) if isinstance(burn_cfg, dict) else 1.0
                         burns = world.components.setdefault('BurnComponent', {})
                         bc = burns.get(target)
-                        now = time.time()
+                        now = getattr(world, '_frame_time', None) or time.time()
                         owner = hb.owner
                         if bc is None:
                             burns[target] = BurnComponent(
@@ -356,7 +381,7 @@ class HitboxSystem:
 
                         poisons = world.components.setdefault('PoisonComponent', {})
                         pc = poisons.get(target)
-                        now = time.time()
+                        now = getattr(world, '_frame_time', None) or time.time()
                         owner = hb.owner
                         if pc is None:
                             poisons[target] = PoisonComponent(
@@ -421,7 +446,7 @@ class HitboxSystem:
                     except Exception:
                         pass
                 # record last attacker for KO attribution
-                world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, time.time())
+                world.components.setdefault('LastAttacker', {})[target] = LastAttacker(hb.owner, getattr(world, '_frame_time', None) or time.time())
                 hb.hit_targets.add(target)
                 try:
                     if hb.owner in world.components.get('PlayerTagComponent', {}):

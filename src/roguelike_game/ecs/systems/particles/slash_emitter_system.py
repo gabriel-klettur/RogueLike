@@ -20,35 +20,23 @@ class SlashEmitterSystem:
         self.perf_log = perf_log
     
     def update(self, world, camera=None):
-        now = time.time()
         emitters = world.components.get('SlashEmitterComponent', {})
-        if emitters:
-            try:
-                logger.info("[SlashEmitterSystem] active emitters=%d", len(emitters))
-            except Exception:
-                pass
+        if not emitters:
+            return
         for caster, emitter in list(emitters.items()):
-            try:
-                logger.info(
-                    "[SlashEmitterSystem] begin caster=%s radius=%s arc=%.1fdeg count=%s life=%s size=%s speed_mult=%.2f dir=(%.2f,%.2f)",
-                    caster,
-                    getattr(emitter, 'radius', None),
-                    math.degrees(getattr(emitter, 'arc_range', 0.0) or 0.0),
-                    getattr(emitter, 'count', None),
-                    getattr(emitter, 'lifespan', None),
-                    tuple(getattr(emitter, 'size_range', (0, 0)) or (0, 0)),
-                    float(getattr(emitter, 'speed_multiplier', 0.0) or 0.0),
-                    float((getattr(emitter, 'direction', (0.0, 0.0)) or (0.0, 0.0))[0]),
-                    float((getattr(emitter, 'direction', (0.0, 0.0)) or (0.0, 0.0))[1]),
-                )
-            except Exception:
-                pass
-            pos_cmp = world.components.get('Position', {}).get(caster)
-            if not pos_cmp:
+            if logger.isEnabledFor(logging.DEBUG):
                 try:
-                    logger.warning("[SlashEmitterSystem] missing Position for caster=%s (no emission)", caster)
+                    logger.debug(
+                        "[SlashEmitterSystem] begin caster=%s radius=%s arc=%.1fdeg count=%s",
+                        caster,
+                        getattr(emitter, 'radius', None),
+                        math.degrees(getattr(emitter, 'arc_range', 0.0) or 0.0),
+                        getattr(emitter, 'count', None),
+                    )
                 except Exception:
                     pass
+            pos_cmp = world.components.get('Position', {}).get(caster)
+            if not pos_cmp:
                 continue
             cx, cy = pos_cmp.x, pos_cmp.y
             sprite_cmp = world.components.get('Sprite', {}).get(caster)
@@ -144,9 +132,10 @@ class SlashEmitterSystem:
                     drag=drg,
                 )
                 emitted += 1
-            try:
-                logger.info("[SlashEmitterSystem] emitted=%d particles for caster=%s", emitted, caster)
-            except Exception:
-                pass
+            if logger.isEnabledFor(logging.DEBUG):
+                try:
+                    logger.debug("[SlashEmitterSystem] emitted=%d particles for caster=%s", emitted, caster)
+                except Exception:
+                    pass
             # Remover emisor para que solo emita una vez
             world.components['SlashEmitterComponent'].pop(caster, None)
