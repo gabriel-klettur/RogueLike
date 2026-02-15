@@ -1,5 +1,5 @@
 {
-  "db1e6c82-3442-4c8a-9151-f1b0a3057816": {
+  "6e6f5119-ba7b-4d6e-a4f5-863285d11e67": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       null,
@@ -25,59 +25,7 @@
     ],
     "schema_version": "1.0.0"
   },
-  "b14afe08-c374-4fc9-b7b3-001c21276570": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "346d8e14-9908-41c1-978a-0e61dafd8a6a": {
-    "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "slots": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "schema_version": "1.0.0"
-  },
-  "6961ea46-9b92-4a36-b99f-6039d77575f4": {
+  "e83fed25-221e-4f85-a039-23538eaafe58": {
     "template_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     "slots": [
       null,
