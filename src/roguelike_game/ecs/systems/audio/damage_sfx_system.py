@@ -38,7 +38,7 @@ class DamageSfxSystem:
         # entity_id → last known current_hp
         self._prev_hp: Dict[int, int] = {}
 
-    def update(self, world: Any, **kwargs: Any) -> None:
+    def update(self, world: Any, camera: Any = None, **kwargs: Any) -> None:
         hp_map = world.components.get("Health", {})
         player_tags = world.components.get("PlayerTagComponent", {})
         archetype_map = world.components.get("MonsterArchetype", {})
