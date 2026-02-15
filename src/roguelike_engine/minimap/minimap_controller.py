@@ -189,10 +189,14 @@ class MinimapController:
             try:
                 pos_map = world.components.get('Position', {})
                 id_map = world.components.get('Identity', {})
+                particle_map = world.components.get('ParticleComponent', {})
                 player_eid = getattr(world, 'player_entity', None)
                 count = 0
                 for eid, pos in pos_map.items():
                     if eid == player_eid:
+                        continue
+                    # Skip particles — they have Position but are not real entities
+                    if eid in particle_map:
                         continue
                     ex = int(getattr(pos, 'x', 0)) // TILE_SIZE
                     ey = int(getattr(pos, 'y', 0)) // TILE_SIZE
