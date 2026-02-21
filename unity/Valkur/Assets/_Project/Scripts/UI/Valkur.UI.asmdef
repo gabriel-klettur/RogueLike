@@ -1,0 +1,19 @@
+{
+    "name": "Valkur.UI",
+    "rootNamespace": "Valkur.UI",
+    "references": [
+        "Valkur.Core",
+        "Valkur.Gameplay",
+        "Valkur.Data",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

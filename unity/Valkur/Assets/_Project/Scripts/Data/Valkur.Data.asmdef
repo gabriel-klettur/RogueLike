@@ -1,0 +1,16 @@
+{
+    "name": "Valkur.Data",
+    "rootNamespace": "Valkur.Data",
+    "references": [
+        "Valkur.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -3,7 +3,16 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Player
+  - NPC
+  - Monster
+  - Projectile
+  - Pickup
+  - Building
+  - Spawner
+  - Portal
+  - Vendor
   layers:
   - Default
   - TransparentFX
@@ -13,15 +22,14 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Player
+  - NPC
+  - Projectile
+  - World
+  - Pickup
+  - UIBlocker
+  - Building
+  - Spawner
   - 
   - 
   - 
@@ -40,4 +48,28 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Ground
+    uniqueID: 1
+    locked: 0
+  - name: GroundDecoration
+    uniqueID: 2
+    locked: 0
+  - name: Buildings
+    uniqueID: 3
+    locked: 0
+  - name: Entities
+    uniqueID: 4
+    locked: 0
+  - name: Projectiles
+    uniqueID: 5
+    locked: 0
+  - name: VFX
+    uniqueID: 6
+    locked: 0
+  - name: UI_World
+    uniqueID: 7
+    locked: 0
+  - name: Overlay
+    uniqueID: 8
     locked: 0
