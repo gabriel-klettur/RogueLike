@@ -34,7 +34,12 @@
       "version": 7,
       "hash": "2ef581209030606c70c0502be619e9c465a93bea152ceb45b07aab5ec8b5057d",
       "created_at": "2026-02-15T15:45:48"
+    },
+    {
+      "version": 8,
+      "hash": "8923fc1213d3747759d780d10ddfb47c477fbddd6d6e4e3c3d3ab1bfdf56b6e7",
+      "created_at": "2026-02-15T15:52:31"
     }
   ],
-  "last_version": 7
+  "last_version": 8
 }
