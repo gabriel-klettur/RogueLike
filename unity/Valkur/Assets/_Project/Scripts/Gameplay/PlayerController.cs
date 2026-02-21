@@ -6,7 +6,7 @@ namespace Valkur.Gameplay
     /// <summary>
     /// Player movement and facing direction controller.
     /// Maps to Python's player movement system with 8-directional support.
-    /// Uses the new Input System with ValkurInputActions.
+    /// Uses standalone InputAction objects to avoid InputSystem 1.7.0 composite resolver bugs.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Health))]
@@ -29,7 +29,6 @@ namespace Valkur.Gameplay
         private InputAction _lookAction;
         private InputAction _primaryAttackAction;
         private InputAction _dashAction;
-        private PlayerInput _playerInput;
 
         public Vector2 FacingDirection => _facingDirection;
         public Vector2 MoveInput => _moveInput;
@@ -49,22 +48,31 @@ namespace Valkur.Gameplay
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
-            _playerInput = GetComponent<PlayerInput>();
-            if (_playerInput != null && _playerInput.actions != null)
-            {
-                _moveAction = _playerInput.actions.FindAction("Move");
-                _lookAction = _playerInput.actions.FindAction("Look");
-                _primaryAttackAction = _playerInput.actions.FindAction("PrimaryAttack");
-                _dashAction = _playerInput.actions.FindAction("Dash");
-            }
+            CreateInputActions();
         }
 
-        private void OnEnable()
+        private void CreateInputActions()
         {
-            if (_primaryAttackAction != null)
-                _primaryAttackAction.performed += OnPrimaryAttack;
-            if (_dashAction != null)
-                _dashAction.performed += OnDash;
+            _moveAction = new InputAction("Move", InputActionType.Value);
+            _moveAction.AddCompositeBinding("2DVector")
+                .With("Up", "<Keyboard>/w")
+                .With("Down", "<Keyboard>/s")
+                .With("Left", "<Keyboard>/a")
+                .With("Right", "<Keyboard>/d");
+
+            _lookAction = new InputAction("Look", InputActionType.Value, "<Mouse>/position");
+            _primaryAttackAction = new InputAction("PrimaryAttack", InputActionType.Button, "<Mouse>/leftButton");
+            _dashAction = new InputAction("Dash", InputActionType.Button, "<Keyboard>/space");
+
+            _primaryAttackAction.performed += OnPrimaryAttack;
+            _dashAction.performed += OnDash;
+
+            _moveAction.Enable();
+            _lookAction.Enable();
+            _primaryAttackAction.Enable();
+            _dashAction.Enable();
+
+            Debug.Log("[PlayerController] Standalone input actions created and enabled.");
         }
 
         private void OnDisable()
@@ -73,6 +81,19 @@ namespace Valkur.Gameplay
                 _primaryAttackAction.performed -= OnPrimaryAttack;
             if (_dashAction != null)
                 _dashAction.performed -= OnDash;
+
+            _moveAction?.Disable();
+            _lookAction?.Disable();
+            _primaryAttackAction?.Disable();
+            _dashAction?.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            _moveAction?.Dispose();
+            _lookAction?.Dispose();
+            _primaryAttackAction?.Dispose();
+            _dashAction?.Dispose();
         }
 
         private void Update()

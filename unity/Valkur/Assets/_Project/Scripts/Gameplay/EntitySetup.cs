@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 
@@ -16,7 +15,6 @@ namespace Valkur.Gameplay
         private static readonly int NPCLayer = LayerMask.NameToLayer("NPC");
         private static readonly int ProjectileLayer = LayerMask.NameToLayer("Projectile");
 
-        private static InputActionAsset _cachedInputActions;
         private static Sprite _playerSprite;
         private static Sprite _monsterSprite;
 
@@ -44,24 +42,6 @@ namespace Valkur.Gameplay
             var controller = go.GetComponent<PlayerController>();
             if (controller != null)
                 controller.SetMoveSpeed(def.basicSpeed);
-
-            // Wire InputActions if PlayerInput has none
-            var playerInput = go.GetComponent<PlayerInput>();
-            if (playerInput != null && playerInput.actions == null)
-            {
-                if (_cachedInputActions == null)
-                    _cachedInputActions = Resources.Load<InputActionAsset>("ValkurInputActions");
-                if (_cachedInputActions != null)
-                {
-                    playerInput.actions = _cachedInputActions;
-                    playerInput.defaultActionMap = "Gameplay";
-                    playerInput.notificationBehavior = PlayerNotifications.InvokeUnityEvents;
-                }
-                else
-                {
-                    Debug.LogWarning("[EntitySetup] ValkurInputActions not found in Resources. Place it in a Resources folder.");
-                }
-            }
 
             // MeleeCombat targets NPCs
             var combat = go.GetComponent<MeleeCombat>();
