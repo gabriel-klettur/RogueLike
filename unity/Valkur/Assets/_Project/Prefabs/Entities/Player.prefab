@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 8031997798628219384}
   - component: {fileID: 8219022886136903001}
   - component: {fileID: 2037434478256245301}
+  - component: {fileID: 2491225211818228769}
+  - component: {fileID: 8624213929971547592}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -323,3 +325,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   capacity: 20
+--- !u!114 &2491225211818228769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2435567524609270487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea2ba6c5d7260f64d8b8f67aa1d51cd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashDuration: 0.12
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  knockbackForce: 4
+  knockbackDuration: 0.15
+  deathFadeTime: 0.5
+  deathDestroyDelay: 1
+--- !u!114 &8624213929971547592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2435567524609270487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 501a2ff2d8faae7439eab6c4c90613dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dashSpeed: 18
+  dashDuration: 0.2
+  dashCooldown: 1
+  collisionDamage: 2
+  knockbackOnHit: 4
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 0

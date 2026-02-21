@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
 
 namespace Valkur.Gameplay
@@ -56,6 +57,11 @@ namespace Valkur.Gameplay
             if (caster != null)
                 caster.SetTargetLayers(1 << NPCLayer);
 
+            // DashAbility targets NPCs (collision damage during dash)
+            var dash = go.GetComponent<DashAbility>();
+            if (dash != null)
+                dash.SetTargetLayers(1 << NPCLayer);
+
             // Inventory
             var inventory = go.GetComponent<Inventory.Inventory>();
             if (inventory != null)
@@ -98,6 +104,11 @@ namespace Valkur.Gameplay
                     sr.sprite = _monsterSprite;
                 EnsureUnlitMaterial(sr);
             }
+
+            // Ensure monsters have Health initialized from definition stats
+            var health = go.GetComponent<Health>();
+            if (health != null)
+                health.Initialize(def.stats.hp);
 
             Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
         }

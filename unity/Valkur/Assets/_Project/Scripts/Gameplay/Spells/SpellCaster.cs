@@ -221,6 +221,10 @@ namespace Valkur.Gameplay.Spells
                 if (angle <= arc * 0.5f)
                 {
                     health.TakeDamage(Mathf.RoundToInt(spell.damage));
+
+                    var feedback = hit.GetComponent<Combat.CombatFeedback>();
+                    if (feedback != null)
+                        feedback.ApplyKnockback(transform.position);
                 }
             }
         }

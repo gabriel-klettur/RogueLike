@@ -48,6 +48,7 @@ namespace Valkur.Gameplay
                 range,
                 targetLayers);
 
+            int hitCount = 0;
             foreach (var hit in hits)
             {
                 if (hit.gameObject == gameObject) continue;
@@ -60,9 +61,18 @@ namespace Valkur.Gameplay
                     if (angle <= arcDegrees * 0.5f)
                     {
                         health.TakeDamage(damage);
+                        hitCount++;
+
+                        // Apply knockback via CombatFeedback
+                        var feedback = hit.GetComponent<Combat.CombatFeedback>();
+                        if (feedback != null)
+                            feedback.ApplyKnockback(transform.position);
                     }
                 }
             }
+
+            if (hitCount > 0)
+                Debug.Log($"[MeleeCombat] {gameObject.name} hit {hitCount} target(s) for {damage} damage");
         }
 
         private void OnDrawGizmosSelected()
