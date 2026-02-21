@@ -28,6 +28,14 @@ namespace Valkur.Gameplay.Spells
 
         public CastPhase CurrentPhase => _phase;
         public int ActiveSlot => _activeSlot;
+        public float PhaseTimer => _phaseTimer;
+        public int SlotCount => spellSlots != null ? spellSlots.Length : 0;
+
+        public string GetSlotName(int slot)
+        {
+            if (spellSlots == null || slot < 0 || slot >= spellSlots.Length || spellSlots[slot] == null) return "-";
+            return spellSlots[slot].displayName;
+        }
 
         private void Awake()
         {

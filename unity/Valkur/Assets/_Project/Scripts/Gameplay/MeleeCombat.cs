@@ -24,6 +24,9 @@ namespace Valkur.Gameplay
         public event Action<GameObject, int> OnHitTarget;
 
         public bool CanAttack => Time.time >= _lastAttackTime + cooldown;
+        public float CooldownRemaining => Mathf.Max(0f, (_lastAttackTime + cooldown) - Time.time);
+        public float CooldownTotal => cooldown;
+        public int Damage => damage;
 
         public void Initialize(int dmg, float cd, float rng)
         {

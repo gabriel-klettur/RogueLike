@@ -29,6 +29,8 @@ namespace Valkur.Gameplay.Combat
 
         public bool IsDashing => _isDashing;
         public bool CanDash => !_isDashing && _cooldownTimer <= 0f;
+        public float CooldownRemaining => Mathf.Max(0f, _cooldownTimer);
+        public float CooldownTotal => dashCooldown;
 
         private void Awake()
         {

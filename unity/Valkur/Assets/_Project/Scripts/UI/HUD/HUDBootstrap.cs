@@ -35,8 +35,12 @@ namespace Valkur.UI.HUD
                 combat.OnHitTarget += (hitGo, dmg) => targetHUD.ShowTarget(hitGo);
             }
 
+            // Create DebugHUD overlay (F1 to toggle)
+            var debugGo = new GameObject("DebugHUD");
+            debugGo.AddComponent<DebugHUD>();
+
             _initialized = true;
-            Debug.Log("[HUDBootstrap] HUD system initialized.");
+            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug).");
         }
     }
 }
