@@ -20,6 +20,7 @@ namespace Valkur.Gameplay
 
         private Rigidbody2D _rb;
         private Health _health;
+        private DirectionalAnimator _animator;
         private Vector2 _moveInput;
         private Vector2 _facingDirection = Vector2.down;
         private Camera _mainCamera;
@@ -38,6 +39,7 @@ namespace Valkur.Gameplay
         {
             _rb = GetComponent<Rigidbody2D>();
             _health = GetComponent<Health>();
+            _animator = GetComponent<DirectionalAnimator>();
             _mainCamera = Camera.main;
 
             if (spriteRenderer == null)
@@ -115,6 +117,13 @@ namespace Valkur.Gameplay
 
             if (spriteRenderer != null)
                 spriteRenderer.flipX = _facingDirection.x < 0;
+
+            if (_animator != null)
+            {
+                var dir = DirectionalAnimator.VectorToDirection(_facingDirection);
+                var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
+                _animator.SetState(state, dir);
+            }
         }
 
         private void OnPrimaryAttack(InputAction.CallbackContext ctx)

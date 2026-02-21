@@ -24,6 +24,7 @@ namespace Valkur.Gameplay
         private MeleeCombat _combat;
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
+        private DirectionalAnimator _animator;
         private Transform _target;
 
         public State CurrentState => currentState;
@@ -41,6 +42,7 @@ namespace Valkur.Gameplay
             _combat = GetComponent<MeleeCombat>();
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            _animator = GetComponent<DirectionalAnimator>();
 
             _rb.gravityScale = 0f;
             _rb.freezeRotation = true;
@@ -185,6 +187,9 @@ namespace Valkur.Gameplay
 
             if (_spriteRenderer != null)
                 _spriteRenderer.flipX = dir.x < 0;
+
+            if (_animator != null)
+                _animator.SetState(DirectionalAnimator.AnimState.Chase, DirectionalAnimator.VectorToDirection(dir));
         }
 
         private float DistanceToTarget()
@@ -197,6 +202,23 @@ namespace Valkur.Gameplay
         {
             currentState = newState;
             stateTimer = 0f;
+            UpdateAnimatorState();
+        }
+
+        private void UpdateAnimatorState()
+        {
+            if (_animator == null) return;
+            var animState = currentState switch
+            {
+                State.Idle => DirectionalAnimator.AnimState.Idle,
+                State.Patrol => DirectionalAnimator.AnimState.Walk,
+                State.Chase => DirectionalAnimator.AnimState.Chase,
+                State.Attack => DirectionalAnimator.AnimState.Attack,
+                State.Damage => DirectionalAnimator.AnimState.Damage,
+                State.Death => DirectionalAnimator.AnimState.Death,
+                _ => DirectionalAnimator.AnimState.Idle
+            };
+            _animator.SetState(animState, _animator.CurrentDirection);
         }
 
         private void HandleDeath()
