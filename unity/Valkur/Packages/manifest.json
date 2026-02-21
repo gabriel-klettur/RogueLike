@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.unity.addressables": "1.21.21",
     "com.unity.cinemachine": "2.9.7",
     "com.unity.collab-proxy": "2.11.3",
