@@ -58,6 +58,8 @@ namespace Valkur.Data
 
         [Header("Economy")]
         public int value;
+        public int buyPrice;
+        public int sellPrice;
         public ItemRarity rarity;
         public int levelRequirement = 1;
         public float weight;

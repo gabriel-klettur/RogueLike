@@ -16,6 +16,9 @@ GameObject:
   - component: {fileID: 4977471337079576131}
   - component: {fileID: 3541207195372129298}
   - component: {fileID: 4990636705511356481}
+  - component: {fileID: 8031997798628219384}
+  - component: {fileID: 8219022886136903001}
+  - component: {fileID: 2037434478256245301}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -239,3 +242,115 @@ MonoBehaviour:
   m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &8031997798628219384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2435567524609270487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 072f5b73dbd1e0749ac3b5a66ad73ec4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  walkSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  chaseSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  castSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  attackSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  damageSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  deathSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  frameInterval: 0.15
+  idleHoldTime: 1
+  targetRenderer: {fileID: 0}
+--- !u!114 &8219022886136903001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2435567524609270487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2296750892006e243b892f0c8a92eaed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spellSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  projectilePrefab: {fileID: 0}
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 0
+--- !u!114 &2037434478256245301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2435567524609270487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1284514d5435354f8bf74d44cf6a44e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  capacity: 20

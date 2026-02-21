@@ -34,11 +34,18 @@ namespace Valkur.Gameplay.FSM
 
         private void Start()
         {
-            if (definition != null)
-                Initialize(definition);
-            else
-                InitializeDefault();
+            // If already initialized by EntitySetup.ConfigureMonster, skip
+            if (_fsm == null)
+            {
+                if (definition != null)
+                    Initialize(definition);
+                else
+                    InitializeDefault();
+            }
 
+            // Subscribe events only if not already subscribed
+            _health.OnDeath -= OnDeath;
+            _health.OnDamaged -= OnDamaged;
             _health.OnDeath += OnDeath;
             _health.OnDamaged += OnDamaged;
         }

@@ -104,6 +104,16 @@ namespace Valkur.Gameplay.Spells
                 spellSlots[slotIndex] = spell;
         }
 
+        public void SetTargetLayers(LayerMask layers)
+        {
+            targetLayers = layers;
+        }
+
+        public void SetProjectilePrefab(GameObject prefab)
+        {
+            projectilePrefab = prefab;
+        }
+
         private void AdvancePhase()
         {
             var spell = spellSlots[_activeSlot];

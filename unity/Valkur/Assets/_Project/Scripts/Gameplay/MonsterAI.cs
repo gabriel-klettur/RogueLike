@@ -50,6 +50,13 @@ namespace Valkur.Gameplay
 
         private void Start()
         {
+            // If FSMMonsterBrain is present, it takes over — disable this legacy AI
+            if (GetComponent<FSM.FSMMonsterBrain>() != null)
+            {
+                enabled = false;
+                return;
+            }
+
             if (definition != null)
                 InitializeFromDefinition(definition);
 

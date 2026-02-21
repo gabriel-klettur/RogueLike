@@ -50,12 +50,12 @@ namespace Valkur.Gameplay
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
             _playerInput = GetComponent<PlayerInput>();
-            if (_playerInput != null)
+            if (_playerInput != null && _playerInput.actions != null)
             {
-                _moveAction = _playerInput.actions["Move"];
-                _lookAction = _playerInput.actions["Look"];
-                _primaryAttackAction = _playerInput.actions["PrimaryAttack"];
-                _dashAction = _playerInput.actions["Dash"];
+                _moveAction = _playerInput.actions.FindAction("Move");
+                _lookAction = _playerInput.actions.FindAction("Look");
+                _primaryAttackAction = _playerInput.actions.FindAction("PrimaryAttack");
+                _dashAction = _playerInput.actions.FindAction("Dash");
             }
         }
 

@@ -28,6 +28,11 @@ namespace Valkur.Gameplay
             range = rng;
         }
 
+        public void SetTargetLayers(LayerMask layers)
+        {
+            targetLayers = layers;
+        }
+
         public void TryAttack(Vector2 direction)
         {
             if (!CanAttack) return;

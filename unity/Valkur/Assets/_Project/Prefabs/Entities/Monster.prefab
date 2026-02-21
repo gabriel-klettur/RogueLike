@@ -15,9 +15,11 @@ GameObject:
   - component: {fileID: 8636544790874568417}
   - component: {fileID: 8913856616146492782}
   - component: {fileID: 5621948272858720309}
+  - component: {fileID: 990286312295908055}
+  - component: {fileID: 2768707658205476375}
   m_Layer: 9
   m_Name: Monster
-  m_TagString: Untagged
+  m_TagString: Monster
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -199,3 +201,94 @@ MonoBehaviour:
   targetLayers:
     serializedVersion: 2
     m_Bits: 0
+--- !u!114 &990286312295908055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727930927262553568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 072f5b73dbd1e0749ac3b5a66ad73ec4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  idleSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  walkSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  chaseSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  castSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  attackSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  damageSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  deathSprites:
+    south: []
+    southEast: []
+    east: []
+    northEast: []
+    north: []
+    northWest: []
+    west: []
+    southWest: []
+  frameInterval: 0.15
+  idleHoldTime: 1
+  targetRenderer: {fileID: 0}
+--- !u!114 &2768707658205476375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727930927262553568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aac959c9dac4b65468e92524f0380be4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  definition: {fileID: 0}
