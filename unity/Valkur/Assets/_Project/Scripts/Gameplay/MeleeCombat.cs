@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Valkur.Gameplay
@@ -18,6 +19,9 @@ namespace Valkur.Gameplay
         [SerializeField] private LayerMask targetLayers;
 
         private float _lastAttackTime = -999f;
+
+        /// <summary>Fired when this entity hits a target. Args: (hitGameObject, damage)</summary>
+        public event Action<GameObject, int> OnHitTarget;
 
         public bool CanAttack => Time.time >= _lastAttackTime + cooldown;
 
@@ -68,6 +72,8 @@ namespace Valkur.Gameplay
                         var feedback = hit.GetComponent<Combat.CombatFeedback>();
                         if (feedback != null)
                             feedback.ApplyKnockback(origin);
+
+                        OnHitTarget?.Invoke(hit.gameObject, damage);
                     }
                 }
             }

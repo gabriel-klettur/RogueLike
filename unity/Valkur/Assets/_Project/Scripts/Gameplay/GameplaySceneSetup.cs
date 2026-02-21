@@ -5,7 +5,7 @@ namespace Valkur.Gameplay
 {
     /// <summary>
     /// Sets up the MainGameplay scene at runtime.
-    /// Spawns the player, camera, and test monsters.
+    /// Spawns the player, camera, HUD, and test monsters.
     /// Temporary bootstrap until full spawner system is ported.
     /// </summary>
     public class GameplaySceneSetup : MonoBehaviour
@@ -39,6 +39,7 @@ namespace Valkur.Gameplay
 
             if (defaultPlayerDef != null)
                 EntitySetup.ConfigurePlayer(playerGo, defaultPlayerDef);
+
         }
 
         private void SpawnTestMonsters()

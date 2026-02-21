@@ -67,6 +67,14 @@ namespace Valkur.Gameplay
             if (inventory != null)
                 inventory.Initialize(20);
 
+            // Floating damage numbers
+            if (go.GetComponent<Combat.FloatingDamageSpawner>() == null)
+                go.AddComponent<Combat.FloatingDamageSpawner>();
+
+            // World-space health bar (player bar hidden at full HP by default)
+            if (go.GetComponent<Combat.WorldHealthBar>() == null)
+                go.AddComponent<Combat.WorldHealthBar>();
+
             Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
         }
 
@@ -109,6 +117,14 @@ namespace Valkur.Gameplay
             var health = go.GetComponent<Health>();
             if (health != null)
                 health.Initialize(def.stats.hp);
+
+            // Floating damage numbers
+            if (go.GetComponent<Combat.FloatingDamageSpawner>() == null)
+                go.AddComponent<Combat.FloatingDamageSpawner>();
+
+            // World-space health bar (monsters show bar when damaged)
+            if (go.GetComponent<Combat.WorldHealthBar>() == null)
+                go.AddComponent<Combat.WorldHealthBar>();
 
             Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
         }

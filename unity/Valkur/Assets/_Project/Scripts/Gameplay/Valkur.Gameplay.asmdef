@@ -6,6 +6,7 @@
         "Valkur.Data",
         "Valkur.Infrastructure",
         "Unity.InputSystem",
+        "Unity.TextMeshPro",
         "Cinemachine"
     ],
     "includePlatforms": [],

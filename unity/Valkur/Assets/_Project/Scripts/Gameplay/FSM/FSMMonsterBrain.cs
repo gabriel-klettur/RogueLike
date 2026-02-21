@@ -21,6 +21,7 @@ namespace Valkur.Gameplay.FSM
 
         public StateMachine FSM => _fsm;
         public MonsterDefinition Definition => definition;
+        public string CurrentStateName => _fsm?.CurrentState?.GetType().Name.Replace("State", "") ?? "";
 
         private void Awake()
         {
