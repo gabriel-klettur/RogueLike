@@ -1,0 +1,69 @@
+using UnityEngine;
+
+namespace Valkur.Gameplay
+{
+    /// <summary>
+    /// Melee combat component for both player and NPCs.
+    /// Maps to Python's melee_damage, melee_cooldown, melee_range stats.
+    /// </summary>
+    public class MeleeCombat : MonoBehaviour
+    {
+        [Header("Melee Stats")]
+        [SerializeField] private int damage = 5;
+        [SerializeField] private float cooldown = 1f;
+        [SerializeField] private float range = 1f;
+        [SerializeField] private float arcDegrees = 90f;
+
+        [Header("Layers")]
+        [SerializeField] private LayerMask targetLayers;
+
+        private float _lastAttackTime = -999f;
+
+        public bool CanAttack => Time.time >= _lastAttackTime + cooldown;
+
+        public void Initialize(int dmg, float cd, float rng)
+        {
+            damage = dmg;
+            cooldown = cd;
+            range = rng;
+        }
+
+        public void TryAttack(Vector2 direction)
+        {
+            if (!CanAttack) return;
+
+            _lastAttackTime = Time.time;
+            PerformAttack(direction);
+        }
+
+        private void PerformAttack(Vector2 direction)
+        {
+            var hits = Physics2D.OverlapCircleAll(
+                (Vector2)transform.position + direction.normalized * (range * 0.5f),
+                range,
+                targetLayers);
+
+            foreach (var hit in hits)
+            {
+                if (hit.gameObject == gameObject) continue;
+
+                var health = hit.GetComponent<Health>();
+                if (health != null && !health.IsDead)
+                {
+                    Vector2 toTarget = (hit.transform.position - transform.position).normalized;
+                    float angle = Vector2.Angle(direction, toTarget);
+                    if (angle <= arcDegrees * 0.5f)
+                    {
+                        health.TakeDamage(damage);
+                    }
+                }
+            }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.3f);
+            Gizmos.DrawWireSphere(transform.position, range);
+        }
+    }
+}
