@@ -20,17 +20,18 @@ Objetivo:
 | 2 | Assets y pipeline importacion | 13-22 | 1/10 | 🔴 Pendiente |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 4/6 | 🟡 Parcial |
-| 5 | Port completo gameplay | 37-44 | 3/8 | 🟡 En progreso |
+| 5 | Port completo gameplay | 37-44 | 4/8 | 🟡 En progreso |
 | 6 | Herramientas y editores | 45-47 | 1/3 | 🔴 Pendiente |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **23/50** | **46%** |
+| **Total** | | **1-50** | **24/50** | **48%** |
 
 ### Proximos pasos prioritarios
 
 1. **Paso 33** — Tilemap base y orden de render Y/Z (bloquea mundo jugable)
 2. **Paso 36** — Save/load minimo (bloquea sesiones de prueba largas)
 3. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
-4. **Paso 43** — HUD basico: barras de HP/mana, indicadores de cooldown
+4. **Paso 42** — Inventario UI, pickups, drops
+5. **Paso 44** — Cierre de brechas de paridad funcional
 
 ---
 
@@ -149,10 +150,18 @@ Objetivo:
     - **Pendiente:** Spell casting para NPCs, patrol waypoints.
 42. [ ] Porta inventario, pickups, drops y reglas de consumo/transferencia.
     - `Inventory.cs` existe con capacidad basica. Falta UI, pickups, drops.
-43. [ ] Porta overlays/HUD esenciales para gameplay (barras, target, mensajes).
+43. [x] Porta overlays/HUD esenciales para gameplay (barras, target, mensajes).
+    - `PlayerHUD.cs`: screen-space HP/MP bars con texto (bottom-left), smooth fill animation.
+    - `TargetHUD.cs`: panel top-center con nombre, estado FSM, barra HP del enemigo (fade in/out on hit).
+    - `FloatingDamageNumber.cs` + `FloatingDamageSpawner.cs`: numeros de daño world-space que suben y desaparecen.
+    - `WorldHealthBar.cs`: barra HP sprite-based sobre entidades (oculta a full HP).
+    - `HUDManager.cs`: construye Canvas y UI elements en runtime.
+    - `HUDBootstrap.cs`: auto-descubre player y inicializa HUD.
+    - `MeleeCombat.OnHitTarget` event para desacoplar UI de gameplay.
+    - TMP Essential Resources importados para renderizado de texto.
 44. [ ] Cierra brechas de paridad funcional detectadas en la matriz de paridad.
 
-> **Estado:** Combate base funcional (melee + dash + feedback). Spells scaffolding listo. Falta VFX, inventario UI, HUD.
+> **Estado:** Combate base funcional (melee + dash + feedback + HUD). Spells scaffolding listo. HUD completo con PlayerHUD, TargetHUD, floating damage, world health bars. Falta VFX, inventario UI, cierre de paridad.
 
 ## Fase 6 - Herramientas, editores y flujo de contenido (Pasos 45-47)
 
