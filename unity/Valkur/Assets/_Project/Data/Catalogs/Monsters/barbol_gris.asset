@@ -1,0 +1,123 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c54f8a18a2dca49811722fdafbbfab, type: 3}
+  m_Name: barbol_gris
+  m_EditorClassIdentifier: 
+  monsterKey: barbol_gris
+  displayName: Barbol Gris
+  stats:
+    hp: 100
+    speed: 1
+    chasingSpeed: 1.5
+    defense: 5
+    power: 10
+    meleeRange: 3
+    meleeDamage: 5
+    meleeCooldown: 1
+    aggroRange: 10
+    damageDuration: 0.5
+    damageStopProbability: 0.25
+    attackWindupSeconds: 0
+    spawnCount: 10
+    spawnPadding: 3
+    spawnMargin: 0
+    deathDisappearTime: 5
+    feetWidthFactor: 0.5
+    feetHeightFactor: 0.2
+    faction: EVIL
+  fsmSet: Monster_Default
+  patrolType: 
+  useAttackTelegraph: 0
+  nextPhase: 
+  phaseIndex: 0
+  autoCast: 0
+  autoCastList: []
+  assetConfig:
+    idle:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    walk:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    chase:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    cast:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    attack:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    damage:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    death:
+      south: {fileID: 0}
+      southEast: {fileID: 0}
+      east: {fileID: 0}
+      northEast: {fileID: 0}
+      north: {fileID: 0}
+      northWest: {fileID: 0}
+      west: {fileID: 0}
+      southWest: {fileID: 0}
+    idleSheets: []
+    walkSheets: []
+    chaseSheets: []
+    castSheets: []
+    attackSheets: []
+    damageSheets: []
+    deathSheets: []
+    scaleConfig:
+      scaleIdle: 0
+      scaleWalk: 0
+      scaleChase: 0
+      scaleCast: 0
+      scaleAttack: 0
+      scaleDamage: 0
+      scaleDeath: 0
+      tint: {r: 0, g: 0, b: 0, a: 0}

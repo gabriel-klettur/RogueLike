@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9d8be0c389cb214c8a4442bd8ce5ffa, type: 3}
+  m_Name: flame_breath
+  m_EditorClassIdentifier: 
+  spellKey: flame_breath
+  displayName: Flame Breath
+  type: 0
+  manaCost: 12
+  maxInstances: 1
+  allowOverlap: 1
+  allowMovement: 0
+  interruptible: 1
+  automatic: 0
+  automaticCastPunish: 1
+  lockCastDirection: 1
+  prepareDuration: 0.1
+  channelDuration: 0.2
+  cooldownDuration: 1.6
+  speed: 0
+  damage: 0
+  range: 0
+  lifetime: 0
+  radius: 0
+  hitRadius: 0
+  arcRangeDegrees: 60
+  hitArcDegrees: 0
+  length: 0
+  distance: 0
+  knockback: 0
+  collisionDamage: 0
+  duration: 0
+  damagePerTick: 0
+  tickPeriod: 0
+  element: 
+  sprite: {fileID: 0}
+  scale: 1
+  speedMultiplier: 1
+  offset: 0
+  telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
+  telegraphAlpha: 80
+  particleCount: 0
+  particleDispersion: 0
+  particleLifespan: 0
+  particleSpeed: 0
+  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColors: []
+  sizeRange: []
+  emitRate: 0
+  vfxPreset: 
+  impactPreset: 
