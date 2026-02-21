@@ -82,14 +82,6 @@ namespace Valkur.Gameplay
             _spell3Action = new InputAction("Spell3", InputActionType.Button, "<Keyboard>/3");
             _spell4Action = new InputAction("Spell4", InputActionType.Button, "<Keyboard>/4");
 
-            _primaryAttackAction.performed += OnPrimaryAttack;
-            _secondaryAttackAction.performed += OnSecondaryAttack;
-            _dashAction.performed += OnDash;
-            _spell1Action.performed += ctx => OnSpell(0);
-            _spell2Action.performed += ctx => OnSpell(1);
-            _spell3Action.performed += ctx => OnSpell(2);
-            _spell4Action.performed += ctx => OnSpell(3);
-
             _moveAction.Enable();
             _lookAction.Enable();
             _primaryAttackAction.Enable();
@@ -105,13 +97,6 @@ namespace Valkur.Gameplay
 
         private void OnDisable()
         {
-            if (_primaryAttackAction != null)
-                _primaryAttackAction.performed -= OnPrimaryAttack;
-            if (_secondaryAttackAction != null)
-                _secondaryAttackAction.performed -= OnSecondaryAttack;
-            if (_dashAction != null)
-                _dashAction.performed -= OnDash;
-
             _moveAction?.Disable();
             _lookAction?.Disable();
             _primaryAttackAction?.Disable();
@@ -142,6 +127,7 @@ namespace Valkur.Gameplay
 
             ReadInput();
             UpdateFacingDirection();
+            PollCombatActions();
         }
 
         private void FixedUpdate()
@@ -191,44 +177,46 @@ namespace Valkur.Gameplay
             }
         }
 
-        private void OnPrimaryAttack(InputAction.CallbackContext ctx)
+        private void PollCombatActions()
         {
-            if (_health.IsDead) return;
-            if (_dashAbility != null && _dashAbility.IsDashing) return;
+            bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
 
-            if (_meleeCombat != null)
-                _meleeCombat.TryAttack(_facingDirection);
-        }
-
-        private void OnSecondaryAttack(InputAction.CallbackContext ctx)
-        {
-            if (_health.IsDead) return;
-            if (_dashAbility != null && _dashAbility.IsDashing) return;
-
-            // Secondary attack: cast spell slot 0 (default slash/projectile)
-            if (_spellCaster != null)
-                _spellCaster.TryCast(0, _facingDirection);
-        }
-
-        private void OnDash(InputAction.CallbackContext ctx)
-        {
-            if (_health.IsDead) return;
-
-            if (_dashAbility != null)
+            // Primary attack (left click)
+            if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
             {
-                // Dash in movement direction, or facing direction if standing still
-                Vector2 dashDir = IsMoving ? _moveInput.normalized : _facingDirection;
-                _dashAbility.TryDash(dashDir);
+                if (!isDashing && _meleeCombat != null)
+                    _meleeCombat.TryAttack(_facingDirection);
             }
-        }
 
-        private void OnSpell(int slotIndex)
-        {
-            if (_health.IsDead) return;
-            if (_dashAbility != null && _dashAbility.IsDashing) return;
+            // Secondary attack (right click) — cast spell slot 0
+            if (_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame())
+            {
+                if (!isDashing && _spellCaster != null)
+                    _spellCaster.TryCast(0, _facingDirection);
+            }
 
-            if (_spellCaster != null)
-                _spellCaster.TryCast(slotIndex, _facingDirection);
+            // Dash (space)
+            if (_dashAction != null && _dashAction.WasPerformedThisFrame())
+            {
+                if (_dashAbility != null)
+                {
+                    Vector2 dashDir = IsMoving ? _moveInput.normalized : _facingDirection;
+                    _dashAbility.TryDash(dashDir);
+                }
+            }
+
+            // Spell slots 1-4
+            if (!isDashing && _spellCaster != null)
+            {
+                if (_spell1Action != null && _spell1Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(0, _facingDirection);
+                if (_spell2Action != null && _spell2Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(1, _facingDirection);
+                if (_spell3Action != null && _spell3Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(2, _facingDirection);
+                if (_spell4Action != null && _spell4Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(3, _facingDirection);
+            }
         }
 
         public void SetMoveSpeed(float speed)

@@ -43,10 +43,10 @@ namespace Valkur.Gameplay
 
         private void PerformAttack(Vector2 direction)
         {
-            var hits = Physics2D.OverlapCircleAll(
-                (Vector2)transform.position + direction.normalized * (range * 0.5f),
-                range,
-                targetLayers);
+            // Cast from entity center; the overlap circle covers the full attack range in front
+            Vector2 origin = (Vector2)transform.position;
+            Vector2 center = origin + direction.normalized * (range * 0.5f);
+            var hits = Physics2D.OverlapCircleAll(center, range, targetLayers);
 
             int hitCount = 0;
             foreach (var hit in hits)
@@ -56,8 +56,9 @@ namespace Valkur.Gameplay
                 var health = hit.GetComponent<Health>();
                 if (health != null && !health.IsDead)
                 {
-                    Vector2 toTarget = (hit.transform.position - transform.position).normalized;
-                    float angle = Vector2.Angle(direction, toTarget);
+                    // Arc check: angle from attack direction to target direction
+                    Vector2 toTarget = ((Vector2)hit.transform.position - origin).normalized;
+                    float angle = Vector2.Angle(direction.normalized, toTarget);
                     if (angle <= arcDegrees * 0.5f)
                     {
                         health.TakeDamage(damage);
@@ -66,7 +67,7 @@ namespace Valkur.Gameplay
                         // Apply knockback via CombatFeedback
                         var feedback = hit.GetComponent<Combat.CombatFeedback>();
                         if (feedback != null)
-                            feedback.ApplyKnockback(transform.position);
+                            feedback.ApplyKnockback(origin);
                     }
                 }
             }
