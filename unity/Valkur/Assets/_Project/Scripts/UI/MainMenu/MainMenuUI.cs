@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -287,7 +288,22 @@ namespace Valkur.UI.MainMenu
                 btn.targetGraphic = btnImg;
 
                 int capturedIndex = i;
-                btn.onClick.AddListener(() => ExecuteOption(capturedIndex));
+                btn.onClick.AddListener(() =>
+                {
+                    _selectedIndex = capturedIndex;
+                    UpdateSelection();
+                    ExecuteOption(capturedIndex);
+                });
+
+                // Mouse hover: sync selection indicator with hovered button
+                var trigger = btnGo.AddComponent<EventTrigger>();
+                var pointerEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                pointerEnter.callback.AddListener(_ =>
+                {
+                    _selectedIndex = capturedIndex;
+                    UpdateSelection();
+                });
+                trigger.triggers.Add(pointerEnter);
 
                 // Button text
                 var textGo = CreateUIObject("Text", btnGo.transform);
@@ -331,7 +347,7 @@ namespace Valkur.UI.MainMenu
             hintRect.sizeDelta = new Vector2(400f, 30f);
 
             var hintText = hintGo.AddComponent<TextMeshProUGUI>();
-            hintText.text = "W/S or \u2191\u2193 Navigate  |  Enter Select";
+            hintText.text = "Mouse or W/S \u2191\u2193 Navigate  |  Click or Enter Select";
             hintText.fontSize = 14f;
             hintText.alignment = TextAlignmentOptions.Left;
             hintText.color = versionColor;
