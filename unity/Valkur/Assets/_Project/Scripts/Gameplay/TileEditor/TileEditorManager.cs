@@ -239,18 +239,6 @@ namespace Valkur.Gameplay.TileEditor
 
             if (Input.GetMouseButtonDown(0))
             {
-                // --- DEBUG: diagnose black tile rendering ---
-                var renderer = tilemap.GetComponent<TilemapRenderer>();
-                string spriteInfo = "(no sprite)";
-                if (_state.SelectedTile is Tile dbgTile && dbgTile.sprite != null)
-                    spriteInfo = $"sprite={dbgTile.sprite.name} tex={dbgTile.sprite.texture.name} ppu={dbgTile.sprite.pixelsPerUnit} color={dbgTile.color}";
-                var mat = renderer?.sharedMaterial;
-                string matInfo = mat != null ? $"mat={mat.name} shader={mat.shader.name}" : "mat=NULL";
-                Debug.Log($"[TileEditor] PAINT DEBUG: tile={_state.SelectedTile.name} type={_state.SelectedTile.GetType().Name} " +
-                    $"{spriteInfo} | tilemap={tilemap.name} sortLayer={renderer?.sortingLayerName} sortOrder={renderer?.sortingOrder} " +
-                    $"rendererEnabled={renderer?.enabled} {matInfo} tilemapColor={tilemap.color} | cell={cellPos} layer={_state.CurrentLayer}");
-                // --- END DEBUG ---
-
                 StartBrushStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
