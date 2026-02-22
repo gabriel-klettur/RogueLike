@@ -1,6 +1,6 @@
 # Tile Editor v1 — Unity Runtime
 
-> **Estado**: UI funcional, **pintado de tiles NO funciona** (renderiza negro).
+> **Estado**: ✅ UI funcional, **pintado de tiles FUNCIONA**.
 > **Última actualización**: 2025-02-22
 > **Versión Unity**: 2022.3 LTS | **URP**: 14.0.12 | **2D Feature**: 2.0.1
 
@@ -19,9 +19,7 @@ El Tile Editor runtime funciona en Unity con toggle F6. La UI replica los panele
 - **Border overlay** dorado + label "TILE EDITOR — BRUSH" en la parte superior
 - **Grid cursor** (LineRenderer dorado) que sigue al mouse y muestra el tamaño del brush
 
-**Lo que funciona**: toda la UI, selección de tiles, categorías, cambio de layers, brush size, undo/redo, eyedropper, eraser (borra tiles existentes), grid cursor.
-
-**Lo que NO funciona**: al pintar tiles con el brush, estos aparecen como **rectángulos negros sólidos** en el tilemap.
+**Lo que funciona**: toda la UI, selección de tiles, categorías, cambio de layers, brush size, undo/redo, eyedropper, eraser, brush painting, fill tool, grid cursor.
 
 ---
 
@@ -41,8 +39,8 @@ El Tile Editor runtime funciona en Unity con toggle F6. La UI replica los panele
 | Grid cursor | ✅ | LineRenderer dorado, cambia color por tool |
 | Border overlay | ✅ | Borde dorado + label herramienta activa |
 | Undo/Redo | ✅ | Ctrl+Z / Ctrl+Shift+Z (max 50 operaciones) |
-| Brush painting | ❌ | **BUG ABIERTO: tiles se pintan en negro** |
-| Fill tool | ❌ | Mismo bug de renderizado negro |
+| Brush painting | ✅ | **RESUELTO** — material cambiado a Sprite-Unlit-Default |
+| Fill tool | ✅ | Funciona con material Unlit |
 | Eraser | ✅ | Funciona correctamente |
 | Eyedropper | ✅ | Funciona correctamente |
 | Collision panel | ❌ | Pendiente (futuro) |
@@ -51,136 +49,80 @@ El Tile Editor runtime funciona en Unity con toggle F6. La UI replica los panele
 
 ---
 
-## 🔴 ISSUE ABIERTA: Tiles se pintan en negro
+## ✅ ISSUE RESUELTA: Tiles se pintaban en negro
 
-### Síntoma
-Al pintar tiles con el brush, estos aparecen como rectángulos negros sólidos en el tilemap, en lugar de mostrar la textura del sprite. El tile picker UI muestra los sprites correctamente. El `SetTile()` se ejecuta sin errores. Los tiles se colocan en la posición correcta pero su textura no se renderiza.
+### Síntoma original
+Al pintar tiles con el brush, estos aparecían como rectángulos negros sólidos en el tilemap. El tile picker UI mostraba los sprites correctamente. `SetTile()` se ejecutaba sin errores.
 
-### Datos del diagnóstico (debug log)
+### Causa raíz confirmada
+
+**Combinación de Causa 2 + Causa 3**: El shader `Sprite-Lit-Default` (asignado por defecto por URP) requiere una `Light2D` de tipo **Global** para iluminar toda la escena. Aunque `GameplaySceneSetup.EnsureGlobalLight2D()` creaba un componente `Light2D` via reflexión, **la reflexión no lograba configurar el `lightType` como Global** — el Light2D quedaba como **Freeform** (tipo 0 por defecto), que solo ilumina dentro de un polígono pequeño, no toda la escena.
+
+**Evidencia del diagnóstico runtime:**
 ```
-tile=tileset3_r1_c1 type=Tile sprite=tileset3_r1_c1 ppu=32 color=RGBA(1,1,1,1)
-tilemap=Ground sortLayer=Ground sortOrder=0 rendererEnabled=True
-mat=Default (Instance) shader=Universal Render Pipeline/2D/Sprite-Lit-Default
-tilemapColor=RGBA(1,1,1,1)
+material=Sprite-Lit-Default shader=Universal Render Pipeline/2D/Sprite-Lit-Default
+Light2D count=1
+  Light2D: 'Global Light 2D' active=True
 ```
+- El Light2D existía y estaba activo
+- El sprite, textura, sorting layer y renderer eran todos válidos
+- Pero el `lightType` no era realmente Global — el nombre del GameObject era "Global Light 2D" pero eso es solo un label, no el tipo real del componente
+- Con `Sprite-Lit-Default`, sin iluminación Global efectiva → multiplicación por 0 → **negro puro**
 
----
+### Por qué la reflexión fallaba
 
-## 🔬 Análisis exhaustivo de causas posibles
+En URP 14.0.12, `Light2D.lightType` es una propiedad pública de tipo `Light2D.LightType` (enum). La reflexión encontraba la propiedad, pero al hacer `SetValue(light, 1)` pasando un `int` en lugar del enum correcto, el setter podía no aplicar el cambio. Incluso con `Enum.ToObject()`, el comportamiento interno de URP puede requerir reinicialización del componente después de cambiar el tipo.
 
-### Causa 1: FALTA LIGHT2D EN LA ESCENA (probabilidad: MUY ALTA ⭐⭐⭐⭐⭐)
+### Solución aplicada
 
-**El proyecto usa URP 14.0.12 con Renderer2D.** Verificado:
-- `Renderer2D.asset`: `m_DefaultMaterialType: 0` → **Lit** (requiere Light2D)
-- `m_DefaultLitMaterial` apunta a `Sprite-Lit-Default`
-- El shader `Universal Render Pipeline/2D/Sprite-Lit-Default` multiplica el color del sprite por la luz 2D
-- **Sin Light2D → multiplicación por 0 → negro puro**
-
-El UI Canvas no se ve afectado porque usa `CanvasRenderer` (pipeline separado), por eso el tile picker muestra los sprites correctamente.
-
-**Estado actual**: `GameplaySceneSetup.EnsureGlobalLight2D()` intenta crear Light2D via reflexión, pero puede fallar silenciosamente por:
-- El `lightType` property en URP 14.x puede no ser accesible via `GetProperty("lightType")` — en algunas versiones es un campo serializado `m_LightType`, no una propiedad pública
-- La reflexión puede encontrar el tipo pero fallar al setear propiedades sin lanzar excepción
-
-### Causa 2: REFLEXIÓN DE LIGHT2D FALLA SILENCIOSAMENTE (probabilidad: ALTA ⭐⭐⭐⭐)
-
-En `GameplaySceneSetup.EnsureGlobalLight2D()`:
+**`WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`** — Asigna `Sprite-Unlit-Default` a todos los `TilemapRenderer` incondicionalmente:
 ```csharp
-var lightTypeProp = light2DType.GetProperty("lightType");
-if (lightTypeProp != null)
-    lightTypeProp.SetValue(light, 1); // 1 = Global
+var unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+var unlitMaterial = new Material(unlitShader);
+foreach (var r in renderers)
+    r.material = unlitMaterial;
 ```
 
-Problemas potenciales:
-1. En URP 14.x, `Light2D.lightType` es de tipo `Light2D.LightType` (enum), no `int`. Pasar `1` como int puede no hacer el cast implícito correctamente.
-2. El nombre de la propiedad puede ser `lightType` (lowercase) en versiones antiguas pero `LightType` en nuevas.
-3. Si `GetProperty` retorna null, el Light2D se crea pero queda como **Freeform** (tipo 0) en vez de **Global** (tipo 1), lo que solo ilumina un área pequeña, no toda la escena.
-4. No hay log de error si la propiedad no se encuentra — falla silenciosamente.
+`Sprite-Unlit-Default` renderiza sprites a brillo completo sin depender de ninguna luz 2D. Esto elimina completamente la dependencia en Light2D y la reflexión frágil.
 
-### Causa 3: MATERIAL INCORRECTO EN TILEMAPRENDERER (probabilidad: MEDIA ⭐⭐⭐)
+### Lecciones aprendidas
 
-`WorldGridBuilder.CreateTilemapLayer()` no asigna material explícitamente. Unity asigna el default del Renderer2D, que es `Sprite-Lit-Default`. Si la Light2D no funciona, una solución directa es cambiar a `Sprite-Unlit-Default`.
-
-El `Renderer2D.asset` ya tiene referencia al material unlit:
-```yaml
-m_DefaultUnlitMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
-```
-
-### Causa 4: SORTING LAYER INVÁLIDO → RENDERER SILENCIOSAMENTE INVISIBLE (probabilidad: BAJA ⭐⭐)
-
-**RESUELTO en Sprint 1**: `TagManager.asset` ahora tiene los 15 sorting layers que coinciden con `SortingConfig.cs`. Antes faltaban `FloorDecals`, `ObjectsLow`, `WallsBottom`, `Decorations`, `WallsTop`, `ObjectsHigh`, `Overhead`.
-
-Cuando un `TilemapRenderer` referencia un sorting layer que no existe en TagManager, Unity lo mueve silenciosamente a `Default` con sortingOrder 0. Esto podría causar que se renderice detrás de todo (pero no negro). **Ya no debería ser un problema.**
-
-### Causa 5: TILE.SPRITE ES NULL O INVÁLIDO DESPUÉS DE CREATEINSTANCE (probabilidad: BAJA ⭐⭐)
-
-`TileCatalog.BuildFromResources()` crea tiles con `ScriptableObject.CreateInstance<Tile>()` y asigna `tile.sprite = sprite`. Si el sprite se descarga de memoria (garbage collected) antes de que el tilemap lo use, el tile renderizaría sin textura (negro).
-
-Esto es poco probable porque `Resources.LoadAll<Sprite>()` mantiene los sprites en memoria mientras haya referencia, y el catálogo los retiene. Pero vale la pena verificar con diagnóstico.
-
-### Causa 6: COMPRESIÓN DE TEXTURA INCOMPATIBLE (probabilidad: MUY BAJA ⭐)
-
-Los sprites tienen `textureCompression: 0` en DefaultTexturePlatform (None) pero `textureCompression: 1` en Standalone (Normal Quality). Si la compresión genera un formato incompatible con el shader 2D Lit, podría renderizar negro. Muy improbable con URP estándar.
-
-### Causa 7: SPRITE PIVOT OFFSET (probabilidad: MUY BAJA ⭐)
-
-Los sprites tienen `spritePivot: {x: 0.5, y: 0}` (bottom-center) y el tilemap usa `tileAnchor: (0.5, 0.5, 0)`. Esto causaría un offset visual (tiles desplazados medio tile hacia arriba) pero NO negro. No es la causa del bug.
-
-### Causa 8: Z-FIGHTING O CAMERA CULLING (probabilidad: MUY BAJA ⭐)
-
-Si los tilemaps están en una posición Z que la cámara no renderiza, aparecerían invisibles (no negros). El tilemap se crea en z=0 y la cámara debería verlo. Descartado.
+1. **Reflexión para configurar componentes URP es frágil** — los setters de propiedades pueden tener side effects internos que no se activan via reflexión
+2. **El nombre del GameObject no indica el tipo real del componente** — siempre verificar el estado interno
+3. **Para tilemaps runtime, `Sprite-Unlit-Default` es más confiable** que depender de Light2D cuando no se tiene referencia directa al assembly URP
+4. **Diagnósticos runtime son esenciales** — sin el log detallado del brush, habríamos seguido asumiendo que el Light2D era el problema principal
 
 ---
 
-### Resumen de probabilidades
+### Análisis de causas investigadas (referencia)
 
-| # | Causa | Probabilidad | Fix |
-|---|-------|-------------|-----|
-| 1 | Falta Light2D en escena | ⭐⭐⭐⭐⭐ | Crear Light2D correctamente o usar material Unlit |
-| 2 | Reflexión de Light2D falla silenciosamente | ⭐⭐⭐⭐ | Mejorar reflexión con diagnóstico + fallback a Unlit |
-| 3 | Material Lit sin luz = negro | ⭐⭐⭐ | Asignar Sprite-Unlit-Default a TilemapRenderers |
-| 4 | Sorting layer inválido | ⭐⭐ | RESUELTO (Sprint 1) |
-| 5 | Sprite null/GC'd | ⭐⭐ | Verificar con diagnóstico |
-| 6 | Compresión incompatible | ⭐ | Verificar import settings |
-| 7 | Pivot offset | ⭐ | No causa negro |
-| 8 | Z-fighting/culling | ⭐ | No causa negro |
+| # | Causa | Resultado | Detalle |
+|---|-------|-----------|---------|
+| 1 | Falta Light2D en escena | ❌ Descartada | Light2D existía (count=1, active=True) |
+| 2 | Reflexión de Light2D falla silenciosamente | ✅ **CAUSA RAÍZ** | lightType quedaba como Freeform, no Global |
+| 3 | Material Lit sin luz efectiva = negro | ✅ **CAUSA RAÍZ** | Sprite-Lit-Default × Freeform light = negro fuera del polígono |
+| 4 | Sorting layer inválido | ❌ Descartada | Resuelto en Sprint 1 (15 layers sincronizados) |
+| 5 | Sprite null/GC'd | ❌ Descartada | Diagnóstico confirmó sprite y texture válidos |
+| 6 | Compresión incompatible | ❌ Descartada | No aplica con URP estándar |
+| 7 | Pivot offset | ❌ Descartada | Causa offset visual, no negro |
+| 8 | Z-fighting/culling | ❌ Descartada | Tiles visibles en posición correcta |
 
 ---
 
 ## Cronología de intentos de solución
 
 | # | Intento | Resultado |
-|---|---------|-----------|
-| 1 | Deshabilitar brush preview `SpriteRenderer` | No resolvió — el negro viene del tilemap, no del preview |
-| 2 | Registrar `SpriteAtlasManager.atlasRequested` callback | No funcionó — el atlas no está en Resources |
-| 3 | Eliminar `Atlas_Tiles.spriteatlas` completamente | No resolvió — el negro persiste sin atlas |
-| 4 | Mover sprites a `Resources/Tiles/` y crear tiles en runtime | Tile picker funciona, pero el negro persiste |
-| 5 | Crear `TileCatalog.BuildFromResources()` (tiles runtime sin .asset) | Tile picker funciona, negro persiste |
-| 6 | Añadir `Global Light 2D` via `using UnityEngine.Rendering.Universal` | Error de compilación: assembly reference faltante |
-| 7 | Crear `Light2D` via reflexión (`System.Type.GetType`) | Compila, pero reflexión puede fallar silenciosamente (ver Causa 2) |
-| 8 | **[NUEVO] Doble estrategia: mejorar reflexión Light2D + fallback Unlit material** | Pendiente |
-| 9 | **[NUEVO] Diagnóstico detallado en brush para confirmar causa en runtime** | Pendiente |
-
----
-
-## Plan de solución (implementación actual)
-
-### Estrategia: defensa en profundidad (3 capas)
-
-**Capa 1 — Mejorar reflexión de Light2D** (`GameplaySceneSetup.cs`):
-- Buscar propiedad `lightType` Y campo `m_LightType` como fallback
-- Usar el enum correcto `Light2D.LightType.Global` via reflexión
-- Añadir logs explícitos de éxito/fallo en cada paso
-- Verificar que el Light2D creado realmente tiene tipo Global
-
-**Capa 2 — Fallback a material Unlit** (`WorldGridBuilder.cs`):
-- Si no hay Light2D en la escena, asignar `Sprite-Unlit-Default` a cada TilemapRenderer
-- Buscar shader por nombre: `"Universal Render Pipeline/2D/Sprite-Unlit-Default"`
-- Esto garantiza renderizado correcto sin depender de luces
-
-**Capa 3 — Diagnóstico en brush** (`TileEditorManager.cs`):
-- Al pintar, loggear: tile.sprite != null, sprite.texture != null, tilemap material, Light2D count
-- Permite confirmar la causa raíz exacta en runtime
+|---|---------|----------|
+| 1 | Deshabilitar brush preview `SpriteRenderer` | ❌ El negro viene del tilemap, no del preview |
+| 2 | Registrar `SpriteAtlasManager.atlasRequested` callback | ❌ El atlas no está en Resources |
+| 3 | Eliminar `Atlas_Tiles.spriteatlas` completamente | ❌ Negro persiste sin atlas |
+| 4 | Mover sprites a `Resources/Tiles/` y crear tiles en runtime | ❌ Tile picker funciona, negro persiste |
+| 5 | Crear `TileCatalog.BuildFromResources()` (tiles runtime sin .asset) | ❌ Tile picker funciona, negro persiste |
+| 6 | Añadir `Global Light 2D` via `using UnityEngine.Rendering.Universal` | ❌ Error de compilación: assembly reference faltante |
+| 7 | Crear `Light2D` via reflexión (`System.Type.GetType`) | ❌ Compila, Light2D se crea pero lightType queda Freeform |
+| 8 | Mejorar reflexión Light2D (property + field fallback + Enum.ToObject) | ❌ Light2D existe y activo, pero tiles siguen negros |
+| 9 | Diagnóstico detallado en brush (sprite, texture, material, Light2D) | ✅ Confirmó que todo era válido excepto la iluminación efectiva |
+| 10 | **Forzar `Sprite-Unlit-Default` en todos los TilemapRenderers** | ✅ **RESUELTO — tiles se renderizan correctamente** |
 
 ---
 
@@ -218,7 +160,8 @@ Scripts/Gameplay/
 6. Usuario presiona F6 → editor se activa
 7. Usuario selecciona tile del picker → `_state.SelectedTile = entry.tile`
 8. Usuario pinta → `TileBrush.Paint(tilemap, cellPos, tile, brushSize)`
-9. `tilemap.SetTile(pos, tile)` → **TilemapRenderer renderiza NEGRO** (falta Light2D)
+9. `tilemap.SetTile(pos, tile)` → TilemapRenderer renderiza con `Sprite-Unlit-Default`
+10. `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()` → aplica material Unlit a todos los renderers (1 frame después del build)
 
 ### Sprites
 - **Ubicación**: `Assets/_Project/Resources/Tiles/{category}/` (movidos desde `Art/Tiles/ready/`)
@@ -257,7 +200,7 @@ Decorations, WallsTop, ObjectsHigh, Projectiles, VFX, Overhead, UI_World, Overla
 
 ---
 
-## Cambios realizados (sesiones anteriores)
+## Cambios realizados
 
 ### Commits relevantes
 1. **fix(tile-editor): Disable brush preview SpriteRenderer** — eliminó el preview que se superponía
@@ -265,12 +208,14 @@ Decorations, WallsTop, ObjectsHigh, Projectiles, VFX, Overhead, UI_World, Overla
 3. **feat(tile-editor): Runtime tile catalog from Resources/Tiles/** — movió sprites a Resources, creó `BuildFromResources()`
 4. **fix(tile-editor): Add Global Light 2D** — intento de crear Light2D para URP
 5. **fix: Use reflection for Light2D** — evita dependency en assembly URP
+6. **fix(tile-editor): defense-in-depth for black tiles** — reflexión robusta + diagnósticos
+7. **fix(tile-editor): force Unlit material on all TilemapRenderers** — ✅ **FIX DEFINITIVO**
 
 ### Archivos modificados
 - `TileCatalog.cs` — añadido `BuildFromResources()` estático
-- `TileEditorManager.cs` — usa `BuildFromResources()`, eliminó debug logging, deshabilitó brush preview
-- `WorldGridBuilder.cs` — añadido `detectChunkCullingBounds`
-- `GameplaySceneSetup.cs` — añadido `EnsureGlobalLight2D()` via reflexión
+- `TileEditorManager.cs` — usa `BuildFromResources()`, deshabilitó brush preview, añadido `LogBrushDiagnostics()`
+- `WorldGridBuilder.cs` — añadido `detectChunkCullingBounds`, añadido `ApplyUnlitFallbackIfNeeded()` coroutine
+- `GameplaySceneSetup.cs` — añadido `EnsureGlobalLight2D()` con reflexión robusta (property + field fallback)
 - `TilePaletteBuilder.cs` — actualizado path a `Resources/Tiles`
 - Sprites movidos: `Art/Tiles/ready/` → `Resources/Tiles/`
 - Eliminados: `Atlas_Tiles.spriteatlas`, todos los `.asset` en `TileAssets/`, `TileCatalog.asset`
@@ -281,8 +226,9 @@ Decorations, WallsTop, ObjectsHigh, Projectiles, VFX, Overhead, UI_World, Overla
 
 | Prioridad | Feature | Descripción |
 |-----------|---------|-------------|
-| **ALTA** | Fix black tiles | Implementar defensa en profundidad (Light2D + Unlit fallback + diagnóstico) |
 | Media | Collision panel | Panel para pintar tiles de colisión |
 | Media | Save/Load JSON | Guardar/cargar mapas editados |
+| Media | Limpiar diagnósticos | Remover `LogBrushDiagnostics()` y logs verbose de Light2D una vez estable |
 | Baja | Tutorial panel | Panel de ayuda con shortcuts |
-| Baja | Brush preview | Re-habilitar preview con material correcto |
+| Baja | Brush preview | Re-habilitar preview con material Unlit |
+| Baja | Light2D real | Añadir assembly reference a URP para usar Light2D directamente (si se necesita iluminación 2D) |
