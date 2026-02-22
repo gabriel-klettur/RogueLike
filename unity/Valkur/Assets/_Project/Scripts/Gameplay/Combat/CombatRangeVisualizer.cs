@@ -1,22 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Gameplay.FSM;
 
 namespace Valkur.Gameplay.Combat
 {
     /// <summary>
-    /// Runtime visual overlay that draws attack range circles for entities with MeleeCombat.
-    /// Toggle with F2. Shows:
+    /// Runtime visual overlay that draws attack range circles/arcs for entities.
+    /// Toggle with F2. Uses LineRenderer objects (URP-compatible).
     /// - Player melee range (blue arc toward mouse)
     /// - NPC aggro range (yellow circle)
     /// - NPC melee range (red arc toward player)
     /// - NPC facing direction line (green)
-    /// Hooks into Camera.onPostRender for reliable GL rendering.
     /// </summary>
     public class CombatRangeVisualizer : MonoBehaviour
     {
         [Header("Settings")]
         [SerializeField] private bool showOnStart = false;
         [SerializeField] private int circleSegments = 48;
+        [SerializeField] private float lineWidth = 0.03f;
 
         [Header("Colors")]
         [SerializeField] private Color playerMeleeColor = new Color(0.3f, 0.6f, 1f, 0.6f);
@@ -25,7 +26,10 @@ namespace Valkur.Gameplay.Combat
         [SerializeField] private Color npcFacingColor = new Color(0.2f, 1f, 0.3f, 0.6f);
 
         private bool _visible;
-        private Material _glMaterial;
+        private Material _lineMaterial;
+        private readonly List<LineRenderer> _activeLines = new List<LineRenderer>();
+        private readonly List<LineRenderer> _pool = new List<LineRenderer>();
+        private int _lineIndex;
 
         private static CombatRangeVisualizer _instance;
         public static CombatRangeVisualizer Instance => _instance;
@@ -40,23 +44,8 @@ namespace Valkur.Gameplay.Combat
             _instance = this;
             _visible = showOnStart;
 
-            _glMaterial = new Material(Shader.Find("Hidden/Internal-Colored"));
-            _glMaterial.hideFlags = HideFlags.HideAndDontSave;
-            _glMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            _glMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            _glMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
-            _glMaterial.SetInt("_ZWrite", 0);
-            _glMaterial.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.Always);
-        }
-
-        private void OnEnable()
-        {
-            Camera.onPostRender += OnCameraPostRender;
-        }
-
-        private void OnDisable()
-        {
-            Camera.onPostRender -= OnCameraPostRender;
+            _lineMaterial = new Material(Shader.Find("Sprites/Default"));
+            _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
         }
 
         private void Update()
@@ -68,15 +57,21 @@ namespace Valkur.Gameplay.Combat
             }
         }
 
-        private void OnCameraPostRender(Camera cam)
+        private void LateUpdate()
         {
-            if (!_visible || _glMaterial == null) return;
-            if (cam != Camera.main) return;
+            // Reset all lines — return to pool
+            for (int i = 0; i < _activeLines.Count; i++)
+            {
+                if (_activeLines[i] != null)
+                {
+                    _activeLines[i].enabled = false;
+                    _pool.Add(_activeLines[i]);
+                }
+            }
+            _activeLines.Clear();
+            _lineIndex = 0;
 
-            _glMaterial.SetPass(0);
-            GL.PushMatrix();
-            GL.LoadProjectionMatrix(cam.projectionMatrix);
-            GL.modelview = cam.worldToCameraMatrix;
+            if (!_visible) return;
 
             var player = GameObject.FindGameObjectWithTag("Player");
 
@@ -92,7 +87,8 @@ namespace Valkur.Gameplay.Combat
                     float range = combat.Range;
                     float arc = combat.ArcDegrees;
                     DrawArc(player.transform.position, facing, range, arc, playerMeleeColor);
-                    DrawCircle(player.transform.position, range, new Color(playerMeleeColor.r, playerMeleeColor.g, playerMeleeColor.b, 0.12f));
+                    DrawCircle(player.transform.position, range,
+                        new Color(playerMeleeColor.r, playerMeleeColor.g, playerMeleeColor.b, 0.12f));
                 }
             }
 
@@ -107,15 +103,16 @@ namespace Valkur.Gameplay.Combat
                 Vector3 pos = brain.transform.position;
 
                 // Aggro range
-                float aggroRange = brain.FSM != null ? brain.FSM.GetContextFloat("aggro_range", 5f) : 5f;
+                float aggroRange = brain.FSM != null
+                    ? brain.FSM.GetContextFloat("aggro_range", 5f) : 5f;
                 DrawCircle(pos, aggroRange, npcAggroColor);
 
                 // Melee range + facing direction
-                float meleeRange = brain.FSM != null ? brain.FSM.GetContextFloat("melee_range", 1.5f) : 1.5f;
+                float meleeRange = brain.FSM != null
+                    ? brain.FSM.GetContextFloat("melee_range", 1.5f) : 1.5f;
                 var npcCombat = brain.GetComponent<MeleeCombat>();
                 float npcArc = npcCombat != null ? npcCombat.ArcDegrees : 90f;
 
-                // Determine NPC facing: toward player if in range, else last move direction
                 Vector2 npcFacing = Vector2.down;
                 if (player != null)
                 {
@@ -125,77 +122,105 @@ namespace Valkur.Gameplay.Combat
                 }
 
                 DrawArc(pos, npcFacing, meleeRange, npcArc, npcMeleeColor);
-                DrawCircle(pos, meleeRange, new Color(npcMeleeColor.r, npcMeleeColor.g, npcMeleeColor.b, 0.1f));
+                DrawCircle(pos, meleeRange,
+                    new Color(npcMeleeColor.r, npcMeleeColor.g, npcMeleeColor.b, 0.1f));
 
                 // Facing direction line
                 DrawLine(pos, (Vector3)pos + (Vector3)(npcFacing * meleeRange * 0.8f), npcFacingColor);
             }
+        }
 
-            GL.PopMatrix();
+        private LineRenderer GetLine()
+        {
+            LineRenderer lr;
+            if (_pool.Count > 0)
+            {
+                lr = _pool[_pool.Count - 1];
+                _pool.RemoveAt(_pool.Count - 1);
+            }
+            else
+            {
+                var go = new GameObject($"_RangeViz_{_lineIndex}");
+                go.transform.SetParent(transform);
+                lr = go.AddComponent<LineRenderer>();
+                lr.material = _lineMaterial;
+                lr.useWorldSpace = true;
+                lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                lr.receiveShadows = false;
+                lr.sortingLayerName = "Overlay";
+                lr.sortingOrder = 999;
+            }
+
+            lr.enabled = true;
+            lr.startWidth = lineWidth;
+            lr.endWidth = lineWidth;
+            _activeLines.Add(lr);
+            _lineIndex++;
+            return lr;
         }
 
         private void DrawCircle(Vector3 center, float radius, Color color)
         {
-            GL.Begin(GL.LINES);
-            GL.Color(color);
+            var lr = GetLine();
+            lr.startColor = color;
+            lr.endColor = color;
+            lr.loop = true;
+            lr.positionCount = circleSegments;
 
             float step = 360f / circleSegments;
             for (int i = 0; i < circleSegments; i++)
             {
-                float a1 = i * step * Mathf.Deg2Rad;
-                float a2 = (i + 1) * step * Mathf.Deg2Rad;
-                GL.Vertex3(center.x + Mathf.Cos(a1) * radius, center.y + Mathf.Sin(a1) * radius, 0f);
-                GL.Vertex3(center.x + Mathf.Cos(a2) * radius, center.y + Mathf.Sin(a2) * radius, 0f);
+                float a = i * step * Mathf.Deg2Rad;
+                lr.SetPosition(i, new Vector3(
+                    center.x + Mathf.Cos(a) * radius,
+                    center.y + Mathf.Sin(a) * radius,
+                    0f));
             }
-
-            GL.End();
         }
 
-        private void DrawArc(Vector3 center, Vector2 direction, float radius, float arcDegrees, Color color)
+        private void DrawArc(Vector3 center, Vector2 direction, float radius,
+            float arcDegrees, Color color)
         {
             float baseAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             float halfArc = arcDegrees * 0.5f;
             int segments = Mathf.Max(8, (int)(circleSegments * arcDegrees / 360f));
             float step = arcDegrees / segments;
 
-            GL.Begin(GL.LINES);
-            GL.Color(color);
+            // Arc outline + two side lines back to center
+            // Points: center → arc start → ... → arc end → center
+            var lr = GetLine();
+            lr.startColor = color;
+            lr.endColor = color;
+            lr.loop = false;
+            lr.positionCount = segments + 3;
 
-            for (int i = 0; i < segments; i++)
+            lr.SetPosition(0, center);
+            for (int i = 0; i <= segments; i++)
             {
-                float a1 = (baseAngle - halfArc + i * step) * Mathf.Deg2Rad;
-                float a2 = (baseAngle - halfArc + (i + 1) * step) * Mathf.Deg2Rad;
-                GL.Vertex3(center.x + Mathf.Cos(a1) * radius, center.y + Mathf.Sin(a1) * radius, 0f);
-                GL.Vertex3(center.x + Mathf.Cos(a2) * radius, center.y + Mathf.Sin(a2) * radius, 0f);
+                float a = (baseAngle - halfArc + i * step) * Mathf.Deg2Rad;
+                lr.SetPosition(i + 1, new Vector3(
+                    center.x + Mathf.Cos(a) * radius,
+                    center.y + Mathf.Sin(a) * radius,
+                    0f));
             }
-
-            // Side lines from center to arc edges
-            float startAngle = (baseAngle - halfArc) * Mathf.Deg2Rad;
-            float endAngle = (baseAngle + halfArc) * Mathf.Deg2Rad;
-
-            GL.Vertex3(center.x, center.y, 0f);
-            GL.Vertex3(center.x + Mathf.Cos(startAngle) * radius, center.y + Mathf.Sin(startAngle) * radius, 0f);
-
-            GL.Vertex3(center.x, center.y, 0f);
-            GL.Vertex3(center.x + Mathf.Cos(endAngle) * radius, center.y + Mathf.Sin(endAngle) * radius, 0f);
-
-            GL.End();
+            lr.SetPosition(segments + 2, center);
         }
 
         private void DrawLine(Vector3 from, Vector3 to, Color color)
         {
-            GL.Begin(GL.LINES);
-            GL.Color(color);
-            GL.Vertex3(from.x, from.y, 0f);
-            GL.Vertex3(to.x, to.y, 0f);
-            GL.End();
+            var lr = GetLine();
+            lr.startColor = color;
+            lr.endColor = color;
+            lr.loop = false;
+            lr.positionCount = 2;
+            lr.SetPosition(0, from);
+            lr.SetPosition(1, to);
         }
 
         private void OnDestroy()
         {
-            Camera.onPostRender -= OnCameraPostRender;
-            if (_glMaterial != null)
-                DestroyImmediate(_glMaterial);
+            if (_lineMaterial != null)
+                DestroyImmediate(_lineMaterial);
             if (_instance == this)
                 _instance = null;
         }
