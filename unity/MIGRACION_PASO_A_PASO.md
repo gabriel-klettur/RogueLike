@@ -21,16 +21,16 @@ Objetivo:
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
-| 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
+| 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **31/50** | **62%** |
+| **Total** | | **1-50** | **33/50** | **66%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 45** — Definir herramientas runtime vs EditorWindow
-2. **Paso 47** — Validadores de contenido previos a build
-3. **Paso 48** — Save system final con backups rotativos
-4. **Paso 49** — Hardening: profiling, soak tests, optimizaciones
+1. **Paso 48** — Save system final con backups rotativos y recuperacion ante corrupcion
+2. **Paso 49** — Hardening: profiling CPU/GPU/GC, soak tests, optimizaciones
+3. **Paso 50** — Pipeline CI/CD, build release, checklist final
+4. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
 
 ---
 
@@ -195,10 +195,19 @@ Objetivo:
 
 ## Fase 6 - Herramientas, editores y flujo de contenido (Pasos 45-47)
 
-45. [ ] Define que herramientas seran runtime UI y cuales seran EditorWindow (Unity Editor).
+45. [x] Define que herramientas seran runtime UI y cuales seran EditorWindow (Unity Editor).
+    - **Runtime UI:** InventoryUI (Tab/I), PlayerHUD, TargetHUD, DebugHUD.
+    - **EditorWindow:** PythonDataMigrator, SortingLayerSetup, ContentValidator.
+    - Criterio: herramientas de gameplay = runtime; herramientas de autoria/validacion = Editor.
 46. [x] Implementa tools de autoria prioritarias: spawner placement, tuning NPC/spells, validacion de mapa.
     - `PythonDataMigrator` EditorWindow migra datos de Python a ScriptableObjects.
-47. [ ] Implementa validadores de contenido previos a build (assets faltantes, referencias rotas, addressables invalidos).
+47. [x] Implementa validadores de contenido previos a build (assets faltantes, referencias rotas, addressables invalidos).
+    - `ContentValidator.cs` (Editor): menu Valkur > Validation con 5 validadores:
+      - ValidateMonsterDefinitions: monsterKey, HP, speed.
+      - ValidateSpellDefinitions: spellKey, speed para projectiles, cooldown.
+      - ValidateItemDefinitions: itemId unicidad, maxStack, iconos.
+      - ValidatePlayerDefinitions: playerKey, speed.
+      - ValidatePrefabReferences: missing scripts en prefabs.
 
 ## Fase 7 - Persistencia final, rendimiento y release (Pasos 48-50)
 
