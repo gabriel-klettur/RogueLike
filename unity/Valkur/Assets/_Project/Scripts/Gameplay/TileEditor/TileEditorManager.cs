@@ -239,6 +239,18 @@ namespace Valkur.Gameplay.TileEditor
 
             if (Input.GetMouseButtonDown(0))
             {
+                // --- DEBUG: diagnose black tile rendering ---
+                var renderer = tilemap.GetComponent<TilemapRenderer>();
+                string spriteInfo = "(no sprite)";
+                if (_state.SelectedTile is Tile dbgTile && dbgTile.sprite != null)
+                    spriteInfo = $"sprite={dbgTile.sprite.name} tex={dbgTile.sprite.texture.name} ppu={dbgTile.sprite.pixelsPerUnit} color={dbgTile.color}";
+                var mat = renderer?.sharedMaterial;
+                string matInfo = mat != null ? $"mat={mat.name} shader={mat.shader.name}" : "mat=NULL";
+                Debug.Log($"[TileEditor] PAINT DEBUG: tile={_state.SelectedTile.name} type={_state.SelectedTile.GetType().Name} " +
+                    $"{spriteInfo} | tilemap={tilemap.name} sortLayer={renderer?.sortingLayerName} sortOrder={renderer?.sortingOrder} " +
+                    $"rendererEnabled={renderer?.enabled} {matInfo} tilemapColor={tilemap.color} | cell={cellPos} layer={_state.CurrentLayer}");
+                // --- END DEBUG ---
+
                 StartBrushStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
@@ -406,47 +418,11 @@ namespace Valkur.Gameplay.TileEditor
 
         private void UpdateBrushPreview()
         {
-            if (_state.CurrentTool != TileEditorState.Tool.Brush &&
-                _state.CurrentTool != TileEditorState.Tool.Eraser)
-            {
-                HideBrushPreview();
-                return;
-            }
-
-            // Skip if over UI
-            if (UnityEngine.EventSystems.EventSystem.current != null &&
-                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-            {
-                HideBrushPreview();
-                return;
-            }
-
-            var tilemap = GetCurrentTilemap();
-            if (tilemap == null)
-            {
-                HideBrushPreview();
-                return;
-            }
-
-            Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
-
-            _brushPreviewGo.SetActive(true);
-            _brushPreviewGo.transform.position = worldPos;
-
-            // Show single-tile preview sprite (grid cursor handles brush size visualization)
-            if (_state.CurrentTool == TileEditorState.Tool.Brush && _state.SelectedTile is Tile t && t.sprite != null)
-            {
-                _brushPreviewRenderer.sprite = t.sprite;
-                _brushPreviewRenderer.color = new Color(1f, 1f, 1f, 0.4f);
-            }
-            else
-            {
-                _brushPreviewRenderer.sprite = null;
-                _brushPreviewRenderer.color = new Color(1f, 0.3f, 0.3f, 0.3f);
-            }
-
-            _brushPreviewGo.transform.localScale = Vector3.one;
+            // Brush preview disabled — grid cursor provides visual feedback instead.
+            // The SpriteRenderer preview was rendering as a black rectangle because
+            // atlas-packed sprites don't resolve correctly on a standalone SpriteRenderer
+            // without proper sorting layer assignment.
+            HideBrushPreview();
         }
 
         private void HideBrushPreview()
