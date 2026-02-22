@@ -1,7 +1,9 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
+using Valkur.Gameplay.Rendering;
 
 namespace Valkur.Gameplay
 {
@@ -75,6 +77,12 @@ namespace Valkur.Gameplay
             if (go.GetComponent<Combat.WorldHealthBar>() == null)
                 go.AddComponent<Combat.WorldHealthBar>();
 
+            // Y-sort rendering (player layer)
+            var ySort = go.GetComponent<YSortEntity>();
+            if (ySort == null)
+                ySort = go.AddComponent<YSortEntity>();
+            ySort.ZLayerBase = SortingConfig.Z_ENTITY;
+
             Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
         }
 
@@ -125,6 +133,12 @@ namespace Valkur.Gameplay
             // World-space health bar (monsters show bar when damaged)
             if (go.GetComponent<Combat.WorldHealthBar>() == null)
                 go.AddComponent<Combat.WorldHealthBar>();
+
+            // Y-sort rendering (entity layer)
+            var ySort = go.GetComponent<YSortEntity>();
+            if (ySort == null)
+                ySort = go.AddComponent<YSortEntity>();
+            ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
             Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
         }

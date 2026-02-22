@@ -17,21 +17,22 @@ Objetivo:
 |------|-------------|-------|-------------|--------|
 | 0 | Preparacion y baseline | 1-6 | 2/6 | 🟡 Parcial |
 | 1 | Bootstrap tecnico Unity | 7-12 | 6/6 | ✅ Completa |
-| 2 | Assets y pipeline importacion | 13-22 | 1/10 | 🔴 Pendiente |
+| 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 4/6 | 🟡 Parcial |
-| 5 | Port completo gameplay | 37-44 | 4/8 | 🟡 En progreso |
-| 6 | Herramientas y editores | 45-47 | 1/3 | 🔴 Pendiente |
+| 5 | Port completo gameplay | 37-44 | 5/8 | 🟡 En progreso |
+| 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **24/50** | **48%** |
+| **Total** | | **1-50** | **26/50** | **52%** |
 
 ### Proximos pasos prioritarios
 
 1. **Paso 33** — Tilemap base y orden de render Y/Z (bloquea mundo jugable)
 2. **Paso 36** — Save/load minimo (bloquea sesiones de prueba largas)
-3. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
-4. **Paso 42** — Inventario UI, pickups, drops
-5. **Paso 44** — Cierre de brechas de paridad funcional
+3. **Paso 37** — Documentar decision de arquitectura (MonoBehaviour + Component)
+4. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
+5. **Paso 42** — Inventario UI, pickups, drops
+6. **Paso 44** — Cierre de brechas de paridad funcional
 
 ---
 
@@ -86,7 +87,9 @@ Objetivo:
 16. [ ] Define politica de pivots por categoria (personajes, tiles, props, UI).
 17. [ ] Define politica PPU por categoria para evitar escalas inconsistentes.
 18. [ ] Define politica de SpriteAtlas (grupos por dominio: player, npc, environment, ui).
-19. [ ] Implementa `AssetPostprocessor` en Unity para aplicar reglas de importacion automaticamente.
+19. [x] Implementa `AssetPostprocessor` en Unity para aplicar reglas de importacion automaticamente.
+    - `ValkurAssetPostprocessor.cs`: PPU por categoria (Tiles=16, Characters=16, UI=100), pivots, FilterMode.Point, sin compresion, sin mipmaps.
+    - Audio: SFX DecompressOnLoad/PCM, Music Streaming/Vorbis.
 20. [ ] Migra un lote pequeno (5-10%) y valida visualmente pivots, sorting y calidad.
 21. [ ] Ajusta reglas de importacion segun hallazgos y vuelve a correr el lote.
 22. [ ] Ejecuta migracion completa de assets usando el `asset_map` como fuente de verdad.
@@ -116,7 +119,14 @@ Objetivo:
     - Mouse look para facing direction, sprite flip, `DirectionalAnimator` integration.
 32. [x] Implementa camara de seguimiento con Cinemachine.
     - `CameraSetup.cs`: Cinemachine Virtual Camera sigue al Player.
-33. [ ] Implementa tilemap base y orden de render Y/Z equivalente.
+33. [x] Implementa tilemap base y orden de render Y/Z equivalente.
+    - `SortingConfig.cs`: constantes centrales de sorting layers y Z-layers (mapea Python Z_LAYERS).
+    - `YSortEntity.cs`: actualiza sortingOrder por Y-position cada frame (mapea Python z_layer/render.py).
+    - `TilemapLayerSetup.cs`: enum de 9 capas de tilemap (mapea Python Layer enum).
+    - `WorldGridBuilder.cs`: construye Grid + Tilemaps por capa en runtime, con TilemapCollider2D en Collision/WallsBottom.
+    - `SortingLayerSetup.cs` (Editor): verifica/crea sorting layers requeridos en ProjectSettings.
+    - `EntitySetup.cs` actualizado: agrega YSortEntity a player y monsters.
+    - `GameplaySceneSetup.cs` actualizado: construye WorldGrid al inicio de escena.
 34. [x] Implementa 1 NPC con FSM minima (Idle, Chase, Attack).
     - `FSMMonsterBrain.cs` + `StateMachine.cs` + 9 estados: Idle, Patrol, Chase, AlertChase, Attack, Damage, Death, Flee, Unconscious.
     - `MonsterSpawner.cs` instancia monstruos desde `SpawnerDefinition`.
@@ -131,8 +141,9 @@ Objetivo:
 
 ## Fase 5 - Port completo de gameplay y ECS (Pasos 37-44)
 
-37. [ ] Define estrategia final de simulacion: DOTS o ECS custom C# (decidir una sola y documentar).
-    > **Decision provisional:** MonoBehaviour + Component pattern (no DOTS). Escalable via interfaces y ScriptableObjects.
+37. [x] Define estrategia final de simulacion: DOTS o ECS custom C# (decidir una sola y documentar).
+    > **Decision final:** MonoBehaviour + Component pattern (no DOTS). Escalable via interfaces y ScriptableObjects.
+    > Justificacion: DOTS requiere Unity 6+ y reescritura total. El patron actual (MonoBehaviour + ScriptableObject + interfaces) es suficiente para el scope del proyecto, permite iteracion rapida y es compatible con todas las herramientas del editor.
 38. [x] Porta sistemas de input y movimiento en el mismo orden de actualizacion del origen.
     - Standalone `InputAction` objects con polling en `Update()`.
     - Movement en `FixedUpdate()`, dash overrides movement.

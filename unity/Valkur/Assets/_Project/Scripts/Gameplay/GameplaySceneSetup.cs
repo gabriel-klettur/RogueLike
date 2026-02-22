@@ -1,11 +1,12 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Rendering;
 
 namespace Valkur.Gameplay
 {
     /// <summary>
     /// Sets up the MainGameplay scene at runtime.
-    /// Spawns the player, camera, HUD, and test monsters.
+    /// Builds the world grid, spawns the player, camera, HUD, and test monsters.
     /// Temporary bootstrap until full spawner system is ported.
     /// </summary>
     public class GameplaySceneSetup : MonoBehaviour
@@ -20,10 +21,19 @@ namespace Valkur.Gameplay
         [SerializeField] private int testMonsterCount = 3;
         [SerializeField] private float spawnRadius = 5f;
 
+        private WorldGridBuilder _gridBuilder;
+
         private void Start()
         {
+            BuildWorldGrid();
             SpawnPlayer();
             SpawnTestMonsters();
+        }
+
+        private void BuildWorldGrid()
+        {
+            var gridGo = new GameObject("WorldGridBuilder");
+            _gridBuilder = gridGo.AddComponent<WorldGridBuilder>();
         }
 
         private void SpawnPlayer()
