@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Infrastructure;
 
 namespace Valkur.Core
 {
@@ -24,6 +25,8 @@ namespace Valkur.Core
                 return;
             }
             Instance = this;
+
+            EnsureSaveService();
             Debug.Log("[GameDirector] Initialized.");
         }
 
@@ -39,14 +42,23 @@ namespace Valkur.Core
             if (pauseStatus)
             {
                 Debug.Log("[GameDirector] Application paused — triggering autosave.");
-                // SaveService.Instance?.Save(); // TODO: wire up when SaveService exists
+                SaveService.Instance?.Autosave();
             }
         }
 
         private void OnApplicationQuit()
         {
             Debug.Log("[GameDirector] Application quitting — triggering shutdown save.");
-            // SaveService.Instance?.Save(); // TODO: wire up when SaveService exists
+            SaveService.Instance?.Save("shutdown_save");
+        }
+
+        private void EnsureSaveService()
+        {
+            if (SaveService.Instance != null) return;
+
+            var saveGo = new GameObject("SaveService");
+            saveGo.AddComponent<SaveService>();
+            Debug.Log("[GameDirector] SaveService created.");
         }
     }
 }

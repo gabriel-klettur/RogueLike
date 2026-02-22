@@ -19,20 +19,19 @@ Objetivo:
 | 1 | Bootstrap tecnico Unity | 7-12 | 6/6 | ✅ Completa |
 | 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
-| 4 | Vertical slice minimo | 31-36 | 4/6 | 🟡 Parcial |
+| 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 5/8 | 🟡 En progreso |
 | 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **26/50** | **52%** |
+| **Total** | | **1-50** | **28/50** | **56%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 33** — Tilemap base y orden de render Y/Z (bloquea mundo jugable)
-2. **Paso 36** — Save/load minimo (bloquea sesiones de prueba largas)
-3. **Paso 37** — Documentar decision de arquitectura (MonoBehaviour + Component)
-4. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
-5. **Paso 42** — Inventario UI, pickups, drops
-6. **Paso 44** — Cierre de brechas de paridad funcional
+1. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
+2. **Paso 42** — Inventario UI, pickups, drops
+3. **Paso 44** — Cierre de brechas de paridad funcional
+4. **Paso 45** — Definir herramientas runtime vs EditorWindow
+5. **Paso 48** — Save system final con backups rotativos
 
 ---
 
@@ -135,9 +134,14 @@ Objetivo:
     - `SpellCaster.cs`: FSM de casteo (Ready -> Prepare -> Channel -> Cooldown) con 4 tipos: Projectile, Slash, Area, Dash.
     - `Projectile.cs`: movimiento, colision, daño, expiracion por tiempo/rango.
     - `SpellDefinition.cs`: ScriptableObject con todos los parametros de spell.
-36. [ ] Implementa save/load minimo (posicion, HP, inventario basico) y valida 10 minutos jugables.
+36. [x] Implementa save/load minimo (posicion, HP, inventario basico) y valida 10 minutos jugables.
+    - `SaveService.cs`: singleton con Save/Load/QuickSave/QuickLoad/Autosave/ListSaves/DeleteSave.
+    - JSON serialization via `GameSaveData` (player state + NPC memory + metadata).
+    - Rotative backups (5 autosave slots), shutdown save on quit/pause.
+    - `PlayerController.cs`: F5 quicksave, F9 quickload bindings.
+    - `GameDirector.cs`: creates SaveService on Awake, triggers autosave on pause, shutdown save on quit.
 
-> **Estado:** Vertical slice funcional. Player se mueve, ataca, dashea. Monstruos con FSM persiguen y atacan. Falta tilemap y save/load.
+> **Estado:** Vertical slice funcional. Player se mueve, ataca, dashea. Monstruos con FSM persiguen y atacan. Tilemap Y-sort y save/load implementados.
 
 ## Fase 5 - Port completo de gameplay y ECS (Pasos 37-44)
 
