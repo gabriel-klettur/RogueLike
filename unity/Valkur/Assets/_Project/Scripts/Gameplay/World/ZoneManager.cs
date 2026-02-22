@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.World
 {
@@ -45,9 +45,8 @@ namespace Valkur.Gameplay.World
         {
             if (_playerTransform == null)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _playerTransform = player.transform;
-                else return;
+                _playerTransform = EntityRegistry.PlayerTransform;
+                if (_playerTransform == null) return;
             }
 
             string detected = DetectZone(_playerTransform.position);
@@ -108,23 +107,14 @@ namespace Valkur.Gameplay.World
         }
 
         /// <summary>
-        /// Play music via AudioManager without direct Infrastructure asmdef dependency.
-        /// Uses FindObjectOfType to locate AudioManager at runtime.
+        /// Play music via IAudioService resolved through ServiceLocator.
+        /// AudioManager in Infrastructure registers itself on Awake.
         /// </summary>
         private static void PlayZoneMusic(AudioClip clip)
         {
             if (clip == null) return;
-            // AudioManager lives in Valkur.Infrastructure — locate by type name to avoid circular asmdef ref
-            foreach (var mb in FindObjectsOfType<MonoBehaviour>())
-            {
-                if (mb.GetType().Name == "AudioManager")
-                {
-                    var method = mb.GetType().GetMethod("PlayMusic", new[] { typeof(AudioClip) });
-                    if (method != null)
-                        method.Invoke(mb, new object[] { clip });
-                    return;
-                }
-            }
+            var audio = ServiceLocator.Get<IAudioService>();
+            audio?.PlayMusic(clip);
         }
     }
 }

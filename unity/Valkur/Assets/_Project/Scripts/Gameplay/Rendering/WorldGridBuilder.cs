@@ -77,7 +77,7 @@ namespace Valkur.Gameplay.Rendering
             renderer.detectChunkCullingBounds = TilemapRenderer.DetectChunkCullingBounds.Auto;
 
             var layerSetup = go.AddComponent<TilemapLayerSetup>();
-            SetLayerField(layerSetup, layer);
+            layerSetup.Configure(layer);
 
             // Collision layer gets a TilemapCollider2D
             if (layer == TilemapLayerSetup.TilemapLayer.Collision)
@@ -98,7 +98,7 @@ namespace Valkur.Gameplay.Rendering
 
                 renderer.enabled = false;
 
-                SetCollisionOnlyField(layerSetup, true);
+                layerSetup.Configure(layer, true);
             }
 
             // WallsBottom also gets collision
@@ -122,18 +122,5 @@ namespace Valkur.Gameplay.Rendering
             layerSetup.ApplyLayerSettings();
         }
 
-        private static void SetLayerField(TilemapLayerSetup setup, TilemapLayerSetup.TilemapLayer value)
-        {
-            var field = typeof(TilemapLayerSetup).GetField("layer",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null) field.SetValue(setup, value);
-        }
-
-        private static void SetCollisionOnlyField(TilemapLayerSetup setup, bool value)
-        {
-            var field = typeof(TilemapLayerSetup).GetField("collisionOnly",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null) field.SetValue(setup, value);
-        }
     }
 }

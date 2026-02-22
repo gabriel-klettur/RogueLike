@@ -36,6 +36,15 @@ namespace Valkur.Gameplay.Rendering
         public TilemapLayer Layer => layer;
         public bool IsCollisionOnly => collisionOnly;
 
+        /// <summary>
+        /// Configure layer and collision flag at runtime (replaces reflection-based field injection).
+        /// </summary>
+        public void Configure(TilemapLayer layerType, bool isCollisionOnly = false)
+        {
+            layer = layerType;
+            collisionOnly = isCollisionOnly;
+        }
+
         private void Awake()
         {
             ApplyLayerSettings();

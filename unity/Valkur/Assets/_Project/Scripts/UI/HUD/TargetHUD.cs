@@ -33,6 +33,19 @@ namespace Valkur.UI.HUD
         private float _lastInteractionTime = -999f;
         private bool _isHovering;
 
+        /// <summary>
+        /// Wire UI element references at runtime (replaces reflection-based field injection).
+        /// </summary>
+        public void SetUIReferences(CanvasGroup group, TextMeshProUGUI name, TextMeshProUGUI state,
+                                     Image hpFillImg, TextMeshProUGUI hpLabel)
+        {
+            panelGroup = group;
+            nameText = name;
+            stateText = state;
+            hpFill = hpFillImg;
+            hpText = hpLabel;
+        }
+
         private void Awake()
         {
             if (panelGroup != null)
