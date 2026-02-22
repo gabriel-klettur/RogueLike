@@ -209,8 +209,8 @@ namespace Valkur.Gameplay.TileEditor
 
             if (_catalog != null)
             {
-                var cats = _catalog.GetCategories();
-                _currentCategory = cats.Count > 0 ? cats[0] : "";
+                // Default to "All" so all tiles are visible on open
+                _currentCategory = "";
                 PopulateCategoryTabs();
                 PopulateTileGrid(_currentCategory);
             }
@@ -239,7 +239,7 @@ namespace Valkur.Gameplay.TileEditor
             BuildBrushSize(_leftPanel.transform);
             BuildSelectedTilePreview(_leftPanel.transform);
             BuildSectionHeader(_leftPanel.transform, "TILE PICKER", 16f);
-            BuildCategoryTabs(_leftPanel.transform);
+            BuildCategorySelector(_leftPanel.transform);
             BuildTilePicker(_leftPanel.transform);
             BuildTileCountRow(_leftPanel.transform);
             BuildStatusBar(_leftPanel.transform);
@@ -379,27 +379,36 @@ namespace Valkur.Gameplay.TileEditor
             _selectedTileNameText.enableWordWrapping = true;
         }
 
-        private void BuildCategoryTabs(Transform parent)
+        private void BuildCategorySelector(Transform parent)
         {
+            // Vertical scrollable category list with wrapping grid
             var scrollGo = CreateUI("CatScroll", parent);
-            scrollGo.AddComponent<LayoutElement>().preferredHeight = 28f;
+            var le = scrollGo.AddComponent<LayoutElement>();
+            le.preferredHeight = 60f;
+            le.minHeight = 40f;
             var sr = scrollGo.AddComponent<ScrollRect>();
-            sr.horizontal = true; sr.vertical = false;
+            sr.horizontal = false; sr.vertical = true;
 
             var vp = CreateUI("VP", scrollGo.transform);
             StretchFill(vp);
             vp.AddComponent<Mask>().showMaskGraphic = false;
-            vp.AddComponent<Image>().color = Color.clear;
+            vp.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.1f, 0.5f);
 
             var content = CreateUI("Content", vp.transform);
             _categoryTabsContent = content.transform;
             var cr = content.GetComponent<RectTransform>();
-            cr.anchorMin = new Vector2(0, 0); cr.anchorMax = new Vector2(0, 1);
-            cr.pivot = new Vector2(0, 0.5f); cr.sizeDelta = Vector2.zero;
-            var cl = content.AddComponent<HorizontalLayoutGroup>();
-            cl.spacing = 2f; cl.childForceExpandWidth = false; cl.childForceExpandHeight = true;
-            cl.childControlWidth = true; cl.childControlHeight = true;
-            content.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            cr.anchorMin = new Vector2(0, 1); cr.anchorMax = new Vector2(1, 1);
+            cr.pivot = new Vector2(0, 1); cr.sizeDelta = Vector2.zero;
+
+            // Use GridLayout so categories wrap into rows
+            var gl = content.AddComponent<GridLayoutGroup>();
+            gl.cellSize = new Vector2(124f, 22f);
+            gl.spacing = new Vector2(3f, 2f);
+            gl.padding = new RectOffset(2, 2, 2, 2);
+            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            gl.constraintCount = 2;
+
+            content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sr.content = cr; sr.viewport = vp.GetComponent<RectTransform>();
         }
 
@@ -681,15 +690,29 @@ namespace Valkur.Gameplay.TileEditor
         private void AddCategoryTab(string displayName, string categoryKey)
         {
             var go = CreateUI($"Cat_{displayName}", _categoryTabsContent);
-            go.AddComponent<LayoutElement>().preferredWidth = Mathf.Max(48f, displayName.Length * 8f + 12f);
             var img = go.AddComponent<Image>();
-            img.color = categoryKey == _currentCategory ? ButtonActive : ButtonNormal;
+            bool isActive = categoryKey == _currentCategory;
+            img.color = isActive ? ButtonActive : ButtonNormal;
+
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = isActive ? LabelColor : Color.clear;
+            outline.effectDistance = new Vector2(1f, 1f);
+
             var btn = go.AddComponent<Button>();
-            var c = btn.colors; c.normalColor = ButtonNormal; c.highlightedColor = ButtonHover; btn.colors = c;
+            var c = btn.colors;
+            c.normalColor = ButtonNormal;
+            c.highlightedColor = ButtonHover;
+            c.pressedColor = ButtonActive;
+            btn.colors = c;
             btn.targetGraphic = img;
             string cap = categoryKey;
             btn.onClick.AddListener(() => SelectCategory(cap));
-            AddCenteredText(go.transform, displayName, 11f, FontStyles.Normal, TextColor);
+
+            var tmp = AddCenteredText(go.transform, displayName, 11f, FontStyles.Normal,
+                isActive ? LabelColor : TextColor);
+            tmp.alignment = TextAlignmentOptions.Left;
+            tmp.margin = new Vector4(6f, 0f, 0f, 0f);
+
             _categoryButtons.Add(btn);
         }
 
@@ -697,16 +720,9 @@ namespace Valkur.Gameplay.TileEditor
         {
             _currentCategory = category;
             PopulateTileGrid(category);
-            if (_catalog != null)
-            {
-                var allCats = new List<string> { "" };
-                allCats.AddRange(_catalog.GetCategories());
-                for (int i = 0; i < _categoryButtons.Count && i < allCats.Count; i++)
-                {
-                    var img = _categoryButtons[i].GetComponent<Image>();
-                    if (img != null) img.color = allCats[i] == category ? ButtonActive : ButtonNormal;
-                }
-            }
+
+            // Rebuild tabs to update highlights (simpler than tracking all sub-elements)
+            PopulateCategoryTabs();
         }
 
         private void PopulateTileGrid(string category)

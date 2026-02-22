@@ -132,9 +132,12 @@ namespace Valkur.Gameplay.TileEditor
 
                 if (_state.Active)
                 {
+                    // Reset to Ground layer on open to avoid accidental painting on wrong layer
+                    _state.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
                     _ui.RefreshToolHighlights();
                     _ui.RefreshLayerLabel();
                     _ui.RefreshBrushSizeLabel();
+                    _ui.RefreshTilePicker();
                     _ui.SetStatus("Tile Editor active. F6 to close.");
                     if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                     if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
