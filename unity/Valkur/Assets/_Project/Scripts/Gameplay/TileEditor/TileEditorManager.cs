@@ -112,6 +112,7 @@ namespace Valkur.Gameplay.TileEditor
             HandleMouseInput();
             UpdateBrushPreview();
             UpdateGridCursor();
+            UpdateViewPanelHover();
         }
 
         // =====================================================================
@@ -291,6 +292,13 @@ namespace Valkur.Gameplay.TileEditor
                 {
                     _state.SelectedTile = picked;
                     _ui.SetStatus($"Picked: {picked.name}");
+
+                    // Update View Panel selected + left panel preview
+                    Sprite sprite = null;
+                    if (picked is Tile pickedTile) sprite = pickedTile.sprite;
+                    _ui.UpdateViewPanelSelected(sprite, picked.name);
+                    _ui.UpdateSelectedTilePreview(sprite, picked.name);
+
                     OnToolChanged(TileEditorState.Tool.Brush);
                 }
             }
@@ -303,6 +311,11 @@ namespace Valkur.Gameplay.TileEditor
                 var tile = tilemap.GetTile(cellPos);
                 string info = tile != null ? tile.name : "(empty)";
                 _ui.SetStatus($"Cell ({cellPos.x},{cellPos.y}) Layer:{_state.CurrentLayer} Tile:{info}");
+
+                // Update View Panel selected
+                Sprite sprite = null;
+                if (tile is Tile t) sprite = t.sprite;
+                _ui.UpdateViewPanelSelected(sprite, info);
             }
         }
 
@@ -472,6 +485,12 @@ namespace Valkur.Gameplay.TileEditor
             _state.SelectedCategory = entry.category;
             _ui.SetStatus($"Selected: {entry.tileName}");
 
+            // Update selected tile preview in left panel + view panel choice
+            Sprite preview = entry.preview;
+            if (preview == null && entry.tile is Tile tileAsset)
+                preview = tileAsset.sprite;
+            _ui.UpdateSelectedTilePreview(preview, entry.tileName);
+
             if (_state.CurrentTool == TileEditorState.Tool.Select ||
                 _state.CurrentTool == TileEditorState.Tool.Eyedropper)
             {
@@ -507,6 +526,44 @@ namespace Valkur.Gameplay.TileEditor
         {
             _state.BrushSize = Mathf.Clamp(newSize, 1, 5);
             _ui.RefreshBrushSizeLabel();
+        }
+
+        // =====================================================================
+        // VIEW PANEL HOVER UPDATE
+        // =====================================================================
+
+        private void UpdateViewPanelHover()
+        {
+            if (_ui == null) return;
+
+            // Skip if over UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                _ui.UpdateViewPanelHovered(null, "", "");
+                return;
+            }
+
+            var tilemap = GetCurrentTilemap();
+            if (tilemap == null)
+            {
+                _ui.UpdateViewPanelHovered(null, "", "");
+                return;
+            }
+
+            Vector3Int cellPos = GetCellUnderMouse(tilemap);
+            var tileBase = tilemap.GetTile(cellPos);
+            if (tileBase != null)
+            {
+                Sprite sprite = null;
+                if (tileBase is Tile t) sprite = t.sprite;
+                string layerName = $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}";
+                _ui.UpdateViewPanelHovered(sprite, tileBase.name, layerName);
+            }
+            else
+            {
+                _ui.UpdateViewPanelHovered(null, $"({cellPos.x},{cellPos.y}) empty", $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}");
+            }
         }
 
         // =====================================================================
