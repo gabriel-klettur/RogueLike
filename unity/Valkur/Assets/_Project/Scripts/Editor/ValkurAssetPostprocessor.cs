@@ -11,7 +11,7 @@ namespace Valkur.Editor
     {
         private const int DEFAULT_PPU = 16;
         private const int CHARACTER_PPU = 16;
-        private const int TILE_PPU = 16;
+        private const int TILE_PPU = 32;
         private const int UI_PPU = 100;
 
         private void OnPreprocessTexture()
