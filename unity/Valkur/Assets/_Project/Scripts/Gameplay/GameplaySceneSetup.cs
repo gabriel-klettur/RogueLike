@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 using Valkur.Data;
 using Valkur.Gameplay.Rendering;
 using Valkur.Gameplay.TileEditor;
@@ -55,16 +54,35 @@ namespace Valkur.Gameplay
         /// URP uses Sprite-Lit-Default material on TilemapRenderers.
         /// Without a 2D light source, all tilemaps render as solid black.
         /// This creates a Global Light 2D to illuminate the entire scene.
+        /// Uses reflection to avoid hard dependency on URP assembly.
         /// </summary>
         private void EnsureGlobalLight2D()
         {
-            if (FindObjectOfType<Light2D>() != null) return;
+            // Find Light2D type via reflection (avoids URP assembly reference)
+            var light2DType = System.Type.GetType(
+                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            if (light2DType == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found. URP 2D Renderer package may not be installed.");
+                return;
+            }
+
+            // Check if one already exists
+            if (FindObjectOfType(light2DType) != null) return;
 
             var lightGo = new GameObject("GlobalLight2D");
-            var light = lightGo.AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global;
-            light.intensity = 1f;
-            light.color = Color.white;
+            var light = lightGo.AddComponent(light2DType);
+
+            // Set lightType to Global (enum value 1) via reflection
+            var lightTypeProp = light2DType.GetProperty("lightType");
+            if (lightTypeProp != null)
+                lightTypeProp.SetValue(light, 1); // 1 = Global
+
+            // Set intensity
+            var intensityProp = light2DType.GetProperty("intensity");
+            if (intensityProp != null)
+                intensityProp.SetValue(light, 1f);
+
             Debug.Log("[GameplaySceneSetup] Created Global Light 2D for URP tilemap rendering.");
         }
 
