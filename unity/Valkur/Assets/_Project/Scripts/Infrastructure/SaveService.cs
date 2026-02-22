@@ -244,7 +244,8 @@ namespace Valkur.Infrastructure
 
             // Player state
             var health = player.GetComponent<Gameplay.Health>();
-            var controller = player.GetComponent<Gameplay.PlayerController>();
+            var mana = player.GetComponent<Gameplay.Mana>();
+            var experience = player.GetComponent<Gameplay.Experience>();
             var inventory = player.GetComponent<Gameplay.Inventory.Inventory>();
 
             data.player = new PlayerSaveData
@@ -252,9 +253,11 @@ namespace Valkur.Infrastructure
                 position = (Vector2)player.transform.position,
                 hp = health != null ? health.CurrentHp : 0,
                 maxHp = health != null ? health.MaxHp : 0,
+                mana = mana != null ? mana.CurrentMana : 0,
+                maxMana = mana != null ? mana.MaxMana : 0,
                 currentZone = "",
-                experience = 0,
-                level = 1
+                experience = experience != null ? experience.TotalXp : 0,
+                level = experience != null ? experience.Level : 1
             };
 
             // Inventory
@@ -323,6 +326,23 @@ namespace Valkur.Infrastructure
                     health.TakeDamage(damage);
             }
 
+            // Restore mana
+            var mana = player.GetComponent<Gameplay.Mana>();
+            if (mana != null && data.player.maxMana > 0)
+            {
+                mana.Initialize(Mathf.RoundToInt(data.player.maxMana), 2f);
+                int manaToConsume = Mathf.RoundToInt(data.player.maxMana - data.player.mana);
+                if (manaToConsume > 0)
+                    mana.TryConsume(manaToConsume);
+            }
+
+            // Restore experience
+            var experience = player.GetComponent<Gameplay.Experience>();
+            if (experience != null)
+            {
+                experience.Initialize(data.player.experience, data.player.level);
+            }
+
             // Restore inventory
             if (data.player.inventory != null)
             {
@@ -336,7 +356,7 @@ namespace Valkur.Infrastructure
                 }
             }
 
-            Debug.Log($"[SaveService] Player state restored: pos={data.player.position}, HP={data.player.hp}/{data.player.maxHp}");
+            Debug.Log($"[SaveService] Player state restored: pos={data.player.position}, HP={data.player.hp}/{data.player.maxHp}, Mana={data.player.mana}/{data.player.maxMana}, XP={data.player.experience}, Lv={data.player.level}");
         }
 
         private void RotateBackups(string prefix)

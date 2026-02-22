@@ -74,7 +74,15 @@ namespace Valkur.Gameplay.Spells
             if (spell == null) return false;
             if (_cooldownTimers[slotIndex] > 0f) return false;
 
-            // Check mana (stub — will integrate with player stats)
+            // Check mana cost
+            int manaCost = Mathf.RoundToInt(spell.manaCost);
+            if (manaCost > 0)
+            {
+                var mana = GetComponent<Mana>();
+                if (mana != null && !mana.TryConsume(manaCost))
+                    return false;
+            }
+
             _activeSlot = slotIndex;
             _castDirection = direction.normalized;
 

@@ -20,17 +20,17 @@ Objetivo:
 | 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
-| 5 | Port completo gameplay | 37-44 | 7/8 | 🟡 En progreso |
+| 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
 | 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **30/50** | **60%** |
+| **Total** | | **1-50** | **31/50** | **62%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 44** — Cierre de brechas de paridad funcional
-2. **Paso 45** — Definir herramientas runtime vs EditorWindow
+1. **Paso 45** — Definir herramientas runtime vs EditorWindow
+2. **Paso 47** — Validadores de contenido previos a build
 3. **Paso 48** — Save system final con backups rotativos
-4. **Paso 15-18** — Politicas de nombres, pivots, PPU, SpriteAtlas
+4. **Paso 49** — Hardening: profiling, soak tests, optimizaciones
 
 ---
 
@@ -182,9 +182,16 @@ Objetivo:
     - `HUDBootstrap.cs`: auto-descubre player y inicializa HUD.
     - `MeleeCombat.OnHitTarget` event para desacoplar UI de gameplay.
     - TMP Essential Resources importados para renderizado de texto.
-44. [ ] Cierra brechas de paridad funcional detectadas en la matriz de paridad.
+44. [x] Cierra brechas de paridad funcional detectadas en la matriz de paridad.
+    - `Mana.cs`: recurso de mana con regen pasiva, delay post-consumo, eventos para HUD.
+    - `Experience.cs`: sistema XP/nivel con curva configurable (baseXP * N^exp), evento OnLevelUp.
+    - `SpellCaster.cs`: integra consumo de mana real via Mana.TryConsume().
+    - `EntitySetup.cs`: agrega Mana y Experience al player.
+    - `SaveService.cs`: persiste/restaura mana y experiencia en save/load.
+    - Brechas cerradas: mana system, experience/leveling, save/load de mana+xp.
+    - Brechas pendientes menores: day/night cycle, inventory transfer UI (buy/sell modal).
 
-> **Estado:** Combate base funcional (melee + dash + feedback + HUD). Spells scaffolding listo. HUD completo con PlayerHUD, TargetHUD, floating damage, world health bars. Falta VFX, inventario UI, cierre de paridad.
+> **Estado:** Fase 5 completa. Combate, spells con mana, VFX, inventario UI, pickups/drops, save/load, XP/niveles — todo funcional.
 
 ## Fase 6 - Herramientas, editores y flujo de contenido (Pasos 45-47)
 

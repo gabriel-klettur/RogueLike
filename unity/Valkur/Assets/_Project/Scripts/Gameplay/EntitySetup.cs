@@ -84,6 +84,17 @@ namespace Valkur.Gameplay
                 ySort = go.AddComponent<YSortEntity>();
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
+            // Mana
+            var mana = go.GetComponent<Mana>();
+            if (mana == null)
+                mana = go.AddComponent<Mana>();
+            mana.Initialize(def.initialIntelligence * 10, def.manaRegenPerSecond);
+
+            // Experience
+            var xp = go.GetComponent<Experience>();
+            if (xp == null)
+                xp = go.AddComponent<Experience>();
+
             // Pickup system
             if (go.GetComponent<Inventory.PickupSystem>() == null)
                 go.AddComponent<Inventory.PickupSystem>();
