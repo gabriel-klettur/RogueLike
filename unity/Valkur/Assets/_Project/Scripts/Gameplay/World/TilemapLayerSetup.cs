@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
 
-namespace Valkur.Gameplay.Rendering
+namespace Valkur.Gameplay.World
 {
     /// <summary>
     /// Defines the tilemap layer type for a Tilemap GameObject.

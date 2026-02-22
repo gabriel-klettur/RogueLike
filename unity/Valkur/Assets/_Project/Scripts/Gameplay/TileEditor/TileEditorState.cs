@@ -1,5 +1,5 @@
 using UnityEngine.Tilemaps;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {

@@ -3,7 +3,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Spells;
 

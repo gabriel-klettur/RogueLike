@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.TileEditor

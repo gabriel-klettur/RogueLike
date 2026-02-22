@@ -1,6 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 

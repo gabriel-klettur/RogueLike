@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
 
-namespace Valkur.Gameplay.Rendering
+namespace Valkur.Gameplay.World
 {
     /// <summary>
     /// Builds the tilemap grid hierarchy at runtime if not already present in the scene.

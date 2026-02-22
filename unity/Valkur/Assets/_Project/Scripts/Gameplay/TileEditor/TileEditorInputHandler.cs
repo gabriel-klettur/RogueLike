@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {

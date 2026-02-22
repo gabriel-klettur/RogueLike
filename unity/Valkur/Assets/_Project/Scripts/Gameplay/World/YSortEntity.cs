@@ -1,7 +1,7 @@
 using UnityEngine;
 using Valkur.Core;
 
-namespace Valkur.Gameplay.Rendering
+namespace Valkur.Gameplay.World
 {
     /// <summary>
     /// Dynamically updates a SpriteRenderer's sortingOrder based on the entity's Y position.

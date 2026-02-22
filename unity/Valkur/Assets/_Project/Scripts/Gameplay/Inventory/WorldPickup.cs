@@ -1,7 +1,7 @@
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
-using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.Inventory
 {
