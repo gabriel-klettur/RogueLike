@@ -49,23 +49,41 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 10
+    locked: 0
   - name: Ground
     uniqueID: 1
     locked: 0
-  - name: GroundDecoration
-    uniqueID: 2
+  - name: FloorDecals
+    uniqueID: 11
     locked: 0
-  - name: Buildings
-    uniqueID: 3
+  - name: ObjectsLow
+    uniqueID: 12
+    locked: 0
+  - name: WallsBottom
+    uniqueID: 13
     locked: 0
   - name: Entities
     uniqueID: 4
+    locked: 0
+  - name: Decorations
+    uniqueID: 14
+    locked: 0
+  - name: WallsTop
+    uniqueID: 15
+    locked: 0
+  - name: ObjectsHigh
+    uniqueID: 16
     locked: 0
   - name: Projectiles
     uniqueID: 5
     locked: 0
   - name: VFX
     uniqueID: 6
+    locked: 0
+  - name: Overhead
+    uniqueID: 17
     locked: 0
   - name: UI_World
     uniqueID: 7

@@ -15,6 +15,7 @@ namespace Valkur.UI.HUD
         private PlayerHUD _playerHUD;
         private TargetHUD _targetHUD;
         private Canvas _canvas;
+        private Mana _playerMana;
 
         private static HUDManager _instance;
         public static HUDManager Instance => _instance;
@@ -34,7 +35,7 @@ namespace Valkur.UI.HUD
         /// <summary>
         /// Called by GameplaySceneSetup after the player is spawned.
         /// </summary>
-        public void InitializeForPlayer(Health playerHealth)
+        public void InitializeForPlayer(Health playerHealth, Mana playerMana = null)
         {
             if (_canvas == null)
                 CreateCanvas();
@@ -42,7 +43,21 @@ namespace Valkur.UI.HUD
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
 
+            // Wire mana to PlayerHUD
+            if (playerMana != null)
+            {
+                _playerMana = playerMana;
+                _playerMana.OnManaChanged += OnPlayerManaChanged;
+                OnPlayerManaChanged(_playerMana.CurrentMana, _playerMana.MaxMana);
+            }
+
             Debug.Log("[HUDManager] HUD initialized for player.");
+        }
+
+        private void OnPlayerManaChanged(int current, int max)
+        {
+            if (_playerHUD != null)
+                _playerHUD.SetMana(current, max);
         }
 
         private void CreateCanvas()
@@ -97,16 +112,7 @@ namespace Valkur.UI.HUD
             // Attach PlayerHUD component
             _playerHUD = panel.AddComponent<PlayerHUD>();
 
-            // Wire serialized fields via reflection-free approach: use Initialize
-            // We need to set the references. Since they're [SerializeField] private,
-            // we'll use a public setup method approach instead.
-            SetPrivateField(_playerHUD, "hpFill", hpFill);
-            SetPrivateField(_playerHUD, "hpBackground", hpBg);
-            SetPrivateField(_playerHUD, "hpText", hpText);
-            SetPrivateField(_playerHUD, "mpFill", mpFill);
-            SetPrivateField(_playerHUD, "mpBackground", mpBg);
-            SetPrivateField(_playerHUD, "mpText", mpText);
-
+            _playerHUD.SetUIReferences(hpFill, hpBg, hpText, mpFill, mpBg, mpText);
             _playerHUD.Initialize(playerHealth);
         }
 
@@ -196,11 +202,7 @@ namespace Valkur.UI.HUD
 
             // Attach TargetHUD component
             _targetHUD = panel.AddComponent<TargetHUD>();
-            SetPrivateField(_targetHUD, "panelGroup", canvasGroup);
-            SetPrivateField(_targetHUD, "nameText", nameText);
-            SetPrivateField(_targetHUD, "stateText", stateText);
-            SetPrivateField(_targetHUD, "hpFill", barFillImg);
-            SetPrivateField(_targetHUD, "hpText", hpText);
+            _targetHUD.SetUIReferences(canvasGroup, nameText, stateText, barFillImg, hpText);
         }
 
         private GameObject CreateBarRow(Transform parent, string label,
@@ -266,16 +268,6 @@ namespace Valkur.UI.HUD
             return go;
         }
 
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var field = target.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                field.SetValue(target, value);
-            else
-                Debug.LogWarning($"[HUDManager] Field '{fieldName}' not found on {target.GetType().Name}");
-        }
-
         private static Sprite _whitePixelSprite;
 
         private static Sprite GetWhitePixelSprite()
@@ -292,6 +284,9 @@ namespace Valkur.UI.HUD
 
         private void OnDestroy()
         {
+            if (_playerMana != null)
+                _playerMana.OnManaChanged -= OnPlayerManaChanged;
+
             if (_instance == this)
                 _instance = null;
         }

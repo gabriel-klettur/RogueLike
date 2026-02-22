@@ -1,6 +1,8 @@
 using System.Text;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
+using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
@@ -16,7 +18,6 @@ namespace Valkur.UI.HUD
     public class DebugHUD : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private KeyCode toggleKey = KeyCode.F1;
         [SerializeField] private int fontSize = 14;
         [SerializeField] private Color textColor = new Color(0.0f, 1f, 0.0f, 0.9f);
         [SerializeField] private Color bgColor = new Color(0f, 0f, 0f, 0.65f);
@@ -28,6 +29,7 @@ namespace Valkur.UI.HUD
 
         private GameObject _player;
         private Health _health;
+        private Mana _mana;
         private MeleeCombat _melee;
         private DashAbility _dash;
         private SpellCaster _spellCaster;
@@ -40,14 +42,18 @@ namespace Valkur.UI.HUD
         private int _fpsFrameCount;
         private float _currentFps;
 
+        private InputAction _toggleAction;
+
         private void Start()
         {
+            _toggleAction = new InputAction("ToggleDebugHUD", InputActionType.Button, "<Keyboard>/f1");
+            _toggleAction.Enable();
             CreateOverlay();
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(toggleKey))
+            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
             {
                 _visible = !_visible;
                 if (_canvas != null)
@@ -77,10 +83,11 @@ namespace Valkur.UI.HUD
         {
             if (_player != null) return;
 
-            _player = GameObject.FindGameObjectWithTag("Player");
+            _player = EntityRegistry.Player;
             if (_player == null) return;
 
             _health = _player.GetComponent<Health>();
+            _mana = _player.GetComponent<Mana>();
             _melee = _player.GetComponent<MeleeCombat>();
             _dash = _player.GetComponent<DashAbility>();
             _spellCaster = _player.GetComponent<SpellCaster>();
@@ -123,8 +130,16 @@ namespace Valkur.UI.HUD
                     _sb.AppendLine("HP:   (no Health)");
                 }
 
-                // Mana placeholder
-                _sb.AppendLine($"MP:   100/100  (100%)");
+                // Mana
+                if (_mana != null)
+                {
+                    float mpPct = _mana.NormalizedMana * 100f;
+                    _sb.AppendLine($"MP:   {_mana.CurrentMana}/{_mana.MaxMana}  ({mpPct:F0}%)");
+                }
+                else
+                {
+                    _sb.AppendLine("MP:   (no Mana)");
+                }
                 _sb.AppendLine();
 
                 // Melee Combat
@@ -158,7 +173,7 @@ namespace Valkur.UI.HUD
 
                 // Nearby monsters
                 _sb.AppendLine("<b>--- NEARBY MONSTERS ---</b>");
-                var monsters = GameObject.FindGameObjectsWithTag("Monster");
+                var monsters = EntityRegistry.Monsters;
                 int shown = 0;
                 foreach (var m in monsters)
                 {
@@ -180,7 +195,7 @@ namespace Valkur.UI.HUD
 
             // Entity count
             _sb.AppendLine();
-            int totalGo = FindObjectsOfType<Transform>().Length;
+            int totalGo = EntityRegistry.MonsterCount + (EntityRegistry.HasPlayer ? 1 : 0);
             _sb.AppendLine($"GameObjects: {totalGo}");
 
             if (_text != null)
@@ -241,6 +256,12 @@ namespace Valkur.UI.HUD
             _text.enableWordWrapping = false;
             _text.overflowMode = TextOverflowModes.Overflow;
             _text.richText = true;
+        }
+
+        private void OnDestroy()
+        {
+            _toggleAction?.Disable();
+            _toggleAction?.Dispose();
         }
     }
 }

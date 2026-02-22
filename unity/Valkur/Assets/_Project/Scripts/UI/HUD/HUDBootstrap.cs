@@ -24,10 +24,12 @@ namespace Valkur.UI.HUD
             var health = player.GetComponent<Health>();
             if (health == null) return;
 
+            var mana = player.GetComponent<Mana>();
+
             // Create HUDManager
             var hudGo = new GameObject("HUDManager");
             var hudManager = hudGo.AddComponent<HUDManager>();
-            hudManager.InitializeForPlayer(health);
+            hudManager.InitializeForPlayer(health, mana);
 
             var targetHUD = hudManager.TargetHUD;
 

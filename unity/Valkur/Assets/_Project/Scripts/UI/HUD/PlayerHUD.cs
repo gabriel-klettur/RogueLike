@@ -39,6 +39,20 @@ namespace Valkur.UI.HUD
         private int _currentMp = 100;
         private int _maxMp = 100;
 
+        /// <summary>
+        /// Wire UI element references at runtime (replaces reflection-based field injection).
+        /// </summary>
+        public void SetUIReferences(Image hpFillImg, Image hpBgImg, TextMeshProUGUI hpLabel,
+                                     Image mpFillImg, Image mpBgImg, TextMeshProUGUI mpLabel)
+        {
+            hpFill = hpFillImg;
+            hpBackground = hpBgImg;
+            hpText = hpLabel;
+            mpFill = mpFillImg;
+            mpBackground = mpBgImg;
+            mpText = mpLabel;
+        }
+
         public void Initialize(Health health)
         {
             if (playerHealth != null)

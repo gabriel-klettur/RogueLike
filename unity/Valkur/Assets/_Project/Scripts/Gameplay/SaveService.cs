@@ -310,7 +310,6 @@ namespace Valkur.Gameplay
 
             var data = new GameSaveData
             {
-                schemaVersion = "1.0",
                 timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")
             };
 
