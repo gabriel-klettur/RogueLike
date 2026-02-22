@@ -18,7 +18,7 @@ namespace Valkur.Editor
     /// </summary>
     public static class TilePaletteBuilder
     {
-        private const string TILES_READY_FOLDER = "Assets/_Project/Art/Tiles/ready";
+        private const string TILES_READY_FOLDER = "Assets/_Project/Resources/Tiles";
         private const string TILE_ASSETS_FOLDER = "Assets/_Project/Art/Tiles/TileAssets";
         private const string PALETTE_PATH = "Assets/_Project/Art/Tiles/Palettes";
 
