@@ -16,9 +16,17 @@ namespace Valkur.Gameplay
     /// </summary>
     public static class EntitySetup
     {
-        private static readonly int PlayerLayer = LayerMask.NameToLayer("Player");
-        private static readonly int NPCLayer = LayerMask.NameToLayer("NPC");
-        private static readonly int ProjectileLayer = LayerMask.NameToLayer("Projectile");
+        private static readonly int PlayerLayer = SafeNameToLayer("Player");
+        private static readonly int NPCLayer = SafeNameToLayer("NPC");
+        private static readonly int ProjectileLayer = SafeNameToLayer("Projectile");
+
+        private static int SafeNameToLayer(string layerName)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+            if (layer == -1)
+                Debug.LogWarning($"[EntitySetup] Layer '{layerName}' not found in TagManager! Falling back to Default (0).");
+            return layer == -1 ? 0 : layer;
+        }
 
         private static Sprite _playerSprite;
         private static Sprite _monsterSprite;
@@ -281,7 +289,8 @@ namespace Valkur.Gameplay
         {
             if (sr == null) return;
             if (_unlitSpriteMaterial == null)
-                _unlitSpriteMaterial = new Material(Shader.Find("Sprites/Default"));
+                _unlitSpriteMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                    ?? Shader.Find("Sprites/Default"));
             sr.material = _unlitSpriteMaterial;
         }
     }

@@ -54,7 +54,8 @@ namespace Valkur.Gameplay.Combat
             _arrowSr.color = arrowColor;
             _arrowSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             _arrowSr.sortingOrder = SortingConfig.Z_SKY + 10;
-            _arrowSr.material = new Material(Shader.Find("Sprites/Default"));
+            _arrowSr.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"));
 
             _arrowGo.transform.localScale = Vector3.one * arrowScale;
         }
@@ -121,6 +122,8 @@ namespace Valkur.Gameplay.Combat
 
         private void OnDestroy()
         {
+            if (_arrowSr != null && _arrowSr.material != null)
+                Destroy(_arrowSr.material);
             if (_arrowGo != null)
                 Destroy(_arrowGo);
         }

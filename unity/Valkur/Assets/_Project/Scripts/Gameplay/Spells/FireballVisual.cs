@@ -89,7 +89,8 @@ namespace Valkur.Gameplay.Spells
         private static void EnsureMaterial()
         {
             if (_unlitMaterial != null) return;
-            _unlitMaterial = new Material(Shader.Find("Sprites/Default"));
+            _unlitMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"));
         }
 
         private static Sprite CreateCircleSprite(int size, System.Func<float, Color> pixelFunc)

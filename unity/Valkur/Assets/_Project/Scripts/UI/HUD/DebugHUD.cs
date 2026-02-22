@@ -258,6 +258,16 @@ namespace Valkur.UI.HUD
             _text.richText = true;
         }
 
+        private void OnDisable()
+        {
+            _toggleAction?.Disable();
+        }
+
+        private void OnEnable()
+        {
+            _toggleAction?.Enable();
+        }
+
         private void OnDestroy()
         {
             _toggleAction?.Disable();

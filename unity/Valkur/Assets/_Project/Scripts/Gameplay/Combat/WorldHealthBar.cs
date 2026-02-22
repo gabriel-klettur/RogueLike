@@ -165,7 +165,8 @@ namespace Valkur.Gameplay.Combat
         private static Material GetSharedSpriteMaterial()
         {
             if (_sharedMaterial != null) return _sharedMaterial;
-            _sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"));
             return _sharedMaterial;
         }
     }

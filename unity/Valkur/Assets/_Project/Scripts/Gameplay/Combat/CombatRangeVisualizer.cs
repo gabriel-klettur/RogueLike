@@ -38,7 +38,8 @@ namespace Valkur.Gameplay.Combat
         {
             _visible = showOnStart;
 
-            _lineMaterial = new Material(Shader.Find("Sprites/Default"));
+            _lineMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"));
             _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
 
             _toggleAction = new InputAction("ToggleRanges", InputActionType.Button, "<Keyboard>/f2");

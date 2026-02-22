@@ -27,7 +27,8 @@ namespace Valkur.Gameplay.TileEditor
             _lineRenderer.startWidth = 0.04f;
             _lineRenderer.endWidth = 0.04f;
             _lineRenderer.sortingOrder = 998;
-            _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            _lineRenderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"));
             _lineRenderer.startColor = CursorColor;
             _lineRenderer.endColor = CursorColor;
 

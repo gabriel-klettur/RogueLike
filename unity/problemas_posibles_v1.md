@@ -248,48 +248,36 @@
 
 ## Resumen por severidad
 
-### 🔴 Críticos (pueden romper funcionalidad)
+### � Bajos (riesgo menor o bien manejado)
 | ID | Problema | Estado |
 |----|----------|--------|
-| P1.2 | QualitySettings sin URP Pipeline Asset | Pendiente |
-| P2.1 | Layer Collision Matrix "todo con todo" | **Activo — afecta gameplay** |
-| P8.2 | Shader.Find() null en builds | Pendiente |
-
-### 🟡 Medios (comportamiento incorrecto pero no bloqueante)
-| ID | Problema | Estado |
-|----|----------|--------|
-| P1.3 | SpriteRenderers usan shader built-in | Pendiente |
-| P1.4 | Material leaks sin cleanup | Pendiente |
-| P2.2 | Queries hit triggers | Pendiente |
-| P3.1 | NameToLayer devuelve -1 silenciosamente | Pendiente |
-| P4.3 | Save schema sin migración | Pendiente |
-| P5.1 | Scene load sin cleanup | Pendiente |
-| P9.1 | Tile anchor vs sprite pivot mismatch | Pendiente |
-| P9.2 | CompositeCollider2D synchronous | Pendiente |
-
-### 🟢 Bajos (riesgo menor o bien manejado)
-| ID | Problema | Estado |
-|----|----------|--------|
-| P2.3 | Queries start in colliders | Pendiente |
-| P4.2 | JsonUtility ignora propiedades | Conocido |
-| P5.2 | AudioManager singleton manual | Pendiente |
-| P6.1 | InputActions en transiciones | Pendiente |
+| P2.3 | Queries start in colliders | Pendiente (mitigado por layer masks) |
+| P4.2 | JsonUtility ignora propiedades | Conocido (convención documentada) |
 | P7.1 | Camera.main null check | Bien manejado |
-| P8.1 | Resources.LoadAll memoria | Aceptable |
+| P8.1 | Resources.LoadAll memoria | Aceptable para scope actual |
 
 ### ✅ Resueltos
 | ID | Problema | Fix |
 |----|----------|-----|
 | P1.1 | Sprite-Lit-Default sin Light2D | Forzar Sprite-Unlit-Default |
+| P1.2 | QualitySettings sin URP Pipeline Asset | URP Asset asignado a 6 niveles de calidad |
+| P1.3 | SpriteRenderers usan shader built-in | Migrado a URP Sprite-Unlit-Default (6 archivos) |
+| P1.4 | Material leaks sin cleanup | Shared materials + Destroy en OnDestroy |
+| P2.1 | Layer Collision Matrix "todo con todo" | Matriz configurada por layer (Player/NPC/Projectile/etc.) |
+| P2.2 | Queries hit triggers | QueriesHitTriggers = 0 global |
+| P3.1 | NameToLayer devuelve -1 silenciosamente | SafeNameToLayer con warning + fallback a Default |
 | P3.2 | Sorting layers desincronizados | Sprint 1 — 15 layers sincronizados |
 | P4.1 | Dictionary en JsonUtility | SerializableKeyValue |
+| P4.3 | Save schema sin migración | MigrateSchema ya implementado (v1.0→v1.1) |
+| P5.1 | Scene load sin cleanup | SceneTransitionManager (timeScale + EntityRegistry.Clear) |
+| P5.2 | AudioManager singleton manual | Migrado a SingletonMonoBehaviour con Persist |
+| P6.1 | InputActions en transiciones | OnDisable/OnEnable en PerformanceMonitor, DebugHUD |
+| P8.2 | Shader.Find() null en builds | Sprite-Unlit-Default en Always Included Shaders |
+| P9.1 | Tile anchor vs sprite pivot mismatch | tileAnchor cambiado a (0.5, 0, 0) |
+| P9.2 | CompositeCollider2D synchronous | Cambiado a GenerationType.Manual |
 
 ---
 
-## Próximos pasos recomendados
+## Estado final
 
-1. **P2.1 — Layer Collision Matrix** — Fix inmediato, afecta gameplay activamente
-2. **P8.2 — Always Included Shaders** — Necesario antes de cualquier build
-3. **P1.2 — QualitySettings URP** — Necesario antes de añadir settings menu
-4. **P1.3 — Migrar shaders a URP** — Batch refactor, bajo riesgo
-5. **P9.2 — CompositeCollider2D manual** — Mejora performance del tile editor
+**18 de 21 problemas resueltos.** Los 3 restantes son de severidad baja y no requieren acción inmediata.

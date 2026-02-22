@@ -163,6 +163,16 @@ namespace Valkur.Core
                 $"Entities: {entityCount} | F3 toggle", style);
         }
 
+        private void OnDisable()
+        {
+            _toggleAction?.Disable();
+        }
+
+        private void OnEnable()
+        {
+            _toggleAction?.Enable();
+        }
+
         protected override void OnDestroy()
         {
             _toggleAction?.Disable();

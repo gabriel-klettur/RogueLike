@@ -101,7 +101,7 @@ namespace Valkur.Gameplay.Rendering
             go.transform.SetParent(parent, false);
 
             var tilemap = go.AddComponent<Tilemap>();
-            tilemap.tileAnchor = new Vector3(0.5f, 0.5f, 0f);
+            tilemap.tileAnchor = new Vector3(0.5f, 0f, 0f);
 
             var renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;
@@ -119,7 +119,7 @@ namespace Valkur.Gameplay.Rendering
 
                 var composite = go.AddComponent<CompositeCollider2D>();
                 composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
-                composite.generationType = CompositeCollider2D.GenerationType.Synchronous;
+                composite.generationType = CompositeCollider2D.GenerationType.Manual;
 
                 collider.usedByComposite = true;
 
@@ -141,7 +141,7 @@ namespace Valkur.Gameplay.Rendering
 
                 var composite = go.AddComponent<CompositeCollider2D>();
                 composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
-                composite.generationType = CompositeCollider2D.GenerationType.Synchronous;
+                composite.generationType = CompositeCollider2D.GenerationType.Manual;
 
                 collider.usedByComposite = true;
 

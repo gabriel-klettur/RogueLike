@@ -170,18 +170,16 @@ namespace Valkur.UI
 
         private void OnRestartClicked()
         {
-            Time.timeScale = 1f;
             _shown = false;
             Debug.Log("[DeathScreenUI] Restarting gameplay...");
-            SceneManager.LoadScene(gameplaySceneName);
+            SceneTransitionManager.LoadScene(gameplaySceneName);
         }
 
         private void OnMainMenuClicked()
         {
-            Time.timeScale = 1f;
             _shown = false;
             Debug.Log("[DeathScreenUI] Returning to main menu...");
-            SceneManager.LoadScene(mainMenuSceneName);
+            SceneTransitionManager.LoadScene(mainMenuSceneName);
         }
 
         private void BuildUI()

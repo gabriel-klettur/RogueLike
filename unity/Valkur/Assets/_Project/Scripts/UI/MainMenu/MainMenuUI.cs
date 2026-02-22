@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Valkur.Core;
 
 namespace Valkur.UI.MainMenu
 {
@@ -169,7 +170,7 @@ namespace Valkur.UI.MainMenu
         private void StartNewGame()
         {
             Debug.Log("[MainMenu] Starting new game...");
-            SceneManager.LoadScene(gameplaySceneName);
+            SceneTransitionManager.LoadScene(gameplaySceneName);
         }
 
         private void QuitGame()
