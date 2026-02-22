@@ -56,26 +56,17 @@ namespace Valkur.Gameplay.Rendering
 
         private System.Collections.IEnumerator ApplyUnlitFallbackIfNeeded()
         {
-            // Wait one frame so GameplaySceneSetup.EnsureGlobalLight2D() has time to run
+            // Wait one frame so all setup has completed
             yield return null;
 
-            // Check if any Light2D exists in the scene
-            var light2DType = System.Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            bool hasLight2D = light2DType != null && FindObjectOfType(light2DType) != null;
-
-            if (hasLight2D)
-            {
-                Debug.Log("[WorldGridBuilder] Light2D found in scene — using Lit materials (default).");
-                yield break;
-            }
-
-            // No Light2D → apply Unlit material to all TilemapRenderers
-            Debug.LogWarning("[WorldGridBuilder] No Light2D found — applying Sprite-Unlit-Default to all TilemapRenderers.");
+            // Always apply Unlit material to TilemapRenderers.
+            // The Sprite-Lit-Default shader requires a properly configured Global Light2D,
+            // and reflection-based Light2D creation is unreliable (lightType may remain Freeform).
+            // Unlit material renders sprites at full brightness without any light dependency.
             var unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
             if (unlitShader == null)
             {
-                Debug.LogError("[WorldGridBuilder] Sprite-Unlit-Default shader not found. Cannot apply Unlit fallback.");
+                Debug.LogError("[WorldGridBuilder] Sprite-Unlit-Default shader not found! Tiles may render black.");
                 yield break;
             }
 
@@ -88,7 +79,7 @@ namespace Valkur.Gameplay.Rendering
                 r.material = unlitMaterial;
                 count++;
             }
-            Debug.Log($"[WorldGridBuilder] Applied Unlit material to {count} TilemapRenderers.");
+            Debug.Log($"[WorldGridBuilder] Applied Sprite-Unlit-Default to {count} TilemapRenderers.");
         }
 
         /// <summary>

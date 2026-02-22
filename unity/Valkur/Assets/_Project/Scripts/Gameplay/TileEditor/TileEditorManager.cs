@@ -271,7 +271,7 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
-        private bool _brushDiagLogged;
+        private bool _brushDiagLogged = false;
 
         private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
         {
@@ -663,17 +663,49 @@ namespace Valkur.Gameplay.TileEditor
                 sb.AppendLine("  renderer=NULL (no TilemapRenderer!)");
             }
 
-            // Light2D check
+            // Light2D check — also read lightType to verify Global vs Freeform
             var light2DType = System.Type.GetType(
                 "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
             if (light2DType != null)
             {
                 var lights = FindObjectsOfType(light2DType);
                 sb.AppendLine($"  Light2D count={lights.Length}");
+
+                // Try to read lightType property or m_LightType field
+                var ltProp = light2DType.GetProperty("lightType",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                var ltField = light2DType.GetField("m_LightType",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var intProp = light2DType.GetProperty("intensity",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
                 foreach (var l in lights)
                 {
                     var go = ((Component)l).gameObject;
-                    sb.AppendLine($"    Light2D: '{go.name}' active={go.activeInHierarchy}");
+                    string ltVal = "?";
+                    if (ltProp != null)
+                    {
+                        try { ltVal = $"prop={ltProp.GetValue(l)} ({(int)ltProp.GetValue(l)})"; }
+                        catch { ltVal = "prop-read-error"; }
+                    }
+                    else if (ltField != null)
+                    {
+                        try { ltVal = $"field={ltField.GetValue(l)} ({(int)ltField.GetValue(l)})"; }
+                        catch { ltVal = "field-read-error"; }
+                    }
+                    else
+                    {
+                        ltVal = "NO_PROP_OR_FIELD";
+                    }
+
+                    string intVal = "?";
+                    if (intProp != null)
+                    {
+                        try { intVal = intProp.GetValue(l)?.ToString(); }
+                        catch { intVal = "read-error"; }
+                    }
+
+                    sb.AppendLine($"    Light2D: '{go.name}' active={go.activeInHierarchy} lightType={ltVal} intensity={intVal}");
                 }
             }
             else
