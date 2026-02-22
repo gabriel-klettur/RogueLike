@@ -67,6 +67,8 @@ namespace Valkur.Gameplay.TileEditor
 
         private void Start()
         {
+            if (_state == null) return; // Duplicate instance being destroyed
+
             _mainCamera = Camera.main;
 
             if (worldGridBuilder == null)
@@ -102,6 +104,8 @@ namespace Valkur.Gameplay.TileEditor
 
         private void Update()
         {
+            if (_state == null) return;
+
             HandleToggle();
 
             if (!_state.Active) return;

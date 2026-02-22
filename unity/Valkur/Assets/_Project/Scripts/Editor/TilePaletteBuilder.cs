@@ -168,13 +168,24 @@ namespace Valkur.Editor
                 return;
             }
 
-            string catalogPath = $"{TILE_ASSETS_FOLDER}/TileCatalog.asset";
+            // Output to Resources/ so TileEditorManager can use Resources.Load at runtime
+            const string RESOURCES_FOLDER = "Assets/_Project/Resources";
+            string catalogPath = $"{RESOURCES_FOLDER}/TileCatalog.asset";
+
+            // Also clean up old location if it exists
+            string oldPath = $"{TILE_ASSETS_FOLDER}/TileCatalog.asset";
+            if (AssetDatabase.LoadAssetAtPath<Object>(oldPath) != null)
+            {
+                AssetDatabase.DeleteAsset(oldPath);
+                Debug.Log($"[TilePaletteBuilder] Removed old catalog at {oldPath}");
+            }
+
             var catalog = AssetDatabase.LoadAssetAtPath<Valkur.Gameplay.TileEditor.TileCatalog>(catalogPath);
             if (catalog == null)
             {
                 catalog = ScriptableObject.CreateInstance<Valkur.Gameplay.TileEditor.TileCatalog>();
-                if (!AssetDatabase.IsValidFolder(TILE_ASSETS_FOLDER))
-                    CreateFolderRecursive(TILE_ASSETS_FOLDER);
+                if (!AssetDatabase.IsValidFolder(RESOURCES_FOLDER))
+                    CreateFolderRecursive(RESOURCES_FOLDER);
                 AssetDatabase.CreateAsset(catalog, catalogPath);
             }
 
@@ -205,7 +216,7 @@ namespace Valkur.Editor
             AssetDatabase.Refresh();
 
             Debug.Log($"[TilePaletteBuilder] Generated TileCatalog at {catalogPath} with {entries.Count} entries.\n" +
-                      "Assign this to TileEditorManager.tileCatalog in the scene.");
+                      "It will be auto-loaded at runtime via Resources.Load(\"TileCatalog\"). Press F6 in Play mode to use it.");
         }
 
         private static void CreateFolderRecursive(string path)
