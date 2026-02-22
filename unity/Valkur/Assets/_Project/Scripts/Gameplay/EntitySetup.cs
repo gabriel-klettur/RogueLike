@@ -79,8 +79,12 @@ namespace Valkur.Gameplay
                 go.AddComponent<Combat.FloatingDamageSpawner>();
 
             // World-space health bar (player bar hidden at full HP by default)
-            if (go.GetComponent<Combat.WorldHealthBar>() == null)
-                go.AddComponent<Combat.WorldHealthBar>();
+            var playerBar = go.GetComponent<Combat.WorldHealthBar>();
+            if (playerBar == null)
+                playerBar = go.AddComponent<Combat.WorldHealthBar>();
+            playerBar.SetBarColors(
+                new Color(0.2f, 0.9f, 0.25f, 1f),   // green fill
+                new Color(0.95f, 0.85f, 0.15f, 1f)); // yellow when low
 
             // Y-sort rendering (player layer)
             var ySort = go.GetComponent<YSortEntity>();
@@ -167,9 +171,13 @@ namespace Valkur.Gameplay
             if (go.GetComponent<Combat.FloatingDamageSpawner>() == null)
                 go.AddComponent<Combat.FloatingDamageSpawner>();
 
-            // World-space health bar (monsters show bar when damaged)
-            if (go.GetComponent<Combat.WorldHealthBar>() == null)
-                go.AddComponent<Combat.WorldHealthBar>();
+            // World-space health bar (monsters show bar when damaged, red fill)
+            var npcBar = go.GetComponent<Combat.WorldHealthBar>();
+            if (npcBar == null)
+                npcBar = go.AddComponent<Combat.WorldHealthBar>();
+            npcBar.SetBarColors(
+                new Color(0.9f, 0.25f, 0.2f, 1f),    // red fill
+                new Color(0.95f, 0.15f, 0.1f, 1f));   // darker red when low
 
             // Y-sort rendering (entity layer)
             var ySort = go.GetComponent<YSortEntity>();

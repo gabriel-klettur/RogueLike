@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Gameplay;
+using Valkur.Gameplay.Combat;
 using Valkur.UI;
 
 namespace Valkur.UI.HUD
@@ -28,13 +29,22 @@ namespace Valkur.UI.HUD
             var hudManager = hudGo.AddComponent<HUDManager>();
             hudManager.InitializeForPlayer(health);
 
+            var targetHUD = hudManager.TargetHUD;
+
             // Wire player MeleeCombat hits to TargetHUD
             var combat = player.GetComponent<MeleeCombat>();
-            if (combat != null && hudManager.TargetHUD != null)
-            {
-                var targetHUD = hudManager.TargetHUD;
+            if (combat != null && targetHUD != null)
                 combat.OnHitTarget += (hitGo, dmg) => targetHUD.ShowTarget(hitGo);
-            }
+
+            // Wire mouse hover detection to TargetHUD
+            var mouseDetector = player.GetComponent<MouseTargetDetector>();
+            if (mouseDetector == null)
+                mouseDetector = player.AddComponent<MouseTargetDetector>();
+            int npcLayer = LayerMask.GetMask("NPC");
+            if (npcLayer == 0) npcLayer = 1 << LayerMask.NameToLayer("NPC");
+            mouseDetector.SetDetectableLayers(npcLayer);
+            if (targetHUD != null)
+                mouseDetector.OnTargetChanged += (target) => targetHUD.SetHoverTarget(target);
 
             // Create DebugHUD overlay (F1 to toggle)
             var debugGo = new GameObject("DebugHUD");
@@ -48,7 +58,7 @@ namespace Valkur.UI.HUD
             }
 
             _initialized = true;
-            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death screen).");
+            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death screen + mouse targeting).");
         }
     }
 }

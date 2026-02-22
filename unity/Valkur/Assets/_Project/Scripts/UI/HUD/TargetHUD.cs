@@ -7,9 +7,12 @@ using Valkur.Gameplay.FSM;
 namespace Valkur.UI.HUD
 {
     /// <summary>
-    /// Shows a target panel at the top-center of the screen when the player hits an enemy.
-    /// Mirrors Python's TargetHudRenderSystem: name, state label, HP bar, HP text.
-    /// Auto-hides after a configurable TTL since last hit.
+    /// Shows a target panel at the top-center of the screen.
+    /// Triggers:
+    ///   1. Mouse hover over an NPC (via MouseTargetDetector)
+    ///   2. Player hits an NPC (via MeleeCombat.OnHitTarget)
+    /// Displays: name, FSM state, HP bar, HP text.
+    /// Persists while hovering; fades after displayDuration if triggered by hit.
     /// </summary>
     public class TargetHUD : MonoBehaviour
     {
@@ -21,13 +24,14 @@ namespace Valkur.UI.HUD
         [SerializeField] private TextMeshProUGUI hpText;
 
         [Header("Settings")]
-        [SerializeField] private float displayDuration = 3f;
-        [SerializeField] private float fadeSpeed = 4f;
+        [SerializeField] private float displayDuration = 4f;
+        [SerializeField] private float fadeSpeed = 6f;
         [SerializeField] private Color hpColor = new Color(0.86f, 0.24f, 0.24f, 1f);
 
         private Health _targetHealth;
-        private float _lastHitTime = -999f;
-        private float _targetAlpha;
+        private GameObject _targetGo;
+        private float _lastInteractionTime = -999f;
+        private bool _isHovering;
 
         private void Awake()
         {
@@ -37,18 +41,47 @@ namespace Valkur.UI.HUD
 
         private void Update()
         {
-            bool shouldShow = Time.time - _lastHitTime < displayDuration && _targetHealth != null;
-            _targetAlpha = shouldShow ? 1f : 0f;
+            // Show while hovering, or for displayDuration after a hit
+            bool shouldShow = _targetHealth != null &&
+                (_isHovering || Time.time - _lastInteractionTime < displayDuration);
 
+            float targetAlpha = shouldShow ? 1f : 0f;
             if (panelGroup != null)
-                panelGroup.alpha = Mathf.Lerp(panelGroup.alpha, _targetAlpha, Time.deltaTime * fadeSpeed);
+                panelGroup.alpha = Mathf.MoveTowards(panelGroup.alpha, targetAlpha, Time.deltaTime * fadeSpeed);
 
+            // Live-update state label and HP while visible
             if (_targetHealth != null && shouldShow)
+            {
                 UpdateBar(_targetHealth.CurrentHp, _targetHealth.MaxHp);
+                UpdateStateLabel();
+            }
         }
 
         /// <summary>
-        /// Called when the player damages an entity. Updates the target panel.
+        /// Called by MouseTargetDetector when the hovered entity changes.
+        /// Pass null to clear the hover target.
+        /// </summary>
+        public void SetHoverTarget(GameObject target)
+        {
+            if (target == null)
+            {
+                _isHovering = false;
+                return;
+            }
+
+            var health = target.GetComponent<Health>();
+            if (health == null || health.IsDead)
+            {
+                _isHovering = false;
+                return;
+            }
+
+            _isHovering = true;
+            SetTarget(target, health);
+        }
+
+        /// <summary>
+        /// Called when the player damages an entity. Shows the target panel with a timer.
         /// </summary>
         public void ShowTarget(GameObject target)
         {
@@ -57,39 +90,54 @@ namespace Valkur.UI.HUD
             var health = target.GetComponent<Health>();
             if (health == null) return;
 
+            _lastInteractionTime = Time.time;
+            SetTarget(target, health);
+        }
+
+        private void SetTarget(GameObject target, Health health)
+        {
+            // Skip if same target
+            if (_targetGo == target && _targetHealth == health) return;
+
             // Unsubscribe from previous target
             if (_targetHealth != null)
                 _targetHealth.OnHpChanged -= OnTargetHpChanged;
 
+            _targetGo = target;
             _targetHealth = health;
             _targetHealth.OnHpChanged += OnTargetHpChanged;
-            _lastHitTime = Time.time;
 
+            // Update name
             if (nameText != null)
-                nameText.text = target.name.Replace("(Clone)", "").Trim();
-
-            if (stateText != null)
             {
-                // Try to get FSM state label
-                var brain = target.GetComponent<FSMMonsterBrain>();
-                if (brain != null)
-                {
-                    string stateName = brain.CurrentStateName;
-                    stateText.text = stateName;
-                    stateText.gameObject.SetActive(!string.IsNullOrEmpty(stateName));
-                }
-                else
-                {
-                    stateText.gameObject.SetActive(false);
-                }
+                string rawName = target.name.Replace("(Clone)", "").Trim();
+                nameText.text = rawName;
             }
 
+            UpdateStateLabel();
             UpdateBar(health.CurrentHp, health.MaxHp);
+        }
+
+        private void UpdateStateLabel()
+        {
+            if (stateText == null || _targetGo == null) return;
+
+            var brain = _targetGo.GetComponent<FSMMonsterBrain>();
+            if (brain != null)
+            {
+                string stateName = brain.CurrentStateName;
+                stateText.text = stateName;
+                stateText.gameObject.SetActive(!string.IsNullOrEmpty(stateName));
+            }
+            else
+            {
+                stateText.gameObject.SetActive(false);
+            }
         }
 
         private void OnTargetHpChanged(int current, int max)
         {
-            _lastHitTime = Time.time;
+            _lastInteractionTime = Time.time;
             UpdateBar(current, max);
         }
 

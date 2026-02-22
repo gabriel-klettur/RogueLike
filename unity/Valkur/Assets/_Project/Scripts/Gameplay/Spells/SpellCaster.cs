@@ -194,6 +194,7 @@ namespace Valkur.Gameplay.Spells
 
             Vector3 spawnPos = transform.position + (Vector3)(_castDirection * 0.5f);
             var go = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
+            go.SetActive(true);
 
             var proj = go.GetComponent<Projectile>();
             if (proj != null)

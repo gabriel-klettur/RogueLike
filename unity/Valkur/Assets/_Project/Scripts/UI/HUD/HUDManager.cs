@@ -169,6 +169,8 @@ namespace Valkur.UI.HUD
             barBgRect.anchorMax = Vector2.one;
             barBgRect.sizeDelta = Vector2.zero;
             var barBgImg = barBg.AddComponent<Image>();
+            barBgImg.sprite = GetWhitePixelSprite();
+            barBgImg.type = Image.Type.Sliced;
             barBgImg.color = new Color(0.24f, 0.24f, 0.24f, 1f);
 
             var barFill = CreateUIObject("BarFill", barContainer.transform);
@@ -177,6 +179,7 @@ namespace Valkur.UI.HUD
             barFillRect.anchorMax = Vector2.one;
             barFillRect.sizeDelta = Vector2.zero;
             var barFillImg = barFill.AddComponent<Image>();
+            barFillImg.sprite = GetWhitePixelSprite();
             barFillImg.color = new Color(0.86f, 0.24f, 0.24f, 1f);
             barFillImg.type = Image.Type.Filled;
             barFillImg.fillMethod = Image.FillMethod.Horizontal;
@@ -237,6 +240,8 @@ namespace Valkur.UI.HUD
             bgRect.anchorMax = Vector2.one;
             bgRect.sizeDelta = Vector2.zero;
             bg = bgGo.AddComponent<Image>();
+            bg.sprite = GetWhitePixelSprite();
+            bg.type = Image.Type.Sliced;
             bg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
 
             // Bar fill
@@ -246,6 +251,7 @@ namespace Valkur.UI.HUD
             fillRect.anchorMax = Vector2.one;
             fillRect.sizeDelta = Vector2.zero;
             fill = fillGo.AddComponent<Image>();
+            fill.sprite = GetWhitePixelSprite();
             fill.color = fillColor;
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
@@ -268,6 +274,20 @@ namespace Valkur.UI.HUD
                 field.SetValue(target, value);
             else
                 Debug.LogWarning($"[HUDManager] Field '{fieldName}' not found on {target.GetType().Name}");
+        }
+
+        private static Sprite _whitePixelSprite;
+
+        private static Sprite GetWhitePixelSprite()
+        {
+            if (_whitePixelSprite != null) return _whitePixelSprite;
+            var tex = new Texture2D(4, 4);
+            var pixels = new Color[16];
+            for (int i = 0; i < 16; i++) pixels[i] = Color.white;
+            tex.SetPixels(pixels);
+            tex.Apply();
+            _whitePixelSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+            return _whitePixelSprite;
         }
 
         private void OnDestroy()
