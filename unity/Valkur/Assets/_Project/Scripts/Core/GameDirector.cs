@@ -6,6 +6,10 @@ namespace Valkur.Core
     /// Central orchestrator for the gameplay scene.
     /// Equivalent to Python's Game class — coordinates update phases.
     /// Lives in MainGameplay scene.
+    /// 
+    /// Note: SaveService lives in Valkur.Gameplay (separate asmdef)
+    /// and manages its own lifecycle (autosave on pause, shutdown save on quit).
+    /// GameDirector does NOT reference Gameplay to avoid circular asmdef deps.
     /// </summary>
     public class GameDirector : MonoBehaviour
     {
@@ -24,6 +28,8 @@ namespace Valkur.Core
                 return;
             }
             Instance = this;
+
+            EnsurePerformanceMonitor();
             Debug.Log("[GameDirector] Initialized.");
         }
 
@@ -34,19 +40,13 @@ namespace Valkur.Core
             Debug.Log($"[GameDirector] Paused: {paused}");
         }
 
-        private void OnApplicationPause(bool pauseStatus)
+        private void EnsurePerformanceMonitor()
         {
-            if (pauseStatus)
-            {
-                Debug.Log("[GameDirector] Application paused — triggering autosave.");
-                // SaveService.Instance?.Save(); // TODO: wire up when SaveService exists
-            }
-        }
+            if (PerformanceMonitor.Instance != null) return;
 
-        private void OnApplicationQuit()
-        {
-            Debug.Log("[GameDirector] Application quitting — triggering shutdown save.");
-            // SaveService.Instance?.Save(); // TODO: wire up when SaveService exists
+            var perfGo = new GameObject("PerformanceMonitor");
+            perfGo.AddComponent<PerformanceMonitor>();
+            Debug.Log("[GameDirector] PerformanceMonitor created.");
         }
     }
 }

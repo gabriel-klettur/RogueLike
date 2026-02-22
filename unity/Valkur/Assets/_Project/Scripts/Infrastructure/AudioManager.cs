@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Infrastructure
 {
@@ -8,9 +9,8 @@ namespace Valkur.Infrastructure
     /// Maps to Python's audio system with zone-based music and pooled SFX sources.
     /// Singleton pattern matching Python's global audio manager.
     /// </summary>
-    public class AudioManager : MonoBehaviour
+    public class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService
     {
-        public static AudioManager Instance { get; private set; }
 
         [Header("Music")]
         [SerializeField] private AudioSource musicSource;
@@ -27,16 +27,10 @@ namespace Valkur.Infrastructure
         private float _fadeTimer;
         private bool _fadingOut;
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+        protected override bool Persist => true;
 
+        protected override void OnSingletonAwake()
+        {
             if (musicSource == null)
             {
                 musicSource = gameObject.AddComponent<AudioSource>();
@@ -51,6 +45,14 @@ namespace Valkur.Infrastructure
                 src.loop = false;
                 _sfxPool.Add(src);
             }
+
+            ServiceLocator.Register<IAudioService>(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            ServiceLocator.Unregister<IAudioService>();
+            base.OnDestroy();
         }
 
         private void Update()

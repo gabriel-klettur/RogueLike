@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -21,6 +22,18 @@ namespace Valkur.Gameplay.Spells
         private float _timer;
         private Rigidbody2D _rb;
         private bool _expired;
+        private Color _vfxColor = new Color(1f, 0.6f, 0.2f, 0.8f);
+        private string _poolKey;
+
+        /// <summary>
+        /// Set the pool key so the projectile returns to pool instead of being destroyed.
+        /// </summary>
+        public void SetPoolKey(string key) => _poolKey = key;
+
+        /// <summary>
+        /// Set the VFX color for impact effects.
+        /// </summary>
+        public void SetVFXColor(Color color) => _vfxColor = color;
 
         public void Initialize(Vector2 direction, float spd, float dmg, float life, float rng, LayerMask targets)
         {
@@ -83,8 +96,30 @@ namespace Valkur.Gameplay.Spells
         {
             _expired = true;
             _rb.velocity = Vector2.zero;
-            // TODO: spawn impact VFX here
-            Destroy(gameObject);
+
+            // Spawn impact VFX
+            if (VFXManager.Instance != null)
+                VFXManager.Instance.SpawnImpact(transform.position, _vfxColor, 0.25f, 0.8f);
+
+            // Return to pool or destroy
+            if (!string.IsNullOrEmpty(_poolKey) && VFXManager.Instance != null)
+            {
+                ResetState();
+                VFXManager.Instance.Despawn(_poolKey, gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void ResetState()
+        {
+            _direction = Vector2.zero;
+            _origin = Vector2.zero;
+            _timer = 0f;
+            _expired = false;
+            if (_rb != null) _rb.velocity = Vector2.zero;
         }
     }
 }

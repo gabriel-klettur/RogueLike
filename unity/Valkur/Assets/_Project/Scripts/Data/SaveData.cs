@@ -64,6 +64,23 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// Serializable key-value pair for metadata storage.
+    /// Replaces Dictionary&lt;string,string&gt; which JsonUtility cannot serialize.
+    /// </summary>
+    [Serializable]
+    public struct SerializableKeyValue
+    {
+        public string key;
+        public string value;
+
+        public SerializableKeyValue(string key, string value)
+        {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    /// <summary>
     /// Root save file structure.
     /// Combines player state, NPC memory, and game metadata.
     /// </summary>
@@ -74,6 +91,26 @@ namespace Valkur.Data
         public string timestamp;
         public PlayerSaveData player;
         public List<NpcMemoryEntry> npcMemory = new List<NpcMemoryEntry>();
-        public Dictionary<string, string> metadata = new Dictionary<string, string>();
+        public List<SerializableKeyValue> metadata = new List<SerializableKeyValue>();
+
+        public string GetMeta(string key, string defaultValue = "")
+        {
+            for (int i = 0; i < metadata.Count; i++)
+                if (metadata[i].key == key) return metadata[i].value;
+            return defaultValue;
+        }
+
+        public void SetMeta(string key, string value)
+        {
+            for (int i = 0; i < metadata.Count; i++)
+            {
+                if (metadata[i].key == key)
+                {
+                    metadata[i] = new SerializableKeyValue(key, value);
+                    return;
+                }
+            }
+            metadata.Add(new SerializableKeyValue(key, value));
+        }
     }
 }

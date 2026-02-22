@@ -4,8 +4,7 @@
     "references": [
         "Valkur.Core",
         "Valkur.Gameplay",
-        "Valkur.Data",
-        "Valkur.Infrastructure"
+        "Valkur.Data"
     ],
     "includePlatforms": [
         "Editor"

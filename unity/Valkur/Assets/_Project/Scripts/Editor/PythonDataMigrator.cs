@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
@@ -8,8 +9,114 @@ using Valkur.Data;
 namespace Valkur.Editor
 {
     /// <summary>
+    /// Severity level for migration report entries.
+    /// </summary>
+    public enum MigrationSeverity { Ok, Warning, Error }
+
+    /// <summary>
+    /// Single entry in a migration report.
+    /// </summary>
+    public struct MigrationEntry
+    {
+        public MigrationSeverity Severity;
+        public string Source;
+        public string EntityKey;
+        public string Message;
+
+        public MigrationEntry(MigrationSeverity severity, string source, string entityKey, string message)
+        {
+            Severity = severity;
+            Source = source;
+            EntityKey = entityKey;
+            Message = message;
+        }
+
+        public override string ToString()
+        {
+            string tag = Severity switch
+            {
+                MigrationSeverity.Ok => "OK",
+                MigrationSeverity.Warning => "WARN",
+                MigrationSeverity.Error => "ERROR",
+                _ => "?"
+            };
+            return $"[{tag}] {Source} / {EntityKey}: {Message}";
+        }
+    }
+
+    /// <summary>
+    /// Accumulates migration results per file/entity and prints a summary report.
+    /// Used by PythonDataMigrator for both live imports and dry-run validation.
+    /// </summary>
+    public class MigrationReport
+    {
+        private readonly List<MigrationEntry> _entries = new List<MigrationEntry>();
+
+        public int OkCount { get; private set; }
+        public int WarningCount { get; private set; }
+        public int ErrorCount { get; private set; }
+        public int TotalCount => _entries.Count;
+        public IReadOnlyList<MigrationEntry> Entries => _entries;
+
+        public void AddOk(string source, string entityKey, string message = "Imported successfully")
+        {
+            _entries.Add(new MigrationEntry(MigrationSeverity.Ok, source, entityKey, message));
+            OkCount++;
+        }
+
+        public void AddWarning(string source, string entityKey, string message)
+        {
+            _entries.Add(new MigrationEntry(MigrationSeverity.Warning, source, entityKey, message));
+            WarningCount++;
+        }
+
+        public void AddError(string source, string entityKey, string message)
+        {
+            _entries.Add(new MigrationEntry(MigrationSeverity.Error, source, entityKey, message));
+            ErrorCount++;
+        }
+
+        /// <summary>
+        /// Prints full report to Unity console with summary header.
+        /// </summary>
+        public void PrintToConsole(string title)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"=== Migration Report: {title} ===");
+            sb.AppendLine($"Total: {TotalCount} | OK: {OkCount} | Warnings: {WarningCount} | Errors: {ErrorCount}");
+            sb.AppendLine("---");
+
+            foreach (var entry in _entries)
+            {
+                sb.AppendLine(entry.ToString());
+            }
+
+            sb.AppendLine("=== End Report ===");
+
+            if (ErrorCount > 0)
+                Debug.LogError(sb.ToString());
+            else if (WarningCount > 0)
+                Debug.LogWarning(sb.ToString());
+            else
+                Debug.Log(sb.ToString());
+        }
+
+        /// <summary>
+        /// Merge another report into this one.
+        /// </summary>
+        public void Merge(MigrationReport other)
+        {
+            _entries.AddRange(other._entries);
+            OkCount += other.OkCount;
+            WarningCount += other.WarningCount;
+            ErrorCount += other.ErrorCount;
+        }
+    }
+
+    /// <summary>
     /// Editor tool that imports Python JSON data files into Unity ScriptableObjects.
     /// Menu: Valkur > Migration > Import Python Data
+    /// Supports dry-run mode (validate without writing) and conversion reports.
     /// </summary>
     public static class PythonDataMigrator
     {
@@ -17,52 +124,51 @@ namespace Valkur.Editor
         private const string SO_OUTPUT_ROOT = "Assets/_Project/Data/Catalogs";
 
         [MenuItem("Valkur/Migration/Import Monsters from Python JSON")]
-        public static void ImportMonsters()
+        public static void ImportMonsters() => ImportMonsters(dryRun: false);
+
+        public static MigrationReport ImportMonsters(bool dryRun)
         {
+            var report = new MigrationReport();
+            const string source = "new_hostiles.json";
+
             string jsonPath = Path.GetFullPath(
                 Path.Combine(Application.dataPath, PYTHON_DATA_ROOT, "entities/new_hostiles.json"));
 
             if (!File.Exists(jsonPath))
             {
-                Debug.LogError($"[Migrator] File not found: {jsonPath}");
-                return;
+                report.AddError(source, "-", $"File not found: {jsonPath}");
+                report.PrintToConsole($"Monsters ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+                return report;
             }
 
             string json = File.ReadAllText(jsonPath);
-            var root = JsonUtility.FromJson<HostilesRoot>(json);
-
-            if (root?.hostiles?.classes == null)
-            {
-                // JsonUtility can't handle Dictionary, use manual parsing
-                ImportMonstersManual(json);
-                return;
-            }
-
-            Debug.Log("[Migrator] Monster import complete.");
+            ImportMonstersManual(json, dryRun, report);
+            report.PrintToConsole($"Monsters ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+            return report;
         }
 
-        private static void ImportMonstersManual(string json)
+        private static void ImportMonstersManual(string json, bool dryRun, MigrationReport report)
         {
-            // Parse using Unity's built-in JSON as a raw approach
-            // For complex nested dicts, we use a simplified manual parser
+            const string source = "new_hostiles.json";
+
             var parsed = MiniJson.Deserialize(json) as Dictionary<string, object>;
             if (parsed == null)
             {
-                Debug.LogError("[Migrator] Failed to parse hostiles JSON.");
+                report.AddError(source, "-", "Failed to parse JSON root.");
                 return;
             }
 
             string outputDir = Path.Combine(SO_OUTPUT_ROOT, "Monsters");
-            if (!AssetDatabase.IsValidFolder(outputDir))
+            if (!dryRun && !AssetDatabase.IsValidFolder(outputDir))
             {
                 AssetDatabase.CreateFolder(SO_OUTPUT_ROOT, "Monsters");
             }
 
             var hostiles = parsed.GetValueOrDefault("hostiles") as Dictionary<string, object>;
-            if (hostiles == null) return;
+            if (hostiles == null) { report.AddError(source, "-", "Missing 'hostiles' key."); return; }
 
             var classes = hostiles.GetValueOrDefault("classes") as Dictionary<string, object>;
-            if (classes == null) return;
+            if (classes == null) { report.AddError(source, "-", "Missing 'hostiles.classes' key."); return; }
 
             float defaultDeathTime = Convert.ToSingle(parsed.GetValueOrDefault("DEFAULT_DEATH_DISSAPEAR_TIME") ?? 10f);
             float defaultDmgStopProb = Convert.ToSingle(parsed.GetValueOrDefault("DEFAULT_DAMAGE_STOP_PROBABILITY") ?? 0.25f);
@@ -72,7 +178,41 @@ namespace Valkur.Editor
             {
                 string className = kvp.Key;
                 var classCfg = kvp.Value as Dictionary<string, object>;
-                if (classCfg == null) continue;
+                if (classCfg == null)
+                {
+                    report.AddError(source, className, "Entry is not a valid dictionary.");
+                    continue;
+                }
+
+                // Validate required fields
+                var stats = classCfg.GetValueOrDefault("stats") as Dictionary<string, object>;
+                if (stats == null)
+                {
+                    report.AddWarning(source, className, "Missing 'stats' block — will use zero defaults.");
+                }
+                else
+                {
+                    int hp = GetInt(stats, "hp");
+                    float speed = GetFloat(stats, "speed");
+                    if (hp <= 0)
+                        report.AddWarning(source, className, $"HP is {hp} (expected > 0).");
+                    if (speed <= 0f)
+                        report.AddWarning(source, className, $"Speed is {speed} (expected > 0).");
+                }
+
+                if (string.IsNullOrEmpty(className))
+                {
+                    report.AddError(source, "(empty)", "Monster key is empty.");
+                    continue;
+                }
+
+                if (dryRun)
+                {
+                    if (report.ErrorCount == 0 || !HasErrorForKey(report, className))
+                        report.AddOk(source, className, "Validated (dry-run).");
+                    count++;
+                    continue;
+                }
 
                 var so = ScriptableObject.CreateInstance<MonsterDefinition>();
                 so.monsterKey = className;
@@ -80,18 +220,14 @@ namespace Valkur.Editor
                 so.fsmSet = classCfg.GetValueOrDefault("fsm_set") as string ?? "";
                 so.useAttackTelegraph = Convert.ToBoolean(classCfg.GetValueOrDefault("use_attack_telegraph") ?? false);
 
-                // Parse patrol
                 var patrol = classCfg.GetValueOrDefault("patrol") as Dictionary<string, object>;
                 if (patrol != null)
                     so.patrolType = patrol.GetValueOrDefault("id") as string ?? "";
 
-                // Parse next_phase / phase_index
                 so.nextPhase = classCfg.GetValueOrDefault("next_phase") as string ?? "";
                 so.phaseIndex = Convert.ToInt32(classCfg.GetValueOrDefault("phase_index") ?? 0);
                 so.autoCast = Convert.ToBoolean(classCfg.GetValueOrDefault("auto_cast") ?? false);
 
-                // Parse stats
-                var stats = classCfg.GetValueOrDefault("stats") as Dictionary<string, object>;
                 if (stats != null)
                 {
                     so.stats = new EntityStats
@@ -120,36 +256,46 @@ namespace Valkur.Editor
 
                 string assetPath = $"{outputDir}/{className}.asset";
                 AssetDatabase.CreateAsset(so, assetPath);
+                report.AddOk(source, className);
                 count++;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log($"[Migrator] Imported {count} monster definitions to {outputDir}");
+            if (!dryRun && count > 0)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
         }
 
         [MenuItem("Valkur/Migration/Import Spells from Python JSON")]
-        public static void ImportSpells()
+        public static void ImportSpells() => ImportSpells(dryRun: false);
+
+        public static MigrationReport ImportSpells(bool dryRun)
         {
+            var report = new MigrationReport();
+            const string source = "spells.json";
+
             string jsonPath = Path.GetFullPath(
                 Path.Combine(Application.dataPath, PYTHON_DATA_ROOT, "spells/spells.json"));
 
             if (!File.Exists(jsonPath))
             {
-                Debug.LogError($"[Migrator] File not found: {jsonPath}");
-                return;
+                report.AddError(source, "-", $"File not found: {jsonPath}");
+                report.PrintToConsole($"Spells ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+                return report;
             }
 
             string json = File.ReadAllText(jsonPath);
             var parsed = MiniJson.Deserialize(json) as Dictionary<string, object>;
             if (parsed == null)
             {
-                Debug.LogError("[Migrator] Failed to parse spells JSON.");
-                return;
+                report.AddError(source, "-", "Failed to parse JSON root.");
+                report.PrintToConsole($"Spells ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+                return report;
             }
 
             string outputDir = Path.Combine(SO_OUTPUT_ROOT, "Spells");
-            if (!AssetDatabase.IsValidFolder(outputDir))
+            if (!dryRun && !AssetDatabase.IsValidFolder(outputDir))
             {
                 AssetDatabase.CreateFolder(SO_OUTPUT_ROOT, "Spells");
             }
@@ -159,20 +305,56 @@ namespace Valkur.Editor
             {
                 string spellKey = kvp.Key;
                 var spellData = kvp.Value as Dictionary<string, object>;
-                if (spellData == null) continue;
+                if (spellData == null)
+                {
+                    report.AddError(source, spellKey, "Entry is not a valid dictionary.");
+                    continue;
+                }
+
+                // Validate required fields
+                if (string.IsNullOrEmpty(spellKey))
+                {
+                    report.AddError(source, "(empty)", "Spell key is empty.");
+                    continue;
+                }
+
+                string typeStr = spellData.GetValueOrDefault("type") as string ?? "projectile";
+                SpellType parsedType = ParseSpellType(typeStr);
+
+                var effect = spellData.GetValueOrDefault("effect") as Dictionary<string, object>;
+                if (parsedType == SpellType.Projectile)
+                {
+                    float speed = effect != null ? GetFloat(effect, "speed") : 0f;
+                    if (speed <= 0f)
+                        report.AddWarning(source, spellKey, $"Projectile spell has speed={speed} (expected > 0).");
+                }
+
+                var timings = spellData.GetValueOrDefault("timings") as Dictionary<string, object>;
+                if (timings != null)
+                {
+                    float cd = GetFloat(timings, "cooldown");
+                    if (cd <= 0f)
+                        report.AddWarning(source, spellKey, $"Cooldown is {cd} (expected > 0).");
+                }
+                else
+                {
+                    report.AddWarning(source, spellKey, "Missing 'timings' block.");
+                }
+
+                if (dryRun)
+                {
+                    if (!HasErrorForKey(report, spellKey))
+                        report.AddOk(source, spellKey, "Validated (dry-run).");
+                    count++;
+                    continue;
+                }
 
                 var so = ScriptableObject.CreateInstance<SpellDefinition>();
                 so.spellKey = spellKey;
                 so.displayName = spellData.GetValueOrDefault("name") as string ?? spellKey;
-
-                // Type
-                string typeStr = spellData.GetValueOrDefault("type") as string ?? "projectile";
-                so.type = ParseSpellType(typeStr);
-
+                so.type = parsedType;
                 so.manaCost = GetFloat(spellData, "mana_cost");
 
-                // Timings
-                var timings = spellData.GetValueOrDefault("timings") as Dictionary<string, object>;
                 if (timings != null)
                 {
                     so.prepareDuration = GetFloat(timings, "prepare");
@@ -180,7 +362,6 @@ namespace Valkur.Editor
                     so.cooldownDuration = GetFloat(timings, "cooldown");
                 }
 
-                // Rules
                 var rules = spellData.GetValueOrDefault("rules") as Dictionary<string, object>;
                 if (rules != null)
                 {
@@ -191,7 +372,6 @@ namespace Valkur.Editor
                     so.automatic = GetBool(rules, "automatic");
                 }
 
-                // Constraints
                 var constraints = spellData.GetValueOrDefault("constraints") as Dictionary<string, object>;
                 if (constraints != null)
                 {
@@ -199,8 +379,6 @@ namespace Valkur.Editor
                     so.allowOverlap = GetBool(constraints, "allow_overlap", true);
                 }
 
-                // Effect
-                var effect = spellData.GetValueOrDefault("effect") as Dictionary<string, object>;
                 if (effect != null)
                 {
                     so.damage = GetFloat(effect, "damage");
@@ -213,7 +391,6 @@ namespace Valkur.Editor
                     so.hitArcDegrees = GetFloat(effect, "hit_arc_degrees");
                 }
 
-                // Meta
                 var meta = spellData.GetValueOrDefault("meta") as Dictionary<string, object>;
                 if (meta != null)
                 {
@@ -223,58 +400,104 @@ namespace Valkur.Editor
 
                 string assetPath = $"{outputDir}/{spellKey}.asset";
                 AssetDatabase.CreateAsset(so, assetPath);
+                report.AddOk(source, spellKey);
                 count++;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log($"[Migrator] Imported {count} spell definitions to {outputDir}");
+            if (!dryRun && count > 0)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            report.PrintToConsole($"Spells ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+            return report;
         }
 
         [MenuItem("Valkur/Migration/Import Players from Python JSON")]
-        public static void ImportPlayers()
+        public static void ImportPlayers() => ImportPlayers(dryRun: false);
+
+        public static MigrationReport ImportPlayers(bool dryRun)
         {
+            var report = new MigrationReport();
+            const string source = "new_players.json";
+
             string jsonPath = Path.GetFullPath(
                 Path.Combine(Application.dataPath, PYTHON_DATA_ROOT, "entities/new_players.json"));
 
             if (!File.Exists(jsonPath))
             {
-                Debug.LogError($"[Migrator] File not found: {jsonPath}");
-                return;
+                report.AddError(source, "-", $"File not found: {jsonPath}");
+                report.PrintToConsole($"Players ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+                return report;
             }
 
             string json = File.ReadAllText(jsonPath);
             var parsed = MiniJson.Deserialize(json) as Dictionary<string, object>;
             if (parsed == null)
             {
-                Debug.LogError("[Migrator] Failed to parse players JSON.");
-                return;
+                report.AddError(source, "-", "Failed to parse JSON root.");
+                report.PrintToConsole($"Players ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+                return report;
             }
 
             string outputDir = Path.Combine(SO_OUTPUT_ROOT, "Players");
-            if (!AssetDatabase.IsValidFolder(outputDir))
+            if (!dryRun && !AssetDatabase.IsValidFolder(outputDir))
             {
                 AssetDatabase.CreateFolder(SO_OUTPUT_ROOT, "Players");
             }
 
             var players = parsed.GetValueOrDefault("players") as Dictionary<string, object>;
-            if (players == null) return;
+            if (players == null) { report.AddError(source, "-", "Missing 'players' key."); report.PrintToConsole($"Players ({(dryRun ? "DRY-RUN" : "IMPORT")})"); return report; }
 
             var classes = players.GetValueOrDefault("classes") as Dictionary<string, object>;
-            if (classes == null) return;
+            if (classes == null) { report.AddError(source, "-", "Missing 'players.classes' key."); report.PrintToConsole($"Players ({(dryRun ? "DRY-RUN" : "IMPORT")})"); return report; }
 
             int count = 0;
             foreach (var kvp in classes)
             {
                 string className = kvp.Key;
                 var classCfg = kvp.Value as Dictionary<string, object>;
-                if (classCfg == null) continue;
+                if (classCfg == null)
+                {
+                    report.AddError(source, className, "Entry is not a valid dictionary.");
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(className))
+                {
+                    report.AddError(source, "(empty)", "Player key is empty.");
+                    continue;
+                }
+
+                // Validate required fields
+                var stats = classCfg.GetValueOrDefault("stats") as Dictionary<string, object>;
+                if (stats == null)
+                {
+                    report.AddWarning(source, className, "Missing 'stats' block — will use zero defaults.");
+                }
+                else
+                {
+                    float speed = GetFloat(stats, "basic_speed");
+                    int hp = GetInt(stats, "initial_strength");
+                    if (speed <= 0f)
+                        report.AddWarning(source, className, $"basic_speed is {speed} (expected > 0).");
+                    if (hp <= 0)
+                        report.AddWarning(source, className, $"initial_strength is {hp} (expected > 0).");
+                }
+
+                if (dryRun)
+                {
+                    if (!HasErrorForKey(report, className))
+                        report.AddOk(source, className, "Validated (dry-run).");
+                    count++;
+                    continue;
+                }
 
                 var so = ScriptableObject.CreateInstance<PlayerDefinition>();
                 so.playerKey = className;
                 so.displayName = className;
 
-                var stats = classCfg.GetValueOrDefault("stats") as Dictionary<string, object>;
                 if (stats != null)
                 {
                     so.maxStrength = GetInt(stats, "max_strength");
@@ -295,21 +518,47 @@ namespace Valkur.Editor
 
                 string assetPath = $"{outputDir}/{className}.asset";
                 AssetDatabase.CreateAsset(so, assetPath);
+                report.AddOk(source, className);
                 count++;
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log($"[Migrator] Imported {count} player definitions to {outputDir}");
+            if (!dryRun && count > 0)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            report.PrintToConsole($"Players ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+            return report;
         }
 
         [MenuItem("Valkur/Migration/Import All Python Data")]
-        public static void ImportAll()
+        public static void ImportAll() => ImportAll(dryRun: false);
+
+        [MenuItem("Valkur/Migration/Dry-Run All (Validate Only)")]
+        public static void DryRunAll() => ImportAll(dryRun: true);
+
+        public static MigrationReport ImportAll(bool dryRun)
         {
-            ImportMonsters();
-            ImportSpells();
-            ImportPlayers();
-            Debug.Log("[Migrator] All Python data imported.");
+            var combined = new MigrationReport();
+            combined.Merge(ImportMonsters(dryRun));
+            combined.Merge(ImportSpells(dryRun));
+            combined.Merge(ImportPlayers(dryRun));
+            combined.PrintToConsole($"ALL DATA ({(dryRun ? "DRY-RUN" : "IMPORT")})");
+            return combined;
+        }
+
+        /// <summary>
+        /// Check if the report already has an Error-level entry for the given entity key.
+        /// </summary>
+        private static bool HasErrorForKey(MigrationReport report, string entityKey)
+        {
+            foreach (var e in report.Entries)
+            {
+                if (e.Severity == MigrationSeverity.Error && e.EntityKey == entityKey)
+                    return true;
+            }
+            return false;
         }
 
         #region Helpers

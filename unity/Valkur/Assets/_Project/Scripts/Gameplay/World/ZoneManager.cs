@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.World
 {
@@ -44,9 +45,8 @@ namespace Valkur.Gameplay.World
         {
             if (_playerTransform == null)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _playerTransform = player.transform;
-                else return;
+                _playerTransform = EntityRegistry.PlayerTransform;
+                if (_playerTransform == null) return;
             }
 
             string detected = DetectZone(_playerTransform.position);
@@ -56,12 +56,10 @@ namespace Valkur.Gameplay.World
                 currentZone = detected;
                 OnZoneChanged?.Invoke(oldZone, currentZone);
 
-                // Play zone music
+                // Play zone music via AudioManager (found by type to avoid cross-asmdef dep)
                 if (_zoneMap.TryGetValue(currentZone, out var def) && def.zoneMusic != null)
                 {
-                    var audio = Infrastructure.AudioManager.Instance;
-                    if (audio != null)
-                        audio.PlayMusic(def.zoneMusic);
+                    PlayZoneMusic(def.zoneMusic);
                 }
             }
         }
@@ -106,6 +104,17 @@ namespace Valkur.Gameplay.World
                 return new Vector2(cx, cy);
             }
             return Vector2.zero;
+        }
+
+        /// <summary>
+        /// Play music via IAudioService resolved through ServiceLocator.
+        /// AudioManager in Infrastructure registers itself on Awake.
+        /// </summary>
+        private static void PlayZoneMusic(AudioClip clip)
+        {
+            if (clip == null) return;
+            var audio = ServiceLocator.Get<IAudioService>();
+            audio?.PlayMusic(clip);
         }
     }
 }

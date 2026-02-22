@@ -1,7 +1,9 @@
 {
     "name": "Valkur.Core",
     "rootNamespace": "Valkur.Core",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

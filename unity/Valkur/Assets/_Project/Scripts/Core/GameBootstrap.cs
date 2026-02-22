@@ -44,7 +44,7 @@ namespace Valkur.Core
         private void LoadMainMenu()
         {
             Debug.Log($"[Bootstrap] Loading scene: {_mainMenuSceneName}");
-            SceneManager.LoadScene(_mainMenuSceneName);
+            SceneTransitionManager.LoadScene(_mainMenuSceneName);
         }
     }
 }

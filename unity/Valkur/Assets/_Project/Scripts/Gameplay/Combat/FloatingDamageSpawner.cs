@@ -1,9 +1,12 @@
 using UnityEngine;
+using TMPro;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.Combat
 {
     /// <summary>
     /// Attaches to any entity with Health. Spawns floating damage numbers on damage events.
+    /// Uses a shared ObjectPool to avoid per-hit allocations.
     /// </summary>
     public class FloatingDamageSpawner : MonoBehaviour
     {
@@ -14,9 +17,15 @@ namespace Valkur.Gameplay.Combat
 
         private Health _health;
 
+        private static ObjectPool _pool;
+        private static GameObject _prefab;
+        private const int POOL_INITIAL = 8;
+        private const int POOL_MAX = 32;
+
         private void Awake()
         {
             _health = GetComponent<Health>();
+            EnsurePool();
         }
 
         private void OnEnable()
@@ -43,11 +52,38 @@ namespace Valkur.Gameplay.Combat
 
         private void SpawnNumber(int amount, Color color)
         {
-            var go = new GameObject($"DmgNum_{amount}");
-            go.transform.position = transform.position + spawnOffset;
+            EnsurePool();
+            var go = _pool.Get(transform.position + spawnOffset, Quaternion.identity);
+            if (go == null) return;
 
-            var dmgNum = go.AddComponent<FloatingDamageNumber>();
+            var dmgNum = go.GetComponent<FloatingDamageNumber>();
+            if (dmgNum == null) return;
+
+            dmgNum.OnFinished -= ReturnToPool;
+            dmgNum.OnFinished += ReturnToPool;
             dmgNum.Initialize(amount, color);
+        }
+
+        private static void ReturnToPool(FloatingDamageNumber num)
+        {
+            if (num == null) return;
+            num.OnFinished -= ReturnToPool;
+            if (_pool != null)
+                _pool.Return(num.gameObject);
+            else
+                num.gameObject.SetActive(false);
+        }
+
+        private static void EnsurePool()
+        {
+            if (_pool != null) return;
+
+            _prefab = new GameObject("DmgNumPrefab");
+            _prefab.AddComponent<TextMeshPro>();
+            _prefab.AddComponent<FloatingDamageNumber>();
+            _prefab.SetActive(false);
+
+            _pool = new ObjectPool(_prefab, POOL_INITIAL, null, POOL_MAX);
         }
     }
 }

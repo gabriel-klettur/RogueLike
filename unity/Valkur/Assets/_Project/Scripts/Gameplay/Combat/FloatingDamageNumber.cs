@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using TMPro;
 
@@ -5,6 +6,7 @@ namespace Valkur.Gameplay.Combat
 {
     /// <summary>
     /// A single floating damage number that rises and fades out.
+    /// Supports object pooling: calls OnFinished instead of Destroy when lifetime expires.
     /// Spawned by FloatingDamageSpawner on damage events.
     /// </summary>
     public class FloatingDamageNumber : MonoBehaviour
@@ -18,12 +20,28 @@ namespace Valkur.Gameplay.Combat
         private float _elapsed;
         private Color _baseColor;
         private Vector3 _velocity;
+        private bool _active;
 
-        public void Initialize(int amount, Color color)
+        /// <summary>
+        /// Called when the number finishes its animation. Used by the spawner to return to pool.
+        /// </summary>
+        public event Action<FloatingDamageNumber> OnFinished;
+
+        private void Awake()
         {
             _tmp = GetComponent<TextMeshPro>();
             if (_tmp == null)
                 _tmp = gameObject.AddComponent<TextMeshPro>();
+        }
+
+        public void Initialize(int amount, Color color)
+        {
+            if (_tmp == null)
+            {
+                _tmp = GetComponent<TextMeshPro>();
+                if (_tmp == null)
+                    _tmp = gameObject.AddComponent<TextMeshPro>();
+            }
 
             _tmp.text = amount.ToString();
             _tmp.fontSize = 4f;
@@ -32,27 +50,27 @@ namespace Valkur.Gameplay.Combat
             _baseColor = color;
             _tmp.color = _baseColor;
 
-            // Randomize horizontal spread for visual variety
-            float spreadX = Random.Range(-spreadRange, spreadRange);
+            float spreadX = UnityEngine.Random.Range(-spreadRange, spreadRange);
             _velocity = new Vector3(spreadX, riseSpeed, 0f);
 
             _elapsed = 0f;
+            _active = true;
+            transform.localScale = Vector3.one;
         }
 
         private void Update()
         {
+            if (!_active) return;
+
             _elapsed += Time.deltaTime;
 
-            // Rise and slow down
             float t = _elapsed / lifetime;
             transform.position += _velocity * Time.deltaTime;
             _velocity.y = Mathf.Lerp(riseSpeed, 0f, t);
 
-            // Scale pop effect: start big, settle to normal
             float scale = t < 0.15f ? Mathf.Lerp(1.4f, 1f, t / 0.15f) : 1f;
             transform.localScale = Vector3.one * scale;
 
-            // Fade out in the last 40% of lifetime
             if (t > 0.6f)
             {
                 float fadeT = (t - 0.6f) / 0.4f;
@@ -63,7 +81,13 @@ namespace Valkur.Gameplay.Combat
             }
 
             if (_elapsed >= lifetime)
-                Destroy(gameObject);
+            {
+                _active = false;
+                if (OnFinished != null)
+                    OnFinished.Invoke(this);
+                else
+                    Destroy(gameObject);
+            }
         }
     }
 }

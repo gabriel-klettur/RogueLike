@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 using Valkur.Gameplay;
 
 namespace Valkur.UI.HUD
@@ -10,31 +11,19 @@ namespace Valkur.UI.HUD
     /// PlayerHUD, and TargetHUD at runtime. Wires to player Health events.
     /// Attach to a persistent GameObject in the gameplay scene.
     /// </summary>
-    public class HUDManager : MonoBehaviour
+    public class HUDManager : SingletonMonoBehaviour<HUDManager>
     {
         private PlayerHUD _playerHUD;
         private TargetHUD _targetHUD;
         private Canvas _canvas;
-
-        private static HUDManager _instance;
-        public static HUDManager Instance => _instance;
+        private Mana _playerMana;
 
         public TargetHUD TargetHUD => _targetHUD;
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-        }
 
         /// <summary>
         /// Called by GameplaySceneSetup after the player is spawned.
         /// </summary>
-        public void InitializeForPlayer(Health playerHealth)
+        public void InitializeForPlayer(Health playerHealth, Mana playerMana = null)
         {
             if (_canvas == null)
                 CreateCanvas();
@@ -42,7 +31,21 @@ namespace Valkur.UI.HUD
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
 
+            // Wire mana to PlayerHUD
+            if (playerMana != null)
+            {
+                _playerMana = playerMana;
+                _playerMana.OnManaChanged += OnPlayerManaChanged;
+                OnPlayerManaChanged(_playerMana.CurrentMana, _playerMana.MaxMana);
+            }
+
             Debug.Log("[HUDManager] HUD initialized for player.");
+        }
+
+        private void OnPlayerManaChanged(int current, int max)
+        {
+            if (_playerHUD != null)
+                _playerHUD.SetMana(current, max);
         }
 
         private void CreateCanvas()
@@ -97,16 +100,7 @@ namespace Valkur.UI.HUD
             // Attach PlayerHUD component
             _playerHUD = panel.AddComponent<PlayerHUD>();
 
-            // Wire serialized fields via reflection-free approach: use Initialize
-            // We need to set the references. Since they're [SerializeField] private,
-            // we'll use a public setup method approach instead.
-            SetPrivateField(_playerHUD, "hpFill", hpFill);
-            SetPrivateField(_playerHUD, "hpBackground", hpBg);
-            SetPrivateField(_playerHUD, "hpText", hpText);
-            SetPrivateField(_playerHUD, "mpFill", mpFill);
-            SetPrivateField(_playerHUD, "mpBackground", mpBg);
-            SetPrivateField(_playerHUD, "mpText", mpText);
-
+            _playerHUD.SetUIReferences(hpFill, hpBg, hpText, mpFill, mpBg, mpText);
             _playerHUD.Initialize(playerHealth);
         }
 
@@ -169,6 +163,8 @@ namespace Valkur.UI.HUD
             barBgRect.anchorMax = Vector2.one;
             barBgRect.sizeDelta = Vector2.zero;
             var barBgImg = barBg.AddComponent<Image>();
+            barBgImg.sprite = GetWhitePixelSprite();
+            barBgImg.type = Image.Type.Sliced;
             barBgImg.color = new Color(0.24f, 0.24f, 0.24f, 1f);
 
             var barFill = CreateUIObject("BarFill", barContainer.transform);
@@ -177,6 +173,7 @@ namespace Valkur.UI.HUD
             barFillRect.anchorMax = Vector2.one;
             barFillRect.sizeDelta = Vector2.zero;
             var barFillImg = barFill.AddComponent<Image>();
+            barFillImg.sprite = GetWhitePixelSprite();
             barFillImg.color = new Color(0.86f, 0.24f, 0.24f, 1f);
             barFillImg.type = Image.Type.Filled;
             barFillImg.fillMethod = Image.FillMethod.Horizontal;
@@ -193,11 +190,7 @@ namespace Valkur.UI.HUD
 
             // Attach TargetHUD component
             _targetHUD = panel.AddComponent<TargetHUD>();
-            SetPrivateField(_targetHUD, "panelGroup", canvasGroup);
-            SetPrivateField(_targetHUD, "nameText", nameText);
-            SetPrivateField(_targetHUD, "stateText", stateText);
-            SetPrivateField(_targetHUD, "hpFill", barFillImg);
-            SetPrivateField(_targetHUD, "hpText", hpText);
+            _targetHUD.SetUIReferences(canvasGroup, nameText, stateText, barFillImg, hpText);
         }
 
         private GameObject CreateBarRow(Transform parent, string label,
@@ -237,6 +230,8 @@ namespace Valkur.UI.HUD
             bgRect.anchorMax = Vector2.one;
             bgRect.sizeDelta = Vector2.zero;
             bg = bgGo.AddComponent<Image>();
+            bg.sprite = GetWhitePixelSprite();
+            bg.type = Image.Type.Sliced;
             bg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
 
             // Bar fill
@@ -246,6 +241,7 @@ namespace Valkur.UI.HUD
             fillRect.anchorMax = Vector2.one;
             fillRect.sizeDelta = Vector2.zero;
             fill = fillGo.AddComponent<Image>();
+            fill.sprite = GetWhitePixelSprite();
             fill.color = fillColor;
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
@@ -260,20 +256,26 @@ namespace Valkur.UI.HUD
             return go;
         }
 
-        private static void SetPrivateField(object target, string fieldName, object value)
+        private static Sprite _whitePixelSprite;
+
+        private static Sprite GetWhitePixelSprite()
         {
-            var field = target.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                field.SetValue(target, value);
-            else
-                Debug.LogWarning($"[HUDManager] Field '{fieldName}' not found on {target.GetType().Name}");
+            if (_whitePixelSprite != null) return _whitePixelSprite;
+            var tex = new Texture2D(4, 4);
+            var pixels = new Color[16];
+            for (int i = 0; i < 16; i++) pixels[i] = Color.white;
+            tex.SetPixels(pixels);
+            tex.Apply();
+            _whitePixelSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+            return _whitePixelSprite;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            if (_playerMana != null)
+                _playerMana.OnManaChanged -= OnPlayerManaChanged;
+
+            base.OnDestroy();
         }
     }
 }

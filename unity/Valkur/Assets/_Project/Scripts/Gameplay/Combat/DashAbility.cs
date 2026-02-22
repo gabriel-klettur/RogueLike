@@ -16,7 +16,9 @@ namespace Valkur.Gameplay.Combat
         [SerializeField] private float dashDuration = 0.2f;
         [SerializeField] private float dashCooldown = 1f;
         [SerializeField] private float collisionDamage = 2f;
+#pragma warning disable CS0414
         [SerializeField] private float knockbackOnHit = 4f;
+#pragma warning restore CS0414
 
         [Header("Layers")]
         [SerializeField] private LayerMask targetLayers;
