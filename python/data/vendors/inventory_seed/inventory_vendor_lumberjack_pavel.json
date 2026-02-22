@@ -1,0 +1,10 @@
+{
+  "template_id": "f1a2b3c4-d5e6-47f8-9012-abcdef123456",
+  "slots": [
+    { "item": "arrow_01", "quantity": 200 },
+    { "item": "bow_01", "quantity": 10 },
+    { "item": "wood_log_bundle", "quantity": 60 },
+    { "item": "gold", "quantity": 200 }
+  ],
+  "schema_version": "1.0.0"
+}

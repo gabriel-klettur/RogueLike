@@ -1,0 +1,11 @@
+{
+  "template_id": "c7b8a9d0-e1f2-4a34-b5c6-d7e8f9a0b1c2",
+  "slots": [
+    { "item": "spellbook_simple", "quantity": 10 },
+    { "item": "wizard_staff_lvl_1", "quantity": 6 },
+    { "item": "wizard_staff_lvl_2", "quantity": 4 },
+    { "item": "wizard_staff_lvl_3", "quantity": 2 },
+    { "item": "gold", "quantity": 250 }
+  ],
+  "schema_version": "1.0.0"
+}

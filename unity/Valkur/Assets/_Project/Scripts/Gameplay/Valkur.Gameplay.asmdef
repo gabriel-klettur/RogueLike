@@ -1,0 +1,21 @@
+{
+    "name": "Valkur.Gameplay",
+    "rootNamespace": "Valkur.Gameplay",
+    "references": [
+        "Valkur.Core",
+        "Valkur.Data",
+        "Valkur.Infrastructure",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "Cinemachine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

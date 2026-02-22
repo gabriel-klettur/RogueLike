@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+from ...spawner_toolbar_model import ICON_PATHS, TOOL_SPAWNER_INSTANCES
+
+
+class SpawnerInstancesButtonView:
+    def get_icon_path(self) -> str:
+        return ICON_PATHS.get(TOOL_SPAWNER_INSTANCES, "")
+
+
+__all__ = ["SpawnerInstancesButtonView"]

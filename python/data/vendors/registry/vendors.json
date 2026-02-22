@@ -1,0 +1,111 @@
+{
+  "$schema_version": "1.0.0",
+  "vendors": {
+    "vendor_cheff_gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
+      "prices_override": {}
+    },
+    "gatita": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_cheff_gatita.json",
+      "seed_group": "vendor_cheff",
+      "economy_group": "vendor_cheff",
+      "prices_override": {}
+    },
+    "vendor_alchemist_valeria": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
+      "seed_group": "vendor_alchemist",
+      "economy_group": "vendor_alchemist",
+      "prices_override": {
+        "health_potion": {"buy": 1, "sell": 1},
+        "mana_potion": {"buy": 1, "sell": 1},
+        "energy_potion": {"buy": 1, "sell": 1},
+        "poison_potion": {"buy": 1, "sell": 1},
+        "explosion_potion": {"buy": 1, "sell": 1}
+      }
+    },
+    "valeria": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_alchemist_valeria.json",
+      "seed_group": "vendor_alchemist",
+      "economy_group": "vendor_alchemist",
+      "prices_override": {
+        "health_potion": {"buy": 1, "sell": 1},
+        "mana_potion": {"buy": 1, "sell": 1},
+        "energy_potion": {"buy": 1, "sell": 1},
+        "poison_potion": {"buy": 1, "sell": 1},
+        "explosion_potion": {"buy": 1, "sell": 1}
+      }
+    },
+    "vendor_blacksmith_smith": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
+      "seed_group": "vendor_blacksmith",
+      "economy_group": "vendor_blacksmith",
+      "prices_override": {
+        "simple_wooden_shield": {"buy": 1, "sell": 1},
+        "iron_ingot": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1},
+        "iron_sword": {"buy": 1, "sell": 1}
+      }
+    },
+    "smith": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_blacksmith_smith.json",
+      "seed_group": "vendor_blacksmith",
+      "economy_group": "vendor_blacksmith",
+      "prices_override": {
+        "simple_wooden_shield": {"buy": 1, "sell": 1},
+        "iron_ingot": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1},
+        "iron_sword": {"buy": 1, "sell": 1}
+      }
+    },
+    "abigail": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_banker_abigail.json",
+      "seed_group": "vendor_banker",
+      "economy_group": "vendor_banker",
+      "prices_override": {}
+    },
+    "pavel": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_lumberjack_pavel.json",
+      "seed_group": "vendor_lumberjack",
+      "economy_group": "vendor_lumberjack",
+      "prices_override": {
+        "arrow_01": {"buy": 1, "sell": 1},
+        "bow_01": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1}
+      }
+    },
+    "vendor_lumberjack_pavel": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_lumberjack_pavel.json",
+      "seed_group": "vendor_lumberjack",
+      "economy_group": "vendor_lumberjack",
+      "prices_override": {
+        "arrow_01": {"buy": 1, "sell": 1},
+        "bow_01": {"buy": 1, "sell": 1},
+        "wood_log_bundle": {"buy": 1, "sell": 1}
+      }
+    },
+    "roberto": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_mague_roberto.json",
+      "seed_group": "vendor_mague",
+      "economy_group": "vendor_mague",
+      "prices_override": {
+        "spellbook_simple": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_1": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_2": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_3": {"buy": 1, "sell": 1}
+      }
+    },
+    "vendor_mague_roberto": {
+      "seed_specific": "data/vendors/inventory_seed/inventory_vendor_mague_roberto.json",
+      "seed_group": "vendor_mague",
+      "economy_group": "vendor_mague",
+      "prices_override": {
+        "spellbook_simple": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_1": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_2": {"buy": 1, "sell": 1},
+        "wizard_staff_lvl_3": {"buy": 1, "sell": 1}
+      }
+    }
+  }
+}

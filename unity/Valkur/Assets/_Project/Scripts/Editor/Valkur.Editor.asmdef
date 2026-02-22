@@ -1,0 +1,21 @@
+{
+    "name": "Valkur.Editor",
+    "rootNamespace": "Valkur.Editor",
+    "references": [
+        "Valkur.Core",
+        "Valkur.Gameplay",
+        "Valkur.Data",
+        "Valkur.Infrastructure"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

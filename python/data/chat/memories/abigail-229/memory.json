@@ -1,0 +1,15 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Hola Abigail"
+    },
+    {
+      "role": "assistant",
+      "content": "Bienvenido. Soy Abigail, gestora de cuentas del gremio. ¿Qué artículo buscas? Ofrezco cofres seguros y certificados de depósito; dime cuánta cantidad necesitas y te doy el precio."
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

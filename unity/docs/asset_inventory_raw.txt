@@ -1,0 +1,1395 @@
+﻿.png	1484014	D:\Python\RogueLike\python\assets\AAA_in_process\spells\axe\ChatGPT Image Jun 7, 2025, 06_28_22 PM.png
+.png	1387071	D:\Python\RogueLike\python\assets\AAA_in_process\spells\axe\ChatGPT Image Jun 7, 2025, 06_30_30 PM.png
+.png	1534799	D:\Python\RogueLike\python\assets\AAA_in_process\spells\daga\ChatGPT Image Jun 7, 2025, 06_54_38 PM.png
+.png	1536366	D:\Python\RogueLike\python\assets\AAA_in_process\spells\daga\ChatGPT Image Jun 7, 2025, 06_54_46 PM.png
+.png	1458199	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ready\ChatGPT Image 9 jun 2025, 09_16_11.png
+.png	901606	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ready\ChatGPT Image Jun 7, 2025, 07_32_41 PM.png
+.png	1400088	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ready\ChatGPT Image Jun 7, 2025, 09_31_46 PM.png
+.png	1122660	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 07_34_52 PM.png
+.png	1096998	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 07_35_44 PM.png
+.png	1132046	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 07_36_23 PM.png
+.png	1006579	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 07_37_14 PM.png
+.png	1006579	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 08_48_21 PM.png
+.png	1159057	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 08_48_32 PM.png
+.png	1162999	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 7, 2025, 09_31_40 PM.png
+.png	1714749	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 8, 2025, 09_23_24 AM.png
+.png	2105925	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 8, 2025, 09_25_24 AM.png
+.png	2130030	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 8, 2025, 09_26_07 AM.png
+.png	2100681	D:\Python\RogueLike\python\assets\AAA_in_process\spells\Meele\ChatGPT Image Jun 8, 2025, 09_26_45 AM.png
+.png	2502203	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_20_26 PM.png
+.png	2505644	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_21_15 PM.png
+.png	2582229	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_22_01 PM.png
+.png	2839216	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_23_50 PM.png
+.png	2514112	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_25_09 PM.png
+.png	3431826	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_27_23 PM.png
+.png	3431826	D:\Python\RogueLike\python\assets\AAA_in_process\spells\proyectiles\ChatGPT Image Jun 7, 2025, 07_27_32 PM.png
+.png	1657974	D:\Python\RogueLike\python\assets\AAA_in_process\spells\rasengan\ChatGPT Image Jun 7, 2025, 06_56_43 PM.png
+.png	6347	D:\Python\RogueLike\python\assets\AAA_in_process\tiles\ocean_sand.png
+.png	2380614	D:\Python\RogueLike\python\assets\AAA_in_process\background_ini.png
+.png	1652296	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image 2 jun 2025, 08_07_53.png
+.png	1471773	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image 2 jun 2025, 12_09_53.png
+.png	1942200	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image 2 jun 2025, 12_27_49.png
+.png	1582791	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image 2 jun 2025, 12_46_44.png
+.png	1846920	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image 2 jun 2025, 12_49_09.png
+.png	1993724	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 15, 2025, 06_16_09 PM.png
+.png	1932707	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 2, 2025, 05_58_24 PM.png
+.png	3036714	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 3, 2025, 06_07_41 AM.png
+.png	1677549	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 3, 2025, 06_14_06 PM.png
+.png	2345983	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 3, 2025, 06_17_09 PM.png
+.png	2367178	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 3, 2025, 06_32_29 PM.png
+.png	1758853	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Apr 3, 2025, 06_50_28 PM.png
+.png	2809589	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Jun 6, 2025, 08_37_56 PM.png
+.png	2651412	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Jun 6, 2025, 08_38_55 PM.png
+.png	3076391	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Jun 6, 2025, 08_41_53 PM.png
+.png	1984352	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Mar 30, 2025, 04_35_55 PM.png
+.png	2126109	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Mar 30, 2025, 04_43_10 PM.png
+.png	1778988	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image Mar 30, 2025, 04_47_42 PM.png
+.png	1899733	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_33_31 PM.png
+.png	2128655	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_33_37 PM.png
+.png	1646799	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_33_39 PM.png
+.png	2162487	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_33_41 PM.png
+.png	2105604	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_37_54 PM.png
+.png	2148997	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_38_00 PM.png
+.png	2314620	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 22, 2025, 09_39_08 PM.png
+.png	1523256	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 09_05_37 AM.png
+.png	1610244	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 09_25_37 AM.png
+.png	1555542	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 09_48_00 AM.png
+.png	1611089	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_11_10 AM.png
+.png	1586739	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_17_24 AM.png
+.png	2239993	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_20_40 AM.png
+.png	1718040	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_23_16 AM.png
+.png	1748698	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_29_29 AM.png
+.png	2103486	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_31_38 AM.png
+.png	1720188	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_33_43 AM.png
+.png	1953335	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_34_44 AM.png
+.png	1766545	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_36_05 AM.png
+.png	2061897	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_37_08 AM.png
+.png	1418746	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_55_24 AM.png
+.png	1437245	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 11_57_37 AM.png
+.png	1393895	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 12_03_38 PM.png
+.png	1407288	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 23, 2025, 12_07_03 PM.png
+.png	3118106	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 24, 2025, 10_05_20 PM.png
+.png	3118106	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 24, 2025, 10_05_54 PM.png
+.png	3345505	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 24, 2025, 10_12_24 PM.png
+.png	2417938	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 26, 2025, 01_00_22 PM.png
+.png	1671333	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 26, 2025, 01_01_36 PM.png
+.png	1739307	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 26, 2025, 01_03_42 PM.png
+.png	2888332	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 26, 2025, 10_23_17 PM.png
+.png	2312357	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 26, 2025, 10_32_23 PM.png
+.png	1498515	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 31, 2025, 07_36_35 PM.png
+.png	1753967	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 31, 2025, 08_02_26 PM.png
+.png	1732820	D:\Python\RogueLike\python\assets\AAA_in_process\ChatGPT Image May 31, 2025, 08_10_40 PM.png
+.png	8279	D:\Python\RogueLike\python\assets\AAA_in_process\F61y5UIb0AAEfqA.png
+.png	1737610	D:\Python\RogueLike\python\assets\AAA_in_process\fireball.png
+.png	39835	D:\Python\RogueLike\python\assets\AAA_in_process\house3.png
+.png	30141	D:\Python\RogueLike\python\assets\AAA_in_process\idea.png
+.png	2585562	D:\Python\RogueLike\python\assets\AAA_in_process\image.png
+.png	36280	D:\Python\RogueLike\python\assets\AAA_in_process\imageview.png
+.PNG	17400	D:\Python\RogueLike\python\assets\AAA_in_process\inspiracion.PNG
+.png	2585562	D:\Python\RogueLike\python\assets\AAA_in_process\lastrogue.png
+.png	331218	D:\Python\RogueLike\python\assets\AAA_in_process\map (1).png
+.png	9876	D:\Python\RogueLike\python\assets\AAA_in_process\map.png
+.png	1406152	D:\Python\RogueLike\python\assets\AAA_in_process\portal_dudgeon_1.png
+.png	19053	D:\Python\RogueLike\python\assets\AAA_in_process\statue2.png
+.png	1172131	D:\Python\RogueLike\python\assets\AAA_in_process\valkyria_down.png
+.png	1449009	D:\Python\RogueLike\python\assets\AAA_in_process\valkyria_left.png
+.png	1463093	D:\Python\RogueLike\python\assets\AAA_in_process\valkyria_right.png
+.png	1142526	D:\Python\RogueLike\python\assets\AAA_in_process\valkyria_up.png
+.png	125032	D:\Python\RogueLike\python\assets\AAA_in_process\waterfall.png
+.flac	65052	D:\Python\RogueLike\python\assets\audio\ambient\animals\amb_bird_1.flac
+.flac	167444	D:\Python\RogueLike\python\assets\audio\ambient\animals\amb_bird_2.flac
+.flac	10343	D:\Python\RogueLike\python\assets\audio\ambient\animals\amb_cricket_1.flac
+.flac	31330	D:\Python\RogueLike\python\assets\audio\ambient\animals\amb_frog_1.flac
+.mp3	3635867	D:\Python\RogueLike\python\assets\audio\music\covetus_main_theme.mp3
+.mp3	3099172	D:\Python\RogueLike\python\assets\audio\music\covetus_theme_2.mp3
+.mp3	7786598	D:\Python\RogueLike\python\assets\audio\music\covetus_theme_3.mp3
+.mp3	4969401	D:\Python\RogueLike\python\assets\audio\music\covetus_theme_4.mp3
+.mp3	3794408	D:\Python\RogueLike\python\assets\audio\music\covetus_theme_5.mp3
+.mp3	5211111	D:\Python\RogueLike\python\assets\audio\music\desert_main_theme.mp3
+.mp3	4831784	D:\Python\RogueLike\python\assets\audio\music\desert_theme_2.mp3
+.mp3	5199948	D:\Python\RogueLike\python\assets\audio\music\desert_theme_3.mp3
+.mp3	6668646	D:\Python\RogueLike\python\assets\audio\music\desert_theme_4.mp3
+.mp3	3889160	D:\Python\RogueLike\python\assets\audio\music\Forest_main_theme.mp3
+.mp3	3931098	D:\Python\RogueLike\python\assets\audio\music\intro_theme.mp3
+.mp3	4723450	D:\Python\RogueLike\python\assets\audio\music\pepitoria_main_theme.mp3
+.mp3	3355673	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_10.mp3
+.mp3	3348670	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_11.mp3
+.mp3	4362072	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_12.mp3
+.mp3	4165324	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_13.mp3
+.mp3	3998612	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_2.mp3
+.mp3	4172228	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_3.mp3
+.mp3	4403123	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_4.mp3
+.mp3	4455784	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_5.mp3
+.mp3	4837464	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_6.mp3
+.mp3	4012732	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_7.mp3
+.mp3	2966627	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_8.mp3
+.mp3	2306475	D:\Python\RogueLike\python\assets\audio\music\pepitoria_theme_9.mp3
+.ogg	16491	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.1.ogg
+.ogg	14339	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.10.ogg
+.ogg	13951	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.2.ogg
+.ogg	15421	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.3.ogg
+.ogg	15545	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.4.ogg
+.ogg	12225	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.5.ogg
+.ogg	20300	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.6.ogg
+.ogg	18481	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.7.ogg
+.ogg	16417	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.8.ogg
+.ogg	17005	D:\Python\RogueLike\python\assets\audio\sfx\clash\sword\sword_clash.9.ogg
+.wav	284256	D:\Python\RogueLike\python\assets\audio\sfx\inventory\open_inventory.wav
+.ogg	8305	D:\Python\RogueLike\python\assets\audio\sfx\menu\vgmenuselect.ogg
+.wav	111346	D:\Python\RogueLike\python\assets\audio\sfx\npc\barbol\attack\animal melee sound.wav
+.wav	106910	D:\Python\RogueLike\python\assets\audio\sfx\npc\barbol\attack\melee sound.wav
+.wav	95214	D:\Python\RogueLike\python\assets\audio\sfx\npc\barbol\attack\sword sound.wav
+.ogg	21662	D:\Python\RogueLike\python\assets\audio\sfx\npc\barbol\damage\recive_damage.ogg
+.wav	150866	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\01._damage_grunt_male (1).wav
+.wav	130342	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\02._damage_grunt_male (1).wav
+.wav	159342	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\03._damage_grunt_male (1).wav
+.wav	157598	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\04._damage_grunt_male (1).wav
+.wav	146970	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\05._damage_grunt_male (1).wav
+.wav	121538	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\06._damage_grunt_male (1).wav
+.wav	116346	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\07._damage_grunt_male (1).wav
+.wav	197050	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\08._damage_grunt_male (1).wav
+.wav	105894	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\09._damage_grunt_male (1).wav
+.wav	195970	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\10._damage_grunt_male (1).wav
+.wav	124214	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\11._damage_grunt_male (1).wav
+.wav	176086	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\12._damage_grunt_male (1).wav
+.wav	124926	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\13._damage_grunt_male (1).wav
+.wav	138762	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\14._damage_grunt_male (1).wav
+.wav	118622	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\15._damage_grunt_male (1).wav
+.wav	106682	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\16._damage_grunt_male (1).wav
+.wav	151754	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\17._damage_grunt_male (1).wav
+.wav	137266	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\18._damage_grunt_male (1).wav
+.wav	138270	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\19._damage_grunt_male (1).wav
+.wav	148434	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\20._damage_grunt_male (1).wav
+.wav	171666	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\21._damage_grunt_male (1).wav
+.wav	206710	D:\Python\RogueLike\python\assets\audio\sfx\player\damage\22._damage_grunt_male.wav
+.wav	304940	D:\Python\RogueLike\python\assets\audio\sfx\spells\fireball\fireball.wav
+.wav	346694	D:\Python\RogueLike\python\assets\audio\sfx\spells\fireball\fireball_2.wav
+.ogg	8442	D:\Python\RogueLike\python\assets\audio\sfx\coinsplash.ogg
+.png	2501731	D:\Python\RogueLike\python\assets\buildings\backgrounds\background lobby.png
+.png	3188874	D:\Python\RogueLike\python\assets\buildings\castles\castle_1.png
+.png	2571811	D:\Python\RogueLike\python\assets\buildings\castles\castle_2.png
+.png	3663758	D:\Python\RogueLike\python\assets\buildings\combat\ChatGPT Image Apr 3, 2025, 05_12_38 AM.png
+.png	2830619	D:\Python\RogueLike\python\assets\buildings\combat\coliseo.png
+.png	2544287	D:\Python\RogueLike\python\assets\buildings\combat\coliseo_2.png
+.png	3663758	D:\Python\RogueLike\python\assets\buildings\combat\training.png
+.png	1471137	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\craneo_muzgo.png
+.png	1446631	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\flor_carnivora.png
+.png	1440334	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\hojas_marchitas.png
+.png	1469311	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\hongos_liminiscentes_venenosos.png
+.png	1415700	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\monton_ramas_afiladas.png
+.png	1758489	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\piedra_runica_musgosa.png
+.png	1383571	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\pozo_savia_corrupta.png
+.png	1444433	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\raiz_retorcida.png
+.png	1435321	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\semilla_reventada.png
+.png	1464980	D:\Python\RogueLike\python\assets\buildings\forest_decoration\corrupto\totem_podrido.png
+.png	1401177	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\champinones_agrupados_marrones.png
+.png	1397243	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\Flor_silvestre_azul.png
+.png	1563419	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\hojas_frescas.png
+.png	1384093	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\mariposa rama caida.png
+.png	1529247	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\nido_huevos.png
+.png	1384701	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\petalos_rosados_1.png
+.png	1378363	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\petalos_rosados_2.png
+.png	1372296	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\petalos_rosados_3.png
+.png	1516817	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\piedras_musgo.png
+.png	867051	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\raiz_expuesta_suave.png
+.png	1375444	D:\Python\RogueLike\python\assets\buildings\forest_decoration\natural\seta_blanca.png
+.png	1810204	D:\Python\RogueLike\python\assets\buildings\gardens\ChatGPT Image Sep 17, 2025, 12_27_43 AM.png
+.PNG	129345	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_1.PNG
+.PNG	231452	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_2.PNG
+.PNG	260913	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_3.PNG
+.PNG	143634	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_4.PNG
+.PNG	795895	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_5.PNG
+.PNG	822371	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_6.PNG
+.PNG	795560	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_7.PNG
+.PNG	142217	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_8.PNG
+.PNG	132116	D:\Python\RogueLike\python\assets\buildings\gardens\flowers_9.PNG
+.png	2748777	D:\Python\RogueLike\python\assets\buildings\gardens\garden_1.png
+.png	2816739	D:\Python\RogueLike\python\assets\buildings\gardens\garden_2.png
+.png	2875971	D:\Python\RogueLike\python\assets\buildings\gardens\garden_3.png
+.png	2850542	D:\Python\RogueLike\python\assets\buildings\gardens\garden_4.png
+.png	2268625	D:\Python\RogueLike\python\assets\buildings\gardens\garden_5.png
+.png	1829389	D:\Python\RogueLike\python\assets\buildings\houses\curse_house_iso.png
+.png	1751880	D:\Python\RogueLike\python\assets\buildings\houses\curse_house_topdown.png
+.png	1788587	D:\Python\RogueLike\python\assets\buildings\houses\orden_house_2.png
+.png	1981678	D:\Python\RogueLike\python\assets\buildings\others\fuente.png
+.png	1605719	D:\Python\RogueLike\python\assets\buildings\others\guillotina.png
+.png	1637120	D:\Python\RogueLike\python\assets\buildings\others\Portal wow.png
+.png	1783632	D:\Python\RogueLike\python\assets\buildings\portals\ChatGPT Image Sep 11, 2025, 10_25_29 PM.png
+.png	1708173	D:\Python\RogueLike\python\assets\buildings\portals\ChatGPT Image Sep 11, 2025, 10_27_21 PM.png
+.png	1773808	D:\Python\RogueLike\python\assets\buildings\portals\ChatGPT Image Sep 11, 2025, 10_29_09 PM.png
+.png	1773808	D:\Python\RogueLike\python\assets\buildings\portals\ChatGPT Image Sep 11, 2025, 10_30_45 PM.png
+.png	2936366	D:\Python\RogueLike\python\assets\buildings\portals\portal.png
+.png	2292302	D:\Python\RogueLike\python\assets\buildings\portals\portal_2.png
+.png	1406152	D:\Python\RogueLike\python\assets\buildings\portals\portal_dudgeon_1.png
+.png	1482938	D:\Python\RogueLike\python\assets\buildings\portals\portal_dudgeon_2.png
+.png	2846545	D:\Python\RogueLike\python\assets\buildings\shops\alchemy_tower.png
+.png	3691000	D:\Python\RogueLike\python\assets\buildings\shops\banco.png
+.png	1637453	D:\Python\RogueLike\python\assets\buildings\shops\blacksmith.png
+.png	3672185	D:\Python\RogueLike\python\assets\buildings\shops\ChatGPT Image Apr 3, 2025, 05_11_07 AM.png
+.png	2450814	D:\Python\RogueLike\python\assets\buildings\shops\ChatGPT Image Apr 3, 2025, 05_11_17 AM.png
+.png	2656795	D:\Python\RogueLike\python\assets\buildings\shops\ChatGPT Image Apr 3, 2025, 05_11_32 AM.png
+.png	1761949	D:\Python\RogueLike\python\assets\buildings\shops\healer.png
+.png	1651318	D:\Python\RogueLike\python\assets\buildings\shops\healer_1.png
+.png	2146700	D:\Python\RogueLike\python\assets\buildings\shops\jewlery_shop.png
+.png	3228004	D:\Python\RogueLike\python\assets\buildings\shops\magic_tower.png
+.png	2221395	D:\Python\RogueLike\python\assets\buildings\shops\ukranian_super_1.png
+.png	3037636	D:\Python\RogueLike\python\assets\buildings\shops\ukranian_super_2.png
+.png	1821298	D:\Python\RogueLike\python\assets\buildings\statues\ChatGPT Image May 1, 2025, 11_04_33 AM.png
+.png	1904401	D:\Python\RogueLike\python\assets\buildings\statues\ChatGPT Image May 1, 2025, 11_04_43 AM.png
+.png	1807957	D:\Python\RogueLike\python\assets\buildings\statues\statue_olim_01.png
+.png	3364903	D:\Python\RogueLike\python\assets\buildings\temples\catholic.png
+.png	2069657	D:\Python\RogueLike\python\assets\buildings\temples\ChatGPT Image Apr 3, 2025, 05_11_11 AM.png
+.png	2237114	D:\Python\RogueLike\python\assets\buildings\temples\ChatGPT Image Apr 3, 2025, 05_11_14 AM.png
+.png	1831790	D:\Python\RogueLike\python\assets\buildings\temples\ChatGPT Image May 5, 2025, 09_14_51 PM.png
+.png	2508472	D:\Python\RogueLike\python\assets\buildings\temples\satanist.png
+.png	2457528	D:\Python\RogueLike\python\assets\buildings\totems\totem_cargando_energia.png
+.png	2758389	D:\Python\RogueLike\python\assets\buildings\totems\totem_destruido.png
+.png	2296740	D:\Python\RogueLike\python\assets\buildings\totems\totem_forest.png
+.png	2189319	D:\Python\RogueLike\python\assets\buildings\totems\totem_riendo.png
+.png	2430654	D:\Python\RogueLike\python\assets\buildings\totems\totem_sufriendo.png
+.PNG	392804	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_1.PNG
+.PNG	64101	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_10.PNG
+.png	11251	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_11.png
+.PNG	375536	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_2.PNG
+.PNG	397004	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_3.PNG
+.png	3650	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_4.png
+.png	15837	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_5.png
+.png	19495	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_6.png
+.PNG	55534	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_7.PNG
+.PNG	55325	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_8.PNG
+.PNG	61308	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_9.PNG
+.png	1736365	D:\Python\RogueLike\python\assets\buildings\vegetation\tree_azul.png
+.png	70	D:\Python\RogueLike\python\assets\buildings\dummy.png
+.png	1813060	D:\Python\RogueLike\python\assets\buildings\mine.png
+.png	223842	D:\Python\RogueLike\python\assets\characters\barbarian\barbarian_casting.png
+.png	71442	D:\Python\RogueLike\python\assets\characters\barbarian\barbarian_idle.png
+.png	235550	D:\Python\RogueLike\python\assets\characters\barbarian\barbarian_walking.png
+.png	201310	D:\Python\RogueLike\python\assets\characters\dwarf\old\dwarf_idle.png
+.png	201310	D:\Python\RogueLike\python\assets\characters\dwarf\old\dwarf_walk.png
+.png	160713	D:\Python\RogueLike\python\assets\characters\dwarf\dwarf_casting.png
+.png	156713	D:\Python\RogueLike\python\assets\characters\dwarf\dwarf_idle.png
+.png	170244	D:\Python\RogueLike\python\assets\characters\dwarf\dwarf_walking.png
+.png	171628	D:\Python\RogueLike\python\assets\characters\elven\elven_casting.png
+.png	60353	D:\Python\RogueLike\python\assets\characters\elven\elven_idle.png
+.png	175741	D:\Python\RogueLike\python\assets\characters\elven\elven_walking.png
+.png	226557	D:\Python\RogueLike\python\assets\characters\mague\mague_casting.png
+.png	94214	D:\Python\RogueLike\python\assets\characters\mague\mague_idle.png
+.png	246294	D:\Python\RogueLike\python\assets\characters\mague\mague_walking.png
+.png	227189	D:\Python\RogueLike\python\assets\characters\valkyrie\valkyrie_casting.png
+.png	63066	D:\Python\RogueLike\python\assets\characters\valkyrie\valkyrie_idle.png
+.png	234923	D:\Python\RogueLike\python\assets\characters\valkyrie\valkyrie_walking.png
+.png	541001	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_down.png
+.png	541001	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_down_left.png
+.png	541001	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_down_right.png
+.png	1449009	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_left.png
+.png	1463093	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_right.png
+.png	492232	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_up.png
+.png	492232	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_up_left.png
+.png	492232	D:\Python\RogueLike\python\assets\characters\z_old\valkyria\valkyria_up_right.png
+.png	2312465	D:\Python\RogueLike\python\assets\characters\z_old\valkyria_v2\valkyria_down.png
+.png	2371834	D:\Python\RogueLike\python\assets\characters\z_old\valkyria_v2\valkyria_left.png
+.png	2787206	D:\Python\RogueLike\python\assets\characters\z_old\valkyria_v2\valkyria_up.png
+.png	42998	D:\Python\RogueLike\python\assets\characters\Selection.png
+.png	63818	D:\Python\RogueLike\python\assets\download\charact1.png
+.png	2464468	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 07_59_18 PM.png
+.png	2390496	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 07_59_54 PM.png
+.png	2464468	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 08_01_47 PM.png
+.png	3022690	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 08_12_10 PM.png
+.png	2787206	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 08_49_23 PM.png
+.png	2371834	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 08_56_52 PM.png
+.png	2312465	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 2, 2025, 08_57_55 PM.png
+.png	2080973	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 3, 2025, 05_57_58 AM.png
+.png	2357714	D:\Python\RogueLike\python\assets\download\ChatGPT Image Apr 3, 2025, 05_59_13 AM.png
+.png	2539777	D:\Python\RogueLike\python\assets\download\ChatGPT Image May 1, 2025, 04_56_44 PM.png
+.PNG	147150	D:\Python\RogueLike\python\assets\download\knight_walking_left_1.PNG
+.PNG	142979	D:\Python\RogueLike\python\assets\download\knight_walking_left_2.PNG
+.PNG	152932	D:\Python\RogueLike\python\assets\download\knight_walking_left_3.PNG
+.PNG	157674	D:\Python\RogueLike\python\assets\download\knight_walking_left_4.PNG
+.PNG	11779	D:\Python\RogueLike\python\assets\download\megamanpowerbattlessheet.PNG
+.png	1758853	D:\Python\RogueLike\python\assets\explosions\explosion.png
+.PNG	48676	D:\Python\RogueLike\python\assets\explosions\explosion_0.PNG
+.PNG	346287	D:\Python\RogueLike\python\assets\explosions\explosion_1.PNG
+.PNG	346160	D:\Python\RogueLike\python\assets\explosions\explosion_2.PNG
+.PNG	292485	D:\Python\RogueLike\python\assets\explosions\explosion_3.PNG
+.png	1276871	D:\Python\RogueLike\python\assets\inspiration\click_to_play_1.png
+.png	1710865	D:\Python\RogueLike\python\assets\items\Alchemy\energy_potion.png
+.png	1669697	D:\Python\RogueLike\python\assets\items\Alchemy\explosion_potion.png
+.png	1546409	D:\Python\RogueLike\python\assets\items\Alchemy\health_potion.png
+.png	1471805	D:\Python\RogueLike\python\assets\items\Alchemy\mana_potion.png
+.png	1807386	D:\Python\RogueLike\python\assets\items\Alchemy\poison_potion.png
+.png	1440821	D:\Python\RogueLike\python\assets\items\bank\chestbox.png
+.png	1480813	D:\Python\RogueLike\python\assets\items\bank\gold_coin_stack_1.png
+.png	1630412	D:\Python\RogueLike\python\assets\items\bank\gold_coin_stack_2.png
+.png	1397630	D:\Python\RogueLike\python\assets\items\blacksmith\iron_sword.png
+.png	1574622	D:\Python\RogueLike\python\assets\items\Cook\borsh_01.png
+.png	1537507	D:\Python\RogueLike\python\assets\items\Cook\completo_chileno_01.png
+.png	1446378	D:\Python\RogueLike\python\assets\items\Cook\food_chicken.png
+.png	1625116	D:\Python\RogueLike\python\assets\items\Cook\hakarl_01.png
+.png	1534321	D:\Python\RogueLike\python\assets\items\Cook\paella_01.png
+.png	1436151	D:\Python\RogueLike\python\assets\items\Cook\perogi_01.png
+.png	1523707	D:\Python\RogueLike\python\assets\items\Cook\tortilla_spain_01.png
+.png	1497558	D:\Python\RogueLike\python\assets\items\decorations\lamp_decoration.png
+.png	1428210	D:\Python\RogueLike\python\assets\items\decorations\mushrooms_deocation.png
+.png	1498528	D:\Python\RogueLike\python\assets\items\decorations\rocks_decoration.png
+.png	1418684	D:\Python\RogueLike\python\assets\items\decorations\rock_mod_decoration.png
+.png	1439456	D:\Python\RogueLike\python\assets\items\decorations\shovel_decoration.png
+.png	1494386	D:\Python\RogueLike\python\assets\items\experience\exp_orb_1.png
+.png	1498616	D:\Python\RogueLike\python\assets\items\experience\exp_orb_2.png
+.png	1372814	D:\Python\RogueLike\python\assets\items\experience\exp_orb_3.png
+.png	1374010	D:\Python\RogueLike\python\assets\items\experience\exp_orb_4.png
+.png	1495685	D:\Python\RogueLike\python\assets\items\lumberjack\arrow_01.png
+.png	1436802	D:\Python\RogueLike\python\assets\items\lumberjack\bow_01.png
+.png	1471176	D:\Python\RogueLike\python\assets\items\lumberjack\wood_log_bundle.png
+.png	1644958	D:\Python\RogueLike\python\assets\items\magic\spellbook_simple.png
+.png	1728115	D:\Python\RogueLike\python\assets\items\magic\wizard_staff_lvl_1.png
+.png	1862166	D:\Python\RogueLike\python\assets\items\magic\wizard_staff_lvl_2.png
+.png	3535425	D:\Python\RogueLike\python\assets\items\magic\wizard_staff_lvl_3.png
+.png	1224170	D:\Python\RogueLike\python\assets\items\Mining\iron_ingot.png
+.png	1179475	D:\Python\RogueLike\python\assets\items\npcs\ancient_relic_mask.png
+.png	1772599	D:\Python\RogueLike\python\assets\items\shields\simple_wooden_shield.png
+.png	1956230	D:\Python\RogueLike\python\assets\items\backpack_close.png
+.png	2106942	D:\Python\RogueLike\python\assets\items\backpack_open.png
+.png	1444770	D:\Python\RogueLike\python\assets\items\bucket.png
+.png	1463011	D:\Python\RogueLike\python\assets\items\bucket_water.png
+.png	2443794	D:\Python\RogueLike\python\assets\items\coal_in_wooden_box.png
+.png	1530679	D:\Python\RogueLike\python\assets\items\empty_wooden_box.png
+.png	2099493	D:\Python\RogueLike\python\assets\items\image_item_not_found.png
+.png	1450823	D:\Python\RogueLike\python\assets\items\keg.png
+.png	1541585	D:\Python\RogueLike\python\assets\items\metal_bucket.png
+.png	1558875	D:\Python\RogueLike\python\assets\items\rock_in_bag.png
+.png	1549156	D:\Python\RogueLike\python\assets\items\sign.png
+.png	1424867	D:\Python\RogueLike\python\assets\items\torch.png
+.png	1513906	D:\Python\RogueLike\python\assets\items\unlit_campfire.png
+.png	1995809	D:\Python\RogueLike\python\assets\npc\monsters\barbol\old\barbol1_all.png
+.png	1826439	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_down.png
+.png	1715281	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_down_attack.png
+.png	1906511	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_down_chase.png
+.png	1284967	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_left.png
+.png	1983055	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_left_chase.png
+.png	1508553	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_left_damage.png
+.png	1799502	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_right.png
+.png	1606277	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_right_attack.png
+.png	2094564	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_right_chase.png
+.png	1362680	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_right_damage.png
+.png	1710112	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_top.png
+.png	1674810	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_top_attack.png
+.png	1931314	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_1_top_chase.png
+.png	1481207	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_2_down_right_attack.png
+.png	1322450	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_2_left.png
+.png	1768143	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_2_right.png
+.png	1753967	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_2_right_attack.png
+.png	951768	D:\Python\RogueLike\python\assets\npc\monsters\barbol\barbol_female_death.png
+.png	1596163	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl1_down.png
+.png	913998	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl1_left.png
+.png	1539668	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl1_right.png
+.png	1543518	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl1_top.png
+.png	1664592	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl2_down.png
+.png	1276701	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl2_left.png
+.png	1634865	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl2_right.png
+.png	1628231	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl2_top.png
+.png	1753575	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl3_down.png
+.png	1551285	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl3_left.png
+.png	1632989	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl3_right.png
+.png	1681483	D:\Python\RogueLike\python\assets\npc\monsters\barbol boss\final_boss_barbol_lvl3_top.png
+.png	2261297	D:\Python\RogueLike\python\assets\npc\monsters\barbol_brother_felipondor\felipondor_brother_final_boss.png
+.png	1563302	D:\Python\RogueLike\python\assets\npc\monsters\barbol_druida\druida_1_down.png
+.png	1393730	D:\Python\RogueLike\python\assets\npc\monsters\barbol_druida\druida_1_right.png
+.png	1343039	D:\Python\RogueLike\python\assets\npc\monsters\barbol_druida\druida_1_top.png
+.png	273930	D:\Python\RogueLike\python\assets\npc\monsters\barbol_elite\elite_barbol_1_down.png
+.png	217068	D:\Python\RogueLike\python\assets\npc\monsters\barbol_elite\elite_barbol_1_left.png
+.png	215445	D:\Python\RogueLike\python\assets\npc\monsters\barbol_elite\elite_barbol_1_right.png
+.png	248817	D:\Python\RogueLike\python\assets\npc\monsters\barbol_elite\elite_barbol_1_top.png
+.png	2825021	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 08_53_01 PM.png
+.png	2261988	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 08_55_38 PM.png
+.png	1822499	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 08_59_54 PM.png
+.png	1822499	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 09_00_07 PM.png
+.png	1770152	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 09_02_33 PM.png
+.png	1900499	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT Image May 5, 2025, 09_05_42 PM.png
+.png	1822525	D:\Python\RogueLike\python\assets\npc\monsters\dragon\ChatGPT_Image_May_5_2025_09_00_07_PM.png
+.png	12049	D:\Python\RogueLike\python\assets\npc\monsters\dragon\dragon.png
+.png	1572695	D:\Python\RogueLike\python\assets\npc\monsters\fairy\fairy_1_down.png
+.png	1601656	D:\Python\RogueLike\python\assets\npc\monsters\fairy\fairy_1_right.png
+.png	1697760	D:\Python\RogueLike\python\assets\npc\monsters\fairy\fairy_1_top.png
+.png	1364898	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image 28 may 2025, 09_51_17.png
+.png	2179826	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image 28 may 2025, 10_11_44.png
+.png	2948260	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image May 26, 2025, 09_19_32 AM.png
+.png	3052365	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image May 26, 2025, 09_21_44 AM.png
+.png	2997401	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image May 26, 2025, 09_28_46 AM.png
+.png	2937406	D:\Python\RogueLike\python\assets\npc\monsters\jabato\ChatGPT Image May 26, 2025, 09_28_48 AM.png
+.png	1554350	D:\Python\RogueLike\python\assets\npc\monsters\new\mini Migro\ChatGPT Image May 26, 2025, 11_08_02 AM.png
+.png	1715109	D:\Python\RogueLike\python\assets\npc\monsters\new\mini Migro\ChatGPT Image May 26, 2025, 11_18_54 AM.png
+.png	2301169	D:\Python\RogueLike\python\assets\npc\monsters\new\mini Migro\ChatGPT Image May 26, 2025, 11_20_44 AM.png
+.png	2353265	D:\Python\RogueLike\python\assets\npc\monsters\new\mini Migro\ChatGPT Image May 26, 2025, 11_22_31 AM.png
+.png	1731360	D:\Python\RogueLike\python\assets\npc\monsters\new\Nigro\ChatGPT Image May 26, 2025, 11_08_06 AM.png
+.png	1931765	D:\Python\RogueLike\python\assets\npc\monsters\new\Nigro\ChatGPT Image May 26, 2025, 11_16_39 AM.png
+.png	2073970	D:\Python\RogueLike\python\assets\npc\monsters\new\Nigro\ChatGPT Image May 26, 2025, 11_18_06 AM.png
+.png	1858349	D:\Python\RogueLike\python\assets\npc\monsters\new\Nigro\ChatGPT Image May 26, 2025, 11_19_45 AM.png
+.png	1570869	D:\Python\RogueLike\python\assets\npc\monsters\new\squeleton\ChatGPT Image May 26, 2025, 11_07_57 AM.png
+.png	1573236	D:\Python\RogueLike\python\assets\npc\monsters\new\squeleton\ChatGPT Image May 26, 2025, 11_12_08 AM.png
+.png	1581095	D:\Python\RogueLike\python\assets\npc\monsters\new\squeleton\ChatGPT Image May 26, 2025, 11_13_41 AM.png
+.png	1726379	D:\Python\RogueLike\python\assets\npc\monsters\new\squeleton\ChatGPT Image May 26, 2025, 11_16_17 AM.png
+.png	1624336	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 06_48_28 PM.png
+.png	1583397	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 07_16_43 PM.png
+.png	1360714	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 07_19_32 PM.png
+.png	1649795	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 07_23_02 PM.png
+.png	1565746	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_08_04 AM.png
+.png	1828780	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_25_30 AM.png
+.png	2130032	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_27_40 AM.png
+.png	2407304	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_30_37 AM.png
+.png	1754951	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_49_43 AM.png
+.png	1780218	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_52_45 AM.png
+.png	1860259	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_52_48 AM.png
+.png	1794480	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_54_49 AM.png
+.png	1898146	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_56_12 AM.png
+.png	2108786	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_57_42 AM.png
+.png	2091407	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 11_59_26 AM.png
+.png	1936892	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 12_00_11 PM.png
+.png	1899249	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 12_01_32 PM.png
+.png	1960871	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 12_07_50 PM.png
+.png	1947689	D:\Python\RogueLike\python\assets\npc\monsters\new\ChatGPT Image May 26, 2025, 12_11_52 PM.png
+.png	1513067	D:\Python\RogueLike\python\assets\npc\monsters\old design\barbol\1\ChatGPT Image Apr 2, 2025, 06_01_22 PM.png
+.png	1088159	D:\Python\RogueLike\python\assets\npc\monsters\old design\barbol\1\ChatGPT Image Apr 2, 2025, 06_01_48 PM.png
+.png	79728	D:\Python\RogueLike\python\assets\npc\neutral\vendors\alchemist\normal\valeria_alchemist.png
+.png	90336	D:\Python\RogueLike\python\assets\npc\neutral\vendors\banker\normal\Abigail_banker.png
+.png	71089	D:\Python\RogueLike\python\assets\npc\neutral\vendors\blacksmith\normal\smith_blacksmith.png
+.png	80317	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\normal\gatitachanchita_down.png
+.png	2445627	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\normal\gatitachanchita_left.png
+.png	2298649	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\normal\gatitachanchita_right.png
+.png	2870284	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\normal\gatitachanchita_top.png
+.png	2826302	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\others\ChatGPT Image May 26, 2025, 09_48_51 PM.png
+.png	74616	D:\Python\RogueLike\python\assets\npc\neutral\vendors\cheff\gatita_chanchita\sexy\gatita_chanchita_down.png
+.png	75065	D:\Python\RogueLike\python\assets\npc\neutral\vendors\lumberjack\normal\pavel_lumberjack.png
+.png	73458	D:\Python\RogueLike\python\assets\npc\neutral\vendors\mague\normal\roberto_mague.png
+.png	19344	D:\Python\RogueLike\python\assets\objects\arrow_left.png
+.png	126174	D:\Python\RogueLike\python\assets\objects\folder_win.png
+.png	3134	D:\Python\RogueLike\python\assets\objects\rock.png
+.png	1390	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_0.png
+.png	1493	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_1.png
+.png	2206	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_10.png
+.png	2266	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_11.png
+.png	2422	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_12.png
+.png	2373	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_13.png
+.png	2515	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_14.png
+.png	2602	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_15.png
+.png	2752	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_16.png
+.png	2878	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_17.png
+.png	2942	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_18.png
+.png	2948	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_19.png
+.png	1581	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_2.png
+.png	2983	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_20.png
+.png	3069	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_21.png
+.png	3142	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_22.png
+.png	3180	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_23.png
+.png	3254	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_24.png
+.png	3297	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_25.png
+.png	3237	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_26.png
+.png	3341	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_27.png
+.png	3474	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_28.png
+.png	3448	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_29.png
+.png	1649	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_3.png
+.png	3466	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_30.png
+.png	3488	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_31.png
+.png	3412	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_32.png
+.png	3496	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_33.png
+.png	3465	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_34.png
+.png	3397	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_35.png
+.png	3399	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_36.png
+.png	3326	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_37.png
+.png	3411	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_38.png
+.png	3332	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_39.png
+.png	1726	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_4.png
+.png	3381	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_40.png
+.png	3329	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_41.png
+.png	3302	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_42.png
+.png	3382	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_43.png
+.png	3319	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_44.png
+.png	3292	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_45.png
+.png	3272	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_46.png
+.png	3293	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_47.png
+.png	3202	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_48.png
+.png	3153	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_49.png
+.png	1790	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_5.png
+.png	3097	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_50.png
+.png	3044	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_51.png
+.png	2964	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_52.png
+.png	2909	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_53.png
+.png	2953	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_54.png
+.png	2851	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_55.png
+.png	2745	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_56.png
+.png	2676	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_57.png
+.png	2573	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_58.png
+.png	2451	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_59.png
+.png	1885	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_6.png
+.png	2369	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_60.png
+.png	2229	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_61.png
+.png	2084	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_62.png
+.png	2094	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_63.png
+.png	1914	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_7.png
+.png	2061	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_8.png
+.png	2117	D:\Python\RogueLike\python\assets\particles_sprites\flame\arcane_flame_9.png
+.png	418	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_0.png
+.png	426	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_1.png
+.png	580	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_10.png
+.png	574	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_11.png
+.png	613	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_12.png
+.png	636	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_13.png
+.png	616	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_14.png
+.png	652	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_15.png
+.png	690	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_16.png
+.png	732	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_17.png
+.png	737	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_18.png
+.png	806	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_19.png
+.png	452	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_2.png
+.png	801	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_20.png
+.png	799	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_21.png
+.png	849	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_22.png
+.png	860	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_23.png
+.png	899	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_24.png
+.png	942	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_25.png
+.png	972	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_26.png
+.png	1048	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_27.png
+.png	1043	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_28.png
+.png	1119	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_29.png
+.png	451	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_3.png
+.png	1139	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_30.png
+.png	1162	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_31.png
+.png	1180	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_32.png
+.png	1220	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_33.png
+.png	1322	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_34.png
+.png	1406	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_35.png
+.png	1395	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_36.png
+.png	1448	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_37.png
+.png	1468	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_38.png
+.png	1573	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_39.png
+.png	473	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_4.png
+.png	1528	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_40.png
+.png	1558	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_41.png
+.png	1572	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_42.png
+.png	1520	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_43.png
+.png	1538	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_44.png
+.png	1509	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_45.png
+.png	1490	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_46.png
+.png	1469	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_47.png
+.png	1446	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_48.png
+.png	1526	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_49.png
+.png	494	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_5.png
+.png	1535	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_50.png
+.png	1499	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_51.png
+.png	1458	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_52.png
+.png	1477	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_53.png
+.png	1404	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_54.png
+.png	1514	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_55.png
+.png	1486	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_56.png
+.png	1524	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_57.png
+.png	1456	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_58.png
+.png	1425	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_59.png
+.png	494	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_6.png
+.png	1452	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_60.png
+.png	1434	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_61.png
+.png	1459	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_62.png
+.png	1545	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_63.png
+.png	512	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_7.png
+.png	557	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_8.png
+.png	554	D:\Python\RogueLike\python\assets\particles_sprites\smoke\smoke_emitter_9.png
+.png	1379	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_0.png
+.png	1480	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_1.png
+.png	2203	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_10.png
+.png	2250	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_11.png
+.png	2406	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_12.png
+.png	2379	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_13.png
+.png	2501	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_14.png
+.png	2582	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_15.png
+.png	1584	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_2.png
+.png	1652	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_3.png
+.png	1722	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_4.png
+.png	1771	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_5.png
+.png	1878	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_6.png
+.png	1909	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_7.png
+.png	2007	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_8.png
+.png	2109	D:\Python\RogueLike\python\assets\particles_sprites_2\arcane_flame_9.png
+.png	383	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_0.png
+.png	430	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_1.png
+.png	866	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_10.png
+.png	965	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_11.png
+.png	964	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_12.png
+.png	1026	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_13.png
+.png	1052	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_14.png
+.png	1079	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_15.png
+.png	442	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_2.png
+.png	518	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_3.png
+.png	540	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_4.png
+.png	618	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_5.png
+.png	666	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_6.png
+.png	693	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_7.png
+.png	763	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_8.png
+.png	826	D:\Python\RogueLike\python\assets\particles_sprites_2\firework_launch_9.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_0.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_1.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_10.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_11.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_12.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_13.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_14.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_15.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_2.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_3.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_4.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_5.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_6.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_7.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_8.png
+.png	405	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_9.png
+.png	390	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_0.png
+.png	440	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_1.png
+.png	565	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_10.png
+.png	547	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_11.png
+.png	582	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_12.png
+.png	610	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_13.png
+.png	640	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_14.png
+.png	642	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_15.png
+.png	459	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_2.png
+.png	501	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_3.png
+.png	496	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_4.png
+.png	510	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_5.png
+.png	519	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_6.png
+.png	512	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_7.png
+.png	536	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_8.png
+.png	517	D:\Python\RogueLike\python\assets\particles_sprites_2\smoke_emitter_9.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_0.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_1.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_10.png
+.png	1507	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_11.png
+.png	1507	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_12.png
+.png	1507	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_13.png
+.png	1507	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_14.png
+.png	1507	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_15.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_2.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_3.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_4.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_5.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_6.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_7.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_8.png
+.png	1506	D:\Python\RogueLike\python\assets\particles_sprites_2\sphere_magic_shield_9.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_0.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_1.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_10.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_11.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_12.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_13.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_14.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_15.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_2.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_3.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_4.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_5.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_6.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_7.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_8.png
+.png	334	D:\Python\RogueLike\python\assets\particles_sprites_2\teleport_9.png
+.png	1377048	D:\Python\RogueLike\python\assets\projectiles\darkball.png
+.png	1389734	D:\Python\RogueLike\python\assets\projectiles\fireball.png
+.png	1431192	D:\Python\RogueLike\python\assets\projectiles\iceball.png
+.png	1401056	D:\Python\RogueLike\python\assets\projectiles\lightball.png
+.png	1632101	D:\Python\RogueLike\python\assets\projectiles\rockball.png
+.png	2217580	D:\Python\RogueLike\python\assets\projectiles\waterball.png
+.png	1445363	D:\Python\RogueLike\python\assets\spells\boomerang\iron_axe.png
+.png	1417802	D:\Python\RogueLike\python\assets\spells\boomerang\iron_boomerang.png
+.png	1492100	D:\Python\RogueLike\python\assets\spells\meteor\meteor.png
+.png	1496672	D:\Python\RogueLike\python\assets\spells\meteor\meteor_impact.png
+.png	1465377	D:\Python\RogueLike\python\assets\spells\root_whip\root_whip_1.png
+.png	1459539	D:\Python\RogueLike\python\assets\spells\root_whip\root_whip_2.png
+.png	1469681	D:\Python\RogueLike\python\assets\spells\root_whip\root_whip_3.png
+.png	1547293	D:\Python\RogueLike\python\assets\spells\shield\shield.png
+.png	1436211	D:\Python\RogueLike\python\assets\spells\traps\regular_trap.png
+.png	2236553	D:\Python\RogueLike\python\assets\spells\walls\ice_wall\large_ice_wall.png
+.png	1492284	D:\Python\RogueLike\python\assets\spells\walls\ice_wall\medium_ice_wall.png
+.png	2245106	D:\Python\RogueLike\python\assets\spells\walls\ice_wall\small_ice_wall.png
+.png	1241762	D:\Python\RogueLike\python\assets\tiles\dungeon\dungeon_1.png
+.png	1199304	D:\Python\RogueLike\python\assets\tiles\dungeon\dungeon_c_1.png
+.png	974	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\dirt\multi_3.png
+.png	436	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_141.png
+.png	462	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_142.png
+.png	429	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_143.png
+.png	1586	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_146.png
+.png	602	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_147.png
+.png	632	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_148.png
+.png	1174	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_152.png
+.png	1177	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_153.png
+.png	463	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_155.png
+.png	527	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_156.png
+.png	525	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_157.png
+.png	1443	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_158.png
+.png	1561	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_159.png
+.png	1502	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_16.png
+.png	1551	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_160.png
+.png	587	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_161.png
+.png	585	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_162.png
+.png	1433	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_166.png
+.png	1484	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_167.png
+.png	1534	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_2.png
+.png	1605	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_20.png
+.png	1581	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_34.png
+.png	1548	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_48.png
+.png	1568	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_6.png
+.png	1488	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_62.png
+.png	1618	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_71.png
+.png	1612	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_72.png
+.png	1701	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_73.png
+.png	1687	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_74.png
+.png	1644	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_76.png
+.png	1583	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_85.png
+.png	1619	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_86.png
+.png	1722	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_87.png
+.png	1709	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass\multi_88.png
+.png	1397	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_100.png
+.png	1502	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_101.png
+.png	1585	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_102.png
+.png	1607	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_103.png
+.png	1604	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_104.png
+.png	1620	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_113.png
+.png	1602	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_114.png
+.png	1596	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_115.png
+.png	1629	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_116.png
+.png	1526	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_117.png
+.png	1622	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_118.png
+.png	1527	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_127.png
+.png	1382	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_128.png
+.png	1508	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_129.png
+.png	1403	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_130.png
+.png	1428	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_131.png
+.png	1454	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_132.png
+.png	1544	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_144.png
+.png	1475	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_145.png
+.png	830	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_59.png
+.png	969	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_60.png
+.png	1543	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_90.png
+.png	1554	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_dirt\multi_99.png
+.png	1599	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_105.png
+.png	1738	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_106.png
+.png	1555	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_110.png
+.png	1560	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_111.png
+.png	1765	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_119.png
+.png	1777	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_120.png
+.png	1063	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_138.png
+.png	1066	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_139.png
+.png	1077	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_140.png
+.png	1518	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_47.png
+.png	1603	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_91.png
+.png	1784	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_92.png
+.png	1101	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_93.png
+.png	1172	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_94.png
+.png	1136	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_95.png
+.png	1592	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_96.png
+.png	1515	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_rock\multi_97.png
+.png	1558	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_49.png
+.png	1659	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_50.png
+.png	1640	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_51.png
+.png	1879	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_52.png
+.png	1506	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_63.png
+.png	1599	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_64.png
+.png	1620	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_65.png
+.png	1767	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_66.png
+.png	1669	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_77.png
+.png	1683	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_78.png
+.png	1837	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_79.png
+.png	1834	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_sand\multi_80.png
+.png	1799	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_10.png
+.png	1526	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_11.png
+.png	1781	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_12.png
+.png	1506	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_13.png
+.png	1699	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_14.png
+.png	1480	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_21.png
+.png	1591	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_22.png
+.png	1485	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_23.png
+.png	1645	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_24.png
+.png	1495	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_25.png
+.png	1642	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_26.png
+.png	1501	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_27.png
+.png	1583	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_28.png
+.png	1648	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_35.png
+.png	1639	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_36.png
+.png	1709	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_37.png
+.png	1678	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_38.png
+.png	1649	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_39.png
+.png	1693	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_40.png
+.png	1654	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_41.png
+.png	1648	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_42.png
+.png	1519	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_7.png
+.png	1732	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_8.png
+.png	1489	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\grass_water\multi_9.png
+.png	897	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_107.png
+.png	920	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_108.png
+.png	900	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_109.png
+.png	890	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_121.png
+.png	938	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_122.png
+.png	920	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_123.png
+.png	966	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_124.png
+.png	988	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_125.png
+.png	970	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_126.png
+.png	920	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_15.png
+.png	1592	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_17.png
+.png	939	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_61.png
+.png	943	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\rock\multi_75.png
+.png	1296	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_18.png
+.png	1633	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_19.png
+.png	1346	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_4.png
+.png	1597	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_5.png
+.png	1771	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_53.png
+.png	1741	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_54.png
+.png	1898	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_55.png
+.png	1992	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_56.png
+.png	1181	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_57.png
+.png	1348	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_58.png
+.png	1764	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_67.png
+.png	1779	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_68.png
+.png	1903	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_69.png
+.png	1910	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_70.png
+.png	1711	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_81.png
+.png	1671	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_82.png
+.png	1877	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_83.png
+.png	1893	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand\multi_84.png
+.png	1629	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand_water\multi_43.png
+.png	1631	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand_water\multi_44.png
+.png	1687	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand_water\multi_45.png
+.png	1670	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\sand_water\multi_46.png
+.png	707	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_135.png
+.png	886	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_136.png
+.png	789	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_137.png
+.png	604	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_149.png
+.png	817	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_150.png
+.png	600	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_151.png
+.png	493	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_163.png
+.png	616	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_164.png
+.png	450	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\trees\multi_165.png
+.png	1283	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\water\multi_29.png
+.png	1328	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\water\multi_30.png
+.png	1288	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\water\multi_31.png
+.png	1259	D:\Python\RogueLike\python\assets\tiles\multi_tiles\tiles\water\multi_32.png
+.png	136748	D:\Python\RogueLike\python\assets\tiles\multi_tiles\multi.png
+.png	200886	D:\Python\RogueLike\python\assets\tiles\multi_tiles\multi_grid.png
+.png	1659	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_0_0.png
+.png	1561	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_0_32.png
+.png	1543	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_0_64.png
+.png	796	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_0_96.png
+.png	1301	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_128_0.png
+.png	1347	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_128_32.png
+.png	1727	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_128_96.png
+.png	1478	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_32_0.png
+.png	796	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_32_32.png
+.png	1432	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_32_64.png
+.png	1376	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_32_96.png
+.png	1660	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_64_0.png
+.png	1555	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_64_32.png
+.png	1584	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_64_96.png
+.png	1287	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_96_0.png
+.png	1346	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_96_32.png
+.png	1741	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3_slices\tileset3_96_96.png
+.png	14375	D:\Python\RogueLike\python\assets\tiles\ready\grass_dirt\tileset3.png
+.png	1740	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_0_0.png
+.png	1796	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_0_32.png
+.png	1801	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_0_64.png
+.png	1605	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_0_96.png
+.png	1883	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_128_0.png
+.png	1914	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_128_32.png
+.png	2076	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_128_96.png
+.png	1857	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_32_0.png
+.png	1605	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_32_32.png
+.png	1921	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_32_64.png
+.png	1360	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_32_96.png
+.png	1844	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_64_0.png
+.png	1831	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_64_32.png
+.png	1880	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_64_96.png
+.png	1895	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_96_0.png
+.png	1956	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_96_32.png
+.png	2079	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4_slices\tileset4_96_96.png
+.png	1726	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_0_0.png
+.png	1764	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_0_32.png
+.png	1740	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_0_64.png
+.png	1636	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_0_96.png
+.png	1856	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_128_0.png
+.png	1868	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_128_32.png
+.png	2003	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_128_96.png
+.png	1851	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_32_0.png
+.png	1636	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_32_32.png
+.png	1816	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_32_64.png
+.png	1394	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_32_96.png
+.png	1763	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_64_0.png
+.png	1755	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_64_32.png
+.png	1785	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_64_96.png
+.png	1864	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_96_0.png
+.png	1856	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_96_32.png
+.png	1931	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5_slices\tileset5_96_96.png
+.png	1884	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_0_0.png
+.png	2197	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_0_32.png
+.png	1859	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_0_64.png
+.png	2381	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_0_96.png
+.png	2304	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_128_0.png
+.png	2328	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_128_32.png
+.png	2245	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_128_96.png
+.png	2096	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_32_0.png
+.png	2381	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_32_32.png
+.png	2114	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_32_64.png
+.png	1330	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_32_96.png
+.png	1920	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_64_0.png
+.png	2202	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_64_32.png
+.png	1912	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_64_96.png
+.png	2284	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_96_0.png
+.png	2341	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_96_32.png
+.png	2246	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6_slices\tileset6_96_96.png
+.png	19181	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset4.png
+.png	18037	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset5.png
+.png	21782	D:\Python\RogueLike\python\assets\tiles\ready\grass_rock\tileset6.png
+.png	1060	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_1.png
+.png	988	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_2.png
+.png	981	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_21.png
+.png	579	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_22.png
+.png	981	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_23.png
+.png	951	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_24.png
+.png	907	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_25.png
+.png	1047	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_3.png
+.png	801	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_4.png
+.png	1069	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_41.png
+.png	898	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_42.png
+.png	1049	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_43.png
+.png	1044	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_44.png
+.png	1037	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_45.png
+.png	817	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_5.png
+.png	579	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_61.png
+.png	1078	D:\Python\RogueLike\python\assets\tiles\ready\ocean_grass\tileset_test_62.png
+.png	19898	D:\Python\RogueLike\python\assets\tiles\ready\rock_water\tileset8.png
+.png	19817	D:\Python\RogueLike\python\assets\tiles\ready\rock_water\tileset9.png
+.png	2630	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_0_0.png
+.png	2737	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_0_32.png
+.png	2641	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_0_64.png
+.png	2768	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_0_96.png
+.png	2889	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_128_0.png
+.png	2889	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_128_32.png
+.png	2884	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_128_96.png
+.png	2781	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_32_0.png
+.png	2768	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_32_32.png
+.png	2678	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_32_64.png
+.png	2233	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_32_96.png
+.png	2660	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_64_0.png
+.png	2720	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_64_32.png
+.png	2638	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_64_96.png
+.png	2906	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_96_0.png
+.png	2880	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_96_32.png
+.png	2875	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1_slices\tileset1_96_96.png
+.png	1628	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_0_0.png
+.png	2007	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_0_32.png
+.png	1743	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_0_64.png
+.png	2327	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_0_96.png
+.png	2245	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_128_0.png
+.png	2285	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_128_32.png
+.png	1991	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_128_96.png
+.png	1939	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_32_0.png
+.png	2327	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_32_32.png
+.png	2023	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_32_64.png
+.png	1267	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_32_96.png
+.png	1653	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_64_0.png
+.png	2018	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_64_32.png
+.png	1737	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_64_96.png
+.png	2244	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_96_0.png
+.png	2220	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_96_32.png
+.png	2011	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2_slices\tileset2_96_96.png
+.png	41714	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset1.png
+.png	17077	D:\Python\RogueLike\python\assets\tiles\ready\sand_grass\tileset2.png
+.png	916	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_10.png
+.png	1071	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_109.png
+.png	1094	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_110.png
+.png	1095	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_26.png
+.png	983	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_27.png
+.png	1092	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_28.png
+.png	1022	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_29.png
+.png	1069	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_30.png
+.png	1026	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_46.png
+.png	900	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_47.png
+.png	1007	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_48.png
+.png	1042	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_49.png
+.png	1088	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_50.png
+.png	961	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_6.png
+.png	951	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_66.png
+.png	1005	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_67.png
+.png	987	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_68.png
+.png	973	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_69.png
+.png	1011	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_7.png
+.png	970	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_70.png
+.png	955	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_8.png
+.png	872	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_86.png
+.png	877	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_87.png
+.png	1088	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_89.png
+.png	907	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_9.png
+.png	1110	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean\tileset_test_90.png
+.png	956	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_101.png
+.png	623	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_102.png
+.png	987	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_103.png
+.png	913	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_104.png
+.png	884	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_105.png
+.png	978	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_121.png
+.png	865	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_122.png
+.png	1026	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_123.png
+.png	1102	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_124.png
+.png	1068	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_125.png
+.png	623	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_141.png
+.png	732	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_142.png
+.png	995	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_81.png
+.png	938	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_82.png
+.png	1027	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_83.png
+.png	791	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_84.png
+.png	785	D:\Python\RogueLike\python\assets\tiles\ready\sand_ocean_2\tileset_test_85.png
+.png	2028	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_0_0.png
+.png	2398	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_0_32.png
+.png	2075	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_0_64.png
+.png	2408	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_0_96.png
+.png	2531	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_128_0.png
+.png	2503	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_128_32.png
+.png	2507	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_128_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_128_96.png
+.png	2194	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_32_0.png
+.png	2408	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_32_32.png
+.png	2249	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_32_64.png
+.png	1421	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_32_96.png
+.png	2024	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_64_0.png
+.png	2373	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_64_32.png
+.png	2100	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_64_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_64_96.png
+.png	2496	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_96_0.png
+.png	2515	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_96_32.png
+.png	2553	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_96_64.png
+.png	83	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7_slices\tileset7_96_96.png
+.png	24257	D:\Python\RogueLike\python\assets\tiles\ready\sand_rock\tileset7.png
+.png	735	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_1.png
+.png	671	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_10.png
+.png	733	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_11.png
+.png	680	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_12.png
+.png	732	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_13.png
+.png	706	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_14.png
+.png	740	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_15.png
+.png	394	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_16.png
+.png	745	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_17.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_18.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_19.png
+.png	724	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_2.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_20.png
+.png	733	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_3.png
+.png	629	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_4.png
+.png	659	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_5.png
+.png	725	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_6.png
+.png	394	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_7.png
+.png	713	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_8.png
+.png	649	D:\Python\RogueLike\python\assets\tiles\tileset_1\rock_grass\rock_grass_32_9.png
+.png	1060	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_1.png
+.png	988	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_2.png
+.png	981	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_21.png
+.png	579	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_22.png
+.png	981	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_23.png
+.png	951	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_24.png
+.png	907	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_25.png
+.png	1047	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_3.png
+.png	801	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_4.png
+.png	1069	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_41.png
+.png	898	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_42.png
+.png	1049	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_43.png
+.png	1044	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_44.png
+.png	1037	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_45.png
+.png	817	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_5.png
+.png	579	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_61.png
+.png	1078	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\ocean_grass\tileset_test_62.png
+.png	916	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_10.png
+.png	1071	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_109.png
+.png	1094	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_110.png
+.png	1095	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_26.png
+.png	983	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_27.png
+.png	1092	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_28.png
+.png	1022	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_29.png
+.png	1069	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_30.png
+.png	1026	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_46.png
+.png	900	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_47.png
+.png	1007	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_48.png
+.png	1042	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_49.png
+.png	1088	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_50.png
+.png	961	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_6.png
+.png	951	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_66.png
+.png	1005	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_67.png
+.png	987	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_68.png
+.png	973	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_69.png
+.png	1011	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_7.png
+.png	970	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_70.png
+.png	955	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_8.png
+.png	872	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_86.png
+.png	877	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_87.png
+.png	1088	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_89.png
+.png	907	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_9.png
+.png	1110	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean\tileset_test_90.png
+.png	956	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_101.png
+.png	623	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_102.png
+.png	987	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_103.png
+.png	913	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_104.png
+.png	884	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_105.png
+.png	978	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_121.png
+.png	865	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_122.png
+.png	1026	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_123.png
+.png	1102	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_124.png
+.png	1068	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_125.png
+.png	623	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_141.png
+.png	732	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_142.png
+.png	995	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_81.png
+.png	938	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_82.png
+.png	1027	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_83.png
+.png	791	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_84.png
+.png	785	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\sand_ocean_2\tileset_test_85.png
+.png	541	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_100.png
+.png	299	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_106.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_107.png
+.png	239	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_108.png
+.png	339	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_11.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_111.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_112.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_113.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_114.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_115.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_116.png
+.png	623	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_117.png
+.png	668	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_118.png
+.png	655	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_119.png
+.png	563	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_12.png
+.png	577	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_120.png
+.png	230	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_126.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_127.png
+.png	107	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_128.png
+.png	175	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_129.png
+.png	525	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_13.png
+.png	291	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_130.png
+.png	532	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_131.png
+.png	484	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_132.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_133.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_134.png
+.png	168	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_135.png
+.png	228	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_136.png
+.png	613	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_137.png
+.png	609	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_138.png
+.png	589	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_139.png
+.png	542	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_14.png
+.png	573	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_140.png
+.png	270	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_143.png
+.png	167	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_144.png
+.png	178	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_145.png
+.png	111	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_146.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_147.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_148.png
+.png	88	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_149.png
+.png	563	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_15.png
+.png	218	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_150.png
+.png	536	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_151.png
+.png	517	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_152.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_153.png
+.png	161	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_154.png
+.png	168	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_155.png
+.png	240	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_156.png
+.png	767	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_157.png
+.png	627	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_158.png
+.png	627	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_159.png
+.png	356	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_16.png
+.png	737	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_160.png
+.png	615	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_17.png
+.png	807	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_18.png
+.png	790	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_19.png
+.png	622	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_20.png
+.png	429	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_31.png
+.png	620	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_32.png
+.png	627	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_33.png
+.png	600	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_34.png
+.png	597	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_35.png
+.png	416	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_36.png
+.png	607	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_37.png
+.png	465	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_38.png
+.png	453	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_39.png
+.png	595	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_40.png
+.png	455	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_51.png
+.png	624	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_52.png
+.png	565	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_53.png
+.png	597	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_54.png
+.png	620	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_55.png
+.png	432	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_56.png
+.png	576	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_57.png
+.png	652	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_58.png
+.png	640	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_59.png
+.png	553	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_60.png
+.png	405	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_71.png
+.png	579	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_72.png
+.png	532	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_73.png
+.png	484	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_74.png
+.png	584	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_75.png
+.png	414	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_76.png
+.png	568	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_77.png
+.png	596	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_78.png
+.png	600	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_79.png
+.png	580	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_80.png
+.png	410	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_91.png
+.png	688	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_92.png
+.png	711	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_93.png
+.png	726	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_94.png
+.png	691	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_95.png
+.png	432	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_96.png
+.png	564	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_97.png
+.png	614	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_98.png
+.png	620	D:\Python\RogueLike\python\assets\tiles\tileset_1\tiles\tileset_test_99.png
+.png	72195	D:\Python\RogueLike\python\assets\tiles\tileset_1\tileset_test.png
+.png	113250	D:\Python\RogueLike\python\assets\tiles\tileset_1\tileset_test_grid.png
+.png	1241762	D:\Python\RogueLike\python\assets\tiles\dungeon_1.png
+.png	1241762	D:\Python\RogueLike\python\assets\tiles\dungeon_2.png
+.png	1241762	D:\Python\RogueLike\python\assets\tiles\dungeon_3.png
+.png	1199304	D:\Python\RogueLike\python\assets\tiles\dungeon_c_1.png
+.png	1199304	D:\Python\RogueLike\python\assets\tiles\dungeon_c_2.png
+.png	104120	D:\Python\RogueLike\python\assets\tiles\floor.png
+.png	2722316	D:\Python\RogueLike\python\assets\tiles\floor_1.png
+.png	2527401	D:\Python\RogueLike\python\assets\tiles\floor_2.png
+.png	3036714	D:\Python\RogueLike\python\assets\tiles\floor_3.png
+.png	2597013	D:\Python\RogueLike\python\assets\tiles\floor_4.png
+.png	2777622	D:\Python\RogueLike\python\assets\tiles\floor_5.png
+.png	3020344	D:\Python\RogueLike\python\assets\tiles\floor_6.png
+.png	2641669	D:\Python\RogueLike\python\assets\tiles\floor_7.png
+.PNG	862772	D:\Python\RogueLike\python\assets\tiles\wall.PNG
+.png	3172463	D:\Python\RogueLike\python\assets\ui\character_selection\barbarian_vs_dragon.png
+.png	2388911	D:\Python\RogueLike\python\assets\ui\character_selection\characters_dungeon_stop.png
+.png	2266824	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern.png
+.png	2103462	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_2.png
+.png	2666739	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_3.png
+.png	2419480	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_4.png
+.png	2648914	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_5.png
+.png	2459267	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_6.png
+.png	2399919	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_7.png
+.png	2253972	D:\Python\RogueLike\python\assets\ui\character_selection\characters_tabern_stop.png
+.png	2496575	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_01.png
+.png	2413406	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_barbrian.png
+.png	2468200	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_drwaft.png
+.png	2417653	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_elve.png
+.png	2425595	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_mague.png
+.png	2445227	D:\Python\RogueLike\python\assets\ui\character_selection\character_selection_valkyrie.png
+.png	2773543	D:\Python\RogueLike\python\assets\ui\character_selection\dwraft_vs_dragon.png
+.png	2459531	D:\Python\RogueLike\python\assets\ui\character_selection\elven_play_guitar.png
+.png	2520008	D:\Python\RogueLike\python\assets\ui\character_selection\elven_play_guitar_concert.png
+.png	2624959	D:\Python\RogueLike\python\assets\ui\character_selection\elven_vs_dragon.png
+.png	2696774	D:\Python\RogueLike\python\assets\ui\character_selection\elven_vs_dragon_2.png
+.png	2669061	D:\Python\RogueLike\python\assets\ui\character_selection\intro_castle_afternoon.png
+.png	2825200	D:\Python\RogueLike\python\assets\ui\character_selection\intro_castle_morning.png
+.png	3209344	D:\Python\RogueLike\python\assets\ui\character_selection\intro_castle_morning_2.png
+.png	2435014	D:\Python\RogueLike\python\assets\ui\character_selection\intro_castle_night.png
+.png	1894570	D:\Python\RogueLike\python\assets\ui\character_selection\mague_orden_chaos.png
+.png	2572702	D:\Python\RogueLike\python\assets\ui\character_selection\mague_orden_chaos_2.png
+.png	3250612	D:\Python\RogueLike\python\assets\ui\character_selection\mague_vs_dragon.png
+.png	3194277	D:\Python\RogueLike\python\assets\ui\character_selection\mague_vs_dragon_2.png
+.png	3233764	D:\Python\RogueLike\python\assets\ui\character_selection\mague_vs_dragon_3.png
+.png	2313666	D:\Python\RogueLike\python\assets\ui\character_selection\taberna.png
+.png	2601529	D:\Python\RogueLike\python\assets\ui\character_selection\valkyrie_dragon.png
+.png	2922413	D:\Python\RogueLike\python\assets\ui\character_selection\valkyrie_dragon_2.png
+.png	2671512	D:\Python\RogueLike\python\assets\ui\character_selection\valkyrie_dragon_3.png
+.png	2725702	D:\Python\RogueLike\python\assets\ui\character_selection\valkyrie_vs_dragon.png
+.png	986843	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\add_node.png
+.png	841231	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\clone_node.png
+.png	1417687	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\connect_node.png
+.png	986194	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\delete_node.png
+.png	761715	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\disconnect_node.png
+.png	883208	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\end_node.png
+.png	1419524	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\select_node.png
+.png	844477	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\start_node.png
+.png	1107214	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\zoom_in.png
+.png	910418	D:\Python\RogueLike\python\assets\ui\fsm_editor\graph_panel\zoom_out.png
+.png	753626	D:\Python\RogueLike\python\assets\ui\fsm_editor\tool_panel\sets_list.png
+.png	798353	D:\Python\RogueLike\python\assets\ui\fsm_editor\tool_panel\set_assigment_animations.png
+.png	790341	D:\Python\RogueLike\python\assets\ui\fsm_editor\tool_panel\set_assigment_entities.png
+.png	831022	D:\Python\RogueLike\python\assets\ui\fsm_editor\tool_panel\set_properties.png
+.png	642294	D:\Python\RogueLike\python\assets\ui\intro\game_name.png
+.png	1921287	D:\Python\RogueLike\python\assets\ui\intro\Intro_barbarian.png
+.png	2953306	D:\Python\RogueLike\python\assets\ui\intro\Intro_drwaft.png
+.png	2576736	D:\Python\RogueLike\python\assets\ui\intro\Intro_elven.png
+.png	2538949	D:\Python\RogueLike\python\assets\ui\intro\intro_mague.png
+.png	2792833	D:\Python\RogueLike\python\assets\ui\intro\Intro_valkyrie.png
+.png	1434459	D:\Python\RogueLike\python\assets\ui\particles_editor\add_remove_panel\particles_add.png
+.png	1525026	D:\Python\RogueLike\python\assets\ui\particles_editor\add_remove_panel\particles_add_system.png
+.png	1434954	D:\Python\RogueLike\python\assets\ui\particles_editor\add_remove_panel\particles_remove.png
+.png	1374772	D:\Python\RogueLike\python\assets\ui\particles_editor\toolbar\particles_list.png
+.png	1376194	D:\Python\RogueLike\python\assets\ui\particles_editor\toolbar\particles_reset.png
+.png	1409415	D:\Python\RogueLike\python\assets\ui\particles_editor\particles_configuration.png
+.png	1378011	D:\Python\RogueLike\python\assets\ui\particles_editor\particles_no_view.png
+.png	1385127	D:\Python\RogueLike\python\assets\ui\particles_editor\particles_view.png
+.png	1248291	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_add.png
+.png	1262191	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_list.png
+.png	1237646	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_manager.png
+.png	1314477	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_no_view.png
+.png	1278878	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_remove.png
+.png	1313011	D:\Python\RogueLike\python\assets\ui\spawner_editor\spawner_view.png
+.png	1435285	D:\Python\RogueLike\python\assets\ui\add_building.png
+.png	1402307	D:\Python\RogueLike\python\assets\ui\add_building_on_system.png
+.png	948650	D:\Python\RogueLike\python\assets\ui\add_entitie.png
+.png	1188299	D:\Python\RogueLike\python\assets\ui\add_entity_on_system.png
+.png	1291113	D:\Python\RogueLike\python\assets\ui\add_item.png
+.png	1504154	D:\Python\RogueLike\python\assets\ui\add_item_on_system.png
+.png	1452865	D:\Python\RogueLike\python\assets\ui\add_spell.png
+.png	1395619	D:\Python\RogueLike\python\assets\ui\add_zone.png
+.png	19344	D:\Python\RogueLike\python\assets\ui\arrow_left.png
+.png	2653264	D:\Python\RogueLike\python\assets\ui\background_ini.png
+.png	2380614	D:\Python\RogueLike\python\assets\ui\background_ini_2.png
+.png	2933758	D:\Python\RogueLike\python\assets\ui\background_ini_old.png
+.PNG	1554601	D:\Python\RogueLike\python\assets\ui\brush_tool.PNG
+.png	1636053	D:\Python\RogueLike\python\assets\ui\buildings_colliders.png
+.png	1499883	D:\Python\RogueLike\python\assets\ui\building_manager_icon.png
+.png	1532787	D:\Python\RogueLike\python\assets\ui\ChatGPT Image 2 jun 2025, 12_09_43.png
+.png	1566784	D:\Python\RogueLike\python\assets\ui\collision_tool.png
+.png	983843	D:\Python\RogueLike\python\assets\ui\dash_icon.png
+.png	1471440	D:\Python\RogueLike\python\assets\ui\default_icon.png
+.png	1458488	D:\Python\RogueLike\python\assets\ui\delete_icon.png
+.png	1495833	D:\Python\RogueLike\python\assets\ui\delete_zone.png
+.png	1598274	D:\Python\RogueLike\python\assets\ui\entities_on_map_icon.png
+.png	1497879	D:\Python\RogueLike\python\assets\ui\entities_on_system_icon.png
+.PNG	1465674	D:\Python\RogueLike\python\assets\ui\eyedropper_tool.PNG
+.png	964326	D:\Python\RogueLike\python\assets\ui\firework_icon.png
+.png	126174	D:\Python\RogueLike\python\assets\ui\folder_win.png
+.png	1203263	D:\Python\RogueLike\python\assets\ui\generic_icon.png
+.png	1404293	D:\Python\RogueLike\python\assets\ui\icon.png
+.png	1500627	D:\Python\RogueLike\python\assets\ui\items_on_map_icon.png
+.png	1453745	D:\Python\RogueLike\python\assets\ui\layers_view_tool.png
+.png	1009708	D:\Python\RogueLike\python\assets\ui\lightning_icon.png
+.png	2322505	D:\Python\RogueLike\python\assets\ui\loading_create_dungeon.png
+.png	1974657	D:\Python\RogueLike\python\assets\ui\pintar_colliders_zone.png
+.png	1513950	D:\Python\RogueLike\python\assets\ui\pintar_tiles_zone.png
+.png	1035744	D:\Python\RogueLike\python\assets\ui\pixel_fire_icon.png
+.png	1502957	D:\Python\RogueLike\python\assets\ui\redo.png
+.png	1484224	D:\Python\RogueLike\python\assets\ui\remove_building.png
+.png	955757	D:\Python\RogueLike\python\assets\ui\remove_entitie.png
+.png	1401361	D:\Python\RogueLike\python\assets\ui\remove_item.png
+.png	1389926	D:\Python\RogueLike\python\assets\ui\remove_spell.png
+.png	1586416	D:\Python\RogueLike\python\assets\ui\respawn.png
+.png	1742825	D:\Python\RogueLike\python\assets\ui\restore_icon.png
+.PNG	1590204	D:\Python\RogueLike\python\assets\ui\select_tool.PNG
+.png	1017359	D:\Python\RogueLike\python\assets\ui\shield_icon.png
+.png	999178	D:\Python\RogueLike\python\assets\ui\slash_icon.png
+.png	1002413	D:\Python\RogueLike\python\assets\ui\smoke_icon.png
+.png	1597345	D:\Python\RogueLike\python\assets\ui\spells_on_map_icon.png
+.png	1149008	D:\Python\RogueLike\python\assets\ui\teleport_icon.png
+.png	1431960	D:\Python\RogueLike\python\assets\ui\tutorials_button.png
+.png	1512849	D:\Python\RogueLike\python\assets\ui\undo.png
+.png	1582791	D:\Python\RogueLike\python\assets\ui\vaciar_colliders_zone.png
+.png	1643245	D:\Python\RogueLike\python\assets\ui\vaciar_tiles_zone.png
+.png	1082732	D:\Python\RogueLike\python\assets\ui\view_tool.png
+.png	2294949	D:\Python\RogueLike\python\assets\views\horizonte_1.png
+.png	14605	D:\Python\RogueLike\python\assets\views\Top_Landscape.png

@@ -1,0 +1,31 @@
+{
+  "presets": {
+    "Torch": {
+      "radius": 500,
+      "intensity": 1.0,
+      "falloff": 2.0,
+      "color": [255, 200, 140],
+      "flicker_amp": 0.15,
+      "flicker_speed": 0.75,
+      "center_scale": 0.25
+    },
+    "Lamp": {
+      "radius": 500,
+      "intensity": 0.9,
+      "falloff": 2.2,
+      "color": [255, 240, 200],
+      "flicker_amp": 0.05,
+      "flicker_speed": 1.2,
+      "center_scale": 0.9
+    },
+    "Magic": {
+      "radius": 180,
+      "intensity": 1.1,
+      "falloff": 1.6,
+      "color": [120, 200, 255],
+      "flicker_amp": 0.2,
+      "flicker_speed": 3.2,
+      "center_scale": 1.0
+    }
+  }
+}

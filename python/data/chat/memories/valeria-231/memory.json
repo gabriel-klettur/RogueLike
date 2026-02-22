@@ -1,0 +1,31 @@
+{
+  "friendship_score": 0,
+  "ephemeral_history": [
+    {
+      "role": "user",
+      "content": "Hola Valeria"
+    },
+    {
+      "role": "assistant",
+      "content": "¡Hola, cielo! Soy Valeria, alquimista del pueblo. Te ofrezco poción de salud (12 monedas), antidoto (9 monedas) y ungüento regenerador (15 monedas). ¿Qué necesitas, mi niño?"
+    },
+    {
+      "role": "user",
+      "content": "Quiero tu culo"
+    },
+    {
+      "role": "assistant",
+      "content": "Lo siento, cielo, no puedo ayudar con eso. Si buscas remedios, te ofrezco poción de salud (12 monedas), antidoto (9 monedas) o ungüento regenerador (15 monedas). ¿Qué cantidad necesitas?"
+    },
+    {
+      "role": "user",
+      "content": "A quien conoces de este pueblo?"
+    },
+    {
+      "role": "assistant",
+      "content": "Conozco a muchos del pueblo y a sus viajeros, sí. Soy Valeria, la alquimista local; si necesitas remedios, tengo poción de salud, antidoto y ungüento regenerador. ¿Qué te hace falta, tesoro?"
+    }
+  ],
+  "preferred_language": "es",
+  "has_greeted": true
+}

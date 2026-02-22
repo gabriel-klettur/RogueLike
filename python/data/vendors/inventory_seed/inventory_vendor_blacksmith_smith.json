@@ -1,0 +1,11 @@
+{
+  "template_id": "9d2b3c54-2f0a-4a70-9e2c-4a4f8a8e7c31",
+  "slots": [
+    { "item": "simple_wooden_shield", "quantity": 10 },
+    { "item": "iron_ingot", "quantity": 30 },
+    { "item": "wood_log_bundle", "quantity": 50 },
+    { "item": "iron_sword", "quantity": 6 },
+    { "item": "gold", "quantity": 500 }
+  ],
+  "schema_version": "1.0.0"
+}

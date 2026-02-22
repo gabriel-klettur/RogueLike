@@ -1,0 +1,1239 @@
+{
+  "fireball": {
+    "id": "fireball",
+    "type": "projectile",
+    "mana_cost": 1,
+    "name": "Bola de Fuego",
+    "timings": {
+      "prepare": 0.015,
+      "channel": 0.015,
+      "cooldown": 0.033
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 20,
+      "range": 1800,
+      "speed": 30,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/fireball.png",
+        "scale": 0.05
+      },
+  "hostile_slash_giant": {
+    "id": "hostile_slash_giant",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Giant)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 50,
+      "arc_range_degrees": 180,
+      "radius": 180,
+      "hit_radius": 320,
+      "hit_arc_degrees": 180,
+      "lifetime": 18
+    },
+    "telegraph_color": [120, 230, 160],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 80,
+        "size_range": [4, 9],
+        "color": [0, 255, 100],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 40
+    }
+  },
+      "preset": "fireball_trail",
+      "impact": {
+        "preset": "explosion_small",
+        "ttl": 24,
+        "explosion": {
+          "scale": 0.8,
+          "count": 24,
+          "colors": [[255, 180, 80], [255, 120, 60], [255, 220, 120]]
+        }
+      }
+    }
+  },
+  "hostile_slash_dark": {
+    "id": "hostile_slash_dark",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Dark)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.6
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 16,
+      "arc_range_degrees": 130,
+      "radius": 60,
+      "hit_radius": 112,
+      "hit_arc_degrees": 130,
+      "lifetime": 14
+    },
+    "telegraph_color": [60, 60, 60],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [6, 14],
+        "color": [10, 10, 10],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 14
+    }
+  },
+  "hostile_slash_purple": {
+    "id": "hostile_slash_purple",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Purple)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 130,
+      "radius": 34,
+      "hit_radius": 60,
+      "hit_arc_degrees": 130,
+      "lifetime": 15
+    },
+    "telegraph_color": [180, 100, 180],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 26,
+        "size_range": [4, 8],
+        "color": [128, 0, 128],
+        "speed": 6.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 16
+    }
+  },
+  "hostile_slash_red": {
+    "id": "hostile_slash_red",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Red)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.9
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 24,
+      "arc_range_degrees": 160,
+      "radius": 220,
+      "hit_radius": 220,
+      "hit_arc_degrees": 160,
+      "lifetime": 18
+    },
+    "telegraph_color": [220, 120, 120],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 32,
+        "size_range": [12, 24],
+        "color": [255, 0, 0],
+        "speed": 6.2
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 40
+    }
+  },
+  "boss_barbol_slash": {
+    "id": "boss_barbol_slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Barbol Boss Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 40,
+      "arc_range_degrees": 260,
+      "radius": 300,
+      "hit_radius": 420,
+      "hit_arc_degrees": 280,
+      "lifetime": 22
+    },
+    "telegraph_color": [200, 100, 120],
+    "telegraph_alpha": 70,
+    "color": [220, 20, 60],
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 280,
+        "size_range": [20, 40],
+        "color": [220, 20, 60],
+        "speed": 7.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 60
+    }
+  },
+  "hostile_slash_cyan": {
+    "id": "hostile_slash_cyan",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Cyan)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 120,
+      "radius": 32,
+      "hit_radius": 58,
+      "hit_arc_degrees": 120,
+      "lifetime": 15
+    },
+    "telegraph_color": [120, 240, 240],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [3, 7],
+        "color": [0, 255, 255],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 15
+    }
+  },
+  "hostile_slash_gray": {
+    "id": "hostile_slash_gray",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash (Gray)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 125,
+      "radius": 30,
+      "hit_radius": 56,
+      "hit_arc_degrees": 125,
+      "lifetime": 15
+    },
+    "telegraph_color": [180, 180, 180],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 24,
+        "size_range": [3, 7],
+        "color": [150, 150, 150],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 14
+    }
+  },
+  "iceball": {
+    "id": "iceball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Hielo",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 900,
+      "speed": 15,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/iceball.png",
+        "scale": 0.1
+      },
+      "preset": "iceball_trail_strong",
+      "impact": {
+        "preset": "explosion_ice_large",
+        "ttl": 24
+      }
+    }
+  },
+  "lightball": {
+    "id": "lightball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Luz",
+    "timings": {
+      "prepare": 0.5,
+      "channel": 0.5,
+      "cooldown": 0.5
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 7200,
+      "speed": 60,
+      "lifetime": 120
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/lightball.png",
+        "scale": 0.1
+      },
+      "preset": "lightball_trail",
+      "impact": {
+        "preset": "explosion_light_small",
+        "ttl": 20
+      }
+    }
+  },
+  "darkball": {
+    "id": "darkball",
+    "type": "projectile",
+    "mana_cost": 10,
+    "name": "Bola de Oscuridad",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": true,
+      "automatic": true
+    },
+    "constraints": {
+      "max_instances": 20,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 10,
+      "range": 600,
+      "speed": 10,
+      "lifetime": 60
+    },
+    "vfx": {
+      "sprite": {
+        "path": "assets/projectiles/darkball.png",
+        "scale": 0.1
+      },
+      "preset": "darkball_trail",
+      "impact": {
+        "preset": "explosion_dark_small",
+        "ttl": 24
+      }
+    }
+  },
+  "healing_aura": {
+    "id": "healing_aura",
+    "type": "aura",
+    "mana_cost": 10,
+    "name": "Aura de Curación",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 1.0,
+      "radius": 10,
+      "buff": {
+        "heal_per_second": 20
+      }
+    },
+    "vfx": {
+      "sprite": {
+        "scale": 0.3
+      },
+      "preset": "healing_aura_emitter"
+    }
+  },
+  "laser_beam": {
+    "id": "laser_beam",
+    "type": "beam",
+    "mana_cost": 10,
+    "name": "Laser",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": true
+    },
+    "effect": {
+      "damage": 0.25,
+      "range": 1000,
+      "lifetime": 1.0
+    },
+    "vfx": {
+      "sprite": {
+        "scale": 2.0
+      },
+      "preset": "laser_beam_emitter"
+    }
+  },
+  "dash": {
+    "id": "dash",
+    "type": "dash",
+    
+    "mana_cost": 0,
+    "name": "Dash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "effect": {
+      "duration": 0.1,
+      "speed": 2000,
+      "knockback": 4,
+      "collision_damage": 2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "vfx": {
+      "particles": {
+        "count": 22,
+        "lifespan": 16,
+        "size_range": [8, 18],
+        "color": [255, 255, 255]
+      }
+    }
+  },
+  "hostile_dash": {
+    "id": "hostile_dash",
+    "type": "dash",
+    "mana_cost": 0,
+    "name": "Hostile Dash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.2
+    },
+    "effect": {
+      "duration": 0.22,
+      "speed": 4800,
+      "knockback": 4,
+      "collision_damage": 2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "vfx": {
+      "particles": {
+        "count": 22,
+        "lifespan": 16,
+        "size_range": [8, 18],
+        "colors": [[0, 255, 120], [0, 200, 80], [0, 220, 100]]
+      }
+    }
+  },
+  "teleport": {
+    "id": "teleport",
+    "type": "teleport",
+    "mana_cost": 10,
+    "name": "Teleport",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "distance": 200,
+      "lifetime": 0.5
+    }
+  },
+  "slash": {
+    "id": "slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.5
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 20,
+      "arc_range_degrees": 90,
+      "radius": 20,
+      "hit_radius": 40,      
+      "hit_arc_degrees": 90,
+      "lifetime": 15
+    },
+    "vfx": {
+      "preset": "slash_emitter"
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 0
+    }
+  },
+  "slash_cleave": {
+    "id": "slash_cleave",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Slash (Cleave)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.6
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 140,
+      "radius": 24,
+      "lifetime": 14
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 26,
+        "size_range": [3, 6],
+        "color": [255, 220, 140],
+        "speed": 5.2
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 14
+    }
+  },
+  "slash_stab": {
+    "id": "slash_stab",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Slash (Stab)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.5
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 24,
+      "arc_range_degrees": 40,
+      "radius": 34,
+      "lifetime": 12
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 16,
+        "size_range": [2, 5],
+        "color": [255, 240, 180],
+        "speed": 6.5
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.15,
+      "offset": 18
+    }
+  },
+  "slash_combo": {
+    "id": "slash_combo",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Slash (Combo)",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.2
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 16,
+      "arc_range_degrees": 90,
+      "radius": 22,
+      "lifetime": 12
+    },
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 20,
+        "size_range": [3, 6],
+        "color": [255, 230, 150],
+        "speed": 5.8
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.05,
+      "offset": 12
+    }
+  },
+  "hostile_slash": {
+    "id": "hostile_slash",
+    "type": "slash",
+    "mana_cost": 0,
+    "name": "Hostile Slash",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.7
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "damage": 18,
+      "arc_range_degrees": 140,
+      "radius": 36,
+      "hit_radius": 64,
+      "hit_arc_degrees": 140,
+      "lifetime": 16
+    },
+    "telegraph_color": [120, 230, 160],
+    "telegraph_alpha": 80,
+    "vfx": {
+      "preset": "slash_emitter",
+      "particles": {
+        "count": 28,
+        "size_range": [4, 8],
+        "color": [0, 255, 100],
+        "speed": 6.0
+      }
+    },
+    "meta": {
+      "speed_multiplier": 1.0,
+      "offset": 16
+    }
+  },
+  "lightning": {
+    "id": "lightning",
+    "type": "lightning",
+    "mana_cost": 10,
+    "name": "Lightning",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "interruptible": true,
+      "automatic_cast_punish": 2.0,
+      "automatic": false
+    },
+    "effect": {
+      "lifetime": 8
+    },
+    "meta": {
+      "segments": 12,
+      "offset": 15
+    },
+    "vfx": {
+      "preset": "lightning_emitter"
+    }
+  },
+  "chain_lightning": {
+    "id": "chain_lightning",
+    "type": "chain_lightning",
+    "mana_cost": 14,
+    "name": "Chain Lightning",
+    "timings": { "prepare": 0.1, "channel": 0.1, "cooldown": 1.4 },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "damage": 12, "max_bounces": 4, "range": 360, "damage_decay": 0.8 },
+    "vfx": { "preset": "lightning_emitter" }
+  },
+  "arcane_flame": {
+    "id": "arcane_flame",
+    "type": "arcane_flame",
+    "mana_cost": 10,
+    "name": "Arcane Flame",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 2.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 2.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 5.0,
+      "radius": 128
+    },
+    "vfx": {
+      "preset": "arcane_flame_emitter"
+    }
+  },
+  "firework_launch": {
+    "id": "firework_launch",
+    "type": "firework_launch",
+    "mana_cost": 10,
+    "name": "Firework Launch",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.5,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 3,
+      "allow_overlap": true
+    },
+    "effect": {
+      "speed": 12
+    },
+    "vfx": {
+      "preset": "firework_launch"
+    }
+  },
+  "smoke": {
+    "id": "smoke",
+    "type": "smoke",
+    "mana_cost": 10,
+    "name": "Smoke",
+    "timings": {
+      "prepare": 0.15,
+      "channel": 0.2,
+      "cooldown": 1.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "vfx": {
+      "preset": "smoke_burst"
+    }
+  },
+  "smoke_emitter": {
+    "id": "smoke_emitter",
+    "type": "smoke_emitter",
+    "mana_cost": 10,
+    "name": "Smoke Emitter",
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.2,
+      "cooldown": 1.5
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "automatic_cast_punish": 1.0,
+      "allow_movement": true,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "vfx": {
+      "preset": "smoke_emitter"
+    },
+    "meta": {
+      "particle_color": [
+        200,
+        200,
+        200
+      ]
+    }
+  },
+  "sphere_magic_shield": {
+    "id": "sphere_magic_shield",
+    "type": "sphere_magic_shield",
+    "mana_cost": 10,
+    "name": "Sphere Magic Shield",
+    "timings": {
+      "prepare": 0.2,
+      "channel": 0.2,
+      "cooldown": 5.0
+    },
+    "rules": {
+      "lock_cast_direction": false,
+      "interruptible": false,
+      "automatic_cast_punish": 3.0,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 1,
+      "allow_overlap": false
+    },
+    "effect": {
+      "duration": 5.0,
+      "radius": 80
+    }
+  },
+  "puddle_lava": {
+    "id": "puddle_lava",
+    "type": "puddle",
+    "name": "Lava Puddle",
+    "mana_cost": 10,
+    "timings": {
+      "prepare": 0.1,
+      "channel": 0.0,
+      "cooldown": 2.0
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "allow_movement": true,
+      "interruptible": false,
+      "automatic": false
+    },
+    "constraints": {
+      "allow_overlap": true
+    },
+    "effect": {
+      "radius": 64,
+      "duration": 6.0,
+      "tick_period": 0.25,
+      "damage": 0,
+      "element": "lava",
+      "status": {
+        "burn": {
+          "dps": 5,
+          "duration": 3.0,
+          "tick_period": 1.0
+        }
+      }
+    },
+    "vfx": {
+      "particles": {
+        "color": [255, 120, 60]
+      },
+      "alpha": 96
+    }
+  },
+  "mine_basic": {
+    "id": "mine_basic",
+    "type": "mine",
+    "mana_cost": 6,
+    "name": "Basic Mine",
+    "timings": {
+      "prepare": 0.0,
+      "channel": 0.0,
+      "cooldown": 0.8
+    },
+    "rules": {
+      "lock_cast_direction": true,
+      "interruptible": false,
+      "allow_movement": false,
+      "automatic": false
+    },
+    "constraints": {
+      "max_instances": 3,
+      "allow_overlap": true
+    },
+    "effect": {
+      "trigger_radius": 60,
+      "arming_time": 0.5,
+      "ttl": 14,
+      "payload": {
+        "explosion": {
+          "radius": 140,
+          "damage": 28
+        }
+      }
+    },
+    "vfx": {
+      "preset": "explosion_small"
+    }
+  },
+  "boomerang": {
+    "id": "boomerang",
+    "type": "boomerang",
+    "mana_cost": 8,
+    "name": "Boomerang",
+    "timings": { "prepare": 0.05, "channel": 0.0, "cooldown": 0.8 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "damage": 18, "range": 420, "speed": 22, "return_speed": 28, "passes_through": false, "hit_radius": 12.0 },
+    "vfx": { "sprite": { "scale": 0.8 } }
+  },
+  "vortex_pull": {
+    "id": "vortex_pull",
+    "type": "vortex_field",
+    "mana_cost": 10,
+    "name": "Vortex Pull",
+    "timings": { "prepare": 0.1, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "radius": 280, "force": 1400, "mode": "pull", "duration": 2.2, "spawn_at": "mouse", "follow_caster": false },
+    "vfx": { "preset": "vortex_dark" }
+  },
+  "vortex_push": {
+    "id": "vortex_push",
+    "type": "vortex_field",
+    "mana_cost": 10,
+    "name": "Vortex Push",
+    "timings": { "prepare": 0.1, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "radius": 280, "force": 1200, "mode": "push", "duration": 2.0, "spawn_at": "caster", "follow_caster": true },
+    "vfx": { "preset": "vortex_dark" }
+  },
+  "flame_breath": {
+    "id": "flame_breath",
+    "type": "cone_breath",
+    "mana_cost": 12,
+    "name": "Flame Breath",
+    "timings": { "prepare": 0.1, "channel": 0.2, "cooldown": 1.6 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "arc_range_degrees": 60, "length": 260, "damage_per_tick": 4, "tick_period": 0.2, "duration": 2.0, "element": "fire" },
+    "vfx": { "preset": "breath_fire" }
+  },
+  "meteor_shower": {
+    "id": "meteor_shower",
+    "type": "meteor_shower",
+    "mana_cost": 18,
+    "name": "Meteor Shower",
+    "timings": { "prepare": 0.3, "channel": 0.2, "cooldown": 6.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": false, "allow_movement": false, "automatic": false },
+    "non_preemptive": true,
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "count": 8, "interval": 0.25, "area_radius": 520, "impact_damage": 40, "impact_radius": 160, "spawn_at": "mouse" },
+    "vfx": {
+      "meteor": {
+        "sprite": {
+          "path": "assets/spells/meteor/meteor.png",
+          "scale": 0.15
+        }
+      },
+      "impact": {
+        "sprite": {
+          "path": "assets/spells/meteor/meteor_impact.png",
+          "scale": 0.15
+        },
+        "preset": "explosion_small",
+        "ttl": 24,
+        "explosion": { "scale": 1.0 }
+      }
+    }
+  },
+  "healing_totem": {
+    "id": "healing_totem",
+    "type": "totem",
+    "mana_cost": 16,
+    "name": "Healing Totem",
+    "timings": { "prepare": 0.2, "channel": 0.0, "cooldown": 8.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "duration": 10.0, "tick_period": 0.5, "radius": 220, "kind": "heal", "heal_per_tick": 6 }
+  },
+  "summon_barbol": {
+    "id": "summon_barbol",
+    "type": "summon",
+    "mana_cost": 20,
+    "name": "Summon Barbol",
+    "timings": { "prepare": 0.3, "channel": 0.0, "cooldown": 8.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": false, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": true },
+    "effect": { "template_id": "barbol", "duration": 20.0, "count": 1, "spread_radius": 0 }
+  },
+  "wall_ice": {
+    "id": "wall_ice",
+    "type": "wall",
+    "mana_cost": 0,
+    "name": "Ice Wall",
+    "timings": { "prepare": 0.0, "channel": 0.0, "cooldown": 2.0 },
+    "rules": { "lock_cast_direction": true, "interruptible": true, "allow_movement": true, "automatic": false },
+    "constraints": { "max_instances": 1, "allow_overlap": false },
+    "effect": { "duration": 6.0, "hp": 100, "width": 200, "height": 50, "blocks_projectiles": true, "blocks_units": true },
+    "vfx": {
+      "sprite": {
+        "path": "assets/spells/walls/ice_wall/large_ice_wall.png",
+        "scale": 0.25,
+        "reveal_duration_sec": 2.0
+      }
+    }
+  },
+  "root_whip": {
+    "id": "root_whip",
+    "type": "puddle",
+    "mana_cost": 0,
+    "name": "Root Whip",
+    "timings": { "prepare": 0.0, "channel": 0.0, "cooldown": 0.6 },
+    "rules": { "lock_cast_direction": true, "interruptible": false, "allow_movement": true, "automatic": false },
+    "constraints": { "allow_overlap": true, "max_instances": 0 },
+    "effect": {
+      "radius": 0,
+      "auto_radius": true,
+      "tick_period": 0.25,
+      "duration": 9999.0,
+      "damage": 0,
+      "spawn_at": "mouse",
+      "expire_on_player_collision": true
+    },
+    "vfx": {
+      "sprite_sequence": {
+        "frames": [
+          "assets/spells/root_whip/root_whip_1.png",
+          "assets/spells/root_whip/root_whip_2.png",
+          "assets/spells/root_whip/root_whip_3.png"
+        ],
+        "times": [0, 1.0, 2.0],
+        "scale": 0.25
+      },
+      "alpha": 255
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "player": {
+    "level": "global_map",
+    "pos": [
+      15,
+      82
+    ]
+  },
+  "npcs": {},
+  "levels": {
+    "global_map": {
+      "player_pos": [
+        15,
+        82
+      ],
+      "npc_states": {}
+    }
+  },
+  "player_inventory": {
+    "player_id": "48123e7b-8448-4c58-a3cb-9837cd927ff0",
+    "capacity": 20,
+    "slots": [
+      {
+        "item": "gold",
+        "quantity": 11.0
+      },
+      {
+        "item": "tortilla_spain_01",
+        "quantity": 3
+      },
+      {
+        "item": "completo_chileno_01",
+        "quantity": 1
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "npc_inventories": {
+    "c09cf693-f261-4d49-96db-9761d901f947": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "cbcc8fd9-46a1-496c-9554-efda972222e7": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    },
+    "d5ef56cd-c6c0-4047-a5e5-874cc4de56c3": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "gold",
+          "quantity": 1
+        },
+        {
+          "item": "experience_orb",
+          "quantity": 1
+        }
+      ]
+    },
+    "2e895fd3-1024-468c-9f8b-357b69f8eb32": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "9e2b848a-9016-4dc4-b4dc-57d049e9a9de": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": [
+        {
+          "item": "wood",
+          "quantity": 1
+        }
+      ]
+    },
+    "4d1b97a0-a425-4caa-bb2b-35e7974c659b": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "136ab8f8-f1e3-437a-939b-7d68316bf9b4": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "a5c271bb-8f3a-4a03-8d66-1fdec418e152": {
+      "player_id": null,
+      "capacity": 20,
+      "slots": []
+    },
+    "a30bf9a1-9b3f-4a29-94e8-6987e3b3ecbc": {
+      "player_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "capacity": 20,
+      "slots": []
+    }
+  },
+  "meta": {
+    "name": "partida_2025-11-02_12-39-16",
+    "created_at": "2025-11-02T12:39:16",
+    "last_played": "2025-11-08T23:29:07",
+    "player": {
+      "xp": 0,
+      "level": 0
+    },
+    "items_summary": {
+      "stacks": 3,
+      "top_items": [
+        "gold",
+        "tortilla_spain_01",
+        "completo_chileno_01"
+      ]
+    }
+  },
+  "time": {
+    "minute": 1044,
+    "time_scale": 0.4
+  }
+}

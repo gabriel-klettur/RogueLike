@@ -1,0 +1,29 @@
+{
+  "player_id": "d0eedce5-c40c-4699-a8db-41ecb19708be",
+  "capacity": 20,
+  "slots": [
+    {
+      "item": "gold",
+      "quantity": 3
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

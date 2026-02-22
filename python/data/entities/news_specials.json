@@ -1,0 +1,326 @@
+{
+  "specials": {
+    "classes": {
+      "final_boss_barbol": {
+        "default_name": "Final Boss Barbol I",
+        "phase_index": 1,
+        "next_phase": "final_boss_barbol_lvl2",
+        "auto_cast_list": [
+          {
+            "spell": "root_whip",
+            "min_period_s": 5.0,
+            "max_period_s": 10.0,
+            "channel_s": 2.0,
+            "wire_from": [0, 128, 255],
+            "wire_to": [0, 255, 0],
+            "target": "player"
+          }
+        ],
+        "stats": {
+          "hp": 2500,
+          "speed": 1.5,
+          "faction": "EVIL",
+          "aggro_range": 20,
+          "melee_range": 7,
+          "melee_damage": 50,
+          "melee_cooldown": 1.0,
+          "defense": 8,
+          "power": 14,
+          "damage_duration": 0.5,
+          "chasing_speed": 3.5,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.22,
+          "spawn_padding": 3,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 0.2,
+          "damage_stop_probability": 0.05,
+          "attack_windup_s": 2.0
+        },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "line" },
+        "assets": {
+          "active_set": "no-sets",
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_left.png",
+              "sw": null
+            },
+            "chase": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl1_left.png",
+              "sw": null
+            },
+            "attack": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "death": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "damage": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "casting": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.4,
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
+              "tint": null
+            }
+          },
+          "sets": {
+            "sprites_set": { "idle": [], "walk": [], "chase": [], "cast": [], "attack": [], "damage": [], "death": [] },
+            "sprites_data_set": { "scale_idle": 0.35, "scale_walk": 0.35, "scale_chase": 0.35, "scale_cast": 0.35, "scale_attack": 0.35, "scale_damage": 0.35, "scale_death": 0.4, "tint": null }
+          }
+        }
+      },
+      "final_boss_barbol_lvl2": {
+        "default_name": "Final Boss Barbol II",
+        "phase_index": 2,
+        "next_phase": "final_boss_barbol_lvl3",
+        "auto_cast_list": [
+          {
+            "spell": "root_whip",
+            "min_period_s": 5.0,
+            "max_period_s": 10.0,
+            "channel_s": 2.0,
+            "wire_from": [0, 128, 255],
+            "wire_to": [0, 255, 0],
+            "target": "player"
+          },
+          {
+            "spell": "fireball",
+            "min_period_s": 2.0,
+            "max_period_s": 3.0,
+            "scale_multiplier": 2.5,
+            "hit_radius": 6.0,
+            "damage": 30,
+            "meta": { "parallel_count": 3, "parallel_spacing": 120, "central_forward_offset": 60, "min_distance_tiles": 8 }
+          }
+        ],
+        "stats": {
+          "hp": 3000,
+          "speed": 1.6,
+          "mana": 10000,
+          "max_mana": 10000,
+          "faction": "EVIL",
+          "aggro_range": 22,
+          "melee_range": 7,
+          "melee_damage": 60,
+          "melee_cooldown": 0.9,
+          "defense": 10,
+          "power": 16,
+          "damage_duration": 0.5,
+          "chasing_speed": 3.8,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.22,
+          "spawn_padding": 3,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 0.2,
+          "damage_stop_probability": 0.04,
+          "attack_windup_s": 2.0
+        },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "line" },
+        "assets": {
+          "active_set": "no-sets",
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_left.png",
+              "sw": null
+            },
+            "chase": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl2_left.png",
+              "sw": null
+            },
+            "attack": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "death": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "damage": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "casting": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.4,
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
+              "tint": null
+            }
+          },
+          "sets": {
+            "sprites_set": { "idle": [], "walk": [], "chase": [], "cast": [], "attack": [], "damage": [], "death": [] },
+            "sprites_data_set": { "scale_idle": 0.35, "scale_walk": 0.35, "scale_chase": 0.35, "scale_cast": 0.35, "scale_attack": 0.35, "scale_damage": 0.35, "scale_death": 0.4, "tint": null }
+          }
+        }
+      },
+      "final_boss_barbol_lvl3": {
+        "default_name": "Final Boss Barbol III",
+        "phase_index": 3,
+        "next_phase": null,
+        "auto_cast_list": [
+          {
+            "spell": "root_whip",
+            "min_period_s": 5.0,
+            "max_period_s": 10.0,
+            "channel_s": 2.0,
+            "wire_from": [0, 128, 255],
+            "wire_to": [0, 255, 0],
+            "target": "player"
+          },
+          {
+            "spell": "meteor_shower",
+            "period_s": 10.0,
+            "channel_s": 1.2,
+            "wire_from": [120, 120, 255],
+            "wire_to": [255, 180, 0],
+            "target": "player",
+            "meta": { "initial_delay_s": 0.0 }
+          },
+          {
+            "spell": "fireball",
+            "period_s": 4.0,
+            "scale_multiplier": 2.5,
+            "hit_radius": 2.5,
+            "damage": 60,
+            "meta": { "parallel_count": 3, "parallel_spacing": 48, "central_forward_offset": 24, "sides_forward_offset": 12, "hit_radius_multiplier": 2.0, "initial_delay_s": 0.0 }
+          },
+          {
+            "spell": "fireball",
+            "period_s": 2.5,
+            "scale_multiplier": 2.5,
+            "hit_radius": 4.0,
+            "damage": 60,
+            "meta": { "radial_count": 8, "radial_start_deg": 45.0, "central_forward_offset": 0.0, "hit_radius_multiplier": 2.0, "initial_delay_s": 2.0 }
+          }
+        ],
+        "stats": {
+          "hp": 4000,
+          "speed": 1.7,
+          "mana": 10000,
+          "max_mana": 10000,
+          "faction": "EVIL",
+          "aggro_range": 24,
+          "melee_range": 8,
+          "melee_damage": 70,
+          "melee_cooldown": 0.85,
+          "defense": 12,
+          "power": 18,
+          "damage_duration": 0.5,
+          "chasing_speed": 4.0,
+          "feet_width_factor": 0.5,
+          "feet_height_factor": 0.22,
+          "spawn_padding": 3,
+          "spawn_count": 1,
+          "spawn_margin": 0,
+          "death_dissapear_time": 0.2,
+          "damage_stop_probability": 0.03,
+          "attack_windup_s": 2.0
+        },
+        "fsm_set": "Monster_Default",
+        "patrol": { "id": "line" },
+        "assets": {
+          "active_set": "no-sets",
+          "no-sets": {
+            "idle": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_left.png",
+              "sw": null
+            },
+            "walk": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_left.png",
+              "sw": null
+            },
+            "chase": {
+              "s": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_down.png",
+              "se": null,
+              "e": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_right.png",
+              "ne": null,
+              "n": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_top.png",
+              "nw": null,
+              "w": "assets/npc/monsters/barbol boss/final_boss_barbol_lvl3_left.png",
+              "sw": null
+            },
+            "attack": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "death": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "damage": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "casting": { "s": null, "se": null, "e": null, "ne": null, "n": null, "nw": null, "w": null, "sw": null },
+            "sprites_data_no-set": {
+              "scale": 0.35,
+              "death_scale": 0.4,
+              "scale_idle": 0.35,
+              "scale_walk": 0.35,
+              "scale_chase": 0.35,
+              "scale_cast": 0.35,
+              "scale_attack": 0.35,
+              "scale_damage": 0.35,
+              "scale_death": 0.4,
+              "tint": null
+            }
+          },
+          "sets": {
+            "sprites_set": { "idle": [], "walk": [], "chase": [], "cast": [], "attack": [], "damage": [], "death": [] },
+            "sprites_data_set": { "scale_idle": 0.35, "scale_walk": 0.35, "scale_chase": 0.35, "scale_cast": 0.35, "scale_attack": 0.35, "scale_damage": 0.35, "scale_death": 0.4, "tint": null }
+          }
+        }
+      }
+    }
+  }
+}
