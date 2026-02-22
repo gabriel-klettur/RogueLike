@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 using Valkur.Data;
 
 namespace Valkur.Infrastructure
 {
     /// <summary>
-    /// Persistent save/load service with JSON serialization and rotative backups.
+    /// Persistent save/load service with JSON serialization, rotative backups,
+    /// corruption recovery, checksum validation, and schema migration.
     /// Maps to Python's ShutdownManager + SaveService + WorldManager.save_world().
     /// 
     /// Responsibilities:
@@ -15,11 +18,16 @@ namespace Valkur.Infrastructure
     /// - Manage save slots with timestamps.
     /// - Rotative backups (keeps last N saves).
     /// - Autosave support via tick interval.
+    /// - Checksum validation to detect corruption.
+    /// - Automatic fallback to backup on corrupted load.
+    /// - Schema version migration for forward compatibility.
     /// </summary>
     public class SaveService : MonoBehaviour
     {
         private const string SAVE_DIR = "Saves";
         private const string SAVE_EXTENSION = ".json";
+        private const string CHECKSUM_EXTENSION = ".sha256";
+        private const string CURRENT_SCHEMA = "1.1";
         private const int MAX_BACKUPS = 5;
         private const string AUTOSAVE_PREFIX = "autosave";
         private const string QUICKSAVE_PREFIX = "quicksave";
@@ -126,36 +134,98 @@ namespace Valkur.Infrastructure
 
         /// <summary>
         /// Load a game from a specific file path.
+        /// Validates checksum and falls back to backups on corruption.
         /// </summary>
         public bool Load(string path)
         {
+            var data = TryLoadWithRecovery(path);
+            if (data == null)
+            {
+                Debug.LogError($"[SaveService] Load failed — no valid save found for: {path}");
+                return false;
+            }
+
+            data = MigrateSchema(data);
+            ApplySaveData(data);
+            _currentSavePath = path;
+
+            Debug.Log($"[SaveService] Game loaded from: {path} (schema {data.schemaVersion})");
+            return true;
+        }
+
+        /// <summary>
+        /// Try to load from the given path. If corrupted, attempt backup recovery.
+        /// </summary>
+        private GameSaveData TryLoadWithRecovery(string path)
+        {
+            // Try primary file
+            var data = TryLoadSingle(path);
+            if (data != null) return data;
+
+            Debug.LogWarning($"[SaveService] Primary save corrupted or missing: {path}. Attempting backup recovery...");
+
+            // Try numbered backups (autosave_0 through autosave_N)
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            for (int i = 0; i < MAX_BACKUPS; i++)
+            {
+                string backupPath = GetSavePath($"{AUTOSAVE_PREFIX}_{i}");
+                if (backupPath == path) continue;
+
+                data = TryLoadSingle(backupPath);
+                if (data != null)
+                {
+                    Debug.Log($"[SaveService] Recovered from backup: {backupPath}");
+                    return data;
+                }
+            }
+
+            // Try shutdown save as last resort
+            string shutdownPath = GetSavePath("shutdown_save");
+            if (shutdownPath != path)
+            {
+                data = TryLoadSingle(shutdownPath);
+                if (data != null)
+                {
+                    Debug.Log($"[SaveService] Recovered from shutdown save: {shutdownPath}");
+                    return data;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Try to load and validate a single save file. Returns null on any failure.
+        /// </summary>
+        private GameSaveData TryLoadSingle(string path)
+        {
             try
             {
-                if (!File.Exists(path))
-                {
-                    Debug.LogError($"[SaveService] Save file not found: {path}");
-                    return false;
-                }
+                if (!File.Exists(path)) return null;
 
                 string json = File.ReadAllText(path);
-                var data = JsonUtility.FromJson<GameSaveData>(json);
+                if (string.IsNullOrWhiteSpace(json)) return null;
 
-                if (data == null)
+                // Checksum validation
+                if (!ValidateChecksum(path, json))
                 {
-                    Debug.LogError("[SaveService] Failed to deserialize save data.");
-                    return false;
+                    Debug.LogWarning($"[SaveService] Checksum mismatch for: {path}");
+                    return null;
                 }
 
-                ApplySaveData(data);
-                _currentSavePath = path;
+                var data = JsonUtility.FromJson<GameSaveData>(json);
+                if (data == null || data.player == null)
+                {
+                    Debug.LogWarning($"[SaveService] Invalid save structure in: {path}");
+                    return null;
+                }
 
-                Debug.Log($"[SaveService] Game loaded from: {path}");
-                return true;
+                return data;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[SaveService] Load failed: {ex.Message}");
-                return false;
+                Debug.LogWarning($"[SaveService] Failed to read {path}: {ex.Message}");
+                return null;
             }
         }
 
@@ -381,8 +451,91 @@ namespace Valkur.Infrastructure
 
         private void WriteSaveFile(string path, GameSaveData data)
         {
+            data.schemaVersion = CURRENT_SCHEMA;
             string json = JsonUtility.ToJson(data, true);
-            File.WriteAllText(path, json);
+
+            // Write to temp file first, then atomic rename for crash safety
+            string tempPath = path + ".tmp";
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(path))
+                File.Delete(path);
+            File.Move(tempPath, path);
+
+            // Write checksum sidecar
+            WriteChecksum(path, json);
+        }
+
+        private void WriteChecksum(string savePath, string json)
+        {
+            try
+            {
+                string hash = ComputeSha256(json);
+                string checksumPath = savePath.Replace(SAVE_EXTENSION, CHECKSUM_EXTENSION);
+                File.WriteAllText(checksumPath, hash);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SaveService] Failed to write checksum: {ex.Message}");
+            }
+        }
+
+        private bool ValidateChecksum(string savePath, string json)
+        {
+            string checksumPath = savePath.Replace(SAVE_EXTENSION, CHECKSUM_EXTENSION);
+            if (!File.Exists(checksumPath))
+            {
+                // No checksum file = legacy save, accept it
+                return true;
+            }
+
+            try
+            {
+                string storedHash = File.ReadAllText(checksumPath).Trim();
+                string computedHash = ComputeSha256(json);
+                return string.Equals(storedHash, computedHash, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return true; // Fail open on checksum read errors
+            }
+        }
+
+        private static string ComputeSha256(string input)
+        {
+            using (var sha = SHA256.Create())
+            {
+                byte[] bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+                var sb = new StringBuilder(64);
+                foreach (byte b in bytes)
+                    sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Migrate save data from older schema versions to current.
+        /// </summary>
+        private GameSaveData MigrateSchema(GameSaveData data)
+        {
+            if (data.schemaVersion == CURRENT_SCHEMA)
+                return data;
+
+            string from = data.schemaVersion ?? "unknown";
+
+            // v1.0 -> v1.1: added mana and experience fields (already have defaults)
+            if (from == "1.0")
+            {
+                // No structural changes needed — new fields default to 0
+                data.schemaVersion = CURRENT_SCHEMA;
+                Debug.Log($"[SaveService] Migrated save from v1.0 to v{CURRENT_SCHEMA}");
+                return data;
+            }
+
+            // Unknown version — accept as-is with warning
+            Debug.LogWarning($"[SaveService] Unknown schema version '{from}'. Loading as-is.");
+            data.schemaVersion = CURRENT_SCHEMA;
+            return data;
         }
 
         private string GetSaveDirectory()

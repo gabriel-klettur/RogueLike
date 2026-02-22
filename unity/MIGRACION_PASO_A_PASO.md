@@ -22,15 +22,14 @@ Objetivo:
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
 | 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
-| 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **33/50** | **66%** |
+| 7 | Persistencia y release | 48-50 | 1/3 | � En progreso |
+| **Total** | | **1-50** | **34/50** | **68%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 48** — Save system final con backups rotativos y recuperacion ante corrupcion
-2. **Paso 49** — Hardening: profiling CPU/GPU/GC, soak tests, optimizaciones
-3. **Paso 50** — Pipeline CI/CD, build release, checklist final
-4. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
+1. **Paso 49** — Hardening: profiling CPU/GPU/GC, soak tests, optimizaciones
+2. **Paso 50** — Pipeline CI/CD, build release, checklist final
+3. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
 
 ---
 
@@ -211,7 +210,13 @@ Objetivo:
 
 ## Fase 7 - Persistencia final, rendimiento y release (Pasos 48-50)
 
-48. [ ] Implementa save system final con backups rotativos y recuperacion ante corrupcion.
+48. [x] Implementa save system final con backups rotativos y recuperacion ante corrupcion.
+    - SHA-256 checksum sidecar (`.sha256`) escrito junto a cada save para deteccion de corrupcion.
+    - Atomic writes via temp file + rename para crash safety.
+    - `TryLoadWithRecovery`: si el save primario falla checksum/parse, intenta autosave_0..4, luego shutdown_save.
+    - `MigrateSchema`: migracion v1.0→v1.1 (mana/xp fields), extensible para futuras versiones.
+    - `TryLoadSingle`: validacion de checksum + estructura antes de aceptar un save.
+    - Schema version bumped a `1.1`.
 49. [ ] Ejecuta hardening: profiling CPU/GPU/GC, soak tests 30-60 min, optimizaciones de pooling/culling.
 50. [ ] Configura pipeline de CI/CD (build + EditMode + PlayMode smoke), genera build release y checklist final de salida.
 
