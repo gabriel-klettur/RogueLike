@@ -39,8 +39,6 @@ namespace Valkur.Gameplay
         private InputAction _spell2Action;
         private InputAction _spell3Action;
         private InputAction _spell4Action;
-        private InputAction _quickSaveAction;
-        private InputAction _quickLoadAction;
 
         public Vector2 FacingDirection => _facingDirection;
         public Vector2 MoveInput => _moveInput;
@@ -89,9 +87,6 @@ namespace Valkur.Gameplay
             _spell2Action = new InputAction("Spell2", InputActionType.Button, "<Keyboard>/2");
             _spell3Action = new InputAction("Spell3", InputActionType.Button, "<Keyboard>/3");
             _spell4Action = new InputAction("Spell4", InputActionType.Button, "<Keyboard>/4");
-            _quickSaveAction = new InputAction("QuickSave", InputActionType.Button, "<Keyboard>/f5");
-            _quickLoadAction = new InputAction("QuickLoad", InputActionType.Button, "<Keyboard>/f9");
-
             _moveAction.Enable();
             _lookAction.Enable();
             _primaryAttackAction.Enable();
@@ -101,10 +96,8 @@ namespace Valkur.Gameplay
             _spell2Action.Enable();
             _spell3Action.Enable();
             _spell4Action.Enable();
-            _quickSaveAction.Enable();
-            _quickLoadAction.Enable();
 
-            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, LClick=fireball, RClick=slash, RCtrl=dash, 1-4=spells, F5/F9 save/load).");
+            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, LClick=fireball, RClick=slash, RCtrl=dash, 1-4=spells).");
         }
 
         private void OnDisable()
@@ -118,8 +111,6 @@ namespace Valkur.Gameplay
             _spell2Action?.Disable();
             _spell3Action?.Disable();
             _spell4Action?.Disable();
-            _quickSaveAction?.Disable();
-            _quickLoadAction?.Disable();
         }
 
         private void OnDestroy()
@@ -133,8 +124,6 @@ namespace Valkur.Gameplay
             _spell2Action?.Dispose();
             _spell3Action?.Dispose();
             _spell4Action?.Dispose();
-            _quickSaveAction?.Dispose();
-            _quickLoadAction?.Dispose();
         }
 
         private void Update()
@@ -144,7 +133,6 @@ namespace Valkur.Gameplay
             ReadInput();
             UpdateFacingDirection();
             PollCombatActions();
-            PollSaveLoadActions();
         }
 
         private void FixedUpdate()
@@ -230,21 +218,6 @@ namespace Valkur.Gameplay
                     _spellCaster.TryCast(2, _facingDirection);
                 if (_spell4Action != null && _spell4Action.WasPerformedThisFrame())
                     _spellCaster.TryCast(3, _facingDirection);
-            }
-        }
-
-        private void PollSaveLoadActions()
-        {
-            if (_quickSaveAction != null && _quickSaveAction.WasPerformedThisFrame())
-            {
-                if (SaveService.Instance != null)
-                    SaveService.Instance.QuickSave();
-            }
-
-            if (_quickLoadAction != null && _quickLoadAction.WasPerformedThisFrame())
-            {
-                if (SaveService.Instance != null)
-                    SaveService.Instance.QuickLoad();
             }
         }
 

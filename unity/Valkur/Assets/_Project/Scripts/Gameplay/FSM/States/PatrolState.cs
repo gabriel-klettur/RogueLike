@@ -26,8 +26,8 @@ namespace Valkur.Gameplay.FSM
 
         public void Execute(StateMachine fsm, float dt)
         {
-            var health = fsm.Owner.GetComponent<Health>();
-            if (health != null && health.IsDead)
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Health != null && c.Health.IsDead)
             {
                 fsm.ChangeState(new UnconsciousState());
                 return;
@@ -54,8 +54,7 @@ namespace Valkur.Gameplay.FSM
             // No waypoints: stay idle
             if (_waypoints == null || _waypoints.Length == 0)
             {
-                var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-                if (rb != null) rb.velocity = Vector2.zero;
+                if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
                 return;
             }
 
@@ -84,8 +83,7 @@ namespace Valkur.Gameplay.FSM
                 {
                     _waiting = true;
                     _dwellTimer = dwellTime;
-                    var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-                    if (rb != null) rb.velocity = Vector2.zero;
+                    if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
                 }
                 else
                 {
@@ -94,15 +92,14 @@ namespace Valkur.Gameplay.FSM
             }
             else
             {
-                var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-                if (rb != null) rb.velocity = dir.normalized * speed;
+                if (c?.Rb != null) c.Rb.velocity = dir.normalized * speed;
             }
         }
 
         public void Exit(StateMachine fsm)
         {
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.velocity = Vector2.zero;
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
         }
     }
 }

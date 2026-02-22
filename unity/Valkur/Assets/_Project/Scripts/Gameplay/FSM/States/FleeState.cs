@@ -19,8 +19,8 @@ namespace Valkur.Gameplay.FSM
 
         public void Execute(StateMachine fsm, float dt)
         {
-            var health = fsm.Owner.GetComponent<Health>();
-            if (health != null && health.IsDead)
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Health != null && c.Health.IsDead)
             {
                 fsm.ChangeState(new UnconsciousState());
                 return;
@@ -45,19 +45,17 @@ namespace Valkur.Gameplay.FSM
             Vector2 fleeDir = (myPos - playerPos).normalized;
 
             float speed = fsm.GetContextFloat("speed", 2f) * 1.5f;
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null)
-                rb.velocity = fleeDir * speed;
+            if (c?.Rb != null)
+                c.Rb.velocity = fleeDir * speed;
 
-            var sr = fsm.Owner.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                sr.flipX = fleeDir.x < 0;
+            if (c?.Sprite != null)
+                c.Sprite.flipX = fleeDir.x < 0;
         }
 
         public void Exit(StateMachine fsm)
         {
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.velocity = Vector2.zero;
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
         }
     }
 }

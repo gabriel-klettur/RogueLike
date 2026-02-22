@@ -78,6 +78,7 @@ namespace Valkur.Gameplay.FSM
 
             // Create FSM with context from definition
             _fsm = new StateMachine(gameObject, new IdleState());
+            _fsm.SetContext(FSMComponents.KEY, new FSMComponents(gameObject));
             _fsm.SetContext("aggro_range", def.stats.aggroRange);
             _fsm.SetContext("melee_range", (float)def.stats.meleeRange);
             _fsm.SetContext("speed", def.stats.speed);
@@ -94,6 +95,7 @@ namespace Valkur.Gameplay.FSM
         private void InitializeDefault()
         {
             _fsm = new StateMachine(gameObject, new IdleState());
+            _fsm.SetContext(FSMComponents.KEY, new FSMComponents(gameObject));
             _fsm.SetContext("aggro_range", 5f);
             _fsm.SetContext("melee_range", 1.5f);
             _fsm.SetContext("speed", 2f);

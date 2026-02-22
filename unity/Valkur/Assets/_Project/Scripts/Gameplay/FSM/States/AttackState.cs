@@ -21,14 +21,14 @@ namespace Valkur.Gameplay.FSM
             _windupDuration = fsm.GetContextFloat("attack_windup_s", 0.2f);
             _attackDuration = _windupDuration + 0.3f;
 
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.velocity = Vector2.zero;
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
         }
 
         public void Execute(StateMachine fsm, float dt)
         {
-            var health = fsm.Owner.GetComponent<Health>();
-            if (health != null && health.IsDead)
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Health != null && c.Health.IsDead)
             {
                 fsm.ChangeState(new UnconsciousState());
                 return;
@@ -40,14 +40,13 @@ namespace Valkur.Gameplay.FSM
             if (!_attacked && _timer >= _windupDuration)
             {
                 _attacked = true;
-                var combat = fsm.Owner.GetComponent<MeleeCombat>();
-                if (combat != null)
+                if (c?.Combat != null)
                 {
                     var player = EntityRegistry.Player;
                     if (player != null)
                     {
                         Vector2 dir = ((Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position).normalized;
-                        combat.TryAttack(dir);
+                        c.Combat.TryAttack(dir);
                     }
                 }
             }

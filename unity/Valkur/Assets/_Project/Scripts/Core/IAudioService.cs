@@ -9,6 +9,10 @@ namespace Valkur.Core
     public interface IAudioService
     {
         void PlayMusic(AudioClip clip);
-        void PlaySFX(AudioClip clip, Vector3 position = default);
+        void StopMusic();
+        void PlaySFX(AudioClip clip, float volumeScale = 1f);
+        void PlaySFXAtPosition(AudioClip clip, Vector3 position, float volumeScale = 1f);
+        void SetMusicVolume(float vol);
+        void SetSFXVolume(float vol);
     }
 }

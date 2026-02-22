@@ -16,8 +16,8 @@ namespace Valkur.Gameplay.FSM
             _timer = 0f;
             _disappearTime = fsm.GetContextFloat("death_disappear_time", 10f);
 
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.velocity = Vector2.zero;
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
         }
 
         public void Execute(StateMachine fsm, float dt)

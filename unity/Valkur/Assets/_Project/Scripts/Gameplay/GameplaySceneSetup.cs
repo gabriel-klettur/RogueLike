@@ -31,6 +31,7 @@ namespace Valkur.Gameplay
             EnsureGlobalLight2D();
             EnsureVFXManager();
             EnsureTileEditor();
+            EnsureSaveLoadInput();
             SpawnPlayer();
             SpawnTestMonsters();
         }
@@ -160,6 +161,14 @@ namespace Valkur.Gameplay
 
             // --- Verify ---
             Debug.Log($"[GameplaySceneSetup] Global Light 2D created. GameObject='{lightGo.name}', Component={light.GetType().Name}, lightTypeSet={lightTypeSet}");
+        }
+
+        private void EnsureSaveLoadInput()
+        {
+            if (FindObjectOfType<SaveLoadInputHandler>() != null) return;
+            var go = new GameObject("SaveLoadInputHandler");
+            go.AddComponent<SaveLoadInputHandler>();
+            Debug.Log("[GameplaySceneSetup] SaveLoadInputHandler created (F5/F9).");
         }
 
         private void EnsureVFXManager()

@@ -9,7 +9,7 @@ namespace Valkur.Infrastructure
     /// Maps to Python's audio system with zone-based music and pooled SFX sources.
     /// Singleton pattern matching Python's global audio manager.
     /// </summary>
-    public class AudioManager : SingletonMonoBehaviour<AudioManager>
+    public class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService
     {
 
         [Header("Music")]
@@ -45,6 +45,14 @@ namespace Valkur.Infrastructure
                 src.loop = false;
                 _sfxPool.Add(src);
             }
+
+            ServiceLocator.Register<IAudioService>(this);
+        }
+
+        protected override void OnDestroy()
+        {
+            ServiceLocator.Unregister<IAudioService>();
+            base.OnDestroy();
         }
 
         private void Update()

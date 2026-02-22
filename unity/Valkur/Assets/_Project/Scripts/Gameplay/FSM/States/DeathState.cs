@@ -11,8 +11,8 @@ namespace Valkur.Gameplay.FSM
     {
         public void Enter(StateMachine fsm)
         {
-            var rb = fsm.Owner.GetComponent<Rigidbody2D>();
-            if (rb != null) rb.velocity = Vector2.zero;
+            var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
+            if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
 
             bool isPlayer = fsm.Owner.CompareTag("Player");
             if (!isPlayer)
