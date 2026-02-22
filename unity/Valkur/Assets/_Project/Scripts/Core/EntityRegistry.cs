@@ -70,6 +70,22 @@ namespace Valkur.Core
         }
 
         /// <summary>
+        /// Remove any null/destroyed entries from the lists.
+        /// Call periodically as a safety net against missed unregistrations.
+        /// </summary>
+        public static void PurgeDestroyed()
+        {
+            _monsters.RemoveAll(m => m == null);
+            _npcs.RemoveAll(n => n == null);
+
+            if (!ReferenceEquals(_player, null) && _player == null)
+            {
+                _player = null;
+                _playerTransform = null;
+            }
+        }
+
+        /// <summary>
         /// Clear all registrations. Call on scene unload or domain reload.
         /// </summary>
         public static void Clear()

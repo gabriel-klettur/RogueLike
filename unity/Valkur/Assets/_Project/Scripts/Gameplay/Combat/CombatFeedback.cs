@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -88,6 +89,9 @@ namespace Valkur.Gameplay.Combat
             _isDying = true;
 
             Debug.Log($"[Combat] {gameObject.name} died!");
+
+            // Unregister from EntityRegistry immediately to prevent stale references
+            EntityRegistry.UnregisterMonster(gameObject);
 
             // Disable AI/movement
             var controller = GetComponent<PlayerController>();
