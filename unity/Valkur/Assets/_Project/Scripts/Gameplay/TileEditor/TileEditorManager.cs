@@ -429,12 +429,12 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
+            Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
 
             _brushPreviewGo.SetActive(true);
             _brushPreviewGo.transform.position = worldPos;
 
-            // Update sprite preview
+            // Show single-tile preview sprite (grid cursor handles brush size visualization)
             if (_state.CurrentTool == TileEditorState.Tool.Brush && _state.SelectedTile is Tile t && t.sprite != null)
             {
                 _brushPreviewRenderer.sprite = t.sprite;
@@ -446,9 +446,7 @@ namespace Valkur.Gameplay.TileEditor
                 _brushPreviewRenderer.color = new Color(1f, 0.3f, 0.3f, 0.3f);
             }
 
-            // Scale for brush size
-            float scale = _state.BrushSize;
-            _brushPreviewGo.transform.localScale = new Vector3(scale, scale, 1f);
+            _brushPreviewGo.transform.localScale = Vector3.one;
         }
 
         private void HideBrushPreview()
@@ -478,7 +476,7 @@ namespace Valkur.Gameplay.TileEditor
 
             _gridCursor.gameObject.SetActive(true);
             Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
+            Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
             _gridCursor.UpdateCursor(worldPos, _state.BrushSize, _state.CurrentTool);
         }
 
@@ -591,6 +589,17 @@ namespace Valkur.Gameplay.TileEditor
             Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
             mouseWorld.z = 0f;
             return tilemap.WorldToCell(mouseWorld);
+        }
+
+        /// <summary>
+        /// Get the true world-space center of a cell, ignoring tileAnchor.
+        /// CellToWorld returns the bottom-left corner; we add half the cell size.
+        /// </summary>
+        private Vector3 GetCellWorldCenter(Tilemap tilemap, Vector3Int cellPos)
+        {
+            Vector3 bottomLeft = tilemap.CellToWorld(cellPos);
+            Vector3 cellSize = tilemap.cellSize;
+            return bottomLeft + new Vector3(cellSize.x * 0.5f, cellSize.y * 0.5f, 0f);
         }
 
         private void OnDestroy()
