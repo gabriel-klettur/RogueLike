@@ -271,6 +271,8 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
+        private bool _brushDiagLogged;
+
         private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
         {
             if (_state.SelectedTile == null) return;
@@ -283,6 +285,12 @@ namespace Valkur.Gameplay.TileEditor
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
                 _state.IsDragging = true;
+
+                if (!_brushDiagLogged)
+                {
+                    _brushDiagLogged = true;
+                    LogBrushDiagnostics(tilemap, cellPos);
+                }
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
@@ -617,6 +625,64 @@ namespace Valkur.Gameplay.TileEditor
             Vector3 bottomLeft = tilemap.CellToWorld(cellPos);
             Vector3 cellSize = tilemap.cellSize;
             return bottomLeft + new Vector3(cellSize.x * 0.5f, cellSize.y * 0.5f, 0f);
+        }
+
+        private void LogBrushDiagnostics(Tilemap tilemap, Vector3Int cellPos)
+        {
+            var tile = _state.SelectedTile;
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== [TileEditor] BRUSH DIAGNOSTICS (first paint) ===");
+
+            // Tile info
+            sb.AppendLine($"  tile={tile?.name ?? "NULL"} type={tile?.GetType().Name ?? "?"}");
+            if (tile is UnityEngine.Tilemaps.Tile t)
+            {
+                var spr = t.sprite;
+                sb.AppendLine($"  sprite={spr?.name ?? "NULL"} spriteNull={spr == null}");
+                if (spr != null)
+                {
+                    sb.AppendLine($"  sprite.texture={spr.texture?.name ?? "NULL"} texNull={spr.texture == null}");
+                    if (spr.texture != null)
+                        sb.AppendLine($"  texSize={spr.texture.width}x{spr.texture.height} ppu={spr.pixelsPerUnit}");
+                }
+                sb.AppendLine($"  tile.color={t.color}");
+            }
+
+            // Tilemap info
+            sb.AppendLine($"  tilemap={tilemap.name} cellPos={cellPos}");
+            var renderer = tilemap.GetComponent<TilemapRenderer>();
+            if (renderer != null)
+            {
+                sb.AppendLine($"  renderer.enabled={renderer.enabled}");
+                sb.AppendLine($"  sortingLayer={renderer.sortingLayerName} sortingOrder={renderer.sortingOrder}");
+                var mat = renderer.sharedMaterial;
+                sb.AppendLine($"  material={mat?.name ?? "NULL"} shader={mat?.shader?.name ?? "NULL"}");
+            }
+            else
+            {
+                sb.AppendLine("  renderer=NULL (no TilemapRenderer!)");
+            }
+
+            // Light2D check
+            var light2DType = System.Type.GetType(
+                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            if (light2DType != null)
+            {
+                var lights = FindObjectsOfType(light2DType);
+                sb.AppendLine($"  Light2D count={lights.Length}");
+                foreach (var l in lights)
+                {
+                    var go = ((Component)l).gameObject;
+                    sb.AppendLine($"    Light2D: '{go.name}' active={go.activeInHierarchy}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("  Light2D type NOT FOUND (URP 2D Renderer missing?)");
+            }
+
+            sb.AppendLine("=== END DIAGNOSTICS ===");
+            Debug.Log(sb.ToString());
         }
 
         protected override void OnDestroy()

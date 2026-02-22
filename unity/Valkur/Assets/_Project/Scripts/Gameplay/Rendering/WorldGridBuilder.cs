@@ -49,6 +49,46 @@ namespace Valkur.Gameplay.Rendering
             }
 
             Debug.Log($"[WorldGridBuilder] Grid built with {layers.Length} tilemap layers.");
+
+            // Deferred: check for Light2D after one frame (GameplaySceneSetup creates it in Start)
+            StartCoroutine(ApplyUnlitFallbackIfNeeded());
+        }
+
+        private System.Collections.IEnumerator ApplyUnlitFallbackIfNeeded()
+        {
+            // Wait one frame so GameplaySceneSetup.EnsureGlobalLight2D() has time to run
+            yield return null;
+
+            // Check if any Light2D exists in the scene
+            var light2DType = System.Type.GetType(
+                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            bool hasLight2D = light2DType != null && FindObjectOfType(light2DType) != null;
+
+            if (hasLight2D)
+            {
+                Debug.Log("[WorldGridBuilder] Light2D found in scene — using Lit materials (default).");
+                yield break;
+            }
+
+            // No Light2D → apply Unlit material to all TilemapRenderers
+            Debug.LogWarning("[WorldGridBuilder] No Light2D found — applying Sprite-Unlit-Default to all TilemapRenderers.");
+            var unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+            if (unlitShader == null)
+            {
+                Debug.LogError("[WorldGridBuilder] Sprite-Unlit-Default shader not found. Cannot apply Unlit fallback.");
+                yield break;
+            }
+
+            var unlitMaterial = new Material(unlitShader);
+            var renderers = _grid.GetComponentsInChildren<TilemapRenderer>();
+            int count = 0;
+            foreach (var r in renderers)
+            {
+                if (!r.enabled) continue; // Skip collision layers
+                r.material = unlitMaterial;
+                count++;
+            }
+            Debug.Log($"[WorldGridBuilder] Applied Unlit material to {count} TilemapRenderers.");
         }
 
         /// <summary>

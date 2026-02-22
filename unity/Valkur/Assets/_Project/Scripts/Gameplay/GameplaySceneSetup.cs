@@ -55,6 +55,9 @@ namespace Valkur.Gameplay
         /// Without a 2D light source, all tilemaps render as solid black.
         /// This creates a Global Light 2D to illuminate the entire scene.
         /// Uses reflection to avoid hard dependency on URP assembly.
+        /// 
+        /// Defense in depth: tries multiple reflection strategies for lightType,
+        /// logs every step, and WorldGridBuilder applies Unlit fallback if this fails.
         /// </summary>
         private void EnsureGlobalLight2D()
         {
@@ -63,27 +66,100 @@ namespace Valkur.Gameplay
                 "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
             if (light2DType == null)
             {
-                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found. URP 2D Renderer package may not be installed.");
+                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found — URP 2D Renderer may not be installed. Tilemaps will use Unlit fallback.");
                 return;
             }
 
+            Debug.Log("[GameplaySceneSetup] Light2D type found: " + light2DType.FullName);
+
             // Check if one already exists
-            if (FindObjectOfType(light2DType) != null) return;
+            if (FindObjectOfType(light2DType) != null)
+            {
+                Debug.Log("[GameplaySceneSetup] Global Light 2D already exists in scene.");
+                return;
+            }
 
             var lightGo = new GameObject("GlobalLight2D");
             var light = lightGo.AddComponent(light2DType);
 
-            // Set lightType to Global (enum value 1) via reflection
-            var lightTypeProp = light2DType.GetProperty("lightType");
+            if (light == null)
+            {
+                Debug.LogError("[GameplaySceneSetup] Failed to AddComponent Light2D.");
+                Destroy(lightGo);
+                return;
+            }
+
+            // --- Set lightType to Global ---
+            // Strategy 1: public property "lightType" (URP 12.x-14.x)
+            bool lightTypeSet = false;
+            var lightTypeProp = light2DType.GetProperty("lightType",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             if (lightTypeProp != null)
-                lightTypeProp.SetValue(light, 1); // 1 = Global
+            {
+                try
+                {
+                    // The property type is Light2D.LightType enum — get the Global value (1)
+                    var enumType = lightTypeProp.PropertyType;
+                    var globalValue = System.Enum.ToObject(enumType, 1); // 1 = Global
+                    lightTypeProp.SetValue(light, globalValue);
+                    lightTypeSet = true;
+                    Debug.Log($"[GameplaySceneSetup] Light2D.lightType set to Global via property (enum={enumType.Name}, value={globalValue})");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[GameplaySceneSetup] Failed to set lightType via property: {ex.Message}");
+                }
+            }
 
-            // Set intensity
-            var intensityProp = light2DType.GetProperty("intensity");
+            // Strategy 2: serialized field "m_LightType" (fallback for different URP versions)
+            if (!lightTypeSet)
+            {
+                var lightTypeField = light2DType.GetField("m_LightType",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (lightTypeField != null)
+                {
+                    try
+                    {
+                        var enumType = lightTypeField.FieldType;
+                        var globalValue = System.Enum.ToObject(enumType, 1);
+                        lightTypeField.SetValue(light, globalValue);
+                        lightTypeSet = true;
+                        Debug.Log($"[GameplaySceneSetup] Light2D.m_LightType set to Global via field (enum={enumType.Name}, value={globalValue})");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[GameplaySceneSetup] Failed to set m_LightType via field: {ex.Message}");
+                    }
+                }
+            }
+
+            if (!lightTypeSet)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] Could not set Light2D to Global type — neither property nor field found. Light may be Freeform (local only).");
+            }
+
+            // --- Set intensity ---
+            var intensityProp = light2DType.GetProperty("intensity",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             if (intensityProp != null)
-                intensityProp.SetValue(light, 1f);
+            {
+                try
+                {
+                    intensityProp.SetValue(light, 1f);
+                    Debug.Log("[GameplaySceneSetup] Light2D.intensity set to 1.0");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[GameplaySceneSetup] Failed to set intensity: {ex.Message}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[GameplaySceneSetup] Light2D.intensity property not found.");
+            }
 
-            Debug.Log("[GameplaySceneSetup] Created Global Light 2D for URP tilemap rendering.");
+            // --- Verify ---
+            Debug.Log($"[GameplaySceneSetup] Global Light 2D created. GameObject='{lightGo.name}', Component={light.GetType().Name}, lightTypeSet={lightTypeSet}");
         }
 
         private void EnsureVFXManager()

@@ -2,6 +2,7 @@
 
 > **Estado**: UI funcional, **pintado de tiles NO funciona** (renderiza negro).
 > **Última actualización**: 2025-02-22
+> **Versión Unity**: 2022.3 LTS | **URP**: 14.0.12 | **2D Feature**: 2.0.1
 
 ## Screenshot actual
 
@@ -63,19 +64,90 @@ mat=Default (Instance) shader=Universal Render Pipeline/2D/Sprite-Lit-Default
 tilemapColor=RGBA(1,1,1,1)
 ```
 
-### Causa raíz identificada
-**El proyecto usa URP (Universal Render Pipeline).** Verificado en `ProjectSettings/GraphicsSettings.asset`:
-```yaml
-m_CustomRenderPipeline: {fileID: 11400000, guid: 681886c5eb7344803b6206f758bf0b1c, type: 2}
-m_SRPDefaultSettings:
-  UnityEngine.Rendering.Universal.UniversalRenderPipeline: {fileID: 11400000, guid: 93b439a37f63240aca3dd4e01d978a9f, type: 2}
+---
+
+## 🔬 Análisis exhaustivo de causas posibles
+
+### Causa 1: FALTA LIGHT2D EN LA ESCENA (probabilidad: MUY ALTA ⭐⭐⭐⭐⭐)
+
+**El proyecto usa URP 14.0.12 con Renderer2D.** Verificado:
+- `Renderer2D.asset`: `m_DefaultMaterialType: 0` → **Lit** (requiere Light2D)
+- `m_DefaultLitMaterial` apunta a `Sprite-Lit-Default`
+- El shader `Universal Render Pipeline/2D/Sprite-Lit-Default` multiplica el color del sprite por la luz 2D
+- **Sin Light2D → multiplicación por 0 → negro puro**
+
+El UI Canvas no se ve afectado porque usa `CanvasRenderer` (pipeline separado), por eso el tile picker muestra los sprites correctamente.
+
+**Estado actual**: `GameplaySceneSetup.EnsureGlobalLight2D()` intenta crear Light2D via reflexión, pero puede fallar silenciosamente por:
+- El `lightType` property en URP 14.x puede no ser accesible via `GetProperty("lightType")` — en algunas versiones es un campo serializado `m_LightType`, no una propiedad pública
+- La reflexión puede encontrar el tipo pero fallar al setear propiedades sin lanzar excepción
+
+### Causa 2: REFLEXIÓN DE LIGHT2D FALLA SILENCIOSAMENTE (probabilidad: ALTA ⭐⭐⭐⭐)
+
+En `GameplaySceneSetup.EnsureGlobalLight2D()`:
+```csharp
+var lightTypeProp = light2DType.GetProperty("lightType");
+if (lightTypeProp != null)
+    lightTypeProp.SetValue(light, 1); // 1 = Global
 ```
 
-Con URP, Unity asigna automáticamente el material **`Sprite-Lit-Default`** a los `TilemapRenderer`. Este material requiere **luces 2D** (`Light2D`) para renderizar sprites. Sin ninguna `Light2D` en la escena, todos los tilemaps se renderizan como **negro sólido**.
+Problemas potenciales:
+1. En URP 14.x, `Light2D.lightType` es de tipo `Light2D.LightType` (enum), no `int`. Pasar `1` como int puede no hacer el cast implícito correctamente.
+2. El nombre de la propiedad puede ser `lightType` (lowercase) en versiones antiguas pero `LightType` en nuevas.
+3. Si `GetProperty` retorna null, el Light2D se crea pero queda como **Freeform** (tipo 0) en vez de **Global** (tipo 1), lo que solo ilumina un área pequeña, no toda la escena.
+4. No hay log de error si la propiedad no se encuentra — falla silenciosamente.
 
-El UI Canvas no se ve afectado porque usa su propio pipeline de renderizado (`CanvasRenderer`), por eso el tile picker muestra los sprites correctamente.
+### Causa 3: MATERIAL INCORRECTO EN TILEMAPRENDERER (probabilidad: MEDIA ⭐⭐⭐)
 
-### Cronología de intentos de solución
+`WorldGridBuilder.CreateTilemapLayer()` no asigna material explícitamente. Unity asigna el default del Renderer2D, que es `Sprite-Lit-Default`. Si la Light2D no funciona, una solución directa es cambiar a `Sprite-Unlit-Default`.
+
+El `Renderer2D.asset` ya tiene referencia al material unlit:
+```yaml
+m_DefaultUnlitMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+```
+
+### Causa 4: SORTING LAYER INVÁLIDO → RENDERER SILENCIOSAMENTE INVISIBLE (probabilidad: BAJA ⭐⭐)
+
+**RESUELTO en Sprint 1**: `TagManager.asset` ahora tiene los 15 sorting layers que coinciden con `SortingConfig.cs`. Antes faltaban `FloorDecals`, `ObjectsLow`, `WallsBottom`, `Decorations`, `WallsTop`, `ObjectsHigh`, `Overhead`.
+
+Cuando un `TilemapRenderer` referencia un sorting layer que no existe en TagManager, Unity lo mueve silenciosamente a `Default` con sortingOrder 0. Esto podría causar que se renderice detrás de todo (pero no negro). **Ya no debería ser un problema.**
+
+### Causa 5: TILE.SPRITE ES NULL O INVÁLIDO DESPUÉS DE CREATEINSTANCE (probabilidad: BAJA ⭐⭐)
+
+`TileCatalog.BuildFromResources()` crea tiles con `ScriptableObject.CreateInstance<Tile>()` y asigna `tile.sprite = sprite`. Si el sprite se descarga de memoria (garbage collected) antes de que el tilemap lo use, el tile renderizaría sin textura (negro).
+
+Esto es poco probable porque `Resources.LoadAll<Sprite>()` mantiene los sprites en memoria mientras haya referencia, y el catálogo los retiene. Pero vale la pena verificar con diagnóstico.
+
+### Causa 6: COMPRESIÓN DE TEXTURA INCOMPATIBLE (probabilidad: MUY BAJA ⭐)
+
+Los sprites tienen `textureCompression: 0` en DefaultTexturePlatform (None) pero `textureCompression: 1` en Standalone (Normal Quality). Si la compresión genera un formato incompatible con el shader 2D Lit, podría renderizar negro. Muy improbable con URP estándar.
+
+### Causa 7: SPRITE PIVOT OFFSET (probabilidad: MUY BAJA ⭐)
+
+Los sprites tienen `spritePivot: {x: 0.5, y: 0}` (bottom-center) y el tilemap usa `tileAnchor: (0.5, 0.5, 0)`. Esto causaría un offset visual (tiles desplazados medio tile hacia arriba) pero NO negro. No es la causa del bug.
+
+### Causa 8: Z-FIGHTING O CAMERA CULLING (probabilidad: MUY BAJA ⭐)
+
+Si los tilemaps están en una posición Z que la cámara no renderiza, aparecerían invisibles (no negros). El tilemap se crea en z=0 y la cámara debería verlo. Descartado.
+
+---
+
+### Resumen de probabilidades
+
+| # | Causa | Probabilidad | Fix |
+|---|-------|-------------|-----|
+| 1 | Falta Light2D en escena | ⭐⭐⭐⭐⭐ | Crear Light2D correctamente o usar material Unlit |
+| 2 | Reflexión de Light2D falla silenciosamente | ⭐⭐⭐⭐ | Mejorar reflexión con diagnóstico + fallback a Unlit |
+| 3 | Material Lit sin luz = negro | ⭐⭐⭐ | Asignar Sprite-Unlit-Default a TilemapRenderers |
+| 4 | Sorting layer inválido | ⭐⭐ | RESUELTO (Sprint 1) |
+| 5 | Sprite null/GC'd | ⭐⭐ | Verificar con diagnóstico |
+| 6 | Compresión incompatible | ⭐ | Verificar import settings |
+| 7 | Pivot offset | ⭐ | No causa negro |
+| 8 | Z-fighting/culling | ⭐ | No causa negro |
+
+---
+
+## Cronología de intentos de solución
 
 | # | Intento | Resultado |
 |---|---------|-----------|
@@ -85,38 +157,30 @@ El UI Canvas no se ve afectado porque usa su propio pipeline de renderizado (`Ca
 | 4 | Mover sprites a `Resources/Tiles/` y crear tiles en runtime | Tile picker funciona, pero el negro persiste |
 | 5 | Crear `TileCatalog.BuildFromResources()` (tiles runtime sin .asset) | Tile picker funciona, negro persiste |
 | 6 | Añadir `Global Light 2D` via `using UnityEngine.Rendering.Universal` | Error de compilación: assembly reference faltante |
-| 7 | Crear `Light2D` via reflexión (`System.Type.GetType`) | Compila, pero `Light2D` type puede no encontrarse en runtime si el paquete URP 2D Renderer no está instalado correctamente |
+| 7 | Crear `Light2D` via reflexión (`System.Type.GetType`) | Compila, pero reflexión puede fallar silenciosamente (ver Causa 2) |
+| 8 | **[NUEVO] Doble estrategia: mejorar reflexión Light2D + fallback Unlit material** | Pendiente |
+| 9 | **[NUEVO] Diagnóstico detallado en brush para confirmar causa en runtime** | Pendiente |
 
-### Solución pendiente (próximo intento)
+---
 
-La solución correcta requiere **una de estas opciones** (en orden de preferencia):
+## Plan de solución (implementación actual)
 
-#### Opción A: Añadir Light2D desde la escena (manual, sin código)
-1. En Unity Editor, abrir la escena de gameplay
-2. **GameObject → Light → 2D → Global Light 2D**
-3. Configurar: intensity=1, color=white
-4. Guardar la escena
-5. Play + F6 → los tiles deberían renderizarse correctamente
+### Estrategia: defensa en profundidad (3 capas)
 
-#### Opción B: Cambiar material de TilemapRenderer a Unlit
-En `WorldGridBuilder.CreateTilemapLayer()`, después de crear el `TilemapRenderer`:
-```csharp
-// Buscar el material Sprite-Unlit-Default que no requiere luces
-var unlitShader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-if (unlitShader != null)
-    renderer.sharedMaterial = new Material(unlitShader);
-```
+**Capa 1 — Mejorar reflexión de Light2D** (`GameplaySceneSetup.cs`):
+- Buscar propiedad `lightType` Y campo `m_LightType` como fallback
+- Usar el enum correcto `Light2D.LightType.Global` via reflexión
+- Añadir logs explícitos de éxito/fallo en cada paso
+- Verificar que el Light2D creado realmente tiene tipo Global
 
-#### Opción C: Añadir assembly reference a URP
-1. Crear un `.asmdef` para los scripts de gameplay
-2. Añadir referencia a `Unity.RenderPipelines.Universal.Runtime`
-3. Usar `Light2D` directamente sin reflexión
+**Capa 2 — Fallback a material Unlit** (`WorldGridBuilder.cs`):
+- Si no hay Light2D en la escena, asignar `Sprite-Unlit-Default` a cada TilemapRenderer
+- Buscar shader por nombre: `"Universal Render Pipeline/2D/Sprite-Unlit-Default"`
+- Esto garantiza renderizado correcto sin depender de luces
 
-#### Opción D: Verificar paquete URP 2D Renderer
-1. Window → Package Manager
-2. Verificar que **Universal RP** incluye el **2D Renderer**
-3. Si no, instalar/actualizar el paquete
-4. La reflexión en `EnsureGlobalLight2D()` debería funcionar
+**Capa 3 — Diagnóstico en brush** (`TileEditorManager.cs`):
+- Al pintar, loggear: tile.sprite != null, sprite.texture != null, tilemap material, Light2D count
+- Permite confirmar la causa raíz exacta en runtime
 
 ---
 
@@ -162,6 +226,7 @@ Scripts/Gameplay/
 - **Categorías**: grass_dirt, grass_rock, ocean_grass, rock_water, sand_grass, sand_ocean, sand_ocean_2, sand_rock
 - **Total**: ~312 sprites (incluye subcarpetas `_slices/`)
 - **SpriteAtlas**: ELIMINADO (`Atlas_Tiles.spriteatlas` fue borrado)
+- **Import settings**: `spriteMode=1`, `filterMode=0` (Point), `textureCompression=0` (None en default), `isReadable=0`, `spritePivot=(0.5, 0)` (bottom-center)
 
 ### Layers (TilemapLayerSetup.TilemapLayer)
 | Index | Nombre | Sorting Layer | Notas |
@@ -176,18 +241,23 @@ Scripts/Gameplay/
 | 7 | ObjectsHigh | ObjectsHigh | |
 | 8 | OverheadDetails | Overhead | |
 
-### Sorting Layers (TagManager.asset)
+### Sorting Layers (TagManager.asset — actualizado Sprint 1)
 ```
-Default, Ground, GroundDecoration, Buildings, Entities, Projectiles, VFX, UI_World, Overlay
+Default, Background, Ground, FloorDecals, ObjectsLow, WallsBottom, Entities,
+Decorations, WallsTop, ObjectsHigh, Projectiles, VFX, Overhead, UI_World, Overlay
 ```
-**Nota**: Hay mismatch entre `SortingConfig.cs` y `TagManager.asset`:
-- `FloorDecals` en código → `GroundDecoration` en TagManager
-- `ObjectsLow`, `WallsBottom`, `Decorations`, `WallsTop`, `ObjectsHigh` → NO existen en TagManager
-- Solo `Ground`, `Entities`, `Overlay` coinciden
+**Estado**: ✅ Sincronizado con `SortingConfig.cs` (15 layers, todos presentes).
+
+### Configuración URP
+- **Pipeline**: `com.unity.render-pipelines.universal` 14.0.12
+- **2D Feature**: `com.unity.feature.2d` 2.0.1
+- **Renderer**: `Renderer2D.asset` con `m_DefaultMaterialType: 0` (Lit)
+- **Lit Material**: `Sprite-Lit-Default` (requiere Light2D)
+- **Unlit Material**: `Sprite-Unlit-Default` (guid: `9dfc825aed78fcd4ba02077103263b40`)
 
 ---
 
-## Cambios realizados en esta sesión
+## Cambios realizados (sesiones anteriores)
 
 ### Commits relevantes
 1. **fix(tile-editor): Disable brush preview SpriteRenderer** — eliminó el preview que se superponía
@@ -211,9 +281,8 @@ Default, Ground, GroundDecoration, Buildings, Entities, Projectiles, VFX, UI_Wor
 
 | Prioridad | Feature | Descripción |
 |-----------|---------|-------------|
-| **ALTA** | Fix black tiles | Resolver el renderizado negro (ver opciones arriba) |
+| **ALTA** | Fix black tiles | Implementar defensa en profundidad (Light2D + Unlit fallback + diagnóstico) |
 | Media | Collision panel | Panel para pintar tiles de colisión |
 | Media | Save/Load JSON | Guardar/cargar mapas editados |
-| Media | Sorting layer mismatch | Alinear `SortingConfig.cs` con `TagManager.asset` |
 | Baja | Tutorial panel | Panel de ayuda con shortcuts |
 | Baja | Brush preview | Re-habilitar preview con material correcto |
