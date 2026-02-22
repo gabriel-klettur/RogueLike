@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using Valkur.Core;
 using Valkur.Gameplay.FSM;
 
 namespace Valkur.Gameplay.Combat
@@ -30,6 +32,7 @@ namespace Valkur.Gameplay.Combat
         private readonly List<LineRenderer> _activeLines = new List<LineRenderer>();
         private readonly List<LineRenderer> _pool = new List<LineRenderer>();
         private int _lineIndex;
+        private InputAction _toggleAction;
 
         private static CombatRangeVisualizer _instance;
         public static CombatRangeVisualizer Instance => _instance;
@@ -46,11 +49,14 @@ namespace Valkur.Gameplay.Combat
 
             _lineMaterial = new Material(Shader.Find("Sprites/Default"));
             _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+
+            _toggleAction = new InputAction("ToggleRanges", InputActionType.Button, "<Keyboard>/f2");
+            _toggleAction.Enable();
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F2))
+            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
             {
                 _visible = !_visible;
                 Debug.Log($"[CombatRangeVisualizer] Ranges {(_visible ? "ON" : "OFF")}");
@@ -73,7 +79,7 @@ namespace Valkur.Gameplay.Combat
 
             if (!_visible) return;
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
 
             // Player ranges
             if (player != null)
@@ -93,11 +99,14 @@ namespace Valkur.Gameplay.Combat
             }
 
             // NPC ranges
-            var brains = FindObjectsOfType<FSMMonsterBrain>();
-            foreach (var brain in brains)
+            var monsters = EntityRegistry.Monsters;
+            for (int mi = 0; mi < monsters.Count; mi++)
             {
+                var m = monsters[mi];
+                if (m == null) continue;
+                var brain = m.GetComponent<FSMMonsterBrain>();
                 if (brain == null || !brain.enabled) continue;
-                var health = brain.GetComponent<Health>();
+                var health = m.GetComponent<Health>();
                 if (health != null && health.IsDead) continue;
 
                 Vector3 pos = brain.transform.position;
@@ -219,6 +228,9 @@ namespace Valkur.Gameplay.Combat
 
         private void OnDestroy()
         {
+            _toggleAction?.Disable();
+            _toggleAction?.Dispose();
+
             if (_lineMaterial != null)
                 DestroyImmediate(_lineMaterial);
             if (_instance == this)

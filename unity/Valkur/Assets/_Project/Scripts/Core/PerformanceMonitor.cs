@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Valkur.Core
 {
@@ -20,7 +21,6 @@ namespace Valkur.Core
         [Header("Settings")]
         [SerializeField] private bool showOverlay = true;
         [SerializeField] private bool logToConsole;
-        [SerializeField] private KeyCode toggleKey = KeyCode.F3;
 
         private float[] _frameTimes;
         private int _frameIndex;
@@ -55,12 +55,17 @@ namespace Valkur.Core
 
             _frameTimes = new float[SAMPLE_COUNT];
             _lastGcCount = System.GC.CollectionCount(0);
+
+            _toggleAction = new InputAction("TogglePerfMon", InputActionType.Button, "<Keyboard>/f3");
+            _toggleAction.Enable();
         }
+
+        private InputAction _toggleAction;
 
         private void Update()
         {
             // Toggle overlay
-            if (Input.GetKeyDown(toggleKey))
+            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
                 showOverlay = !showOverlay;
 
             // Record frame time
@@ -164,12 +169,16 @@ namespace Valkur.Core
                 $"Avg: {_avgFps:F0} FPS | p95: {_p95FrameTime * 1000f:F1}ms", style);
             GUI.Label(new Rect(x + 5, y + 45, w - 10, 20),
                 $"p99: {_p99FrameTime * 1000f:F1}ms | GC: {_gcCollections}", style);
+            int entityCount = EntityRegistry.MonsterCount + (EntityRegistry.HasPlayer ? 1 : 0);
             GUI.Label(new Rect(x + 5, y + 65, w - 10, 20),
-                $"Entities: {FindObjectsOfType<Transform>().Length} | F3 toggle", style);
+                $"Entities: {entityCount} | F3 toggle", style);
         }
 
         private void OnDestroy()
         {
+            _toggleAction?.Disable();
+            _toggleAction?.Dispose();
+
             if (_instance == this)
                 _instance = null;
         }

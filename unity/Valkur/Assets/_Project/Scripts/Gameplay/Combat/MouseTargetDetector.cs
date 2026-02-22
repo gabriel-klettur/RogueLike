@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Valkur.Gameplay.Combat
 {
@@ -37,7 +38,9 @@ namespace Valkur.Gameplay.Combat
                 if (_mainCamera == null) return;
             }
 
-            Vector2 mouseWorld = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            Vector2 mouseWorld = _mainCamera.ScreenToWorldPoint(mouse.position.ReadValue());
             var hit = Physics2D.OverlapCircle(mouseWorld, raycastRadius, detectableLayers);
 
             GameObject newTarget = null;

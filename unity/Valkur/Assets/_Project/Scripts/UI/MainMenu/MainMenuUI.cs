@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -31,6 +32,10 @@ namespace Valkur.UI.MainMenu
         private TextMeshProUGUI[] _buttonTexts;
         private Image _selectionIndicator;
 
+        private InputAction _navUpAction;
+        private InputAction _navDownAction;
+        private InputAction _confirmAction;
+
         private readonly string[] _menuOptions = {
             "Nuevo Juego",
             "Opciones",
@@ -62,6 +67,21 @@ namespace Valkur.UI.MainMenu
 
         private void Start()
         {
+            _navUpAction = new InputAction("MenuNavUp", InputActionType.Button);
+            _navUpAction.AddBinding("<Keyboard>/upArrow");
+            _navUpAction.AddBinding("<Keyboard>/w");
+            _navUpAction.Enable();
+
+            _navDownAction = new InputAction("MenuNavDown", InputActionType.Button);
+            _navDownAction.AddBinding("<Keyboard>/downArrow");
+            _navDownAction.AddBinding("<Keyboard>/s");
+            _navDownAction.Enable();
+
+            _confirmAction = new InputAction("MenuConfirm", InputActionType.Button);
+            _confirmAction.AddBinding("<Keyboard>/enter");
+            _confirmAction.AddBinding("<Keyboard>/space");
+            _confirmAction.Enable();
+
             EnsureCamera();
             BuildUI();
         }
@@ -94,17 +114,17 @@ namespace Valkur.UI.MainMenu
         {
             if (_buttons == null || _buttons.Length == 0) return;
 
-            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+            if (_navUpAction != null && _navUpAction.WasPerformedThisFrame())
             {
                 _selectedIndex = (_selectedIndex - 1 + _buttons.Length) % _buttons.Length;
                 UpdateSelection();
             }
-            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+            else if (_navDownAction != null && _navDownAction.WasPerformedThisFrame())
             {
                 _selectedIndex = (_selectedIndex + 1) % _buttons.Length;
                 UpdateSelection();
             }
-            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
+            else if (_confirmAction != null && _confirmAction.WasPerformedThisFrame())
             {
                 ExecuteOption(_selectedIndex);
             }
@@ -331,6 +351,16 @@ namespace Valkur.UI.MainMenu
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             return go;
+        }
+
+        private void OnDestroy()
+        {
+            _navUpAction?.Disable();
+            _navUpAction?.Dispose();
+            _navDownAction?.Disable();
+            _navDownAction?.Dispose();
+            _confirmAction?.Disable();
+            _confirmAction?.Dispose();
         }
     }
 }

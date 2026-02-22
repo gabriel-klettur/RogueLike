@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.Rendering;
 
@@ -25,6 +26,17 @@ namespace Valkur.Gameplay.TileEditor
         private TileEditorState _state;
         private TileEditorUI _ui;
         private Camera _mainCamera;
+
+        // --- Input Actions (New Input System) ---
+        private InputAction _toggleAction;
+        private InputAction _toolBrushAction;
+        private InputAction _toolEraserAction;
+        private InputAction _toolFillAction;
+        private InputAction _toolEyedropperAction;
+        private InputAction _toolSelectAction;
+        private InputAction _undoAction;
+        private InputAction _redoAction;
+        private InputAction _ctrlModifier;
 
         // Undo/Redo stacks
         private readonly List<TileEditBatch> _undoStack = new List<TileEditBatch>();
@@ -63,6 +75,30 @@ namespace Valkur.Gameplay.TileEditor
             _instance = this;
 
             _state = new TileEditorState();
+
+            // Create input actions
+            _toggleAction = new InputAction("ToggleTileEditor", InputActionType.Button, "<Keyboard>/f6");
+            _toggleAction.Enable();
+
+            _toolBrushAction = new InputAction("ToolBrush", InputActionType.Button, "<Keyboard>/b");
+            _toolBrushAction.Enable();
+            _toolEraserAction = new InputAction("ToolEraser", InputActionType.Button, "<Keyboard>/e");
+            _toolEraserAction.Enable();
+            _toolFillAction = new InputAction("ToolFill", InputActionType.Button, "<Keyboard>/f");
+            _toolFillAction.Enable();
+            _toolEyedropperAction = new InputAction("ToolEyedropper", InputActionType.Button, "<Keyboard>/i");
+            _toolEyedropperAction.Enable();
+            _toolSelectAction = new InputAction("ToolSelect", InputActionType.Button, "<Keyboard>/s");
+            _toolSelectAction.Enable();
+
+            _undoAction = new InputAction("Undo", InputActionType.Button, "<Keyboard>/z");
+            _undoAction.Enable();
+            _redoAction = new InputAction("Redo", InputActionType.Button, "<Keyboard>/z");
+            _redoAction.Enable();
+            _ctrlModifier = new InputAction("CtrlMod", InputActionType.Button);
+            _ctrlModifier.AddBinding("<Keyboard>/leftCtrl");
+            _ctrlModifier.AddBinding("<Keyboard>/rightCtrl");
+            _ctrlModifier.Enable();
         }
 
         private void Start()
@@ -130,7 +166,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleToggle()
         {
-            if (Input.GetKeyDown(KeyCode.F6))
+            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
             {
                 _state.Active = !_state.Active;
                 _ui.SetVisible(_state.Active);
@@ -166,17 +202,20 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleToolShortcuts()
         {
-            if (Input.GetKeyDown(KeyCode.B)) OnToolChanged(TileEditorState.Tool.Brush);
-            else if (Input.GetKeyDown(KeyCode.E)) OnToolChanged(TileEditorState.Tool.Eraser);
-            else if (Input.GetKeyDown(KeyCode.F)) OnToolChanged(TileEditorState.Tool.Fill);
-            else if (Input.GetKeyDown(KeyCode.I)) OnToolChanged(TileEditorState.Tool.Eyedropper);
-            else if (Input.GetKeyDown(KeyCode.S) && !Input.GetKey(KeyCode.LeftControl))
+            bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
+            if (_toolBrushAction.WasPerformedThisFrame()) OnToolChanged(TileEditorState.Tool.Brush);
+            else if (_toolEraserAction.WasPerformedThisFrame()) OnToolChanged(TileEditorState.Tool.Eraser);
+            else if (_toolFillAction.WasPerformedThisFrame()) OnToolChanged(TileEditorState.Tool.Fill);
+            else if (_toolEyedropperAction.WasPerformedThisFrame()) OnToolChanged(TileEditorState.Tool.Eyedropper);
+            else if (_toolSelectAction.WasPerformedThisFrame() && !ctrl)
                 OnToolChanged(TileEditorState.Tool.Select);
         }
 
         private void HandleLayerScroll()
         {
-            float scroll = Input.mouseScrollDelta.y;
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            float scroll = mouse.scroll.ReadValue().y;
             if (Mathf.Abs(scroll) < 0.1f) return;
 
             // Only cycle layers when not hovering over UI
@@ -192,10 +231,12 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleUndoRedo()
         {
-            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-            if (ctrl && Input.GetKeyDown(KeyCode.Z))
+            bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
+            if (ctrl && _undoAction.WasPerformedThisFrame())
             {
-                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                var kb = Keyboard.current;
+                bool shift = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
+                if (shift)
                     Redo();
                 else
                     Undo();
@@ -241,20 +282,22 @@ namespace Valkur.Gameplay.TileEditor
         private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
         {
             if (_state.SelectedTile == null) return;
+            var mouse = Mouse.current;
+            if (mouse == null) return;
 
-            if (Input.GetMouseButtonDown(0))
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 StartBrushStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
                 _state.IsDragging = true;
             }
-            else if (Input.GetMouseButton(0) && _state.IsDragging)
+            else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
             }
-            else if (Input.GetMouseButtonUp(0))
+            else if (mouse.leftButton.wasReleasedThisFrame)
             {
                 EndBrushStroke();
                 _state.IsDragging = false;
@@ -263,19 +306,22 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            if (Input.GetMouseButtonDown(0))
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 StartBrushStroke(tilemap);
                 var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
                 _state.IsDragging = true;
             }
-            else if (Input.GetMouseButton(0) && _state.IsDragging)
+            else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
                 var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize);
                 _currentBatch?.Edits.AddRange(edits);
             }
-            else if (Input.GetMouseButtonUp(0))
+            else if (mouse.leftButton.wasReleasedThisFrame)
             {
                 EndBrushStroke();
                 _state.IsDragging = false;
@@ -285,8 +331,10 @@ namespace Valkur.Gameplay.TileEditor
         private void HandleFillInput(Tilemap tilemap, Vector3Int cellPos)
         {
             if (_state.SelectedTile == null) return;
+            var mouse = Mouse.current;
+            if (mouse == null) return;
 
-            if (Input.GetMouseButtonDown(0))
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 StartBrushStroke(tilemap);
                 var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile);
@@ -297,7 +345,10 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleEyedropperInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            if (Input.GetMouseButtonDown(0))
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 var picked = TileBrush.Pick(tilemap, cellPos);
                 if (picked != null)
@@ -318,7 +369,10 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleSelectInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            if (Input.GetMouseButtonDown(0))
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+
+            if (mouse.leftButton.wasPressedThisFrame)
             {
                 var tile = tilemap.GetTile(cellPos);
                 string info = tile != null ? tile.name : "(empty)";
@@ -555,7 +609,9 @@ namespace Valkur.Gameplay.TileEditor
             if (_mainCamera == null)
                 _mainCamera = Camera.main;
 
-            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+            var mouse = Mouse.current;
+            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(
+                mouse != null ? (Vector3)mouse.position.ReadValue() : Vector3.zero);
             mouseWorld.z = 0f;
             return tilemap.WorldToCell(mouseWorld);
         }
@@ -573,6 +629,16 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OnDestroy()
         {
+            _toggleAction?.Disable(); _toggleAction?.Dispose();
+            _toolBrushAction?.Disable(); _toolBrushAction?.Dispose();
+            _toolEraserAction?.Disable(); _toolEraserAction?.Dispose();
+            _toolFillAction?.Disable(); _toolFillAction?.Dispose();
+            _toolEyedropperAction?.Disable(); _toolEyedropperAction?.Dispose();
+            _toolSelectAction?.Disable(); _toolSelectAction?.Dispose();
+            _undoAction?.Disable(); _undoAction?.Dispose();
+            _redoAction?.Disable(); _redoAction?.Dispose();
+            _ctrlModifier?.Disable(); _ctrlModifier?.Dispose();
+
             if (_instance == this)
                 _instance = null;
         }

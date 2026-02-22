@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -41,6 +42,10 @@ namespace Valkur.UI
         private System.Action[] _buttonActions;
         private int _buttonCount;
 
+        private InputAction _navUpAction;
+        private InputAction _navDownAction;
+        private InputAction _confirmAction;
+
         private static DeathScreenUI _instance;
 
         private void Awake()
@@ -51,6 +56,21 @@ namespace Valkur.UI
                 return;
             }
             _instance = this;
+
+            _navUpAction = new InputAction("DeathNavUp", InputActionType.Button);
+            _navUpAction.AddBinding("<Keyboard>/upArrow");
+            _navUpAction.AddBinding("<Keyboard>/w");
+            _navUpAction.Enable();
+
+            _navDownAction = new InputAction("DeathNavDown", InputActionType.Button);
+            _navDownAction.AddBinding("<Keyboard>/downArrow");
+            _navDownAction.AddBinding("<Keyboard>/s");
+            _navDownAction.Enable();
+
+            _confirmAction = new InputAction("DeathConfirm", InputActionType.Button);
+            _confirmAction.AddBinding("<Keyboard>/enter");
+            _confirmAction.AddBinding("<Keyboard>/space");
+            _confirmAction.Enable();
         }
 
         private void Start()
@@ -91,17 +111,17 @@ namespace Valkur.UI
         {
             if (_buttonActions == null || _buttonCount == 0) return;
 
-            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+            if (_navUpAction != null && _navUpAction.WasPerformedThisFrame())
             {
                 _selectedIndex = (_selectedIndex - 1 + _buttonCount) % _buttonCount;
                 UpdateButtonHighlights();
             }
-            else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+            else if (_navDownAction != null && _navDownAction.WasPerformedThisFrame())
             {
                 _selectedIndex = (_selectedIndex + 1) % _buttonCount;
                 UpdateButtonHighlights();
             }
-            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
+            else if (_confirmAction != null && _confirmAction.WasPerformedThisFrame())
             {
                 _buttonActions[_selectedIndex]?.Invoke();
             }
@@ -327,6 +347,13 @@ namespace Valkur.UI
 
         private void OnDestroy()
         {
+            _navUpAction?.Disable();
+            _navUpAction?.Dispose();
+            _navDownAction?.Disable();
+            _navDownAction?.Dispose();
+            _confirmAction?.Disable();
+            _confirmAction?.Dispose();
+
             if (_playerHealth != null)
                 _playerHealth.OnDeath -= OnPlayerDeath;
 
