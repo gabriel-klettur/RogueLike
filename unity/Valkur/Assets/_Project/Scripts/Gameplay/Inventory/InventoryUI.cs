@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Inventory
@@ -105,7 +106,7 @@ namespace Valkur.Gameplay.Inventory
         {
             if (_playerInventory != null) return;
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player != null)
                 _playerInventory = player.GetComponent<Inventory>();
         }
@@ -313,7 +314,7 @@ namespace Valkur.Gameplay.Inventory
             if (removed <= 0) return;
 
             // Spawn world pickup at player position + small offset
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player != null)
             {
                 Vector3 dropPos = player.transform.position + (Vector3)(Random.insideUnitCircle.normalized * 1.5f);

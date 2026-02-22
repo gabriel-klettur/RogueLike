@@ -122,7 +122,7 @@ namespace Valkur.Gameplay.FSM
 
         private void OnDamaged(int amount)
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             bool fromLeft = false;
             if (player != null)
                 fromLeft = player.transform.position.x < transform.position.x;

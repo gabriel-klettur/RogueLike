@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -34,7 +35,7 @@ namespace Valkur.Gameplay.FSM
 
             // Check aggro
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player != null)
             {
                 var playerHealth = player.GetComponent<Health>();

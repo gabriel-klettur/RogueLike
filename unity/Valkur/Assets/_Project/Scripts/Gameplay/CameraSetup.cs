@@ -1,5 +1,6 @@
 using UnityEngine;
 using Cinemachine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -31,7 +32,7 @@ namespace Valkur.Gameplay
 
         private void Start()
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player != null)
             {
                 _vcam.Follow = player.transform;

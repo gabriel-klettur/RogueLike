@@ -133,7 +133,7 @@ namespace Valkur.UI
         {
             if (_playerHealth != null) return;
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null) return;
 
             _playerHealth = player.GetComponent<Health>();

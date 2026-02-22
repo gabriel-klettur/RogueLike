@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -42,7 +43,7 @@ namespace Valkur.Gameplay.FSM
                 var combat = fsm.Owner.GetComponent<MeleeCombat>();
                 if (combat != null)
                 {
-                    var player = GameObject.FindGameObjectWithTag("Player");
+                    var player = EntityRegistry.Player;
                     if (player != null)
                     {
                         Vector2 dir = ((Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position).normalized;
@@ -55,7 +56,7 @@ namespace Valkur.Gameplay.FSM
             if (_timer >= _attackDuration)
             {
                 // Check if player still in range
-                var player2 = GameObject.FindGameObjectWithTag("Player");
+                var player2 = EntityRegistry.Player;
                 if (player2 != null)
                 {
                     float meleeRange = fsm.GetContextFloat("melee_range", 1.5f);

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 
@@ -44,9 +45,8 @@ namespace Valkur.Gameplay
         {
             if (_playerTransform == null)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _playerTransform = player.transform;
-                else return;
+                _playerTransform = EntityRegistry.PlayerTransform;
+                if (_playerTransform == null) return;
             }
 
             ProcessDespawns();

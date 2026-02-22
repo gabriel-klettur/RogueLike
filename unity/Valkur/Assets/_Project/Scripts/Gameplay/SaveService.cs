@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Inventory;
@@ -296,7 +297,7 @@ namespace Valkur.Gameplay
 
         private GameSaveData CollectSaveData()
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null) return null;
 
             var data = new GameSaveData
@@ -365,7 +366,7 @@ namespace Valkur.Gameplay
         {
             if (data.player == null) return;
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null)
             {
                 Debug.LogWarning("[SaveService] No player found to restore state.");

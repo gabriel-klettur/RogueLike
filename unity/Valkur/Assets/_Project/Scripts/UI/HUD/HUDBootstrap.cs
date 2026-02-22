@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
 using Valkur.UI;
@@ -18,7 +19,7 @@ namespace Valkur.UI.HUD
         {
             if (_initialized) return;
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null) return;
 
             var health = player.GetComponent<Health>();

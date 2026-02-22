@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -24,7 +25,7 @@ namespace Valkur.Gameplay.FSM
             }
 
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null) return;
 
             float dist = Vector2.Distance(fsm.Owner.transform.position, player.transform.position);

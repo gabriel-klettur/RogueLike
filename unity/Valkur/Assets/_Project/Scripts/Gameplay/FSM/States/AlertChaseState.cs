@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -33,7 +34,7 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            var player = GameObject.FindGameObjectWithTag("Player");
+            var player = EntityRegistry.Player;
             if (player == null)
             {
                 fsm.ChangeState(new PatrolState());
