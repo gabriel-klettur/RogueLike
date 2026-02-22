@@ -1,0 +1,454 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using Valkur.Gameplay.Rendering;
+
+namespace Valkur.Gameplay.TileEditor
+{
+    /// <summary>
+    /// Main orchestrator for the in-game tile editor.
+    /// Toggle with F6. Handles input, delegates to TileBrush, manages undo stack.
+    /// Maps to Python's TileEditorController + TileEditorEventHandler.
+    ///
+    /// Attach to a persistent GameObject in the gameplay scene, or let GameDirector create it.
+    /// Requires a TileCatalog asset assigned via inspector or loaded at runtime.
+    /// </summary>
+    public class TileEditorManager : MonoBehaviour
+    {
+        [Header("Tile Catalog")]
+        [SerializeField] private TileCatalog tileCatalog;
+
+        [Header("Grid Reference")]
+        [Tooltip("If null, will search for WorldGridBuilder at runtime.")]
+        [SerializeField] private WorldGridBuilder worldGridBuilder;
+
+        private TileEditorState _state;
+        private TileEditorUI _ui;
+        private Camera _mainCamera;
+
+        // Undo/Redo stacks
+        private readonly List<TileEditBatch> _undoStack = new List<TileEditBatch>();
+        private readonly List<TileEditBatch> _redoStack = new List<TileEditBatch>();
+        private TileEditBatch _currentBatch;
+
+        // Brush preview
+        private GameObject _brushPreviewGo;
+        private SpriteRenderer _brushPreviewRenderer;
+
+        private static TileEditorManager _instance;
+        public static TileEditorManager Instance => _instance;
+
+        public TileEditorState State => _state;
+        public bool IsActive => _state != null && _state.Active;
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+
+            _state = new TileEditorState();
+        }
+
+        private void Start()
+        {
+            _mainCamera = Camera.main;
+
+            if (worldGridBuilder == null)
+                worldGridBuilder = FindObjectOfType<WorldGridBuilder>();
+
+            // Load tile catalog
+            if (tileCatalog != null)
+                TileRegistry.Instance.Load(tileCatalog);
+
+            // Create UI
+            var uiGo = new GameObject("TileEditorUI");
+            uiGo.transform.SetParent(transform);
+            _ui = uiGo.AddComponent<TileEditorUI>();
+            _ui.Initialize(_state, tileCatalog,
+                OnTileSelected,
+                OnToolChanged,
+                OnLayerChanged,
+                OnBrushSizeChanged);
+
+            // Create brush preview
+            CreateBrushPreview();
+        }
+
+        private void Update()
+        {
+            HandleToggle();
+
+            if (!_state.Active) return;
+
+            HandleToolShortcuts();
+            HandleLayerScroll();
+            HandleUndoRedo();
+            HandleMouseInput();
+            UpdateBrushPreview();
+        }
+
+        // =====================================================================
+        // TOGGLE
+        // =====================================================================
+
+        private void HandleToggle()
+        {
+            if (Input.GetKeyDown(KeyCode.F6))
+            {
+                _state.Active = !_state.Active;
+                _ui.SetVisible(_state.Active);
+
+                if (_state.Active)
+                {
+                    _ui.RefreshToolHighlights();
+                    _ui.RefreshLayerLabel();
+                    _ui.RefreshBrushSizeLabel();
+                    _ui.SetStatus("Tile Editor active. F6 to close.");
+                    Debug.Log("[TileEditor] Activated (F6)");
+                }
+                else
+                {
+                    EndBrushStroke();
+                    HideBrushPreview();
+                    Debug.Log("[TileEditor] Deactivated (F6)");
+                }
+            }
+        }
+
+        // =====================================================================
+        // TOOL SHORTCUTS
+        // =====================================================================
+
+        private void HandleToolShortcuts()
+        {
+            if (Input.GetKeyDown(KeyCode.B)) OnToolChanged(TileEditorState.Tool.Brush);
+            else if (Input.GetKeyDown(KeyCode.E)) OnToolChanged(TileEditorState.Tool.Eraser);
+            else if (Input.GetKeyDown(KeyCode.F)) OnToolChanged(TileEditorState.Tool.Fill);
+            else if (Input.GetKeyDown(KeyCode.I)) OnToolChanged(TileEditorState.Tool.Eyedropper);
+            else if (Input.GetKeyDown(KeyCode.S) && !Input.GetKey(KeyCode.LeftControl))
+                OnToolChanged(TileEditorState.Tool.Select);
+        }
+
+        private void HandleLayerScroll()
+        {
+            float scroll = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(scroll) < 0.1f) return;
+
+            // Only cycle layers when not hovering over UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            int val = (int)_state.CurrentLayer + (scroll > 0 ? 1 : -1);
+            if (val < 0) val = 8;
+            if (val > 8) val = 0;
+            OnLayerChanged((TilemapLayerSetup.TilemapLayer)val);
+        }
+
+        private void HandleUndoRedo()
+        {
+            bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            if (ctrl && Input.GetKeyDown(KeyCode.Z))
+            {
+                if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                    Redo();
+                else
+                    Undo();
+            }
+        }
+
+        // =====================================================================
+        // MOUSE INPUT
+        // =====================================================================
+
+        private void HandleMouseInput()
+        {
+            // Skip if over UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            var tilemap = GetCurrentTilemap();
+            if (tilemap == null) return;
+
+            Vector3Int cellPos = GetCellUnderMouse(tilemap);
+
+            switch (_state.CurrentTool)
+            {
+                case TileEditorState.Tool.Brush:
+                    HandleBrushInput(tilemap, cellPos);
+                    break;
+                case TileEditorState.Tool.Eraser:
+                    HandleEraserInput(tilemap, cellPos);
+                    break;
+                case TileEditorState.Tool.Fill:
+                    HandleFillInput(tilemap, cellPos);
+                    break;
+                case TileEditorState.Tool.Eyedropper:
+                    HandleEyedropperInput(tilemap, cellPos);
+                    break;
+                case TileEditorState.Tool.Select:
+                    HandleSelectInput(tilemap, cellPos);
+                    break;
+            }
+        }
+
+        private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (_state.SelectedTile == null) return;
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                StartBrushStroke(tilemap);
+                var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
+                _currentBatch?.Edits.AddRange(edits);
+                _state.IsDragging = true;
+            }
+            else if (Input.GetMouseButton(0) && _state.IsDragging)
+            {
+                var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize);
+                _currentBatch?.Edits.AddRange(edits);
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                EndBrushStroke();
+                _state.IsDragging = false;
+            }
+        }
+
+        private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                StartBrushStroke(tilemap);
+                var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize);
+                _currentBatch?.Edits.AddRange(edits);
+                _state.IsDragging = true;
+            }
+            else if (Input.GetMouseButton(0) && _state.IsDragging)
+            {
+                var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize);
+                _currentBatch?.Edits.AddRange(edits);
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                EndBrushStroke();
+                _state.IsDragging = false;
+            }
+        }
+
+        private void HandleFillInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (_state.SelectedTile == null) return;
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                StartBrushStroke(tilemap);
+                var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile);
+                _currentBatch?.Edits.AddRange(edits);
+                EndBrushStroke();
+            }
+        }
+
+        private void HandleEyedropperInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                var picked = TileBrush.Pick(tilemap, cellPos);
+                if (picked != null)
+                {
+                    _state.SelectedTile = picked;
+                    _ui.SetStatus($"Picked: {picked.name}");
+                    OnToolChanged(TileEditorState.Tool.Brush);
+                }
+            }
+        }
+
+        private void HandleSelectInput(Tilemap tilemap, Vector3Int cellPos)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                var tile = tilemap.GetTile(cellPos);
+                string info = tile != null ? tile.name : "(empty)";
+                _ui.SetStatus($"Cell ({cellPos.x},{cellPos.y}) Layer:{_state.CurrentLayer} Tile:{info}");
+            }
+        }
+
+        // =====================================================================
+        // BRUSH STROKE MANAGEMENT
+        // =====================================================================
+
+        private void StartBrushStroke(Tilemap tilemap)
+        {
+            _currentBatch = new TileEditBatch { TargetTilemap = tilemap };
+        }
+
+        private void EndBrushStroke()
+        {
+            if (_currentBatch == null) return;
+            if (_currentBatch.Edits.Count > 0)
+            {
+                _undoStack.Add(_currentBatch);
+                if (_undoStack.Count > TileEditorState.MAX_UNDO)
+                    _undoStack.RemoveAt(0);
+                _redoStack.Clear();
+            }
+            _currentBatch = null;
+        }
+
+        private void Undo()
+        {
+            if (_undoStack.Count == 0) return;
+            var batch = _undoStack[_undoStack.Count - 1];
+            _undoStack.RemoveAt(_undoStack.Count - 1);
+            batch.Undo();
+            _redoStack.Add(batch);
+            _ui.SetStatus("Undo");
+        }
+
+        private void Redo()
+        {
+            if (_redoStack.Count == 0) return;
+            var batch = _redoStack[_redoStack.Count - 1];
+            _redoStack.RemoveAt(_redoStack.Count - 1);
+            batch.Redo();
+            _undoStack.Add(batch);
+            _ui.SetStatus("Redo");
+        }
+
+        // =====================================================================
+        // BRUSH PREVIEW
+        // =====================================================================
+
+        private void CreateBrushPreview()
+        {
+            _brushPreviewGo = new GameObject("BrushPreview");
+            _brushPreviewGo.transform.SetParent(transform);
+            _brushPreviewRenderer = _brushPreviewGo.AddComponent<SpriteRenderer>();
+            _brushPreviewRenderer.sortingOrder = 999;
+            _brushPreviewRenderer.color = new Color(1f, 1f, 1f, 0.4f);
+            _brushPreviewGo.SetActive(false);
+        }
+
+        private void UpdateBrushPreview()
+        {
+            if (_state.CurrentTool != TileEditorState.Tool.Brush &&
+                _state.CurrentTool != TileEditorState.Tool.Eraser)
+            {
+                HideBrushPreview();
+                return;
+            }
+
+            // Skip if over UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                HideBrushPreview();
+                return;
+            }
+
+            var tilemap = GetCurrentTilemap();
+            if (tilemap == null)
+            {
+                HideBrushPreview();
+                return;
+            }
+
+            Vector3Int cellPos = GetCellUnderMouse(tilemap);
+            Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
+
+            _brushPreviewGo.SetActive(true);
+            _brushPreviewGo.transform.position = worldPos;
+
+            // Update sprite preview
+            if (_state.CurrentTool == TileEditorState.Tool.Brush && _state.SelectedTile is Tile t && t.sprite != null)
+            {
+                _brushPreviewRenderer.sprite = t.sprite;
+                _brushPreviewRenderer.color = new Color(1f, 1f, 1f, 0.4f);
+            }
+            else
+            {
+                _brushPreviewRenderer.sprite = null;
+                _brushPreviewRenderer.color = new Color(1f, 0.3f, 0.3f, 0.3f);
+            }
+
+            // Scale for brush size
+            float scale = _state.BrushSize;
+            _brushPreviewGo.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+
+        private void HideBrushPreview()
+        {
+            if (_brushPreviewGo != null)
+                _brushPreviewGo.SetActive(false);
+        }
+
+        // =====================================================================
+        // CALLBACKS
+        // =====================================================================
+
+        private void OnTileSelected(TileCatalog.TileEntry entry)
+        {
+            _state.SelectedTile = entry.tile;
+            _state.SelectedCategory = entry.category;
+            _ui.SetStatus($"Selected: {entry.tileName}");
+
+            if (_state.CurrentTool == TileEditorState.Tool.Select ||
+                _state.CurrentTool == TileEditorState.Tool.Eyedropper)
+            {
+                OnToolChanged(TileEditorState.Tool.Brush);
+            }
+        }
+
+        private void OnToolChanged(TileEditorState.Tool tool)
+        {
+            EndBrushStroke();
+            _state.CurrentTool = tool;
+            _state.IsDragging = false;
+            _ui.RefreshToolHighlights();
+            _ui.SetStatus($"Tool: {tool}");
+        }
+
+        private void OnLayerChanged(TilemapLayerSetup.TilemapLayer layer)
+        {
+            _state.CurrentLayer = layer;
+            _ui.RefreshLayerLabel();
+        }
+
+        private void OnBrushSizeChanged(int newSize)
+        {
+            _state.BrushSize = Mathf.Clamp(newSize, 1, 5);
+            _ui.RefreshBrushSizeLabel();
+        }
+
+        // =====================================================================
+        // HELPERS
+        // =====================================================================
+
+        private Tilemap GetCurrentTilemap()
+        {
+            if (worldGridBuilder == null) return null;
+            return worldGridBuilder.GetTilemap(_state.CurrentLayer);
+        }
+
+        private Vector3Int GetCellUnderMouse(Tilemap tilemap)
+        {
+            if (_mainCamera == null)
+                _mainCamera = Camera.main;
+
+            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorld.z = 0f;
+            return tilemap.WorldToCell(mouseWorld);
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
+        }
+    }
+}
