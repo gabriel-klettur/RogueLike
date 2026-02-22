@@ -121,6 +121,8 @@ namespace Valkur.Gameplay
             if (caster != null)
                 EnsureFireballProjectilePrefab(caster);
 
+            EntityRegistry.RegisterPlayer(go);
+
             Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
         }
 
@@ -184,6 +186,8 @@ namespace Valkur.Gameplay
             if (ySort == null)
                 ySort = go.AddComponent<YSortEntity>();
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
+
+            EntityRegistry.RegisterMonster(go);
 
             Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
         }

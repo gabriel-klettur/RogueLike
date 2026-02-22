@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.NPC
 {
@@ -30,9 +31,8 @@ namespace Valkur.Gameplay.NPC
         {
             if (_playerTransform == null)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) _playerTransform = player.transform;
-                else return;
+                _playerTransform = EntityRegistry.PlayerTransform;
+                if (_playerTransform == null) return;
             }
 
             float dist = Vector2.Distance(transform.position, _playerTransform.position);

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay
@@ -128,11 +129,7 @@ namespace Valkur.Gameplay
         private void FindTarget()
         {
             if (_target == null)
-            {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null)
-                    _target = player.transform;
-            }
+                _target = EntityRegistry.PlayerTransform;
         }
 
         private void UpdateState()
