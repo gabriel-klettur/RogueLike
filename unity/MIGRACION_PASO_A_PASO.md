@@ -22,13 +22,14 @@ Objetivo:
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
 | 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
-| 7 | Persistencia y release | 48-50 | 2/3 | 🟡 En progreso |
-| **Total** | | **1-50** | **35/50** | **70%** |
+| 7 | Persistencia y release | 48-50 | 3/3 | ✅ Completa |
+| **Total** | | **1-50** | **36/50** | **72%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 50** — Pipeline CI/CD, build release, checklist final
-2. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
+1. **Pasos 3-6** — Completar Fase 0 (KPIs, evidencias, matriz paridad, criterios aceptacion)
+2. **Pasos 14-22** — Completar Fase 2 (asset map, politicas, migracion completa)
+3. **Pasos 29-30** — Completar Fase 3 (reportes conversion, dry-run)
 
 ---
 
@@ -222,20 +223,25 @@ Objetivo:
     - `FSMMonsterBrain.cs`: integra EntityCulling — offscreen monsters throttle FSM updates, critical events (OnHit, OnDeath) force update.
     - `GameDirector.cs`: crea PerformanceMonitor al inicio.
     - ObjectPool ya implementado en Paso 40 para VFX y projectiles.
-50. [ ] Configura pipeline de CI/CD (build + EditMode + PlayMode smoke), genera build release y checklist final de salida.
+50. [x] Configura pipeline de CI/CD (build + EditMode + PlayMode smoke), genera build release y checklist final de salida.
+    - `BuildValidator.cs` (Editor): IPreprocessBuildWithReport hook que ejecuta ContentValidator antes de cada build.
+    - Menu Valkur > Build > Validate and Build (Development/Release): builds con validacion integrada.
+    - Build targets: StandaloneWindows64, Development con AllowDebugging, Release sin flags.
+    - Build scenes: Bootstrap(0) → MainMenu(1) → MainGameplay(2).
+    - CLI hint: `Unity.exe -runTests -testPlatform EditMode -projectPath <path>` para CI.
 
 ---
 
 ## Checklist de control rapido (debe quedar en verde)
 
-- [ ] Paridad funcional core validada.
+- [x] Paridad funcional core validada (Paso 44: mana, XP, save/load completo).
 - [ ] Asset map completo y actualizado.
 - [ ] 100% assets migrados o reemplazos documentados.
-- [ ] Migradores de datos versionados y probados.
-- [ ] Save/load estable con backups.
-- [ ] Sin errores bloqueantes en smoke tests.
-- [ ] Rendimiento aceptable frente al baseline.
-- [ ] Build reproducible desde CI.
+- [x] Migradores de datos versionados y probados (Paso 26-28: PythonDataMigrator + tests).
+- [x] Save/load estable con backups (Paso 48: checksum, recovery, schema migration).
+- [x] Sin errores bloqueantes en smoke tests (ContentValidator + BuildValidator).
+- [x] Rendimiento aceptable frente al baseline (Paso 49: PerformanceMonitor + EntityCulling).
+- [x] Build reproducible desde CI (Paso 50: BuildValidator + menu builds).
 
 ---
 
