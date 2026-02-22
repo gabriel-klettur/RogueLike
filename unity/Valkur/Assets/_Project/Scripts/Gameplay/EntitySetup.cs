@@ -5,6 +5,7 @@ using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Rendering;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.Spells;
 
 namespace Valkur.Gameplay
 {
@@ -55,10 +56,13 @@ namespace Valkur.Gameplay
                 combat.SetTargetLayers(1 << NPCLayer);
             }
 
-            // SpellCaster targets NPCs
+            // SpellCaster targets NPCs + assign fireball to slot 0
             var caster = go.GetComponent<Spells.SpellCaster>();
             if (caster != null)
+            {
                 caster.SetTargetLayers(1 << NPCLayer);
+                caster.SetSpell(0, CreateFireballSpell());
+            }
 
             // DashAbility targets NPCs (collision damage during dash)
             var dash = go.GetComponent<DashAbility>();
@@ -102,6 +106,17 @@ namespace Valkur.Gameplay
             // Inventory UI (singleton, created once)
             EnsureInventoryUI();
 
+            // Facing direction indicator (visual arrow toward mouse)
+            if (go.GetComponent<Combat.FacingIndicator>() == null)
+                go.AddComponent<Combat.FacingIndicator>();
+
+            // Combat range visualizer (F2 toggle, singleton)
+            EnsureCombatRangeVisualizer();
+
+            // Ensure SpellCaster has a fireball projectile prefab
+            if (caster != null)
+                EnsureFireballProjectilePrefab(caster);
+
             Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
         }
 
@@ -124,10 +139,13 @@ namespace Valkur.Gameplay
                     ai.InitializeFromDefinition(def);
             }
 
-            // MeleeCombat targets Player
+            // MeleeCombat targets Player + green slash VFX
             var combat = go.GetComponent<MeleeCombat>();
             if (combat != null)
+            {
                 combat.SetTargetLayers(1 << PlayerLayer);
+                combat.SetSlashVfxColor(new Color(0.2f, 0.9f, 0.3f, 0.8f));
+            }
 
             // Assign placeholder sprite if none set
             var sr = go.GetComponentInChildren<SpriteRenderer>();
@@ -167,6 +185,74 @@ namespace Valkur.Gameplay
             if (InventoryUI.Instance != null) return;
             var uiGo = new GameObject("InventoryUI");
             uiGo.AddComponent<InventoryUI>();
+        }
+
+        private static void EnsureCombatRangeVisualizer()
+        {
+            if (Combat.CombatRangeVisualizer.Instance != null) return;
+            var vizGo = new GameObject("CombatRangeVisualizer");
+            vizGo.AddComponent<Combat.CombatRangeVisualizer>();
+        }
+
+        private static GameObject _fireballPrefab;
+
+        private static void EnsureFireballProjectilePrefab(SpellCaster caster)
+        {
+            if (_fireballPrefab == null)
+            {
+                _fireballPrefab = new GameObject("FireballPrefab");
+                _fireballPrefab.SetActive(false);
+
+                // Rigidbody2D (required by Projectile)
+                var rb = _fireballPrefab.AddComponent<Rigidbody2D>();
+                rb.gravityScale = 0f;
+                rb.freezeRotation = true;
+
+                // Collider (trigger for hit detection)
+                var col = _fireballPrefab.AddComponent<CircleCollider2D>();
+                col.radius = 0.15f;
+                col.isTrigger = true;
+
+                // SpriteRenderer placeholder (FireballVisual will override)
+                var sr = _fireballPrefab.AddComponent<SpriteRenderer>();
+                sr.sortingLayerName = Core.SortingConfig.LAYER_ENTITIES;
+                sr.sortingOrder = Core.SortingConfig.Z_SKY;
+
+                // Projectile component
+                _fireballPrefab.AddComponent<Projectile>();
+
+                // Fireball visual (procedural glow + flicker)
+                _fireballPrefab.AddComponent<FireballVisual>();
+
+                // Layer: Projectile
+                _fireballPrefab.layer = ProjectileLayer;
+
+                Object.DontDestroyOnLoad(_fireballPrefab);
+            }
+
+            caster.SetProjectilePrefab(_fireballPrefab);
+        }
+
+        private static SpellDefinition _fireballSpell;
+
+        private static SpellDefinition CreateFireballSpell()
+        {
+            if (_fireballSpell != null) return _fireballSpell;
+
+            _fireballSpell = ScriptableObject.CreateInstance<SpellDefinition>();
+            _fireballSpell.spellKey = "fireball";
+            _fireballSpell.displayName = "Fireball";
+            _fireballSpell.type = SpellType.Projectile;
+            _fireballSpell.manaCost = 0f;
+            _fireballSpell.prepareDuration = 0f;
+            _fireballSpell.channelDuration = 0f;
+            _fireballSpell.cooldownDuration = 0.4f;
+            _fireballSpell.speed = 8f;
+            _fireballSpell.damage = 15f;
+            _fireballSpell.range = 12f;
+            _fireballSpell.lifetime = 3f;
+            _fireballSpell.particleColor = new Color(1f, 0.5f, 0.1f, 1f);
+            return _fireballSpell;
         }
 
         private static Material _unlitSpriteMaterial;

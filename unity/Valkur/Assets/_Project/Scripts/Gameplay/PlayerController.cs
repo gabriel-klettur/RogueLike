@@ -83,7 +83,8 @@ namespace Valkur.Gameplay
             _lookAction = new InputAction("Look", InputActionType.Value, "<Mouse>/position");
             _primaryAttackAction = new InputAction("PrimaryAttack", InputActionType.Button, "<Mouse>/leftButton");
             _secondaryAttackAction = new InputAction("SecondaryAttack", InputActionType.Button, "<Mouse>/rightButton");
-            _dashAction = new InputAction("Dash", InputActionType.Button, "<Keyboard>/space");
+            _dashAction = new InputAction("Dash", InputActionType.Button, "<Keyboard>/rightCtrl");
+            _dashAction.AddBinding("<Keyboard>/rightShift");
             _spell1Action = new InputAction("Spell1", InputActionType.Button, "<Keyboard>/1");
             _spell2Action = new InputAction("Spell2", InputActionType.Button, "<Keyboard>/2");
             _spell3Action = new InputAction("Spell3", InputActionType.Button, "<Keyboard>/3");
@@ -103,7 +104,7 @@ namespace Valkur.Gameplay
             _quickSaveAction.Enable();
             _quickLoadAction.Enable();
 
-            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, look, attack, dash, spells 1-4, F5/F9 save/load).");
+            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, LClick=fireball, RClick=slash, RCtrl=dash, 1-4=spells, F5/F9 save/load).");
         }
 
         private void OnDisable()
@@ -197,28 +198,25 @@ namespace Valkur.Gameplay
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
 
-            // Primary attack (left click)
+            // Primary attack (left click) — fireball (spell slot 0)
             if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
-            {
-                if (!isDashing && _meleeCombat != null)
-                    _meleeCombat.TryAttack(_facingDirection);
-            }
-
-            // Secondary attack (right click) — cast spell slot 0
-            if (_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame())
             {
                 if (!isDashing && _spellCaster != null)
                     _spellCaster.TryCast(0, _facingDirection);
             }
 
-            // Dash (space)
+            // Secondary attack (right click) — melee slash
+            if (_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame())
+            {
+                if (!isDashing && _meleeCombat != null)
+                    _meleeCombat.TryAttack(_facingDirection);
+            }
+
+            // Dash (right ctrl) — dash toward mouse facing direction
             if (_dashAction != null && _dashAction.WasPerformedThisFrame())
             {
                 if (_dashAbility != null)
-                {
-                    Vector2 dashDir = IsMoving ? _moveInput.normalized : _facingDirection;
-                    _dashAbility.TryDash(dashDir);
-                }
+                    _dashAbility.TryDash(_facingDirection);
             }
 
             // Spell slots 1-4

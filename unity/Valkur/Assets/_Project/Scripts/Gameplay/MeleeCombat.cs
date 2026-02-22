@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay
 {
@@ -15,6 +16,10 @@ namespace Valkur.Gameplay
         [SerializeField] private float range = 1f;
         [SerializeField] private float arcDegrees = 90f;
 
+        [Header("VFX")]
+        [SerializeField] private Color slashVfxColor = new Color(0.9f, 0.95f, 1f, 0.8f);
+        [SerializeField] private bool showSlashVfx = true;
+
         [Header("Layers")]
         [SerializeField] private LayerMask targetLayers;
 
@@ -27,12 +32,20 @@ namespace Valkur.Gameplay
         public float CooldownRemaining => Mathf.Max(0f, (_lastAttackTime + cooldown) - Time.time);
         public float CooldownTotal => cooldown;
         public int Damage => damage;
+        public float Range => range;
+        public float ArcDegrees => arcDegrees;
 
         public void Initialize(int dmg, float cd, float rng)
         {
             damage = dmg;
             cooldown = cd;
             range = rng;
+        }
+
+        public void SetSlashVfxColor(Color color)
+        {
+            slashVfxColor = color;
+            showSlashVfx = true;
         }
 
         public void SetTargetLayers(LayerMask layers)
@@ -46,6 +59,7 @@ namespace Valkur.Gameplay
 
             _lastAttackTime = Time.time;
             PerformAttack(direction);
+            SpawnSlashVFX(direction);
         }
 
         private void PerformAttack(Vector2 direction)
@@ -83,6 +97,15 @@ namespace Valkur.Gameplay
 
             if (hitCount > 0)
                 Debug.Log($"[MeleeCombat] {gameObject.name} hit {hitCount} target(s) for {damage} damage");
+        }
+
+        private void SpawnSlashVFX(Vector2 direction)
+        {
+            if (!showSlashVfx) return;
+            if (VFXManager.Instance == null) return;
+
+            Vector3 vfxPos = transform.position + (Vector3)(direction.normalized * (range * 0.5f));
+            VFXManager.Instance.SpawnSlashArc(vfxPos, direction, slashVfxColor, arcDegrees, range, 0.2f);
         }
 
         private void OnDrawGizmosSelected()
