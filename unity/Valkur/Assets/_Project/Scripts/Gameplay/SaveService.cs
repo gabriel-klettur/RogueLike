@@ -24,7 +24,7 @@ namespace Valkur.Gameplay
     /// - Automatic fallback to backup on corrupted load.
     /// - Schema version migration for forward compatibility.
     /// </summary>
-    public class SaveService : MonoBehaviour
+    public class SaveService : SingletonMonoBehaviour<SaveService>
     {
         private const string SAVE_DIR = "Saves";
         private const string SAVE_EXTENSION = ".json";
@@ -41,21 +41,12 @@ namespace Valkur.Gameplay
         private float _autosaveTimer;
         private string _currentSavePath;
 
-        private static SaveService _instance;
-        public static SaveService Instance => _instance;
+        protected override bool Persist => true;
 
         public string CurrentSavePath => _currentSavePath;
 
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
             EnsureSaveDirectory();
         }
 
@@ -574,11 +565,6 @@ namespace Valkur.Gameplay
             Save("shutdown_save");
         }
 
-        private void OnDestroy()
-        {
-            if (_instance == this)
-                _instance = null;
-        }
     }
 
     /// <summary>

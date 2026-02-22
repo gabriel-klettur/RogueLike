@@ -13,7 +13,7 @@ namespace Valkur.Core
     /// - Optional on-screen debug overlay (toggle with F3).
     /// - Log dump on demand for profiling sessions.
     /// </summary>
-    public class PerformanceMonitor : MonoBehaviour
+    public class PerformanceMonitor : SingletonMonoBehaviour<PerformanceMonitor>
     {
         private const int SAMPLE_COUNT = 300;
         private const float LOG_INTERVAL = 10f;
@@ -35,32 +35,21 @@ namespace Valkur.Core
         private float _maxFrameTime;
         private long _lastGcCount;
         private int _gcCollections;
-
-        private static PerformanceMonitor _instance;
-        public static PerformanceMonitor Instance => _instance;
+        private InputAction _toggleAction;
 
         public float AvgFps => _avgFps;
         public float AvgFrameTimeMs => _avgFrameTime * 1000f;
         public float P95FrameTimeMs => _p95FrameTime * 1000f;
         public float P99FrameTimeMs => _p99FrameTime * 1000f;
 
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-
             _frameTimes = new float[SAMPLE_COUNT];
             _lastGcCount = System.GC.CollectionCount(0);
 
             _toggleAction = new InputAction("TogglePerfMon", InputActionType.Button, "<Keyboard>/f3");
             _toggleAction.Enable();
         }
-
-        private InputAction _toggleAction;
 
         private void Update()
         {
@@ -174,13 +163,11 @@ namespace Valkur.Core
                 $"Entities: {entityCount} | F3 toggle", style);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Disable();
             _toggleAction?.Dispose();
-
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

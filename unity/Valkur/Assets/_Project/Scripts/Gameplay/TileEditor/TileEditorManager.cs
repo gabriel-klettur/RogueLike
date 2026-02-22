@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using Valkur.Core;
 using Valkur.Gameplay.Rendering;
 
 namespace Valkur.Gameplay.TileEditor
@@ -14,7 +15,7 @@ namespace Valkur.Gameplay.TileEditor
     /// Attach to a persistent GameObject in the gameplay scene, or let GameDirector create it.
     /// Requires a TileCatalog asset assigned via inspector or loaded at runtime.
     /// </summary>
-    public class TileEditorManager : MonoBehaviour
+    public class TileEditorManager : SingletonMonoBehaviour<TileEditorManager>
     {
         [Header("Tile Catalog")]
         [SerializeField] private TileCatalog tileCatalog;
@@ -47,9 +48,6 @@ namespace Valkur.Gameplay.TileEditor
         private GameObject _brushPreviewGo;
         private SpriteRenderer _brushPreviewRenderer;
 
-        private static TileEditorManager _instance;
-        public static TileEditorManager Instance => _instance;
-
         // Screen border overlay (visual feedback when editor is active)
         private GameObject _borderOverlayGo;
         private TileEditorGridCursor _gridCursor;
@@ -65,15 +63,8 @@ namespace Valkur.Gameplay.TileEditor
             worldGridBuilder = builder;
         }
 
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-
             _state = new TileEditorState();
 
             // Create input actions
@@ -100,6 +91,7 @@ namespace Valkur.Gameplay.TileEditor
             _ctrlModifier.AddBinding("<Keyboard>/rightCtrl");
             _ctrlModifier.Enable();
         }
+
 
         private void Start()
         {
@@ -627,7 +619,7 @@ namespace Valkur.Gameplay.TileEditor
             return bottomLeft + new Vector3(cellSize.x * 0.5f, cellSize.y * 0.5f, 0f);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Disable(); _toggleAction?.Dispose();
             _toolBrushAction?.Disable(); _toolBrushAction?.Dispose();
@@ -638,9 +630,7 @@ namespace Valkur.Gameplay.TileEditor
             _undoAction?.Disable(); _undoAction?.Dispose();
             _redoAction?.Disable(); _redoAction?.Dispose();
             _ctrlModifier?.Disable(); _ctrlModifier?.Dispose();
-
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Valkur.Gameplay.Combat
     /// - NPC melee range (red arc toward player)
     /// - NPC facing direction line (green)
     /// </summary>
-    public class CombatRangeVisualizer : MonoBehaviour
+    public class CombatRangeVisualizer : SingletonMonoBehaviour<CombatRangeVisualizer>
     {
         [Header("Settings")]
         [SerializeField] private bool showOnStart = false;
@@ -34,17 +34,8 @@ namespace Valkur.Gameplay.Combat
         private int _lineIndex;
         private InputAction _toggleAction;
 
-        private static CombatRangeVisualizer _instance;
-        public static CombatRangeVisualizer Instance => _instance;
-
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
             _visible = showOnStart;
 
             _lineMaterial = new Material(Shader.Find("Sprites/Default"));
@@ -226,15 +217,14 @@ namespace Valkur.Gameplay.Combat
             lr.SetPosition(1, to);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Disable();
             _toggleAction?.Dispose();
 
             if (_lineMaterial != null)
                 DestroyImmediate(_lineMaterial);
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 using Valkur.Gameplay;
 
 namespace Valkur.UI.HUD
@@ -10,27 +11,14 @@ namespace Valkur.UI.HUD
     /// PlayerHUD, and TargetHUD at runtime. Wires to player Health events.
     /// Attach to a persistent GameObject in the gameplay scene.
     /// </summary>
-    public class HUDManager : MonoBehaviour
+    public class HUDManager : SingletonMonoBehaviour<HUDManager>
     {
         private PlayerHUD _playerHUD;
         private TargetHUD _targetHUD;
         private Canvas _canvas;
         private Mana _playerMana;
 
-        private static HUDManager _instance;
-        public static HUDManager Instance => _instance;
-
         public TargetHUD TargetHUD => _targetHUD;
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-        }
 
         /// <summary>
         /// Called by GameplaySceneSetup after the player is spawned.
@@ -282,13 +270,12 @@ namespace Valkur.UI.HUD
             return _whitePixelSprite;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             if (_playerMana != null)
                 _playerMana.OnManaChanged -= OnPlayerManaChanged;
 
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

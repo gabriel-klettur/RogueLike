@@ -132,18 +132,10 @@ namespace Valkur.Gameplay
             go.layer = NPCLayer;
             go.tag = "Monster";
 
-            // Prefer FSMMonsterBrain over legacy MonsterAI
+            // Initialize FSMMonsterBrain
             var brain = go.GetComponent<FSMMonsterBrain>();
             if (brain != null)
-            {
                 brain.Initialize(def);
-            }
-            else
-            {
-                var ai = go.GetComponent<MonsterAI>();
-                if (ai != null)
-                    ai.InitializeFromDefinition(def);
-            }
 
             // MeleeCombat targets Player + green slash VFX
             var combat = go.GetComponent<MeleeCombat>();

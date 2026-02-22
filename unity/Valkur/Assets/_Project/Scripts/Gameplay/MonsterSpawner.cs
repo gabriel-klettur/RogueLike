@@ -104,18 +104,10 @@ namespace Valkur.Gameplay
 
             var go = Instantiate(monsterPrefab, req.Position, Quaternion.identity);
 
-            // Prefer FSMMonsterBrain if available, fallback to MonsterAI
+            // Initialize FSMMonsterBrain
             var brain = go.GetComponent<FSMMonsterBrain>();
             if (brain != null)
-            {
                 brain.Initialize(req.Definition);
-            }
-            else
-            {
-                var ai = go.GetComponent<MonsterAI>();
-                if (ai != null)
-                    ai.InitializeFromDefinition(req.Definition);
-            }
 
             _activeMonsters.Add(go);
         }

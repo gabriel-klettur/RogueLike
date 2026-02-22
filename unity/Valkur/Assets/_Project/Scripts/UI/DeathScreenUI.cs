@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using Valkur.Core;
 using Valkur.Gameplay;
 
 namespace Valkur.UI
@@ -14,7 +15,7 @@ namespace Valkur.UI
     /// Supports both mouse clicks and keyboard navigation (W/S/Arrows + Enter).
     /// Works at Time.timeScale = 0 via unscaled input polling.
     /// </summary>
-    public class DeathScreenUI : MonoBehaviour
+    public class DeathScreenUI : SingletonMonoBehaviour<DeathScreenUI>
     {
         [Header("Scene Names")]
         [SerializeField] private string gameplaySceneName = "MainGameplay";
@@ -46,17 +47,8 @@ namespace Valkur.UI
         private InputAction _navDownAction;
         private InputAction _confirmAction;
 
-        private static DeathScreenUI _instance;
-
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-
             _navUpAction = new InputAction("DeathNavUp", InputActionType.Button);
             _navUpAction.AddBinding("<Keyboard>/upArrow");
             _navUpAction.AddBinding("<Keyboard>/w");
@@ -345,7 +337,7 @@ namespace Valkur.UI
             return go;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _navUpAction?.Disable();
             _navUpAction?.Dispose();
@@ -357,8 +349,7 @@ namespace Valkur.UI
             if (_playerHealth != null)
                 _playerHealth.OnDeath -= OnPlayerDeath;
 
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

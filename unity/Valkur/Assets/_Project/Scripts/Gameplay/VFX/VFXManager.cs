@@ -11,26 +11,16 @@ namespace Valkur.Gameplay.VFX
     /// Uses ObjectPool for each VFX type to avoid runtime allocation.
     /// Singleton — created by GameplaySceneSetup or accessed via Instance.
     /// </summary>
-    public class VFXManager : MonoBehaviour
+    public class VFXManager : SingletonMonoBehaviour<VFXManager>
     {
-        private static VFXManager _instance;
-        public static VFXManager Instance => _instance;
-
         [Header("Pool Settings")]
         [SerializeField] private int poolSizePerType = 20;
 
         private readonly Dictionary<string, ObjectPool> _pools = new Dictionary<string, ObjectPool>();
         private Transform _poolParent;
 
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-
             _poolParent = new GameObject("VFXPools").transform;
             _poolParent.SetParent(transform);
         }
@@ -169,14 +159,13 @@ namespace Valkur.Gameplay.VFX
             return go;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             foreach (var pool in _pools.Values)
                 pool.Dispose();
             _pools.Clear();
 
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

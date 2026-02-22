@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.Inventory
     /// Displays inventory slots in a grid with item icons, quantities, and tooltips.
     /// Supports click-to-drop functionality.
     /// </summary>
-    public class InventoryUI : MonoBehaviour
+    public class InventoryUI : SingletonMonoBehaviour<InventoryUI>
     {
         [Header("Layout")]
         [SerializeField] private int columns = 5;
@@ -45,18 +45,8 @@ namespace Valkur.Gameplay.Inventory
 
         public bool IsVisible => _visible;
 
-        private static InventoryUI _instance;
-        public static InventoryUI Instance => _instance;
-
-        private void Awake()
+        protected override void OnSingletonAwake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-
             _toggleAction = new InputAction("ToggleInventory", InputActionType.Button);
             _toggleAction.AddBinding("<Keyboard>/tab");
             _toggleAction.AddBinding("<Keyboard>/i");
@@ -350,13 +340,11 @@ namespace Valkur.Gameplay.Inventory
             _dropAction?.Disable();
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             _dropAction?.Dispose();
-
-            if (_instance == this)
-                _instance = null;
+            base.OnDestroy();
         }
     }
 }

@@ -93,9 +93,6 @@ namespace Valkur.Gameplay.Combat
             var controller = GetComponent<PlayerController>();
             if (controller != null) controller.enabled = false;
 
-            var ai = GetComponent<MonsterAI>();
-            if (ai != null) ai.enabled = false;
-
             var brain = GetComponent<FSM.FSMMonsterBrain>();
             if (brain != null) brain.enabled = false;
 
