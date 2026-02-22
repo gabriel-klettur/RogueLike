@@ -38,8 +38,20 @@ namespace Valkur.Gameplay.TileEditor
         private static TileEditorManager _instance;
         public static TileEditorManager Instance => _instance;
 
+        // Screen border overlay (visual feedback when editor is active)
+        private GameObject _borderOverlayGo;
+        private TileEditorGridCursor _gridCursor;
+
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
+
+        /// <summary>
+        /// Called by GameplaySceneSetup to wire the grid builder reference.
+        /// </summary>
+        public void SetGridBuilder(WorldGridBuilder builder)
+        {
+            worldGridBuilder = builder;
+        }
 
         private void Awake()
         {
@@ -60,9 +72,13 @@ namespace Valkur.Gameplay.TileEditor
             if (worldGridBuilder == null)
                 worldGridBuilder = FindObjectOfType<WorldGridBuilder>();
 
-            // Load tile catalog
+            // Load tile catalog: try inspector assignment first, then Resources
+            if (tileCatalog == null)
+                tileCatalog = Resources.Load<TileCatalog>("TileCatalog");
             if (tileCatalog != null)
                 TileRegistry.Instance.Load(tileCatalog);
+            else
+                Debug.LogWarning("[TileEditor] No TileCatalog found. Run Valkur > Atlas > Generate Tile Catalog, then place in Resources/ or assign via inspector.");
 
             // Create UI
             var uiGo = new GameObject("TileEditorUI");
@@ -76,6 +92,12 @@ namespace Valkur.Gameplay.TileEditor
 
             // Create brush preview
             CreateBrushPreview();
+
+            // Create screen border overlay
+            CreateScreenBorderOverlay();
+
+            // Create grid cursor highlight
+            CreateGridCursor();
         }
 
         private void Update()
@@ -89,6 +111,7 @@ namespace Valkur.Gameplay.TileEditor
             HandleUndoRedo();
             HandleMouseInput();
             UpdateBrushPreview();
+            UpdateGridCursor();
         }
 
         // =====================================================================
@@ -108,12 +131,17 @@ namespace Valkur.Gameplay.TileEditor
                     _ui.RefreshLayerLabel();
                     _ui.RefreshBrushSizeLabel();
                     _ui.SetStatus("Tile Editor active. F6 to close.");
+                    if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
+                    if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
+                    UpdateBorderToolLabel();
                     Debug.Log("[TileEditor] Activated (F6)");
                 }
                 else
                 {
                     EndBrushStroke();
                     HideBrushPreview();
+                    if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
+                    if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
                     Debug.Log("[TileEditor] Deactivated (F6)");
                 }
             }
@@ -279,6 +307,28 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         // =====================================================================
+        // SCREEN BORDER OVERLAY (visual mode indicator like Python)
+        // =====================================================================
+
+        private void CreateScreenBorderOverlay()
+        {
+            _borderOverlayGo = new GameObject("TileEditorBorderOverlay");
+            _borderOverlayGo.transform.SetParent(transform);
+            var overlay = _borderOverlayGo.AddComponent<TileEditorBorderOverlay>();
+            overlay.Initialize();
+            _borderOverlayGo.SetActive(false);
+        }
+
+        private void CreateGridCursor()
+        {
+            var cursorGo = new GameObject("TileEditorGridCursor");
+            cursorGo.transform.SetParent(transform);
+            _gridCursor = cursorGo.AddComponent<TileEditorGridCursor>();
+            _gridCursor.Initialize();
+            cursorGo.SetActive(false);
+        }
+
+        // =====================================================================
         // BRUSH STROKE MANAGEMENT
         // =====================================================================
 
@@ -387,6 +437,31 @@ namespace Valkur.Gameplay.TileEditor
                 _brushPreviewGo.SetActive(false);
         }
 
+        private void UpdateGridCursor()
+        {
+            if (_gridCursor == null) return;
+
+            // Skip if over UI
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                _gridCursor.gameObject.SetActive(false);
+                return;
+            }
+
+            var tilemap = GetCurrentTilemap();
+            if (tilemap == null)
+            {
+                _gridCursor.gameObject.SetActive(false);
+                return;
+            }
+
+            _gridCursor.gameObject.SetActive(true);
+            Vector3Int cellPos = GetCellUnderMouse(tilemap);
+            Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
+            _gridCursor.UpdateCursor(worldPos, _state.BrushSize, _state.CurrentTool);
+        }
+
         // =====================================================================
         // CALLBACKS
         // =====================================================================
@@ -411,6 +486,15 @@ namespace Valkur.Gameplay.TileEditor
             _state.IsDragging = false;
             _ui.RefreshToolHighlights();
             _ui.SetStatus($"Tool: {tool}");
+            UpdateBorderToolLabel();
+        }
+
+        private void UpdateBorderToolLabel()
+        {
+            if (_borderOverlayGo == null) return;
+            var overlay = _borderOverlayGo.GetComponent<TileEditorBorderOverlay>();
+            if (overlay != null)
+                overlay.SetToolLabel(_state.CurrentTool.ToString().ToUpper());
         }
 
         private void OnLayerChanged(TilemapLayerSetup.TilemapLayer layer)

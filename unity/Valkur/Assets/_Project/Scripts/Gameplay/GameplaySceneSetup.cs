@@ -1,6 +1,7 @@
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay
@@ -28,6 +29,7 @@ namespace Valkur.Gameplay
         {
             BuildWorldGrid();
             EnsureVFXManager();
+            EnsureTileEditor();
             SpawnPlayer();
             SpawnTestMonsters();
         }
@@ -36,6 +38,15 @@ namespace Valkur.Gameplay
         {
             var gridGo = new GameObject("WorldGridBuilder");
             _gridBuilder = gridGo.AddComponent<WorldGridBuilder>();
+        }
+
+        private void EnsureTileEditor()
+        {
+            if (TileEditorManager.Instance != null) return;
+            var editorGo = new GameObject("TileEditorManager");
+            var manager = editorGo.AddComponent<TileEditorManager>();
+            manager.SetGridBuilder(_gridBuilder);
+            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
         }
 
         private void EnsureVFXManager()
