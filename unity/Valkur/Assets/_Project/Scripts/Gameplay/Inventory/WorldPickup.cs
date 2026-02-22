@@ -116,6 +116,7 @@ namespace Valkur.Gameplay.Inventory
             quantity = overflow;
 
             Debug.Log($"[WorldPickup] {collector.name} picked up {picked}x {itemDefinition.displayName}");
+            GameEvents.FireItemPickedUp(collector, itemDefinition.displayName, picked);
 
             if (quantity <= 0)
             {

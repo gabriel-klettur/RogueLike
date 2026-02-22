@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -41,9 +42,16 @@ namespace Valkur.Gameplay
             OnDamaged?.Invoke(amount);
             OnHpChanged?.Invoke(currentHp, maxHp);
 
+            GameEvents.FireEntityDamaged(gameObject, null, amount);
+            if (gameObject.CompareTag("Player"))
+                GameEvents.FirePlayerDamaged(amount, currentHp, maxHp);
+
             if (currentHp <= 0)
             {
                 OnDeath?.Invoke();
+                GameEvents.FireEntityDied(gameObject, null);
+                if (gameObject.CompareTag("Player"))
+                    GameEvents.FirePlayerDied();
             }
         }
 

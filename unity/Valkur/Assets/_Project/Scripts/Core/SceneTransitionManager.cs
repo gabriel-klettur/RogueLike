@@ -24,6 +24,9 @@ namespace Valkur.Core
             // Clear entity registry to prevent stale references
             EntityRegistry.Clear();
 
+            // Clear global event bus to prevent subscriber leaks
+            GameEvents.Clear();
+
             SceneManager.LoadScene(sceneName);
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -58,11 +59,13 @@ namespace Valkur.Gameplay
 
             _totalXp += amount;
             OnXpGained?.Invoke(amount);
+            GameEvents.FireXpGained(gameObject, amount);
 
             while (_totalXp >= XpRequiredForLevel(_level + 1))
             {
                 _level++;
                 OnLevelUp?.Invoke(_level);
+                GameEvents.FireLevelUp(gameObject, _level);
                 Debug.Log($"[Experience] {gameObject.name} leveled up to {_level}!");
             }
         }

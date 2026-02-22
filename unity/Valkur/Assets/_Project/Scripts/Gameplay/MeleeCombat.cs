@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay
@@ -91,6 +92,7 @@ namespace Valkur.Gameplay
                             feedback.ApplyKnockback(origin);
 
                         OnHitTarget?.Invoke(hit.gameObject, damage);
+                        GameEvents.FireHitDealt(gameObject, hit.gameObject, damage);
                     }
                 }
             }
