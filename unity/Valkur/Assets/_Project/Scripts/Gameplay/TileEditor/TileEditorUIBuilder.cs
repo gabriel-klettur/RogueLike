@@ -189,7 +189,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var prev = CreateUI("Prev", layerRow.transform);
             prev.AddComponent<LayoutElement>().preferredWidth = 26f;
-            MakeBtn(prev, "\u25C0", () => { int v = (int)state.CurrentLayer - 1; if (v < 0) v = 8; onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
+            MakeBtn(prev, "<", () => { int v = (int)state.CurrentLayer - 1; if (v < 0) v = 8; onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
 
             var lbl = CreateUI("LayerVal", layerRow.transform);
             lbl.AddComponent<LayoutElement>().flexibleWidth = 1f;
@@ -200,7 +200,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var next = CreateUI("Next", layerRow.transform);
             next.AddComponent<LayoutElement>().preferredWidth = 26f;
-            MakeBtn(next, "\u25B6", () => { int v = (int)state.CurrentLayer + 1; if (v > 8) v = 0; onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
+            MakeBtn(next, ">", () => { int v = (int)state.CurrentLayer + 1; if (v > 8) v = 0; onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
 
             var spacer = CreateUI("Spacer", layerRow.transform);
             spacer.AddComponent<LayoutElement>().preferredWidth = 8f;

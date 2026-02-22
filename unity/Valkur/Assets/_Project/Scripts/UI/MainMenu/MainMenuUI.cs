@@ -105,6 +105,7 @@ namespace Valkur.UI.MainMenu
             cam.orthographicSize = 5f;
             cam.depth = -1f;
             camGo.tag = "MainCamera";
+            camGo.AddComponent<AudioListener>();
         }
 
         private void Update()
