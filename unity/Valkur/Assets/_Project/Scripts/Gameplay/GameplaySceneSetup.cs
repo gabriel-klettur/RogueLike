@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using Valkur.Data;
 using Valkur.Gameplay.Rendering;
 using Valkur.Gameplay.TileEditor;
@@ -28,6 +29,7 @@ namespace Valkur.Gameplay
         private void Start()
         {
             BuildWorldGrid();
+            EnsureGlobalLight2D();
             EnsureVFXManager();
             EnsureTileEditor();
             SpawnPlayer();
@@ -47,6 +49,23 @@ namespace Valkur.Gameplay
             var manager = editorGo.AddComponent<TileEditorManager>();
             manager.SetGridBuilder(_gridBuilder);
             Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
+        }
+
+        /// <summary>
+        /// URP uses Sprite-Lit-Default material on TilemapRenderers.
+        /// Without a 2D light source, all tilemaps render as solid black.
+        /// This creates a Global Light 2D to illuminate the entire scene.
+        /// </summary>
+        private void EnsureGlobalLight2D()
+        {
+            if (FindObjectOfType<Light2D>() != null) return;
+
+            var lightGo = new GameObject("GlobalLight2D");
+            var light = lightGo.AddComponent<Light2D>();
+            light.lightType = Light2D.LightType.Global;
+            light.intensity = 1f;
+            light.color = Color.white;
+            Debug.Log("[GameplaySceneSetup] Created Global Light 2D for URP tilemap rendering.");
         }
 
         private void EnsureVFXManager()

@@ -74,6 +74,7 @@ namespace Valkur.Gameplay.Rendering
 
             var renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;
+            renderer.detectChunkCullingBounds = TilemapRenderer.DetectChunkCullingBounds.Auto;
 
             var layerSetup = go.AddComponent<TilemapLayerSetup>();
             SetLayerField(layerSetup, layer);
