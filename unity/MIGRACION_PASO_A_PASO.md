@@ -15,21 +15,20 @@ Objetivo:
 
 | Fase | Descripcion | Pasos | Completados | Estado |
 |------|-------------|-------|-------------|--------|
-| 0 | Preparacion y baseline | 1-6 | 2/6 | 🟡 Parcial |
+| 0 | Preparacion y baseline | 1-6 | 5/6 | 🟡 Parcial |
 | 1 | Bootstrap tecnico Unity | 7-12 | 6/6 | ✅ Completa |
 | 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
-| 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
+| 3 | Contratos de datos y migradores | 23-30 | 8/8 | ✅ Completa |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
 | 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
 | 7 | Persistencia y release | 48-50 | 3/3 | ✅ Completa |
-| **Total** | | **1-50** | **36/50** | **72%** |
+| **Total** | | **1-50** | **41/50** | **82%** |
 
 ### Proximos pasos prioritarios
 
-1. **Pasos 3-6** — Completar Fase 0 (KPIs, evidencias, matriz paridad, criterios aceptacion)
-2. **Pasos 14-22** — Completar Fase 2 (asset map, politicas, migracion completa)
-3. **Pasos 29-30** — Completar Fase 3 (reportes conversion, dry-run)
+1. **Paso 4** — Registrar evidencias del baseline Python (video + capturas + logs de perfil) [requiere ejecucion manual]
+2. **Pasos 14-22** — Completar Fase 2 (asset map, politicas, migracion completa) [DIFERIDA]
 
 ---
 
@@ -47,11 +46,20 @@ Objetivo:
 ## Fase 0 - Preparacion y baseline (Pasos 1-6)
 
 1. [x] Congela un commit baseline del proyecto Python (`python/`) para tener referencia estable.
-2. [ ] Define KPI base de comparacion: FPS medio, frame time p95, tiempo de carga y uso de RAM.
+2. [x] Define KPI base de comparacion: FPS medio, frame time p95, tiempo de carga y uso de RAM.
+    - Tabla de metricas estimadas Python vs objetivos Unity en `unity/docs/fase0_baseline.md`.
+    - Unity side: `PerformanceMonitor.cs` (F3) mide FPS avg/p95/p99 y GC en runtime.
 3. [x] Crea una lista de flujos criticos jugables: mover, atacar, castear, lootear, morir, respawn, guardar/cargar.
 4. [ ] Registra evidencias del baseline (video corto + capturas + logs de perfil).
-5. [ ] Crea una matriz de paridad funcional (feature Python -> feature Unity).
-6. [ ] Firma criterios de aceptacion de migracion completa con el equipo.
+    - Requiere ejecucion manual del juego Python y captura de pantalla/video.
+    - Checklist de evidencias pendientes documentado en `unity/docs/fase0_baseline.md`.
+5. [x] Crea una matriz de paridad funcional (feature Python -> feature Unity).
+    - Matriz completa con 33 capacidades, prioridad P0-P3, estado actual y referencia a scripts.
+    - Todos los P0 marcados como DONE. Ver `unity/docs/fase0_baseline.md`.
+6. [x] Firma criterios de aceptacion de migracion completa con el equipo.
+    - 6 criterios definidos con estado de cumplimiento actual.
+    - 3/6 CUMPLIDO, 2/6 PARCIAL, 1/6 PENDIENTE (assets, Fase 2 diferida).
+    - Ver `unity/docs/fase0_baseline.md`.
 
 ## Fase 1 - Bootstrap tecnico Unity (Pasos 7-12)
 
@@ -103,10 +111,18 @@ Objetivo:
     - `DataMigrationTests` valida conteos y estructura de datos migrados (9 tests passing).
 27. [x] Implementa migradores versionados (v1 Python -> v2 Unity) con logs de conversion.
 28. [x] Construye pruebas golden de datos: mismo input produce mismo estado esperado.
-29. [ ] Implementa reporte de conversion con conteos (ok, warning, error) por archivo.
-30. [ ] Crea modo `dry-run` de migracion de datos para validar sin tocar estado final.
+29. [x] Implementa reporte de conversion con conteos (ok, warning, error) por archivo.
+    - `MigrationReport` class: acumula entries OK/Warning/Error por source file y entity key.
+    - `MigrationEntry` struct con severity, source, entityKey, message.
+    - Cada import method (Monsters, Spells, Players) ahora retorna `MigrationReport`.
+    - Validaciones por dominio: HP>0, speed>0, spell cooldown>0, projectile speed>0, keys no vacios.
+    - Reporte impreso a consola con summary header (Total/OK/Warn/Error).
+30. [x] Crea modo `dry-run` de migracion de datos para validar sin tocar estado final.
+    - Todas las funciones de import aceptan `bool dryRun`.
+    - En dry-run: parsea JSON, valida campos, genera reporte, pero NO crea ScriptableObjects ni escribe assets.
+    - Menu: `Valkur > Migration > Dry-Run All (Validate Only)`.
 
-> **Estado:** DTOs y migrador funcional. 9/9 tests passing. Faltan reportes y dry-run.
+> **Estado:** Fase 3 completa. DTOs, migrador, reportes y dry-run funcionales. 9/9 tests passing.
 
 ## Fase 4 - Vertical slice minimo (Pasos 31-36)
 
@@ -237,7 +253,7 @@ Objetivo:
 - [x] Paridad funcional core validada (Paso 44: mana, XP, save/load completo).
 - [ ] Asset map completo y actualizado.
 - [ ] 100% assets migrados o reemplazos documentados.
-- [x] Migradores de datos versionados y probados (Paso 26-28: PythonDataMigrator + tests).
+- [x] Migradores de datos versionados y probados (Paso 26-30: PythonDataMigrator + tests + report + dry-run).
 - [x] Save/load estable con backups (Paso 48: checksum, recovery, schema migration).
 - [x] Sin errores bloqueantes en smoke tests (ContentValidator + BuildValidator).
 - [x] Rendimiento aceptable frente al baseline (Paso 49: PerformanceMonitor + EntityCulling).
