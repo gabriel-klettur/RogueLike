@@ -1,6 +1,7 @@
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Rendering;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay
 {
@@ -26,6 +27,7 @@ namespace Valkur.Gameplay
         private void Start()
         {
             BuildWorldGrid();
+            EnsureVFXManager();
             SpawnPlayer();
             SpawnTestMonsters();
         }
@@ -34,6 +36,13 @@ namespace Valkur.Gameplay
         {
             var gridGo = new GameObject("WorldGridBuilder");
             _gridBuilder = gridGo.AddComponent<WorldGridBuilder>();
+        }
+
+        private void EnsureVFXManager()
+        {
+            if (VFXManager.Instance != null) return;
+            var vfxGo = new GameObject("VFXManager");
+            vfxGo.AddComponent<VFXManager>();
         }
 
         private void SpawnPlayer()

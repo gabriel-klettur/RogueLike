@@ -20,18 +20,17 @@ Objetivo:
 | 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
-| 5 | Port completo gameplay | 37-44 | 5/8 | 🟡 En progreso |
+| 5 | Port completo gameplay | 37-44 | 6/8 | 🟡 En progreso |
 | 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **28/50** | **56%** |
+| **Total** | | **1-50** | **29/50** | **58%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 40** — VFX de spells + object pooling (bloquea combate completo)
-2. **Paso 42** — Inventario UI, pickups, drops
-3. **Paso 44** — Cierre de brechas de paridad funcional
-4. **Paso 45** — Definir herramientas runtime vs EditorWindow
-5. **Paso 48** — Save system final con backups rotativos
+1. **Paso 42** — Inventario UI, pickups, drops (bloquea gameplay loop completo)
+2. **Paso 44** — Cierre de brechas de paridad funcional
+3. **Paso 45** — Definir herramientas runtime vs EditorWindow
+4. **Paso 48** — Save system final con backups rotativos
 
 ---
 
@@ -157,9 +156,13 @@ Objetivo:
     - `CombatFeedback.cs`: hit flash (white tint), knockback impulse, death fade+destroy.
     - `DashAbility.cs`: duration-based dash (speed=18, duration=0.2s, cooldown=1s), collision damage.
     - Input wiring: Left click = melee, Right click = spell 0, Space = dash, 1-4 = spell slots.
-40. [ ] Porta sistemas de spells y VFX asociados con pooling.
-    - `SpellCaster.cs` tiene logica base para Projectile/Slash/Area/Dash.
-    - **Pendiente:** VFX de slash (particulas arco), VFX de impacto, object pooling, mas tipos de spell.
+40. [x] Porta sistemas de spells y VFX asociados con pooling.
+    - `ObjectPool.cs`: pool generico de GameObjects con pre-warm, max size, return/dispose.
+    - `VFXManager.cs`: singleton con pools por tipo de VFX, auto-crea prefabs simples (circle sprite).
+    - `SimpleVFX.cs`: componente de efecto visual con scale curve + alpha fade + auto-despawn a pool.
+    - `Projectile.cs`: impacto VFX al expirar/colisionar, soporte pool key para reutilizacion.
+    - `SpellCaster.cs`: VFX de slash arc y area indicator al ejecutar spells.
+    - `GameplaySceneSetup.cs`: crea VFXManager al inicio de escena.
 41. [x] Porta IA/FSM y comportamiento de spawner runtime.
     - FSM completa con 9 estados. `MonsterSpawner` instancia desde definiciones.
     - **Pendiente:** Spell casting para NPCs, patrol waypoints.

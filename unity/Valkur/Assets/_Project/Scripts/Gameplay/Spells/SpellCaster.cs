@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -235,6 +236,14 @@ namespace Valkur.Gameplay.Spells
                         feedback.ApplyKnockback(transform.position);
                 }
             }
+
+            // Spawn slash arc VFX
+            if (VFXManager.Instance != null)
+            {
+                Color slashColor = spell.particleColor != Color.clear ? spell.particleColor : new Color(1f, 1f, 1f, 0.7f);
+                Vector3 vfxPos = transform.position + (Vector3)(_castDirection * (hitRadius * 0.5f));
+                VFXManager.Instance.SpawnSlashArc(vfxPos, _castDirection, slashColor, arc, hitRadius, 0.2f);
+            }
         }
 
         private void PerformArea(SpellDefinition spell)
@@ -251,6 +260,13 @@ namespace Valkur.Gameplay.Spells
                 {
                     health.TakeDamage(Mathf.RoundToInt(spell.damage));
                 }
+            }
+
+            // Spawn area indicator VFX
+            if (VFXManager.Instance != null)
+            {
+                Color areaColor = spell.particleColor != Color.clear ? spell.particleColor : new Color(0.8f, 0.3f, 0.1f, 0.5f);
+                VFXManager.Instance.SpawnAreaIndicator((Vector3)center, areaColor, radius, 0.5f);
             }
         }
 
