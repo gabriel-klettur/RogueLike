@@ -20,17 +20,17 @@ Objetivo:
 | 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 6/8 | 🟡 Parcial |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
-| 5 | Port completo gameplay | 37-44 | 6/8 | 🟡 En progreso |
+| 5 | Port completo gameplay | 37-44 | 7/8 | 🟡 En progreso |
 | 6 | Herramientas y editores | 45-47 | 1/3 | � Parcial |
 | 7 | Persistencia y release | 48-50 | 0/3 | 🔴 Pendiente |
-| **Total** | | **1-50** | **29/50** | **58%** |
+| **Total** | | **1-50** | **30/50** | **60%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 42** — Inventario UI, pickups, drops (bloquea gameplay loop completo)
-2. **Paso 44** — Cierre de brechas de paridad funcional
-3. **Paso 45** — Definir herramientas runtime vs EditorWindow
-4. **Paso 48** — Save system final con backups rotativos
+1. **Paso 44** — Cierre de brechas de paridad funcional
+2. **Paso 45** — Definir herramientas runtime vs EditorWindow
+3. **Paso 48** — Save system final con backups rotativos
+4. **Paso 15-18** — Politicas de nombres, pivots, PPU, SpriteAtlas
 
 ---
 
@@ -166,8 +166,13 @@ Objetivo:
 41. [x] Porta IA/FSM y comportamiento de spawner runtime.
     - FSM completa con 9 estados. `MonsterSpawner` instancia desde definiciones.
     - **Pendiente:** Spell casting para NPCs, patrol waypoints.
-42. [ ] Porta inventario, pickups, drops y reglas de consumo/transferencia.
-    - `Inventory.cs` existe con capacidad basica. Falta UI, pickups, drops.
+42. [x] Porta inventario, pickups, drops y reglas de consumo/transferencia.
+    - `Inventory.cs`: sistema base con slots, stacking, capacidad, serialization.
+    - `InventoryUI.cs`: grid UI screen-space (Tab/I toggle), slot selection, tooltip, drop con Q.
+    - `WorldPickup.cs`: entidad mundo con bob animation, auto-pickup trigger, proximity check.
+    - `PickupSystem.cs`: pickup manual con E, busca WorldPickup mas cercano en rango.
+    - `DropSystem.cs`: utility estatica para crear drops en el mundo desde inventario.
+    - `EntitySetup.cs`: agrega PickupSystem al player, crea InventoryUI singleton.
 43. [x] Porta overlays/HUD esenciales para gameplay (barras, target, mensajes).
     - `PlayerHUD.cs`: screen-space HP/MP bars con texto (bottom-left), smooth fill animation.
     - `TargetHUD.cs`: panel top-center con nombre, estado FSM, barra HP del enemigo (fade in/out on hit).

@@ -4,6 +4,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Rendering;
+using Valkur.UI.InventoryUI;
 
 namespace Valkur.Gameplay
 {
@@ -83,6 +84,13 @@ namespace Valkur.Gameplay
                 ySort = go.AddComponent<YSortEntity>();
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
+            // Pickup system
+            if (go.GetComponent<Inventory.PickupSystem>() == null)
+                go.AddComponent<Inventory.PickupSystem>();
+
+            // Inventory UI (singleton, created once)
+            EnsureInventoryUI();
+
             Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
         }
 
@@ -141,6 +149,13 @@ namespace Valkur.Gameplay
             ySort.ZLayerBase = SortingConfig.Z_ENTITY;
 
             Debug.Log($"[EntitySetup] Monster configured: {def.displayName}, HP={def.stats.hp}");
+        }
+
+        private static void EnsureInventoryUI()
+        {
+            if (InventoryUI.Instance != null) return;
+            var uiGo = new GameObject("InventoryUI");
+            uiGo.AddComponent<InventoryUI>();
         }
 
         private static Material _unlitSpriteMaterial;
