@@ -74,13 +74,18 @@ namespace Valkur.Gameplay.TileEditor
             if (worldGridBuilder == null)
                 worldGridBuilder = FindObjectOfType<WorldGridBuilder>();
 
-            // Load tile catalog: try inspector assignment first, then Resources
+            // Load tile catalog: build at runtime from sprites in Resources/Tiles/
             if (tileCatalog == null)
+                tileCatalog = TileCatalog.BuildFromResources();
+            if (tileCatalog == null || tileCatalog.Entries.Count == 0)
+            {
+                // Fallback: try pre-built asset
                 tileCatalog = Resources.Load<TileCatalog>("TileCatalog");
+            }
             if (tileCatalog != null)
                 TileRegistry.Instance.Load(tileCatalog);
             else
-                Debug.LogWarning("[TileEditor] No TileCatalog found. Run Valkur > Atlas > Generate Tile Catalog, then place in Resources/ or assign via inspector.");
+                Debug.LogError("[TileEditor] No tiles found. Ensure sprites exist in Resources/Tiles/{category}/ folders.");
 
             // Create UI
             var uiGo = new GameObject("TileEditorUI");
