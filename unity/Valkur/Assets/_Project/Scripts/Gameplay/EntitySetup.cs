@@ -4,7 +4,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Rendering;
-using Valkur.UI.InventoryUI;
+using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay
 {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Gameplay;
+using Valkur.UI;
 
 namespace Valkur.UI.HUD
 {
@@ -39,8 +40,15 @@ namespace Valkur.UI.HUD
             var debugGo = new GameObject("DebugHUD");
             debugGo.AddComponent<DebugHUD>();
 
+            // Create DeathScreen overlay
+            if (FindObjectOfType<DeathScreenUI>() == null)
+            {
+                var deathGo = new GameObject("DeathScreenUI");
+                deathGo.AddComponent<DeathScreenUI>();
+            }
+
             _initialized = true;
-            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug).");
+            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death screen).");
         }
     }
 }

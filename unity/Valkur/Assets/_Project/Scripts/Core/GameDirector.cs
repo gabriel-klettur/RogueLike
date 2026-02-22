@@ -1,5 +1,4 @@
 using UnityEngine;
-using Valkur.Infrastructure;
 
 namespace Valkur.Core
 {
@@ -7,6 +6,10 @@ namespace Valkur.Core
     /// Central orchestrator for the gameplay scene.
     /// Equivalent to Python's Game class — coordinates update phases.
     /// Lives in MainGameplay scene.
+    /// 
+    /// Note: SaveService lives in Valkur.Gameplay (separate asmdef)
+    /// and manages its own lifecycle (autosave on pause, shutdown save on quit).
+    /// GameDirector does NOT reference Gameplay to avoid circular asmdef deps.
     /// </summary>
     public class GameDirector : MonoBehaviour
     {
@@ -26,7 +29,6 @@ namespace Valkur.Core
             }
             Instance = this;
 
-            EnsureSaveService();
             EnsurePerformanceMonitor();
             Debug.Log("[GameDirector] Initialized.");
         }
@@ -36,30 +38,6 @@ namespace Valkur.Core
             _isPaused = paused;
             Time.timeScale = paused ? 0f : 1f;
             Debug.Log($"[GameDirector] Paused: {paused}");
-        }
-
-        private void OnApplicationPause(bool pauseStatus)
-        {
-            if (pauseStatus)
-            {
-                Debug.Log("[GameDirector] Application paused — triggering autosave.");
-                SaveService.Instance?.Autosave();
-            }
-        }
-
-        private void OnApplicationQuit()
-        {
-            Debug.Log("[GameDirector] Application quitting — triggering shutdown save.");
-            SaveService.Instance?.Save("shutdown_save");
-        }
-
-        private void EnsureSaveService()
-        {
-            if (SaveService.Instance != null) return;
-
-            var saveGo = new GameObject("SaveService");
-            saveGo.AddComponent<SaveService>();
-            Debug.Log("[GameDirector] SaveService created.");
         }
 
         private void EnsurePerformanceMonitor()

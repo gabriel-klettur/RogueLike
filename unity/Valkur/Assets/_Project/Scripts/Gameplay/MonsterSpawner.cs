@@ -19,9 +19,13 @@ namespace Valkur.Gameplay
         [SerializeField] private GameObject monsterPrefab;
 
         [Header("Spawn Config")]
+#pragma warning disable CS0414
         [SerializeField] private float spawnRadius = 15f;
+#pragma warning restore CS0414
         [SerializeField] private float despawnRadius = 25f;
+#pragma warning disable CS0414
         [SerializeField] private float minSpawnDistance = 8f;
+#pragma warning restore CS0414
 
         private readonly Queue<SpawnRequest> _spawnQueue = new Queue<SpawnRequest>();
         private readonly List<GameObject> _activeMonsters = new List<GameObject>();

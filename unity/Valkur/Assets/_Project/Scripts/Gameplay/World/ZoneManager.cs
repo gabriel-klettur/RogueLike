@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace Valkur.Gameplay.World
@@ -56,12 +57,10 @@ namespace Valkur.Gameplay.World
                 currentZone = detected;
                 OnZoneChanged?.Invoke(oldZone, currentZone);
 
-                // Play zone music
+                // Play zone music via AudioManager (found by type to avoid cross-asmdef dep)
                 if (_zoneMap.TryGetValue(currentZone, out var def) && def.zoneMusic != null)
                 {
-                    var audio = Infrastructure.AudioManager.Instance;
-                    if (audio != null)
-                        audio.PlayMusic(def.zoneMusic);
+                    PlayZoneMusic(def.zoneMusic);
                 }
             }
         }
@@ -106,6 +105,26 @@ namespace Valkur.Gameplay.World
                 return new Vector2(cx, cy);
             }
             return Vector2.zero;
+        }
+
+        /// <summary>
+        /// Play music via AudioManager without direct Infrastructure asmdef dependency.
+        /// Uses FindObjectOfType to locate AudioManager at runtime.
+        /// </summary>
+        private static void PlayZoneMusic(AudioClip clip)
+        {
+            if (clip == null) return;
+            // AudioManager lives in Valkur.Infrastructure — locate by type name to avoid circular asmdef ref
+            foreach (var mb in FindObjectsOfType<MonoBehaviour>())
+            {
+                if (mb.GetType().Name == "AudioManager")
+                {
+                    var method = mb.GetType().GetMethod("PlayMusic", new[] { typeof(AudioClip) });
+                    if (method != null)
+                        method.Invoke(mb, new object[] { clip });
+                    return;
+                }
+            }
         }
     }
 }

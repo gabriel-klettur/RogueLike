@@ -62,7 +62,27 @@ namespace Valkur.UI.MainMenu
 
         private void Start()
         {
+            EnsureCamera();
             BuildUI();
+        }
+
+        /// <summary>
+        /// Ensures a Camera exists in the scene to suppress
+        /// "Display 1 No cameras rendering" message.
+        /// </summary>
+        private void EnsureCamera()
+        {
+            if (Camera.main != null) return;
+
+            var camGo = new GameObject("MainMenuCamera");
+            camGo.transform.SetParent(transform);
+            var cam = camGo.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = bgColor;
+            cam.orthographic = true;
+            cam.orthographicSize = 5f;
+            cam.depth = -1f;
+            camGo.tag = "MainCamera";
         }
 
         private void Update()

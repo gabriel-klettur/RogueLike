@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
-using Valkur.Infrastructure;
 
 namespace Valkur.Gameplay
 {
@@ -75,6 +74,11 @@ namespace Valkur.Gameplay
                 .With("Down", "<Keyboard>/s")
                 .With("Left", "<Keyboard>/a")
                 .With("Right", "<Keyboard>/d");
+            _moveAction.AddCompositeBinding("2DVector")
+                .With("Up", "<Keyboard>/upArrow")
+                .With("Down", "<Keyboard>/downArrow")
+                .With("Left", "<Keyboard>/leftArrow")
+                .With("Right", "<Keyboard>/rightArrow");
 
             _lookAction = new InputAction("Look", InputActionType.Value, "<Mouse>/position");
             _primaryAttackAction = new InputAction("PrimaryAttack", InputActionType.Button, "<Mouse>/leftButton");
@@ -99,7 +103,7 @@ namespace Valkur.Gameplay
             _quickSaveAction.Enable();
             _quickLoadAction.Enable();
 
-            Debug.Log("[PlayerController] Input actions created and enabled (move, look, attack, dash, spells 1-4, F5/F9 save/load).");
+            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, look, attack, dash, spells 1-4, F5/F9 save/load).");
         }
 
         private void OnDisable()
