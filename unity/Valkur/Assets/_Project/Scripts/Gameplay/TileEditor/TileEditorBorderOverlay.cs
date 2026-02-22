@@ -11,11 +11,15 @@ namespace Valkur.Gameplay.TileEditor
     /// </summary>
     public class TileEditorBorderOverlay : MonoBehaviour
     {
-        private static readonly Color BorderColor = new Color(0.85f, 0.75f, 0.45f, 0.7f);
-        private static readonly Color LabelBg = new Color(0.1f, 0.1f, 0.14f, 0.88f);
+        private static readonly Color BorderColor = new Color(0.90f, 0.76f, 0.38f, 0.50f);
+        private static readonly Color LabelBg = new Color(0.09f, 0.09f, 0.12f, 0.92f);
+        private static readonly Color LabelBorder = new Color(0.90f, 0.76f, 0.38f, 0.35f);
+        private static readonly Color AccentText = new Color(0.90f, 0.76f, 0.38f, 1f);
+        private static readonly Color MutedText = new Color(0.55f, 0.57f, 0.62f, 1f);
 
         private Canvas _canvas;
         private TextMeshProUGUI _modeLabel;
+        private TextMeshProUGUI _hintLabel;
 
         public void Initialize()
         {
@@ -32,64 +36,73 @@ namespace Valkur.Gameplay.TileEditor
 
             canvasGo.AddComponent<GraphicRaycaster>().blockingObjects = GraphicRaycaster.BlockingObjects.None;
 
-            float borderThickness = 3f;
+            float borderThickness = 2f;
 
-            // Top border
             CreateBorderStrip(canvasGo.transform, "TopBorder",
                 new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1f),
                 Vector2.zero, new Vector2(0, borderThickness));
-
-            // Bottom border
             CreateBorderStrip(canvasGo.transform, "BottomBorder",
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0f),
                 Vector2.zero, new Vector2(0, borderThickness));
-
-            // Left border
             CreateBorderStrip(canvasGo.transform, "LeftBorder",
                 new Vector2(0, 0), new Vector2(0, 1), new Vector2(0f, 0.5f),
                 Vector2.zero, new Vector2(borderThickness, 0));
-
-            // Right border
             CreateBorderStrip(canvasGo.transform, "RightBorder",
                 new Vector2(1, 0), new Vector2(1, 1), new Vector2(1f, 0.5f),
                 Vector2.zero, new Vector2(borderThickness, 0));
 
-            // Top-center mode label: "TILE EDITOR MODE"
+            // Top-center label panel
             var labelPanel = CreateUIObj("ModeLabelPanel", canvasGo.transform);
             var panelRect = labelPanel.GetComponent<RectTransform>();
             panelRect.anchorMin = new Vector2(0.5f, 1f);
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -6f);
-            panelRect.sizeDelta = new Vector2(260f, 32f);
+            panelRect.anchoredPosition = new Vector2(0f, -4f);
+            panelRect.sizeDelta = new Vector2(320f, 28f);
 
             var panelImg = labelPanel.AddComponent<Image>();
             panelImg.color = LabelBg;
             panelImg.raycastTarget = false;
 
             var outline = labelPanel.AddComponent<Outline>();
-            outline.effectColor = BorderColor;
+            outline.effectColor = LabelBorder;
             outline.effectDistance = new Vector2(1f, 1f);
 
-            var textGo = CreateUIObj("ModeText", labelPanel.transform);
-            var textRect = textGo.GetComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.sizeDelta = Vector2.zero;
+            // Horizontal layout: mode label + hint
+            var hl = labelPanel.AddComponent<HorizontalLayoutGroup>();
+            hl.childAlignment = TextAnchor.MiddleCenter;
+            hl.childForceExpandWidth = false;
+            hl.childForceExpandHeight = true;
+            hl.childControlWidth = true;
+            hl.childControlHeight = true;
+            hl.padding = new RectOffset(12, 12, 0, 0);
+            hl.spacing = 8f;
 
-            _modeLabel = textGo.AddComponent<TextMeshProUGUI>();
-            _modeLabel.text = "TILE EDITOR MODE";
-            _modeLabel.fontSize = 16f;
+            var modeGo = CreateUIObj("ModeText", labelPanel.transform);
+            modeGo.AddComponent<LayoutElement>().flexibleWidth = 0f;
+            _modeLabel = modeGo.AddComponent<TextMeshProUGUI>();
+            _modeLabel.text = "TILE EDITOR";
+            _modeLabel.fontSize = 13f;
             _modeLabel.fontStyle = FontStyles.Bold;
             _modeLabel.alignment = TextAlignmentOptions.Center;
-            _modeLabel.color = BorderColor;
+            _modeLabel.color = AccentText;
             _modeLabel.raycastTarget = false;
+            _modeLabel.enableAutoSizing = false;
+
+            var hintGo = CreateUIObj("HintText", labelPanel.transform);
+            hintGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            _hintLabel = hintGo.AddComponent<TextMeshProUGUI>();
+            _hintLabel.text = "F6 close";
+            _hintLabel.fontSize = 10f;
+            _hintLabel.alignment = TextAlignmentOptions.Right;
+            _hintLabel.color = MutedText;
+            _hintLabel.raycastTarget = false;
         }
 
         public void SetToolLabel(string toolName)
         {
             if (_modeLabel != null)
-                _modeLabel.text = $"TILE EDITOR — {toolName}";
+                _modeLabel.text = $"TILE EDITOR \u2014 {toolName}";
         }
 
         private void CreateBorderStrip(Transform parent, string name,

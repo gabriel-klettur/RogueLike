@@ -9,10 +9,10 @@ namespace Valkur.Gameplay.TileEditor
     /// </summary>
     public class TileEditorGridCursor : MonoBehaviour
     {
-        private static readonly Color CursorColor = new Color(0.85f, 0.75f, 0.45f, 0.8f);
-        private static readonly Color EraserColor = new Color(1f, 0.3f, 0.3f, 0.7f);
-        private static readonly Color FillColor = new Color(0.3f, 0.8f, 1f, 0.7f);
-        private static readonly Color EyedropperColor = new Color(0.3f, 1f, 0.5f, 0.7f);
+        private static readonly Color CursorColor = new Color(0.90f, 0.76f, 0.38f, 0.85f);
+        private static readonly Color EraserColor = new Color(0.95f, 0.35f, 0.30f, 0.75f);
+        private static readonly Color FillColor = new Color(0.30f, 0.85f, 0.90f, 0.75f);
+        private static readonly Color EyedropperColor = new Color(0.30f, 0.90f, 0.45f, 0.75f);
 
         private LineRenderer _lineRenderer;
         private SpriteRenderer _fillRenderer;

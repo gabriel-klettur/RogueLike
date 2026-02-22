@@ -8,31 +8,43 @@ using Valkur.Gameplay.Rendering;
 namespace Valkur.Gameplay.TileEditor
 {
     /// <summary>
-    /// Builds and manages the in-game tile editor UI.
-    /// Replicates all Python tile editor panels:
-    ///   LEFT:  Title, Toolbar, Layer selector, Brush size, Selected tile preview,
-    ///          Category tabs, Tile picker grid (scrollable), Status bar
-    ///   RIGHT: View Panel (hovered/selected/choice info), Layers Panel (9 layers + visibility)
-    ///   BOTTOM CENTER: Layer indicator
+    /// Professional in-game tile editor UI.
+    /// Layout: LEFT toolbar/picker panel, RIGHT info/layers sidebar, BOTTOM layer indicator.
+    /// Toggle with F6. Dark theme with amber accent.
     /// </summary>
     public class TileEditorUI : MonoBehaviour
     {
-        // --- Style constants (dark theme matching Python editor) ---
-        private static readonly Color PanelBg = new Color(0.1f, 0.1f, 0.14f, 0.92f);
-        private static readonly Color PanelBorder = new Color(0.85f, 0.75f, 0.45f, 0.6f);
-        private static readonly Color ButtonNormal = new Color(0.2f, 0.2f, 0.26f, 0.9f);
-        private static readonly Color ButtonActive = new Color(0.85f, 0.75f, 0.45f, 0.7f);
-        private static readonly Color ButtonHover = new Color(0.3f, 0.28f, 0.36f, 1f);
-        private static readonly Color TextColor = new Color(0.92f, 0.92f, 0.92f, 1f);
-        private static readonly Color LabelColor = new Color(0.85f, 0.75f, 0.45f, 1f);
-        private static readonly Color TileSlotBg = new Color(0.15f, 0.15f, 0.2f, 1f);
-        private static readonly Color TileSlotSelected = new Color(0.85f, 0.75f, 0.45f, 0.8f);
-        private static readonly Color SectionHeaderBg = new Color(0.14f, 0.14f, 0.18f, 1f);
-        private static readonly Color LayerActiveBg = new Color(0.25f, 0.22f, 0.12f, 0.9f);
-        private static readonly Color ToggleOnColor = new Color(0.4f, 0.85f, 0.4f, 1f);
-        private static readonly Color ToggleOffColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+        // ── Design Tokens ──
+        private static readonly Color BG_PANEL       = new Color(0.09f, 0.09f, 0.12f, 0.94f);
+        private static readonly Color BG_SURFACE     = new Color(0.13f, 0.13f, 0.17f, 1f);
+        private static readonly Color BG_ELEVATED    = new Color(0.17f, 0.17f, 0.22f, 1f);
+        private static readonly Color ACCENT         = new Color(0.90f, 0.76f, 0.38f, 1f);
+        private static readonly Color ACCENT_DIM     = new Color(0.90f, 0.76f, 0.38f, 0.45f);
+        private static readonly Color ACCENT_BG      = new Color(0.90f, 0.76f, 0.38f, 0.15f);
+        private static readonly Color TEXT_PRIMARY    = new Color(0.93f, 0.93f, 0.96f, 1f);
+        private static readonly Color TEXT_SECONDARY  = new Color(0.60f, 0.62f, 0.68f, 1f);
+        private static readonly Color TEXT_MUTED      = new Color(0.42f, 0.44f, 0.50f, 1f);
+        private static readonly Color BTN_NORMAL      = new Color(0.16f, 0.16f, 0.21f, 1f);
+        private static readonly Color BTN_HOVER       = new Color(0.22f, 0.22f, 0.28f, 1f);
+        private static readonly Color BTN_ACTIVE      = new Color(0.90f, 0.76f, 0.38f, 0.55f);
+        private static readonly Color SLOT_BG         = new Color(0.13f, 0.13f, 0.17f, 1f);
+        private static readonly Color SLOT_HOVER      = new Color(0.22f, 0.22f, 0.28f, 1f);
+        private static readonly Color SLOT_SELECTED   = new Color(0.90f, 0.76f, 0.38f, 0.65f);
+        private static readonly Color LAYER_ACTIVE_BG = new Color(0.90f, 0.76f, 0.38f, 0.12f);
+        private static readonly Color VIS_ON          = new Color(0.40f, 0.88f, 0.40f, 1f);
+        private static readonly Color VIS_OFF         = new Color(0.50f, 0.50f, 0.50f, 0.45f);
+        private static readonly Color BORDER          = new Color(0.90f, 0.76f, 0.38f, 0.35f);
+        private static readonly Color SEPARATOR       = new Color(0.25f, 0.25f, 0.30f, 0.6f);
+        private static readonly Color CYAN_ACCENT     = new Color(0.30f, 0.85f, 0.90f, 1f);
+        private static readonly Color GREEN_ACCENT    = new Color(0.30f, 0.90f, 0.45f, 1f);
 
-        // --- Callbacks ---
+        private const float LEFT_WIDTH = 300f;
+        private const float RIGHT_WIDTH = 230f;
+        private const float PANEL_PAD = 10f;
+        private const float SECTION_SPACING = 6f;
+        private const float INNER_PAD = 10f;
+
+        // ── Callbacks ──
         private TileEditorState _state;
         private TileCatalog _catalog;
         private System.Action<TileCatalog.TileEntry> _onTileSelected;
@@ -40,12 +52,13 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action<TilemapLayerSetup.TilemapLayer> _onLayerChanged;
         private System.Action<int> _onBrushSizeChanged;
 
-        // --- Canvas ---
+        // ── Canvas ──
         private Canvas _canvas;
 
-        // --- LEFT PANEL ---
+        // ── Left Panel ──
         private GameObject _leftPanel;
         private readonly Dictionary<TileEditorState.Tool, Image> _toolButtonImages = new Dictionary<TileEditorState.Tool, Image>();
+        private readonly Dictionary<TileEditorState.Tool, TextMeshProUGUI> _toolButtonTexts = new Dictionary<TileEditorState.Tool, TextMeshProUGUI>();
         private TextMeshProUGUI _layerLabel;
         private TextMeshProUGUI _brushSizeLabel;
         private Image _selectedTilePreviewImg;
@@ -60,7 +73,7 @@ namespace Valkur.Gameplay.TileEditor
         private TextMeshProUGUI _tileCountText;
         private TextMeshProUGUI _statusText;
 
-        // --- RIGHT: VIEW PANEL (Python's TilesViewPanel) ---
+        // ── Right: View Panel ──
         private GameObject _viewPanel;
         private Image _viewHoveredImg;
         private TextMeshProUGUI _viewHoveredLabel;
@@ -71,14 +84,14 @@ namespace Valkur.Gameplay.TileEditor
         private TextMeshProUGUI _viewLayerHoveredText;
         private TextMeshProUGUI _viewLayerSelectedText;
 
-        // --- RIGHT: LAYERS PANEL (Python's LayersPanel) ---
+        // ── Right: Layers Panel ──
         private GameObject _layersPanel;
         private readonly List<Image> _layerRowBgs = new List<Image>();
         private readonly List<TextMeshProUGUI> _layerRowLabels = new List<TextMeshProUGUI>();
         private readonly List<Image> _layerVisIcons = new List<Image>();
         private readonly bool[] _layerVisibility = new bool[9];
 
-        // --- BOTTOM: LAYER INDICATOR ---
+        // ── Bottom: Layer Indicator ──
         private GameObject _layerIndicatorPanel;
         private TextMeshProUGUI _layerIndicator;
 
@@ -115,7 +128,9 @@ namespace Valkur.Gameplay.TileEditor
         public void RefreshToolHighlights()
         {
             foreach (var kvp in _toolButtonImages)
-                kvp.Value.color = kvp.Key == _state.CurrentTool ? ButtonActive : ButtonNormal;
+                kvp.Value.color = kvp.Key == _state.CurrentTool ? BTN_ACTIVE : BTN_NORMAL;
+            foreach (var kvp in _toolButtonTexts)
+                kvp.Value.color = kvp.Key == _state.CurrentTool ? ACCENT : TEXT_SECONDARY;
         }
 
         public void RefreshLayerLabel()
@@ -151,14 +166,14 @@ namespace Valkur.Gameplay.TileEditor
             if (_selectedTilePreviewImg != null)
             {
                 _selectedTilePreviewImg.sprite = sprite;
-                _selectedTilePreviewImg.color = sprite != null ? Color.white : new Color(0.15f, 0.15f, 0.2f, 1f);
+                _selectedTilePreviewImg.color = sprite != null ? Color.white : SLOT_BG;
             }
             if (_selectedTileNameText != null)
                 _selectedTileNameText.text = tileName ?? "(none)";
             if (_viewChoiceImg != null)
             {
                 _viewChoiceImg.sprite = sprite;
-                _viewChoiceImg.color = sprite != null ? Color.white : TileSlotBg;
+                _viewChoiceImg.color = sprite != null ? Color.white : SLOT_BG;
             }
             if (_viewChoiceLabel != null)
                 _viewChoiceLabel.text = tileName ?? "";
@@ -169,7 +184,7 @@ namespace Valkur.Gameplay.TileEditor
             if (_viewHoveredImg != null)
             {
                 _viewHoveredImg.sprite = sprite;
-                _viewHoveredImg.color = sprite != null ? Color.white : TileSlotBg;
+                _viewHoveredImg.color = sprite != null ? Color.white : SLOT_BG;
             }
             if (_viewHoveredLabel != null) _viewHoveredLabel.text = name ?? "";
             if (_viewLayerHoveredText != null) _viewLayerHoveredText.text = $"  {layerName}";
@@ -180,7 +195,7 @@ namespace Valkur.Gameplay.TileEditor
             if (_viewSelectedImg != null)
             {
                 _viewSelectedImg.sprite = sprite;
-                _viewSelectedImg.color = sprite != null ? Color.white : TileSlotBg;
+                _viewSelectedImg.color = sprite != null ? Color.white : SLOT_BG;
             }
             if (_viewSelectedLabel != null) _viewSelectedLabel.text = name ?? "";
         }
@@ -203,196 +218,279 @@ namespace Valkur.Gameplay.TileEditor
             canvasGo.AddComponent<GraphicRaycaster>();
 
             BuildLeftPanel(canvasGo.transform);
-            BuildViewPanel(canvasGo.transform);
-            BuildLayersPanel(canvasGo.transform);
+            BuildRightSidebar(canvasGo.transform);
             BuildLayerIndicator(canvasGo.transform);
 
             if (_catalog != null)
             {
-                // Default to "All" so all tiles are visible on open
                 _currentCategory = "";
                 PopulateCategoryTabs();
                 PopulateTileGrid(_currentCategory);
             }
         }
 
-        // =========================== LEFT PANEL ==============================
+        // ═══════════════════════════════════════════════════════════════
+        //  LEFT PANEL
+        // ═══════════════════════════════════════════════════════════════
 
         private void BuildLeftPanel(Transform canvasT)
         {
-            _leftPanel = CreatePanel("LeftPanel", canvasT,
+            _leftPanel = MakePanel("LeftPanel", canvasT,
                 new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f),
-                new Vector2(10f, 0f), new Vector2(280f, -20f));
+                new Vector2(PANEL_PAD, 0f), new Vector2(LEFT_WIDTH, -16f));
 
             var layout = _leftPanel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(8, 8, 8, 8);
-            layout.spacing = 5f;
+            layout.padding = new RectOffset(10, 10, 10, 8);
+            layout.spacing = SECTION_SPACING;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             _leftPanel.AddComponent<CanvasGroup>();
 
-            BuildSectionHeader(_leftPanel.transform, "TILE EDITOR", 26f);
+            // Title
+            BuildSectionHeader(_leftPanel.transform, "TILE EDITOR", 20f);
+            BuildSeparator(_leftPanel.transform);
+
+            // Toolbar with shortcut labels
             BuildToolbar(_leftPanel.transform);
-            BuildLayerSelector(_leftPanel.transform);
-            BuildBrushSize(_leftPanel.transform);
+            BuildSeparator(_leftPanel.transform);
+
+            // Layer + Brush row (compact)
+            BuildLayerAndBrushRow(_leftPanel.transform);
+            BuildSeparator(_leftPanel.transform);
+
+            // Selected tile preview
             BuildSelectedTilePreview(_leftPanel.transform);
-            BuildSectionHeader(_leftPanel.transform, "TILE PICKER", 16f);
+            BuildSeparator(_leftPanel.transform);
+
+            // Category tabs
+            BuildSectionLabel(_leftPanel.transform, "CATEGORIES");
             BuildCategorySelector(_leftPanel.transform);
+
+            // Tile picker grid
+            BuildSectionLabel(_leftPanel.transform, "TILES");
             BuildTilePicker(_leftPanel.transform);
             BuildTileCountRow(_leftPanel.transform);
+
+            // Status bar
+            BuildSeparator(_leftPanel.transform);
             BuildStatusBar(_leftPanel.transform);
         }
 
         private void BuildSectionHeader(Transform parent, string text, float fontSize)
         {
             var go = CreateUI("Header_" + text, parent);
-            go.AddComponent<LayoutElement>().preferredHeight = fontSize + 8f;
+            go.AddComponent<LayoutElement>().preferredHeight = fontSize + 6f;
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text = text;
             tmp.fontSize = fontSize;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = LabelColor;
+            tmp.color = ACCENT;
+            tmp.characterSpacing = 4f;
+        }
+
+        private void BuildSectionLabel(Transform parent, string text)
+        {
+            var go = CreateUI("Label_" + text, parent);
+            go.AddComponent<LayoutElement>().preferredHeight = 18f;
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.text = text;
+            tmp.fontSize = 11f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Left;
+            tmp.color = TEXT_SECONDARY;
+            tmp.characterSpacing = 2f;
+        }
+
+        private void BuildSeparator(Transform parent)
+        {
+            var go = CreateUI("Sep", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = 1f;
+            go.AddComponent<Image>().color = SEPARATOR;
         }
 
         private void BuildToolbar(Transform parent)
         {
             var go = CreateUI("Toolbar", parent);
-            go.AddComponent<LayoutElement>().preferredHeight = 38f;
+            go.AddComponent<LayoutElement>().preferredHeight = 44f;
             var h = go.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 3f;
+            h.spacing = 4f;
             h.childForceExpandWidth = true;
             h.childForceExpandHeight = true;
             h.childControlWidth = true;
             h.childControlHeight = true;
 
-            CreateToolBtn(go.transform, "B", TileEditorState.Tool.Brush);
-            CreateToolBtn(go.transform, "E", TileEditorState.Tool.Eraser);
-            CreateToolBtn(go.transform, "F", TileEditorState.Tool.Fill);
-            CreateToolBtn(go.transform, "I", TileEditorState.Tool.Eyedropper);
-            CreateToolBtn(go.transform, "S", TileEditorState.Tool.Select);
+            CreateToolBtn(go.transform, "Brush", "B", TileEditorState.Tool.Brush);
+            CreateToolBtn(go.transform, "Erase", "E", TileEditorState.Tool.Eraser);
+            CreateToolBtn(go.transform, "Fill", "F", TileEditorState.Tool.Fill);
+            CreateToolBtn(go.transform, "Pick", "I", TileEditorState.Tool.Eyedropper);
+            CreateToolBtn(go.transform, "Select", "S", TileEditorState.Tool.Select);
         }
 
-        private void CreateToolBtn(Transform parent, string label, TileEditorState.Tool tool)
+        private void CreateToolBtn(Transform parent, string label, string shortcut, TileEditorState.Tool tool)
         {
             var go = CreateUI($"Tool_{tool}", parent);
             var img = go.AddComponent<Image>();
-            img.color = ButtonNormal;
+            bool active = tool == _state.CurrentTool;
+            img.color = active ? BTN_ACTIVE : BTN_NORMAL;
+
             var btn = go.AddComponent<Button>();
-            var c = btn.colors; c.normalColor = ButtonNormal; c.highlightedColor = ButtonHover; c.pressedColor = ButtonActive; btn.colors = c;
+            var c = btn.colors;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
+            btn.colors = c;
             btn.targetGraphic = img;
             var cap = tool;
             btn.onClick.AddListener(() => _onToolChanged?.Invoke(cap));
-            AddCenteredText(go.transform, label, 16f, FontStyles.Bold, TextColor);
+
+            // Vertical layout: label + shortcut
+            var vl = go.AddComponent<VerticalLayoutGroup>();
+            vl.childAlignment = TextAnchor.MiddleCenter;
+            vl.childForceExpandWidth = true;
+            vl.childForceExpandHeight = false;
+            vl.childControlWidth = true;
+            vl.childControlHeight = true;
+            vl.spacing = -2f;
+
+            var lblGo = CreateUI("Lbl", go.transform);
+            lblGo.AddComponent<LayoutElement>().preferredHeight = 20f;
+            var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text = label;
+            lblTmp.fontSize = 11f;
+            lblTmp.fontStyle = FontStyles.Bold;
+            lblTmp.alignment = TextAlignmentOptions.Center;
+            lblTmp.color = active ? ACCENT : TEXT_SECONDARY;
+
+            var keyGo = CreateUI("Key", go.transform);
+            keyGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            var keyTmp = keyGo.AddComponent<TextMeshProUGUI>();
+            keyTmp.text = shortcut;
+            keyTmp.fontSize = 9f;
+            keyTmp.alignment = TextAlignmentOptions.Center;
+            keyTmp.color = TEXT_MUTED;
+
             _toolButtonImages[tool] = img;
+            _toolButtonTexts[tool] = lblTmp;
         }
 
-        private void BuildLayerSelector(Transform parent)
+        private void BuildLayerAndBrushRow(Transform parent)
         {
-            var row = CreateUI("LayerRow", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 30f;
-            var h = row.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 4f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
-            h.childControlWidth = true; h.childControlHeight = true;
+            // Layer selector
+            var layerRow = CreateUI("LayerRow", parent);
+            layerRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var lh = layerRow.AddComponent<HorizontalLayoutGroup>();
+            lh.spacing = 4f; lh.childForceExpandWidth = false; lh.childForceExpandHeight = true;
+            lh.childControlWidth = true; lh.childControlHeight = true;
 
-            var prev = CreateUI("Prev", row.transform);
-            prev.AddComponent<LayoutElement>().preferredWidth = 28f;
-            MakeBtn(prev, "<", () => { int v = (int)_state.CurrentLayer - 1; if (v < 0) v = 8; _onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); });
+            // Layer label
+            var layerLbl = CreateUI("LLbl", layerRow.transform);
+            layerLbl.AddComponent<LayoutElement>().preferredWidth = 44f;
+            var lt = layerLbl.AddComponent<TextMeshProUGUI>();
+            lt.text = "Layer"; lt.fontSize = 11f; lt.alignment = TextAlignmentOptions.Left; lt.color = TEXT_SECONDARY;
 
-            var lbl = CreateUI("LayerLbl", row.transform);
+            var prev = CreateUI("Prev", layerRow.transform);
+            prev.AddComponent<LayoutElement>().preferredWidth = 26f;
+            MakeBtn(prev, "\u25C0", () => { int v = (int)_state.CurrentLayer - 1; if (v < 0) v = 8; _onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
+
+            var lbl = CreateUI("LayerVal", layerRow.transform);
             lbl.AddComponent<LayoutElement>().flexibleWidth = 1f;
             _layerLabel = lbl.AddComponent<TextMeshProUGUI>();
             _layerLabel.text = _state.CurrentLayer.ToString();
-            _layerLabel.fontSize = 14f;
+            _layerLabel.fontSize = 13f;
+            _layerLabel.fontStyle = FontStyles.Bold;
             _layerLabel.alignment = TextAlignmentOptions.Center;
-            _layerLabel.color = TextColor;
+            _layerLabel.color = ACCENT;
 
-            var next = CreateUI("Next", row.transform);
-            next.AddComponent<LayoutElement>().preferredWidth = 28f;
-            MakeBtn(next, ">", () => { int v = (int)_state.CurrentLayer + 1; if (v > 8) v = 0; _onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); });
-        }
+            var next = CreateUI("Next", layerRow.transform);
+            next.AddComponent<LayoutElement>().preferredWidth = 26f;
+            MakeBtn(next, "\u25B6", () => { int v = (int)_state.CurrentLayer + 1; if (v > 8) v = 0; _onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v); }, 10f);
 
-        private void BuildBrushSize(Transform parent)
-        {
-            var row = CreateUI("BrushRow", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 26f;
-            var h = row.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 4f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
-            h.childControlWidth = true; h.childControlHeight = true;
+            // Spacer
+            var spacer = CreateUI("Spacer", layerRow.transform);
+            spacer.AddComponent<LayoutElement>().preferredWidth = 8f;
 
-            var lbl = CreateUI("Lbl", row.transform);
-            lbl.AddComponent<LayoutElement>().preferredWidth = 50f;
-            var t = lbl.AddComponent<TextMeshProUGUI>();
-            t.text = "Size:"; t.fontSize = 13f; t.alignment = TextAlignmentOptions.Left; t.color = TextColor;
+            // Brush size
+            var brushLbl = CreateUI("BLbl", layerRow.transform);
+            brushLbl.AddComponent<LayoutElement>().preferredWidth = 34f;
+            var bt = brushLbl.AddComponent<TextMeshProUGUI>();
+            bt.text = "Size"; bt.fontSize = 11f; bt.alignment = TextAlignmentOptions.Left; bt.color = TEXT_SECONDARY;
 
-            var minus = CreateUI("Minus", row.transform);
-            minus.AddComponent<LayoutElement>().preferredWidth = 26f;
-            MakeBtn(minus, "-", () => _onBrushSizeChanged?.Invoke(Mathf.Max(1, _state.BrushSize - 1)));
+            var minus = CreateUI("Minus", layerRow.transform);
+            minus.AddComponent<LayoutElement>().preferredWidth = 22f;
+            MakeBtn(minus, "-", () => _onBrushSizeChanged?.Invoke(Mathf.Max(1, _state.BrushSize - 1)), 12f);
 
-            var val = CreateUI("Val", row.transform);
-            val.AddComponent<LayoutElement>().preferredWidth = 46f;
+            var val = CreateUI("Val", layerRow.transform);
+            val.AddComponent<LayoutElement>().preferredWidth = 36f;
             _brushSizeLabel = val.AddComponent<TextMeshProUGUI>();
             _brushSizeLabel.text = $"{_state.BrushSize}x{_state.BrushSize}";
-            _brushSizeLabel.fontSize = 13f; _brushSizeLabel.alignment = TextAlignmentOptions.Center; _brushSizeLabel.color = LabelColor;
+            _brushSizeLabel.fontSize = 12f;
+            _brushSizeLabel.fontStyle = FontStyles.Bold;
+            _brushSizeLabel.alignment = TextAlignmentOptions.Center;
+            _brushSizeLabel.color = TEXT_PRIMARY;
 
-            var plus = CreateUI("Plus", row.transform);
-            plus.AddComponent<LayoutElement>().preferredWidth = 26f;
-            MakeBtn(plus, "+", () => _onBrushSizeChanged?.Invoke(Mathf.Min(5, _state.BrushSize + 1)));
-
-            // Visual brush size buttons (1-5)
-            for (int s = 1; s <= 5; s++)
-            {
-                var sb = CreateUI($"S{s}", row.transform);
-                sb.AddComponent<LayoutElement>().preferredWidth = 22f;
-                int cap = s;
-                MakeBtn(sb, $"{s}", () => _onBrushSizeChanged?.Invoke(cap), 11f);
-            }
+            var plus = CreateUI("Plus", layerRow.transform);
+            plus.AddComponent<LayoutElement>().preferredWidth = 22f;
+            MakeBtn(plus, "+", () => _onBrushSizeChanged?.Invoke(Mathf.Min(5, _state.BrushSize + 1)), 12f);
         }
 
         private void BuildSelectedTilePreview(Transform parent)
         {
             var row = CreateUI("SelectedPreview", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 52f;
+            row.AddComponent<LayoutElement>().preferredHeight = 56f;
             var h = row.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 6f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
+            h.spacing = 10f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
             h.childControlWidth = true; h.childControlHeight = true;
-            h.padding = new RectOffset(4, 4, 2, 2);
+            h.padding = new RectOffset(4, 4, 4, 4);
 
+            // Preview image with accent border
             var imgGo = CreateUI("Img", row.transform);
             imgGo.AddComponent<LayoutElement>().preferredWidth = 48f;
             _selectedTilePreviewImg = imgGo.AddComponent<Image>();
-            _selectedTilePreviewImg.color = TileSlotBg;
+            _selectedTilePreviewImg.color = SLOT_BG;
             _selectedTilePreviewImg.preserveAspect = true;
             var outline = imgGo.AddComponent<Outline>();
-            outline.effectColor = LabelColor;
-            outline.effectDistance = new Vector2(1f, 1f);
+            outline.effectColor = ACCENT;
+            outline.effectDistance = new Vector2(1.5f, 1.5f);
 
-            var nameGo = CreateUI("Name", row.transform);
-            nameGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            // Name + label
+            var infoGo = CreateUI("Info", row.transform);
+            infoGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var vl = infoGo.AddComponent<VerticalLayoutGroup>();
+            vl.spacing = 2f; vl.childForceExpandHeight = false; vl.childControlHeight = true;
+            vl.childForceExpandWidth = true; vl.childControlWidth = true;
+
+            var labelGo = CreateUI("Lbl", infoGo.transform);
+            labelGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            var labelTmp = labelGo.AddComponent<TextMeshProUGUI>();
+            labelTmp.text = "SELECTED"; labelTmp.fontSize = 9f; labelTmp.color = TEXT_MUTED;
+            labelTmp.characterSpacing = 2f;
+
+            var nameGo = CreateUI("Name", infoGo.transform);
+            nameGo.AddComponent<LayoutElement>().flexibleHeight = 1f;
             _selectedTileNameText = nameGo.AddComponent<TextMeshProUGUI>();
             _selectedTileNameText.text = "(none)";
             _selectedTileNameText.fontSize = 13f;
             _selectedTileNameText.alignment = TextAlignmentOptions.Left;
-            _selectedTileNameText.color = TextColor;
+            _selectedTileNameText.color = TEXT_PRIMARY;
             _selectedTileNameText.enableWordWrapping = true;
         }
 
         private void BuildCategorySelector(Transform parent)
         {
-            // Vertical scrollable category list with wrapping grid
             var scrollGo = CreateUI("CatScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
-            le.preferredHeight = 60f;
-            le.minHeight = 40f;
+            le.preferredHeight = 56f;
+            le.minHeight = 32f;
             var sr = scrollGo.AddComponent<ScrollRect>();
             sr.horizontal = false; sr.vertical = true;
 
             var vp = CreateUI("VP", scrollGo.transform);
             StretchFill(vp);
             vp.AddComponent<Mask>().showMaskGraphic = false;
-            vp.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.1f, 0.5f);
+            vp.AddComponent<Image>().color = BG_SURFACE;
 
             var content = CreateUI("Content", vp.transform);
             _categoryTabsContent = content.transform;
@@ -400,11 +498,10 @@ namespace Valkur.Gameplay.TileEditor
             cr.anchorMin = new Vector2(0, 1); cr.anchorMax = new Vector2(1, 1);
             cr.pivot = new Vector2(0, 1); cr.sizeDelta = Vector2.zero;
 
-            // Use GridLayout so categories wrap into rows
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(124f, 22f);
-            gl.spacing = new Vector2(3f, 2f);
-            gl.padding = new RectOffset(2, 2, 2, 2);
+            gl.cellSize = new Vector2(130f, 24f);
+            gl.spacing = new Vector2(3f, 3f);
+            gl.padding = new RectOffset(3, 3, 3, 3);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gl.constraintCount = 2;
 
@@ -416,14 +513,14 @@ namespace Valkur.Gameplay.TileEditor
         {
             var scrollGo = CreateUI("TileScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
-            le.flexibleHeight = 1f; le.minHeight = 120f;
+            le.flexibleHeight = 1f; le.minHeight = 140f;
             _tileScrollRect = scrollGo.AddComponent<ScrollRect>();
             _tileScrollRect.horizontal = false; _tileScrollRect.vertical = true;
 
             var vp = CreateUI("VP", scrollGo.transform);
             StretchFill(vp);
             vp.AddComponent<Mask>().showMaskGraphic = false;
-            vp.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.1f, 1f);
+            vp.AddComponent<Image>().color = BG_SURFACE;
 
             var content = CreateUI("Content", vp.transform);
             _tileGridContent = content.transform;
@@ -431,8 +528,8 @@ namespace Valkur.Gameplay.TileEditor
             cr.anchorMin = new Vector2(0, 1); cr.anchorMax = new Vector2(1, 1);
             cr.pivot = new Vector2(0, 1); cr.sizeDelta = Vector2.zero;
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(48f, 48f);
-            gl.spacing = new Vector2(3f, 3f);
+            gl.cellSize = new Vector2(52f, 52f);
+            gl.spacing = new Vector2(4f, 4f);
             gl.padding = new RectOffset(4, 4, 4, 4);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gl.constraintCount = 5;
@@ -444,101 +541,109 @@ namespace Valkur.Gameplay.TileEditor
         private void BuildTileCountRow(Transform parent)
         {
             var go = CreateUI("TileCount", parent);
-            go.AddComponent<LayoutElement>().preferredHeight = 18f;
+            go.AddComponent<LayoutElement>().preferredHeight = 16f;
             _tileCountText = go.AddComponent<TextMeshProUGUI>();
             _tileCountText.text = "";
-            _tileCountText.fontSize = 11f;
+            _tileCountText.fontSize = 10f;
             _tileCountText.alignment = TextAlignmentOptions.Right;
-            _tileCountText.color = new Color(0.5f, 0.5f, 0.55f, 0.7f);
+            _tileCountText.color = TEXT_MUTED;
         }
 
         private void BuildStatusBar(Transform parent)
         {
             var go = CreateUI("Status", parent);
-            go.AddComponent<LayoutElement>().preferredHeight = 20f;
+            go.AddComponent<LayoutElement>().preferredHeight = 18f;
             _statusText = go.AddComponent<TextMeshProUGUI>();
-            _statusText.text = "F6: Toggle | B/E/F/I/S: Tools | Scroll: Layer";
-            _statusText.fontSize = 10f;
+            _statusText.text = "F6 Toggle  |  B E F I S Tools  |  Scroll Layer  |  Ctrl+Z Undo";
+            _statusText.fontSize = 9f;
             _statusText.alignment = TextAlignmentOptions.Center;
-            _statusText.color = new Color(0.55f, 0.55f, 0.6f, 0.7f);
+            _statusText.color = TEXT_MUTED;
         }
 
-        // ========================= RIGHT: VIEW PANEL =========================
-        // Maps to Python's TilesViewPanelView: hovered, selected, choice sprites + layer info
+        // ═══════════════════════════════════════════════════════════════
+        //  RIGHT SIDEBAR (View + Layers merged)
+        // ═══════════════════════════════════════════════════════════════
 
-        private void BuildViewPanel(Transform canvasT)
+        private void BuildRightSidebar(Transform canvasT)
         {
-            _viewPanel = CreatePanel("ViewPanel", canvasT,
+            // View panel (top-right)
+            _viewPanel = MakePanel("ViewPanel", canvasT,
                 new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-10f, -10f), new Vector2(220f, 260f));
+                new Vector2(-PANEL_PAD, -8f), new Vector2(RIGHT_WIDTH, 240f));
 
-            var layout = _viewPanel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(8, 8, 6, 6);
-            layout.spacing = 4f;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
+            var vLayout = _viewPanel.AddComponent<VerticalLayoutGroup>();
+            vLayout.padding = new RectOffset(10, 10, 8, 8);
+            vLayout.spacing = 4f;
+            vLayout.childForceExpandWidth = true;
+            vLayout.childForceExpandHeight = false;
+            vLayout.childControlWidth = true;
+            vLayout.childControlHeight = true;
 
-            BuildSectionHeader(_viewPanel.transform, "VIEW", 15f);
+            BuildSectionLabel(_viewPanel.transform, "INSPECTOR");
+            BuildViewRow(_viewPanel.transform, "Hovered", CYAN_ACCENT, out _viewHoveredImg, out _viewHoveredLabel);
+            BuildViewRow(_viewPanel.transform, "Selected", GREEN_ACCENT, out _viewSelectedImg, out _viewSelectedLabel);
+            BuildViewRow(_viewPanel.transform, "Brush", ACCENT, out _viewChoiceImg, out _viewChoiceLabel);
+            BuildSeparator(_viewPanel.transform);
 
-            // Hovered tile row
-            BuildViewRow(_viewPanel.transform, "Hovered", new Color(0f, 0.9f, 0.9f, 1f),
-                out _viewHoveredImg, out _viewHoveredLabel);
-
-            // Selected tile row
-            BuildViewRow(_viewPanel.transform, "Selected", new Color(0f, 1f, 0f, 1f),
-                out _viewSelectedImg, out _viewSelectedLabel);
-
-            // Choice tile row
-            BuildViewRow(_viewPanel.transform, "Choice", new Color(1f, 0.85f, 0f, 1f),
-                out _viewChoiceImg, out _viewChoiceLabel);
-
-            // Separator
-            var sep = CreateUI("Sep", _viewPanel.transform);
-            sep.AddComponent<LayoutElement>().preferredHeight = 1f;
-            sep.AddComponent<Image>().color = PanelBorder;
-
-            // Layer Hovered
+            // Layer info
             var lhGo = CreateUI("LayerHov", _viewPanel.transform);
             lhGo.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var lhLabel = lhGo.AddComponent<TextMeshProUGUI>();
-            lhLabel.text = "Layer Hovered:"; lhLabel.fontSize = 11f; lhLabel.color = TextColor;
+            var lhTmp = lhGo.AddComponent<TextMeshProUGUI>();
+            lhTmp.text = "Hover Layer"; lhTmp.fontSize = 10f; lhTmp.color = TEXT_MUTED;
             var lhVal = CreateUI("LHVal", _viewPanel.transform);
             lhVal.AddComponent<LayoutElement>().preferredHeight = 18f;
             _viewLayerHoveredText = lhVal.AddComponent<TextMeshProUGUI>();
-            _viewLayerHoveredText.text = ""; _viewLayerHoveredText.fontSize = 13f;
-            _viewLayerHoveredText.fontStyle = FontStyles.Bold; _viewLayerHoveredText.color = LabelColor;
+            _viewLayerHoveredText.text = ""; _viewLayerHoveredText.fontSize = 12f;
+            _viewLayerHoveredText.fontStyle = FontStyles.Bold; _viewLayerHoveredText.color = ACCENT;
 
-            // Layer Selected
             var lsGo = CreateUI("LayerSel", _viewPanel.transform);
             lsGo.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var lsLabel = lsGo.AddComponent<TextMeshProUGUI>();
-            lsLabel.text = "Layer Selected:"; lsLabel.fontSize = 11f; lsLabel.color = TextColor;
+            var lsTmp = lsGo.AddComponent<TextMeshProUGUI>();
+            lsTmp.text = "Active Layer"; lsTmp.fontSize = 10f; lsTmp.color = TEXT_MUTED;
             var lsVal = CreateUI("LSVal", _viewPanel.transform);
             lsVal.AddComponent<LayoutElement>().preferredHeight = 18f;
             _viewLayerSelectedText = lsVal.AddComponent<TextMeshProUGUI>();
             _viewLayerSelectedText.text = $"  {(int)_state.CurrentLayer}: {_state.CurrentLayer}";
-            _viewLayerSelectedText.fontSize = 13f;
-            _viewLayerSelectedText.fontStyle = FontStyles.Bold; _viewLayerSelectedText.color = LabelColor;
+            _viewLayerSelectedText.fontSize = 12f;
+            _viewLayerSelectedText.fontStyle = FontStyles.Bold; _viewLayerSelectedText.color = ACCENT;
+
+            // Layers panel (below view panel)
+            _layersPanel = MakePanel("LayersPanel", canvasT,
+                new Vector2(1f, 0f), new Vector2(1f, 0.52f), new Vector2(1f, 0f),
+                new Vector2(-PANEL_PAD, 8f), new Vector2(RIGHT_WIDTH, 0f));
+
+            var lLayout = _layersPanel.AddComponent<VerticalLayoutGroup>();
+            lLayout.padding = new RectOffset(8, 8, 6, 6);
+            lLayout.spacing = 2f;
+            lLayout.childForceExpandWidth = true;
+            lLayout.childForceExpandHeight = false;
+            lLayout.childControlWidth = true;
+            lLayout.childControlHeight = true;
+
+            BuildSectionLabel(_layersPanel.transform, "LAYERS");
+
+            var layers = System.Enum.GetValues(typeof(TilemapLayerSetup.TilemapLayer));
+            foreach (TilemapLayerSetup.TilemapLayer layer in layers)
+                BuildLayerRow(_layersPanel.transform, layer);
         }
 
-        private void BuildViewRow(Transform parent, string label, Color outlineColor,
+        private void BuildViewRow(Transform parent, string label, Color accentColor,
             out Image tileImg, out TextMeshProUGUI nameText)
         {
             var row = CreateUI($"View_{label}", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 36f;
+            row.AddComponent<LayoutElement>().preferredHeight = 38f;
             var h = row.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 6f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
+            h.spacing = 8f; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
             h.childControlWidth = true; h.childControlHeight = true;
+            h.padding = new RectOffset(2, 2, 2, 2);
 
             var imgGo = CreateUI("Img", row.transform);
-            imgGo.AddComponent<LayoutElement>().preferredWidth = 32f;
+            imgGo.AddComponent<LayoutElement>().preferredWidth = 34f;
             tileImg = imgGo.AddComponent<Image>();
-            tileImg.color = TileSlotBg;
+            tileImg.color = SLOT_BG;
             tileImg.preserveAspect = true;
             var ol = imgGo.AddComponent<Outline>();
-            ol.effectColor = outlineColor;
+            ol.effectColor = accentColor;
             ol.effectDistance = new Vector2(1.5f, 1.5f);
 
             var txtGo = CreateUI("Txt", row.transform);
@@ -548,39 +653,13 @@ namespace Valkur.Gameplay.TileEditor
 
             var lblGo = CreateUI("Lbl", txtGo.transform);
             var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
-            lblTmp.text = label; lblTmp.fontSize = 10f; lblTmp.color = outlineColor;
+            lblTmp.text = label; lblTmp.fontSize = 9f; lblTmp.color = accentColor;
 
             var valGo = CreateUI("Val", txtGo.transform);
             nameText = valGo.AddComponent<TextMeshProUGUI>();
-            nameText.text = ""; nameText.fontSize = 12f; nameText.color = TextColor;
+            nameText.text = ""; nameText.fontSize = 12f; nameText.color = TEXT_PRIMARY;
             nameText.enableWordWrapping = false;
             nameText.overflowMode = TextOverflowModes.Ellipsis;
-        }
-
-        // ======================== RIGHT: LAYERS PANEL ========================
-        // Maps to Python's LayersPanelView: 9 layers with visibility toggles
-
-        private void BuildLayersPanel(Transform canvasT)
-        {
-            _layersPanel = CreatePanel("LayersPanel", canvasT,
-                new Vector2(1f, 0f), new Vector2(1f, 0.55f), new Vector2(1f, 0f),
-                new Vector2(-10f, 10f), new Vector2(220f, 0f));
-
-            var layout = _layersPanel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(6, 6, 4, 4);
-            layout.spacing = 2f;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-
-            BuildSectionHeader(_layersPanel.transform, "LAYERS", 14f);
-
-            var layers = System.Enum.GetValues(typeof(TilemapLayerSetup.TilemapLayer));
-            foreach (TilemapLayerSetup.TilemapLayer layer in layers)
-            {
-                BuildLayerRow(_layersPanel.transform, layer);
-            }
         }
 
         private void BuildLayerRow(Transform parent, TilemapLayerSetup.TilemapLayer layer)
@@ -594,41 +673,42 @@ namespace Valkur.Gameplay.TileEditor
             h.padding = new RectOffset(4, 4, 1, 1);
 
             var bg = row.AddComponent<Image>();
-            bg.color = layer == _state.CurrentLayer ? LayerActiveBg : Color.clear;
+            bg.color = layer == _state.CurrentLayer ? LAYER_ACTIVE_BG : Color.clear;
             _layerRowBgs.Add(bg);
 
             // Visibility toggle
             var visGo = CreateUI("Vis", row.transform);
-            visGo.AddComponent<LayoutElement>().preferredWidth = 18f;
+            visGo.AddComponent<LayoutElement>().preferredWidth = 16f;
             var visImg = visGo.AddComponent<Image>();
-            visImg.color = ToggleOnColor;
+            visImg.color = VIS_ON;
             _layerVisIcons.Add(visImg);
             var visBtn = visGo.AddComponent<Button>();
             visBtn.targetGraphic = visImg;
             int capIdx = idx;
             visBtn.onClick.AddListener(() => ToggleLayerVisibility(capIdx));
 
-            // Index label
+            // Index
             var idxGo = CreateUI("Idx", row.transform);
-            idxGo.AddComponent<LayoutElement>().preferredWidth = 20f;
+            idxGo.AddComponent<LayoutElement>().preferredWidth = 18f;
             var idxTmp = idxGo.AddComponent<TextMeshProUGUI>();
-            idxTmp.text = idx.ToString(); idxTmp.fontSize = 12f;
-            idxTmp.alignment = TextAlignmentOptions.Center; idxTmp.color = LabelColor;
+            idxTmp.text = idx.ToString(); idxTmp.fontSize = 11f;
+            idxTmp.alignment = TextAlignmentOptions.Center; idxTmp.color = ACCENT_DIM;
 
-            // Name label
+            // Name
             var nameGo = CreateUI("Name", row.transform);
             nameGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
             var nameTmp = nameGo.AddComponent<TextMeshProUGUI>();
-            nameTmp.text = layer.ToString(); nameTmp.fontSize = 12f;
-            nameTmp.alignment = TextAlignmentOptions.Left; nameTmp.color = TextColor;
+            nameTmp.text = layer.ToString(); nameTmp.fontSize = 11f;
+            nameTmp.alignment = TextAlignmentOptions.Left;
+            nameTmp.color = layer == _state.CurrentLayer ? TEXT_PRIMARY : TEXT_SECONDARY;
             _layerRowLabels.Add(nameTmp);
 
-            // Click to select layer
+            // Click to select
             var rowBtn = row.AddComponent<Button>();
             rowBtn.targetGraphic = bg;
             var colors = rowBtn.colors;
             colors.normalColor = Color.clear;
-            colors.highlightedColor = new Color(0.3f, 0.28f, 0.2f, 0.4f);
+            colors.highlightedColor = BTN_HOVER;
             rowBtn.colors = colors;
             var capLayer = layer;
             rowBtn.onClick.AddListener(() => _onLayerChanged?.Invoke(capLayer));
@@ -638,7 +718,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             _layerVisibility[layerIdx] = !_layerVisibility[layerIdx];
             if (layerIdx < _layerVisIcons.Count)
-                _layerVisIcons[layerIdx].color = _layerVisibility[layerIdx] ? ToggleOnColor : ToggleOffColor;
+                _layerVisIcons[layerIdx].color = _layerVisibility[layerIdx] ? VIS_ON : VIS_OFF;
         }
 
         public bool IsLayerVisible(int layerIdx)
@@ -649,10 +729,17 @@ namespace Valkur.Gameplay.TileEditor
         private void RefreshLayersPanel()
         {
             for (int i = 0; i < _layerRowBgs.Count && i < 9; i++)
-                _layerRowBgs[i].color = i == (int)_state.CurrentLayer ? LayerActiveBg : Color.clear;
+            {
+                bool active = i == (int)_state.CurrentLayer;
+                _layerRowBgs[i].color = active ? LAYER_ACTIVE_BG : Color.clear;
+                if (i < _layerRowLabels.Count)
+                    _layerRowLabels[i].color = active ? TEXT_PRIMARY : TEXT_SECONDARY;
+            }
         }
 
-        // ======================== BOTTOM: LAYER INDICATOR ====================
+        // ═══════════════════════════════════════════════════════════════
+        //  BOTTOM LAYER INDICATOR
+        // ═══════════════════════════════════════════════════════════════
 
         private void BuildLayerIndicator(Transform canvasT)
         {
@@ -660,19 +747,21 @@ namespace Valkur.Gameplay.TileEditor
             var r = _layerIndicatorPanel.GetComponent<RectTransform>();
             r.anchorMin = new Vector2(0.5f, 0f); r.anchorMax = new Vector2(0.5f, 0f);
             r.pivot = new Vector2(0.5f, 0f);
-            r.anchoredPosition = new Vector2(0f, 15f);
-            r.sizeDelta = new Vector2(220f, 36f);
+            r.anchoredPosition = new Vector2(0f, 12f);
+            r.sizeDelta = new Vector2(240f, 34f);
             var bg = _layerIndicatorPanel.AddComponent<Image>();
-            bg.color = new Color(0.1f, 0.1f, 0.14f, 0.85f);
-            _layerIndicatorPanel.AddComponent<Outline>().effectColor = LabelColor;
+            bg.color = BG_PANEL;
+            var ol = _layerIndicatorPanel.AddComponent<Outline>();
+            ol.effectColor = ACCENT_DIM;
+            ol.effectDistance = new Vector2(1f, 1f);
 
             _layerIndicator = AddCenteredText(_layerIndicatorPanel.transform,
-                $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}", 18f, FontStyles.Bold, LabelColor);
+                $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}", 16f, FontStyles.Bold, ACCENT);
         }
 
-        // =====================================================================
-        // TILE GRID POPULATION
-        // =====================================================================
+        // ═══════════════════════════════════════════════════════════════
+        //  TILE GRID POPULATION
+        // ═══════════════════════════════════════════════════════════════
 
         private void PopulateCategoryTabs()
         {
@@ -680,9 +769,7 @@ namespace Valkur.Gameplay.TileEditor
             _categoryButtons.Clear();
             if (_catalog == null) return;
 
-            // "All" tab
             AddCategoryTab("All", "");
-
             foreach (var cat in _catalog.GetCategories())
                 AddCategoryTab(cat, cat);
         }
@@ -692,24 +779,27 @@ namespace Valkur.Gameplay.TileEditor
             var go = CreateUI($"Cat_{displayName}", _categoryTabsContent);
             var img = go.AddComponent<Image>();
             bool isActive = categoryKey == _currentCategory;
-            img.color = isActive ? ButtonActive : ButtonNormal;
+            img.color = isActive ? BTN_ACTIVE : BTN_NORMAL;
 
-            var outline = go.AddComponent<Outline>();
-            outline.effectColor = isActive ? LabelColor : Color.clear;
-            outline.effectDistance = new Vector2(1f, 1f);
+            if (isActive)
+            {
+                var outline = go.AddComponent<Outline>();
+                outline.effectColor = ACCENT;
+                outline.effectDistance = new Vector2(1f, 1f);
+            }
 
             var btn = go.AddComponent<Button>();
             var c = btn.colors;
-            c.normalColor = ButtonNormal;
-            c.highlightedColor = ButtonHover;
-            c.pressedColor = ButtonActive;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
             btn.colors = c;
             btn.targetGraphic = img;
             string cap = categoryKey;
             btn.onClick.AddListener(() => SelectCategory(cap));
 
-            var tmp = AddCenteredText(go.transform, displayName, 11f, FontStyles.Normal,
-                isActive ? LabelColor : TextColor);
+            var tmp = AddCenteredText(go.transform, displayName, 10f, FontStyles.Normal,
+                isActive ? ACCENT : TEXT_SECONDARY);
             tmp.alignment = TextAlignmentOptions.Left;
             tmp.margin = new Vector4(6f, 0f, 0f, 0f);
 
@@ -720,8 +810,6 @@ namespace Valkur.Gameplay.TileEditor
         {
             _currentCategory = category;
             PopulateTileGrid(category);
-
-            // Rebuild tabs to update highlights (simpler than tracking all sub-elements)
             PopulateCategoryTabs();
         }
 
@@ -741,11 +829,14 @@ namespace Valkur.Gameplay.TileEditor
                 var entry = tiles[i];
                 var go = CreateUI($"Slot_{i}", _tileGridContent);
                 var slotImg = go.AddComponent<Image>();
-                slotImg.color = TileSlotBg;
+                slotImg.color = SLOT_BG;
                 var btn = go.AddComponent<Button>();
-                var c = btn.colors;
-                c.normalColor = TileSlotBg; c.highlightedColor = ButtonHover; c.selectedColor = TileSlotSelected;
-                btn.colors = c; btn.targetGraphic = slotImg;
+                var bc = btn.colors;
+                bc.normalColor = SLOT_BG;
+                bc.highlightedColor = SLOT_HOVER;
+                bc.selectedColor = SLOT_SELECTED;
+                btn.colors = bc;
+                btn.targetGraphic = slotImg;
                 int ci = i; var ce = entry;
                 btn.onClick.AddListener(() => { _selectedSlotIndex = ci; _onTileSelected?.Invoke(ce); HighlightSelectedSlot(); });
 
@@ -755,20 +846,20 @@ namespace Valkur.Gameplay.TileEditor
                 {
                     var sgo = CreateUI("Prev", go.transform);
                     var sr = sgo.GetComponent<RectTransform>();
-                    sr.anchorMin = new Vector2(0.08f, 0.08f); sr.anchorMax = new Vector2(0.92f, 0.92f);
+                    sr.anchorMin = new Vector2(0.06f, 0.06f); sr.anchorMax = new Vector2(0.94f, 0.94f);
                     sr.sizeDelta = Vector2.zero;
                     var si = sgo.AddComponent<Image>();
                     si.sprite = preview; si.preserveAspect = true; si.raycastTarget = false;
                 }
 
-                // Tile name tooltip at bottom
+                // Name label at bottom
                 var nameGo = CreateUI("TName", go.transform);
                 var nr = nameGo.GetComponent<RectTransform>();
-                nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0.25f);
+                nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0.22f);
                 nr.sizeDelta = Vector2.zero;
                 var nbg = nameGo.AddComponent<Image>();
-                nbg.color = new Color(0f, 0f, 0f, 0.6f); nbg.raycastTarget = false;
-                var nt = AddCenteredText(nameGo.transform, entry.tileName, 7f, FontStyles.Normal, TextColor);
+                nbg.color = new Color(0f, 0f, 0f, 0.7f); nbg.raycastTarget = false;
+                var nt = AddCenteredText(nameGo.transform, entry.tileName, 7f, FontStyles.Normal, TEXT_PRIMARY);
                 nt.raycastTarget = false;
                 nt.overflowMode = TextOverflowModes.Ellipsis;
                 nt.enableWordWrapping = false;
@@ -785,15 +876,15 @@ namespace Valkur.Gameplay.TileEditor
             for (int i = 0; i < _tileSlots.Count; i++)
             {
                 var img = _tileSlots[i].GetComponent<Image>();
-                if (img != null) img.color = i == _selectedSlotIndex ? TileSlotSelected : TileSlotBg;
+                if (img != null) img.color = i == _selectedSlotIndex ? SLOT_SELECTED : SLOT_BG;
             }
         }
 
-        // =====================================================================
-        // HELPERS
-        // =====================================================================
+        // ═══════════════════════════════════════════════════════════════
+        //  HELPERS
+        // ═══════════════════════════════════════════════════════════════
 
-        private GameObject CreatePanel(string name, Transform parent,
+        private GameObject MakePanel(string name, Transform parent,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
             Vector2 anchoredPos, Vector2 sizeDelta)
         {
@@ -802,21 +893,25 @@ namespace Valkur.Gameplay.TileEditor
             r.anchorMin = anchorMin; r.anchorMax = anchorMax; r.pivot = pivot;
             r.anchoredPosition = anchoredPos; r.sizeDelta = sizeDelta;
             var img = go.AddComponent<Image>();
-            img.color = PanelBg;
+            img.color = BG_PANEL;
             var ol = go.AddComponent<Outline>();
-            ol.effectColor = PanelBorder; ol.effectDistance = new Vector2(1.5f, 1.5f);
+            ol.effectColor = BORDER; ol.effectDistance = new Vector2(1f, 1f);
             return go;
         }
 
-        private void MakeBtn(GameObject go, string label, UnityEngine.Events.UnityAction onClick, float fontSize = 14f)
+        private void MakeBtn(GameObject go, string label, UnityEngine.Events.UnityAction onClick, float fontSize = 13f)
         {
             var img = go.AddComponent<Image>();
-            img.color = ButtonNormal;
+            img.color = BTN_NORMAL;
             var btn = go.AddComponent<Button>();
-            var c = btn.colors; c.normalColor = ButtonNormal; c.highlightedColor = ButtonHover; btn.colors = c;
+            var c = btn.colors;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
+            btn.colors = c;
             btn.targetGraphic = img;
             btn.onClick.AddListener(onClick);
-            AddCenteredText(go.transform, label, fontSize, FontStyles.Bold, TextColor);
+            AddCenteredText(go.transform, label, fontSize, FontStyles.Bold, TEXT_PRIMARY);
         }
 
         private TextMeshProUGUI AddCenteredText(Transform parent, string text, float size, FontStyles style, Color color)
