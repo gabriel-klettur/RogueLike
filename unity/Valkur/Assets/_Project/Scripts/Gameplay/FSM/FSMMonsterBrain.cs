@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.FSM
@@ -18,6 +19,7 @@ namespace Valkur.Gameplay.FSM
         private StateMachine _fsm;
         private Health _health;
         private DirectionalAnimator _animator;
+        private EntityCulling _culling;
 
         public StateMachine FSM => _fsm;
         public MonsterDefinition Definition => definition;
@@ -27,6 +29,9 @@ namespace Valkur.Gameplay.FSM
         {
             _health = GetComponent<Health>();
             _animator = GetComponent<DirectionalAnimator>();
+            _culling = GetComponent<EntityCulling>();
+            if (_culling == null)
+                _culling = gameObject.AddComponent<EntityCulling>();
 
             var rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
@@ -103,11 +108,15 @@ namespace Valkur.Gameplay.FSM
 
         private void Update()
         {
+            if (_culling != null && !_culling.ShouldUpdate)
+                return;
+
             _fsm?.Update(Time.deltaTime);
         }
 
         private void OnDeath()
         {
+            _culling?.ForceActiveNextFrame();
             _fsm?.QueueEvent(new FSMEvent { Type = FSMEventType.OnDeath });
         }
 
@@ -118,6 +127,7 @@ namespace Valkur.Gameplay.FSM
             if (player != null)
                 fromLeft = player.transform.position.x < transform.position.x;
 
+            _culling?.ForceActiveNextFrame();
             _fsm?.QueueEvent(new FSMEvent
             {
                 Type = FSMEventType.OnHit,

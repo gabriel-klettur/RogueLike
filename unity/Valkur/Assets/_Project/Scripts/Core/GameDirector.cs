@@ -27,6 +27,7 @@ namespace Valkur.Core
             Instance = this;
 
             EnsureSaveService();
+            EnsurePerformanceMonitor();
             Debug.Log("[GameDirector] Initialized.");
         }
 
@@ -59,6 +60,15 @@ namespace Valkur.Core
             var saveGo = new GameObject("SaveService");
             saveGo.AddComponent<SaveService>();
             Debug.Log("[GameDirector] SaveService created.");
+        }
+
+        private void EnsurePerformanceMonitor()
+        {
+            if (PerformanceMonitor.Instance != null) return;
+
+            var perfGo = new GameObject("PerformanceMonitor");
+            perfGo.AddComponent<PerformanceMonitor>();
+            Debug.Log("[GameDirector] PerformanceMonitor created.");
         }
     }
 }

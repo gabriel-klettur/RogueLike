@@ -22,14 +22,13 @@ Objetivo:
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
 | 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
-| 7 | Persistencia y release | 48-50 | 1/3 | � En progreso |
-| **Total** | | **1-50** | **34/50** | **68%** |
+| 7 | Persistencia y release | 48-50 | 2/3 | 🟡 En progreso |
+| **Total** | | **1-50** | **35/50** | **70%** |
 
 ### Proximos pasos prioritarios
 
-1. **Paso 49** — Hardening: profiling CPU/GPU/GC, soak tests, optimizaciones
-2. **Paso 50** — Pipeline CI/CD, build release, checklist final
-3. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
+1. **Paso 50** — Pipeline CI/CD, build release, checklist final
+2. **Pasos 3-6, 15-22, 29-30** — Completar fases 0, 2, 3 pendientes
 
 ---
 
@@ -217,7 +216,12 @@ Objetivo:
     - `MigrateSchema`: migracion v1.0→v1.1 (mana/xp fields), extensible para futuras versiones.
     - `TryLoadSingle`: validacion de checksum + estructura antes de aceptar un save.
     - Schema version bumped a `1.1`.
-49. [ ] Ejecuta hardening: profiling CPU/GPU/GC, soak tests 30-60 min, optimizaciones de pooling/culling.
+49. [x] Ejecuta hardening: profiling CPU/GPU/GC, soak tests 30-60 min, optimizaciones de pooling/culling.
+    - `PerformanceMonitor.cs`: rolling FPS/frame time (avg, p95, p99), GC tracking, F3 overlay toggle.
+    - `EntityCulling.cs`: viewport-based frustum culling con margin, offscreen interval=8 frames, ForceActiveNextFrame para estados criticos.
+    - `FSMMonsterBrain.cs`: integra EntityCulling — offscreen monsters throttle FSM updates, critical events (OnHit, OnDeath) force update.
+    - `GameDirector.cs`: crea PerformanceMonitor al inicio.
+    - ObjectPool ya implementado en Paso 40 para VFX y projectiles.
 50. [ ] Configura pipeline de CI/CD (build + EditMode + PlayMode smoke), genera build release y checklist final de salida.
 
 ---
