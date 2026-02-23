@@ -32,7 +32,11 @@ namespace Valkur.Gameplay
             go.layer = PlayerLayer;
             go.tag = "Player";
 
-            EntitySpriteHelper.EnsurePlayerSprite(go.GetComponentInChildren<SpriteRenderer>());
+            var spriteRenderer = go.GetComponentInChildren<SpriteRenderer>();
+            bool appliedDataDrivenVisuals = EntityAnimationBinder.ApplyPlayerVisuals(go, def);
+            if (!appliedDataDrivenVisuals)
+                EntitySpriteHelper.EnsurePlayerSprite(spriteRenderer);
+            EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
 
             // Python parity: selected class defines player max HP from max_strength.
             InitHealth(go, def.maxStrength);

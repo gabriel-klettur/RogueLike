@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Data;
 
 namespace Valkur.Gameplay
 {
@@ -95,6 +96,110 @@ namespace Valkur.Gameplay
 
         public AnimState CurrentState => _currentState;
         public Direction CurrentDirection => _currentDirection;
+
+        /// <summary>
+        /// Runtime assignment API for data-driven character definitions.
+        /// </summary>
+        public void SetSpriteSets(
+            DirectionalSpriteSet idle,
+            DirectionalSpriteSet walk,
+            DirectionalSpriteSet chase,
+            DirectionalSpriteSet cast,
+            DirectionalSpriteSet attack,
+            DirectionalSpriteSet damage,
+            DirectionalSpriteSet death)
+        {
+            idleSprites = idle;
+            walkSprites = walk;
+            chaseSprites = chase;
+            castSprites = cast;
+            attackSprites = attack;
+            damageSprites = damage;
+            deathSprites = death;
+
+            _frameIndex = 0;
+            _frameTimer = 0f;
+            _stateStartTime = Time.time;
+        }
+
+        public Sprite PeekFirstFrame(DirectionalSpriteSet set)
+        {
+            Sprite[] frames = set.GetFrames(Direction.South);
+            if (frames != null && frames.Length > 0 && frames[0] != null) return frames[0];
+
+            frames = set.GetFrames(Direction.East);
+            if (frames != null && frames.Length > 0 && frames[0] != null) return frames[0];
+
+            frames = set.GetFrames(Direction.North);
+            if (frames != null && frames.Length > 0 && frames[0] != null) return frames[0];
+
+            frames = set.GetFrames(Direction.West);
+            if (frames != null && frames.Length > 0 && frames[0] != null) return frames[0];
+
+            return null;
+        }
+
+        public static DirectionalSpriteSet CreateSetFromDirectional(DirectionalSprites directional)
+        {
+            return new DirectionalSpriteSet
+            {
+                south = ToSingleFrameArray(directional.south),
+                southEast = ToSingleFrameArray(directional.southEast),
+                east = ToSingleFrameArray(directional.east),
+                northEast = ToSingleFrameArray(directional.northEast),
+                north = ToSingleFrameArray(directional.north),
+                northWest = ToSingleFrameArray(directional.northWest),
+                west = ToSingleFrameArray(directional.west),
+                southWest = ToSingleFrameArray(directional.southWest)
+            };
+        }
+
+        public static DirectionalSpriteSet CreateSetFromLinearFrames(IReadOnlyList<Sprite> frames)
+        {
+            if (frames == null || frames.Count == 0)
+                return default;
+
+            var clean = new List<Sprite>(frames.Count);
+            for (int i = 0; i < frames.Count; i++)
+            {
+                if (frames[i] != null)
+                    clean.Add(frames[i]);
+            }
+
+            if (clean.Count == 0)
+                return default;
+
+            var buckets = new List<Sprite>[8];
+            for (int i = 0; i < buckets.Length; i++)
+                buckets[i] = new List<Sprite>();
+
+            for (int i = 0; i < clean.Count; i++)
+            {
+                int dirIndex = (int)Mathf.Floor((i * 8f) / clean.Count);
+                if (dirIndex < 0) dirIndex = 0;
+                if (dirIndex > 7) dirIndex = 7;
+                buckets[dirIndex].Add(clean[i]);
+            }
+
+            var fallback = clean[0];
+            for (int i = 0; i < buckets.Length; i++)
+            {
+                if (buckets[i].Count == 0)
+                    buckets[i].Add(fallback);
+            }
+
+            return new DirectionalSpriteSet
+            {
+                south = buckets[0].ToArray(),
+                southEast = buckets[1].ToArray(),
+                east = buckets[2].ToArray(),
+                northEast = buckets[3].ToArray(),
+                north = buckets[4].ToArray(),
+                northWest = buckets[5].ToArray(),
+                west = buckets[6].ToArray(),
+                southWest = buckets[7].ToArray()
+            };
+        }
 
         private void Awake()
         {
@@ -237,6 +342,11 @@ namespace Valkur.Gameplay
                 AnimState.Death => deathSprites,
                 _ => idleSprites
             };
+        }
+
+        private static Sprite[] ToSingleFrameArray(Sprite sprite)
+        {
+            return sprite == null ? Array.Empty<Sprite>() : new[] { sprite };
         }
 
         private void ApplyFrame(Sprite sprite)
