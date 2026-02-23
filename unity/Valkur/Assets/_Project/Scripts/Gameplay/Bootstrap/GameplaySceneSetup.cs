@@ -4,6 +4,9 @@ using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Valkur.Gameplay
 {
@@ -232,6 +235,11 @@ namespace Valkur.Gameplay
                 return defaultPlayerDef;
 
             string selectedKey = PlayerSelectionState.SelectedPlayerKey;
+
+            var selectedAssetDef = TryResolveCatalogDefinition(selectedKey);
+            if (selectedAssetDef != null)
+                return selectedAssetDef;
+
             var selectedRuntimeDef = PlayerClassCatalog.CreateRuntimeDefinition(selectedKey);
             if (selectedRuntimeDef == null)
             {
@@ -240,6 +248,39 @@ namespace Valkur.Gameplay
             }
 
             return selectedRuntimeDef;
+        }
+
+        private PlayerDefinition TryResolveCatalogDefinition(string selectedKey)
+        {
+            if (string.IsNullOrWhiteSpace(selectedKey))
+                return null;
+
+            if (defaultPlayerDef != null &&
+                string.Equals(defaultPlayerDef.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return defaultPlayerDef;
+            }
+
+            var resourceDefs = Resources.LoadAll<PlayerDefinition>(string.Empty);
+            for (int i = 0; i < resourceDefs.Length; i++)
+            {
+                var def = resourceDefs[i];
+                if (def != null && string.Equals(def.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+                    return def;
+            }
+
+#if UNITY_EDITOR
+            string[] guids = AssetDatabase.FindAssets("t:PlayerDefinition", new[] { "Assets/_Project/Data/Catalogs/Players" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(path);
+                if (def != null && string.Equals(def.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+                    return def;
+            }
+#endif
+
+            return null;
         }
 
         private void SpawnTestMonsters()
