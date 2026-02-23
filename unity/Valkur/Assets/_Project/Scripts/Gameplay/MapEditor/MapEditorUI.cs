@@ -171,10 +171,10 @@ namespace Valkur.Gameplay.MapEditor
 
             _root = CreatePanel("MapEditorRoot", canvasGo.transform, new Color(0.05f, 0.05f, 0.06f, 0.92f));
             var rootRect = _root.GetComponent<RectTransform>();
-            rootRect.anchorMin = new Vector2(1f, 1f);
-            rootRect.anchorMax = new Vector2(1f, 1f);
-            rootRect.pivot = new Vector2(1f, 1f);
-            rootRect.anchoredPosition = new Vector2(-18f, -18f);
+            rootRect.anchorMin = new Vector2(0f, 1f);
+            rootRect.anchorMax = new Vector2(0f, 1f);
+            rootRect.pivot = new Vector2(0f, 1f);
+            rootRect.anchoredPosition = new Vector2(18f, -18f);
             rootRect.sizeDelta = new Vector2(460f, 690f);
 
             var rootLayout = _root.AddComponent<VerticalLayoutGroup>();
