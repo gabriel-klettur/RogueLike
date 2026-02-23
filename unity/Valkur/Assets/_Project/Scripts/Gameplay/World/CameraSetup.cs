@@ -3,6 +3,7 @@ using Cinemachine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.TileEditor;
 
 namespace Valkur.Gameplay
@@ -20,6 +21,8 @@ namespace Valkur.Gameplay
         [SerializeField] private float zoomStep = 0.5f;
         [SerializeField] private float minOrthoSize = 3f;
         [SerializeField] private float maxOrthoSize = 14f;
+        [SerializeField] private float mapEditorMaxZoomMultiplier = 20f;
+        [SerializeField] private float mapEditorZoomStepMultiplier = 4f;
 
         private CinemachineVirtualCamera _vcam;
 
@@ -64,8 +67,14 @@ namespace Valkur.Gameplay
             if (Mathf.Abs(scrollY) < 0.1f)
                 return;
 
-            float targetSize = _vcam.m_Lens.OrthographicSize - Mathf.Sign(scrollY) * zoomStep;
-            _vcam.m_Lens.OrthographicSize = Mathf.Clamp(targetSize, minOrthoSize, maxOrthoSize);
+            bool mapEditorActive = MapEditorManager.Instance != null && MapEditorManager.Instance.IsActive;
+            float step = zoomStep * (mapEditorActive ? mapEditorZoomStepMultiplier : 1f);
+            float maxSize = mapEditorActive
+                ? maxOrthoSize * Mathf.Max(1f, mapEditorMaxZoomMultiplier)
+                : maxOrthoSize;
+
+            float targetSize = _vcam.m_Lens.OrthographicSize - Mathf.Sign(scrollY) * step;
+            _vcam.m_Lens.OrthographicSize = Mathf.Clamp(targetSize, minOrthoSize, maxSize);
         }
 
         public void SetTarget(Transform target)
