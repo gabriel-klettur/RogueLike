@@ -2,18 +2,20 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.Tests.EditMode
 {
     public class SpellCasterTests
     {
-        private SpellDefinition CreateSpell(string key, float prepare = 0f, float channel = 0f, float cooldown = 1f)
+        private SpellDefinition CreateSpell(string key, float prepare = 0f, float channel = 0f, float cooldown = 1f, float manaCost = 0f)
         {
             var spell = ScriptableObject.CreateInstance<SpellDefinition>();
             spell.spellKey = key;
             spell.displayName = key;
             spell.type = SpellType.Projectile;
+            spell.manaCost = manaCost;
             spell.damage = 10f;
             spell.speed = 5f;
             spell.prepareDuration = prepare;
@@ -31,6 +33,19 @@ namespace Valkur.Tests.EditMode
             // Awake doesn't run in EditMode — initialize _cooldownTimers via reflection
             var field = typeof(SpellCaster).GetField("_cooldownTimers", BindingFlags.NonPublic | BindingFlags.Instance);
             field.SetValue(caster, new float[caster.SlotCount]);
+            return caster;
+        }
+
+        private SpellCaster CreateCasterWithMana(int currentMana, int maxMana = 100)
+        {
+            var caster = CreateCaster();
+            var mana = caster.gameObject.AddComponent<Mana>();
+            mana.Initialize(maxMana, regen: 0f);
+
+            int consumeToTarget = Mathf.Max(0, maxMana - currentMana);
+            if (consumeToTarget > 0)
+                mana.TryConsume(consumeToTarget);
+
             return caster;
         }
 
@@ -183,6 +198,60 @@ namespace Valkur.Tests.EditMode
             caster.TryCast(0, Vector2.right);
             bool second = caster.TryCast(1, Vector2.right);
             Assert.IsFalse(second);
+            Cleanup(caster);
+        }
+
+        [Test]
+        public void TryCast_WithManaCostAndEnoughMana_ConsumesMana()
+        {
+            var caster = CreateCasterWithMana(currentMana: 10, maxMana: 10);
+            caster.SetSpell(0, CreateSpell("fireball", manaCost: 3f));
+
+            bool result = caster.TryCast(0, Vector2.right);
+
+            var mana = caster.GetComponent<Mana>();
+            Assert.IsTrue(result);
+            Assert.IsNotNull(mana);
+            Assert.AreEqual(7, mana.CurrentMana);
+            Cleanup(caster);
+        }
+
+        [Test]
+        public void TryCast_WithManaCostAndInsufficientMana_ReturnsFalse()
+        {
+            var caster = CreateCasterWithMana(currentMana: 2, maxMana: 10);
+            caster.SetSpell(0, CreateSpell("fireball", manaCost: 5f));
+
+            bool result = caster.TryCast(0, Vector2.right);
+
+            var mana = caster.GetComponent<Mana>();
+            Assert.IsFalse(result);
+            Assert.IsNotNull(mana);
+            Assert.AreEqual(2, mana.CurrentMana);
+            Cleanup(caster);
+        }
+
+        [Test]
+        public void TryCast_WithManaCostAndNoManaComponent_ReturnsFalse()
+        {
+            var caster = CreateCaster();
+            caster.SetSpell(0, CreateSpell("fireball", manaCost: 2f));
+
+            bool result = caster.TryCast(0, Vector2.right);
+
+            Assert.IsFalse(result);
+            Cleanup(caster);
+        }
+
+        [Test]
+        public void CanCast_WithManaCostAndInsufficientMana_ReturnsFalse()
+        {
+            var caster = CreateCasterWithMana(currentMana: 1, maxMana: 10);
+            caster.SetSpell(0, CreateSpell("fireball", manaCost: 3f));
+
+            bool canCast = caster.CanCast(0);
+
+            Assert.IsFalse(canCast);
             Cleanup(caster);
         }
     }
