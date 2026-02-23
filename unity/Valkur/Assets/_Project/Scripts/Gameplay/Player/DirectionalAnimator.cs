@@ -215,9 +215,11 @@ namespace Valkur.Gameplay
             for (int i = 0; i < buckets.Length; i++)
                 buckets[i] = new List<Sprite>();
 
-            if (clean.Count % 8 == 0)
+            int perDirection = clean.Count / 8;
+            if (perDirection > 0)
             {
-                int perDirection = clean.Count / 8;
+                // Python parity: directional strips are contiguous by direction.
+                // If an extra frame exists (e.g., 41 total), ignore trailing remainder frames.
                 for (int dir = 0; dir < 8; dir++)
                 {
                     int start = dir * perDirection;

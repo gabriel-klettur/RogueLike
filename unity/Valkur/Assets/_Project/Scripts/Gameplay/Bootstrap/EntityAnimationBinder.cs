@@ -69,8 +69,9 @@ namespace Valkur.Gameplay
 
             if (sheetFrames != null && sheetFrames.Count > 0)
             {
-                usesFourDirectionalLayout = true;
-                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames, assumeFourDirectionalLayout: true);
+                // Player sheets in this pipeline follow Python's 8-direction strip layout.
+                // Let the animator normalize 40/41-frame inputs instead of forcing 4-direction mapping.
+                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames);
             }
 
             return default;
