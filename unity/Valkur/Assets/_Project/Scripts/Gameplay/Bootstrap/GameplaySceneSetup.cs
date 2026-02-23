@@ -1,8 +1,12 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Valkur.Gameplay
 {
@@ -30,10 +34,20 @@ namespace Valkur.Gameplay
             BuildWorldGrid();
             EnsureGlobalLight2D();
             EnsureVFXManager();
+            EnsureZoneManager();
             EnsureTileEditor();
+            EnsureMapEditor();
             EnsureSaveLoadInput();
             SpawnPlayer();
             SpawnTestMonsters();
+        }
+
+        private void EnsureZoneManager()
+        {
+            if (FindObjectOfType<ZoneManager>() != null) return;
+            var zoneManagerGo = new GameObject("ZoneManager");
+            zoneManagerGo.AddComponent<ZoneManager>();
+            Debug.Log("[GameplaySceneSetup] ZoneManager created.");
         }
 
         private void BuildWorldGrid()
@@ -49,6 +63,14 @@ namespace Valkur.Gameplay
             var manager = editorGo.AddComponent<TileEditorManager>();
             manager.SetGridBuilder(_gridBuilder);
             Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
+        }
+
+        private void EnsureMapEditor()
+        {
+            if (MapEditorManager.Instance != null) return;
+            var editorGo = new GameObject("MapEditorManager");
+            editorGo.AddComponent<MapEditorManager>();
+            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
         }
 
         /// <summary>
@@ -189,9 +211,76 @@ namespace Valkur.Gameplay
             var playerGo = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             playerGo.tag = "Player";
 
-            if (defaultPlayerDef != null)
+            var selectedDef = ResolveSelectedPlayerDefinition();
+            if (selectedDef != null)
+            {
+                if (!string.IsNullOrWhiteSpace(selectedDef.playerKey))
+                    PlayerSelectionState.SetSelectedPlayer(selectedDef.playerKey);
+                EntitySetup.ConfigurePlayer(playerGo, selectedDef);
+            }
+            else if (defaultPlayerDef != null)
+            {
                 EntitySetup.ConfigurePlayer(playerGo, defaultPlayerDef);
+            }
+            else
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No player definition available for spawned player.");
+            }
 
+        }
+
+        private PlayerDefinition ResolveSelectedPlayerDefinition()
+        {
+            if (!PlayerSelectionState.HasExplicitSelection)
+                return defaultPlayerDef;
+
+            string selectedKey = PlayerSelectionState.SelectedPlayerKey;
+
+            var selectedAssetDef = TryResolveCatalogDefinition(selectedKey);
+            if (selectedAssetDef != null)
+                return selectedAssetDef;
+
+            var selectedRuntimeDef = PlayerClassCatalog.CreateRuntimeDefinition(selectedKey);
+            if (selectedRuntimeDef == null)
+            {
+                Debug.LogWarning($"[GameplaySceneSetup] Selected player class '{selectedKey}' not found in runtime catalog. Falling back to default player definition.");
+                return defaultPlayerDef;
+            }
+
+            return selectedRuntimeDef;
+        }
+
+        private PlayerDefinition TryResolveCatalogDefinition(string selectedKey)
+        {
+            if (string.IsNullOrWhiteSpace(selectedKey))
+                return null;
+
+            if (defaultPlayerDef != null &&
+                string.Equals(defaultPlayerDef.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return defaultPlayerDef;
+            }
+
+            var resourceDefs = Resources.LoadAll<PlayerDefinition>(string.Empty);
+            for (int i = 0; i < resourceDefs.Length; i++)
+            {
+                var def = resourceDefs[i];
+                if (def != null && string.Equals(def.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+                    return def;
+            }
+
+#if UNITY_EDITOR
+            string[] guids = AssetDatabase.FindAssets("t:PlayerDefinition", new[] { "Assets/_Project/Data/Catalogs/Players" });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                var def = AssetDatabase.LoadAssetAtPath<PlayerDefinition>(path);
+                if (def != null && string.Equals(def.playerKey, selectedKey, System.StringComparison.OrdinalIgnoreCase))
+                    return def;
+            }
+#endif
+
+            return null;
         }
 
         private void SpawnTestMonsters()

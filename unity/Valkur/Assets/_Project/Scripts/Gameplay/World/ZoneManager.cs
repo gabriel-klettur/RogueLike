@@ -18,6 +18,7 @@ namespace Valkur.Gameplay.World
             public string zoneName;
             public Vector2Int gridOffset;
             public AudioClip zoneMusic;
+            public bool editableInTileEditor;
         }
 
         [Header("Zones")]
@@ -33,12 +34,16 @@ namespace Valkur.Gameplay.World
         private Transform _playerTransform;
 
         public string CurrentZone => currentZone;
+        public int ZoneWidthTiles => zoneWidthTiles;
+        public int ZoneHeightTiles => zoneHeightTiles;
+        public float TileSize => tileSize;
         public event Action<string, string> OnZoneChanged;
+        public event Action OnZonesChanged;
 
         private void Awake()
         {
-            foreach (var z in zones)
-                _zoneMap[z.zoneName] = z;
+            EnsureLegacyEditableDefaults();
+            RebuildZoneMap();
         }
 
         private void Update()
@@ -75,12 +80,7 @@ namespace Valkur.Gameplay.World
 
             foreach (var z in zones)
             {
-                int minX = z.gridOffset.x;
-                int minY = z.gridOffset.y;
-                int maxX = minX + zoneWidthTiles;
-                int maxY = minY + zoneHeightTiles;
-
-                if (tileX >= minX && tileX < maxX && tileY >= minY && tileY < maxY)
+                if (ContainsTile(z, tileX, tileY))
                     return z.zoneName;
             }
 
@@ -90,6 +90,200 @@ namespace Valkur.Gameplay.World
         public bool TryGetZone(string zoneName, out ZoneDefinition def)
         {
             return _zoneMap.TryGetValue(zoneName, out def);
+        }
+
+        public ZoneDefinition[] GetZonesSnapshot()
+        {
+            return zones.ToArray();
+        }
+
+        public bool TryGetZoneAtTile(Vector2Int tilePos, out ZoneDefinition zone)
+        {
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var z = zones[i];
+                if (ContainsTile(z, tilePos.x, tilePos.y))
+                {
+                    zone = z;
+                    return true;
+                }
+            }
+
+            zone = default;
+            return false;
+        }
+
+        public bool IsTileInEditableZone(Vector3Int cellPos)
+        {
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var z = zones[i];
+                if (ContainsTile(z, cellPos.x, cellPos.y))
+                    return z.editableInTileEditor;
+            }
+
+            return false;
+        }
+
+        public RectInt GetZoneRect(string zoneName)
+        {
+            if (!TryGetZone(zoneName, out var zone))
+                return default;
+
+            return GetZoneRect(zone);
+        }
+
+        public RectInt GetZoneRect(ZoneDefinition zone)
+        {
+            return new RectInt(zone.gridOffset.x, zone.gridOffset.y, zoneWidthTiles, zoneHeightTiles);
+        }
+
+        public bool AddZone(string zoneName, Vector2Int gridOffset, bool editableInTileEditor = true)
+        {
+            if (!IsValidZoneName(zoneName) || _zoneMap.ContainsKey(zoneName))
+                return false;
+
+            zones.Add(new ZoneDefinition
+            {
+                zoneName = zoneName,
+                gridOffset = gridOffset,
+                zoneMusic = null,
+                editableInTileEditor = editableInTileEditor
+            });
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public bool AddZoneFromTemplate(string sourceZoneName, string newZoneName, Vector2Int gridOffset, bool? editableOverride = null)
+        {
+            if (!IsValidZoneName(sourceZoneName) || !IsValidZoneName(newZoneName) || _zoneMap.ContainsKey(newZoneName))
+                return false;
+
+            int idx = FindZoneIndex(sourceZoneName);
+            if (idx < 0)
+                return false;
+
+            var source = zones[idx];
+            zones.Add(new ZoneDefinition
+            {
+                zoneName = newZoneName,
+                gridOffset = gridOffset,
+                zoneMusic = source.zoneMusic,
+                editableInTileEditor = editableOverride ?? source.editableInTileEditor
+            });
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public bool DuplicateZone(string sourceZoneName, out string duplicatedZoneName)
+        {
+            duplicatedZoneName = null;
+            if (!IsValidZoneName(sourceZoneName))
+                return false;
+
+            int idx = FindZoneIndex(sourceZoneName);
+            if (idx < 0)
+                return false;
+
+            var source = zones[idx];
+            duplicatedZoneName = GenerateUniqueDuplicateName(source.zoneName);
+
+            zones.Add(new ZoneDefinition
+            {
+                zoneName = duplicatedZoneName,
+                gridOffset = source.gridOffset,
+                zoneMusic = source.zoneMusic,
+                editableInTileEditor = source.editableInTileEditor
+            });
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public void ReplaceZones(IReadOnlyList<ZoneDefinition> newZones)
+        {
+            zones.Clear();
+            if (newZones != null)
+            {
+                for (int i = 0; i < newZones.Count; i++)
+                    zones.Add(newZones[i]);
+            }
+
+            EnsureLegacyEditableDefaults();
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+        }
+
+        public bool RemoveZone(string zoneName)
+        {
+            int idx = FindZoneIndex(zoneName);
+            if (idx < 0) return false;
+
+            zones.RemoveAt(idx);
+            RebuildZoneMap();
+
+            if (currentZone == zoneName && zones.Count > 0)
+                currentZone = zones[0].zoneName;
+
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public bool RenameZone(string oldZoneName, string newZoneName)
+        {
+            if (!IsValidZoneName(oldZoneName) || !IsValidZoneName(newZoneName) || oldZoneName == newZoneName)
+                return false;
+            if (_zoneMap.ContainsKey(newZoneName))
+                return false;
+
+            int idx = FindZoneIndex(oldZoneName);
+            if (idx < 0) return false;
+
+            var zone = zones[idx];
+            zone.zoneName = newZoneName;
+            zones[idx] = zone;
+
+            if (currentZone == oldZoneName)
+                currentZone = newZoneName;
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public bool MoveZone(string zoneName, Vector2Int delta)
+        {
+            int idx = FindZoneIndex(zoneName);
+            if (idx < 0) return false;
+
+            var zone = zones[idx];
+            zone.gridOffset += delta;
+            zones[idx] = zone;
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
+        public bool SetZoneEditable(string zoneName, bool editable)
+        {
+            int idx = FindZoneIndex(zoneName);
+            if (idx < 0) return false;
+
+            var zone = zones[idx];
+            if (zone.editableInTileEditor == editable)
+                return true;
+
+            zone.editableInTileEditor = editable;
+            zones[idx] = zone;
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
         }
 
         /// <summary>
@@ -115,6 +309,83 @@ namespace Valkur.Gameplay.World
             if (clip == null) return;
             var audio = ServiceLocator.Get<IAudioService>();
             audio?.PlayMusic(clip);
+        }
+
+        private bool ContainsTile(ZoneDefinition zone, int tileX, int tileY)
+        {
+            int minX = zone.gridOffset.x;
+            int minY = zone.gridOffset.y;
+            int maxX = minX + zoneWidthTiles;
+            int maxY = minY + zoneHeightTiles;
+            return tileX >= minX && tileX < maxX && tileY >= minY && tileY < maxY;
+        }
+
+        private int FindZoneIndex(string zoneName)
+        {
+            for (int i = 0; i < zones.Count; i++)
+            {
+                if (zones[i].zoneName == zoneName)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RebuildZoneMap()
+        {
+            _zoneMap.Clear();
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var zone = zones[i];
+                if (!string.IsNullOrWhiteSpace(zone.zoneName))
+                    _zoneMap[zone.zoneName] = zone;
+            }
+        }
+
+        private void EnsureLegacyEditableDefaults()
+        {
+            if (zones.Count == 0) return;
+
+            bool hasEditableZone = false;
+            for (int i = 0; i < zones.Count; i++)
+            {
+                if (zones[i].editableInTileEditor)
+                {
+                    hasEditableZone = true;
+                    break;
+                }
+            }
+
+            if (hasEditableZone) return;
+
+            // Backward compatibility: legacy scene/prefab data had no editable flag.
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var zone = zones[i];
+                zone.editableInTileEditor = true;
+                zones[i] = zone;
+            }
+        }
+
+        private static bool IsValidZoneName(string zoneName)
+        {
+            return !string.IsNullOrWhiteSpace(zoneName);
+        }
+
+        private string GenerateUniqueDuplicateName(string sourceZoneName)
+        {
+            string seed = $"{sourceZoneName}_copy";
+            if (!_zoneMap.ContainsKey(seed))
+                return seed;
+
+            for (int i = 2; i < 10000; i++)
+            {
+                string candidate = $"{seed}{i}";
+                if (!_zoneMap.ContainsKey(candidate))
+                    return candidate;
+            }
+
+            return $"{seed}_{Guid.NewGuid().ToString("N").Substring(0, 6)}";
         }
     }
 }

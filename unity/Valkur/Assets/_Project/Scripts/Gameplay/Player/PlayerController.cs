@@ -158,6 +158,9 @@ namespace Valkur.Gameplay
 
         private void UpdateFacingDirection()
         {
+            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
+                _mainCamera = Camera.main;
+
             if (_lookAction != null && _mainCamera != null)
             {
                 Vector2 mouseScreen = _lookAction.ReadValue<Vector2>();
@@ -171,12 +174,12 @@ namespace Valkur.Gameplay
                 _facingDirection = _moveInput.normalized;
             }
 
-            if (spriteRenderer != null)
+            if (spriteRenderer != null && _animator == null)
                 spriteRenderer.flipX = _facingDirection.x < 0;
 
             if (_animator != null)
             {
-                var dir = DirectionalAnimator.VectorToDirection(_facingDirection);
+                var dir = _animator.ResolveDirectionFromVector(_facingDirection);
                 var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
                 _animator.SetState(state, dir);
             }

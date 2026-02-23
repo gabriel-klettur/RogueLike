@@ -26,6 +26,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private TileEditorInputHandler _input;
         private TileEditorUndoSystem _undo;
+        private System.Func<Vector3Int, bool> _editConstraint;
 
         // Brush preview
         private GameObject _brushPreviewGo;
@@ -36,6 +37,16 @@ namespace Valkur.Gameplay.TileEditor
 
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
+
+        public void SetEditConstraint(System.Func<Vector3Int, bool> constraint)
+        {
+            _editConstraint = constraint;
+        }
+
+        public void ClearEditConstraint()
+        {
+            _editConstraint = null;
+        }
 
         public void SetGridBuilder(WorldGridBuilder builder)
         {
@@ -184,8 +195,12 @@ namespace Valkur.Gameplay.TileEditor
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 _undo.StartStroke(tilemap);
-                _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize));
+                var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
+                _undo.RecordEdits(edits);
                 _state.IsDragging = true;
+
+                if (edits.Count == 0 && !CanEditCell(cellPos))
+                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
 
                 if (!_brushDiagLogged)
                 {
@@ -195,7 +210,7 @@ namespace Valkur.Gameplay.TileEditor
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
-                _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize));
+                _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell));
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
             {
@@ -212,12 +227,16 @@ namespace Valkur.Gameplay.TileEditor
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 _undo.StartStroke(tilemap);
-                _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize));
+                var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
+                _undo.RecordEdits(edits);
                 _state.IsDragging = true;
+
+                if (edits.Count == 0 && !CanEditCell(cellPos))
+                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
-                _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize));
+                _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell));
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
             {
@@ -235,8 +254,12 @@ namespace Valkur.Gameplay.TileEditor
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 _undo.StartStroke(tilemap);
-                _undo.RecordEdits(TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile));
+                var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile, canEditCell: CanEditCell);
+                _undo.RecordEdits(edits);
                 _undo.EndStroke();
+
+                if (edits.Count == 0 && !CanEditCell(cellPos))
+                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
             }
         }
 
@@ -451,6 +474,11 @@ namespace Valkur.Gameplay.TileEditor
             Vector3 bottomLeft = tilemap.CellToWorld(cellPos);
             Vector3 cellSize = tilemap.cellSize;
             return bottomLeft + new Vector3(cellSize.x * 0.5f, cellSize.y * 0.5f, 0f);
+        }
+
+        private bool CanEditCell(Vector3Int cellPos)
+        {
+            return _editConstraint == null || _editConstraint(cellPos);
         }
 
         protected override void OnDestroy()

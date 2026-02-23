@@ -349,10 +349,12 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildRightSidebar(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged)
         {
+            float sideColumnX = PANEL_PAD + LEFT_WIDTH + 12f;
+
             // View panel (top-right)
             refs.ViewPanel = MakePanel("ViewPanel", canvasT,
-                new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-PANEL_PAD, -8f), new Vector2(RIGHT_WIDTH, 240f));
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(sideColumnX, -8f), new Vector2(RIGHT_WIDTH, 240f));
 
             var vLayout = refs.ViewPanel.AddComponent<VerticalLayoutGroup>();
             vLayout.padding = new RectOffset(10, 10, 8, 8);
@@ -389,8 +391,8 @@ namespace Valkur.Gameplay.TileEditor
 
             // Layers panel (below view panel)
             refs.LayersPanel = MakePanel("LayersPanel", canvasT,
-                new Vector2(1f, 0f), new Vector2(1f, 0.52f), new Vector2(1f, 0f),
-                new Vector2(-PANEL_PAD, 8f), new Vector2(RIGHT_WIDTH, 0f));
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(sideColumnX, -256f), new Vector2(RIGHT_WIDTH, 552f));
 
             var lLayout = refs.LayersPanel.AddComponent<VerticalLayoutGroup>();
             lLayout.padding = new RectOffset(8, 8, 6, 6);

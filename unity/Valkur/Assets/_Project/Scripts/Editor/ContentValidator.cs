@@ -143,6 +143,26 @@ namespace Valkur.Editor
                     Debug.LogWarning($"[Validator] PlayerDefinition '{def.playerKey}' has speed <= 0.", def);
                     issues++;
                 }
+
+                if (def.assetConfig == null)
+                {
+                    Debug.LogWarning($"[Validator] PlayerDefinition '{def.playerKey}' has null assetConfig.", def);
+                    issues++;
+                    continue;
+                }
+
+                int idleCount = def.assetConfig.idleSheets != null ? def.assetConfig.idleSheets.Count : 0;
+                int walkCount = def.assetConfig.walkSheets != null ? def.assetConfig.walkSheets.Count : 0;
+                if (idleCount == 0)
+                {
+                    Debug.LogWarning($"[Validator] PlayerDefinition '{def.playerKey}' has no idle sprites configured.", def);
+                    issues++;
+                }
+                if (walkCount == 0)
+                {
+                    Debug.LogWarning($"[Validator] PlayerDefinition '{def.playerKey}' has no walk sprites configured.", def);
+                    issues++;
+                }
             }
 
             Debug.Log($"[Validator] Players: {assets.Length} checked, {issues} issues.");

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -15,7 +16,7 @@ namespace Valkur.Gameplay.TileEditor
         /// Paint a tile at the given cell position with the specified brush size.
         /// Returns list of affected cells for undo tracking.
         /// </summary>
-        public static List<TileEdit> Paint(Tilemap tilemap, Vector3Int cellPos, TileBase tile, int brushSize)
+        public static List<TileEdit> Paint(Tilemap tilemap, Vector3Int cellPos, TileBase tile, int brushSize, Func<Vector3Int, bool> canEditCell = null)
         {
             var edits = new List<TileEdit>();
             int half = brushSize / 2;
@@ -24,6 +25,7 @@ namespace Valkur.Gameplay.TileEditor
                 for (int dx = 0; dx < brushSize; dx++)
                 {
                     var pos = new Vector3Int(cellPos.x - half + dx, cellPos.y - half + dy, 0);
+                    if (canEditCell != null && !canEditCell(pos)) continue;
                     var oldTile = tilemap.GetTile(pos);
                     if (oldTile == tile) continue;
                     edits.Add(new TileEdit(pos, oldTile, tile));
@@ -36,17 +38,19 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>
         /// Erase tiles at the given cell position with the specified brush size.
         /// </summary>
-        public static List<TileEdit> Erase(Tilemap tilemap, Vector3Int cellPos, int brushSize)
+        public static List<TileEdit> Erase(Tilemap tilemap, Vector3Int cellPos, int brushSize, Func<Vector3Int, bool> canEditCell = null)
         {
-            return Paint(tilemap, cellPos, null, brushSize);
+            return Paint(tilemap, cellPos, null, brushSize, canEditCell);
         }
 
         /// <summary>
         /// Flood fill from the given cell position, replacing matching tiles.
         /// </summary>
-        public static List<TileEdit> FloodFill(Tilemap tilemap, Vector3Int startPos, TileBase newTile, int maxCells = 10000)
+        public static List<TileEdit> FloodFill(Tilemap tilemap, Vector3Int startPos, TileBase newTile, int maxCells = 10000, Func<Vector3Int, bool> canEditCell = null)
         {
             var edits = new List<TileEdit>();
+            if (canEditCell != null && !canEditCell(startPos)) return edits;
+
             var targetTile = tilemap.GetTile(startPos);
             if (targetTile == newTile) return edits;
 
@@ -64,6 +68,8 @@ namespace Valkur.Gameplay.TileEditor
             while (queue.Count > 0 && count < maxCells)
             {
                 var pos = queue.Dequeue();
+                if (canEditCell != null && !canEditCell(pos)) continue;
+
                 var current = tilemap.GetTile(pos);
                 if (current != targetTile) continue;
 
@@ -74,6 +80,9 @@ namespace Valkur.Gameplay.TileEditor
                 foreach (var dir in directions)
                 {
                     var neighbor = pos + dir;
+                    if (canEditCell != null && !canEditCell(neighbor))
+                        continue;
+
                     if (!visited.Contains(neighbor))
                     {
                         visited.Add(neighbor);

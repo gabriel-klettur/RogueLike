@@ -28,6 +28,7 @@ namespace Valkur.Gameplay.Spells
         private Vector2 _castDirection;
         private float[] _cooldownTimers;
         private Mana _mana;
+        private bool _missingManaWarningLogged;
 
         private static readonly Dictionary<SpellType, ISpellExecutor> Executors = new Dictionary<SpellType, ISpellExecutor>
         {
@@ -79,9 +80,23 @@ namespace Valkur.Gameplay.Spells
             if (spell == null) return false;
             if (_cooldownTimers[slotIndex] > 0f) return false;
 
-            int manaCost = Mathf.RoundToInt(spell.manaCost);
-            if (manaCost > 0 && _mana != null && !_mana.TryConsume(manaCost))
-                return false;
+            int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
+            if (manaCost > 0)
+            {
+                var mana = ResolveMana();
+                if (mana == null)
+                {
+                    if (!_missingManaWarningLogged)
+                    {
+                        Debug.LogWarning($"[SpellCaster] Spell '{spell.spellKey}' requires mana ({manaCost}) but no Mana component is present on '{name}'. Cast cancelled.");
+                        _missingManaWarningLogged = true;
+                    }
+                    return false;
+                }
+
+                if (!mana.TryConsume(manaCost))
+                    return false;
+            }
 
             _activeSlot = slotIndex;
             _castDirection = direction.normalized;
@@ -104,7 +119,15 @@ namespace Valkur.Gameplay.Spells
         {
             if (slotIndex < 0 || slotIndex >= spellSlots.Length) return false;
             if (_phase != CastPhase.Ready) return false;
-            if (spellSlots[slotIndex] == null) return false;
+            var spell = spellSlots[slotIndex];
+            if (spell == null) return false;
+            int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
+            if (manaCost > 0)
+            {
+                var mana = ResolveMana();
+                if (mana == null || !mana.HasMana(manaCost))
+                    return false;
+            }
             return _cooldownTimers[slotIndex] <= 0f;
         }
 
@@ -196,6 +219,13 @@ namespace Valkur.Gameplay.Spells
             _phase = CastPhase.Ready;
             _phaseTimer = 0f;
             _activeSlot = -1;
+        }
+
+        private Mana ResolveMana()
+        {
+            if (_mana == null)
+                _mana = GetComponent<Mana>();
+            return _mana;
         }
     }
 }

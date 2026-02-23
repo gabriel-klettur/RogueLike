@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.FSM;
@@ -176,6 +177,10 @@ namespace Valkur.UI.HUD
                 _sb.Append(Label("   Vel "));
                 _sb.Append(Val($"{vel.magnitude:F1}"));
                 _sb.Append(Dim($" ({vel.x:F1}, {vel.y:F1})"));
+                _sb.AppendLine();
+
+                _sb.Append(Label("Class "));
+                _sb.Append(Val(PlayerSelectionState.SelectedPlayerKey));
                 _sb.AppendLine();
 
                 // HP bar

@@ -43,6 +43,7 @@ namespace Valkur.Gameplay.Save
 
             var psd = new PlayerSaveData
             {
+                playerClass = PlayerSelectionState.SelectedPlayerKey,
                 position = (Vector2)player.transform.position,
                 hp = health != null ? health.CurrentHp : 0,
                 maxHp = health != null ? health.MaxHp : 0,
