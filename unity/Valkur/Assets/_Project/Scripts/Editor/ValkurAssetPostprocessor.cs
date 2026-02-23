@@ -37,6 +37,7 @@ namespace Valkur.Editor
             else if (assetPath.Contains("/Characters/"))
             {
                 importer.spritePixelsPerUnit = PLAYER_CHARACTER_PPU;
+                importer.filterMode = FilterMode.Bilinear;
                 SetPivot(importer, new Vector2(0.5f, 0f));
             }
             else if (assetPath.Contains("/NPC/"))

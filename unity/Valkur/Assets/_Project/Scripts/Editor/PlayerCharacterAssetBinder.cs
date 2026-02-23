@@ -118,9 +118,9 @@ namespace Valkur.Editor
                 needsReimport = true;
             }
 
-            if (importer.filterMode != FilterMode.Point)
+            if (importer.filterMode != FilterMode.Bilinear)
             {
-                importer.filterMode = FilterMode.Point;
+                importer.filterMode = FilterMode.Bilinear;
                 needsReimport = true;
             }
 
