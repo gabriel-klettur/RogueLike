@@ -1,6 +1,10 @@
-# Migracion completa: Python (Pygame) -> Unity
+# Migration Program Overview: Python (Pygame) -> Unity
 
-Este documento define un plan completo, tecnico y ejecutable para migrar el juego desde `python/` a Unity, con foco en:
+**Document type:** Program overview  
+**Last updated:** 2026-02-23  
+**Primary audience:** Tech lead, gameplay programmers, content pipeline owners
+
+This document defines the full technical migration strategy from `python/` to Unity, with focus on:
 
 1. Paridad funcional (que se juegue igual o mejor).
 2. Paridad de datos (mapas, NPCs, inventario, progreso).
@@ -361,16 +365,18 @@ Se considera completada cuando:
 
 ---
 
-## 10) Proximo paso inmediato (accionable)
+## 10) Current next steps (actionable)
 
-1. Crear el proyecto Unity 2D URP en esta carpeta `unity/`.
-2. Implementar `Bootstrap.unity` + `MainGameplay.unity`.
-3. Portar primero el **vertical slice minimo** (Fase 3).
-4. Validar paridad con una lista corta de escenarios de juego reales.
+1. Complete pending baseline evidence capture (video, screenshots, profiling logs).
+2. Close remaining Phase 2 assets tasks (asset map, naming policy, full migration run).
+3. Track unresolved migration risks in:
+   - `../01_execution/roadmap_50_steps.md`
+   - `../02_assets/phase_02_asset_pipeline_plan.md`
+4. Keep release criteria aligned with measurable evidence (tests + build + perf).
 
-Cuando esto este listo, actualizamos este README con:
+After each milestone, update this document with:
 
-- estado por fase,
-- decisiones de arquitectura tomadas,
-- debt tecnico pendiente,
-- checklist de release.
+- phase-level status,
+- architecture decisions,
+- technical debt registry,
+- release readiness checklist.

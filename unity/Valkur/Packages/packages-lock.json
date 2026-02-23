@@ -5,9 +5,10 @@
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.0.2"
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
       },
-      "hash": "f26f389b940750456a962bd79c08f17cce37f727"
+      "hash": "d76a8df311c48263872be0cd3e6a8ef1a0fa8e59"
     },
     "com.unity.2d.animation": {
       "version": "9.2.0",

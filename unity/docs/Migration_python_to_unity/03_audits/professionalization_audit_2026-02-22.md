@@ -1,8 +1,11 @@
-# Auditoría de Profesionalización — Valkur Unity Project
+# Professionalization Audit - Valkur Unity Project
 
-**Fecha:** 2026-02-22
-**Scope:** 48 scripts C#, 6 asmdefs, ProjectSettings, arquitectura completa
-**Objetivo:** Identificar piezas desconectadas, fragilidades y deuda técnica para maximizar robustez, profesionalidad y escalabilidad.
+**Document type:** Technical quality audit  
+**Audit date:** 2026-02-22  
+**Last updated:** 2026-02-23  
+**Scope:** 48 C# scripts, 6 asmdefs, ProjectSettings, end-to-end architecture  
+**Objective:** Identify disconnected systems, fragility points, and technical debt to improve robustness and scalability.  
+**Note:** Point-in-time audit; some findings may already be resolved in later commits.
 
 ---
 

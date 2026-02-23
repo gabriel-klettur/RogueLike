@@ -1,6 +1,7 @@
 # Problemas Posibles por Defaults Ocultos — Valkur Unity
 
 > **Fecha**: 2025-02-22
+> **Última auditoría de estado**: 2026-02-23
 > **Contexto**: Tras resolver el bug de tiles negros (causado por un default de URP que nadie configuró explícitamente), se realizó una auditoría exhaustiva del proyecto para identificar **todos los defaults ocultos de Unity que podrían causar problemas silenciosos**.
 >
 > Estos son problemas que **no generan errores de compilación ni warnings**, pero que causan comportamiento incorrecto en runtime.
@@ -17,47 +18,38 @@
 - **Fix aplicado**: Forzar `Sprite-Unlit-Default` en `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`
 - **Documentación**: `unity/Tile_editor_v1.md`
 
-### P1.2 — ⚠️ PENDIENTE: QualitySettings no tiene URP asignado
+### P1.2 — ✅ RESUELTO: QualitySettings sí tiene URP asignado
 
-- **Archivo**: `ProjectSettings/QualitySettings.asset`
-- **Problema**: Las 6 calidades (Very Low → Ultra) tienen `customRenderPipeline: {fileID: 0}` — es decir, **ninguna tiene el URP Pipeline Asset asignado**
-- **Impacto**: Unity usa solo el pipeline de `GraphicsSettings.asset` (que sí tiene URP). Pero si alguien cambia la calidad en runtime (`QualitySettings.SetQualityLevel()`), podría perder el URP pipeline y caer al built-in renderer, causando:
-  - Todos los materiales URP dejan de funcionar
-  - Sprites se renderizan con shader fallback rosa/magenta
-  - Light2D deja de existir como concepto
-- **Probabilidad de ocurrencia**: Baja ahora (no hay menú de calidad), pero **alta si se añade** un settings menu
-- **Fix recomendado**: Asignar el URP Pipeline Asset a cada nivel de calidad en `QualitySettings.asset`
-- **Severidad**: 🔴 Crítica (si se activa)
+- **Archivo verificado**: `ProjectSettings/QualitySettings.asset`
+- **Estado actual**: Las calidades Very Low → Ultra tienen `customRenderPipeline` apuntando al asset URP (`guid: 681886c5eb7344803b6206f758bf0b1c`)
+- **Resultado**: Cambiar calidad ya no implica perder URP
+- **Severidad actual**: ✅ Cerrado
 
-### P1.3 — ⚠️ PENDIENTE: SpriteRenderers runtime usan "Sprites/Default" (built-in, no URP)
+### P1.3 — ✅ RESUELTO (con fallback controlado): SpriteRenderers runtime priorizan URP
 
 - **Archivos afectados**:
-  - `EntitySetup.cs` → `Shader.Find("Sprites/Default")` para sprites de entidades
+  - `EntitySpriteHelper.cs`
   - `WorldHealthBar.cs` → barras de vida
   - `FacingIndicator.cs` → flecha de dirección
   - `CombatRangeVisualizer.cs` → líneas de rango
   - `FireballVisual.cs` → visual de proyectil
   - `TileEditorGridCursor.cs` → cursor del tile editor
-- **Problema**: `Sprites/Default` es el shader del **built-in render pipeline**, no de URP. En URP, el shader correcto es `Universal Render Pipeline/2D/Sprite-Unlit-Default`. El built-in shader funciona *por ahora* porque URP tiene un fallback, pero:
-  - No participa en el 2D lighting system (no recibe luces 2D)
-  - Puede romperse en futuras versiones de URP que eliminen el fallback
-  - Comportamiento de blending puede diferir del esperado
-- **Probabilidad de problema visible**: Baja ahora, **media-alta en el futuro**
-- **Fix recomendado**: Reemplazar `Shader.Find("Sprites/Default")` por `Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")` en todos los archivos
-- **Severidad**: 🟡 Media
+- **Estado actual**: Todos usan patrón `Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default") ?? Shader.Find("Sprites/Default")`
+- **Resultado**: URP es la ruta principal; `Sprites/Default` queda como fallback defensivo
+- **Severidad actual**: ✅ Cerrado (riesgo residual bajo por fallback intencional)
 
 ### P1.4 — ⚠️ PENDIENTE: Material leaks por `new Material()` sin cleanup
 
-- **Archivos afectados**: Todos los que hacen `new Material(Shader.Find(...))`:
-  - `WorldGridBuilder.cs` — crea material cada vez que se ejecuta la coroutine
-  - `EntitySetup.cs` — crea material estático (OK, se reutiliza)
-  - `WorldHealthBar.cs` — material estático compartido (OK)
-  - `FacingIndicator.cs` — `new Material()` por cada indicador creado
-  - `CombatRangeVisualizer.cs` — `new Material()` por instancia
+- **Archivos afectados (estado actual)**:
+  - `WorldGridBuilder.cs` — crea `new Material(unlitShader)` sin cleanup explícito
+  - `TileEditorGridCursor.cs` — crea material para `LineRenderer` sin cleanup explícito
+  - `FacingIndicator.cs` — crea material y sí hace `Destroy` en `OnDestroy()`
+  - `CombatRangeVisualizer.cs` — crea material y sí hace `DestroyImmediate` en `OnDestroy()`
+  - `WorldHealthBar.cs` y `FireballVisual.cs` — material estático compartido
 - **Problema**: `new Material()` crea un material en memoria que **no se destruye automáticamente** con el GameObject. Si el objeto se destruye sin hacer `Destroy(material)`, el material queda en memoria como leak
 - **Impacto**: Memory leak gradual. En sesiones largas con muchos monstruos spawneados/destruidos, puede acumular cientos de materiales huérfanos
-- **Fix recomendado**: Usar materiales estáticos compartidos (como `WorldHealthBar` ya hace) o destruir el material en `OnDestroy()`
-- **Severidad**: 🟡 Media
+- **Fix recomendado**: Completar cleanup en `WorldGridBuilder` y `TileEditorGridCursor`
+- **Severidad**: 🟡 Media (aún vigente)
 
 ---
 
@@ -88,15 +80,12 @@
   ```
 - **Severidad**: 🔴 Crítica — afecta gameplay activamente
 
-### P2.2 — ⚠️ PENDIENTE: Physics2D queries hit triggers por defecto
+### P2.2 — ✅ RESUELTO: Physics2D queries NO hit triggers globalmente
 
-- **Archivo**: `ProjectSettings/Physics2DSettings.asset`
-- **Problema**: `m_QueriesHitTriggers: 1` — todos los raycasts y overlap queries detectan triggers además de colliders
-- **Impacto**: `MouseTargetDetector` usa `Physics2D.CircleCast` para detectar NPCs. Si hay triggers en la escena (spawner zones, pickup areas), el raycast los detectará como "targets", causando:
-  - El HUD muestra info de un trigger invisible en vez del NPC
-  - El targeting de combate puede seleccionar un trigger
-- **Fix recomendado**: Cambiar a `m_QueriesHitTriggers: 0` globalmente, o usar `QueryTriggerInteraction.Ignore` en queries específicos
-- **Severidad**: 🟡 Media
+- **Archivo verificado**: `ProjectSettings/Physics2DSettings.asset`
+- **Estado actual**: `m_QueriesHitTriggers: 0`
+- **Resultado**: Se eliminó el riesgo global de seleccionar triggers por default en queries
+- **Severidad actual**: ✅ Cerrado
 
 ### P2.3 — ⚠️ PENDIENTE: Queries start in colliders
 
@@ -110,7 +99,7 @@
 
 ## Categoría 3: LAYERS Y TAGS
 
-### P3.1 — ⚠️ PENDIENTE: LayerMask.NameToLayer devuelve -1 si el layer no existe
+### P3.1 — ⚠️ PARCIAL: validación aplicada en puntos críticos, no en todo el proyecto
 
 - **Archivos afectados**:
   - `EntitySetup.cs` → `LayerMask.NameToLayer("Player")`, `"NPC"`, `"Projectile"` — son `static readonly`, se evalúan una sola vez
@@ -118,8 +107,11 @@
   - `DropSystem.cs` → `LayerMask.NameToLayer("Default")`
 - **Problema**: Si alguien renombra o elimina un layer en TagManager, `NameToLayer` devuelve `-1` silenciosamente. Asignar `gameObject.layer = -1` pone el objeto en layer 0 (Default), lo que cambia completamente su comportamiento de colisión y raycast
 - **Por qué es oculto**: No hay error, no hay warning. El objeto simplemente está en el layer equivocado
-- **Fix recomendado**: Validar el resultado de `NameToLayer` y loggear warning si es -1. O usar constantes de layer index en vez de strings
-- **Severidad**: 🟡 Media
+- **Estado actual**:
+  - ✅ `EntitySetup` usa `SafeNameToLayer(...)` con warning + fallback a Default
+  - ✅ `ProjectilePrefabFactory` usa fallback seguro para `Projectile`
+  - ⚠️ Siguen usos directos de `NameToLayer` en `HUDBootstrap` y `DropSystem`
+- **Severidad**: 🟡 Media (mitigado, no cerrado)
 
 ### P3.2 — ✅ RESUELTO: Sorting layers desincronizados (Sprint 1)
 
@@ -142,50 +134,45 @@
 - **Fix recomendado**: Documentar la convención: "solo campos públicos o `[SerializeField]` en clases de datos". Considerar migrar a Newtonsoft.Json para datos complejos
 - **Severidad**: 🟢 Baja (convención conocida)
 
-### P4.3 — ⚠️ PENDIENTE: Save files no tienen migración de schema
+### P4.3 — ✅ RESUELTO: Save files sí tienen migración de schema
 
-- **Problema**: `SaveService` tiene `CURRENT_SCHEMA = "1.0"` pero no hay lógica de migración si el schema cambia. Si se modifica `GameSaveData` (añadir/quitar campos), los saves antiguos:
-  - Se cargan sin error (JsonUtility ignora campos desconocidos)
-  - Los campos nuevos quedan en su valor default (0, null, "")
-  - Datos pueden corromperse silenciosamente
-- **Fix recomendado**: Implementar `MigrateSaveData(string fromVersion, GameSaveData data)` que transforme datos entre versiones
-- **Severidad**: 🟡 Media (se activa cuando se modifique GameSaveData)
+- **Estado actual**:
+  - `SaveSchemaMigrator.CURRENT_SCHEMA = "1.1"`
+  - `SaveSchemaMigrator.Migrate(...)` implementado (incluye ruta 1.0 -> 1.1)
+  - `SaveService.Load(...)` llama migración antes de restaurar estado
+- **Severidad actual**: ✅ Cerrado
 
 ---
 
 ## Categoría 5: SCENE MANAGEMENT
 
-### P5.1 — ⚠️ PENDIENTE: SceneManager.LoadScene destruye todo sin cleanup
+### P5.1 — ✅ RESUELTO: transición de escenas centralizada con cleanup
 
-- **Archivos**: `MainMenuUI.cs`, `DeathScreenUI.cs`, `GameBootstrap.cs`
-- **Problema**: `SceneManager.LoadScene()` destruye todos los GameObjects de la escena actual excepto los marcados con `DontDestroyOnLoad`. Pero:
-  - Los singletons que NO son `Persist` se destruyen y su `Instance` queda null
-  - Los event listeners (`OnDamaged`, `OnTargetChanged`, etc.) pueden quedar suscritos a objetos destruidos → `MissingReferenceException` en el siguiente frame
-  - `Time.timeScale` se resetea manualmente en `DeathScreenUI` pero podría no ejecutarse si la escena se carga desde otro lugar
-- **Fix recomendado**: Implementar un `SceneTransitionManager` que:
-  1. Desuscribe todos los eventos
-  2. Resetea `Time.timeScale = 1f`
-  3. Limpia singletons no persistentes
-  4. Luego carga la escena
-- **Severidad**: 🟡 Media
+- **Estado actual**:
+  - Existe `SceneTransitionManager.LoadScene(sceneName)`
+  - Resetea `Time.timeScale = 1f`
+  - Limpia `EntityRegistry` y `GameEvents`
+  - `MainMenuUI`, `DeathScreenUI` y `GameBootstrap` cargan escenas a través de `SceneTransitionManager`
+- **Severidad actual**: ✅ Cerrado
 
-### P5.2 — ⚠️ PENDIENTE: AudioManager usa DontDestroyOnLoad manual (no SingletonMonoBehaviour)
+### P5.2 — ✅ RESUELTO: AudioManager usa SingletonMonoBehaviour con Persist
 
-- **Archivo**: `Infrastructure/AudioManager.cs`
-- **Problema**: `AudioManager` usa su propio patrón singleton con `DontDestroyOnLoad` manual en vez de heredar de `SingletonMonoBehaviour<T>`. Si se carga la escena de gameplay dos veces, puede haber dos AudioManagers (el check de duplicados puede fallar si el timing es diferente)
-- **Fix recomendado**: Migrar a `SingletonMonoBehaviour<AudioManager>` con `Persist => true`
-- **Severidad**: 🟢 Baja (funciona ahora, pero inconsistente)
+- **Archivo verificado**: `Infrastructure/AudioManager.cs`
+- **Estado actual**: Hereda de `SingletonMonoBehaviour<AudioManager>` y define `Persist => true`
+- **Severidad actual**: ✅ Cerrado
 
 ---
 
 ## Categoría 6: INPUT SYSTEM
 
-### P6.1 — ⚠️ PENDIENTE: InputActions no se deshabilitan al cambiar de escena
+### P6.1 — ⚠️ PARCIAL: mejoró en varios módulos, aún no homogéneo
 
-- **Problema**: Los `InputAction` creados en scripts (TileEditorManager, PerformanceMonitor, CombatRangeVisualizer, etc.) se deshabilitan en `OnDestroy()`. Pero si el script se destruye por cambio de escena, el `OnDestroy` puede ejecutarse en un orden impredecible, y las acciones pueden disparar callbacks en objetos ya destruidos
+- **Problema**: Aún hay scripts con desactivación/dispose concentrado en `OnDestroy()` sin `OnDisable()` consistente
 - **Impacto**: `NullReferenceException` o `MissingReferenceException` esporádicos durante transiciones de escena
-- **Fix recomendado**: Deshabilitar InputActions en `OnDisable()` además de `OnDestroy()`
-- **Severidad**: 🟢 Baja (solo durante transiciones)
+- **Estado actual**:
+  - ✅ `DebugHUD`, `InventoryUI`, `PickupSystem`, `PlayerController`, `SaveLoadInputHandler` tienen flujo seguro de disable/dispose
+  - ⚠️ `CombatRangeVisualizer`, `MainMenuUI`, `DeathScreenUI`, `TileEditorManager` no aplican patrón homogéneo de `OnDisable()` + `OnDestroy()`
+- **Severidad**: 🟢 Baja (riesgo de transición, no bloqueante)
 
 ---
 
@@ -211,73 +198,76 @@
 - **Fix futuro**: Migrar a Addressables para carga bajo demanda por categoría
 - **Severidad**: 🟢 Baja (aceptable para scope actual)
 
-### P8.2 — 🔴 PENDIENTE: Shader.Find() puede devolver null en builds
+### P8.2 — ✅ RESUELTO: shader crítico URP incluido para builds
 
-- **Archivos**: Todos los que usan `Shader.Find()`
-- **Problema**: `Shader.Find()` solo encuentra shaders que están incluidos en el build. Si un shader no está referenciado por ningún material en la escena, Unity lo excluye del build. En el Editor funciona (todos los shaders están disponibles), pero en un build standalone:
-  - `Shader.Find("Sprites/Default")` → probablemente OK (siempre incluido)
-  - `Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")` → **puede ser null** si ningún material en el proyecto lo usa directamente
-- **Impacto**: El juego funciona en el Editor pero falla en builds
-- **Fix recomendado**: Añadir los shaders necesarios a `ProjectSettings/GraphicsSettings.asset` → `Always Included Shaders`, o crear un material dummy que los referencie
-- **Severidad**: 🔴 Crítica (para builds)
+- **Archivos verificados**:
+  - `ProjectSettings/GraphicsSettings.asset`
+  - `Library/PackageCache/com.unity.render-pipelines.universal@14.0.12/Shaders/2D/Sprite-Unlit-Default.shader.meta`
+- **Estado actual**: `Always Included Shaders` incluye `guid: 13c02b14c4d048fa9653293d54f6e0e1`, que corresponde a `Sprite-Unlit-Default`
+- **Resultado**: Se mitigó el riesgo principal de `Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")` devolviendo null en build
+- **Severidad actual**: ✅ Cerrado
 
 ---
 
 ## Categoría 9: TILEMAP ESPECÍFICO
 
-### P9.1 — ⚠️ PENDIENTE: Tile anchor mismatch con sprite pivot
+### P9.1 — ✅ RESUELTO: tile anchor alineado con pivot de sprites
 
-- **Problema**: Los sprites tienen `spritePivot: (0.5, 0)` (bottom-center) pero el tilemap usa `tileAnchor: (0.5, 0.5, 0)` (center)
-- **Impacto**: Los tiles se renderizan desplazados medio tile hacia arriba respecto a su celda. Esto puede causar:
-  - Gaps visuales entre tiles
-  - Misalignment con colliders
-  - El cursor del tile editor apunta a una celda pero el tile aparece offset
-- **Fix recomendado**: Cambiar `spritePivot` a `(0.5, 0.5)` en los import settings de todos los sprites de tiles, o cambiar `tileAnchor` a `(0.5, 0)` en el tilemap
-- **Severidad**: 🟡 Media (visible pero no bloqueante)
+- **Estado actual**: `WorldGridBuilder` define `tilemap.tileAnchor = new Vector3(0.5f, 0f, 0f)`
+- **Resultado**: Alineación corregida en la construcción runtime del grid
+- **Severidad actual**: ✅ Cerrado
 
-### P9.2 — ⚠️ PENDIENTE: CompositeCollider2D con generationType Synchronous
+### P9.2 — ✅ RESUELTO: CompositeCollider2D usa generationType Manual
 
-- **Archivo**: `WorldGridBuilder.cs` (layers Collision y WallsBottom)
-- **Problema**: `generationType = CompositeCollider2D.GenerationType.Synchronous` regenera el collider **cada vez que se modifica un tile**. Con el tile editor pintando muchos tiles rápidamente, esto causa:
-  - Spike de CPU por cada tile pintado
-  - Posible stutter visible durante brush strokes grandes
-- **Fix recomendado**: Cambiar a `GenerationType.Manual` y llamar `GenerateGeometry()` solo al final del brush stroke (en `EndBrushStroke()`)
-- **Severidad**: 🟡 Media (performance durante edición)
+- **Archivo verificado**: `WorldGridBuilder.cs` (layers Collision y WallsBottom)
+- **Estado actual**: ambos colliders usan `CompositeCollider2D.GenerationType.Manual`
+- **Resultado**: Se evita regeneración síncrona automática por cada edición
+- **Severidad actual**: ✅ Cerrado
 
 ---
 
 ## Resumen por severidad
 
-### � Bajos (riesgo menor o bien manejado)
-| ID | Problema | Estado |
-|----|----------|--------|
-| P2.3 | Queries start in colliders | Pendiente (mitigado por layer masks) |
-| P4.2 | JsonUtility ignora propiedades | Conocido (convención documentada) |
-| P7.1 | Camera.main null check | Bien manejado |
-| P8.1 | Resources.LoadAll memoria | Aceptable para scope actual |
+### 🔴/🟡 Activos (requieren acción)
+| ID | Problema | Estado actual |
+|----|----------|---------------|
+| P1.4 | Material leaks por `new Material()` sin cleanup total | Pendiente |
+| P2.1 | Layer Collision Matrix "todo con todo" | **Activo** |
+| P3.1 | `NameToLayer` sin validación en todos los puntos | Parcial |
+| P6.1 | Patrón `InputAction` no homogéneo en transiciones | Parcial |
 
-### ✅ Resueltos
-| ID | Problema | Fix |
-|----|----------|-----|
-| P1.1 | Sprite-Lit-Default sin Light2D | Forzar Sprite-Unlit-Default |
-| P1.2 | QualitySettings sin URP Pipeline Asset | URP Asset asignado a 6 niveles de calidad |
-| P1.3 | SpriteRenderers usan shader built-in | Migrado a URP Sprite-Unlit-Default (6 archivos) |
-| P1.4 | Material leaks sin cleanup | Shared materials + Destroy en OnDestroy |
-| P2.1 | Layer Collision Matrix "todo con todo" | Matriz configurada por layer (Player/NPC/Projectile/etc.) |
-| P2.2 | Queries hit triggers | QueriesHitTriggers = 0 global |
-| P3.1 | NameToLayer devuelve -1 silenciosamente | SafeNameToLayer con warning + fallback a Default |
-| P3.2 | Sorting layers desincronizados | Sprint 1 — 15 layers sincronizados |
-| P4.1 | Dictionary en JsonUtility | SerializableKeyValue |
-| P4.3 | Save schema sin migración | MigrateSchema ya implementado (v1.0→v1.1) |
-| P5.1 | Scene load sin cleanup | SceneTransitionManager (timeScale + EntityRegistry.Clear) |
-| P5.2 | AudioManager singleton manual | Migrado a SingletonMonoBehaviour con Persist |
-| P6.1 | InputActions en transiciones | OnDisable/OnEnable en PerformanceMonitor, DebugHUD |
-| P8.2 | Shader.Find() null en builds | Sprite-Unlit-Default en Always Included Shaders |
-| P9.1 | Tile anchor vs sprite pivot mismatch | tileAnchor cambiado a (0.5, 0, 0) |
-| P9.2 | CompositeCollider2D synchronous | Cambiado a GenerationType.Manual |
+### 🟢 Pendientes mitigados / aceptados por ahora
+| ID | Problema | Estado actual |
+|----|----------|---------------|
+| P2.3 | Queries start in colliders | Pendiente (mitigado por masks) |
+| P4.2 | JsonUtility ignora propiedades | Pendiente (convención conocida) |
+| P7.1 | `Camera.main` puede ser null temporalmente | Bien manejado (riesgo bajo) |
+| P8.1 | `Resources.LoadAll` carga masiva en TileCatalog | Aceptable para scope actual |
+
+### ✅ Resueltos verificados
+| ID | Problema | Estado actual |
+|----|----------|---------------|
+| P1.1 | Sprite-Lit-Default sin Light2D | Resuelto |
+| P1.2 | URP por calidad | Resuelto |
+| P1.3 | Shader runtime built-in como principal | Resuelto (URP primero + fallback) |
+| P2.2 | Queries hit triggers | Resuelto (`m_QueriesHitTriggers: 0`) |
+| P3.2 | Sorting layers desincronizados | Resuelto |
+| P4.1 | Dictionary en JsonUtility | Resuelto |
+| P4.3 | Migración de schema de save | Resuelto |
+| P5.1 | Carga de escena sin cleanup centralizado | Resuelto |
+| P5.2 | AudioManager singleton manual | Resuelto |
+| P8.2 | Riesgo `Shader.Find()` para Sprite-Unlit en build | Resuelto (shader incluido) |
+| P9.1 | Tile anchor vs sprite pivot mismatch | Resuelto |
+| P9.2 | CompositeCollider2D synchronous | Resuelto |
 
 ---
 
 ## Estado final
 
-**18 de 21 problemas resueltos.** Los 3 restantes son de severidad baja y no requieren acción inmediata.
+**12 de 20 problemas resueltos, 8 pendientes (4 activos + 4 mitigados).**
+
+### Prioridad sugerida para próximas revisiones (solo documental)
+1. **P2.1** (crítico): matriz de colisión por capas
+2. **P1.4** (media): cleanup de materiales runtime
+3. **P3.1** (media): eliminar usos directos restantes de `NameToLayer`
+4. **P6.1** (baja): homogeneizar lifecycle de `InputAction`

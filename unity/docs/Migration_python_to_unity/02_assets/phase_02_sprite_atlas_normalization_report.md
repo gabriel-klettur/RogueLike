@@ -1,6 +1,12 @@
-# Fase 2 — Atlas de Sprites: Analisis y Plan de Normalizacion
+# Phase 02 Sprite Atlas Normalization Report
 
-> **IMPORTANTE:** Este analisis se realiza sobre los assets de **Unity**
+**Document type:** Asset audit report  
+**Last updated:** 2026-02-23  
+**Status:** Historical analysis + normalization guidance
+
+This report captures the sprite atlas normalization analysis used to prepare Unity production assets for Phase 02.
+
+> **IMPORTANT:** This analysis is performed on **Unity** assets
 > (`unity/Valkur/Assets/_Project/Art/`), NO sobre `python/assets/`.
 > Los archivos originales de Python **no se tocan**. Toda normalizacion
 > se aplica exclusivamente sobre los assets ya migrados en el proyecto Unity.

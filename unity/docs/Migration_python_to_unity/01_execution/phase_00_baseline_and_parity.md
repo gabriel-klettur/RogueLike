@@ -1,4 +1,10 @@
-# Fase 0 - Baseline y paridad funcional
+# Phase 00 Baseline and Functional Parity
+
+**Document type:** Baseline evidence and parity matrix  
+**Last updated:** 2026-02-23  
+**Primary audience:** QA, gameplay, technical production
+
+This document defines the baseline evidence model and parity matrix used to validate the Python -> Unity migration.
 
 ## Commit baseline
 

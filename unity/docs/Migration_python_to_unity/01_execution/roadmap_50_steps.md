@@ -1,6 +1,10 @@
-# Migracion Python -> Unity: plan operativo en 50 pasos
+# Roadmap 50 Steps: Python -> Unity Migration
 
-Este documento es una guia accionable basada en `unity/README.md`.
+**Document type:** Execution roadmap  
+**Last updated:** 2026-02-23  
+**Primary audience:** Technical production, gameplay, tools, and content teams
+
+This document is an actionable execution roadmap aligned with `../00_overview/migration_program_overview.md`.
 Se eligieron **50 pasos** (en lugar de 20) porque buscas una migracion total: codigo, datos, herramientas y **todos los assets**.
 
 Objetivo:
@@ -17,7 +21,7 @@ Objetivo:
 |------|-------------|-------|-------------|--------|
 | 0 | Preparacion y baseline | 1-6 | 5/6 | 🟡 Parcial |
 | 1 | Bootstrap tecnico Unity | 7-12 | 6/6 | ✅ Completa |
-| 2 | Assets y pipeline importacion | 13-22 | 2/10 | � Parcial |
+| 2 | Assets y pipeline importacion | 13-22 | 2/10 | 🟡 Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 8/8 | ✅ Completa |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
@@ -47,19 +51,19 @@ Objetivo:
 
 1. [x] Congela un commit baseline del proyecto Python (`python/`) para tener referencia estable.
 2. [x] Define KPI base de comparacion: FPS medio, frame time p95, tiempo de carga y uso de RAM.
-    - Tabla de metricas estimadas Python vs objetivos Unity en `unity/docs/fase0_baseline.md`.
+    - Tabla de metricas estimadas Python vs objetivos Unity en `phase_00_baseline_and_parity.md`.
     - Unity side: `PerformanceMonitor.cs` (F3) mide FPS avg/p95/p99 y GC en runtime.
 3. [x] Crea una lista de flujos criticos jugables: mover, atacar, castear, lootear, morir, respawn, guardar/cargar.
 4. [ ] Registra evidencias del baseline (video corto + capturas + logs de perfil).
     - Requiere ejecucion manual del juego Python y captura de pantalla/video.
-    - Checklist de evidencias pendientes documentado en `unity/docs/fase0_baseline.md`.
+    - Checklist de evidencias pendientes documentado en `phase_00_baseline_and_parity.md`.
 5. [x] Crea una matriz de paridad funcional (feature Python -> feature Unity).
     - Matriz completa con 33 capacidades, prioridad P0-P3, estado actual y referencia a scripts.
-    - Todos los P0 marcados como DONE. Ver `unity/docs/fase0_baseline.md`.
+    - Todos los P0 marcados como DONE. Ver `phase_00_baseline_and_parity.md`.
 6. [x] Firma criterios de aceptacion de migracion completa con el equipo.
     - 6 criterios definidos con estado de cumplimiento actual.
     - 3/6 CUMPLIDO, 2/6 PARCIAL, 1/6 PENDIENTE (assets, Fase 2 diferida).
-    - Ver `unity/docs/fase0_baseline.md`.
+    - Ver `phase_00_baseline_and_parity.md`.
 
 ## Fase 1 - Bootstrap tecnico Unity (Pasos 7-12)
 

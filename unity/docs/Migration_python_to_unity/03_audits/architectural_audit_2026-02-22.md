@@ -1,8 +1,11 @@
-# Valkur — Architectural Audit Report
+# Valkur Architectural Audit Report
 
-**Date:** 2026-02-22  
-**Branch:** `feature/unity-migration-fase6-continuation`  
+**Document type:** Architecture audit  
+**Audit date:** 2026-02-22  
+**Last updated:** 2026-02-23  
+**Branch at audit time:** `feature/unity-migration-fase6-continuation`  
 **Scope:** Full codebase audit per `/unity-refactor-pro` workflow  
+**Note:** This document is a point-in-time audit and may not reflect all fixes merged after the audit date.
 
 ---
 
