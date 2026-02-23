@@ -9,6 +9,7 @@ namespace Valkur.Editor
     /// <summary>
     /// Prepares player character sheets (SpriteMode=Multiple + 128x128 slicing)
     /// and binds resulting sprites into PlayerDefinition.assetConfig sheet lists.
+    /// Baseline scope: players with idle + walk animations.
     /// </summary>
     public static class PlayerCharacterAssetBinder
     {
@@ -65,20 +66,22 @@ namespace Valkur.Editor
 
             List<Sprite> idleFrames = LoadSheetFrames(classKey, "idle", ref configuredSheets);
             List<Sprite> walkFrames = LoadSheetFrames(classKey, "walking", ref configuredSheets);
-            List<Sprite> castFrames = LoadSheetFrames(classKey, "casting", ref configuredSheets);
 
-            bool hasAny = idleFrames.Count > 0 || walkFrames.Count > 0 || castFrames.Count > 0;
+            bool hasAny = idleFrames.Count > 0 || walkFrames.Count > 0;
             if (!hasAny)
             {
-                Debug.LogWarning($"[PlayerCharacterAssetBinder] No sheets found for class '{classKey}'.");
+                Debug.LogWarning($"[PlayerCharacterAssetBinder] No idle/walking sheets found for class '{classKey}'.");
                 return false;
             }
+
+            if (walkFrames.Count == 0 && idleFrames.Count > 0)
+                walkFrames = new List<Sprite>(idleFrames);
 
             playerDef.assetConfig.idleSheets = idleFrames;
             playerDef.assetConfig.walkSheets = walkFrames;
             playerDef.assetConfig.chaseSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
-            playerDef.assetConfig.castSheets = castFrames;
-            playerDef.assetConfig.attackSheets = castFrames.Count > 0 ? new List<Sprite>(castFrames) : new List<Sprite>();
+            playerDef.assetConfig.castSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
+            playerDef.assetConfig.attackSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
             playerDef.assetConfig.damageSheets = idleFrames.Count > 0 ? new List<Sprite>(idleFrames) : new List<Sprite>();
             playerDef.assetConfig.deathSheets = idleFrames.Count > 0 ? new List<Sprite>(idleFrames) : new List<Sprite>();
             return true;
