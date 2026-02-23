@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.UI.MainMenu
 {
@@ -33,10 +34,19 @@ namespace Valkur.UI.MainMenu
         private Button[] _buttons;
         private TextMeshProUGUI[] _buttonTexts;
         private Image _selectionIndicator;
+        private GameObject _classSelectionPanel;
+        private readonly System.Collections.Generic.List<Button> _classButtons = new System.Collections.Generic.List<Button>();
+        private readonly System.Collections.Generic.List<TextMeshProUGUI> _classMarkerTexts = new System.Collections.Generic.List<TextMeshProUGUI>();
+        private readonly System.Collections.Generic.List<string> _classKeys = new System.Collections.Generic.List<string>();
+        private int _selectedClassIndex;
+        private bool _showingClassSelector;
 
         private InputAction _navUpAction;
         private InputAction _navDownAction;
+        private InputAction _navLeftAction;
+        private InputAction _navRightAction;
         private InputAction _confirmAction;
+        private InputAction _cancelAction;
 
         private readonly string[] _menuOptions = {
             "Nuevo Juego",
@@ -79,10 +89,24 @@ namespace Valkur.UI.MainMenu
             _navDownAction.AddBinding("<Keyboard>/s");
             _navDownAction.Enable();
 
+            _navLeftAction = new InputAction("MenuNavLeft", InputActionType.Button);
+            _navLeftAction.AddBinding("<Keyboard>/leftArrow");
+            _navLeftAction.AddBinding("<Keyboard>/a");
+            _navLeftAction.Enable();
+
+            _navRightAction = new InputAction("MenuNavRight", InputActionType.Button);
+            _navRightAction.AddBinding("<Keyboard>/rightArrow");
+            _navRightAction.AddBinding("<Keyboard>/d");
+            _navRightAction.Enable();
+
             _confirmAction = new InputAction("MenuConfirm", InputActionType.Button);
             _confirmAction.AddBinding("<Keyboard>/enter");
             _confirmAction.AddBinding("<Keyboard>/space");
             _confirmAction.Enable();
+
+            _cancelAction = new InputAction("MenuCancel", InputActionType.Button);
+            _cancelAction.AddBinding("<Keyboard>/escape");
+            _cancelAction.Enable();
 
             EnsureCamera();
             BuildUI();
@@ -110,6 +134,12 @@ namespace Valkur.UI.MainMenu
 
         private void Update()
         {
+            if (_showingClassSelector)
+            {
+                HandleClassSelectorInput();
+                return;
+            }
+
             HandleKeyboardNavigation();
         }
 
@@ -158,7 +188,7 @@ namespace Valkur.UI.MainMenu
             switch (option)
             {
                 case "Nuevo Juego":
-                    StartNewGame();
+                    OpenClassSelector();
                     break;
                 case "Opciones":
                     Debug.Log("[MainMenu] Opciones (not yet implemented)");
@@ -173,6 +203,48 @@ namespace Valkur.UI.MainMenu
         {
             Debug.Log("[MainMenu] Starting new game...");
             SceneTransitionManager.LoadScene(gameplaySceneName);
+        }
+
+        private void OpenClassSelector()
+        {
+            if (_classSelectionPanel == null)
+                return;
+
+            _showingClassSelector = true;
+            _classSelectionPanel.SetActive(true);
+            SetSelectedClassIndex(FindSelectedClassIndex());
+        }
+
+        private void CloseClassSelector()
+        {
+            _showingClassSelector = false;
+            if (_classSelectionPanel != null)
+                _classSelectionPanel.SetActive(false);
+        }
+
+        private void HandleClassSelectorInput()
+        {
+            if (_cancelAction != null && _cancelAction.WasPerformedThisFrame())
+            {
+                CloseClassSelector();
+                return;
+            }
+
+            if (_classButtons.Count == 0)
+                return;
+
+            if (_navLeftAction != null && _navLeftAction.WasPerformedThisFrame())
+            {
+                SetSelectedClassIndex(_selectedClassIndex - 1);
+            }
+            else if (_navRightAction != null && _navRightAction.WasPerformedThisFrame())
+            {
+                SetSelectedClassIndex(_selectedClassIndex + 1);
+            }
+            else if (_confirmAction != null && _confirmAction.WasPerformedThisFrame())
+            {
+                ApplySelectedClassAndStartGame();
+            }
         }
 
         private void QuitGame()
@@ -353,9 +425,252 @@ namespace Valkur.UI.MainMenu
             hintText.alignment = TextAlignmentOptions.Left;
             hintText.color = versionColor;
 
+            BuildClassSelectorPanel(canvasGo.transform);
+
             // Initial selection (deferred one frame so layout has resolved)
             _selectedIndex = 0;
             StartCoroutine(DeferredUpdateSelection());
+        }
+
+        private void BuildClassSelectorPanel(Transform canvasTransform)
+        {
+            _classSelectionPanel = CreateUIObject("ClassSelectionOverlay", canvasTransform);
+            var overlayRect = _classSelectionPanel.GetComponent<RectTransform>();
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.sizeDelta = Vector2.zero;
+            var overlayImage = _classSelectionPanel.AddComponent<Image>();
+            overlayImage.color = new Color(0f, 0f, 0f, 0.72f);
+
+            var panel = CreateUIObject("ClassSelectionPanel", _classSelectionPanel.transform);
+            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(1120f, 560f);
+            var panelImage = panel.AddComponent<Image>();
+            panelImage.color = new Color(0.11f, 0.11f, 0.16f, 0.97f);
+
+            var titleGo = CreateUIObject("ClassSelectorTitle", panel.transform);
+            var titleRect = titleGo.GetComponent<RectTransform>();
+            titleRect.anchorMin = new Vector2(0.5f, 1f);
+            titleRect.anchorMax = new Vector2(0.5f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -20f);
+            titleRect.sizeDelta = new Vector2(900f, 48f);
+            var titleText = titleGo.AddComponent<TextMeshProUGUI>();
+            titleText.text = "Selecciona Personaje";
+            titleText.fontSize = 40f;
+            titleText.alignment = TextAlignmentOptions.Center;
+            titleText.color = titleColor;
+            titleText.fontStyle = FontStyles.Bold;
+
+            var rowGo = CreateUIObject("ClassCardsRow", panel.transform);
+            var rowRect = rowGo.GetComponent<RectTransform>();
+            rowRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rowRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rowRect.pivot = new Vector2(0.5f, 0.5f);
+            rowRect.anchoredPosition = new Vector2(0f, 30f);
+            rowRect.sizeDelta = new Vector2(1040f, 320f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = false;
+            rowLayout.childAlignment = TextAnchor.MiddleCenter;
+
+            _classButtons.Clear();
+            _classMarkerTexts.Clear();
+            _classKeys.Clear();
+
+            var presets = PlayerClassCatalog.AllPresets;
+            for (int i = 0; i < presets.Count; i++)
+            {
+                var preset = presets[i];
+                var key = preset.PlayerKey;
+
+                var cardGo = CreateUIObject($"Class_{key}", rowGo.transform);
+                var cardLayout = cardGo.AddComponent<LayoutElement>();
+                cardLayout.preferredWidth = 196f;
+                cardLayout.preferredHeight = 300f;
+
+                var cardImage = cardGo.AddComponent<Image>();
+                cardImage.color = buttonNormalColor;
+
+                var cardButton = cardGo.AddComponent<Button>();
+                cardButton.targetGraphic = cardImage;
+                int captured = i;
+                cardButton.onClick.AddListener(() => SetSelectedClassIndex(captured));
+
+                var nameGo = CreateUIObject("Name", cardGo.transform);
+                var nameRect = nameGo.GetComponent<RectTransform>();
+                nameRect.anchorMin = new Vector2(0f, 1f);
+                nameRect.anchorMax = new Vector2(1f, 1f);
+                nameRect.pivot = new Vector2(0.5f, 1f);
+                nameRect.anchoredPosition = new Vector2(0f, -12f);
+                nameRect.sizeDelta = new Vector2(-12f, 40f);
+                var nameText = nameGo.AddComponent<TextMeshProUGUI>();
+                nameText.text = preset.DisplayName;
+                nameText.fontSize = 24f;
+                nameText.alignment = TextAlignmentOptions.Center;
+                nameText.color = buttonTextColor;
+                nameText.fontStyle = FontStyles.Bold;
+
+                var markerGo = CreateUIObject("Marker", cardGo.transform);
+                var markerRect = markerGo.GetComponent<RectTransform>();
+                markerRect.anchorMin = new Vector2(0.5f, 0.5f);
+                markerRect.anchorMax = new Vector2(0.5f, 0.5f);
+                markerRect.pivot = new Vector2(0.5f, 0.5f);
+                markerRect.anchoredPosition = new Vector2(0f, 20f);
+                markerRect.sizeDelta = new Vector2(90f, 90f);
+                var markerText = markerGo.AddComponent<TextMeshProUGUI>();
+                markerText.text = string.Empty;
+                markerText.fontSize = 68f;
+                markerText.alignment = TextAlignmentOptions.Center;
+                markerText.color = titleColor;
+                markerText.fontStyle = FontStyles.Bold;
+
+                var statsGo = CreateUIObject("Stats", cardGo.transform);
+                var statsRect = statsGo.GetComponent<RectTransform>();
+                statsRect.anchorMin = new Vector2(0f, 0f);
+                statsRect.anchorMax = new Vector2(1f, 0f);
+                statsRect.pivot = new Vector2(0.5f, 0f);
+                statsRect.anchoredPosition = new Vector2(0f, 10f);
+                statsRect.sizeDelta = new Vector2(-18f, 130f);
+                var statsText = statsGo.AddComponent<TextMeshProUGUI>();
+                statsText.text = $"HP {preset.MaxStrength}\nMP {preset.MaxIntelligence}\nSPD {preset.BasicSpeed:0.#}\nATK {preset.BasicAttack}";
+                statsText.fontSize = 19f;
+                statsText.alignment = TextAlignmentOptions.TopLeft;
+                statsText.color = new Color(0.84f, 0.84f, 0.9f, 1f);
+
+                _classButtons.Add(cardButton);
+                _classMarkerTexts.Add(markerText);
+                _classKeys.Add(key);
+            }
+
+            var actionsGo = CreateUIObject("ClassActions", panel.transform);
+            var actionsRect = actionsGo.GetComponent<RectTransform>();
+            actionsRect.anchorMin = new Vector2(0.5f, 0f);
+            actionsRect.anchorMax = new Vector2(0.5f, 0f);
+            actionsRect.pivot = new Vector2(0.5f, 0f);
+            actionsRect.anchoredPosition = new Vector2(0f, 20f);
+            actionsRect.sizeDelta = new Vector2(520f, 56f);
+            var actionsLayout = actionsGo.AddComponent<HorizontalLayoutGroup>();
+            actionsLayout.spacing = 16f;
+            actionsLayout.childControlWidth = true;
+            actionsLayout.childControlHeight = true;
+            actionsLayout.childForceExpandWidth = true;
+            actionsLayout.childForceExpandHeight = true;
+
+            var confirmGo = CreateUIObject("ConfirmButton", actionsGo.transform);
+            confirmGo.AddComponent<LayoutElement>().preferredHeight = 56f;
+            var confirmImage = confirmGo.AddComponent<Image>();
+            confirmImage.color = new Color(0.24f, 0.47f, 0.2f, 1f);
+            var confirmButton = confirmGo.AddComponent<Button>();
+            confirmButton.targetGraphic = confirmImage;
+            confirmButton.onClick.AddListener(ApplySelectedClassAndStartGame);
+            var confirmText = CreateUIObject("Text", confirmGo.transform).AddComponent<TextMeshProUGUI>();
+            var confirmTextRect = confirmText.GetComponent<RectTransform>();
+            confirmTextRect.anchorMin = Vector2.zero;
+            confirmTextRect.anchorMax = Vector2.one;
+            confirmTextRect.sizeDelta = Vector2.zero;
+            confirmText.text = "Confirmar";
+            confirmText.fontSize = 24f;
+            confirmText.alignment = TextAlignmentOptions.Center;
+            confirmText.color = Color.white;
+            confirmText.fontStyle = FontStyles.Bold;
+
+            var cancelGo = CreateUIObject("CancelButton", actionsGo.transform);
+            cancelGo.AddComponent<LayoutElement>().preferredHeight = 56f;
+            var cancelImage = cancelGo.AddComponent<Image>();
+            cancelImage.color = new Color(0.34f, 0.2f, 0.2f, 1f);
+            var cancelButton = cancelGo.AddComponent<Button>();
+            cancelButton.targetGraphic = cancelImage;
+            cancelButton.onClick.AddListener(CloseClassSelector);
+            var cancelText = CreateUIObject("Text", cancelGo.transform).AddComponent<TextMeshProUGUI>();
+            var cancelTextRect = cancelText.GetComponent<RectTransform>();
+            cancelTextRect.anchorMin = Vector2.zero;
+            cancelTextRect.anchorMax = Vector2.one;
+            cancelTextRect.sizeDelta = Vector2.zero;
+            cancelText.text = "Cancelar";
+            cancelText.fontSize = 24f;
+            cancelText.alignment = TextAlignmentOptions.Center;
+            cancelText.color = Color.white;
+            cancelText.fontStyle = FontStyles.Bold;
+
+            var helpGo = CreateUIObject("ClassSelectorHint", panel.transform);
+            var helpRect = helpGo.GetComponent<RectTransform>();
+            helpRect.anchorMin = new Vector2(0.5f, 0f);
+            helpRect.anchorMax = new Vector2(0.5f, 0f);
+            helpRect.pivot = new Vector2(0.5f, 0f);
+            helpRect.anchoredPosition = new Vector2(0f, 84f);
+            helpRect.sizeDelta = new Vector2(900f, 28f);
+            var helpText = helpGo.AddComponent<TextMeshProUGUI>();
+            helpText.text = "A/D o \u2190\u2192 para elegir clase, Enter para confirmar";
+            helpText.fontSize = 18f;
+            helpText.alignment = TextAlignmentOptions.Center;
+            helpText.color = versionColor;
+
+            _classSelectionPanel.SetActive(false);
+            _selectedClassIndex = FindSelectedClassIndex();
+            UpdateClassSelectionUI();
+        }
+
+        private int FindSelectedClassIndex()
+        {
+            if (_classKeys.Count == 0)
+                return 0;
+
+            string selectedKey = PlayerSelectionState.SelectedPlayerKey;
+            for (int i = 0; i < _classKeys.Count; i++)
+            {
+                if (string.Equals(_classKeys[i], selectedKey, System.StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return 0;
+        }
+
+        private void SetSelectedClassIndex(int index)
+        {
+            if (_classButtons.Count == 0)
+                return;
+
+            if (index < 0)
+                index = _classButtons.Count - 1;
+            else if (index >= _classButtons.Count)
+                index = 0;
+
+            _selectedClassIndex = index;
+            UpdateClassSelectionUI();
+        }
+
+        private void UpdateClassSelectionUI()
+        {
+            for (int i = 0; i < _classButtons.Count; i++)
+            {
+                bool selected = i == _selectedClassIndex;
+                var image = _classButtons[i].GetComponent<Image>();
+                if (image != null)
+                    image.color = selected ? buttonHoverColor : buttonNormalColor;
+
+                if (i < _classMarkerTexts.Count)
+                {
+                    _classMarkerTexts[i].text = selected
+                        ? char.ToUpperInvariant(_classKeys[i][0]).ToString()
+                        : string.Empty;
+                }
+            }
+        }
+
+        private void ApplySelectedClassAndStartGame()
+        {
+            if (_selectedClassIndex < 0 || _selectedClassIndex >= _classKeys.Count)
+                return;
+
+            PlayerSelectionState.SetSelectedPlayer(_classKeys[_selectedClassIndex]);
+            CloseClassSelector();
+            StartNewGame();
         }
 
         private System.Collections.IEnumerator DeferredUpdateSelection()
@@ -377,8 +692,14 @@ namespace Valkur.UI.MainMenu
             _navUpAction?.Dispose();
             _navDownAction?.Disable();
             _navDownAction?.Dispose();
+            _navLeftAction?.Disable();
+            _navLeftAction?.Dispose();
+            _navRightAction?.Disable();
+            _navRightAction?.Dispose();
             _confirmAction?.Disable();
             _confirmAction?.Dispose();
+            _cancelAction?.Disable();
+            _cancelAction?.Dispose();
         }
     }
 }

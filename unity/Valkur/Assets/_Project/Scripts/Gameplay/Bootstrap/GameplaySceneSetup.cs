@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
@@ -31,6 +32,7 @@ namespace Valkur.Gameplay
             EnsureGlobalLight2D();
             EnsureVFXManager();
             EnsureTileEditor();
+            EnsureMapEditor();
             EnsureSaveLoadInput();
             SpawnPlayer();
             SpawnTestMonsters();
@@ -49,6 +51,14 @@ namespace Valkur.Gameplay
             var manager = editorGo.AddComponent<TileEditorManager>();
             manager.SetGridBuilder(_gridBuilder);
             Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
+        }
+
+        private void EnsureMapEditor()
+        {
+            if (MapEditorManager.Instance != null) return;
+            var editorGo = new GameObject("MapEditorManager");
+            editorGo.AddComponent<MapEditorManager>();
+            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
         }
 
         /// <summary>
@@ -189,9 +199,36 @@ namespace Valkur.Gameplay
             var playerGo = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity);
             playerGo.tag = "Player";
 
-            if (defaultPlayerDef != null)
+            var selectedDef = ResolveSelectedPlayerDefinition();
+            if (selectedDef != null)
+            {
+                EntitySetup.ConfigurePlayer(playerGo, selectedDef);
+            }
+            else if (defaultPlayerDef != null)
+            {
                 EntitySetup.ConfigurePlayer(playerGo, defaultPlayerDef);
+            }
+            else
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No player definition available for spawned player.");
+            }
 
+        }
+
+        private PlayerDefinition ResolveSelectedPlayerDefinition()
+        {
+            if (!PlayerSelectionState.HasExplicitSelection)
+                return defaultPlayerDef;
+
+            string selectedKey = PlayerSelectionState.SelectedPlayerKey;
+            var selectedRuntimeDef = PlayerClassCatalog.CreateRuntimeDefinition(selectedKey);
+            if (selectedRuntimeDef == null)
+            {
+                Debug.LogWarning($"[GameplaySceneSetup] Selected player class '{selectedKey}' not found in runtime catalog. Falling back to default player definition.");
+                return defaultPlayerDef;
+            }
+
+            return selectedRuntimeDef;
         }
 
         private void SpawnTestMonsters()

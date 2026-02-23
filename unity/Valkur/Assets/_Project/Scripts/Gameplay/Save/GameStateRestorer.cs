@@ -18,6 +18,9 @@ namespace Valkur.Gameplay.Save
         {
             if (data.player == null) return;
 
+            if (!string.IsNullOrWhiteSpace(data.player.playerClass))
+                PlayerSelectionState.SetSelectedPlayer(data.player.playerClass);
+
             var player = EntityRegistry.Player;
             if (player == null)
             {
