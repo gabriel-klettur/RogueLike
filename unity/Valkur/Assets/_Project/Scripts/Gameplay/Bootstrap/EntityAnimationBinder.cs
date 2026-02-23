@@ -23,35 +23,36 @@ namespace Valkur.Gameplay
             if (animator == null)
                 return false;
 
-            var idleSet = BuildSet(def.assetConfig.idle, def.assetConfig.idleSheets);
+            var idleSet = BuildSet(def.assetConfig.idle, def.assetConfig.idleSheets, out bool idleUsesFourDirectionalLayout);
             if (!HasFrames(idleSet))
                 return false;
 
-            var walkSet = BuildSet(def.assetConfig.walk, def.assetConfig.walkSheets);
+            var walkSet = BuildSet(def.assetConfig.walk, def.assetConfig.walkSheets, out bool walkUsesFourDirectionalLayout);
             if (!HasFrames(walkSet))
                 walkSet = idleSet;
 
-            var chaseSet = BuildSet(def.assetConfig.chase, def.assetConfig.chaseSheets);
+            var chaseSet = BuildSet(def.assetConfig.chase, def.assetConfig.chaseSheets, out _);
             if (!HasFrames(chaseSet))
                 chaseSet = walkSet;
 
-            var castSet = BuildSet(def.assetConfig.cast, def.assetConfig.castSheets);
+            var castSet = BuildSet(def.assetConfig.cast, def.assetConfig.castSheets, out _);
             if (!HasFrames(castSet))
                 castSet = walkSet;
 
-            var attackSet = BuildSet(def.assetConfig.attack, def.assetConfig.attackSheets);
+            var attackSet = BuildSet(def.assetConfig.attack, def.assetConfig.attackSheets, out _);
             if (!HasFrames(attackSet))
                 attackSet = castSet;
 
-            var damageSet = BuildSet(def.assetConfig.damage, def.assetConfig.damageSheets);
+            var damageSet = BuildSet(def.assetConfig.damage, def.assetConfig.damageSheets, out _);
             if (!HasFrames(damageSet))
                 damageSet = idleSet;
 
-            var deathSet = BuildSet(def.assetConfig.death, def.assetConfig.deathSheets);
+            var deathSet = BuildSet(def.assetConfig.death, def.assetConfig.deathSheets, out _);
             if (!HasFrames(deathSet))
                 deathSet = idleSet;
 
-            animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet);
+            bool preferCardinalDirectionSampling = idleUsesFourDirectionalLayout || walkUsesFourDirectionalLayout;
+            animator.SetSpriteSets(idleSet, walkSet, chaseSet, castSet, attackSet, damageSet, deathSet, preferCardinalDirectionSampling);
             var initialFrame = animator.PeekFirstFrame(idleSet);
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
@@ -59,13 +60,18 @@ namespace Valkur.Gameplay
             return true;
         }
 
-        private static DirectionalAnimator.DirectionalSpriteSet BuildSet(DirectionalSprites directional, List<Sprite> sheetFrames)
+        private static DirectionalAnimator.DirectionalSpriteSet BuildSet(DirectionalSprites directional, List<Sprite> sheetFrames, out bool usesFourDirectionalLayout)
         {
+            usesFourDirectionalLayout = false;
+
             if (HasDirectionalSprites(directional))
                 return DirectionalAnimator.CreateSetFromDirectional(directional);
 
             if (sheetFrames != null && sheetFrames.Count > 0)
+            {
+                usesFourDirectionalLayout = true;
                 return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames, assumeFourDirectionalLayout: true);
+            }
 
             return default;
         }

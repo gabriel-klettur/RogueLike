@@ -179,7 +179,7 @@ namespace Valkur.Gameplay
 
             if (_animator != null)
             {
-                var dir = DirectionalAnimator.VectorToDirection(_facingDirection);
+                var dir = _animator.ResolveDirectionFromVector(_facingDirection);
                 var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
                 _animator.SetState(state, dir);
             }

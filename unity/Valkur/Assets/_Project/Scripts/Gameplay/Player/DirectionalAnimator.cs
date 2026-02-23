@@ -93,6 +93,7 @@ namespace Valkur.Gameplay
         private float _stateStartTime;
         private AnimState _prevState;
         private Direction _prevDirection;
+        private bool _preferCardinalDirectionSampling;
 
         public AnimState CurrentState => _currentState;
         public Direction CurrentDirection => _currentDirection;
@@ -107,7 +108,8 @@ namespace Valkur.Gameplay
             DirectionalSpriteSet cast,
             DirectionalSpriteSet attack,
             DirectionalSpriteSet damage,
-            DirectionalSpriteSet death)
+            DirectionalSpriteSet death,
+            bool preferCardinalDirectionSampling = false)
         {
             idleSprites = idle;
             walkSprites = walk;
@@ -116,6 +118,7 @@ namespace Valkur.Gameplay
             attackSprites = attack;
             damageSprites = damage;
             deathSprites = death;
+            _preferCardinalDirectionSampling = preferCardinalDirectionSampling;
 
             _frameIndex = 0;
             _frameTimer = 0f;
@@ -315,7 +318,17 @@ namespace Valkur.Gameplay
         public void SetDirectionFromVector(Vector2 dir)
         {
             if (dir.sqrMagnitude < 0.01f) return;
-            _currentDirection = VectorToDirection(dir);
+            _currentDirection = ResolveDirectionFromVector(dir);
+        }
+
+        public Direction ResolveDirectionFromVector(Vector2 dir)
+        {
+            if (dir.sqrMagnitude < 0.01f)
+                return _currentDirection;
+
+            return _preferCardinalDirectionSampling
+                ? VectorToPrimaryDirection(dir)
+                : VectorToDirection(dir);
         }
 
         /// <summary>
@@ -336,6 +349,18 @@ namespace Valkur.Gameplay
             if (angle < 247.5f) return Direction.SouthWest;
             if (angle < 292.5f) return Direction.South;
             return Direction.SouthEast;
+        }
+
+        /// <summary>
+        /// Convert a 2D vector to a primary cardinal direction using dominant axis.
+        /// Mirrors Python's primary_direction_from_vector fallback when only 4-dir assets exist.
+        /// </summary>
+        public static Direction VectorToPrimaryDirection(Vector2 dir)
+        {
+            if (Mathf.Abs(dir.x) > Mathf.Abs(dir.y))
+                return dir.x < 0f ? Direction.West : Direction.East;
+
+            return dir.y < 0f ? Direction.South : Direction.North;
         }
 
         private void AdvanceFrame()
