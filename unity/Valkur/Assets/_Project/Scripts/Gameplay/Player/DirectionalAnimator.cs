@@ -226,19 +226,22 @@ namespace Valkur.Gameplay
         public void SetState(AnimState state, Direction direction)
         {
             bool stateChanged = state != _currentState;
+            bool directionChanged = direction != _currentDirection;
+
+            if (!stateChanged && !directionChanged)
+                return;
+
             _currentState = state;
             _currentDirection = direction;
 
-            if (stateChanged || direction != _prevDirection)
-            {
-                if (stateChanged)
-                {
-                    _frameIndex = 0;
-                    _stateStartTime = Time.time;
-                }
-                _prevState = _currentState;
-                _prevDirection = _currentDirection;
-            }
+            _frameIndex = 0;
+            _frameTimer = 0f;
+            _stateStartTime = Time.time;
+            _prevState = _currentState;
+            _prevDirection = _currentDirection;
+
+            // Apply immediately so idle/walk direction follows mouse without frame-interval lag.
+            AdvanceFrame();
         }
 
         /// <summary>
