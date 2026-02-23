@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -16,17 +17,25 @@ namespace Valkur.Gameplay.MapEditor
         private MapEditorState _state;
 
         private System.Action<string> _onZoneSelected;
-        private System.Action _onAddZoneAtCursor;
+        private System.Action _onBeginAddZoneFlow;
+        private System.Action<string, bool, bool> _onConfirmAddZone;
+        private System.Action _onCancelAddZoneFlow;
         private System.Action _onDuplicateSelectedZone;
-        private System.Action _onDeleteSelectedZone;
+        private System.Action _onRequestDeleteSelectedZone;
+        private System.Action _onConfirmDeleteSelectedZone;
         private System.Action<string> _onRenameSelectedZone;
+        private System.Action<string, string> _onRenameZoneByName;
         private System.Action _onToggleSelectedZoneEditable;
+        private System.Action<string> _onToggleZoneEditableByName;
         private System.Action<Vector2Int> _onMoveSelectedZone;
         private System.Action<bool> _onRestrictEditChanged;
 
+        private Transform _canvasRoot;
         private GameObject _root;
         private Transform _zonesListContent;
         private readonly List<Button> _zoneButtons = new List<Button>();
+        private ZoneManager.ZoneDefinition[] _cachedZones = Array.Empty<ZoneManager.ZoneDefinition>();
+        private string _inlineRenameZoneName;
 
         private TMP_Text _selectedZoneText;
         private TMP_Text _selectedEditableText;
@@ -34,29 +43,55 @@ namespace Valkur.Gameplay.MapEditor
         private TMP_InputField _nameInput;
         private Toggle _restrictToggle;
 
+        private GameObject _addZoneDialog;
+        private TMP_InputField _addZoneNameInput;
+        private TMP_Text _addZoneSourceText;
+        private TMP_Text _addZoneTargetText;
+        private Toggle _addUseTemplateToggle;
+        private Toggle _addEditableToggle;
+
+        private GameObject _deleteZoneDialog;
+        private TMP_Text _deleteZonePrompt;
+
         private static Sprite _whiteSprite;
 
         public string NameInput => _nameInput != null ? _nameInput.text : string.Empty;
-        public bool IsTypingName => _nameInput != null && _nameInput.isFocused;
+        public bool IsTypingInput =>
+            EventSystem.current != null &&
+            EventSystem.current.currentSelectedGameObject != null &&
+            EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null;
+        public bool IsModalOpen =>
+            (_addZoneDialog != null && _addZoneDialog.activeSelf) ||
+            (_deleteZoneDialog != null && _deleteZoneDialog.activeSelf);
 
         public void Initialize(
             MapEditorState state,
             System.Action<string> onZoneSelected,
-            System.Action onAddZoneAtCursor,
+            System.Action onBeginAddZoneFlow,
+            System.Action<string, bool, bool> onConfirmAddZone,
+            System.Action onCancelAddZoneFlow,
             System.Action onDuplicateSelectedZone,
-            System.Action onDeleteSelectedZone,
+            System.Action onRequestDeleteSelectedZone,
+            System.Action onConfirmDeleteSelectedZone,
             System.Action<string> onRenameSelectedZone,
+            System.Action<string, string> onRenameZoneByName,
             System.Action onToggleSelectedZoneEditable,
+            System.Action<string> onToggleZoneEditableByName,
             System.Action<Vector2Int> onMoveSelectedZone,
             System.Action<bool> onRestrictEditChanged)
         {
             _state = state;
             _onZoneSelected = onZoneSelected;
-            _onAddZoneAtCursor = onAddZoneAtCursor;
+            _onBeginAddZoneFlow = onBeginAddZoneFlow;
+            _onConfirmAddZone = onConfirmAddZone;
+            _onCancelAddZoneFlow = onCancelAddZoneFlow;
             _onDuplicateSelectedZone = onDuplicateSelectedZone;
-            _onDeleteSelectedZone = onDeleteSelectedZone;
+            _onRequestDeleteSelectedZone = onRequestDeleteSelectedZone;
+            _onConfirmDeleteSelectedZone = onConfirmDeleteSelectedZone;
             _onRenameSelectedZone = onRenameSelectedZone;
+            _onRenameZoneByName = onRenameZoneByName;
             _onToggleSelectedZoneEditable = onToggleSelectedZoneEditable;
+            _onToggleZoneEditableByName = onToggleZoneEditableByName;
             _onMoveSelectedZone = onMoveSelectedZone;
             _onRestrictEditChanged = onRestrictEditChanged;
 
@@ -68,50 +103,32 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_root != null)
                 _root.SetActive(visible);
+
+            if (!visible)
+            {
+                HideAddZoneDialog();
+                HideDeleteZoneDialog();
+            }
         }
 
         public void RefreshZones(ZoneManager.ZoneDefinition[] zones)
         {
-            if (_zonesListContent == null) return;
+            _cachedZones = zones ?? Array.Empty<ZoneManager.ZoneDefinition>();
 
-            for (int i = _zonesListContent.childCount - 1; i >= 0; i--)
-                Destroy(_zonesListContent.GetChild(i).gameObject);
-            _zoneButtons.Clear();
-
-            for (int i = 0; i < zones.Length; i++)
+            bool inlineExists = false;
+            for (int i = 0; i < _cachedZones.Length; i++)
             {
-                var zone = zones[i];
-                var row = CreatePanel($"Zone_{zone.zoneName}", _zonesListContent, new Color(0.12f, 0.12f, 0.12f, 0.9f));
-                row.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 32f);
-
-                var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
-                rowLayout.padding = new RectOffset(8, 8, 4, 4);
-                rowLayout.spacing = 8f;
-                rowLayout.childAlignment = TextAnchor.MiddleLeft;
-                rowLayout.childControlWidth = true;
-                rowLayout.childForceExpandWidth = true;
-
-                var text = CreateText("Label", row.transform,
-                    $"{zone.zoneName}  [{zone.gridOffset.x},{zone.gridOffset.y}] {(zone.editableInTileEditor ? "EDIT" : "LOCK")}",
-                    13f,
-                    zone.editableInTileEditor ? new Color(0.92f, 0.96f, 1f, 1f) : new Color(1f, 0.7f, 0.7f, 1f));
-                text.alignment = TextAlignmentOptions.MidlineLeft;
-
-                var button = row.AddComponent<Button>();
-                var colors = button.colors;
-                colors.normalColor = zone.zoneName == _state.SelectedZone
-                    ? new Color(0.28f, 0.34f, 0.44f, 0.95f)
-                    : new Color(0.12f, 0.12f, 0.12f, 0.9f);
-                colors.highlightedColor = new Color(0.22f, 0.26f, 0.34f, 0.95f);
-                colors.pressedColor = new Color(0.36f, 0.42f, 0.52f, 0.95f);
-                colors.selectedColor = colors.normalColor;
-                button.colors = colors;
-                button.targetGraphic = row.GetComponent<Image>();
-
-                string zoneName = zone.zoneName;
-                button.onClick.AddListener(() => _onZoneSelected?.Invoke(zoneName));
-                _zoneButtons.Add(button);
+                if (_cachedZones[i].zoneName == _inlineRenameZoneName)
+                {
+                    inlineExists = true;
+                    break;
+                }
             }
+
+            if (!inlineExists)
+                _inlineRenameZoneName = null;
+
+            RebuildZonesList();
         }
 
         public void SetSelectedZone(string zoneName, bool editable)
@@ -147,6 +164,168 @@ namespace Valkur.Gameplay.MapEditor
                 _statusText.text = text;
         }
 
+        public void ShowAddZoneDialog(string suggestedName, string sourceZoneName, bool sourceEditable)
+        {
+            if (_addZoneDialog == null) return;
+
+            _addZoneDialog.SetActive(true);
+
+            if (_addZoneNameInput != null)
+                _addZoneNameInput.text = suggestedName;
+
+            SetAddZoneSource(sourceZoneName, sourceEditable);
+
+            if (_addUseTemplateToggle != null)
+                _addUseTemplateToggle.SetIsOnWithoutNotify(true);
+            if (_addEditableToggle != null)
+                _addEditableToggle.SetIsOnWithoutNotify(sourceEditable);
+
+            SetAddZoneTarget(Vector2Int.zero, 50, 50, false);
+        }
+
+        public void HideAddZoneDialog()
+        {
+            if (_addZoneDialog != null)
+                _addZoneDialog.SetActive(false);
+        }
+
+        public void SetAddZoneSource(string sourceZoneName, bool editable)
+        {
+            if (_addZoneSourceText == null)
+                return;
+
+            string source = string.IsNullOrWhiteSpace(sourceZoneName) ? "(none)" : sourceZoneName;
+            _addZoneSourceText.text = $"Source: {source} ({(editable ? "EDIT" : "LOCK")})";
+
+            if (_addEditableToggle != null && _addUseTemplateToggle != null && _addUseTemplateToggle.isOn)
+                _addEditableToggle.SetIsOnWithoutNotify(editable);
+        }
+
+        public void SetAddZoneTarget(Vector2Int gridOffset, int zoneWidth, int zoneHeight, bool hasTarget)
+        {
+            if (_addZoneTargetText == null)
+                return;
+
+            _addZoneTargetText.text = hasTarget
+                ? $"Target: [{gridOffset.x},{gridOffset.y}] ({zoneWidth}x{zoneHeight})"
+                : $"Target: click map to mark ({zoneWidth}x{zoneHeight})";
+        }
+
+        public void ShowDeleteZoneDialog(string zoneName)
+        {
+            if (_deleteZoneDialog == null || _deleteZonePrompt == null)
+                return;
+
+            _deleteZonePrompt.text = $"Delete zone '{zoneName}'?";
+            _deleteZoneDialog.SetActive(true);
+        }
+
+        public void HideDeleteZoneDialog()
+        {
+            if (_deleteZoneDialog != null)
+                _deleteZoneDialog.SetActive(false);
+        }
+
+        private void RebuildZonesList()
+        {
+            if (_zonesListContent == null) return;
+
+            for (int i = _zonesListContent.childCount - 1; i >= 0; i--)
+                Destroy(_zonesListContent.GetChild(i).gameObject);
+            _zoneButtons.Clear();
+
+            for (int i = 0; i < _cachedZones.Length; i++)
+            {
+                var zone = _cachedZones[i];
+                var row = CreatePanel($"Zone_{zone.zoneName}", _zonesListContent, new Color(0.12f, 0.12f, 0.12f, 0.9f));
+                row.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 36f);
+
+                var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
+                rowLayout.padding = new RectOffset(8, 8, 4, 4);
+                rowLayout.spacing = 6f;
+                rowLayout.childAlignment = TextAnchor.MiddleLeft;
+                rowLayout.childControlWidth = true;
+                rowLayout.childForceExpandWidth = true;
+
+                string zoneName = zone.zoneName;
+                if (_inlineRenameZoneName == zoneName)
+                    BuildInlineRenameRow(row.transform, zone);
+                else
+                    BuildDefaultZoneRow(row.transform, zone);
+
+                var button = row.AddComponent<Button>();
+                var colors = button.colors;
+                colors.normalColor = zoneName == _state.SelectedZone
+                    ? new Color(0.28f, 0.34f, 0.44f, 0.95f)
+                    : new Color(0.12f, 0.12f, 0.12f, 0.9f);
+                colors.highlightedColor = new Color(0.22f, 0.26f, 0.34f, 0.95f);
+                colors.pressedColor = new Color(0.36f, 0.42f, 0.52f, 0.95f);
+                colors.selectedColor = colors.normalColor;
+                button.colors = colors;
+                button.targetGraphic = row.GetComponent<Image>();
+                button.onClick.AddListener(() => _onZoneSelected?.Invoke(zoneName));
+                _zoneButtons.Add(button);
+            }
+        }
+
+        private void BuildDefaultZoneRow(Transform parent, ZoneManager.ZoneDefinition zone)
+        {
+            var text = CreateText("Label", parent,
+                $"{zone.zoneName}  [{zone.gridOffset.x},{zone.gridOffset.y}] {(zone.editableInTileEditor ? "EDIT" : "LOCK")}",
+                12f,
+                zone.editableInTileEditor ? new Color(0.92f, 0.96f, 1f, 1f) : new Color(1f, 0.7f, 0.7f, 1f));
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.rectTransform.sizeDelta = new Vector2(300f, 0f);
+
+            var actions = CreateRow("RowActions", parent, 26f);
+            actions.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            actions.GetComponent<RectTransform>().sizeDelta = new Vector2(96f, 0f);
+            var actionsLayout = actions.AddComponent<LayoutElement>();
+            actionsLayout.preferredWidth = 96f;
+            actionsLayout.flexibleWidth = 0f;
+
+            CreateMiniActionButton(actions.transform, "R", () =>
+            {
+                _inlineRenameZoneName = zone.zoneName;
+                RebuildZonesList();
+            });
+
+            CreateMiniActionButton(actions.transform, "E", () =>
+            {
+                _onZoneSelected?.Invoke(zone.zoneName);
+                _onToggleZoneEditableByName?.Invoke(zone.zoneName);
+            });
+        }
+
+        private void BuildInlineRenameRow(Transform parent, ZoneManager.ZoneDefinition zone)
+        {
+            var inputHost = CreatePanel("InlineRenameHost", parent, new Color(0.15f, 0.16f, 0.2f, 1f));
+            inputHost.GetComponent<RectTransform>().sizeDelta = new Vector2(260f, 28f);
+            var inputLayout = inputHost.AddComponent<LayoutElement>();
+            inputLayout.preferredWidth = 260f;
+            inputLayout.flexibleWidth = 0f;
+            var input = CreateInputField(inputHost.transform, "New zone name");
+            input.text = zone.zoneName;
+
+            var actions = CreateRow("RenameActions", parent, 26f);
+            actions.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            actions.GetComponent<RectTransform>().sizeDelta = new Vector2(96f, 0f);
+            var actionsLayout = actions.AddComponent<LayoutElement>();
+            actionsLayout.preferredWidth = 96f;
+            actionsLayout.flexibleWidth = 0f;
+
+            CreateMiniActionButton(actions.transform, "OK", () =>
+            {
+                _onRenameZoneByName?.Invoke(zone.zoneName, input.text);
+            });
+
+            CreateMiniActionButton(actions.transform, "X", () =>
+            {
+                _inlineRenameZoneName = null;
+                RebuildZonesList();
+            });
+        }
+
         private void BuildUI()
         {
             if (FindObjectOfType<EventSystem>() == null)
@@ -158,6 +337,7 @@ namespace Valkur.Gameplay.MapEditor
 
             var canvasGo = new GameObject("MapEditorCanvas");
             canvasGo.transform.SetParent(transform, false);
+            _canvasRoot = canvasGo.transform;
 
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -187,7 +367,7 @@ namespace Valkur.Gameplay.MapEditor
 
             CreateText("Title", _root.transform, "MAP EDITOR (F7)", 22f, new Color(1f, 0.84f, 0.45f, 1f), FontStyles.Bold);
             CreateText("Hint", _root.transform,
-                "Left-click: select zone under cursor | N: add zone | D: duplicate | Del: delete | R: rename | E: toggle editable",
+                "Left-click: select zone / mark Add target | N: Add Zone flow | D: duplicate | Del: delete | R: rename | E: toggle editable",
                 12f,
                 new Color(0.8f, 0.86f, 0.96f, 1f));
 
@@ -199,10 +379,10 @@ namespace Valkur.Gameplay.MapEditor
             _nameInput = CreateInputField(inputPanel.transform, "Zone name");
 
             var actionsRow = CreateRow("ActionsRow", _root.transform, 34f);
-            CreateActionButton(actionsRow.transform, "Add @ Cursor", () => _onAddZoneAtCursor?.Invoke());
+            CreateActionButton(actionsRow.transform, "Add Zone", () => _onBeginAddZoneFlow?.Invoke());
             CreateActionButton(actionsRow.transform, "Duplicate", () => _onDuplicateSelectedZone?.Invoke());
             CreateActionButton(actionsRow.transform, "Rename", () => _onRenameSelectedZone?.Invoke(NameInput));
-            CreateActionButton(actionsRow.transform, "Delete", () => _onDeleteSelectedZone?.Invoke());
+            CreateActionButton(actionsRow.transform, "Delete", () => _onRequestDeleteSelectedZone?.Invoke());
             CreateActionButton(actionsRow.transform, "Toggle Editable", () => _onToggleSelectedZoneEditable?.Invoke());
 
             var moveRow = CreateRow("MoveRow", _root.transform, 34f);
@@ -223,10 +403,99 @@ namespace Valkur.Gameplay.MapEditor
 
             var scroll = CreateScrollView("ZonesScroll", _root.transform, out var content);
             var scrollLayout = scroll.gameObject.AddComponent<LayoutElement>();
-            scrollLayout.preferredHeight = 430f;
+            scrollLayout.preferredHeight = 380f;
             _zonesListContent = content;
 
             _statusText = CreateText("Status", _root.transform, "Ready", 12f, new Color(0.78f, 0.86f, 0.96f, 1f));
+
+            BuildAddZoneDialog();
+            BuildDeleteZoneDialog();
+        }
+
+        private void BuildAddZoneDialog()
+        {
+            if (_canvasRoot == null)
+                return;
+
+            _addZoneDialog = CreatePanel("AddZoneDialog", _canvasRoot, new Color(0.04f, 0.05f, 0.08f, 0.96f));
+            var rect = _addZoneDialog.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(494f, -18f);
+            rect.sizeDelta = new Vector2(430f, 270f);
+
+            var layout = _addZoneDialog.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(12, 12, 10, 10);
+            layout.spacing = 6f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+
+            CreateText("Title", _addZoneDialog.transform, "ADD ZONE", 18f, new Color(1f, 0.88f, 0.56f, 1f), FontStyles.Bold);
+            _addZoneSourceText = CreateText("Source", _addZoneDialog.transform, "Source: (none)", 12f, new Color(0.84f, 0.91f, 1f, 1f));
+            _addZoneTargetText = CreateText("Target", _addZoneDialog.transform, "Target: click map to mark (50x50)", 12f, new Color(0.84f, 0.91f, 1f, 1f));
+
+            var namePanel = CreatePanel("NamePanel", _addZoneDialog.transform, new Color(0.09f, 0.09f, 0.1f, 1f));
+            namePanel.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 36f);
+            _addZoneNameInput = CreateInputField(namePanel.transform, "new_zone_name");
+
+            var togglesRow = CreateRow("AddToggles", _addZoneDialog.transform, 30f);
+            var tplLabel = CreateText("TplLabel", togglesRow.transform, "Use selected as template", 12f, Color.white);
+            tplLabel.rectTransform.sizeDelta = new Vector2(230f, 0f);
+            _addUseTemplateToggle = CreateToggle(togglesRow.transform);
+
+            var editableRow = CreateRow("EditableRow", _addZoneDialog.transform, 30f);
+            var editableLabel = CreateText("EditableLabel", editableRow.transform, "Editable in tile editor", 12f, Color.white);
+            editableLabel.rectTransform.sizeDelta = new Vector2(230f, 0f);
+            _addEditableToggle = CreateToggle(editableRow.transform);
+
+            var actionsRow = CreateRow("AddDialogActions", _addZoneDialog.transform, 34f);
+            CreateActionButton(actionsRow.transform, "Confirm Add", () =>
+            {
+                _onConfirmAddZone?.Invoke(
+                    _addZoneNameInput != null ? _addZoneNameInput.text : string.Empty,
+                    _addUseTemplateToggle != null && _addUseTemplateToggle.isOn,
+                    _addEditableToggle != null && _addEditableToggle.isOn);
+            });
+
+            CreateActionButton(actionsRow.transform, "Cancel", () =>
+            {
+                _onCancelAddZoneFlow?.Invoke();
+                HideAddZoneDialog();
+            });
+
+            _addZoneDialog.SetActive(false);
+        }
+
+        private void BuildDeleteZoneDialog()
+        {
+            if (_canvasRoot == null)
+                return;
+
+            _deleteZoneDialog = CreatePanel("DeleteZoneDialog", _canvasRoot, new Color(0.08f, 0.04f, 0.04f, 0.96f));
+            var rect = _deleteZoneDialog.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(494f, -300f);
+            rect.sizeDelta = new Vector2(430f, 130f);
+
+            var layout = _deleteZoneDialog.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(12, 12, 10, 10);
+            layout.spacing = 6f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+
+            CreateText("DeleteTitle", _deleteZoneDialog.transform, "CONFIRM DELETE", 16f, new Color(1f, 0.74f, 0.66f, 1f), FontStyles.Bold);
+            _deleteZonePrompt = CreateText("DeletePrompt", _deleteZoneDialog.transform, "Delete zone?", 13f, Color.white);
+
+            var actions = CreateRow("DeleteActions", _deleteZoneDialog.transform, 34f);
+            CreateActionButton(actions.transform, "Delete", () => _onConfirmDeleteSelectedZone?.Invoke());
+            CreateActionButton(actions.transform, "Cancel", HideDeleteZoneDialog);
+
+            _deleteZoneDialog.SetActive(false);
         }
 
         private static GameObject CreatePanel(string name, Transform parent, Color color)
@@ -288,6 +557,17 @@ namespace Valkur.Gameplay.MapEditor
             text.rectTransform.offsetMin = Vector2.zero;
             text.rectTransform.offsetMax = Vector2.zero;
 
+            return button;
+        }
+
+        private static Button CreateMiniActionButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        {
+            var button = CreateActionButton(parent, label, onClick);
+            var rect = button.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(42f, 24f);
+            var text = button.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+                text.fontSize = 10f;
             return button;
         }
 

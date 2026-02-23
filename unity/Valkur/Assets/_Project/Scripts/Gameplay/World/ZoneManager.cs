@@ -156,6 +156,29 @@ namespace Valkur.Gameplay.World
             return true;
         }
 
+        public bool AddZoneFromTemplate(string sourceZoneName, string newZoneName, Vector2Int gridOffset, bool? editableOverride = null)
+        {
+            if (!IsValidZoneName(sourceZoneName) || !IsValidZoneName(newZoneName) || _zoneMap.ContainsKey(newZoneName))
+                return false;
+
+            int idx = FindZoneIndex(sourceZoneName);
+            if (idx < 0)
+                return false;
+
+            var source = zones[idx];
+            zones.Add(new ZoneDefinition
+            {
+                zoneName = newZoneName,
+                gridOffset = gridOffset,
+                zoneMusic = source.zoneMusic,
+                editableInTileEditor = editableOverride ?? source.editableInTileEditor
+            });
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
         public bool DuplicateZone(string sourceZoneName, out string duplicatedZoneName)
         {
             duplicatedZoneName = null;

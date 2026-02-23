@@ -33,6 +33,12 @@ namespace Valkur.Gameplay.MapEditor
         private Material _overlayLineMaterial;
         private GameObject _overlayRoot;
 
+        private bool _isAddZoneFlowActive;
+        private bool _hasPendingAddTarget;
+        private Vector2Int _pendingAddZoneOffset;
+        private GameObject _addZonePreviewObject;
+        private string _pendingDeleteZoneName;
+
         public bool IsActive => _state != null && _state.Active;
 
         [Serializable]
@@ -97,20 +103,33 @@ namespace Valkur.Gameplay.MapEditor
 
             if (!_state.Active) return;
 
-            if (_ui != null && _ui.IsTypingName)
+            if (_ui != null && _ui.IsTypingInput)
                 return;
+
+            if (_ui != null && _ui.IsModalOpen)
+            {
+                if (_isAddZoneFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI())
+                    MarkAddZoneTargetAtCursor();
+                return;
+            }
+
+            if (_isAddZoneFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI())
+            {
+                MarkAddZoneTargetAtCursor();
+                return;
+            }
 
             if (_input.WasSelectPressed() && !_input.IsPointerOverUI())
                 SelectZoneAtCursor();
 
             if (_input.WasCreatePressed())
-                AddZoneAtCursor();
+                BeginAddZoneFlow();
 
             if (_input.WasDuplicatePressed())
                 DuplicateSelectedZone();
 
             if (_input.WasDeletePressed())
-                DeleteSelectedZone();
+                RequestDeleteSelectedZone();
 
             if (_input.WasRenamePressed())
                 RenameSelectedZone(_ui != null ? _ui.NameInput : string.Empty);
@@ -136,6 +155,7 @@ namespace Valkur.Gameplay.MapEditor
             }
             else
             {
+                CancelAddZoneFlow();
                 if (_ui != null)
                     _ui.SetStatus("Map Editor inactive.");
                 Debug.Log("[MapEditor] Deactivated (F7).");
@@ -163,11 +183,16 @@ namespace Valkur.Gameplay.MapEditor
             _ui.Initialize(
                 _state,
                 OnZoneSelected,
-                AddZoneAtCursor,
+                BeginAddZoneFlow,
+                ConfirmAddZone,
+                CancelAddZoneFlow,
                 DuplicateSelectedZone,
-                DeleteSelectedZone,
+                RequestDeleteSelectedZone,
+                ConfirmDeleteSelectedZone,
                 RenameSelectedZone,
+                RenameZoneByName,
                 ToggleSelectedZoneEditable,
+                ToggleZoneEditableByName,
                 MoveSelectedZone,
                 SetRestrictTileEditing);
             _ui.SetVisible(false);
@@ -177,6 +202,8 @@ namespace Valkur.Gameplay.MapEditor
         private void OnZoneSelected(string zoneName)
         {
             _state.SelectZone(zoneName);
+            if (_isAddZoneFlowActive && zoneManager.TryGetZone(zoneName, out var zone))
+                _ui?.SetAddZoneSource(zone.zoneName, zone.editableInTileEditor);
             RefreshSelectionUIAndOverlay();
         }
 
@@ -201,11 +228,35 @@ namespace Valkur.Gameplay.MapEditor
             RefreshSelectionUIAndOverlay();
         }
 
-        private void AddZoneAtCursor()
+        private void BeginAddZoneFlow()
         {
+            if (!_state.HasSelection || !zoneManager.TryGetZone(_state.SelectedZone, out var sourceZone))
+            {
+                _ui?.SetStatus("Select a source zone before Add Zone.");
+                return;
+            }
+
+            _isAddZoneFlowActive = true;
+            _hasPendingAddTarget = false;
+            _pendingAddZoneOffset = default;
+
+            int width = Mathf.Max(1, zoneManager.ZoneWidthTiles);
+            int height = Mathf.Max(1, zoneManager.ZoneHeightTiles);
+
+            _ui?.ShowAddZoneDialog(GenerateUniqueZoneName(), sourceZone.zoneName, sourceZone.editableInTileEditor);
+            _ui?.SetAddZoneTarget(default, width, height, false);
+            _ui?.SetStatus("Add Zone mode: click world to mark a 50x50 zone target, then confirm.");
+            UpdateAddZonePreviewVisibility();
+        }
+
+        private void MarkAddZoneTargetAtCursor()
+        {
+            if (!_isAddZoneFlowActive)
+                return;
+
             if (!TryGetCursorTile(out var tilePos))
             {
-                _ui?.SetStatus("Cannot add zone: cursor tile unavailable.");
+                _ui?.SetStatus("Cannot mark add target: cursor tile unavailable.");
                 return;
             }
 
@@ -215,27 +266,104 @@ namespace Valkur.Gameplay.MapEditor
             int alignedX = Mathf.FloorToInt(tilePos.x / (float)width) * width;
             int alignedY = Mathf.FloorToInt(tilePos.y / (float)height) * height;
 
-            string zoneName = GenerateUniqueZoneName();
-            bool created = zoneManager.AddZone(zoneName, new Vector2Int(alignedX, alignedY), editableInTileEditor: true);
+            _pendingAddZoneOffset = new Vector2Int(alignedX, alignedY);
+            _hasPendingAddTarget = true;
+
+            UpdateAddZonePreview();
+            _ui?.SetAddZoneTarget(_pendingAddZoneOffset, width, height, true);
+            _ui?.SetStatus($"Add Zone target marked at [{alignedX},{alignedY}] ({width}x{height}).");
+        }
+
+        private void ConfirmAddZone(string requestedZoneName, bool useSelectedZoneAsTemplate, bool editableInTileEditor)
+        {
+            if (!_isAddZoneFlowActive)
+            {
+                _ui?.SetStatus("Add Zone flow is not active.");
+                return;
+            }
+
+            if (!_hasPendingAddTarget)
+            {
+                _ui?.SetStatus("Mark a 50x50 target in the world before confirming Add Zone.");
+                return;
+            }
+
+            string zoneName = (requestedZoneName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(zoneName))
+            {
+                _ui?.SetStatus("Add Zone failed: empty name.");
+                return;
+            }
+
+            bool created;
+            if (useSelectedZoneAsTemplate)
+            {
+                if (!_state.HasSelection)
+                {
+                    _ui?.SetStatus("Add Zone failed: source zone is required for template mode.");
+                    return;
+                }
+
+                string sourceZoneName = _state.SelectedZone;
+                created = zoneManager.AddZoneFromTemplate(sourceZoneName, zoneName, _pendingAddZoneOffset, editableInTileEditor);
+            }
+            else
+            {
+                created = zoneManager.AddZone(zoneName, _pendingAddZoneOffset, editableInTileEditor);
+            }
 
             if (!created)
             {
-                _ui?.SetStatus($"Cannot add zone '{zoneName}'. Name already exists.");
+                _ui?.SetStatus($"Add Zone failed for '{zoneName}'. Check name uniqueness and source-zone selection.");
                 return;
             }
 
             _state.SelectZone(zoneName);
             _state.NextZoneIndex++;
             PersistZonesToDisk();
-            _ui?.SetStatus($"Zone '{zoneName}' added at [{alignedX},{alignedY}].");
+
+            CancelAddZoneFlow();
+            _ui?.SetStatus($"Zone '{zoneName}' added at [{_pendingAddZoneOffset.x},{_pendingAddZoneOffset.y}].");
             RefreshSelectionUIAndOverlay();
         }
 
-        private void DeleteSelectedZone()
+        private void CancelAddZoneFlow()
+        {
+            _isAddZoneFlowActive = false;
+            _hasPendingAddTarget = false;
+            _ui?.HideAddZoneDialog();
+            UpdateAddZonePreviewVisibility();
+        }
+
+        private void RequestDeleteSelectedZone()
         {
             if (!_state.HasSelection)
             {
                 _ui?.SetStatus("Select a zone before deleting.");
+                return;
+            }
+
+            _pendingDeleteZoneName = _state.SelectedZone;
+            _ui?.ShowDeleteZoneDialog(_pendingDeleteZoneName);
+        }
+
+        private void ConfirmDeleteSelectedZone()
+        {
+            if (string.IsNullOrWhiteSpace(_pendingDeleteZoneName))
+            {
+                _ui?.SetStatus("No pending zone to delete.");
+                return;
+            }
+
+            DeleteZoneByName(_pendingDeleteZoneName);
+            _pendingDeleteZoneName = null;
+        }
+
+        private void DeleteZoneByName(string zoneName)
+        {
+            if (string.IsNullOrWhiteSpace(zoneName))
+            {
+                _ui?.SetStatus("Delete failed: invalid zone.");
                 return;
             }
 
@@ -246,17 +374,18 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
-            string removedName = _state.SelectedZone;
-            bool removed = zoneManager.RemoveZone(removedName);
-            if (!removed)
+            if (!zoneManager.RemoveZone(zoneName))
             {
-                _ui?.SetStatus($"Could not delete zone '{removedName}'.");
+                _ui?.SetStatus($"Could not delete zone '{zoneName}'.");
                 return;
             }
 
-            _state.ClearSelection();
+            if (_state.HasSelection && _state.SelectedZone == zoneName)
+                _state.ClearSelection();
+
+            _ui?.HideDeleteZoneDialog();
             PersistZonesToDisk();
-            _ui?.SetStatus($"Zone '{removedName}' deleted.");
+            _ui?.SetStatus($"Zone '{zoneName}' deleted.");
             RefreshSelectionUIAndOverlay();
         }
 
@@ -277,8 +406,12 @@ namespace Valkur.Gameplay.MapEditor
             }
 
             _state.SelectZone(duplicatedZoneName);
+
+            int dx = Mathf.Max(1, zoneManager.ZoneWidthTiles);
+            zoneManager.MoveZone(duplicatedZoneName, new Vector2Int(dx, 0));
+
             PersistZonesToDisk();
-            _ui?.SetStatus($"Zone '{sourceZoneName}' duplicated to '{duplicatedZoneName}'.");
+            _ui?.SetStatus($"Zone '{sourceZoneName}' duplicated to '{duplicatedZoneName}' and shifted by [{dx},0].");
             RefreshSelectionUIAndOverlay();
         }
 
@@ -290,7 +423,17 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
-            string oldName = _state.SelectedZone;
+            RenameZoneByName(_state.SelectedZone, newName);
+        }
+
+        private void RenameZoneByName(string oldName, string newName)
+        {
+            if (string.IsNullOrWhiteSpace(oldName))
+            {
+                _ui?.SetStatus("Rename failed: invalid zone.");
+                return;
+            }
+
             string trimmed = (newName ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
             {
@@ -318,11 +461,24 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
-            if (!zoneManager.TryGetZone(_state.SelectedZone, out var zone))
+            ToggleZoneEditableByName(_state.SelectedZone);
+        }
+
+        private void ToggleZoneEditableByName(string zoneName)
+        {
+            if (string.IsNullOrWhiteSpace(zoneName))
             {
-                _ui?.SetStatus("Selected zone no longer exists.");
+                _ui?.SetStatus("Could not update zone editable state: invalid zone.");
                 return;
             }
+
+            if (!zoneManager.TryGetZone(zoneName, out var zone))
+            {
+                _ui?.SetStatus($"Zone '{zoneName}' no longer exists.");
+                return;
+            }
+
+            _state.SelectZone(zoneName);
 
             bool target = !zone.editableInTileEditor;
             if (!zoneManager.SetZoneEditable(zone.zoneName, target))
@@ -379,6 +535,14 @@ namespace Valkur.Gameplay.MapEditor
             if (_state.HasSelection && !zoneManager.TryGetZone(_state.SelectedZone, out _))
                 _state.ClearSelection();
 
+            if (_isAddZoneFlowActive)
+            {
+                if (_state.HasSelection && zoneManager.TryGetZone(_state.SelectedZone, out var zone))
+                    _ui?.SetAddZoneSource(zone.zoneName, zone.editableInTileEditor);
+                else
+                    _ui?.SetAddZoneSource("(none)", true);
+            }
+
             RefreshSelectionUIAndOverlay();
         }
 
@@ -410,6 +574,75 @@ namespace Valkur.Gameplay.MapEditor
                 tileEditorManager.SetEditConstraint(zoneManager.IsTileInEditableZone);
             else
                 tileEditorManager.ClearEditConstraint();
+        }
+
+        private void UpdateAddZonePreviewVisibility()
+        {
+            if (_addZonePreviewObject == null)
+                return;
+
+            _addZonePreviewObject.SetActive(_isAddZoneFlowActive && _hasPendingAddTarget && _state.Active);
+        }
+
+        private void UpdateAddZonePreview()
+        {
+            if (!_hasPendingAddTarget || _overlayRoot == null)
+            {
+                UpdateAddZonePreviewVisibility();
+                return;
+            }
+
+            if (_addZonePreviewObject == null)
+            {
+                _addZonePreviewObject = new GameObject("MapEditorAddZonePreview");
+                _addZonePreviewObject.transform.SetParent(_overlayRoot.transform, false);
+
+                var line = _addZonePreviewObject.AddComponent<LineRenderer>();
+                line.positionCount = 5;
+                line.loop = false;
+                line.useWorldSpace = true;
+                line.widthMultiplier = Mathf.Max(overlayLineWidth * 1.15f, 0.06f);
+                line.material = _overlayLineMaterial;
+                line.sortingLayerName = SortingConfig.LAYER_OVERHEAD;
+                line.sortingOrder = SortingConfig.Z_UI + 2;
+                line.startColor = new Color(0.36f, 0.86f, 1f, 0.95f);
+                line.endColor = line.startColor;
+
+                var labelGo = new GameObject("Label");
+                labelGo.transform.SetParent(_addZonePreviewObject.transform, false);
+                var text = labelGo.AddComponent<TextMeshPro>();
+                text.fontSize = 3.1f;
+                text.alignment = TextAlignmentOptions.Center;
+                text.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_OVERHEAD);
+                text.sortingOrder = SortingConfig.Z_UI + 2;
+            }
+
+            float tileSize = Mathf.Max(0.01f, zoneManager.TileSize);
+            int width = Mathf.Max(1, zoneManager.ZoneWidthTiles);
+            int height = Mathf.Max(1, zoneManager.ZoneHeightTiles);
+
+            float minX = _pendingAddZoneOffset.x * tileSize;
+            float maxX = (_pendingAddZoneOffset.x + width) * tileSize;
+            float minY = _pendingAddZoneOffset.y * tileSize;
+            float maxY = (_pendingAddZoneOffset.y + height) * tileSize;
+            float z = -0.015f;
+
+            var previewLine = _addZonePreviewObject.GetComponent<LineRenderer>();
+            previewLine.SetPosition(0, new Vector3(minX, minY, z));
+            previewLine.SetPosition(1, new Vector3(maxX, minY, z));
+            previewLine.SetPosition(2, new Vector3(maxX, maxY, z));
+            previewLine.SetPosition(3, new Vector3(minX, maxY, z));
+            previewLine.SetPosition(4, new Vector3(minX, minY, z));
+
+            var previewText = _addZonePreviewObject.GetComponentInChildren<TextMeshPro>();
+            if (previewText != null)
+            {
+                previewText.transform.position = new Vector3((minX + maxX) * 0.5f, maxY + 0.25f, z);
+                previewText.color = new Color(0.52f, 0.94f, 1f, 1f);
+                previewText.text = $"NEW ZONE [{_pendingAddZoneOffset.x},{_pendingAddZoneOffset.y}]";
+            }
+
+            UpdateAddZonePreviewVisibility();
         }
 
         private void RebuildZoneOverlays()
@@ -641,6 +874,9 @@ namespace Valkur.Gameplay.MapEditor
 
             if (_overlayLineMaterial != null)
                 Destroy(_overlayLineMaterial);
+
+            if (_addZonePreviewObject != null)
+                Destroy(_addZonePreviewObject);
 
             base.OnDestroy();
         }

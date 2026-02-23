@@ -132,5 +132,33 @@ namespace Valkur.Tests.EditMode
             Assert.IsFalse(duplicatedZone.editableInTileEditor);
             Cleanup(zm);
         }
+
+        [Test]
+        public void AddZoneFromTemplate_CopiesMusicAndAppliesOverrideEditable()
+        {
+            var zm = CreateZoneManager();
+            var clip = AudioClip.Create("zone_music", 32, 1, 22050, false);
+
+            zm.ReplaceZones(new[]
+            {
+                new ZoneManager.ZoneDefinition
+                {
+                    zoneName = "zone_template",
+                    gridOffset = new Vector2Int(0, 0),
+                    zoneMusic = clip,
+                    editableInTileEditor = false
+                }
+            });
+
+            bool created = zm.AddZoneFromTemplate("zone_template", "zone_new", new Vector2Int(100, 150), editableOverride: true);
+            bool found = zm.TryGetZone("zone_new", out var zoneNew);
+
+            Assert.IsTrue(created);
+            Assert.IsTrue(found);
+            Assert.AreEqual(new Vector2Int(100, 150), zoneNew.gridOffset);
+            Assert.AreEqual(clip, zoneNew.zoneMusic);
+            Assert.IsTrue(zoneNew.editableInTileEditor);
+            Cleanup(zm);
+        }
     }
 }
