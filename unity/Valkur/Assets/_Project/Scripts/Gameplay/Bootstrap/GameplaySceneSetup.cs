@@ -202,6 +202,8 @@ namespace Valkur.Gameplay
             var selectedDef = ResolveSelectedPlayerDefinition();
             if (selectedDef != null)
             {
+                if (!string.IsNullOrWhiteSpace(selectedDef.playerKey))
+                    PlayerSelectionState.SetSelectedPlayer(selectedDef.playerKey);
                 EntitySetup.ConfigurePlayer(playerGo, selectedDef);
             }
             else if (defaultPlayerDef != null)

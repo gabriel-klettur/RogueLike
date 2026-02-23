@@ -6,6 +6,7 @@ using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Spells;
+using TMPro;
 
 namespace Valkur.Gameplay
 {
@@ -33,18 +34,20 @@ namespace Valkur.Gameplay
 
             EntitySpriteHelper.EnsurePlayerSprite(go.GetComponentInChildren<SpriteRenderer>());
 
-            InitHealth(go, def.initialStrength);
+            // Python parity: selected class defines player max HP from max_strength.
+            InitHealth(go, def.maxStrength);
             InitPlayerMovement(go, def.basicSpeed);
             InitPlayerCombat(go, def);
             InitPlayerSpells(go);
             InitPlayerStats(go, def);
             InitSharedVisuals(go);
+            ApplyPlayerClassInitialMarker(go, def.playerKey);
 
             EnsureInventoryUI();
             EnsureCombatRangeVisualizer();
 
             EntityRegistry.RegisterPlayer(go);
-            Debug.Log($"[EntitySetup] Player configured: {def.displayName}, HP={def.initialStrength}, Speed={def.basicSpeed}");
+            Debug.Log($"[EntitySetup] Player configured: key={def.playerKey}, HP={def.maxStrength}, MP={def.maxIntelligence}, ATK={def.basicAttack}, SPD={def.basicSpeed}");
         }
 
         public static void ConfigureMonster(GameObject go, MonsterDefinition def)
@@ -126,7 +129,8 @@ namespace Valkur.Gameplay
 
             var mana = go.GetComponent<Mana>();
             if (mana == null) mana = go.AddComponent<Mana>();
-            mana.Initialize(def.initialIntelligence * 10, def.manaRegenPerSecond);
+            // Python parity: max mana from max_intelligence.
+            mana.Initialize(def.maxIntelligence, def.manaRegenPerSecond);
 
             var xp = go.GetComponent<Experience>();
             if (xp == null) go.AddComponent<Experience>();
@@ -152,6 +156,43 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<FacingIndicator>() == null)
                 go.AddComponent<FacingIndicator>();
+        }
+
+        private static void ApplyPlayerClassInitialMarker(GameObject go, string playerKey)
+        {
+            if (go == null || string.IsNullOrWhiteSpace(playerKey))
+                return;
+
+            var markerTransform = go.transform.Find("PlayerClassInitialMarker");
+            TextMeshPro markerText;
+            if (markerTransform == null)
+            {
+                var markerGo = new GameObject("PlayerClassInitialMarker");
+                markerGo.transform.SetParent(go.transform, false);
+                markerGo.transform.localPosition = new Vector3(0f, 0f, 0f);
+                markerGo.transform.localRotation = Quaternion.identity;
+                markerGo.transform.localScale = Vector3.one * 0.18f;
+                markerText = markerGo.AddComponent<TextMeshPro>();
+            }
+            else
+            {
+                markerText = markerTransform.GetComponent<TextMeshPro>();
+                if (markerText == null)
+                    markerText = markerTransform.gameObject.AddComponent<TextMeshPro>();
+            }
+
+            markerText.text = char.ToUpperInvariant(playerKey[0]).ToString();
+            markerText.alignment = TextAlignmentOptions.Center;
+            markerText.enableWordWrapping = false;
+            markerText.fontSize = 20f;
+            markerText.color = new Color(0.95f, 0.96f, 1f, 0.95f);
+
+            var renderer = markerText.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.sortingLayerName = SortingConfig.LAYER_ENTITIES;
+                renderer.sortingOrder = SortingConfig.Z_SKY + 20;
+            }
         }
 
         private static void EnsureInventoryUI()

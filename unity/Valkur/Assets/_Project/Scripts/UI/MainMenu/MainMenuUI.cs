@@ -501,7 +501,7 @@ namespace Valkur.UI.MainMenu
                 var cardButton = cardGo.AddComponent<Button>();
                 cardButton.targetGraphic = cardImage;
                 int captured = i;
-                cardButton.onClick.AddListener(() => SetSelectedClassIndex(captured));
+                cardButton.onClick.AddListener(() => OnClassCardClicked(captured));
 
                 var nameGo = CreateUIObject("Name", cardGo.transform);
                 var nameRect = nameGo.GetComponent<RectTransform>();
@@ -607,7 +607,7 @@ namespace Valkur.UI.MainMenu
             helpRect.anchoredPosition = new Vector2(0f, 84f);
             helpRect.sizeDelta = new Vector2(900f, 28f);
             var helpText = helpGo.AddComponent<TextMeshProUGUI>();
-            helpText.text = "A/D o \u2190\u2192 para elegir clase, Enter para confirmar";
+            helpText.text = "Click selecciona y empieza. A/D o \u2190\u2192 para elegir, Enter para confirmar";
             helpText.fontSize = 18f;
             helpText.alignment = TextAlignmentOptions.Center;
             helpText.color = versionColor;
@@ -643,6 +643,12 @@ namespace Valkur.UI.MainMenu
 
             _selectedClassIndex = index;
             UpdateClassSelectionUI();
+        }
+
+        private void OnClassCardClicked(int index)
+        {
+            SetSelectedClassIndex(index);
+            ApplySelectedClassAndStartGame();
         }
 
         private void UpdateClassSelectionUI()
