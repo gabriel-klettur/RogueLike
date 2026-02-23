@@ -65,7 +65,7 @@ namespace Valkur.Gameplay
                 return DirectionalAnimator.CreateSetFromDirectional(directional);
 
             if (sheetFrames != null && sheetFrames.Count > 0)
-                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames);
+                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames, assumeFourDirectionalLayout: true);
 
             return default;
         }
