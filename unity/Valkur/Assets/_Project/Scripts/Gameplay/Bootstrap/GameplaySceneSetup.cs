@@ -31,11 +31,20 @@ namespace Valkur.Gameplay
             BuildWorldGrid();
             EnsureGlobalLight2D();
             EnsureVFXManager();
+            EnsureZoneManager();
             EnsureTileEditor();
             EnsureMapEditor();
             EnsureSaveLoadInput();
             SpawnPlayer();
             SpawnTestMonsters();
+        }
+
+        private void EnsureZoneManager()
+        {
+            if (FindObjectOfType<ZoneManager>() != null) return;
+            var zoneManagerGo = new GameObject("ZoneManager");
+            zoneManagerGo.AddComponent<ZoneManager>();
+            Debug.Log("[GameplaySceneSetup] ZoneManager created.");
         }
 
         private void BuildWorldGrid()

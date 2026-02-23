@@ -74,8 +74,9 @@ namespace Valkur.Gameplay.MapEditor
 
             if (zoneManager == null)
             {
-                Debug.LogError("[MapEditor] ZoneManager not found. Map editor cannot start.");
-                return;
+                var zoneManagerGo = new GameObject("ZoneManager");
+                zoneManager = zoneManagerGo.AddComponent<ZoneManager>();
+                Debug.LogWarning("[MapEditor] ZoneManager not found. Created runtime ZoneManager so F7 map editor can start.");
             }
 
             CreateOverlayRoot();
