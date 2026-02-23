@@ -16,7 +16,7 @@ namespace Valkur.Editor
         private const string CharactersRoot = "Assets/_Project/Art/Characters";
         private const string PlayerCatalogRoot = "Assets/_Project/Data/Catalogs/Players";
         private const int FrameSizePx = 128;
-        private const int CharacterPpu = 32;
+        private const int CharacterPpu = 64;
 
         [MenuItem("Valkur/Characters/Rebuild Player Character Assets")]
         public static void RebuildPlayerCharacterAssets()

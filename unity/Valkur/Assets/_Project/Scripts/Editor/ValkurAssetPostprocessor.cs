@@ -10,7 +10,8 @@ namespace Valkur.Editor
     public class ValkurAssetPostprocessor : AssetPostprocessor
     {
         private const int DEFAULT_PPU = 16;
-        private const int CHARACTER_PPU = 16;
+        private const int PLAYER_CHARACTER_PPU = 64;
+        private const int NPC_PPU = 16;
         private const int TILE_PPU = 32;
         private const int UI_PPU = 100;
 
@@ -33,9 +34,14 @@ namespace Valkur.Editor
                 importer.spritePixelsPerUnit = TILE_PPU;
                 SetPivot(importer, new Vector2(0.5f, 0f));
             }
-            else if (assetPath.Contains("/Characters/") || assetPath.Contains("/NPC/"))
+            else if (assetPath.Contains("/Characters/"))
             {
-                importer.spritePixelsPerUnit = CHARACTER_PPU;
+                importer.spritePixelsPerUnit = PLAYER_CHARACTER_PPU;
+                SetPivot(importer, new Vector2(0.5f, 0f));
+            }
+            else if (assetPath.Contains("/NPC/"))
+            {
+                importer.spritePixelsPerUnit = NPC_PPU;
                 SetPivot(importer, new Vector2(0.5f, 0f));
             }
             else if (assetPath.Contains("/UI/"))
