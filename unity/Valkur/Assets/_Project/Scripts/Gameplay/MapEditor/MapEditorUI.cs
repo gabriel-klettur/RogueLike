@@ -17,6 +17,7 @@ namespace Valkur.Gameplay.MapEditor
 
         private System.Action<string> _onZoneSelected;
         private System.Action _onAddZoneAtCursor;
+        private System.Action _onDuplicateSelectedZone;
         private System.Action _onDeleteSelectedZone;
         private System.Action<string> _onRenameSelectedZone;
         private System.Action _onToggleSelectedZoneEditable;
@@ -42,6 +43,7 @@ namespace Valkur.Gameplay.MapEditor
             MapEditorState state,
             System.Action<string> onZoneSelected,
             System.Action onAddZoneAtCursor,
+            System.Action onDuplicateSelectedZone,
             System.Action onDeleteSelectedZone,
             System.Action<string> onRenameSelectedZone,
             System.Action onToggleSelectedZoneEditable,
@@ -51,6 +53,7 @@ namespace Valkur.Gameplay.MapEditor
             _state = state;
             _onZoneSelected = onZoneSelected;
             _onAddZoneAtCursor = onAddZoneAtCursor;
+            _onDuplicateSelectedZone = onDuplicateSelectedZone;
             _onDeleteSelectedZone = onDeleteSelectedZone;
             _onRenameSelectedZone = onRenameSelectedZone;
             _onToggleSelectedZoneEditable = onToggleSelectedZoneEditable;
@@ -184,7 +187,7 @@ namespace Valkur.Gameplay.MapEditor
 
             CreateText("Title", _root.transform, "MAP EDITOR (F7)", 22f, new Color(1f, 0.84f, 0.45f, 1f), FontStyles.Bold);
             CreateText("Hint", _root.transform,
-                "Left-click: select zone under cursor | N: add zone | Del: delete | R: rename | E: toggle editable",
+                "Left-click: select zone under cursor | N: add zone | D: duplicate | Del: delete | R: rename | E: toggle editable",
                 12f,
                 new Color(0.8f, 0.86f, 0.96f, 1f));
 
@@ -197,6 +200,7 @@ namespace Valkur.Gameplay.MapEditor
 
             var actionsRow = CreateRow("ActionsRow", _root.transform, 34f);
             CreateActionButton(actionsRow.transform, "Add @ Cursor", () => _onAddZoneAtCursor?.Invoke());
+            CreateActionButton(actionsRow.transform, "Duplicate", () => _onDuplicateSelectedZone?.Invoke());
             CreateActionButton(actionsRow.transform, "Rename", () => _onRenameSelectedZone?.Invoke(NameInput));
             CreateActionButton(actionsRow.transform, "Delete", () => _onDeleteSelectedZone?.Invoke());
             CreateActionButton(actionsRow.transform, "Toggle Editable", () => _onToggleSelectedZoneEditable?.Invoke());

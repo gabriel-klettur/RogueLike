@@ -105,6 +105,9 @@ namespace Valkur.Gameplay.MapEditor
             if (_input.WasCreatePressed())
                 AddZoneAtCursor();
 
+            if (_input.WasDuplicatePressed())
+                DuplicateSelectedZone();
+
             if (_input.WasDeletePressed())
                 DeleteSelectedZone();
 
@@ -160,6 +163,7 @@ namespace Valkur.Gameplay.MapEditor
                 _state,
                 OnZoneSelected,
                 AddZoneAtCursor,
+                DuplicateSelectedZone,
                 DeleteSelectedZone,
                 RenameSelectedZone,
                 ToggleSelectedZoneEditable,
@@ -252,6 +256,28 @@ namespace Valkur.Gameplay.MapEditor
             _state.ClearSelection();
             PersistZonesToDisk();
             _ui?.SetStatus($"Zone '{removedName}' deleted.");
+            RefreshSelectionUIAndOverlay();
+        }
+
+        private void DuplicateSelectedZone()
+        {
+            if (!_state.HasSelection)
+            {
+                _ui?.SetStatus("Select a zone before duplicating.");
+                return;
+            }
+
+            string sourceZoneName = _state.SelectedZone;
+
+            if (!zoneManager.DuplicateZone(sourceZoneName, out var duplicatedZoneName))
+            {
+                _ui?.SetStatus($"Could not duplicate zone '{sourceZoneName}'.");
+                return;
+            }
+
+            _state.SelectZone(duplicatedZoneName);
+            PersistZonesToDisk();
+            _ui?.SetStatus($"Zone '{sourceZoneName}' duplicated to '{duplicatedZoneName}'.");
             RefreshSelectionUIAndOverlay();
         }
 

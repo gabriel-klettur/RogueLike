@@ -113,5 +113,24 @@ namespace Valkur.Tests.EditMode
             Assert.AreEqual("zone_move", zone.zoneName);
             Cleanup(zm);
         }
+
+        [Test]
+        public void DuplicateZone_CopiesOffsetAndEditableState()
+        {
+            var zm = CreateZoneManager();
+            zm.AddZone("zone_src", new Vector2Int(20, 40), editableInTileEditor: true);
+            zm.SetZoneEditable("zone_src", false);
+
+            bool duplicated = zm.DuplicateZone("zone_src", out var duplicateName);
+            bool found = zm.TryGetZone(duplicateName, out var duplicatedZone);
+
+            Assert.IsTrue(duplicated);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(duplicateName));
+            Assert.AreNotEqual("zone_src", duplicateName);
+            Assert.IsTrue(found);
+            Assert.AreEqual(new Vector2Int(20, 40), duplicatedZone.gridOffset);
+            Assert.IsFalse(duplicatedZone.editableInTileEditor);
+            Cleanup(zm);
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace Valkur.Gameplay.MapEditor
         private InputAction _toggleAction;
         private InputAction _selectAction;
         private InputAction _createAction;
+        private InputAction _duplicateAction;
         private InputAction _deleteAction;
         private InputAction _renameAction;
         private InputAction _toggleEditableAction;
@@ -27,6 +28,9 @@ namespace Valkur.Gameplay.MapEditor
 
             _createAction = new InputAction("MapEditorCreate", InputActionType.Button, "<Keyboard>/n");
             _createAction.Enable();
+
+            _duplicateAction = new InputAction("MapEditorDuplicate", InputActionType.Button, "<Keyboard>/d");
+            _duplicateAction.Enable();
 
             _deleteAction = new InputAction("MapEditorDelete", InputActionType.Button, "<Keyboard>/delete");
             _deleteAction.Enable();
@@ -51,6 +55,11 @@ namespace Valkur.Gameplay.MapEditor
         public bool WasCreatePressed()
         {
             return _createAction != null && _createAction.WasPerformedThisFrame();
+        }
+
+        public bool WasDuplicatePressed()
+        {
+            return _duplicateAction != null && _duplicateAction.WasPerformedThisFrame();
         }
 
         public bool WasDeletePressed()
@@ -79,6 +88,7 @@ namespace Valkur.Gameplay.MapEditor
             DisposeAction(ref _toggleAction);
             DisposeAction(ref _selectAction);
             DisposeAction(ref _createAction);
+            DisposeAction(ref _duplicateAction);
             DisposeAction(ref _deleteAction);
             DisposeAction(ref _renameAction);
             DisposeAction(ref _toggleEditableAction);

@@ -156,6 +156,32 @@ namespace Valkur.Gameplay.World
             return true;
         }
 
+        public bool DuplicateZone(string sourceZoneName, out string duplicatedZoneName)
+        {
+            duplicatedZoneName = null;
+            if (!IsValidZoneName(sourceZoneName))
+                return false;
+
+            int idx = FindZoneIndex(sourceZoneName);
+            if (idx < 0)
+                return false;
+
+            var source = zones[idx];
+            duplicatedZoneName = GenerateUniqueDuplicateName(source.zoneName);
+
+            zones.Add(new ZoneDefinition
+            {
+                zoneName = duplicatedZoneName,
+                gridOffset = source.gridOffset,
+                zoneMusic = source.zoneMusic,
+                editableInTileEditor = source.editableInTileEditor
+            });
+
+            RebuildZoneMap();
+            OnZonesChanged?.Invoke();
+            return true;
+        }
+
         public void ReplaceZones(IReadOnlyList<ZoneDefinition> newZones)
         {
             zones.Clear();
@@ -321,6 +347,22 @@ namespace Valkur.Gameplay.World
         private static bool IsValidZoneName(string zoneName)
         {
             return !string.IsNullOrWhiteSpace(zoneName);
+        }
+
+        private string GenerateUniqueDuplicateName(string sourceZoneName)
+        {
+            string seed = $"{sourceZoneName}_copy";
+            if (!_zoneMap.ContainsKey(seed))
+                return seed;
+
+            for (int i = 2; i < 10000; i++)
+            {
+                string candidate = $"{seed}{i}";
+                if (!_zoneMap.ContainsKey(candidate))
+                    return candidate;
+            }
+
+            return $"{seed}_{Guid.NewGuid().ToString("N").Substring(0, 6)}";
         }
     }
 }
