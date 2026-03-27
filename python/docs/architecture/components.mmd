@@ -1,0 +1,55 @@
+---
+title: "RogueLike Valkur — ECS Core Components (C4 Level 3)"
+---
+graph TB
+    subgraph ECSWorld["ECSWorld  —  roguelike_game/ecs/core/manager.py"]
+
+        subgraph Store["Component Store"]
+            CR["ComponentRegistry\n────────────────────────\nDict[ComponentType, Dict[EntityId, Component]]\n────────────────────────\nPosition · Health · Mana · CombatStats\nAI · Inventory · Physics · Rendering\nSpawn · Status · Transform · Particles"]
+        end
+
+        SI["SpatialIndex\n────────────────────────\nBroadphase hashing\nmap solid tiles + building colliders\nLazy rebuild on invalidation"]
+
+        subgraph Update["Update Pipeline  (~50 systems, ordered)"]
+            direction TB
+            U1["Spawner Systems\nPlacementSystem · TriggerSystem · RuntimeSystem\n(reads SpawnerTemplate + Waves from SQLite)"]
+            U2["Input System\n(key bindings from data/config/input_bindings.json)"]
+            U3["Physics Systems\nMovementCollision · Facing · PlayerFacing\nNpcSeparation"]
+            U4["Combat & Spells\nMeleeCombat · SpellCasting\nFireball · Lightning · Dash · Hitbox\nDeath · FSMSystem · ExplosionSystem"]
+            U5["Inventory & Items\nPickup · Drop · Consume · Transfer\nMapLoadDrops · DeathDrop"]
+            U6["Experience · Abilities\nExperienceSystem · ManaRegen · DashResource\nComboSystem · OrbAttraction"]
+            U7["Chat & Vendor\nChatRouterSystem · VendorTradeSystem"]
+            U8["Audio\nDamageSfxSystem → AudioSystem\n(Pygame mixer backend)"]
+            U1 --> U2 --> U3 --> U4 --> U5 --> U6 --> U7 --> U8
+        end
+
+        subgraph Render["Render Pipeline  (~30 systems, z-ordered via ecs-z-order.json)"]
+            direction TB
+            R1["Entity Render  (sprites, Z-ordered by layer + Y pos)"]
+            R2["HUD Overlay  (Health · Mana · Dash · Combo bars)"]
+            R3["Spell Visuals  (Fireball · Lightning · Smoke · Meteor…)"]
+            R4["UI Panels  (Inventory · Chat · Vendor · Toast)"]
+            R1 --> R2 --> R3 --> R4
+        end
+    end
+
+    subgraph Factories["Entity Factories  —  roguelike_game/factories/"]
+        PF["PlayerFactory\n(Builder + Facade)\nloads stats from DB Entity definition"]
+        MF["MonsterFactory\n(Builder + Facade)\nbehaviour_loader · sprite_loader\ncalibrator · physics"]
+    end
+
+    subgraph DataAccess["Data Access"]
+        ORM["SQLAlchemy session_scope()\nEntities · Items · Spells\nSpawnerTemplates · Buildings"]
+        JLOADERS["JSON Loaders\nMap overlays · Buildings\nParticles · Lights · Config"]
+    end
+
+    subgraph LLM["Chat / AI"]
+        GPN["Gpt5NanoProvider\n(Strategy: LLMProvider)\nOpenAI Responses API\nDummyProvider for tests"]
+    end
+
+    CR <--> Update
+    SI -->|"collision queries"| U3
+    Factories -->|"assembles components into"| CR
+    U1 -->|"reads"| ORM
+    U5 -->|"reads/writes"| JLOADERS
+    U7 -->|"calls"| GPN

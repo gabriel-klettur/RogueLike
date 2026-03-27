@@ -1,0 +1,291 @@
+{
+  "system_name": "RogueLike Valkur (Python)",
+  "purpose": "Single-player top-down roguelike game with a real-time ECS combat engine, procedural dungeon generation, an embedded in-game tooling suite (map/entity/spell/spawner editors), and LLM-powered NPC dialogue via OpenAI.",
+  "actors": [
+    {
+      "name": "Player",
+      "type": "human",
+      "description": "Single user interacting via keyboard and mouse in a desktop window"
+    }
+  ],
+  "external_systems": [
+    {
+      "name": "OpenAI Responses API",
+      "description": "LLM-powered NPC dialogue generation using GPT-5 Nano via the Responses API",
+      "protocol": "HTTPS POST",
+      "endpoint": "https://api.openai.com/v1/responses",
+      "auth": "OPENAI_API_KEY environment variable or .env file",
+      "status": "active"
+    },
+    {
+      "name": "WebSocket Server",
+      "description": "Optional multiplayer server (configured, not yet implemented in this repo)",
+      "protocol": "WebSocket",
+      "endpoint": "ws://localhost:8000/ws",
+      "status": "SUPUESTO: planned, not yet implemented"
+    },
+    {
+      "name": "Local Filesystem",
+      "description": "SQLite database, JSON data files, binary assets (sprites, audio, tiles), log files",
+      "protocol": "OS I/O",
+      "status": "active"
+    }
+  ],
+  "containers": [
+    {
+      "name": "roguelike_engine",
+      "type": "python_package",
+      "path": "src/roguelike_engine/",
+      "responsibility": "Low-level engine layer with no game logic. Provides camera, map (MVC), tiles (MVC), zone (MVC), buildings (MVC), audio service, SQLAlchemy DB engine/models, cache (memory + file), console (MVC), diagnostics overlay, input normalization, z-layer pipeline, world persistence, and engine-level config.",
+      "technology": ["Python 3.8+", "Pygame CE", "SQLAlchemy 2.x", "SQLite"],
+      "depends_on": []
+    },
+    {
+      "name": "roguelike_game",
+      "type": "python_package",
+      "path": "src/roguelike_game/",
+      "responsibility": "Game logic layer. Owns the ECS world (~50 update + ~30 render systems), entity factories (player + monster), staged initialization pipeline, game-loop managers (events, update, render, shutdown), and game-level config.",
+      "technology": ["Python 3.8+", "Pygame CE", "Custom ECS"],
+      "depends_on": ["roguelike_engine"]
+    },
+    {
+      "name": "roguelike_editors",
+      "type": "python_package",
+      "path": "src/roguelike_editors/",
+      "responsibility": "In-game overlay editors for authoring content at runtime: map, tiles, buildings, entities, FSM, spells, spawner, particles, lighting. Each editor follows MVC with commands and event patterns.",
+      "technology": ["Python 3.8+", "Pygame CE", "roguelike_ui"],
+      "depends_on": ["roguelike_engine", "roguelike_game", "roguelike_ui"]
+    },
+    {
+      "name": "roguelike_ui",
+      "type": "python_package",
+      "path": "src/roguelike_ui/",
+      "responsibility": "Reusable UI primitives consumed by game and editors: panels, widgets (button, grid, text input, list panel, tab panel, toolbar, hover, icon cache, file picker), HUD components, formatting services, JSON persistence services.",
+      "technology": ["Python 3.8+", "Pygame CE"],
+      "depends_on": ["roguelike_engine"]
+    },
+    {
+      "name": "minigames",
+      "type": "python_package",
+      "path": "src/minigames/",
+      "responsibility": "Self-contained minigames (Pylos, Soluna) launchable from the main game.",
+      "technology": ["Python 3.8+", "Pygame CE"],
+      "depends_on": ["roguelike_engine", "roguelike_ui"]
+    },
+    {
+      "name": "SQLite Database",
+      "type": "database",
+      "path": "data/roguelike.sqlite3",
+      "responsibility": "Persistent relational storage for game catalog data, migrated from JSON sources.",
+      "technology": ["SQLite (WAL mode, NORMAL sync)", "SQLAlchemy ORM (mapped_column API)", "Alembic (10 migrations)"],
+      "tables": [
+        "entities",
+        "items",
+        "item_prices",
+        "spells",
+        "spawners_instances",
+        "spawner_templates",
+        "spawner_waves",
+        "building_instances",
+        "building_collisions",
+        "entities_assets_set",
+        "entities_assets_no_set",
+        "entities_payload_archive",
+        "import_log"
+      ]
+    },
+    {
+      "name": "JSON Data Files",
+      "type": "file_store",
+      "path": "data/",
+      "responsibility": "Content-driven game data not suitable for relational storage: map zone overlays, building instances/templates/collisions, particle instances, light presets/instances, inventory drops, FSM configs, world saves, input bindings.",
+      "technology": ["JSON", "jsonschema", "check-jsonschema"],
+      "key_paths": [
+        "data/map/zones/overlays/<zone>.overlay.json",
+        "data/buildings/buildings_instances.json",
+        "data/buildings/buildings_templates.json",
+        "data/particles/particles_instances.json",
+        "data/light/light_instances.json",
+        "data/config/input_bindings.json",
+        "data/config/chat.json",
+        "data/saves/",
+        "data/worlds/"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "name": "ECSWorld",
+      "package": "roguelike_game.ecs.core.manager",
+      "type": "core_runtime",
+      "description": "Central ECS registry. Manages entity IDs (int), component store, spatial index, and ordered update/render system pipelines. Exposes get_entities_with(), create_entity(), remove_entity(), and update()/render() entry points."
+    },
+    {
+      "name": "ComponentRegistry",
+      "package": "roguelike_game.ecs.core.component_registry",
+      "type": "data_store",
+      "description": "Dict[ComponentType, Dict[EntityId, Component]] providing O(1) component lookup and efficient entity queries by component intersection (iterates over smallest component set)."
+    },
+    {
+      "name": "SpatialIndex",
+      "package": "roguelike_game.ecs.core.spatial_index",
+      "type": "acceleration_structure",
+      "description": "Broadphase spatial hashing over map solid tiles and building collision rects. Rebuilt lazily (invalidate_spatial_index / rebuild_spatial_index) to avoid per-frame cost when map state is static."
+    },
+    {
+      "name": "SystemRegistry",
+      "package": "roguelike_game.ecs.core.system_registry",
+      "type": "configuration",
+      "description": "Ordered factory functions (get_update_system_classes, get_render_system_classes) that return the full system pipeline. Render order is overridable via ecs-z-order.json. All systems are benchmarked via pre-built closures."
+    },
+    {
+      "name": "GameInitializer",
+      "package": "roguelike_game.managers.core.initializer",
+      "type": "startup",
+      "description": "22-stage sequential startup pipeline with LoadingScreen visual feedback. Each stage is a pure function injected via a list of (label, fn) tuples, making it testable and extensible without modifying the core."
+    },
+    {
+      "name": "GameLoop",
+      "package": "roguelike_game.managers.core.loop_manager",
+      "type": "runtime_loop",
+      "description": "60 FPS main loop. Calls handle_events → update → update_ecs → render → render_ecs in order, with BenchmarkGroup instrumentation on each phase."
+    },
+    {
+      "name": "PlayerFactory",
+      "package": "roguelike_game.factories.player",
+      "type": "factory",
+      "description": "Builder + Facade for assembling player entities. Reads class stats from DB Entity definition, assembles Position, Health, Mana, CombatStats, Inventory, Sprite, Hitbox, and all other required components."
+    },
+    {
+      "name": "MonsterFactory",
+      "package": "roguelike_game.factories.monster",
+      "type": "factory",
+      "description": "Builder + Facade for assembling NPC/hostile entities from DB entity definitions. Supports behavior loading, sprite loading, physics calibration, and per-class FSM assignment."
+    },
+    {
+      "name": "InputSystem",
+      "package": "roguelike_game.ecs.systems.input.input_system",
+      "type": "ecs_system",
+      "description": "Reads player keyboard/mouse input and translates to component mutations (movement intent, spell cast intent, dash, chat open). Key bindings loaded from data/config/input_bindings.json."
+    },
+    {
+      "name": "SpellCastingSystem",
+      "package": "roguelike_game.ecs.systems.combat.spells.spell_casting_system",
+      "type": "ecs_system",
+      "description": "Resolves CastIntent components against the active spell bar, checks mana, applies cooldown, and routes to the appropriate spell-specific system (FireballSystem, LightningSystem, etc.)."
+    },
+    {
+      "name": "FSMSystem",
+      "package": "roguelike_game.ecs.systems.fsm.fsm_system",
+      "type": "ecs_system",
+      "description": "Drives NPC Finite State Machines (Idle, Patrol, Aggro, Attack, Flee, Death) each frame. FSM definitions stored as JSON in data/fsm/ and authored via the in-game FSM editor."
+    },
+    {
+      "name": "SpawnerRuntimeSystem",
+      "package": "roguelike_game.ecs.systems.spawner.spawner_runtime",
+      "type": "ecs_system",
+      "description": "Executes active spawner wave logic: reads SpawnerTemplate + SpawnerWaves from SQLite, generates SpawnRequest components, respects max_count and respawn_seconds constraints."
+    },
+    {
+      "name": "AudioSystem",
+      "package": "roguelike_game.ecs.systems.audio.audio_system",
+      "type": "ecs_system",
+      "description": "Consumes audio event queue populated by DamageSfxSystem and other combat systems, delegating to the engine-layer AudioService (Pygame mixer backend)."
+    },
+    {
+      "name": "Gpt5NanoProvider",
+      "package": "roguelike_engine.chat.providers.gpt5_nano",
+      "type": "external_integration",
+      "description": "OpenAI Responses API client (Strategy pattern implementation of LLMProvider). Reads OPENAI_API_KEY from env/.env, posts to /v1/responses, parses output_text and tool_calls. 20 s timeout, reasoning effort: low."
+    },
+    {
+      "name": "MapService",
+      "package": "roguelike_engine.map.controller.map_service",
+      "type": "service",
+      "description": "MVC controller that builds world maps by combining lobby + dungeon + additional zones, merging them and generating connecting tunnels. Used at startup and during runtime expansion."
+    },
+    {
+      "name": "AudioService",
+      "package": "roguelike_engine.audio.service",
+      "type": "service",
+      "description": "Pygame mixer-backed audio service. Exposes a clean API (play_sfx, play_music, stop) decoupled from ECS. Consumed indirectly via AudioSystem."
+    }
+  ],
+  "main_flows": [
+    {
+      "name": "Game Frame Loop",
+      "description": "60 FPS real-time loop: pygame.event.get → handle_events → update (game state + editors) → ECSWorld.update (all update systems) → render (map, buildings, overlays) → ECSWorld.render (all render systems) → pygame.display.flip()",
+      "critical": true,
+      "sequence_diagram": "sequence-game-loop.mmd"
+    },
+    {
+      "name": "NPC Chat (LLM)",
+      "description": "Player presses T → InputSystem enqueues ChatInputEvent → ChatRouterSystem resolves nearest NPC → Gpt5NanoProvider sends POST to OpenAI → LLMResult returned → ChatBubbleRenderSystem displays speech bubble",
+      "critical": false,
+      "sequence_diagram": "sequence-npc-chat.mmd"
+    },
+    {
+      "name": "Entity Spawn",
+      "description": "SpawnerTriggerSystem fires condition → SpawnerRuntimeSystem reads DB template/waves → SpawnSystem creates entity via MonsterFactory → SpatialIndex invalidated → SpawnStabilizationSystem resolves overlaps",
+      "critical": true
+    },
+    {
+      "name": "Spell Casting",
+      "description": "InputSystem queues CastIntent → SpellCastingSystem resolves spell + checks mana → spell-specific system (e.g. FireballSystem) creates projectile entity → HitboxSystem detects collisions → CombatSystem applies damage → DeathSystem handles death → ExperienceSystem grants XP",
+      "critical": true
+    },
+    {
+      "name": "Map Overlay Persistence",
+      "description": "MapEditor writes tile changes → save_layers() serializes multi-layer overlay to data/map/zones/overlays/<zone>.overlay.json → on next load, load_layers() reads JSON and rehydrates Map model",
+      "critical": false
+    },
+    {
+      "name": "Game Startup (Staged Init)",
+      "description": "launcher.py → init_logging → init_pygame → create_screen → Game.__init__ → GameInitializer (22 stages: display, world, audio, state, map, buildings, ECS, items, editors x8, minimap, renderer, menu) → GameLoop.run()",
+      "critical": true
+    }
+  ],
+  "deployment_nodes": [
+    {
+      "name": "Developer Machine",
+      "type": "local_desktop",
+      "runtime": "Python 3.8+ virtual environment (venv)",
+      "entry_points": [
+        "python launcher.py",
+        "roguelike  (console_scripts entry-point via setup.py)"
+      ],
+      "data_paths": [
+        "data/roguelike.sqlite3",
+        "data/**/*.json",
+        "assets/  (sprites, audio, tiles, FX)"
+      ],
+      "logs": "logs/  (rotating files: engine, init stage times, profiling)",
+      "migrations": "alembic upgrade head"
+    },
+    {
+      "name": "Distribution Bundle",
+      "type": "packaged_binary",
+      "tool": "PyInstaller --onefile",
+      "target_platforms": ["Windows (primary)", "Linux (SUPUESTO)", "macOS (SUPUESTO)"],
+      "bundled_data": ["assets/", "data/"],
+      "spec_file": "roguelike.spec  (SUPUESTO: to be created)"
+    }
+  ],
+  "tech_stack": {
+    "language": "Python 3.8+",
+    "game_runtime": "Pygame CE (Community Edition — pygame-ce)",
+    "ecs": "Custom hand-rolled ECSWorld (dict-of-dicts, ordered system pipeline)",
+    "orm": "SQLAlchemy 2.x (DeclarativeBase, mapped_column API)",
+    "database": "SQLite with WAL journal mode and NORMAL synchronous",
+    "migrations": "Alembic (10 migration files, content-hash idempotency via import_log)",
+    "llm_integration": "OpenAI Responses API — gpt-5-nano via urllib (no external SDK)",
+    "networking_planned": ["websocket-client >= 1.5", "websockets >= 10.4", "aiortc >= 1.9.0", "miniupnpc >= 2.2"],
+    "validation": ["pydantic", "jsonschema", "check-jsonschema"],
+    "serialization": ["json (stdlib)", "pyyaml"],
+    "packaging": "PyInstaller + setup.py (editable install)",
+    "testing": "pytest with headless SDL (SDL_VIDEODRIVER=dummy, SDL_AUDIODRIVER=dummy)",
+    "logging": "Python logging with RotatingFileHandler (engine log + stage init log + profiling log)",
+    "profiling": "Custom BenchmarkGroup decorator — per-frame timings stored in perf_log defaultdict",
+    "linting": "ruff (ruff.toml present)"
+  }
+}

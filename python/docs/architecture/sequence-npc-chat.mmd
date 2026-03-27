@@ -1,0 +1,37 @@
+---
+title: "RogueLike Valkur — Sequence: LLM-Powered NPC Chat"
+---
+sequenceDiagram
+    participant P   as Player
+    participant IS  as InputSystem
+    participant CR  as ChatRouterSystem
+    participant CP  as ChatProximitySystem
+    participant GPN as Gpt5NanoProvider
+    participant OA  as OpenAI Responses API
+    participant CBR as ChatBubbleRenderSystem
+
+    P->>IS: Press T  (open chat input)
+    IS->>CR: enqueue ChatInputEvent(text, player_entity)
+
+    CR->>CP: query NPCs within chat_range
+    CP-->>CR: nearest NPC entity_id
+
+    CR->>GPN: provider.generate(messages)
+    Note over GPN: Loads OPENAI_API_KEY<br/>from env or .env file<br/>Builds _ProviderConfig from<br/>data/config/chat.json
+
+    GPN->>OA: POST /v1/responses<br/>{model, input, reasoning:{effort:low}, tools?}
+    Note over OA: timeout: 20 s<br/>No streaming<br/>tool_choice: auto
+
+    OA-->>GPN: HTTP 200  {output_text, tool_calls?, usage}
+    Note over GPN: Parses output_text<br/>Extracts tool_calls if present<br/>Sanitises function names (regex)
+
+    GPN-->>CR: LLMResult(text, tool_calls, usage)
+
+    alt tool_call present  (e.g. vendor.buy)
+        CR->>CR: dispatch tool action to VendorTradeSystem
+    end
+
+    CR->>CP: attach NPC response text to entity
+    CP->>CBR: schedule ChatBubble component on NPC entity
+
+    CBR-->>P: Speech bubble rendered above NPC (next frame)

@@ -1,0 +1,43 @@
+---
+title: "RogueLike Valkur — Deployment"
+---
+graph TB
+    subgraph DevMachine["💻 Development Machine  (Windows primary · cross-platform via SDL2)"]
+
+        subgraph Env["Python 3.8+  virtual environment  (venv)"]
+            EP["Entry Points\n──────────────────────\npython launcher.py\n roguelike  (console_scripts)"]
+            Src["src/  (editable install — pip install -e .)\n──────────────────────────────────────────\nroguelike_engine · roguelike_game\nroguelike_editors · roguelike_ui · minigames"]
+            Deps["requirements.txt\n──────────────────────\npygame-ce · sqlalchemy\nalembic · pydantic\njsonschema · pyyaml\nopenai urllib client\nwebsocket-client · aiortc\n(networking — planned)"]
+        end
+
+        subgraph DataLayer["Data Layer  (local filesystem)"]
+            DB[("roguelike.sqlite3\n──────────────────\nSQLite WAL mode\nAlembic migrations\n(10 versions)")]
+            JSON["data/ JSON Files\n──────────────────\nMap overlays · Builds\nParticles · Lights\nSaves · Config"]
+            Logs["logs/\n──────────────────\nRotating log files\nEngine · Init · Profiling"]
+        end
+
+        Assets["assets/\n──────────────────\nSprites · Audio\nTiles · FX"]
+        Alembic["alembic/\n─────────────────\nalembic upgrade head\n(run once on setup)"]
+    end
+
+    subgraph Distribution["📦 Distribution  (optional)"]
+        Bundle["PyInstaller\n──────────────────────────\npyinstaller roguelike.spec --onefile\nBundles: assets/ + data/\nOutput: roguelike.exe / bin"]
+    end
+
+    subgraph External["☁️ External Services"]
+        OA["OpenAI API\n──────────────────\ngpt-5-nano\nNPC Chat\n(OPENAI_API_KEY)"]
+        WS["WebSocket Server\n──────────────────\nws://localhost:8000\n[SUPUESTO: futuro]\nmultiplayear planificado"]
+    end
+
+    EP --> Src
+    Src <--> DB
+    Src <--> JSON
+    Src --> Assets
+    Src --> Logs
+    Alembic -->|"schema migrations"| DB
+    Deps --> Src
+
+    Src -.->|"HTTPS NPC chat\n(requires API key)"| OA
+    Src -.->|"WebSocket\n(not yet active)"| WS
+
+    DevMachine -->|"pyinstaller roguelike.spec"| Bundle

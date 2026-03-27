@@ -1,0 +1,36 @@
+---
+title: "RogueLike Valkur — Containers (C4 Level 2)"
+---
+graph TB
+    Player(["🎮 Player"])
+    OpenAI["☁️ OpenAI API\ngpt-5-nano"]
+
+    subgraph Src["src/  —  Python monorepo (pip install -e .)"]
+        Game["roguelike_game\n─────────────────────────\nECS World · ~70 Systems\nGame Loop · Factories\nManagers · Staged Init\n─────────────────────────\nPython · Pygame CE"]
+
+        Engine["roguelike_engine\n─────────────────────────\nCamera · Map · Tile · Zone\nBuildings · Audio · DB ORM\nCache · Console · Config\n─────────────────────────\nPython · SQLAlchemy · Pygame CE"]
+
+        Editors["roguelike_editors\n─────────────────────────\nMap · Tiles · Buildings\nEntities · FSM · Spells\nSpawner · Particles · Luz\n─────────────────────────\nPython · Pygame CE"]
+
+        UI["roguelike_ui\n─────────────────────────\nPaneles · Widgets · HUD\nButton · Grid · TextInput\nFormatting · Persistence\n─────────────────────────\nPython · Pygame CE"]
+
+        MG["minigames\n─────────────────────────\nPylos · Soluna\n─────────────────────────\nPython · Pygame CE"]
+    end
+
+    SQLite[("roguelike.sqlite3\n──────────────────\nEntidades · Ítems\nHechizos · Spawners\nEdificios · Precios\n──────────────────\nSQLite WAL + Alembic")]
+
+    JSONData["data/ JSON Files\n──────────────────\nMap overlays · Buildings\nParticles · Lights · FSM\nSaves · Config · Worlds\n──────────────────\nJSON + jsonschema"]
+
+    Assets["assets/\n──────────────────\nSprites · Audio\nTiles · FX"]
+
+    Player -->|"Input events"| Game
+    Game -->|"Rendered frame"| Player
+    Game -->|"imports / uses"| Engine
+    Game -->|"hosts overlay"| Editors
+    Game -->|"renders via"| UI
+    Game -->|"launches"| MG
+    Editors -->|"uses"| UI
+    Engine <-->|"ORM read/write\nsession_scope()"| SQLite
+    Engine <-->|"JSON read/write"| JSONData
+    Engine -->|"load sprites/audio"| Assets
+    Game -.->|"HTTPS NPC chat"| OpenAI
