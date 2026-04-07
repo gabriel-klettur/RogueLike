@@ -66,6 +66,7 @@ namespace Valkur.Editor
 
             List<Sprite> idleFrames = LoadSheetFrames(classKey, "idle", ref configuredSheets);
             List<Sprite> walkFrames = LoadSheetFrames(classKey, "walking", ref configuredSheets);
+            List<Sprite> castFrames = LoadSheetFrames(classKey, "casting", ref configuredSheets);
 
             bool hasAny = idleFrames.Count > 0 || walkFrames.Count > 0;
             if (!hasAny)
@@ -76,12 +77,14 @@ namespace Valkur.Editor
 
             if (walkFrames.Count == 0 && idleFrames.Count > 0)
                 walkFrames = new List<Sprite>(idleFrames);
+            if (castFrames.Count == 0)
+                castFrames = new List<Sprite>(walkFrames);
 
             playerDef.assetConfig.idleSheets = idleFrames;
             playerDef.assetConfig.walkSheets = walkFrames;
             playerDef.assetConfig.chaseSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
-            playerDef.assetConfig.castSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
-            playerDef.assetConfig.attackSheets = walkFrames.Count > 0 ? new List<Sprite>(walkFrames) : new List<Sprite>();
+            playerDef.assetConfig.castSheets = castFrames;
+            playerDef.assetConfig.attackSheets = castFrames.Count > 0 ? new List<Sprite>(castFrames) : new List<Sprite>();
             playerDef.assetConfig.damageSheets = idleFrames.Count > 0 ? new List<Sprite>(idleFrames) : new List<Sprite>();
             playerDef.assetConfig.deathSheets = idleFrames.Count > 0 ? new List<Sprite>(idleFrames) : new List<Sprite>();
             return true;
@@ -136,6 +139,16 @@ namespace Valkur.Editor
                 needsReimport = true;
             }
 
+            // Read actual source dimensions to avoid maxTextureSize capping (e.g. 5120px sheets
+            // were truncated to 2048px, losing 24 of 40 frames).
+            importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
+            int requiredMaxSize = Mathf.NextPowerOfTwo(Mathf.Max(sourceWidth, sourceHeight));
+            if (importer.maxTextureSize < requiredMaxSize)
+            {
+                importer.maxTextureSize = requiredMaxSize;
+                needsReimport = true;
+            }
+
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             if (settings.spriteAlignment != (int)SpriteAlignment.Custom || settings.spritePivot != new Vector2(0.5f, 0f))
@@ -146,7 +159,8 @@ namespace Valkur.Editor
                 needsReimport = true;
             }
 
-            int frameCount = Mathf.Max(1, texture.width / FrameSizePx);
+            // Use source width (not texture.width which returns the capped/imported size)
+            int frameCount = Mathf.Max(1, sourceWidth / FrameSizePx);
             var metas = new List<SpriteMetaData>(frameCount);
             for (int i = 0; i < frameCount; i++)
             {

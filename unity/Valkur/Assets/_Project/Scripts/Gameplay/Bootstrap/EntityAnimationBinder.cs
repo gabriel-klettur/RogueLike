@@ -69,9 +69,15 @@ namespace Valkur.Gameplay
 
             if (sheetFrames != null && sheetFrames.Count > 0)
             {
-                // Player sheets in this pipeline follow Python's 8-direction strip layout.
-                // Let the animator normalize 40/41-frame inputs instead of forcing 4-direction mapping.
-                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames);
+                // Auto-detect layout: 8-direction strips have 40 frames (8 dirs × 5 frames),
+                // 4-direction strips have 16–20 frames (4 dirs × 4–5 frames).
+                // If dividing by 8 yields fewer than 3 frames per direction but dividing
+                // by 4 yields 3+, prefer the 4-directional mapping to avoid wrong directions.
+                bool preferFourDir = sheetFrames.Count % 4 == 0
+                                     && sheetFrames.Count / 8 < 3
+                                     && sheetFrames.Count / 4 >= 3;
+                usesFourDirectionalLayout = preferFourDir;
+                return DirectionalAnimator.CreateSetFromLinearFrames(sheetFrames, preferFourDir);
             }
 
             return default;
