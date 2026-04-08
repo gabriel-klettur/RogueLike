@@ -288,7 +288,7 @@ Transform:
   m_GameObject: {fileID: 111622648}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -403,7 +403,7 @@ TilemapRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1
-  m_SortingLayer: 1
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
@@ -590,8 +590,8 @@ MonoBehaviour:
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
   m_LocalBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0
@@ -693,7 +693,7 @@ TilemapRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1
-  m_SortingLayer: 1
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
@@ -741,6 +741,151 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!1 &545052134
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 545052136}
+  - component: {fileID: 545052135}
+  m_Layer: 0
+  m_Name: WorldManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &545052135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 545052134}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01e710e9535d72b4b99f93bb501b5e0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zones:
+  - zoneName: dungeon
+    gridOffset: {x: 50, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: Lobby
+    gridOffset: {x: 50, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: Forest
+    gridOffset: {x: 0, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_100_50
+    gridOffset: {x: 100, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_50_0
+    gridOffset: {x: 50, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_0_0
+    gridOffset: {x: 0, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_150_50
+    gridOffset: {x: 150, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_200_50
+    gridOffset: {x: 200, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_150_100
+    gridOffset: {x: 150, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_200_100
+    gridOffset: {x: 200, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_150_0
+    gridOffset: {x: 150, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_200_0
+    gridOffset: {x: 200, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_250_50
+    gridOffset: {x: 250, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_250_0
+    gridOffset: {x: 250, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_250_100
+    gridOffset: {x: 250, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_0_100
+    gridOffset: {x: 0, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_100_100
+    gridOffset: {x: 100, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_100_0
+    gridOffset: {x: 100, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-50_50
+    gridOffset: {x: -50, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-100_50
+    gridOffset: {x: -100, y: 50}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-50_0
+    gridOffset: {x: -50, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-100_0
+    gridOffset: {x: -100, y: 0}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-50_100
+    gridOffset: {x: -50, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  - zoneName: zone_-100_100
+    gridOffset: {x: -100, y: 100}
+    zoneMusic: {fileID: 0}
+    editableInTileEditor: 1
+  zoneWidthTiles: 50
+  zoneHeightTiles: 50
+  tileSize: 1
+  currentZone: Lobby
+--- !u!4 &545052136
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 545052134}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &563997199
 GameObject:
   m_ObjectHideFlags: 0
@@ -817,10 +962,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultPlayerDef: {fileID: 11400000, guid: cce8c8ba6c964ab459770f4f1382b45d, type: 2}
   playerPrefab: {fileID: 2435567524609270487, guid: 8c480d6e59eb7904cb9ac829273bb53d, type: 3}
-  testMonsterDef: {fileID: 11400000, guid: 20d8a47639f95ae46982e94ee4d47df6, type: 2}
+  testMonsterDef: {fileID: 0}
   monsterPrefab: {fileID: 727930927262553568, guid: 36f25606ef9d3c04fb19141475edaedf, type: 3}
   testMonsterCount: 3
   spawnRadius: 5
+  overlayFile: lobby.overlay.json
+  loadFullWorld: 1
+  _particlePresetCatalog: {fileID: 11400000, guid: 29fa5a684bfc8f74bafa10c0e031b7e2, type: 2}
+  _lightPresetCatalog: {fileID: 11400000, guid: 79a535589eb9b644db6b938380e2e967, type: 2}
+  _spawnerTemplateCatalog: {fileID: 11400000, guid: e6a17de5dba17684191b5bb9d9f512b1, type: 2}
+  _buildingCatalog: {fileID: 11400000, guid: f1b36cb223debd944b3abd40afc7a211, type: 2}
+  _monsterCatalog: {fileID: 11400000, guid: 8116da144dac0f5439b9803e59c70697, type: 2}
+  _audioCatalog: {fileID: 11400000, guid: d6f4650fee0545f43a3d9e5d1c11e6e8, type: 2}
+  _combatSfxConfig: {fileID: 11400000, guid: 605d705fef7bb744e9a2dcaca953e364, type: 2}
 --- !u!4 &568156325
 Transform:
   m_ObjectHideFlags: 0
@@ -868,6 +1022,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orthoSize: 5
   cameraZOffset: -10
+  zoomStep: 0.5
+  minOrthoSize: 3
+  maxOrthoSize: 14
+  mapEditorMaxZoomMultiplier: 20
+  mapEditorZoomStepMultiplier: 4
+  assetsPPU: 32
+  refResolutionX: 640
+  refResolutionY: 360
 --- !u!114 &881348595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1038,3 +1200,4 @@ SceneRoots:
   - {fileID: 3259270542086614958}
   - {fileID: 341643219}
   - {fileID: 149128457}
+  - {fileID: 545052136}
