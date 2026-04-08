@@ -70,6 +70,12 @@ namespace Valkur.UI.MainMenu
         private int  _selectedClassIndex;
         private bool _showingClassSelector;
 
+        // Class selector – enhanced visuals (Python parity)
+        private Image _classHeaderPortrait;
+        private readonly List<Image> _classCardBorderImages = new List<Image>();
+        private readonly List<RectTransform> _classCardBgRects = new List<RectTransform>();
+        private readonly Dictionary<string, Sprite> _portraitSpriteCache = new Dictionary<string, Sprite>();
+
         // Input actions
         private InputAction _navUpAction;
         private InputAction _navDownAction;
@@ -131,6 +137,10 @@ namespace Valkur.UI.MainMenu
             _navRightAction?.Disable(); _navRightAction?.Dispose();
             _confirmAction?.Disable();  _confirmAction?.Dispose();
             _cancelAction?.Disable();   _cancelAction?.Dispose();
+
+            foreach (var s in _portraitSpriteCache.Values)
+                if (s != null) Destroy(s);
+            _portraitSpriteCache.Clear();
         }
 
 
