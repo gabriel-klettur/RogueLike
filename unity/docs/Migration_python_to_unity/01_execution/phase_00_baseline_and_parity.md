@@ -1,7 +1,7 @@
 # Phase 00 Baseline and Functional Parity
 
 **Document type:** Baseline evidence and parity matrix  
-**Last updated:** 2026-02-23  
+**Last updated:** 2026-04-08  
 **Primary audience:** QA, gameplay, technical production
 
 This document defines the baseline evidence model and parity matrix used to validate the Python -> Unity migration.
@@ -87,21 +87,21 @@ This document defines the baseline evidence model and parity matrix used to vali
 | Content validators | P1 | **DONE** | `ContentValidator.cs` (5 validators) |
 | Build pipeline | P1 | **DONE** | `BuildValidator.cs` (pre-build hook) |
 | Map transitions (portals) | P1 | **DONE** | `ZonePortal.cs`, `NPCZone.cs` |
-| Buildings + collision | P1 | pendiente | — |
+| Buildings + collision | P1 | **DONE** | `BuildingLoader.cs`, `BuildingObject.cs`, `BuildingCollisionLoader.cs` (fine-grained grid) |
 | Day/night cycle | P1 | **DONE** | `DayNightCycle.cs` (singleton, URP Global Light 2D via reflection) |
-| Lighting 2D | P1 | pendiente | — |
-| Audio system | P2 | **DONE** | `AudioManager.cs` + `AudioCatalogSO.cs` (completo) |
-| Chat/Vendor system | P2 | pendiente | — |
+| Lighting 2D | P1 | **DONE** | `WorldLightLoader.cs`, `LightPresetDefinition.cs`, `LightPresetCatalog.cs` |
+| Audio system | P2 | **DONE** | `AudioManager.cs` (crossfade, SFX pool, ducking, playlists) + `AudioCatalogSO.cs` + `CombatSfxConfigSO.cs` |
+| Chat/Vendor system | P2 | **DONE** | `ChatSystem.cs`, `ChatBubble.cs`, `ChatUI.cs`, `VendorEconomyService.cs`, `VendorShopUI.cs` |
 | Combo system | P2 | **DONE** | `ComboCounter.cs` + `ComboHUD.cs` |
-| Inventory transfer UI (buy/sell) | P2 | pendiente | — |
+| Inventory transfer UI (buy/sell) | P2 | **DONE** | `VendorShopUI.cs` (split-panel, CurrencyWallet) |
 | Minimap | P2 | **DONE** | `MinimapManager.cs` + `MinimapDot.cs` (Texture2D 160×160) |
-| Tiles editor | P3 | pendiente | — |
-| Buildings editor | P3 | pendiente | — |
-| Map editor | P3 | pendiente | — |
-| Entities debug editor | P3 | pendiente | — |
-| Spells editor | P3 | pendiente | — |
-| Particles editor | P3 | pendiente | — |
-| Console overlay | P3 | pendiente | — |
+| Tiles editor | P3 | **DONE** | `TileEditorManager.cs` (F6 runtime, 9 layers, brush/eraser/fill/eyedropper, undo/redo) |
+| Buildings editor | P3 | **DONE** | `BuildingsEditorWindow.cs` (`Valkur > Buildings Editor`) |
+| Map editor | P3 | **DONE** | `MapEditorManager.cs` (F7 runtime, overlay paint/erase) |
+| Entities debug editor | P3 | **DONE** | `DebugHUD.cs` (F1) + `DevConsole.cs` (backtick/F4, godmode/heal/tp/spawn) |
+| Spells editor | P3 | **DONE** | `SpellsEditorWindow.cs` (`Valkur > Spells Editor`) |
+| Particles editor | P3 | **DONE** | `ParticlesEditorWindow.cs` (`Valkur > Particles > Particles Editor`) |
+| Console overlay | P3 | **DONE** | `DevConsole.cs` (IMGUI, backtick/F4) |
 
 ## Inventario de assets Python
 
