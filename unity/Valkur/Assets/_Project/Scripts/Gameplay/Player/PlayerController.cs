@@ -233,18 +233,11 @@ namespace Valkur.Gameplay
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
 
-            // Primary attack (left click) — fireball via spell book
+            // Primary attack (left click) — fireball (spell slot 0)
             if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
             {
                 if (!isDashing && _spellCaster != null)
-                    _spellCaster.TryCastByKey("fireball", _facingDirection);
-            }
-
-            // Middle click — laser beam
-            if (_middleClickAction != null && _middleClickAction.WasPerformedThisFrame())
-            {
-                if (!isDashing && _spellCaster != null)
-                    _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+                    _spellCaster.TryCast(0, _facingDirection);
             }
 
             // Secondary attack (right click) — melee slash
@@ -254,24 +247,24 @@ namespace Valkur.Gameplay
                     _meleeCombat.TryAttack(_facingDirection);
             }
 
-            // Dash (ctrl/shift)
+            // Dash (right ctrl) — dash toward mouse facing direction
             if (_dashAction != null && _dashAction.WasPerformedThisFrame())
             {
                 if (_dashAbility != null)
                     _dashAbility.TryDash(_facingDirection);
             }
 
-            // All spell key bindings (1-0, Q, E, R, T, F, G, C, V, X, P, L, U, M)
+            // Spell slots 1-4
             if (!isDashing && _spellCaster != null)
             {
-                foreach (var (action, spellKey) in _spellBindings)
-                {
-                    if (action != null && action.WasPerformedThisFrame())
-                    {
-                        _spellCaster.TryCastByKey(spellKey, _facingDirection);
-                        break; // Only one spell per frame
-                    }
-                }
+                if (_spell1Action != null && _spell1Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(0, _facingDirection);
+                if (_spell2Action != null && _spell2Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(1, _facingDirection);
+                if (_spell3Action != null && _spell3Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(2, _facingDirection);
+                if (_spell4Action != null && _spell4Action.WasPerformedThisFrame())
+                    _spellCaster.TryCast(3, _facingDirection);
             }
         }
 
