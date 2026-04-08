@@ -62,10 +62,12 @@ This document defines the baseline evidence model and parity matrix used to vali
 | Camera follow | P0 | **DONE** | `CameraSetup.cs` (Cinemachine) |
 | Tilemap render + sorting Y/Z | P0 | **DONE** | `WorldGridBuilder.cs`, `YSortEntity.cs`, `SortingConfig.cs` |
 | Melee combat | P0 | **DONE** | `MeleeCombat.cs` (OverlapCircle + arc, cooldown, knockback) |
-| Spell system (fireball, dash, etc) | P0 | **DONE** | `SpellCaster.cs` (4 types: Projectile/Slash/Area/Dash) |
+| Spell system (fireball, dash, etc) | P0 | **DONE** | `SpellCaster.cs` (8 types: Projectile/Slash/Area/Dash/Teleport/Boomerang/Lightning/ChainLightning) |
 | FSM/AI (Idle, Patrol, Aggro, Attack, Flee, Death) | P0 | **DONE** | `FSMMonsterBrain.cs` + `StateMachine.cs` (9 states) |
 | Spawn system + budget | P0 | **DONE** | `MonsterSpawner.cs` (from SpawnerDefinition) |
 | Inventory + pickup + drop | P0 | **DONE** | `Inventory.cs`, `InventoryUI.cs`, `WorldPickup.cs`, `PickupSystem.cs`, `DropSystem.cs` |
+| Item consume (potions/food) | P0 | **DONE** | `ItemConsumer.cs` (heal/mana/buff timed) |
+| Currency / coin system | P0 | **DONE** | `CurrencyWallet.cs` + `CoinPickup.cs` (magnet, auto-collect) |
 | Save/Load + autosave | P0 | **DONE** | `SaveService.cs` (checksum, recovery, schema migration v1.1) |
 | Mana system | P0 | **DONE** | `Mana.cs` (regen, delay, events) |
 | Experience/leveling | P0 | **DONE** | `Experience.cs` (XP curve, OnLevelUp) |
@@ -73,6 +75,9 @@ This document defines the baseline evidence model and parity matrix used to vali
 | Target HUD + nameplates | P0 | **DONE** | `TargetHUD.cs` (hover + hit), `WorldHealthBar.cs` |
 | Floating damage numbers | P0 | **DONE** | `FloatingDamageNumber.cs`, `FloatingDamageSpawner.cs` |
 | Particles/VFX | P1 | **DONE** | `VFXManager.cs`, `SimpleVFX.cs`, `ObjectPool.cs` |
+| Status effects (burn/slow/stun/poison/freeze) | P1 | **DONE** | `StatusEffectManager.cs` + 5 effect classes |
+| Pathfinding (A*) | P1 | **DONE** | `PathFinder.cs` (SortedList A*, integrated in ChaseState/AlertChaseState) |
+| Explosion area damage | P1 | **DONE** | `ExplosionEffect.cs` (static Spawn, linear falloff, VFX) |
 | Combat range debug | P1 | **DONE** | `CombatRangeVisualizer.cs` (F2 toggle) |
 | Performance monitor | P1 | **DONE** | `PerformanceMonitor.cs` (F3 overlay, FPS/p95/p99/GC) |
 | Entity culling | P1 | **DONE** | `EntityCulling.cs` (viewport frustum, offscreen throttle) |
@@ -81,15 +86,15 @@ This document defines the baseline evidence model and parity matrix used to vali
 | Data migration + validation | P1 | **DONE** | `PythonDataMigrator.cs` (report + dry-run) |
 | Content validators | P1 | **DONE** | `ContentValidator.cs` (5 validators) |
 | Build pipeline | P1 | **DONE** | `BuildValidator.cs` (pre-build hook) |
-| Map transitions (portals) | P1 | pendiente | — |
+| Map transitions (portals) | P1 | **DONE** | `ZonePortal.cs`, `NPCZone.cs` |
 | Buildings + collision | P1 | pendiente | — |
-| Day/night cycle | P1 | pendiente | — |
+| Day/night cycle | P1 | **DONE** | `DayNightCycle.cs` (singleton, URP Global Light 2D via reflection) |
 | Lighting 2D | P1 | pendiente | — |
-| Audio system | P2 | pendiente | — |
+| Audio system | P2 | **DONE** | `AudioManager.cs` + `AudioCatalogSO.cs` (completo) |
 | Chat/Vendor system | P2 | pendiente | — |
-| Combo system | P2 | pendiente | — |
+| Combo system | P2 | **DONE** | `ComboCounter.cs` + `ComboHUD.cs` |
 | Inventory transfer UI (buy/sell) | P2 | pendiente | — |
-| Minimap | P2 | pendiente | — |
+| Minimap | P2 | **DONE** | `MinimapManager.cs` + `MinimapDot.cs` (Texture2D 160×160) |
 | Tiles editor | P3 | pendiente | — |
 | Buildings editor | P3 | pendiente | — |
 | Map editor | P3 | pendiente | — |

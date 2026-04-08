@@ -1,7 +1,7 @@
 # Roadmap 50 Steps: Python -> Unity Migration
 
 **Document type:** Execution roadmap  
-**Last updated:** 2026-02-23  
+**Last updated:** 2026-02-24  
 **Primary audience:** Technical production, gameplay, tools, and content teams
 
 This document is an actionable execution roadmap aligned with `../00_overview/migration_program_overview.md`.
@@ -28,6 +28,8 @@ Objetivo:
 | 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
 | 7 | Persistencia y release | 48-50 | 3/3 | ✅ Completa |
 | **Total** | | **1-50** | **41/50** | **82%** |
+
+> **Nota 2026-02-24:** Los 41 pasos del roadmap están completados. Adicionalmente, se implementaron ~20 sistemas extra más allá del scope de los 50 pasos (ver detalle en Paso 44). Las brechas abiertas son: asset map completo (Fase 2 diferida) y evidencias baseline en video (Paso 4).
 
 ### Proximos pasos prioritarios
 
@@ -208,7 +210,21 @@ Objetivo:
     - `EntitySetup.cs`: agrega Mana y Experience al player.
     - `SaveService.cs`: persiste/restaura mana y experiencia en save/load.
     - Brechas cerradas: mana system, experience/leveling, save/load de mana+xp.
-    - Brechas pendientes menores: day/night cycle, inventory transfer UI (buy/sell modal).
+    - Brechas pendientes menores: inventory transfer UI (buy/sell modal).
+    - **Sesión 2026-02-24 — sistemas adicionales implementados:**
+      - `StatusEffectManager.cs` + efectos: `BurnEffect`, `SlowEffect`, `StunEffect`, `PoisonEffect`, `FreezeEffect`.
+      - Separation NPC/Player: `NPCZone.cs`, `ZonePortal.cs` (teletransporte entre zonas), `ThinkingBubble.cs`.
+      - `PathFinder.cs`: A* con SortedList, integrado en `ChaseState.cs` y `AlertChaseState.cs`.
+      - `AudioManager.cs` + `AudioCatalogSO.cs`: ya completos (verificados, sin cambios necesarios).
+      - Spells avanzados: `TeleportExecutor.cs`, `BoomerangProjectile.cs` + `BoomerangExecutor.cs`, `LightningExecutor.cs`.
+      - `SpellType` enum extendido: +Lightning, +ChainLightning, +Aura, +ArcaneFlame, +FireworkLaunch, +SmokeEmitter, +SphereMagicShield, +Puddle, +Mine.
+      - `ComboCounter.cs` + `ComboHUD.cs`: sistema de combo con ventana dinámica y HUD.
+      - `MinimapManager.cs` + `MinimapDot.cs`: minimapa pixel-draw Texture2D 160×160.
+      - `DayNightCycle.cs`: ciclo día/noche URP 2D (nueva funcionalidad, sin equivalente Python).
+      - `ExplosionEffect.cs`: explosión con daño por área y falloff lineal (mapea Python FireExplosionModel).
+      - `ItemConsumer.cs`: consumo de items con healing/mana/buff temporizado (mapea Python ConsumeSystem).
+      - `CurrencyWallet.cs` + `CoinPickup.cs`: sistema de monedas (mapea Python GoldComponent).
+      - `GameEvents.cs`: evento `OnItemConsumed` añadido.
 
 > **Estado:** Fase 5 completa. Combate, spells con mana, VFX, inventario UI, pickups/drops, save/load, XP/niveles — todo funcional.
 
