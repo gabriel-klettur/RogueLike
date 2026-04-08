@@ -1,0 +1,347 @@
+using UnityEngine;
+using Valkur.Core;
+using Valkur.Data;
+using Valkur.Gameplay.Chat;
+using Valkur.Gameplay.MapEditor;
+using Valkur.Gameplay.Spawners;
+using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.VFX;
+using Valkur.Gameplay.NPC;
+using Valkur.Infrastructure;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Valkur.Gameplay
+{
+    public partial class GameplaySceneSetup
+    {
+        private void EnsureTileEditor()
+        {
+            if (TileEditorManager.Instance != null) return;
+            var editorGo = new GameObject("TileEditorManager");
+            var manager = editorGo.AddComponent<TileEditorManager>();
+            manager.SetGridBuilder(_gridBuilder);
+            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
+        }
+
+        private void EnsureMapEditor()
+        {
+            if (MapEditorManager.Instance != null) return;
+            var editorGo = new GameObject("MapEditorManager");
+            editorGo.AddComponent<MapEditorManager>();
+            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
+        }
+
+        /// <summary>
+        /// URP uses Sprite-Lit-Default material on TilemapRenderers.
+        /// Without a 2D light source, all tilemaps render as solid black.
+        /// This creates a Global Light 2D to illuminate the entire scene.
+        /// Uses reflection to avoid hard dependency on URP assembly.
+        ///
+        /// Defense in depth: tries multiple reflection strategies for lightType,
+        /// logs every step, and WorldGridBuilder applies Unlit fallback if this fails.
+        /// </summary>
+        private void EnsureGlobalLight2D()
+        {
+            var light2DType = System.Type.GetType(
+                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            if (light2DType == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found — URP 2D Renderer may not be installed.");
+                return;
+            }
+
+            if (FindObjectOfType(light2DType) != null) return;
+
+            var lightGo = new GameObject("GlobalLight2D");
+            var light = lightGo.AddComponent(light2DType);
+
+            if (light == null)
+            {
+                Debug.LogError("[GameplaySceneSetup] Failed to AddComponent Light2D.");
+                Destroy(lightGo);
+                return;
+            }
+
+            bool lightTypeSet = false;
+            var lightTypeProp = light2DType.GetProperty("lightType",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (lightTypeProp != null)
+            {
+                try
+                {
+                    var enumType = lightTypeProp.PropertyType;
+                    var globalValue = System.Enum.ToObject(enumType, 1);
+                    lightTypeProp.SetValue(light, globalValue);
+                    lightTypeSet = true;
+                    Debug.Log($"[GameplaySceneSetup] Light2D.lightType set to Global via property.");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[GameplaySceneSetup] Failed to set lightType via property: {ex.Message}");
+                }
+            }
+
+            if (!lightTypeSet)
+            {
+                var lightTypeField = light2DType.GetField("m_LightType",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (lightTypeField != null)
+                {
+                    try
+                    {
+                        var enumType = lightTypeField.FieldType;
+                        var globalValue = System.Enum.ToObject(enumType, 1);
+                        lightTypeField.SetValue(light, globalValue);
+                        lightTypeSet = true;
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[GameplaySceneSetup] Failed to set m_LightType via field: {ex.Message}");
+                    }
+                }
+            }
+
+            if (!lightTypeSet)
+                Debug.LogWarning("[GameplaySceneSetup] Could not set Light2D to Global type.");
+
+            var intensityProp = light2DType.GetProperty("intensity",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (intensityProp != null)
+            {
+                try { intensityProp.SetValue(light, 1f); }
+                catch (System.Exception ex) { Debug.LogWarning($"[GameplaySceneSetup] Failed to set intensity: {ex.Message}"); }
+            }
+
+            Debug.Log($"[GameplaySceneSetup] Global Light 2D created. lightTypeSet={lightTypeSet}");
+        }
+
+        private void EnsureSaveLoadInput()
+        {
+            if (FindObjectOfType<SaveLoadInputHandler>() != null) return;
+            var go = new GameObject("SaveLoadInputHandler");
+            go.AddComponent<SaveLoadInputHandler>();
+            Debug.Log("[GameplaySceneSetup] SaveLoadInputHandler created (F5/F9).");
+        }
+
+        private void EnsureVFXManager()
+        {
+            bool created = VFXManager.Instance == null;
+            if (created)
+            {
+                var vfxGo = new GameObject("VFXManager");
+                vfxGo.AddComponent<VFXManager>();
+            }
+
+            if (_particlePresetCatalog != null)
+                VFXManager.Instance.SetParticleCatalog(_particlePresetCatalog);
+        }
+
+        private void EnsureParticleInstancesLoader()
+        {
+            if (_particlePresetCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No ParticlePresetCatalog assigned — ambient world particles skipped.");
+                return;
+            }
+
+            if (FindObjectOfType<ParticleInstancesLoader>() != null) return;
+
+            var loaderGo = new GameObject("ParticleInstancesLoader");
+            var loader = loaderGo.AddComponent<ParticleInstancesLoader>();
+            loader.Initialize(_particlePresetCatalog);
+            Debug.Log("[GameplaySceneSetup] ParticleInstancesLoader created.");
+        }
+
+        private void EnsureNPCSeparation()
+        {
+            if (FindObjectOfType<World.NPCSeparationSystem>() != null) return;
+            var go = new GameObject("NPCSeparationSystem");
+            go.AddComponent<World.NPCSeparationSystem>();
+            Debug.Log("[GameplaySceneSetup] NPCSeparationSystem created.");
+        }
+
+        private void EnsureVendorShopUI()
+        {
+            if (VendorShopUI.Instance != null) return;
+            var go = new GameObject("VendorShopUI");
+            go.AddComponent<VendorShopUI>();
+            Debug.Log("[GameplaySceneSetup] VendorShopUI created.");
+        }
+
+        private void EnsureDevConsole()
+        {
+            if (DevConsole.Instance != null) return;
+            var go = new GameObject("DevConsole");
+            go.AddComponent<DevConsole>();
+            Debug.Log("[GameplaySceneSetup] DevConsole created (` or F4 to toggle).");
+        }
+
+        private void EnsureChatSystem()
+        {
+            if (FindObjectOfType<ChatSystem>() != null) return;
+            var go = new GameObject("ChatSystem");
+            go.AddComponent<ChatSystem>();
+            Debug.Log("[GameplaySceneSetup] ChatSystem created.");
+
+            if (FindObjectOfType<ChatUI>() == null)
+            {
+                var uiGo = new GameObject("ChatUI");
+                uiGo.AddComponent<ChatUI>();
+                Debug.Log("[GameplaySceneSetup] ChatUI created.");
+            }
+        }
+
+        private void EnsureVendorEconomyService()
+        {
+            if (VendorEconomyService.Instance != null) return;
+            var go = new GameObject("VendorEconomyService");
+            go.AddComponent<VendorEconomyService>();
+            Debug.Log("[GameplaySceneSetup] VendorEconomyService created.");
+        }
+
+        private void EnsureWorldLightLoader()
+        {
+            if (FindObjectOfType<World.WorldLightLoader>() != null) return;
+
+            if (_lightPresetCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No LightPresetCatalog assigned — ambient world lights skipped.");
+                return;
+            }
+
+            var go = new GameObject("WorldLightLoader");
+            var loader = go.AddComponent<World.WorldLightLoader>();
+            loader.SetCatalog(_lightPresetCatalog);
+            Debug.Log("[GameplaySceneSetup] WorldLightLoader created.");
+        }
+
+        private void EnsureBuildingCollisionLoader()
+        {
+            if (FindObjectOfType<World.BuildingCollisionLoader>() != null) return;
+            var go = new GameObject("BuildingCollisionLoader");
+            go.AddComponent<World.BuildingCollisionLoader>();
+            Debug.Log("[GameplaySceneSetup] BuildingCollisionLoader created.");
+        }
+
+        private void EnsureSpawnerEditor()
+        {
+            if (SpawnerEditorManager.Instance != null) return;
+
+            var go = new GameObject("SpawnerEditorManager");
+            var mgr = go.AddComponent<SpawnerEditorManager>();
+
+            if (_spawnerTemplateCatalog != null)
+            {
+                // Set catalog via serialized field
+                var so = new UnityEngine.Object[] { mgr };
+#if UNITY_EDITOR
+                var serialized = new UnityEditor.SerializedObject(mgr);
+                var catalogProp = serialized.FindProperty("_catalog");
+                if (catalogProp != null)
+                {
+                    catalogProp.objectReferenceValue = _spawnerTemplateCatalog;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+#endif
+            }
+
+            Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Press F3 to toggle.");
+        }
+
+        private void EnsureMonsterSpawner()
+        {
+            if (FindObjectOfType<MonsterSpawner>() != null) return;
+
+            var go = new GameObject("MonsterSpawner");
+            var spawner = go.AddComponent<MonsterSpawner>();
+
+            if (monsterPrefab != null)
+                spawner.Initialize(monsterPrefab, _monsterCatalog);
+            else
+                Debug.LogWarning("[GameplaySceneSetup] monsterPrefab is NULL — MonsterSpawner not initialized!");
+
+            Debug.Log("[GameplaySceneSetup] MonsterSpawner created.");
+        }
+
+        private void EnsureBuildingLoader()
+        {
+            if (FindObjectOfType<World.BuildingLoader>() != null) return;
+
+            if (_buildingCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No BuildingCatalog assigned — buildings skipped.");
+                return;
+            }
+
+            var zm = FindObjectOfType<World.ZoneManager>();
+
+            var go = new GameObject("BuildingLoader");
+            var loader = go.AddComponent<World.BuildingLoader>();
+            loader.Initialize(_buildingCatalog, zm);
+            loader.LoadBuildings();
+
+            Debug.Log("[GameplaySceneSetup] BuildingLoader created and loaded.");
+        }
+
+        private void EnsureSpawnerInstanceLoader()
+        {
+            if (FindObjectOfType<Spawners.SpawnerInstanceLoader>() != null) return;
+
+            if (_spawnerTemplateCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No SpawnerTemplateCatalog assigned — spawner instances skipped.");
+                return;
+            }
+
+            var monsterSpawner = FindObjectOfType<MonsterSpawner>();
+
+            var go = new GameObject("SpawnerInstanceLoader");
+            var loader = go.AddComponent<Spawners.SpawnerInstanceLoader>();
+            loader.Initialize(_spawnerTemplateCatalog, monsterSpawner);
+            loader.LoadInstances();
+
+            Debug.Log("[GameplaySceneSetup] SpawnerInstanceLoader created and loaded.");
+        }
+
+        private void EnsureAudioManager()
+        {
+            if (AudioManager.HasInstance) return;
+
+            if (_audioCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No AudioCatalog assigned — audio system skipped.");
+                return;
+            }
+
+            var go = new GameObject("AudioManager");
+            var mgr = go.AddComponent<AudioManager>();
+            mgr.SetCatalog(_audioCatalog);
+            Debug.Log("[GameplaySceneSetup] AudioManager created.");
+        }
+
+        private void EnsureCombatAudioSystem()
+        {
+            if (FindObjectOfType<Combat.CombatAudioSystem>() != null) return;
+
+            if (_combatSfxConfig == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No CombatSfxConfig assigned — combat audio skipped.");
+                return;
+            }
+
+            var go = new GameObject("CombatAudioSystem");
+            var sys = go.AddComponent<Combat.CombatAudioSystem>();
+            sys.Initialize(_combatSfxConfig);
+            Debug.Log("[GameplaySceneSetup] CombatAudioSystem created.");
+        }
+
+        private void EnterGameAudio()
+        {
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio == null) return;
+            audio.EnterGameAudio();
+        }
+    }
+}

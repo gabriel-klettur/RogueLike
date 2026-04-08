@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
@@ -13,8 +14,7 @@ namespace Valkur.Gameplay
 {
     /// <summary>
     /// Sets up the MainGameplay scene at runtime.
-    /// Builds the world grid, spawns the player, camera, HUD, and test monsters.
-    /// Temporary bootstrap until full spawner system is ported.
+    /// Builds the world grid, loads the full multi-zone world, spawns the player, camera, HUD.
     /// </summary>
     public partial class GameplaySceneSetup : MonoBehaviour
     {
@@ -29,8 +29,12 @@ namespace Valkur.Gameplay
         [SerializeField] private float spawnRadius = 5f;
 
         [Header("Map")]
-        [Tooltip("Overlay JSON filename in StreamingAssets/Maps/")]
+        [Tooltip("Overlay JSON filename in StreamingAssets/Maps/ (single-zone fallback)")]
         [SerializeField] private string overlayFile = "lobby.overlay.json";
+
+        [Tooltip("When true, loads the full multi-zone world from zones_database.json " +
+                 "instead of a single overlay file.")]
+        [SerializeField] private bool loadFullWorld = true;
 
         [Header("Particles")]
         [SerializeField, Tooltip("Catalog of particle presets. Populate via 'Valkur > Particles > Import Presets from Python JSON'.")]
@@ -44,15 +48,30 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Catalog of spawner templates. Populate via 'Valkur > Spawners > Import Templates'.")]
         private SpawnerTemplateCatalog _spawnerTemplateCatalog;
 
+        [Header("Buildings")]
+        [SerializeField, Tooltip("Catalog of building templates. Populate via 'Valkur > Buildings > Import Buildings'.")]
+        private BuildingCatalog _buildingCatalog;
+
+        [Header("Monsters Catalog")]
+        [SerializeField, Tooltip("Catalog of monster/vendor definitions. Populate via 'Valkur > Migration > Import Monsters'.")]
+        private MonsterCatalog _monsterCatalog;
+
+        [Header("Audio")]
+        [SerializeField, Tooltip("Audio catalog (music, SFX, ambient). Populate via 'Valkur > Audio > Import Catalog from Python JSON'.")]
+        private AudioCatalogSO _audioCatalog;
+
+        [SerializeField, Tooltip("Combat SFX config. Populate via 'Valkur > Audio > Import Catalog from Python JSON'.")]
+        private CombatSfxConfigSO _combatSfxConfig;
+
         private WorldGridBuilder _gridBuilder;
 
         private void Start()
         {
             BuildWorldGrid();
-            LoadOverlay();
+            EnsureZoneManager();
+            LoadWorld();
             EnsureGlobalLight2D();
             EnsureVFXManager();
-            EnsureZoneManager();
             EnsureParticleInstancesLoader();
             EnsureTileEditor();
             EnsureMapEditor();
@@ -65,8 +84,33 @@ namespace Valkur.Gameplay
             EnsureBuildingCollisionLoader();
             EnsureSpawnerEditor();
             EnsureDevConsole();
+
+            // Player & camera MUST be created before risky loaders
+            // so a loader crash can never leave the scene without a camera target.
             SpawnPlayer();
             SpawnTestMonsters();
+
+            // Buildings / spawners may fail (missing sprites, templates, etc.).
+            // Wrap in try-catch so the game remains playable even when data is incomplete.
+            try { EnsureMonsterSpawner(); }            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
+            try { EnsureBuildingLoader(); }             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] BuildingLoader failed: {ex.Message}"); }
+            try { EnsureSpawnerInstanceLoader(); }      catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
+
+            // Audio must init after all gameplay systems are ready
+            try { EnsureAudioManager(); }               catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] AudioManager failed: {ex.Message}"); }
+            try { EnsureCombatAudioSystem(); }           catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] CombatAudioSystem failed: {ex.Message}"); }
+            EnterGameAudio();
+
+            // If we're coming from a menu "Continue" or "Load Game", apply saved state
+            if (Save.PendingSaveLoad.HasPending)
+            {
+                string savePath = Save.PendingSaveLoad.Consume();
+                if (SaveService.Instance != null)
+                {
+                    SaveService.Instance.Load(savePath);
+                    Debug.Log($"[GameplaySceneSetup] Loaded pending save: {savePath}");
+                }
+            }
         }
     }
 }

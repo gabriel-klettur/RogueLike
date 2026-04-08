@@ -74,6 +74,7 @@ namespace Valkur.Gameplay
             if (!appliedDataDrivenVisuals)
                 EntitySpriteHelper.EnsureMonsterSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
+            CompensateColliderForScale(go);
             InitHealth(go, def.stats.hp);
 
             if (go.GetComponent<FloatingDamageSpawner>() == null)
@@ -100,6 +101,20 @@ namespace Valkur.Gameplay
         }
 
         // ── Private helpers ──
+
+        /// <summary>
+        /// After EntityAnimationBinder scales the root transform for Python-parity visual sizing,
+        /// the CircleCollider2D radius must be compensated so its world-space size stays constant.
+        /// </summary>
+        private static void CompensateColliderForScale(GameObject go)
+        {
+            float scale = go.transform.localScale.x;
+            if (Mathf.Approximately(scale, 1f) || scale <= 0f) return;
+
+            var circle = go.GetComponent<CircleCollider2D>();
+            if (circle != null)
+                circle.radius /= scale;
+        }
 
         private static void InitHealth(GameObject go, int maxHp)
         {
@@ -132,8 +147,31 @@ namespace Valkur.Gameplay
             if (caster == null) return;
 
             caster.SetTargetLayers(1 << NPCLayer);
-            caster.SetSpell(0, ProjectilePrefabFactory.GetFireballSpell());
             ProjectilePrefabFactory.EnsureFireballPrefab(caster);
+
+            // Load all spell definitions from the Spells catalog and register them in the spell book
+            var allSpells = Resources.LoadAll<SpellDefinition>("Catalogs/Spells");
+            if (allSpells == null || allSpells.Length == 0)
+            {
+                Debug.LogWarning("[EntitySetup] No SpellDefinition assets found in Resources/Catalogs/Spells! Falling back to fireball only.");
+                caster.SetSpell(0, ProjectilePrefabFactory.GetFireballSpell());
+                return;
+            }
+
+            int registered = 0;
+            foreach (var spell in allSpells)
+            {
+                if (string.IsNullOrEmpty(spell.spellKey)) continue;
+                caster.RegisterSpell(spell.spellKey, spell);
+                registered++;
+            }
+
+            // Also set slot 0 to fireball for backward compatibility
+            var fireball = ProjectilePrefabFactory.GetFireballSpell();
+            if (fireball != null)
+                caster.SetSpell(0, fireball);
+
+            Debug.Log($"[EntitySetup] Registered {registered} spells in spell book from {allSpells.Length} assets.");
         }
 
         private static void InitPlayerStats(GameObject go, PlayerDefinition def)

@@ -16,7 +16,16 @@ namespace Valkur.Gameplay
                 return;
             }
 
-            var playerGo = Instantiate(playerPrefab, new Vector3(25f, 25f, 0f), Quaternion.identity);
+            // Spawn at Lobby center. With full world, Lobby offset is (50,50) + center (25,25) = (75,75).
+            // With single overlay (Lobby at 0,0), center is (25,25).
+            Vector3 spawnPos = new Vector3(25f, 25f, 0f);
+            var zm = FindObjectOfType<World.ZoneManager>();
+            if (zm != null && zm.TryGetZone("Lobby", out var lobbyDef))
+            {
+                spawnPos = new Vector3(lobbyDef.gridOffset.x + 25f, lobbyDef.gridOffset.y + 25f, 0f);
+            }
+
+            var playerGo = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
             playerGo.tag = "Player";
 
             var selectedDef = ResolveSelectedPlayerDefinition();

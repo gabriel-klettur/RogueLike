@@ -28,245 +28,37 @@ namespace Valkur.Gameplay
             _gridBuilder = gridGo.AddComponent<World.WorldGridBuilder>();
         }
 
-        private void LoadOverlay()
-        {
-            if (string.IsNullOrEmpty(overlayFile) || _gridBuilder == null) return;
-            World.OverlayLoader.LoadOverlay(overlayFile, _gridBuilder);
-            Debug.Log($"[GameplaySceneSetup] Overlay '{overlayFile}' loaded.");
-        }
-
-        private void EnsureTileEditor()
-        {
-            if (TileEditorManager.Instance != null) return;
-            var editorGo = new GameObject("TileEditorManager");
-            var manager = editorGo.AddComponent<TileEditorManager>();
-            manager.SetGridBuilder(_gridBuilder);
-            Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
-        }
-
-        private void EnsureMapEditor()
-        {
-            if (MapEditorManager.Instance != null) return;
-            var editorGo = new GameObject("MapEditorManager");
-            editorGo.AddComponent<MapEditorManager>();
-            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
-        }
-
         /// <summary>
-        /// URP uses Sprite-Lit-Default material on TilemapRenderers.
-        /// Without a 2D light source, all tilemaps render as solid black.
-        /// This creates a Global Light 2D to illuminate the entire scene.
-        /// Uses reflection to avoid hard dependency on URP assembly.
-        ///
-        /// Defense in depth: tries multiple reflection strategies for lightType,
-        /// logs every step, and WorldGridBuilder applies Unlit fallback if this fails.
+        /// Load the world map. When loadFullWorld is true, uses ZoneDatabaseLoader + WorldLoader
+        /// to paint all 24 zones at their correct offsets. Otherwise loads a single overlay.
         /// </summary>
-        private void EnsureGlobalLight2D()
+        private void LoadWorld()
         {
-            var light2DType = System.Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            if (light2DType == null)
+            if (loadFullWorld)
             {
-                Debug.LogWarning("[GameplaySceneSetup] Light2D type not found — URP 2D Renderer may not be installed.");
-                return;
+                // 1) Load zone database → populates ZoneManager with all zones
+                var dbLoaderGo = new GameObject("ZoneDatabaseLoader");
+                var dbLoader = dbLoaderGo.AddComponent<World.ZoneDatabaseLoader>();
+                // Call manually (Start() won't fire until next frame)
+                dbLoader.LoadDatabase();
+
+                // 2) Load full world overlays + collision grids at zone offsets
+                var worldLoaderGo = new GameObject("WorldLoader");
+                var worldLoader = worldLoaderGo.AddComponent<World.WorldLoader>();
+                worldLoader.LoadFullWorld();
+
+                Debug.Log("[GameplaySceneSetup] Full multi-zone world loaded.");
             }
-
-            if (FindObjectOfType(light2DType) != null) return;
-
-            var lightGo = new GameObject("GlobalLight2D");
-            var light = lightGo.AddComponent(light2DType);
-
-            if (light == null)
+            else
             {
-                Debug.LogError("[GameplaySceneSetup] Failed to AddComponent Light2D.");
-                Destroy(lightGo);
-                return;
-            }
-
-            bool lightTypeSet = false;
-            var lightTypeProp = light2DType.GetProperty("lightType",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (lightTypeProp != null)
-            {
-                try
+                // Legacy single-overlay mode
+                if (!string.IsNullOrEmpty(overlayFile) && _gridBuilder != null)
                 {
-                    var enumType = lightTypeProp.PropertyType;
-                    var globalValue = System.Enum.ToObject(enumType, 1);
-                    lightTypeProp.SetValue(light, globalValue);
-                    lightTypeSet = true;
-                    Debug.Log($"[GameplaySceneSetup] Light2D.lightType set to Global via property.");
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[GameplaySceneSetup] Failed to set lightType via property: {ex.Message}");
+                    World.OverlayLoader.LoadOverlay(overlayFile, _gridBuilder);
+                    Debug.Log($"[GameplaySceneSetup] Single overlay '{overlayFile}' loaded.");
                 }
             }
-
-            if (!lightTypeSet)
-            {
-                var lightTypeField = light2DType.GetField("m_LightType",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (lightTypeField != null)
-                {
-                    try
-                    {
-                        var enumType = lightTypeField.FieldType;
-                        var globalValue = System.Enum.ToObject(enumType, 1);
-                        lightTypeField.SetValue(light, globalValue);
-                        lightTypeSet = true;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Debug.LogWarning($"[GameplaySceneSetup] Failed to set m_LightType via field: {ex.Message}");
-                    }
-                }
-            }
-
-            if (!lightTypeSet)
-                Debug.LogWarning("[GameplaySceneSetup] Could not set Light2D to Global type.");
-
-            var intensityProp = light2DType.GetProperty("intensity",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            if (intensityProp != null)
-            {
-                try { intensityProp.SetValue(light, 1f); }
-                catch (System.Exception ex) { Debug.LogWarning($"[GameplaySceneSetup] Failed to set intensity: {ex.Message}"); }
-            }
-
-            Debug.Log($"[GameplaySceneSetup] Global Light 2D created. lightTypeSet={lightTypeSet}");
         }
 
-        private void EnsureSaveLoadInput()
-        {
-            if (FindObjectOfType<SaveLoadInputHandler>() != null) return;
-            var go = new GameObject("SaveLoadInputHandler");
-            go.AddComponent<SaveLoadInputHandler>();
-            Debug.Log("[GameplaySceneSetup] SaveLoadInputHandler created (F5/F9).");
-        }
-
-        private void EnsureVFXManager()
-        {
-            bool created = VFXManager.Instance == null;
-            if (created)
-            {
-                var vfxGo = new GameObject("VFXManager");
-                vfxGo.AddComponent<VFXManager>();
-            }
-
-            if (_particlePresetCatalog != null)
-                VFXManager.Instance.SetParticleCatalog(_particlePresetCatalog);
-        }
-
-        private void EnsureParticleInstancesLoader()
-        {
-            if (_particlePresetCatalog == null)
-            {
-                Debug.LogWarning("[GameplaySceneSetup] No ParticlePresetCatalog assigned — ambient world particles skipped.");
-                return;
-            }
-
-            if (FindObjectOfType<ParticleInstancesLoader>() != null) return;
-
-            var loaderGo = new GameObject("ParticleInstancesLoader");
-            var loader = loaderGo.AddComponent<ParticleInstancesLoader>();
-            loader.Initialize(_particlePresetCatalog);
-            Debug.Log("[GameplaySceneSetup] ParticleInstancesLoader created.");
-        }
-
-        private void EnsureNPCSeparation()
-        {
-            if (FindObjectOfType<World.NPCSeparationSystem>() != null) return;
-            var go = new GameObject("NPCSeparationSystem");
-            go.AddComponent<World.NPCSeparationSystem>();
-            Debug.Log("[GameplaySceneSetup] NPCSeparationSystem created.");
-        }
-
-        private void EnsureVendorShopUI()
-        {
-            if (VendorShopUI.Instance != null) return;
-            var go = new GameObject("VendorShopUI");
-            go.AddComponent<VendorShopUI>();
-            Debug.Log("[GameplaySceneSetup] VendorShopUI created.");
-        }
-
-        private void EnsureDevConsole()
-        {
-            if (DevConsole.Instance != null) return;
-            var go = new GameObject("DevConsole");
-            go.AddComponent<DevConsole>();
-            Debug.Log("[GameplaySceneSetup] DevConsole created (` or F4 to toggle).");
-        }
-
-        private void EnsureChatSystem()
-        {
-            if (FindObjectOfType<ChatSystem>() != null) return;
-            var go = new GameObject("ChatSystem");
-            go.AddComponent<ChatSystem>();
-            Debug.Log("[GameplaySceneSetup] ChatSystem created.");
-
-            if (FindObjectOfType<ChatUI>() == null)
-            {
-                var uiGo = new GameObject("ChatUI");
-                uiGo.AddComponent<ChatUI>();
-                Debug.Log("[GameplaySceneSetup] ChatUI created.");
-            }
-        }
-
-        private void EnsureVendorEconomyService()
-        {
-            if (VendorEconomyService.Instance != null) return;
-            var go = new GameObject("VendorEconomyService");
-            go.AddComponent<VendorEconomyService>();
-            Debug.Log("[GameplaySceneSetup] VendorEconomyService created.");
-        }
-
-        private void EnsureWorldLightLoader()
-        {
-            if (FindObjectOfType<World.WorldLightLoader>() != null) return;
-
-            if (_lightPresetCatalog == null)
-            {
-                Debug.LogWarning("[GameplaySceneSetup] No LightPresetCatalog assigned — ambient world lights skipped.");
-                return;
-            }
-
-            var go = new GameObject("WorldLightLoader");
-            var loader = go.AddComponent<World.WorldLightLoader>();
-            loader.SetCatalog(_lightPresetCatalog);
-            Debug.Log("[GameplaySceneSetup] WorldLightLoader created.");
-        }
-
-        private void EnsureBuildingCollisionLoader()
-        {
-            if (FindObjectOfType<World.BuildingCollisionLoader>() != null) return;
-            var go = new GameObject("BuildingCollisionLoader");
-            go.AddComponent<World.BuildingCollisionLoader>();
-            Debug.Log("[GameplaySceneSetup] BuildingCollisionLoader created.");
-        }
-
-        private void EnsureSpawnerEditor()
-        {
-            if (SpawnerEditorManager.Instance != null) return;
-
-            var go = new GameObject("SpawnerEditorManager");
-            var mgr = go.AddComponent<SpawnerEditorManager>();
-
-            if (_spawnerTemplateCatalog != null)
-            {
-                // Set catalog via serialized field
-                var so = new UnityEngine.Object[] { mgr };
-#if UNITY_EDITOR
-                var serialized = new UnityEditor.SerializedObject(mgr);
-                var catalogProp = serialized.FindProperty("_catalog");
-                if (catalogProp != null)
-                {
-                    catalogProp.objectReferenceValue = _spawnerTemplateCatalog;
-                    serialized.ApplyModifiedPropertiesWithoutUndo();
-                }
-#endif
-            }
-
-            Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Press F3 to toggle.");
-        }
     }
 }

@@ -70,6 +70,8 @@ namespace Valkur.Gameplay
             if (initialFrame != null)
                 renderer.sprite = initialFrame;
 
+            ApplyEntityScale(go, assetConfig.scaleConfig, renderer);
+
             return true;
         }
 
@@ -100,6 +102,24 @@ namespace Valkur.Gameplay
         {
             return d.south != null || d.southEast != null || d.east != null || d.northEast != null ||
                    d.north != null || d.northWest != null || d.west != null || d.southWest != null;
+        }
+
+        /// <summary>
+        /// Applies Python-parity visual scale to the entity.
+        /// Python pre-scales sprites: rendered_px = raw_px * scale_idle.
+        /// Unity equivalent: localScale = scaleIdle * sprite.pixelsPerUnit / PYTHON_TILE_PX.
+        /// Skipped when scaleIdle is zero (e.g. players use default scale).
+        /// </summary>
+        private static void ApplyEntityScale(GameObject go, AnimationScaleConfig scaleConfig, SpriteRenderer renderer)
+        {
+            float scaleIdle = scaleConfig.scaleIdle;
+            if (scaleIdle <= 0f || renderer.sprite == null)
+                return;
+
+            const float PYTHON_TILE_PX = 32f;
+            float ppu = renderer.sprite.pixelsPerUnit;
+            float scale = scaleIdle * ppu / PYTHON_TILE_PX;
+            go.transform.localScale = new Vector3(scale, scale, 1f);
         }
 
         private static bool HasFrames(DirectionalAnimator.DirectionalSpriteSet set)

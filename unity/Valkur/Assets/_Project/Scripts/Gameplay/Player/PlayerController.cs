@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Gameplay.Combat;
@@ -9,6 +10,7 @@ namespace Valkur.Gameplay
     /// Player movement, combat, and ability controller.
     /// Maps to Python's player movement + combat + spell casting systems.
     /// Uses standalone InputAction objects to avoid InputSystem 1.7.0 composite resolver bugs.
+    /// All 27+ spell key bindings from Python are mapped here via TryCastByKey.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Health))]
@@ -35,11 +37,11 @@ namespace Valkur.Gameplay
         private InputAction _lookAction;
         private InputAction _primaryAttackAction;
         private InputAction _secondaryAttackAction;
+        private InputAction _middleClickAction;
         private InputAction _dashAction;
-        private InputAction _spell1Action;
-        private InputAction _spell2Action;
-        private InputAction _spell3Action;
-        private InputAction _spell4Action;
+
+        // Spell key bindings — each entry maps an InputAction to a spellKey string
+        private readonly List<(InputAction action, string spellKey)> _spellBindings = new List<(InputAction, string)>();
 
         public Vector2 FacingDirection => _facingDirection;
         public Vector2 MoveInput => _moveInput;
@@ -83,23 +85,56 @@ namespace Valkur.Gameplay
             _lookAction = new InputAction("Look", InputActionType.Value, "<Mouse>/position");
             _primaryAttackAction = new InputAction("PrimaryAttack", InputActionType.Button, "<Mouse>/leftButton");
             _secondaryAttackAction = new InputAction("SecondaryAttack", InputActionType.Button, "<Mouse>/rightButton");
+            _middleClickAction = new InputAction("MiddleClick", InputActionType.Button, "<Mouse>/middleButton");
             _dashAction = new InputAction("Dash", InputActionType.Button, "<Keyboard>/rightCtrl");
             _dashAction.AddBinding("<Keyboard>/rightShift");
-            _spell1Action = new InputAction("Spell1", InputActionType.Button, "<Keyboard>/1");
-            _spell2Action = new InputAction("Spell2", InputActionType.Button, "<Keyboard>/2");
-            _spell3Action = new InputAction("Spell3", InputActionType.Button, "<Keyboard>/3");
-            _spell4Action = new InputAction("Spell4", InputActionType.Button, "<Keyboard>/4");
+            _dashAction.AddBinding("<Keyboard>/leftCtrl");
+
+            // Python parity: full spell key bindings
+            // Number keys
+            AddSpellBinding("<Keyboard>/1", "darkball");
+            AddSpellBinding("<Keyboard>/2", "iceball");
+            AddSpellBinding("<Keyboard>/3", "lightball");
+            AddSpellBinding("<Keyboard>/4", "puddle_lava");
+            AddSpellBinding("<Keyboard>/5", "mine_basic");
+            AddSpellBinding("<Keyboard>/6", "boomerang");
+            AddSpellBinding("<Keyboard>/7", "chain_lightning");
+            AddSpellBinding("<Keyboard>/8", "vortex_pull");
+            AddSpellBinding("<Keyboard>/9", "vortex_push");
+            AddSpellBinding("<Keyboard>/0", "flame_breath");
+
+            // Letter keys
+            AddSpellBinding("<Keyboard>/q", "teleport");
+            AddSpellBinding("<Keyboard>/e", "slash");
+            AddSpellBinding("<Keyboard>/r", "lightning");
+            AddSpellBinding("<Keyboard>/t", "sphere_magic_shield");
+            AddSpellBinding("<Keyboard>/f", "smoke");
+            AddSpellBinding("<Keyboard>/g", "smoke_emitter");
+            AddSpellBinding("<Keyboard>/c", "arcane_flame");
+            AddSpellBinding("<Keyboard>/v", "firework_launch");
+            AddSpellBinding("<Keyboard>/x", "healing_aura");
+            AddSpellBinding("<Keyboard>/p", "meteor_shower");
+            AddSpellBinding("<Keyboard>/l", "healing_totem");
+            AddSpellBinding("<Keyboard>/u", "summon_barbol");
+            AddSpellBinding("<Keyboard>/m", "wall_ice");
+
+            // Enable all
             _moveAction.Enable();
             _lookAction.Enable();
             _primaryAttackAction.Enable();
             _secondaryAttackAction.Enable();
+            _middleClickAction.Enable();
             _dashAction.Enable();
-            _spell1Action.Enable();
-            _spell2Action.Enable();
-            _spell3Action.Enable();
-            _spell4Action.Enable();
+            foreach (var (action, _) in _spellBindings)
+                action.Enable();
 
-            Debug.Log("[PlayerController] Input actions created and enabled (WASD+Arrows move, LClick=fireball, RClick=slash, RCtrl=dash, 1-4=spells).");
+            Debug.Log($"[PlayerController] Input actions created: {_spellBindings.Count} spell bindings + move/look/attack/dash.");
+        }
+
+        private void AddSpellBinding(string binding, string spellKey)
+        {
+            var action = new InputAction($"Spell_{spellKey}", InputActionType.Button, binding);
+            _spellBindings.Add((action, spellKey));
         }
 
         private void OnDisable()
@@ -108,11 +143,10 @@ namespace Valkur.Gameplay
             _lookAction?.Disable();
             _primaryAttackAction?.Disable();
             _secondaryAttackAction?.Disable();
+            _middleClickAction?.Disable();
             _dashAction?.Disable();
-            _spell1Action?.Disable();
-            _spell2Action?.Disable();
-            _spell3Action?.Disable();
-            _spell4Action?.Disable();
+            foreach (var (action, _) in _spellBindings)
+                action?.Disable();
         }
 
         private void OnDestroy()
@@ -121,11 +155,11 @@ namespace Valkur.Gameplay
             _lookAction?.Dispose();
             _primaryAttackAction?.Dispose();
             _secondaryAttackAction?.Dispose();
+            _middleClickAction?.Dispose();
             _dashAction?.Dispose();
-            _spell1Action?.Dispose();
-            _spell2Action?.Dispose();
-            _spell3Action?.Dispose();
-            _spell4Action?.Dispose();
+            foreach (var (action, _) in _spellBindings)
+                action?.Dispose();
+            _spellBindings.Clear();
         }
 
         private void Update()
@@ -199,11 +233,18 @@ namespace Valkur.Gameplay
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
 
-            // Primary attack (left click) — fireball (spell slot 0)
+            // Primary attack (left click) — fireball via spell book
             if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
             {
                 if (!isDashing && _spellCaster != null)
-                    _spellCaster.TryCast(0, _facingDirection);
+                    _spellCaster.TryCastByKey("fireball", _facingDirection);
+            }
+
+            // Middle click — laser beam
+            if (_middleClickAction != null && _middleClickAction.WasPerformedThisFrame())
+            {
+                if (!isDashing && _spellCaster != null)
+                    _spellCaster.TryCastByKey("laser_beam", _facingDirection);
             }
 
             // Secondary attack (right click) — melee slash
@@ -213,24 +254,24 @@ namespace Valkur.Gameplay
                     _meleeCombat.TryAttack(_facingDirection);
             }
 
-            // Dash (right ctrl) — dash toward mouse facing direction
+            // Dash (ctrl/shift)
             if (_dashAction != null && _dashAction.WasPerformedThisFrame())
             {
                 if (_dashAbility != null)
                     _dashAbility.TryDash(_facingDirection);
             }
 
-            // Spell slots 1-4
+            // All spell key bindings (1-0, Q, E, R, T, F, G, C, V, X, P, L, U, M)
             if (!isDashing && _spellCaster != null)
             {
-                if (_spell1Action != null && _spell1Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(0, _facingDirection);
-                if (_spell2Action != null && _spell2Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(1, _facingDirection);
-                if (_spell3Action != null && _spell3Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(2, _facingDirection);
-                if (_spell4Action != null && _spell4Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(3, _facingDirection);
+                foreach (var (action, spellKey) in _spellBindings)
+                {
+                    if (action != null && action.WasPerformedThisFrame())
+                    {
+                        _spellCaster.TryCastByKey(spellKey, _facingDirection);
+                        break; // Only one spell per frame
+                    }
+                }
             }
         }
 

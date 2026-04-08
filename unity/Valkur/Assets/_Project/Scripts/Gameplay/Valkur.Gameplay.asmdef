@@ -4,6 +4,7 @@
     "references": [
         "Valkur.Core",
         "Valkur.Data",
+        "Valkur.Infrastructure",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Cinemachine",
