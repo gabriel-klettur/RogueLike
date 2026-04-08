@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4cde80846bb1324eb2127ca2a7c8e63, type: 3}
+  m_Name: LightPresetCatalog
+  m_EditorClassIdentifier: 
+  presets:
+  - {fileID: 11400000, guid: 03e17e0121da26d4f951419fac885ab3, type: 2}
+  - {fileID: 11400000, guid: bf6b0d4c74ec28547913106fe38ebc8c, type: 2}
+  - {fileID: 11400000, guid: c7e59859031a5a24197a4d0a6a1d6226, type: 2}

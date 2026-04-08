@@ -30,7 +30,7 @@ namespace Valkur.Gameplay.World
         [Header("Runtime")]
         [SerializeField] private string currentZone = "Lobby";
 
-        private readonly Dictionary<string, ZoneDefinition> _zoneMap = new Dictionary<string, ZoneDefinition>();
+        private readonly Dictionary<string, ZoneDefinition> _zoneMap = new Dictionary<string, ZoneDefinition>(StringComparer.OrdinalIgnoreCase);
         private Transform _playerTransform;
 
         public string CurrentZone => currentZone;
