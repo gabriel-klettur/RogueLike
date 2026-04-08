@@ -45,7 +45,9 @@ namespace Valkur.Editor
 
         // Drag-to-place preview state (world position of ghost under mouse)
         private Vector3 _ghostWorldPos;
+#pragma warning disable CS0414
         private bool    _ghostVisible;
+#pragma warning restore CS0414
 
         // â”€â”€ Menu item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

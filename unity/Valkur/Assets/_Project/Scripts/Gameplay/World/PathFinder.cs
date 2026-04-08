@@ -28,8 +28,10 @@ namespace Valkur.Gameplay.World
         [Tooltip("Maximum nodes expanded per search. Prevents freeze on huge open maps.")]
         [SerializeField] private int maxNodes = 2000;
 
+#pragma warning disable CS0414 // Serialized config field – used via Inspector
         [Tooltip("Maximum path length in tiles.")]
         [SerializeField] private int maxPathLength = 100;
+#pragma warning restore CS0414
 
         // Layers that block NPC movement: World(11) + Building(14)
         private static readonly int BlockingMask = (1 << 11) | (1 << 14);

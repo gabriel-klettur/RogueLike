@@ -10,6 +10,7 @@ namespace Valkur.Gameplay.MapEditor
 {
     public partial class MapEditorUI
     {
+        private void RebuildZonesList()
         {
             if (_zonesListContent == null) return;
 

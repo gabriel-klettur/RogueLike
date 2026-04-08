@@ -24,7 +24,6 @@ namespace Valkur.Gameplay.Spells
         private LineRenderer _lineRenderer;
         private Material _beamMaterial;
         private SpellContext _ctx;
-        private bool _running;
 
         /// <summary>Starts the beam coroutine. Call immediately after AddComponent.</summary>
         public void Begin(SpellContext ctx)
@@ -65,8 +64,6 @@ namespace Valkur.Gameplay.Spells
 
         private IEnumerator RunBeam()
         {
-            _running = true;
-
             float duration = _ctx.Spell.channelDuration > 0 ? _ctx.Spell.channelDuration : DEFAULT_DURATION;
             float range = _ctx.Spell.range > 0 ? _ctx.Spell.range : DEFAULT_RANGE;
             float beamHalfWidth = DEFAULT_BEAM_WIDTH * (_ctx.Spell.scale > 0 ? _ctx.Spell.scale : 1f);
@@ -145,7 +142,6 @@ namespace Valkur.Gameplay.Spells
                 yield return null;
             }
 
-            _running = false;
             Destroy(gameObject.GetComponentInChildren<LineRenderer>()?.gameObject);
             Destroy(this);
         }

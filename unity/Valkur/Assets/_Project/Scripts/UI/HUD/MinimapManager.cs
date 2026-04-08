@@ -31,7 +31,9 @@ namespace Valkur.UI.HUD
 
         [Header("Rate Limits")]
         [Tooltip("How often (seconds) the background tile layer redraws.")]
+#pragma warning disable CS0414
         [SerializeField] private float tileRedrawInterval = 0.5f;
+#pragma warning restore CS0414
 
         [Header("Dot sizes (pixels)")]
         [SerializeField] private int playerDotSize  = 3;
@@ -54,7 +56,9 @@ namespace Valkur.UI.HUD
         // ── Runtime state ─────────────────────────────────────────────────
         private Texture2D _tex;
         private Color[] _bgPixels;          // pre-filled background row
+#pragma warning disable CS0414
         private float _lastTileRedraw = -99f;
+#pragma warning restore CS0414
         private Transform _playerTransform;
 
         // ── Lifecycle ─────────────────────────────────────────────────────

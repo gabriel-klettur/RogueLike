@@ -226,6 +226,5 @@ namespace Valkur.Gameplay.MapEditor
                 _deleteZoneDialog.SetActive(false);
         }
 
-        private void RebuildZonesList()
     }
 }
