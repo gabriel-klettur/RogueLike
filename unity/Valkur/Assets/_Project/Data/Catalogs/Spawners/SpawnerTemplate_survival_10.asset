@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0386b5d6c08627a428e4f1067210b32c, type: 3}
+  m_Name: SpawnerTemplate_survival_10
+  m_EditorClassIdentifier: 
+  templateId: survival_10
+  spawnerType: 0
+  spawnerShape: 0
+  spawnRadius: 20
+  randomSpawnRadius: 0
+  defendSpawn: 1
+  defendLeash: 1
+  visibleInGame: 1
+  triggerType: 0
+  triggerRadius: 10
+  autoStart: 1
+  spawnMode: 0
+  cooldownSeconds: 1
+  proximityInitialOnly: 1
+  betweenWavesCooldownSeconds: 5
+  maxActive: 0
+  persistent: 0
+  restartOnDone: 0
+  restartCooldownSeconds: 0
+  wavesId: waves_survival_10
+  waves: []
+  damageable: 0
+  maxHp: 1000
+  flashOnHit: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDurationSeconds: 0.08
+  hpResetOnEnter: set_to_max

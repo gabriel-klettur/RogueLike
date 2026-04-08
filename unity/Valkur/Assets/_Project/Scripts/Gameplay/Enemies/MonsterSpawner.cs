@@ -19,11 +19,15 @@ namespace Valkur.Gameplay
         [Header("Prefab")]
         [SerializeField] private GameObject monsterPrefab;
 
+        [Header("Monster Catalog")]
+        [Tooltip("Catalog of all MonsterDefinition SOs for runtime lookup.")]
+        [SerializeField] private MonsterCatalog _monsterCatalog;
+
         [Header("Spawn Config")]
 #pragma warning disable CS0414
         [SerializeField] private float spawnRadius = 15f;
 #pragma warning restore CS0414
-        [SerializeField] private float despawnRadius = 25f;
+        [SerializeField] private float despawnRadius = 100f;
 #pragma warning disable CS0414
         [SerializeField] private float minSpawnDistance = 8f;
 #pragma warning restore CS0414
@@ -39,6 +43,31 @@ namespace Valkur.Gameplay
         {
             public MonsterDefinition Definition;
             public Vector2 Position;
+        }
+
+        /// <summary>
+        /// Wire the monster prefab and catalog from code (e.g. GameplaySceneSetup).
+        /// </summary>
+        public void Initialize(GameObject prefab, MonsterCatalog catalog = null)
+        {
+            monsterPrefab = prefab;
+            if (catalog != null) _monsterCatalog = catalog;
+        }
+
+        /// <summary>
+        /// Look up a MonsterDefinition by key. Returns null if not found.
+        /// </summary>
+        public MonsterDefinition GetDefinition(string monsterKey)
+        {
+            if (_monsterCatalog == null)
+            {
+                Debug.LogWarning($"[MonsterSpawner] GetDefinition('{monsterKey}'): catalog is null!");
+                return null;
+            }
+            var result = _monsterCatalog.GetByKey(monsterKey);
+            if (result == null)
+                Debug.LogWarning($"[MonsterSpawner] GetDefinition('{monsterKey}'): not found in catalog.");
+            return result;
         }
 
         private void Update()
@@ -59,6 +88,21 @@ namespace Valkur.Gameplay
         public void RequestSpawn(MonsterDefinition def, Vector2 position)
         {
             _spawnQueue.Enqueue(new SpawnRequest { Definition = def, Position = position });
+        }
+
+        /// <summary>
+        /// Immediately spawn a single entity and return it.
+        /// Used by SpawnerInstance to track active entities.
+        /// </summary>
+        public GameObject SpawnEntity(MonsterDefinition def, Vector2 position)
+        {
+            if (monsterPrefab == null) return null;
+
+            var go = Instantiate(monsterPrefab, position, Quaternion.identity);
+            EntitySetup.ConfigureMonster(go, def);
+
+            _activeMonsters.Add(go);
+            return go;
         }
 
         /// <summary>
@@ -103,11 +147,7 @@ namespace Valkur.Gameplay
             if (monsterPrefab == null) return;
 
             var go = Instantiate(monsterPrefab, req.Position, Quaternion.identity);
-
-            // Initialize FSMMonsterBrain
-            var brain = go.GetComponent<FSMMonsterBrain>();
-            if (brain != null)
-                brain.Initialize(req.Definition);
+            EntitySetup.ConfigureMonster(go, req.Definition);
 
             _activeMonsters.Add(go);
         }

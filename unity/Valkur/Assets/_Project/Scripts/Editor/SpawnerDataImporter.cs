@@ -18,6 +18,7 @@ namespace Valkur.Editor
     public static class SpawnerDataImporter
     {
         private const string TEMPLATES_JSON = "python/data/spawners/spawners_templates.json";
+        private const string WAVES_JSON = "python/data/spawners/spawners_waves.json";
         private const string INSTANCES_JSON = "python/data/worlds/base/spawners/spawners_instances.json";
         private const string SO_OUTPUT = "Assets/_Project/Data/Catalogs/Spawners";
         private const string CATALOG_PATH = "Assets/_Project/Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset";
@@ -37,11 +38,36 @@ namespace Valkur.Editor
             EnsureDirectory(SO_OUTPUT);
 
             string json = File.ReadAllText(templatesFile);
-            var rawList = EditorMiniJson.Deserialize(json) as List<object>;
+            var rawList = MiniJson.Deserialize(json) as List<object>;
             if (rawList == null)
             {
                 Debug.LogWarning("[SpawnerDataImporter] Failed to parse templates JSON (expected array).");
                 return;
+            }
+
+            Debug.Log($"[SpawnerDataImporter] Parsed {rawList.Count} template entries from JSON.");
+
+            // Load external waves catalog
+            string wavesFile = Path.Combine(projectRoot, WAVES_JSON);
+            Dictionary<string, List<object>> externalWaves = null;
+            if (File.Exists(wavesFile))
+            {
+                string wavesJson = File.ReadAllText(wavesFile);
+                var wavesRoot = MiniJson.Deserialize(wavesJson) as Dictionary<string, object>;
+                if (wavesRoot != null)
+                {
+                    externalWaves = new Dictionary<string, List<object>>();
+                    foreach (var kv in wavesRoot)
+                    {
+                        if (kv.Value is List<object> wList)
+                            externalWaves[kv.Key] = wList;
+                        else if (kv.Value is Dictionary<string, object> envelope
+                                 && envelope.TryGetValue("waves", out var inner)
+                                 && inner is List<object> innerList)
+                            externalWaves[kv.Key] = innerList;
+                    }
+                    Debug.Log($"[SpawnerDataImporter] Loaded {externalWaves.Count} external wave definitions.");
+                }
             }
 
             // Load or create catalog
@@ -57,11 +83,24 @@ namespace Valkur.Editor
             {
                 if (item is Dictionary<string, object> dict)
                 {
-                    var so = ImportOneTemplate(dict);
-                    if (so != null)
+                    try
                     {
-                        catalog.UpsertTemplate(so);
-                        count++;
+                        var so = ImportOneTemplate(dict, externalWaves);
+                        if (so != null)
+                        {
+                            catalog.UpsertTemplate(so);
+                            count++;
+                        }
+                        else
+                        {
+                            string failId = dict.TryGetValue("id", out var idv) ? idv?.ToString() : "?";
+                            Debug.LogWarning($"[SpawnerDataImporter] ImportOneTemplate returned null for '{failId}'");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        string failId = dict.TryGetValue("id", out var idv) ? idv?.ToString() : "?";
+                        Debug.LogError($"[SpawnerDataImporter] Failed to import template '{failId}': {ex}");
                     }
                 }
             }
@@ -94,7 +133,8 @@ namespace Valkur.Editor
             Debug.Log("[SpawnerDataImporter] Copied spawner instances to StreamingAssets/Spawners/.");
         }
 
-        private static SpawnerTemplateData ImportOneTemplate(Dictionary<string, object> dict)
+        private static SpawnerTemplateData ImportOneTemplate(Dictionary<string, object> dict,
+            Dictionary<string, List<object>> externalWaves)
         {
             string id = GetString(dict, "id");
             if (string.IsNullOrEmpty(id)) return null;
@@ -110,7 +150,19 @@ namespace Valkur.Editor
             so.templateId = id;
             so.spawnerType = GetString(dict, "spawner_type") == "visual" ? SpawnerType.Visual : SpawnerType.Invisible;
             so.spawnerShape = GetString(dict, "spawner_shape") == "circle" ? SpawnerShape.Circle : SpawnerShape.Square;
-            so.spawnRadius = GetInt(dict, "spawn_radius", 20);
+
+            // spawn_radius can be an integer or the string "random"
+            if (dict.TryGetValue("spawn_radius", out var srVal) && srVal is string srStr && srStr == "random")
+            {
+                so.randomSpawnRadius = true;
+                so.spawnRadius = 20; // default fallback
+            }
+            else
+            {
+                so.randomSpawnRadius = false;
+                so.spawnRadius = GetInt(dict, "spawn_radius", 20);
+            }
+
             so.defendSpawn = GetBool(dict, "defend_spawn", true);
             so.defendLeash = GetBool(dict, "defend_leash", true);
             so.visibleInGame = GetBool(dict, "visible_in_game");
@@ -130,14 +182,38 @@ namespace Valkur.Editor
                 so.cooldownSeconds = GetFloat(pol, "cooldown_s", 1f);
                 so.proximityInitialOnly = GetBool(pol, "proximity_initial_only", true);
                 so.betweenWavesCooldownSeconds = GetFloat(pol, "between_waves_cooldown_s", 5f);
+                so.advanceOn = GetString(pol, "advance_on", "clear") == "cooldown" ? AdvanceOn.Cooldown : AdvanceOn.Clear;
                 so.maxActive = GetInt(pol, "max_active");
                 so.persistent = GetBool(pol, "persistent");
                 so.restartOnDone = GetBool(pol, "restart_on_done");
+                so.restartCooldownSeconds = GetFloat(pol, "restart_cooldown_s", 0f);
             }
 
-            // Waves (inline)
+            // Waves — resolve waves_id first, then fall back to inline
             so.waves = new List<WaveDefinition>();
-            if (dict.TryGetValue("waves", out var wavesObj) && wavesObj is List<object> wavesList)
+            string wavesIdStr = GetString(dict, "waves_id");
+            if (!string.IsNullOrEmpty(wavesIdStr))
+            {
+                so.wavesId = wavesIdStr;
+                if (externalWaves != null && externalWaves.TryGetValue(wavesIdStr, out var extWavesList))
+                {
+                    foreach (var waveItem in extWavesList)
+                    {
+                        if (waveItem is Dictionary<string, object> waveDict)
+                        {
+                            var waveDef = ParseWave(waveDict);
+                            if (waveDef != null)
+                                so.waves.Add(waveDef);
+                        }
+                    }
+                    Debug.Log($"[SpawnerDataImporter] Resolved waves_id '{wavesIdStr}' → {so.waves.Count} waves for '{so.templateId}'.");
+                }
+                else
+                {
+                    Debug.LogWarning($"[SpawnerDataImporter] waves_id '{wavesIdStr}' not found in external catalog for '{so.templateId}'.");
+                }
+            }
+            else if (dict.TryGetValue("waves", out var wavesObj) && wavesObj is List<object> wavesList)
             {
                 foreach (var waveItem in wavesList)
                 {
@@ -148,10 +224,6 @@ namespace Valkur.Editor
                             so.waves.Add(waveDef);
                     }
                 }
-            }
-            else if (dict.TryGetValue("waves_id", out var wid) && wid is string wavesIdStr)
-            {
-                so.wavesId = wavesIdStr;
             }
 
             EditorUtility.SetDirty(so);
@@ -216,133 +288,6 @@ namespace Valkur.Editor
         {
             if (d.TryGetValue(key, out var v) && v is bool b) return b;
             return fallback;
-        }
-    }
-
-    /// <summary>
-    /// Minimal JSON runtime deserializer for editor importers.
-    /// Separate from Valkur.Gameplay.World.MiniJsonRuntime to avoid assembly coupling.
-    /// </summary>
-    internal static class EditorMiniJson
-    {
-        public static object Deserialize(string json)
-        {
-            if (string.IsNullOrEmpty(json)) return null;
-            int index = 0;
-            return ParseValue(json, ref index);
-        }
-
-        private static object ParseValue(string json, ref int index)
-        {
-            SkipWhitespace(json, ref index);
-            if (index >= json.Length) return null;
-            char c = json[index];
-            if (c == '{') return ParseObject(json, ref index);
-            if (c == '[') return ParseArray(json, ref index);
-            if (c == '"') return ParseString(json, ref index);
-            if (c == 't' || c == 'f') return ParseBool(json, ref index);
-            if (c == 'n') { index += 4; return null; }
-            return ParseNumber(json, ref index);
-        }
-
-        private static Dictionary<string, object> ParseObject(string json, ref int index)
-        {
-            var dict = new Dictionary<string, object>();
-            index++;
-            while (index < json.Length)
-            {
-                SkipWhitespace(json, ref index);
-                if (json[index] == '}') { index++; return dict; }
-                if (json[index] == ',') { index++; continue; }
-                string key = ParseString(json, ref index);
-                SkipWhitespace(json, ref index);
-                index++;
-                object value = ParseValue(json, ref index);
-                dict[key] = value;
-            }
-            return dict;
-        }
-
-        private static List<object> ParseArray(string json, ref int index)
-        {
-            var list = new List<object>();
-            index++;
-            while (index < json.Length)
-            {
-                SkipWhitespace(json, ref index);
-                if (json[index] == ']') { index++; return list; }
-                if (json[index] == ',') { index++; continue; }
-                list.Add(ParseValue(json, ref index));
-            }
-            return list;
-        }
-
-        private static string ParseString(string json, ref int index)
-        {
-            index++;
-            var sb = new System.Text.StringBuilder();
-            while (index < json.Length)
-            {
-                char c = json[index++];
-                if (c == '"') return sb.ToString();
-                if (c == '\\' && index < json.Length)
-                {
-                    char next = json[index++];
-                    switch (next)
-                    {
-                        case '"': sb.Append('"'); break;
-                        case '\\': sb.Append('\\'); break;
-                        case '/': sb.Append('/'); break;
-                        case 'n': sb.Append('\n'); break;
-                        case 'r': sb.Append('\r'); break;
-                        case 't': sb.Append('\t'); break;
-                        case 'u':
-                            if (index + 4 <= json.Length)
-                            {
-                                string hex = json.Substring(index, 4);
-                                sb.Append((char)Convert.ToInt32(hex, 16));
-                                index += 4;
-                            }
-                            break;
-                        default: sb.Append(next); break;
-                    }
-                }
-                else
-                {
-                    sb.Append(c);
-                }
-            }
-            return sb.ToString();
-        }
-
-        private static object ParseNumber(string json, ref int index)
-        {
-            int start = index;
-            while (index < json.Length && "0123456789.eE+-".IndexOf(json[index]) >= 0) index++;
-            string num = json.Substring(start, index - start);
-            if (num.Contains(".") || num.Contains("e") || num.Contains("E"))
-            {
-                if (double.TryParse(num, System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out double d))
-                    return d;
-            }
-            else
-            {
-                if (long.TryParse(num, out long l)) return l;
-            }
-            return 0;
-        }
-
-        private static bool ParseBool(string json, ref int index)
-        {
-            if (json[index] == 't') { index += 4; return true; }
-            index += 5;
-            return false;
-        }
-
-        private static void SkipWhitespace(string json, ref int index)
-        {
-            while (index < json.Length && char.IsWhiteSpace(json[index])) index++;
         }
     }
 }

@@ -84,6 +84,9 @@ namespace Valkur.Gameplay.Spawners
                 case SpawnerState.Active:
                     UpdateActive();
                     break;
+                case SpawnerState.WaitClear:
+                    UpdateWaitClear();
+                    break;
                 case SpawnerState.WaveCooldown:
                     UpdateWaveCooldown();
                     break;
@@ -146,6 +149,18 @@ namespace Valkur.Gameplay.Spawners
             }
 
             _cooldownTimer = _template.cooldownSeconds;
+
+            // For "clear" mode, wait for all entities to die before advancing
+            if (_template.advanceOn == AdvanceOn.Clear)
+                _state = SpawnerState.WaitClear;
+            else
+                AdvanceWave();
+        }
+
+        private void UpdateWaitClear()
+        {
+            // Wait until all active entities from this wave are dead
+            if (_activeEntities.Count > 0) return;
             AdvanceWave();
         }
 
@@ -155,6 +170,7 @@ namespace Valkur.Gameplay.Spawners
             if (_currentWaveIndex >= (_template.waves?.Count ?? 0))
             {
                 _state = SpawnerState.Done;
+                _cooldownTimer = _template.restartCooldownSeconds;
             }
             else
             {
@@ -172,26 +188,41 @@ namespace Valkur.Gameplay.Spawners
 
         private void UpdateDone()
         {
-            if (_template != null && _template.restartOnDone && _activeEntities.Count == 0)
+            if (_template == null || !_template.restartOnDone) return;
+
+            // Wait for all spawned entities to die before restarting
+            if (_activeEntities.Count > 0) return;
+
+            // Apply restart cooldown
+            if (_template.restartCooldownSeconds > 0f)
             {
-                _currentWaveIndex = 0;
-                _state = SpawnerState.Active;
+                _cooldownTimer -= Time.deltaTime;
+                if (_cooldownTimer > 0f) return;
             }
+
+            _currentWaveIndex = 0;
+            _cooldownTimer = _template.restartCooldownSeconds;
+            _state = SpawnerState.Active;
         }
 
         private void SpawnWaveEntry(WaveSpawnEntry entry)
         {
             if (_monsterSpawner == null || string.IsNullOrEmpty(entry.entityId)) return;
 
-            // Look up MonsterDefinition by key
-            var monsterDef = Resources.Load<MonsterDefinition>($"Monsters/{entry.entityId}");
+            var monsterDef = _monsterSpawner.GetDefinition(entry.entityId);
             if (monsterDef == null)
             {
                 Debug.LogWarning($"[SpawnerInstance] Monster definition '{entry.entityId}' not found for spawner '{_instanceId}'.");
                 return;
             }
 
-            _monsterSpawner.RequestSpawnBatch(monsterDef, entry.count, transform.position, entry.spreadRadius);
+            for (int i = 0; i < entry.count; i++)
+            {
+                Vector2 offset = entry.spreadRadius > 0 ? Random.insideUnitCircle * entry.spreadRadius : Vector2.zero;
+                var go = _monsterSpawner.SpawnEntity(monsterDef, (Vector2)transform.position + offset);
+                if (go != null)
+                    _activeEntities.Add(go);
+            }
         }
 
         private void CleanupDeadEntities()
@@ -239,6 +270,7 @@ namespace Valkur.Gameplay.Spawners
     {
         Idle,
         Active,
+        WaitClear,
         WaveCooldown,
         Done
     }

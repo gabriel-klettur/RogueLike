@@ -37,6 +37,19 @@ namespace Valkur.Gameplay.Spawners
         private readonly List<SpawnerInstance> _instances = new List<SpawnerInstance>();
         public IReadOnlyList<SpawnerInstance> Instances => _instances;
 
+        // ── Programmatic setup ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Wire references from code (e.g. GameplaySceneSetup) and disable auto-load
+        /// so the caller can invoke <see cref="LoadInstances"/> at the right time.
+        /// </summary>
+        public void Initialize(SpawnerTemplateCatalog catalog, MonsterSpawner monsterSpawner)
+        {
+            _catalog         = catalog;
+            _monsterSpawner  = monsterSpawner;
+            _autoLoad        = false;
+        }
+
         private void Start()
         {
             if (_autoLoad)

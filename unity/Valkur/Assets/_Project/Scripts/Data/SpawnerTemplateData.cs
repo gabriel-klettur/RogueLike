@@ -23,8 +23,11 @@ namespace Valkur.Data
         public SpawnerShape spawnerShape = SpawnerShape.Square;
 
         [Header("Spawn Area")]
-        [Tooltip("Radius in tiles for the spawn area.")]
+        [Tooltip("Radius in tiles for the spawn area. Ignored when randomSpawnRadius is true.")]
         public int spawnRadius = 20;
+
+        [Tooltip("When true, spawn radius is randomised at runtime (Python value: 'random').")]
+        public bool randomSpawnRadius;
 
         [Tooltip("If true, spawned entities will defend the spawn point.")]
         public bool defendSpawn = true;
@@ -58,6 +61,9 @@ namespace Valkur.Data
         [Tooltip("Cooldown between waves in seconds.")]
         public float betweenWavesCooldownSeconds = 5f;
 
+        [Tooltip("When to advance to the next wave: Clear (all entities dead) or Cooldown (timer only).")]
+        public AdvanceOn advanceOn = AdvanceOn.Clear;
+
         [Tooltip("Maximum simultaneously active entities. 0 = unlimited.")]
         public int maxActive;
 
@@ -66,6 +72,9 @@ namespace Valkur.Data
 
         [Tooltip("If true, restart wave cycle when all waves are completed.")]
         public bool restartOnDone;
+
+        [Tooltip("Cooldown in seconds before the spawner restarts after completing all waves.")]
+        public float restartCooldownSeconds;
 
         [Header("Waves")]
         [Tooltip("Wave ID for external wave lookup, or use inline waves below.")]
@@ -105,6 +114,12 @@ namespace Valkur.Data
     {
         Periodic,
         Burst
+    }
+
+    public enum AdvanceOn
+    {
+        Clear,
+        Cooldown
     }
 
     [Serializable]

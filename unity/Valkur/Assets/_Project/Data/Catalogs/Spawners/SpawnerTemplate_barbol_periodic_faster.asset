@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0386b5d6c08627a428e4f1067210b32c, type: 3}
+  m_Name: SpawnerTemplate_barbol_periodic_faster
+  m_EditorClassIdentifier: 
+  templateId: barbol_periodic_faster
+  spawnerType: 0
+  spawnerShape: 1
+  spawnRadius: 0
+  randomSpawnRadius: 0
+  defendSpawn: 0
+  defendLeash: 1
+  visibleInGame: 0
+  triggerType: 0
+  triggerRadius: 6
+  autoStart: 1
+  spawnMode: 0
+  cooldownSeconds: 1
+  proximityInitialOnly: 1
+  betweenWavesCooldownSeconds: 5
+  maxActive: 0
+  persistent: 0
+  restartOnDone: 1
+  restartCooldownSeconds: 0
+  wavesId: 
+  waves:
+  - spawns:
+    - kind: monster
+      entityId: barbol
+      count: 1
+      spreadRadius: 2
+      spreadFallbackMax: 12
+      minDistance: 24
+  damageable: 0
+  maxHp: 1000
+  flashOnHit: 1
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDurationSeconds: 0.08
+  hpResetOnEnter: set_to_max
