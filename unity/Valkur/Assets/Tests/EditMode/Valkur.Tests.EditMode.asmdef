@@ -5,7 +5,10 @@
         "Valkur.Core",
         "Valkur.Gameplay",
         "Valkur.Data",
-        "Valkur.Infrastructure"
+        "Valkur.Infrastructure",
+        "Valkur.UI",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

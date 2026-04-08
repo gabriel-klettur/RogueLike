@@ -6,7 +6,11 @@
         "Valkur.Gameplay",
         "Valkur.Data",
         "Valkur.Infrastructure",
-        "Valkur.UI"
+        "Valkur.UI",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
