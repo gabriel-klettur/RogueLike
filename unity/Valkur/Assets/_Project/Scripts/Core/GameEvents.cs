@@ -42,6 +42,9 @@ namespace Valkur.Core
         /// <summary>Item picked up. Args: (collector, itemName, quantity)</summary>
         public static event Action<GameObject, string, int> OnItemPickedUp;
 
+        /// <summary>Item consumed (used from inventory). Args: (consumer, itemId)</summary>
+        public static event Action<GameObject, string> OnItemConsumed;
+
         // ── Fire Methods ──
 
         public static void FireEntityDamaged(GameObject victim, GameObject attacker, int amount)
@@ -84,6 +87,11 @@ namespace Valkur.Core
             OnItemPickedUp?.Invoke(collector, itemName, quantity);
         }
 
+        public static void FireItemConsumed(GameObject consumer, string itemId)
+        {
+            OnItemConsumed?.Invoke(consumer, itemId);
+        }
+
         /// <summary>
         /// Clear all subscribers. Call on scene unload or domain reload to prevent leaks.
         /// </summary>
@@ -97,6 +105,7 @@ namespace Valkur.Core
             OnXpGained = null;
             OnLevelUp = null;
             OnItemPickedUp = null;
+            OnItemConsumed = null;
         }
     }
 }

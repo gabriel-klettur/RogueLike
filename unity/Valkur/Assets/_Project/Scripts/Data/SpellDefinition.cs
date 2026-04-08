@@ -20,7 +20,16 @@ namespace Valkur.Data
         Trap,
         Shield,
         Boomerang,
-        Meteor
+        Meteor,
+        Lightning,
+        ChainLightning,
+        Aura,
+        ArcaneFlame,
+        FireworkLaunch,
+        SmokeEmitter,
+        SphereMagicShield,
+        Puddle,
+        Mine,
     }
 
     /// <summary>
