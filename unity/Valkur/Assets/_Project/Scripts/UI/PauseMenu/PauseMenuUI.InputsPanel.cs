@@ -35,14 +35,21 @@ namespace Valkur.UI.PauseMenu
                 tR.anchoredPosition = new Vector2(0f, -52f);
                 tR.sizeDelta = new Vector2(0f, 36f);
                 var img = tGo.AddComponent<Image>(); img.color = new Color(0.14f, 0.14f, 0.18f, 1f);
-                var tmp = tGo.AddComponent<TextMeshProUGUI>();
-                tmp.text = tabs[t]; tmp.fontSize = 18f;
-                tmp.alignment = TextAlignmentOptions.Center; tmp.color = TextNormal;
-                _tabLabels[t] = tmp;
 
                 int cap = t;
                 var btn = tGo.AddComponent<Button>(); btn.targetGraphic = img;
                 btn.onClick.AddListener(() => { _inputsTabSel = cap; UpdateInputsPanel(); });
+
+                // Text as child GO (Image + TMP on same GO causes NPE)
+                var txtGo = CreateUIObject($"TabLabel_{t}", tGo.transform);
+                var txtR  = txtGo.GetComponent<RectTransform>();
+                txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
+                txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
+                var tmp = txtGo.AddComponent<TextMeshProUGUI>();
+                tmp.text = tabs[t]; tmp.fontSize = 18f;
+                tmp.alignment = TextAlignmentOptions.Center; tmp.color = TextNormal;
+                tmp.raycastTarget = false;
+                _tabLabels[t] = tmp;
             }
 
             var gs = GameSettings.Instance;

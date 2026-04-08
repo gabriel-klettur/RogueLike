@@ -56,21 +56,32 @@ namespace Valkur.UI.MainMenu
             {
                 case "Continuar":    ContinueGame();      break;
                 case "Nuevo juego":  OpenClassSelector();  break;
-                case "Cargar juego": Debug.Log("[MainMenu] Cargar juego - not yet implemented"); break;
-                case "Opciones":     Debug.Log("[MainMenu] Opciones - not yet implemented");     break;
+                case "Cargar juego": ShowMenuScreen(MenuScreen.LoadGame); break;
+                case "Opciones":     ShowMenuScreen(MenuScreen.Options); break;
                 case "Salir":        QuitGame();           break;
             }
         }
 
         private void ContinueGame()
         {
-            Debug.Log("[MainMenu] Continuing most recent save...");
+            var saves = SaveFileManager.ListSaves();
+            if (saves.Count > 0)
+            {
+                PendingSaveLoad.Path = saves[0].path;
+                Debug.Log($"[MainMenu] Continuing most recent save: {saves[0].fileName}");
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenu] No saves found for Continue.");
+            }
+            TransitionAudioToGame();
             SceneTransitionManager.LoadScene(gameplaySceneName);
         }
 
         private void StartNewGame()
         {
             Debug.Log("[MainMenu] Starting new game...");
+            TransitionAudioToGame();
             SceneTransitionManager.LoadScene(gameplaySceneName);
         }
 
@@ -157,6 +168,13 @@ namespace Valkur.UI.MainMenu
             PlayerSelectionState.SetSelectedPlayer(_classKeys[_selectedClassIndex]);
             CloseClassSelector();
             StartNewGame();
+        }
+
+        private void TransitionAudioToGame()
+        {
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio == null) return;
+            audio.TransitionMenuToGame();
         }
     }
 }

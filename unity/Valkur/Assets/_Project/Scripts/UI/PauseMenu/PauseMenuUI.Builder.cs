@@ -29,6 +29,7 @@ namespace Valkur.UI.PauseMenu
                 _optOptions, out _optPills, out _optBars, out _optTexts);
             _soundsPanel = BuildSoundsPanel(_overlayRoot.transform);
             _inputsPanel = BuildInputsPanel(_overlayRoot.transform);
+            _loadGamePanel = BuildLoadGamePanel(_overlayRoot.transform);
 
             // Pause panel: shell only – rows are rebuilt dynamically via RebuildPausePanelRows
             _pausePanel = CreateUIObject("PausadoPanel", _overlayRoot.transform);
@@ -200,10 +201,15 @@ namespace Valkur.UI.PauseMenu
             img.color = new Color(0.22f, 0.22f, 0.28f, 1f);
             var btn = go.AddComponent<Button>(); btn.targetGraphic = img;
             btn.onClick.AddListener(action);
-            var tmp = go.AddComponent<TextMeshProUGUI>();
+            var txtGo = CreateUIObject("Label", go.transform);
+            var txtR  = txtGo.GetComponent<RectTransform>();
+            txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
+            txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
+            var tmp = txtGo.AddComponent<TextMeshProUGUI>();
             tmp.text = label; tmp.fontSize = 20f;
             tmp.alignment = TextAlignmentOptions.Center; tmp.color = AccentGold;
             tmp.fontStyle = FontStyles.Bold;
+            tmp.raycastTarget = false;
         }
 
         private void AddTableCell(Transform parent, string text, TextAlignmentOptions align,

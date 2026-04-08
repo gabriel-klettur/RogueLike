@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Infrastructure;
 using Valkur.Gameplay.Save;
 
 namespace Valkur.UI.MainMenu
@@ -102,14 +103,24 @@ namespace Valkur.UI.MainMenu
         {
             SetupInputActions();
             EnsureCamera();
+            EnsureAudioManager();
             BuildMenuOptions();
             BuildUI();
+            PlayMenuMusic();
         }
 
         private void Update()
         {
+            if (HandlePressToStart()) return;
             if (_showingClassSelector) { HandleClassSelectorInput(); return; }
-            HandleKeyboardNavigation();
+            switch (_menuScreen)
+            {
+                case MenuScreen.Main:     HandleKeyboardNavigation(); break;
+                case MenuScreen.Options:  HandleOptionsListInput();   break;
+                case MenuScreen.Sounds:   HandleOptionsSoundsInput(); break;
+                case MenuScreen.Inputs:   HandleOptionsInputsInput(); break;
+                case MenuScreen.LoadGame: HandleMMLoadInput();        break;
+            }
         }
 
         private void OnDestroy()
@@ -137,6 +148,30 @@ namespace Valkur.UI.MainMenu
             cam.depth = -1f;
             camGo.tag = "MainCamera";
             camGo.AddComponent<AudioListener>();
+        }
+
+        private void EnsureAudioManager()
+        {
+            if (ServiceLocator.Get<IAudioService>() != null) return;
+
+            var catalogAsset = Resources.Load<AudioCatalogSO>("AudioCatalog");
+            if (catalogAsset == null)
+            {
+                Debug.LogWarning("[MainMenuUI] AudioCatalog not found in Resources/ — menu music skipped.");
+                return;
+            }
+
+            var go = new GameObject("AudioManager");
+            var mgr = go.AddComponent<AudioManager>();
+            mgr.SetCatalog(catalogAsset);
+            Debug.Log("[MainMenuUI] AudioManager bootstrapped for menu.");
+        }
+
+        private void PlayMenuMusic()
+        {
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio == null) return;
+            audio.PlayMenuMusic();
         }
 
         private void BuildMenuOptions()

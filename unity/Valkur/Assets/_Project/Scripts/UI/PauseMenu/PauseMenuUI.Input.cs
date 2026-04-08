@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Valkur.Core;
 
 namespace Valkur.UI.PauseMenu
 {
@@ -56,11 +57,13 @@ namespace Valkur.UI.PauseMenu
             float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
             row.set(v);
             RefreshSoundRowText(i);
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
         }
 
         private void SaveAndBack()
         {
             Valkur.Core.GameSettings.Instance?.Save();
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
             GoBack();
         }
 

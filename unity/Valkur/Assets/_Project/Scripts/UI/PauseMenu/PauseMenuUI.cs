@@ -59,7 +59,7 @@ namespace Valkur.UI.PauseMenu
         private const string MAIN_SCENE = "MainMenu";
 
         // ── State ─────────────────────────────────────────────────────────────
-        private enum PauseScreen { None, Pause, Options, Sounds, Inputs }
+        private enum PauseScreen { None, Pause, Options, Sounds, Inputs, LoadGame }
         private PauseScreen _screen = PauseScreen.None;
 
         // ── UI roots ─────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ namespace Valkur.UI.PauseMenu
         private GameObject _optionsPanel;
         private GameObject _soundsPanel;
         private GameObject _inputsPanel;
+        private GameObject _loadGamePanel;
 
         // ── Pause panel ───────────────────────────────────────────────────────
         private string[] _pauseOptions;
@@ -106,6 +107,16 @@ namespace Valkur.UI.PauseMenu
 #pragma warning restore CS0414
         private TextMeshProUGUI[] _tabLabels;
 
+        // ── Load game panel ──────────────────────────────────────────────────
+        private List<SaveSlotInfo> _loadSaves = new List<SaveSlotInfo>();
+        private int _loadSel;
+        private Image[] _loadPills;
+        private Image[] _loadBars;
+        private TextMeshProUGUI[] _loadTexts;
+        private TextMeshProUGUI _loadDetailText;
+        private int _loadScrollOffset;
+        private const int LOAD_VISIBLE_ROWS = 8;
+
         // ── Input actions ────────────────────────────────────────────────────
         private InputAction _pauseAction;
         private InputAction _navUp;
@@ -129,22 +140,54 @@ namespace Valkur.UI.PauseMenu
         private void Start()
         {
             SetupInputActions();
-            BuildCanvas();
+            try
+            {
+                BuildCanvas();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[PauseMenuUI] BuildCanvas failed: {e}");
+            }
             HideAll();
         }
 
         private void Update()
         {
-            if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
-                TogglePause();
+            // ESC when menu is closed → open pause; don't fall through to
+            // sub-screen input this frame (_cancel also binds ESC and would
+            // immediately close the menu again).
+            if (_screen == PauseScreen.None)
+            {
+                if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+                    OpenPause();
+                return;
+            }
 
+            // Menu is open – sub-screen input handles ESC via _cancel → GoBack()
             switch (_screen)
             {
-                case PauseScreen.Pause:   HandleListInput(_pauseOptions.Length, ref _pauseSel, _pausePills, _pauseBars, _pauseTexts, ExecutePause); break;
+                case PauseScreen.Pause:   HandlePauseListInput(); break;
                 case PauseScreen.Options: HandleListInput(_optOptions.Length,   ref _optSel,   _optPills,   _optBars,   _optTexts,   ExecuteOption); break;
                 case PauseScreen.Sounds:  HandleSoundsInput();  break;
                 case PauseScreen.Inputs:  HandleInputsTabInput(); break;
+                case PauseScreen.LoadGame: HandleLoadGameInput(); break;
             }
+        }
+
+        /// <summary>
+        /// Pause screen handles ESC directly via _pauseAction (not _cancel)
+        /// so that ESC closes the menu cleanly from the top-level list.
+        /// </summary>
+        private void HandlePauseListInput()
+        {
+            if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+            { ClosePause(); return; }
+            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            { _pauseSel = (_pauseSel - 1 + _pauseOptions.Length) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
+            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            { _pauseSel = (_pauseSel + 1) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
+            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            { ExecutePause(_pauseSel); }
         }
 
         private void OnDestroy()
@@ -190,16 +233,18 @@ namespace Valkur.UI.PauseMenu
         private void ShowScreen(PauseScreen s)
         {
             _screen = s;
-            _overlayRoot.SetActive(s != PauseScreen.None);
-            _pausePanel.SetActive(s == PauseScreen.Pause);
-            _optionsPanel.SetActive(s == PauseScreen.Options);
-            _soundsPanel.SetActive(s == PauseScreen.Sounds);
-            _inputsPanel.SetActive(s == PauseScreen.Inputs);
+            _overlayRoot?.SetActive(s != PauseScreen.None);
+            _pausePanel?.SetActive(s == PauseScreen.Pause);
+            _optionsPanel?.SetActive(s == PauseScreen.Options);
+            _soundsPanel?.SetActive(s == PauseScreen.Sounds);
+            _inputsPanel?.SetActive(s == PauseScreen.Inputs);
+            _loadGamePanel?.SetActive(s == PauseScreen.LoadGame);
 
             if (s == PauseScreen.Pause)   { _pauseSel = 0;  UpdateListVisuals(_pauseSel,  _pausePills,  _pauseBars,  _pauseTexts); }
             if (s == PauseScreen.Options) { _optSel = 0;    UpdateListVisuals(_optSel,    _optPills,    _optBars,    _optTexts);   }
             if (s == PauseScreen.Sounds)  { _soundSel = 0;  UpdateSoundsPanel(); }
             if (s == PauseScreen.Inputs)  { _inputsTabSel = 0; _inputsRowSel = 0; UpdateInputsPanel(); }
+            if (s == PauseScreen.LoadGame) { RefreshLoadGamePanel(); }
         }
 
         private void HideAll() => ShowScreen(PauseScreen.None);
@@ -256,10 +301,11 @@ namespace Valkur.UI.PauseMenu
         {
             switch (_screen)
             {
-                case PauseScreen.Options: ShowScreen(PauseScreen.Pause);   break;
-                case PauseScreen.Sounds:  ShowScreen(PauseScreen.Options); break;
-                case PauseScreen.Inputs:  ShowScreen(PauseScreen.Options); break;
-                default:                  ClosePause();                     break;
+                case PauseScreen.Options:  ShowScreen(PauseScreen.Pause);   break;
+                case PauseScreen.Sounds:   ShowScreen(PauseScreen.Options); break;
+                case PauseScreen.Inputs:   ShowScreen(PauseScreen.Options); break;
+                case PauseScreen.LoadGame: ShowScreen(PauseScreen.Pause);   break;
+                default:                   ClosePause();                     break;
             }
         }
 

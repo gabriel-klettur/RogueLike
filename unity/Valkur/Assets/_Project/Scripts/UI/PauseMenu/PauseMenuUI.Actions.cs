@@ -26,7 +26,7 @@ namespace Valkur.UI.PauseMenu
                     ClosePause();
                     break;
                 case "Cargar juego":
-                    Debug.Log("[PauseMenu] Cargar juego – not yet implemented");
+                    ShowScreen(PauseScreen.LoadGame);
                     break;
                 case "Opciones":
                     ShowScreen(PauseScreen.Options);

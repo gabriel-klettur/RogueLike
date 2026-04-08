@@ -41,6 +41,9 @@ namespace Valkur.UI.MainMenu
             BuildMenuPanel(canvasGo.transform);
             BuildClassSelectorPanel(canvasGo.transform);
             BuildFooter(canvasGo.transform);
+            BuildOptionsSubmenu(canvasGo.transform);
+            BuildLoadGameSubmenu(canvasGo.transform);
+            BuildPressToStartOverlay(canvasGo.transform);
 
             _selectedIndex = 0;
             StartCoroutine(DeferredInit());
