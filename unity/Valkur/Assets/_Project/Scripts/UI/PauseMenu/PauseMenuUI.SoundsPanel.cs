@@ -1,0 +1,122 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using TMPro;
+using Valkur.Core;
+
+namespace Valkur.UI.PauseMenu
+{
+    public partial class PauseMenuUI
+    {
+        // ── Sounds settings panel builder ────────────────────────────────────
+
+        private GameObject BuildSoundsPanel(Transform parent)
+        {
+            var gs = GameSettings.Instance;
+
+            var rowDefs = new (string label, float min, float max, float step,
+                System.Func<float> get, System.Action<float> set)[]
+            {
+                ("Música",                      0f,    1f,   0.02f, () => gs.musicVolume,        v => gs.musicVolume        = v),
+                ("Ambiente",                    0f,    1f,   0.02f, () => gs.ambientVolume,       v => gs.ambientVolume       = v),
+                ("SFX",                         0f,    1f,   0.02f, () => gs.sfxVolume,            v => gs.sfxVolume            = v),
+                ("Ambiente: mín intervalo (s)", 0f,   60f,   0.5f, () => gs.ambientMinInterval,  v => gs.ambientMinInterval  = v),
+                ("Ambiente: máx intervalo (s)", 0f,  120f,   0.5f, () => gs.ambientMaxInterval,  v => gs.ambientMaxInterval  = v),
+                ("Ducking: atenuación (dB)",  -24f,    0f,   1f,   () => gs.duckingAttenuation,  v => gs.duckingAttenuation  = v),
+                ("Ducking: hold (ms)",          0f, 2000f,  25f,   () => gs.duckingHoldMs,       v => gs.duckingHoldMs       = v),
+                ("Ducking: release (ms)",       0f, 2000f,  25f,   () => gs.duckingReleaseMs,    v => gs.duckingReleaseMs    = v),
+            };
+
+            const float rowH   = 40f;
+            const float padX   = 20f;
+            const float padY   = 16f;
+            const float gap    = 6f;
+            const float panelW = 540f;
+            float panelH = padY * 2 + rowDefs.Length * rowH + (rowDefs.Length - 1) * gap + 60f;
+
+            var panel = CreateUIObject("SoundsPanel", parent);
+            var r     = panel.GetComponent<RectTransform>();
+            r.anchorMin = new Vector2(0.5f, 0.5f); r.anchorMax = new Vector2(0.5f, 0.5f);
+            r.pivot = new Vector2(0.5f, 0.5f); r.anchoredPosition = Vector2.zero;
+            r.sizeDelta = new Vector2(panelW, panelH);
+            panel.AddComponent<Image>().color = PanelBg;
+
+            AddPanelTitle(panel.transform, "Opciones de Sonido", panelH, padX);
+
+            _soundRows.Clear();
+            _soundPills     = new Image[rowDefs.Length];
+            _soundBars      = new Image[rowDefs.Length];
+            _soundRowLabels = new TextMeshProUGUI[rowDefs.Length];
+
+            const float btnSize = 28f;
+
+            for (int i = 0; i < rowDefs.Length; i++)
+            {
+                var def = rowDefs[i];
+                float cy = -58f - i * (rowH + gap) - rowH * 0.5f;
+
+                var pillGo = CreateUIObject($"SPill_{i}", panel.transform);
+                SetRowRect(pillGo, cy, rowH, 0f);
+                _soundPills[i] = pillGo.AddComponent<Image>(); _soundPills[i].color = Color.clear;
+
+                var barGo = CreateUIObject($"SBar_{i}", panel.transform);
+                var barR  = barGo.GetComponent<RectTransform>();
+                barR.anchorMin = new Vector2(0f, 1f); barR.anchorMax = new Vector2(0f, 1f);
+                barR.pivot = new Vector2(0f, 0.5f);
+                barR.anchoredPosition = new Vector2(0f, cy);
+                barR.sizeDelta = new Vector2(4f, rowH - 4f);
+                _soundBars[i] = barGo.AddComponent<Image>(); _soundBars[i].color = Color.clear;
+
+                var lblGo = CreateUIObject($"SLabel_{i}", panel.transform);
+                var lblR  = lblGo.GetComponent<RectTransform>();
+                lblR.anchorMin = new Vector2(0f, 1f); lblR.anchorMax = new Vector2(0.55f, 1f);
+                lblR.pivot = new Vector2(0f, 0.5f);
+                lblR.anchoredPosition = new Vector2(padX + 12f, cy);
+                lblR.sizeDelta = new Vector2(0f, rowH);
+                var lblTMP = lblGo.AddComponent<TextMeshProUGUI>();
+                lblTMP.text = def.label; lblTMP.fontSize = 18f;
+                lblTMP.alignment = TextAlignmentOptions.Left; lblTMP.color = TextNormal;
+                _soundRowLabels[i] = lblTMP;
+
+                var valGo = CreateUIObject($"SVal_{i}", panel.transform);
+                var valR  = valGo.GetComponent<RectTransform>();
+                valR.anchorMin = new Vector2(0.58f, 1f); valR.anchorMax = new Vector2(0.72f, 1f);
+                valR.pivot = new Vector2(0.5f, 0.5f);
+                valR.anchoredPosition = new Vector2(0f, cy);
+                valR.sizeDelta = new Vector2(0f, rowH);
+                var valTMP = valGo.AddComponent<TextMeshProUGUI>();
+                valTMP.fontSize = 18f; valTMP.alignment = TextAlignmentOptions.Center;
+                valTMP.color = AccentGold;
+
+                int cap = i;
+                AddStepButton(panel.transform, $"SMin_{i}", "-", new Vector2(0.75f, 0.5f), cy,
+                    btnSize, () => ChangeSound(cap, -1));
+                AddStepButton(panel.transform, $"SPlus_{i}", "+", new Vector2(0.88f, 0.5f), cy,
+                    btnSize, () => ChangeSound(cap, +1));
+
+                var hitGo = CreateUIObject($"SHit_{i}", panel.transform);
+                SetRowRect(hitGo, cy, rowH, 0f);
+                var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
+                var hitBtn = hitGo.AddComponent<Button>(); hitBtn.targetGraphic = hitImg;
+                hitBtn.onClick.AddListener(() => { _soundSel = cap; UpdateSoundsPanel(); });
+                var trig  = hitGo.AddComponent<EventTrigger>();
+                var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                enter.callback.AddListener(_ => { _soundSel = cap; UpdateSoundsPanel(); });
+                trig.triggers.Add(enter);
+
+                var sr = new SoundRow
+                {
+                    valueText = valTMP,
+                    min = def.min, max = def.max, step = def.step,
+                    get = def.get, set = def.set
+                };
+                _soundRows.Add(sr);
+                RefreshSoundRowText(i);
+            }
+
+            AddHint(panel.transform, "<- -> Ajustar  |  R Resetear  |  Esc Volver", panelH);
+            return panel;
+        }
+    }
+}

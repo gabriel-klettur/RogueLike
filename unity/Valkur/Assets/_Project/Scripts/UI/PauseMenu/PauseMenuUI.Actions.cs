@@ -1,0 +1,51 @@
+using UnityEngine;
+using Valkur.Core;
+using Valkur.Gameplay;
+using Valkur.Gameplay.Save;
+
+namespace Valkur.UI.PauseMenu
+{
+    public partial class PauseMenuUI
+    {
+        // ── Pause menu execution ─────────────────────────────────────────────
+
+        private void ExecutePause(int idx)
+        {
+            if (_pauseOptions == null || idx >= _pauseOptions.Length) return;
+            switch (_pauseOptions[idx])
+            {
+                case "Continuar":
+                    ClosePause();
+                    break;
+                case "Nueva Partida":
+                    ClosePause();
+                    SceneTransitionManager.LoadScene("MainGameplay");
+                    break;
+                case "Guardar partida":
+                    if (SaveService.Instance != null) SaveService.Instance.QuickSave();
+                    ClosePause();
+                    break;
+                case "Cargar juego":
+                    Debug.Log("[PauseMenu] Cargar juego – not yet implemented");
+                    break;
+                case "Opciones":
+                    ShowScreen(PauseScreen.Options);
+                    break;
+                case "Salir":
+                    ClosePause();
+                    SceneTransitionManager.LoadScene("MainMenu");
+                    break;
+            }
+        }
+
+        private void ExecuteOption(int idx)
+        {
+            switch (_optOptions[idx])
+            {
+                case "Inputs": ShowScreen(PauseScreen.Inputs); break;
+                case "Sonido": ShowScreen(PauseScreen.Sounds); break;
+                case "Volver": ShowScreen(PauseScreen.Pause);  break;
+            }
+        }
+    }
+}
