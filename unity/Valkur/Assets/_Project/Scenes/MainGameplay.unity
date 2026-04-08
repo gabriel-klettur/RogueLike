@@ -975,6 +975,7 @@ MonoBehaviour:
   _monsterCatalog: {fileID: 11400000, guid: 8116da144dac0f5439b9803e59c70697, type: 2}
   _audioCatalog: {fileID: 11400000, guid: d6f4650fee0545f43a3d9e5d1c11e6e8, type: 2}
   _combatSfxConfig: {fileID: 11400000, guid: 605d705fef7bb744e9a2dcaca953e364, type: 2}
+  _spellCatalog: {fileID: 11400000, guid: b5f4bf60bea172e4f89f60d72bc82a03, type: 2}
 --- !u!4 &568156325
 Transform:
   m_ObjectHideFlags: 0

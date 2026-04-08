@@ -4,6 +4,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay
@@ -144,6 +145,9 @@ namespace Valkur.Gameplay
                 case "killall":  CmdKillAll(); break;
                 case "give":     CmdGive(parts); break;
                 case "spawn":    CmdSpawn(parts); break;
+                case "spell":    CmdSpell(parts); break;
+                case "spells":   CmdSpellList(); break;
+                case "spellinfo":CmdSpellInfo(parts); break;
                 default:
                     Log($"Unknown command: '{parts[0]}'. Type 'help' for a list.");
                     break;
@@ -160,6 +164,9 @@ namespace Valkur.Gameplay
             Log("  killall             - kill all enemies");
             Log("  give <item_id> [n]  - add item to inventory");
             Log("  spawn <monster_key> - spawn monster nearby");
+            Log("  spell <spell_key>   - cast a spell");
+            Log("  spells              - list all registered spells");
+            Log("  spellinfo <key>     - show spell details");
             Log("  clear               - clear log");
         }
 

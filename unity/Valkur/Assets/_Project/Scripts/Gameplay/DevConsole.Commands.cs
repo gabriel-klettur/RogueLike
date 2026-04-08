@@ -1,6 +1,10 @@
 using System;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Data;
+using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay
@@ -126,6 +130,115 @@ namespace Valkur.Gameplay
             tex.Apply();
             tex.hideFlags = HideFlags.HideAndDontSave;
             return tex;
+        }
+
+        // ── Spell Debug Commands ──
+
+        private void CmdSpell(string[] parts)
+        {
+            if (parts.Length < 2) { Log("Usage: spell <spell_key>"); return; }
+            string key = parts[1];
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) { Log("No player found."); return; }
+            var caster = player.GetComponent<SpellCaster>();
+            if (caster == null) { Log("Player has no SpellCaster."); return; }
+
+            // Get facing direction (toward mouse or default right)
+            Vector2 dir = Vector2.right;
+            var cam = Camera.main;
+            if (cam != null)
+            {
+                Vector2 mouseScreen = Mouse.current != null ? Mouse.current.position.ReadValue() : new Vector2(Screen.width / 2f, Screen.height / 2f);
+                Vector3 mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
+                dir = ((Vector2)mouseWorld - (Vector2)player.position).normalized;
+                if (dir.sqrMagnitude < 0.01f) dir = Vector2.right;
+            }
+
+            bool success = caster.TryCastByKey(key, dir);
+            if (success)
+                Log($"Cast '{key}' → dir=({dir.x:F2},{dir.y:F2})");
+            else
+                Log($"Failed to cast '{key}' (not registered, on cooldown, or insufficient mana).");
+        }
+
+        private void CmdSpellList()
+        {
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) { Log("No player found."); return; }
+            var caster = player.GetComponent<SpellCaster>();
+            if (caster == null) { Log("Player has no SpellCaster."); return; }
+
+            Log("--- Registered Spells ---");
+
+            // Use reflection to access the spell book (private field)
+            var bookField = typeof(SpellCaster).GetField("_spellBook",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (bookField == null) { Log("Cannot read spell book (reflection failed)."); return; }
+
+            var book = bookField.GetValue(caster) as System.Collections.Generic.Dictionary<string, SpellDefinition>;
+            if (book == null || book.Count == 0) { Log("Spell book is empty!"); return; }
+
+            var sorted = book.OrderBy(kv => kv.Value.type.ToString()).ThenBy(kv => kv.Key);
+            int count = 0;
+            foreach (var kv in sorted)
+            {
+                var s = kv.Value;
+                float cd = caster.GetBookCooldownRemaining(kv.Key);
+                string cdStr = cd > 0 ? $" [CD:{cd:F1}s]" : "";
+                Log($"  {s.spellKey} ({s.type}) dmg={s.damage} mana={s.manaCost} cd={s.cooldownDuration:F1}s{cdStr}");
+                count++;
+            }
+            Log($"Total: {count} spells registered.");
+        }
+
+        private void CmdSpellInfo(string[] parts)
+        {
+            if (parts.Length < 2) { Log("Usage: spellinfo <spell_key>"); return; }
+            string key = parts[1];
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) { Log("No player found."); return; }
+            var caster = player.GetComponent<SpellCaster>();
+            if (caster == null) { Log("Player has no SpellCaster."); return; }
+
+            var spell = caster.GetSpellByKey(key);
+            if (spell == null)
+            {
+                Log($"Spell '{key}' not found in spell book.");
+                // Try to find it in all loaded spell definitions
+                var allDefs = Resources.FindObjectsOfTypeAll<SpellDefinition>();
+                foreach (var d in allDefs)
+                {
+                    if (d.spellKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        spell = d;
+                        Log($"  (Found as unregistered asset)");
+                        break;
+                    }
+                }
+                if (spell == null) return;
+            }
+
+            Log($"--- {spell.displayName} ({spell.spellKey}) ---");
+            Log($"  Type:       {spell.type}");
+            Log($"  Damage:     {spell.damage}");
+            Log($"  Mana Cost:  {spell.manaCost}");
+            Log($"  Cooldown:   {spell.cooldownDuration:F2}s");
+            Log($"  Prepare:    {spell.prepareDuration:F2}s");
+            Log($"  Channel:    {spell.channelDuration:F2}s");
+            Log($"  Speed:      {spell.speed}");
+            Log($"  Range:      {spell.range}");
+            Log($"  Lifetime:   {spell.lifetime}");
+            Log($"  Radius:     {spell.radius}");
+            Log($"  Duration:   {spell.duration}");
+            if (spell.damage > 0)    Log($"  DPS:        {spell.damagePerTick} / {spell.tickPeriod:F2}s");
+            if (spell.healPerTick > 0) Log($"  HealTick:   {spell.healPerTick}");
+            if (!string.IsNullOrEmpty(spell.element)) Log($"  Element:    {spell.element}");
+            if (!string.IsNullOrEmpty(spell.vfxPreset)) Log($"  VFX Preset: {spell.vfxPreset}");
+            Log($"  Interruptible: {spell.interruptible}");
+            Log($"  Max Instances: {spell.maxInstances}");
+
+            float currentCd = caster.GetBookCooldownRemaining(key);
+            if (currentCd > 0) Log($"  Current CD: {currentCd:F1}s remaining");
         }
     }
 }

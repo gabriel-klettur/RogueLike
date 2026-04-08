@@ -16,6 +16,10 @@ namespace Valkur.Gameplay
                 return;
             }
 
+            // Inject spell catalog before ConfigurePlayer so all spells are available
+            if (_spellCatalog != null)
+                EntitySetup.SetSpellCatalog(_spellCatalog);
+
             // Spawn at Lobby center. With full world, Lobby offset is (50,50) + center (25,25) = (75,75).
             // With single overlay (Lobby at 0,0), center is (25,25).
             Vector3 spawnPos = new Vector3(25f, 25f, 0f);

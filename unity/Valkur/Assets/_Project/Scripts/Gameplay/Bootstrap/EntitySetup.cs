@@ -141,6 +141,20 @@ namespace Valkur.Gameplay
             if (dash != null) dash.SetTargetLayers(1 << NPCLayer);
         }
 
+        /// <summary>
+        /// Cached reference set by GameplaySceneSetup before player spawn.
+        /// </summary>
+        private static SpellCatalog _spellCatalog;
+
+        /// <summary>
+        /// Set the spell catalog before ConfigurePlayer so all spells are available.
+        /// Called from GameplaySceneSetup.
+        /// </summary>
+        public static void SetSpellCatalog(SpellCatalog catalog)
+        {
+            _spellCatalog = catalog;
+        }
+
         private static void InitPlayerSpells(GameObject go)
         {
             var caster = go.GetComponent<SpellCaster>();
@@ -149,11 +163,36 @@ namespace Valkur.Gameplay
             caster.SetTargetLayers(1 << NPCLayer);
             ProjectilePrefabFactory.EnsureFireballPrefab(caster);
 
-            // Load all spell definitions from the Spells catalog and register them in the spell book
-            var allSpells = Resources.LoadAll<SpellDefinition>("Catalogs/Spells");
+            // Primary: use the injected SpellCatalog
+            SpellDefinition[] allSpells = null;
+            if (_spellCatalog != null && _spellCatalog.Count > 0)
+            {
+                allSpells = _spellCatalog.AllSpells;
+            }
+
+            // Fallback: scan via AssetDatabase in editor, Resources in build
             if (allSpells == null || allSpells.Length == 0)
             {
-                Debug.LogWarning("[EntitySetup] No SpellDefinition assets found in Resources/Catalogs/Spells! Falling back to fireball only.");
+#if UNITY_EDITOR
+                var guids = UnityEditor.AssetDatabase.FindAssets("t:SpellDefinition", new[] { "Assets/_Project/Data/Catalogs/Spells" });
+                var list = new System.Collections.Generic.List<SpellDefinition>(guids.Length);
+                foreach (var guid in guids)
+                {
+                    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                    var def = UnityEditor.AssetDatabase.LoadAssetAtPath<SpellDefinition>(path);
+                    if (def != null) list.Add(def);
+                }
+                allSpells = list.ToArray();
+                if (allSpells.Length > 0)
+                    Debug.Log($"[EntitySetup] Loaded {allSpells.Length} spells via AssetDatabase fallback.");
+#else
+                allSpells = Resources.LoadAll<SpellDefinition>("Catalogs/Spells");
+#endif
+            }
+
+            if (allSpells == null || allSpells.Length == 0)
+            {
+                Debug.LogWarning("[EntitySetup] No SpellDefinition assets found! Falling back to fireball only.");
                 caster.SetSpell(0, ProjectilePrefabFactory.GetFireballSpell());
                 return;
             }
@@ -161,17 +200,17 @@ namespace Valkur.Gameplay
             int registered = 0;
             foreach (var spell in allSpells)
             {
-                if (string.IsNullOrEmpty(spell.spellKey)) continue;
+                if (spell == null || string.IsNullOrEmpty(spell.spellKey)) continue;
                 caster.RegisterSpell(spell.spellKey, spell);
                 registered++;
             }
 
-            // Also set slot 0 to fireball for backward compatibility
+            // Set slot 0 to fireball for backward compatibility (LMB)
             var fireball = ProjectilePrefabFactory.GetFireballSpell();
             if (fireball != null)
                 caster.SetSpell(0, fireball);
 
-            Debug.Log($"[EntitySetup] Registered {registered} spells in spell book from {allSpells.Length} assets.");
+            Debug.Log($"[EntitySetup] Registered {registered}/{allSpells.Length} spells in spell book.");
         }
 
         private static void InitPlayerStats(GameObject go, PlayerDefinition def)

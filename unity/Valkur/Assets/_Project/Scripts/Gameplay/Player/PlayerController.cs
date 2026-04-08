@@ -232,39 +232,56 @@ namespace Valkur.Gameplay
         private void PollCombatActions()
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
+            if (isDashing) return;
 
-            // Primary attack (left click) — fireball (spell slot 0)
+            // Primary attack (left click) → fireball (spell slot 0)
+            // Python parity: M_LEFT → fireball
             if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
             {
-                if (!isDashing && _spellCaster != null)
-                    _spellCaster.TryCast(0, _facingDirection);
+                if (_spellCaster != null)
+                    _spellCaster.TryCastByKey("fireball", _facingDirection);
             }
 
-            // Secondary attack (right click) — melee slash
+            // Secondary attack (right click) → slash spell
+            // Python parity: M_RIGHT → slash
             if (_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame())
             {
-                if (!isDashing && _meleeCombat != null)
-                    _meleeCombat.TryAttack(_facingDirection);
+                if (_spellCaster != null)
+                    _spellCaster.TryCastByKey("slash", _facingDirection);
             }
 
-            // Dash (right ctrl) — dash toward mouse facing direction
+            // Middle click → laser beam
+            // Python parity: M_MIDDLE → laser_beam
+            if (_middleClickAction != null && _middleClickAction.WasPerformedThisFrame())
+            {
+                if (_spellCaster != null)
+                    _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+            }
+
+            // Dash (Ctrl) → dash spell through spell system
+            // Python parity: K_LCTRL / K_RCTRL → dash spell
             if (_dashAction != null && _dashAction.WasPerformedThisFrame())
             {
-                if (_dashAbility != null)
-                    _dashAbility.TryDash(_facingDirection);
+                if (_spellCaster != null && !_spellCaster.TryCastByKey("dash", _facingDirection))
+                {
+                    // Fallback: use DashAbility if spell system can't cast (cooldown, no mana, etc.)
+                    if (_dashAbility != null)
+                        _dashAbility.TryDash(_facingDirection);
+                }
             }
 
-            // Spell slots 1-4
-            if (!isDashing && _spellCaster != null)
+            // All spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m)
+            // Python parity: full 23 spell key bindings
+            if (_spellCaster != null)
             {
-                if (_spell1Action != null && _spell1Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(0, _facingDirection);
-                if (_spell2Action != null && _spell2Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(1, _facingDirection);
-                if (_spell3Action != null && _spell3Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(2, _facingDirection);
-                if (_spell4Action != null && _spell4Action.WasPerformedThisFrame())
-                    _spellCaster.TryCast(3, _facingDirection);
+                foreach (var (action, spellKey) in _spellBindings)
+                {
+                    if (action != null && action.WasPerformedThisFrame())
+                    {
+                        _spellCaster.TryCastByKey(spellKey, _facingDirection);
+                        break; // only one spell per frame
+                    }
+                }
             }
         }
 

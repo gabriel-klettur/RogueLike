@@ -63,6 +63,10 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Combat SFX config. Populate via 'Valkur > Audio > Import Catalog from Python JSON'.")]
         private CombatSfxConfigSO _combatSfxConfig;
 
+        [Header("Spells")]
+        [SerializeField, Tooltip("Catalog of all spell definitions. Populate via 'Valkur > Spells > Import Spells from Python JSON'.")]
+        private SpellCatalog _spellCatalog;
+
         private WorldGridBuilder _gridBuilder;
 
         private void Start()
