@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Smoke
   type: 6
   manaCost: 10
-  maxInstances: 0
+  maxInstances: 1
   allowOverlap: 1
   allowMovement: 1
   interruptible: 0
@@ -42,6 +42,31 @@ MonoBehaviour:
   damagePerTick: 0
   tickPeriod: 0
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 1
+  summonDuration: 0
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -56,5 +81,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: 
+  vfxPreset: smoke_burst
   impactPreset: 

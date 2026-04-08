@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: chain_lightning
   displayName: Chain Lightning
-  type: 0
+  type: 13
   manaCost: 14
   maxInstances: 1
   allowOverlap: 1
@@ -28,7 +28,7 @@ MonoBehaviour:
   cooldownDuration: 1.4
   speed: 0
   damage: 12
-  range: 360
+  range: 22.5
   lifetime: 0
   radius: 0
   hitRadius: 0
@@ -42,6 +42,31 @@ MonoBehaviour:
   damagePerTick: 0
   tickPeriod: 0
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 0
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -56,5 +81,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: 
+  vfxPreset: lightning_emitter
   impactPreset: 

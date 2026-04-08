@@ -28,8 +28,8 @@ MonoBehaviour:
   cooldownDuration: 1
   speed: 0
   damage: 0.25
-  range: 1000
-  lifetime: 1
+  range: 62.5
+  lifetime: 0.016666668
   radius: 0
   hitRadius: 0
   arcRangeDegrees: 0
@@ -42,8 +42,33 @@ MonoBehaviour:
   damagePerTick: 0
   tickPeriod: 0
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 0
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
-  scale: 1
+  scale: 2
   speedMultiplier: 1
   offset: 0
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
@@ -56,5 +81,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: 
+  vfxPreset: laser_beam_emitter
   impactPreset: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: flame_breath
   displayName: Flame Breath
-  type: 0
+  type: 22
   manaCost: 12
   maxInstances: 1
   allowOverlap: 1
@@ -34,14 +34,39 @@ MonoBehaviour:
   hitRadius: 0
   arcRangeDegrees: 60
   hitArcDegrees: 0
-  length: 0
+  length: 16.25
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 0
-  damagePerTick: 0
-  tickPeriod: 0
-  element: 
+  duration: 2
+  damagePerTick: 4
+  tickPeriod: 0.2
+  element: fire
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 2
+  totemKind: 
+  coneArc: 60
+  coneLength: 16.25
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -56,5 +81,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: 
+  vfxPreset: breath_fire
   impactPreset: 

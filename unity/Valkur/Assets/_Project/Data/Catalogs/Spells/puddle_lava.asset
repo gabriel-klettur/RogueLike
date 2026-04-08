@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: puddle_lava
   displayName: Lava Puddle
-  type: 0
+  type: 19
   manaCost: 10
-  maxInstances: 0
+  maxInstances: 1
   allowOverlap: 1
   allowMovement: 1
   interruptible: 0
@@ -30,7 +30,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 64
+  radius: 4
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -38,10 +38,35 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 0
+  duration: 6
   damagePerTick: 0
-  tickPeriod: 0
-  element: 
+  tickPeriod: 0.25
+  element: lava
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 6
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -52,7 +77,7 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 1, g: 0.47058824, b: 0.23529412, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0

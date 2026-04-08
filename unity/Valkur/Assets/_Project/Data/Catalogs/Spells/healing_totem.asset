@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: healing_totem
   displayName: Healing Totem
-  type: 0
+  type: 24
   manaCost: 16
   maxInstances: 1
   allowOverlap: 1
@@ -30,7 +30,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 220
+  radius: 13.75
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -38,10 +38,35 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 0
+  duration: 10
   damagePerTick: 0
-  tickPeriod: 0
+  tickPeriod: 0.5
   element: 
+  healPerTick: 6
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 10
+  totemKind: heal
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1

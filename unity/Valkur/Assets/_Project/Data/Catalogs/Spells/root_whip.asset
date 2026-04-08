@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: root_whip
   displayName: Root Whip
-  type: 0
+  type: 19
   manaCost: 0
   maxInstances: 0
   allowOverlap: 1
@@ -38,10 +38,35 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 0
+  duration: 9999
   damagePerTick: 0
-  tickPeriod: 0
+  tickPeriod: 0.25
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 1
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 9999
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1

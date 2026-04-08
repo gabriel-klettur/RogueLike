@@ -29,9 +29,9 @@ MonoBehaviour:
   speed: 0
   damage: 18
   range: 0
-  lifetime: 16
-  radius: 36
-  hitRadius: 64
+  lifetime: 0.26666668
+  radius: 2.25
+  hitRadius: 4
   arcRangeDegrees: 140
   hitArcDegrees: 140
   length: 0
@@ -42,19 +42,46 @@ MonoBehaviour:
   damagePerTick: 0
   tickPeriod: 0
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 0
+  meteorCount: 0
+  meteorInterval: 0
+  meteorAreaRadius: 0
+  meteorImpactRadius: 0
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 0
+  summonDuration: 0
+  totemKind: 
+  coneArc: 140
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
-  offset: 16
-  telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
+  offset: 1
+  telegraphColor: {r: 0.47058824, g: 0.9019608, b: 0.627451, a: 0.3137255}
   telegraphAlpha: 80
-  particleCount: 0
+  particleCount: 28
   particleDispersion: 0
   particleLifespan: 0
-  particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleSpeed: 6
+  particleColor: {r: 0, g: 1, b: 0.39215687, a: 1}
   particleColors: []
-  sizeRange: []
+  sizeRange:
+  - 4
+  - 8
   emitRate: 0
-  vfxPreset: 
+  vfxPreset: slash_emitter
   impactPreset: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spellKey: meteor_shower
   displayName: Meteor Shower
-  type: 0
+  type: 11
   manaCost: 18
   maxInstances: 1
   allowOverlap: 1
@@ -27,7 +27,7 @@ MonoBehaviour:
   channelDuration: 0.2
   cooldownDuration: 6
   speed: 0
-  damage: 0
+  damage: 40
   range: 0
   lifetime: 0
   radius: 0
@@ -42,6 +42,31 @@ MonoBehaviour:
   damagePerTick: 0
   tickPeriod: 0
   element: 
+  healPerTick: 0
+  force: 0
+  forceMode: 
+  followCaster: 0
+  spawnAtMouse: 1
+  meteorCount: 8
+  meteorInterval: 0.25
+  meteorAreaRadius: 32.5
+  meteorImpactRadius: 10
+  armingTime: 0
+  triggerRadius: 0
+  explosionRadius: 0
+  explosionDamage: 0
+  ttl: 0
+  wallWidth: 0
+  wallHeight: 0
+  wallHP: 0
+  blockProjectiles: 0
+  blockUnits: 0
+  summonTemplate: 
+  summonCount: 8
+  summonDuration: 0
+  totemKind: 
+  coneArc: 0
+  coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
@@ -57,4 +82,4 @@ MonoBehaviour:
   sizeRange: []
   emitRate: 0
   vfxPreset: 
-  impactPreset: 
+  impactPreset: explosion_small
