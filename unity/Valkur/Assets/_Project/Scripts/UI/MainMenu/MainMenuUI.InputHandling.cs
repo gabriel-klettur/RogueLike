@@ -10,6 +10,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
+using Valkur.UI.Loading;
 
 namespace Valkur.UI.MainMenu
 {
@@ -75,14 +76,14 @@ namespace Valkur.UI.MainMenu
                 Debug.LogWarning("[MainMenu] No saves found for Continue.");
             }
             TransitionAudioToGame();
-            SceneTransitionManager.LoadScene(gameplaySceneName);
+            LoadingScreenController.Show(gameplaySceneName);
         }
 
         private void StartNewGame()
         {
             Debug.Log("[MainMenu] Starting new game...");
             TransitionAudioToGame();
-            SceneTransitionManager.LoadScene(gameplaySceneName);
+            LoadingScreenController.Show(gameplaySceneName);
         }
 
         private void QuitGame()
@@ -148,17 +149,38 @@ namespace Valkur.UI.MainMenu
 
         private void UpdateClassSelectionUI()
         {
-            var hoverColor  = new Color(0.28f, 0.25f, 0.35f, 1f);
-            var normalColor = new Color(0.18f, 0.18f, 0.24f, 0.9f);
+            // Update card border colors and thickness
             for (int i = 0; i < _classButtons.Count; i++)
             {
                 bool selected = i == _selectedClassIndex;
-                var image = _classButtons[i].GetComponent<Image>();
-                if (image != null) image.color = selected ? hoverColor : normalColor;
-                if (i < _classMarkerTexts.Count)
-                    _classMarkerTexts[i].text = selected
-                        ? char.ToUpperInvariant(_classKeys[i][0]).ToString()
-                        : string.Empty;
+
+                // Border color: per-class color when selected, gray otherwise
+                if (i < _classCardBorderImages.Count)
+                {
+                    if (selected && i < _classKeys.Count
+                        && ClassBorderColors.TryGetValue(_classKeys[i], out var borderCol))
+                        _classCardBorderImages[i].color = borderCol;
+                    else
+                        _classCardBorderImages[i].color = CellBorderUnselected;
+                }
+
+                // Border thickness: 4px selected (Python width=4), 2px unselected (Python width=2)
+                if (i < _classCardBgRects.Count)
+                {
+                    float border = selected ? 4f : 2f;
+                    _classCardBgRects[i].offsetMin = new Vector2(border, border);
+                    _classCardBgRects[i].offsetMax = new Vector2(-border, -border);
+                }
+            }
+
+            // Update header portrait to match selected class
+            if (_classHeaderPortrait != null
+                && _selectedClassIndex >= 0
+                && _selectedClassIndex < _classKeys.Count)
+            {
+                var sprite = GetCachedPortraitSprite(_classKeys[_selectedClassIndex]);
+                _classHeaderPortrait.sprite = sprite;
+                _classHeaderPortrait.color = sprite != null ? Color.white : Color.clear;
             }
         }
 
