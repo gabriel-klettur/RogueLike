@@ -113,11 +113,11 @@ MonoBehaviour:
     damageSheets: []
     deathSheets: []
     scaleConfig:
-      scaleIdle: 0
-      scaleWalk: 0
-      scaleChase: 0
-      scaleCast: 0
-      scaleAttack: 0
-      scaleDamage: 0
-      scaleDeath: 0
-      tint: {r: 0, g: 0, b: 0, a: 0}
+      scaleIdle: 0.5
+      scaleWalk: 0.5
+      scaleChase: 0.5
+      scaleCast: 0.5
+      scaleAttack: 0.5
+      scaleDamage: 0.5
+      scaleDeath: 0.55
+      tint: {r: 1, g: 1, b: 1, a: 1}

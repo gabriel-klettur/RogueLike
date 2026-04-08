@@ -10,32 +10,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24c54f8a18a2dca49811722fdafbbfab, type: 3}
-  m_Name: barbol_boss
+  m_Name: vendor_banker_abigail
   m_EditorClassIdentifier: 
-  monsterKey: barbol_boss
-  displayName: Barbol Boss
+  monsterKey: vendor_banker_abigail
+  displayName: Abigail
   stats:
-    hp: 2000
-    speed: 1.5
-    chasingSpeed: 3.5
-    defense: 5
-    power: 10
-    meleeRange: 7
-    meleeDamage: 50
-    meleeCooldown: 1
-    aggroRange: 20
-    damageDuration: 0.5
-    damageStopProbability: 0.05
+    hp: 50
+    speed: 0.8
+    chasingSpeed: 0
+    defense: 0
+    power: 0
+    meleeRange: 0
+    meleeDamage: 0
+    meleeCooldown: 999
+    aggroRange: 0
+    damageDuration: 0
+    damageStopProbability: 0
     attackWindupSeconds: 0
-    spawnCount: 10
-    spawnPadding: 3
+    spawnCount: 0
+    spawnPadding: 0
     spawnMargin: 0
-    deathDisappearTime: 5
+    deathDisappearTime: 0
     feetWidthFactor: 0.5
     feetHeightFactor: 0.2
-    faction: EVIL
-  fsmSet: Monster_Default
-  patrolType: line
+    faction: NEUTRAL
+    chatRange: 2
+  fsmSet: 
+  patrolType: 
   useAttackTelegraph: 0
   nextPhase: 
   phaseIndex: 0
@@ -43,31 +44,31 @@ MonoBehaviour:
   autoCastList: []
   assetConfig:
     idle:
-      south: {fileID: 21300000, guid: a55b35d407872ed418e10e772f9f28ed, type: 3}
+      south: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       southEast: {fileID: 0}
-      east: {fileID: 21300000, guid: efdcb5dde3d0ace4b94439357bebcc8b, type: 3}
+      east: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       northEast: {fileID: 0}
-      north: {fileID: 21300000, guid: 5e6923b0e8623c64eb5a884381b4532e, type: 3}
+      north: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       northWest: {fileID: 0}
-      west: {fileID: 21300000, guid: 19a5519d00bf25448af34408d6ea5da3, type: 3}
+      west: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       southWest: {fileID: 0}
     walk:
-      south: {fileID: 21300000, guid: 22013d8d6fc603d4c9fa337c16c51f21, type: 3}
+      south: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       southEast: {fileID: 0}
-      east: {fileID: 21300000, guid: 6fcbbbfc9f8cd244cbbb3a76d2f52ef5, type: 3}
+      east: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       northEast: {fileID: 0}
-      north: {fileID: 21300000, guid: ad1417b05ba19f5458c4fa2ded19bec0, type: 3}
+      north: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       northWest: {fileID: 0}
-      west: {fileID: 21300000, guid: 4b96278831fe66849830e22e56400721, type: 3}
+      west: {fileID: 21300000, guid: f27bc555fa554d840b23441980ae6826, type: 3}
       southWest: {fileID: 0}
     chase:
-      south: {fileID: 21300000, guid: 22013d8d6fc603d4c9fa337c16c51f21, type: 3}
+      south: {fileID: 0}
       southEast: {fileID: 0}
-      east: {fileID: 21300000, guid: 6fcbbbfc9f8cd244cbbb3a76d2f52ef5, type: 3}
+      east: {fileID: 0}
       northEast: {fileID: 0}
-      north: {fileID: 21300000, guid: ad1417b05ba19f5458c4fa2ded19bec0, type: 3}
+      north: {fileID: 0}
       northWest: {fileID: 0}
-      west: {fileID: 21300000, guid: 4b96278831fe66849830e22e56400721, type: 3}
+      west: {fileID: 0}
       southWest: {fileID: 0}
     cast:
       south: {fileID: 0}
@@ -90,14 +91,14 @@ MonoBehaviour:
     damage:
       south: {fileID: 0}
       southEast: {fileID: 0}
-      east: {fileID: 21300000, guid: 4419fca095c884646a7afc3da256ab03, type: 3}
+      east: {fileID: 0}
       northEast: {fileID: 0}
       north: {fileID: 0}
       northWest: {fileID: 0}
-      west: {fileID: 21300000, guid: 8c528b6bf7497e44a85aedfbb4582dc3, type: 3}
+      west: {fileID: 0}
       southWest: {fileID: 0}
     death:
-      south: {fileID: 21300000, guid: 7aa6cb7a35595cc4198bc227d9b5ab0b, type: 3}
+      south: {fileID: 0}
       southEast: {fileID: 0}
       east: {fileID: 0}
       northEast: {fileID: 0}
@@ -113,11 +114,11 @@ MonoBehaviour:
     damageSheets: []
     deathSheets: []
     scaleConfig:
-      scaleIdle: 0.35
-      scaleWalk: 0.35
-      scaleChase: 0.35
-      scaleCast: 0.35
-      scaleAttack: 0.35
-      scaleDamage: 0.35
-      scaleDeath: 0.38
+      scaleIdle: 0.3
+      scaleWalk: 0.3
+      scaleChase: 0.3
+      scaleCast: 0.3
+      scaleAttack: 0.3
+      scaleDamage: 0.3
+      scaleDeath: 0.05
       tint: {r: 1, g: 1, b: 1, a: 1}

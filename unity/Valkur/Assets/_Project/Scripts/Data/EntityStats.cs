@@ -38,5 +38,8 @@ namespace Valkur.Data
 
         [Header("Faction")]
         public string faction;
+
+        [Header("NPC / Vendor")]
+        public float chatRange;
     }
 }

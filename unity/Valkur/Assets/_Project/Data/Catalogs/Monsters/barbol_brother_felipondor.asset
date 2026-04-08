@@ -43,22 +43,22 @@ MonoBehaviour:
   autoCastList: []
   assetConfig:
     idle:
-      south: {fileID: 0}
+      south: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       southEast: {fileID: 0}
-      east: {fileID: 0}
+      east: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       northEast: {fileID: 0}
-      north: {fileID: 0}
+      north: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       northWest: {fileID: 0}
-      west: {fileID: 0}
+      west: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       southWest: {fileID: 0}
     walk:
-      south: {fileID: 0}
+      south: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       southEast: {fileID: 0}
-      east: {fileID: 0}
+      east: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       northEast: {fileID: 0}
-      north: {fileID: 0}
+      north: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       northWest: {fileID: 0}
-      west: {fileID: 0}
+      west: {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
       southWest: {fileID: 0}
     chase:
       south: {fileID: 0}
@@ -113,11 +113,11 @@ MonoBehaviour:
     damageSheets: []
     deathSheets: []
     scaleConfig:
-      scaleIdle: 0
-      scaleWalk: 0
-      scaleChase: 0
-      scaleCast: 0
-      scaleAttack: 0
-      scaleDamage: 0
-      scaleDeath: 0
-      tint: {r: 0, g: 0, b: 0, a: 0}
+      scaleIdle: 0.35
+      scaleWalk: 0.35
+      scaleChase: 0.35
+      scaleCast: 0.35
+      scaleAttack: 0.35
+      scaleDamage: 0.35
+      scaleDeath: 0.4
+      tint: {r: 1, g: 1, b: 1, a: 1}
