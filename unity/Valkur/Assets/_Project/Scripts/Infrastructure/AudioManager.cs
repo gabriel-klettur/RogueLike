@@ -1,52 +1,87 @@
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.Infrastructure
 {
     /// <summary>
-    /// Centralized audio manager for music and SFX.
-    /// Maps to Python's audio system with zone-based music and pooled SFX sources.
-    /// Singleton pattern matching Python's global audio manager.
+    /// Full audio manager: music crossfade, SFX pool, ambient scheduler, ducking, playlists.
+    /// Mirrors Python AudioService + AudioBus + AudioSystem combined.
+    /// Registers as IAudioService via ServiceLocator.
     /// </summary>
-    public class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService
+    public partial class AudioManager : SingletonMonoBehaviour<AudioManager>, IAudioService
     {
+        // â”€â”€ Inspector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        [Header("Audio Catalog")]
+        [Tooltip("Reference to the AudioCatalog ScriptableObject")]
+        [SerializeField] private AudioCatalogSO catalog;
 
         [Header("Music")]
-        [SerializeField] private AudioSource musicSource;
-        [SerializeField] private float musicFadeDuration = 1f;
-        [SerializeField] [Range(0f, 1f)] private float musicVolume = 0.5f;
+        [Tooltip("Default crossfade duration in seconds (Python: 0.6)")]
+        [SerializeField] private float defaultCrossfadeSec = 0.6f;
 
         [Header("SFX")]
-        [SerializeField] private int sfxPoolSize = 8;
-        [SerializeField] [Range(0f, 1f)] private float sfxVolume = 0.7f;
+        [Tooltip("Number of pooled AudioSources for SFX (Python max channels: 32)")]
+        [SerializeField] private int sfxPoolSize = 16;
 
+        // â”€â”€ Music state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private AudioSource _musicA;
+        private AudioSource _musicB;
+        private AudioSource _activeMusicSource;
+        private Coroutine _crossfadeCoroutine;
+        private float _musicVolume;
+        private string _currentTrackTitle;
+
+        // â”€â”€ SFX state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private readonly List<AudioSource> _sfxPool = new List<AudioSource>();
         private int _sfxIndex;
-        private AudioClip _pendingMusic;
-        private float _fadeTimer;
-        private bool _fadingOut;
+        private float _sfxVolume;
+
+        // â”€â”€ Ambient state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private float _ambientVolume;
+        private Coroutine _ambientCoroutine;
+        private string[] _ambientChoices;
+
+        // â”€â”€ Playlist state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private Coroutine _playlistCoroutine;
+        private AudioClip[] _playlistTracks;
+        private int _playlistIndex;
+        private bool _playlistShuffle;
+
+        // â”€â”€ Ducking state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        private Coroutine _duckingCoroutine;
+        private float _duckTarget = 1f; // 1 = no duck
 
         protected override bool Persist => true;
 
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // Lifecycle
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
         protected override void OnSingletonAwake()
         {
-            if (musicSource == null)
-            {
-                musicSource = gameObject.AddComponent<AudioSource>();
-                musicSource.loop = true;
-                musicSource.playOnAwake = false;
-            }
+            // Read saved settings
+            var gs = GameSettings.Instance;
+            _musicVolume   = gs.musicVolume;
+            _sfxVolume     = gs.sfxVolume;
+            _ambientVolume = gs.ambientVolume;
 
+            // Create two music sources for crossfade
+            _musicA = CreateAudioSource("MusicA", true);
+            _musicB = CreateAudioSource("MusicB", true);
+            _activeMusicSource = _musicA;
+
+            // Create SFX pool
             for (int i = 0; i < sfxPoolSize; i++)
             {
-                var src = gameObject.AddComponent<AudioSource>();
-                src.playOnAwake = false;
-                src.loop = false;
+                var src = CreateAudioSource($"SFX_{i}", false);
                 _sfxPool.Add(src);
             }
 
             ServiceLocator.Register<IAudioService>(this);
+            Debug.Log($"[AudioManager] Initialized. Music={_musicVolume:F2}, SFX={_sfxVolume:F2}, Ambient={_ambientVolume:F2}");
         }
 
         protected override void OnDestroy()
@@ -55,91 +90,15 @@ namespace Valkur.Infrastructure
             base.OnDestroy();
         }
 
-        private void Update()
+        private AudioSource CreateAudioSource(string label, bool loop)
         {
-            if (_fadingOut)
-            {
-                _fadeTimer -= Time.deltaTime;
-                float t = Mathf.Clamp01(_fadeTimer / musicFadeDuration);
-                musicSource.volume = t * musicVolume;
-
-                if (_fadeTimer <= 0f)
-                {
-                    _fadingOut = false;
-                    musicSource.Stop();
-                    if (_pendingMusic != null)
-                    {
-                        musicSource.clip = _pendingMusic;
-                        musicSource.volume = musicVolume;
-                        musicSource.Play();
-                        _pendingMusic = null;
-                    }
-                }
-            }
+            var go = new GameObject(label);
+            go.transform.SetParent(transform);
+            var src = go.AddComponent<AudioSource>();
+            src.playOnAwake = false;
+            src.loop = loop;
+            return src;
         }
 
-        /// <summary>
-        /// Play background music with crossfade.
-        /// Maps to Python's zone-based music switching.
-        /// </summary>
-        public void PlayMusic(AudioClip clip)
-        {
-            if (clip == null) return;
-            if (musicSource.clip == clip && musicSource.isPlaying) return;
-
-            if (musicSource.isPlaying)
-            {
-                _pendingMusic = clip;
-                _fadingOut = true;
-                _fadeTimer = musicFadeDuration;
-            }
-            else
-            {
-                musicSource.clip = clip;
-                musicSource.volume = musicVolume;
-                musicSource.Play();
-            }
-        }
-
-        public void StopMusic()
-        {
-            _fadingOut = true;
-            _fadeTimer = musicFadeDuration;
-            _pendingMusic = null;
-        }
-
-        /// <summary>
-        /// Play a one-shot SFX from the pool.
-        /// </summary>
-        public void PlaySFX(AudioClip clip, float volumeScale = 1f)
-        {
-            if (clip == null) return;
-
-            var src = _sfxPool[_sfxIndex];
-            src.volume = sfxVolume * volumeScale;
-            src.PlayOneShot(clip);
-            _sfxIndex = (_sfxIndex + 1) % _sfxPool.Count;
-        }
-
-        /// <summary>
-        /// Play SFX at a world position (3D spatialized).
-        /// </summary>
-        public void PlaySFXAtPosition(AudioClip clip, Vector3 position, float volumeScale = 1f)
-        {
-            if (clip == null) return;
-            AudioSource.PlayClipAtPoint(clip, position, sfxVolume * volumeScale);
-        }
-
-        public void SetMusicVolume(float vol)
-        {
-            musicVolume = Mathf.Clamp01(vol);
-            if (!_fadingOut)
-                musicSource.volume = musicVolume;
-        }
-
-        public void SetSFXVolume(float vol)
-        {
-            sfxVolume = Mathf.Clamp01(vol);
-        }
     }
 }
