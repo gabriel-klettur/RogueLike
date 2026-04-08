@@ -17,6 +17,10 @@ namespace Valkur.Gameplay.NPC
         [SerializeField] private float buyPriceMultiplier = 1.0f;
         [SerializeField] private float sellPriceMultiplier = 0.5f;
 
+        [Header("Economy Config (optional)")]
+        [Tooltip("Assign to use economy-aware pricing pipeline. Falls back to simple multipliers if null.")]
+        [SerializeField] private VendorConfigDefinition vendorConfig;
+
         private NPCInteractable _interactable;
 
         [System.Serializable]
@@ -30,6 +34,7 @@ namespace Valkur.Gameplay.NPC
         public IReadOnlyList<ShopEntry> ShopInventory => shopInventory;
         public float BuyMultiplier => buyPriceMultiplier;
         public float SellMultiplier => sellPriceMultiplier;
+        public VendorConfigDefinition VendorConfig => vendorConfig;
 
         private void Awake()
         {
@@ -69,6 +74,10 @@ namespace Valkur.Gameplay.NPC
 
         public int GetBuyPrice(ItemDefinition item)
         {
+            // Economy-aware pipeline when VendorConfigDefinition is assigned
+            if (vendorConfig != null && VendorEconomyService.Instance != null)
+                return VendorEconomyService.Instance.GetBuyPrice(vendorConfig, item);
+
             foreach (var entry in shopInventory)
             {
                 if (entry.item == item && entry.priceOverride > 0)
@@ -79,6 +88,10 @@ namespace Valkur.Gameplay.NPC
 
         public int GetSellPrice(ItemDefinition item)
         {
+            // Economy-aware pipeline when VendorConfigDefinition is assigned
+            if (vendorConfig != null && VendorEconomyService.Instance != null)
+                return VendorEconomyService.Instance.GetSellPrice(vendorConfig, item);
+
             if (item == null) return 0;
             int basePrice = item.sellPrice > 0 ? item.sellPrice : item.buyPrice;
             return Mathf.RoundToInt(basePrice * sellPriceMultiplier);
