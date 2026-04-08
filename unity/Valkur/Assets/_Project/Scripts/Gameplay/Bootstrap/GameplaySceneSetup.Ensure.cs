@@ -1,6 +1,8 @@
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.MapEditor;
+using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
@@ -193,6 +195,78 @@ namespace Valkur.Gameplay
             var go = new GameObject("DevConsole");
             go.AddComponent<DevConsole>();
             Debug.Log("[GameplaySceneSetup] DevConsole created (` or F4 to toggle).");
+        }
+
+        private void EnsureChatSystem()
+        {
+            if (FindObjectOfType<ChatSystem>() != null) return;
+            var go = new GameObject("ChatSystem");
+            go.AddComponent<ChatSystem>();
+            Debug.Log("[GameplaySceneSetup] ChatSystem created.");
+
+            if (FindObjectOfType<ChatUI>() == null)
+            {
+                var uiGo = new GameObject("ChatUI");
+                uiGo.AddComponent<ChatUI>();
+                Debug.Log("[GameplaySceneSetup] ChatUI created.");
+            }
+        }
+
+        private void EnsureVendorEconomyService()
+        {
+            if (VendorEconomyService.Instance != null) return;
+            var go = new GameObject("VendorEconomyService");
+            go.AddComponent<VendorEconomyService>();
+            Debug.Log("[GameplaySceneSetup] VendorEconomyService created.");
+        }
+
+        private void EnsureWorldLightLoader()
+        {
+            if (FindObjectOfType<World.WorldLightLoader>() != null) return;
+
+            if (_lightPresetCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No LightPresetCatalog assigned — ambient world lights skipped.");
+                return;
+            }
+
+            var go = new GameObject("WorldLightLoader");
+            var loader = go.AddComponent<World.WorldLightLoader>();
+            loader.SetCatalog(_lightPresetCatalog);
+            Debug.Log("[GameplaySceneSetup] WorldLightLoader created.");
+        }
+
+        private void EnsureBuildingCollisionLoader()
+        {
+            if (FindObjectOfType<World.BuildingCollisionLoader>() != null) return;
+            var go = new GameObject("BuildingCollisionLoader");
+            go.AddComponent<World.BuildingCollisionLoader>();
+            Debug.Log("[GameplaySceneSetup] BuildingCollisionLoader created.");
+        }
+
+        private void EnsureSpawnerEditor()
+        {
+            if (SpawnerEditorManager.Instance != null) return;
+
+            var go = new GameObject("SpawnerEditorManager");
+            var mgr = go.AddComponent<SpawnerEditorManager>();
+
+            if (_spawnerTemplateCatalog != null)
+            {
+                // Set catalog via serialized field
+                var so = new UnityEngine.Object[] { mgr };
+#if UNITY_EDITOR
+                var serialized = new UnityEditor.SerializedObject(mgr);
+                var catalogProp = serialized.FindProperty("_catalog");
+                if (catalogProp != null)
+                {
+                    catalogProp.objectReferenceValue = _spawnerTemplateCatalog;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+#endif
+            }
+
+            Debug.Log("[GameplaySceneSetup] SpawnerEditorManager created. Press F3 to toggle.");
         }
     }
 }

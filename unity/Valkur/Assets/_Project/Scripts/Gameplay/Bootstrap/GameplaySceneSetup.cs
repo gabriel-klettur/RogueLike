@@ -36,6 +36,14 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Catalog of particle presets. Populate via 'Valkur > Particles > Import Presets from Python JSON'.")]
         private ParticlePresetCatalog _particlePresetCatalog;
 
+        [Header("Lighting")]
+        [SerializeField, Tooltip("Catalog of light presets. Populate via 'Valkur > Lighting > Import Presets from Python JSON'.")]
+        private LightPresetCatalog _lightPresetCatalog;
+
+        [Header("Spawners")]
+        [SerializeField, Tooltip("Catalog of spawner templates. Populate via 'Valkur > Spawners > Import Templates'.")]
+        private SpawnerTemplateCatalog _spawnerTemplateCatalog;
+
         private WorldGridBuilder _gridBuilder;
 
         private void Start()
@@ -51,6 +59,11 @@ namespace Valkur.Gameplay
             EnsureSaveLoadInput();
             EnsureNPCSeparation();
             EnsureVendorShopUI();
+            EnsureVendorEconomyService();
+            EnsureChatSystem();
+            EnsureWorldLightLoader();
+            EnsureBuildingCollisionLoader();
+            EnsureSpawnerEditor();
             EnsureDevConsole();
             SpawnPlayer();
             SpawnTestMonsters();
