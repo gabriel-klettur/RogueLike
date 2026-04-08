@@ -32,10 +32,15 @@ namespace Valkur.Gameplay.Spells
 
         private static readonly Dictionary<SpellType, ISpellExecutor> Executors = new Dictionary<SpellType, ISpellExecutor>
         {
-            { SpellType.Projectile, new ProjectileExecutor() },
-            { SpellType.Slash,      new SlashExecutor() },
-            { SpellType.Area,       new AreaExecutor() },
-            { SpellType.Dash,       new DashExecutor() }
+            { SpellType.Projectile,    new ProjectileExecutor() },
+            { SpellType.Slash,         new SlashExecutor() },
+            { SpellType.Area,          new AreaExecutor() },
+            { SpellType.Dash,          new DashExecutor() },
+            { SpellType.Teleport,      new TeleportExecutor() },
+            { SpellType.Boomerang,     new BoomerangExecutor() },
+            { SpellType.Lightning,     new LightningExecutor() },
+            { SpellType.ChainLightning,new LightningExecutor() },
+            { SpellType.Beam,          new LaserBeamExecutor() },
         };
 
         public CastPhase CurrentPhase => _phase;

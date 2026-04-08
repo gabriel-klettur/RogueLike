@@ -20,6 +20,7 @@ namespace Valkur.Gameplay.World
         [SerializeField] private PhysicsMaterial2D tilemapPhysicsMaterial;
 
         private Grid _grid;
+        private Material _unlitFallbackMaterial;
 
         public Grid Grid => _grid;
 
@@ -70,13 +71,14 @@ namespace Valkur.Gameplay.World
                 yield break;
             }
 
-            var unlitMaterial = new Material(unlitShader);
+            _unlitFallbackMaterial = new Material(unlitShader);
+            _unlitFallbackMaterial.hideFlags = HideFlags.HideAndDontSave;
             var renderers = _grid.GetComponentsInChildren<TilemapRenderer>();
             int count = 0;
             foreach (var r in renderers)
             {
                 if (!r.enabled) continue; // Skip collision layers
-                r.material = unlitMaterial;
+                r.sharedMaterial = _unlitFallbackMaterial;
                 count++;
             }
             Debug.Log($"[WorldGridBuilder] Applied Sprite-Unlit-Default to {count} TilemapRenderers.");
@@ -95,13 +97,34 @@ namespace Valkur.Gameplay.World
             return layerTransform.GetComponent<Tilemap>();
         }
 
+        /// <summary>
+        /// Clear all tiles from all tilemap layers without destroying the grid hierarchy.
+        /// Used by ZonePortal for same-scene overlay swaps.
+        /// </summary>
+        public void ClearWorld()
+        {
+            if (_grid == null) return;
+
+            var tilemaps = _grid.GetComponentsInChildren<Tilemap>();
+            foreach (var tm in tilemaps)
+                tm.ClearAllTiles();
+
+            Debug.Log("[WorldGridBuilder] World cleared.");
+        }
+
+        private void OnDestroy()
+        {
+            if (_unlitFallbackMaterial != null)
+                Destroy(_unlitFallbackMaterial);
+        }
+
         private void CreateTilemapLayer(Transform parent, TilemapLayerSetup.TilemapLayer layer)
         {
             var go = new GameObject(layer.ToString());
             go.transform.SetParent(parent, false);
 
             var tilemap = go.AddComponent<Tilemap>();
-            tilemap.tileAnchor = new Vector3(0.5f, 0f, 0f);
+            tilemap.tileAnchor = new Vector3(0.5f, 0.5f, 0f);
 
             var renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;

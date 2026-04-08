@@ -6,7 +6,8 @@
         "Valkur.Data",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
-        "Cinemachine"
+        "Cinemachine",
+        "Unity.2D.PixelPerfect"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

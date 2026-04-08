@@ -69,11 +69,21 @@ namespace Valkur.Gameplay
                 combat.SetSlashVfxColor(new Color(0.2f, 0.9f, 0.3f, 0.8f));
             }
 
-            EntitySpriteHelper.EnsureMonsterSprite(go.GetComponentInChildren<SpriteRenderer>());
+            var spriteRenderer = go.GetComponentInChildren<SpriteRenderer>();
+            bool appliedDataDrivenVisuals = EntityAnimationBinder.ApplyMonsterVisuals(go, def);
+            if (!appliedDataDrivenVisuals)
+                EntitySpriteHelper.EnsureMonsterSprite(spriteRenderer);
+            EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
             InitHealth(go, def.stats.hp);
 
             if (go.GetComponent<FloatingDamageSpawner>() == null)
                 go.AddComponent<FloatingDamageSpawner>();
+
+            if (go.GetComponent<StatusEffectManager>() == null)
+                go.AddComponent<StatusEffectManager>();
+
+            // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency
+            ConfigureMinimapDot(go, "Monster", new Color(0.9f, 0.2f, 0.2f, 1f));
 
             var npcBar = go.GetComponent<WorldHealthBar>();
             if (npcBar == null) npcBar = go.AddComponent<WorldHealthBar>();
@@ -141,12 +151,31 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<PickupSystem>() == null)
                 go.AddComponent<PickupSystem>();
+
+            // Currency wallet (Python: gold field on player entity)
+            if (go.GetComponent<CurrencyWallet>() == null)
+                go.AddComponent<CurrencyWallet>();
+
+            // Item consumer (Python: ConsumeSystem)
+            if (go.GetComponent<Inventory.ItemConsumer>() == null)
+                go.AddComponent<Inventory.ItemConsumer>();
         }
 
         private static void InitSharedVisuals(GameObject go)
         {
             if (go.GetComponent<FloatingDamageSpawner>() == null)
                 go.AddComponent<FloatingDamageSpawner>();
+
+            if (go.GetComponent<StatusEffectManager>() == null)
+                go.AddComponent<StatusEffectManager>();
+
+            // Combo counter: only on player (tag is set before this call)
+            if (go.CompareTag("Player") && go.GetComponent<ComboCounter>() == null)
+                go.AddComponent<ComboCounter>();
+
+            // Minimap dot — uses reflection to avoid Gameplay→UI circular dependency
+            if (go.CompareTag("Player"))
+                ConfigureMinimapDot(go, "Player", new Color(0.2f, 0.95f, 0.3f, 1f));
 
             var playerBar = go.GetComponent<WorldHealthBar>();
             if (playerBar == null) playerBar = go.AddComponent<WorldHealthBar>();
@@ -211,6 +240,41 @@ namespace Valkur.Gameplay
             if (CombatRangeVisualizer.Instance != null) return;
             var vizGo = new GameObject("CombatRangeVisualizer");
             vizGo.AddComponent<CombatRangeVisualizer>();
+        }
+
+        // ── Minimap dot helper (reflection to avoid Gameplay→UI circular dep) ──
+
+        private static System.Type _minimapDotType;
+        private static System.Type _minimapDotEnumType;
+        private static System.Reflection.MethodInfo _configureMethod;
+        private static bool _minimapReflectionFailed;
+
+        private static void ConfigureMinimapDot(GameObject go, string dotTypeName, Color color)
+        {
+            if (_minimapReflectionFailed) return;
+
+            if (_minimapDotType == null)
+            {
+                _minimapDotType = System.Type.GetType("Valkur.UI.HUD.MinimapDot, Valkur.UI");
+                _minimapDotEnumType = System.Type.GetType("Valkur.UI.HUD.MinimapDotType, Valkur.UI");
+                if (_minimapDotType == null || _minimapDotEnumType == null)
+                {
+                    _minimapReflectionFailed = true;
+                    Debug.LogWarning("[EntitySetup] MinimapDot type not found — minimap dots skipped.");
+                    return;
+                }
+                _configureMethod = _minimapDotType.GetMethod("Configure",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            }
+
+            var dot = go.GetComponent(_minimapDotType);
+            if (dot == null) dot = go.AddComponent(_minimapDotType);
+
+            if (_configureMethod != null)
+            {
+                var enumVal = System.Enum.Parse(_minimapDotEnumType, dotTypeName);
+                _configureMethod.Invoke(dot, new object[] { enumVal, color });
+            }
         }
     }
 }

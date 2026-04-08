@@ -12,10 +12,13 @@ namespace Valkur.Gameplay
     {
         [SerializeField] private int maxHp = 100;
         [SerializeField] private int currentHp;
+        private bool _invincible;
 
         public int MaxHp => maxHp;
+        public int MaxHealth => maxHp;
         public int CurrentHp => currentHp;
         public bool IsDead => currentHp <= 0;
+        public bool IsInvincible => _invincible;
         public float NormalizedHp => maxHp > 0 ? (float)currentHp / maxHp : 0f;
 
         public event Action<int, int> OnHpChanged;
@@ -36,7 +39,7 @@ namespace Valkur.Gameplay
 
         public void TakeDamage(int amount)
         {
-            if (IsDead || amount <= 0) return;
+            if (IsDead || amount <= 0 || _invincible) return;
 
             currentHp = Mathf.Max(0, currentHp - amount);
             OnDamaged?.Invoke(amount);
@@ -61,6 +64,11 @@ namespace Valkur.Gameplay
 
             currentHp = Mathf.Min(maxHp, currentHp + amount);
             OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
+        public void SetInvincible(bool invincible)
+        {
+            _invincible = invincible;
         }
     }
 }

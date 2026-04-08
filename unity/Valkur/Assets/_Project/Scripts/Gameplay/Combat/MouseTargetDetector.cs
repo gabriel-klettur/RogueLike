@@ -13,7 +13,9 @@ namespace Valkur.Gameplay.Combat
     {
         [Header("Settings")]
         [SerializeField] private LayerMask detectableLayers;
+#pragma warning disable CS0414
         [SerializeField] private float maxDistance = 50f;
+#pragma warning restore CS0414
         [SerializeField] private float raycastRadius = 0.2f;
 
         private GameObject _currentTarget;

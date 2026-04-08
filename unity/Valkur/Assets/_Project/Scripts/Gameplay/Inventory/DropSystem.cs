@@ -19,7 +19,8 @@ namespace Valkur.Gameplay.Inventory
             if (item == null || quantity <= 0) return null;
 
             var go = new GameObject($"Drop_{item.itemId}");
-            go.layer = LayerMask.NameToLayer("Default");
+            int pickupLayer = LayerMask.NameToLayer("Pickup");
+            go.layer = pickupLayer != -1 ? pickupLayer : 0;
 
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = item.icon ?? item.iconSmall;

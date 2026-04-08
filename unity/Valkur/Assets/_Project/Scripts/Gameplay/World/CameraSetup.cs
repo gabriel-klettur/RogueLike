@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.U2D;
 using Cinemachine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -24,6 +25,14 @@ namespace Valkur.Gameplay
         [SerializeField] private float mapEditorMaxZoomMultiplier = 20f;
         [SerializeField] private float mapEditorZoomStepMultiplier = 4f;
 
+        [Header("Pixel Perfect")]
+        [Tooltip("Assets pixels-per-unit for PixelPerfectCamera (should match tile PPU)")]
+        [SerializeField] private int assetsPPU = 32;
+        [Tooltip("Reference resolution width (logical pixels)")]
+        [SerializeField] private int refResolutionX = 640;
+        [Tooltip("Reference resolution height (logical pixels)")]
+        [SerializeField] private int refResolutionY = 360;
+
         private CinemachineVirtualCamera _vcam;
 
         private void Awake()
@@ -46,6 +55,29 @@ namespace Valkur.Gameplay
             {
                 _vcam.Follow = player.transform;
             }
+
+            // PixelPerfectCamera disabled at runtime: it conflicts with Cinemachine on
+            // non‐even resolutions (Free Aspect / Game view). Once we lock to a fixed
+            // resolution build, re‐enable via the scene or by uncommenting below.
+            // SetupPixelPerfectCamera();
+        }
+
+        private void SetupPixelPerfectCamera()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            var ppc = cam.GetComponent<PixelPerfectCamera>();
+            if (ppc == null)
+                ppc = cam.gameObject.AddComponent<PixelPerfectCamera>();
+
+            ppc.assetsPPU = assetsPPU;
+            ppc.refResolutionX = refResolutionX;
+            ppc.refResolutionY = refResolutionY;
+            ppc.upscaleRT = false;
+            ppc.pixelSnapping = true;
+
+            Debug.Log($"[CameraSetup] PixelPerfectCamera configured: PPU={assetsPPU}, ref={refResolutionX}x{refResolutionY}");
         }
 
         private void Update()

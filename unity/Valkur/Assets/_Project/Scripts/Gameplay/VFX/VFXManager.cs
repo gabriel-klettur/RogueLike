@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.Gameplay.VFX
 {
@@ -18,6 +19,7 @@ namespace Valkur.Gameplay.VFX
 
         private readonly Dictionary<string, ObjectPool> _pools = new Dictionary<string, ObjectPool>();
         private Transform _poolParent;
+        private ParticlePresetCatalog _particleCatalog;
 
         protected override void OnSingletonAwake()
         {
@@ -39,6 +41,46 @@ namespace Valkur.Gameplay.VFX
 
             int size = warmCount > 0 ? warmCount : poolSizePerType;
             _pools[key] = new ObjectPool(prefab, size, parent);
+        }
+
+        /// <summary>
+        /// Provide the particle preset catalog for SpawnParticlePreset.
+        /// Called by GameplaySceneSetup after creating the manager.
+        /// </summary>
+        public void SetParticleCatalog(ParticlePresetCatalog catalog) => _particleCatalog = catalog;
+
+        /// <summary>
+        /// Spawn a one-shot particle effect from a preset at world position.
+        /// duration &lt; 0  → auto-destroy after preset lifespan + 1 s.
+        /// Maps to Python's gameplay emitter systems (dash, fireball trail, healing aura, etc.)
+        /// called from combat/spell MonoBehaviours.
+        /// </summary>
+        public void SpawnParticlePreset(string presetId, Vector3 position, float duration = -1f, float scale = 1f)
+        {
+            if (_particleCatalog == null)
+            {
+                Debug.LogWarning("[VFXManager] No particle catalog set — call SetParticleCatalog() first.");
+                return;
+            }
+
+            var preset = _particleCatalog.GetById(presetId);
+            if (preset == null)
+            {
+                Debug.LogWarning($"[VFXManager] Particle preset '{presetId}' not found in catalog.");
+                return;
+            }
+
+            var go = new GameObject($"ParticleEffect_{presetId}");
+            go.transform.position = position;
+            go.transform.SetParent(_poolParent, true);
+
+            var emitter = go.AddComponent<ParticleEmitter>();
+            emitter.ApplyPreset(preset, scale);
+
+            float destroyAfter = duration > 0f
+                ? duration
+                : (preset.vfx.lifespan > 0f ? preset.vfx.lifespan + 1f : 5f);
+            Destroy(go, destroyAfter);
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
+using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay.NPC
 {
@@ -47,8 +48,23 @@ namespace Valkur.Gameplay.NPC
 
         private void HandleInteract(NPCInteractable npc)
         {
-            // TODO: Open shop UI
-            Debug.Log($"[VendorNPC] Shop opened: {npc.NPCName} with {shopInventory.Count} items");
+            var playerGo = Valkur.Core.EntityRegistry.PlayerTransform?.gameObject;
+            if (playerGo == null)
+            {
+                Debug.LogWarning("[VendorNPC] No player found to open shop.");
+                return;
+            }
+
+            var shopUI = VendorShopUI.Instance;
+            if (shopUI == null)
+            {
+                Debug.LogWarning("[VendorNPC] VendorShopUI singleton not found in scene.");
+                return;
+            }
+
+            var playerInventory = playerGo.GetComponent<Inventory.Inventory>();
+            var playerWallet = playerGo.GetComponent<CurrencyWallet>();
+            shopUI.OpenShop(this, playerInventory, playerWallet);
         }
 
         public int GetBuyPrice(ItemDefinition item)
@@ -98,6 +114,44 @@ namespace Valkur.Gameplay.NPC
             int price = GetSellPrice(item);
             playerInventory.RemoveItem(item);
             playerGold += price;
+            return true;
+        }
+
+        /// <summary>Buy an item using a CurrencyWallet. Automatically handles refunds on failure.</summary>
+        public bool TryBuyItem(ItemDefinition item, Inventory.Inventory playerInventory, CurrencyWallet wallet)
+        {
+            int price = GetBuyPrice(item);
+            if (!wallet.TrySpend(price)) return false;
+
+            if (playerInventory.IsFull)
+            {
+                wallet.Add(price);
+                return false;
+            }
+
+            for (int i = 0; i < shopInventory.Count; i++)
+            {
+                if (shopInventory[i].item == item && shopInventory[i].stock > 0)
+                {
+                    var entry = shopInventory[i];
+                    entry.stock--;
+                    shopInventory[i] = entry;
+                    playerInventory.AddItem(item);
+                    return true;
+                }
+            }
+
+            wallet.Add(price); // refund — item not in stock
+            return false;
+        }
+
+        /// <summary>Sell an item to this vendor using a CurrencyWallet.</summary>
+        public bool TrySellItem(ItemDefinition item, Inventory.Inventory playerInventory, CurrencyWallet wallet)
+        {
+            if (!playerInventory.HasItem(item)) return false;
+            int price = GetSellPrice(item);
+            playerInventory.RemoveItem(item);
+            wallet.Add(price);
             return true;
         }
     }

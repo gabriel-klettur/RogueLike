@@ -1,18 +1,32 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.FSM
 {
     /// <summary>
-    /// Chase state: pursues player with increased speed, transitions to Attack when in melee range.
+    /// Chase state: pursues player with A* pathfinding, transitions to Attack when in melee range.
     /// Maps to Python's ChaseState with aggro exit hysteresis and leash support.
+    /// Falls back to direct movement when PathFinder is unavailable.
     /// </summary>
     public class ChaseState : IState
     {
         private const float AGGRO_EXIT_HYSTERESIS = 1.15f;
         private const float CHASE_SPEED_MULTIPLIER = 1.5f;
+        private const float REPATH_INTERVAL = 0.5f;
+        private const float WAYPOINT_REACH_DIST = 0.25f;
 
-        public void Enter(StateMachine fsm) { }
+        private List<Vector2> _waypoints = new List<Vector2>();
+        private int _waypointIndex;
+        private float _repathTimer;
+
+        public void Enter(StateMachine fsm)
+        {
+            _waypoints.Clear();
+            _waypointIndex = 0;
+            _repathTimer = REPATH_INTERVAL; // force immediate repath on first frame
+        }
 
         public void Execute(StateMachine fsm, float dt)
         {
@@ -59,15 +73,42 @@ namespace Valkur.Gameplay.FSM
                 return;
             }
 
-            // Move towards player
             float baseSpeed = fsm.GetContextFloat("chasing_speed", 3f);
             float chaseSpeed = baseSpeed * CHASE_SPEED_MULTIPLIER;
+
+            // Repath periodically
+            _repathTimer += dt;
+            if (_repathTimer >= REPATH_INTERVAL)
+            {
+                _repathTimer = 0f;
+                if (PathFinder.Instance != null)
+                {
+                    _waypoints = PathFinder.Instance.FindPath(myPos, playerPos);
+                    _waypointIndex = 0;
+                }
+            }
+
+            // Follow waypoints or fall back to direct movement
+            Vector2 moveDir;
+            if (_waypoints != null && _waypointIndex < _waypoints.Count)
+            {
+                Vector2 target = _waypoints[_waypointIndex];
+                Vector2 toTarget = target - myPos;
+                if (toTarget.sqrMagnitude < WAYPOINT_REACH_DIST * WAYPOINT_REACH_DIST)
+                    _waypointIndex++;
+                moveDir = toTarget.sqrMagnitude > 0.001f ? toTarget.normalized : delta.normalized;
+            }
+            else
+            {
+                moveDir = delta.normalized;
+            }
+
             if (c?.Rb != null)
-                c.Rb.velocity = delta.normalized * chaseSpeed;
+                c.Rb.velocity = moveDir * chaseSpeed;
 
             // Flip sprite
             if (c?.Sprite != null)
-                c.Sprite.flipX = delta.x < 0;
+                c.Sprite.flipX = moveDir.x < 0;
         }
 
         public void Exit(StateMachine fsm)

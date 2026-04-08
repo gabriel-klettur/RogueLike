@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
@@ -108,265 +108,25 @@ namespace Valkur.Gameplay.TileEditor
             UpdateViewPanelHover();
         }
 
-        // ── Toggle ──
+        // ------------------------------------------------------------------
+        // Input Handlers (partial — see TileEditorManager.InputHandlers.cs)
+        // ------------------------------------------------------------------
+        private partial void HandleToggle();
+        private partial void HandleToolShortcuts();
+        private partial void HandleLayerScroll();
+        private partial void HandleUndoRedo();
+        private partial void HandleMouseInput();
 
-        private void HandleToggle()
-        {
-            _state.Active = !_state.Active;
-            _ui.SetVisible(_state.Active);
-
-            if (_state.Active)
-            {
-                _state.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
-                _ui.RefreshToolHighlights();
-                _ui.RefreshLayerLabel();
-                _ui.RefreshBrushSizeLabel();
-                _ui.RefreshTilePicker();
-                _ui.SetStatus("Tile Editor active. F6 to close.");
-                if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
-                if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
-                UpdateBorderToolLabel();
-                Debug.Log("[TileEditor] Activated (F6)");
-            }
-            else
-            {
-                _undo.EndStroke();
-                HideBrushPreview();
-                if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
-                if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
-                Debug.Log("[TileEditor] Deactivated (F6)");
-            }
-        }
-
-        // ── Input dispatch ──
-
-        private void HandleToolShortcuts()
-        {
-            var tool = _input.PollToolShortcut();
-            if (tool.HasValue) OnToolChanged(tool.Value);
-        }
-
-        private void HandleLayerScroll()
-        {
-            int delta = _input.PollLayerScroll();
-            if (delta == 0) return;
-            int val = (int)_state.CurrentLayer + delta;
-            if (val < 0) val = 8;
-            if (val > 8) val = 0;
-            OnLayerChanged((TilemapLayerSetup.TilemapLayer)val);
-        }
-
-        private void HandleUndoRedo()
-        {
-            int action = _input.PollUndoRedo();
-            if (action == 1 && _undo.Undo()) _ui.SetStatus("Undo");
-            else if (action == 2 && _undo.Redo()) _ui.SetStatus("Redo");
-        }
-
-        // ── Mouse input ──
-
-        private void HandleMouseInput()
-        {
-            if (_input.IsPointerOverUI()) return;
-
-            var tilemap = GetCurrentTilemap();
-            if (tilemap == null) return;
-
-            Vector3Int cellPos = GetCellUnderMouse(tilemap);
-
-            switch (_state.CurrentTool)
-            {
-                case TileEditorState.Tool.Brush:    HandleBrushInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Eraser:   HandleEraserInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Fill:     HandleFillInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Eyedropper: HandleEyedropperInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Select:   HandleSelectInput(tilemap, cellPos); break;
-            }
-        }
-
-        private bool _brushDiagLogged;
-
-        private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            if (_state.SelectedTile == null) return;
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                _undo.StartStroke(tilemap);
-                var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
-                _undo.RecordEdits(edits);
-                _state.IsDragging = true;
-
-                if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
-
-                if (!_brushDiagLogged)
-                {
-                    _brushDiagLogged = true;
-                    TileEditorDiagnostics.LogBrushDiagnostics(this, tilemap, cellPos, _state.SelectedTile);
-                }
-            }
-            else if (mouse.leftButton.isPressed && _state.IsDragging)
-            {
-                _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell));
-            }
-            else if (mouse.leftButton.wasReleasedThisFrame)
-            {
-                _undo.EndStroke();
-                _state.IsDragging = false;
-            }
-        }
-
-        private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                _undo.StartStroke(tilemap);
-                var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
-                _undo.RecordEdits(edits);
-                _state.IsDragging = true;
-
-                if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
-            }
-            else if (mouse.leftButton.isPressed && _state.IsDragging)
-            {
-                _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell));
-            }
-            else if (mouse.leftButton.wasReleasedThisFrame)
-            {
-                _undo.EndStroke();
-                _state.IsDragging = false;
-            }
-        }
-
-        private void HandleFillInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            if (_state.SelectedTile == null) return;
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                _undo.StartStroke(tilemap);
-                var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile, canEditCell: CanEditCell);
-                _undo.RecordEdits(edits);
-                _undo.EndStroke();
-
-                if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
-            }
-        }
-
-        private void HandleEyedropperInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                var picked = TileBrush.Pick(tilemap, cellPos);
-                if (picked != null)
-                {
-                    _state.SelectedTile = picked;
-                    _ui.SetStatus($"Picked: {picked.name}");
-
-                    Sprite sprite = null;
-                    if (picked is Tile pickedTile) sprite = pickedTile.sprite;
-                    _ui.UpdateViewPanelSelected(sprite, picked.name);
-                    _ui.UpdateSelectedTilePreview(sprite, picked.name);
-
-                    OnToolChanged(TileEditorState.Tool.Brush);
-                }
-            }
-        }
-
-        private void HandleSelectInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                var tile = tilemap.GetTile(cellPos);
-                string info = tile != null ? tile.name : "(empty)";
-                _ui.SetStatus($"Cell ({cellPos.x},{cellPos.y}) Layer:{_state.CurrentLayer} Tile:{info}");
-
-                Sprite sprite = null;
-                if (tile is Tile t) sprite = t.sprite;
-                _ui.UpdateViewPanelSelected(sprite, info);
-            }
-        }
-
-        // ── Visual helpers ──
-
-        private void CreateScreenBorderOverlay()
-        {
-            _borderOverlayGo = new GameObject("TileEditorBorderOverlay");
-            _borderOverlayGo.transform.SetParent(transform);
-            var overlay = _borderOverlayGo.AddComponent<TileEditorBorderOverlay>();
-            overlay.Initialize();
-            _borderOverlayGo.SetActive(false);
-        }
-
-        private void CreateGridCursor()
-        {
-            var cursorGo = new GameObject("TileEditorGridCursor");
-            cursorGo.transform.SetParent(transform);
-            _gridCursor = cursorGo.AddComponent<TileEditorGridCursor>();
-            _gridCursor.Initialize();
-            cursorGo.SetActive(false);
-        }
-
-        private void CreateBrushPreview()
-        {
-            _brushPreviewGo = new GameObject("BrushPreview");
-            _brushPreviewGo.transform.SetParent(transform);
-            var sr = _brushPreviewGo.AddComponent<SpriteRenderer>();
-            sr.sortingOrder = 999;
-            sr.color = new Color(1f, 1f, 1f, 0.4f);
-            _brushPreviewGo.SetActive(false);
-        }
-
-        private void UpdateBrushPreview()
-        {
-            HideBrushPreview();
-        }
-
-        private void HideBrushPreview()
-        {
-            if (_brushPreviewGo != null) _brushPreviewGo.SetActive(false);
-        }
-
-        private void UpdateGridCursor()
-        {
-            if (_gridCursor == null) return;
-
-            if (_input.IsPointerOverUI())
-            {
-                _gridCursor.gameObject.SetActive(false);
-                return;
-            }
-
-            var tilemap = GetCurrentTilemap();
-            if (tilemap == null)
-            {
-                _gridCursor.gameObject.SetActive(false);
-                return;
-            }
-
-            _gridCursor.gameObject.SetActive(true);
-            Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
-            _gridCursor.UpdateCursor(worldPos, _state.BrushSize, _state.CurrentTool);
-        }
-
-        // ── Callbacks ──
+        // ------------------------------------------------------------------
+        // Visuals (partial — see TileEditorManager.Visuals.cs)
+        // ------------------------------------------------------------------
+        private partial void CreateScreenBorderOverlay();
+        private partial void CreateGridCursor();
+        private partial void CreateBrushPreview();
+        private partial void UpdateBrushPreview();
+        private partial void UpdateGridCursor();
+        private partial void UpdateViewPanelHover();
+        // â”€â”€ Callbacks â”€â”€
 
         private void OnTileSelected(TileCatalog.TileEntry entry)
         {
@@ -416,42 +176,8 @@ namespace Valkur.Gameplay.TileEditor
             _ui.RefreshBrushSizeLabel();
         }
 
-        // ── View panel hover ──
 
-        private void UpdateViewPanelHover()
-        {
-            if (_ui == null) return;
-
-            if (_input.IsPointerOverUI())
-            {
-                _ui.UpdateViewPanelHovered(null, "", "");
-                return;
-            }
-
-            var tilemap = GetCurrentTilemap();
-            if (tilemap == null)
-            {
-                _ui.UpdateViewPanelHovered(null, "", "");
-                return;
-            }
-
-            Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            var tileBase = tilemap.GetTile(cellPos);
-            if (tileBase != null)
-            {
-                Sprite sprite = null;
-                if (tileBase is Tile t) sprite = t.sprite;
-                string layerName = $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}";
-                _ui.UpdateViewPanelHovered(sprite, tileBase.name, layerName);
-            }
-            else
-            {
-                _ui.UpdateViewPanelHovered(null, $"({cellPos.x},{cellPos.y}) empty",
-                    $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}");
-            }
-        }
-
-        // ── Helpers ──
+        // â”€â”€ Helpers â”€â”€
 
         private Tilemap GetCurrentTilemap()
         {

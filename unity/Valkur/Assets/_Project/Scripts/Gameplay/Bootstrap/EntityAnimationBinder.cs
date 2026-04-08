@@ -5,7 +5,7 @@ using Valkur.Data;
 namespace Valkur.Gameplay
 {
     /// <summary>
-    /// Applies data-driven character sprites from PlayerDefinition into DirectionalAnimator.
+    /// Applies data-driven character sprites from definitions into DirectionalAnimator.
     /// Keeps rendering concerns isolated from gameplay stat setup.
     /// </summary>
     public static class EntityAnimationBinder
@@ -15,39 +15,52 @@ namespace Valkur.Gameplay
             if (go == null || def == null || def.assetConfig == null)
                 return false;
 
+            return ApplyVisuals(go, def.assetConfig);
+        }
+
+        public static bool ApplyMonsterVisuals(GameObject go, MonsterDefinition def)
+        {
+            if (go == null || def == null || def.assetConfig == null)
+                return false;
+
+            return ApplyVisuals(go, def.assetConfig);
+        }
+
+        private static bool ApplyVisuals(GameObject go, EntityAssetConfig assetConfig)
+        {
             var renderer = go.GetComponentInChildren<SpriteRenderer>();
             if (renderer == null)
                 return false;
 
             var animator = go.GetComponent<DirectionalAnimator>();
             if (animator == null)
-                return false;
+                animator = go.AddComponent<DirectionalAnimator>();
 
-            var idleSet = BuildSet(def.assetConfig.idle, def.assetConfig.idleSheets, out bool idleUsesFourDirectionalLayout);
+            var idleSet = BuildSet(assetConfig.idle, assetConfig.idleSheets, out bool idleUsesFourDirectionalLayout);
             if (!HasFrames(idleSet))
                 return false;
 
-            var walkSet = BuildSet(def.assetConfig.walk, def.assetConfig.walkSheets, out bool walkUsesFourDirectionalLayout);
+            var walkSet = BuildSet(assetConfig.walk, assetConfig.walkSheets, out bool walkUsesFourDirectionalLayout);
             if (!HasFrames(walkSet))
                 walkSet = idleSet;
 
-            var chaseSet = BuildSet(def.assetConfig.chase, def.assetConfig.chaseSheets, out _);
+            var chaseSet = BuildSet(assetConfig.chase, assetConfig.chaseSheets, out _);
             if (!HasFrames(chaseSet))
                 chaseSet = walkSet;
 
-            var castSet = BuildSet(def.assetConfig.cast, def.assetConfig.castSheets, out _);
+            var castSet = BuildSet(assetConfig.cast, assetConfig.castSheets, out _);
             if (!HasFrames(castSet))
                 castSet = walkSet;
 
-            var attackSet = BuildSet(def.assetConfig.attack, def.assetConfig.attackSheets, out _);
+            var attackSet = BuildSet(assetConfig.attack, assetConfig.attackSheets, out _);
             if (!HasFrames(attackSet))
                 attackSet = castSet;
 
-            var damageSet = BuildSet(def.assetConfig.damage, def.assetConfig.damageSheets, out _);
+            var damageSet = BuildSet(assetConfig.damage, assetConfig.damageSheets, out _);
             if (!HasFrames(damageSet))
                 damageSet = idleSet;
 
-            var deathSet = BuildSet(def.assetConfig.death, def.assetConfig.deathSheets, out _);
+            var deathSet = BuildSet(assetConfig.death, assetConfig.deathSheets, out _);
             if (!HasFrames(deathSet))
                 deathSet = idleSet;
 

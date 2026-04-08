@@ -26,6 +26,7 @@ namespace Valkur.Gameplay
         private MeleeCombat _meleeCombat;
         private DashAbility _dashAbility;
         private SpellCaster _spellCaster;
+        private StatusEffectManager _statusEffects;
         private Vector2 _moveInput;
         private Vector2 _facingDirection = Vector2.down;
         private Camera _mainCamera;
@@ -52,6 +53,7 @@ namespace Valkur.Gameplay
             _meleeCombat = GetComponent<MeleeCombat>();
             _dashAbility = GetComponent<DashAbility>();
             _spellCaster = GetComponent<SpellCaster>();
+            _statusEffects = GetComponent<StatusEffectManager>();
             _mainCamera = Camera.main;
 
             if (spriteRenderer == null)
@@ -129,6 +131,7 @@ namespace Valkur.Gameplay
         private void Update()
         {
             if (_health.IsDead) return;
+            if (_statusEffects != null && _statusEffects.IsStunned) return;
 
             ReadInput();
             UpdateFacingDirection();
@@ -138,6 +141,13 @@ namespace Valkur.Gameplay
         private void FixedUpdate()
         {
             if (_health.IsDead)
+            {
+                _rb.velocity = Vector2.zero;
+                return;
+            }
+
+            // Stun zeroes velocity (StunEffect.Tick also handles this, double-safe)
+            if (_statusEffects != null && _statusEffects.IsStunned)
             {
                 _rb.velocity = Vector2.zero;
                 return;

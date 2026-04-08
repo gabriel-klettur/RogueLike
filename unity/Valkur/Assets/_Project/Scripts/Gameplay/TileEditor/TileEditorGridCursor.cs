@@ -16,6 +16,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private LineRenderer _lineRenderer;
         private SpriteRenderer _fillRenderer;
+        private Material _lineMaterial;
 
         public void Initialize()
         {
@@ -27,8 +28,10 @@ namespace Valkur.Gameplay.TileEditor
             _lineRenderer.startWidth = 0.04f;
             _lineRenderer.endWidth = 0.04f;
             _lineRenderer.sortingOrder = 998;
-            _lineRenderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+            _lineMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
                 ?? Shader.Find("Sprites/Default"));
+            _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
+            _lineRenderer.sharedMaterial = _lineMaterial;
             _lineRenderer.startColor = CursorColor;
             _lineRenderer.endColor = CursorColor;
 
@@ -69,6 +72,12 @@ namespace Valkur.Gameplay.TileEditor
                 _fillRenderer.transform.localScale = new Vector3(brushSize, brushSize, 1f);
                 _fillRenderer.color = new Color(color.r, color.g, color.b, 0.15f);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_lineMaterial != null)
+                Destroy(_lineMaterial);
         }
 
         private Color GetToolColor(TileEditorState.Tool tool)
