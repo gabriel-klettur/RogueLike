@@ -9,15 +9,18 @@ namespace Valkur.Editor
     /// </summary>
     public class ValkurAssetPostprocessor : AssetPostprocessor
     {
-        private const int DEFAULT_PPU = 16;
-        private const int PLAYER_CHARACTER_PPU = 64;
-        private const int NPC_PPU = 16;
-        private const int TILE_PPU = 32;
-        private const int UI_PPU = 100;
+        private const int DEFAULT_PPU           = 16;
+        private const int PLAYER_CHARACTER_PPU  = 64;
+        private const int NPC_PPU               = 64;   // 128 px native ÷ 64 PPU = 2 units = 2 tiles (matches Python 0.5× scale)
+        private const int TILE_PPU              = 32;
+        private const int BUILDING_PPU          = 32;   // 1 Unity unit = 1 game tile = 32 px
+        private const int UI_PPU                = 100;
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith("Assets/_Project/Art/"))
+            if (!assetPath.StartsWith("Assets/_Project/Art/") &&
+                !assetPath.StartsWith("Assets/_Project/Resources/Tiles/") &&
+                !assetPath.StartsWith("Assets/_Project/Resources/Buildings/"))
                 return;
 
             var importer = (TextureImporter)assetImporter;
@@ -29,10 +32,20 @@ namespace Valkur.Editor
             importer.mipmapEnabled = false;
 
             // Category-specific PPU and pivot
-            if (assetPath.Contains("/Tiles/"))
+            if (assetPath.Contains("/Buildings/"))
+            {
+                // Building sprites are split at runtime using Sprite.Create.
+                // PPU=32 matches tile world units so that 32 px = 1 Unity unit = 1 game tile.
+                // isReadable is NOT required for Sprite.Create (UV-based crop).
+                importer.spritePixelsPerUnit = BUILDING_PPU;
+                importer.spritePivot         = new Vector2(0.5f, 0f); // bottom-center
+                importer.spriteImportMode    = SpriteImportMode.Single;
+                SetPivot(importer, new Vector2(0.5f, 0f));
+            }
+            else if (assetPath.Contains("/Tiles/"))
             {
                 importer.spritePixelsPerUnit = TILE_PPU;
-                SetPivot(importer, new Vector2(0.5f, 0f));
+                SetPivot(importer, new Vector2(0.5f, 0.5f));
             }
             else if (assetPath.Contains("/Characters/"))
             {
