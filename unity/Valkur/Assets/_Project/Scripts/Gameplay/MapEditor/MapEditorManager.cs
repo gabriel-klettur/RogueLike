@@ -14,7 +14,7 @@ namespace Valkur.Gameplay.MapEditor
     /// Runtime map editor migrated from Python workflow.
     /// Toggle with F7 to manage zones and define editable areas consumed by TileEditor.
     /// </summary>
-    public partial class MapEditorManager : SingletonMonoBehaviour<MapEditorManager>
+    public partial class MapEditorManager : SingletonMonoBehaviour<MapEditorManager>, GameEditorManager.IGameEditor
     {
         [Header("References")]
         [SerializeField] private ZoneManager zoneManager;
@@ -40,6 +40,23 @@ namespace Valkur.Gameplay.MapEditor
         private string _pendingDeleteZoneName;
 
         public bool IsActive => _state != null && _state.Active;
+
+        // IGameEditor
+        public string EditorName => "Map Editor";
+
+        public void Activate()
+        {
+            if (_state != null && !_state.Active)
+                ToggleActive();
+        }
+
+        public void Deactivate()
+        {
+            if (_state != null && _state.Active)
+                ToggleActive();
+            if (GameEditorManager.HasInstance)
+                GameEditorManager.Instance.NotifyDeactivated(this);
+        }
 
         [Serializable]
         private class ZonePersistenceFile
@@ -92,6 +109,8 @@ namespace Valkur.Gameplay.MapEditor
 
             zoneManager.OnZonesChanged += HandleZonesChanged;
             ApplyTileEditorConstraint();
+
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
         private void Update()
@@ -99,7 +118,12 @@ namespace Valkur.Gameplay.MapEditor
             if (_input == null || zoneManager == null) return;
 
             if (_input.WasTogglePressed())
-                ToggleActive();
+            {
+                if (GameEditorManager.HasInstance)
+                    GameEditorManager.Instance.ToggleExclusive(this);
+                else
+                    ToggleActive();
+            }
 
             if (!_state.Active) return;
 

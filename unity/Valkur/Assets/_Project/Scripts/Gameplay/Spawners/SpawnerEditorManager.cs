@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Spawners
     /// MVC-lite: state in this class, rendering via UGUI canvas.
     /// Python had ~14 sub-modules; this is a consolidated Unity port.
     /// </summary>
-    public partial class SpawnerEditorManager : SingletonMonoBehaviour<SpawnerEditorManager>
+    public partial class SpawnerEditorManager : SingletonMonoBehaviour<SpawnerEditorManager>, GameEditorManager.IGameEditor
     {
         [Header("References")]
         [Tooltip("Catalog of spawner templates for the template list.")]
@@ -58,6 +58,22 @@ namespace Valkur.Gameplay.Spawners
 
         public bool IsVisible => _visible;
 
+        // IGameEditor
+        public string EditorName => "Spawner Editor";
+        public bool IsActive => _visible;
+
+        public void Activate()
+        {
+            if (!_visible) SetVisible(true);
+        }
+
+        public void Deactivate()
+        {
+            if (_visible) SetVisible(false);
+            if (GameEditorManager.HasInstance)
+                GameEditorManager.Instance.NotifyDeactivated(this);
+        }
+
         // ------------------------------------------------------------------
         // Lifecycle
         // ------------------------------------------------------------------
@@ -85,12 +101,18 @@ namespace Valkur.Gameplay.Spawners
         {
             BuildUI();
             SetVisible(false);
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
         private void Update()
         {
             if (_toggleAction.WasPerformedThisFrame())
-                SetVisible(!_visible);
+            {
+                if (GameEditorManager.HasInstance)
+                    GameEditorManager.Instance.ToggleExclusive(this);
+                else
+                    SetVisible(!_visible);
+            }
 
             if (!_visible) return;
 
@@ -107,6 +129,7 @@ namespace Valkur.Gameplay.Spawners
             _clickAction?.Disable(); _clickAction?.Dispose();
             _rightClickAction?.Disable(); _rightClickAction?.Dispose();
             _escapeAction?.Disable(); _escapeAction?.Dispose();
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
 

@@ -25,7 +25,7 @@ namespace Valkur.Gameplay.TileEditor
 
         public void CreateActions()
         {
-            _toggleAction = new InputAction("ToggleTileEditor", InputActionType.Button, "<Keyboard>/f6");
+            _toggleAction = new InputAction("ToggleTileEditor", InputActionType.Button, "<Keyboard>/f8");
             _toggleAction.Enable();
 
             _toolBrushAction = new InputAction("ToolBrush", InputActionType.Button, "<Keyboard>/b");

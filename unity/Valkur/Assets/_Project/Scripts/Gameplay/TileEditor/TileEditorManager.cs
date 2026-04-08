@@ -9,9 +9,9 @@ namespace Valkur.Gameplay.TileEditor
     /// <summary>
     /// Thin coordinator for the in-game tile editor.
     /// Delegates input to TileEditorInputHandler, undo/redo to TileEditorUndoSystem.
-    /// Toggle with F6.
+    /// Toggle with F8.
     /// </summary>
-    public partial class TileEditorManager : SingletonMonoBehaviour<TileEditorManager>
+    public partial class TileEditorManager : SingletonMonoBehaviour<TileEditorManager>, GameEditorManager.IGameEditor
     {
         [Header("Tile Catalog")]
         [SerializeField] private TileCatalog tileCatalog;
@@ -37,6 +37,23 @@ namespace Valkur.Gameplay.TileEditor
 
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
+
+        // IGameEditor
+        public string EditorName => "Tile Editor";
+
+        public void Activate()
+        {
+            if (_state != null && !_state.Active)
+                HandleToggle();
+        }
+
+        public void Deactivate()
+        {
+            if (_state != null && _state.Active)
+                HandleToggle();
+            if (GameEditorManager.HasInstance)
+                GameEditorManager.Instance.NotifyDeactivated(this);
+        }
 
         public void SetEditConstraint(System.Func<Vector3Int, bool> constraint)
         {
@@ -79,6 +96,8 @@ namespace Valkur.Gameplay.TileEditor
             else
                 Debug.LogError("[TileEditor] No tiles found. Ensure sprites exist in Resources/Tiles/{category}/ folders.");
 
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
+
             var uiGo = new GameObject("TileEditorUI");
             uiGo.transform.SetParent(transform);
             _ui = uiGo.AddComponent<TileEditorUI>();
@@ -95,7 +114,12 @@ namespace Valkur.Gameplay.TileEditor
             if (_state == null) return;
 
             if (_input.WasTogglePressed())
-                HandleToggle();
+            {
+                if (GameEditorManager.HasInstance)
+                    GameEditorManager.Instance.ToggleExclusive(this);
+                else
+                    HandleToggle();
+            }
 
             if (!_state.Active) return;
 

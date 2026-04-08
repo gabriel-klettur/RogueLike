@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.MapEditor
 
         public void CreateActions()
         {
-            _toggleAction = new InputAction("ToggleMapEditor", InputActionType.Button, "<Keyboard>/f7");
+            _toggleAction = new InputAction("ToggleMapEditor", InputActionType.Button, "<Keyboard>/f11");
             _toggleAction.Enable();
 
             _selectAction = new InputAction("MapEditorSelect", InputActionType.Button, "<Mouse>/leftButton");

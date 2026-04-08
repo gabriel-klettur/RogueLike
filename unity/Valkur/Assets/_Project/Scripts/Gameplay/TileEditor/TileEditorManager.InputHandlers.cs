@@ -21,11 +21,11 @@ namespace Valkur.Gameplay.TileEditor
                 _ui.RefreshLayerLabel();
                 _ui.RefreshBrushSizeLabel();
                 _ui.RefreshTilePicker();
-                _ui.SetStatus("Tile Editor active. F6 to close.");
+                _ui.SetStatus("Tile Editor active. F8 to close.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 UpdateBorderToolLabel();
-                Debug.Log("[TileEditor] Activated (F6)");
+                Debug.Log("[TileEditor] Activated (F8)");
             }
             else
             {
@@ -33,7 +33,7 @@ namespace Valkur.Gameplay.TileEditor
                 HideBrushPreview();
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
-                Debug.Log("[TileEditor] Deactivated (F6)");
+                Debug.Log("[TileEditor] Deactivated (F8)");
             }
         }
 
@@ -99,7 +99,7 @@ namespace Valkur.Gameplay.TileEditor
                 _state.IsDragging = true;
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
+                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
 
                 if (!_brushDiagLogged)
                 {
@@ -131,7 +131,7 @@ namespace Valkur.Gameplay.TileEditor
                 _state.IsDragging = true;
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
+                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
@@ -158,7 +158,7 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.EndStroke();
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F7 Map Editor.");
+                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
             }
         }
 
