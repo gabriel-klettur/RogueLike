@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_197
+  m_EditorClassIdentifier: 
+  templateId: 197
+  assetPath: Buildings/portals/ChatGPT_Image_Sep_11,_2025,_10_29_09_PM
+  previewSprite: {fileID: 21300000, guid: be8e12d2c1445cf47a9128ea371d90db, type: 3}
+  solid: 1
+  splitRatio: 0.5
+  colliderScope: CG
+  originalScale: {x: 0, y: 0}
+  sourceImagePath: assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_29_09
+    PM.png

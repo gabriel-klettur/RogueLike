@@ -57,6 +57,19 @@ namespace Valkur.Gameplay.World
         /// <summary>All currently spawned BuildingObjects managed by this loader.</summary>
         public IReadOnlyList<BuildingObject> SpawnedBuildings => _spawnedBuildings;
 
+        // ── Programmatic setup ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Wire references from code (e.g. GameplaySceneSetup) and disable auto-load
+        /// so the caller can invoke <see cref="LoadBuildings"/> at the right time.
+        /// </summary>
+        public void Initialize(BuildingCatalog catalog, ZoneManager zoneManager = null)
+        {
+            _catalog   = catalog;
+            _autoLoad  = false;
+            if (zoneManager != null) _zoneManager = zoneManager;
+        }
+
         // ── Unity lifecycle ────────────────────────────────────────────────────────
 
         private void Start()
@@ -109,13 +122,22 @@ namespace Valkur.Gameplay.World
             }
 
             int spawned = 0;
+            int errors  = 0;
             foreach (var inst in instances)
             {
-                if (SpawnInstance(inst))
-                    spawned++;
+                try
+                {
+                    if (SpawnInstance(inst))
+                        spawned++;
+                }
+                catch (System.Exception ex)
+                {
+                    errors++;
+                    Debug.LogWarning($"[BuildingLoader] Failed to spawn instance id={inst.Id}: {ex.Message}");
+                }
             }
 
-            Debug.Log($"[BuildingLoader] Spawned {spawned}/{instances.Count} building instances.");
+            Debug.Log($"[BuildingLoader] Spawned {spawned}/{instances.Count} building instances ({errors} errors).");
         }
 
         /// <summary>

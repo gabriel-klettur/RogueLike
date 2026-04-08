@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9f5d83c654b68c40ac738eedbcc1cb4, type: 3}
+  m_Name: BuildingTemplate_105
+  m_EditorClassIdentifier: 
+  templateId: 105
+  assetPath: Buildings/forest_decoration/corrupto/pozo_savia_corrupta
+  previewSprite: {fileID: 21300000, guid: eff680ea10b218b45a2f8b40289944bf, type: 3}
+  solid: 1
+  splitRatio: 0.5
+  colliderScope: CG
+  originalScale: {x: 0, y: 0}
+  sourceImagePath: assets/buildings/forest_decoration/corrupto/pozo_savia_corrupta.png

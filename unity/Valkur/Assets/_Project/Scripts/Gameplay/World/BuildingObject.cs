@@ -39,6 +39,9 @@ namespace Valkur.Gameplay.World
         // ── Pixels per Unity world unit. Must match TILE_PPU in ValkurAssetPostprocessor. ──
         private const float PPU = 32f;
 
+        // Cached URP-compatible material (shared across all buildings).
+        private static Material s_urpSpriteMat;
+
         [Header("Template")]
         [Tooltip("BuildingTemplateData defining this building type. Set by BuildingLoader or by inspector.")]
         [SerializeField] private BuildingTemplateData _template;
@@ -111,11 +114,14 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
+            // Effective pixel dimensions = instance override or template default.
+            // This is the DESIRED on-screen pixel size (matches Python's pygame.transform.scale).
             int effW = (scaleOverride.x > 0) ? scaleOverride.x : origW;
             int effH = (scaleOverride.y > 0) ? scaleOverride.y : origH;
 
-            // Scale transform so the building appears at effW×effH pixels in the world.
-            transform.localScale = new Vector3((float)effW / origW, (float)effH / origH, 1f);
+            // Always ensure collider exists (even if sprite is missing) so other systems
+            // that reference GetComponent<BoxCollider2D>() don't hit MissingComponentException.
+            EnsureCollider();
 
             // ── 2. Load texture ─────────────────────────────────────────────────────
             Sprite sourceSprite = Resources.Load<Sprite>(template.assetPath);
@@ -128,31 +134,38 @@ namespace Valkur.Gameplay.World
             }
 
             Texture2D tex = sourceSprite.texture;
+            int texW = tex.width;
+            int texH = tex.height;
 
-            // ── 3. Compute crop rects in texture-space (Unity Y=0 is BOTTOM of texture) ──
-            // bottomTexH = pixel count of the footprint (lower portion in Python = ground region).
-            // In Python (Y-down), split is at y=origH*splitRatio from the TOP.
-            // In Unity texture (Y-up), footprint spans rows 0 .. bottomTexH.
-            int bottomTexH = Mathf.RoundToInt(origH * (1f - effectiveSplitRatio));
-            bottomTexH = Mathf.Clamp(bottomTexH, 1, origH - 1);
-            int topTexH = origH - bottomTexH;
+            // ── 3. Compute crop rects in TEXTURE-space (Unity Y=0 is BOTTOM of texture) ──
+            // The split ratio divides the sprite visually. Use actual texture dimensions
+            // for the Rect — NOT template.originalScale, which may differ from the PNG size.
+            // Python resizes the image to effW×effH via pygame.transform.scale before splitting;
+            // in Unity we use localScale instead, so Sprite.Create uses the raw texture size.
+            int bottomTexH = Mathf.RoundToInt(texH * (1f - effectiveSplitRatio));
+            bottomTexH = Mathf.Clamp(bottomTexH, 1, texH - 1);
+            int topTexH = texH - bottomTexH;
 
             // Sprites with pivot at bottom-center so local Y=0 = the bottom of each portion.
             Sprite bottomSprite = Sprite.Create(
                 tex,
-                new Rect(0, 0, origW, bottomTexH),
+                new Rect(0, 0, texW, bottomTexH),
                 new Vector2(0.5f, 0f),
                 PPU);
 
             Sprite topSprite = Sprite.Create(
                 tex,
-                new Rect(0, bottomTexH, origW, topTexH),
+                new Rect(0, bottomTexH, texW, topTexH),
                 new Vector2(0.5f, 0f),
                 PPU);
 
-            // Heights in local (unscaled) Unity units
-            float bottomH = bottomTexH / PPU;   // footprint height
-            float topH    = topTexH    / PPU;   // canopy height
+            // Heights in local (unscaled) Unity units (based on texture pixels / PPU)
+            float bottomH = bottomTexH / PPU;
+            float topH    = topTexH    / PPU;
+
+            // Scale transform so the building renders at effW×effH pixels in the world.
+            // localScale maps from the raw texture world-size to the desired display size.
+            transform.localScale = new Vector3((float)effW / texW, (float)effH / texH, 1f);
 
             // ── 4. Create / reuse child renderers ──────────────────────────────────
             // Parent transform sits at BOTTOM-CENTER of the full sprite.
@@ -171,13 +184,12 @@ namespace Valkur.Gameplay.World
             _topRenderer.sortingOrder    = ySortOrder;
 
             // ── 5. Collider (footprint rect) ───────────────────────────────────────
-            EnsureCollider();
             _collider.enabled = template.solid;
             if (template.solid)
             {
                 // Collider covers the footprint portion in LOCAL (unscaled) space.
-                // Transform.localScale then stretches it to effW×effH in world space.
-                _collider.size   = new Vector2(origW / PPU, bottomH);
+                // Transform.localScale then stretches it to the correct world size.
+                _collider.size   = new Vector2(texW / PPU, bottomH);
                 _collider.offset = new Vector2(0f, bottomH * 0.5f);
             }
         }
@@ -208,12 +220,30 @@ namespace Valkur.Gameplay.World
             sr.transform.localPosition = localPos;
             sr.sprite                  = sprite;
             sr.sortingLayerName        = layerName;
+
+            // URP 2D: without an explicit URP material, SpriteRenderers get the
+            // built-in Sprites-Default shader which renders BLACK in the URP pipeline.
+            if (s_urpSpriteMat == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+                if (shader != null)
+                    s_urpSpriteMat = new Material(shader);
+            }
+            if (s_urpSpriteMat != null)
+                sr.sharedMaterial = s_urpSpriteMat;
         }
 
         private void EnsureCollider()
         {
-            if (_collider != null) return;
-            _collider = GetComponent<BoxCollider2D>() ?? gameObject.AddComponent<BoxCollider2D>();
+            // Unity null check: a destroyed UnityEngine.Object passes C# null check
+            // but throws MissingComponentException when accessed. Use the implicit
+            // bool operator which handles both cases.
+            if ((object)_collider != null && _collider)
+                return;
+
+            _collider = GetComponent<BoxCollider2D>();
+            if (_collider == null)
+                _collider = gameObject.AddComponent<BoxCollider2D>();
         }
 
         // ── Editor helpers ─────────────────────────────────────────────────────────
@@ -228,28 +258,32 @@ namespace Valkur.Gameplay.World
 
         private void OnDrawGizmosSelected()
         {
-            if (_template == null || _template.originalScale == Vector2Int.zero) return;
+            if (_template == null) return;
 
-            float effectiveSplitRatio = (_splitRatioOverride >= 0f) ? _splitRatioOverride : _template.splitRatio;
-            int   origW   = _template.originalScale.x;
-            int   origH   = _template.originalScale.y;
-            float bottomH = origH * (1f - effectiveSplitRatio) / PPU;
-            float topH    = origH * effectiveSplitRatio         / PPU;
-            float sx      = transform.localScale.x;
-            float sy      = transform.localScale.y;
-            Vector3 pos   = transform.position;
+            // Use actual collider/renderer data if available, else estimate from scale
+            float sx = transform.localScale.x;
+            float sy = transform.localScale.y;
+            Vector3 pos = transform.position;
 
-            // Red: footprint / collision zone
-            Gizmos.color = new Color(1f, 0.25f, 0.25f, 0.45f);
-            Gizmos.DrawWireCube(
-                pos + new Vector3(0f, bottomH * sy * 0.5f, 0f),
-                new Vector3(origW / PPU * sx, bottomH * sy, 0.05f));
+            if (_bottomRenderer != null && _bottomRenderer.sprite != null &&
+                _topRenderer != null && _topRenderer.sprite != null)
+            {
+                float bottomH = _bottomRenderer.sprite.rect.height / PPU;
+                float topH    = _topRenderer.sprite.rect.height / PPU;
+                float spriteW = _bottomRenderer.sprite.rect.width / PPU;
 
-            // Blue: canopy / above-player zone
-            Gizmos.color = new Color(0.25f, 0.5f, 1f, 0.3f);
-            Gizmos.DrawWireCube(
-                pos + new Vector3(0f, (bottomH + topH * 0.5f) * sy, 0f),
-                new Vector3(origW / PPU * sx, topH * sy, 0.05f));
+                // Red: footprint / collision zone
+                Gizmos.color = new Color(1f, 0.25f, 0.25f, 0.45f);
+                Gizmos.DrawWireCube(
+                    pos + new Vector3(0f, bottomH * sy * 0.5f, 0f),
+                    new Vector3(spriteW * sx, bottomH * sy, 0.05f));
+
+                // Blue: canopy / above-player zone
+                Gizmos.color = new Color(0.25f, 0.5f, 1f, 0.3f);
+                Gizmos.DrawWireCube(
+                    pos + new Vector3(0f, (bottomH + topH * 0.5f) * sy, 0f),
+                    new Vector3(spriteW * sx, topH * sy, 0.05f));
+            }
         }
 #endif
     }

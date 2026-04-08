@@ -160,14 +160,14 @@ namespace Valkur.Editor
             if (dryRun)
             {
                 report.AddOk("buildings_instances.json", "-",
-                    $"Would generate {INSTANCES_ZONE} instances JSON at {destPath}");
+                    $"Would copy all-zone instances JSON to {destPath}");
                 return;
             }
 
             if (!Directory.Exists(streamingDir))
                 Directory.CreateDirectory(streamingDir);
 
-            // Read world instances, filter to target zone, normalise zone casing, write.
+            // Read world instances, keep all zones, clean up, write.
             string rawJson = File.ReadAllText(src);
             var allInstances = MiniJson.Deserialize(rawJson) as List<object>;
             if (allInstances == null)
@@ -176,18 +176,11 @@ namespace Valkur.Editor
                 return;
             }
 
-            var filteredInstances = new List<object>();
+            var cleanedInstances = new List<object>();
             foreach (var item in allInstances)
             {
                 var dict = item as Dictionary<string, object>;
                 if (dict == null) continue;
-
-                string zone = GetString(dict, "zone", "");
-                if (!zone.Equals(INSTANCES_ZONE, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                // Normalise zone key to canonical casing
-                dict["zone"] = INSTANCES_ZONE;
 
                 // Strip Unity-irrelevant overrides (z_bottom, z_top, z)
                 if (dict.TryGetValue("overrides", out var ovRaw) &&
@@ -198,14 +191,14 @@ namespace Valkur.Editor
                     overrides.Remove("z");
                 }
 
-                filteredInstances.Add(dict);
+                cleanedInstances.Add(dict);
             }
 
-            string outJson = MiniJson.Serialize(filteredInstances);
+            string outJson = MiniJson.Serialize(cleanedInstances);
             File.WriteAllText(destPath, outJson);
             AssetDatabase.Refresh();
             report.AddOk("buildings_instances.json", "-",
-                $"Generated {filteredInstances.Count} {INSTANCES_ZONE} instances at {destPath}");
+                $"Copied {cleanedInstances.Count} building instances (all zones) to {destPath}");
         }
     }
 }

@@ -32,7 +32,6 @@ namespace Valkur.Editor
         private const string TEMPLATES_JSON       = "data/buildings/buildings_templates.json";
         // Per-world instances (lobby lives in worlds/base)
         private const string INSTANCES_JSON_WORLD = "data/worlds/base/buildings/buildings_instances.json";
-        private const string INSTANCES_ZONE       = "Lobby";                   // zone to export
         private const string PYTHON_ASSETS_ROOT   = "assets/buildings";        // python/assets/buildings/
 
         private const string SO_OUTPUT_DIR        = "Assets/_Project/Data/Catalogs/Buildings";
