@@ -38,11 +38,17 @@ namespace Valkur.Gameplay.World
         [SerializeField] private float activationRadius = 0.6f;
 
         private bool _triggered;
+        private WorldGridBuilder _cachedGridBuilder;
+        private ZoneManager _cachedZoneManager;
 
         private void Awake()
         {
             var col = GetComponent<Collider2D>();
             col.isTrigger = true;
+
+            // Cache scene references once instead of FindObjectOfType per activation
+            _cachedGridBuilder = Object.FindObjectOfType<WorldGridBuilder>();
+            _cachedZoneManager = Object.FindObjectOfType<ZoneManager>();
         }
 
         private void OnTriggerEnter2D(Collider2D other)
@@ -66,7 +72,8 @@ namespace Valkur.Gameplay.World
             }
             else if (!string.IsNullOrWhiteSpace(destinationOverlay))
             {
-                var gridBuilder = Object.FindObjectOfType<WorldGridBuilder>();
+                var gridBuilder = _cachedGridBuilder;
+                if (gridBuilder == null) gridBuilder = Object.FindObjectOfType<WorldGridBuilder>();
                 if (gridBuilder != null)
                 {
                     // Clear existing world
@@ -83,7 +90,8 @@ namespace Valkur.Gameplay.World
                     player.transform.position = new Vector3(dest.x, dest.y, 0f);
 
                     // Notify zone system
-                    var zm = Object.FindObjectOfType<ZoneManager>();
+                    var zm = _cachedZoneManager;
+                    if (zm == null) zm = Object.FindObjectOfType<ZoneManager>();
                     if (zm != null) zm.ForceZoneName(System.IO.Path.GetFileNameWithoutExtension(destinationOverlay));
 
                     // Notify audio

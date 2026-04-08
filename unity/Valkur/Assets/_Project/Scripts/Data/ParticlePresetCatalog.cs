@@ -22,6 +22,28 @@ namespace Valkur.Data
 
         public IReadOnlyList<ParticlePresetDefinition> Presets => presets;
 
+        // Lazy O(1) lookup cache, rebuilt on first access or after mutation
+        [System.NonSerialized] private Dictionary<string, ParticlePresetDefinition> _lookup;
+
+        private Dictionary<string, ParticlePresetDefinition> Lookup
+        {
+            get
+            {
+                if (_lookup == null) RebuildLookup();
+                return _lookup;
+            }
+        }
+
+        private void RebuildLookup()
+        {
+            _lookup = new Dictionary<string, ParticlePresetDefinition>(presets.Count);
+            foreach (var p in presets)
+            {
+                if (p != null && !string.IsNullOrEmpty(p.id))
+                    _lookup[p.id] = p;
+            }
+        }
+
         /// <summary>
         /// Look up a preset by its id.  Returns null if not found.
         /// Matches Python's get_preset(preset_id) from particles_config.py.
@@ -29,12 +51,7 @@ namespace Valkur.Data
         public ParticlePresetDefinition GetById(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-            foreach (var p in presets)
-            {
-                if (p != null && p.id == id)
-                    return p;
-            }
-            return null;
+            return Lookup.TryGetValue(id, out var result) ? result : null;
         }
 
         /// <summary>
@@ -48,6 +65,7 @@ namespace Valkur.Data
                 if (d != null)
                     presets.Add(d);
             }
+            _lookup = null; // Invalidate cache
         }
     }
 }

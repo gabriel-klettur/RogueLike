@@ -53,6 +53,9 @@ namespace Valkur.UI.HUD
         public static void Register(MinimapDot dot)   { if (!_dots.Contains(dot)) _dots.Add(dot); }
         public static void Unregister(MinimapDot dot) { _dots.Remove(dot); }
 
+        // ── Static instance for MinimapDot color lookups ──────────────────
+        public static MinimapManager Instance { get; private set; }
+
         // ── Runtime state ─────────────────────────────────────────────────
         private Texture2D _tex;
         private Color[] _bgPixels;          // pre-filled background row
@@ -65,6 +68,8 @@ namespace Valkur.UI.HUD
 
         private void Awake()
         {
+            Instance = this;
+
             _tex = new Texture2D(texWidth, texHeight, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Point,

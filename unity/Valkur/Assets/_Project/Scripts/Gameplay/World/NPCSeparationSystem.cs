@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Valkur.Gameplay.FSM;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.World
 {
@@ -31,34 +31,34 @@ namespace Valkur.Gameplay.World
 
         private void FixedUpdate()
         {
-            // Gather all active NPC rigidbodies
-            var npcs = FindObjectsOfType<FSMMonsterBrain>();
-            if (npcs == null || npcs.Length < 2) return;
+            // Use EntityRegistry instead of FindObjectsOfType (O(1) vs O(n) scene scan)
+            var monsterList = EntityRegistry.Monsters;
+            if (monsterList == null || monsterList.Count < 2) return;
 
             for (int iter = 0; iter < solverIterations; iter++)
             {
                 bool movedAny = false;
 
-                for (int i = 0; i < npcs.Length; i++)
+                for (int i = 0; i < monsterList.Count; i++)
                 {
-                    var a = npcs[i];
-                    if (a == null || !a.isActiveAndEnabled) continue;
+                    var npcGo = monsterList[i];
+                    if (npcGo == null || !npcGo.activeInHierarchy) continue;
 
-                    var rbA = a.GetComponent<Rigidbody2D>();
-                    var colA = a.GetComponent<Collider2D>();
+                    var rbA = npcGo.GetComponent<Rigidbody2D>();
+                    var colA = npcGo.GetComponent<Collider2D>();
                     if (rbA == null || colA == null) continue;
                     if (rbA.isKinematic) continue;
 
                     // Broad-phase: find nearby NPCs
                     var hits = Physics2D.OverlapCircleAll(
-                        (Vector2)a.transform.position, searchRadius, NpcLayerMask);
+                        (Vector2)npcGo.transform.position, searchRadius, NpcLayerMask);
 
                     foreach (var hit in hits)
                     {
-                        if (hit.gameObject == a.gameObject) continue;
+                        if (hit.gameObject == npcGo) continue;
 
-                        var bBrain = hit.GetComponent<FSMMonsterBrain>();
-                        if (bBrain == null) continue;
+                        // Verify the hit object is on NPC layer
+                        if (hit.gameObject.layer != 9) continue;
 
                         var rbB = hit.GetComponent<Rigidbody2D>();
                         if (rbB == null || rbB.isKinematic) continue;

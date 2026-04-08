@@ -23,8 +23,8 @@ namespace Valkur.UI.HUD
         private void Start()
         {
             if (!useDefaultColor) return;
-            // Try to get default color from MinimapManager instance
-            var mgr = Object.FindObjectOfType<MinimapManager>();
+            // Use cached static Instance instead of FindObjectOfType
+            var mgr = MinimapManager.Instance;
             if (mgr != null)
                 dotColor = mgr.GetDefaultColor(dotType);
         }

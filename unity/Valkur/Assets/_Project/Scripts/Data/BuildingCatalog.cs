@@ -17,6 +17,28 @@ namespace Valkur.Data
 
         public IReadOnlyList<BuildingTemplateData> Templates => _templates;
 
+        // Lazy O(1) lookup cache, rebuilt on first access or after mutation
+        [System.NonSerialized] private Dictionary<int, BuildingTemplateData> _lookup;
+
+        private Dictionary<int, BuildingTemplateData> Lookup
+        {
+            get
+            {
+                if (_lookup == null) RebuildLookup();
+                return _lookup;
+            }
+        }
+
+        private void RebuildLookup()
+        {
+            _lookup = new Dictionary<int, BuildingTemplateData>(_templates.Count);
+            foreach (var t in _templates)
+            {
+                if (t != null)
+                    _lookup[t.templateId] = t;
+            }
+        }
+
         /// <summary>
         /// Find a template by its integer template ID.
         /// Returns null if not found.
@@ -24,12 +46,7 @@ namespace Valkur.Data
         /// </summary>
         public BuildingTemplateData GetById(int id)
         {
-            foreach (var t in _templates)
-            {
-                if (t != null && t.templateId == id)
-                    return t;
-            }
-            return null;
+            return Lookup.TryGetValue(id, out var result) ? result : null;
         }
 
         /// <summary>
@@ -39,12 +56,9 @@ namespace Valkur.Data
         public bool AddTemplate(BuildingTemplateData template)
         {
             if (template == null) return false;
-            foreach (var t in _templates)
-            {
-                if (t != null && t.templateId == template.templateId)
-                    return false;
-            }
+            if (Lookup.ContainsKey(template.templateId)) return false;
             _templates.Add(template);
+            _lookup[template.templateId] = template;
             return true;
         }
 
@@ -60,10 +74,12 @@ namespace Valkur.Data
                 if (_templates[i] != null && _templates[i].templateId == template.templateId)
                 {
                     _templates[i] = template;
+                    _lookup = null; // Invalidate cache
                     return;
                 }
             }
             _templates.Add(template);
+            _lookup = null; // Invalidate cache
         }
     }
 }

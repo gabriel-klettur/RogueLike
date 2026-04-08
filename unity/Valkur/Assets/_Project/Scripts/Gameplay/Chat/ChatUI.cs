@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 using Valkur.Core;
 
@@ -68,8 +69,9 @@ namespace Valkur.Gameplay.Chat
         {
             if (!_panel.activeSelf) return;
 
-            // Enter submits message
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            // Enter submits message (New Input System)
+            var kb = Keyboard.current;
+            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))
             {
                 SubmitInput();
             }

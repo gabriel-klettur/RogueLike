@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.NPC;
@@ -210,8 +211,9 @@ namespace Valkur.Gameplay.Chat
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
             }
 
-            // ESC closes chat
-            if (_chatOpen && Input.GetKeyDown(KeyCode.Escape))
+            // ESC closes chat (New Input System)
+            var kb = Keyboard.current;
+            if (_chatOpen && kb != null && kb.escapeKey.wasPressedThisFrame)
                 CloseChat();
         }
 

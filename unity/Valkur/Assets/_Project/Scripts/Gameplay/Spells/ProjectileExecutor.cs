@@ -1,26 +1,42 @@
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
     /// Spawns a projectile in the cast direction with speed, damage, and lifetime from the spell definition.
+    /// Uses VFXManager pool when available for frequently spawned projectiles.
     /// Python parity: fireball_trail / iceball_trail_strong / etc. particle presets.
     /// </summary>
     public class ProjectileExecutor : ISpellExecutor
     {
+        private const string POOL_PREFIX = "proj_";
+
         public void Execute(SpellContext ctx)
         {
             if (ctx.ProjectilePrefab == null) return;
 
+            string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
             Vector3 spawnPos = ctx.Caster.position + (Vector3)(ctx.Direction * 0.5f);
-            var go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
+
+            // Try pool-based spawn, fall back to Instantiate
+            GameObject go = null;
+            var vfxMgr = VFXManager.Instance;
+            if (vfxMgr != null)
+            {
+                vfxMgr.RegisterPrefab(poolKey, ctx.ProjectilePrefab, 4);
+                go = vfxMgr.Spawn(poolKey, spawnPos, Quaternion.identity);
+            }
+            if (go == null)
+                go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
             go.SetActive(true);
 
             var proj = go.GetComponent<Projectile>();
             if (proj != null)
             {
+                proj.SetPoolKey(poolKey);
                 proj.Initialize(
                     ctx.Direction,
                     ctx.Spell.speed,

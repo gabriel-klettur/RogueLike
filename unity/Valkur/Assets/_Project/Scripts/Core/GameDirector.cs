@@ -28,9 +28,19 @@ namespace Valkur.Core
                 return;
             }
             Instance = this;
+            ServiceLocator.Register(this);
 
             EnsurePerformanceMonitor();
             Debug.Log("[GameDirector] Initialized.");
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                ServiceLocator.Unregister<GameDirector>();
+                Instance = null;
+            }
         }
 
         public void SetPaused(bool paused)
