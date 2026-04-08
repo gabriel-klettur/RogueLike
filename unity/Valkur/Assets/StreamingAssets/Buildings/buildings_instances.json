@@ -1,0 +1,626 @@
+[
+  {
+    "id": 8,
+    "template_id": 8,
+    "zone": "Lobby",
+    "rel_x": 542,
+    "rel_y": 492,
+    "overrides": {
+      "scale": [
+        201,
+        258
+      ]
+    }
+  },
+  {
+    "id": 10,
+    "template_id": 10,
+    "zone": "Lobby",
+    "rel_x": 34,
+    "rel_y": 371,
+    "overrides": {
+      "scale": [
+        499,
+        499
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "template_id": 11,
+    "zone": "Lobby",
+    "rel_x": 141,
+    "rel_y": -833,
+    "overrides": {
+      "scale": [
+        1322,
+        879
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "template_id": 12,
+    "zone": "Lobby",
+    "rel_x": 935,
+    "rel_y": -177,
+    "overrides": {
+      "scale": [
+        414,
+        414
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "template_id": 310,
+    "zone": "Lobby",
+    "rel_x": 724,
+    "rel_y": 143,
+    "overrides": {
+      "scale": [
+        158,
+        158
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "template_id": 14,
+    "zone": "Lobby",
+    "rel_x": 136,
+    "rel_y": 122,
+    "overrides": {
+      "scale": [
+        316,
+        473
+      ]
+    }
+  },
+  {
+    "id": 17,
+    "template_id": 270,
+    "zone": "Lobby",
+    "rel_x": 30,
+    "rel_y": 939,
+    "overrides": {
+      "scale": [
+        222,
+        222
+      ]
+    }
+  },
+  {
+    "id": 18,
+    "template_id": 18,
+    "zone": "Lobby",
+    "rel_x": 211,
+    "rel_y": -220,
+    "overrides": {
+      "scale": [
+        505,
+        505
+      ]
+    }
+  },
+  {
+    "id": 20,
+    "template_id": 20,
+    "zone": "Lobby",
+    "rel_x": 1179,
+    "rel_y": 221,
+    "overrides": {
+      "scale": [
+        389,
+        579
+      ]
+    }
+  },
+  {
+    "id": 21,
+    "template_id": 21,
+    "zone": "Lobby",
+    "rel_x": 631,
+    "rel_y": 476,
+    "overrides": {
+      "scale": [
+        73,
+        177
+      ]
+    }
+  },
+  {
+    "id": 22,
+    "template_id": 22,
+    "zone": "Lobby",
+    "rel_x": 901,
+    "rel_y": 491,
+    "overrides": {
+      "scale": [
+        75,
+        182
+      ]
+    }
+  },
+  {
+    "id": 24,
+    "template_id": 22,
+    "zone": "Lobby",
+    "rel_x": 920,
+    "rel_y": 1061,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ]
+    }
+  },
+  {
+    "id": 25,
+    "template_id": 22,
+    "zone": "Lobby",
+    "rel_x": 1441,
+    "rel_y": 1234,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ]
+    }
+  },
+  {
+    "id": 26,
+    "template_id": 22,
+    "zone": "Lobby",
+    "rel_x": 1439,
+    "rel_y": 1057,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ]
+    }
+  },
+  {
+    "id": 27,
+    "template_id": 183,
+    "zone": "Lobby",
+    "rel_x": 925,
+    "rel_y": 1413,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ]
+    }
+  },
+  {
+    "id": 29,
+    "template_id": 22,
+    "zone": "Lobby",
+    "rel_x": 1442,
+    "rel_y": 1411,
+    "overrides": {
+      "scale": [
+        50,
+        121
+      ]
+    }
+  },
+  {
+    "id": 33,
+    "template_id": 25,
+    "zone": "Lobby",
+    "rel_x": 56,
+    "rel_y": 1513,
+    "overrides": {
+      "scale": [
+        109,
+        51
+      ]
+    }
+  },
+  {
+    "id": 34,
+    "template_id": 26,
+    "zone": "Lobby",
+    "rel_x": 228,
+    "rel_y": 1512,
+    "overrides": {
+      "scale": [
+        133,
+        54
+      ]
+    }
+  },
+  {
+    "id": 35,
+    "template_id": 26,
+    "zone": "Lobby",
+    "rel_x": 422,
+    "rel_y": 1513,
+    "overrides": {
+      "scale": [
+        122,
+        50
+      ]
+    }
+  },
+  {
+    "id": 36,
+    "template_id": 26,
+    "zone": "Lobby",
+    "rel_x": 584,
+    "rel_y": 1508,
+    "overrides": {
+      "scale": [
+        137,
+        56
+      ]
+    }
+  },
+  {
+    "id": 37,
+    "template_id": 27,
+    "zone": "Lobby",
+    "rel_x": 75,
+    "rel_y": 1341,
+    "overrides": {
+      "scale": [
+        235,
+        235
+      ]
+    }
+  },
+  {
+    "id": 38,
+    "template_id": 28,
+    "zone": "Lobby",
+    "rel_x": 289,
+    "rel_y": 1379,
+    "overrides": {
+      "scale": [
+        188,
+        188
+      ]
+    }
+  },
+  {
+    "id": 39,
+    "template_id": 29,
+    "zone": "Lobby",
+    "rel_x": 469,
+    "rel_y": 1370,
+    "overrides": {
+      "scale": [
+        206,
+        206
+      ]
+    }
+  },
+  {
+    "id": 42,
+    "template_id": 32,
+    "zone": "Lobby",
+    "rel_x": 567,
+    "rel_y": 207,
+    "overrides": {
+      "scale": [
+        197,
+        269
+      ]
+    }
+  },
+  {
+    "id": 116,
+    "template_id": 15,
+    "zone": "Lobby",
+    "rel_x": 1335,
+    "rel_y": -80,
+    "overrides": {
+      "scale": [
+        227,
+        346
+      ]
+    }
+  },
+  {
+    "id": 122,
+    "template_id": 30,
+    "zone": "Lobby",
+    "rel_x": 578,
+    "rel_y": 683,
+    "overrides": {
+      "scale": [
+        172,
+        218
+      ]
+    }
+  },
+  {
+    "id": 138,
+    "template_id": 31,
+    "zone": "Lobby",
+    "rel_x": 161,
+    "rel_y": 884,
+    "overrides": {
+      "scale": [
+        172,
+        221
+      ]
+    }
+  },
+  {
+    "id": 151,
+    "template_id": 149,
+    "zone": "Lobby",
+    "rel_x": 215,
+    "rel_y": 1148,
+    "overrides": {
+      "scale": [
+        256,
+        256
+      ]
+    }
+  },
+  {
+    "id": 162,
+    "template_id": 309,
+    "zone": "Lobby",
+    "rel_x": 980,
+    "rel_y": 1059,
+    "overrides": {
+      "scale": [
+        437,
+        437
+      ]
+    }
+  },
+  {
+    "id": 177,
+    "template_id": 288,
+    "zone": "Lobby",
+    "rel_x": 971,
+    "rel_y": 1322,
+    "overrides": {
+      "scale": [
+        180,
+        230
+      ]
+    }
+  },
+  {
+    "id": 178,
+    "template_id": 287,
+    "zone": "Lobby",
+    "rel_x": 1126,
+    "rel_y": 1357,
+    "overrides": {
+      "scale": [
+        162,
+        221
+      ]
+    }
+  },
+  {
+    "id": 180,
+    "template_id": 273,
+    "zone": "Lobby",
+    "rel_x": 1266,
+    "rel_y": 1311,
+    "overrides": {
+      "scale": [
+        177,
+        226
+      ]
+    }
+  },
+  {
+    "id": 183,
+    "template_id": 284,
+    "zone": "Lobby",
+    "rel_x": 1433,
+    "rel_y": 958,
+    "overrides": {
+      "scale": [
+        179,
+        228
+      ]
+    }
+  },
+  {
+    "id": 187,
+    "template_id": 187,
+    "zone": "Lobby",
+    "rel_x": 1129,
+    "rel_y": 856,
+    "overrides": {
+      "scale": [
+        173,
+        235
+      ]
+    }
+  },
+  {
+    "id": 188,
+    "template_id": 289,
+    "zone": "Lobby",
+    "rel_x": 1298,
+    "rel_y": 907,
+    "overrides": {
+      "scale": [
+        148,
+        202
+      ]
+    }
+  },
+  {
+    "id": 189,
+    "template_id": 290,
+    "zone": "Lobby",
+    "rel_x": 969,
+    "rel_y": 874,
+    "overrides": {
+      "scale": [
+        175,
+        239
+      ]
+    }
+  },
+  {
+    "id": 210,
+    "template_id": 272,
+    "zone": "Lobby",
+    "rel_x": 417,
+    "rel_y": 915,
+    "overrides": {
+      "scale": [
+        333,
+        333
+      ]
+    }
+  },
+  {
+    "id": 259,
+    "template_id": 249,
+    "zone": "Lobby",
+    "rel_x": 694,
+    "rel_y": 844,
+    "overrides": {
+      "scale": [
+        220,
+        220
+      ]
+    }
+  },
+  {
+    "id": 344,
+    "template_id": 285,
+    "zone": "Lobby",
+    "rel_x": 1490,
+    "rel_y": 1121,
+    "overrides": {
+      "scale": [
+        175,
+        238
+      ]
+    }
+  },
+  {
+    "id": 367,
+    "template_id": 48,
+    "zone": "Lobby",
+    "rel_x": 1084,
+    "rel_y": 247,
+    "overrides": {
+      "scale": [
+        213,
+        274
+      ]
+    }
+  },
+  {
+    "id": 371,
+    "template_id": 175,
+    "zone": "Lobby",
+    "rel_x": 29,
+    "rel_y": -14,
+    "overrides": {
+      "scale": [
+        191,
+        260
+      ]
+    }
+  },
+  {
+    "id": 377,
+    "template_id": 308,
+    "zone": "Lobby",
+    "rel_x": 918,
+    "rel_y": 327,
+    "overrides": {
+      "scale": [
+        405,
+        607
+      ]
+    }
+  },
+  {
+    "id": 383,
+    "template_id": 311,
+    "zone": "Lobby",
+    "rel_x": 821,
+    "rel_y": -116,
+    "overrides": {
+      "scale": [
+        201,
+        201
+      ]
+    }
+  },
+  {
+    "id": 386,
+    "template_id": 311,
+    "zone": "Lobby",
+    "rel_x": 1286,
+    "rel_y": -115,
+    "overrides": {
+      "scale": [
+        191,
+        191
+      ]
+    }
+  },
+  {
+    "id": 390,
+    "template_id": 311,
+    "zone": "Lobby",
+    "rel_x": 1415,
+    "rel_y": -108,
+    "overrides": {
+      "scale": [
+        181,
+        181
+      ]
+    }
+  },
+  {
+    "id": 392,
+    "template_id": 311,
+    "zone": "Lobby",
+    "rel_x": 572,
+    "rel_y": -117,
+    "overrides": {
+      "scale": [
+        196,
+        196
+      ]
+    }
+  },
+  {
+    "id": 395,
+    "template_id": 311,
+    "zone": "Lobby",
+    "rel_x": 99,
+    "rel_y": -115,
+    "overrides": {
+      "scale": [
+        198,
+        198
+      ]
+    }
+  },
+  {
+    "id": 397,
+    "template_id": 176,
+    "zone": "Lobby",
+    "rel_x": 1473,
+    "rel_y": 661,
+    "overrides": {
+      "scale": [
+        184,
+        235
+      ]
+    }
+  }
+]
