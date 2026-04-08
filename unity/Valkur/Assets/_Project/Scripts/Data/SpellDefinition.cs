@@ -9,27 +9,31 @@ namespace Valkur.Data
     /// </summary>
     public enum SpellType
     {
-        Projectile,
-        Slash,
-        Area,
-        Dash,
-        Teleport,
-        Beam,
-        Smoke,
-        Wall,
-        Trap,
-        Shield,
-        Boomerang,
-        Meteor,
-        Lightning,
-        ChainLightning,
-        Aura,
-        ArcaneFlame,
-        FireworkLaunch,
-        SmokeEmitter,
-        SphereMagicShield,
-        Puddle,
-        Mine,
+        Projectile,      // 0
+        Slash,            // 1
+        Area,             // 2
+        Dash,             // 3
+        Teleport,         // 4
+        Beam,             // 5
+        Smoke,            // 6
+        Wall,             // 7
+        Trap,             // 8
+        Shield,           // 9
+        Boomerang,        // 10
+        Meteor,           // 11
+        Lightning,        // 12
+        ChainLightning,   // 13
+        Aura,             // 14
+        ArcaneFlame,      // 15
+        FireworkLaunch,   // 16
+        SmokeEmitter,     // 17
+        SphereMagicShield,// 18
+        Puddle,           // 19
+        Mine,             // 20
+        VortexField,      // 21
+        ConeBreath,       // 22
+        Summon,           // 23
+        Totem,            // 24
     }
 
     /// <summary>
@@ -82,6 +86,72 @@ namespace Valkur.Data
         public float damagePerTick;
         public float tickPeriod;
         public string element;
+        [Tooltip("Heal per tick for aura/totem spells")]
+        public float healPerTick;
+
+        [Header("Vortex / Force")]
+        [Tooltip("Force magnitude for vortex spells")]
+        public float force;
+        [Tooltip("pull or push")]
+        public string forceMode;
+        [Tooltip("Whether to follow the caster")]
+        public bool followCaster;
+
+        [Header("Spawn Position")]
+        [Tooltip("Spawn effect at mouse position instead of caster")]
+        public bool spawnAtMouse;
+
+        [Header("Meteor")]
+        [Tooltip("Number of meteor strikes")]
+        public int meteorCount;
+        [Tooltip("Interval between meteor strikes")]
+        public float meteorInterval;
+        [Tooltip("Area radius for meteor scatter")]
+        public float meteorAreaRadius;
+        [Tooltip("Each meteor's impact damage radius")]
+        public float meteorImpactRadius;
+
+        [Header("Mine")]
+        [Tooltip("Arming time before mine becomes active")]
+        public float armingTime;
+        [Tooltip("Trigger proximity radius")]
+        public float triggerRadius;
+        [Tooltip("Explosion radius on detonation")]
+        public float explosionRadius;
+        [Tooltip("Explosion damage on detonation")]
+        public float explosionDamage;
+        [Tooltip("Time-to-live before auto-despawn")]
+        public float ttl;
+
+        [Header("Wall")]
+        [Tooltip("Wall width in world units")]
+        public float wallWidth;
+        [Tooltip("Wall height in world units")]
+        public float wallHeight;
+        [Tooltip("Wall hit points")]
+        public float wallHP;
+        [Tooltip("Whether the wall blocks projectiles")]
+        public bool blockProjectiles;
+        [Tooltip("Whether the wall blocks unit movement")]
+        public bool blockUnits;
+
+        [Header("Summon")]
+        [Tooltip("Monster template key to summon")]
+        public string summonTemplate;
+        [Tooltip("Number of units to summon")]
+        public int summonCount = 1;
+        [Tooltip("Duration before summoned unit expires")]
+        public float summonDuration;
+
+        [Header("Totem")]
+        [Tooltip("Totem kind: heal, damage, etc.")]
+        public string totemKind;
+
+        [Header("Cone Breath")]
+        [Tooltip("Arc angle for cone breath")]
+        public float coneArc;
+        [Tooltip("Cone length")]
+        public float coneLength;
 
         [Header("Visual")]
         public Sprite sprite;

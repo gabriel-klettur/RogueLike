@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Spells
@@ -8,6 +9,7 @@ namespace Valkur.Gameplay.Spells
     /// Spell casting coordinator: phase FSM (prepare/channel/cooldown),
     /// cooldown management, and mana consumption.
     /// Delegates actual spell execution to ISpellExecutor strategies.
+    /// Supports both slot-based and key-based spell lookup (SpellBook).
     /// </summary>
     public class SpellCaster : MonoBehaviour
     {
@@ -25,22 +27,41 @@ namespace Valkur.Gameplay.Spells
         private CastPhase _phase = CastPhase.Ready;
         private float _phaseTimer;
         private int _activeSlot = -1;
+        private string _activeKey;
         private Vector2 _castDirection;
         private float[] _cooldownTimers;
         private Mana _mana;
         private bool _missingManaWarningLogged;
 
+        // SpellBook: key-based spell lookup for expanded bindings beyond 4 slots
+        private readonly Dictionary<string, SpellDefinition> _spellBook = new Dictionary<string, SpellDefinition>();
+        private readonly Dictionary<string, float> _spellBookCooldowns = new Dictionary<string, float>();
+
         private static readonly Dictionary<SpellType, ISpellExecutor> Executors = new Dictionary<SpellType, ISpellExecutor>
         {
-            { SpellType.Projectile,    new ProjectileExecutor() },
-            { SpellType.Slash,         new SlashExecutor() },
-            { SpellType.Area,          new AreaExecutor() },
-            { SpellType.Dash,          new DashExecutor() },
-            { SpellType.Teleport,      new TeleportExecutor() },
-            { SpellType.Boomerang,     new BoomerangExecutor() },
-            { SpellType.Lightning,     new LightningExecutor() },
-            { SpellType.ChainLightning,new LightningExecutor() },
-            { SpellType.Beam,          new LaserBeamExecutor() },
+            { SpellType.Projectile,       new ProjectileExecutor() },
+            { SpellType.Slash,            new SlashExecutor() },
+            { SpellType.Area,             new AreaExecutor() },
+            { SpellType.Dash,             new DashExecutor() },
+            { SpellType.Teleport,         new TeleportExecutor() },
+            { SpellType.Boomerang,        new BoomerangExecutor() },
+            { SpellType.Lightning,        new LightningExecutor() },
+            { SpellType.ChainLightning,   new LightningExecutor() },
+            { SpellType.Beam,             new LaserBeamExecutor() },
+            { SpellType.Smoke,            new SmokeExecutor() },
+            { SpellType.SmokeEmitter,     new SmokeEmitterExecutor() },
+            { SpellType.Wall,             new WallExecutor() },
+            { SpellType.Mine,             new MineExecutor() },
+            { SpellType.SphereMagicShield,new ShieldExecutor() },
+            { SpellType.Meteor,           new MeteorExecutor() },
+            { SpellType.Aura,             new AuraExecutor() },
+            { SpellType.ArcaneFlame,      new ArcaneFlameExecutor() },
+            { SpellType.FireworkLaunch,   new FireworkLaunchExecutor() },
+            { SpellType.Puddle,           new PuddleExecutor() },
+            { SpellType.VortexField,      new VortexFieldExecutor() },
+            { SpellType.ConeBreath,       new ConeBreathExecutor() },
+            { SpellType.Summon,           new SummonExecutor() },
+            { SpellType.Totem,            new TotemExecutor() },
         };
 
         public CastPhase CurrentPhase => _phase;
@@ -66,6 +87,17 @@ namespace Valkur.Gameplay.Spells
             {
                 if (_cooldownTimers[i] > 0f)
                     _cooldownTimers[i] -= Time.deltaTime;
+            }
+
+            // Tick spell book cooldowns
+            var keysToUpdate = new List<string>();
+            foreach (var kv in _spellBookCooldowns)
+            {
+                if (kv.Value > 0f) keysToUpdate.Add(kv.Key);
+            }
+            foreach (var key in keysToUpdate)
+            {
+                _spellBookCooldowns[key] -= Time.deltaTime;
             }
 
             if (_phase != CastPhase.Ready)
@@ -160,7 +192,12 @@ namespace Valkur.Gameplay.Spells
 
         private void AdvancePhase()
         {
-            var spell = spellSlots[_activeSlot];
+            SpellDefinition spell = null;
+            if (_activeSlot >= 0 && _activeSlot < spellSlots.Length)
+                spell = spellSlots[_activeSlot];
+            else if (!string.IsNullOrEmpty(_activeKey) && _spellBook.TryGetValue(_activeKey, out var bookSpell))
+                spell = bookSpell;
+
             if (spell == null) { ResetPhase(); return; }
 
             switch (_phase)
@@ -174,12 +211,12 @@ namespace Valkur.Gameplay.Spells
                     }
                     else
                     {
-                        StartCooldown(spell, _activeSlot);
+                        StartCooldownForSpell(spell);
                     }
                     break;
 
                 case CastPhase.Channel:
-                    StartCooldown(spell, _activeSlot);
+                    StartCooldownForSpell(spell);
                     break;
 
                 case CastPhase.Cooldown:
@@ -200,9 +237,20 @@ namespace Valkur.Gameplay.Spells
             };
 
             if (Executors.TryGetValue(spell.type, out var executor))
+            {
+                Debug.Log($"[SpellCaster] Executing '{spell.spellKey}' (type={spell.type}) on {name} → {executor.GetType().Name}, dir={_castDirection}, dmg={spell.damage}, cd={spell.cooldownDuration:F2}s");
                 executor.Execute(ctx);
+            }
             else
+            {
+                Debug.LogWarning($"[SpellCaster] No executor for type {spell.type}, falling back to Projectile for '{spell.spellKey}'");
                 Executors[SpellType.Projectile].Execute(ctx);
+            }
+
+            // Play spell SFX by spellKey (e.g. "fireball" → fireball SFX in catalog)
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio != null && !string.IsNullOrEmpty(spell.spellKey))
+                audio.PlaySfxById(spell.spellKey);
         }
 
         private void StartCooldown(SpellDefinition spell, int slotIndex)
@@ -219,11 +267,115 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
+        /// <summary>
+        /// Starts cooldown for spell resolved from either slot or book.
+        /// Called from AdvancePhase when the cast was initiated via either path.
+        /// </summary>
+        private void StartCooldownForSpell(SpellDefinition spell)
+        {
+            // If we know the slot, use the slot-based cooldown array
+            if (_activeSlot >= 0 && _activeSlot < _cooldownTimers.Length)
+            {
+                StartCooldown(spell, _activeSlot);
+                return;
+            }
+
+            // Otherwise use spell book cooldown dictionary
+            if (!string.IsNullOrEmpty(_activeKey))
+                _spellBookCooldowns[_activeKey] = spell.cooldownDuration;
+
+            if (spell.cooldownDuration > 0f)
+            {
+                _phase = CastPhase.Cooldown;
+                _phaseTimer = spell.cooldownDuration;
+            }
+            else
+            {
+                ResetPhase();
+            }
+        }
+
         private void ResetPhase()
         {
             _phase = CastPhase.Ready;
             _phaseTimer = 0f;
             _activeSlot = -1;
+            _activeKey = null;
+        }
+
+        // ── Spell Book API ──
+
+        /// <summary>
+        /// Registers a spell in the key-based spell book for bindings beyond 4 slots.
+        /// </summary>
+        public void RegisterSpell(string key, SpellDefinition spell)
+        {
+            if (string.IsNullOrEmpty(key) || spell == null) return;
+            _spellBook[key] = spell;
+            if (!_spellBookCooldowns.ContainsKey(key))
+                _spellBookCooldowns[key] = 0f;
+        }
+
+        /// <summary>
+        /// Try to cast a spell from the spell book by its key.
+        /// </summary>
+        public bool TryCastByKey(string spellKey, Vector2 direction)
+        {
+            if (_phase != CastPhase.Ready) return false;
+            if (!_spellBook.TryGetValue(spellKey, out var spell)) return false;
+            if (_spellBookCooldowns.TryGetValue(spellKey, out float cd) && cd > 0f) return false;
+
+            int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
+            if (manaCost > 0)
+            {
+                var mana = ResolveMana();
+                if (mana == null)
+                {
+                    if (!_missingManaWarningLogged)
+                    {
+                        Debug.LogWarning($"[SpellCaster] Spell '{spell.spellKey}' requires mana ({manaCost}) but no Mana component on '{name}'.");
+                        _missingManaWarningLogged = true;
+                    }
+                    return false;
+                }
+                if (!mana.TryConsume(manaCost)) return false;
+            }
+
+            _activeSlot = -1;
+            _activeKey = spellKey;
+            _castDirection = direction.normalized;
+
+            if (spell.prepareDuration > 0f)
+            {
+                _phase = CastPhase.Prepare;
+                _phaseTimer = spell.prepareDuration;
+            }
+            else
+            {
+                ExecuteSpell(spell);
+                _spellBookCooldowns[spellKey] = spell.cooldownDuration;
+                if (spell.cooldownDuration > 0f)
+                {
+                    _phase = CastPhase.Cooldown;
+                    _phaseTimer = spell.cooldownDuration;
+                }
+            }
+
+            Debug.Log($"[SpellCaster] TryCastByKey '{spellKey}' → {spell.displayName} (type={spell.type})");
+            return true;
+        }
+
+        public SpellDefinition GetSpellByKey(string key)
+        {
+            _spellBook.TryGetValue(key, out var spell);
+            return spell;
+        }
+
+        public float GetBookCooldownRemaining(string key)
+        {
+            if (_spellBookCooldowns.TryGetValue(key, out float cd))
+                return Mathf.Max(0f, cd);
+            return 0f;
         }
 
         private Mana ResolveMana()
