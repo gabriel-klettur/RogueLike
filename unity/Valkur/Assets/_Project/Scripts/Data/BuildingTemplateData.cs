@@ -46,5 +46,10 @@ namespace Valkur.Data
         [Tooltip("Source image dimensions in pixels. Used to compute world size and split in Unity units. " +
                  "Maps to Python 'original_scale'.")]
         public Vector2Int originalScale;
+
+        [Tooltip("Original Python asset path (e.g. 'assets/buildings/vegetation/tree_7.png'). " +
+                 "Used to key into buildings_collisions_by_image.json. " +
+                 "Populated by BuildingImporter.")]
+        public string sourceImagePath;
     }
 }

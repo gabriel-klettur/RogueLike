@@ -112,6 +112,7 @@ namespace Valkur.Editor
                 so.splitRatio    = splitRatio;
                 so.colliderScope = scope;
                 so.originalScale = origScale;
+                so.sourceImagePath = idlePath;
 
                 // Assign preview sprite (the freshly imported asset)
                 AssetDatabase.ImportAsset(unityAssetPath, ImportAssetOptions.ForceSynchronousImport);
