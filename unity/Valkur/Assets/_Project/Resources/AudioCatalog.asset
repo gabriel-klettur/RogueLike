@@ -1,0 +1,241 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0790bf7abc999a48b26c557137ceb2f, type: 3}
+  m_Name: AudioCatalog
+  m_EditorClassIdentifier: 
+  tracks:
+  - id: menu_intro
+    title: Menu Intro
+    clip: {fileID: 8300000, guid: cc8147b6b224a8e4797eafb00ad43f87, type: 3}
+  - id: main_theme
+    title: Pepitoria Main Theme
+    clip: {fileID: 8300000, guid: 7c822a4e568746f42baceb340de845ab, type: 3}
+  - id: pepitoria_theme_2
+    title: Pepitoria Theme 2
+    clip: {fileID: 8300000, guid: bc47e7bb1510d9d4a9286c9498210026, type: 3}
+  - id: pepitoria_theme_3
+    title: Pepitoria Theme 3
+    clip: {fileID: 8300000, guid: 1d0847f4f98932a48bd54519c1bfd9d2, type: 3}
+  - id: pepitoria_theme_4
+    title: Pepitoria Theme 4
+    clip: {fileID: 8300000, guid: 0313d25aa7c72d64fbc0a1ac09f10ad9, type: 3}
+  - id: pepitoria_theme_5
+    title: Pepitoria Theme 5
+    clip: {fileID: 8300000, guid: 516aac323602655478f76d42b8ef41d7, type: 3}
+  - id: pepitoria_theme_6
+    title: Pepitoria Theme 6
+    clip: {fileID: 8300000, guid: 98009d95e1d1bf84d98d50e602a2100a, type: 3}
+  - id: pepitoria_theme_7
+    title: Pepitoria Theme 7
+    clip: {fileID: 8300000, guid: ba4eea861738b8e45b43bc820f2b9094, type: 3}
+  - id: pepitoria_theme_8
+    title: Pepitoria Theme 8
+    clip: {fileID: 8300000, guid: 53be1d16b9009954c85838e99bb583f5, type: 3}
+  - id: pepitoria_theme_9
+    title: Pepitoria Theme 9
+    clip: {fileID: 8300000, guid: 6861cdd8a49dc1e4e8b0b122a346299a, type: 3}
+  - id: pepitoria_theme_10
+    title: Pepitoria Theme 10
+    clip: {fileID: 8300000, guid: 3491e0e95f84faf418b20bc6c6fae1c9, type: 3}
+  - id: pepitoria_theme_11
+    title: Pepitoria Theme 11
+    clip: {fileID: 8300000, guid: d4d29a149d1130d4eb69ff18de0c7cab, type: 3}
+  - id: pepitoria_theme_12
+    title: Pepitoria Theme 12
+    clip: {fileID: 8300000, guid: 1f052e4108f2d584ebacdc76ae1655e1, type: 3}
+  - id: pepitoria_theme_13
+    title: Pepitoria Theme 13
+    clip: {fileID: 8300000, guid: 8b7aed386bed88b4e8ea320f81ead54b, type: 3}
+  - id: forest_main_theme
+    title: Forest Main Theme
+    clip: {fileID: 8300000, guid: cb6d8248295c3e947b80595668dd4aed, type: 3}
+  sfxEntries:
+  - id: inv_open
+    clip: {fileID: 8300000, guid: cbc59960b603abf4f9d7e2d02e50a8bd, type: 3}
+    group: ui
+  - id: fireball
+    clip: {fileID: 8300000, guid: fe3c79a0230a7ec4b9231faa4547b3fa, type: 3}
+    group: sfx
+  - id: sword_clash_1
+    clip: {fileID: 8300000, guid: 408ced2f4f5a0ea468034f36189ce0ee, type: 3}
+    group: sfx
+  - id: sword_clash_2
+    clip: {fileID: 8300000, guid: a025ef60e3452434ea7b277262222f06, type: 3}
+    group: sfx
+  - id: sword_clash_3
+    clip: {fileID: 8300000, guid: 36e8c81f050028743b9daf6a1627c1f4, type: 3}
+    group: sfx
+  - id: sword_clash_4
+    clip: {fileID: 8300000, guid: 337aeebf66350694d9ea33859aa1116b, type: 3}
+    group: sfx
+  - id: sword_clash_5
+    clip: {fileID: 8300000, guid: 77522d4e01b4e9845b68f10e7ee9034f, type: 3}
+    group: sfx
+  - id: sword_clash_6
+    clip: {fileID: 8300000, guid: e07bfdb1763c11b4f96bdb4dd3d8a38d, type: 3}
+    group: sfx
+  - id: sword_clash_7
+    clip: {fileID: 8300000, guid: b0558b6019217af4197cb25e8d414086, type: 3}
+    group: sfx
+  - id: sword_clash_8
+    clip: {fileID: 8300000, guid: e238c9ce004d87144b5a7a20316e84eb, type: 3}
+    group: sfx
+  - id: sword_clash_9
+    clip: {fileID: 8300000, guid: c36aa0d4daeb8fe48a380787866ecc32, type: 3}
+    group: sfx
+  - id: sword_clash_10
+    clip: {fileID: 8300000, guid: 1bcd66fccbd9bab4ebe60e802e289c43, type: 3}
+    group: sfx
+  - id: ambient_bird_1
+    clip: {fileID: 8300000, guid: e66b122577d65eb4f87c07734a2c095a, type: 3}
+    group: ambient
+  - id: ambient_bird_2
+    clip: {fileID: 8300000, guid: d60942118b592b84faf92d8da0180734, type: 3}
+    group: ambient
+  - id: ambient_cricket_1
+    clip: {fileID: 8300000, guid: b77fea259640dfc449a059666965a4c7, type: 3}
+    group: ambient
+  - id: ambient_frog_1
+    clip: {fileID: 8300000, guid: a0965792bcde95049ab7d9843208b9f8, type: 3}
+    group: ambient
+  - id: barbol_damage_1
+    clip: {fileID: 8300000, guid: fa933c3e376d62c4da81df5a9b808611, type: 3}
+    group: sfx
+  - id: barbol_attack_1
+    clip: {fileID: 8300000, guid: 6bc5b12fd5e18e144a9ce046513204a3, type: 3}
+    group: sfx
+  - id: barbol_attack_2
+    clip: {fileID: 8300000, guid: d892d9a71c2fa3341b7a998181236024, type: 3}
+    group: sfx
+  - id: barbol_attack_3
+    clip: {fileID: 8300000, guid: 4005120fa3288474bbb8930af2da1dcd, type: 3}
+    group: sfx
+  - id: player_damage_1
+    clip: {fileID: 8300000, guid: f989227bcf1ffca45ae2dcb601e0f9f0, type: 3}
+    group: sfx
+  - id: player_damage_2
+    clip: {fileID: 8300000, guid: f7003eed550b448469077f5377b6c8dd, type: 3}
+    group: sfx
+  - id: player_damage_3
+    clip: {fileID: 8300000, guid: 87b163198dfbf0640a9823842d98c977, type: 3}
+    group: sfx
+  - id: player_damage_4
+    clip: {fileID: 8300000, guid: f087294f202e3894294c9971531fc3a5, type: 3}
+    group: sfx
+  - id: player_damage_5
+    clip: {fileID: 8300000, guid: 2028f8161a3f50f4984d3593097e658c, type: 3}
+    group: sfx
+  - id: player_damage_6
+    clip: {fileID: 8300000, guid: b836c3ba1a22fb943a39dac68fb62b97, type: 3}
+    group: sfx
+  - id: player_damage_7
+    clip: {fileID: 8300000, guid: 7f5a7381f8cbee1479af997104239fd0, type: 3}
+    group: sfx
+  - id: player_damage_8
+    clip: {fileID: 8300000, guid: 1df02e220e02c864495a85e743c36a51, type: 3}
+    group: sfx
+  - id: player_damage_9
+    clip: {fileID: 8300000, guid: dcf9d74b5d65c0343b5d0c75ef9559c6, type: 3}
+    group: sfx
+  - id: player_damage_10
+    clip: {fileID: 8300000, guid: 8c173275ae7cbd4438be3987b25b86d3, type: 3}
+    group: sfx
+  - id: player_damage_11
+    clip: {fileID: 8300000, guid: 66217b215169f534dbf974370b9de13e, type: 3}
+    group: sfx
+  - id: player_damage_12
+    clip: {fileID: 8300000, guid: 61b8ed34facf9c745aaf39a5e1f5df64, type: 3}
+    group: sfx
+  - id: player_damage_13
+    clip: {fileID: 8300000, guid: ac3bc2f86f4aa9c4092e667a25d0d8e1, type: 3}
+    group: sfx
+  - id: player_damage_14
+    clip: {fileID: 8300000, guid: 20e70a9fde94096409f4b26fc10f34e9, type: 3}
+    group: sfx
+  - id: player_damage_15
+    clip: {fileID: 8300000, guid: 6b3ff01d9b621b342b7fc72b45c982b0, type: 3}
+    group: sfx
+  - id: player_damage_16
+    clip: {fileID: 8300000, guid: 766c5ce608d584d42b17a33e7e852f39, type: 3}
+    group: sfx
+  - id: player_damage_17
+    clip: {fileID: 8300000, guid: 2dfe5844da2980f408e6dbf250ddf7f4, type: 3}
+    group: sfx
+  - id: player_damage_18
+    clip: {fileID: 8300000, guid: fb0f3c239a0a58543b6346adf6380b37, type: 3}
+    group: sfx
+  - id: player_damage_19
+    clip: {fileID: 8300000, guid: b11279319ae86fd44a5aa61ad4e65f9a, type: 3}
+    group: sfx
+  - id: player_damage_20
+    clip: {fileID: 8300000, guid: f396d2a75db47234e87035bf1c15f883, type: 3}
+    group: sfx
+  - id: player_damage_21
+    clip: {fileID: 8300000, guid: 1afd1f1da2f13fd45baeac88d7a3656c, type: 3}
+    group: sfx
+  - id: player_damage_22
+    clip: {fileID: 8300000, guid: 47a85c454a1ea8c408f25725303236e6, type: 3}
+    group: sfx
+  startupTrackId: menu_intro
+  ingameTrackId: main_theme
+  ingamePlaylist:
+  - main_theme
+  - pepitoria_theme_2
+  - pepitoria_theme_3
+  - pepitoria_theme_4
+  - pepitoria_theme_5
+  - pepitoria_theme_6
+  - pepitoria_theme_7
+  - pepitoria_theme_8
+  - pepitoria_theme_9
+  - pepitoria_theme_10
+  - pepitoria_theme_11
+  - pepitoria_theme_12
+  - pepitoria_theme_13
+  playlistIntervalSec: 120
+  playlistShuffle: 1
+  crossfadeSec: 0.6
+  menuFadeOutSec: 0.5
+  defaultAmbientChoices:
+  - ambient_bird_1
+  - ambient_bird_2
+  - ambient_cricket_1
+  - ambient_frog_1
+  defaultAmbientMinInterval: 6
+  defaultAmbientMaxInterval: 18
+  duckingAmountDb: -4
+  duckingHoldMs: 250
+  duckingReleaseMs: 200
+  duckingPrefixes:
+  - sword_clash_
+  - fireball
+  musicOverrides:
+  - scope: 2
+    scopeName: forest
+    trackId: main_theme
+  - scope: 1
+    scopeName: global_map
+    trackId: main_theme
+  - scope: 0
+    scopeName: lobby
+    trackId: main_theme
+  - scope: 0
+    scopeName: Forest
+    trackId: forest_main_theme
+  ambientOverrides:
+  - scopeName: forest
+    choices:
+    - ambient_bird_1
+    - ambient_bird_2
+    - ambient_cricket_1
+    minInterval: 5
+    maxInterval: 16

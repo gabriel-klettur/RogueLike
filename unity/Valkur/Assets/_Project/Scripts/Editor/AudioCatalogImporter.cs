@@ -33,12 +33,8 @@ namespace Valkur.Editor
             }
 
             string json = File.ReadAllText(jsonPath);
-            var data = JsonUtility.FromJson<PythonAudioJson>(json);
-            if (data == null)
-            {
-                // JsonUtility doesn't support top-level dicts well; use manual parsing
-                data = ParseManual(json);
-            }
+            // JsonUtility doesn't support Dictionary fields — always use manual MiniJson parser
+            var data = ParseManual(json);
 
             var catalog    = LoadOrCreateAsset<AudioCatalogSO>(CATALOG_PATH);
             var combatSfx  = LoadOrCreateAsset<CombatSfxConfigSO>(COMBAT_SFX_PATH);

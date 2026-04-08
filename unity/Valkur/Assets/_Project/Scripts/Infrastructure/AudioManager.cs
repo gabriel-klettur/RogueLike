@@ -100,5 +100,14 @@ namespace Valkur.Infrastructure
             return src;
         }
 
+        /// <summary>
+        /// Assigns the catalog at runtime (used when AudioManager is created via code
+        /// rather than placed in a scene with the inspector reference pre-wired).
+        /// </summary>
+        public void SetCatalog(AudioCatalogSO newCatalog)
+        {
+            catalog = newCatalog;
+        }
+
     }
 }

@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02ee184423d55a14fb5f588d6c38cbf2, type: 3}
+  m_Name: CombatSfxConfig
+  m_EditorClassIdentifier: 
+  playerDamageSfxIds:
+  - player_damage_1
+  - player_damage_2
+  - player_damage_3
+  - player_damage_4
+  - player_damage_5
+  - player_damage_6
+  - player_damage_7
+  - player_damage_8
+  - player_damage_9
+  - player_damage_10
+  - player_damage_11
+  - player_damage_12
+  - player_damage_13
+  - player_damage_14
+  - player_damage_15
+  - player_damage_16
+  - player_damage_17
+  - player_damage_18
+  - player_damage_19
+  - player_damage_20
+  - player_damage_21
+  - player_damage_22
+  npcArchetypes:
+  - archetype: barbol
+    damageSfxIds:
+    - barbol_damage_1
+    attackSfxIds:
+    - barbol_attack_1
+    - barbol_attack_2
+    - barbol_attack_3
+  slashSfxIds:
+  - sword_clash_1
+  - sword_clash_2
+  - sword_clash_3
+  - sword_clash_4
+  - sword_clash_5
+  - sword_clash_6
+  - sword_clash_7
+  - sword_clash_8
+  - sword_clash_9
+  - sword_clash_10
+  fireballSfxId: fireball

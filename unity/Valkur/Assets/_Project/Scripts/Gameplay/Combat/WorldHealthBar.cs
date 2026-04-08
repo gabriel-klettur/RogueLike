@@ -69,8 +69,21 @@ namespace Valkur.Gameplay.Combat
         {
             _barRoot = new GameObject("HealthBar").transform;
             _barRoot.SetParent(transform);
-            _barRoot.localPosition = offset;
-            _barRoot.localScale = Vector3.one;
+
+            // Compensate for entity visual scaling (NPCs may have non-1 localScale from sprite sizing).
+            // Without this, the bar would shrink/grow with the entity sprite.
+            float parentScaleY = transform.localScale.y;
+            if (parentScaleY > 0f && !Mathf.Approximately(parentScaleY, 1f))
+            {
+                float inv = 1f / parentScaleY;
+                _barRoot.localPosition = new Vector3(offset.x * inv, offset.y * inv, offset.z);
+                _barRoot.localScale = new Vector3(inv, inv, 1f);
+            }
+            else
+            {
+                _barRoot.localPosition = offset;
+                _barRoot.localScale = Vector3.one;
+            }
 
             float borderPad = 0.04f;
 
