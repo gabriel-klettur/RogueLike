@@ -5,6 +5,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Combat;
 // Mana lives in Valkur.Gameplay (same assembly, different sub-namespace)
 using ManaCmp = Valkur.Gameplay.Mana;
+using Valkur.Gameplay.Player;
 
 namespace Valkur.Gameplay.Inventory
 {
@@ -25,6 +26,8 @@ namespace Valkur.Gameplay.Inventory
         private Inventory                  _inventory;
         private Health                     _health;
         private ManaCmp                    _mana;
+        private Energy                     _energy;
+        private Hunger                     _hunger;
         private FloatingDamageSpawner      _floatingText;
 
         // ── Events ────────────────────────────────────────────────────
@@ -38,6 +41,8 @@ namespace Valkur.Gameplay.Inventory
             _inventory    = GetComponent<Inventory>();
             _health       = GetComponent<Health>();
             _mana         = GetComponent<ManaCmp>();
+            _energy       = GetComponent<Energy>();
+            _hunger       = GetComponent<Hunger>();
             _floatingText = GetComponentInChildren<FloatingDamageSpawner>(true);
         }
 
@@ -84,13 +89,13 @@ namespace Valkur.Gameplay.Inventory
             if (item.mana > 0 && _mana != null)
                 _mana.Restore(Mathf.RoundToInt(item.mana));
 
-            // Energy and Hunger are stored in ItemDefinition for future subsystems.
-            // Log so designers know the value is being read but not yet applied.
-            if (item.energy != 0)
-                Debug.Log($"[ItemConsumer] '{item.displayName}' energy={item.energy} (no Energy component yet).");
+            // Energy
+            if (item.energy != 0 && _energy != null)
+                _energy.Restore(Mathf.RoundToInt(item.energy));
 
-            if (item.hunger != 0)
-                Debug.Log($"[ItemConsumer] '{item.displayName}' hunger={item.hunger} (no Hunger component yet).");
+            // Hunger
+            if (item.hunger != 0 && _hunger != null)
+                _hunger.Feed(Mathf.RoundToInt(item.hunger));
 
             // Timed stat buff
             if (item.duration > 0 && !string.IsNullOrEmpty(item.buffStat))

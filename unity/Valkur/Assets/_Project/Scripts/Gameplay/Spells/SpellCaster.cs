@@ -75,6 +75,23 @@ namespace Valkur.Gameplay.Spells
             return spellSlots[slot].displayName;
         }
 
+        /// <summary>Get the spell definition at the given slot, or null.</summary>
+        public SpellDefinition GetSpellAtSlot(int slot)
+        {
+            if (spellSlots == null || slot < 0 || slot >= spellSlots.Length) return null;
+            return spellSlots[slot];
+        }
+
+        /// <summary>Get cooldown progress for a slot (0 = ready, 1 = full cooldown).</summary>
+        public float GetCooldownNormalized(int slot)
+        {
+            if (_cooldownTimers == null || slot < 0 || slot >= _cooldownTimers.Length) return 0f;
+            if (_cooldownTimers[slot] <= 0f) return 0f;
+            var spell = GetSpellAtSlot(slot);
+            if (spell == null || spell.cooldownDuration <= 0f) return 0f;
+            return Mathf.Clamp01(_cooldownTimers[slot] / spell.cooldownDuration);
+        }
+
         private void Awake()
         {
             _cooldownTimers = new float[spellSlots.Length];

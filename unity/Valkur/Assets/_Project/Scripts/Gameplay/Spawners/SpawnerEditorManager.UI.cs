@@ -166,7 +166,6 @@ namespace Valkur.Gameplay.Spawners
             go.transform.SetParent(parent, worldPositionStays: false);
             var img = go.AddComponent<Image>();
             img.color = color;
-            go.AddComponent<RectTransform>();
             return go;
         }
 

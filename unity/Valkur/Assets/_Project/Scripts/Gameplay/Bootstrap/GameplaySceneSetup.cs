@@ -89,6 +89,11 @@ namespace Valkur.Gameplay
             EnsureSpawnerEditor();
             EnsureDevConsole();
 
+            // Combat support systems (death drops, respawn, toast)
+            EnsureDeathDropSystem();
+            EnsureNPCRespawnSystem();
+            EnsureToastSystem();
+
             // Player & camera MUST be created before risky loaders
             // so a loader crash can never leave the scene without a camera target.
             SpawnPlayer();

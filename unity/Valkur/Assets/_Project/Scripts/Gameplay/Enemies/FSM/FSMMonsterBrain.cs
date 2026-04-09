@@ -89,6 +89,14 @@ namespace Valkur.Gameplay.FSM
             _fsm.SetContext("attack_windup_s", def.stats.attackWindupSeconds);
             _fsm.SetContext("faction", def.stats.faction);
 
+            // Generate patrol waypoints from definition
+            if (!string.IsNullOrEmpty(def.patrolType))
+            {
+                Vector2 spawnPos = transform.position;
+                var waypoints = PatrolWaypointGenerator.Generate(spawnPos, def.patrolType);
+                _fsm.SetContext("patrol_waypoints", waypoints);
+            }
+
             _fsm.OnStateChanged += OnFSMStateChanged;
         }
 

@@ -343,5 +343,29 @@ namespace Valkur.Gameplay
             if (audio == null) return;
             audio.EnterGameAudio();
         }
+
+        private void EnsureDeathDropSystem()
+        {
+            if (FindObjectOfType<DeathDropSystem>() != null) return;
+            var go = new GameObject("DeathDropSystem");
+            go.AddComponent<DeathDropSystem>();
+            Debug.Log("[GameplaySceneSetup] DeathDropSystem created.");
+        }
+
+        private void EnsureNPCRespawnSystem()
+        {
+            if (FindObjectOfType<NPCRespawnSystem>() != null) return;
+            var go = new GameObject("NPCRespawnSystem");
+            go.AddComponent<NPCRespawnSystem>();
+            Debug.Log("[GameplaySceneSetup] NPCRespawnSystem created.");
+        }
+
+        private void EnsureToastSystem()
+        {
+            if (FindObjectOfType<Combat.ToastSystem>() != null) return;
+            var go = new GameObject("ToastSystem");
+            go.AddComponent<Combat.ToastSystem>();
+            Debug.Log("[GameplaySceneSetup] ToastSystem created.");
+        }
     }
 }

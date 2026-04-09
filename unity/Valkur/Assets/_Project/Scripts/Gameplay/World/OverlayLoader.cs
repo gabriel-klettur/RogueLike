@@ -147,6 +147,15 @@ namespace Valkur.Gameplay.World
             var sprite = Resources.Load<Sprite>("Tiles/" + tileName);
             if (sprite != null) return sprite;
 
+            // Fallback: Python "ready/{category}/..." tiles may have been imported
+            // without the "ready/" prefix (e.g. grass_dirt/, grass_rock/ at Tiles root).
+            if (tileName.StartsWith("ready/"))
+            {
+                string stripped = tileName.Substring(6); // Remove "ready/"
+                sprite = Resources.Load<Sprite>("Tiles/" + stripped);
+                if (sprite != null) return sprite;
+            }
+
             Debug.LogWarning($"[OverlayLoader] Could not resolve tile: '{tileName}' (tried Resources/Tiles/{tileName})");
             return null;
         }
