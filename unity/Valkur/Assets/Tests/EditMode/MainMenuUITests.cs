@@ -138,11 +138,11 @@ namespace Valkur.Tests.EditMode
         // ── Menu options (dynamic) ───────────────────────────────────────────
 
         [Test]
-        public void MenuOptions_AlwaysContains_NuevaPartida()
+        public void MenuOptions_AlwaysContains_NuevoJuego()
         {
             var options = GetPrivateField<string[]>("_menuOptions");
             Assert.IsNotNull(options);
-            Assert.Contains("Nueva Partida", options);
+            Assert.Contains("Nuevo juego", options);
         }
 
         [Test]

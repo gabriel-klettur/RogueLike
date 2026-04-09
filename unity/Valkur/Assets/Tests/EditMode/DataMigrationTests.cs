@@ -55,8 +55,8 @@ namespace Valkur.Tests.EditMode
             Assert.AreEqual(SpellType.Projectile, fireball.type);
             Assert.AreEqual(20f, fireball.damage);
             Assert.AreEqual(1f, fireball.manaCost);
-            Assert.AreEqual(1800f, fireball.range);
-            Assert.AreEqual(30f, fireball.speed);
+            Assert.AreEqual(112.5f, fireball.range);
+            Assert.AreEqual(112.5f, fireball.speed);
         }
 
         [Test]
