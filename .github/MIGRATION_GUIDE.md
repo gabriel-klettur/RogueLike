@@ -1,8 +1,8 @@
 # Valkur Migration Guide: Python (Pygame-CE) → Unity 2022.3 LTS
 
-**Version:** 2.0  
-**Date:** 2026-04-07  
-**Status:** 82% complete (41/50 steps)  
+**Version:** 3.0  
+**Date:** 2026-04-09  
+**Status:** 90% complete (45/50 steps)  
 **Primary audience:** Developer, Copilot agents, future contributors
 
 ---
@@ -13,7 +13,7 @@
 2. [Architecture Comparison](#2-architecture-comparison)
 3. [Available Agents & Skills](#3-available-agents--skills)
 4. [Migration Status](#4-migration-status)
-5. [Remaining Work (9 steps)](#5-remaining-work)
+5. [Remaining Work (5 steps)](#5-remaining-work)
 6. [Critical Issues](#6-critical-issues)
 7. [System-by-System Mapping](#7-system-by-system-mapping)
 8. [Data Migration Reference](#8-data-migration-reference)
@@ -199,44 +199,23 @@ Invoke these as slash commands for specific workflows:
 
 | Item | Priority | Agent/Skill |
 |------|----------|-------------|
-| Fix Physics2D Collision Matrix (P2.1) | 🔴 CRITICAL | @unity-architect |
-| Fix material leaks (P1.4) | ⚠️ Medium | @unity-architect |
-| Audio pipeline integration | ⚠️ Medium | @unity-architect |
 | Day/night cycle | Low | @python-analyst → @unity-architect |
 | NPC spell casting | Low | /combat-migration |
-| Patrol waypoints | Low | @unity-architect |
-| Vendor buy/sell UI | Low | @unity-architect |
-| Minigames (Pylos, Soluna) | Low | @python-analyst → @unity-architect |
+| Minigames (Pylos deferred; Soluna empty) | Low | @python-analyst → @unity-architect |
 | Clean up legacy InputManager axes | Low | @unity-architect |
+
+> **Resolved** (2026-04 session): Physics2D Collision Matrix ✅, Material leaks ✅, Audio pipeline ✅, Patrol waypoints ✅, Vendor buy/sell UI ✅
 
 ---
 
 ## 6. Critical Issues
 
-### P2.1 — Physics2D Layer Collision Matrix (🔴 ACTIVE)
+All previously critical issues have been resolved:
 
-**Problem:** All layers collide with all layers. Projectiles hit the player who cast them, NPCs collide with pickups, spawners interfere with movement.
-
-**Required matrix:**
-
-| | Player | NPC | Projectile | World | Pickup | UIBlocker | Building | Spawner |
-|---|---|---|---|---|---|---|---|---|
-| **Player** | — | ✅ | — | ✅ | ✅ | — | ✅ | — |
-| **NPC** | ✅ | ✅ | ✅ | ✅ | — | — | ✅ | — |
-| **Projectile** | — | ✅ | — | ✅ | — | — | ✅ | — |
-| **World** | ✅ | ✅ | ✅ | — | — | — | — | — |
-| **Pickup** | ✅ | — | — | — | — | — | — | — |
-| **UIBlocker** | — | — | — | — | — | — | — | — |
-| **Building** | ✅ | ✅ | ✅ | — | — | — | — | — |
-| **Spawner** | — | — | — | — | — | — | — | — |
-
-**Fix:** Edit via Unity menu `Edit > Project Settings > Physics 2D > Layer Collision Matrix`
-
-### P1.4 — Material Leaks (⚠️ ACTIVE)
-
-**Problem:** `WorldGridBuilder.cs` and `TileEditorGridCursor.cs` create `new Material()` at runtime without `Destroy()` on cleanup.
-
-**Fix:** Cache materials and destroy in `OnDestroy()`.
+| ID | Issue | Status | Resolution |
+|----|-------|--------|------------|
+| P2.1 | Physics2D Layer Collision Matrix | ✅ Fixed 2026-04-07 | Proper per-layer matrix configured |
+| P1.4 | Material leaks in WorldGridBuilder/TileEditorGridCursor | ✅ Fixed 2026-04 | Cached materials + `OnDestroy()` cleanup |
 
 ---
 
@@ -252,7 +231,7 @@ Invoke these as slash commands for specific workflows:
 | `hitbox_system.py` | `MeleeCombat.OverlapCircle` + `Projectile.OnTriggerEnter2D` | ✅ |
 | `explosion_system.py` | `AreaExecutor.cs` | ✅ |
 | `burn_system.py` | — | ❌ Not ported |
-| `combat_sfx.py` | — | ❌ No audio |
+| `combat_sfx.py` | `CombatAudioSystem.cs` + `CombatSfxConfigSO.cs` | ✅ |
 
 ### Spells
 
