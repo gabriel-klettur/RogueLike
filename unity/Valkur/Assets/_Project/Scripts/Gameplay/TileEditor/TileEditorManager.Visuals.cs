@@ -66,6 +66,17 @@ namespace Valkur.Gameplay.TileEditor
             Vector3Int cellPos = GetCellUnderMouse(tilemap);
             Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
             _gridCursor.UpdateCursor(worldPos, _state.BrushSize, _state.CurrentTool);
+
+            // GREEN selection indicator at last-interacted cell
+            if (_state.SelectedCellPos.HasValue)
+            {
+                Vector3 selWorld = GetCellWorldCenter(tilemap, _state.SelectedCellPos.Value);
+                _gridCursor.SetSelection(selWorld, _state.BrushSize);
+            }
+            else
+            {
+                _gridCursor.ClearSelection();
+            }
         }
 
         // ── View panel hover ──

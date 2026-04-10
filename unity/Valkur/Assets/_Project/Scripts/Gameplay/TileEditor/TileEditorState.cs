@@ -1,3 +1,4 @@
+using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.World;
 
@@ -26,6 +27,12 @@ namespace Valkur.Gameplay.TileEditor
         public string SelectedCategory = "";
         public int BrushSize = 1;
         public bool IsDragging;
+
+        /// <summary>
+        /// World-space cell last interacted with (click/place/eyedrop).
+        /// Shown as a GREEN outline. Maps to Python's selected_tile (.x,.y).
+        /// </summary>
+        public Vector3Int? SelectedCellPos;
 
         // Undo support
         public const int MAX_UNDO = 50;

@@ -30,6 +30,7 @@ namespace Valkur.Gameplay.TileEditor
             else
             {
                 _undo.EndStroke();
+                _state.SelectedCellPos = null;
                 HideBrushPreview();
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
@@ -93,6 +94,7 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
@@ -109,6 +111,7 @@ namespace Valkur.Gameplay.TileEditor
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
+                _state.SelectedCellPos = cellPos;
                 _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell));
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
@@ -125,6 +128,7 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
@@ -135,6 +139,7 @@ namespace Valkur.Gameplay.TileEditor
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
+                _state.SelectedCellPos = cellPos;
                 _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell));
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
@@ -152,6 +157,7 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile, canEditCell: CanEditCell);
                 _undo.RecordEdits(edits);
@@ -169,6 +175,7 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.SelectedCellPos = cellPos;
                 var picked = TileBrush.Pick(tilemap, cellPos);
                 if (picked != null)
                 {
@@ -192,6 +199,7 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.SelectedCellPos = cellPos;
                 var tile = tilemap.GetTile(cellPos);
                 string info = tile != null ? tile.name : "(empty)";
                 _ui.SetStatus($"Cell ({cellPos.x},{cellPos.y}) Layer:{_state.CurrentLayer} Tile:{info}");

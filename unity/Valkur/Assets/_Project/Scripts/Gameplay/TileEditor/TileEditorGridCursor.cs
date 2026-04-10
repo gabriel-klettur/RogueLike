@@ -3,75 +3,108 @@ using UnityEngine;
 namespace Valkur.Gameplay.TileEditor
 {
     /// <summary>
-    /// World-space grid cursor that highlights the cell under the mouse.
-    /// Draws a colored outline rectangle matching the brush size.
-    /// Maps to Python's TileEditorView brush preview rectangle (OUTLINE_HOVER).
+    /// World-space grid cursor that highlights the cell under the mouse (CYAN hover)
+    /// and the last-interacted cell (GREEN selection).
+    /// Maps to Python's TileOutlineView: OUTLINE_HOVER=(0,220,255) + OUTLINE_SEL=(0,255,0).
     /// </summary>
     public class TileEditorGridCursor : MonoBehaviour
     {
-        private static readonly Color CursorColor = new Color(0.90f, 0.76f, 0.38f, 0.85f);
-        private static readonly Color EraserColor = new Color(0.95f, 0.35f, 0.30f, 0.75f);
-        private static readonly Color FillColor = new Color(0.30f, 0.85f, 0.90f, 0.75f);
-        private static readonly Color EyedropperColor = new Color(0.30f, 0.90f, 0.45f, 0.75f);
+        // Python: OUTLINE_HOVER = (0, 220, 255), HOVER_ALPHA = 60
+        private static readonly Color HoverColor = new Color(0f, 0.863f, 1f, 0.85f);
+        private const float HoverFillAlpha = 0.235f; // 60/255
 
-        private LineRenderer _lineRenderer;
-        private SpriteRenderer _fillRenderer;
+        // Python: OUTLINE_SEL = (0, 255, 0)
+        private static readonly Color SelectionColor = new Color(0f, 1f, 0f, 0.9f);
+        private const float SelectionFillAlpha = 0.12f;
+
+        // Python: OUTLINE_WIDTH = 3 px → 3/16 PPU ≈ 0.1875 world units
+        private const float OutlineWidth = 0.06f;
+
+        // ── Hover cursor ──
+        private LineRenderer _hoverLine;
+        private SpriteRenderer _hoverFill;
+
+        // ── Selection cursor ──
+        private GameObject _selGo;
+        private LineRenderer _selLine;
+        private SpriteRenderer _selFill;
+
         private Material _lineMaterial;
+        private Sprite _whiteSprite;
 
         public void Initialize()
         {
-            // Line renderer for the outline
-            _lineRenderer = gameObject.AddComponent<LineRenderer>();
-            _lineRenderer.useWorldSpace = true;
-            _lineRenderer.loop = true;
-            _lineRenderer.positionCount = 4;
-            _lineRenderer.startWidth = 0.04f;
-            _lineRenderer.endWidth = 0.04f;
-            _lineRenderer.sortingOrder = 998;
             _lineMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
                 ?? Shader.Find("Sprites/Default"));
             _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
-            _lineRenderer.sharedMaterial = _lineMaterial;
-            _lineRenderer.startColor = CursorColor;
-            _lineRenderer.endColor = CursorColor;
+            _whiteSprite = CreateWhiteSprite();
 
-            // Semi-transparent fill quad
-            var fillGo = new GameObject("CursorFill");
-            fillGo.transform.SetParent(transform, false);
-            _fillRenderer = fillGo.AddComponent<SpriteRenderer>();
-            _fillRenderer.sortingOrder = 997;
-            _fillRenderer.color = new Color(CursorColor.r, CursorColor.g, CursorColor.b, 0.15f);
-            _fillRenderer.sprite = CreateWhiteSprite();
+            // ── Hover outline + fill ──
+            _hoverLine = CreateOutline(gameObject, HoverColor, 998);
+
+            var hoverFillGo = new GameObject("HoverFill");
+            hoverFillGo.transform.SetParent(transform, false);
+            _hoverFill = hoverFillGo.AddComponent<SpriteRenderer>();
+            _hoverFill.sortingOrder = 997;
+            _hoverFill.color = new Color(HoverColor.r, HoverColor.g, HoverColor.b, HoverFillAlpha);
+            _hoverFill.sprite = _whiteSprite;
+
+            // ── Selection outline + fill ──
+            _selGo = new GameObject("SelectionCursor");
+            _selGo.transform.SetParent(transform, false);
+
+            _selLine = CreateOutline(_selGo, SelectionColor, 996);
+
+            var selFillGo = new GameObject("SelectionFill");
+            selFillGo.transform.SetParent(_selGo.transform, false);
+            _selFill = selFillGo.AddComponent<SpriteRenderer>();
+            _selFill.sortingOrder = 995;
+            _selFill.color = new Color(SelectionColor.r, SelectionColor.g, SelectionColor.b, SelectionFillAlpha);
+            _selFill.sprite = _whiteSprite;
+
+            _selGo.SetActive(false);
         }
 
         /// <summary>
-        /// Update the cursor position and size. Call from TileEditorManager.Update().
+        /// Update hover cursor position/size. Called every frame from TileEditorManager.
         /// </summary>
         public void UpdateCursor(Vector3 worldCenter, int brushSize, TileEditorState.Tool tool)
         {
-            Color color = GetToolColor(tool);
             float half = brushSize * 0.5f;
+            SetRect(_hoverLine, worldCenter, half);
+            _hoverLine.startColor = HoverColor;
+            _hoverLine.endColor = HoverColor;
 
-            // Outline corners
-            Vector3 bl = worldCenter + new Vector3(-half, -half, 0f);
-            Vector3 br = worldCenter + new Vector3(half, -half, 0f);
-            Vector3 tr = worldCenter + new Vector3(half, half, 0f);
-            Vector3 tl = worldCenter + new Vector3(-half, half, 0f);
-
-            _lineRenderer.SetPosition(0, bl);
-            _lineRenderer.SetPosition(1, br);
-            _lineRenderer.SetPosition(2, tr);
-            _lineRenderer.SetPosition(3, tl);
-            _lineRenderer.startColor = color;
-            _lineRenderer.endColor = color;
-
-            // Fill quad
-            if (_fillRenderer != null)
+            if (_hoverFill != null)
             {
-                _fillRenderer.transform.position = worldCenter;
-                _fillRenderer.transform.localScale = new Vector3(brushSize, brushSize, 1f);
-                _fillRenderer.color = new Color(color.r, color.g, color.b, 0.15f);
+                _hoverFill.transform.position = worldCenter;
+                _hoverFill.transform.localScale = new Vector3(brushSize, brushSize, 1f);
+                _hoverFill.color = new Color(HoverColor.r, HoverColor.g, HoverColor.b, HoverFillAlpha);
             }
+        }
+
+        /// <summary>
+        /// Show/update the GREEN selection indicator at a world position.
+        /// </summary>
+        public void SetSelection(Vector3 worldCenter, int brushSize)
+        {
+            if (_selGo == null) return;
+            _selGo.SetActive(true);
+            float half = brushSize * 0.5f;
+            SetRect(_selLine, worldCenter, half);
+            if (_selFill != null)
+            {
+                _selFill.transform.position = worldCenter;
+                _selFill.transform.localScale = new Vector3(brushSize, brushSize, 1f);
+            }
+        }
+
+        /// <summary>
+        /// Hide the GREEN selection indicator.
+        /// </summary>
+        public void ClearSelection()
+        {
+            if (_selGo != null) _selGo.SetActive(false);
         }
 
         private void OnDestroy()
@@ -80,15 +113,33 @@ namespace Valkur.Gameplay.TileEditor
                 Destroy(_lineMaterial);
         }
 
-        private Color GetToolColor(TileEditorState.Tool tool)
+        // ── Helpers ──
+
+        private LineRenderer CreateOutline(GameObject go, Color color, int sortOrder)
         {
-            switch (tool)
-            {
-                case TileEditorState.Tool.Eraser: return EraserColor;
-                case TileEditorState.Tool.Fill: return FillColor;
-                case TileEditorState.Tool.Eyedropper: return EyedropperColor;
-                default: return CursorColor;
-            }
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.loop = true;
+            lr.positionCount = 4;
+            lr.startWidth = OutlineWidth;
+            lr.endWidth = OutlineWidth;
+            lr.sortingOrder = sortOrder;
+            lr.sharedMaterial = _lineMaterial;
+            lr.startColor = color;
+            lr.endColor = color;
+            return lr;
+        }
+
+        private static void SetRect(LineRenderer lr, Vector3 center, float half)
+        {
+            Vector3 bl = center + new Vector3(-half, -half, 0f);
+            Vector3 br = center + new Vector3(half, -half, 0f);
+            Vector3 tr = center + new Vector3(half, half, 0f);
+            Vector3 tl = center + new Vector3(-half, half, 0f);
+            lr.SetPosition(0, bl);
+            lr.SetPosition(1, br);
+            lr.SetPosition(2, tr);
+            lr.SetPosition(3, tl);
         }
 
         private static Sprite CreateWhiteSprite()
