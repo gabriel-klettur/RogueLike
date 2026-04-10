@@ -11,7 +11,8 @@ namespace Valkur.Gameplay.Combat
     public class WorldHealthBar : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private Vector3 offset = new Vector3(0f, 0.7f, 0f);
+        [SerializeField, Tooltip("Extra margin above sprite top edge.")]
+        private float marginAboveSprite = 0.12f;
         [SerializeField] private float barWidth = 0.8f;
         [SerializeField] private float barHeight = 0.1f;
         [SerializeField] private float lowThreshold = 0.3f;
@@ -41,6 +42,24 @@ namespace Valkur.Gameplay.Combat
             CreateBarVisuals();
         }
 
+        /// <summary>
+        /// Compute the local-space Y of the sprite's top edge (above pivot).
+        /// Works regardless of entity scale.
+        /// </summary>
+        public static float GetSpriteTopY(GameObject entity)
+        {
+            var sr = entity.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null && sr.sprite != null)
+            {
+                // bounds.max.y is the world-space top of the sprite.
+                // Subtract entity position to get local-space distance from pivot (feet) to top.
+                float worldTopY = sr.bounds.max.y - entity.transform.position.y;
+                float scaleY = entity.transform.localScale.y;
+                return scaleY > 0f ? worldTopY / scaleY : worldTopY;
+            }
+            return 1.4f; // fallback for ~22px tall sprite at PPU 16
+        }
+
         private void OnEnable()
         {
             if (_health != null)
@@ -65,23 +84,36 @@ namespace Valkur.Gameplay.Combat
             lowColor = low;
         }
 
+        /// <summary>
+        /// Python always shows the health bar for the player (no hide-at-full).
+        /// Monsters keep hideAtFullHp=true to reduce clutter.
+        /// </summary>
+        public void SetHideAtFullHp(bool hide)
+        {
+            hideAtFullHp = hide;
+            UpdateVisibility();
+        }
+
         private void CreateBarVisuals()
         {
             _barRoot = new GameObject("HealthBar").transform;
             _barRoot.SetParent(transform);
 
-            // Compensate for entity visual scaling (NPCs may have non-1 localScale from sprite sizing).
-            // Without this, the bar would shrink/grow with the entity sprite.
+            // Position above sprite top edge (like Python's screen_y - margin)
+            float spriteTopY = GetSpriteTopY(gameObject);
+            float barY = spriteTopY + marginAboveSprite;
+
+            // Compensate for entity visual scaling so bar stays constant size
             float parentScaleY = transform.localScale.y;
             if (parentScaleY > 0f && !Mathf.Approximately(parentScaleY, 1f))
             {
                 float inv = 1f / parentScaleY;
-                _barRoot.localPosition = new Vector3(offset.x * inv, offset.y * inv, offset.z);
+                _barRoot.localPosition = new Vector3(0f, barY * inv, 0f);
                 _barRoot.localScale = new Vector3(inv, inv, 1f);
             }
             else
             {
-                _barRoot.localPosition = offset;
+                _barRoot.localPosition = new Vector3(0f, barY, 0f);
                 _barRoot.localScale = Vector3.one;
             }
 
@@ -162,7 +194,7 @@ namespace Valkur.Gameplay.Combat
         private static Sprite _sharedPixelSprite;
         private static Material _sharedMaterial;
 
-        private static Sprite GetSharedPixelSprite()
+        public static Sprite GetSharedPixelSprite()
         {
             if (_sharedPixelSprite != null) return _sharedPixelSprite;
 
@@ -175,7 +207,7 @@ namespace Valkur.Gameplay.Combat
             return _sharedPixelSprite;
         }
 
-        private static Material GetSharedSpriteMaterial()
+        public static Material GetSharedSpriteMaterial()
         {
             if (_sharedMaterial != null) return _sharedMaterial;
             _sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")

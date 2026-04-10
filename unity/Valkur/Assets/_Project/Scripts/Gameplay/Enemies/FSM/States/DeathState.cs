@@ -17,7 +17,10 @@ namespace Valkur.Gameplay.FSM
             bool isPlayer = fsm.Owner.CompareTag("Player");
             if (!isPlayer)
             {
-                Object.Destroy(fsm.Owner);
+                if (Application.isPlaying)
+                    Object.Destroy(fsm.Owner);
+                else
+                    Object.DestroyImmediate(fsm.Owner);
             }
         }
 

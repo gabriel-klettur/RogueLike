@@ -8,7 +8,7 @@ namespace Valkur.Gameplay.Combat
 {
     /// <summary>
     /// Runtime visual overlay that draws attack range circles/arcs for entities.
-    /// Toggle with F2. Uses LineRenderer objects (URP-compatible).
+    /// Toggle with Alt+F2. Uses LineRenderer objects (URP-compatible).
     /// - Player melee range (blue arc toward mouse)
     /// - NPC aggro range (yellow circle)
     /// - NPC melee range (red arc toward player)
@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.Combat
         private readonly List<LineRenderer> _pool = new List<LineRenderer>();
         private int _lineIndex;
         private InputAction _toggleAction;
+        private InputAction _altModifier;
 
         protected override void OnSingletonAwake()
         {
@@ -44,11 +45,13 @@ namespace Valkur.Gameplay.Combat
 
             _toggleAction = new InputAction("ToggleRanges", InputActionType.Button, "<Keyboard>/f2");
             _toggleAction.Enable();
+            _altModifier = new InputAction("AltModRanges", InputActionType.Button, "<Keyboard>/leftAlt");
+            _altModifier.Enable();
         }
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame() && _altModifier.IsPressed())
             {
                 _visible = !_visible;
                 Debug.Log($"[CombatRangeVisualizer] Ranges {(_visible ? "ON" : "OFF")}");
@@ -222,6 +225,8 @@ namespace Valkur.Gameplay.Combat
         {
             _toggleAction?.Disable();
             _toggleAction?.Dispose();
+            _altModifier?.Disable();
+            _altModifier?.Dispose();
 
             if (_lineMaterial != null)
                 DestroyImmediate(_lineMaterial);
