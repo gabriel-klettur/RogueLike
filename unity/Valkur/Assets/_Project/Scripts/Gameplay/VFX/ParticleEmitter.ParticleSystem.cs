@@ -41,8 +41,23 @@ namespace Valkur.Gameplay.VFX
             main.startSpeed = new ParticleSystem.MinMaxCurve(0f, p.speed * scale);
             main.startSize = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
             main.startColor = BuildColorParameter(p);
-            // Gravity: Python gravity > 0 means falling down (Y inverted → positive in Unity)
-            main.gravityModifier = p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f;
+            // Gravity: scalar gravity means falling down; vector gravity is pre-converted
+            if (p.useGravityVector)
+            {
+                // Use velocity-over-lifetime for arbitrary gravity direction
+                main.gravityModifier = 0f;
+                var vel = _ps.velocityOverLifetime;
+                vel.enabled = true;
+                vel.space = ParticleSystemSimulationSpace.Local;
+                vel.x = new ParticleSystem.MinMaxCurve(p.gravityVector.x);
+                vel.y = new ParticleSystem.MinMaxCurve(p.gravityVector.y);
+            }
+            else
+            {
+                main.gravityModifier = p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f;
+                var vel = _ps.velocityOverLifetime;
+                vel.enabled = false;
+            }
             main.simulationSpace = kind is "dash" ? ParticleSystemSimulationSpace.World : ParticleSystemSimulationSpace.Local;
 
             // ---- Emission ----
@@ -62,15 +77,24 @@ namespace Valkur.Gameplay.VFX
 
             // ---- Size Over Lifetime ----
             var sol = _ps.sizeOverLifetime;
-            sol.enabled = isBurst;
-            if (isBurst)
+            if (p.sizeOverLife != null && p.sizeOverLife.Length > 0)
             {
+                sol.enabled = true;
+                sol.size = new ParticleSystem.MinMaxCurve(1f, BuildAnimationCurve(p.sizeOverLife));
+            }
+            else if (isBurst)
+            {
+                sol.enabled = true;
                 // Expand then shrink for impact/explosion feel
                 var curve = new AnimationCurve(
                     new Keyframe(0f, 0.3f),
                     new Keyframe(0.3f, 1.0f),
                     new Keyframe(1.0f, 0f));
                 sol.size = new ParticleSystem.MinMaxCurve(1f, curve);
+            }
+            else
+            {
+                sol.enabled = false;
             }
 
             // ---- Velocity Damping (drag) ----
@@ -100,7 +124,10 @@ namespace Valkur.Gameplay.VFX
             // ---- Colour Over Lifetime ----
             var col = _ps.colorOverLifetime;
             col.enabled = true;
-            col.color = BuildFadeOutGradient(p);
+            if (p.alphaOverLife != null && p.alphaOverLife.Length > 0)
+                col.color = BuildGradientFromCurves(p);
+            else
+                col.color = BuildFadeOutGradient(p);
 
             // ---- Renderer ----
             ConfigureRenderer(p);
@@ -144,7 +171,8 @@ namespace Valkur.Gameplay.VFX
                 case "smoke_emitter":
                 case "smoke":
                     shape.shapeType = ParticleSystemShapeType.Circle;
-                    shape.radius = 0.15f * scale;
+                    // Use dispersion as radius if available (Python emission spread)
+                    shape.radius = p.dispersion > 0f ? p.dispersion * scale : 0.15f * scale;
                     shape.radiusThickness = 1f;
                     break;
 
@@ -170,6 +198,13 @@ namespace Valkur.Gameplay.VFX
                 case "water_flow":
                     shape.shapeType = ParticleSystemShapeType.Box;
                     shape.scale = new Vector3(3f * scale, 0.1f, 0.1f);
+                    break;
+
+                case "portal":
+                    shape.shapeType = ParticleSystemShapeType.Circle;
+                    float portalR = p.outerRadius > 0f ? p.outerRadius : p.radius;
+                    shape.radius = portalR * scale;
+                    shape.radiusThickness = 0f; // emit from edge
                     break;
 
                 default:
@@ -246,6 +281,44 @@ namespace Valkur.Gameplay.VFX
 
             // Two-colour random: Unity picks between min and max color per particle
             return new ParticleSystem.MinMaxGradient(cols[0], cols[cols.Length - 1]);
+        }
+
+        private static AnimationCurve BuildAnimationCurve(Keyframe2D[] keys)
+        {
+            var keyframes = new Keyframe[keys.Length];
+            for (int i = 0; i < keys.Length; i++)
+                keyframes[i] = new Keyframe(keys[i].time, keys[i].value);
+            return new AnimationCurve(keyframes);
+        }
+
+        private ParticleSystem.MinMaxGradient BuildGradientFromCurves(ParticleVfxParams p)
+        {
+            var gradient = new Gradient();
+
+            // Colour keys: from colorOverLife if present, else from colors array/single color
+            GradientColorKey[] colorKeys;
+            if (p.colorOverLife != null && p.colorOverLife.Length > 0)
+            {
+                int n = Mathf.Min(p.colorOverLife.Length, 8);
+                colorKeys = new GradientColorKey[n];
+                for (int i = 0; i < n; i++)
+                    colorKeys[i] = new GradientColorKey(p.colorOverLife[i].color, p.colorOverLife[i].time);
+            }
+            else
+            {
+                var cols = (p.colors != null && p.colors.Length > 0) ? p.colors : null;
+                Color baseColor = (cols != null) ? cols[0] : p.color;
+                colorKeys = new[] { new GradientColorKey(baseColor, 0f), new GradientColorKey(baseColor, 1f) };
+            }
+
+            // Alpha keys: from alphaOverLife
+            int an = Mathf.Min(p.alphaOverLife.Length, 8);
+            var alphaKeys = new GradientAlphaKey[an];
+            for (int i = 0; i < an; i++)
+                alphaKeys[i] = new GradientAlphaKey(p.alphaOverLife[i].value, p.alphaOverLife[i].time);
+
+            gradient.SetKeys(colorKeys, alphaKeys);
+            return new ParticleSystem.MinMaxGradient(gradient);
         }
 
         private ParticleSystem.MinMaxGradient BuildFadeOutGradient(ParticleVfxParams p)

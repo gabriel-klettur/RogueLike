@@ -89,6 +89,23 @@ namespace Valkur.Editor
                 v.speed = speedTick * TICK_RATE / PPU; // px/tick → world/s
 
             v.gravity = GetFloat(p, "gravity", 0f) * (TICK_RATE * TICK_RATE) / PPU;
+
+            // gravity can be a [gx, gy] vector in some presets (e.g. ember_plume, nebulous_smoke)
+            var gravityRaw = p.GetValueOrDefault("gravity");
+            if (gravityRaw is List<object> gravityList && gravityList.Count >= 2)
+            {
+                float gx = GetListFloat(gravityList, 0) * (TICK_RATE * TICK_RATE) / PPU;
+                float gy = GetListFloat(gravityList, 1) * (TICK_RATE * TICK_RATE) / PPU;
+                // Python Y-down → Unity Y-up: flip gy sign
+                v.gravityVector = new Vector2(gx, -gy);
+                v.useGravityVector = true;
+                v.gravity = 0f; // scalar unused when vector is active
+            }
+            else
+            {
+                v.useGravityVector = false;
+            }
+
             v.drag    = Mathf.Clamp(GetFloat(p, "drag", 0f), 0f, 0.98f);
 
             var dirList = p.GetValueOrDefault("direction") as List<object>;
@@ -181,7 +198,53 @@ namespace Valkur.Editor
             if (hlColor != null && hlColor.Count >= 3)
                 v.highlightColor = ParseRgb(hlColor);
 
+            // ---- Dispersion (smoke_emitter emission spread) ----
+            float rawDispersion = GetFloat(p, "dispersion", 0f);
+            v.dispersion = rawDispersion / PPU;
+
+            // ---- Curves ----
+            v.sizeOverLife = ParseKeyframeCurve(p.GetValueOrDefault("size_over_life") as List<object>);
+            v.alphaOverLife = ParseKeyframeCurve(p.GetValueOrDefault("alpha_over_life") as List<object>);
+            v.colorOverLife = ParseColorKeyframeCurve(p.GetValueOrDefault("color_over_life") as List<object>);
+
+            // ---- Portal ----
+            v.ellipseRatio = GetFloat(p, "ellipse_ratio", 1f);
+            v.outerRadius = GetFloat(p, "outer_radius", 0f) / PPU;
+
             return v;
+        }
+
+        // ------------------------------------------------------------------ curve helpers
+
+        private static Keyframe2D[] ParseKeyframeCurve(List<object> list)
+        {
+            if (list == null || list.Count == 0) return null;
+            var result = new Keyframe2D[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                var entry = list[i] as List<object>;
+                if (entry == null || entry.Count < 2) continue;
+                result[i] = new Keyframe2D(
+                    Mathf.Clamp01(GetListFloat(entry, 0)),
+                    GetListFloat(entry, 1));
+            }
+            return result;
+        }
+
+        private static ColorKeyframe[] ParseColorKeyframeCurve(List<object> list)
+        {
+            if (list == null || list.Count == 0) return null;
+            var result = new ColorKeyframe[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                var entry = list[i] as List<object>;
+                if (entry == null || entry.Count < 2) continue;
+                float t = Mathf.Clamp01(GetListFloat(entry, 0));
+                var rgb = entry[1] as List<object>;
+                Color c = (rgb != null && rgb.Count >= 3) ? ParseRgb(rgb) : Color.white;
+                result[i] = new ColorKeyframe(t, c);
+            }
+            return result;
         }
     }
 }

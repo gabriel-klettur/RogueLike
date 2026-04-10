@@ -15,7 +15,7 @@ namespace Valkur.Gameplay.VFX
     ///
     /// Coordinate conversion from Python pixel-space to Unity world-space:
     ///   world_x = zoneGridOffset.x * tileSize + rel_x / pixelsPerUnit
-    ///   world_y = zoneGridOffset.y * tileSize - rel_y / pixelsPerUnit   (Y-flip)
+    ///   world_y = zoneGridOffset.y + (zoneHeightTiles - 1) - rel_y / pixelsPerUnit   (Y-flip)
     ///
     /// Attach to any persistent scene GameObject (e.g. GameplaySceneSetup).
     /// </summary>
@@ -113,7 +113,9 @@ namespace Valkur.Gameplay.VFX
             }
 
             // Build zone offset table from ZoneManager
-            var zoneOffsets = BuildZoneOffsets();
+            var zm = FindZoneManager();
+            var zoneOffsets = BuildZoneOffsets(zm);
+            int zoneHeightTiles = zm != null ? zm.ZoneHeightTiles : 50;
 
             int spawned = 0;
             foreach (var inst in instances)
@@ -127,7 +129,7 @@ namespace Valkur.Gameplay.VFX
                     continue;
                 }
 
-                Vector2 worldPos = ComputeWorldPos(inst, zoneOffsets);
+                Vector2 worldPos = ComputeWorldPos(inst, zoneOffsets, zoneHeightTiles);
                 SpawnEmitter(preset, worldPos, inst);
                 spawned++;
             }
@@ -135,7 +137,7 @@ namespace Valkur.Gameplay.VFX
             Debug.Log($"[ParticleInstancesLoader] Spawned {spawned} particle emitters.");
         }
 
-        private Vector2 ComputeWorldPos(ParticleInstanceData inst, Dictionary<string, Vector2Int> zoneOffsets)
+        private Vector2 ComputeWorldPos(ParticleInstanceData inst, Dictionary<string, Vector2Int> zoneOffsets, int zoneHeightTiles)
         {
             Vector2Int offset = Vector2Int.zero;
             if (!string.IsNullOrEmpty(inst.zone))
@@ -143,7 +145,7 @@ namespace Valkur.Gameplay.VFX
 
             float wx = offset.x * _tileSize + inst.rel_x / _pixelsPerUnit;
             float wy = _flipY
-                ? offset.y * _tileSize - inst.rel_y / _pixelsPerUnit
+                ? offset.y * _tileSize + (zoneHeightTiles - 1) * _tileSize - inst.rel_y / _pixelsPerUnit
                 : offset.y * _tileSize + inst.rel_y / _pixelsPerUnit;
             return new Vector2(wx, wy);
         }
@@ -166,11 +168,10 @@ namespace Valkur.Gameplay.VFX
 
         // ------------------------------------------------------------------ zone helpers
 
-        private Dictionary<string, Vector2Int> BuildZoneOffsets()
+        private Dictionary<string, Vector2Int> BuildZoneOffsets(ZoneManager zm)
         {
             var result = new Dictionary<string, Vector2Int>(StringComparer.Ordinal);
 
-            var zm = FindZoneManager();
             if (zm == null) return result;
 
             foreach (var zone in zm.GetZonesSnapshot())

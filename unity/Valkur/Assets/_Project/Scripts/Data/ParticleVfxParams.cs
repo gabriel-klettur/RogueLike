@@ -122,5 +122,54 @@ namespace Valkur.Data
 
         [Tooltip("Secondary highlight colour for water flow. Python: highlight_color.")]
         public Color highlightColor = new Color(0.23f, 0.43f, 0.63f, 1f);
+
+        // --------------- Smoke Dispersion ---------------
+        [Tooltip("Emission spread for smoke_emitter kind (world units). Python: dispersion / PPU.")]
+        public float dispersion = 0f;
+
+        // --------------- Gravity vector ---------------
+        [Tooltip("Gravity as X,Y vector (world units/s²). Python: gravity [gx,gy] * TICK² / PPU. " +
+                 "Used when Python passes gravity as a list [gx, gy]. Y-flipped for Unity.")]
+        public Vector2 gravityVector = Vector2.zero;
+
+        [Tooltip("True if Python gravity was a [gx,gy] vector instead of a scalar.")]
+        public bool useGravityVector = false;
+
+        // --------------- Curves ---------------
+        [Tooltip("Size over lifetime keyframes [[t, scale], ...]. Python: size_over_life.")]
+        public Keyframe2D[] sizeOverLife;
+
+        [Tooltip("Alpha over lifetime keyframes [[t, alpha01], ...]. Python: alpha_over_life.")]
+        public Keyframe2D[] alphaOverLife;
+
+        [Tooltip("Color over lifetime keyframes [[t, [R,G,B]], ...]. Python: color_over_life.")]
+        public ColorKeyframe[] colorOverLife;
+
+        // --------------- Portal ---------------
+        [Tooltip("Ellipse aspect ratio for portal rendering. Python: ellipse_ratio.")]
+        public float ellipseRatio = 1f;
+
+        [Tooltip("Outer ring radius for portal presets (world units). Python: outer_radius / PPU.")]
+        public float outerRadius = 0f;
+    }
+
+    /// <summary>Simple 2D keyframe: time [0..1] → value.</summary>
+    [Serializable]
+    public struct Keyframe2D
+    {
+        public float time;
+        public float value;
+
+        public Keyframe2D(float t, float v) { time = t; value = v; }
+    }
+
+    /// <summary>Color keyframe: time [0..1] → color.</summary>
+    [Serializable]
+    public struct ColorKeyframe
+    {
+        public float time;
+        public Color color;
+
+        public ColorKeyframe(float t, Color c) { time = t; color = c; }
     }
 }
