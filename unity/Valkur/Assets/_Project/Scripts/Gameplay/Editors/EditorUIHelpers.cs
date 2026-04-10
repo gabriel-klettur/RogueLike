@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.Editors
 {
@@ -44,8 +45,9 @@ namespace Valkur.Gameplay.Editors
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = sortOrder;
             go.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            go.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920, 1080);
+            go.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1600, 800);
             go.AddComponent<GraphicRaycaster>();
+            UILayerHelper.SetUILayerRecursive(go);
             return canvas;
         }
 
@@ -250,6 +252,7 @@ namespace Valkur.Gameplay.Editors
 
         /// <summary>
         /// Creates a title bar for an editor panel.
+        /// Image on parent, TMP on child to avoid dual-Graphic conflict.
         /// </summary>
         public static TextMeshProUGUI MakeTitleBar(Transform parent, string title, float height = 36f)
         {
@@ -257,7 +260,10 @@ namespace Valkur.Gameplay.Editors
             go.AddComponent<LayoutElement>().preferredHeight = height;
             var img = go.AddComponent<Image>();
             img.color = new Color(0.07f, 0.07f, 0.09f, 0.98f);
-            var tmp = go.AddComponent<TextMeshProUGUI>();
+
+            var labelGo = CreateUI("Label", go.transform);
+            StretchFill(labelGo);
+            var tmp = labelGo.AddComponent<TextMeshProUGUI>();
             tmp.text = title;
             tmp.fontSize = 16f;
             tmp.fontStyle = FontStyles.Bold;

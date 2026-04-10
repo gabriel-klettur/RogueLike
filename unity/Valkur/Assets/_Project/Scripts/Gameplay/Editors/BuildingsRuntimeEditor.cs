@@ -28,6 +28,7 @@ namespace Valkur.Gameplay.Buildings
         private GameObject _selectedInstance;
 
         // UI
+        private bool _uiBuilt;
         private Canvas _canvas;
         private GameObject _root;
         private RectTransform _pickerContent;
@@ -46,14 +47,14 @@ namespace Valkur.Gameplay.Buildings
         protected override void OnSingletonAwake()
         {
             _toggleAction = new InputAction("ToggleBuildingsEditor", InputActionType.Button, "<Keyboard>/f10");
-            _toggleAction.Enable();
+            // Don't enable yet — wait until Start() to avoid first-frame spurious fire
         }
 
         private void Start()
         {
-            BuildUI();
-            _root.SetActive(false);
+            _active = false;
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
+            _toggleAction.Enable();
         }
 
         private void OnDestroy()
@@ -77,19 +78,28 @@ namespace Valkur.Gameplay.Buildings
 
         public void Activate()
         {
+            if (!_uiBuilt) { BuildUI(); _uiBuilt = true; }
             _active = true;
+            _canvas.gameObject.SetActive(true);
+            _canvas.enabled = true;
             _root.SetActive(true);
             _mode = EditorMode.Select;
             RefreshPicker();
             RefreshModeButtons();
-            _statusTmp.text = "Buildings Editor active. F10 to close. ESC=cancel.";
+            if (_statusTmp != null)
+                _statusTmp.text = "Buildings Editor active. F10 to close. ESC=cancel.";
             Debug.Log("[BuildingsEditor] Activated (F10)");
         }
 
         public void Deactivate()
         {
             _active = false;
-            _root.SetActive(false);
+            if (_uiBuilt)
+            {
+                _root.SetActive(false);
+                _canvas.enabled = false;
+                _canvas.gameObject.SetActive(false);
+            }
             _selectedTemplateId = -1;
             _selectedInstance = null;
             _dragging = false;
@@ -182,6 +192,8 @@ namespace Valkur.Gameplay.Buildings
 
         private void RefreshPicker()
         {
+            if (_pickerContent == null) return;
+
             for (int i = _pickerContent.childCount - 1; i >= 0; i--)
                 Destroy(_pickerContent.GetChild(i).gameObject);
 
