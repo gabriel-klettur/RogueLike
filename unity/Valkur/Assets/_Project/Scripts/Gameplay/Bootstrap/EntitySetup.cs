@@ -138,7 +138,8 @@ namespace Valkur.Gameplay
             }
 
             var dash = go.GetComponent<DashAbility>();
-            if (dash != null) dash.SetTargetLayers(1 << NPCLayer);
+            if (dash == null) dash = go.AddComponent<DashAbility>();
+            dash.SetTargetLayers(1 << NPCLayer);
         }
 
         /// <summary>
@@ -259,6 +260,15 @@ namespace Valkur.Gameplay
             playerBar.SetBarColors(
                 new Color(0.2f, 0.9f, 0.25f, 1f),
                 new Color(0.95f, 0.85f, 0.15f, 1f));
+            playerBar.SetHideAtFullHp(false); // Python always shows player health bar
+
+            // World-space dash bar (above health bar) — Python parity
+            if (go.GetComponent<WorldDashBar>() == null)
+                go.AddComponent<WorldDashBar>();
+
+            // World-space mana bar (above dash bar) — Python parity
+            if (go.GetComponent<WorldManaBar>() == null)
+                go.AddComponent<WorldManaBar>();
 
             var ySort = go.GetComponent<YSortEntity>();
             if (ySort == null) ySort = go.AddComponent<YSortEntity>();

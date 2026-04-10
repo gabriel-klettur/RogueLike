@@ -3,6 +3,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.MapEditor;
+using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
@@ -342,6 +343,29 @@ namespace Valkur.Gameplay
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio == null) return;
             audio.EnterGameAudio();
+        }
+
+        private void EnsureBuildingsRuntimeEditor()
+        {
+            if (BuildingsRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("BuildingsRuntimeEditor");
+            var editor = go.AddComponent<BuildingsRuntimeEditor>();
+
+            if (_buildingCatalog != null)
+            {
+#if UNITY_EDITOR
+                var serialized = new UnityEditor.SerializedObject(editor);
+                var catalogProp = serialized.FindProperty("_catalog");
+                if (catalogProp != null)
+                {
+                    catalogProp.objectReferenceValue = _buildingCatalog;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+#endif
+            }
+
+            Debug.Log("[GameplaySceneSetup] BuildingsRuntimeEditor created. Press F10 to toggle.");
         }
 
         private void EnsureDeathDropSystem()

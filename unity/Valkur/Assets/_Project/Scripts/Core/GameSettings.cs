@@ -41,8 +41,8 @@ namespace Valkur.Core
         public string primaryAttackMouse  = "LeftButton";
         public string secondaryAttackMouse = "RightButton";
         // Editors
-        public string toggleTileEditorKeyA = "F1";
-        public string toggleMapEditorKeyA  = "F2";
+        public string toggleTileEditorKeyA = "F8";
+        public string toggleMapEditorKeyA  = "F11";
 
         // ── Statics ──────────────────────────────────────────────────────────
         private static GameSettings _instance;

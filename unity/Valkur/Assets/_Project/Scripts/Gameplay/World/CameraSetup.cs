@@ -60,6 +60,9 @@ namespace Valkur.Gameplay
             // non‐even resolutions (Free Aspect / Game view). Once we lock to a fixed
             // resolution build, re‐enable via the scene or by uncommenting below.
             // SetupPixelPerfectCamera();
+
+            // Enforce 2:1 aspect ratio (matching Python 1600×800)
+            SetupAspectRatioEnforcer();
         }
 
         private void SetupPixelPerfectCamera()
@@ -78,6 +81,16 @@ namespace Valkur.Gameplay
             ppc.pixelSnapping = true;
 
             Debug.Log($"[CameraSetup] PixelPerfectCamera configured: PPU={assetsPPU}, ref={refResolutionX}x{refResolutionY}");
+        }
+
+        private void SetupAspectRatioEnforcer()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            var enforcer = cam.GetComponent<AspectRatioEnforcer>();
+            if (enforcer == null)
+                cam.gameObject.AddComponent<AspectRatioEnforcer>();
         }
 
         private void Update()

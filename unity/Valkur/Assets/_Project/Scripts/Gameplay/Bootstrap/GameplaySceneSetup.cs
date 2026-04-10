@@ -67,6 +67,13 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Catalog of all spell definitions. Populate via 'Valkur > Spells > Import Spells from Python JSON'.")]
         private SpellCatalog _spellCatalog;
 
+        [Header("Dungeon")]
+        [SerializeField, Tooltip("Dungeon generator config. Create via 'Create > Valkur > Dungeon Generator Config'.")]
+        private DungeonGeneratorConfig _dungeonConfig;
+
+        [Tooltip("Seed for dungeon generation. -1 for random each run.")]
+        [SerializeField] private int _dungeonSeed = -1;
+
         private WorldGridBuilder _gridBuilder;
 
         private void Start()
@@ -87,6 +94,7 @@ namespace Valkur.Gameplay
             EnsureWorldLightLoader();
             EnsureBuildingCollisionLoader();
             EnsureSpawnerEditor();
+            EnsureBuildingsRuntimeEditor();
             EnsureDevConsole();
 
             // Combat support systems (death drops, respawn, toast)

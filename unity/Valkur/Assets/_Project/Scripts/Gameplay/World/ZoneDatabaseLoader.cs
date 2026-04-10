@@ -133,9 +133,41 @@ namespace Valkur.Gameplay.World
                 });
             }
 
+            // --- Global Y-flip ---
+            // Python uses Y-down (row 0 = top/north), Unity uses Y-up.
+            // OverlayLoader already flips tiles WITHIN each zone, but zone offset Y
+            // values from the JSON are still Python-style (higher Y = further south).
+            // We flip all zone offset Y's so that south-in-Python = south-in-Unity.
+            // Formula: flippedY = maxWorldY - offsetY - zoneHeight
+            int maxWorldY = 0;
+            for (int i = 0; i < _entries.Count; i++)
+                maxWorldY = Mathf.Max(maxWorldY, _entries[i].offsetY + ZoneHeightTiles);
+
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                var e = _entries[i];
+                int flippedY = maxWorldY - e.offsetY - ZoneHeightTiles;
+                _entries[i] = new ZoneEntry
+                {
+                    name = e.name,
+                    offsetX = e.offsetX,
+                    offsetY = flippedY,
+                    overlayFile = e.overlayFile,
+                    collisionFile = e.collisionFile,
+                };
+                zoneDefs[i] = new ZoneManager.ZoneDefinition
+                {
+                    zoneName = e.name,
+                    gridOffset = new Vector2Int(e.offsetX, flippedY),
+                    zoneMusic = zoneDefs[i].zoneMusic,
+                    editableInTileEditor = zoneDefs[i].editableInTileEditor,
+                };
+            }
+
             _zoneManager.ReplaceZones(zoneDefs);
             Debug.Log($"[ZoneDatabaseLoader] Loaded {zoneDefs.Count} zones into ZoneManager " +
-                      $"(origin [{WorldOriginX},{WorldOriginY}], zone size {ZoneWidthTiles}x{ZoneHeightTiles}).");
+                      $"(origin [{WorldOriginX},{WorldOriginY}], zone size {ZoneWidthTiles}x{ZoneHeightTiles}, " +
+                      $"Y-flipped with maxWorldY={maxWorldY}).");
         }
 
         private static string GetString(Dictionary<string, object> d, string key, string fallback = "")
