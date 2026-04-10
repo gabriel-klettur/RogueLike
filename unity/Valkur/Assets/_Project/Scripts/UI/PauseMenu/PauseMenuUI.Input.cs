@@ -58,6 +58,7 @@ namespace Valkur.UI.PauseMenu
             row.set(v);
             RefreshSoundRowText(i);
             ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            Valkur.Core.GameSettings.Instance?.Save();
         }
 
         private void SaveAndBack()

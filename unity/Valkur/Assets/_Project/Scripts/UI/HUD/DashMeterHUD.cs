@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Valkur.Core;
 
 namespace Valkur.UI
 {
@@ -104,6 +105,8 @@ namespace Valkur.UI
 
                 _segments[i] = segGo.AddComponent<Image>();
             }
+
+            UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
         }
 
         private void UpdateSegments()

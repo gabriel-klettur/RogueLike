@@ -31,6 +31,8 @@ namespace Valkur.UI.HUD
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
 
+            UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
+
             // Wire mana to PlayerHUD
             if (playerMana != null)
             {
@@ -59,7 +61,7 @@ namespace Valkur.UI.HUD
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = new Vector2(1600, 800);
             scaler.matchWidthOrHeight = 0.5f;
 
             canvasGo.AddComponent<GraphicRaycaster>();

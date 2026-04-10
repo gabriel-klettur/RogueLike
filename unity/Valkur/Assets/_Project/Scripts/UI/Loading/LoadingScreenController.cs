@@ -202,6 +202,8 @@ namespace Valkur.UI.Loading
 
             // Start at 0% progress
             SetProgress(0f, "Cargando...");
+
+            UILayerHelper.SetUILayerRecursive(canvasGo);
         }
 
         // ────────────────────────────────────────────────────────────

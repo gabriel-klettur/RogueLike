@@ -31,7 +31,7 @@ namespace Valkur.UI.MainMenu
             canvas.sortingOrder = 50;
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = new Vector2(1600, 800);
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
@@ -45,6 +45,8 @@ namespace Valkur.UI.MainMenu
             BuildLoadGameSubmenu(canvasGo.transform);
             BuildPressToStartOverlay(canvasGo.transform);
 
+            UILayerHelper.SetUILayerRecursive(canvasGo);
+
             _selectedIndex = 0;
             StartCoroutine(DeferredInit());
             StartCoroutine(RunCarousel());
@@ -52,19 +54,31 @@ namespace Valkur.UI.MainMenu
 
         private void BuildBackground(Transform canvas)
         {
+            // Container masks overflow so "cover" scaling crops edges
+            var container = CreateUIObject("BG_Container", canvas);
+            StretchFull(container);
+            container.AddComponent<RectMask2D>();
+
             for (int i = 0; i < 2; i++)
             {
-                var go = CreateUIObject($"BG_{i}", canvas);
+                var go = CreateUIObject($"BG_{i}", container.transform);
                 StretchFull(go);
                 _bgImages[i] = go.AddComponent<Image>();
-                _bgImages[i].preserveAspect = false;
+                _bgImages[i].preserveAspect = true;
                 _bgImages[i].color = Color.clear;
+
+                // EnvelopeParent = "cover" mode: fill parent, crop overflow
+                var fitter = go.AddComponent<AspectRatioFitter>();
+                fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+                fitter.aspectRatio = 1.5f; // default; updated per image in carousel
             }
             var firstTex = Resources.Load<Texture2D>(BgPaths[0]);
             if (firstTex != null)
             {
                 _bgImages[0].sprite = MakeSprite(firstTex);
                 _bgImages[0].color  = Color.white;
+                _bgImages[0].GetComponent<AspectRatioFitter>().aspectRatio =
+                    (float)firstTex.width / firstTex.height;
             }
             _bgIndex = 0;
             _carouselSlot = 0;
@@ -233,6 +247,9 @@ namespace Valkur.UI.MainMenu
 
                 _bgImages[nextSlot].sprite = MakeSprite(tex);
                 _bgImages[nextSlot].color  = Color.clear;
+                var fitter = _bgImages[nextSlot].GetComponent<AspectRatioFitter>();
+                if (fitter != null)
+                    fitter.aspectRatio = (float)tex.width / tex.height;
 
                 float elapsed = 0f;
                 while (elapsed < CAROUSEL_CROSSFADE)

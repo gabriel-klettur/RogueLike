@@ -498,6 +498,7 @@ namespace Valkur.UI.MainMenu
             row.set(v);
             RefreshOptSoundRowText(i);
             ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            GameSettings.Instance?.Save();
         }
 
         private void RefreshOptSoundRowText(int i)

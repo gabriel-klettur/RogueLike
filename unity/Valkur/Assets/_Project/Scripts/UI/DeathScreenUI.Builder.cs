@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 
 namespace Valkur.UI
 {
@@ -26,7 +27,7 @@ namespace Valkur.UI
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = new Vector2(1600, 800);
             scaler.matchWidthOrHeight = 0.5f;
 
             canvasGo.AddComponent<GraphicRaycaster>();
@@ -113,6 +114,8 @@ namespace Valkur.UI
 
             CreateButton(0, "Reiniciar", containerGo.transform, OnRestartClicked);
             CreateButton(1, "Menu Principal", containerGo.transform, OnMainMenuClicked);
+
+            UILayerHelper.SetUILayerRecursive(canvasGo);
         }
 
         private void CreateButton(int index, string label, Transform parent, System.Action onClick)

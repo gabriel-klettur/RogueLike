@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 
 namespace Valkur.UI.PauseMenu
 {
@@ -17,7 +18,7 @@ namespace Valkur.UI.PauseMenu
             _canvas.sortingOrder = 100;
             var scaler = cGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.referenceResolution = new Vector2(1600f, 800f);
             cGo.AddComponent<GraphicRaycaster>();
 
             _overlayRoot = CreateUIObject("OverlayRoot", cGo.transform);
@@ -39,6 +40,8 @@ namespace Valkur.UI.PauseMenu
             pr.sizeDelta = new Vector2(380f, 52f);
             _pausePanel.AddComponent<Image>().color = PanelBg;
             AddPanelTitle(_pausePanel.transform, "Pausado", 52f, 0f);
+
+            UILayerHelper.SetUILayerRecursive(cGo);
         }
 
         partial void RebuildPausePanelRows()

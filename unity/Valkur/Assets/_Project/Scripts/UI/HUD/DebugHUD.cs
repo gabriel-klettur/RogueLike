@@ -13,7 +13,7 @@ namespace Valkur.UI.HUD
 {
     /// <summary>
     /// Unified debug overlay combining gameplay state and performance metrics.
-    /// Toggle with F1. Professional layout with sectioned panels, color-coded
+    /// Toggle with F9. Professional layout with sectioned panels, color-coded
     /// indicators, and compact information density.
     /// </summary>
     public partial class DebugHUD : MonoBehaviour
@@ -60,7 +60,7 @@ namespace Valkur.UI.HUD
 
         private void Start()
         {
-            _toggleAction = new InputAction("ToggleDebugHUD", InputActionType.Button, "<Keyboard>/f1");
+            _toggleAction = new InputAction("ToggleDebugHUD", InputActionType.Button, "<Keyboard>/f9");
             _toggleAction.Enable();
             CreateOverlay();
         }

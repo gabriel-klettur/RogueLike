@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Chat
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 200;
             canvasGo.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            canvasGo.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1920, 1080);
+            canvasGo.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1600, 800);
             canvasGo.AddComponent<GraphicRaycaster>();
 
             // Panel

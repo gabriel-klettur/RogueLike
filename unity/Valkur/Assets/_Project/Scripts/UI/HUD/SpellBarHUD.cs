@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using Valkur.Core;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.UI
@@ -80,6 +81,8 @@ namespace Valkur.UI
             {
                 _slots[i] = CreateSlot(i);
             }
+
+            UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
         }
 
         private SpellSlotUI CreateSlot(int index)

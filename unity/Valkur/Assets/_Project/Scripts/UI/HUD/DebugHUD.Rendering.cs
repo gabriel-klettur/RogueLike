@@ -224,7 +224,7 @@ namespace Valkur.UI.HUD
 
             var scaler = canvasGo.AddComponent<UnityEngine.UI.CanvasScaler>();
             scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = new Vector2(1600, 800);
             scaler.matchWidthOrHeight = 0.5f;
 
             canvasGo.AddComponent<UnityEngine.UI.GraphicRaycaster>();
@@ -258,6 +258,8 @@ namespace Valkur.UI.HUD
             _text.font = TMP_Settings.defaultFontAsset;
             _text.alignment = TextAlignmentOptions.TopLeft;
             _text.enableWordWrapping = false;
+
+            UILayerHelper.SetUILayerRecursive(canvasGo);
             _text.overflowMode = TextOverflowModes.Overflow;
             _text.richText = true;
             _text.lineSpacing = -8f;

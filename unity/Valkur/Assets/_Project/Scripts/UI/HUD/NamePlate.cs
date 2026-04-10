@@ -62,8 +62,12 @@ namespace Valkur.UI
             _tmp.enableWordWrapping = false;
 
             // Outline for readability (Python outline_w=2)
-            _tmp.outlineWidth = 0.15f;
-            _tmp.outlineColor = new Color32(0, 0, 0, 200);
+            // Guard against material instantiation leak in edit mode (e.g. tests)
+            if (Application.isPlaying)
+            {
+                _tmp.outlineWidth = 0.15f;
+                _tmp.outlineColor = new Color32(0, 0, 0, 200);
+            }
         }
 
         private static Color FactionColor(string faction)

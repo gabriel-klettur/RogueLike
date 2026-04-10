@@ -44,10 +44,14 @@ namespace Valkur.UI.MainMenu
             StretchFull(_classSelectionPanel);
 
             // 1. Tavern background (Python: scale_mode="cover")
-            var tavernGo = CreateUIObject("TavernBg", _classSelectionPanel.transform);
+            var tavernContainer = CreateUIObject("TavernBgContainer", _classSelectionPanel.transform);
+            StretchFull(tavernContainer);
+            tavernContainer.AddComponent<RectMask2D>();
+
+            var tavernGo = CreateUIObject("TavernBg", tavernContainer.transform);
             StretchFull(tavernGo);
             var tavernImg = tavernGo.AddComponent<Image>();
-            tavernImg.preserveAspect = false;
+            tavernImg.preserveAspect = true;
             tavernImg.raycastTarget = false;
             var tavernTex = Resources.Load<Texture2D>("UI/CharacterSelection/taberna");
             if (tavernTex != null)
