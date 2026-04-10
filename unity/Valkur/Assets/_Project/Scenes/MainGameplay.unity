@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 111622651}
   - component: {fileID: 111622650}
   - component: {fileID: 111622649}
+  - component: {fileID: 111622654}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -294,6 +295,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &111622654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 111622648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2a264d159bfb9f4cac5c1a1fe6b2611, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetAspectWidth: 2
+  targetAspectHeight: 1
+  barColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1 &131343756
 GameObject:
   m_ObjectHideFlags: 0
@@ -976,6 +992,8 @@ MonoBehaviour:
   _audioCatalog: {fileID: 11400000, guid: d6f4650fee0545f43a3d9e5d1c11e6e8, type: 2}
   _combatSfxConfig: {fileID: 11400000, guid: 605d705fef7bb744e9a2dcaca953e364, type: 2}
   _spellCatalog: {fileID: 11400000, guid: b5f4bf60bea172e4f89f60d72bc82a03, type: 2}
+  _dungeonConfig: {fileID: 0}
+  _dungeonSeed: -1
 --- !u!4 &568156325
 Transform:
   m_ObjectHideFlags: 0

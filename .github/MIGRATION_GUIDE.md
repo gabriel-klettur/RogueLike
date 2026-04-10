@@ -27,6 +27,7 @@
 ## 1. Project Overview
 
 **Valkur** is a 2D roguelike action game featuring:
+
 - Real-time combat (melee + spells + projectiles)
 - FSM-driven monster AI (9 states: Idle, Patrol, Chase, AlertChase, Attack, Damage, Death, Flee, Unconscious)
 - Tilemap-based world with Y-sort depth rendering
@@ -37,8 +38,9 @@
 - Minigames (Pylos, Soluna)
 
 ### Source (Python)
+
 | Component | Technology |
-|-----------|-----------|
+| ----------- | ----------- |
 | Engine | Pygame Community Edition |
 | ECS | Custom Python (dict-based, 45+ components) |
 | Data | JSON configs + SQLAlchemy/SQLite |
@@ -46,8 +48,9 @@
 | Testing | pytest with headless fixtures |
 
 ### Target (Unity)
+
 | Component | Technology |
-|-----------|-----------|
+| ----------- | ----------- |
 | Engine | Unity 2022.3.62f1 LTS |
 | Rendering | Universal Render Pipeline (URP) 2D |
 | Input | New Input System 1.7.0 |
@@ -61,7 +64,7 @@
 
 ### Game Loop
 
-```
+```text
 Python:                              Unity:
 ─────────                           ──────
 main.py                              Bootstrap.unity scene
@@ -81,7 +84,7 @@ main.py                              Bootstrap.unity scene
 ### Module Mapping
 
 | Python Module | Unity Assembly | Status |
-|---------------|---------------|--------|
+| --------------- | --------------- | -------- |
 | `roguelike_game/managers/core/` | `Valkur.Core` | ✅ Done |
 | `roguelike_game/ecs/core/` | Component pattern (MonoBehaviours) | ✅ Done |
 | `roguelike_game/ecs/systems/combat/` | `Valkur.Gameplay/Combat/` | ✅ Done |
@@ -109,7 +112,7 @@ main.py                              Bootstrap.unity scene
 Use these specialized agents for focused migration tasks:
 
 | Agent | Purpose | When to Use |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | **@python-analyst** | Analyzes Python source code | Before porting any system — understand the Python implementation first |
 | **@unity-architect** | Designs and writes Unity C# code | When implementing new features or porting systems |
 | **@data-migrator** | Handles data conversion | When migrating JSON configs to ScriptableObjects |
@@ -121,7 +124,7 @@ Use these specialized agents for focused migration tasks:
 Invoke these as slash commands for specific workflows:
 
 | Skill | Purpose | When to Use |
-|-------|---------|-------------|
+| ------- | --------- | ------------- |
 | `/python-to-csharp` | Python→C# translation reference | When translating specific code patterns |
 | `/combat-migration` | Combat system porting guide | When working on combat, spells, damage |
 | `/asset-pipeline` | Asset import and atlas reference | When handling sprites, audio, import rules |
@@ -129,7 +132,7 @@ Invoke these as slash commands for specific workflows:
 
 ### Recommended Workflow
 
-```
+```text
 1. @python-analyst    → Analyze the Python system to port
 2. /python-to-csharp  → Reference the translation patterns
 3. @unity-architect   → Implement the C# version
@@ -143,7 +146,7 @@ Invoke these as slash commands for specific workflows:
 ### Phase Summary
 
 | Phase | Description | Steps | Done | Status |
-|-------|-------------|-------|------|--------|
+| ------- | ------------- | ------- | ------ | -------- |
 | 0 | Preparation & baseline | 1-6 | 5/6 | 🟡 Step 4 pending |
 | 1 | Unity bootstrap | 7-12 | 6/6 | ✅ Complete |
 | 2 | Assets & import pipeline | 13-22 | 2/10 | 🔴 Deferred |
@@ -176,16 +179,18 @@ Invoke these as slash commands for specific workflows:
 ## 5. Remaining Work
 
 ### Step 4 — Record Python Baseline Evidence
+
 **Priority:** Low (documentation)  
 **Effort:** Manual  
 **Action:** Run Python game, capture video + screenshots + performance logs  
 
 ### Steps 14-22 — Asset Pipeline Completion (Phase 2)
+
 **Priority:** High  
 **Effort:** Large  
 
 | Step | Task | Agent/Skill |
-|------|------|-------------|
+| ------ | ------ | ------------- |
 | 14 | Create `asset_map.csv` master file | @asset-pipeline |
 | 15 | Define asset naming convention | @asset-pipeline |
 | 16 | Define pivot policy per category | /asset-pipeline |
@@ -198,7 +203,7 @@ Invoke these as slash commands for specific workflows:
 ### Additional Pending Items (not in roadmap)
 
 | Item | Priority | Agent/Skill |
-|------|----------|-------------|
+| ------ | ---------- | ------------- |
 | Day/night cycle | Low | @python-analyst → @unity-architect |
 | NPC spell casting | Low | /combat-migration |
 | Minigames (Pylos deferred; Soluna empty) | Low | @python-analyst → @unity-architect |
@@ -213,7 +218,7 @@ Invoke these as slash commands for specific workflows:
 All previously critical issues have been resolved:
 
 | ID | Issue | Status | Resolution |
-|----|-------|--------|------------|
+| ---- | ------- | -------- | ------------ |
 | P2.1 | Physics2D Layer Collision Matrix | ✅ Fixed 2026-04-07 | Proper per-layer matrix configured |
 | P1.4 | Material leaks in WorldGridBuilder/TileEditorGridCursor | ✅ Fixed 2026-04 | Cached materials + `OnDestroy()` cleanup |
 
@@ -224,7 +229,7 @@ All previously critical issues have been resolved:
 ### Combat
 
 | Python System | Unity Script | Parity |
-|---------------|-------------|--------|
+| --------------- | ------------- | -------- |
 | `combat_system.py` | `Health.cs` + `CombatFeedback.cs` | ✅ |
 | `melee_system.py` + `slash_system.py` | `MeleeCombat.cs` | ✅ |
 | `death_system.py` | `CombatFeedback.cs` (death fade) | ✅ |
@@ -236,7 +241,7 @@ All previously critical issues have been resolved:
 ### Spells
 
 | Python System | Unity Script | Parity |
-|---------------|-------------|--------|
+| --------------- | ------------- | -------- |
 | `spells_config.py` | `SpellDefinition.cs` (ScriptableObject) | ✅ |
 | Fireball (projectile) | `ProjectileExecutor.cs` + `Projectile.cs` | ✅ |
 | Laser beam | — | ❌ Not ported |
@@ -248,7 +253,7 @@ All previously critical issues have been resolved:
 ### AI/FSM
 
 | Python State | Unity State | Parity |
-|-------------|------------|--------|
+| ------------- | ------------ | -------- |
 | `idle_state.py` | FSMMonsterBrain Idle | ✅ |
 | `attack_state.py` | FSMMonsterBrain Attack | ✅ |
 | `cast_state.py` | FSMMonsterBrain (partial) | ⚠️ No NPC spells |
@@ -262,7 +267,7 @@ All previously critical issues have been resolved:
 ### World/Map
 
 | Python System | Unity Script | Parity |
-|---------------|-------------|--------|
+| --------------- | ------------- | -------- |
 | `map_model.py` | Tilemap system | ✅ |
 | `chunked_map_view.py` | `WorldGridBuilder.cs` | ✅ |
 | `tile_model.py` | Unity Tile assets | ✅ |
@@ -274,7 +279,7 @@ All previously critical issues have been resolved:
 ### Inventory
 
 | Python System | Unity Script | Parity |
-|---------------|-------------|--------|
+| --------------- | ------------- | -------- |
 | `inventory_ui_system.py` | `InventoryUI.cs` | ✅ |
 | `inventory_transfer_system.py` | — | ⚠️ No vendor UI |
 | `inventory_pickup_system.py` | `PickupSystem.cs` | ✅ |
@@ -284,7 +289,7 @@ All previously critical issues have been resolved:
 ### Persistence
 
 | Python System | Unity Script | Parity |
-|---------------|-------------|--------|
+| --------------- | ------------- | -------- |
 | `shutdown_manager.py` | `SaveService.cs` | ✅ |
 | Save/load state | `GameStateCollector.cs` + `GameStateRestorer.cs` | ✅ |
 | Schema migration | `SaveSchemaMigrator.cs` | ✅ |
@@ -297,7 +302,7 @@ All previously critical issues have been resolved:
 ### JSON Sources → ScriptableObjects
 
 | Python Source | Unity ScriptableObject | Migration Tool |
-|--------------|----------------------|----------------|
+| -------------- | ---------------------- | ---------------- |
 | `data/entities/new_hostiles.json` | `MonsterDefinition` (11 assets) | `PythonDataMigrator` |
 | `data/entities/new_players.json` | `PlayerDefinition` | `PythonDataMigrator` |
 | `data/spells/spells.json` | `SpellDefinition` | `PythonDataMigrator` |
@@ -321,7 +326,7 @@ All previously critical issues have been resolved:
 ### Current Status
 
 | Category | Python Count | Unity Imported | Status |
-|----------|-------------|---------------|--------|
+| ---------- | ------------- | --------------- | -------- |
 | Tiles | ~hundreds | Partial | ⚠️ Phase 2 |
 | Characters | ~dozens sheets | Partial | ⚠️ Phase 2 |
 | NPC | ~dozens sheets | Partial | ⚠️ Phase 2 |
@@ -333,7 +338,7 @@ All previously critical issues have been resolved:
 ### Import Settings (ValkurAssetPostprocessor.cs)
 
 | Path Contains | PPU | Filter | Compression |
-|--------------|-----|--------|------------|
+| -------------- | ----- | -------- | ------------ |
 | `Tiles/` | 16 | Point | None |
 | `Characters/` | 16 | Point | None |
 | `NPC/` | 16 | Point | None |
@@ -349,7 +354,7 @@ All previously critical issues have been resolved:
 ### Test Layers
 
 | Layer | Tool | Location | Status |
-|-------|------|----------|--------|
+| ------- | ------ | ---------- | -------- |
 | Python unit tests | pytest | `python/tests/` | ✅ Active |
 | Data migration validation | PythonDataMigrator dry-run | Unity Editor menu | ✅ Active |
 | Content validation | ContentValidator | Unity Editor menu | ✅ Active |
@@ -379,7 +384,7 @@ cd python && python -m pytest tests/ -v
 
 ### Porting a New System
 
-```
+```text
 Step 1: ANALYZE
   └─ Use @python-analyst to understand the Python implementation
   └─ Read the Python source files thoroughly
@@ -411,7 +416,7 @@ Step 5: VALIDATE
 
 ### Migrating Data
 
-```
+```text
 Step 1: Read Python JSON source
 Step 2: Read Unity DTO/ScriptableObject class
 Step 3: Use @data-migrator to map fields
@@ -422,7 +427,7 @@ Step 6: Verify counts and spot-check values
 
 ### Migrating Assets
 
-```
+```text
 Step 1: Inventory source assets (count, dimensions)
 Step 2: Use @asset-pipeline to plan import
 Step 3: Copy to Unity Art/ folder with correct structure
@@ -450,7 +455,7 @@ Step 6: Update asset_map.csv
 
 ## Quick Reference: File Locations
 
-```
+```text
 Repository Root: d:\Python\RogueLike\
 
 Python Source:     python/src/roguelike_game/    (game logic)
