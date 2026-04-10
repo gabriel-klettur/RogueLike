@@ -23,12 +23,12 @@ namespace Valkur.Gameplay.TileEditor
             canvas.sortingOrder = 300;
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.referenceResolution = new Vector2(1600, 800);
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
             _refs = TileEditorUIBuilder.BuildAll(canvasGo.transform, _state,
-                _onToolChanged, _onLayerChanged, _onBrushSizeChanged);
+                _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown);
 
             WireLayerVisibilityButtons();
 

@@ -41,6 +41,33 @@ namespace Valkur.Gameplay.TileEditor
         public const float SECTION_SPACING = 6f;
         public const float INNER_PAD = 10f;
 
+        // ── Menu Bar ──
+        public const float MENUBAR_HEIGHT = 30f;
+        public const float MENUBAR_SPACING = 3f;
+        public const float MENUBAR_PAD_H = 10f;
+        public static readonly Color MENUBAR_BG = new Color(0.07f, 0.07f, 0.09f, 0.97f);
+        public static readonly Color MENU_BTN_NORMAL = new Color(0.07f, 0.07f, 0.09f, 0f);
+        public static readonly Color MENU_BTN_HOVER = new Color(0.22f, 0.22f, 0.28f, 1f);
+        public static readonly Color MENU_BTN_OPEN = new Color(0.90f, 0.76f, 0.38f, 0.18f);
+        public static readonly Color DROPDOWN_BG = new Color(0.09f, 0.09f, 0.12f, 0.97f);
+        public static readonly Color DROPDOWN_BORDER = new Color(0.90f, 0.76f, 0.38f, 0.25f);
+
+        // ── Menu Button Widths (for dropdown positioning) ──
+        public const float TITLE_W = 110f;
+        public const float TOOLS_BTN_W = 66f;
+        public const float TILES_BTN_W = 62f;
+        public const float LAYERS_BTN_W = 72f;
+        public const float INSPECTOR_BTN_W = 86f;
+        // Dropdown widths/heights
+        public const float TOOLS_DROP_W = 270f;
+        public const float TOOLS_DROP_H = 108f;
+        public const float TILES_DROP_W = 320f;
+        public const float TILES_DROP_H = 440f;
+        public const float LAYERS_DROP_W = 240f;
+        public const float LAYERS_DROP_H = 300f;
+        public const float INSPECTOR_DROP_W = 250f;
+        public const float INSPECTOR_DROP_H = 256f;
+
         // ── Factory Methods ──
 
         public static GameObject CreateUI(string name, Transform parent)
