@@ -10,7 +10,8 @@ namespace Valkur.Gameplay.Spawners
 {
     /// <summary>
     /// In-game visual editor for spawner placement and management.
-    /// Toggled with F3 (maps to Python's spawner_editor_manager.py toggle).
+    /// Toggled with F3 (bare, without Ctrl — maps to Python's spawner_editor_manager.py toggle).
+    /// Ctrl+F3 opens the Lighting Editor instead.
     ///
     /// Features:
     ///   - F3: Toggle editor overlay
@@ -34,6 +35,7 @@ namespace Valkur.Gameplay.Spawners
 
         // --- Input ---
         private InputAction _toggleAction;
+        private InputAction _ctrlModifier;
         private InputAction _clickAction;
         private InputAction _rightClickAction;
         private InputAction _escapeAction;
@@ -83,6 +85,8 @@ namespace Valkur.Gameplay.Spawners
             _toggleAction = new InputAction("ToggleSpawnerEditor", InputActionType.Button);
             _toggleAction.AddBinding("<Keyboard>/f3");
             _toggleAction.Enable();
+            _ctrlModifier = new InputAction("CtrlModSpawner", InputActionType.Button, "<Keyboard>/leftCtrl");
+            _ctrlModifier.Enable();
 
             _clickAction = new InputAction("SpawnerEditorClick", InputActionType.Button);
             _clickAction.AddBinding("<Mouse>/leftButton");
@@ -106,7 +110,7 @@ namespace Valkur.Gameplay.Spawners
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame())
+            if (_toggleAction.WasPerformedThisFrame() && !_ctrlModifier.IsPressed())
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);
@@ -126,6 +130,7 @@ namespace Valkur.Gameplay.Spawners
         protected override void OnDestroy()
         {
             _toggleAction?.Disable(); _toggleAction?.Dispose();
+            _ctrlModifier?.Disable(); _ctrlModifier?.Dispose();
             _clickAction?.Disable(); _clickAction?.Dispose();
             _rightClickAction?.Disable(); _rightClickAction?.Dispose();
             _escapeAction?.Disable(); _escapeAction?.Dispose();

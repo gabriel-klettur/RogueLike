@@ -51,7 +51,6 @@ namespace Valkur.Gameplay
         {
             _toggleAction = new InputAction("DevConsoleToggle", InputActionType.Button);
             _toggleAction.AddBinding("<Keyboard>/backquote");
-            _toggleAction.AddBinding("<Keyboard>/f4");
             _toggleAction.Enable();
         }
 
