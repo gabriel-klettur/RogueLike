@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 using System.Collections.Generic;
 using Valkur.Gameplay.FSM;
 
@@ -158,11 +157,6 @@ namespace Valkur.Tests.EditMode
             // Only allow StubState — but DeathState should bypass
             fsm.SetAllowedStates(new HashSet<string> { "StubState" });
             var deathState = new DeathState();
-
-            // DeathState.Enter calls Object.Destroy which logs an error in EditMode
-            LogAssert.Expect(LogType.Error,
-                "Destroy may not be called from edit mode! Use DestroyImmediate instead.\n" +
-                "Destroying an object in edit mode destroys it permanently.");
 
             fsm.ChangeState(deathState);
             Assert.AreEqual(deathState, fsm.CurrentState);

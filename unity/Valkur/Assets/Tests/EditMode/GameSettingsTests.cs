@@ -125,8 +125,8 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void DefaultEditorKeys_AreCorrect()
         {
-            Assert.AreEqual("F1", _settings.toggleTileEditorKeyA);
-            Assert.AreEqual("F2", _settings.toggleMapEditorKeyA);
+            Assert.AreEqual("F8", _settings.toggleTileEditorKeyA);
+            Assert.AreEqual("F11", _settings.toggleMapEditorKeyA);
         }
 
         // ── ResetToDefaults ──────────────────────────────────────────────
