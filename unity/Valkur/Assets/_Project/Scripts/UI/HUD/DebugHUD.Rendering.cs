@@ -263,6 +263,9 @@ namespace Valkur.UI.HUD
             _text.overflowMode = TextOverflowModes.Overflow;
             _text.richText = true;
             _text.lineSpacing = -8f;
+
+            // Start hidden — F9 toggles visibility
+            canvasGo.SetActive(false);
         }
 
         private void OnDisable()

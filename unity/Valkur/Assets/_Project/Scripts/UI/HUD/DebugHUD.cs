@@ -38,7 +38,7 @@ namespace Valkur.UI.HUD
         private Canvas _canvas;
         private TextMeshProUGUI _text;
         private UnityEngine.UI.Image _bg;
-        private bool _visible = true;
+        private bool _visible = false;
 
         private GameObject _player;
         private Health _health;
