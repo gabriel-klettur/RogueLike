@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Tests.EditMode
@@ -27,26 +26,18 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void Message_ShowsModalWithOkButton()
         {
-            bool okCalled = false;
-            EditorModal.Message(_testCanvas.transform, "Test Title", "Test Body", () => okCalled = true);
+            EditorModal.Message(_testCanvas.transform, "Test Title", "Test Body", () => { });
 
             // Modal creates a child GameObject with "Modal" or similar in name
             Assert.Greater(_testCanvas.transform.childCount, 0, "Modal should create child GameObject");
-
-            // Simulate OK button click by invoking callback directly
-            // (Full UI interaction testing would require PlayMode or UI Toolkit)
-            LogAssert.Expect(LogType.Log, new System.Text.RegularExpressions.Regex(".*"));
         }
 
         [Test]
         public void Confirm_CreatesModalWithOkAndCancelButtons()
         {
-            bool okCalled = false;
-            bool cancelCalled = false;
-
             EditorModal.Confirm(_testCanvas.transform, "Confirm Test", "Are you sure?",
-                () => okCalled = true,
-                () => cancelCalled = true);
+                () => { },
+                () => { });
 
             Assert.Greater(_testCanvas.transform.childCount, 0, "Modal should create child GameObject");
         }
@@ -102,8 +93,8 @@ namespace Valkur.Tests.EditMode
             var field = EditorModal.FormField.Text("TestKey", "TestDefault");
 
             Assert.AreEqual("TestKey", field.Key);
-            Assert.AreEqual(EditorModal.FormField.FieldType.Text, field.Type);
-            Assert.AreEqual("TestDefault", field.TextDefault);
+            Assert.AreEqual(EditorModal.FieldKind.Text, field.Kind);
+            Assert.AreEqual("TestDefault", field.Default);
         }
 
         [Test]
@@ -112,8 +103,8 @@ namespace Valkur.Tests.EditMode
             var field = EditorModal.FormField.Int("HPKey", 50);
 
             Assert.AreEqual("HPKey", field.Key);
-            Assert.AreEqual(EditorModal.FormField.FieldType.Int, field.Type);
-            Assert.AreEqual(50, field.IntDefault);
+            Assert.AreEqual(EditorModal.FieldKind.Int, field.Kind);
+            Assert.AreEqual(50, field.Default);
         }
 
         [Test]
@@ -123,9 +114,9 @@ namespace Valkur.Tests.EditMode
             var field = EditorModal.FormField.Dropdown("TypeKey", options, 1);
 
             Assert.AreEqual("TypeKey", field.Key);
-            Assert.AreEqual(EditorModal.FormField.FieldType.Dropdown, field.Type);
-            Assert.AreEqual(options, field.DropdownOptions);
-            Assert.AreEqual(1, field.DropdownDefault);
+            Assert.AreEqual(EditorModal.FieldKind.Dropdown, field.Kind);
+            Assert.AreEqual(options, field.Options);
+            Assert.AreEqual(1, field.Default);
         }
     }
 }

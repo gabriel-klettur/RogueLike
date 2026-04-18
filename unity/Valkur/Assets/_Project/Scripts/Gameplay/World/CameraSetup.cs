@@ -56,6 +56,9 @@ namespace Valkur.Gameplay
                 _vcam.Follow = player.transform;
             }
 
+            // Start at maximum zoom distance so the player sees the full area
+            _vcam.m_Lens.OrthographicSize = maxOrthoSize;
+
             // PixelPerfectCamera disabled at runtime: it conflicts with Cinemachine on
             // non‐even resolutions (Free Aspect / Game view). Once we lock to a fixed
             // resolution build, re‐enable via the scene or by uncommenting below.
