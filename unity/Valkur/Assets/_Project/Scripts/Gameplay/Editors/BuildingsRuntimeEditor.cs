@@ -86,7 +86,20 @@ namespace Valkur.Gameplay.Buildings
 
         public void Activate()
         {
-            if (!_uiBuilt) { BuildUI(); _uiBuilt = true; }
+            if (!_uiBuilt)
+            {
+                try
+                {
+                    BuildUI();
+                    _uiBuilt = true;
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[BuildingsEditor] BuildUI failed: {ex.Message}\n{ex.StackTrace}");
+                    CleanupUI();
+                    return;
+                }
+            }
             _active = true;
             _canvas.gameObject.SetActive(true);
             _canvas.enabled = true;
@@ -102,11 +115,14 @@ namespace Valkur.Gameplay.Buildings
         public void Deactivate()
         {
             _active = false;
-            if (_uiBuilt)
+            if (_uiBuilt && _root != null)
             {
                 _root.SetActive(false);
-                _canvas.enabled = false;
-                _canvas.gameObject.SetActive(false);
+                if (_canvas != null)
+                {
+                    _canvas.enabled = false;
+                    _canvas.gameObject.SetActive(false);
+                }
             }
             _selectedTemplateId = -1;
             _selectedInstance = null;
@@ -119,6 +135,23 @@ namespace Valkur.Gameplay.Buildings
         private void ToggleActive()
         {
             if (_active) Deactivate(); else Activate();
+        }
+
+        /// <summary>
+        /// Destroys any partially-built UI to prevent orphaned canvases.
+        /// Resets _uiBuilt so the next Activate attempt can retry cleanly.
+        /// </summary>
+        private void CleanupUI()
+        {
+            if (_root != null) { Destroy(_root); _root = null; }
+            if (_canvas != null) { Destroy(_canvas.gameObject); _canvas = null; }
+            _pickerContent = null;
+            _statusTmp = null;
+            _propsTmp = null;
+            _selectBtnImg = _placeBtnImg = _deleteBtnImg = _resizeBtnImg = null;
+            _searchBox = null;
+            _tutorial = null;
+            _uiBuilt = false;
         }
 
         // ── UI ──

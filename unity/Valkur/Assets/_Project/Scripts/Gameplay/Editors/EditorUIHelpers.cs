@@ -280,7 +280,12 @@ namespace Valkur.Gameplay.Editors
             Transform parent, string name, int columns = 5, float cellSize = 64f, float spacing = 4f)
         {
             var (scroll, content) = MakeScrollView(parent, name);
-            Object.Destroy(content.GetComponent<VerticalLayoutGroup>());
+            // DestroyImmediate is required here: Object.Destroy is deferred to
+            // end-of-frame, so AddComponent<GridLayoutGroup> would fail because
+            // Unity prevents two LayoutGroup components on the same GameObject.
+            var existingVlg = content.GetComponent<VerticalLayoutGroup>();
+            if (existingVlg != null)
+                Object.DestroyImmediate(existingVlg);
             var glg = content.gameObject.AddComponent<GridLayoutGroup>();
             glg.cellSize = new Vector2(cellSize, cellSize);
             glg.spacing = new Vector2(spacing, spacing);
