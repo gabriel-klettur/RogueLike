@@ -29,8 +29,8 @@ namespace Valkur.Gameplay.TileEditor
         {
             _gridOverlayGo = new GameObject("TileEditorGridOverlay");
             _gridOverlayGo.transform.SetParent(transform);
-            var overlay = _gridOverlayGo.AddComponent<TileEditorGridOverlay>();
-            overlay.Initialize(_mainCamera);
+            _gridOverlay = _gridOverlayGo.AddComponent<TileEditorGridOverlay>();
+            _gridOverlay.Initialize(_mainCamera);
             _gridOverlayGo.SetActive(false);
         }
 
@@ -85,6 +85,13 @@ namespace Valkur.Gameplay.TileEditor
             else
             {
                 _gridCursor.ClearSelection();
+            }
+
+            // Push selection + brush-stroke data to GL overlay
+            if (_gridOverlay != null)
+            {
+                _gridOverlay.SetSelectedCell(_state.SelectedCellPos);
+                _gridOverlay.SetBrushStrokeCells(_state.BrushStrokeCells);
             }
         }
 

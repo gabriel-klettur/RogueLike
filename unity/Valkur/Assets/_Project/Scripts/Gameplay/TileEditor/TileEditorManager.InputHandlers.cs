@@ -16,6 +16,8 @@ namespace Valkur.Gameplay.TileEditor
 
             if (_state.Active)
             {
+                _state.CurrentTool = TileEditorState.Tool.Select;
+                _state.BrushStrokeCells.Clear();
                 _state.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
                 _ui.RefreshToolHighlights();
                 _ui.RefreshLayerLabel();
@@ -32,6 +34,7 @@ namespace Valkur.Gameplay.TileEditor
             {
                 _undo.EndStroke();
                 _state.SelectedCellPos = null;
+                _state.BrushStrokeCells.Clear();
                 HideBrushPreview();
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
@@ -96,10 +99,12 @@ namespace Valkur.Gameplay.TileEditor
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
+                _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
+                AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
@@ -114,13 +119,25 @@ namespace Valkur.Gameplay.TileEditor
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
-                _undo.RecordEdits(TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell));
+                var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
+                _undo.RecordEdits(edits);
+                AddCellsToBrushStroke(cellPos);
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;
+                _state.BrushStrokeCells.Clear();
             }
+        }
+
+        /// <summary>Mark all cells in the brush footprint around <paramref name="center"/> as part of the active stroke.</summary>
+        private void AddCellsToBrushStroke(Vector3Int center)
+        {
+            int half = _state.BrushSize / 2;
+            for (int dy = 0; dy < _state.BrushSize; dy++)
+                for (int dx = 0; dx < _state.BrushSize; dx++)
+                    _state.BrushStrokeCells.Add(new Vector3Int(center.x - half + dx, center.y - half + dy, 0));
         }
 
         private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)

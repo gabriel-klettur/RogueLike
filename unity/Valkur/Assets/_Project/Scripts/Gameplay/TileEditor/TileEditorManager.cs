@@ -37,6 +37,7 @@ namespace Valkur.Gameplay.TileEditor
 
         // Tile grid overlay (white cell borders)
         private GameObject _gridOverlayGo;
+        private TileEditorGridOverlay _gridOverlay;
 
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
@@ -180,6 +181,7 @@ namespace Valkur.Gameplay.TileEditor
             _undo.EndStroke();
             _state.CurrentTool = tool;
             _state.IsDragging = false;
+            _state.BrushStrokeCells.Clear();
             _ui.RefreshToolHighlights();
             _ui.SetStatus($"Tool: {tool}");
             UpdateBorderToolLabel();
