@@ -18,23 +18,29 @@ Objetivo:
 ## Resumen de progreso
 
 | Fase | Descripcion | Pasos | Completados | Estado |
-|------|-------------|-------|-------------|--------|
+| ---- | ----------- | ----- | ----------- | ------ |
 | 0 | Preparacion y baseline | 1-6 | 5/6 | 🟡 Parcial |
 | 1 | Bootstrap tecnico Unity | 7-12 | 6/6 | ✅ Completa |
 | 2 | Assets y pipeline importacion | 13-22 | 6/10 | 🟡 Parcial |
 | 3 | Contratos de datos y migradores | 23-30 | 8/8 | ✅ Completa |
 | 4 | Vertical slice minimo | 31-36 | 6/6 | ✅ Completa |
 | 5 | Port completo gameplay | 37-44 | 8/8 | ✅ Completa |
-| 6 | Herramientas y editores | 45-47 | 3/3 | ✅ Completa |
+| 6 | Herramientas y editores | 45-47 | 3/3 shells | 🟡 **Parcial — solo shells** |
 | 7 | Persistencia y release | 48-50 | 3/3 | ✅ Completa |
-| **Total** | | **1-50** | **45/50** | **90%** |
+| 8 | **Editor depth migration (propuesta)** | 51-65 | 0/15 | 🔴 No iniciada |
+| 9 | **Runtime feature polish (propuesta)** | 66-70 | 0/5 | 🔴 No iniciada |
+| **Total** | | **1-50** | **45/50** | **90 % shells / ≈ 60 % funcional** |
 
-> **Nota 2026-04-08:** 45 de 50 pasos completados (90%). Se implementaron ~30 sistemas extra más allá del scope original (ver Paso 44). Las brechas abiertas: evidencias baseline video (Paso 4), naming convention formal (Paso 15), ejecución de migración batch de assets (Pasos 20-22).
+> **Nota 2026-04-08:** 45 de 50 pasos completados (90 %). Se implementaron ~30 sistemas extra más allá del scope original (ver Paso 44). Las brechas abiertas: evidencias baseline video (Paso 4), naming convention formal (Paso 15), ejecución de migración batch de assets (Pasos 20-22).
+>
+> **Corrección 2026-04-18 (gap analysis profundo):** Los Pasos 45-47 (Fase 6 — Herramientas y editores) están marcados ✅ pero esto sólo refleja que los **shells** existen. A nivel de panels / botones / undo / sub-panels, la cobertura real de los 11 editores in-game es **≈ 14 %** (de ~63 000 LOC Python a ~9 200 LOC Unity). Ver [`03_audits/editor_and_feature_depth_gap_2026-04-18.md`](../03_audits/editor_and_feature_depth_gap_2026-04-18.md) para la matriz por-editor y [`01_execution/editors/per_editor_checklists.md`](editors/per_editor_checklists.md) para los work items. Se proponen las **Fases 8 y 9** (15 + 5 pasos nuevos) para cerrar este gap antes de declarar paridad completa.
 
 ### Proximos pasos prioritarios
 
 1. **Paso 4** — Registrar evidencias del baseline Python (video + capturas + logs de perfil) [requiere ejecucion manual]
 2. **Pasos 15, 20-22** — Naming convention formal + ejecutar migración batch de assets con validación visual
+3. **NUEVO — Fase 8 (Pasos 51-65)** — Editor depth migration. Prerequisito: kit común `Scripts/UI/EditorKit/` (UndoStack, EditorModal, AssetThumbnailGrid, TabStrip, TutorialOverlay, PropertyForm). Ver checklist por editor en [`editors/per_editor_checklists.md`](editors/per_editor_checklists.md).
+4. **NUEVO — Fase 9 (Pasos 66-70)** — Polish runtime: vendor UI scrollbar/paginación, HUD action grid + cooldown rings, minimap fog-of-war + markers, multi-binding configurator, save versioning.
 
 ---
 

@@ -11,7 +11,7 @@
 ## 0. Métricas de Línea Base
 
 | Métrica | Feb 2026 | Abr 2026 | Δ |
-|---------|----------|----------|---|
+| --------- |----------| ---------- |---|
 | Total archivos `.cs` | 90 | **294** | +204 |
 | Assemblies (`.asmdef`) | 5 | **6** (+Editor) | +1 |
 | Singletons (`static Instance`) | 9 | **4** | -5 ✅ |
@@ -30,7 +30,7 @@
 ### Issues Críticos Previos — Estado Actual
 
 | ID | Issue (Feb 2026) | Estado Abr 2026 | Notas |
-|----|------------------|------------------|-------|
+| ---- |------------------| ------------------ |-------|
 | C1 | `GameSaveData.metadata` usa `Dictionary` → no serializa con JsonUtility | ✅ **RESUELTO** | Reemplazado con `SerializableKeyValue[]` |
 | C2 | Sorting Layers: 9 de 11 capas en código no existían en TagManager | ✅ **RESUELTO** | TagManager sincronizado: 14 sorting layers, todos alineados con `SortingConfig.cs` |
 | C3 | Schema version duplicado en `SaveService` | ✅ **RESUELTO** | `SaveSchemaMigrator.CURRENT_SCHEMA` es fuente única de verdad |
@@ -38,7 +38,7 @@
 ### Issues de Alta Severidad Previos — Estado Actual
 
 | ID | Issue (Feb 2026) | Estado Abr 2026 |
-|----|------------------|------------------|
+| ---- |------------------| ------------------ |
 | H1 | Legacy `Input.GetKeyDown` mezclado con InputSystem (19 usos en TileEditor) | ⚠️ **PARCIAL** — Reducido a ~2 usos en Chat (ChatUI, ChatSystem). TileEditor migrado. |
 | H2 | Reflection (5 archivos) | ⚠️ **PARCIAL** — DayNightCycle y Light2D reflection persiste, pero cacheado en static. |
 | H3 | `FindObjectOfType` en hot paths (DebugHUD, CombatRangeVisualizer, NPCInteractable) | ✅ **RESUELTO** — Los 3 casos originales corregidos. Nuevo: `NPCSeparationSystem.FixedUpdate`. |
@@ -80,7 +80,7 @@ Assets/
 **Hallazgos:**
 
 | Sev. | Hallazgo | Impacto | Acción |
-|------|----------|---------|--------|
+| ------ |----------| --------- |--------|
 | 🟡 **BAJO** | `Screenshots/` en Assets root en vez de `_Project/` | Se incluirá en builds | Mover a `_Project/Screenshots/` o excluir del build |
 | ✅ | `Resources/` tiene uso mínimo (3 assets + carpetas) | No infla el build | Correcto |
 | ✅ | Sin archivos sueltos en `_Project/` root | Limpio | — |
@@ -106,7 +106,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ```
 
 | Verificación | Estado |
-|-------------|--------|
+| ------------- |--------|
 | Dependencias circulares | ✅ Ninguna |
 | Violaciones de capas | ✅ Ninguna |
 | `Valkur.Editor` con platform filter `Editor` | ✅ Correcto |
@@ -120,7 +120,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Estadísticas:**
 
 | Categoría | Cantidad |
-|-----------|----------|
+| ----------- |----------|
 | Archivos PascalCase + nombre descriptivo | 227 (77%) |
 | Partial classes (`.NombreParte.cs`) | 67 (23%) |
 | Sufijos genéricos (`Helpers`, `Internals`, `Processing`) | 18 |
@@ -131,7 +131,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Hallazgos:**
 
 | Sev. | Hallazgo | Archivos | Acción |
-|------|----------|----------|--------|
+| ------ |----------| ---------- |--------|
 | 🟠 **MEDIO** | `VendorShopUI.cs`, `.Builder.cs`, `.Rows.cs` están en `Gameplay/Enemies/` en vez de `Gameplay/Vendors/` | 3 | Mover a `Vendors/` |
 | 🟠 **MEDIO** | Conflicto de nombres: `TileEditorUI.Builder.cs` (partial de TileEditorUI) coexiste con `TileEditorUIBuilder.cs` (clase separada) | 2 | Unificar o renombrar |
 | 🟡 **BAJO** | 18 archivos con sufijos genéricos (`Helpers`, `Internals`, `Processing`, `Rendering`) | 18 | Renombrar a algo descriptivo |
@@ -147,7 +147,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Estado actual del patrón de inyección de dependencias:**
 
 | Componente | Patrón Usado | Ideal |
-|------------|-------------|-------|
+| ------------ |-------------| ------- |
 | `AudioManager` | ✅ `ServiceLocator.Register<IAudioService>` | Correcto |
 | `VFXManager` | ✅ `ServiceLocator.Register<IVFXService>` | Correcto |
 | `GameDirector` | ❌ `public static GameDirector Instance` | Migrar a ServiceLocator |
@@ -162,7 +162,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Hallazgos:**
 
 | Sev. | Hallazgo | Impacto | Acción |
-|------|----------|---------|--------|
+| ------ |----------| --------- |--------|
 | 🟠 **MEDIO** | `GameDirector`, `GameSettings`, `PauseMenuUI` bypasean ServiceLocator con static Instance | Patrón inconsistente; difícil de testear | Registrar en ServiceLocator; mantener Instance como wrapper de conveniencia |
 | 🟡 **BAJO** | Sin política centralizada de `DontDestroyOnLoad` — 5 sitios diferentes lo llaman manualmente | Fragmentado | Consolidar en `GameBootstrap` o `SingletonMonoBehaviour.Persist` |
 
@@ -171,7 +171,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Top 5 clases más grandes (agregando partials):**
 
 | Rank | Clase | LOC Estimadas | Partials | Responsabilidades | Verdict |
-|------|-------|---------------|----------|-------------------|---------|
+| ------ |-------| --------------- |----------| ------------------- |---------|
 | 1 | `MainMenuUI` | ~1700 | 8 | Menú principal, carrusel, selector de clase, opciones, sonido, inputs, carga, audio init | 🔴 **GOD CLASS** |
 | 2 | `PauseMenuUI` | ~1400 | 7 | Menú pausa, opciones, sonido, inputs, carga, canvas setup, singleton | 🔴 **GOD CLASS** |
 | 3 | `GameplaySceneSetup` | ~700 | 4 | Grid, zona, luz, VFX, audio, chat, vendor, spawner, player, monsters | 🟠 **ORQUESTADOR LARGO** |
@@ -189,7 +189,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **`FindObjectOfType` en hot paths (runtime):**
 
 | Sev. | Archivo | Línea | Contexto | Impacto |
-|------|---------|-------|----------|---------|
+| ------ |---------| ------- |----------| --------- |
 | 🔴 **CRÍTICO** | `NPCSeparationSystem.cs` | L35 | `FindObjectsOfType<FSMMonsterBrain>()` en `FixedUpdate()` | O(n) cada physics frame. Con 50+ NPCs = 1-2ms/frame |
 | 🟠 **MEDIO** | `ZonePortal.cs` | L69, L86 | `FindObjectOfType<WorldGridBuilder/ZoneManager>()` en colisión | Innecesario; cachear en Awake |
 | 🟠 **MEDIO** | `MinimapDot.cs` | L27 | `FindObjectOfType<MinimapManager>()` en OnEnable | 100+ calls en escena con muchas entidades |
@@ -199,7 +199,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Reflection en código runtime (no Editor):**
 
 | Archivo | Uso | Cached? | Riesgo |
-|---------|-----|---------|--------|
+| --------- |-----| --------- |--------|
 | `DayNightCycle.cs` | Light2D property setters via PropertyInfo | ✅ Static cache | Bajo |
 | `GameplaySceneSetup.Systems.cs` | Global Light2D creation via reflection | ✅ One-time | Medio (breaking en URP updates) |
 | `WorldLightLoader.cs` | Point Light2D creation via reflection | ⚠️ Per-light (5 property sets) | Medio |
@@ -213,7 +213,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **`GameEvents.cs`** — 9 eventos estáticos con fire methods + `Clear()`:
 
 | Evento | Suscriptores | Desuscripción | Estado |
-|--------|-------------|---------------|--------|
+| -------- |-------------| --------------- |--------|
 | `OnEntityDamaged` | CombatAudioSystem | OnDisable `-=` | ✅ Balanceado |
 | `OnEntityDied` | (unused currently) | — | ✅ Listo para uso |
 | `OnHitDealt` | ComboCounter, CombatAudioSystem | OnDisable `-=` | ✅ Balanceado |
@@ -235,7 +235,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 3.5 Manejo de Errores — Calificación: ✅ A-
 
 | Métrica | Valor |
-|---------|-------|
+| --------- |-------|
 | Total `try-catch` blocks | 20 |
 | Con `Debug.LogError` | 8 |
 | Con `Debug.LogWarning` | 3 |
@@ -247,7 +247,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 3.6 Serialización y Persistencia — Calificación: ✅ A
 
 | Verificación | Estado |
-|-------------|--------|
+| ------------- |--------|
 | `Dictionary<>` en `SaveData.cs` | ✅ 0 — Usa `SerializableKeyValue[]` |
 | Schema migration pipeline | ✅ `SaveSchemaMigrator` v1.0 → v1.1 |
 | `JsonUtility` con tipos no soportados | ✅ 0 — 21 usos, todos con tipos compatibles |
@@ -262,7 +262,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 4.1 Anti-patterns de Rendimiento — Calificación: ✅ A-
 
 | Patrón | Instancias | Estado |
-|--------|-----------|--------|
+| -------- |-----------| -------- |
 | `new Material()` | 14 | ✅ 11/14 con cleanup en OnDestroy. 3 pendientes de verificación (EntitySpriteHelper, FireballVisual, ParticleEmitter) |
 | `new Mesh()` | 0 | ✅ Limpio |
 | `Camera.main` sin cachear | 0 | ✅ Todo cacheado |
@@ -274,7 +274,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Material leaks pendientes (3 verificaciones):**
 
 | Archivo | Línea | Shader | Estado |
-|---------|-------|--------|--------|
+| --------- |-------| -------- |--------|
 | `EntitySpriteHelper.cs` | L39 | Sprite-Unlit-Default | ⚠️ Verificar cleanup |
 | `FireballVisual.cs` | L92 | Sprite-Unlit-Default | ⚠️ Verificar cleanup |
 | `ParticleEmitter.ParticleSystem.cs` | L196, L209 | Varios | ⚠️ Verificar cleanup |
@@ -286,7 +286,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Uso actual:**
 
 | Sistema | ¿Usa Pool? | Frecuencia | Impacto |
-|---------|-----------|-----------|---------|
+| --------- |-----------| ----------- |---------|
 | Projectiles (fireball) | ⚠️ Parcial — prefab pool via `ProjectilePrefabFactory` | ~2/sec | Medio |
 | Boomerang spell | ❌ `Instantiate()` raw | ~1/sec | Medio |
 | Projectile spells | ❌ `Instantiate()` raw | ~2/sec | Medio |
@@ -299,7 +299,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Layer Collision Matrix:**
 
 | Verificación | Estado |
-|-------------|--------|
+| ------------- |--------|
 | Sorting layers vs SortingConfig.cs | ✅ **14/14 alineados** (issue C2 resuelto) |
 | Physics layers definidos (8-15) | ✅ 8 layers correctos |
 | Collision matrix selectiva | ❌ **PERSISTE ALL-TO-ALL en layers 0-7** |
@@ -310,7 +310,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 4.4 Escalabilidad de Datos — Calificación: ✅ A-
 
 | Catálogo | Estructura | Lookup | Escala |
-|----------|-----------|--------|--------|
+| ---------- |-----------| -------- |--------|
 | `SpellCatalog` | Array + lazy `Dictionary<string, T>` | O(1) | ✅ |
 | `MonsterCatalog` | List + lazy `Dictionary<string, T>` | O(1) | ✅ |
 | `AudioCatalogSO` | Arrays + lazy dictionaries | O(1) | ✅ |
@@ -330,7 +330,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **EditMode Tests — 18 archivos, ~135 test cases:**
 
 | Sistema | Archivo de Test | ~Casos | Cobertura |
-|---------|----------------|--------|-----------|
+| --------- |----------------| -------- |-----------|
 | Health | HealthTests.cs | 12 | ✅ Buena |
 | Inventory | InventoryTests.cs | 10+ | ✅ Buena |
 | SpellCaster | SpellCasterTests.cs | 20+ | ✅ Comprehensive |
@@ -355,7 +355,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 **Sistemas sin tests:**
 
 | Sistema | Riesgo | Prioridad |
-|---------|--------|-----------|
+| --------- |--------| ----------- |
 | PlayerController (movimiento, input) | Medio | P2 |
 | Spell executors (20+ tipos) | Alto | P1 |
 | Monster AI states (Patrol, Chase, Attack, etc.) | Alto | P1 |
@@ -368,7 +368,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 5.2 Calidad de Tests
 
 | Aspecto | Estado |
-|---------|--------|
+| --------- |--------|
 | SetUp/TearDown para cleanup | ✅ Correcto |
 | Destrucción de GameObjects | ✅ Correcto |
 | Patrón AAA (Arrange, Act, Assert) | ✅ Seguido |
@@ -383,7 +383,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 6.1 Input System — Calificación: ⚠️ B
 
 | Verificación | Estado |
-|-------------|--------|
+| ------------- |--------|
 | New Input System activo | ✅ Sí |
 | Legacy InputManager axes | ⚠️ 11 axes definidos (Horizontal, Vertical, Fire1-3, Jump, Mouse X/Y, ScrollWheel, Submit, Cancel) |
 | Legacy API en código runtime | ⚠️ 2 usos: `ChatUI.cs` L72, `ChatSystem.cs` L214 |
@@ -394,7 +394,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 6.2 Otras Settings
 
 | Setting | Valor | Correcto |
-|---------|-------|----------|
+| --------- |-------| ---------- |
 | Unity version | 2022.3.62f1 | ✅ LTS |
 | Gravity 2D | (0, 0) | ✅ Top-down correcto |
 | vSync | 1 (60 FPS) | ✅ |
@@ -409,14 +409,14 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 🔴 CRÍTICO (2)
 
 | # | Hallazgo | Archivo | Impacto | Esfuerzo |
-|---|----------|---------|---------|----------|
+| --- |----------| --------- |---------| ---------- |
 | C1 | `NPCSeparationSystem.FixedUpdate()` llama `FindObjectsOfType<FSMMonsterBrain>()` cada physics frame | `NPCSeparationSystem.cs:35` | O(n²) physics overhead, ~1-2ms/frame con 50+ NPCs | Bajo |
 | C2 | 0 PlayMode tests — ningún test de integración runtime | `Tests/PlayMode/` | Regresiones en gameplay no detectadas | Medio |
 
 ### 🟠 ALTO (6)
 
 | # | Hallazgo | Archivo | Impacto | Esfuerzo |
-|---|----------|---------|---------|----------|
+| --- |----------| --------- |---------| ---------- |
 | H1 | `MainMenuUI` (~1700 LOC) es God Class con 8 responsabilidades | `Scripts/UI/MainMenu/MainMenuUI*.cs` | Difícil de mantener, testear y extender | Alto |
 | H2 | `PauseMenuUI` (~1400 LOC) es God Class con 7 responsabilidades | `Scripts/UI/PauseMenu/PauseMenuUI*.cs` | Mismo problema que H1 | Alto |
 | H3 | `PlayerHUD.Mana` no conectado a componente `Mana` (hardcoded 100/100) | `PlayerHUD.cs` | Jugador ve MP incorrecto | Bajo |
@@ -427,7 +427,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 🟡 MEDIO (9)
 
 | # | Hallazgo | Archivo | Impacto |
-|---|----------|---------|---------|
+| --- |----------| --------- |---------|
 | M1 | `VendorShopUI.*.cs` (3 archivos) en carpeta `Enemies/` en vez de `Vendors/` | `Gameplay/Enemies/VendorShopUI*.cs` | Confusión de dominio |
 | M2 | `TileEditorUI.Builder.cs` y `TileEditorUIBuilder.cs` — conflicto de nombres | `Gameplay/TileEditor/` | Ambigüedad |
 | M3 | `GameDirector`, `GameSettings`, `PauseMenuUI` bypasean ServiceLocator | `Core/`, `UI/PauseMenu/` | Patrón inconsistente, difícil de testear |
@@ -441,7 +441,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### 🟢 BAJO / INFORMATIVO (4)
 
 | # | Hallazgo | Notas |
-|---|----------|-------|
+| --- |----------| ------- |
 | L1 | `Screenshots/` en Assets root | Mover a `_Project/` o excluir |
 | L2 | 18 partials con sufijos genéricos (`Helpers`, `Internals`, etc.) | Renombrar para claridad |
 | L3 | `ParticleEmitter.ParticleSystem.cs` colisiona con nombre Unity | Renombrar |
@@ -452,7 +452,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ## 8. Calificaciones por Área
 
 | Área | Nota | Detalles |
-|------|------|---------|
+| ------ |------| --------- |
 | **Estructura de carpetas** | ✅ A | Organización profesional, `_Project/` limpio, Resources mínimo |
 | **Assemblies (.asmdef)** | ✅ A+ | Grafo limpio, sin circulares, namespaces correctos |
 | **Convenciones de nombrado** | ⚠️ B | 77% correcto, conflictos menores, archivos mal ubicados |
@@ -480,7 +480,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### Sprint 1 — Críticos y Quick Wins (1-2 días)
 
 | # | Tarea | Hallazgo | Esfuerzo |
-|---|-------|----------|----------|
+| --- |-------| ---------- |----------|
 | 1 | Cache NPC list en `NPCSeparationSystem` — usar registro de entidades | C1 | 30 min |
 | 2 | Conectar `Mana.OnManaChanged` → `PlayerHUD.SetMana()` | H3 | 30 min |
 | 3 | Migrar `ChatUI`/`ChatSystem` de legacy Input a InputAction | M8 | 1 hora |
@@ -491,7 +491,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### Sprint 2 — Pooling y Estructura (2-3 días)
 
 | # | Tarea | Hallazgo | Esfuerzo |
-|---|-------|----------|----------|
+| --- |-------| ---------- |----------|
 | 7 | Pool para FloatingDamageNumber (usar ObjectPool existente) | H4 | 2 horas |
 | 8 | Pool para Boomerang y Projectile executors | H5 | 2 horas |
 | 9 | Mover `VendorShopUI.*.cs` a `Gameplay/Vendors/` | M1 | 30 min |
@@ -502,7 +502,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### Sprint 3 — Testing (3-5 días)
 
 | # | Tarea | Hallazgo | Esfuerzo |
-|---|-------|----------|----------|
+| --- |-------| ---------- |----------|
 | 13 | Crear PlayMode tests para spell casting loop (mana + cooldown + execution) | C2 | 4 horas |
 | 14 | Crear PlayMode tests para combat hit flow (damage → event → feedback) | C2 | 3 horas |
 | 15 | Crear PlayMode tests para monster FSM (idle → chase → attack → death) | C2 | 4 horas |
@@ -511,7 +511,7 @@ Valkur.Editor ←── Valkur.Core, Valkur.Gameplay, Valkur.Data
 ### Sprint 4 — God Classes (5-10 días, opcional)
 
 | # | Tarea | Hallazgo | Esfuerzo |
-|---|-------|----------|----------|
+| --- |-------| ---------- |----------|
 | 17 | Extraer `MainMenuUI` → `MenuCarousel`, `ClassSelectorUI`, `OptionsMenuUI`, `InputBindingUI` | H1 | 8 horas |
 | 18 | Extraer `PauseMenuUI` → `PauseOptionsUI`, `SoundSettingsUI`, `InputDisplayUI`, `LoadGameUI` | H2 | 8 horas |
 
