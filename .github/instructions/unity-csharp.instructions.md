@@ -30,3 +30,13 @@ Background → Ground → FloorDecals → ObjectsLow → WallsBottom → Entitie
 - Preserve exact numerical values from Python (damage, speed, timing)
 - Check existing scripts before creating new ones
 - Game tuning lives in ScriptableObjects, not hardcoded
+
+### Post-Implementation Verification (MANDATORY)
+After **every** Unity C# change (create, edit, refactor, delete):
+1. Call `mcp_unity_refresh_unity` with `compile=request`, `mode=force`, `scope=scripts`, `wait_for_ready=true`
+2. Call `mcp_unity_read_console` with `types=["error","warning"]`, `page_size=50`, `format=detailed`, `include_stacktrace=true`
+3. If **any error** appears → fix immediately before proceeding
+4. The only acceptable warnings are:
+   - MCP WebSocket reconnect (benign after domain reload)
+   - `Default GameObject Tag: X already registered` (editor state, not a code error)
+5. **Never** report "done" until the console is error-free

@@ -77,3 +77,14 @@ argument-hint: "Name the Python system or file to translate"
 - Python `range(a, b)` excludes `b`; C# `for` loops must match
 - Pygame coordinates are **pixels**; Unity uses **world units** (÷ PPU)
 - Python `time.time()` returns seconds; use `Time.time` in Unity
+
+## Post-Implementation Verification (MANDATORY)
+
+After writing or editing any Unity C# script:
+
+1. `mcp_unity_refresh_unity` — `compile=request`, `mode=force`, `scope=scripts`, `wait_for_ready=true`
+2. `mcp_unity_read_console` — `types=["error","warning"]`, `page_size=50`, `format=detailed`, `include_stacktrace=true`
+3. Fix any compilation errors before reporting completion
+4. Only benign warnings allowed:
+   - MCP WebSocket reconnect (domain reload artifact)
+   - `Default GameObject Tag: X already registered`
