@@ -112,16 +112,54 @@ namespace Valkur.Gameplay.NPC
             var btnColor = isBuy ? buyButtonColor : sellButtonColor;
             string btnLabel = isBuy ? "Buy" : "Sell";
             var btn = CreateButton(row.transform, btnLabel, 10, btnColor,
-                new Vector2(0.78f, 0.15f), new Vector2(0.98f, 0.85f));
+                new Vector2(0.88f, 0.15f), new Vector2(0.98f, 0.85f));
+
+            // Quantity stepper (-/+) and count label between the price and the action button.
+            int maxQty = isBuy ? Mathf.Max(1, qty) : Mathf.Max(1, qty);
+            int[] qtyBox = { 1 };
+            var qtyLabel = CreateLabel(row.transform, "1", 11, Color.white, true);
+            var qlRect = qtyLabel.GetComponent<RectTransform>();
+            qlRect.anchorMin = new Vector2(0.80f, 0.15f);
+            qlRect.anchorMax = new Vector2(0.86f, 0.85f);
+            qlRect.offsetMin = qlRect.offsetMax = Vector2.zero;
+
+            var minusBtn = CreateButton(row.transform, "-", 12, new Color(0.35f, 0.35f, 0.40f, 1f),
+                new Vector2(0.74f, 0.15f), new Vector2(0.80f, 0.85f));
+            minusBtn.onClick.AddListener(() =>
+            {
+                qtyBox[0] = Mathf.Max(1, qtyBox[0] - 1);
+                qtyLabel.text = qtyBox[0].ToString();
+                UpdatePriceLabel(priceLabel, priceCol, price, qtyBox[0]);
+            });
+
+            var plusBtn = CreateButton(row.transform, "+", 12, new Color(0.35f, 0.35f, 0.40f, 1f),
+                new Vector2(0.86f, 0.15f), new Vector2(0.88f, 0.85f));
+            plusBtn.onClick.AddListener(() =>
+            {
+                qtyBox[0] = Mathf.Min(maxQty, qtyBox[0] + 1);
+                qtyLabel.text = qtyBox[0].ToString();
+                UpdatePriceLabel(priceLabel, priceCol, price, qtyBox[0]);
+            });
 
             var capturedItem = item;
             btn.onClick.AddListener(() =>
             {
-                if (isBuy) HandleBuy(capturedItem);
-                else HandleSell(capturedItem);
+                int n = Mathf.Max(1, qtyBox[0]);
+                for (int i = 0; i < n; i++)
+                {
+                    if (isBuy) HandleBuy(capturedItem);
+                    else HandleSell(capturedItem);
+                }
             });
 
             return row;
+        }
+
+        private static void UpdatePriceLabel(TMPro.TextMeshProUGUI label, Color col, int unitPrice, int quantity)
+        {
+            if (label == null) return;
+            label.text = $"{unitPrice * Mathf.Max(1, quantity)}g";
+            label.color = col;
         }
 
         private static void LayoutRows(Transform parent, List<GameObject> rows)

@@ -13,7 +13,9 @@ namespace Valkur.Gameplay
     public class DeathDropSystem : MonoBehaviour
     {
         [SerializeField, Tooltip("Max spiral search radius in tiles for free drop positions.")]
+#pragma warning disable CS0414 // reserved for upcoming spiral search; surfaced in inspector
         private int maxSearchRadius = 12;
+#pragma warning restore CS0414
 
         [SerializeField, Tooltip("TTL in seconds for ground drops before they despawn. 0 = never.")]
         private float dropDespawnTime = 120f;
