@@ -95,6 +95,15 @@ namespace Valkur.UI.PauseMenu
 
         private void HandleInputsTabInput()
         {
+            // While interactive rebinding is active, swallow all navigation input
+            // so Q/E/Esc don't both switch tabs AND capture the rebind.
+            if (_rebinder != null && _rebinder.IsActive)
+            {
+                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                    _rebinder.Cancel();
+                return;
+            }
+
             int tabCount = _tabLabels != null ? _tabLabels.Length : 0;
             bool tabLeft  = Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame;
             bool tabRight = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;

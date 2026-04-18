@@ -199,6 +199,7 @@ namespace Valkur.UI.PauseMenu
             _navRight?.Disable(); _navRight?.Dispose();
             _confirm?.Disable(); _confirm?.Dispose();
             _cancel?.Disable();  _cancel?.Dispose();
+            _rebinder?.Dispose(); _rebinder = null;
         }
 
         // ════════════════════════════════════════════════════════════════════

@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Gameplay.Spells;
+using Valkur.UI.HUD;
 
 namespace Valkur.UI
 {
@@ -114,17 +115,8 @@ namespace Valkur.UI
             var iconImg = iconGo.AddComponent<Image>();
             iconImg.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-            // Cooldown overlay
-            var cdGo = new GameObject("Cooldown");
-            cdGo.transform.SetParent(slotGo.transform, false);
-            var cdRt = cdGo.AddComponent<RectTransform>();
-            cdRt.anchorMin = new Vector2(0, 0);
-            cdRt.anchorMax = new Vector2(1, 0);
-            cdRt.pivot = new Vector2(0.5f, 0);
-            cdRt.sizeDelta = new Vector2(0, 0);
-            cdRt.anchoredPosition = Vector2.zero;
-            var cdImg = cdGo.AddComponent<Image>();
-            cdImg.color = new Color(0f, 0f, 0f, 0.65f);
+            // Radial cooldown ring (replaces the old bottom-up fill)
+            var ring = CooldownRing.AddToParent(slotGo.transform);
 
             // Key label
             var keyGo = new GameObject("KeyLabel");
@@ -145,8 +137,7 @@ namespace Valkur.UI
             {
                 root = rt,
                 icon = iconImg,
-                cooldownOverlay = cdImg,
-                cooldownRect = cdRt,
+                cooldownRing = ring,
                 keyLabel = keyText
             };
         }
@@ -160,25 +151,23 @@ namespace Valkur.UI
                 if (spell != null)
                 {
                     slot.icon.color = Color.white;
+                    if (spell.sprite != null) slot.icon.sprite = spell.sprite;
                     float cdNorm = _playerCaster.GetCooldownNormalized(i);
-                    float h = Mathf.Clamp01(cdNorm) * slotSize;
-                    slot.cooldownRect.sizeDelta = new Vector2(0, h);
-                    slot.cooldownOverlay.enabled = cdNorm > 0f;
+                    slot.cooldownRing?.SetProgress(cdNorm);
                 }
                 else
                 {
                     slot.icon.color = new Color(0.3f, 0.3f, 0.3f, 0.3f);
-                    slot.cooldownOverlay.enabled = false;
+                    slot.cooldownRing?.SetProgress(0f);
                 }
             }
         }
 
-        private struct SpellSlotUI
+        private class SpellSlotUI
         {
             public RectTransform root;
             public Image icon;
-            public Image cooldownOverlay;
-            public RectTransform cooldownRect;
+            public CooldownRing cooldownRing;
             public TextMeshProUGUI keyLabel;
         }
     }

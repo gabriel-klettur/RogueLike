@@ -138,6 +138,8 @@ namespace Valkur.UI.MainMenu
             _confirmAction?.Disable();  _confirmAction?.Dispose();
             _cancelAction?.Disable();   _cancelAction?.Dispose();
 
+            _optRebinder?.Dispose(); _optRebinder = null;
+
             foreach (var s in _portraitSpriteCache.Values)
                 if (s != null) Destroy(s);
             _portraitSpriteCache.Clear();

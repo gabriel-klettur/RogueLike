@@ -53,28 +53,30 @@ namespace Valkur.UI.PauseMenu
             }
 
             var gs = GameSettings.Instance;
-            var tabData = new (string action, string keyA, string keyB, string mouse)[][]
+            // Tab rows: each row lists the display label and the underlying action keys used by GameSettingsBindings.
+            // Action "-" means no binding slot for that column.
+            var tabData = new (string label, string actionA, string actionB, string actionMouse)[][]
             {
                 new[] {
-                    ("Pausa",       gs.pauseKeyA,            "-", "-"),
-                    ("Inventario",  gs.toggleInventoryKeyA,  "-", "-"),
+                    ("Pausa",       "pause",               "-", "-"),
+                    ("Inventario",  "toggle_inventory",    "-", "-"),
                 },
                 new[] {
-                    ("Arriba",      gs.moveUpKeyA,    gs.moveUpKeyB,    "-"),
-                    ("Abajo",       gs.moveDownKeyA,  gs.moveDownKeyB,  "-"),
-                    ("Izquierda",   gs.moveLeftKeyA,  gs.moveLeftKeyB,  "-"),
-                    ("Derecha",     gs.moveRightKeyA, gs.moveRightKeyB, "-"),
-                    ("Dash",        gs.dashKeyA,      gs.dashKeyB,      "-"),
+                    ("Arriba",      "move_up",    "move_up",    "-"),
+                    ("Abajo",       "move_down",  "move_down",  "-"),
+                    ("Izquierda",   "move_left",  "move_left",  "-"),
+                    ("Derecha",     "move_right", "move_right", "-"),
+                    ("Dash",        "dash",       "dash",       "-"),
                 },
                 new[] {
-                    ("Hechizo 1",   gs.spell1KeyA, "-", gs.primaryAttackMouse),
-                    ("Hechizo 2",   gs.spell2KeyA, "-", gs.secondaryAttackMouse),
-                    ("Hechizo 3",   gs.spell3KeyA, "-", "-"),
-                    ("Hechizo 4",   gs.spell4KeyA, "-", "-"),
+                    ("Hechizo 1",   "spell_1", "-", "attack_primary_mouse"),
+                    ("Hechizo 2",   "spell_2", "-", "attack_secondary_mouse"),
+                    ("Hechizo 3",   "spell_3", "-", "-"),
+                    ("Hechizo 4",   "spell_4", "-", "-"),
                 },
                 new[] {
-                    ("Editor Tiles", gs.toggleTileEditorKeyA, "-", "-"),
-                    ("Editor Mapa",  gs.toggleMapEditorKeyA,  "-", "-"),
+                    ("Editor Tiles", "toggle_tile_editor", "-", "-"),
+                    ("Editor Mapa",  "toggle_map_editor",  "-", "-"),
                 },
             };
 
@@ -96,15 +98,98 @@ namespace Valkur.UI.PauseMenu
                     rowR.anchoredPosition = new Vector2(col0, cy);
                     rowR.sizeDelta = new Vector2(-col0 * 2, rowH);
 
-                    AddTableCell(row.transform, rows[i].action,             TextAlignmentOptions.Left, 0f,   0.35f);
-                    AddTableCell(row.transform, "Tecla A: " + rows[i].keyA, TextAlignmentOptions.Left, col1, 0.18f);
-                    AddTableCell(row.transform, "Tecla B: " + rows[i].keyB, TextAlignmentOptions.Left, col2, 0.18f);
-                    AddTableCell(row.transform, "Raton: " + rows[i].mouse,  TextAlignmentOptions.Left, col3, 0.22f);
+                    AddTableCell(row.transform, rows[i].label, TextAlignmentOptions.Left, 0f, 0.35f);
+                    AddRebindCell(row.transform, rows[i].actionA,     0, col1, 0.18f, "Tecla A");
+                    AddRebindCell(row.transform, rows[i].actionB,     1, col2, 0.18f, "Tecla B");
+                    AddRebindCell(row.transform, rows[i].actionMouse, 0, col3, 0.22f, "Raton");
                 }
             }
 
-            AddHint(panel.transform, "Q / E  Cambiar pestana  |  Esc Volver  (reasignacion proximamente)", panelH);
+            AddHint(panel.transform, "Click en una tecla para reasignar  |  Esc para cancelar  |  Q / E Cambiar pestana", panelH);
             return panel;
+        }
+
+        /// <summary>
+        /// Adds a clickable cell that, on click, triggers an interactive rebind for the given action slot.
+        /// When action is "-", renders a static "-" cell.
+        /// </summary>
+        private void AddRebindCell(Transform parent, string action, int slotIndex,
+            float anchorLeft, float width, string prefix)
+        {
+            // If there's no action for this column, render static dash.
+            if (string.IsNullOrEmpty(action) || action == "-")
+            {
+                AddTableCell(parent, $"{prefix}: -", TextAlignmentOptions.Left, anchorLeft, width);
+                return;
+            }
+
+            var gs = GameSettings.Instance;
+            string current = gs != null ? GameSettingsBindings.Get(gs, action, slotIndex) : "";
+            if (string.IsNullOrEmpty(current)) current = "-";
+
+            // Button-backed cell
+            var go = CreateUIObject("RebindCell_" + action + "_" + slotIndex, parent);
+            var r = go.GetComponent<RectTransform>();
+            r.anchorMin = new Vector2(anchorLeft, 0f);
+            r.anchorMax = new Vector2(anchorLeft + width, 1f);
+            r.pivot = new Vector2(0.5f, 0.5f);
+            r.offsetMin = new Vector2(4f, 6f); r.offsetMax = new Vector2(-4f, -6f);
+
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.12f, 0.12f, 0.18f, 1f);
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+
+            // Label as child GO (TMP+Image on same GO is the documented gotcha)
+            var textGo = CreateUIObject("Label", go.transform);
+            var tr = textGo.GetComponent<RectTransform>();
+            tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+            tr.sizeDelta = Vector2.zero;
+            var tmp = textGo.AddComponent<TextMeshProUGUI>();
+            tmp.text = $"{prefix}: {current}";
+            tmp.fontSize = 14f; tmp.color = TextNormal;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
+
+            string capturedAction = action; int capturedSlot = slotIndex; string capturedPrefix = prefix;
+            btn.onClick.AddListener(() => StartRebind(capturedAction, capturedSlot, capturedPrefix, tmp, img));
+        }
+
+        private KeyRebinder _rebinder;
+
+        private void StartRebind(string action, int slotIndex, string prefix,
+            TextMeshProUGUI label, Image cellBg)
+        {
+            if (_rebinder != null && _rebinder.IsActive) return;
+
+            var origColor = cellBg.color;
+            var origText = label.text;
+            cellBg.color = new Color(0.55f, 0.45f, 0.15f, 1f);
+            label.text = $"{prefix}: <i>Press any key...</i>";
+
+            _rebinder?.Dispose();
+            _rebinder = new KeyRebinder();
+            _rebinder.Completed += captured =>
+            {
+                var gs = GameSettings.Instance;
+                if (gs != null)
+                {
+                    GameSettingsBindings.Set(gs, action, slotIndex, captured);
+                    gs.Save();
+                }
+                label.text = $"{prefix}: {captured}";
+                cellBg.color = origColor;
+                _rebinder?.Dispose();
+                _rebinder = null;
+            };
+            _rebinder.Cancelled += () =>
+            {
+                label.text = origText;
+                cellBg.color = origColor;
+                _rebinder?.Dispose();
+                _rebinder = null;
+            };
+            _rebinder.Start();
         }
     }
 }

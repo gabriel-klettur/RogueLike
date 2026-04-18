@@ -392,29 +392,28 @@ namespace Valkur.UI.MainMenu
                 _optTabLabels[t] = tmp;
             }
 
-            var gs = GameSettings.Instance;
-            var tabData = new (string action, string keyA, string keyB, string mouse)[][]
+            var tabData = new (string label, string actionA, string actionB, string actionMouse)[][]
             {
                 new[] {
-                    ("Pausa",       gs.pauseKeyA,            "-", "-"),
-                    ("Inventario",  gs.toggleInventoryKeyA,  "-", "-"),
+                    ("Pausa",       "pause",            "-", "-"),
+                    ("Inventario",  "toggle_inventory", "-", "-"),
                 },
                 new[] {
-                    ("Arriba",      gs.moveUpKeyA,    gs.moveUpKeyB,    "-"),
-                    ("Abajo",       gs.moveDownKeyA,  gs.moveDownKeyB,  "-"),
-                    ("Izquierda",   gs.moveLeftKeyA,  gs.moveLeftKeyB,  "-"),
-                    ("Derecha",     gs.moveRightKeyA, gs.moveRightKeyB, "-"),
-                    ("Dash",        gs.dashKeyA,      gs.dashKeyB,      "-"),
+                    ("Arriba",      "move_up",    "move_up",    "-"),
+                    ("Abajo",       "move_down",  "move_down",  "-"),
+                    ("Izquierda",   "move_left",  "move_left",  "-"),
+                    ("Derecha",     "move_right", "move_right", "-"),
+                    ("Dash",        "dash",       "dash",       "-"),
                 },
                 new[] {
-                    ("Hechizo 1",   gs.spell1KeyA, "-", gs.primaryAttackMouse),
-                    ("Hechizo 2",   gs.spell2KeyA, "-", gs.secondaryAttackMouse),
-                    ("Hechizo 3",   gs.spell3KeyA, "-", "-"),
-                    ("Hechizo 4",   gs.spell4KeyA, "-", "-"),
+                    ("Hechizo 1",   "spell_1", "-", "attack_primary_mouse"),
+                    ("Hechizo 2",   "spell_2", "-", "attack_secondary_mouse"),
+                    ("Hechizo 3",   "spell_3", "-", "-"),
+                    ("Hechizo 4",   "spell_4", "-", "-"),
                 },
                 new[] {
-                    ("Editor Tiles", gs.toggleTileEditorKeyA, "-", "-"),
-                    ("Editor Mapa",  gs.toggleMapEditorKeyA,  "-", "-"),
+                    ("Editor Tiles", "toggle_tile_editor", "-", "-"),
+                    ("Editor Mapa",  "toggle_map_editor",  "-", "-"),
                 },
             };
 
@@ -435,14 +434,90 @@ namespace Valkur.UI.MainMenu
                     rowR.anchoredPosition = new Vector2(16f, cy);
                     rowR.sizeDelta = new Vector2(-32f, rowH);
 
-                    AddOptTableCell(row.transform, rows[ri].action,             TextAlignmentOptions.Left, 0f,    0.35f);
-                    AddOptTableCell(row.transform, "Tecla A: " + rows[ri].keyA, TextAlignmentOptions.Left, 0.38f, 0.18f);
-                    AddOptTableCell(row.transform, "Tecla B: " + rows[ri].keyB, TextAlignmentOptions.Left, 0.58f, 0.18f);
-                    AddOptTableCell(row.transform, "Raton: " + rows[ri].mouse,  TextAlignmentOptions.Left, 0.78f, 0.22f);
+                    AddOptTableCell(row.transform, rows[ri].label, TextAlignmentOptions.Left, 0f, 0.35f);
+                    AddOptRebindCell(row.transform, rows[ri].actionA,     0, 0.38f, 0.18f, "Tecla A");
+                    AddOptRebindCell(row.transform, rows[ri].actionB,     1, 0.58f, 0.18f, "Tecla B");
+                    AddOptRebindCell(row.transform, rows[ri].actionMouse, 0, 0.78f, 0.22f, "Raton");
                 }
             }
 
-            AddOptHint(_optInputsPanel.transform, "Q / E  Cambiar pestaña  |  Esc Volver  (reasignación próximamente)", panelH);
+            AddOptHint(_optInputsPanel.transform, "Click en una tecla para reasignar  |  Esc para cancelar  |  Q / E Cambiar pestaña", panelH);
+        }
+
+        private KeyRebinder _optRebinder;
+
+        private void AddOptRebindCell(Transform parent, string action, int slotIndex,
+            float anchorLeft, float width, string prefix)
+        {
+            if (string.IsNullOrEmpty(action) || action == "-")
+            {
+                AddOptTableCell(parent, $"{prefix}: -", TextAlignmentOptions.Left, anchorLeft, width);
+                return;
+            }
+
+            var gs = GameSettings.Instance;
+            string current = gs != null ? GameSettingsBindings.Get(gs, action, slotIndex) : "";
+            if (string.IsNullOrEmpty(current)) current = "-";
+
+            var go = CreateUIObject("OptRebindCell_" + action + "_" + slotIndex, parent);
+            var r = go.GetComponent<RectTransform>();
+            r.anchorMin = new Vector2(anchorLeft, 0f);
+            r.anchorMax = new Vector2(anchorLeft + width, 1f);
+            r.pivot = new Vector2(0.5f, 0.5f);
+            r.offsetMin = new Vector2(4f, 6f); r.offsetMax = new Vector2(-4f, -6f);
+
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.12f, 0.12f, 0.18f, 1f);
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+
+            var textGo = CreateUIObject("Label", go.transform);
+            var tr = textGo.GetComponent<RectTransform>();
+            tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+            tr.sizeDelta = Vector2.zero;
+            var tmp = textGo.AddComponent<TextMeshProUGUI>();
+            tmp.text = $"{prefix}: {current}";
+            tmp.fontSize = 14f; tmp.color = TextNormal;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
+
+            string capturedAction = action; int capturedSlot = slotIndex; string capturedPrefix = prefix;
+            btn.onClick.AddListener(() => StartOptRebind(capturedAction, capturedSlot, capturedPrefix, tmp, img));
+        }
+
+        private void StartOptRebind(string action, int slotIndex, string prefix,
+            TextMeshProUGUI label, Image cellBg)
+        {
+            if (_optRebinder != null && _optRebinder.IsActive) return;
+
+            var origColor = cellBg.color;
+            var origText = label.text;
+            cellBg.color = new Color(0.55f, 0.45f, 0.15f, 1f);
+            label.text = $"{prefix}: <i>Press any key...</i>";
+
+            _optRebinder?.Dispose();
+            _optRebinder = new KeyRebinder();
+            _optRebinder.Completed += captured =>
+            {
+                var gs = GameSettings.Instance;
+                if (gs != null)
+                {
+                    GameSettingsBindings.Set(gs, action, slotIndex, captured);
+                    gs.Save();
+                }
+                label.text = $"{prefix}: {captured}";
+                cellBg.color = origColor;
+                _optRebinder?.Dispose();
+                _optRebinder = null;
+            };
+            _optRebinder.Cancelled += () =>
+            {
+                label.text = origText;
+                cellBg.color = origColor;
+                _optRebinder?.Dispose();
+                _optRebinder = null;
+            };
+            _optRebinder.Start();
         }
 
         // ════════════════════════════════════════════════════════════════════
