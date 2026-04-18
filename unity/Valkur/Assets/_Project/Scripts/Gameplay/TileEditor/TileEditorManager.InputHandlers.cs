@@ -24,6 +24,7 @@ namespace Valkur.Gameplay.TileEditor
                 _ui.SetStatus("Tile Editor active. F8 to close.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
+                if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
                 UpdateBorderToolLabel();
                 Debug.Log("[TileEditor] Activated (F8)");
             }
@@ -34,6 +35,7 @@ namespace Valkur.Gameplay.TileEditor
                 HideBrushPreview();
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
+                if (_gridOverlayGo != null) _gridOverlayGo.SetActive(false);
                 Debug.Log("[TileEditor] Deactivated (F8)");
             }
         }

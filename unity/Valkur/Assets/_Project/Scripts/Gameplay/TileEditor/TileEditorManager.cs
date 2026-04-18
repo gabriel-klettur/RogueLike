@@ -35,6 +35,9 @@ namespace Valkur.Gameplay.TileEditor
         private GameObject _borderOverlayGo;
         private TileEditorGridCursor _gridCursor;
 
+        // Tile grid overlay (white cell borders)
+        private GameObject _gridOverlayGo;
+
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
 
@@ -107,6 +110,7 @@ namespace Valkur.Gameplay.TileEditor
             CreateBrushPreview();
             CreateScreenBorderOverlay();
             CreateGridCursor();
+            CreateGridOverlay();
         }
 
         private void Update()
@@ -146,6 +150,7 @@ namespace Valkur.Gameplay.TileEditor
         // ------------------------------------------------------------------
         private partial void CreateScreenBorderOverlay();
         private partial void CreateGridCursor();
+        private partial void CreateGridOverlay();
         private partial void CreateBrushPreview();
         private partial void UpdateBrushPreview();
         private partial void UpdateGridCursor();

@@ -25,6 +25,15 @@ namespace Valkur.Gameplay.TileEditor
             cursorGo.SetActive(false);
         }
 
+        private partial void CreateGridOverlay()
+        {
+            _gridOverlayGo = new GameObject("TileEditorGridOverlay");
+            _gridOverlayGo.transform.SetParent(transform);
+            var overlay = _gridOverlayGo.AddComponent<TileEditorGridOverlay>();
+            overlay.Initialize(_mainCamera);
+            _gridOverlayGo.SetActive(false);
+        }
+
         private partial void CreateBrushPreview()
         {
             _brushPreviewGo = new GameObject("BrushPreview");
