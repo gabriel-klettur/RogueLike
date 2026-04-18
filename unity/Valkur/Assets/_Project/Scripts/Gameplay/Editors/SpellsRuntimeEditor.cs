@@ -5,6 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -31,6 +32,10 @@ namespace Valkur.Gameplay.Spells
         private TextMeshProUGUI _propsTmp;
         private ScrollRect _propsScroll;
         private string _selectedKey;
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private EditorToolbar _toolbar;
 
         // IGameEditor
         public string EditorName => "Spells Editor";
@@ -51,11 +56,12 @@ namespace Valkur.Gameplay.Spells
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             _ctrlModifier?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -110,6 +116,10 @@ namespace Valkur.Gameplay.Spells
             EditorUIHelpers.AddVLG(left, 8, 4f);
             _titleTmp = EditorUIHelpers.MakeTitleBar(left.transform, "SPELLS EDITOR");
 
+            // Search filter
+            _searchBox = SearchBox.Create(left.transform, "Search spells…",
+                v => { _searchFilter = v ?? ""; RefreshPicker(); });
+
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "SpellGrid", 4, 72f, 4f);
             _pickerContent = content;
 
@@ -124,6 +134,16 @@ namespace Valkur.Gameplay.Spells
             _propsScroll = pScroll;
             _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select a spell to view properties.", 11f);
             _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            // Tutorial overlay (hotkey hints), docked right, hidden by default.
+            _tutorial = TutorialOverlay.Build(_root.transform, "SPELLS HOTKEYS", new[]
+            {
+                ("F4",     "Toggle Spells Editor"),
+                ("Click",  "Select a spell"),
+                ("Type",   "Filter by name"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Picker ──
@@ -137,9 +157,17 @@ namespace Valkur.Gameplay.Spells
                 Destroy(_pickerContent.GetChild(i).gameObject);
 
             var keys = _catalog.GetAllKeys();
+            int shown = 0;
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
             foreach (var key in keys)
             {
                 if (!_catalog.TryGet(key, out var spell)) continue;
+                if (filter.Length > 0)
+                {
+                    string name = (spell.displayName ?? key).ToLowerInvariant();
+                    if (!name.Contains(filter) && !key.ToLowerInvariant().Contains(filter))
+                        continue;
+                }
                 var capturedKey = key;
                 var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                     _pickerContent, spell.displayName ?? key, 72f,
@@ -154,6 +182,13 @@ namespace Valkur.Gameplay.Spells
 
                 if (key == _selectedKey)
                     btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
+                shown++;
+            }
+            if (_statusTmp != null)
+            {
+                _statusTmp.text = filter.Length == 0
+                    ? $"{shown} spells"
+                    : $"{shown} match '{_searchFilter}'";
             }
         }
 

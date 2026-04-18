@@ -5,6 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.VFX
 {
@@ -40,6 +41,12 @@ namespace Valkur.Gameplay.VFX
         private TextMeshProUGUI _propsTmp;
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
+
         // IGameEditor
         public string EditorName => "Particles Editor";
         public bool IsActive => _active;
@@ -59,11 +66,12 @@ namespace Valkur.Gameplay.VFX
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             _ctrlModifier?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -137,8 +145,18 @@ namespace Valkur.Gameplay.VFX
             var deleteBtn = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
             _deleteBtnImg = deleteBtn.GetComponent<Image>();
 
-            EditorUIHelpers.MakeButton(left.transform, "Save Instances", () => SaveInstances(), 30f, 12f);
+            var utilRow = EditorUIHelpers.CreateUI("UtilRow", left.transform);
+            utilRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var uhlg = utilRow.AddComponent<HorizontalLayoutGroup>();
+            uhlg.spacing = 4f; uhlg.childForceExpandWidth = true;
+            EditorUIHelpers.MakeButton(utilRow.transform, "Save", () => SaveInstances(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Redo", () => _undo.Redo(), 28f, 11f);
+
             EditorUIHelpers.BuildSeparator(left.transform);
+
+            _searchBox = SearchBox.Create(left.transform, "Search presets\u2026",
+                v => { _searchFilter = v ?? ""; RefreshPicker(); });
 
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "PresetGrid", 4, 64f, 4f);
             _pickerContent = content;
@@ -153,6 +171,18 @@ namespace Valkur.Gameplay.VFX
             var (pScroll, pContent) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
             _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select a preset to view properties.", 11f);
             _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            _tutorial = TutorialOverlay.Build(_root.transform, "PARTICLES HOTKEYS", new[]
+            {
+                ("Ctrl+F1","Toggle Particles Editor"),
+                ("LMB",    "Select / place / delete"),
+                ("RMB",    "Drag to move"),
+                ("Type",   "Filter by name"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Mode ──
@@ -179,10 +209,18 @@ namespace Valkur.Gameplay.VFX
 
             if (_catalog == null) return;
 
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
             foreach (var preset in _catalog.Presets)
             {
                 if (preset == null) continue;
                 var pid = preset.id;
+                if (filter.Length > 0)
+                {
+                    string n = (preset.displayName ?? pid ?? "").ToLowerInvariant();
+                    if (!n.Contains(filter) && !(pid ?? "").ToLowerInvariant().Contains(filter)) continue;
+                }
+                shown++;
                 var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                     _pickerContent, preset.displayName ?? pid, 64f,
                     () => SelectPreset(pid));
@@ -191,6 +229,8 @@ namespace Valkur.Gameplay.VFX
                 if (pid == _selectedPresetId)
                     btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
             }
+            if (_statusTmp != null)
+                _statusTmp.text = filter.Length == 0 ? $"{shown} presets" : $"{shown} match '{_searchFilter}'";
         }
 
         private void SelectPreset(string pid)

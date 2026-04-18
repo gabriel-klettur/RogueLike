@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.Enemies.FSM
 {
@@ -59,6 +60,12 @@ namespace Valkur.Gameplay.Enemies.FSM
         // Graph node visuals
         private readonly Dictionary<string, RectTransform> _nodeRects = new Dictionary<string, RectTransform>();
         private readonly List<GameObject> _edgeObjects = new List<GameObject>();
+
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
 
         // IGameEditor
         public string EditorName => "FSM Editor";
@@ -115,10 +122,11 @@ namespace Valkur.Gameplay.Enemies.FSM
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -175,6 +183,20 @@ namespace Valkur.Gameplay.Enemies.FSM
             BuildSetsPanel();
             BuildGraphPanel();
             BuildPropsPanel();
+
+            _tutorial = TutorialOverlay.Build(_root.transform, "FSM HOTKEYS", new[]
+            {
+                ("F12",    "Toggle FSM Editor"),
+                ("Click",  "Select set / state / transition"),
+                ("Drag",   "Move state node"),
+                ("MMB",    "Pan graph"),
+                ("Wheel",  "Zoom graph"),
+                ("Type",   "Filter sets"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         private void BuildSetsPanel()
@@ -182,6 +204,16 @@ namespace Valkur.Gameplay.Enemies.FSM
             var left = EditorUIHelpers.MakeSidebar("SetsPanel", _root.transform, 220f);
             EditorUIHelpers.AddVLG(left, 6, 4f);
             EditorUIHelpers.MakeTitleBar(left.transform, "FSM SETS");
+
+            var toolRow = EditorUIHelpers.CreateUI("ToolRow", left.transform);
+            toolRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var thlg = toolRow.AddComponent<HorizontalLayoutGroup>();
+            thlg.spacing = 4f; thlg.childForceExpandWidth = true;
+            EditorUIHelpers.MakeButton(toolRow.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            EditorUIHelpers.MakeButton(toolRow.transform, "Redo", () => _undo.Redo(), 28f, 11f);
+
+            _searchBox = SearchBox.Create(left.transform, "Search sets\u2026",
+                v => { _searchFilter = v ?? ""; RefreshSetsList(); });
 
             var (scroll, content) = EditorUIHelpers.MakeScrollView(left.transform, "SetsScroll");
             _setsContent = content;
@@ -320,18 +352,27 @@ namespace Valkur.Gameplay.Enemies.FSM
             for (int i = _setsContent.childCount - 1; i >= 0; i--)
                 Destroy(_setsContent.GetChild(i).gameObject);
 
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
             foreach (var set in _fsmSets)
             {
                 var s = set;
+                if (filter.Length > 0)
+                {
+                    string n = ((set.label ?? set.id) ?? "").ToLowerInvariant();
+                    if (!n.Contains(filter) && !(set.id ?? "").ToLowerInvariant().Contains(filter)) continue;
+                }
+                shown++;
                 var btn = EditorUIHelpers.MakeButton(_setsContent, set.label ?? set.id,
                     () => SelectSet(s), 26f, 11f);
                 if (s == _selectedSet)
                     btn.GetComponent<Image>().color = EditorUIHelpers.BTN_ACTIVE;
             }
 
-            if (_fsmSets.Count == 0)
+            if (shown == 0)
             {
-                EditorUIHelpers.AddLabel(_setsContent, "No FSM sets loaded.", 11f);
+                EditorUIHelpers.AddLabel(_setsContent,
+                    _fsmSets.Count == 0 ? "No FSM sets loaded." : $"No sets match '{_searchFilter}'.", 11f);
             }
         }
 

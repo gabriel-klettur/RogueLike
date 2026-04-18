@@ -6,6 +6,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.World
 {
@@ -60,6 +61,13 @@ namespace Valkur.Gameplay.World
         private TextMeshProUGUI _dayTimeTmp;
         private Image _selectBtnImg, _spawnBtnImg, _deleteBtnImg;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private RectTransform _presetButtonsParent;
+        private readonly UndoStack _undo = new UndoStack(64);
+
         // IGameEditor
         public string EditorName => "Lighting Editor";
         public bool IsActive => _active;
@@ -79,11 +87,12 @@ namespace Valkur.Gameplay.World
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             _ctrlModifier?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -141,6 +150,17 @@ namespace Valkur.Gameplay.World
             BuildMainPanel();
             BuildDayTimePanel();
             BuildPresetsPanel();
+
+            _tutorial = TutorialOverlay.Build(_root.transform, "LIGHTING HOTKEYS", new[]
+            {
+                ("Ctrl+F3","Toggle Lighting Editor"),
+                ("LMB",    "Select / place / delete"),
+                ("Type",   "Filter presets"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Panel 1: Main Lighting Settings (left) ──
@@ -188,7 +208,13 @@ namespace Valkur.Gameplay.World
             var del = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
             _deleteBtnImg = del.GetComponent<Image>();
 
-            EditorUIHelpers.MakeButton(panel.transform, "Save Lights", () => SaveInstances(), 30f, 12f);
+            var utilRow = EditorUIHelpers.CreateUI("UtilRow", panel.transform);
+            utilRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var uhlg = utilRow.AddComponent<HorizontalLayoutGroup>();
+            uhlg.spacing = 4f; uhlg.childForceExpandWidth = true;
+            EditorUIHelpers.MakeButton(utilRow.transform, "Save", () => SaveInstances(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Redo", () => _undo.Redo(), 28f, 11f);
 
             _statusTmp = EditorUIHelpers.MakeStatusText(panel.transform);
         }
@@ -282,18 +308,14 @@ namespace Valkur.Gameplay.World
             EditorUIHelpers.AddVLG(right, 6, 4f);
             EditorUIHelpers.BuildSectionHeader(right.transform, "LIGHT PRESETS");
 
-            // Quick preset buttons
-            if (_catalog != null)
-            {
-                foreach (var preset in _catalog.presets)
-                {
-                    if (preset == null) continue;
-                    var key = preset.presetKey;
-                    var btn = EditorUIHelpers.MakeButton(right.transform, key, () => SelectPreset(key), 28f, 11f);
-                    if (key == _selectedPresetKey)
-                        btn.GetComponent<Image>().color = EditorUIHelpers.BTN_ACTIVE;
-                }
-            }
+            _searchBox = SearchBox.Create(right.transform, "Search presets\u2026",
+                v => { _searchFilter = v ?? ""; RefreshPresetButtons(); });
+
+            var listGo = EditorUIHelpers.CreateUI("PresetButtons", right.transform);
+            var lvlg = listGo.AddComponent<VerticalLayoutGroup>();
+            lvlg.spacing = 2f; lvlg.childForceExpandWidth = true; lvlg.childForceExpandHeight = false;
+            _presetButtonsParent = listGo.GetComponent<RectTransform>();
+            RefreshPresetButtons();
 
             EditorUIHelpers.BuildSeparator(right.transform);
             EditorUIHelpers.BuildSectionHeader(right.transform, "PRESET PROPERTIES");
@@ -311,10 +333,29 @@ namespace Valkur.Gameplay.World
 
         // ── Preset Selection ──
 
+        private void RefreshPresetButtons()
+        {
+            if (_presetButtonsParent == null) return;
+            for (int i = _presetButtonsParent.childCount - 1; i >= 0; i--)
+                Destroy(_presetButtonsParent.GetChild(i).gameObject);
+            if (_catalog == null) return;
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            foreach (var preset in _catalog.presets)
+            {
+                if (preset == null) continue;
+                var key = preset.presetKey;
+                if (filter.Length > 0 && !(key ?? "").ToLowerInvariant().Contains(filter)) continue;
+                var btn = EditorUIHelpers.MakeButton(_presetButtonsParent, key, () => SelectPreset(key), 28f, 11f);
+                if (key == _selectedPresetKey)
+                    btn.GetComponent<Image>().color = EditorUIHelpers.BTN_ACTIVE;
+            }
+        }
+
         private void SelectPreset(string key)
         {
             _selectedPresetKey = key;
             ShowPresetProperties(key);
+            RefreshPresetButtons();
             _statusTmp.text = $"Preset: {key}";
         }
 

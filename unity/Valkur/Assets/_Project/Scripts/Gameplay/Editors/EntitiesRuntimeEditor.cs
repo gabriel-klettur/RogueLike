@@ -5,6 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.Entities
 {
@@ -40,6 +41,12 @@ namespace Valkur.Gameplay.Entities
         private enum EntityCategory { Hostiles, Players }
         private EntityCategory _category = EntityCategory.Hostiles;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
+
         // IGameEditor
         public string EditorName => "Entities Editor";
         public bool IsActive => _active;
@@ -57,10 +64,11 @@ namespace Valkur.Gameplay.Entities
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -146,8 +154,14 @@ namespace Valkur.Gameplay.Entities
             _spawnBtnImg = spawnBtn.GetComponent<Image>();
             var deleteBtn = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
             _deleteBtnImg = deleteBtn.GetComponent<Image>();
+            EditorUIHelpers.MakeButton(toolbar.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            EditorUIHelpers.MakeButton(toolbar.transform, "Redo", () => _undo.Redo(), 28f, 11f);
 
             EditorUIHelpers.BuildSeparator(left.transform);
+
+            // Search filter
+            _searchBox = SearchBox.Create(left.transform, "Search entities\u2026",
+                v => { _searchFilter = v ?? ""; RefreshPicker(); });
 
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "EntityGrid", 4, 72f, 4f);
             _pickerContent = content;
@@ -162,6 +176,18 @@ namespace Valkur.Gameplay.Entities
             var (pScroll, pContent) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
             _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select an entity to view properties.", 11f);
             _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            // Tutorial overlay
+            _tutorial = TutorialOverlay.Build(_root.transform, "ENTITIES HOTKEYS", new[]
+            {
+                ("F5",     "Toggle Entities Editor"),
+                ("Click",  "Select / spawn / delete"),
+                ("Type",   "Filter by name"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Mode ──
@@ -193,11 +219,20 @@ namespace Valkur.Gameplay.Entities
             for (int i = _pickerContent.childCount - 1; i >= 0; i--)
                 Destroy(_pickerContent.GetChild(i).gameObject);
 
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
+
             if (_category == EntityCategory.Hostiles && _monsterCatalog != null)
             {
                 foreach (var def in _monsterCatalog.Definitions)
                 {
                     var key = def.monsterKey;
+                    if (filter.Length > 0)
+                    {
+                        string n = (def.displayName ?? key ?? "").ToLowerInvariant();
+                        if (!n.Contains(filter) && !(key ?? "").ToLowerInvariant().Contains(filter)) continue;
+                    }
+                    shown++;
                     var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                         _pickerContent, def.displayName ?? key, 72f,
                         () => SelectEntity(key));
@@ -218,6 +253,12 @@ namespace Valkur.Gameplay.Entities
                 foreach (var preset in PlayerClassCatalog.AllPresets)
                 {
                     var key = preset.PlayerKey;
+                    if (filter.Length > 0)
+                    {
+                        string n = (preset.DisplayName ?? key ?? "").ToLowerInvariant();
+                        if (!n.Contains(filter) && !(key ?? "").ToLowerInvariant().Contains(filter)) continue;
+                    }
+                    shown++;
                     var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                         _pickerContent, preset.DisplayName ?? key, 72f,
                         () => SelectPlayerClass(key));
@@ -226,6 +267,8 @@ namespace Valkur.Gameplay.Entities
                         btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
                 }
             }
+            if (_statusTmp != null)
+                _statusTmp.text = filter.Length == 0 ? $"{shown} entities" : $"{shown} match '{_searchFilter}'";
         }
 
         private void SelectEntity(string key)

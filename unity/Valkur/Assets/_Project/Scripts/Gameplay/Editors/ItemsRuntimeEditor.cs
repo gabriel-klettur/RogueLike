@@ -5,6 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.Items
 {
@@ -37,6 +38,12 @@ namespace Valkur.Gameplay.Items
         // Items loaded from Resources
         private ItemDefinition[] _allItems;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
+
         // IGameEditor
         public string EditorName => "Items Editor";
         public bool IsActive => _active;
@@ -57,10 +64,11 @@ namespace Valkur.Gameplay.Items
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -132,7 +140,14 @@ namespace Valkur.Gameplay.Items
             var deleteBtn = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
             _deleteBtnImg = deleteBtn.GetComponent<Image>();
 
+            var undoBtn = EditorUIHelpers.MakeButton(toolbar.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            var redoBtn = EditorUIHelpers.MakeButton(toolbar.transform, "Redo", () => _undo.Redo(), 28f, 11f);
+
             EditorUIHelpers.BuildSeparator(left.transform);
+
+            // Search filter
+            _searchBox = SearchBox.Create(left.transform, "Search items\u2026",
+                v => { _searchFilter = v ?? ""; RefreshPicker(); });
 
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "ItemGrid", 4, 64f, 4f);
             _pickerContent = content;
@@ -147,6 +162,18 @@ namespace Valkur.Gameplay.Items
             var (pScroll, pContent) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
             _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select an item to view properties.", 11f);
             _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            // Tutorial overlay (hotkey hints), hidden by default.
+            _tutorial = TutorialOverlay.Build(_root.transform, "ITEMS HOTKEYS", new[]
+            {
+                ("F7",     "Toggle Items Editor"),
+                ("Click",  "Select / spawn / delete"),
+                ("Type",   "Filter by name"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Mode ──
@@ -180,9 +207,18 @@ namespace Valkur.Gameplay.Items
 
             if (_allItems == null) return;
 
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
             foreach (var item in _allItems)
             {
                 if (item == null) continue;
+                if (filter.Length > 0)
+                {
+                    string name = (item.displayName ?? item.itemId ?? "").ToLowerInvariant();
+                    string id = (item.itemId ?? "").ToLowerInvariant();
+                    if (!name.Contains(filter) && !id.Contains(filter)) continue;
+                }
+                shown++;
                 var captured = item;
                 var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                     _pickerContent, item.displayName ?? item.itemId, 64f,
@@ -198,6 +234,8 @@ namespace Valkur.Gameplay.Items
                 if (item.itemId == _selectedItemId)
                     btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
             }
+            if (_statusTmp != null)
+                _statusTmp.text = filter.Length == 0 ? $"{shown} items" : $"{shown} match '{_searchFilter}'";
         }
 
         private void SelectItem(ItemDefinition def)

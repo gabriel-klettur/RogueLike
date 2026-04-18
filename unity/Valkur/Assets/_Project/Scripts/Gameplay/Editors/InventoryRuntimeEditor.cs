@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay.Editors
@@ -34,6 +35,11 @@ namespace Valkur.Gameplay.Editors
         private Category _category = Category.Player;
         private Inventory.Inventory _selectedInventory;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+
         // IGameEditor
         public string EditorName => "Inventory Editor";
         public bool IsActive => _active;
@@ -51,10 +57,11 @@ namespace Valkur.Gameplay.Editors
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -134,6 +141,10 @@ namespace Valkur.Gameplay.Editors
 
             EditorUIHelpers.BuildSeparator(left.transform);
 
+            // Search filter
+            _searchBox = SearchBox.Create(left.transform, "Search entities\u2026",
+                v => { _searchFilter = v ?? ""; RefreshEntityList(); });
+
             var (entScroll, entContent) = EditorUIHelpers.MakeScrollView(left.transform, "EntityList");
             _entityListContent = entContent;
 
@@ -154,6 +165,17 @@ namespace Valkur.Gameplay.Editors
             var (dScroll, dContent) = EditorUIHelpers.MakeScrollView(right.transform, "DetailsScroll");
             _detailsTmp = EditorUIHelpers.AddLabel(dContent, "Select an inventory to inspect.", 11f);
             _detailsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            // Tutorial overlay
+            _tutorial = TutorialOverlay.Build(_root.transform, "INVENTORY HOTKEYS", new[]
+            {
+                ("F6",    "Toggle Inventory Editor"),
+                ("Tabs",  "Switch Player/Monsters/Map"),
+                ("Click", "Select entity / slot"),
+                ("Type",  "Filter entities"),
+                ("Esc",   "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Entity List ──
@@ -164,6 +186,7 @@ namespace Valkur.Gameplay.Editors
                 Destroy(_entityListContent.GetChild(i).gameObject);
 
             _categoryLabel.text = _category.ToString();
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
 
             if (_category == Category.Player)
             {
@@ -171,7 +194,7 @@ namespace Valkur.Gameplay.Editors
                 if (player != null)
                 {
                     var inv = player.GetComponent<Inventory.Inventory>();
-                    if (inv != null)
+                    if (inv != null && (filter.Length == 0 || "player".Contains(filter)))
                     {
                         EditorUIHelpers.MakeButton(_entityListContent, "Player", () => SelectInventory(inv), 28f, 11f);
                     }
@@ -185,6 +208,7 @@ namespace Valkur.Gameplay.Editors
                     var inv = monster.GetComponent<Inventory.Inventory>();
                     if (inv == null) continue;
                     var name = monster.name;
+                    if (filter.Length > 0 && !name.ToLowerInvariant().Contains(filter)) continue;
                     var capturedInv = inv;
                     EditorUIHelpers.MakeButton(_entityListContent, name, () => SelectInventory(capturedInv), 26f, 10f);
                 }

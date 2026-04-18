@@ -5,6 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Editors.EditorKit;
 
 namespace Valkur.Gameplay.Buildings
 {
@@ -40,6 +41,12 @@ namespace Valkur.Gameplay.Buildings
         private bool _dragging;
         private Vector3 _dragOffset;
 
+        // EditorKit extras
+        private string _searchFilter = "";
+        private TMP_InputField _searchBox;
+        private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
+
         // IGameEditor
         public string EditorName => "Buildings Editor";
         public bool IsActive => _active;
@@ -57,10 +64,11 @@ namespace Valkur.Gameplay.Buildings
             _toggleAction.Enable();
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         private void Update()
@@ -144,10 +152,20 @@ namespace Valkur.Gameplay.Buildings
             var deleteBtn = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
             _deleteBtnImg = deleteBtn.GetComponent<Image>();
 
-            // Save button
-            EditorUIHelpers.MakeButton(left.transform, "Save to JSON", () => SaveInstances(), 30f, 12f);
+            // Save / Undo / Redo
+            var utilRow = EditorUIHelpers.CreateUI("UtilRow", left.transform);
+            utilRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var uhlg = utilRow.AddComponent<HorizontalLayoutGroup>();
+            uhlg.spacing = 4f; uhlg.childForceExpandWidth = true;
+            EditorUIHelpers.MakeButton(utilRow.transform, "Save", () => SaveInstances(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Undo", () => _undo.Undo(), 28f, 11f);
+            EditorUIHelpers.MakeButton(utilRow.transform, "Redo", () => _undo.Redo(), 28f, 11f);
 
             EditorUIHelpers.BuildSeparator(left.transform);
+
+            // Search filter
+            _searchBox = SearchBox.Create(left.transform, "Search buildings\u2026",
+                v => { _searchFilter = v ?? ""; RefreshPicker(); });
 
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "BuildingGrid", 3, 80f, 4f);
             _pickerContent = content;
@@ -162,6 +180,18 @@ namespace Valkur.Gameplay.Buildings
             var (pScroll, pContent) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
             _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select a building to view properties.", 11f);
             _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
+
+            _tutorial = TutorialOverlay.Build(_root.transform, "BUILDINGS HOTKEYS", new[]
+            {
+                ("F10",    "Toggle Buildings Editor"),
+                ("LMB",    "Select / place / delete"),
+                ("RMB",    "Drag to move / resize"),
+                ("Type",   "Filter by id"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
+            });
+            _tutorial.SetActive(false);
         }
 
         // ── Mode ──
@@ -199,9 +229,18 @@ namespace Valkur.Gameplay.Buildings
 
             if (_catalog == null) return;
 
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            int shown = 0;
             foreach (var tmpl in _catalog.Templates)
             {
                 var id = tmpl.templateId;
+                if (filter.Length > 0)
+                {
+                    string idStr = id.ToString();
+                    string ap = (tmpl.assetPath ?? "").ToLowerInvariant();
+                    if (!idStr.Contains(filter) && !ap.Contains(filter)) continue;
+                }
+                shown++;
                 var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
                     _pickerContent, $"B{id}", 80f,
                     () => SelectTemplate(id));
@@ -216,6 +255,8 @@ namespace Valkur.Gameplay.Buildings
                 if (id == _selectedTemplateId)
                     btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
             }
+            if (_statusTmp != null)
+                _statusTmp.text = filter.Length == 0 ? $"{shown} templates" : $"{shown} match '{_searchFilter}'";
         }
 
         private void SelectTemplate(int id)
@@ -303,8 +344,16 @@ namespace Valkur.Gameplay.Buildings
             var hit = Physics2D.OverlapPoint(pos, LayerMask.GetMask("Building"));
             if (hit != null)
             {
-                _statusTmp.text = $"Deleted: {hit.gameObject.name}";
-                Destroy(hit.gameObject);
+                var go = hit.gameObject;
+                // Capture transform so undo can recreate a placeholder marker.
+                Vector3 savedPos = go.transform.position;
+                Quaternion savedRot = go.transform.rotation;
+                Vector3 savedScale = go.transform.localScale;
+                string savedName = go.name;
+                _undo.Do($"Delete {savedName}",
+                    () => { if (go) go.SetActive(false); },
+                    () => { if (go) { go.transform.SetPositionAndRotation(savedPos, savedRot); go.transform.localScale = savedScale; go.name = savedName; go.SetActive(true); } });
+                _statusTmp.text = $"Deleted: {savedName}";
             }
         }
 
