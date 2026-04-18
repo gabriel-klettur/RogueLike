@@ -1,24 +1,26 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Valkur.Gameplay.TileEditor
 {
     /// <summary>
     /// World-space tile grid overlay for the Tile Editor.
-    /// Draws white cell borders matching the 1×1 world-unit tile grid (PPU = 16, cellSize = 1)
+    /// Draws white cell borders matching the 1×1 world-unit tile grid (PPU=16, cellSize=1)
     /// so painters can see exactly which tiles they are affecting.
     ///
-    /// Rendering uses GL immediate mode inside OnRenderObject, which is called by Unity's
-    /// rendering loop regardless of pipeline (works in URP 2022). The grid is confined to the
-    /// camera's visible frustum and recomputed every frame so it remains correct when the
-    /// player pans or zooms.
+    /// Uses RenderPipelineManager.endCameraRendering for URP 2022 compatibility.
+    /// OnRenderObject + GL is unreliable in URP because Unity's SRP replaces the
+    /// built-in rendering loop and Camera.current may be null during that callback.
+    /// endCameraRendering fires after each camera finishes rendering and always
+    /// provides the correct Camera reference.
     ///
     /// Activation is managed by TileEditorManager: the GameObject is enabled/disabled
     /// together with the rest of the editor visuals.
     /// </summary>
     public class TileEditorGridOverlay : MonoBehaviour
     {
-        // White at 20% alpha — readable without obscuring tile art.
-        private static readonly Color GridColor = new Color(1f, 1f, 1f, 0.20f);
+        // White at 55% alpha — highly visible without fully obscuring tile art.
+        private static readonly Color GridColor = new Color(1f, 1f, 1f, 0.55f);
 
         // Extra cells drawn beyond the visible edge to avoid pop-in when panning.
         private const int Margin = 2;
@@ -44,30 +46,47 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             _mat = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
-            _mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            _mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            _mat.SetInt("_Cull",     (int)UnityEngine.Rendering.CullMode.Off);
+            _mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+            _mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+            _mat.SetInt("_Cull",     (int)CullMode.Off);
             _mat.SetInt("_ZWrite",   0);
             // Always pass depth test so the grid overlays tile art cleanly.
-            _mat.SetInt("_ZTest",    (int)UnityEngine.Rendering.CompareFunction.Always);
+            _mat.SetInt("_ZTest",    (int)CompareFunction.Always);
+        }
+
+        // ── Lifecycle ────────────────────────────────────────────────────────
+
+        private void OnEnable()
+        {
+            // URP-safe hook: fires after each camera finishes rendering, with the
+            // correct Camera reference passed in. Safe to call GL inside this callback.
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+        }
+
+        private void OnDisable()
+        {
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+        }
+
+        private void OnDestroy()
+        {
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+            if (_mat != null) Destroy(_mat);
         }
 
         // ── Rendering ────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Called by Unity after the scene is rendered for each camera.
-        /// We guard against non-target cameras (e.g. scene view, secondary cams).
-        /// Vertex coordinates are in world space: GL.LoadProjectionMatrix +
-        /// GL.modelview = worldToCameraMatrix together replicate the standard MVP.
-        /// </summary>
-        private void OnRenderObject()
+        private void OnEndCameraRendering(ScriptableRenderContext context, Camera cam)
         {
             if (_mat == null || _targetCamera == null) return;
+            if (cam != _targetCamera) return;
 
-            var cam = Camera.current;
-            if (cam == null || cam != _targetCamera) return;
+            DrawGrid(cam);
+        }
 
-            // Camera world-space bounds (orthographic).
+        private void DrawGrid(Camera cam)
+        {
+            // Camera world-space orthographic bounds.
             float halfH  = cam.orthographicSize;
             float halfW  = halfH * cam.aspect;
             Vector3 pos  = cam.transform.position;
@@ -77,7 +96,7 @@ namespace Valkur.Gameplay.TileEditor
             float bottom = pos.y - halfH;
             float top    = pos.y + halfH;
 
-            // Integer tile coords, extended by Margin to hide seams at edges.
+            // Integer tile boundaries, extended by Margin to avoid visible seams on pan.
             int xMin = Mathf.FloorToInt(left)   - Margin;
             int xMax = Mathf.CeilToInt(right)   + Margin;
             int yMin = Mathf.FloorToInt(bottom) - Margin;
@@ -108,11 +127,6 @@ namespace Valkur.Gameplay.TileEditor
 
             GL.End();
             GL.PopMatrix();
-        }
-
-        private void OnDestroy()
-        {
-            if (_mat != null) Destroy(_mat);
         }
     }
 }
