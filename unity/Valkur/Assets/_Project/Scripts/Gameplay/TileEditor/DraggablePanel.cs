@@ -61,6 +61,10 @@ namespace Valkur.Gameplay.TileEditor
         // ── External callback — set by TileEditorUI.Builder ────────────────
         public System.Action OnClose;
 
+        // ── Resize-tracking enums ───────────────────────────────────────────
+        private enum EdgeSnapX { None, Left, Right }
+        private enum EdgeSnapY { None, Top, Bottom }
+
         // ── Private state ───────────────────────────────────────────────────
         private RectTransform _rt;
         private RectTransform _canvasRt;
@@ -75,6 +79,16 @@ namespace Valkur.Gameplay.TileEditor
 
         private Vector2 _snapTarget;
         private bool    _snapping;
+
+        // ── Edge-snap affinity (used to respond to canvas resize) ───────────
+        // Tracks which canvas edges this panel is currently anchored to and the
+        // pixel offset from that edge.  Set on first normalization (from initial
+        // dock) and updated whenever the user drags/snaps the panel.
+        private EdgeSnapX _edgeSnapX    = EdgeSnapX.None;
+        private EdgeSnapY _edgeSnapY    = EdgeSnapY.None;
+        private float     _edgeOffsetX;   // px offset from the snapped x-edge
+        private float     _edgeOffsetY;   // px offset from the snapped y-edge
+        private Vector2   _lastCanvasSize; // for resize detection (valid once normalized)
 
         // ── Static panel registry (class-level, all active panels) ──────────
         private static readonly List<DraggablePanel> _allPanels = new List<DraggablePanel>();
@@ -139,19 +153,36 @@ namespace Valkur.Gameplay.TileEditor
             if (!_isDragging) return;
             _isDragging = false;
             TrySnap();
+            // Update edge affinity so resize can maintain this panel's position
+            // relative to whatever canvas edge it just settled near.
+            UpdateEdgeAffinityFromDrag(_snapping ? _snapTarget : _rt.anchoredPosition);
         }
 
-        // ── Snap animation update ───────────────────────────────────────────
+        // ── Snap animation + canvas-resize response ─────────────────────────
         private void Update()
         {
-            if (!_snapping) return;
-            _rt.anchoredPosition = Vector2.Lerp(
-                _rt.anchoredPosition, _snapTarget,
-                Time.unscaledDeltaTime * SnapAnimSpeed);
-            if (Vector2.Distance(_rt.anchoredPosition, _snapTarget) < 0.5f)
+            if (_snapping)
             {
-                _rt.anchoredPosition = _snapTarget;
-                _snapping = false;
+                _rt.anchoredPosition = Vector2.Lerp(
+                    _rt.anchoredPosition, _snapTarget,
+                    Time.unscaledDeltaTime * SnapAnimSpeed);
+                if (Vector2.Distance(_rt.anchoredPosition, _snapTarget) < 0.5f)
+                {
+                    _rt.anchoredPosition = _snapTarget;
+                    _snapping = false;
+                }
+            }
+
+            // Detect canvas resize and re-position normalized panels accordingly.
+            // Un-normalized panels still use corner anchors, so Unity handles them.
+            if (_anchorNormalized && _canvasRt != null && _lastCanvasSize.sqrMagnitude > 0f)
+            {
+                var cur = new Vector2(_canvasRt.rect.width, _canvasRt.rect.height);
+                if (cur != _lastCanvasSize)
+                {
+                    OnCanvasSizeChanged(cur);
+                    _lastCanvasSize = cur;
+                }
             }
         }
 
@@ -200,6 +231,14 @@ namespace Valkur.Gameplay.TileEditor
         private void NormalizeAnchor()
         {
             if (_anchorNormalized || _canvasRt == null) return;
+
+            // Capture initial dock from corner anchor BEFORE modifying anything.
+            // TopRight/BottomRight panels have anchorMin.x == 1; Bottom panels have anchorMin.y == 0.
+            bool  wasRightAnchored  = _rt.anchorMin.x > 0.5f;
+            bool  wasBottomAnchored = _rt.anchorMin.y < 0.5f;
+            float cornerOffX = Mathf.Abs(_rt.anchoredPosition.x);
+            float cornerOffY = Mathf.Abs(_rt.anchoredPosition.y);
+
             _anchorNormalized = true;
 
             // Capture the world-space top-left corner before touching anchors.
@@ -220,6 +259,81 @@ namespace Valkur.Gameplay.TileEditor
             float cH = _canvasRt.rect.height;
             // localPos is canvas-center-relative; shift to top-left-relative.
             _rt.anchoredPosition = localPos - new Vector2(-cW * 0.5f, cH * 0.5f);
+
+            // Record the initial dock affinity so resize can maintain edge offsets.
+            _edgeSnapX   = wasRightAnchored  ? EdgeSnapX.Right  : EdgeSnapX.Left;
+            _edgeSnapY   = wasBottomAnchored ? EdgeSnapY.Bottom : EdgeSnapY.Top;
+            _edgeOffsetX = cornerOffX;
+            _edgeOffsetY = cornerOffY;
+
+            // Start canvas-size monitoring.
+            _lastCanvasSize = new Vector2(cW, cH);
+        }
+
+        // ── Canvas-resize response ──────────────────────────────────────────
+
+        /// <summary>
+        /// Called when the canvas rect changes size.  Panels that are edge-snapped
+        /// maintain their pixel offset from that edge; all others are clamped to the
+        /// new bounds so they never float off-screen.
+        /// </summary>
+        private void OnCanvasSizeChanged(Vector2 newSize)
+        {
+            if (_snapping) _snapping = false;  // abort in-progress snap
+
+            float pW = _rt.rect.width;
+            float pH = _rt.rect.height;
+            var   p  = _rt.anchoredPosition;
+
+            switch (_edgeSnapX)
+            {
+                case EdgeSnapX.Left:  p.x = _edgeOffsetX;                        break;
+                case EdgeSnapX.Right: p.x = newSize.x - pW - _edgeOffsetX;       break;
+                // None: keep current x, ClampToBounds will correct if out of range
+            }
+            switch (_edgeSnapY)
+            {
+                case EdgeSnapY.Top:    p.y = -_edgeOffsetY;                       break;
+                case EdgeSnapY.Bottom: p.y = -(newSize.y - pH - _edgeOffsetY);    break;
+                // None: keep current y
+            }
+
+            _rt.anchoredPosition = p;
+            ClampToBounds();
+        }
+
+        /// <summary>
+        /// Updates edge-snap affinity after a drag (or snap-animation settle).
+        /// If <paramref name="targetPos"/> is within <see cref="SnapTolerance"/> of a canvas
+        /// edge, that edge is recorded; otherwise the axis is cleared to None so the panel
+        /// is only clamped (not repositioned) on resize.
+        /// </summary>
+        private void UpdateEdgeAffinityFromDrag(Vector2 targetPos)
+        {
+            if (_canvasRt == null) return;
+            float cW = _canvasRt.rect.width;
+            float cH = _canvasRt.rect.height;
+            float pW = _rt.rect.width;
+            float pH = _rt.rect.height;
+
+            float leftEdge   = LeftReservedPx;
+            float rightEdge  = cW - pW - RightReservedPx;
+            float topEdge    = -TopReservedPx;
+            float bottomEdge = -(cH - pH - BottomReservedPx);
+
+            if (Mathf.Abs(targetPos.x - leftEdge) < SnapTolerance)
+            { _edgeSnapX = EdgeSnapX.Left;   _edgeOffsetX = LeftReservedPx;   }
+            else if (Mathf.Abs(targetPos.x - rightEdge) < SnapTolerance)
+            { _edgeSnapX = EdgeSnapX.Right;  _edgeOffsetX = RightReservedPx;  }
+            else
+            { _edgeSnapX = EdgeSnapX.None; }
+
+            if (Mathf.Abs(targetPos.y - topEdge) < SnapTolerance)
+            { _edgeSnapY = EdgeSnapY.Top;    _edgeOffsetY = TopReservedPx;    }
+            else if (Mathf.Abs(targetPos.y - bottomEdge) < SnapTolerance)
+            { _edgeSnapY = EdgeSnapY.Bottom; _edgeOffsetY = BottomReservedPx; }
+            else
+            { _edgeSnapY = EdgeSnapY.None; }
         }
 
         // ── Bounds clamping ─────────────────────────────────────────────────
