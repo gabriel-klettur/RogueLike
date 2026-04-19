@@ -114,6 +114,10 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel   UxPanelDrag;
             public Image            UxMenuBtnImg;
             public TextMeshProUGUI  UxMenuBtnTmp;
+
+            // Panels visibility toggle button (menu bar, left of UX)
+            public Image            PanelsToggleBtnImg;
+            public TextMeshProUGUI  PanelsToggleBtnTmp;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,
@@ -127,7 +131,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowColliders = null,
             System.Action onDrawColliders = null,
             System.Action onEraseColliders = null,
-            System.Action onPerfToggle = null)
+            System.Action onPerfToggle = null,
+            System.Action onAllPanelsToggle = null)
         {
             var refs = new UIRefs
             {
@@ -140,7 +145,7 @@ namespace Valkur.Gameplay.TileEditor
                 BrushSizePresetLabels = new List<TextMeshProUGUI>()
             };
 
-            BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle, onPerfToggle);
+            BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle, onPerfToggle, onAllPanelsToggle);
             BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo, onSave);
             BuildTilesDropdown(canvasT, ref refs);
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);

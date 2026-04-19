@@ -38,11 +38,9 @@ namespace Valkur.Gameplay.TileEditor
         {
             refs.ToolsDropdown = MakeDropdownPanel("ToolsDropdown", canvasT,
                 PanelDock.TopLeft, ToolsX, ToolsY, TOOLS_DROP_W, TOOLS_DROP_H,
-                "Tools", out var toolsContent, out refs.ToolsPanelDrag,
-                narrowPanel: true);   // 60px wide — header shows only control buttons; title goes in content
+                "Tools", out var toolsContent, out refs.ToolsPanelDrag);
 
             var t = toolsContent;
-            BuildSectionLabel(t, "TOOLS");  // panel title as first content row (below control buttons)
 
             // Single-column icon toolbar — inner width (60-8-8=44) = BTN_H → square
             const float BTN_H = 44f;

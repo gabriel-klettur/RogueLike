@@ -99,8 +99,9 @@ namespace Valkur.Gameplay.TileEditor
         public const float COLLIDERS_BTN_W = 84f;
         // Size dropdown sits to the LEFT of Colliders on the top-right side.
         public const float SIZE_BTN_W = 64f;
-        public const float UX_BTN_W   = 50f;
-        public const float PERF_BTN_W = 60f;
+        public const float UX_BTN_W     = 50f;
+        public const float PERF_BTN_W   = 60f;
+        public const float PANELS_BTN_W = 68f;
         // Dropdown widths/heights
         // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44  =  BTN_H → perfect square buttons
         public const float TOOLS_DROP_W = 60f;

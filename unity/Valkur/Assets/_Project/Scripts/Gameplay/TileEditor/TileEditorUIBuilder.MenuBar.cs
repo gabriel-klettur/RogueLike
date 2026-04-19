@@ -15,7 +15,8 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildMenuBar(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged,
             System.Action<string> onDropdownToggle,
-            System.Action onPerfToggle = null)
+            System.Action onPerfToggle = null,
+            System.Action onAllPanelsToggle = null)
         {
             refs.MenuBar = CreateUI("MenuBar", canvasT);
             var r = refs.MenuBar.GetComponent<RectTransform>();
@@ -80,6 +81,10 @@ namespace Valkur.Gameplay.TileEditor
             spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
 
             BuildMenuDivider(t);
+
+            // ── Panels visibility toggle (left of UX) ──
+            refs.PanelsToggleBtnImg = BuildMenuButton(t, "PANELS", PANELS_BTN_W,
+                () => onAllPanelsToggle?.Invoke(), out refs.PanelsToggleBtnTmp);
 
             // ── UX/Theme editor (just left of PERF) ──
             refs.UxMenuBtnImg = BuildMenuButton(t, "UX", UX_BTN_W,

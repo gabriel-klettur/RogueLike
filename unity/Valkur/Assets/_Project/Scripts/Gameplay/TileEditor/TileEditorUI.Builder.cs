@@ -31,7 +31,7 @@ namespace Valkur.Gameplay.TileEditor
                 _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown,
                 _onUndo, _onRedo, _onSave,
                 _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked,
-                _onPerfToggle);
+                _onPerfToggle, ToggleAllPanels);
 
             // Wire close callbacks: clicking the ✕ on any panel header closes it cleanly
             // (updates menu-bar button highlights via ToggleDropdown).

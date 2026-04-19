@@ -127,6 +127,29 @@ namespace Valkur.Gameplay.TileEditor
             RefreshMenuBtnHighlights();
         }
 
+        public void ToggleAllPanels()
+        {
+            var mainPanels = new[] { "tools", "tiles", "layers", "inspector", "colliders", "size" };
+            bool allOpen = System.Array.TrueForAll(mainPanels, n => _openDropdowns.Contains(n));
+            if (allOpen)
+            {
+                foreach (var name in mainPanels)
+                {
+                    SetDropdownOpen(name, false);
+                    _openDropdowns.Remove(name);
+                }
+            }
+            else
+            {
+                foreach (var name in mainPanels)
+                {
+                    SetDropdownOpen(name, true);
+                    _openDropdowns.Add(name);
+                }
+            }
+            RefreshMenuBtnHighlights();
+        }
+
         private void SetDropdownOpen(string name, bool open)
         {
             switch (name)
@@ -164,6 +187,10 @@ namespace Valkur.Gameplay.TileEditor
             ApplyMenuBtnStyle(_refs.CollidersMenuBtnImg, _refs.CollidersMenuBtnTmp, _openDropdowns.Contains("colliders"));
             ApplyMenuBtnStyle(_refs.SizeMenuBtnImg,      _refs.SizeMenuBtnTmp,      _openDropdowns.Contains("size"));
             ApplyMenuBtnStyle(_refs.UxMenuBtnImg,        _refs.UxMenuBtnTmp,        _openDropdowns.Contains("ux"));
+            bool allMainOpen = _openDropdowns.Contains("tools")     && _openDropdowns.Contains("tiles") &&
+                               _openDropdowns.Contains("layers")    && _openDropdowns.Contains("inspector") &&
+                               _openDropdowns.Contains("colliders") && _openDropdowns.Contains("size");
+            ApplyMenuBtnStyle(_refs.PanelsToggleBtnImg, _refs.PanelsToggleBtnTmp, allMainOpen);
         }
 
         private static void ApplyMenuBtnStyle(Image img, TextMeshProUGUI tmp, bool isOpen)
