@@ -152,5 +152,45 @@ namespace Valkur.Gameplay.World
             OnZonesChanged?.Invoke();
             return true;
         }
+
+        /// <summary>
+        /// Drop zones that share a name (case-insensitive) or a grid offset with an
+        /// earlier entry. Keeps the first occurrence. Used to clean up persisted
+        /// data that may contain stale or duplicated zone definitions.
+        /// </summary>
+        /// <returns>Number of zones removed.</returns>
+        public int RemoveDuplicateZones()
+        {
+            if (zones.Count <= 1) return 0;
+
+            var seenNames   = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            var seenOffsets = new System.Collections.Generic.HashSet<Vector2Int>();
+            int removed = 0;
+
+            var keep = new System.Collections.Generic.List<ZoneDefinition>(zones.Count);
+            for (int i = 0; i < zones.Count; i++)
+            {
+                var z = zones[i];
+                bool nameDup   = !string.IsNullOrEmpty(z.zoneName) && !seenNames.Add(z.zoneName);
+                bool offsetDup = !seenOffsets.Add(z.gridOffset);
+                if (nameDup || offsetDup)
+                {
+                    Debug.LogWarning($"[ZoneManager] Removed duplicate zone '{z.zoneName}' at {z.gridOffset} " +
+                                     $"(nameDup={nameDup}, offsetDup={offsetDup}).");
+                    removed++;
+                    continue;
+                }
+                keep.Add(z);
+            }
+
+            if (removed > 0)
+            {
+                zones.Clear();
+                zones.AddRange(keep);
+                RebuildZoneMap();
+                OnZonesChanged?.Invoke();
+            }
+            return removed;
+        }
     }
 }

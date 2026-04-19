@@ -75,25 +75,57 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
+            // Defensive dedup: avoid painting the same overlay/collision into the same
+            // (offsetX, offsetY) twice. This guards against malformed zones_database.json
+            // and prevents stacked tilemap fillrate cost on layers like Ground.
+            var paintedOverlays   = new HashSet<(int, int, string)>();
+            var paintedCollisions = new HashSet<(int, int, string)>();
+            int skippedOverlays   = 0;
+            int skippedCollisions = 0;
+
             foreach (var entry in entries)
             {
                 // Load overlay at zone offset
                 if (!string.IsNullOrEmpty(entry.overlayFile))
                 {
-                    OverlayLoader.LoadOverlay(entry.overlayFile, _gridBuilder,
-                        entry.offsetX, entry.offsetY);
-                    _overlaysLoaded++;
+                    var key = (entry.offsetX, entry.offsetY, entry.overlayFile);
+                    if (paintedOverlays.Add(key))
+                    {
+                        OverlayLoader.LoadOverlay(entry.overlayFile, _gridBuilder,
+                            entry.offsetX, entry.offsetY);
+                        _overlaysLoaded++;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[WorldLoader] Skipped duplicate overlay '{entry.overlayFile}' at ({entry.offsetX},{entry.offsetY}).");
+                        skippedOverlays++;
+                    }
                 }
 
                 // Load collision grid at zone offset
                 if (!string.IsNullOrEmpty(entry.collisionFile))
                 {
-                    LoadCollisionGrid(entry.collisionFile, entry.offsetX, entry.offsetY);
+                    var key = (entry.offsetX, entry.offsetY, entry.collisionFile);
+                    if (paintedCollisions.Add(key))
+                    {
+                        LoadCollisionGrid(entry.collisionFile, entry.offsetX, entry.offsetY);
+                    }
+                    else
+                    {
+                        skippedCollisions++;
+                    }
                 }
             }
 
             Debug.Log($"[WorldLoader] Full world loaded: {_overlaysLoaded} overlays, " +
-                      $"{_collisionsLoaded} collision grids across {entries.Count} zones.");
+                      $"{_collisionsLoaded} collision grids across {entries.Count} zones " +
+                      $"(skipped duplicates: {skippedOverlays} overlays, {skippedCollisions} collisions).");
+
+            // Apply persisted tile-editor overrides (one JSON per zone in persistentDataPath/MapOverrides).
+            // This restores user edits made in previous play sessions.
+            var zoneManager = FindObjectOfType<ZoneManager>();
+            if (zoneManager != null)
+                Valkur.Gameplay.TileEditor.TileOverlayPersistence.ApplyAllOverrides(_gridBuilder, zoneManager);
         }
 
         /// <summary>
@@ -158,6 +190,12 @@ namespace Valkur.Gameplay.World
         }
 
         private static TileBase _wallTile;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            _wallTile = null;
+        }
 
         /// <summary>
         /// Get or create a simple collision tile for wall cells.
