@@ -33,6 +33,15 @@ namespace Valkur.Gameplay.TileEditor
                 _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked,
                 _onPerfToggle);
 
+            // Wire close callbacks: clicking the ✕ on any panel header closes it cleanly
+            // (updates menu-bar button highlights via ToggleDropdown).
+            if (_refs.ToolsPanelDrag      != null) _refs.ToolsPanelDrag.OnClose      = () => ToggleDropdown("tools");
+            if (_refs.TilesPanelDrag      != null) _refs.TilesPanelDrag.OnClose      = () => ToggleDropdown("tiles");
+            if (_refs.LayersPanelDrag     != null) _refs.LayersPanelDrag.OnClose     = () => ToggleDropdown("layers");
+            if (_refs.InspectorPanelDrag  != null) _refs.InspectorPanelDrag.OnClose  = () => ToggleDropdown("inspector");
+            if (_refs.CollidersPanelDrag  != null) _refs.CollidersPanelDrag.OnClose  = () => ToggleDropdown("colliders");
+            if (_refs.SizePanelDrag       != null) _refs.SizePanelDrag.OnClose       = () => ToggleDropdown("size");
+
             WireLayerVisibilityButtons();
 
             if (_catalog != null)

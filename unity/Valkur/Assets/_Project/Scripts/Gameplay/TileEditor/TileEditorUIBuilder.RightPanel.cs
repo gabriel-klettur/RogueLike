@@ -17,10 +17,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged)
         {
             refs.LayersDropdown = MakeDropdownPanel("LayersDropdown", canvasT,
-                PanelDock.BottomRight, LayersX, LayersY, LAYERS_DROP_W, LAYERS_DROP_H);
+                PanelDock.BottomRight, LayersX, LayersY, LAYERS_DROP_W, LAYERS_DROP_H,
+                "Layers", out var layersContent, out refs.LayersPanelDrag);
 
-            var t = refs.LayersDropdown.transform;
-            BuildSectionLabel(t, "LAYERS");
+            var t = layersContent;
 
             var layers = System.Enum.GetValues(typeof(TilemapLayerSetup.TilemapLayer));
             foreach (TilemapLayerSetup.TilemapLayer layer in layers)
@@ -90,10 +90,10 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildInspectorDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs)
         {
             refs.InspectorDropdown = MakeDropdownPanel("InspectorDropdown", canvasT,
-                PanelDock.TopRight, InspectorX, InspectorY, INSPECTOR_DROP_W, INSPECTOR_DROP_H);
+                PanelDock.TopRight, InspectorX, InspectorY, INSPECTOR_DROP_W, INSPECTOR_DROP_H,
+                "Inspector", out var inspectorContent, out refs.InspectorPanelDrag);
 
-            var t = refs.InspectorDropdown.transform;
-            BuildSectionLabel(t, "INSPECTOR");
+            var t = inspectorContent;
 
             BuildViewRow(t, "Hovered", CYAN_ACCENT, out refs.ViewHoveredImg, out refs.ViewHoveredLabel);
             BuildViewRow(t, "Selected", GREEN_ACCENT, out refs.ViewSelectedImg, out refs.ViewSelectedLabel);

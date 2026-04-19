@@ -27,10 +27,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onEraseCollidersClicked)
         {
             refs.CollidersDropdown = MakeDropdownPanel("CollidersDropdown", canvasT,
-                PanelDock.TopRight, CollidersX, CollidersY, COLLIDERS_DROP_W, COLLIDERS_DROP_H);
+                PanelDock.TopRight, CollidersX, CollidersY, COLLIDERS_DROP_W, COLLIDERS_DROP_H,
+                "Colliders", out var collidersContent, out refs.CollidersPanelDrag);
 
-            var t = refs.CollidersDropdown.transform;
-            BuildSectionLabel(t, "COLLIDERS");
+            var t = collidersContent;
 
             // Visualize toggle
             BuildColliderToggleRow(t, "Show Colliders",

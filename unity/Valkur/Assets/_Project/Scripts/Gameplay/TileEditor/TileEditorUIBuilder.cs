@@ -100,6 +100,14 @@ namespace Valkur.Gameplay.TileEditor
             // Perf Probe toggle button (menu bar far-right)
             public Image PerfProbeMenuBtnImg;
             public TextMeshProUGUI PerfProbeMenuBtnTmp;
+
+            // DraggablePanel components — wired by TileEditorUI.Builder for close callbacks
+            public DraggablePanel ToolsPanelDrag;
+            public DraggablePanel TilesPanelDrag;
+            public DraggablePanel LayersPanelDrag;
+            public DraggablePanel InspectorPanelDrag;
+            public DraggablePanel CollidersPanelDrag;
+            public DraggablePanel SizePanelDrag;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,

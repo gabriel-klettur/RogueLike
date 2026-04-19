@@ -66,6 +66,16 @@ namespace Valkur.Gameplay.TileEditor
             BottomRight
         }
 
+        // ── Draggable Panel Header ──
+        /// <summary>Height of the header bar on every floating dropdown panel.</summary>
+        public const float PANEL_HDR_H = 24f;
+        /// <summary>Width of each header control button (minimize / maximize / close).</summary>
+        public const float PANEL_HDR_BTN_W = 22f;
+        public static readonly Color PANEL_HDR_BG      = new Color(0.07f, 0.07f, 0.09f, 1f);
+        public static readonly Color PANEL_HDR_TITLE    = new Color(0.93f, 0.93f, 0.96f, 1f);
+        public static readonly Color PANEL_HDR_BTN_HOVER   = new Color(0.28f, 0.28f, 0.36f, 1f);
+        public static readonly Color PANEL_HDR_CLOSE_HOVER = new Color(0.72f, 0.10f, 0.10f, 0.9f);
+
         // ── Menu Bar ──
         public const float MENUBAR_HEIGHT = 30f;
         public const float MENUBAR_SPACING = 3f;
@@ -91,9 +101,9 @@ namespace Valkur.Gameplay.TileEditor
         // Dropdown widths/heights
         // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44  =  BTN_H → perfect square buttons
         public const float TOOLS_DROP_W = 60f;
-        public const float TOOLS_DROP_H = 460f;
+        public const float TOOLS_DROP_H = 460f + PANEL_HDR_H;   // 484
         public const float TILES_DROP_W = 256f;
-        public const float TILES_DROP_H = 540f;
+        public const float TILES_DROP_H = 540f + PANEL_HDR_H;   // 564
         /// <summary>Number of columns in the tile picker grid.</summary>
         public const int TILES_GRID_COLS = 4;
         /// <summary>Spacing between cells in the tile picker grid.</summary>
@@ -106,13 +116,13 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>Full inner row width (used by the categories list which spans the whole panel width minus the scrollbar).</summary>
         public const float TILES_ROW_WIDTH = TILES_DROP_W - 16f - TILES_SCROLLBAR_W - 8f;
         public const float LAYERS_DROP_W = 240f;
-        public const float LAYERS_DROP_H = 300f;
+        public const float LAYERS_DROP_H = 300f + PANEL_HDR_H;      // 324
         public const float INSPECTOR_DROP_W = 250f;
-        public const float INSPECTOR_DROP_H = 256f;
+        public const float INSPECTOR_DROP_H = 256f + PANEL_HDR_H;   // 280
         public const float COLLIDERS_DROP_W = 230f;
-        public const float COLLIDERS_DROP_H = 220f;
+        public const float COLLIDERS_DROP_H = 220f + PANEL_HDR_H;   // 244
         public const float SIZE_DROP_W = 200f;
-        public const float SIZE_DROP_H = 150f;
+        public const float SIZE_DROP_H = 150f + PANEL_HDR_H;        // 174
 
         // ── Factory Methods ──
 

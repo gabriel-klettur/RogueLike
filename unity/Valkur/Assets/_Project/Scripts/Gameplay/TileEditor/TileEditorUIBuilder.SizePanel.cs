@@ -29,10 +29,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<int> onBrushSizeChanged)
         {
             refs.SizeDropdown = MakeDropdownPanel("SizeDropdown", canvasT,
-                PanelDock.TopRight, SizeX, SizeY, SIZE_DROP_W, SIZE_DROP_H);
+                PanelDock.TopRight, SizeX, SizeY, SIZE_DROP_W, SIZE_DROP_H,
+                "Brush Size", out var sizeContent, out refs.SizePanelDrag);
 
-            var t = refs.SizeDropdown.transform;
-            BuildSectionLabel(t, "BRUSH SIZE");
+            var t = sizeContent;
 
             BuildSizePresetRow(t, state, ref refs, onBrushSizeChanged);
             BuildSeparator(t);
