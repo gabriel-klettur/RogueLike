@@ -18,6 +18,18 @@ namespace Valkur.Core
         public static bool HasInstance => _instance != null;
 
         /// <summary>
+        /// Reset static state on every Play Mode entry.
+        /// Required when "Enter Play Mode Options → Disable Domain Reload" is enabled,
+        /// otherwise <see cref="_instance"/> would carry a stale reference from the previous
+        /// session (pointing to a destroyed GameObject).
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            _instance = null;
+        }
+
+        /// <summary>
         /// Override to true if this singleton should persist across scene loads.
         /// </summary>
         protected virtual bool Persist => false;

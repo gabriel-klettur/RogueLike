@@ -24,6 +24,17 @@ namespace Valkur.Core
         public IGameEditor ActiveEditor => _activeEditor;
         public bool AnyEditorActive => _activeEditor != null;
 
+        /// <summary>
+        /// Returns the existing instance, or creates a new GameObject hosting one if missing.
+        /// Use this from any editor's Awake/Start to guarantee the manager exists at runtime.
+        /// </summary>
+        public static GameEditorManager EnsureInstance()
+        {
+            if (HasInstance) return Instance;
+            var go = new GameObject("[GameEditorManager]");
+            return go.AddComponent<GameEditorManager>();
+        }
+
         public void Register(IGameEditor editor)
         {
             if (editor == null || _registered.Contains(editor)) return;

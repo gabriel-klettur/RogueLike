@@ -17,6 +17,14 @@ namespace Valkur.Gameplay
     [RequireComponent(typeof(CinemachineVirtualCamera))]
     public class CameraSetup : MonoBehaviour
     {
+        public static CameraSetup Instance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            Instance = null;
+        }
+
         [SerializeField] private float orthoSize = 5f;
         [SerializeField] private float cameraZOffset = -10f;
         [SerializeField] private float zoomStep = 0.5f;
@@ -34,9 +42,12 @@ namespace Valkur.Gameplay
         [SerializeField] private int refResolutionY = 360;
 
         private CinemachineVirtualCamera _vcam;
+        private Transform _savedFollowTarget;
+        private bool _detached;
 
         private void Awake()
         {
+            Instance = this;
             _vcam = GetComponent<CinemachineVirtualCamera>();
             _vcam.m_Lens.OrthographicSize = orthoSize;
 
@@ -129,6 +140,38 @@ namespace Valkur.Gameplay
         {
             if (_vcam != null)
                 _vcam.Follow = target;
+        }
+
+        /// <summary>
+        /// Detach the virtual camera from its follow target so its transform can be
+        /// driven manually (used by runtime editors to free-pan the camera).
+        /// </summary>
+        public void DetachFollow()
+        {
+            if (_vcam == null || _detached) return;
+            _savedFollowTarget = _vcam.Follow;
+            _vcam.Follow = null;
+            _detached = true;
+        }
+
+        /// <summary>
+        /// Re-attach the virtual camera to its previously saved follow target.
+        /// </summary>
+        public void ReattachFollow()
+        {
+            if (_vcam == null || !_detached) return;
+            _vcam.Follow = _savedFollowTarget;
+            _savedFollowTarget = null;
+            _detached = false;
+        }
+
+        /// <summary>
+        /// While detached, returns the vcam transform so callers can move it directly.
+        /// Returns null if attached (caller should not pan in that case).
+        /// </summary>
+        public Transform GetDetachedTransform()
+        {
+            return _detached && _vcam != null ? _vcam.transform : null;
         }
     }
 }

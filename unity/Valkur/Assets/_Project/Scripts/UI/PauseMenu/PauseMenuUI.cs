@@ -26,6 +26,12 @@ namespace Valkur.UI.PauseMenu
 
         private const string GAMEPLAY_SCENE = "MainGameplay";
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            Instance = null;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoBootstrap()
         {

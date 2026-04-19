@@ -260,6 +260,13 @@ namespace Valkur.UI.HUD
 
         private static Sprite _whitePixelSprite;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            // Cached sprite would point to a Texture2D destroyed in the previous play session.
+            _whitePixelSprite = null;
+        }
+
         private static Sprite GetWhitePixelSprite()
         {
             if (_whitePixelSprite != null) return _whitePixelSprite;
