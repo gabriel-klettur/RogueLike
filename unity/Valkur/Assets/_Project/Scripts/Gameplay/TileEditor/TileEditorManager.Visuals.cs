@@ -51,7 +51,8 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HideBrushPreview()
         {
-            if (_brushPreviewGo != null) _brushPreviewGo.SetActive(false);
+            if (_brushPreviewGo != null && _brushPreviewGo.activeSelf)
+                _brushPreviewGo.SetActive(false);
         }
 
         private partial void UpdateGridCursor()
