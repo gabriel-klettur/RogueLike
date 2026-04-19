@@ -213,15 +213,31 @@ namespace Valkur.Gameplay
             if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
                 _mainCamera = Camera.main;
 
-            if (_lookAction != null && _mainCamera != null)
+            // Read the mouse position directly from the device. The InputAction bound to
+            // <Mouse>/position can return (0,0) whenever the cursor leaves the Game view
+            // window (focus loss, hovering editor chrome, etc.), which would otherwise
+            // make the player face the bottom-left corner of the viewport every frame.
+            // Mouse.current.position keeps updating regardless of focus, and we additionally
+            // skip facing updates while the cursor is outside the visible game viewport so
+            // facing only changes from real player intent.
+            bool facingUpdatedFromMouse = false;
+            if (_mainCamera != null && Mouse.current != null)
             {
-                Vector2 mouseScreen = _lookAction.ReadValue<Vector2>();
-                Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(mouseScreen);
-                Vector2 dir = ((Vector2)mouseWorld - (Vector2)transform.position).normalized;
-                if (dir.sqrMagnitude > 0.01f)
-                    _facingDirection = dir;
+                Vector2 mouseScreen = Mouse.current.position.ReadValue();
+                if (mouseScreen.x >= 0f && mouseScreen.x <= Screen.width &&
+                    mouseScreen.y >= 0f && mouseScreen.y <= Screen.height)
+                {
+                    Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(mouseScreen);
+                    Vector2 dir = ((Vector2)mouseWorld - (Vector2)transform.position).normalized;
+                    if (dir.sqrMagnitude > 0.01f)
+                    {
+                        _facingDirection = dir;
+                        facingUpdatedFromMouse = true;
+                    }
+                }
             }
-            else if (IsMoving)
+
+            if (!facingUpdatedFromMouse && IsMoving)
             {
                 _facingDirection = _moveInput.normalized;
             }
