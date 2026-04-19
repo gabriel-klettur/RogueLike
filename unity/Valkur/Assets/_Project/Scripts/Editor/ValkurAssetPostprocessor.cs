@@ -13,6 +13,7 @@ namespace Valkur.Editor
         private const int PLAYER_CHARACTER_PPU  = 64;
         private const int NPC_PPU               = 64;   // 128 px native ÷ 64 PPU = 2 units = 2 tiles (matches Python 0.5× scale)
         private const int TILE_PPU              = 32;
+        private const int TILE_MAX_ALLOWED_SIZE = 64;   // hard upper bound for tile source PNGs (px)
         private const int BUILDING_PPU          = 32;   // 1 Unity unit = 1 game tile = 32 px
         private const int UI_PPU                = 100;
 
@@ -21,6 +22,14 @@ namespace Valkur.Editor
             if (!assetPath.StartsWith("Assets/_Project/Art/") &&
                 !assetPath.StartsWith("Assets/_Project/Resources/Tiles/") &&
                 !assetPath.StartsWith("Assets/_Project/Resources/Buildings/"))
+                return;
+
+            // Skip backup / source / experimental folders. These hold raw artwork,
+            // multi-sprite tilesets, and PSD exports that are NOT consumed at runtime
+            // and therefore are exempt from the strict tile size policy.
+            if (assetPath.Contains("/_backups/") ||
+                assetPath.Contains("/_raw/") ||
+                assetPath.Contains("/_source/"))
                 return;
 
             var importer = (TextureImporter)assetImporter;
@@ -44,6 +53,25 @@ namespace Valkur.Editor
             }
             else if (assetPath.Contains("/Tiles/"))
             {
+                // Tile sprites must render at exactly 1 world unit (1 cell).
+                // Canonical size: 32x32 px @ PPU=32. Sources up to 64x64 are still
+                // accepted (will rescale to 1 unit) without warning.
+                //
+                // Anything larger is REJECTED with an error: oversized tiles cause
+                // catastrophic visual bleeding (one cell rendering as N×N units),
+                // which historically produced the "sand patch" overlap bug.
+                // Run `Valkur > Tiles > Audit Sizes` (or `python python/scripts/
+                // audit_tile_sizes.py --fix`) to downscale offenders to 32x32.
+                Vector2Int srcSize = GetSourceTextureSize(importer);
+                int tileMax = Mathf.Max(srcSize.x, srcSize.y);
+                if (tileMax > TILE_MAX_ALLOWED_SIZE)
+                {
+                    Debug.LogError(
+                        $"[ValkurAssetPostprocessor] OVERSIZED TILE: '{assetPath}' is " +
+                        $"{srcSize.x}x{srcSize.y} px, exceeds the {TILE_MAX_ALLOWED_SIZE}px " +
+                        $"limit. Tiles must be ≤{TILE_MAX_ALLOWED_SIZE}x{TILE_MAX_ALLOWED_SIZE} " +
+                        $"to render as a single map cell. Run `Valkur > Tiles > Audit Sizes` to fix.");
+                }
                 importer.spritePixelsPerUnit = TILE_PPU;
                 SetPivot(importer, new Vector2(0.5f, 0.5f));
             }
@@ -81,6 +109,27 @@ namespace Valkur.Editor
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = pivot;
             importer.SetTextureSettings(settings);
+        }
+
+        /// <summary>
+        /// Returns the source PNG/JPG dimensions as a Vector2Int (width, height).
+        /// Uses TextureImporter.GetSourceTextureWidthAndHeight via reflection-free API
+        /// available since Unity 2019.2.
+        /// </summary>
+        private static Vector2Int GetSourceTextureSize(TextureImporter importer)
+        {
+            int w = 0, h = 0;
+            var mi = typeof(TextureImporter).GetMethod(
+                "GetWidthAndHeight",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (mi != null)
+            {
+                object[] args = new object[] { w, h };
+                mi.Invoke(importer, args);
+                w = (int)args[0];
+                h = (int)args[1];
+            }
+            return new Vector2Int(w, h);
         }
 
         private void OnPreprocessAudio()
