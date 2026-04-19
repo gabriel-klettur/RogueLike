@@ -62,7 +62,19 @@ namespace Valkur.Tests.EditMode.TileEditor
             var chrome = go.AddComponent<MenuBarChrome>();
             chrome.BgImage       = bg;
             chrome.BorderOutline = ol;
+
+            // EditMode does not reliably fire Awake/OnEnable on AddComponent.
+            // Invoke OnEnable directly so the singleton self-registers.
+            InvokeLifecycle(chrome, "OnEnable");
+
             return chrome;
+        }
+
+        private static void InvokeLifecycle(MonoBehaviour mb, string methodName)
+        {
+            var m = mb.GetType().GetMethod(methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            m?.Invoke(mb, null);
         }
 
         // ── Single-instance ─────────────────────────────────────────────────
@@ -78,7 +90,7 @@ namespace Valkur.Tests.EditMode.TileEditor
         public void OnDisable_ClearsSingletonInstance()
         {
             var bar = BuildBar();
-            bar.gameObject.SetActive(false);
+            InvokeLifecycle(bar, "OnDisable");
             Assert.IsNull(CurrentInstance());
         }
 

@@ -85,9 +85,6 @@ namespace Valkur.Tests.EditMode.TileEditor
                 titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
             }
 
-            // AddComponent<PanelChrome>() triggers OnEnable BEFORE the field assignments below.
-            // To match the way TileEditorUIBuilder wires panels (assign refs THEN AddComponent),
-            // we add the component last — same order as production code.
             var chrome = go.AddComponent<PanelChrome>();
             chrome.PanelBgImage    = bg;
             chrome.PanelOutline    = ol;
@@ -95,7 +92,19 @@ namespace Valkur.Tests.EditMode.TileEditor
             chrome.HeaderSeparator = sepImg;
             chrome.HeaderTitle     = titleTmp;
 
+            // EditMode does not reliably fire MonoBehaviour Awake/OnEnable on a freshly
+            // AddComponent'd script. Invoke them directly via reflection so the chrome
+            // self-registers in PanelChrome._all and applies the current theme.
+            InvokeLifecycle(chrome, "OnEnable");
+
             return chrome;
+        }
+
+        private static void InvokeLifecycle(MonoBehaviour mb, string methodName)
+        {
+            var m = mb.GetType().GetMethod(methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            m?.Invoke(mb, null);
         }
 
         // ── Registry lifecycle ──────────────────────────────────────────────
@@ -113,10 +122,10 @@ namespace Valkur.Tests.EditMode.TileEditor
             var chrome = BuildPanel("PanelA");
             Assert.AreEqual(1, RegistryCount());
 
-            chrome.gameObject.SetActive(false);
+            InvokeLifecycle(chrome, "OnDisable");
             Assert.AreEqual(0, RegistryCount(), "Disabling should remove from registry");
 
-            chrome.gameObject.SetActive(true);
+            InvokeLifecycle(chrome, "OnEnable");
             Assert.AreEqual(1, RegistryCount(), "Re-enabling should re-register");
         }
 
@@ -124,6 +133,9 @@ namespace Valkur.Tests.EditMode.TileEditor
         public void OnDestroy_RemovesFromRegistry()
         {
             var chrome = BuildPanel("PanelA");
+            // EditMode does not always fire OnDestroy on DestroyImmediate; invoke directly.
+            InvokeLifecycle(chrome, "OnDisable");
+            InvokeLifecycle(chrome, "OnDestroy");
             Object.DestroyImmediate(chrome.gameObject);
             // gameObject was removed from _spawned scope when Destroyed; remove from list to avoid double-destroy.
             _spawned.RemoveAll(g => g == null);
@@ -204,16 +216,17 @@ namespace Valkur.Tests.EditMode.TileEditor
         {
             var a = BuildPanel("A");
             var b = BuildPanel("B");
-            b.gameObject.SetActive(false);
+
+            // Capture b's color BEFORE disabling - re-enabling would repaint to current theme.
+            InvokeLifecycle(b, "OnDisable");
+            var bColorWhenDisabled = b.PanelBgImage.color;
 
             var newColor = new Color(0.9f, 0.1f, 0.1f, 1f);
             TileEditorTheme.PanelBg = newColor;
             PanelChrome.ApplyThemeToAll();
 
             Assert.AreEqual(newColor, a.PanelBgImage.color, "Active panel should get the new color");
-            // Disabled panel keeps whatever value its Image had before disable
-            // (not strictly newColor unless it was repainted recently).
-            Assert.AreNotEqual(newColor, b.PanelBgImage.color,
+            Assert.AreEqual(bColorWhenDisabled, b.PanelBgImage.color,
                 "Inactive panel must NOT be repainted by the broadcast");
         }
 
@@ -221,13 +234,13 @@ namespace Valkur.Tests.EditMode.TileEditor
         public void ReEnabling_PullsCurrentTheme()
         {
             var chrome = BuildPanel("A");
-            chrome.gameObject.SetActive(false);
+            InvokeLifecycle(chrome, "OnDisable");
 
             // Mutate while disabled
             var newColor = new Color(0.5f, 0.5f, 0.0f, 0.5f);
             TileEditorTheme.PanelBg = newColor;
 
-            chrome.gameObject.SetActive(true);   // OnEnable → ApplyTheme
+            InvokeLifecycle(chrome, "OnEnable");   // OnEnable → ApplyTheme
 
             Assert.AreEqual(newColor, chrome.PanelBgImage.color,
                 "OnEnable should pull the latest theme value");

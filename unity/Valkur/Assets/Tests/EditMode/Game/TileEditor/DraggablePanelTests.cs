@@ -59,7 +59,22 @@ namespace Valkur.Tests.EditMode.TileEditor
             var drag = go.AddComponent<DraggablePanel>();
             drag.DragHeader  = hdrRt;
             drag.ContentRoot = contentGo;
+
+            // EditMode does not reliably fire Awake/OnEnable on AddComponent;
+            // invoke them directly so _rt and other private fields are initialized.
+            InvokeLifecycle(drag, "Awake");
+            InvokeLifecycle(drag, "OnEnable");
+
             return drag;
+        }
+
+        private static void InvokeLifecycle(MonoBehaviour mb, string methodName)
+        {
+            var m = mb.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            m?.Invoke(mb, null);
         }
 
         // ── Minimize ────────────────────────────────────────────────────────

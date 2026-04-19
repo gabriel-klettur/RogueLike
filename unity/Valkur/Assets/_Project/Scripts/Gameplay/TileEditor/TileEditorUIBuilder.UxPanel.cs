@@ -182,7 +182,7 @@ namespace Valkur.Gameplay.TileEditor
             letterTmp.text = ch;
             letterTmp.fontSize = 10f;
             letterTmp.fontStyle = FontStyles.Bold;
-            letterTmp.alignment = TextAlignmentOptions.MidlineCenter;
+            letterTmp.alignment = TextAlignmentOptions.Midline;
             letterTmp.color = ChannelTint(ch);
 
             // Slider
