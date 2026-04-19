@@ -127,7 +127,8 @@ namespace Valkur.Gameplay.TileEditor
             _ui = uiGo.AddComponent<TileEditorUI>();
             _ui.Initialize(_state, tileCatalog,
                 OnTileSelected, OnToolChanged, OnLayerChanged, OnBrushSizeChanged,
-                OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked, OnSaveClicked);
+                OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked, OnSaveClicked,
+                OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
@@ -351,6 +352,7 @@ namespace Valkur.Gameplay.TileEditor
         protected override void OnDestroy()
         {
             _input?.Dispose();
+            DisposeColliderTile();
             base.OnDestroy();
         }
     }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Tilemaps;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -30,8 +31,19 @@ namespace Valkur.Gameplay.TileEditor
         // Yellow — cells painted during an active brush drag.
         private static readonly Color BrushColor    = new Color(1f,  1f,  0f,  1f);
 
+        // Red overlay drawn over every solid Collision cell when the Colliders panel
+        // toggles "Show Colliders" ON. The fill is intentionally translucent so the
+        // underlying ground/floor tile remains visible; the border is fully opaque.
+        private static readonly Color ColliderFillColor   = new Color(1f, 0.10f, 0.15f, 0.32f);
+        private static readonly Color ColliderBorderColor = new Color(1f, 0.10f, 0.15f, 1f);
+
         // Border thickness of all cell highlights, in screen pixels.
         private const float HoverThicknessPx = 3f;
+        // Border thickness used for collider cells (slightly thinner than the hover ring).
+        private const float ColliderBorderThicknessPx = 2f;
+        // Defensive cap: skip drawing collider overlay if the visible tile rect would
+        // require more than this many GetTilesBlock entries (extreme zoom-out).
+        private const int MaxColliderCells = 20000;
 
         // Extra cells drawn beyond the visible edge to avoid pop-in when panning.
         private const int Margin = 2;
@@ -42,7 +54,13 @@ namespace Valkur.Gameplay.TileEditor
         // State pushed each frame by TileEditorManager.
         private Vector2Int  _hoverCell;
         private Vector2Int? _selectedCell;
+        private int         _brushSize = 1;
+        private TileEditorState.Tool _currentTool;
         private readonly HashSet<Vector2Int> _brushCells = new HashSet<Vector2Int>();
+
+        // Collider overlay state (Colliders panel).
+        private Tilemap _collisionTilemap;
+        private bool    _showColliderOverlay;
 
         // ── Public API ────────────────────────────────────────────────────────
 
@@ -76,6 +94,12 @@ namespace Valkur.Gameplay.TileEditor
             _selectedCell = cell.HasValue ? new Vector2Int(cell.Value.x, cell.Value.y) : (Vector2Int?)null;
         }
 
+        /// <summary>Set the brush size used to render the cyan hover and green selection borders (1–5).</summary>
+        public void SetBrushSize(int size) => _brushSize = Mathf.Max(1, size);
+
+        /// <summary>Set the active tool so stroke cells are tinted yellow (Brush/Erase) or green (Select).</summary>
+        public void SetCurrentTool(TileEditorState.Tool tool) => _currentTool = tool;
+
         /// <summary>Replace the set of cells painted by the active brush stroke (shown in YELLOW). Pass null or empty to clear.</summary>
         public void SetBrushStrokeCells(IEnumerable<Vector3Int> cells)
         {
@@ -84,6 +108,15 @@ namespace Valkur.Gameplay.TileEditor
             foreach (var c in cells)
                 _brushCells.Add(new Vector2Int(c.x, c.y));
         }
+
+        /// <summary>
+        /// Bind the Collision tilemap that the overlay should sample to draw the red
+        /// collider visualization. Pass null to disable collider sampling entirely.
+        /// </summary>
+        public void SetCollisionTilemap(Tilemap tilemap) => _collisionTilemap = tilemap;
+
+        /// <summary>Enable or disable the red collider overlay.</summary>
+        public void SetShowColliderOverlay(bool show) => _showColliderOverlay = show;
 
         // ── Lifecycle ────────────────────────────────────────────────────────
 
@@ -166,6 +199,12 @@ namespace Valkur.Gameplay.TileEditor
             }
             GL.End();
 
+            // ── Collider overlay: red fill + red border for every solid Collision cell ──
+            // Drawn between the grid lines and the cell highlights so the hover/selection
+            // borders remain on top of the collider shading.
+            if (_showColliderOverlay && _collisionTilemap != null)
+                DrawColliderOverlay(cam, xMin, yMin, xMax, yMax);
+
             // ── Cell highlight quads: hover (cyan) / selected (green) / brush (yellow) ──
             // Thickness is the same for all; compute once from current zoom level.
             float pixelSize = (cam.orthographicSize * 2f) / Screen.height;
@@ -173,16 +212,20 @@ namespace Valkur.Gameplay.TileEditor
 
             GL.Begin(GL.QUADS);
 
-            // Yellow — all cells touched during the current brush drag (drawn first / underneath).
+            // Yellow (Brush/Erase) or Green (Select) — all cells in the current stroke.
+            Color strokeColor = _currentTool == TileEditorState.Tool.Select ? SelectedColor : BrushColor;
             foreach (var c in _brushCells)
-                DrawBorderQuads(c.x, c.y, BrushColor, t);
+                DrawBorderQuads(c.x, c.y, strokeColor, t);
 
-            // Green — selected / last-clicked cell.
+            // Green — selected / last-clicked cell, sized to brush footprint (cursor = top-left,
+            // footprint extends right + down).
             if (_selectedCell.HasValue)
-                DrawBorderQuads(_selectedCell.Value.x, _selectedCell.Value.y, SelectedColor, t);
+                DrawBorderRect(_selectedCell.Value.x, _selectedCell.Value.y - (_brushSize - 1),
+                               _brushSize, _brushSize, SelectedColor, t);
 
-            // Cyan — cell currently under the mouse (drawn last / on top).
-            DrawBorderQuads(_hoverCell.x, _hoverCell.y, HoverColor, t);
+            // Cyan — hover, sized to brush footprint (drawn last / on top).
+            DrawBorderRect(_hoverCell.x, _hoverCell.y - (_brushSize - 1),
+                           _brushSize, _brushSize, HoverColor, t);
 
             GL.End();
 
@@ -195,10 +238,19 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         private static void DrawBorderQuads(float cx, float cy, Color color, float t)
         {
+            DrawBorderRect(cx, cy, 1, 1, color, t);
+        }
+
+        /// <summary>
+        /// Emits 4 GL quads forming a thick border around an N×M cell rectangle whose
+        /// bottom-left corner is at (cx, cy). Must be called between GL.Begin(GL.QUADS) and GL.End().
+        /// </summary>
+        private static void DrawBorderRect(float cx, float cy, int w, int h, Color color, float t)
+        {
             float x0 = cx;
             float y0 = cy;
-            float x1 = cx + 1f;
-            float y1 = cy + 1f;
+            float x1 = cx + w;
+            float y1 = cy + h;
 
             GL.Color(color);
 
@@ -214,6 +266,63 @@ namespace Valkur.Gameplay.TileEditor
             // Right
             GL.Vertex3(x1 - t, y0 + t, 0f); GL.Vertex3(x1,     y0 + t, 0f);
             GL.Vertex3(x1,     y1 - t, 0f); GL.Vertex3(x1 - t, y1 - t, 0f);
+        }
+
+        /// <summary>
+        /// Draws a translucent red fill and an opaque red border for every solid cell
+        /// of the bound Collision tilemap that lies within the visible rect.
+        /// Uses <see cref="Tilemap.GetTilesBlock"/> to fetch all candidate tiles in a
+        /// single managed call instead of N individual <c>GetTile</c> queries.
+        /// </summary>
+        private void DrawColliderOverlay(Camera cam, int xMin, int yMin, int xMax, int yMax)
+        {
+            // Clip the visible window against the tilemap's painted bounds so we never
+            // sample empty regions of the world (massive zones with sparse colliders).
+            var bounds = _collisionTilemap.cellBounds;
+            int sx = Mathf.Max(xMin, bounds.xMin);
+            int sy = Mathf.Max(yMin, bounds.yMin);
+            int ex = Mathf.Min(xMax, bounds.xMax);
+            int ey = Mathf.Min(yMax, bounds.yMax);
+
+            int w = ex - sx;
+            int h = ey - sy;
+            if (w <= 0 || h <= 0) return;
+            if (w * h > MaxColliderCells) return;
+
+            var rect = new BoundsInt(sx, sy, 0, w, h, 1);
+            TileBase[] tiles;
+            try { tiles = _collisionTilemap.GetTilesBlock(rect); }
+            catch { return; }
+            if (tiles == null || tiles.Length == 0) return;
+
+            float pixelSize = (cam.orthographicSize * 2f) / Screen.height;
+            float t = pixelSize * ColliderBorderThicknessPx;
+
+            // Translucent red fill — one quad per painted cell.
+            GL.Begin(GL.QUADS);
+            GL.Color(ColliderFillColor);
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (tiles[i] == null) continue;
+                int cx = sx + (i % w);
+                int cy = sy + (i / w);
+                GL.Vertex3(cx,        cy,        0f);
+                GL.Vertex3(cx + 1f,   cy,        0f);
+                GL.Vertex3(cx + 1f,   cy + 1f,   0f);
+                GL.Vertex3(cx,        cy + 1f,   0f);
+            }
+            GL.End();
+
+            // Opaque red border — 4 thin quads per painted cell.
+            GL.Begin(GL.QUADS);
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (tiles[i] == null) continue;
+                int cx = sx + (i % w);
+                int cy = sy + (i / w);
+                DrawBorderQuads(cx, cy, ColliderBorderColor, t);
+            }
+            GL.End();
         }
     }
 }

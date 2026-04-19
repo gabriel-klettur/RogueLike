@@ -181,7 +181,8 @@ namespace Valkur.Gameplay.TileEditor
         //  BOTTOM LAYER INDICATOR
         // ═════════════════════════════════════════════════════════════════
 
-        private static void BuildLayerIndicator(Transform canvasT, TileEditorState state, ref UIRefs refs)
+        private static void BuildLayerIndicator(Transform canvasT, TileEditorState state, ref UIRefs refs,
+            System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged)
         {
             refs.LayerIndicatorPanel = CreateUI("LayerIndicator", canvasT);
             var r = refs.LayerIndicatorPanel.GetComponent<RectTransform>();
@@ -189,15 +190,54 @@ namespace Valkur.Gameplay.TileEditor
             r.anchorMax = new Vector2(0.5f, 0f);
             r.pivot = new Vector2(0.5f, 0f);
             r.anchoredPosition = new Vector2(0f, 12f);
-            r.sizeDelta = new Vector2(240f, 30f);
+            r.sizeDelta = new Vector2(280f, 30f);
+
             var bg = refs.LayerIndicatorPanel.AddComponent<Image>();
             bg.color = BG_PANEL;
             var ol = refs.LayerIndicatorPanel.AddComponent<Outline>();
             ol.effectColor = ACCENT_DIM;
             ol.effectDistance = new Vector2(1f, 1f);
 
-            refs.LayerIndicator = AddCenteredText(refs.LayerIndicatorPanel.transform,
-                $"{(int)state.CurrentLayer}: {state.CurrentLayer}", 14f, FontStyles.Bold, ACCENT);
+            var h = refs.LayerIndicatorPanel.AddComponent<HorizontalLayoutGroup>();
+            h.spacing = 0f;
+            h.childForceExpandWidth = false;
+            h.childForceExpandHeight = true;
+            h.childControlWidth = true;
+            h.childControlHeight = true;
+            h.childAlignment = TextAnchor.MiddleCenter;
+            h.padding = new RectOffset(2, 2, 0, 0);
+
+            var t = refs.LayerIndicatorPanel.transform;
+
+            // ◀ prev layer
+            var prevGo = CreateUI("PrevLayer", t);
+            prevGo.AddComponent<LayoutElement>().preferredWidth = 28f;
+            MakeBtn(prevGo, "<", () =>
+            {
+                int v = (int)state.CurrentLayer - 1;
+                if (v < 0) v = 8;
+                onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v);
+            }, 10f);
+
+            // Layer label
+            var labelGo = CreateUI("LayerLbl", t);
+            labelGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            refs.LayerIndicator = labelGo.AddComponent<TextMeshProUGUI>();
+            refs.LayerIndicator.text = $"{(int)state.CurrentLayer}: {state.CurrentLayer}";
+            refs.LayerIndicator.fontSize = 14f;
+            refs.LayerIndicator.fontStyle = FontStyles.Bold;
+            refs.LayerIndicator.alignment = TextAlignmentOptions.Center;
+            refs.LayerIndicator.color = ACCENT;
+
+            // ▶ next layer
+            var nextGo = CreateUI("NextLayer", t);
+            nextGo.AddComponent<LayoutElement>().preferredWidth = 28f;
+            MakeBtn(nextGo, ">", () =>
+            {
+                int v = (int)state.CurrentLayer + 1;
+                if (v > 8) v = 0;
+                onLayerChanged?.Invoke((TilemapLayerSetup.TilemapLayer)v);
+            }, 10f);
         }
     }
 }

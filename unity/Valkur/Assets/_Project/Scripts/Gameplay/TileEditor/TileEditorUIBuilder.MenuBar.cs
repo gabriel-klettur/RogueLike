@@ -13,7 +13,6 @@ namespace Valkur.Gameplay.TileEditor
         /// Contains: brand title, dropdown menu buttons, layer navigation, brush size, status text.
         /// </summary>
         private static void BuildMenuBar(Transform canvasT, TileEditorState state, ref UIRefs refs,
-            System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged,
             System.Action<int> onBrushSizeChanged,
             System.Action<string> onDropdownToggle)
         {
@@ -57,39 +56,26 @@ namespace Valkur.Gameplay.TileEditor
             BuildMenuDivider(t);
 
             // ── Dropdown menu buttons ──
-            refs.ToolsMenuBtnImg = BuildMenuButton(t, "Tools \u25BE", TOOLS_BTN_W,
-                () => onDropdownToggle?.Invoke("tools"));
-            refs.TilesMenuBtnImg = BuildMenuButton(t, "Tiles \u25BE", TILES_BTN_W,
-                () => onDropdownToggle?.Invoke("tiles"));
-            refs.LayersMenuBtnImg = BuildMenuButton(t, "Layers \u25BE", LAYERS_BTN_W,
-                () => onDropdownToggle?.Invoke("layers"));
-            refs.InspectorMenuBtnImg = BuildMenuButton(t, "Inspector \u25BE", INSPECTOR_BTN_W,
-                () => onDropdownToggle?.Invoke("inspector"));
+            refs.ToolsMenuBtnImg = BuildMenuButton(t, "Tools v", TOOLS_BTN_W,
+                () => onDropdownToggle?.Invoke("tools"), out refs.ToolsMenuBtnTmp);
+            refs.TilesMenuBtnImg = BuildMenuButton(t, "Tiles v", TILES_BTN_W,
+                () => onDropdownToggle?.Invoke("tiles"), out refs.TilesMenuBtnTmp);
+            refs.LayersMenuBtnImg = BuildMenuButton(t, "Layers v", LAYERS_BTN_W,
+                () => onDropdownToggle?.Invoke("layers"), out refs.LayersMenuBtnTmp);
+            refs.InspectorMenuBtnImg = BuildMenuButton(t, "Inspector v", INSPECTOR_BTN_W,
+                () => onDropdownToggle?.Invoke("inspector"), out refs.InspectorMenuBtnTmp);
+            refs.CollidersMenuBtnImg = BuildMenuButton(t, "Colliders v", COLLIDERS_BTN_W,
+                () => onDropdownToggle?.Invoke("colliders"), out refs.CollidersMenuBtnTmp);
+            refs.SizeMenuBtnImg = BuildMenuButton(t, "Size v", SIZE_BTN_W,
+                () => onDropdownToggle?.Invoke("size"), out refs.SizeMenuBtnTmp);
 
             // ── Flexible spacer ──
             var spacer = CreateUI("Spacer", t);
             spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
-
-            // ── Layer navigation ──
-            BuildMenuDivider(t);
-            BuildLayerNav(t, state, ref refs, onLayerChanged);
-
-            // ── Brush size ──
-            BuildMenuDivider(t);
-            BuildBrushSizeNav(t, state, ref refs, onBrushSizeChanged);
-
-            // ── Status ──
-            BuildMenuDivider(t);
-            var statusGo = CreateUI("Status", t);
-            statusGo.AddComponent<LayoutElement>().flexibleWidth = 0.4f;
-            refs.StatusText = statusGo.AddComponent<TextMeshProUGUI>();
-            refs.StatusText.text = "F6 Toggle";
-            refs.StatusText.fontSize = 9f;
-            refs.StatusText.alignment = TextAlignmentOptions.Right;
-            refs.StatusText.color = TEXT_MUTED;
         }
 
-        private static Image BuildMenuButton(Transform parent, string label, float width, UnityEngine.Events.UnityAction onClick)
+        private static Image BuildMenuButton(Transform parent, string label, float width,
+            UnityEngine.Events.UnityAction onClick, out TextMeshProUGUI tmp)
         {
             var go = CreateUI($"Menu_{label}", parent);
             go.AddComponent<LayoutElement>().preferredWidth = width;
@@ -108,7 +94,7 @@ namespace Valkur.Gameplay.TileEditor
             btn.targetGraphic = img;
             btn.onClick.AddListener(onClick);
 
-            var tmp = AddCenteredText(go.transform, label, 11f, FontStyles.Normal, TEXT_PRIMARY);
+            tmp = AddCenteredText(go.transform, label, 11f, FontStyles.Normal, TEXT_PRIMARY);
             tmp.alignment = TextAlignmentOptions.Center;
 
             return img;
@@ -144,7 +130,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var prev = CreateUI("Prev", group.transform);
             prev.AddComponent<LayoutElement>().preferredWidth = 20f;
-            MakeBtn(prev, "\u25C0", () =>
+            MakeBtn(prev, "<", () =>
             {
                 int v = (int)state.CurrentLayer - 1;
                 if (v < 0) v = 8;
@@ -162,7 +148,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var next = CreateUI("Next", group.transform);
             next.AddComponent<LayoutElement>().preferredWidth = 20f;
-            MakeBtn(next, "\u25B6", () =>
+            MakeBtn(next, ">", () =>
             {
                 int v = (int)state.CurrentLayer + 1;
                 if (v > 8) v = 0;
@@ -193,7 +179,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var minus = CreateUI("Minus", group.transform);
             minus.AddComponent<LayoutElement>().preferredWidth = 18f;
-            MakeBtn(minus, "\u2212", () => onBrushSizeChanged?.Invoke(Mathf.Max(1, state.BrushSize - 1)), 10f);
+            MakeBtn(minus, "-", () => onBrushSizeChanged?.Invoke(Mathf.Max(1, state.BrushSize - 1)), 10f);
 
             var val = CreateUI("Val", group.transform);
             val.AddComponent<LayoutElement>().flexibleWidth = 1f;

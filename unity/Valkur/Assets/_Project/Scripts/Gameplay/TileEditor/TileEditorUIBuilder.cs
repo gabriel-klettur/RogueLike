@@ -26,6 +26,8 @@ namespace Valkur.Gameplay.TileEditor
             public GameObject TilesDropdown;
             public GameObject LayersDropdown;
             public GameObject InspectorDropdown;
+            public GameObject CollidersDropdown;
+            public GameObject SizeDropdown;
 
             // Tool buttons (inside ToolsDropdown)
             public Dictionary<TileEditorState.Tool, Image> ToolButtonImages;
@@ -68,6 +70,27 @@ namespace Valkur.Gameplay.TileEditor
             public Image TilesMenuBtnImg;
             public Image LayersMenuBtnImg;
             public Image InspectorMenuBtnImg;
+            public Image CollidersMenuBtnImg;
+            public Image SizeMenuBtnImg;
+            public TextMeshProUGUI ToolsMenuBtnTmp;
+            public TextMeshProUGUI TilesMenuBtnTmp;
+            public TextMeshProUGUI LayersMenuBtnTmp;
+            public TextMeshProUGUI InspectorMenuBtnTmp;
+            public TextMeshProUGUI CollidersMenuBtnTmp;
+            public TextMeshProUGUI SizeMenuBtnTmp;
+
+            // Colliders panel — visualize toggle, draw toggle, erase toggle, status hint
+            public Image ShowCollidersToggleImg;
+            public TextMeshProUGUI ShowCollidersToggleLabel;
+            public Image DrawCollidersToggleImg;
+            public TextMeshProUGUI DrawCollidersToggleLabel;
+            public Image EraseCollidersToggleImg;
+            public TextMeshProUGUI EraseCollidersToggleLabel;
+            public TextMeshProUGUI CollidersHintText;
+
+            // Size panel — preset buttons (1x1 .. 5x5)
+            public List<Image> BrushSizePresetImgs;
+            public List<TextMeshProUGUI> BrushSizePresetLabels;
 
             // Save button + dirty indicator (in Tools panel)
             public Image SaveButtonImg;
@@ -82,7 +105,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<string> onDropdownToggle,
             System.Action onUndo = null,
             System.Action onRedo = null,
-            System.Action onSave = null)
+            System.Action onSave = null,
+            System.Action onShowColliders = null,
+            System.Action onDrawColliders = null,
+            System.Action onEraseColliders = null)
         {
             var refs = new UIRefs
             {
@@ -90,15 +116,20 @@ namespace Valkur.Gameplay.TileEditor
                 ToolButtonTexts = new Dictionary<TileEditorState.Tool, TextMeshProUGUI>(),
                 LayerRowBgs = new List<Image>(),
                 LayerRowLabels = new List<TextMeshProUGUI>(),
-                LayerVisIcons = new List<Image>()
+                LayerVisIcons = new List<Image>(),
+                BrushSizePresetImgs = new List<Image>(),
+                BrushSizePresetLabels = new List<TextMeshProUGUI>()
             };
 
-            BuildMenuBar(canvasT, state, ref refs, onLayerChanged, onBrushSizeChanged, onDropdownToggle);
+            BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle);
             BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo, onSave);
             BuildTilesDropdown(canvasT, ref refs);
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);
-            BuildLayerIndicator(canvasT, state, ref refs);
+            BuildCollidersDropdown(canvasT, state, ref refs,
+                onShowColliders, onDrawColliders, onEraseColliders);
+            BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
+            BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 
             return refs;
         }

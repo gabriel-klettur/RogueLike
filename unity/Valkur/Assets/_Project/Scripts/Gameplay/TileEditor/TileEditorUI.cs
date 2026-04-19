@@ -27,6 +27,9 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onUndo;
         private System.Action _onRedo;
         private System.Action _onSave;
+        private System.Action _onShowCollidersClicked;
+        private System.Action _onDrawCollidersClicked;
+        private System.Action _onEraseCollidersClicked;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -53,7 +56,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TilemapLayerSetup.TilemapLayer, bool> onLayerVisibilityChanged = null,
             System.Action onUndo = null,
             System.Action onRedo = null,
-            System.Action onSave = null)
+            System.Action onSave = null,
+            System.Action onShowCollidersClicked = null,
+            System.Action onDrawCollidersClicked = null,
+            System.Action onEraseCollidersClicked = null)
         {
             _state = state;
             _catalog = catalog;
@@ -65,6 +71,9 @@ namespace Valkur.Gameplay.TileEditor
             _onUndo = onUndo;
             _onRedo = onRedo;
             _onSave = onSave;
+            _onShowCollidersClicked = onShowCollidersClicked;
+            _onDrawCollidersClicked = onDrawCollidersClicked;
+            _onEraseCollidersClicked = onEraseCollidersClicked;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -75,7 +84,20 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_refs.MenuBar != null) _refs.MenuBar.SetActive(visible);
             if (_refs.LayerIndicatorPanel != null) _refs.LayerIndicatorPanel.SetActive(visible);
-            if (!visible) CloseAllDropdowns();
+            if (!visible)
+                CloseAllDropdowns();
+            else
+                OpenAllDropdowns();
+        }
+
+        private void OpenAllDropdowns()
+        {
+            foreach (var name in new[] { "tools", "tiles", "layers", "inspector", "colliders", "size" })
+            {
+                SetDropdownOpen(name, true);
+                _openDropdowns.Add(name);
+            }
+            RefreshMenuBtnHighlights();
         }
 
         public void ToggleDropdown(string name)
@@ -118,19 +140,33 @@ namespace Valkur.Gameplay.TileEditor
                 case "inspector":
                     if (_refs.InspectorDropdown != null) _refs.InspectorDropdown.SetActive(open);
                     break;
+                case "colliders":
+                    if (_refs.CollidersDropdown != null) _refs.CollidersDropdown.SetActive(open);
+                    break;
+                case "size":
+                    if (_refs.SizeDropdown != null) _refs.SizeDropdown.SetActive(open);
+                    break;
             }
         }
 
         private void RefreshMenuBtnHighlights()
         {
-            if (_refs.ToolsMenuBtnImg != null)
-                _refs.ToolsMenuBtnImg.color = _openDropdowns.Contains("tools") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
-            if (_refs.TilesMenuBtnImg != null)
-                _refs.TilesMenuBtnImg.color = _openDropdowns.Contains("tiles") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
-            if (_refs.LayersMenuBtnImg != null)
-                _refs.LayersMenuBtnImg.color = _openDropdowns.Contains("layers") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
-            if (_refs.InspectorMenuBtnImg != null)
-                _refs.InspectorMenuBtnImg.color = _openDropdowns.Contains("inspector") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+            ApplyMenuBtnStyle(_refs.ToolsMenuBtnImg,     _refs.ToolsMenuBtnTmp,     _openDropdowns.Contains("tools"));
+            ApplyMenuBtnStyle(_refs.TilesMenuBtnImg,     _refs.TilesMenuBtnTmp,     _openDropdowns.Contains("tiles"));
+            ApplyMenuBtnStyle(_refs.LayersMenuBtnImg,    _refs.LayersMenuBtnTmp,    _openDropdowns.Contains("layers"));
+            ApplyMenuBtnStyle(_refs.InspectorMenuBtnImg, _refs.InspectorMenuBtnTmp, _openDropdowns.Contains("inspector"));
+            ApplyMenuBtnStyle(_refs.CollidersMenuBtnImg, _refs.CollidersMenuBtnTmp, _openDropdowns.Contains("colliders"));
+            ApplyMenuBtnStyle(_refs.SizeMenuBtnImg,      _refs.SizeMenuBtnTmp,      _openDropdowns.Contains("size"));
+        }
+
+        private static void ApplyMenuBtnStyle(Image img, TextMeshProUGUI tmp, bool isOpen)
+        {
+            if (img != null) img.color = isOpen ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+            if (tmp != null)
+            {
+                tmp.color     = isOpen ? ACCENT : TEXT_PRIMARY;
+                tmp.fontStyle = isOpen ? FontStyles.Bold : FontStyles.Normal;
+            }
         }
 
         public void RefreshToolHighlights()
@@ -156,6 +192,76 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_refs.BrushSizeLabel != null)
                 _refs.BrushSizeLabel.text = $"{_state.BrushSize}x{_state.BrushSize}";
+            RefreshBrushSizePresets();
+        }
+
+        /// <summary>
+        /// Re-tint the 1x1..5x5 preset buttons in the Size dropdown so the active
+        /// brush size pops in accent. State is owned by <see cref="TileEditorState"/>;
+        /// this method just repaints to match.
+        /// </summary>
+        public void RefreshBrushSizePresets()
+        {
+            if (_refs.BrushSizePresetImgs == null) return;
+            for (int i = 0; i < _refs.BrushSizePresetImgs.Count; i++)
+            {
+                bool active = (i + 1) == _state.BrushSize;
+                if (_refs.BrushSizePresetImgs[i] != null)
+                    _refs.BrushSizePresetImgs[i].color = active ? BTN_ACTIVE : BTN_NORMAL;
+                if (i < _refs.BrushSizePresetLabels.Count && _refs.BrushSizePresetLabels[i] != null)
+                    _refs.BrushSizePresetLabels[i].color = active ? ACCENT : TEXT_SECONDARY;
+            }
+        }
+
+        /// <summary>
+        /// Refresh the visual state (background tint, dot color, ON/OFF label) of the
+        /// three Colliders panel toggles. Called by <see cref="TileEditorManager"/> after
+        /// any state mutation (Show overlay flip, Draw/Erase mode change). The state is
+        /// owned by the manager — this method merely repaints to match.
+        /// </summary>
+        public void RefreshColliderToggles()
+        {
+            if (_state == null) return;
+
+            ApplyColliderToggleVisual(_refs.ShowCollidersToggleImg, _refs.ShowCollidersToggleLabel,
+                _state.ShowColliderOverlay);
+            ApplyColliderToggleVisual(_refs.DrawCollidersToggleImg, _refs.DrawCollidersToggleLabel,
+                _state.CurrentColliderMode == TileEditorState.ColliderMode.Draw);
+            ApplyColliderToggleVisual(_refs.EraseCollidersToggleImg, _refs.EraseCollidersToggleLabel,
+                _state.CurrentColliderMode == TileEditorState.ColliderMode.Erase);
+        }
+
+        private static void ApplyColliderToggleVisual(UnityEngine.UI.Image bg, TMPro.TextMeshProUGUI label, bool on)
+        {
+            if (bg != null)
+            {
+                var onColor = new Color(COLLIDER_BORDER.r, COLLIDER_BORDER.g, COLLIDER_BORDER.b, 0.30f);
+                bg.color = on ? onColor : BTN_NORMAL;
+            }
+            if (label != null)
+                label.color = on ? RED_ACCENT : TEXT_PRIMARY;
+
+            // Update children: dot color (index 0) and ON/OFF state label (last child).
+            // The row layout from BuildColliderToggleRow places: [Dot][Lbl][State].
+            if (bg != null)
+            {
+                var rowT = bg.transform;
+                if (rowT.childCount >= 1)
+                {
+                    var dot = rowT.GetChild(0).GetComponent<UnityEngine.UI.Image>();
+                    if (dot != null)
+                        dot.color = on ? COLLIDER_BORDER : new Color(0.4f, 0.4f, 0.45f, 1f);
+                }
+                if (rowT.childCount >= 3)
+                {
+                    var stateTmp = rowT.GetChild(2).GetComponent<TMPro.TextMeshProUGUI>();
+                    if (stateTmp != null)
+                    {
+                        stateTmp.text = on ? "ON" : "OFF";
+                        stateTmp.color = on ? RED_ACCENT : TEXT_MUTED;
+                    }
+                }
+            }
         }
 
         public void SetStatus(string text)

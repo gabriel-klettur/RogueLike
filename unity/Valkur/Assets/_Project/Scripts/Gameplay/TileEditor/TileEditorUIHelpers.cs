@@ -34,6 +34,12 @@ namespace Valkur.Gameplay.TileEditor
         public static readonly Color CYAN_ACCENT     = new Color(0.30f, 0.85f, 0.90f, 1f);
         public static readonly Color GREEN_ACCENT    = new Color(0.30f, 0.90f, 0.45f, 1f);
 
+        // Colliders panel — bright red fill+border applied over collision tiles
+        // (the underlying tile is invisible, so this is the only visible cue).
+        public static readonly Color COLLIDER_FILL   = new Color(1f, 0.10f, 0.15f, 0.32f);
+        public static readonly Color COLLIDER_BORDER = new Color(1f, 0.10f, 0.15f, 1f);
+        public static readonly Color RED_ACCENT      = new Color(1f, 0.32f, 0.36f, 1f);
+
         // ── Layout Constants ──
         public const float LEFT_WIDTH = 300f;
         public const float RIGHT_WIDTH = 230f;
@@ -77,19 +83,35 @@ namespace Valkur.Gameplay.TileEditor
         public const float TILES_BTN_W = 62f;
         public const float LAYERS_BTN_W = 72f;
         public const float INSPECTOR_BTN_W = 86f;
+        // Colliders dropdown sits to the LEFT of Inspector on the top-right side.
+        public const float COLLIDERS_BTN_W = 84f;
+        // Size dropdown sits to the LEFT of Colliders on the top-right side.
+        public const float SIZE_BTN_W = 64f;
         // Dropdown widths/heights
         // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44  =  BTN_H → perfect square buttons
         public const float TOOLS_DROP_W = 60f;
         public const float TOOLS_DROP_H = 460f;
-        public const float TILES_DROP_W = 140f;
-        public const float TILES_DROP_H = 500f;
-        /// <summary>Square cell size for the single-column tile picker.
-        /// Derived from: TILES_DROP_W(140) - VerticalLayoutGroup padding(8+8) - GridLayout padding(4+4) = 116.</summary>
-        public const float TILES_CELL_SIZE = 116f;
+        public const float TILES_DROP_W = 256f;
+        public const float TILES_DROP_H = 540f;
+        /// <summary>Number of columns in the tile picker grid.</summary>
+        public const int TILES_GRID_COLS = 4;
+        /// <summary>Spacing between cells in the tile picker grid.</summary>
+        public const float TILES_GRID_SPACING = 4f;
+        /// <summary>Width of the visible vertical scrollbar reserved space inside scroll panels.</summary>
+        public const float TILES_SCROLLBAR_W = 12f;
+        /// <summary>Square cell size for the 4-column tile picker. Sized to roughly match the in-game tile footprint.
+        /// Derived from: TILES_DROP_W(256) - VerticalLayoutGroup padding(8+8) - Scrollbar(12) - GridLayout padding(4+4) - 3*spacing(4) = 212, /4 = 53. We use 52 for a clean integer.</summary>
+        public const float TILES_CELL_SIZE = 52f;
+        /// <summary>Full inner row width (used by the categories list which spans the whole panel width minus the scrollbar).</summary>
+        public const float TILES_ROW_WIDTH = TILES_DROP_W - 16f - TILES_SCROLLBAR_W - 8f;
         public const float LAYERS_DROP_W = 240f;
         public const float LAYERS_DROP_H = 300f;
         public const float INSPECTOR_DROP_W = 250f;
         public const float INSPECTOR_DROP_H = 256f;
+        public const float COLLIDERS_DROP_W = 230f;
+        public const float COLLIDERS_DROP_H = 220f;
+        public const float SIZE_DROP_W = 200f;
+        public const float SIZE_DROP_H = 150f;
 
         // ── Factory Methods ──
 

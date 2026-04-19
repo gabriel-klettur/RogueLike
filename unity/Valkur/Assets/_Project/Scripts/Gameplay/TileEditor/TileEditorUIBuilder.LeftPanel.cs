@@ -298,35 +298,49 @@ namespace Valkur.Gameplay.TileEditor
         {
             var scrollGo = CreateUI("CatScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
-            le.preferredHeight = 90f;
-            le.minHeight = 24f;
+            le.preferredHeight = 110f;
+            le.minHeight = 60f;
+            // Background panel
+            var bg = scrollGo.AddComponent<Image>();
+            bg.color = BG_SURFACE;
             var sr = scrollGo.AddComponent<ScrollRect>();
             sr.horizontal = false;
             sr.vertical = true;
+            sr.scrollSensitivity = 18f;
+            sr.movementType = ScrollRect.MovementType.Clamped;
 
+            // Viewport reserves space on the right for the scrollbar
             var vp = CreateUI("VP", scrollGo.transform);
-            StretchFill(vp);
-            vp.AddComponent<Mask>().showMaskGraphic = false;
-            vp.AddComponent<Image>().color = BG_SURFACE;
+            var vpRt = vp.GetComponent<RectTransform>();
+            vpRt.anchorMin = new Vector2(0f, 0f);
+            vpRt.anchorMax = new Vector2(1f, 1f);
+            vpRt.pivot = new Vector2(0f, 1f);
+            vpRt.offsetMin = new Vector2(0f, 0f);
+            vpRt.offsetMax = new Vector2(-TILES_SCROLLBAR_W, 0f);
+            vp.AddComponent<RectMask2D>();
 
             var content = CreateUI("Content", vp.transform);
             refs.CategoryTabsContent = content.transform;
             var cr = content.GetComponent<RectTransform>();
-            cr.anchorMin = new Vector2(0, 1);
-            cr.anchorMax = new Vector2(1, 1);
-            cr.pivot = new Vector2(0, 1);
+            cr.anchorMin = new Vector2(0f, 1f);
+            cr.anchorMax = new Vector2(1f, 1f);
+            cr.pivot = new Vector2(0f, 1f);
             cr.sizeDelta = Vector2.zero;
 
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(TILES_CELL_SIZE, 22f);
+            gl.cellSize = new Vector2(TILES_ROW_WIDTH, 22f);
             gl.spacing = new Vector2(3f, 2f);
             gl.padding = new RectOffset(3, 3, 2, 2);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gl.constraintCount = 1;
-
             content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Scrollbar (always visible) — same look as the tile picker
+            BuildVerticalScrollbar(scrollGo.transform, sr);
+
             sr.content = cr;
-            sr.viewport = vp.GetComponent<RectTransform>();
+            sr.viewport = vpRt;
+            sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
         }
 
         private static void BuildTilePicker(Transform parent, ref UIRefs refs)
@@ -334,32 +348,93 @@ namespace Valkur.Gameplay.TileEditor
             var scrollGo = CreateUI("TileScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
             le.flexibleHeight = 1f;
-            le.minHeight = 120f;
+            le.minHeight = 200f;
+            // Background panel so the empty area reads as a defined picker surface
+            var bg = scrollGo.AddComponent<Image>();
+            bg.color = BG_SURFACE;
             refs.TileScrollRect = scrollGo.AddComponent<ScrollRect>();
             refs.TileScrollRect.horizontal = false;
             refs.TileScrollRect.vertical = true;
+            refs.TileScrollRect.scrollSensitivity = 24f;
+            refs.TileScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
+            // Viewport: leave room on the right for the vertical scrollbar
             var vp = CreateUI("VP", scrollGo.transform);
-            StretchFill(vp);
-            vp.AddComponent<Mask>().showMaskGraphic = false;
-            vp.AddComponent<Image>().color = BG_SURFACE;
+            var vpRt = vp.GetComponent<RectTransform>();
+            vpRt.anchorMin = new Vector2(0f, 0f);
+            vpRt.anchorMax = new Vector2(1f, 1f);
+            vpRt.pivot = new Vector2(0f, 1f);
+            vpRt.offsetMin = new Vector2(0f, 0f);
+            vpRt.offsetMax = new Vector2(-TILES_SCROLLBAR_W, 0f);
+            vp.AddComponent<RectMask2D>();
 
+            // Content grid: 4 columns of square cells
             var content = CreateUI("Content", vp.transform);
             refs.TileGridContent = content.transform;
             var cr = content.GetComponent<RectTransform>();
-            cr.anchorMin = new Vector2(0, 1);
-            cr.anchorMax = new Vector2(1, 1);
-            cr.pivot = new Vector2(0, 1);
+            cr.anchorMin = new Vector2(0f, 1f);
+            cr.anchorMax = new Vector2(1f, 1f);
+            cr.pivot = new Vector2(0f, 1f);
             cr.sizeDelta = Vector2.zero;
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(TILES_CELL_SIZE, TILES_CELL_SIZE); // square cells
-            gl.spacing = new Vector2(4f, 4f);
+            gl.cellSize = new Vector2(TILES_CELL_SIZE, TILES_CELL_SIZE);
+            gl.spacing = new Vector2(TILES_GRID_SPACING, TILES_GRID_SPACING);
             gl.padding = new RectOffset(4, 4, 4, 4);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gl.constraintCount = 1; // single column
+            gl.constraintCount = TILES_GRID_COLS;
+            gl.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            gl.startAxis = GridLayoutGroup.Axis.Horizontal;
+            gl.childAlignment = TextAnchor.UpperLeft;
             content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Vertical scrollbar (always visible for navigability)
+            BuildVerticalScrollbar(scrollGo.transform, refs.TileScrollRect);
+
             refs.TileScrollRect.content = cr;
-            refs.TileScrollRect.viewport = vp.GetComponent<RectTransform>();
+            refs.TileScrollRect.viewport = vpRt;
+            refs.TileScrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+        }
+
+        /// <summary>Builds a thin, always-visible vertical scrollbar pinned to the right edge of the parent
+        /// scroll container and wires it into the supplied ScrollRect. Visual style matches the editor accent palette.</summary>
+        private static void BuildVerticalScrollbar(Transform scrollContainer, ScrollRect targetScrollRect)
+        {
+            var sbGo = CreateUI("VScrollbar", scrollContainer);
+            var sbRt = sbGo.GetComponent<RectTransform>();
+            sbRt.anchorMin = new Vector2(1f, 0f);
+            sbRt.anchorMax = new Vector2(1f, 1f);
+            sbRt.pivot = new Vector2(1f, 1f);
+            sbRt.sizeDelta = new Vector2(TILES_SCROLLBAR_W, 0f);
+            sbRt.anchoredPosition = Vector2.zero;
+            var sbBg = sbGo.AddComponent<Image>();
+            sbBg.color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            var scrollbar = sbGo.AddComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+
+            var slidingArea = CreateUI("SlidingArea", sbGo.transform);
+            var saRt = slidingArea.GetComponent<RectTransform>();
+            saRt.anchorMin = Vector2.zero;
+            saRt.anchorMax = Vector2.one;
+            saRt.offsetMin = new Vector2(2f, 2f);
+            saRt.offsetMax = new Vector2(-2f, -2f);
+
+            var handleGo = CreateUI("Handle", slidingArea.transform);
+            var hRt = handleGo.GetComponent<RectTransform>();
+            hRt.anchorMin = Vector2.zero;
+            hRt.anchorMax = Vector2.one;
+            hRt.offsetMin = Vector2.zero;
+            hRt.offsetMax = Vector2.zero;
+            var hImg = handleGo.AddComponent<Image>();
+            hImg.color = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            scrollbar.targetGraphic = hImg;
+            scrollbar.handleRect = hRt;
+            var sbColors = scrollbar.colors;
+            sbColors.normalColor = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            sbColors.highlightedColor = new Color(0.75f, 0.62f, 0.30f, 0.95f);
+            sbColors.pressedColor = new Color(0.90f, 0.76f, 0.38f, 1f);
+            scrollbar.colors = sbColors;
+
+            targetScrollRect.verticalScrollbar = scrollbar;
         }
 
         private static void BuildTileCountRow(Transform parent, ref UIRefs refs)

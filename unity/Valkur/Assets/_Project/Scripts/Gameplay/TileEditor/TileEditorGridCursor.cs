@@ -68,17 +68,18 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>
         /// Update hover cursor position/size. Called every frame from TileEditorManager.
         /// </summary>
-        public void UpdateCursor(Vector3 worldCenter, int brushSize, TileEditorState.Tool tool)
+        public void UpdateCursor(Vector3 worldCenter, int brushSize, Vector3 cellSize, TileEditorState.Tool tool)
         {
-            float half = brushSize * 0.5f;
-            SetRect(_hoverLine, worldCenter, half);
+            float halfX = brushSize * cellSize.x * 0.5f;
+            float halfY = brushSize * cellSize.y * 0.5f;
+            SetRect(_hoverLine, worldCenter, halfX, halfY);
             _hoverLine.startColor = HoverColor;
             _hoverLine.endColor = HoverColor;
 
             if (_hoverFill != null)
             {
                 _hoverFill.transform.position = worldCenter;
-                _hoverFill.transform.localScale = new Vector3(brushSize, brushSize, 1f);
+                _hoverFill.transform.localScale = new Vector3(brushSize * cellSize.x, brushSize * cellSize.y, 1f);
                 _hoverFill.color = new Color(HoverColor.r, HoverColor.g, HoverColor.b, HoverFillAlpha);
             }
         }
@@ -86,16 +87,17 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>
         /// Show/update the GREEN selection indicator at a world position.
         /// </summary>
-        public void SetSelection(Vector3 worldCenter, int brushSize)
+        public void SetSelection(Vector3 worldCenter, int brushSize, Vector3 cellSize)
         {
             if (_selGo == null) return;
             _selGo.SetActive(true);
-            float half = brushSize * 0.5f;
-            SetRect(_selLine, worldCenter, half);
+            float halfX = brushSize * cellSize.x * 0.5f;
+            float halfY = brushSize * cellSize.y * 0.5f;
+            SetRect(_selLine, worldCenter, halfX, halfY);
             if (_selFill != null)
             {
                 _selFill.transform.position = worldCenter;
-                _selFill.transform.localScale = new Vector3(brushSize, brushSize, 1f);
+                _selFill.transform.localScale = new Vector3(brushSize * cellSize.x, brushSize * cellSize.y, 1f);
             }
         }
 
@@ -130,12 +132,12 @@ namespace Valkur.Gameplay.TileEditor
             return lr;
         }
 
-        private static void SetRect(LineRenderer lr, Vector3 center, float half)
+        private static void SetRect(LineRenderer lr, Vector3 center, float halfX, float halfY)
         {
-            Vector3 bl = center + new Vector3(-half, -half, 0f);
-            Vector3 br = center + new Vector3(half, -half, 0f);
-            Vector3 tr = center + new Vector3(half, half, 0f);
-            Vector3 tl = center + new Vector3(-half, half, 0f);
+            Vector3 bl = center + new Vector3(-halfX, -halfY, 0f);
+            Vector3 br = center + new Vector3(halfX, -halfY, 0f);
+            Vector3 tr = center + new Vector3(halfX, halfY, 0f);
+            Vector3 tl = center + new Vector3(-halfX, halfY, 0f);
             lr.SetPosition(0, bl);
             lr.SetPosition(1, br);
             lr.SetPosition(2, tr);

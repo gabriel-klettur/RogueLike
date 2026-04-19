@@ -19,12 +19,12 @@ namespace Valkur.Gameplay.TileEditor
         public static List<TileEdit> Paint(Tilemap tilemap, Vector3Int cellPos, TileBase tile, int brushSize, Func<Vector3Int, bool> canEditCell = null)
         {
             var edits = new List<TileEdit>();
-            int half = brushSize / 2;
+            // Cursor is the TOP-LEFT of the N×N footprint: footprint extends right and DOWN.
             for (int dy = 0; dy < brushSize; dy++)
             {
                 for (int dx = 0; dx < brushSize; dx++)
                 {
-                    var pos = new Vector3Int(cellPos.x - half + dx, cellPos.y - half + dy, 0);
+                    var pos = new Vector3Int(cellPos.x + dx, cellPos.y - dy, 0);
                     if (canEditCell != null && !canEditCell(pos)) continue;
                     var oldTile = tilemap.GetTile(pos);
                     if (oldTile == tile) continue;

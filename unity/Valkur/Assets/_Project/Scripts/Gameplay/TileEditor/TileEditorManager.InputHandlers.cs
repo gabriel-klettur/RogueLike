@@ -19,10 +19,12 @@ namespace Valkur.Gameplay.TileEditor
                 _state.CurrentTool = TileEditorState.Tool.Select;
                 _state.BrushStrokeCells.Clear();
                 _state.CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
+                _state.CurrentColliderMode = TileEditorState.ColliderMode.None;
                 _ui.RefreshToolHighlights();
                 _ui.RefreshLayerLabel();
                 _ui.RefreshBrushSizeLabel();
                 _ui.RefreshTilePicker();
+                _ui.RefreshColliderToggles();
                 _ui.SetStatus("Tile Editor active. F8 to close.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
@@ -110,6 +112,14 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_input.IsPointerOverUI()) return;
 
+            // Collider edit modes (Draw / Erase) take priority over the regular tool
+            // dispatch — they always target the Collision tilemap and ignore SelectedTile.
+            if (IsColliderEditModeActive())
+            {
+                HandleColliderInput();
+                return;
+            }
+
             var tilemap = GetCurrentTilemap();
             if (tilemap == null) return;
 
@@ -169,13 +179,12 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
-        /// <summary>Mark all cells in the brush footprint around <paramref name="center"/> as part of the active stroke.</summary>
-        private void AddCellsToBrushStroke(Vector3Int center)
+        /// <summary>Mark all cells in the brush footprint anchored at <paramref name="anchor"/> (cursor cell = top-left, footprint extends right + down).</summary>
+        private void AddCellsToBrushStroke(Vector3Int anchor)
         {
-            int half = _state.BrushSize / 2;
             for (int dy = 0; dy < _state.BrushSize; dy++)
                 for (int dx = 0; dx < _state.BrushSize; dx++)
-                    _state.BrushStrokeCells.Add(new Vector3Int(center.x - half + dx, center.y - half + dy, 0));
+                    _state.BrushStrokeCells.Add(new Vector3Int(anchor.x + dx, anchor.y - dy, 0));
         }
 
         private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)
@@ -261,13 +270,44 @@ namespace Valkur.Gameplay.TileEditor
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 _state.SelectedCellPos = cellPos;
-                var tile = tilemap.GetTile(cellPos);
-                string info = tile != null ? tile.name : "(empty)";
-                _ui.SetStatus($"Cell ({cellPos.x},{cellPos.y}) Layer:{_state.CurrentLayer} Tile:{info}");
 
-                Sprite sprite = null;
-                if (tile is Tile t) sprite = t.sprite;
-                _ui.UpdateViewPanelSelected(sprite, info);
+                // Multi-tile selection: gather every tile under the brush footprint
+                // (BrushSize x BrushSize, cursor = top-left, extends right + down).
+                int count = 0;
+                int empty = 0;
+                TileBase firstTile = null;
+                Vector3Int firstTilePos = cellPos;
+                _state.BrushStrokeCells.Clear();
+
+                for (int dy = 0; dy < _state.BrushSize; dy++)
+                for (int dx = 0; dx < _state.BrushSize; dx++)
+                {
+                    var p = new Vector3Int(cellPos.x + dx, cellPos.y - dy, cellPos.z);
+                    _state.BrushStrokeCells.Add(p);
+                    var tile = tilemap.GetTile(p);
+                    if (tile == null) { empty++; continue; }
+                    if (firstTile == null) { firstTile = tile; firstTilePos = p; }
+                    count++;
+                }
+
+                int total = _state.BrushSize * _state.BrushSize;
+                string info;
+                Sprite previewSprite = null;
+                if (total == 1)
+                {
+                    info = firstTile != null ? firstTile.name : "(empty)";
+                }
+                else if (count == 0)
+                {
+                    info = $"(empty x{total})";
+                }
+                else
+                {
+                    info = $"{firstTile.name} (+{count - 1} more, {empty} empty)";
+                }
+                if (firstTile is Tile t) previewSprite = t.sprite;
+
+                _ui.UpdateViewPanelSelected(previewSprite, info);
             }
         }
 

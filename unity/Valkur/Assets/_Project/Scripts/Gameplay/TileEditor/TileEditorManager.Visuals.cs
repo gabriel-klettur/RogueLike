@@ -75,13 +75,20 @@ namespace Valkur.Gameplay.TileEditor
             _gridCursor.gameObject.SetActive(true);
             Vector3Int cellPos = GetCellUnderMouse(tilemap);
             Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
-            _gridCursor.UpdateCursor(worldPos, _state.BrushSize, _state.CurrentTool);
 
-            // GREEN selection indicator at last-interacted cell
+            // Brush is anchored at the cursor cell (cursor = TOP-LEFT of the N×N footprint).
+            // Footprint extends RIGHT and DOWN, so the visual rect's centre shifts +X / -Y.
+            Vector3 cs = tilemap.cellSize;
+            float offset = (_state.BrushSize - 1) * 0.5f;
+            Vector3 brushCenter = worldPos + new Vector3(offset * cs.x, -offset * cs.y, 0f);
+            _gridCursor.UpdateCursor(brushCenter, _state.BrushSize, cs, _state.CurrentTool);
+
+            // GREEN selection indicator at last-interacted cell (also top-left anchor)
             if (_state.SelectedCellPos.HasValue)
             {
                 Vector3 selWorld = GetCellWorldCenter(tilemap, _state.SelectedCellPos.Value);
-                _gridCursor.SetSelection(selWorld, _state.BrushSize);
+                Vector3 selCenter = selWorld + new Vector3(offset * cs.x, -offset * cs.y, 0f);
+                _gridCursor.SetSelection(selCenter, _state.BrushSize, cs);
             }
             else
             {
@@ -93,6 +100,10 @@ namespace Valkur.Gameplay.TileEditor
             {
                 _gridOverlay.SetSelectedCell(_state.SelectedCellPos);
                 _gridOverlay.SetBrushStrokeCells(_state.BrushStrokeCells);
+                _gridOverlay.SetBrushSize(_state.BrushSize);
+                _gridOverlay.SetCurrentTool(_state.CurrentTool);
+                _gridOverlay.SetCollisionTilemap(GetCollisionTilemap());
+                _gridOverlay.SetShowColliderOverlay(_state.ShowColliderOverlay);
             }
         }
 

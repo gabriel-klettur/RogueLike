@@ -20,6 +20,21 @@ namespace Valkur.Gameplay.TileEditor
             Fill
         }
 
+        /// <summary>
+        /// Sub-mode used by the dedicated Colliders panel. When non-None, mouse painting
+        /// affects the <see cref="TilemapLayerSetup.TilemapLayer.Collision"/> layer using the
+        /// configured <see cref="BrushSize"/>, regardless of the currently selected layer.
+        /// </summary>
+        public enum ColliderMode
+        {
+            /// <summary>Colliders panel is not driving input.</summary>
+            None,
+            /// <summary>Brush paints invisible collision tiles (red overlay).</summary>
+            Draw,
+            /// <summary>Eraser removes collision tiles (red overlay).</summary>
+            Erase
+        }
+
         public bool Active;
         public Tool CurrentTool = Tool.Select;
         public TilemapLayerSetup.TilemapLayer CurrentLayer = TilemapLayerSetup.TilemapLayer.Ground;
@@ -28,6 +43,20 @@ namespace Valkur.Gameplay.TileEditor
         public string SelectedCategory = "";
         public int BrushSize = 1;
         public bool IsDragging;
+
+        /// <summary>
+        /// When true, the Tile Editor draws an opaque red fill + red border for every cell
+        /// painted on the Collision tilemap layer, so the otherwise-invisible collider
+        /// shapes can be authored visually. Toggled from the Colliders panel.
+        /// </summary>
+        public bool ShowColliderOverlay;
+
+        /// <summary>
+        /// Active collider authoring mode. When <see cref="ColliderMode.Draw"/> or
+        /// <see cref="ColliderMode.Erase"/>, mouse input paints/erases the Collision layer
+        /// instead of the currently selected drawing layer.
+        /// </summary>
+        public ColliderMode CurrentColliderMode = ColliderMode.None;
 
         /// <summary>
         /// World-space cell last interacted with (click/place/eyedrop).
