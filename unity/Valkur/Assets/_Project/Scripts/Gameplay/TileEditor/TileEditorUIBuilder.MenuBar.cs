@@ -14,7 +14,8 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         private static void BuildMenuBar(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged,
-            System.Action<string> onDropdownToggle)
+            System.Action<string> onDropdownToggle,
+            System.Action onPerfToggle = null)
         {
             refs.MenuBar = CreateUI("MenuBar", canvasT);
             var r = refs.MenuBar.GetComponent<RectTransform>();
@@ -72,6 +73,12 @@ namespace Valkur.Gameplay.TileEditor
             // ── Flexible spacer ──
             var spacer = CreateUI("Spacer", t);
             spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
+
+            BuildMenuDivider(t);
+
+            // ── Perf Probe toggle (far-right) ──
+            refs.PerfProbeMenuBtnImg = BuildMenuButton(t, "PERF", PERF_BTN_W,
+                () => onPerfToggle?.Invoke(), out refs.PerfProbeMenuBtnTmp);
         }
 
         private static Image BuildMenuButton(Transform parent, string label, float width,

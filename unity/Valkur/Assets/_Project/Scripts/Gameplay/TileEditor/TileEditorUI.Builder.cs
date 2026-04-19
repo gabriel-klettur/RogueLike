@@ -30,7 +30,8 @@ namespace Valkur.Gameplay.TileEditor
             _refs = TileEditorUIBuilder.BuildAll(canvasGo.transform, _state,
                 _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown,
                 _onUndo, _onRedo, _onSave,
-                _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked);
+                _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked,
+                _onPerfToggle);
 
             WireLayerVisibilityButtons();
 

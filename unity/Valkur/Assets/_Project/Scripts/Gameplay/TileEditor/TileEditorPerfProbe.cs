@@ -801,13 +801,13 @@ namespace Valkur.Gameplay.TileEditor
             float panelH = HEADER_H + rows * ROW_H + PAD * 2f + 4f;
 
             float x0 = 12f;
-            float y0 = 80f;
+            float y0 = Screen.height - panelH - 12f;
 
             GUI.Box(new Rect(x0, y0, panelW, panelH), GUIContent.none);
 
             // Header
             GUI.Label(new Rect(x0 + PAD, y0 + 4f, panelW - PAD * 2f, HEADER_H),
-                      "PERF PROBE  (Shift+F8 to hide)", _headerStyle);
+                      "PERF PROBE", _headerStyle);
 
             // Grid: row-major fill (cell index 0..3 → first row, 4..7 → second row, etc.)
             float gridY = y0 + HEADER_H + 4f;

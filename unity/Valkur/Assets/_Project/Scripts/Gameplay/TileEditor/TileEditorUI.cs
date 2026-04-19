@@ -30,6 +30,7 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onShowCollidersClicked;
         private System.Action _onDrawCollidersClicked;
         private System.Action _onEraseCollidersClicked;
+        private System.Action _onPerfToggle;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -59,7 +60,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onSave = null,
             System.Action onShowCollidersClicked = null,
             System.Action onDrawCollidersClicked = null,
-            System.Action onEraseCollidersClicked = null)
+            System.Action onEraseCollidersClicked = null,
+            System.Action onPerfToggle = null)
         {
             _state = state;
             _catalog = catalog;
@@ -74,6 +76,7 @@ namespace Valkur.Gameplay.TileEditor
             _onShowCollidersClicked = onShowCollidersClicked;
             _onDrawCollidersClicked = onDrawCollidersClicked;
             _onEraseCollidersClicked = onEraseCollidersClicked;
+            _onPerfToggle = onPerfToggle;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -267,6 +270,15 @@ namespace Valkur.Gameplay.TileEditor
         public void SetStatus(string text)
         {
             if (_refs.StatusText != null) _refs.StatusText.text = text;
+        }
+
+        /// <summary>Updates the PERF button highlight to reflect probe visibility.</summary>
+        public void SetPerfProbeVisible(bool active)
+        {
+            if (_refs.PerfProbeMenuBtnImg != null)
+                _refs.PerfProbeMenuBtnImg.color = active ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+            if (_refs.PerfProbeMenuBtnTmp != null)
+                _refs.PerfProbeMenuBtnTmp.color = active ? ACCENT : TEXT_PRIMARY;
         }
 
         /// <summary>

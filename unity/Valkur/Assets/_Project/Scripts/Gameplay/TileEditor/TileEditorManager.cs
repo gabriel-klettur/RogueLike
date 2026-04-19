@@ -128,7 +128,8 @@ namespace Valkur.Gameplay.TileEditor
             _ui.Initialize(_state, tileCatalog,
                 OnTileSelected, OnToolChanged, OnLayerChanged, OnBrushSizeChanged,
                 OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked, OnSaveClicked,
-                OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked);
+                OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked,
+                TogglePerfProbe);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
@@ -144,8 +145,15 @@ namespace Valkur.Gameplay.TileEditor
             var probeGo = new GameObject("TileEditorPerfProbe");
             probeGo.transform.SetParent(transform);
             _perfProbe = probeGo.AddComponent<TileEditorPerfProbe>();
-            _perfProbe.Visible = false; // hidden by default; Shift+F8 to show
-            Debug.Log("[TileEditor] Perf probe created (visible by default; Shift+F8 to toggle).");
+            _perfProbe.Visible = false; // hidden by default; toggle via PERF button in menu bar
+            Debug.Log("[TileEditor] Perf probe created (toggle via PERF button in menu bar).");
+        }
+
+        private void TogglePerfProbe()
+        {
+            if (_perfProbe == null) return;
+            _perfProbe.Visible = !_perfProbe.Visible;
+            _ui?.SetPerfProbeVisible(_perfProbe.Visible);
         }
 
         private void InitializePersistence()
@@ -185,15 +193,6 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             if (!_state.Active) return;
-
-            // Shift+F8 toggles the perf probe overlay (only useful while editor is active).
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && kb.f8Key.wasPressedThisFrame &&
-                (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) && _perfProbe != null)
-            {
-                _perfProbe.Visible = !_perfProbe.Visible;
-                Debug.Log($"[TileEditor] Perf probe -> {(_perfProbe.Visible ? "ON" : "OFF")}");
-            }
 
             HandleCameraPan();
             HandleToolShortcuts();

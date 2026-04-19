@@ -96,6 +96,10 @@ namespace Valkur.Gameplay.TileEditor
             public Image SaveButtonImg;
             public TextMeshProUGUI SaveButtonLabel;
             public TextMeshProUGUI DirtyIndicatorText;
+
+            // Perf Probe toggle button (menu bar far-right)
+            public Image PerfProbeMenuBtnImg;
+            public TextMeshProUGUI PerfProbeMenuBtnTmp;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,
@@ -108,7 +112,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onSave = null,
             System.Action onShowColliders = null,
             System.Action onDrawColliders = null,
-            System.Action onEraseColliders = null)
+            System.Action onEraseColliders = null,
+            System.Action onPerfToggle = null)
         {
             var refs = new UIRefs
             {
@@ -121,7 +126,7 @@ namespace Valkur.Gameplay.TileEditor
                 BrushSizePresetLabels = new List<TextMeshProUGUI>()
             };
 
-            BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle);
+            BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle, onPerfToggle);
             BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo, onSave);
             BuildTilesDropdown(canvasT, ref refs);
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
