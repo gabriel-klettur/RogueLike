@@ -18,6 +18,18 @@ namespace Valkur.Core
             void Deactivate();
         }
 
+        /// <summary>
+        /// Fired whenever any editor opens (true) or all editors close (false).
+        /// Subscribers in Valkur.UI can react without a Gameplay dependency.
+        /// </summary>
+        public static event Action<bool> OnEditorStateChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetEditorStateEvent()
+        {
+            OnEditorStateChanged = null;
+        }
+
         private readonly List<IGameEditor> _registered = new List<IGameEditor>();
         private IGameEditor _activeEditor;
 
@@ -62,6 +74,7 @@ namespace Valkur.Core
 
             _activeEditor = target;
             target.Activate();
+            OnEditorStateChanged?.Invoke(true);
         }
 
         /// <summary>
@@ -75,6 +88,7 @@ namespace Valkur.Core
             {
                 target.Deactivate();
                 _activeEditor = null;
+                OnEditorStateChanged?.Invoke(false);
             }
             else
             {
@@ -91,13 +105,17 @@ namespace Valkur.Core
             {
                 _activeEditor.Deactivate();
                 _activeEditor = null;
+                OnEditorStateChanged?.Invoke(false);
             }
         }
 
         public void NotifyDeactivated(IGameEditor editor)
         {
             if (_activeEditor == editor)
+            {
                 _activeEditor = null;
+                OnEditorStateChanged?.Invoke(false);
+            }
         }
     }
 }

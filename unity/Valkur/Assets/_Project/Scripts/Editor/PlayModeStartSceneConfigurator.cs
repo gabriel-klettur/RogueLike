@@ -14,7 +14,9 @@ namespace Valkur.Editor
 
         static PlayModeStartSceneConfigurator()
         {
-            EnsureBootstrapAsPlayModeStartScene();
+            // Defer until AssetDatabase has finished its initial import — otherwise
+            // LoadAssetAtPath returns null on cold-start and emits a false warning.
+            EditorApplication.delayCall += EnsureBootstrapAsPlayModeStartScene;
         }
 
         [MenuItem("Valkur/Scenes/Set Play Mode Start Scene (Bootstrap)")]
@@ -23,7 +25,12 @@ namespace Valkur.Editor
             var bootstrapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(BootstrapScenePath);
             if (bootstrapScene == null)
             {
-                Debug.LogWarning($"[PlayModeStartSceneConfigurator] Bootstrap scene not found at '{BootstrapScenePath}'.");
+                // Only warn if the file is genuinely missing on disk; otherwise it's
+                // a transient AssetDatabase state we should ignore.
+                if (!System.IO.File.Exists(BootstrapScenePath))
+                {
+                    Debug.LogWarning($"[PlayModeStartSceneConfigurator] Bootstrap scene not found at '{BootstrapScenePath}'.");
+                }
                 return;
             }
 

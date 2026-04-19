@@ -17,8 +17,14 @@ namespace Valkur.UI.HUD
         private TargetHUD _targetHUD;
         private Canvas _canvas;
         private Mana _playerMana;
+        private GameObject _playerHudPanel;
 
         public TargetHUD TargetHUD => _targetHUD;
+
+        protected override void OnSingletonAwake()
+        {
+            GameEditorManager.OnEditorStateChanged += OnEditorStateChanged;
+        }
 
         /// <summary>
         /// Called by GameplaySceneSetup after the player is spawned.
@@ -100,6 +106,7 @@ namespace Valkur.UI.HUD
                 new Color(0.31f, 0.47f, 1f, 1f));
 
             // Attach PlayerHUD component
+            _playerHudPanel = panel;
             _playerHUD = panel.AddComponent<PlayerHUD>();
 
             _playerHUD.SetUIReferences(hpFill, hpBg, hpText, mpFill, mpBg, mpText);
@@ -281,10 +288,18 @@ namespace Valkur.UI.HUD
 
         protected override void OnDestroy()
         {
+            GameEditorManager.OnEditorStateChanged -= OnEditorStateChanged;
+
             if (_playerMana != null)
                 _playerMana.OnManaChanged -= OnPlayerManaChanged;
 
             base.OnDestroy();
+        }
+
+        private void OnEditorStateChanged(bool editorActive)
+        {
+            if (_playerHudPanel != null)
+                _playerHudPanel.SetActive(!editorActive);
         }
     }
 }
