@@ -90,9 +90,8 @@ namespace Valkur.Tests.EditMode.TileEditor
         [Test]
         public void PanelHeader_HasMinimumHeight()
         {
-            // Need room for 11px title + small padding + control buttons.
+            // Need room for 11px title + vertical padding.
             Assert.GreaterOrEqual(PANEL_HDR_H, 18f);
-            Assert.GreaterOrEqual(PANEL_HDR_BTN_W, 12f);
         }
 
         // ── UX panel docking math ───────────────────────────────────────────

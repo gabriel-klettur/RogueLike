@@ -485,14 +485,11 @@ namespace Valkur.Gameplay.TileEditor
             hdrHlg.childControlHeight     = true;
             hdrHlg.childAlignment         = TextAnchor.MiddleLeft;
 
-            // Header button width: narrow panels (e.g. TOOLS 60px) use 14px buttons to fit
-            float hdrBtnW = narrowPanel ? 14f : PANEL_HDR_BTN_W;
-
             TextMeshProUGUI titleTmp = null;
             if (!narrowPanel)
             {
-                // Title text on the left, buttons on the right
-                hdrHlg.padding = new RectOffset(8, 2, 0, 0);
+                // Title text fills the full header width
+                hdrHlg.padding = new RectOffset(8, 8, 0, 0);
                 var titleGo  = CreateUI("Title", hdrGo.transform);
                 titleGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
                 titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
@@ -506,13 +503,7 @@ namespace Valkur.Gameplay.TileEditor
                 titleTmp.overflowMode       = TextOverflowModes.Truncate;
                 titleTmp.raycastTarget      = false;
             }
-            else
-            {
-                // Narrow panel: flexible spacer pushes the 3 buttons to the right
-                hdrHlg.padding = new RectOffset(2, 2, 0, 0);
-                var spacer = CreateUI("Spacer", hdrGo.transform);
-                spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
-            }
+            // else (narrowPanel): no title — header acts as drag handle only
 
             // Separator line between header and content
             var sepGo = CreateUI("HdrSep", go.transform);
@@ -548,13 +539,6 @@ namespace Valkur.Gameplay.TileEditor
             drag.DragHeader  = hdrRt;
             drag.ContentRoot = contentGo;
 
-            // Normal bg: subtle dark chip so buttons are visible even un-hovered
-            var normalBg  = new Color(0.18f, 0.18f, 0.24f, 0.75f);
-            var closeBgN  = new Color(0.28f, 0.07f, 0.07f, 0.60f);
-            BuildHdrBtn(hdrGo.transform, "MinBtn",   "—", normalBg,  PANEL_HDR_BTN_HOVER,    () => drag.Minimize(),   hdrBtnW);
-            BuildHdrBtn(hdrGo.transform, "MaxBtn",   "□", normalBg,  PANEL_HDR_BTN_HOVER,    () => drag.Maximize(),   hdrBtnW);
-            BuildHdrBtn(hdrGo.transform, "CloseBtn", "×", closeBgN,  PANEL_HDR_CLOSE_HOVER,  () => drag.ClosePanel(), hdrBtnW);
-
             go.AddComponent<CanvasGroup>();
 
             // ── Theme tracker ─ lets the UX panel repaint this panel live ──────────
@@ -568,43 +552,6 @@ namespace Valkur.Gameplay.TileEditor
             contentTransform = contentGo.transform;
             draggable        = drag;
             return go;
-        }
-
-        /// <summary>Builds a small icon button inside the panel header.</summary>
-        private static void BuildHdrBtn(Transform parent, string goName,
-            string icon, Color normalBg, Color hoverColor, System.Action onClick,
-            float btnWidth = PANEL_HDR_BTN_W)
-        {
-            var go = CreateUI(goName, parent);
-            var le = go.AddComponent<LayoutElement>();
-            le.preferredWidth = btnWidth;
-            le.minWidth       = btnWidth;
-
-            var bgImg = go.AddComponent<Image>();
-            bgImg.color         = normalBg;
-            bgImg.raycastTarget = true;
-
-            var btn = go.AddComponent<Button>();
-            var bc  = btn.colors;
-            bc.normalColor      = normalBg;
-            bc.highlightedColor = hoverColor;
-            bc.pressedColor     = hoverColor;
-            bc.fadeDuration     = 0.08f;
-            btn.colors          = bc;
-            btn.targetGraphic   = bgImg;
-            btn.onClick.AddListener(() => onClick?.Invoke());
-
-            var txtGo = CreateUI("Txt", go.transform);
-            var txtRt = txtGo.GetComponent<RectTransform>();
-            txtRt.anchorMin = Vector2.zero;
-            txtRt.anchorMax = Vector2.one;
-            txtRt.sizeDelta = Vector2.zero;
-            var tmp = txtGo.AddComponent<TextMeshProUGUI>();
-            tmp.text          = icon;
-            tmp.fontSize      = btnWidth <= 16f ? 9f : 11f;
-            tmp.alignment     = TextAlignmentOptions.Center;
-            tmp.color         = TEXT_SECONDARY;   // clearly visible, not just TEXT_MUTED
-            tmp.raycastTarget = false;
         }
 
         /// <summary>
