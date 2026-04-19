@@ -144,7 +144,10 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Set animation state and direction. Resets frame on state change.
+        /// Set animation state and direction.
+        /// Resets frame counter only on state change — direction changes preserve the
+        /// current frame index so walk/idle animations don't stutter when the mouse
+        /// crosses an 8-direction sector boundary.
         /// Maps to Python's set_mapped_anim / Animator.current_state assignment.
         /// </summary>
         public void SetState(AnimState state, Direction direction)
@@ -155,17 +158,53 @@ namespace Valkur.Gameplay
             if (!stateChanged && !directionChanged)
                 return;
 
-            _currentState = state;
             _currentDirection = direction;
+            _prevDirection = direction;
 
-            _frameIndex = 0;
-            _frameTimer = 0f;
-            _stateStartTime = Time.time;
-            _prevState = _currentState;
-            _prevDirection = _currentDirection;
+            if (stateChanged)
+            {
+                _currentState = state;
+                _prevState = state;
+                _frameIndex = 0;
+                _frameTimer = 0f;
+                _stateStartTime = Time.time;
+                // Apply immediately so the new state is visible without frame-interval lag.
+                AdvanceFrame();
+            }
+            else
+            {
+                // Direction-only change: show same frame index in new direction without
+                // resetting the counter, preventing walk animation stutter.
+                RefreshCurrentFrame();
+            }
+        }
 
-            // Apply immediately so idle/walk direction follows mouse without frame-interval lag.
-            AdvanceFrame();
+        /// <summary>
+        /// Applies the current frame from the new direction's sprite set without
+        /// advancing <see cref="_frameIndex"/>. Called on direction-only changes.
+        /// </summary>
+        private void RefreshCurrentFrame()
+        {
+            var spriteSet = GetSpriteSet(_currentState);
+            Sprite[] frames = spriteSet.GetFrames(_currentDirection);
+
+            if (frames == null || frames.Length == 0)
+            {
+                frames = idleSprites.GetFrames(_currentDirection);
+                if (frames == null || frames.Length == 0) return;
+            }
+
+            if (frames.Length == 1)
+            {
+                ApplyFrame(frames[0]);
+                return;
+            }
+
+            int idx = Mathf.Clamp(_frameIndex, 0, frames.Length - 1);
+            // Walk/Chase skip frame 0 (standing pose).
+            if ((_currentState == AnimState.Walk || _currentState == AnimState.Chase) && idx < 1)
+                idx = 1;
+            ApplyFrame(frames[idx]);
         }
 
         /// <summary>

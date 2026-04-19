@@ -232,8 +232,24 @@ namespace Valkur.Gameplay
             if (_animator != null)
             {
                 var dir = _animator.ResolveDirectionFromVector(_facingDirection);
-                var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
-                _animator.SetState(state, dir);
+                var currentState = _animator.CurrentState;
+
+                // Only override locomotion states (Idle / Walk / Chase).
+                // Cast, Attack, Damage, and Death animations are owned by other systems
+                // (SpellCaster, MeleeCombat, Health) and must not be interrupted here.
+                if (currentState == DirectionalAnimator.AnimState.Idle ||
+                    currentState == DirectionalAnimator.AnimState.Walk ||
+                    currentState == DirectionalAnimator.AnimState.Chase)
+                {
+                    var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
+                    _animator.SetState(state, dir);
+                }
+                else
+                {
+                    // Non-locomotion state active: update facing direction only so
+                    // projectile targeting remains accurate while the animation plays.
+                    _animator.SetDirectionFromVector(_facingDirection);
+                }
             }
         }
 
