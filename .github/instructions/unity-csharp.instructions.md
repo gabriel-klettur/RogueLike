@@ -40,3 +40,26 @@ After **every** Unity C# change (create, edit, refactor, delete):
    - MCP WebSocket reconnect (benign after domain reload)
    - `Default GameObject Tag: X already registered` (editor state, not a code error)
 5. **Never** report "done" until the console is error-free
+
+### Domain-Reload Safety (MANDATORY)
+The project has **Enter Play Mode Options** enabled (`Disable Domain Reload + Disable Scene Reload`). Play Mode entry is ~50 ms instead of ~5–15 s, but **static state is NOT cleared between sessions**. Every script with mutable static fields must reset them on Play Mode entry, otherwise stale references will leak across runs (NullRef, "destroyed GameObject" errors).
+
+Add this to any class with mutable static state:
+
+```csharp
+[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+private static void ResetStaticsOnPlayModeEnter()
+{
+    Instance = null;          // singleton instance
+    _cachedSprite = null;     // cached UnityEngine.Object references
+    _someList?.Clear();       // collections
+    _someEvent = null;        // static C# events / Action delegates
+}
+```
+
+Rules:
+- `SingletonMonoBehaviour<T>` already does this for `_instance` — subclasses with their own static state must add their own reset.
+- Manually-coded singletons (`public static MyClass Instance { get; private set; }`) **must** add the reset.
+- Cached `UnityEngine.Object` (Sprite, Texture2D, TileBase, Material…) **must** be reset — they point to assets destroyed in the prior session.
+- Static `event` and `Action` fields **must** be reset to avoid stale subscriber lists.
+- `static readonly` collections do not need to be reassigned, but their contents must be `.Clear()`-ed.

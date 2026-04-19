@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Valkur.Core;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
 
@@ -166,6 +167,13 @@ namespace Valkur.Gameplay
         {
             if (_health.IsDead) return;
             if (_statusEffects != null && _statusEffects.IsStunned) return;
+
+            // Suspend all player input while any runtime editor (Tile Editor, etc.) is active.
+            if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive)
+            {
+                _moveInput = Vector2.zero;
+                return;
+            }
 
             ReadInput();
             UpdateFacingDirection();
