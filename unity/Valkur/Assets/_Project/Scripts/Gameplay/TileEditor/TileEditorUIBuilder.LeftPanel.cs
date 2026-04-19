@@ -461,7 +461,7 @@ namespace Valkur.Gameplay.TileEditor
             var img = go.AddComponent<Image>();
             img.color = BG_PANEL;          // semi-transparent dark — matches PERF PROBE
             var ol = go.AddComponent<Outline>();
-            ol.effectColor    = DROPDOWN_BORDER;
+            ol.effectColor    = PANEL_BORDER;
             ol.effectDistance = new Vector2(1f, 1f);
 
             // ── Panel header (drag handle + title + controls) ─────────────────
@@ -521,7 +521,7 @@ namespace Valkur.Gameplay.TileEditor
             sepRt.pivot     = new Vector2(0f, 1f);
             sepRt.anchoredPosition = new Vector2(0f, -PANEL_HDR_H);
             sepRt.sizeDelta = new Vector2(0f, 1f);
-            sepGo.AddComponent<Image>().color = ACCENT_DIM;
+            sepGo.AddComponent<Image>().color = PANEL_HDR_SEP;
 
             // ── Content area ──────────────────────────────────────────────────
             var contentGo = CreateUI("Content", go.transform);

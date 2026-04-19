@@ -43,6 +43,21 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>Global toggle — set false to disable inter-panel snapping for ALL panels.</summary>
         public static bool GlobalInterPanelSnap = true;
 
+        /// <summary>
+        /// Pixels reserved at the TOP of the canvas that no panel may overlap (e.g. menu bar height).
+        /// Set once at startup by <c>TileEditorManager</c>. Affects clamping AND canvas-edge snap.
+        /// </summary>
+        public static float TopReservedPx;
+
+        /// <summary>Pixels reserved at the BOTTOM of the canvas that no panel may overlap.</summary>
+        public static float BottomReservedPx;
+
+        /// <summary>Pixels reserved at the LEFT  of the canvas that no panel may overlap.</summary>
+        public static float LeftReservedPx;
+
+        /// <summary>Pixels reserved at the RIGHT of the canvas that no panel may overlap.</summary>
+        public static float RightReservedPx;
+
         // ── External callback — set by TileEditorUI.Builder ────────────────
         public System.Action OnClose;
 
@@ -215,9 +230,16 @@ namespace Valkur.Gameplay.TileEditor
             float cH = _canvasRt.rect.height;
             float pW = _rt.rect.width;
             float pH = _rt.rect.height;
+
+            // Reserved zones (e.g. menu bar at top) restrict the usable region.
+            float xMin =  LeftReservedPx;
+            float xMax =  Mathf.Max(xMin, cW - pW - RightReservedPx);
+            float yMin = -Mathf.Max(0f, cH - pH - TopReservedPx - BottomReservedPx) - BottomReservedPx;
+            float yMax = -TopReservedPx;
+
             var p = _rt.anchoredPosition;
-            p.x = Mathf.Clamp(p.x, 0f, Mathf.Max(0f, cW - pW));
-            p.y = Mathf.Clamp(p.y, -Mathf.Max(0f, cH - pH), 0f);
+            p.x = Mathf.Clamp(p.x, xMin, xMax);
+            p.y = Mathf.Clamp(p.y, yMin, yMax);
             _rt.anchoredPosition = p;
         }
 
@@ -244,11 +266,17 @@ namespace Valkur.Gameplay.TileEditor
             float pW = _rt.rect.width;
             float pH = _rt.rect.height;
 
-            if (p.x < SnapTolerance)                 s.x = 0f;
-            else if (cW - pW - p.x < SnapTolerance)  s.x = cW - pW;
+            // Edge positions accounting for reserved zones.
+            float leftEdge   = LeftReservedPx;
+            float rightEdge  = cW - pW - RightReservedPx;
+            float topEdge    = -TopReservedPx;
+            float bottomEdge = -(cH - pH - BottomReservedPx);
 
-            if (-p.y < SnapTolerance)                s.y = 0f;
-            else if (cH - pH + p.y < SnapTolerance)  s.y = -(cH - pH);
+            if (Mathf.Abs(p.x - leftEdge)   < SnapTolerance) s.x = leftEdge;
+            else if (Mathf.Abs(rightEdge - p.x) < SnapTolerance) s.x = rightEdge;
+
+            if (Mathf.Abs(p.y - topEdge)    < SnapTolerance) s.y = topEdge;
+            else if (Mathf.Abs(p.y - bottomEdge) < SnapTolerance) s.y = bottomEdge;
         }
 
         /// <summary>

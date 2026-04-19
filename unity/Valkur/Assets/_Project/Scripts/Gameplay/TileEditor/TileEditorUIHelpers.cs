@@ -11,7 +11,7 @@ namespace Valkur.Gameplay.TileEditor
     public static class TileEditorUIHelpers
     {
         // ── Design Tokens ──
-        public static readonly Color BG_PANEL       = new Color(0.09f, 0.09f, 0.12f, 0.94f);
+        public static readonly Color BG_PANEL       = new Color(0.08f, 0.08f, 0.10f, 0.82f);
         public static readonly Color BG_SURFACE     = new Color(0.13f, 0.13f, 0.17f, 1f);
         public static readonly Color BG_ELEVATED    = new Color(0.17f, 0.17f, 0.22f, 1f);
         public static readonly Color ACCENT         = new Color(0.90f, 0.76f, 0.38f, 1f);
@@ -71,8 +71,10 @@ namespace Valkur.Gameplay.TileEditor
         public const float PANEL_HDR_H = 24f;
         /// <summary>Width of each header control button (minimize / maximize / close).</summary>
         public const float PANEL_HDR_BTN_W = 22f;
-        public static readonly Color PANEL_HDR_BG      = new Color(0.07f, 0.07f, 0.09f, 1f);
+        public static readonly Color PANEL_HDR_BG      = new Color(0.06f, 0.06f, 0.08f, 0.92f);
         public static readonly Color PANEL_HDR_TITLE    = new Color(0.93f, 0.93f, 0.96f, 1f);
+        public static readonly Color PANEL_HDR_SEP      = new Color(0.30f, 0.32f, 0.38f, 0.55f);
+        public static readonly Color PANEL_BORDER       = new Color(0.20f, 0.22f, 0.28f, 0.65f);
         public static readonly Color PANEL_HDR_BTN_HOVER   = new Color(0.28f, 0.28f, 0.36f, 1f);
         public static readonly Color PANEL_HDR_CLOSE_HOVER = new Color(0.72f, 0.10f, 0.10f, 0.9f);
 

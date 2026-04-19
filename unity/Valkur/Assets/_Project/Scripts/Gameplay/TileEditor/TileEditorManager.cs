@@ -131,6 +131,9 @@ namespace Valkur.Gameplay.TileEditor
                 OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked,
                 TogglePerfProbe);
 
+            // Floating panels must never overlap the menu bar at the top of the canvas.
+            DraggablePanel.TopReservedPx = TileEditorUIHelpers.MENUBAR_HEIGHT;
+
             CreateBrushPreview();
             CreateScreenBorderOverlay();
             CreateGridCursor();
