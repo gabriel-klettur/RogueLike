@@ -68,13 +68,21 @@ namespace Valkur.Gameplay.TileEditor
             public Image TilesMenuBtnImg;
             public Image LayersMenuBtnImg;
             public Image InspectorMenuBtnImg;
+
+            // Save button + dirty indicator (in Tools panel)
+            public Image SaveButtonImg;
+            public TextMeshProUGUI SaveButtonLabel;
+            public TextMeshProUGUI DirtyIndicatorText;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,
             System.Action<TileEditorState.Tool> onToolChanged,
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged,
             System.Action<int> onBrushSizeChanged,
-            System.Action<string> onDropdownToggle)
+            System.Action<string> onDropdownToggle,
+            System.Action onUndo = null,
+            System.Action onRedo = null,
+            System.Action onSave = null)
         {
             var refs = new UIRefs
             {
@@ -86,7 +94,7 @@ namespace Valkur.Gameplay.TileEditor
             };
 
             BuildMenuBar(canvasT, state, ref refs, onLayerChanged, onBrushSizeChanged, onDropdownToggle);
-            BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged);
+            BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo, onSave);
             BuildTilesDropdown(canvasT, ref refs);
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);

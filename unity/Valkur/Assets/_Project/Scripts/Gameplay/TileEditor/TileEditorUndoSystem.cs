@@ -37,29 +37,29 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Undo the last edit batch. Returns true if an undo was performed.
+        /// Undo the last edit batch. Returns the batch that was undone (so callers can re-mark its cells dirty), or null if nothing to undo.
         /// </summary>
-        public bool Undo()
+        public TileEditBatch Undo()
         {
-            if (_undoStack.Count == 0) return false;
+            if (_undoStack.Count == 0) return null;
             var batch = _undoStack[_undoStack.Count - 1];
             _undoStack.RemoveAt(_undoStack.Count - 1);
             batch.Undo();
             _redoStack.Add(batch);
-            return true;
+            return batch;
         }
 
         /// <summary>
-        /// Redo the last undone edit batch. Returns true if a redo was performed.
+        /// Redo the last undone edit batch. Returns the batch that was redone, or null if nothing to redo.
         /// </summary>
-        public bool Redo()
+        public TileEditBatch Redo()
         {
-            if (_redoStack.Count == 0) return false;
+            if (_redoStack.Count == 0) return null;
             var batch = _redoStack[_redoStack.Count - 1];
             _redoStack.RemoveAt(_redoStack.Count - 1);
             batch.Redo();
             _undoStack.Add(batch);
-            return true;
+            return batch;
         }
 
         public bool HasActiveStroke => _currentBatch != null;

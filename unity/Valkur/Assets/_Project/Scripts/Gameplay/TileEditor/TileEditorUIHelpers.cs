@@ -41,6 +41,25 @@ namespace Valkur.Gameplay.TileEditor
         public const float SECTION_SPACING = 6f;
         public const float INNER_PAD = 10f;
 
+        // ── Dock Layout (panel placement) ──
+        /// <summary>Pixel gap between panels and screen edges / between docked panels.</summary>
+        public const float PANEL_GAP = 8f;
+        /// <summary>Vertical offset from the top of the screen to the first row of panels (sits below the menu bar).</summary>
+        public const float PANEL_TOP_OFFSET = 34f; // = MENUBAR_HEIGHT (30) + 4
+
+        /// <summary>Anchor corner for a docked dropdown panel.</summary>
+        public enum PanelDock
+        {
+            /// <summary>Anchored to the top-left corner. Offsets are pixels right (x) and pixels down (y).</summary>
+            TopLeft,
+            /// <summary>Anchored to the top-right corner. Offsets are pixels left from right edge (x) and pixels down (y).</summary>
+            TopRight,
+            /// <summary>Anchored to the bottom-left corner. Offsets are pixels right (x) and pixels up (y).</summary>
+            BottomLeft,
+            /// <summary>Anchored to the bottom-right corner. Offsets are pixels left from right edge (x) and pixels up (y).</summary>
+            BottomRight
+        }
+
         // ── Menu Bar ──
         public const float MENUBAR_HEIGHT = 30f;
         public const float MENUBAR_SPACING = 3f;
@@ -59,10 +78,14 @@ namespace Valkur.Gameplay.TileEditor
         public const float LAYERS_BTN_W = 72f;
         public const float INSPECTOR_BTN_W = 86f;
         // Dropdown widths/heights
-        public const float TOOLS_DROP_W = 270f;
-        public const float TOOLS_DROP_H = 108f;
-        public const float TILES_DROP_W = 320f;
-        public const float TILES_DROP_H = 440f;
+        // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44  =  BTN_H → perfect square buttons
+        public const float TOOLS_DROP_W = 60f;
+        public const float TOOLS_DROP_H = 460f;
+        public const float TILES_DROP_W = 140f;
+        public const float TILES_DROP_H = 500f;
+        /// <summary>Square cell size for the single-column tile picker.
+        /// Derived from: TILES_DROP_W(140) - VerticalLayoutGroup padding(8+8) - GridLayout padding(4+4) = 116.</summary>
+        public const float TILES_CELL_SIZE = 116f;
         public const float LAYERS_DROP_W = 240f;
         public const float LAYERS_DROP_H = 300f;
         public const float INSPECTOR_DROP_W = 250f;

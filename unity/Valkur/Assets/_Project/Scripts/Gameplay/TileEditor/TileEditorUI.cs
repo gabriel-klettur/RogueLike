@@ -23,6 +23,10 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action<TileEditorState.Tool> _onToolChanged;
         private System.Action<TilemapLayerSetup.TilemapLayer> _onLayerChanged;
         private System.Action<int> _onBrushSizeChanged;
+        private System.Action<TilemapLayerSetup.TilemapLayer, bool> _onLayerVisibilityChanged;
+        private System.Action _onUndo;
+        private System.Action _onRedo;
+        private System.Action _onSave;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -33,7 +37,9 @@ namespace Valkur.Gameplay.TileEditor
         private readonly bool[] _layerVisibility = new bool[9];
 
         // ── Dropdown state ──
-        private string _openDropdown;
+        // Each panel opens / closes independently; we keep a set of open panel keys
+        // so the four menu buttons act as independent toggles.
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
 
         // =====================================================================
         // PUBLIC API
@@ -43,7 +49,11 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TileCatalog.TileEntry> onTileSelected,
             System.Action<TileEditorState.Tool> onToolChanged,
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged,
-            System.Action<int> onBrushSizeChanged)
+            System.Action<int> onBrushSizeChanged,
+            System.Action<TilemapLayerSetup.TilemapLayer, bool> onLayerVisibilityChanged = null,
+            System.Action onUndo = null,
+            System.Action onRedo = null,
+            System.Action onSave = null)
         {
             _state = state;
             _catalog = catalog;
@@ -51,6 +61,10 @@ namespace Valkur.Gameplay.TileEditor
             _onToolChanged = onToolChanged;
             _onLayerChanged = onLayerChanged;
             _onBrushSizeChanged = onBrushSizeChanged;
+            _onLayerVisibilityChanged = onLayerVisibilityChanged;
+            _onUndo = onUndo;
+            _onRedo = onRedo;
+            _onSave = onSave;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -66,51 +80,57 @@ namespace Valkur.Gameplay.TileEditor
 
         public void ToggleDropdown(string name)
         {
-            if (_openDropdown == name)
+            if (string.IsNullOrEmpty(name)) return;
+            if (_openDropdowns.Contains(name))
             {
-                CloseAllDropdowns();
-                return;
+                SetDropdownOpen(name, false);
+                _openDropdowns.Remove(name);
             }
-            CloseAllDropdowns();
-            _openDropdown = name;
-            switch (name)
+            else
             {
-                case "tools":
-                    if (_refs.ToolsDropdown != null) _refs.ToolsDropdown.SetActive(true);
-                    break;
-                case "tiles":
-                    if (_refs.TilesDropdown != null) _refs.TilesDropdown.SetActive(true);
-                    break;
-                case "layers":
-                    if (_refs.LayersDropdown != null) _refs.LayersDropdown.SetActive(true);
-                    break;
-                case "inspector":
-                    if (_refs.InspectorDropdown != null) _refs.InspectorDropdown.SetActive(true);
-                    break;
+                SetDropdownOpen(name, true);
+                _openDropdowns.Add(name);
             }
             RefreshMenuBtnHighlights();
         }
 
         public void CloseAllDropdowns()
         {
-            _openDropdown = null;
-            if (_refs.ToolsDropdown != null) _refs.ToolsDropdown.SetActive(false);
-            if (_refs.TilesDropdown != null) _refs.TilesDropdown.SetActive(false);
-            if (_refs.LayersDropdown != null) _refs.LayersDropdown.SetActive(false);
-            if (_refs.InspectorDropdown != null) _refs.InspectorDropdown.SetActive(false);
+            foreach (var name in _openDropdowns)
+                SetDropdownOpen(name, false);
+            _openDropdowns.Clear();
             RefreshMenuBtnHighlights();
+        }
+
+        private void SetDropdownOpen(string name, bool open)
+        {
+            switch (name)
+            {
+                case "tools":
+                    if (_refs.ToolsDropdown != null) _refs.ToolsDropdown.SetActive(open);
+                    break;
+                case "tiles":
+                    if (_refs.TilesDropdown != null) _refs.TilesDropdown.SetActive(open);
+                    break;
+                case "layers":
+                    if (_refs.LayersDropdown != null) _refs.LayersDropdown.SetActive(open);
+                    break;
+                case "inspector":
+                    if (_refs.InspectorDropdown != null) _refs.InspectorDropdown.SetActive(open);
+                    break;
+            }
         }
 
         private void RefreshMenuBtnHighlights()
         {
             if (_refs.ToolsMenuBtnImg != null)
-                _refs.ToolsMenuBtnImg.color = _openDropdown == "tools" ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+                _refs.ToolsMenuBtnImg.color = _openDropdowns.Contains("tools") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
             if (_refs.TilesMenuBtnImg != null)
-                _refs.TilesMenuBtnImg.color = _openDropdown == "tiles" ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+                _refs.TilesMenuBtnImg.color = _openDropdowns.Contains("tiles") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
             if (_refs.LayersMenuBtnImg != null)
-                _refs.LayersMenuBtnImg.color = _openDropdown == "layers" ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+                _refs.LayersMenuBtnImg.color = _openDropdowns.Contains("layers") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
             if (_refs.InspectorMenuBtnImg != null)
-                _refs.InspectorMenuBtnImg.color = _openDropdown == "inspector" ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
+                _refs.InspectorMenuBtnImg.color = _openDropdowns.Contains("inspector") ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
         }
 
         public void RefreshToolHighlights()
@@ -141,6 +161,22 @@ namespace Valkur.Gameplay.TileEditor
         public void SetStatus(string text)
         {
             if (_refs.StatusText != null) _refs.StatusText.text = text;
+        }
+
+        /// <summary>
+        /// Reflect the persistence dirty-state in the Save button colour and the counter beneath it.
+        /// Bright accent + zone count when there are unsaved changes; muted when clean.
+        /// </summary>
+        public void SetDirtyState(bool isDirty, int dirtyZoneCount)
+        {
+            if (_refs.SaveButtonImg != null)
+                _refs.SaveButtonImg.color = isDirty ? ACCENT_BG : BTN_NORMAL;
+            if (_refs.SaveButtonLabel != null)
+                _refs.SaveButtonLabel.color = isDirty ? ACCENT : TEXT_SECONDARY;
+            if (_refs.DirtyIndicatorText != null)
+                _refs.DirtyIndicatorText.text = isDirty
+                    ? (dirtyZoneCount == 1 ? "1 zone *" : $"{dirtyZoneCount} zones *")
+                    : string.Empty;
         }
 
         public void RefreshTilePicker()

@@ -28,6 +28,16 @@ namespace Valkur.Gameplay.TileEditor
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
                 UpdateBorderToolLabel();
+                if (Valkur.Gameplay.CameraSetup.Instance != null)
+                    Valkur.Gameplay.CameraSetup.Instance.DetachFollow();
+
+                // ── Force uncapped FPS while editing so we can see real perf ──
+                _savedTargetFrameRate = Application.targetFrameRate;
+                _savedVSyncCount = QualitySettings.vSyncCount;
+                Application.targetFrameRate = 120;
+                QualitySettings.vSyncCount = 0;
+                Debug.Log($"[TileEditor] FPS cap override: target=120 vSync=0 (was {_savedTargetFrameRate}/{_savedVSyncCount})");
+
                 Debug.Log("[TileEditor] Activated (F8)");
             }
             else
@@ -39,6 +49,16 @@ namespace Valkur.Gameplay.TileEditor
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(false);
+                // Keep perf probe state — re-enabled on activate via CreatePerfProbe defaults
+                _isPanning = false;
+                if (Valkur.Gameplay.CameraSetup.Instance != null)
+                    Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
+
+                // Restore previous FPS cap
+                Application.targetFrameRate = _savedTargetFrameRate;
+                QualitySettings.vSyncCount = _savedVSyncCount;
+                Debug.Log($"[TileEditor] FPS cap restored: target={_savedTargetFrameRate} vSync={_savedVSyncCount}");
+
                 Debug.Log("[TileEditor] Deactivated (F8)");
             }
         }
@@ -64,8 +84,24 @@ namespace Valkur.Gameplay.TileEditor
         private partial void HandleUndoRedo()
         {
             int action = _input.PollUndoRedo();
-            if (action == 1 && _undo.Undo()) _ui.SetStatus("Undo");
-            else if (action == 2 && _undo.Redo()) _ui.SetStatus("Redo");
+            if (action == 1)
+            {
+                var batch = _undo.Undo();
+                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui.SetStatus("Undo"); }
+            }
+            else if (action == 2)
+            {
+                var batch = _undo.Redo();
+                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui.SetStatus("Redo"); }
+            }
+
+            // Ctrl+S → save all dirty zones to disk
+            var kb = Keyboard.current;
+            if (kb != null && kb.sKey.wasPressedThisFrame &&
+                (kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed))
+            {
+                SaveAllChanges();
+            }
         }
 
         // ── Mouse input ──
@@ -104,6 +140,7 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
+                _persistence?.MarkBatchDirty(edits);
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
 
@@ -121,6 +158,7 @@ namespace Valkur.Gameplay.TileEditor
                 _state.SelectedCellPos = cellPos;
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
+                _persistence?.MarkBatchDirty(edits);
                 AddCellsToBrushStroke(cellPos);
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
@@ -151,6 +189,7 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
+                _persistence?.MarkBatchDirty(edits);
                 _state.IsDragging = true;
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
@@ -159,7 +198,9 @@ namespace Valkur.Gameplay.TileEditor
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
-                _undo.RecordEdits(TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell));
+                var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
+                _undo.RecordEdits(edits);
+                _persistence?.MarkBatchDirty(edits);
             }
             else if (mouse.leftButton.wasReleasedThisFrame)
             {
@@ -180,6 +221,7 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.StartStroke(tilemap);
                 var edits = TileBrush.FloodFill(tilemap, cellPos, _state.SelectedTile, canEditCell: CanEditCell);
                 _undo.RecordEdits(edits);
+                _persistence?.MarkBatchDirty(edits);
                 _undo.EndStroke();
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
@@ -226,6 +268,50 @@ namespace Valkur.Gameplay.TileEditor
                 Sprite sprite = null;
                 if (tile is Tile t) sprite = t.sprite;
                 _ui.UpdateViewPanelSelected(sprite, info);
+            }
+        }
+
+        // ── Middle-mouse camera pan ──
+        // Mirrors Python camera_pan.py: handle_pan_state()
+        //   MOUSEBUTTONDOWN 2 → save anchor
+        //   MOUSEMOTION while panning → camera.offset -= rel / zoom
+        //   MOUSEBUTTONUP 2 → stop panning
+
+        private partial void HandleCameraPan()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            if (_mainCamera == null) _mainCamera = Camera.main;
+            if (_mainCamera == null) return;
+
+            // Move the Cinemachine vcam transform (Camera.main is driven by Cinemachine
+            // and would be overridden every LateUpdate). CameraSetup detached the Follow
+            // target when the editor opened, so the vcam transform is free.
+            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
+            Transform vcamT = camSetup != null ? camSetup.GetDetachedTransform() : null;
+            if (vcamT == null) return;
+
+            if (mouse.middleButton.wasPressedThisFrame)
+            {
+                _isPanning = true;
+                _panAnchorScreenPos = mouse.position.ReadValue();
+                _panAnchorCamPos = vcamT.position;
+            }
+            else if (mouse.middleButton.wasReleasedThisFrame)
+            {
+                _isPanning = false;
+            }
+
+            if (_isPanning && mouse.middleButton.isPressed)
+            {
+                Vector2 currentScreenPos = mouse.position.ReadValue();
+                Vector2 screenDelta = currentScreenPos - _panAnchorScreenPos;
+
+                float unitsPerPixel = _mainCamera.orthographicSize * 2f / Screen.height;
+                Vector3 worldDelta = new Vector3(screenDelta.x, screenDelta.y, 0f) * unitsPerPixel;
+                Vector3 newPos = _panAnchorCamPos - worldDelta;
+                newPos.z = vcamT.position.z;
+                vcamT.position = newPos;
             }
         }
     }

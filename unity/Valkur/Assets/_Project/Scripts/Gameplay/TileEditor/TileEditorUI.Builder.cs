@@ -28,7 +28,8 @@ namespace Valkur.Gameplay.TileEditor
             canvasGo.AddComponent<GraphicRaycaster>();
 
             _refs = TileEditorUIBuilder.BuildAll(canvasGo.transform, _state,
-                _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown);
+                _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown,
+                _onUndo, _onRedo, _onSave);
 
             WireLayerVisibilityButtons();
 
@@ -61,6 +62,8 @@ namespace Valkur.Gameplay.TileEditor
             _layerVisibility[layerIdx] = !_layerVisibility[layerIdx];
             if (layerIdx < _refs.LayerVisIcons.Count)
                 _refs.LayerVisIcons[layerIdx].color = _layerVisibility[layerIdx] ? VIS_ON : VIS_OFF;
+            var layer = (TilemapLayerSetup.TilemapLayer)layerIdx;
+            _onLayerVisibilityChanged?.Invoke(layer, _layerVisibility[layerIdx]);
         }
 
         public bool IsLayerVisible(int layerIdx)
@@ -162,26 +165,31 @@ namespace Valkur.Gameplay.TileEditor
 
                 Sprite preview = entry.preview;
                 if (preview == null && entry.tile is Tile t) preview = t.sprite;
+
+                // Name strip — fixed 18px at the bottom
+                var nameGo = CreateUI("TName", go.transform);
+                var nr = nameGo.GetComponent<RectTransform>();
+                nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0f);
+                nr.pivot = new Vector2(0.5f, 0f);
+                nr.sizeDelta = new Vector2(0f, 18f);
+                var nbg = nameGo.AddComponent<Image>();
+                nbg.color = new Color(0f, 0f, 0f, 0.75f); nbg.raycastTarget = false;
+                var nt = TileEditorUIHelpers.AddCenteredText(nameGo.transform, entry.tileName, 8f, FontStyles.Normal, TEXT_PRIMARY);
+                nt.raycastTarget = false;
+                nt.overflowMode = TextOverflowModes.Ellipsis;
+                nt.enableWordWrapping = false;
+
+                // Sprite preview — fills the cell above the name strip
                 if (preview != null)
                 {
                     var sgo = CreateUI("Prev", go.transform);
                     var sr = sgo.GetComponent<RectTransform>();
-                    sr.anchorMin = new Vector2(0.06f, 0.06f); sr.anchorMax = new Vector2(0.94f, 0.94f);
-                    sr.sizeDelta = Vector2.zero;
+                    sr.anchorMin = new Vector2(0.04f, 0f); sr.anchorMax = new Vector2(0.96f, 1f);
+                    sr.offsetMin = new Vector2(sr.offsetMin.x, 18f);  // leave room for name
+                    sr.offsetMax = new Vector2(sr.offsetMax.x, -4f);
                     var si = sgo.AddComponent<Image>();
                     si.sprite = preview; si.preserveAspect = true; si.raycastTarget = false;
                 }
-
-                var nameGo = CreateUI("TName", go.transform);
-                var nr = nameGo.GetComponent<RectTransform>();
-                nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0.22f);
-                nr.sizeDelta = Vector2.zero;
-                var nbg = nameGo.AddComponent<Image>();
-                nbg.color = new Color(0f, 0f, 0f, 0.7f); nbg.raycastTarget = false;
-                var nt = TileEditorUIHelpers.AddCenteredText(nameGo.transform, entry.tileName, 7f, FontStyles.Normal, TEXT_PRIMARY);
-                nt.raycastTarget = false;
-                nt.overflowMode = TextOverflowModes.Ellipsis;
-                nt.enableWordWrapping = false;
 
                 _tileSlots.Add(go);
             }

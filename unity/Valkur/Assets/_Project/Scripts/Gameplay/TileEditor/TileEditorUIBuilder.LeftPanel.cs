@@ -10,17 +10,20 @@ namespace Valkur.Gameplay.TileEditor
     public static partial class TileEditorUIBuilder
     {
         // ═════════════════════════════════════════════════════════════════
-        //  Dropdown X positions (cumulative from menu bar layout)
+        //  Panel dock layout (top-row Tools + Tiles, top-right Inspector, bottom-right Layers)
         // ═════════════════════════════════════════════════════════════════
-
-        private static float DropdownX_Tools =>
-            MENUBAR_PAD_H + TITLE_W + MENUBAR_SPACING + 1f + MENUBAR_SPACING;
-        private static float DropdownX_Tiles =>
-            DropdownX_Tools + TOOLS_BTN_W + MENUBAR_SPACING;
-        private static float DropdownX_Layers =>
-            DropdownX_Tiles + TILES_BTN_W + MENUBAR_SPACING;
-        private static float DropdownX_Inspector =>
-            DropdownX_Layers + LAYERS_BTN_W + MENUBAR_SPACING;
+        // Tools sits at top-left, just below the menu bar.
+        // Tiles sits immediately to the right of Tools (same vertical row).
+        // Inspector sits at top-right, same vertical row as Tools/Tiles.
+        // Layers sits at the bottom-right corner.
+        private static float ToolsX     => PANEL_GAP;
+        private static float ToolsY     => PANEL_TOP_OFFSET;
+        private static float TilesX     => PANEL_GAP + TOOLS_DROP_W + PANEL_GAP;
+        private static float TilesY     => PANEL_TOP_OFFSET;
+        private static float InspectorX => PANEL_GAP;   // from right edge
+        private static float InspectorY => PANEL_TOP_OFFSET;
+        private static float LayersX    => PANEL_GAP;   // from right edge
+        private static float LayersY    => PANEL_GAP;   // from bottom edge
 
         // ═════════════════════════════════════════════════════════════════
         //  TOOLS DROPDOWN
@@ -28,50 +31,149 @@ namespace Valkur.Gameplay.TileEditor
 
         private static void BuildToolsDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<TileEditorState.Tool> onToolChanged,
-            System.Action<int> onBrushSizeChanged)
+            System.Action<int> onBrushSizeChanged,
+            System.Action onUndo = null,
+            System.Action onRedo = null,
+            System.Action onSave = null)
         {
             refs.ToolsDropdown = MakeDropdownPanel("ToolsDropdown", canvasT,
-                DropdownX_Tools, TOOLS_DROP_W, TOOLS_DROP_H);
+                PanelDock.TopLeft, ToolsX, ToolsY, TOOLS_DROP_W, TOOLS_DROP_H);
 
             var t = refs.ToolsDropdown.transform;
 
-            BuildSectionLabel(t, "TOOLS");
+            // Compact header
+            var hdrGo = CreateUI("Label_Tools", t);
+            hdrGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            var hdrTmp = hdrGo.AddComponent<TextMeshProUGUI>();
+            hdrTmp.text = "TOOLS"; hdrTmp.fontSize = 8f; hdrTmp.fontStyle = FontStyles.Bold;
+            hdrTmp.alignment = TextAlignmentOptions.Center; hdrTmp.color = TEXT_MUTED;
+            hdrTmp.characterSpacing = 2f;
 
-            // Tool buttons row
-            var toolRow = CreateUI("ToolRow", t);
-            toolRow.AddComponent<LayoutElement>().preferredHeight = 44f;
-            var h = toolRow.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 4f;
-            h.childForceExpandWidth = true;
-            h.childForceExpandHeight = true;
-            h.childControlWidth = true;
-            h.childControlHeight = true;
-
-            CreateToolBtn(toolRow.transform, "Brush", "B", TileEditorState.Tool.Brush, state, ref refs, onToolChanged);
-            CreateToolBtn(toolRow.transform, "Erase", "E", TileEditorState.Tool.Eraser, state, ref refs, onToolChanged);
-            CreateToolBtn(toolRow.transform, "Fill", "F", TileEditorState.Tool.Fill, state, ref refs, onToolChanged);
-            CreateToolBtn(toolRow.transform, "Pick", "I", TileEditorState.Tool.Eyedropper, state, ref refs, onToolChanged);
-            CreateToolBtn(toolRow.transform, "Select", "S", TileEditorState.Tool.Select, state, ref refs, onToolChanged);
+            // Single-column icon toolbar — inner width (60-8-8=44) = BTN_H → square
+            const float BTN_H = 44f;
+            CreateToolBtn(t, "Select",  "S",      TileEditorState.Tool.Select,      state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Brush",   "B",      TileEditorState.Tool.Brush,       state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Erase",   "E",      TileEditorState.Tool.Eraser,      state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Fill",    "F",      TileEditorState.Tool.Fill,        state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Pick",    "I",      TileEditorState.Tool.Eyedropper,  state, ref refs, onToolChanged, BTN_H);
 
             BuildSeparator(t);
 
-            // Shortcuts help
-            var help = CreateUI("Help", t);
-            help.AddComponent<LayoutElement>().preferredHeight = 14f;
-            var helpTmp = help.AddComponent<TextMeshProUGUI>();
-            helpTmp.text = "Scroll=Layer  |  Ctrl+Z=Undo  |  B E F I S";
-            helpTmp.fontSize = 9f;
-            helpTmp.alignment = TextAlignmentOptions.Center;
-            helpTmp.color = TEXT_MUTED;
+            CreateActionBtn(t, "Undo", "Ctrl+Z",       BTN_H, onUndo);
+            CreateActionBtn(t, "Redo", "Ctrl+Shift+Z", BTN_H, onRedo);
+
+            BuildSeparator(t);
+
+            // Save button (writes dirty zones to disk)
+            CreateSaveBtn(t, BTN_H, onSave, ref refs);
 
             refs.ToolsDropdown.SetActive(false);
         }
 
+        /// <summary>Compact Save button + dirty-zone counter shown beneath it.</summary>
+        private static void CreateSaveBtn(Transform parent, float height, System.Action onClick, ref UIRefs refs)
+        {
+            var go = CreateUI("Action_Save", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
+            var img = go.AddComponent<Image>();
+            img.color = BTN_NORMAL;
+            refs.SaveButtonImg = img;
+
+            var btn = go.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
+            btn.colors = c;
+            btn.targetGraphic = img;
+            btn.onClick.AddListener(() => onClick?.Invoke());
+
+            var vl = go.AddComponent<VerticalLayoutGroup>();
+            vl.childAlignment = TextAnchor.MiddleCenter;
+            vl.childForceExpandWidth = true;
+            vl.childForceExpandHeight = false;
+            vl.childControlWidth = true;
+            vl.childControlHeight = true;
+            vl.spacing = 1f;
+            vl.padding = new RectOffset(2, 2, 4, 4);
+
+            var lblGo = CreateUI("Lbl", go.transform);
+            lblGo.AddComponent<LayoutElement>().preferredHeight = 16f;
+            refs.SaveButtonLabel = lblGo.AddComponent<TextMeshProUGUI>();
+            refs.SaveButtonLabel.text = "Save";
+            refs.SaveButtonLabel.fontSize = 9f;
+            refs.SaveButtonLabel.fontStyle = FontStyles.Bold;
+            refs.SaveButtonLabel.alignment = TextAlignmentOptions.Center;
+            refs.SaveButtonLabel.color = TEXT_SECONDARY;
+
+            var keyGo = CreateUI("Key", go.transform);
+            keyGo.AddComponent<LayoutElement>().preferredHeight = 11f;
+            var keyTmp = keyGo.AddComponent<TextMeshProUGUI>();
+            keyTmp.text = "Ctrl+S";
+            keyTmp.fontSize = 7f;
+            keyTmp.alignment = TextAlignmentOptions.Center;
+            keyTmp.color = TEXT_MUTED;
+
+            // Dirty zone counter beneath the button
+            var dirtyGo = CreateUI("DirtyIndicator", parent);
+            dirtyGo.AddComponent<LayoutElement>().preferredHeight = 12f;
+            refs.DirtyIndicatorText = dirtyGo.AddComponent<TextMeshProUGUI>();
+            refs.DirtyIndicatorText.text = string.Empty;
+            refs.DirtyIndicatorText.fontSize = 7f;
+            refs.DirtyIndicatorText.alignment = TextAlignmentOptions.Center;
+            refs.DirtyIndicatorText.color = TEXT_MUTED;
+        }
+
+        private static void CreateActionBtn(Transform parent, string label, string shortcut,
+            float height, System.Action onClick)
+        {
+            var go = CreateUI($"Action_{label}", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
+            var img = go.AddComponent<Image>();
+            img.color = BTN_NORMAL;
+
+            var btn = go.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
+            btn.colors = c;
+            btn.targetGraphic = img;
+            btn.onClick.AddListener(() => onClick?.Invoke());
+
+            var vl = go.AddComponent<VerticalLayoutGroup>();
+            vl.childAlignment = TextAnchor.MiddleCenter;
+            vl.childForceExpandWidth = true;
+            vl.childForceExpandHeight = false;
+            vl.childControlWidth = true;
+            vl.childControlHeight = true;
+            vl.spacing = 1f;
+            vl.padding = new RectOffset(2, 2, 4, 4);
+
+            var lblGo = CreateUI("Lbl", go.transform);
+            lblGo.AddComponent<LayoutElement>().preferredHeight = 16f;
+            var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text = label;
+            lblTmp.fontSize = 9f;
+            lblTmp.fontStyle = FontStyles.Bold;
+            lblTmp.alignment = TextAlignmentOptions.Center;
+            lblTmp.color = TEXT_SECONDARY;
+
+            var keyGo = CreateUI("Key", go.transform);
+            keyGo.AddComponent<LayoutElement>().preferredHeight = 11f;
+            var keyTmp = keyGo.AddComponent<TextMeshProUGUI>();
+            keyTmp.text = shortcut;
+            keyTmp.fontSize = 7f;
+            keyTmp.alignment = TextAlignmentOptions.Center;
+            keyTmp.color = TEXT_MUTED;
+        }
+
         private static void CreateToolBtn(Transform parent, string label, string shortcut,
             TileEditorState.Tool tool, TileEditorState state, ref UIRefs refs,
-            System.Action<TileEditorState.Tool> onToolChanged)
+            System.Action<TileEditorState.Tool> onToolChanged, float height = 44f)
         {
             var go = CreateUI($"Tool_{tool}", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
             var img = go.AddComponent<Image>();
             bool active = tool == state.CurrentTool;
             img.color = active ? BTN_ACTIVE : BTN_NORMAL;
@@ -92,22 +194,23 @@ namespace Valkur.Gameplay.TileEditor
             vl.childForceExpandHeight = false;
             vl.childControlWidth = true;
             vl.childControlHeight = true;
-            vl.spacing = -2f;
+            vl.spacing = 1f;
+            vl.padding = new RectOffset(2, 2, 4, 4);
 
             var lblGo = CreateUI("Lbl", go.transform);
-            lblGo.AddComponent<LayoutElement>().preferredHeight = 20f;
+            lblGo.AddComponent<LayoutElement>().preferredHeight = 16f;
             var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
             lblTmp.text = label;
-            lblTmp.fontSize = 11f;
+            lblTmp.fontSize = 9f;
             lblTmp.fontStyle = FontStyles.Bold;
             lblTmp.alignment = TextAlignmentOptions.Center;
             lblTmp.color = active ? ACCENT : TEXT_SECONDARY;
 
             var keyGo = CreateUI("Key", go.transform);
-            keyGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            keyGo.AddComponent<LayoutElement>().preferredHeight = 11f;
             var keyTmp = keyGo.AddComponent<TextMeshProUGUI>();
             keyTmp.text = shortcut;
-            keyTmp.fontSize = 9f;
+            keyTmp.fontSize = 7f;
             keyTmp.alignment = TextAlignmentOptions.Center;
             keyTmp.color = TEXT_MUTED;
 
@@ -122,7 +225,7 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildTilesDropdown(Transform canvasT, ref UIRefs refs)
         {
             refs.TilesDropdown = MakeDropdownPanel("TilesDropdown", canvasT,
-                DropdownX_Tiles, TILES_DROP_W, TILES_DROP_H);
+                PanelDock.TopLeft, TilesX, TilesY, TILES_DROP_W, TILES_DROP_H);
 
             var t = refs.TilesDropdown.transform;
 
@@ -195,8 +298,8 @@ namespace Valkur.Gameplay.TileEditor
         {
             var scrollGo = CreateUI("CatScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
-            le.preferredHeight = 50f;
-            le.minHeight = 28f;
+            le.preferredHeight = 90f;
+            le.minHeight = 24f;
             var sr = scrollGo.AddComponent<ScrollRect>();
             sr.horizontal = false;
             sr.vertical = true;
@@ -215,11 +318,11 @@ namespace Valkur.Gameplay.TileEditor
             cr.sizeDelta = Vector2.zero;
 
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(140f, 22f);
+            gl.cellSize = new Vector2(TILES_CELL_SIZE, 22f);
             gl.spacing = new Vector2(3f, 2f);
             gl.padding = new RectOffset(3, 3, 2, 2);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gl.constraintCount = 2;
+            gl.constraintCount = 1;
 
             content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             sr.content = cr;
@@ -249,11 +352,11 @@ namespace Valkur.Gameplay.TileEditor
             cr.pivot = new Vector2(0, 1);
             cr.sizeDelta = Vector2.zero;
             var gl = content.AddComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(50f, 50f);
-            gl.spacing = new Vector2(3f, 3f);
+            gl.cellSize = new Vector2(TILES_CELL_SIZE, TILES_CELL_SIZE); // square cells
+            gl.spacing = new Vector2(4f, 4f);
             gl.padding = new RectOffset(4, 4, 4, 4);
             gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gl.constraintCount = 5;
+            gl.constraintCount = 1; // single column
             content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             refs.TileScrollRect.content = cr;
             refs.TileScrollRect.viewport = vp.GetComponent<RectTransform>();
@@ -275,15 +378,11 @@ namespace Valkur.Gameplay.TileEditor
         // ═════════════════════════════════════════════════════════════════
 
         private static GameObject MakeDropdownPanel(string name, Transform canvasT,
-            float xPos, float width, float height)
+            PanelDock dock, float xOffset, float yOffset, float width, float height)
         {
             var go = CreateUI(name, canvasT);
             var r = go.GetComponent<RectTransform>();
-            r.anchorMin = new Vector2(0f, 1f);
-            r.anchorMax = new Vector2(0f, 1f);
-            r.pivot = new Vector2(0f, 1f);
-            r.anchoredPosition = new Vector2(xPos, -MENUBAR_HEIGHT);
-            r.sizeDelta = new Vector2(width, height);
+            ApplyDock(r, dock, xOffset, yOffset, width, height);
 
             var img = go.AddComponent<Image>();
             img.color = DROPDOWN_BG;
@@ -302,6 +401,44 @@ namespace Valkur.Gameplay.TileEditor
             go.AddComponent<CanvasGroup>();
 
             return go;
+        }
+
+        /// <summary>
+        /// Applies anchor/pivot/position for a docked panel based on the chosen corner.
+        /// xOffset and yOffset are always positive pixel distances from the anchor corner
+        /// (e.g. for TopRight, xOffset is pixels left from the right edge, yOffset is pixels down from the top).
+        /// </summary>
+        private static void ApplyDock(RectTransform r, PanelDock dock,
+            float xOffset, float yOffset, float width, float height)
+        {
+            switch (dock)
+            {
+                case PanelDock.TopLeft:
+                    r.anchorMin = new Vector2(0f, 1f);
+                    r.anchorMax = new Vector2(0f, 1f);
+                    r.pivot     = new Vector2(0f, 1f);
+                    r.anchoredPosition = new Vector2(xOffset, -yOffset);
+                    break;
+                case PanelDock.TopRight:
+                    r.anchorMin = new Vector2(1f, 1f);
+                    r.anchorMax = new Vector2(1f, 1f);
+                    r.pivot     = new Vector2(1f, 1f);
+                    r.anchoredPosition = new Vector2(-xOffset, -yOffset);
+                    break;
+                case PanelDock.BottomLeft:
+                    r.anchorMin = new Vector2(0f, 0f);
+                    r.anchorMax = new Vector2(0f, 0f);
+                    r.pivot     = new Vector2(0f, 0f);
+                    r.anchoredPosition = new Vector2(xOffset, yOffset);
+                    break;
+                case PanelDock.BottomRight:
+                    r.anchorMin = new Vector2(1f, 0f);
+                    r.anchorMax = new Vector2(1f, 0f);
+                    r.pivot     = new Vector2(1f, 0f);
+                    r.anchoredPosition = new Vector2(-xOffset, yOffset);
+                    break;
+            }
+            r.sizeDelta = new Vector2(width, height);
         }
     }
 }

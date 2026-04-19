@@ -13,8 +13,14 @@ namespace Valkur.Gameplay.World
     public static class OverlayLoader
     {
         private static readonly Dictionary<string, TileBase> _tileCache = new Dictionary<string, TileBase>();
-        private static TileBase _placeholderTile;
         private static int _missingCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            _tileCache.Clear();
+            _missingCount = 0;
+        }
 
         /// <summary>
         /// Load an overlay JSON from StreamingAssets/Maps/ and paint onto the world grid at (0,0).
@@ -32,6 +38,18 @@ namespace Valkur.Gameplay.World
             int offsetX, int offsetY)
         {
             string jsonPath = Path.Combine(Application.streamingAssetsPath, "Maps", overlayFileName);
+            LoadOverlayFromPath(jsonPath, gridBuilder, offsetX, offsetY, clearLayerRegion: false, regionWidth: 0, regionHeight: 0);
+        }
+
+        /// <summary>
+        /// Load an overlay JSON from an arbitrary absolute path and paint at the given offset.
+        /// When <paramref name="clearLayerRegion"/> is true, the [offset, offset+region] rectangle
+        /// of every painted layer is cleared first so empty cells in the JSON are also applied (true erase).
+        /// Used for runtime overrides loaded from <c>persistentDataPath/MapOverrides</c>.
+        /// </summary>
+        public static void LoadOverlayFromPath(string jsonPath, WorldGridBuilder gridBuilder,
+            int offsetX, int offsetY, bool clearLayerRegion, int regionWidth, int regionHeight)
+        {
             if (!File.Exists(jsonPath))
             {
                 Debug.LogError($"[OverlayLoader] Overlay file not found: {jsonPath}");
@@ -74,14 +92,21 @@ namespace Valkur.Gameplay.World
                     continue;
                 }
 
+                if (clearLayerRegion && regionWidth > 0 && regionHeight > 0)
+                {
+                    for (int y = 0; y < regionHeight; y++)
+                        for (int x = 0; x < regionWidth; x++)
+                            tilemap.SetTile(new Vector3Int(offsetX + x, offsetY + y, 0), null);
+                }
+
                 PaintLayer(tilemap, rows, tilemapLayer == TilemapLayerSetup.TilemapLayer.Collision
                     || tilemapLayer == TilemapLayerSetup.TilemapLayer.WallsBottom, offsetX, offsetY);
             }
 
             if (_missingCount > 0)
-                Debug.LogWarning($"[OverlayLoader] {_missingCount} tile references could not be resolved ({overlayFileName}).");
+                Debug.LogWarning($"[OverlayLoader] {_missingCount} tile references could not be resolved ({jsonPath}).");
             else
-                Debug.Log($"[OverlayLoader] Overlay '{overlayFileName}' loaded at offset ({offsetX},{offsetY}).");
+                Debug.Log($"[OverlayLoader] Overlay '{Path.GetFileName(jsonPath)}' loaded at offset ({offsetX},{offsetY}).");
         }
 
         private static void PaintLayer(Tilemap tilemap, List<object> rows, bool isCollisionLayer,
@@ -134,6 +159,10 @@ namespace Valkur.Gameplay.World
 
             // Collision layer tiles always get grid collider for TilemapCollider2D
             tile.colliderType = isCollisionLayer ? Tile.ColliderType.Grid : Tile.ColliderType.None;
+
+            // Name the tile so reverse lookup (TileRegistry.GetName) works for round-trip persistence
+            tile.name = tileName;
+            Valkur.Gameplay.TileEditor.TileRegistry.Instance.Register(tileName, tile);
 
             _tileCache[cacheKey] = tile;
             return tile;

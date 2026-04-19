@@ -17,7 +17,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TilemapLayerSetup.TilemapLayer> onLayerChanged)
         {
             refs.LayersDropdown = MakeDropdownPanel("LayersDropdown", canvasT,
-                DropdownX_Layers, LAYERS_DROP_W, LAYERS_DROP_H);
+                PanelDock.BottomRight, LayersX, LayersY, LAYERS_DROP_W, LAYERS_DROP_H);
 
             var t = refs.LayersDropdown.transform;
             BuildSectionLabel(t, "LAYERS");
@@ -90,7 +90,7 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildInspectorDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs)
         {
             refs.InspectorDropdown = MakeDropdownPanel("InspectorDropdown", canvasT,
-                DropdownX_Inspector, INSPECTOR_DROP_W, INSPECTOR_DROP_H);
+                PanelDock.TopRight, InspectorX, InspectorY, INSPECTOR_DROP_W, INSPECTOR_DROP_H);
 
             var t = refs.InspectorDropdown.transform;
             BuildSectionLabel(t, "INSPECTOR");
