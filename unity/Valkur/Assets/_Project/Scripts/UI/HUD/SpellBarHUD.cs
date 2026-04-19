@@ -39,7 +39,7 @@ namespace Valkur.UI
         {
             if (_playerCaster == null)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
+                var player = EntityRegistry.Player;
                 if (player != null) _playerCaster = player.GetComponent<SpellCaster>();
                 if (_playerCaster == null) return;
             }

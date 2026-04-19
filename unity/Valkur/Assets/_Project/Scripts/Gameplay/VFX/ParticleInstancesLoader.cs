@@ -42,7 +42,19 @@ namespace Valkur.Gameplay.VFX
         [SerializeField, Tooltip("Parent transform for spawned emitters. Created automatically if null.")]
         private Transform _emittersParent;
 
+        [Header("Performance")]
+        [SerializeField, Tooltip("Disable particle emitters whose world position is far outside the camera viewport. Big FPS win when revealing distant zones (Tile Editor pan, fast travel).")]
+        private bool _enableViewportCulling = true;
+
+        [SerializeField, Tooltip("World-unit margin beyond the camera frustum where emitters stay active. Lower = more aggressive culling, higher = safer but more cost.")]
+        private float _cullMarginWorldUnits = 12f;
+
+        [SerializeField, Tooltip("Seconds between culling checks. Cheap, can stay at 0.2s.")]
+        private float _cullCheckInterval = 0.2f;
+
         private readonly List<GameObject> _spawnedEmitters = new List<GameObject>();
+        private float _nextCullCheck;
+        private Camera _cullCamera;
 
         // ------------------------------------------------------------------ lifecycle
 
@@ -55,6 +67,29 @@ namespace Valkur.Gameplay.VFX
             }
 
             LoadAndSpawn();
+        }
+
+        private void LateUpdate()
+        {
+            if (!_enableViewportCulling) return;
+            if (Time.unscaledTime < _nextCullCheck) return;
+            _nextCullCheck = Time.unscaledTime + _cullCheckInterval;
+
+            if (_cullCamera == null) _cullCamera = Camera.main;
+            if (_cullCamera == null) return;
+
+            float halfH = _cullCamera.orthographicSize + _cullMarginWorldUnits;
+            float halfW = halfH * _cullCamera.aspect;
+            Vector3 cp = _cullCamera.transform.position;
+
+            for (int i = 0; i < _spawnedEmitters.Count; i++)
+            {
+                var go = _spawnedEmitters[i];
+                if (go == null) continue;
+                Vector3 p = go.transform.position;
+                bool inView = Mathf.Abs(p.x - cp.x) <= halfW && Mathf.Abs(p.y - cp.y) <= halfH;
+                if (go.activeSelf != inView) go.SetActive(inView);
+            }
         }
 
         // ------------------------------------------------------------------ public API

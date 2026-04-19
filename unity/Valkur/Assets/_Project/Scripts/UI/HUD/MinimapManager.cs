@@ -68,6 +68,13 @@ namespace Valkur.UI.HUD
         // ── Static instance for MinimapDot color lookups ──────────────────
         public static MinimapManager Instance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            Instance = null;
+            _markers?.Clear();
+        }
+
         // ── Runtime state ─────────────────────────────────────────────────
         private Texture2D _tex;
         private Color[] _bgPixels;          // pre-filled background row
@@ -80,6 +87,13 @@ namespace Valkur.UI.HUD
         // Key = (cellX, cellY); value true once revealed.
         private readonly System.Collections.Generic.HashSet<long> _exploredCells
             = new System.Collections.Generic.HashSet<long>();
+
+        // Throttle the (very expensive) full-texture redraw + GPU upload.
+        // Texture2D.Apply() with 25k pixels every frame was the dominant CPU+GC cost
+        // (~400 KB/s alloc, ~30 ms/frame stall on integrated GPUs).
+        // 12 Hz is plenty smooth for a minimap and cuts the cost ~5x.
+        private const float REDRAW_INTERVAL = 1f / 12f;
+        private float _nextRedrawTime;
 
         // ── Lifecycle ─────────────────────────────────────────────────────
 
@@ -110,6 +124,10 @@ namespace Valkur.UI.HUD
 
         private void LateUpdate()
         {
+            // Throttle the entire redraw + GPU upload pipeline.
+            if (Time.unscaledTime < _nextRedrawTime) return;
+            _nextRedrawTime = Time.unscaledTime + REDRAW_INTERVAL;
+
             // Resolve player transform lazily
             if (_playerTransform == null)
             {

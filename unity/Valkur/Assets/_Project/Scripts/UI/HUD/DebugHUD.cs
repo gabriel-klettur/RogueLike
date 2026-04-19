@@ -58,6 +58,12 @@ namespace Valkur.UI.HUD
 
         private InputAction _toggleAction;
 
+        // Throttle the (very expensive) text rebuild. TMP mesh rebuild + dozens of
+        // string allocations per frame was costing ~30-50 ms/frame and ~450 KB/s GC.
+        // 5 Hz is plenty for a debug overlay.
+        private const float TEXT_REBUILD_INTERVAL = 0.2f;
+        private float _nextTextRebuildTime;
+
         private void Start()
         {
             _toggleAction = new InputAction("ToggleDebugHUD", InputActionType.Button, "<Keyboard>/f9");
@@ -78,7 +84,12 @@ namespace Valkur.UI.HUD
 
             TrackFps();
             TryFindPlayer();
-            BuildText();
+
+            if (Time.unscaledTime >= _nextTextRebuildTime)
+            {
+                _nextTextRebuildTime = Time.unscaledTime + TEXT_REBUILD_INTERVAL;
+                BuildText();
+            }
         }
 
         // ─────────────────────────────────────────────

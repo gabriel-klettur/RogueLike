@@ -128,7 +128,17 @@ namespace Valkur.Gameplay.World
 
             var renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;
-            renderer.detectChunkCullingBounds = TilemapRenderer.DetectChunkCullingBounds.Auto;
+            // Manual chunk culling bounds keep Unity's per-chunk frustum culling working.
+            // With Auto, Unity grows each chunk's culling bounds to fit the largest sprite
+            // in the tilemap (tall walls, wide decorations, etc.), which in practice
+            // disables culling entirely → every chunk in every layer renders every frame,
+            // collapsing FPS when the camera reveals far-away zones (e.g. while panning
+            // in the Tile Editor with the Cinemachine follow detached).
+            // Manual + (1, 2, 0) gives us 1 cell of horizontal padding and 2 cells of
+            // vertical padding (enough for tall wall sprites) while still culling chunks
+            // outside the camera viewport.
+            renderer.detectChunkCullingBounds = TilemapRenderer.DetectChunkCullingBounds.Manual;
+            renderer.chunkCullingBounds = new Vector3(1f, 2f, 0f);
 
             var layerSetup = go.AddComponent<TilemapLayerSetup>();
             layerSetup.Configure(layer);

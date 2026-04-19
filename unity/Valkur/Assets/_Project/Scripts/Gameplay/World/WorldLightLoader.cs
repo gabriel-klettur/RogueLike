@@ -39,6 +39,19 @@ namespace Valkur.Gameplay.World
         [SerializeField, Tooltip("Parent transform for spawned lights. Null = this transform.")]
         private Transform _lightsRoot;
 
+        [Header("Performance")]
+        [SerializeField, Tooltip("Disable Light2D GameObjects far outside the camera viewport. URP 2D lights are expensive — big FPS win when many off-screen lights exist.")]
+        private bool _enableViewportCulling = true;
+
+        [SerializeField, Tooltip("World-unit margin beyond the camera frustum where lights stay active.")]
+        private float _cullMarginWorldUnits = 8f;
+
+        [SerializeField, Tooltip("Seconds between culling checks.")]
+        private float _cullCheckInterval = 0.2f;
+
+        private float _nextCullCheck;
+        private Camera _cullCamera;
+
         // Reflection cache for URP Light2D
         private Type _light2DType;
         private PropertyInfo _intensityProp;
@@ -69,6 +82,8 @@ namespace Valkur.Gameplay.World
 
         private void Update()
         {
+            if (_enableViewportCulling) CullLightsByViewport();
+
             if (!_reflectionResolved || _intensityProp == null) return;
 
             float time = Time.time;
@@ -76,10 +91,33 @@ namespace Valkur.Gameplay.World
             {
                 var inst = _activeLights[i];
                 if (inst.light2D == null || inst.flickerAmp <= 0f) continue;
+                if (!inst.light2D.gameObject.activeInHierarchy) continue;
 
                 float flicker = 1f + Mathf.Sin((time + inst.flickerOffset) * inst.flickerSpeed * Mathf.PI * 2f) * inst.flickerAmp;
                 try { _intensityProp.SetValue(inst.light2D, inst.baseIntensity * flicker); }
                 catch { /* ignore reflection failures */ }
+            }
+        }
+
+        private void CullLightsByViewport()
+        {
+            if (Time.unscaledTime < _nextCullCheck) return;
+            _nextCullCheck = Time.unscaledTime + _cullCheckInterval;
+
+            if (_cullCamera == null) _cullCamera = Camera.main;
+            if (_cullCamera == null) return;
+
+            float halfH = _cullCamera.orthographicSize + _cullMarginWorldUnits;
+            float halfW = halfH * _cullCamera.aspect;
+            Vector3 cp = _cullCamera.transform.position;
+
+            for (int i = 0; i < _activeLights.Count; i++)
+            {
+                var c = _activeLights[i].light2D;
+                if (c == null) continue;
+                Vector3 p = c.transform.position;
+                bool inView = Mathf.Abs(p.x - cp.x) <= halfW && Mathf.Abs(p.y - cp.y) <= halfH;
+                if (c.gameObject.activeSelf != inView) c.gameObject.SetActive(inView);
             }
         }
 

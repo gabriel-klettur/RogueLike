@@ -133,6 +133,12 @@ namespace Valkur.Gameplay.TileEditor
             int yMin = Mathf.FloorToInt(bottom) - Margin;
             int yMax = Mathf.CeilToInt(top)     + Margin;
 
+            // Defensive cap: at extreme zoom-out the grid would emit thousands of GL
+            // line segments per frame. Skip drawing rather than tank FPS.
+            const int MaxLinesPerAxis = 400;
+            if ((xMax - xMin) > MaxLinesPerAxis || (yMax - yMin) > MaxLinesPerAxis)
+                return;
+
             // Update hovered cell from current mouse position.
             Vector3 mouseWorld = cam.ScreenToWorldPoint(
                 new Vector3(Input.mousePosition.x, Input.mousePosition.y, -cam.transform.position.z));
