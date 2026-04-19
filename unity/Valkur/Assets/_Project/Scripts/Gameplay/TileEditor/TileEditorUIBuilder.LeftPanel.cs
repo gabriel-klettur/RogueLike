@@ -38,9 +38,11 @@ namespace Valkur.Gameplay.TileEditor
         {
             refs.ToolsDropdown = MakeDropdownPanel("ToolsDropdown", canvasT,
                 PanelDock.TopLeft, ToolsX, ToolsY, TOOLS_DROP_W, TOOLS_DROP_H,
-                "Tools", out var toolsContent, out refs.ToolsPanelDrag);
+                "Tools", out var toolsContent, out refs.ToolsPanelDrag,
+                narrowPanel: true);   // 60px wide — header shows only control buttons; title goes in content
 
             var t = toolsContent;
+            BuildSectionLabel(t, "TOOLS");  // panel title as first content row (below control buttons)
 
             // Single-column icon toolbar — inner width (60-8-8=44) = BTN_H → square
             const float BTN_H = 44f;
@@ -448,7 +450,8 @@ namespace Valkur.Gameplay.TileEditor
 
         private static GameObject MakeDropdownPanel(string name, Transform canvasT,
             PanelDock dock, float xOffset, float yOffset, float width, float height,
-            string title, out Transform contentTransform, out DraggablePanel draggable)
+            string title, out Transform contentTransform, out DraggablePanel draggable,
+            bool narrowPanel = false)
         {
             // ── Root ─────────────────────────────────────────────────────────
             var go = CreateUI(name, canvasT);
@@ -456,7 +459,7 @@ namespace Valkur.Gameplay.TileEditor
             ApplyDock(r, dock, xOffset, yOffset, width, height);
 
             var img = go.AddComponent<Image>();
-            img.color = MENUBAR_BG;          // dark background — matches PERF PROBE aesthetic
+            img.color = BG_PANEL;          // semi-transparent dark — matches PERF PROBE
             var ol = go.AddComponent<Outline>();
             ol.effectColor    = DROPDOWN_BORDER;
             ol.effectDistance = new Vector2(1f, 1f);
@@ -471,29 +474,44 @@ namespace Valkur.Gameplay.TileEditor
             hdrRt.sizeDelta        = new Vector2(0f, PANEL_HDR_H);
 
             var hdrImg = hdrGo.AddComponent<Image>();
-            hdrImg.color          = PANEL_HDR_BG;
-            hdrImg.raycastTarget  = true;
+            hdrImg.color         = PANEL_HDR_BG;
+            hdrImg.raycastTarget = true;
 
             var hdrHlg = hdrGo.AddComponent<HorizontalLayoutGroup>();
-            hdrHlg.padding            = new RectOffset(8, 2, 0, 0);
-            hdrHlg.spacing            = 1f;
+            hdrHlg.spacing            = 0f;
             hdrHlg.childForceExpandWidth  = false;
             hdrHlg.childForceExpandHeight = true;
             hdrHlg.childControlWidth      = true;
             hdrHlg.childControlHeight     = true;
             hdrHlg.childAlignment         = TextAnchor.MiddleLeft;
 
-            // Title text
-            var titleGo  = CreateUI("Title", hdrGo.transform);
-            titleGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
-            var titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
-            titleTmp.text            = title.ToUpper();
-            titleTmp.fontSize        = 10f;
-            titleTmp.fontStyle       = FontStyles.Bold;
-            titleTmp.color           = PANEL_HDR_TITLE;
-            titleTmp.characterSpacing = 1.5f;
-            titleTmp.alignment       = TextAlignmentOptions.Left;
-            titleTmp.raycastTarget   = false;
+            // Header button width: narrow panels (e.g. TOOLS 60px) use 14px buttons to fit
+            float hdrBtnW = narrowPanel ? 14f : PANEL_HDR_BTN_W;
+
+            if (!narrowPanel)
+            {
+                // Title text on the left, buttons on the right
+                hdrHlg.padding = new RectOffset(8, 2, 0, 0);
+                var titleGo  = CreateUI("Title", hdrGo.transform);
+                titleGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+                var titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
+                titleTmp.text               = title.ToUpper();
+                titleTmp.fontSize           = 10f;
+                titleTmp.fontStyle          = FontStyles.Bold;
+                titleTmp.color              = PANEL_HDR_TITLE;
+                titleTmp.characterSpacing   = 1.5f;
+                titleTmp.alignment          = TextAlignmentOptions.Left;
+                titleTmp.enableWordWrapping = false;
+                titleTmp.overflowMode       = TextOverflowModes.Truncate;
+                titleTmp.raycastTarget      = false;
+            }
+            else
+            {
+                // Narrow panel: flexible spacer pushes the 3 buttons to the right
+                hdrHlg.padding = new RectOffset(2, 2, 0, 0);
+                var spacer = CreateUI("Spacer", hdrGo.transform);
+                spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            }
 
             // Separator line between header and content
             var sepGo = CreateUI("HdrSep", go.transform);
@@ -511,7 +529,7 @@ namespace Valkur.Gameplay.TileEditor
             contentRt.anchorMin = new Vector2(0f, 0f);
             contentRt.anchorMax = new Vector2(1f, 1f);
             contentRt.offsetMin = new Vector2(0f, 0f);
-            contentRt.offsetMax = new Vector2(0f, -(PANEL_HDR_H + 1f)); // 1px for the separator
+            contentRt.offsetMax = new Vector2(0f, -(PANEL_HDR_H + 1f));
 
             var layout = contentGo.AddComponent<VerticalLayoutGroup>();
             layout.padding            = new RectOffset(8, 8, 6, 6);
@@ -523,20 +541,19 @@ namespace Valkur.Gameplay.TileEditor
 
             contentGo.AddComponent<CanvasGroup>();
 
-            // ── Header control buttons ────────────────────────────────────────
-            // Created AFTER the DraggablePanel so the delegate captures 'drag' correctly.
+            // ── DraggablePanel + header control buttons ───────────────────────
             var drag = go.AddComponent<DraggablePanel>();
             drag.DragHeader  = hdrRt;
             drag.ContentRoot = contentGo;
 
-            BuildHdrBtn(hdrGo.transform, "MinBtn", "─", PANEL_HDR_BTN_HOVER,
-                () => drag.Minimize());
-            BuildHdrBtn(hdrGo.transform, "MaxBtn", "□", PANEL_HDR_BTN_HOVER,
-                () => drag.Maximize());
-            BuildHdrBtn(hdrGo.transform, "CloseBtn", "✕", PANEL_HDR_CLOSE_HOVER,
-                () => drag.ClosePanel());
+            // Normal bg: subtle dark chip so buttons are visible even un-hovered
+            var normalBg  = new Color(0.18f, 0.18f, 0.24f, 0.75f);
+            var closeBgN  = new Color(0.28f, 0.07f, 0.07f, 0.60f);
+            BuildHdrBtn(hdrGo.transform, "MinBtn",   "—", normalBg,  PANEL_HDR_BTN_HOVER,    () => drag.Minimize(),   hdrBtnW);
+            BuildHdrBtn(hdrGo.transform, "MaxBtn",   "□", normalBg,  PANEL_HDR_BTN_HOVER,    () => drag.Maximize(),   hdrBtnW);
+            BuildHdrBtn(hdrGo.transform, "CloseBtn", "×", closeBgN,  PANEL_HDR_CLOSE_HOVER,  () => drag.ClosePanel(), hdrBtnW);
 
-            go.AddComponent<CanvasGroup>(); // for fade-in if desired
+            go.AddComponent<CanvasGroup>();
 
             contentTransform = contentGo.transform;
             draggable        = drag;
@@ -545,35 +562,38 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Builds a small icon button inside the panel header.</summary>
         private static void BuildHdrBtn(Transform parent, string goName,
-            string icon, Color hoverColor, System.Action onClick)
+            string icon, Color normalBg, Color hoverColor, System.Action onClick,
+            float btnWidth = PANEL_HDR_BTN_W)
         {
             var go = CreateUI(goName, parent);
             var le = go.AddComponent<LayoutElement>();
-            le.preferredWidth  = PANEL_HDR_BTN_W;
+            le.preferredWidth = btnWidth;
+            le.minWidth       = btnWidth;
 
             var bgImg = go.AddComponent<Image>();
-            bgImg.color = Color.clear;
+            bgImg.color         = normalBg;
+            bgImg.raycastTarget = true;
 
             var btn = go.AddComponent<Button>();
             var bc  = btn.colors;
-            bc.normalColor      = Color.clear;
+            bc.normalColor      = normalBg;
             bc.highlightedColor = hoverColor;
-            bc.pressedColor     = hoverColor * 1.2f;
+            bc.pressedColor     = hoverColor;
             bc.fadeDuration     = 0.08f;
             btn.colors          = bc;
             btn.targetGraphic   = bgImg;
             btn.onClick.AddListener(() => onClick?.Invoke());
 
-            var txtGo  = CreateUI("Txt", go.transform);
-            var txtRt  = txtGo.GetComponent<RectTransform>();
+            var txtGo = CreateUI("Txt", go.transform);
+            var txtRt = txtGo.GetComponent<RectTransform>();
             txtRt.anchorMin = Vector2.zero;
             txtRt.anchorMax = Vector2.one;
             txtRt.sizeDelta = Vector2.zero;
             var tmp = txtGo.AddComponent<TextMeshProUGUI>();
             tmp.text          = icon;
-            tmp.fontSize      = 11f;
+            tmp.fontSize      = btnWidth <= 16f ? 9f : 11f;
             tmp.alignment     = TextAlignmentOptions.Center;
-            tmp.color         = TEXT_MUTED;
+            tmp.color         = TEXT_SECONDARY;   // clearly visible, not just TEXT_MUTED
             tmp.raycastTarget = false;
         }
 

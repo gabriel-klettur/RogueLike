@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -6,34 +8,40 @@ namespace Valkur.Gameplay.TileEditor
     /// <summary>
     /// Attaches to a floating Tile-Editor panel root (RectTransform).
     /// Features:
-    ///   • Draggable from <see cref="DragHeader"/> only — never from panel content.
+    ///   • Draggable from <see cref="DragHeader"/> only.
     ///   • Clamped to Canvas bounds at all times.
-    ///   • Auto-snap to any canvas edge when released within <see cref="SnapTolerance"/> px.
-    ///   • Smooth snap animation (lerp).
-    ///   • Focus management: clicking anywhere on the panel brings it to the front (SetAsLastSibling).
-    ///   • Minimize: collapses <see cref="ContentRoot"/> and shrinks the panel to header height.
-    ///   • Maximize: expands the panel to fill the canvas height (minus the menu bar).
-    ///   • Close: fires <see cref="OnClose"/> (wired by TileEditorUI.Builder after construction).
+    ///   • Auto-snap to canvas edges and to neighbouring panel edges on release.
+    ///   • Smooth snap animation (lerp, unscaled time).
+    ///   • Focus management: clicking the panel brings it to the front (SetAsLastSibling).
+    ///   • Minimize / Maximize / Close via header buttons.
+    ///   • Set <see cref="EnableInterPanelSnap"/> = false per instance, or
+    ///     <see cref="GlobalInterPanelSnap"/> = false to disable globally.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class DraggablePanel : MonoBehaviour,
         IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        // ── Wired by TileEditorUIBuilder ────────────────────────────────────
+        // ── Inspector-wired by TileEditorUIBuilder ──────────────────────────
         [Tooltip("Header RectTransform — drag is only initiated when pointer presses here.")]
         public RectTransform DragHeader;
 
         [Tooltip("Container for all panel content below the header. Hidden when minimized.")]
         public GameObject ContentRoot;
 
-        [Tooltip("Height (in canvas units) to expand to when maximized.")]
+        [Tooltip("Height (canvas units) to expand to when maximized.")]
         public float MaximizedHeight = 700f;
 
-        [SerializeField, Tooltip("Distance in canvas units from an edge that triggers auto-snap.")]
+        [SerializeField, Tooltip("Canvas-unit proximity to an edge that triggers auto-snap.")]
         public float SnapTolerance = 18f;
 
-        [SerializeField, Tooltip("Lerp speed for snap animation (uses unscaled time).")]
+        [SerializeField, Tooltip("Lerp speed for snap animation (unscaled time).")]
         public float SnapAnimSpeed = 14f;
+
+        [SerializeField, Tooltip("Whether this panel can snap to other DraggablePanel edges.")]
+        public bool EnableInterPanelSnap = true;
+
+        /// <summary>Global toggle — set false to disable inter-panel snapping for ALL panels.</summary>
+        public static bool GlobalInterPanelSnap = true;
 
         // ── External callback — set by TileEditorUI.Builder ────────────────
         public System.Action OnClose;
@@ -43,15 +51,18 @@ namespace Valkur.Gameplay.TileEditor
         private RectTransform _canvasRt;
         private Canvas        _canvas;
 
-        private bool    _isDragging;
-        private bool    _anchorNormalized;
+        private bool  _isDragging;
+        private bool  _anchorNormalized;   // accessible within class for inter-panel snap
 
-        private bool    _minimized;
-        private bool    _maximized;
-        private float   _restoredHeight;
+        private bool  _minimized;
+        private bool  _maximized;
+        private float _restoredHeight;
 
         private Vector2 _snapTarget;
         private bool    _snapping;
+
+        // ── Static panel registry (class-level, all active panels) ──────────
+        private static readonly List<DraggablePanel> _allPanels = new List<DraggablePanel>();
 
         // ── Life-cycle ──────────────────────────────────────────────────────
         private void Awake()
@@ -60,6 +71,28 @@ namespace Valkur.Gameplay.TileEditor
             _canvas         = GetComponentInParent<Canvas>();
             _canvasRt       = _canvas != null ? _canvas.GetComponent<RectTransform>() : null;
             _restoredHeight = _rt.sizeDelta.y;
+        }
+
+        private void OnEnable()
+        {
+            if (!_allPanels.Contains(this)) _allPanels.Add(this);
+            // Normalize anchor eagerly so other panels can snap to us even before we're dragged.
+            if (!_anchorNormalized)
+                StartCoroutine(NormalizeNextFrame());
+        }
+
+        private void OnDisable()
+        {
+            _allPanels.Remove(this);
+            _snapping = false;
+        }
+
+        private void OnDestroy() => _allPanels.Remove(this);
+
+        private IEnumerator NormalizeNextFrame()
+        {
+            yield return null;  // wait one frame for canvas layout to be fully computed
+            NormalizeAnchor();
         }
 
         // ── IPointerDownHandler — focus ─────────────────────────────────────
@@ -72,19 +105,16 @@ namespace Valkur.Gameplay.TileEditor
             _isDragging = DragHeader != null &&
                           RectTransformUtility.RectangleContainsScreenPoint(
                               DragHeader, e.pressPosition, e.pressEventCamera);
-            if (_isDragging)
-                NormalizeAnchor();
+            if (_isDragging) NormalizeAnchor();
         }
 
         public void OnDrag(PointerEventData e)
         {
             if (!_isDragging || _canvasRt == null) return;
-
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _canvasRt, e.position, e.pressEventCamera, out var cur);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _canvasRt, e.position - e.delta, e.pressEventCamera, out var prev);
-
             _rt.anchoredPosition += cur - prev;
             ClampToBounds();
         }
@@ -123,20 +153,16 @@ namespace Valkur.Gameplay.TileEditor
             _rt.sizeDelta = new Vector2(_rt.sizeDelta.x, hdrH);
         }
 
-        /// <summary>
-        /// Toggle between maximized (full canvas height) and restored (original height).
-        /// Also un-minimizes the panel if it was minimized.
-        /// </summary>
+        /// <summary>Toggle between maximized (full canvas height) and restored size.</summary>
         public void Maximize()
         {
             _minimized = false;
             if (ContentRoot != null) ContentRoot.SetActive(true);
-
             _maximized = !_maximized;
             if (_maximized)
             {
                 float targetH = _canvasRt != null
-                    ? Mathf.Max(_restoredHeight, _canvasRt.rect.height - 34f) // 34 = menu bar
+                    ? Mathf.Max(_restoredHeight, _canvasRt.rect.height - 34f)
                     : MaximizedHeight;
                 _rt.sizeDelta = new Vector2(_rt.sizeDelta.x, targetH);
             }
@@ -146,81 +172,143 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
-        /// <summary>Close (hide) this panel by invoking the registered close callback.</summary>
+        /// <summary>Close (hide) this panel via the registered callback.</summary>
         public void ClosePanel() => OnClose?.Invoke();
 
         // ── Anchor normalization ────────────────────────────────────────────
         /// <summary>
-        /// Converts the panel from any corner-based anchor/pivot to a uniform top-left (0,1)
-        /// anchor + pivot so that anchoredPosition is (pixelsFromLeft, -pixelsFromTop).
-        /// Called once on first drag so initial positioning uses the correct corner anchors
-        /// at any resolution, while subsequent dragging uses a consistent coordinate system.
+        /// Converts the panel from its initial corner anchor/pivot to a uniform top-left (0,1)
+        /// anchor so that anchoredPosition = (pixelsFromLeft, -pixelsFromTop).
+        /// This is required for consistent clamping, snapping, and inter-panel comparison
+        /// across all screen resolutions.
         /// </summary>
         private void NormalizeAnchor()
         {
             if (_anchorNormalized || _canvasRt == null) return;
             _anchorNormalized = true;
 
-            // Capture the world-space top-left corner of the panel before touching anchors.
+            // Capture the world-space top-left corner before touching anchors.
             var corners = new Vector3[4];
             _rt.GetWorldCorners(corners);
-            // corners[1] = world-space top-left corner of the panel.
+            // corners[1] = world-space top-left corner (Unity winding: BL, TL, TR, BR).
 
-            // Switch to top-left anchor + pivot.
             _rt.anchorMin = new Vector2(0f, 1f);
             _rt.anchorMax = new Vector2(0f, 1f);
             _rt.pivot     = new Vector2(0f, 1f);
 
-            // ScreenSpaceOverlay canvas: worldCamera is null, which is fine for these utils.
             var cam = _canvas.worldCamera;
             Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(cam, corners[1]);
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 _canvasRt, screenPos, cam, out Vector2 localPos);
 
-            // localPos is in canvas local space (center = 0,0).
-            // Canvas top-left in that space = (-cW/2, +cH/2).
-            // anchoredPosition = localPos − canvasTopLeft
             float cW = _canvasRt.rect.width;
             float cH = _canvasRt.rect.height;
+            // localPos is canvas-center-relative; shift to top-left-relative.
             _rt.anchoredPosition = localPos - new Vector2(-cW * 0.5f, cH * 0.5f);
         }
 
-        // ── Clamping & snapping ─────────────────────────────────────────────
+        // ── Bounds clamping ─────────────────────────────────────────────────
         private void ClampToBounds()
         {
             if (_canvasRt == null) return;
-
             float cW = _canvasRt.rect.width;
             float cH = _canvasRt.rect.height;
             float pW = _rt.rect.width;
             float pH = _rt.rect.height;
-
-            // With anchor=(0,1): x ∈ [0, cW-pW], y ∈ [-(cH-pH), 0]
             var p = _rt.anchoredPosition;
-            p.x = Mathf.Clamp(p.x, 0f,              Mathf.Max(0f, cW - pW));
+            p.x = Mathf.Clamp(p.x, 0f, Mathf.Max(0f, cW - pW));
             p.y = Mathf.Clamp(p.y, -Mathf.Max(0f, cH - pH), 0f);
             _rt.anchoredPosition = p;
         }
 
+        // ── Combined snap logic ─────────────────────────────────────────────
         private void TrySnap()
         {
             if (_canvasRt == null) return;
+            var p = _rt.anchoredPosition;
+            var s = p;
 
+            TryCanvasEdgeSnap(ref s, p);
+
+            if (EnableInterPanelSnap && GlobalInterPanelSnap)
+                TryPanelToPanelSnap(ref s, p);
+
+            if (s != p) { _snapTarget = s; _snapping = true; }
+        }
+
+        /// <summary>Snap to the four canvas edges if within <see cref="SnapTolerance"/>.</summary>
+        private void TryCanvasEdgeSnap(ref Vector2 s, Vector2 p)
+        {
             float cW = _canvasRt.rect.width;
             float cH = _canvasRt.rect.height;
             float pW = _rt.rect.width;
             float pH = _rt.rect.height;
 
-            var p = _rt.anchoredPosition;
-            var s = p;
+            if (p.x < SnapTolerance)                 s.x = 0f;
+            else if (cW - pW - p.x < SnapTolerance)  s.x = cW - pW;
 
-            if (p.x < SnapTolerance)                s.x = 0f;
-            else if (cW - pW - p.x < SnapTolerance) s.x = cW - pW;
+            if (-p.y < SnapTolerance)                s.y = 0f;
+            else if (cH - pH + p.y < SnapTolerance)  s.y = -(cH - pH);
+        }
 
-            if (-p.y < SnapTolerance)               s.y = 0f;
-            else if (cH - pH + p.y < SnapTolerance) s.y = -(cH - pH);
+        /// <summary>
+        /// Snap this panel's edges to nearby edges of other active, normalized panels.
+        ///
+        /// Coordinate system (after NormalizeAnchor — anchor + pivot = top-left):
+        ///   p.x  = panel left edge (px from canvas left)
+        ///   p.y  = panel top  edge (negative px from canvas top, 0 = canvas top)
+        ///   p.y - pH = panel bottom edge
+        ///   p.x + pW = panel right  edge
+        ///
+        /// Snapping rules:
+        ///   Horizontal (left/right): only when panels share vertical space or have aligned tops.
+        ///   Vertical   (top/bottom): only when panels share horizontal space or have aligned lefts.
+        /// </summary>
+        private void TryPanelToPanelSnap(ref Vector2 s, Vector2 p)
+        {
+            if (!_anchorNormalized) return;
+            float pW = _rt.rect.width;
+            float pH = _rt.rect.height;
 
-            if (s != p) { _snapTarget = s; _snapping = true; }
+            foreach (var other in _allPanels)
+            {
+                if (other == this || other == null || !other.gameObject.activeInHierarchy) continue;
+                if (!other._anchorNormalized || other._rt == null) continue;
+
+                var   op = other._rt.anchoredPosition;
+                float ow = other._rt.rect.width;
+                float oh = other._rt.rect.height;
+
+                // Vertical overlap: both panels share some horizontal strip.
+                // p.y > op.y - oh  →  my top is above other's bottom
+                // p.y < op.y + pH  →  my top is below other's top + my height
+                bool vOverlap = p.y > op.y - oh && p.y < op.y + pH;
+
+                // Horizontal overlap: both panels share some vertical strip.
+                bool hOverlap = p.x < op.x + ow && p.x + pW > op.x;
+
+                // ── Horizontal snap (left/right edges) ───────────────────────
+                if (vOverlap || Mathf.Abs(p.y - op.y) < SnapTolerance)
+                {
+                    // My left edge → other's right edge
+                    if (Mathf.Abs(p.x - (op.x + ow)) < SnapTolerance)
+                        s.x = op.x + ow;
+                    // My right edge → other's left edge
+                    if (Mathf.Abs((p.x + pW) - op.x) < SnapTolerance)
+                        s.x = op.x - pW;
+                }
+
+                // ── Vertical snap (top/bottom edges) ─────────────────────────
+                if (hOverlap || Mathf.Abs(p.x - op.x) < SnapTolerance)
+                {
+                    // My top edge → other's bottom edge  (s.y = op.y - oh)
+                    if (Mathf.Abs(p.y - (op.y - oh)) < SnapTolerance)
+                        s.y = op.y - oh;
+                    // My bottom edge → other's top edge  (s.y = op.y + pH)
+                    if (Mathf.Abs((p.y - pH) - op.y) < SnapTolerance)
+                        s.y = op.y + pH;
+                }
+            }
         }
     }
 }
