@@ -169,10 +169,15 @@ namespace Valkur.Gameplay.World
             // After ZoneDatabaseLoader's global Y-flip, dungeon offset Y < lobby offset Y,
             // so the dungeon zone is directly below the lobby in Unity coords.
             // The lobby's bottom edge (lowest Y) is adjacent to the dungeon's top edge.
-            // Lobby exit: bottom-center of lobby (Y = lobbyOffY, X = midpoint).
+            //
+            // CRITICAL: anchor the corridor at lobbyOffY-1 (last row of dungeon) and
+            // grow it SOUTHWARD (toward lower Y). A naïve centered tunnel at Y=lobbyOffY
+            // overwrites the lobby's southern border tiles AND erases its collision,
+            // producing a visible "sand strip" cutting through the lobby map.
             int lobbyExitLocalX = _config.ZoneWidth / 2;
             int lobbyExitWorldX = lobbyOffX + lobbyExitLocalX;
-            int lobbyExitWorldY = lobbyOffY; // Bottom edge of lobby = adjacent to dungeon top
+            int corridorTopY = lobbyOffY - 1;     // highest Y the corridor may occupy (still in dungeon)
+            int lobbyExitWorldY = corridorTopY;   // exit from the dungeon's north edge
 
             // Find closest dungeon room center (in world tile coords, Unity Y-up)
             int bestDX = 0, bestDY = 0;
@@ -196,19 +201,23 @@ namespace Valkur.Gameplay.World
             }
 
             // Carve L-shaped tunnel in world tile coords
-            int thickness = _config.TunnelThickness;
+            int thickness = Mathf.Max(1, _config.TunnelThickness);
+            int half = thickness / 2;
             int tilesCarved = 0;
+            // Hard upper bound: the corridor MUST NOT cross into the lobby.
+            // Used as a defensive guard inside both segments.
+            int maxAllowedY = lobbyOffY - 1;
 
-            // Horizontal segment: from lobbyExit.x to dungeonRoom.x at lobbyExit.y
+            // Horizontal segment: anchored at corridorTopY, growing southward.
+            // yy = corridorTopY, corridorTopY-1, ..., corridorTopY-(thickness-1)
             int xStart = Mathf.Min(lobbyExitWorldX, bestDX);
             int xEnd = Mathf.Max(lobbyExitWorldX, bestDX);
-            int half = thickness / 2;
-
             for (int xx = xStart; xx <= xEnd; xx++)
             {
                 for (int t = 0; t < thickness; t++)
                 {
-                    int yy = lobbyExitWorldY + t - half;
+                    int yy = corridorTopY - t;
+                    if (yy > maxAllowedY) continue; // defensive guard against config drift
                     var pos = new Vector3Int(xx, yy, 0);
                     groundTilemap.SetTile(pos, GetTunnelFloorTile());
                     // Clear any collision tile at this position
@@ -217,10 +226,11 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            // Vertical segment: from lobbyExit.y to dungeonRoom.y at dungeonRoom.x
-            int yMin = Mathf.Min(lobbyExitWorldY, bestDY);
-            int yMax = Mathf.Max(lobbyExitWorldY, bestDY);
-
+            // Vertical segment: from corridor anchor down to the dungeon room.
+            // Clamp yMax to maxAllowedY so the segment NEVER paints into the lobby,
+            // even if room layout pushes bestDY above the lobby border.
+            int yMin = Mathf.Min(corridorTopY, bestDY);
+            int yMax = Mathf.Min(Mathf.Max(corridorTopY, bestDY), maxAllowedY);
             for (int yy = yMin; yy <= yMax; yy++)
             {
                 for (int t = 0; t < thickness; t++)
@@ -228,7 +238,6 @@ namespace Valkur.Gameplay.World
                     int xx = bestDX + t - half;
                     var pos = new Vector3Int(xx, yy, 0);
                     groundTilemap.SetTile(pos, GetTunnelFloorTile());
-                    // Clear any collision tile at this position
                     collisionTilemap?.SetTile(pos, null);
                     tilesCarved++;
                 }

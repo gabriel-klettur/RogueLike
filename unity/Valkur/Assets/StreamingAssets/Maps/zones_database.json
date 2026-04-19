@@ -4,29 +4,173 @@
   "world_origin_x": -100,
   "world_origin_y": 0,
   "zones": [
-    { "name": "dungeon", "offset_x": 50, "offset_y": 100, "overlay": "dungeon.overlay.json", "collision": null },
-    { "name": "Lobby", "offset_x": 50, "offset_y": 50, "overlay": "lobby.overlay.json", "collision": "lobby.json" },
-    { "name": "Forest", "offset_x": 0, "offset_y": 50, "overlay": "Forest.overlay.json", "collision": "Forest.json" },
-    { "name": "zone_100_50", "offset_x": 100, "offset_y": 50, "overlay": "zone_100_50.overlay.json", "collision": "zone_100_50.json" },
-    { "name": "zone_50_0", "offset_x": 50, "offset_y": 0, "overlay": null, "collision": "zone_50_0.json" },
-    { "name": "zone_0_0", "offset_x": 0, "offset_y": 0, "overlay": null, "collision": "zone_0_0.json" },
-    { "name": "zone_150_50", "offset_x": 150, "offset_y": 50, "overlay": "zone_150_50.overlay.json", "collision": "zone_150_50.json" },
-    { "name": "zone_200_50", "offset_x": 200, "offset_y": 50, "overlay": "zone_200_50.overlay.json", "collision": "zone_200_50.json" },
-    { "name": "zone_150_100", "offset_x": 150, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_200_100", "offset_x": 200, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_150_0", "offset_x": 150, "offset_y": 0, "overlay": "zone_150_0.overlay.json", "collision": "zone_150_0.json" },
-    { "name": "zone_200_0", "offset_x": 200, "offset_y": 0, "overlay": "zone_200_0.overlay.json", "collision": null },
-    { "name": "zone_250_50", "offset_x": 250, "offset_y": 50, "overlay": null, "collision": null },
-    { "name": "zone_250_0", "offset_x": 250, "offset_y": 0, "overlay": null, "collision": null },
-    { "name": "zone_250_100", "offset_x": 250, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_0_100", "offset_x": 0, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_100_100", "offset_x": 100, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_100_0", "offset_x": 100, "offset_y": 0, "overlay": null, "collision": null },
-    { "name": "zone_-50_50", "offset_x": -50, "offset_y": 50, "overlay": null, "collision": null },
-    { "name": "zone_-100_50", "offset_x": -100, "offset_y": 50, "overlay": null, "collision": null },
-    { "name": "zone_-50_0", "offset_x": -50, "offset_y": 0, "overlay": null, "collision": null },
-    { "name": "zone_-100_0", "offset_x": -100, "offset_y": 0, "overlay": null, "collision": null },
-    { "name": "zone_-50_100", "offset_x": -50, "offset_y": 100, "overlay": null, "collision": null },
-    { "name": "zone_-100_100", "offset_x": -100, "offset_y": 100, "overlay": null, "collision": null }
+    {
+      "name": "dungeon",
+      "offset_x": 50,
+      "offset_y": 100,
+      "overlay": "dungeon.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "Lobby",
+      "offset_x": 50,
+      "offset_y": 50,
+      "overlay": "lobby.overlay.json",
+      "collision": "lobby.json"
+    },
+    {
+      "name": "Forest",
+      "offset_x": 0,
+      "offset_y": 50,
+      "overlay": "Forest.overlay.json",
+      "collision": "Forest.json"
+    },
+    {
+      "name": "zone_100_50",
+      "offset_x": 100,
+      "offset_y": 50,
+      "overlay": "zone_100_50.overlay.json",
+      "collision": "zone_100_50.json"
+    },
+    {
+      "name": "zone_50_0",
+      "offset_x": 50,
+      "offset_y": 0,
+      "overlay": "zone_50_0.overlay.json",
+      "collision": "zone_50_0.json"
+    },
+    {
+      "name": "zone_0_0",
+      "offset_x": 0,
+      "offset_y": 0,
+      "overlay": "zone_0_0.overlay.json",
+      "collision": "zone_0_0.json"
+    },
+    {
+      "name": "zone_150_50",
+      "offset_x": 150,
+      "offset_y": 50,
+      "overlay": "zone_150_50.overlay.json",
+      "collision": "zone_150_50.json"
+    },
+    {
+      "name": "zone_200_50",
+      "offset_x": 200,
+      "offset_y": 50,
+      "overlay": "zone_200_50.overlay.json",
+      "collision": "zone_200_50.json"
+    },
+    {
+      "name": "zone_150_100",
+      "offset_x": 150,
+      "offset_y": 100,
+      "overlay": "zone_150_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_200_100",
+      "offset_x": 200,
+      "offset_y": 100,
+      "overlay": "zone_200_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_150_0",
+      "offset_x": 150,
+      "offset_y": 0,
+      "overlay": "zone_150_0.overlay.json",
+      "collision": "zone_150_0.json"
+    },
+    {
+      "name": "zone_200_0",
+      "offset_x": 200,
+      "offset_y": 0,
+      "overlay": "zone_200_0.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_250_50",
+      "offset_x": 250,
+      "offset_y": 50,
+      "overlay": "zone_250_50.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_250_0",
+      "offset_x": 250,
+      "offset_y": 0,
+      "overlay": "zone_250_0.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_250_100",
+      "offset_x": 250,
+      "offset_y": 100,
+      "overlay": "zone_250_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_0_100",
+      "offset_x": 0,
+      "offset_y": 100,
+      "overlay": "zone_0_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_100_100",
+      "offset_x": 100,
+      "offset_y": 100,
+      "overlay": "zone_100_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_100_0",
+      "offset_x": 100,
+      "offset_y": 0,
+      "overlay": "zone_100_0.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-50_50",
+      "offset_x": -50,
+      "offset_y": 50,
+      "overlay": "zone_-50_50.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-100_50",
+      "offset_x": -100,
+      "offset_y": 50,
+      "overlay": "zone_-100_50.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-50_0",
+      "offset_x": -50,
+      "offset_y": 0,
+      "overlay": "zone_-50_0.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-100_0",
+      "offset_x": -100,
+      "offset_y": 0,
+      "overlay": "zone_-100_0.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-50_100",
+      "offset_x": -50,
+      "offset_y": 100,
+      "overlay": "zone_-50_100.overlay.json",
+      "collision": null
+    },
+    {
+      "name": "zone_-100_100",
+      "offset_x": -100,
+      "offset_y": 100,
+      "overlay": "zone_-100_100.overlay.json",
+      "collision": null
+    }
   ]
 }

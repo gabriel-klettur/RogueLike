@@ -37,8 +37,22 @@ namespace Valkur.Gameplay.World
         public static void LoadOverlay(string overlayFileName, WorldGridBuilder gridBuilder,
             int offsetX, int offsetY)
         {
+            LoadOverlay(overlayFileName, gridBuilder, offsetX, offsetY, 0, 0);
+        }
+
+        /// <summary>
+        /// Load an overlay JSON and paint onto the world grid, optionally clipped to a
+        /// per-zone footprint. Pass <paramref name="maxWidth"/>/<paramref name="maxHeight"/> &gt; 0
+        /// to enforce zone bounds — any tile in the JSON outside the rectangle is skipped
+        /// and a single warning is logged. Pass 0 to disable clipping (legacy behaviour).
+        /// </summary>
+        public static void LoadOverlay(string overlayFileName, WorldGridBuilder gridBuilder,
+            int offsetX, int offsetY, int maxWidth, int maxHeight)
+        {
             string jsonPath = Path.Combine(Application.streamingAssetsPath, "Maps", overlayFileName);
-            LoadOverlayFromPath(jsonPath, gridBuilder, offsetX, offsetY, clearLayerRegion: false, regionWidth: 0, regionHeight: 0);
+            LoadOverlayFromPath(jsonPath, gridBuilder, offsetX, offsetY,
+                clearLayerRegion: false, regionWidth: 0, regionHeight: 0,
+                maxWidth: maxWidth, maxHeight: maxHeight);
         }
 
         /// <summary>
@@ -46,9 +60,14 @@ namespace Valkur.Gameplay.World
         /// When <paramref name="clearLayerRegion"/> is true, the [offset, offset+region] rectangle
         /// of every painted layer is cleared first so empty cells in the JSON are also applied (true erase).
         /// Used for runtime overrides loaded from <c>persistentDataPath/MapOverrides</c>.
+        ///
+        /// When <paramref name="maxWidth"/> / <paramref name="maxHeight"/> are &gt; 0, any tile in the
+        /// JSON outside the [0, max) rectangle is skipped and a single warning is logged. This guards
+        /// against malformed overlays that would otherwise paint into neighbouring zones.
         /// </summary>
         public static void LoadOverlayFromPath(string jsonPath, WorldGridBuilder gridBuilder,
-            int offsetX, int offsetY, bool clearLayerRegion, int regionWidth, int regionHeight)
+            int offsetX, int offsetY, bool clearLayerRegion, int regionWidth, int regionHeight,
+            int maxWidth = 0, int maxHeight = 0)
         {
             if (!File.Exists(jsonPath))
             {
@@ -100,7 +119,8 @@ namespace Valkur.Gameplay.World
                 }
 
                 PaintLayer(tilemap, rows, tilemapLayer == TilemapLayerSetup.TilemapLayer.Collision
-                    || tilemapLayer == TilemapLayerSetup.TilemapLayer.WallsBottom, offsetX, offsetY);
+                    || tilemapLayer == TilemapLayerSetup.TilemapLayer.WallsBottom, offsetX, offsetY,
+                    maxWidth, maxHeight, jsonPath);
             }
 
             if (_missingCount > 0)
@@ -110,10 +130,15 @@ namespace Valkur.Gameplay.World
         }
 
         private static void PaintLayer(Tilemap tilemap, List<object> rows, bool isCollisionLayer,
-            int offsetX = 0, int offsetY = 0)
+            int offsetX = 0, int offsetY = 0, int maxWidth = 0, int maxHeight = 0,
+            string sourceLabel = null)
         {
             int tilesSet = 0;
-            for (int y = 0; y < rows.Count; y++)
+            int tilesClipped = 0;
+            int rowCount = rows.Count;
+            // When clipping is enabled, use the JSON's row count to compute the Y-flip basis
+            // so painting still produces the same orientation; we only skip out-of-bounds tiles.
+            for (int y = 0; y < rowCount; y++)
             {
                 var row = rows[y] as List<object>;
                 if (row == null) continue;
@@ -128,10 +153,22 @@ namespace Valkur.Gameplay.World
 
                     // Overlay data is row-major (y=0 is top). Unity tilemap y=0 is bottom.
                     // Flip Y so row 0 in JSON maps to the top of the map.
-                    int flippedY = rows.Count - 1 - y;
+                    int flippedY = rowCount - 1 - y;
+
+                    // Bounds clip — skip any tile outside the declared zone footprint.
+                    if (maxWidth > 0 && x >= maxWidth) { tilesClipped++; continue; }
+                    if (maxHeight > 0 && flippedY >= maxHeight) { tilesClipped++; continue; }
+
                     tilemap.SetTile(new Vector3Int(offsetX + x, offsetY + flippedY, 0), tile);
                     tilesSet++;
                 }
+            }
+
+            if (tilesClipped > 0)
+            {
+                string label = sourceLabel != null ? Path.GetFileName(sourceLabel) : "<unknown>";
+                Debug.LogWarning($"[OverlayLoader] '{label}' on '{tilemap.gameObject.name}': " +
+                                 $"{tilesClipped} tile(s) clipped to zone footprint {maxWidth}x{maxHeight}.");
             }
 
             if (tilesSet > 0)

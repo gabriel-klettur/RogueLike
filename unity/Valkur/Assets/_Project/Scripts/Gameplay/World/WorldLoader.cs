@@ -83,6 +83,12 @@ namespace Valkur.Gameplay.World
             int skippedOverlays   = 0;
             int skippedCollisions = 0;
 
+            // Each overlay must paint within its declared zone footprint. Pass these
+            // dimensions to OverlayLoader so any out-of-bounds tile is skipped with a
+            // logged warning instead of bleeding into the neighbouring zone.
+            int zoneW = _databaseLoader.ZoneWidthTiles;
+            int zoneH = _databaseLoader.ZoneHeightTiles;
+
             foreach (var entry in entries)
             {
                 // Load overlay at zone offset
@@ -92,7 +98,7 @@ namespace Valkur.Gameplay.World
                     if (paintedOverlays.Add(key))
                     {
                         OverlayLoader.LoadOverlay(entry.overlayFile, _gridBuilder,
-                            entry.offsetX, entry.offsetY);
+                            entry.offsetX, entry.offsetY, zoneW, zoneH);
                         _overlaysLoaded++;
                     }
                     else
@@ -108,7 +114,7 @@ namespace Valkur.Gameplay.World
                     var key = (entry.offsetX, entry.offsetY, entry.collisionFile);
                     if (paintedCollisions.Add(key))
                     {
-                        LoadCollisionGrid(entry.collisionFile, entry.offsetX, entry.offsetY);
+                        LoadCollisionGrid(entry.collisionFile, entry.offsetX, entry.offsetY, zoneW, zoneH);
                     }
                     else
                     {
@@ -132,8 +138,11 @@ namespace Valkur.Gameplay.World
         /// Parse a collision JSON file (50x50 grid of "#"/"."/"=") and paint
         /// wall tiles onto the Collision tilemap layer.
         /// "#" = solid wall, "." = walkable, "=" = special connector.
+        /// When <paramref name="maxWidth"/>/<paramref name="maxHeight"/> &gt; 0, any cell outside
+        /// the zone footprint is skipped and a single warning is logged.
         /// </summary>
-        private void LoadCollisionGrid(string collisionFileName, int offsetX, int offsetY)
+        private void LoadCollisionGrid(string collisionFileName, int offsetX, int offsetY,
+            int maxWidth = 0, int maxHeight = 0)
         {
             string jsonPath = Path.Combine(
                 Application.streamingAssetsPath, "Collisions", collisionFileName);
@@ -160,6 +169,7 @@ namespace Valkur.Gameplay.World
             }
 
             int cellsSet = 0;
+            int cellsClipped = 0;
             int rowCount = rows.Count;
 
             for (int y = 0; y < rowCount; y++)
@@ -174,12 +184,21 @@ namespace Valkur.Gameplay.World
 
                     // Y-flip: row 0 in Python is top, row 0 in Unity tilemap is bottom
                     int flippedY = rowCount - 1 - y;
+
+                    // Bounds clip — refuse to paint a wall outside the declared zone footprint.
+                    if (maxWidth > 0 && x >= maxWidth) { cellsClipped++; continue; }
+                    if (maxHeight > 0 && flippedY >= maxHeight) { cellsClipped++; continue; }
+
                     var tile = GetWallCollisionTile();
                     collisionTilemap.SetTile(
                         new Vector3Int(offsetX + x, offsetY + flippedY, 0), tile);
                     cellsSet++;
                 }
             }
+
+            if (cellsClipped > 0)
+                Debug.LogWarning($"[WorldLoader] Collision '{collisionFileName}': " +
+                                 $"{cellsClipped} cell(s) clipped to zone footprint {maxWidth}x{maxHeight}.");
 
             if (cellsSet > 0)
             {

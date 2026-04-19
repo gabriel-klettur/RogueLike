@@ -20,17 +20,27 @@ namespace Valkur.Gameplay.World
         [Tooltip("Load zone database automatically on Start.")]
         [SerializeField] private bool _autoLoad = true;
 
+        [Tooltip("Shift every zone offset by -world_origin so the world's south-west corner sits at (0,0). " +
+                 "Mirrors Python's ZonesService normalization. Disable only for debugging.")]
+        [SerializeField] private bool _normalizeToOrigin = true;
+
         /// <summary>Zone width in tiles (read from JSON). Default 50.</summary>
         public int ZoneWidthTiles { get; private set; } = 50;
 
         /// <summary>Zone height in tiles (read from JSON). Default 50.</summary>
         public int ZoneHeightTiles { get; private set; } = 50;
 
-        /// <summary>Minimum X offset found (for negative zone support).</summary>
+        /// <summary>Minimum X offset found (for negative zone support). Read from <c>world_origin_x</c>.</summary>
         public int WorldOriginX { get; private set; }
 
-        /// <summary>Minimum Y offset found.</summary>
+        /// <summary>Minimum Y offset found. Read from <c>world_origin_y</c>.</summary>
         public int WorldOriginY { get; private set; }
+
+        /// <summary>X-shift actually applied to zone offsets during normalization (0 if normalization disabled).</summary>
+        public int AppliedOriginShiftX { get; private set; }
+
+        /// <summary>Y-shift actually applied to zone offsets after the global Y-flip (0 if normalization disabled or unsupported).</summary>
+        public int AppliedOriginShiftY { get; private set; }
 
         /// <summary>All zone entries loaded from the database.</summary>
         public IReadOnlyList<ZoneEntry> Entries => _entries;
@@ -164,10 +174,77 @@ namespace Valkur.Gameplay.World
                 };
             }
 
+            // --- World-origin normalization ---
+            // Python's ZonesService shifts every zone so the south-west corner of
+            // the world sits at (0,0). Mirror that here so consumers (Tilemap bounds,
+            // ZoneManager.DetectZone, persistence, minimap, etc.) never see negative
+            // tile coordinates. All offsets shift by the same delta, so RELATIVE
+            // positions (lobby↔dungeon distance, player spawn relative to lobby) are
+            // preserved.
+            AppliedOriginShiftX = 0;
+            AppliedOriginShiftY = 0;
+            if (_normalizeToOrigin && WorldOriginX != 0)
+            {
+                int shiftX = -WorldOriginX;
+                AppliedOriginShiftX = shiftX;
+                for (int i = 0; i < _entries.Count; i++)
+                {
+                    var e = _entries[i];
+                    e.offsetX += shiftX;
+                    _entries[i] = e;
+                    var d = zoneDefs[i];
+                    d.gridOffset = new Vector2Int(e.offsetX, d.gridOffset.y);
+                    zoneDefs[i] = d;
+                }
+            }
+            if (_normalizeToOrigin && WorldOriginY != 0)
+            {
+                // world_origin_y is in pre-flip Python space (Y-down). In current
+                // databases this is always 0 so we have no real-world test coverage
+                // for the post-flip shift. Log and skip rather than guess.
+                Debug.LogWarning("[ZoneDatabaseLoader] world_origin_y != 0 normalization is not yet implemented; leaving Y unshifted.");
+            }
+
+            // --- Overlap diagnostics ---
+            // After all transforms, scan for any two zones whose [offsetX..+W, offsetY..+H]
+            // rectangles intersect. This catches malformed databases at load time instead
+            // of letting tiles silently overpaint each other.
+            DetectAndReportOverlaps();
+
             _zoneManager.ReplaceZones(zoneDefs);
             Debug.Log($"[ZoneDatabaseLoader] Loaded {zoneDefs.Count} zones into ZoneManager " +
-                      $"(origin [{WorldOriginX},{WorldOriginY}], zone size {ZoneWidthTiles}x{ZoneHeightTiles}, " +
-                      $"Y-flipped with maxWorldY={maxWorldY}).");
+                      $"(origin [{WorldOriginX},{WorldOriginY}], shift applied [{AppliedOriginShiftX},{AppliedOriginShiftY}], " +
+                      $"zone size {ZoneWidthTiles}x{ZoneHeightTiles}, Y-flipped with maxWorldY={maxWorldY}).");
+        }
+
+        /// <summary>
+        /// Logs an error for every pair of zones whose footprints overlap.
+        /// Intended as a defensive load-time check — overlapping zones cause
+        /// tiles to stack on top of each other on the same Tilemap layer.
+        /// </summary>
+        private void DetectAndReportOverlaps()
+        {
+            int reported = 0;
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                var a = _entries[i];
+                int axMin = a.offsetX, axMax = a.offsetX + ZoneWidthTiles - 1;
+                int ayMin = a.offsetY, ayMax = a.offsetY + ZoneHeightTiles - 1;
+                for (int j = i + 1; j < _entries.Count; j++)
+                {
+                    var b = _entries[j];
+                    int bxMin = b.offsetX, bxMax = b.offsetX + ZoneWidthTiles - 1;
+                    int byMin = b.offsetY, byMax = b.offsetY + ZoneHeightTiles - 1;
+                    bool overlap = axMin <= bxMax && bxMin <= axMax && ayMin <= byMax && byMin <= ayMax;
+                    if (!overlap) continue;
+                    Debug.LogError($"[ZoneDatabaseLoader] Zone overlap detected: '{a.name}' " +
+                                   $"[{axMin}..{axMax},{ayMin}..{ayMax}] intersects '{b.name}' " +
+                                   $"[{bxMin}..{bxMax},{byMin}..{byMax}]. Fix zones_database.json.");
+                    reported++;
+                }
+            }
+            if (reported == 0)
+                Debug.Log($"[ZoneDatabaseLoader] Overlap check passed: {_entries.Count} zones, no intersections.");
         }
 
         private static string GetString(Dictionary<string, object> d, string key, string fallback = "")
