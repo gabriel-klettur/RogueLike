@@ -149,6 +149,9 @@ namespace Valkur.Gameplay.TileEditor
                 case "size":
                     if (_refs.SizeDropdown != null) _refs.SizeDropdown.SetActive(open);
                     break;
+                case "ux":
+                    if (_refs.UxDropdown != null) _refs.UxDropdown.SetActive(open);
+                    break;
             }
         }
 
@@ -160,6 +163,7 @@ namespace Valkur.Gameplay.TileEditor
             ApplyMenuBtnStyle(_refs.InspectorMenuBtnImg, _refs.InspectorMenuBtnTmp, _openDropdowns.Contains("inspector"));
             ApplyMenuBtnStyle(_refs.CollidersMenuBtnImg, _refs.CollidersMenuBtnTmp, _openDropdowns.Contains("colliders"));
             ApplyMenuBtnStyle(_refs.SizeMenuBtnImg,      _refs.SizeMenuBtnTmp,      _openDropdowns.Contains("size"));
+            ApplyMenuBtnStyle(_refs.UxMenuBtnImg,        _refs.UxMenuBtnTmp,        _openDropdowns.Contains("ux"));
         }
 
         private static void ApplyMenuBtnStyle(Image img, TextMeshProUGUI tmp, bool isOpen)

@@ -26,11 +26,16 @@ namespace Valkur.Gameplay.TileEditor
             r.sizeDelta = new Vector2(0f, MENUBAR_HEIGHT);
 
             var bg = refs.MenuBar.AddComponent<Image>();
-            bg.color = MENUBAR_BG;
+            bg.color = TileEditorTheme.MenuBarBg;
             bg.raycastTarget = true;
             var ol = refs.MenuBar.AddComponent<Outline>();
-            ol.effectColor = DROPDOWN_BORDER;
-            ol.effectDistance = new Vector2(0f, -1f);
+            ol.effectColor = TileEditorTheme.Border;
+            ol.effectDistance = new Vector2(0f, -TileEditorTheme.OutlinePx);
+
+            // Theme tracker: lets the UX panel repaint the menu bar live.
+            var chrome = refs.MenuBar.AddComponent<MenuBarChrome>();
+            chrome.BgImage       = bg;
+            chrome.BorderOutline = ol;
 
             var layout = refs.MenuBar.AddComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset((int)MENUBAR_PAD_H, (int)MENUBAR_PAD_H, 0, 0);
@@ -75,6 +80,10 @@ namespace Valkur.Gameplay.TileEditor
             spacer.AddComponent<LayoutElement>().flexibleWidth = 1f;
 
             BuildMenuDivider(t);
+
+            // ── UX/Theme editor (just left of PERF) ──
+            refs.UxMenuBtnImg = BuildMenuButton(t, "UX", UX_BTN_W,
+                () => onDropdownToggle?.Invoke("ux"), out refs.UxMenuBtnTmp);
 
             // ── Perf Probe toggle (far-right) ──
             refs.PerfProbeMenuBtnImg = BuildMenuButton(t, "PERF", PERF_BTN_W,

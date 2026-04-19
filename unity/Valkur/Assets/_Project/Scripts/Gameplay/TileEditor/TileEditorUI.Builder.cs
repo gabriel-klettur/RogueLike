@@ -41,6 +41,7 @@ namespace Valkur.Gameplay.TileEditor
             if (_refs.InspectorPanelDrag  != null) _refs.InspectorPanelDrag.OnClose  = () => ToggleDropdown("inspector");
             if (_refs.CollidersPanelDrag  != null) _refs.CollidersPanelDrag.OnClose  = () => ToggleDropdown("colliders");
             if (_refs.SizePanelDrag       != null) _refs.SizePanelDrag.OnClose       = () => ToggleDropdown("size");
+            if (_refs.UxPanelDrag         != null) _refs.UxPanelDrag.OnClose         = () => ToggleDropdown("ux");
 
             WireLayerVisibilityButtons();
 

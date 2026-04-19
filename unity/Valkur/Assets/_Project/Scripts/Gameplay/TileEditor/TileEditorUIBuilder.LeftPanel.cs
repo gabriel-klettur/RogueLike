@@ -459,10 +459,10 @@ namespace Valkur.Gameplay.TileEditor
             ApplyDock(r, dock, xOffset, yOffset, width, height);
 
             var img = go.AddComponent<Image>();
-            img.color = BG_PANEL;          // semi-transparent dark — matches PERF PROBE
+            img.color = TileEditorTheme.PanelBg;          // semi-transparent dark — matches PERF PROBE
             var ol = go.AddComponent<Outline>();
-            ol.effectColor    = PANEL_BORDER;
-            ol.effectDistance = new Vector2(1f, 1f);
+            ol.effectColor    = TileEditorTheme.Border;
+            ol.effectDistance = new Vector2(TileEditorTheme.OutlinePx, TileEditorTheme.OutlinePx);
 
             // ── Panel header (drag handle + title + controls) ─────────────────
             var hdrGo  = CreateUI("PanelHeader", go.transform);
@@ -474,7 +474,7 @@ namespace Valkur.Gameplay.TileEditor
             hdrRt.sizeDelta        = new Vector2(0f, PANEL_HDR_H);
 
             var hdrImg = hdrGo.AddComponent<Image>();
-            hdrImg.color         = PANEL_HDR_BG;
+            hdrImg.color         = TileEditorTheme.HeaderBg;
             hdrImg.raycastTarget = true;
 
             var hdrHlg = hdrGo.AddComponent<HorizontalLayoutGroup>();
@@ -488,17 +488,18 @@ namespace Valkur.Gameplay.TileEditor
             // Header button width: narrow panels (e.g. TOOLS 60px) use 14px buttons to fit
             float hdrBtnW = narrowPanel ? 14f : PANEL_HDR_BTN_W;
 
+            TextMeshProUGUI titleTmp = null;
             if (!narrowPanel)
             {
                 // Title text on the left, buttons on the right
                 hdrHlg.padding = new RectOffset(8, 2, 0, 0);
                 var titleGo  = CreateUI("Title", hdrGo.transform);
                 titleGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
-                var titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
+                titleTmp = titleGo.AddComponent<TextMeshProUGUI>();
                 titleTmp.text               = title.ToUpper();
                 titleTmp.fontSize           = 10f;
                 titleTmp.fontStyle          = FontStyles.Bold;
-                titleTmp.color              = PANEL_HDR_TITLE;
+                titleTmp.color              = TileEditorTheme.HeaderTitle;
                 titleTmp.characterSpacing   = 1.5f;
                 titleTmp.alignment          = TextAlignmentOptions.Left;
                 titleTmp.enableWordWrapping = false;
@@ -521,7 +522,8 @@ namespace Valkur.Gameplay.TileEditor
             sepRt.pivot     = new Vector2(0f, 1f);
             sepRt.anchoredPosition = new Vector2(0f, -PANEL_HDR_H);
             sepRt.sizeDelta = new Vector2(0f, 1f);
-            sepGo.AddComponent<Image>().color = PANEL_HDR_SEP;
+            var sepImg = sepGo.AddComponent<Image>();
+            sepImg.color = TileEditorTheme.Separator;
 
             // ── Content area ──────────────────────────────────────────────────
             var contentGo = CreateUI("Content", go.transform);
@@ -554,6 +556,14 @@ namespace Valkur.Gameplay.TileEditor
             BuildHdrBtn(hdrGo.transform, "CloseBtn", "×", closeBgN,  PANEL_HDR_CLOSE_HOVER,  () => drag.ClosePanel(), hdrBtnW);
 
             go.AddComponent<CanvasGroup>();
+
+            // ── Theme tracker ─ lets the UX panel repaint this panel live ──────────
+            var chrome = go.AddComponent<PanelChrome>();
+            chrome.PanelBgImage    = img;
+            chrome.PanelOutline    = ol;
+            chrome.HeaderBgImage   = hdrImg;
+            chrome.HeaderSeparator = sepImg;
+            chrome.HeaderTitle     = titleTmp;
 
             contentTransform = contentGo.transform;
             draggable        = drag;

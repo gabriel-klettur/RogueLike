@@ -108,6 +108,12 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel InspectorPanelDrag;
             public DraggablePanel CollidersPanelDrag;
             public DraggablePanel SizePanelDrag;
+
+            // UX / Theme panel
+            public GameObject       UxDropdown;
+            public DraggablePanel   UxPanelDrag;
+            public Image            UxMenuBtnImg;
+            public TextMeshProUGUI  UxMenuBtnTmp;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,
@@ -142,6 +148,7 @@ namespace Valkur.Gameplay.TileEditor
             BuildCollidersDropdown(canvasT, state, ref refs,
                 onShowColliders, onDrawColliders, onEraseColliders);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
+            BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 
             return refs;
