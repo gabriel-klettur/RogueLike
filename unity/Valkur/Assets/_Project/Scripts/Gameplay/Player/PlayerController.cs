@@ -213,34 +213,30 @@ namespace Valkur.Gameplay
             if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
                 _mainCamera = Camera.main;
 
-            // Read the mouse position directly from the device. The InputAction bound to
-            // <Mouse>/position can return (0,0) whenever the cursor leaves the Game view
-            // window (focus loss, hovering editor chrome, etc.), which would otherwise
-            // make the player face the bottom-left corner of the viewport every frame.
-            // Mouse.current.position keeps updating regardless of focus, and we additionally
-            // skip facing updates while the cursor is outside the visible game viewport so
-            // facing only changes from real player intent.
-            bool facingUpdatedFromMouse = false;
-            if (_mainCamera != null && Mouse.current != null)
-            {
-                Vector2 mouseScreen = Mouse.current.position.ReadValue();
-                if (mouseScreen.x >= 0f && mouseScreen.x <= Screen.width &&
-                    mouseScreen.y >= 0f && mouseScreen.y <= Screen.height)
-                {
-                    Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(mouseScreen);
-                    Vector2 dir = ((Vector2)mouseWorld - (Vector2)transform.position).normalized;
-                    if (dir.sqrMagnitude > 0.01f)
-                    {
-                        _facingDirection = dir;
-                        facingUpdatedFromMouse = true;
-                    }
-                }
-            }
+            // Read the mouse directly from the device. The InputAction bound to
+            // <Mouse>/position can return (0,0) when the cursor leaves the Game view
+            // (focus loss, hovering editor chrome, etc.), which would otherwise yank
+            // the player to face the bottom-left corner of the viewport. The pure
+            // resolver clamps to viewport and falls back to move input when needed.
+            // See PlayerFacingResolverTests for the regression coverage.
+            Vector2 mouseScreen = Mouse.current != null
+                ? Mouse.current.position.ReadValue()
+                : Vector2.zero;
+            Vector2 screenSize = new Vector2(Screen.width, Screen.height);
+            bool isMouseInView = Mouse.current != null
+                && PlayerFacingResolver.IsMouseWithinViewport(mouseScreen, screenSize);
 
-            if (!facingUpdatedFromMouse && IsMoving)
-            {
-                _facingDirection = _moveInput.normalized;
-            }
+            Vector2 mouseWorld = _mainCamera != null && isMouseInView
+                ? (Vector2)_mainCamera.ScreenToWorldPoint(mouseScreen)
+                : (Vector2)transform.position;
+
+            _facingDirection = PlayerFacingResolver.ResolveFacingDirection(
+                currentFacing: _facingDirection,
+                mouseWorld: mouseWorld,
+                isMouseInView: isMouseInView && _mainCamera != null,
+                playerPos: transform.position,
+                moveInput: _moveInput,
+                isMoving: IsMoving);
 
             if (spriteRenderer != null && _animator == null)
                 spriteRenderer.flipX = _facingDirection.x < 0;
