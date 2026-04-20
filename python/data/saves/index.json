@@ -504,6 +504,13 @@
       "created_at": "2026-04-10T03:31:42",
       "size_bytes": 1002,
       "summary": null
+    },
+    {
+      "slot_id": "partida_2026-04-19_23-50-51",
+      "path": "D:\\Python\\RogueLike\\python\\data\\saves\\partida_2026-04-19_23-50-51.json",
+      "created_at": "2026-04-19T23:50:51",
+      "size_bytes": 1001,
+      "summary": null
     }
   ]
 }
