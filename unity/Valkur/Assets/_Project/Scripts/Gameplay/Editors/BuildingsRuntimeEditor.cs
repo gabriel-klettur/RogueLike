@@ -487,20 +487,59 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private void BuildFloatingHandles()
         {
+            // Container: pivot = (0,0) → bottom-left aligns to building top-right corner,
+            // so the badge sits completely outside (above-right of) the yellow selection frame.
             _handlesRoot = EditorUIHelpers.CreateUI("FloatingHandles", _root.transform);
             var rt = _handlesRoot.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(1, 1);   // top-right corner of the active building
-            rt.sizeDelta = new Vector2(52f, 50f);
+            rt.pivot     = new Vector2(0f, 0f);  // bottom-left → outside frame
+            rt.sizeDelta = new Vector2(32f, 32f); // updated proportionally each frame
 
-            _handleR = EditorUIHelpers.MakeButton(_handlesRoot.transform, "R", null, 48f, 18f);
-            _handleR.GetComponent<LayoutElement>().preferredWidth = 48f;
+            // Badge button: dark semi-transparent background + gold Outline (matches selection frame)
+            var btnGo = EditorUIHelpers.CreateUI("BtnR", _handlesRoot.transform);
+            var btnRt = btnGo.GetComponent<RectTransform>();
+            btnRt.anchorMin = Vector2.zero;
+            btnRt.anchorMax = Vector2.one;
+            btnRt.offsetMin = btnRt.offsetMax = Vector2.zero;
+
+            var img = btnGo.AddComponent<Image>();
+            img.color = new Color(0.10f, 0.10f, 0.14f, 0.92f);
+
+            _handleR = btnGo.AddComponent<Button>();
+            var colors = _handleR.colors;
+            colors.normalColor      = new Color(0.10f, 0.10f, 0.14f, 0.92f);
+            colors.highlightedColor = new Color(0.90f, 0.76f, 0.38f, 0.22f); // gold hover glow
+            colors.pressedColor     = EditorUIHelpers.BTN_ACTIVE;             // gold on press
+            colors.selectedColor    = new Color(0.10f, 0.10f, 0.14f, 0.92f);
+            colors.fadeDuration     = 0.08f;
+            _handleR.colors = colors;
+            _handleR.targetGraphic = img;
+
+            // Gold border — visually ties the badge to the yellow selection outline
+            var ol = btnGo.AddComponent<Outline>();
+            ol.effectColor    = new Color(0.90f, 0.76f, 0.38f, 0.85f);
+            ol.effectDistance = new Vector2(1.5f, -1.5f);
+
+            // "R" label in bold ACCENT gold, auto-sized to fit the badge
+            var labelGo = EditorUIHelpers.CreateUI("Lbl", btnGo.transform);
+            var labelRt = labelGo.GetComponent<RectTransform>();
+            labelRt.anchorMin = Vector2.zero;
+            labelRt.anchorMax = Vector2.one;
+            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
+            var tmp = labelGo.AddComponent<TextMeshProUGUI>();
+            tmp.text             = "R";
+            tmp.fontStyle        = FontStyles.Bold;
+            tmp.color            = EditorUIHelpers.ACCENT;
+            tmp.alignment        = TextAlignmentOptions.Center;
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin      = 8f;
+            tmp.fontSizeMax      = 18f;
+            tmp.overflowMode     = TextOverflowModes.Overflow;
 
             // EventTrigger: PointerDown starts the resize drag immediately (onClick fires on
             // release, which is too late for drag-distance tracking).
-            var trigger = _handleR.gameObject
-                .AddComponent<UnityEngine.EventSystems.EventTrigger>();
-            var entry = new UnityEngine.EventSystems.EventTrigger.Entry
+            var trigger = btnGo.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var entry   = new UnityEngine.EventSystems.EventTrigger.Entry
             {
                 eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown
             };
@@ -1450,13 +1489,21 @@ namespace Valkur.Gameplay.Buildings
             var cam = Camera.main;
             if (cam == null) return;
 
-            // Project building top-right corner to screen → set handles' top-right pivot there
+            // Project building top-right corner to canvas (pivot=bottom-left → badge sits outside frame)
             Vector3 worldTopRight = new Vector3(rect.xMax, rect.yMax, 0f);
-            Vector3 screen = cam.WorldToScreenPoint(worldTopRight);
-            Vector2 canvasPos = ScreenToCanvasPos(screen);
+            Vector3 screenTR      = cam.WorldToScreenPoint(worldTopRight);
+            Vector2 canvasTR      = ScreenToCanvasPos(screenTR);
+
+            // Compute proportional badge size from the building's canvas-space width
+            Vector3 worldTopLeft = new Vector3(rect.xMin, rect.yMax, 0f);
+            Vector3 screenTL     = cam.WorldToScreenPoint(worldTopLeft);
+            Vector2 canvasTL     = ScreenToCanvasPos(screenTL);
+            float canvasW        = Mathf.Abs(canvasTR.x - canvasTL.x);
+            float handleSize     = Mathf.Clamp(canvasW * 0.20f, 20f, 52f);
 
             var rt = _handlesRoot.GetComponent<RectTransform>();
-            rt.anchoredPosition = canvasPos;
+            rt.sizeDelta        = new Vector2(handleSize, handleSize);
+            rt.anchoredPosition = canvasTR;
         }
 
         /// <summary>
