@@ -2305,5 +2305,21 @@
             "z_top": 5,
             "z": 3
         }
+    },
+    {
+        "id": 409,
+        "template_id": 315,
+        "zone": "lobby",
+        "rel_x": 704,
+        "rel_y": 560,
+        "overrides": {
+            "scale": [
+                256,
+                256
+            ],
+            "z_bottom": 3,
+            "z_top": 5,
+            "z": 1
+        }
     }
 ]
