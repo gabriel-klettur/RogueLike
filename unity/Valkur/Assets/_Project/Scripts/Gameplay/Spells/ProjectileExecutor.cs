@@ -50,12 +50,17 @@ namespace Valkur.Gameplay.Spells
             if (ctx.Spell.sprite != null)
             {
                 var sr = go.GetComponentInChildren<SpriteRenderer>();
-                if (sr != null) sr.sprite = ctx.Spell.sprite;
+                if (sr != null)
+                {
+                    sr.sprite = ctx.Spell.sprite;
+                    // Apply visual scale to the sprite child only — never to the root GO.
+                    // Python's spell.scale is a sprite pixel-scale factor (e.g. 0.05 for fireball),
+                    // not a world-unit scale. Applying it to the root GO would shrink physics
+                    // colliders and make procedural visuals (FireballVisual) invisible.
+                    if (ctx.Spell.scale > 0 && ctx.Spell.scale != 1f)
+                        sr.transform.localScale = Vector3.one * ctx.Spell.scale;
+                }
             }
-
-            // Apply scale from spell definition
-            if (ctx.Spell.scale > 0 && ctx.Spell.scale != 1f)
-                go.transform.localScale = Vector3.one * ctx.Spell.scale;
 
             // Apply particle color tint to sprite
             if (ctx.Spell.particleColor != Color.white)
