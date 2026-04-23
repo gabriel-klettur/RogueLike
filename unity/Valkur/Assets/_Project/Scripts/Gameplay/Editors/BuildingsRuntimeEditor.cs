@@ -487,12 +487,12 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private void BuildFloatingHandles()
         {
-            // Container: pivot = (0,0) → bottom-left aligns to building top-right corner,
-            // so the badge sits completely outside (above-right of) the yellow selection frame.
+            // Container: pivot = (1,1) → top-right of badge anchors to building top-right corner,
+            // so the badge sits inside the yellow selection frame at the top-right corner.
             _handlesRoot = EditorUIHelpers.CreateUI("FloatingHandles", _root.transform);
             var rt = _handlesRoot.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot     = new Vector2(0f, 0f);  // bottom-left → outside frame
+            rt.pivot     = new Vector2(1f, 1f);  // top-right → inside frame at top-right
             rt.sizeDelta = new Vector2(32f, 32f); // updated proportionally each frame
 
             // Badge button: dark semi-transparent background + gold Outline (matches selection frame)
@@ -586,8 +586,8 @@ namespace Valkur.Gameplay.Buildings
             var go = EditorUIHelpers.CreateUI("IdLabel", _root.transform);
             _idLabelRt = go.GetComponent<RectTransform>();
             _idLabelRt.anchorMin = _idLabelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            _idLabelRt.pivot = new Vector2(0, 0);
-            _idLabelRt.sizeDelta = new Vector2(120f, 22f);
+            _idLabelRt.pivot = new Vector2(0f, 1f);  // top-left anchor → sits outside frame above-left
+            _idLabelRt.sizeDelta = new Vector2(80f, 20f);
             var bg = go.AddComponent<Image>();
             bg.color = new Color(0f, 0f, 0f, 0.55f);
             var labelGo = EditorUIHelpers.CreateUI("Text", go.transform);
@@ -1489,7 +1489,7 @@ namespace Valkur.Gameplay.Buildings
             var cam = Camera.main;
             if (cam == null) return;
 
-            // Project building top-right corner to canvas (pivot=bottom-left → badge sits outside frame)
+            // Project building top-right corner to canvas (pivot=top-right → badge sits inside frame)
             Vector3 worldTopRight = new Vector3(rect.xMax, rect.yMax, 0f);
             Vector3 screenTR      = cam.WorldToScreenPoint(worldTopRight);
             Vector2 canvasTR      = ScreenToCanvasPos(screenTR);
@@ -1578,10 +1578,12 @@ namespace Valkur.Gameplay.Buildings
             if (cam == null) { _idLabelRt.gameObject.SetActive(false); return; }
             _idLabelRt.gameObject.SetActive(true);
             _idLabelTmp.text = $"ID {_activeBuilding.InstanceId}";
-            // Place above the top-left corner of the building
+            // Place just above the top-left corner of the yellow frame (outside the frame)
             Vector3 worldTopLeft = new Vector3(rect.xMin, rect.yMax, 0f);
             Vector3 screen = cam.WorldToScreenPoint(worldTopLeft);
-            _idLabelRt.anchoredPosition = ScreenToCanvasPos(screen) + new Vector2(0f, 26f);
+            // pivot=(0,1): label's top-left aligns to worldTopLeft; subtract ~3px so it sits
+            // flush against the outside top edge of the frame with a tiny gap
+            _idLabelRt.anchoredPosition = ScreenToCanvasPos(screen) + new Vector2(0f, 3f);
         }
 
         private Vector2 ScreenToCanvasPos(Vector3 screenPos)
