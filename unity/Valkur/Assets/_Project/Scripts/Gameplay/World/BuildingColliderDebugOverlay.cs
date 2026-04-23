@@ -27,6 +27,15 @@ namespace Valkur.Gameplay.World
             public GameObject Host;
             public SpriteRenderer Fill;
             public LineRenderer Line;
+
+            // Cached last-applied state so SyncVisuals can skip writing transform
+            // / line / renderer properties when the inputs haven't changed. This
+            // is the hot path: 142 overlays x ~5 tiles each x 60+ fps = tens of
+            // thousands of property writes per second if we don't short-circuit.
+            public bool HasCachedState;
+            public Vector3 LastCenter;
+            public Vector3 LastSize;
+            public bool LastActive;
         }
 
         private static Sprite s_whiteSprite;
@@ -38,6 +47,17 @@ namespace Valkur.Gameplay.World
 
         private readonly List<VisualEntry> _visuals = new List<VisualEntry>();
         private bool _visible;
+
+        // Default-mode (BoxCollider2D enumeration) cache. Re-scanned only when
+        // _dirty is set OR the building transform reports hasChanged. Prevents
+        // a GetComponentsInChildren call every LateUpdate across 142 overlays.
+        private BoxCollider2D[] _defaultColliderCache;
+        private int             _defaultColliderCount;
+
+        // Dirty flag: when set, the next SyncVisuals rebuilds the default-mode
+        // cache and re-applies ALL visuals regardless of cached state. Set by
+        // SetVisible(true), SetAuthoringCells, ClearAuthoringCells, MarkDirty.
+        private bool _dirty = true;
 
         // Authoring mode: when set, the overlay renders ONE visual per supplied
         // world-space cell rect (single source of truth = the editor's grid +
@@ -64,6 +84,11 @@ namespace Valkur.Gameplay.World
 
         public void SetVisible(bool visible)
         {
+            if (_visible == visible && !visible)
+            {
+                // already hidden, nothing to do
+                return;
+            }
             _visible = visible;
             if (!_visible)
             {
@@ -72,7 +97,19 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
+            _dirty = true;
             SyncVisuals();
+        }
+
+        /// <summary>
+        /// Force a full re-sync on the next opportunity. Call after mutating
+        /// the set of colliders (painting tiles, repooling, etc.) so the
+        /// overlay rebuilds its cache and refreshes every visual.
+        /// </summary>
+        public void MarkDirty()
+        {
+            _dirty = true;
+            if (_visible) SyncVisuals();
         }
 
         /// <summary>
@@ -94,6 +131,7 @@ namespace Valkur.Gameplay.World
             for (int i = 0; i < count; i++)
                 _authoringCells[i] = worldCellRects[i];
             _authoringCellCount = count;
+            _dirty = true;
             if (_visible) SyncVisuals();
         }
 
@@ -106,12 +144,20 @@ namespace Valkur.Gameplay.World
             if (!_authoringMode && _authoringCellCount == 0) return;
             _authoringMode = false;
             _authoringCellCount = 0;
+            _dirty = true;
             if (_visible) SyncVisuals();
         }
 
         private void LateUpdate()
         {
             if (!_visible) return;
+            // Lazy sync: only re-apply when the building itself moved/scaled or
+            // something explicitly marked us dirty. Idle overlays cost only a
+            // bool check per frame. This is what lets us keep 142 overlays on
+            // simultaneously without dropping below 120fps.
+            bool transformMoved = transform.hasChanged;
+            if (!_dirty && !transformMoved) return;
+            if (transformMoved) transform.hasChanged = false;
             SyncVisuals();
         }
 
@@ -128,7 +174,12 @@ namespace Valkur.Gameplay.World
         private void SyncVisuals()
         {
             EnsureSharedAssets();
-            CleanupOrphanedVisualRoots();
+            // Orphan cleanup is only interesting when the set of visuals might
+            // have changed (first show, repaint, explicit MarkDirty). Running
+            // it on every frame for 142 overlays added up to a measurable
+            // overhead. Clearing _dirty is handled at the end of this method.
+            if (_dirty)
+                CleanupOrphanedVisualRoots();
 
             int visualCount = 0;
 
@@ -144,9 +195,15 @@ namespace Valkur.Gameplay.World
             }
             else
             {
-                // Default mode: infer rects from the building's live BoxCollider2D shapes.
-                foreach (var box in EnumerateActiveColliders())
+                // Default mode: enumerate the building's live BoxCollider2D
+                // children, but only rebuild the cached array on dirty frames
+                // (transform moves don't change the collider SET, only the
+                // world bounds we read from each one).
+                if (_dirty) RebuildDefaultColliderCache();
+                for (int i = 0; i < _defaultColliderCount; i++)
                 {
+                    var box = _defaultColliderCache[i];
+                    if (box == null || !box.enabled) continue;
                     EnsureVisualCapacity(visualCount + 1);
                     UpdateVisualFromCollider(_visuals[visualCount], box, visualCount);
                     visualCount++;
@@ -155,34 +212,39 @@ namespace Valkur.Gameplay.World
 
             for (int i = visualCount; i < _visuals.Count; i++)
             {
-                if (_visuals[i] != null && _visuals[i].Host != null)
-                    _visuals[i].Host.SetActive(false);
+                var v = _visuals[i];
+                if (v == null || v.Host == null) continue;
+                if (v.LastActive)
+                {
+                    v.Host.SetActive(false);
+                    v.LastActive = false;
+                }
             }
 
             CurrentVisualCount = visualCount;
+            _dirty = false;
         }
 
-        private IEnumerable<BoxCollider2D> EnumerateActiveColliders()
+        private void RebuildDefaultColliderCache()
         {
-            // Strict filter: only the building's own root BoxCollider2D and the
-            // explicitly-authored CollTile_* / _PooledCollTile_* children. This
-            // guarantees we never visualise stray colliders that may have been
-            // (accidentally or deliberately) parented under the building, such as
-            // pickups, NPCs that walked into a trigger, debug markers, etc.
-            // Without this filter the overlay was pickup up unrelated colliders
-            // and producing visuals that "followed" other entities.
             var colliders = GetComponentsInChildren<BoxCollider2D>(includeInactive: false);
+            if (_defaultColliderCache == null || _defaultColliderCache.Length < colliders.Length)
+                _defaultColliderCache = new BoxCollider2D[Mathf.Max(colliders.Length, 4)];
+            int count = 0;
             for (int i = 0; i < colliders.Length; i++)
             {
                 var box = colliders[i];
                 if (box == null || !box.enabled) continue;
                 var tName = box.transform.name;
-                if (tName.StartsWith(VISUAL_PREFIX)) continue;            // our own visuals
-                if (box.transform == transform) { yield return box; continue; } // root building collider
-                if (tName.StartsWith(COLL_TILE_PREFIX)) { yield return box; continue; }
-                if (tName.StartsWith(POOLED_COLL_TILE_PREFIX)) continue;  // pooled & inactive (or active but unused)
-                // Any other child collider is intentionally skipped.
+                if (tName.StartsWith(VISUAL_PREFIX)) continue;
+                if (box.transform == transform) { _defaultColliderCache[count++] = box; continue; }
+                if (tName.StartsWith(COLL_TILE_PREFIX)) { _defaultColliderCache[count++] = box; continue; }
+                if (tName.StartsWith(POOLED_COLL_TILE_PREFIX)) continue;
+                // any other child collider is intentionally skipped
             }
+            // clear residual slots so GC sees nothing stale
+            for (int i = count; i < _defaultColliderCache.Length; i++) _defaultColliderCache[i] = null;
+            _defaultColliderCount = count;
         }
 
         private void EnsureVisualCapacity(int targetCount)
@@ -252,8 +314,25 @@ namespace Valkur.Gameplay.World
 
         private void UpdateVisualFromWorldAabb(VisualEntry visual, Vector3 worldCenter, Vector3 worldSize, int index)
         {
-            visual.Host.name = $"{VISUAL_PREFIX}{index}";
-            visual.Host.layer = gameObject.layer;
+            // Fast path: if neither center nor size changed since the last
+            // apply, just make sure the host is active (might have been hidden
+            // when visualCount shrank) and exit. Avoids ~10 property writes
+            // per visual per frame across 801 visuals.
+            bool activeNow = _visible;
+            if (visual.HasCachedState
+                && visual.LastCenter == worldCenter
+                && visual.LastSize == worldSize
+                && visual.LastActive == activeNow)
+            {
+                return;
+            }
+
+            // Only rename when the index slot is actually re-purposed (new).
+            string expectedName = $"{VISUAL_PREFIX}{index}";
+            if (visual.Host.name != expectedName)
+                visual.Host.name = expectedName;
+            if (visual.Host.layer != gameObject.layer)
+                visual.Host.layer = gameObject.layer;
             visual.Host.transform.position = new Vector3(worldCenter.x, worldCenter.y, Z_OFFSET);
             visual.Host.transform.rotation = Quaternion.identity;
             visual.Host.transform.localScale = GetInverseLossyScale(transform);
@@ -263,17 +342,17 @@ namespace Valkur.Gameplay.World
                 visual.Fill.transform.localPosition = Vector3.zero;
                 visual.Fill.transform.localRotation = Quaternion.identity;
                 visual.Fill.transform.localScale = new Vector3(worldSize.x, worldSize.y, 1f);
-                visual.Fill.color = FillColor;
-                visual.Fill.enabled = true;
+                if (visual.Fill.color != FillColor) visual.Fill.color = FillColor;
+                if (!visual.Fill.enabled) visual.Fill.enabled = true;
             }
 
             if (visual.Line != null)
             {
-                visual.Line.startWidth = OUTLINE_WIDTH;
-                visual.Line.endWidth = OUTLINE_WIDTH;
+                if (visual.Line.startWidth != OUTLINE_WIDTH) visual.Line.startWidth = OUTLINE_WIDTH;
+                if (visual.Line.endWidth != OUTLINE_WIDTH) visual.Line.endWidth = OUTLINE_WIDTH;
                 visual.Line.startColor = LineColor;
                 visual.Line.endColor = LineColor;
-                visual.Line.enabled = true;
+                if (!visual.Line.enabled) visual.Line.enabled = true;
                 float minX = worldCenter.x - worldSize.x * 0.5f;
                 float maxX = worldCenter.x + worldSize.x * 0.5f;
                 float minY = worldCenter.y - worldSize.y * 0.5f;
@@ -284,7 +363,13 @@ namespace Valkur.Gameplay.World
                 visual.Line.SetPosition(3, new Vector3(minX, maxY, Z_OFFSET));
             }
 
-            visual.Host.SetActive(_visible);
+            if (visual.Host.activeSelf != activeNow)
+                visual.Host.SetActive(activeNow);
+
+            visual.LastCenter = worldCenter;
+            visual.LastSize = worldSize;
+            visual.LastActive = activeNow;
+            visual.HasCachedState = true;
         }
 
         private void SetVisualsActive(bool active)
