@@ -116,6 +116,9 @@ namespace Valkur.Gameplay.Buildings
 
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg, _resizeBtnImg;
         private Image _addBtnImg, _removeBtnImg;
+
+        // Perf probe (PERF button in menu bar, Shift+PERF to toggle)
+        private BuildingsPerfProbe _perfProbe;
         private TMP_InputField _searchBox;
         private string _searchFilter = "";
 
@@ -397,7 +400,8 @@ namespace Valkur.Gameplay.Buildings
                 onBrushPaint:             () => SetBrushAction(CollBrushMode.Solid),
                 onBrushErase:             () => SetBrushAction(CollBrushMode.Walk),
                 onCollBrushSizeChanged:   v  => OnCollBrushSizeChanged(v),
-                onCollSave:               () => SaveColliderAuthoring());
+                onCollSave:               () => SaveColliderAuthoring(),
+                onPerfToggle:             () => TogglePerfProbe());
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -433,6 +437,7 @@ namespace Valkur.Gameplay.Buildings
             BuildSplitLine();
             BuildTutorial();
             BuildConfirmModal();
+            CreatePerfProbe();
 
             OpenAllPanels();
             RefreshBrushButtonHighlights();
@@ -504,7 +509,7 @@ namespace Valkur.Gameplay.Buildings
             _handlesRoot = EditorUIHelpers.CreateUI("FloatingHandles", _root.transform);
             var rt = _handlesRoot.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot     = new Vector2(1f, 1f);  // top-right → inside frame at top-right
+            rt.pivot     = new Vector2(1f, 0f);  // bottom-right → sits ABOVE frame at top-right
             rt.sizeDelta = new Vector2(32f, 32f); // updated proportionally each frame
 
             // Badge button: dark semi-transparent background + gold Outline (matches selection frame)
@@ -598,7 +603,7 @@ namespace Valkur.Gameplay.Buildings
             var go = EditorUIHelpers.CreateUI("IdLabel", _root.transform);
             _idLabelRt = go.GetComponent<RectTransform>();
             _idLabelRt.anchorMin = _idLabelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            _idLabelRt.pivot = new Vector2(0f, 1f);  // top-left anchor → sits outside frame above-left
+            _idLabelRt.pivot = new Vector2(0f, 0f);  // bottom-left anchor → sits ABOVE the frame top edge
             _idLabelRt.sizeDelta = new Vector2(80f, 20f);
             var bg = go.AddComponent<Image>();
             bg.color = new Color(0f, 0f, 0f, 0.55f);
@@ -802,6 +807,23 @@ namespace Valkur.Gameplay.Buildings
             EditorUIHelpers.MakeButton(btnRow.transform, "Cancelar", () => HideConfirm(), 32f, 12f);
 
             _confirmModal.SetActive(false);
+        }
+
+        private void CreatePerfProbe()
+        {
+            var probeGo = new GameObject("BuildingsPerfProbe");
+            probeGo.transform.SetParent(transform);
+            _perfProbe = probeGo.AddComponent<BuildingsPerfProbe>();
+            _perfProbe.Visible = false;
+            Debug.Log("[BuildingsEditor] Perf probe created (toggle via PERF button in menu bar).");
+        }
+
+        private void TogglePerfProbe()
+        {
+            if (_perfProbe == null) return;
+            _perfProbe.Visible = !_perfProbe.Visible;
+            BuildingsEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.PerfProbeMenuBtnImg, _uiRefs.PerfProbeMenuBtnTmp, _perfProbe.Visible);
         }
 
         // ──────────────────────────────────────────────────────────────────────────

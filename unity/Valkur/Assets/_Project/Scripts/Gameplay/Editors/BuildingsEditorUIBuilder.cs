@@ -41,6 +41,10 @@ namespace Valkur.Gameplay.Buildings
             public GameObject    CollidersDropdown; public DraggablePanel CollidersPanelDrag;
             public GameObject    PropsDropdown;     public DraggablePanel PropsPanelDrag;
 
+            // Menu bar extras
+            public Image           PerfProbeMenuBtnImg;
+            public TextMeshProUGUI PerfProbeMenuBtnTmp;
+
             // Modes panel refs
             public Image SelectBtnImg, PlaceBtnImg, ResizeBtnImg, DeleteBtnImg;
             public Image AddBtnImg, RemoveBtnImg;
@@ -74,7 +78,7 @@ namespace Valkur.Gameplay.Buildings
         // ── Panel sizes (mirrors TileEditor constants) ────────────────────────────
 
         private const float MODES_W     = TOOLS_DROP_W;          // 60 px
-        private const float MODES_H     = 200f + PANEL_HDR_H;    // 224 px (Tools: Siz+Rem+Undo+Redo)
+        private const float MODES_H     = 88f + PANEL_HDR_H;     // 112 px (Tools: Undo+Redo)
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
         private const float BUILDINGS_H = TILES_DROP_H;          // 564 px
         private const float COLLIDERS_W = 220f;                  // narrower than props
@@ -90,6 +94,7 @@ namespace Valkur.Gameplay.Buildings
         private const float COLLIDERS_BTN_W = 92f;
         private const float PROPS_BTN_W     = 98f;
         private const float TUTORIAL_BTN_W  = 40f;
+        private const float PERF_BTN_W       = 46f;
 
         private const float BTN_H = 44f;   // mode/tool button height (same as TileEditor)
 
@@ -119,13 +124,14 @@ namespace Valkur.Gameplay.Buildings
             Action         onBrushPaint,                  // # → action = Paint
             Action         onBrushErase,                  // . → action = Erase
             Action<float>  onCollBrushSizeChanged,
-            Action         onCollSave)
+            Action         onCollSave,
+            Action         onPerfToggle = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
 
             var refs = new UIRefs();
-            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial);
+            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial, onPerfToggle);
             BuildModesPanel(canvasT, ref refs,
                 onModeSelect, onModePlace, onModeResize, onModeDelete,
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
@@ -161,7 +167,7 @@ namespace Valkur.Gameplay.Buildings
         // ── Menu Bar ──────────────────────────────────────────────────────────────
 
         private static void BuildMenuBar(Transform canvasT, ref UIRefs refs,
-            Action<string> onToggle, Action onTutorial)
+            Action<string> onToggle, Action onTutorial, Action onPerfToggle)
         {
             var go = CreateUI("BuildingsMenuBar", canvasT);
             var r  = go.GetComponent<RectTransform>();
@@ -222,6 +228,9 @@ namespace Valkur.Gameplay.Buildings
 
             AddMenuDivider(t);
             AddMenuBtn(t, "?", TUTORIAL_BTN_W, () => onTutorial?.Invoke(), out _);
+            AddMenuDivider(t);
+            refs.PerfProbeMenuBtnImg = AddMenuBtn(t, "PERF", PERF_BTN_W,
+                () => onPerfToggle?.Invoke(), out refs.PerfProbeMenuBtnTmp);
         }
 
         private static void AddMenuDivider(Transform parent)
@@ -269,12 +278,6 @@ namespace Valkur.Gameplay.Buildings
             refs.ModesDropdown = MakeDrop("ToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
                 MODES_W, MODES_H, "Tools", out var t, out refs.ModesPanelDrag, narrowPanel: true);
-
-            refs.ResizeBtnImg = AddToolBtn(t, "Siz", "R", BTN_H, onResize);
-            BuildSeparator(t);
-
-            refs.RemoveBtnImg = AddDangerToolBtn(t, "\u2212", "Rem", BTN_H, onRemove);
-            BuildSeparator(t);
 
             AddActionBtn(t, "Undo", BTN_H, onUndo);
             AddActionBtn(t, "Redo", BTN_H, onRedo);
@@ -697,23 +700,6 @@ namespace Valkur.Gameplay.Buildings
             sbtn.colors = sc; sbtn.targetGraphic = refs.ScopeBtnImg;
             if (onScope != null) sbtn.onClick.AddListener(() => onScope.Invoke());
             refs.ScopeBtnLabel = AddCenteredText(scopeBtn.transform, "CG", 10f, FontStyles.Bold, TEXT_PRIMARY);
-
-            // Colliders paint (Phase 2 placeholder)
-            BuildSeparator(parent);
-            var paintLbl       = CreateUI("PaintLbl", parent);
-            paintLbl.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var paintLblTmp    = paintLbl.AddComponent<TextMeshProUGUI>();
-            paintLblTmp.text   = "Colliders paint (Phase 2)";
-            paintLblTmp.fontSize = 9f;
-            paintLblTmp.color  = TEXT_MUTED;
-
-            var paintRow = CreateUI("PaintRow", parent);
-            paintRow.AddComponent<LayoutElement>().preferredHeight = 28f;
-            var phlg = paintRow.AddComponent<HorizontalLayoutGroup>();
-            phlg.spacing = 4f; phlg.childForceExpandWidth = true; phlg.childForceExpandHeight = false;
-            EditorUIHelpers.MakeButton(paintRow.transform, "# Solid", () => onPaintSolid?.Invoke(), 26f, 9f);
-            EditorUIHelpers.MakeButton(paintRow.transform, ". Walk",  () => onPaintWalk?.Invoke(),  26f, 9f);
-            EditorUIHelpers.MakeButton(paintRow.transform, "Save CU", () => onSaveCU?.Invoke(),     26f, 9f);
 
             // Delete building (danger) + Reset building
             BuildSeparator(parent);

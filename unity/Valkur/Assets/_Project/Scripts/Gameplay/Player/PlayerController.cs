@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
 
@@ -168,8 +169,11 @@ namespace Valkur.Gameplay
             if (_health.IsDead) return;
             if (_statusEffects != null && _statusEffects.IsStunned) return;
 
-            // Suspend all player input while any runtime editor (Tile Editor, etc.) is active.
-            if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive)
+            // Suspend all player input while any runtime editor is active,
+            // EXCEPT the Buildings Editor which intentionally allows movement so
+            // the developer can walk around and test colliders manually.
+            if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive &&
+                !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor))
             {
                 _moveInput = Vector2.zero;
                 return;
