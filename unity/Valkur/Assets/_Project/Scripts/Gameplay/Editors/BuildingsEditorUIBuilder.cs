@@ -111,6 +111,7 @@ namespace Valkur.Gameplay.Buildings
             Action         onColliderScope,
             Action         onPaintSolid,   Action onPaintWalk, Action onSaveCU,
             Action         onDeleteBuilding,
+            Action         onResetBuilding,
             // Colliders panel callbacks (redesigned)
             Action         onToggleCollidersVisible,
             Action         onCollScopeToggle,
@@ -137,7 +138,7 @@ namespace Valkur.Gameplay.Buildings
                 onCollBrushSizeChanged, onCollSave);
             BuildPropertiesPanel(canvasT, ref refs, onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
-                onColliderScope, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding);
+                onColliderScope, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding, onResetBuilding);
             return refs;
         }
 
@@ -595,7 +596,7 @@ namespace Valkur.Gameplay.Buildings
             Action onZTopMinus,    Action onZTopPlus,
             Action onScope,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
-            Action onDelete)
+            Action onDelete, Action onReset)
         {
             refs.PropsDropdown = MakeDrop("PropertiesPanel", canvasT,
                 PanelDock.TopRight, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -625,7 +626,7 @@ namespace Valkur.Gameplay.Buildings
             BuildInspectorControls(refs.InspectorRoot.transform, ref refs,
                 onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
-                onScope, onPaintSolid, onPaintWalk, onSaveCU, onDelete);
+                onScope, onPaintSolid, onPaintWalk, onSaveCU, onDelete, onReset);
 
             refs.InspectorRoot.SetActive(false);
             refs.PropsDropdown.SetActive(false);
@@ -637,7 +638,7 @@ namespace Valkur.Gameplay.Buildings
             Action onZTopMinus,    Action onZTopPlus,
             Action onScope,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
-            Action onDelete)
+            Action onDelete, Action onReset)
         {
             BuildSeparator(parent);
 
@@ -723,10 +724,16 @@ namespace Valkur.Gameplay.Buildings
             EditorUIHelpers.MakeButton(paintRow.transform, ". Walk",  () => onPaintWalk?.Invoke(),  26f, 9f);
             EditorUIHelpers.MakeButton(paintRow.transform, "Save CU", () => onSaveCU?.Invoke(),     26f, 9f);
 
-            // Delete building (danger)
+            // Delete building (danger) + Reset building
             BuildSeparator(parent);
-            EditorUIHelpers.MakeDangerButton(parent, "Delete Building",
+            var actionRow = CreateUI("DeleteResetRow", parent);
+            actionRow.AddComponent<LayoutElement>().preferredHeight = 32f;
+            var arhlg = actionRow.AddComponent<HorizontalLayoutGroup>();
+            arhlg.spacing = 4f; arhlg.childForceExpandWidth = true; arhlg.childForceExpandHeight = false;
+            EditorUIHelpers.MakeDangerButton(actionRow.transform, "Delete Building",
                 () => onDelete?.Invoke(), 32f);
+            EditorUIHelpers.MakeButton(actionRow.transform, "Reset",
+                () => onReset?.Invoke(), 32f, 10f);
         }
 
         private static void BuildZRow(Transform parent, string label,

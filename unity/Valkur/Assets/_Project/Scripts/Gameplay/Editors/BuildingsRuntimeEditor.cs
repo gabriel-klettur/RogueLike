@@ -126,9 +126,11 @@ namespace Valkur.Gameplay.Buildings
         private TextMeshProUGUI _scopeBtnLabel;
         private Image _scopeBtnImg;
 
-        // Floating world-space handles (E/D/R) — overlay positioned each frame
+        // Floating world-space handle (R) — overlay positioned each frame at top-right of active building.
+        // Delete (E) and Reset (D) moved to the Properties inspector panel.
         private GameObject _handlesRoot;
-        private Button _handleE, _handleD, _handleR;
+        private Button _handleR;
+        private bool   _pendingResizeStart;
 
         // Tutorial (10-step interactive)
         private GameObject _tutorialRoot;
@@ -140,7 +142,7 @@ namespace Valkur.Gameplay.Buildings
             ("2. Pick template", "In the left picker, click a building thumbnail to select it. Use the search box to filter by ID or asset path."),
             ("3. Place a building", "Click the Add (+) button or press the Place toolbar button, then click on the map to drop the selected template."),
             ("4. Hover & select",  "Move the mouse over a building — it outlines in CYAN. Use the mouse wheel to cycle through stacked buildings. Click to select (outline turns YELLOW)."),
-            ("5. Move & resize",   "RMB-drag the active building to move it. Click the R handle (top-right of the building) to enter resize mode, then RMB-drag."),
+            ("5. Move & resize",   "RMB-drag the active building to move it. Drag the R handle (top-right of the building) with LMB to resize proportionally."),
             ("6. Inspector edits", "On the right panel, drag the Split slider, change Z-Bottom / Z-Top with –/+, or toggle Collider Scope between CG (shared) and CU (per-instance)."),
             ("7. Remove mode",   "Click the Remove (–) button to enable remove mode — buildings highlight RED on hover. Click to delete."),
             ("8. Delete handle", "Or click the red E handle on the active building to delete it (a confirmation modal appears with reference count)."),
@@ -286,7 +288,7 @@ namespace Valkur.Gameplay.Buildings
             _inspectorRoot = null; _splitSlider = null;
             _zBottomVal = _zTopVal = null;
             _scopeBtnLabel = null; _scopeBtnImg = null;
-            _handlesRoot = null; _handleE = _handleD = _handleR = null;
+            _handlesRoot = null; _handleR = null;
             _tutorialRoot = null; _tutorialStepLabel = _tutorialBodyTmp = null;
             _confirmModal = null; _confirmText = null;
             _idLabelTmp = null; _idLabelRt = null;
@@ -376,6 +378,7 @@ namespace Valkur.Gameplay.Buildings
                 onPaintWalk:       () => SetCollBrushMode(CollBrushMode.Walk),
                 onSaveCU:          () => SaveColliderAuthoring(),
                 onDeleteBuilding:  () => RequestDeleteActiveWithConfirm(),
+                onResetBuilding:   () => ResetActiveBuilding(),
                 // Colliders panel callbacks (redesigned: ON/OFF + #/. action + scope)
                 onToggleCollidersVisible: () => ToggleCollidersVisible(),
                 onCollScopeToggle:        () => ToggleColliderScope(),
@@ -478,25 +481,35 @@ namespace Valkur.Gameplay.Buildings
         }
 
         /// <summary>
-        /// Floating overlay handles E (delete, red), D (reset, white), R (resize, blue)
-        /// drawn at the top-right of the active building (mirrors Python default_tool_view).
+        /// Floating overlay handle: only R (resize) remains — floats at the top-right of the
+        /// active building. Delete and Reset have been moved to the Properties inspector panel.
+        /// LMB-press+drag on the R handle resizes the building proportionally.
         /// </summary>
         private void BuildFloatingHandles()
         {
             _handlesRoot = EditorUIHelpers.CreateUI("FloatingHandles", _root.transform);
             var rt = _handlesRoot.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(1, 1);                  // top-right anchored to building corner
-            rt.sizeDelta = new Vector2(150f, 50f);
-            var hlg = _handlesRoot.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 2f; hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+            rt.pivot = new Vector2(1, 1);   // top-right corner of the active building
+            rt.sizeDelta = new Vector2(52f, 50f);
 
-            _handleE = EditorUIHelpers.MakeDangerButton(_handlesRoot.transform, "E", () => RequestDeleteActiveWithConfirm(), 48f);
-            _handleE.GetComponent<LayoutElement>().preferredWidth = 48f;
-            _handleD = EditorUIHelpers.MakeButton(_handlesRoot.transform, "D", () => ResetActiveBuilding(), 48f, 18f);
-            _handleD.GetComponent<LayoutElement>().preferredWidth = 48f;
-            _handleR = EditorUIHelpers.MakeButton(_handlesRoot.transform, "R", () => SetMode(EditorMode.Resize), 48f, 18f);
+            _handleR = EditorUIHelpers.MakeButton(_handlesRoot.transform, "R", null, 48f, 18f);
             _handleR.GetComponent<LayoutElement>().preferredWidth = 48f;
+
+            // EventTrigger: PointerDown starts the resize drag immediately (onClick fires on
+            // release, which is too late for drag-distance tracking).
+            var trigger = _handleR.gameObject
+                .AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var entry = new UnityEngine.EventSystems.EventTrigger.Entry
+            {
+                eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown
+            };
+            entry.callback.AddListener(_ =>
+            {
+                if (_activeBuilding != null)
+                    _pendingResizeStart = true;
+            });
+            trigger.triggers.Add(entry);
 
             _handlesRoot.SetActive(false);
         }
@@ -672,7 +685,7 @@ namespace Valkur.Gameplay.Buildings
                 EditorMode.Select => "Select: click building on map. Wheel to cycle stack.",
                 EditorMode.Place  => _selectedTemplateId >= 0 ? "Click map to place selected template." : "Pick a template first.",
                 EditorMode.Delete => "Click building to delete (with confirm).",
-                EditorMode.Resize => "RMB-drag the active building to resize.",
+                EditorMode.Resize => "LMB-drag the R handle (top-right) to resize proportionally.",
                 _ => ""
             };
         }
@@ -902,24 +915,38 @@ namespace Valkur.Gameplay.Buildings
                 return;
             }
 
-            // Resize drag
+            // R-handle PointerDown sets _pendingResizeStart; we consume it here so
+            // _resizeStartMouse is recorded at the world position for this frame.
+            if (_pendingResizeStart && _activeBuilding != null)
+            {
+                _pendingResizeStart = false;
+                _resizing         = true;
+                _resizeStartMouse = worldPos;
+                _resizeStartScale = (_activeBuilding.ScaleOverride.x > 0)
+                    ? _activeBuilding.ScaleOverride
+                    : (_activeBuilding.Template != null
+                        ? _activeBuilding.Template.originalScale
+                        : Vector2Int.one * 64);
+                if (_statusTmp != null) _statusTmp.text = "Resize: drag to scale (proportional).";
+            }
+
+            // Resize drag — driven by LMB while _resizing is set by the R handle.
             if (_resizing && _activeBuilding != null)
             {
-                if (mouse.rightButton.isPressed)
+                if (mouse.leftButton.isPressed)
                 {
                     var delta = (Vector2)(worldPos - _resizeStartMouse);
-                    // Preserve aspect ratio (mirrors Python resize_tool.py):
-                    //   delta = max(dx, dy) — largest axis wins
-                    //   new_height = new_width / aspect_ratio
-                    float aspect = (float)_resizeStartScale.x / Mathf.Max(1, _resizeStartScale.y);
-                    float pixDelta = Mathf.Max(delta.x, delta.y) * 32f;
+                    // Preserve aspect ratio: dominant axis (|dx| vs |dy|) drives scale.
+                    float aspect      = (float)_resizeStartScale.x / Mathf.Max(1, _resizeStartScale.y);
+                    float signedDelta = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y) ? delta.x : delta.y;
+                    float pixDelta    = signedDelta * 32f;   // 32 px per world unit (building PPU)
                     int newW = Mathf.Max(8, _resizeStartScale.x + Mathf.RoundToInt(pixDelta));
                     int newH = Mathf.Max(8, Mathf.RoundToInt(newW / aspect));
                     _activeBuilding.Apply(_activeBuilding.Template, new Vector2Int(newW, newH), _activeBuilding.SplitRatioOverride);
                     if (_statusTmp != null) _statusTmp.text = $"Resize → {newW}×{newH} px (ratio {aspect:F2})";
                     RefreshInspector();
                 }
-                else if (mouse.rightButton.wasReleasedThisFrame)
+                else if (mouse.leftButton.wasReleasedThisFrame)
                 {
                     _resizing = false;
                     RefreshCollisionFor(_activeBuilding);
@@ -988,24 +1015,12 @@ namespace Valkur.Gameplay.Buildings
                 if (_hoveredBuilding != null) SetActiveBuilding(_hoveredBuilding);
             }
 
-            // RMB on active building → start move; on hovered → switch active + drag
+            // RMB on a building → move drag (resize is now LMB-drag via the R handle).
             if (mouse.rightButton.wasPressedThisFrame && _hoveredBuilding != null)
             {
-                if (_mode == EditorMode.Resize)
-                {
-                    SetActiveBuilding(_hoveredBuilding);
-                    _resizing = true;
-                    _resizeStartMouse = worldPos;
-                    _resizeStartScale = (_activeBuilding.ScaleOverride.x > 0)
-                        ? _activeBuilding.ScaleOverride
-                        : _activeBuilding.Template.originalScale;
-                }
-                else
-                {
-                    SetActiveBuilding(_hoveredBuilding);
-                    _dragging = true;
-                    _dragOffset = _activeBuilding.transform.position - worldPos;
-                }
+                SetActiveBuilding(_hoveredBuilding);
+                _dragging   = true;
+                _dragOffset = _activeBuilding.transform.position - worldPos;
             }
         }
 
