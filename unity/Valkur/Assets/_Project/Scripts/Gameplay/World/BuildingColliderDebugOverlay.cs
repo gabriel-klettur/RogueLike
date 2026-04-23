@@ -93,6 +93,10 @@ namespace Valkur.Gameplay.World
             if (!_visible)
             {
                 SetAllDebugRootsActive(false);
+                // Reset cached active flag so the next SetVisible(true) does not
+                // short-circuit in UpdateVisualFromWorldAabb before re-activating.
+                for (int i = 0; i < _visuals.Count; i++)
+                    if (_visuals[i] != null) _visuals[i].LastActive = false;
                 CurrentVisualCount = 0;
                 return;
             }
@@ -179,7 +183,13 @@ namespace Valkur.Gameplay.World
             // it on every frame for 142 overlays added up to a measurable
             // overhead. Clearing _dirty is handled at the end of this method.
             if (_dirty)
+            {
                 CleanupOrphanedVisualRoots();
+                // Force every visual to be fully re-applied: clear the cached
+                // AABB state so UpdateVisualFromWorldAabb skips its fast-path.
+                for (int i = 0; i < _visuals.Count; i++)
+                    if (_visuals[i] != null) _visuals[i].HasCachedState = false;
+            }
 
             int visualCount = 0;
 

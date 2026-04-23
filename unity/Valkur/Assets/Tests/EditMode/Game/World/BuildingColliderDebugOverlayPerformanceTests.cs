@@ -88,7 +88,7 @@ namespace Valkur.Tests.EditMode
             // Restore & verify the dirty path DOES rewrite.
             SetDirty(overlay, true);
             InvokeSync(overlay);
-            Assert.AreNotEqual(999f, host.position.x, 0.001f,
+            Assert.That(host.position.x, Is.Not.EqualTo(999f).Within(0.001f),
                 "Dirty SyncVisuals must rewrite the host position.");
 
             Object.DestroyImmediate(go);
@@ -106,7 +106,7 @@ namespace Valkur.Tests.EditMode
             host.position = new Vector3(-123f, -456f, -789f);
             overlay.MarkDirty();
 
-            Assert.AreNotEqual(-123f, host.position.x, 0.001f,
+            Assert.That(host.position.x, Is.Not.EqualTo(-123f).Within(0.001f),
                 "MarkDirty() must trigger a full re-apply that overwrites host transforms.");
 
             Object.DestroyImmediate(go);
@@ -136,6 +136,10 @@ namespace Valkur.Tests.EditMode
             go.transform.position = new Vector3(100f, 50f, 0f);
             Assert.IsTrue(go.transform.hasChanged,
                 "Moving the building must set transform.hasChanged — required by the lazy sync.");
+
+            // In EditMode, BoxCollider2D.bounds does not update until the physics
+            // system syncs with the new transform. Force that sync explicitly.
+            Physics2D.SyncTransforms();
 
             // MarkDirty() models the "transform.hasChanged OR dirty" branch.
             overlay.MarkDirty();
