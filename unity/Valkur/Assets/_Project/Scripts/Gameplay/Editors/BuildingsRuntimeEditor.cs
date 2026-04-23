@@ -132,6 +132,12 @@ namespace Valkur.Gameplay.Buildings
         private Button _handleR;
         private bool   _pendingResizeStart;
 
+        // Floating Z selector badges — top and bottom of active building
+        private RectTransform   _zTopBadgeRt;
+        private RectTransform   _zBotBadgeRt;
+        private TextMeshProUGUI _zTopBadgeTmp;
+        private TextMeshProUGUI _zBotBadgeTmp;
+
         // Tutorial (10-step interactive)
         private GameObject _tutorialRoot;
         private TextMeshProUGUI _tutorialStepLabel, _tutorialBodyTmp;
@@ -205,6 +211,7 @@ namespace Valkur.Gameplay.Buildings
             UpdateOutlineState();
             UpdateFloatingHandles();
             UpdateIdLabel();
+            UpdateZBadges();
             UpdateSplitLine();
             // Re-push the authoring cells every frame the colliders panel is
             // open so the overlay always tracks the active building's current
@@ -289,6 +296,8 @@ namespace Valkur.Gameplay.Buildings
             _zBottomVal = _zTopVal = null;
             _scopeBtnLabel = null; _scopeBtnImg = null;
             _handlesRoot = null; _handleR = null;
+            _zTopBadgeRt = null; _zBotBadgeRt = null;
+            _zTopBadgeTmp = null; _zBotBadgeTmp = null;
             _tutorialRoot = null; _tutorialStepLabel = _tutorialBodyTmp = null;
             _confirmModal = null; _confirmText = null;
             _idLabelTmp = null; _idLabelRt = null;
@@ -321,6 +330,8 @@ namespace Valkur.Gameplay.Buildings
             if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
             if (_idLabelRt  != null) _idLabelRt.gameObject.SetActive(false);
             if (_handlesRoot != null) _handlesRoot.SetActive(false);
+            if (_zTopBadgeRt != null) _zTopBadgeRt.gameObject.SetActive(false);
+            if (_zBotBadgeRt != null) _zBotBadgeRt.gameObject.SetActive(false);
             if (_splitLineRt   != null) _splitLineRt.gameObject.SetActive(false);
             if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
         }
@@ -418,6 +429,7 @@ namespace Valkur.Gameplay.Buildings
 
             BuildFloatingHandles();
             BuildIdLabel();
+            BuildZBadges();
             BuildSplitLine();
             BuildTutorial();
             BuildConfirmModal();
@@ -599,6 +611,127 @@ namespace Valkur.Gameplay.Buildings
             _idLabelTmp.alignment = TextAlignmentOptions.Center;
             _idLabelTmp.color = ACTIVE_YELLOW;
             go.SetActive(false);
+        }
+
+        private void BuildZBadges()
+        {
+            _zTopBadgeRt = BuildZBadge("ZTopBadge",
+                () => AdjustZ(_activeBuilding, bottom: false, delta: -1),
+                () => AdjustZ(_activeBuilding, bottom: false, delta: +1),
+                out _zTopBadgeTmp);
+            _zBotBadgeRt = BuildZBadge("ZBotBadge",
+                () => AdjustZ(_activeBuilding, bottom: true, delta: -1),
+                () => AdjustZ(_activeBuilding, bottom: true, delta: +1),
+                out _zBotBadgeTmp);
+        }
+
+        private RectTransform BuildZBadge(string name, Action onMinus, Action onPlus,
+            out TextMeshProUGUI valueTmp)
+        {
+            var go = EditorUIHelpers.CreateUI(name, _root.transform);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(100f, 22f);  // updated each frame in UpdateZBadges
+
+            var bg = go.AddComponent<Image>();
+            bg.color = new Color(0.07f, 0.07f, 0.10f, 0.88f);
+
+            var ol = go.AddComponent<Outline>();
+            ol.effectColor    = new Color(0.90f, 0.76f, 0.38f, 0.50f); // gold matches selection frame
+            ol.effectDistance = new Vector2(1f, -1f);
+
+            var hlg = go.AddComponent<HorizontalLayoutGroup>();
+            hlg.padding               = new RectOffset(2, 2, 2, 2);
+            hlg.spacing               = 1f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            hlg.childAlignment         = TextAnchor.MiddleCenter;
+
+            // [−] button
+            var minusGo  = EditorUIHelpers.CreateUI("Minus", go.transform);
+            minusGo.AddComponent<LayoutElement>().preferredWidth = 18f;
+            var minusImg = minusGo.AddComponent<Image>();
+            minusImg.color = EditorUIHelpers.BTN_NORMAL;
+            var minusBtn = minusGo.AddComponent<Button>();
+            var mc = minusBtn.colors;
+            mc.normalColor = EditorUIHelpers.BTN_NORMAL; mc.highlightedColor = EditorUIHelpers.BTN_HOVER;
+            mc.pressedColor = EditorUIHelpers.BTN_ACTIVE; mc.fadeDuration = 0.08f;
+            minusBtn.colors = mc; minusBtn.targetGraphic = minusImg;
+            minusBtn.onClick.AddListener(() => { if (_activeBuilding != null) onMinus(); });
+            EditorUIHelpers.AddCenteredText(minusGo.transform, "\u2212", 12f, FontStyles.Bold, EditorUIHelpers.TEXT_PRIMARY);
+
+            // Z: N label
+            var valGo = EditorUIHelpers.CreateUI("Val", go.transform);
+            valGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            valueTmp           = valGo.AddComponent<TextMeshProUGUI>();
+            valueTmp.text      = "Z: 0";
+            valueTmp.fontSize  = 10f;
+            valueTmp.fontStyle = FontStyles.Bold;
+            valueTmp.color     = EditorUIHelpers.ACCENT;
+            valueTmp.alignment = TextAlignmentOptions.Center;
+
+            // [+] button
+            var plusGo  = EditorUIHelpers.CreateUI("Plus", go.transform);
+            plusGo.AddComponent<LayoutElement>().preferredWidth = 18f;
+            var plusImg = plusGo.AddComponent<Image>();
+            plusImg.color = EditorUIHelpers.BTN_NORMAL;
+            var plusBtn = plusGo.AddComponent<Button>();
+            var pc = plusBtn.colors;
+            pc.normalColor = EditorUIHelpers.BTN_NORMAL; pc.highlightedColor = EditorUIHelpers.BTN_HOVER;
+            pc.pressedColor = EditorUIHelpers.BTN_ACTIVE; pc.fadeDuration = 0.08f;
+            plusBtn.colors = pc; plusBtn.targetGraphic = plusImg;
+            plusBtn.onClick.AddListener(() => { if (_activeBuilding != null) onPlus(); });
+            EditorUIHelpers.AddCenteredText(plusGo.transform, "+", 12f, FontStyles.Bold, EditorUIHelpers.TEXT_PRIMARY);
+
+            go.SetActive(false);
+            return rt;
+        }
+
+        private void UpdateZBadges()
+        {
+            if (_zTopBadgeRt == null || _zBotBadgeRt == null) return;
+            bool show = _activeBuilding != null && !_removeMode;
+            _zTopBadgeRt.gameObject.SetActive(show);
+            _zBotBadgeRt.gameObject.SetActive(show);
+            if (!show) return;
+
+            if (!_activeBuilding.TryGetWorldRect(out var rect))
+            {
+                _zTopBadgeRt.gameObject.SetActive(false);
+                _zBotBadgeRt.gameObject.SetActive(false);
+                return;
+            }
+            var cam = Camera.main;
+            if (cam == null) return;
+
+            // Building canvas-space width for proportional badge sizing
+            Vector3 screenTR = cam.WorldToScreenPoint(new Vector3(rect.xMax, rect.yMax, 0f));
+            Vector3 screenTL = cam.WorldToScreenPoint(new Vector3(rect.xMin, rect.yMax, 0f));
+            float   canvasW  = Mathf.Abs(ScreenToCanvasPos(screenTR).x - ScreenToCanvasPos(screenTL).x);
+            float   badgeW   = Mathf.Clamp(canvasW * 0.65f, 60f, 160f);
+            float   badgeH   = Mathf.Clamp(canvasW * 0.08f, 18f, 26f);
+            float   inset    = badgeH * 0.5f + 4f;  // distance from top/bottom edge to badge center
+
+            // Horizontal center of building in canvas space
+            Vector3 screenBL  = cam.WorldToScreenPoint(new Vector3(rect.xMin, rect.yMin, 0f));
+            float   centerX   = (ScreenToCanvasPos(screenTR).x + ScreenToCanvasPos(screenTL).x) * 0.5f;
+
+            // Top badge: just inside the top edge
+            Vector2 canvasTop = ScreenToCanvasPos(cam.WorldToScreenPoint(new Vector3(rect.center.x, rect.yMax, 0f)));
+            _zTopBadgeRt.sizeDelta        = new Vector2(badgeW, badgeH);
+            _zTopBadgeRt.anchoredPosition = new Vector2(centerX, canvasTop.y - inset);
+
+            // Bottom badge: just inside the bottom edge
+            Vector2 canvasBot = ScreenToCanvasPos(cam.WorldToScreenPoint(new Vector3(rect.center.x, rect.yMin, 0f)));
+            _zBotBadgeRt.sizeDelta        = new Vector2(badgeW, badgeH);
+            _zBotBadgeRt.anchoredPosition = new Vector2(centerX, canvasBot.y + inset);
+
+            // Update Z values
+            if (_zTopBadgeTmp != null) _zTopBadgeTmp.text = $"Z: {_activeBuilding.ZTopOffset}";
+            if (_zBotBadgeTmp != null) _zBotBadgeTmp.text = $"Z: {_activeBuilding.ZBottomOffset}";
         }
 
         private void BuildTutorial()

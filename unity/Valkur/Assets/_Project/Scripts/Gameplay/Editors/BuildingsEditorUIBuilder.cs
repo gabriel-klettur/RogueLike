@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.Buildings
         // ── Panel sizes (mirrors TileEditor constants) ────────────────────────────
 
         private const float MODES_W     = TOOLS_DROP_W;          // 60 px
-        private const float MODES_H     = TOOLS_DROP_H;          // 484 px
+        private const float MODES_H     = 200f + PANEL_HDR_H;    // 224 px (Tools: Siz+Rem+Undo+Redo)
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
         private const float BUILDINGS_H = TILES_DROP_H;          // 564 px
         private const float COLLIDERS_W = 220f;                  // narrower than props
@@ -208,7 +208,7 @@ namespace Valkur.Gameplay.Buildings
 
             AddMenuDivider(t);
 
-            refs.ModesMenuBtnImg     = AddMenuBtn(t, "Modes \u25be",      MODES_BTN_W,
+            refs.ModesMenuBtnImg     = AddMenuBtn(t, "Tools \u25be",      MODES_BTN_W,
                 () => onToggle?.Invoke("modes"),     out refs.ModesMenuBtnTmp);
             refs.BuildingsMenuBtnImg = AddMenuBtn(t, "Buildings \u25be",  BUILDINGS_BTN_W,
                 () => onToggle?.Invoke("buildings"), out refs.BuildingsMenuBtnTmp);
@@ -266,27 +266,18 @@ namespace Valkur.Gameplay.Buildings
             Action onUndo,   Action onRedo,
             Action onSave,   Action onReload)
         {
-            refs.ModesDropdown = MakeDrop("ModesPanel", canvasT,
+            refs.ModesDropdown = MakeDrop("ToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
-                MODES_W, MODES_H, "", out var t, out refs.ModesPanelDrag, narrowPanel: true);
+                MODES_W, MODES_H, "Tools", out var t, out refs.ModesPanelDrag, narrowPanel: true);
 
-            refs.SelectBtnImg = AddToolBtn(t, "Sel", "S", BTN_H, onSelect);
-            refs.PlaceBtnImg  = AddToolBtn(t, "Plc", "P", BTN_H, onPlace);
             refs.ResizeBtnImg = AddToolBtn(t, "Siz", "R", BTN_H, onResize);
-            refs.DeleteBtnImg = AddDangerToolBtn(t, "Del", "D", BTN_H, onDelete);
             BuildSeparator(t);
 
-            refs.AddBtnImg    = AddToolBtn(t, "+",       "Add", BTN_H, onAdd);
             refs.RemoveBtnImg = AddDangerToolBtn(t, "\u2212", "Rem", BTN_H, onRemove);
-            AddToolBtn(t, "+S", "Sys", BTN_H, onAddSystem);
             BuildSeparator(t);
 
             AddActionBtn(t, "Undo", BTN_H, onUndo);
             AddActionBtn(t, "Redo", BTN_H, onRedo);
-            BuildSeparator(t);
-
-            AddActionBtn(t, "Save", BTN_H, onSave);
-            AddActionBtn(t, "Rld",  BTN_H, onReload);
 
             refs.ModesDropdown.SetActive(false);
         }
