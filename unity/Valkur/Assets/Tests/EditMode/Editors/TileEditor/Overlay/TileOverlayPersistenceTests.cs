@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
@@ -58,6 +59,8 @@ namespace Valkur.Tests.EditMode.TileEditor
         [TearDown]
         public void TearDown()
         {
+            LogAssert.ignoreFailingMessages = false;
+
             // Wipe override files this test produced (avoids cross-run pollution).
             TileOverlayPersistence.DeleteOverride(ZONE_A);
             TileOverlayPersistence.DeleteOverride(ZONE_B);
@@ -236,6 +239,7 @@ namespace Valkur.Tests.EditMode.TileEditor
                 Assert.IsNull(ground.GetTile(p), "Sanity: cell must be empty before re-apply.");
 
             // Re-apply overrides → all painted cells must come back with the same tile name.
+            // OverlayLoader emits Debug.Log on success (Log-level, never fails tests).
             int applied = TileOverlayPersistence.ApplyAllOverrides(_grid, _zones);
 
             Assert.GreaterOrEqual(applied, 1, "ApplyAllOverrides should restore at least one zone.");

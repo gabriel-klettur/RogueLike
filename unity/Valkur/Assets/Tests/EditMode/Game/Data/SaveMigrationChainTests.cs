@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
 
@@ -45,6 +47,8 @@ namespace Valkur.Tests.EditMode
         public void MigrateTo_UnknownOrigin_DoesNotCrash()
         {
             var data = new GameSaveData { schemaVersion = "99.99" };
+            LogAssert.Expect(LogType.Warning,
+                "[SaveMigrationChain] no migration path from '99.99' (target '1.1').");
             int applied = SaveMigrationChain.MigrateTo(data, "1.1");
             Assert.AreEqual(0, applied);
             Assert.AreEqual("99.99", data.schemaVersion);

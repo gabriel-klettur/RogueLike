@@ -15,6 +15,9 @@ namespace Valkur.Tests.EditMode
             LogAssert.ignoreFailingMessages = true;
         }
 
+        [TearDown]
+        public void TearDown() => LogAssert.ignoreFailingMessages = false;
+
         [Test]
         public void AddToParent_CreatesChildWithStretchedRect()
         {

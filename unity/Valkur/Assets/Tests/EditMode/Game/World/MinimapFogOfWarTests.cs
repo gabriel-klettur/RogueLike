@@ -11,6 +11,9 @@ namespace Valkur.Tests.EditMode
         [SetUp]
         public void Ignore() => LogAssert.ignoreFailingMessages = true;
 
+        [TearDown]
+        public void TearDown() => LogAssert.ignoreFailingMessages = false;
+
         [Test]
         public void RevealAround_MarksNearbyCellsExplored()
         {

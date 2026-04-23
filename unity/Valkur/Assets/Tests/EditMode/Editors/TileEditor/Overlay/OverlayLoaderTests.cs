@@ -50,6 +50,8 @@ namespace Valkur.Tests.EditMode.TileEditor
         [TearDown]
         public void TearDown()
         {
+            LogAssert.ignoreFailingMessages = false;
+
             if (Directory.Exists(_tempDir))
                 Directory.Delete(_tempDir, recursive: true);
 
@@ -192,7 +194,8 @@ namespace Valkur.Tests.EditMode.TileEditor
                 new[] { _tileNameA, _tileNameA, _tileNameA, _tileNameA },
             });
 
-            LogAssert.ignoreFailingMessages = true;
+            LogAssert.Expect(LogType.Warning,
+                "[OverlayLoader] 'clip.json' on 'Ground': 12 tile(s) clipped to zone footprint 2x2.");
 
             OverlayLoader.LoadOverlayFromPath(json, _grid, offsetX: 0, offsetY: 0,
                 clearLayerRegion: false, regionWidth: 0, regionHeight: 0,
@@ -266,7 +269,6 @@ namespace Valkur.Tests.EditMode.TileEditor
             File.WriteAllText(path, "{\"layers\":{\"NotARealLayer\":[[\"anything\"]]}}");
 
             LogAssert.Expect(LogType.Warning, "[OverlayLoader] Unknown layer 'NotARealLayer', skipping.");
-            LogAssert.ignoreFailingMessages = true;
 
             Assert.DoesNotThrow(() =>
                 OverlayLoader.LoadOverlayFromPath(path, _grid, 0, 0, false, 0, 0));

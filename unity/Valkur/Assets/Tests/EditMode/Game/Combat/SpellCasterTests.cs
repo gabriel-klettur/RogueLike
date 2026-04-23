@@ -1,6 +1,7 @@
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Spells;
@@ -237,6 +238,8 @@ namespace Valkur.Tests.EditMode
             var caster = CreateCaster();
             caster.SetSpell(0, CreateSpell("fireball", manaCost: 2f));
 
+            LogAssert.Expect(LogType.Warning,
+                "[SpellCaster] Spell 'fireball' requires mana (2) but no Mana component is present on 'Caster'. Cast cancelled.");
             bool result = caster.TryCast(0, Vector2.right);
 
             Assert.IsFalse(result);
