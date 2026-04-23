@@ -2427,13 +2427,13 @@ namespace Valkur.Gameplay.Buildings
             var effectiveGrid = ResampleGrid(grid, effectiveSize.x, effectiveSize.y);
             if (effectiveGrid == null) return;
 
+            // An authored grid with NO solid cells is treated as "no override":
+            // RestoreDefaultColliderState above already re-enabled the root
+            // collider per the template. Disabling it here would silently make
+            // 'solid' buildings walk-throughable as soon as their image has a
+            // placeholder JSON entry without any '#' painted yet.
             if (!GridHasSolidCells(effectiveGrid))
-            {
-                var mainCollider = building.GetComponent<BoxCollider2D>();
-                if (mainCollider != null)
-                    mainCollider.enabled = false;
                 return;
-            }
 
             for (int row = 0; row < effectiveGrid.height; row++)
             {

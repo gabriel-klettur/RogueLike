@@ -79,13 +79,15 @@ namespace Valkur.Gameplay.World
             var grid = ResolveGrid(bObj);
             if (grid == null) return false;
 
+            // An authored grid with NO solid cells is treated as "no override"
+            // (i.e. fall back to the template's default root collider that
+            // RestoreDefaultColliderState just re-enabled). Disabling the
+            // root here would silently make 'solid' buildings non-blocking
+            // — that's how 140/142 buildings ended up walk-throughable when
+            // their image had a placeholder JSON entry but the user had not
+            // painted any '#' yet.
             if (!HasSolidCells(grid))
-            {
-                var mainCollider = bObj.GetComponent<BoxCollider2D>();
-                if (mainCollider != null)
-                    mainCollider.enabled = false;
                 return true;
-            }
 
             ApplyGridToBuilding(bObj, grid);
             return true;
