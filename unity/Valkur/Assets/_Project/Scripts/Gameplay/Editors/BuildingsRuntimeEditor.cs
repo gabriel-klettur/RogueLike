@@ -99,6 +99,11 @@ namespace Valkur.Gameplay.Buildings
         private TextMeshProUGUI _propsTmp;
         private TextMeshProUGUI _idLabelTmp;     // floating "ID n" near active building
         private RectTransform   _idLabelRt;
+
+        // Split-ratio horizontal line drawn over the active building (mirrors Python split_tool_view.py)
+        private RectTransform _splitLineRt;
+        private Image         _splitLineImg;
+
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg, _resizeBtnImg;
         private Image _addBtnImg, _removeBtnImg;
         private TMP_InputField _searchBox;
@@ -188,6 +193,7 @@ namespace Valkur.Gameplay.Buildings
             UpdateOutlineState();
             UpdateFloatingHandles();
             UpdateIdLabel();
+            UpdateSplitLine();
         }
 
         public void Activate()
@@ -263,6 +269,7 @@ namespace Valkur.Gameplay.Buildings
             _tutorialRoot = null; _tutorialStepLabel = _tutorialBodyTmp = null;
             _confirmModal = null; _confirmText = null;
             _idLabelTmp = null; _idLabelRt = null;
+            _splitLineRt = null; _splitLineImg = null;
             _uiBuilt = false;
         }
 
@@ -288,8 +295,9 @@ namespace Valkur.Gameplay.Buildings
         {
             if (_hoverFx  != null) { _hoverFx.Follow(null);  _hoverFx.SetVisible(false); }
             if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
-            if (_idLabelRt != null) _idLabelRt.gameObject.SetActive(false);
+            if (_idLabelRt  != null) _idLabelRt.gameObject.SetActive(false);
             if (_handlesRoot != null) _handlesRoot.SetActive(false);
+            if (_splitLineRt != null) _splitLineRt.gameObject.SetActive(false);
         }
 
         private void CacheBuildingLoader()
@@ -374,6 +382,7 @@ namespace Valkur.Gameplay.Buildings
 
             BuildFloatingHandles();
             BuildIdLabel();
+            BuildSplitLine();
             BuildTutorial();
             BuildConfirmModal();
 
@@ -452,6 +461,23 @@ namespace Valkur.Gameplay.Buildings
             _handleR.GetComponent<LayoutElement>().preferredWidth = 48f;
 
             _handlesRoot.SetActive(false);
+        }
+
+        /// <summary>
+        /// Horizontal cyan bar drawn at the split-ratio cut point of the active building.
+        /// Mirrors Python split_tool_view.py: 3 px bar + centered draggable handle.
+        /// </summary>
+        private void BuildSplitLine()
+        {
+            // Container — 3 px bar centered on the split Y position
+            var go = EditorUIHelpers.CreateUI("SplitLine", _root.transform);
+            _splitLineRt = go.GetComponent<RectTransform>();
+            _splitLineRt.anchorMin = _splitLineRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _splitLineRt.pivot = new Vector2(0.5f, 0.5f);
+            _splitLineRt.sizeDelta = new Vector2(80f, 3f);  // width updated each frame
+            _splitLineImg = go.AddComponent<Image>();
+            _splitLineImg.color = new Color(0f, 200f / 255f, 1f, 0.85f); // cyan #00C8FF
+            go.SetActive(false);
         }
 
         private void BuildIdLabel()
@@ -746,14 +772,21 @@ namespace Valkur.Gameplay.Buildings
                 if (mouse.rightButton.isPressed)
                 {
                     var delta = (Vector2)(worldPos - _resizeStartMouse);
-                    int newW = Mathf.Max(8, _resizeStartScale.x + Mathf.RoundToInt(delta.x * 32f));
-                    int newH = Mathf.Max(8, _resizeStartScale.y + Mathf.RoundToInt(delta.y * 32f));
+                    // Preserve aspect ratio (mirrors Python resize_tool.py):
+                    //   delta = max(dx, dy) — largest axis wins
+                    //   new_height = new_width / aspect_ratio
+                    float aspect = (float)_resizeStartScale.x / Mathf.Max(1, _resizeStartScale.y);
+                    float pixDelta = Mathf.Max(delta.x, delta.y) * 32f;
+                    int newW = Mathf.Max(8, _resizeStartScale.x + Mathf.RoundToInt(pixDelta));
+                    int newH = Mathf.Max(8, Mathf.RoundToInt(newW / aspect));
                     _activeBuilding.Apply(_activeBuilding.Template, new Vector2Int(newW, newH), _activeBuilding.SplitRatioOverride);
-                    if (_statusTmp != null) _statusTmp.text = $"Resize → {newW}×{newH} px";
+                    if (_statusTmp != null) _statusTmp.text = $"Resize → {newW}×{newH} px (ratio {aspect:F2})";
+                    RefreshInspector();
                 }
                 else if (mouse.rightButton.wasReleasedThisFrame)
                 {
                     _resizing = false;
+                    RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = "Resize done.";
                 }
                 return;
@@ -1190,6 +1223,48 @@ namespace Valkur.Gameplay.Buildings
 
             var rt = _handlesRoot.GetComponent<RectTransform>();
             rt.anchoredPosition = canvasPos;
+        }
+
+        /// <summary>
+        /// Each frame: position the cyan split-ratio line over the active building.
+        /// The line sits at the boundary between the bottom (behind player) and top
+        /// (in front of player) render layers — identical to Python's split_tool_view.py.
+        /// </summary>
+        private void UpdateSplitLine()
+        {
+            if (_splitLineRt == null) return;
+            if (_activeBuilding == null || !_activeBuilding.TryGetWorldRect(out var rect))
+            {
+                _splitLineRt.gameObject.SetActive(false);
+                return;
+            }
+
+            // Effective split ratio: instance override (if >= 0) else template default
+            float sr = _activeBuilding.SplitRatioOverride >= 0f
+                ? _activeBuilding.SplitRatioOverride
+                : (_activeBuilding.Template != null ? _activeBuilding.Template.splitRatio : 0.5f);
+
+            // Split line world Y = bottom of building + bottom-portion height
+            // bottomFraction = (1 - sr)  because sr is the TOP fraction (see BuildingObject docs)
+            float worldSplitY = rect.yMin + rect.height * (1f - sr);
+
+            var cam = Camera.main;
+            if (cam == null) { _splitLineRt.gameObject.SetActive(false); return; }
+
+            // Width in canvas space = width of the building rect projected to screen
+            Vector3 leftScreen  = cam.WorldToScreenPoint(new Vector3(rect.xMin, worldSplitY, 0f));
+            Vector3 rightScreen = cam.WorldToScreenPoint(new Vector3(rect.xMax, worldSplitY, 0f));
+            Vector2 leftCanvas  = ScreenToCanvasPos(leftScreen);
+            Vector2 rightCanvas = ScreenToCanvasPos(rightScreen);
+            float canvasWidth   = Vector2.Distance(leftCanvas, rightCanvas);
+
+            Vector3 centerScreen = cam.WorldToScreenPoint(
+                new Vector3(rect.center.x, worldSplitY, 0f));
+            Vector2 canvasCenter = ScreenToCanvasPos(centerScreen);
+
+            _splitLineRt.gameObject.SetActive(true);
+            _splitLineRt.anchoredPosition = canvasCenter;
+            _splitLineRt.sizeDelta = new Vector2(canvasWidth, 3f);
         }
 
         private void UpdateIdLabel()
