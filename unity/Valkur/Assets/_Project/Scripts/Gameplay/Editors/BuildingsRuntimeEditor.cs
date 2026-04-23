@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -103,6 +104,15 @@ namespace Valkur.Gameplay.Buildings
         // Split-ratio horizontal line drawn over the active building (mirrors Python split_tool_view.py)
         private RectTransform _splitLineRt;
         private Image         _splitLineImg;
+        // Drag handle (small square at center of split line)
+        private RectTransform _splitHandleRt;
+        private Image         _splitHandleImg;
+
+        // Split-ratio drag state
+        private bool  _splitDragging;
+        private bool  _splitHovering;      // cursor is near the split line (hover highlight)
+        private float _splitDragStartRatio;        // ratio when drag began (for undo)
+        private const float SPLIT_HANDLE_WORLD_RADIUS = 0.5f;  // world-units pick radius (~16 px at PPU=32)
 
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg, _resizeBtnImg;
         private Image _addBtnImg, _removeBtnImg;
@@ -241,7 +251,12 @@ namespace Valkur.Gameplay.Buildings
             _hoverStack.Clear();
             _dragging = false;
             _resizing = false;
+            _splitDragging = false;
+            _splitHovering = false;
             _removeMode = false;
+            _collBrushMode = CollBrushMode.Off;
+            _activeColliderSession = null;
+            _colliderStroke.Active = false;
             _isPanning = false;
             HideConfirm();
             if (Valkur.Gameplay.CameraSetup.Instance != null)
@@ -270,6 +285,7 @@ namespace Valkur.Gameplay.Buildings
             _confirmModal = null; _confirmText = null;
             _idLabelTmp = null; _idLabelRt = null;
             _splitLineRt = null; _splitLineImg = null;
+            _splitHandleRt = null; _splitHandleImg = null;
             _uiBuilt = false;
         }
 
@@ -297,7 +313,8 @@ namespace Valkur.Gameplay.Buildings
             if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
             if (_idLabelRt  != null) _idLabelRt.gameObject.SetActive(false);
             if (_handlesRoot != null) _handlesRoot.SetActive(false);
-            if (_splitLineRt != null) _splitLineRt.gameObject.SetActive(false);
+            if (_splitLineRt   != null) _splitLineRt.gameObject.SetActive(false);
+            if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
         }
 
         private void CacheBuildingLoader()
@@ -349,16 +366,29 @@ namespace Valkur.Gameplay.Buildings
                 onZTopMinus:       () => AdjustZ(_activeBuilding, bottom: false, delta: -1),
                 onZTopPlus:        () => AdjustZ(_activeBuilding, bottom: false, delta: +1),
                 onColliderScope:   () => ToggleColliderScope(),
-                onPaintSolid:      () => Toast("Paint solid: TODO Phase 2."),
-                onPaintWalk:       () => Toast("Paint walkable: TODO Phase 2."),
-                onSaveCU:          () => Toast("Save CU: TODO Phase 2."),
-                onDeleteBuilding:  () => RequestDeleteActiveWithConfirm());
+                onPaintSolid:      () => SetCollBrushMode(CollBrushMode.Solid),
+                onPaintWalk:       () => SetCollBrushMode(CollBrushMode.Walk),
+                onSaveCU:          () => SaveColliderAuthoring(),
+                onDeleteBuilding:  () => RequestDeleteActiveWithConfirm(),
+                // Colliders panel callbacks
+                onToggleCollidersVisible: () => ToggleCollidersVisible(),
+                onCollBrushOff:    () => SetCollBrushMode(CollBrushMode.Off),
+                onCollBrushSolid:  () => SetCollBrushMode(CollBrushMode.Solid),
+                onCollBrushWalk:   () => SetCollBrushMode(CollBrushMode.Walk),
+                onCollBrushErase:  () => SetCollBrushMode(CollBrushMode.Erase),
+                onCollBrushSizeChanged: v => OnCollBrushSizeChanged(v),
+                onCollRevert:      () => RevertActiveColliderEntry(),
+                onCollFill:        () => FillActiveColliderEntry(),
+                onCollClear:       () => ClearActiveColliderEntry(),
+                onCollSave:        () => SaveColliderAuthoring());
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
                 _uiRefs.ModesPanelDrag.OnClose     = () => { _openDropdowns.Remove("modes");     RefreshMenuBtnHighlights(); };
             if (_uiRefs.BuildingsPanelDrag != null)
                 _uiRefs.BuildingsPanelDrag.OnClose = () => { _openDropdowns.Remove("buildings"); RefreshMenuBtnHighlights(); };
+            if (_uiRefs.CollidersPanelDrag != null)
+                _uiRefs.CollidersPanelDrag.OnClose = () => { _openDropdowns.Remove("colliders"); RefreshMenuBtnHighlights(); };
             if (_uiRefs.PropsPanelDrag     != null)
                 _uiRefs.PropsPanelDrag.OnClose     = () => { _openDropdowns.Remove("props");     RefreshMenuBtnHighlights(); };
 
@@ -387,6 +417,8 @@ namespace Valkur.Gameplay.Buildings
             BuildConfirmModal();
 
             OpenAllPanels();
+            RefreshBrushButtonHighlights();
+            RefreshCollidersPanel();
         }
 
         // ── Dropdown / panel management ────────────────────────────────────────────
@@ -409,7 +441,7 @@ namespace Valkur.Gameplay.Buildings
 
         private void OpenAllPanels()
         {
-            foreach (var n in new[] { "modes", "buildings", "props" })
+            foreach (var n in new[] { "modes", "buildings", "colliders", "props" })
             {
                 SetDropdownOpen(n, true);
                 _openDropdowns.Add(n);
@@ -423,6 +455,7 @@ namespace Valkur.Gameplay.Buildings
             {
                 "modes"     => _uiRefs.ModesDropdown,
                 "buildings" => _uiRefs.BuildingsDropdown,
+                "colliders" => _uiRefs.CollidersDropdown,
                 "props"     => _uiRefs.PropsDropdown,
                 _           => null
             };
@@ -435,6 +468,8 @@ namespace Valkur.Gameplay.Buildings
                 _uiRefs.ModesMenuBtnImg,     _uiRefs.ModesMenuBtnTmp,     _openDropdowns.Contains("modes"));
             BuildingsEditorUIBuilder.ApplyMenuBtnStyle(
                 _uiRefs.BuildingsMenuBtnImg, _uiRefs.BuildingsMenuBtnTmp, _openDropdowns.Contains("buildings"));
+            BuildingsEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.CollidersMenuBtnImg, _uiRefs.CollidersMenuBtnTmp, _openDropdowns.Contains("colliders"));
             BuildingsEditorUIBuilder.ApplyMenuBtnStyle(
                 _uiRefs.PropsMenuBtnImg,     _uiRefs.PropsMenuBtnTmp,     _openDropdowns.Contains("props"));
         }
@@ -466,10 +501,11 @@ namespace Valkur.Gameplay.Buildings
         /// <summary>
         /// Horizontal cyan bar drawn at the split-ratio cut point of the active building.
         /// Mirrors Python split_tool_view.py: 3 px bar + centered draggable handle.
+        /// The handle (10×10 square) can be dragged vertically to change split ratio.
         /// </summary>
         private void BuildSplitLine()
         {
-            // Container — 3 px bar centered on the split Y position
+            // Bar — 3 px high, width updated each frame
             var go = EditorUIHelpers.CreateUI("SplitLine", _root.transform);
             _splitLineRt = go.GetComponent<RectTransform>();
             _splitLineRt.anchorMin = _splitLineRt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -478,6 +514,16 @@ namespace Valkur.Gameplay.Buildings
             _splitLineImg = go.AddComponent<Image>();
             _splitLineImg.color = new Color(0f, 200f / 255f, 1f, 0.85f); // cyan #00C8FF
             go.SetActive(false);
+
+            // Handle — 24×8 wide bar at center; wider shape suggests horizontal draggability
+            var hgo = EditorUIHelpers.CreateUI("SplitHandle", _root.transform);
+            _splitHandleRt = hgo.GetComponent<RectTransform>();
+            _splitHandleRt.anchorMin = _splitHandleRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _splitHandleRt.pivot = new Vector2(0.5f, 0.5f);
+            _splitHandleRt.sizeDelta = new Vector2(24f, 8f);
+            _splitHandleImg = hgo.AddComponent<Image>();
+            _splitHandleImg.color = new Color(0f, 200f / 255f, 1f, 1f); // solid cyan
+            hgo.SetActive(false);
         }
 
         private void BuildIdLabel()
@@ -754,6 +800,25 @@ namespace Valkur.Gameplay.Buildings
             Vector3 worldPos  = cam.ScreenToWorldPoint(screenPos);
             worldPos.z = 0f;
 
+            if (_colliderStroke.Active && mouse.leftButton.wasReleasedThisFrame)
+            {
+                EndColliderStroke();
+                if (overUi) return;
+            }
+
+            // ── Hover proximity for split line (always computed, drives highlight colour)
+            _splitHovering = false;
+            if (!overUi && _activeBuilding != null && _activeBuilding.TryGetWorldRect(out var hoverRect))
+            {
+                float hsr = _activeBuilding.SplitRatioOverride >= 0f
+                    ? _activeBuilding.SplitRatioOverride
+                    : (_activeBuilding.Template != null ? _activeBuilding.Template.splitRatio : 0.5f);
+                float hSplitY = hoverRect.yMin + hoverRect.height * (1f - hsr);
+                _splitHovering = Mathf.Abs(worldPos.y - hSplitY) <= SPLIT_HANDLE_WORLD_RADIUS
+                              && worldPos.x >= hoverRect.xMin - SPLIT_HANDLE_WORLD_RADIUS
+                              && worldPos.x <= hoverRect.xMax + SPLIT_HANDLE_WORLD_RADIUS;
+            }
+
             // Hover detection (skip when over UI): collect all buildings under cursor.
             if (!overUi) RecomputeHoverStack(worldPos);
             else { _hoveredBuilding = null; _hoverStack.Clear(); }
@@ -764,6 +829,40 @@ namespace Valkur.Gameplay.Buildings
                 float scroll = mouse.scroll.ReadValue().y;
                 if (scroll >  0.01f) { _hoverIndex = (_hoverIndex - 1 + _hoverStack.Count) % _hoverStack.Count; _hoveredBuilding = _hoverStack[_hoverIndex]; }
                 if (scroll < -0.01f) { _hoverIndex = (_hoverIndex + 1) % _hoverStack.Count;                     _hoveredBuilding = _hoverStack[_hoverIndex]; }
+            }
+
+            // Split-ratio drag — LMB held on the split handle
+            if (_splitDragging && _activeBuilding != null)
+            {
+                if (mouse.leftButton.isPressed)
+                {
+                    if (_activeBuilding.TryGetWorldRect(out var dragRect))
+                    {
+                        // Map cursor Y to [0..1] within building rect, clamp [0.01..0.99]
+                        float rawRatio = 1f - Mathf.Clamp01((worldPos.y - dragRect.yMin) / dragRect.height);
+                        float newRatio = Mathf.Clamp(rawRatio, 0.01f, 0.99f);
+                        _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, newRatio);
+                        RefreshInspector();
+                        if (_statusTmp != null)
+                            _statusTmp.text = $"Split ratio → {newRatio:F3}";
+                    }
+                }
+                else if (mouse.leftButton.wasReleasedThisFrame)
+                {
+                    float finalRatio = _activeBuilding.SplitRatioOverride;
+                    float startRatio = _splitDragStartRatio;
+                    // Register as undoable action only if ratio actually changed
+                    if (!Mathf.Approximately(finalRatio, startRatio))
+                    {
+                        _undo.Do($"Split {finalRatio:F3}",
+                            () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, finalRatio),
+                            () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, startRatio));
+                    }
+                    _splitDragging = false;
+                    RefreshInspector();
+                    if (_statusTmp != null) _statusTmp.text = $"Split ratio set to {finalRatio:F3}.";
+                }
+                return;
             }
 
             // Resize drag
@@ -786,6 +885,7 @@ namespace Valkur.Gameplay.Buildings
                 else if (mouse.rightButton.wasReleasedThisFrame)
                 {
                     _resizing = false;
+                    RefreshCollisionFor(_activeBuilding);
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = "Resize done.";
                 }
@@ -801,6 +901,38 @@ namespace Valkur.Gameplay.Buildings
             }
 
             if (overUi) return;
+
+            // Collider painting — when a brush mode is active, LMB hold paints/erases
+            // collider tiles on the active building. Returns early so it doesn't
+            // interfere with selection/placement.
+            if (_collBrushMode != CollBrushMode.Off && _activeBuilding != null
+                && (mouse.leftButton.isPressed || mouse.leftButton.wasPressedThisFrame))
+            {
+                if (mouse.leftButton.wasPressedThisFrame)
+                    BeginColliderStroke();
+                HandleColliderPaint(worldPos);
+                return;
+            }
+
+            // LMB on split handle — start split-ratio drag
+            if (!overUi && mouse.leftButton.wasPressedThisFrame && _activeBuilding != null
+                && _activeBuilding.TryGetWorldRect(out var checkRect))
+            {
+                float sr = _activeBuilding.SplitRatioOverride >= 0f
+                    ? _activeBuilding.SplitRatioOverride
+                    : (_activeBuilding.Template != null ? _activeBuilding.Template.splitRatio : 0.5f);
+                float handleWorldY = checkRect.yMin + checkRect.height * (1f - sr);
+                float distY = Mathf.Abs(worldPos.y - handleWorldY);
+                // Also check horizontal proximity (within building X bounds + small margin)
+                float marginX = SPLIT_HANDLE_WORLD_RADIUS;
+                bool withinX = worldPos.x >= checkRect.xMin - marginX && worldPos.x <= checkRect.xMax + marginX;
+                if (distY <= SPLIT_HANDLE_WORLD_RADIUS && withinX)
+                {
+                    _splitDragging = true;
+                    _splitDragStartRatio = sr;
+                    return;   // consume event
+                }
+            }
 
             // LMB — primary action
             if (mouse.leftButton.wasPressedThisFrame)
@@ -878,6 +1010,7 @@ namespace Valkur.Gameplay.Buildings
             {
                 _propsTmp.text = "Select a building to view properties.";
                 if (_inspectorRoot != null) _inspectorRoot.SetActive(false);
+                RefreshCollidersPanel();
                 return;
             }
             _inspectorRoot.SetActive(true);
@@ -904,6 +1037,7 @@ namespace Valkur.Gameplay.Buildings
             string scope = _activeBuilding.EffectiveColliderScope;
             if (_scopeBtnLabel != null) _scopeBtnLabel.text = scope;
             if (_scopeBtnImg   != null) _scopeBtnImg.color = scope == "CU" ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL;
+            RefreshCollidersPanel();
         }
 
         private void OnSplitSliderChanged(float v)
@@ -911,8 +1045,8 @@ namespace Valkur.Gameplay.Buildings
             if (_activeBuilding == null) return;
             float oldVal = _activeBuilding.SplitRatioOverride;
             _undo.Do($"Split {v:F2}",
-                () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, v),
-                () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, oldVal));
+                () => { _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, v); RefreshCollisionFor(_activeBuilding); },
+                () => { _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, oldVal); RefreshCollisionFor(_activeBuilding); });
         }
 
         private void AdjustZ(BuildingObject b, bool bottom, int delta)
@@ -932,8 +1066,8 @@ namespace Valkur.Gameplay.Buildings
             string next    = current == "CU" ? "CG" : "CU";
             string oldOv   = _activeBuilding.ColliderScopeOverride;
             _undo.Do($"Scope {next}",
-                () => { _activeBuilding.ColliderScopeOverride = next; RefreshInspector(); },
-                () => { _activeBuilding.ColliderScopeOverride = oldOv; RefreshInspector(); });
+                () => { _activeBuilding.ColliderScopeOverride = next; RefreshCollisionFor(_activeBuilding); RefreshInspector(); },
+                () => { _activeBuilding.ColliderScopeOverride = oldOv; RefreshCollisionFor(_activeBuilding); RefreshInspector(); });
         }
 
         private void ResetActiveBuilding()
@@ -946,8 +1080,8 @@ namespace Valkur.Gameplay.Buildings
             var oldZT = b.ZTopOffset;
             var oldScope = b.ColliderScopeOverride;
             _undo.Do("Reset building",
-                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; RefreshInspector(); },
-                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; RefreshInspector(); });
+                () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; RefreshCollisionFor(b); RefreshInspector(); },
+                () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; RefreshCollisionFor(b); RefreshInspector(); });
         }
 
         // ──────────────────────────────────────────────────────────────────────────
@@ -976,6 +1110,7 @@ namespace Valkur.Gameplay.Buildings
                     bObj.ZoneName   = zoneName;
                     bObj.InstanceId = newId;
                     bObj.Apply(template, Vector2Int.zero, -1f);
+                    RefreshCollisionFor(bObj);
                     created = bObj;
                     SetActiveBuilding(bObj);
                     if (_statusTmp != null) _statusTmp.text = $"Placed #{template.templateId} at ({worldPos.x:F1}, {worldPos.y:F1}) → ID {newId}";
@@ -1050,6 +1185,9 @@ namespace Valkur.Gameplay.Buildings
             string path = Path.Combine(dir, "buildings_instances.json");
             try
             {
+                EnsureColliderDataLoaded();
+                if (_activeColliderSession != null && _activeColliderSession.WorkingGrid != null)
+                    PersistSessionToStore(_activeColliderSession);
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
                 var sb = new StringBuilder();
@@ -1065,6 +1203,8 @@ namespace Valkur.Gameplay.Buildings
                 for (int i = 0; i < all.Count; i++)
                 {
                     var b = all[i];
+                    int oldInstanceId = b.InstanceId;
+                    RemapColliderInstanceStore(oldInstanceId, nextId);
                     b.InstanceId = nextId++;
                     int relX = 0, relY = 0;
                     string zone = b.ZoneName ?? "Lobby";
@@ -1082,12 +1222,16 @@ namespace Valkur.Gameplay.Buildings
                     sb.Append("  {");
                     sb.Append($"\"id\": {b.InstanceId}, ");
                     sb.Append($"\"template_id\": {b.Template.templateId}, ");
-                    sb.Append($"\"zone\": \"{zone}\", ");
+                    sb.Append($"\"zone\": \"{EscapeJson(zone)}\", ");
                     sb.Append($"\"rel_x\": {relX}, ");
                     sb.Append($"\"rel_y\": {relY}");
 
                     var sov = b.ScaleOverride;
-                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0;
+                    bool hasCollisionOverride = _colliderInstanceStore.TryGetValue(b.InstanceId, out var instanceGrid);
+                    bool writeCollisionOverride = hasCollisionOverride &&
+                        string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase);
+                    bool hasColliderScope = !string.IsNullOrEmpty(b.ColliderScopeOverride);
+                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || writeCollisionOverride;
                     if (hasOv)
                     {
                         sb.Append(", \"overrides\": {");
@@ -1098,6 +1242,19 @@ namespace Valkur.Gameplay.Buildings
                             if (!first) sb.Append(", ");
                             sb.Append(string.Format(System.Globalization.CultureInfo.InvariantCulture,
                                 "\"split_ratio\": {0:F4}", b.SplitRatioOverride));
+                            first = false;
+                        }
+                        if (hasColliderScope)
+                        {
+                            if (!first) sb.Append(", ");
+                            sb.Append($"\"collider_scope\": \"{EscapeJson(b.ColliderScopeOverride)}\"");
+                            first = false;
+                        }
+                        if (writeCollisionOverride && instanceGrid != null)
+                        {
+                            if (!first) sb.Append(", ");
+                            sb.Append("\"collision_override\": ");
+                            AppendGridJson(sb, instanceGrid, 0);
                         }
                         sb.Append("}");
                     }
@@ -1108,6 +1265,8 @@ namespace Valkur.Gameplay.Buildings
                 sb.AppendLine("]");
 
                 File.WriteAllText(path, sb.ToString());
+                PruneColliderInstanceStore(all);
+                WriteColliderStoresToDisk(dir);
 #if UNITY_EDITOR
                 // Refresh the backup copy via reflection so we don't create a
                 // runtime→editor assembly dependency. BuildingsDataGuard.RefreshBackup()
@@ -1124,6 +1283,7 @@ namespace Valkur.Gameplay.Buildings
 #endif
                 if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {INSTANCES_REL_PATH}";
                 Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path}");
+                RefreshCollidersPanel();
             }
             catch (System.Exception ex)
             {
@@ -1137,6 +1297,7 @@ namespace Valkur.Gameplay.Buildings
         {
             CacheBuildingLoader();
             if (_buildingLoader == null) { Toast("BuildingLoader not found in scene."); return; }
+            ResetColliderAuthoringState();
             _buildingLoader.LoadBuildings();
             _undo.Clear();
             _activeBuilding = null;
@@ -1250,6 +1411,7 @@ namespace Valkur.Gameplay.Buildings
             if (_activeBuilding == null || !_activeBuilding.TryGetWorldRect(out var rect))
             {
                 _splitLineRt.gameObject.SetActive(false);
+                if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
                 return;
             }
 
@@ -1263,7 +1425,12 @@ namespace Valkur.Gameplay.Buildings
             float worldSplitY = rect.yMin + rect.height * (1f - sr);
 
             var cam = Camera.main;
-            if (cam == null) { _splitLineRt.gameObject.SetActive(false); return; }
+            if (cam == null)
+            {
+                _splitLineRt.gameObject.SetActive(false);
+                if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
+                return;
+            }
 
             // Width in canvas space = width of the building rect projected to screen
             Vector3 leftScreen  = cam.WorldToScreenPoint(new Vector3(rect.xMin, worldSplitY, 0f));
@@ -1279,6 +1446,21 @@ namespace Valkur.Gameplay.Buildings
             _splitLineRt.gameObject.SetActive(true);
             _splitLineRt.anchoredPosition = canvasCenter;
             _splitLineRt.sizeDelta = new Vector2(canvasWidth, 3f);
+
+            // Handle — same center point, highlighted while dragging or cursor near it
+            if (_splitHandleRt != null)
+            {
+                _splitHandleRt.gameObject.SetActive(true);
+                _splitHandleRt.anchoredPosition = canvasCenter;
+
+                // Highlight: white when dragging, yellow on hover, cyan otherwise
+                if (_splitHandleImg != null)
+                    _splitHandleImg.color = _splitDragging
+                        ? Color.white
+                        : _splitHovering
+                            ? new Color(1f, 0.9f, 0f, 1f)           // yellow on hover
+                            : new Color(0f, 200f / 255f, 1f, 1f);   // cyan normal
+            }
         }
 
         private void UpdateIdLabel()
@@ -1313,6 +1495,1125 @@ namespace Valkur.Gameplay.Buildings
         {
             if (_statusTmp != null) _statusTmp.text = msg;
             Debug.Log($"[BuildingsEditor] {msg}");
+        }
+
+        // ──────────────────────────────────────────────────────────────────────────
+        //  COLLIDER EDITING (Colliders panel)
+        // ──────────────────────────────────────────────────────────────────────────
+
+        private enum CollBrushMode { Off, Solid, Walk, Erase }
+        private enum ColliderAuthoringScope { CG, CU }
+        private const string CollTilePrefix = "CollTile_";
+        private const string PooledCollTilePrefix = "_PooledCollTile_";
+
+        private sealed class ColliderGridData
+        {
+            public int width;
+            public int height;
+            public string[][] collision;
+            public Vector2Int gridRefSize;
+        }
+
+        private sealed class ActiveColliderGridSession
+        {
+            public int BuildingId;
+            public int InstanceId;
+            public string ImageKey;
+            public ColliderAuthoringScope Scope;
+            public Vector2Int EffectivePixelSize;
+            public ColliderGridData WorkingGrid;
+        }
+
+        private sealed class ColliderPaintStroke
+        {
+            public bool Active;
+            public ColliderAuthoringScope Scope;
+            public string ImageKey;
+            public int InstanceId;
+            public ColliderGridData Before;
+            public bool Changed;
+        }
+
+        private bool          _collidersVisible;
+        private CollBrushMode _collBrushMode = CollBrushMode.Off;
+        private int           _collBrushSize = 1;
+        private bool          _colliderDataLoaded;
+        private readonly Dictionary<string, ColliderGridData> _colliderImageStore =
+            new Dictionary<string, ColliderGridData>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, ColliderGridData> _savedColliderImageStore =
+            new Dictionary<string, ColliderGridData>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<int, ColliderGridData> _colliderInstanceStore =
+            new Dictionary<int, ColliderGridData>();
+        private readonly Dictionary<int, ColliderGridData> _savedColliderInstanceStore =
+            new Dictionary<int, ColliderGridData>();
+        private ActiveColliderGridSession _activeColliderSession;
+        private readonly ColliderPaintStroke _colliderStroke = new ColliderPaintStroke();
+
+        private void ToggleCollidersVisible()
+        {
+            _collidersVisible = !_collidersVisible;
+            if (_collidersVisible)
+            {
+                ReapplyAllColliderStates();
+                Physics2D.SyncTransforms();
+            }
+            int total = RefreshCollidersOverlay();
+            if (_uiRefs.CollVisibilityBtnLabel != null)
+                _uiRefs.CollVisibilityBtnLabel.text = _collidersVisible ? "Hide Colliders" : "Show Colliders";
+            RefreshCollidersPanel();
+            Toast(_collidersVisible ? $"Colliders visible ({total} shapes)." : "Colliders hidden.");
+        }
+
+        private void SetCollBrushMode(CollBrushMode mode)
+        {
+            _collBrushMode = mode;
+            RefreshBrushButtonHighlights();
+            if (mode != CollBrushMode.Off && !_collidersVisible)
+            {
+                _collidersVisible = true;
+                if (_uiRefs.CollVisibilityBtnLabel != null)
+                    _uiRefs.CollVisibilityBtnLabel.text = "Hide Colliders";
+                ReapplyAllColliderStates();
+                Physics2D.SyncTransforms();
+                RefreshCollidersOverlay();
+            }
+            RefreshCollidersPanel();
+            Toast($"Brush: {mode}");
+        }
+
+        private void OnCollBrushSizeChanged(float v)
+        {
+            _collBrushSize = Mathf.Clamp(Mathf.RoundToInt(v), 1, 8);
+            if (_uiRefs.CollBrushSizeVal != null)
+                _uiRefs.CollBrushSizeVal.text = _collBrushSize.ToString();
+            RefreshCollidersPanel();
+        }
+
+        private void RefreshBrushButtonHighlights()
+        {
+            ApplyBrushBtnStyle(_uiRefs.CollBrushOffBtnImg,   _collBrushMode == CollBrushMode.Off);
+            ApplyBrushBtnStyle(_uiRefs.CollBrushSolidBtnImg, _collBrushMode == CollBrushMode.Solid);
+            ApplyBrushBtnStyle(_uiRefs.CollBrushWalkBtnImg,  _collBrushMode == CollBrushMode.Walk);
+            ApplyBrushBtnStyle(_uiRefs.CollBrushEraseBtnImg, _collBrushMode == CollBrushMode.Erase);
+        }
+
+        private static void ApplyBrushBtnStyle(Image img, bool selected)
+        {
+            if (img == null) return;
+            img.color = selected ? new Color(0.20f, 0.55f, 0.85f, 1f)
+                                 : new Color(0.18f, 0.18f, 0.20f, 1f);
+        }
+
+        private void RefreshCollidersPanel()
+        {
+            if (_uiRefs.CollTargetText == null || _uiRefs.CollStateText == null) return;
+            if (_activeBuilding == null || _activeBuilding.Template == null)
+            {
+                _uiRefs.CollTargetText.text = "No building selected.";
+                _uiRefs.CollStateText.text = $"Grid: -- | Brush {_collBrushMode} x{_collBrushSize}";
+                return;
+            }
+
+            EnsureColliderDataLoaded();
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null)
+            {
+                _uiRefs.CollTargetText.text = $"ID {_activeBuilding.InstanceId} | Scope {_activeBuilding.EffectiveColliderScope}";
+                _uiRefs.CollStateText.text = $"Grid: -- | Brush {_collBrushMode} x{_collBrushSize}";
+                return;
+            }
+
+            string scope = session.Scope == ColliderAuthoringScope.CU ? "CU" : "CG";
+            string target = session.Scope == ColliderAuthoringScope.CU
+                ? $"instance:{session.InstanceId}"
+                : string.IsNullOrEmpty(session.ImageKey) ? "image:(none)" : $"image:{session.ImageKey}";
+            string dirty = IsSessionDirty(session) ? "Dirty" : "Saved";
+            int solids = CountSolidCells(session.WorkingGrid);
+            _uiRefs.CollTargetText.text = $"ID {session.InstanceId} | Scope {scope}\n{target}";
+            _uiRefs.CollStateText.text =
+                $"Grid: {session.WorkingGrid.width}x{session.WorkingGrid.height} | Solids {solids} | {dirty} | Brush {_collBrushMode} x{_collBrushSize}";
+        }
+
+        private int RefreshCollidersOverlay()
+        {
+            if (_collidersVisible)
+                Physics2D.SyncTransforms();
+
+            int total = 0;
+            var all = FindObjectsOfType<BuildingObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null) continue;
+                var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
+                if (overlay == null)
+                    overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+                overlay.SetVisible(_collidersVisible);
+                if (_collidersVisible)
+                    total += overlay.CurrentVisualCount;
+            }
+
+            return total;
+        }
+
+        private void ReapplyAllColliderStates()
+        {
+            var all = FindObjectsOfType<BuildingObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] == null) continue;
+                ApplyCollisionStateForBuilding(all[i]);
+            }
+        }
+
+        private void BeginColliderStroke()
+        {
+            if (_colliderStroke.Active) return;
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null) return;
+
+            _colliderStroke.Active = true;
+            _colliderStroke.Scope = session.Scope;
+            _colliderStroke.ImageKey = session.ImageKey;
+            _colliderStroke.InstanceId = session.InstanceId;
+            _colliderStroke.Before = CloneGrid(session.WorkingGrid);
+            _colliderStroke.Changed = false;
+        }
+
+        private void EndColliderStroke()
+        {
+            if (!_colliderStroke.Active) return;
+
+            var strokeScope = _colliderStroke.Scope;
+            string strokeImageKey = _colliderStroke.ImageKey;
+            int strokeInstanceId = _colliderStroke.InstanceId;
+            var before = CloneGrid(_colliderStroke.Before);
+            var after = CloneGrid(GetStoredGrid(strokeScope, strokeImageKey, strokeInstanceId));
+            bool changed = _colliderStroke.Changed && !GridEquals(before, after);
+
+            _colliderStroke.Active = false;
+            _colliderStroke.Before = null;
+            _colliderStroke.Changed = false;
+
+            if (!changed || after == null) return;
+
+            _undo.Do("Paint colliders",
+                () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, after),
+                () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, before));
+        }
+
+        private void HandleColliderPaint(Vector3 worldPos)
+        {
+            if (_collBrushMode == CollBrushMode.Off) return;
+            if (_activeBuilding == null || _activeBuilding.Template == null) return;
+            if (!_activeBuilding.TryGetWorldRect(out var rect) || !rect.Contains(worldPos)) return;
+
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null || session.WorkingGrid.width <= 0 || session.WorkingGrid.height <= 0)
+                return;
+
+            float u = Mathf.Clamp01((worldPos.x - rect.xMin) / rect.width);
+            float v = Mathf.Clamp01((worldPos.y - rect.yMin) / rect.height);
+            int col = Mathf.Clamp(Mathf.FloorToInt(u * session.WorkingGrid.width), 0, session.WorkingGrid.width - 1);
+            int row = Mathf.Clamp(Mathf.FloorToInt((1f - v) * session.WorkingGrid.height), 0, session.WorkingGrid.height - 1);
+
+            int half = (_collBrushSize - 1) / 2;
+            int extra = (_collBrushSize - 1) - half;
+            ColliderGridData fallback = _collBrushMode == CollBrushMode.Erase
+                ? CreateFallbackGridFor(_activeBuilding, session)
+                : null;
+
+            bool changed = false;
+            for (int dr = -half; dr <= extra; dr++)
+            {
+                for (int dc = -half; dc <= extra; dc++)
+                {
+                    int r = row + dr;
+                    int c = col + dc;
+                    if (r < 0 || r >= session.WorkingGrid.height || c < 0 || c >= session.WorkingGrid.width)
+                        continue;
+
+                    string next = ".";
+                    if (_collBrushMode == CollBrushMode.Solid) next = "#";
+                    else if (_collBrushMode == CollBrushMode.Erase && fallback != null)
+                        next = fallback.collision[r][c];
+
+                    if (session.WorkingGrid.collision[r][c] == next) continue;
+                    session.WorkingGrid.collision[r][c] = next;
+                    changed = true;
+                }
+            }
+
+            if (!changed) return;
+
+            PersistSessionToStore(session);
+            _colliderStroke.Changed = true;
+            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
+            RefreshCollidersPanel();
+        }
+
+        private void FillActiveColliderEntry()
+        {
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null) return;
+
+            for (int r = 0; r < session.WorkingGrid.height; r++)
+                for (int c = 0; c < session.WorkingGrid.width; c++)
+                    session.WorkingGrid.collision[r][c] = "#";
+
+            PersistSessionToStore(session);
+            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
+            RefreshCollidersPanel();
+            Toast("Collider grid filled.");
+        }
+
+        private void ClearActiveColliderEntry()
+        {
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null) return;
+
+            for (int r = 0; r < session.WorkingGrid.height; r++)
+                for (int c = 0; c < session.WorkingGrid.width; c++)
+                    session.WorkingGrid.collision[r][c] = ".";
+
+            PersistSessionToStore(session);
+            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
+            RefreshCollidersPanel();
+            Toast("Collider grid cleared.");
+        }
+
+        private void RevertActiveColliderEntry()
+        {
+            var session = EnsureActiveColliderSession();
+            if (session == null) return;
+
+            if (session.Scope == ColliderAuthoringScope.CU)
+            {
+                if (_savedColliderInstanceStore.TryGetValue(session.InstanceId, out var saved))
+                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, saved);
+                else
+                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, null);
+            }
+            else
+            {
+                if (_savedColliderImageStore.TryGetValue(session.ImageKey ?? string.Empty, out var saved))
+                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, saved);
+                else
+                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, null);
+            }
+
+            Toast("Collider entry reverted.");
+        }
+
+        private void SaveColliderAuthoring()
+        {
+            SaveInstancesToJson();
+        }
+
+        private void ResetColliderAuthoringState()
+        {
+            _colliderDataLoaded = false;
+            _colliderImageStore.Clear();
+            _savedColliderImageStore.Clear();
+            _colliderInstanceStore.Clear();
+            _savedColliderInstanceStore.Clear();
+            _activeColliderSession = null;
+            _colliderStroke.Active = false;
+            _colliderStroke.Before = null;
+            _colliderStroke.Changed = false;
+        }
+
+        private void EnsureColliderDataLoaded()
+        {
+            if (_colliderDataLoaded) return;
+
+            _colliderImageStore.Clear();
+            _savedColliderImageStore.Clear();
+            _colliderInstanceStore.Clear();
+            _savedColliderInstanceStore.Clear();
+
+            LoadCollisionImageStore(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_collisions_by_image.json"), _colliderImageStore);
+            LoadCollisionInstanceStore(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_collisions_by_building_instance_id.json"), _colliderInstanceStore);
+            LoadInlineInstanceColliders(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_instances.json"), _colliderInstanceStore);
+
+            CopyStore(_colliderImageStore, _savedColliderImageStore);
+            CopyStore(_colliderInstanceStore, _savedColliderInstanceStore);
+            _colliderDataLoaded = true;
+            _activeColliderSession = null;
+        }
+
+        private ActiveColliderGridSession EnsureActiveColliderSession()
+        {
+            if (_activeBuilding == null || _activeBuilding.Template == null) return null;
+            EnsureColliderDataLoaded();
+
+            Vector2Int effectiveSize = GetEffectivePixelSize(_activeBuilding);
+            string imageKey = NormalizeAssetPath(_activeBuilding.Template.sourceImagePath);
+            ColliderAuthoringScope scope = string.Equals(
+                _activeBuilding.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase)
+                ? ColliderAuthoringScope.CU
+                : ColliderAuthoringScope.CG;
+
+            if (_activeColliderSession != null &&
+                _activeColliderSession.BuildingId == _activeBuilding.GetInstanceID() &&
+                _activeColliderSession.InstanceId == _activeBuilding.InstanceId &&
+                _activeColliderSession.Scope == scope &&
+                string.Equals(_activeColliderSession.ImageKey, imageKey, StringComparison.OrdinalIgnoreCase) &&
+                _activeColliderSession.EffectivePixelSize == effectiveSize)
+            {
+                return _activeColliderSession;
+            }
+
+            _activeColliderSession = new ActiveColliderGridSession
+            {
+                BuildingId = _activeBuilding.GetInstanceID(),
+                InstanceId = _activeBuilding.InstanceId,
+                ImageKey = imageKey,
+                Scope = scope,
+                EffectivePixelSize = effectiveSize,
+                WorkingGrid = ResolveWorkingGridFor(_activeBuilding, scope, imageKey, _activeBuilding.InstanceId, effectiveSize)
+            };
+            return _activeColliderSession;
+        }
+
+        private ColliderGridData ResolveWorkingGridFor(
+            BuildingObject building,
+            ColliderAuthoringScope scope,
+            string imageKey,
+            int instanceId,
+            Vector2Int effectiveSize)
+        {
+            if (scope == ColliderAuthoringScope.CU &&
+                _colliderInstanceStore.TryGetValue(instanceId, out var instanceGrid))
+            {
+                return ResampleGrid(instanceGrid, effectiveSize.x, effectiveSize.y);
+            }
+
+            if (!string.IsNullOrEmpty(imageKey) &&
+                _colliderImageStore.TryGetValue(imageKey, out var sharedGrid))
+            {
+                return ResampleGrid(sharedGrid, effectiveSize.x, effectiveSize.y);
+            }
+
+            return CreateDefaultFootprintGrid(building, effectiveSize);
+        }
+
+        private ColliderGridData CreateFallbackGridFor(BuildingObject building, ActiveColliderGridSession session)
+        {
+            if (session == null) return null;
+            if (session.Scope == ColliderAuthoringScope.CU &&
+                !string.IsNullOrEmpty(session.ImageKey) &&
+                _colliderImageStore.TryGetValue(session.ImageKey, out var sharedGrid))
+            {
+                return ResampleGrid(sharedGrid, session.EffectivePixelSize.x, session.EffectivePixelSize.y);
+            }
+
+            return CreateDefaultFootprintGrid(building, session.EffectivePixelSize);
+        }
+
+        private static Vector2Int GetEffectivePixelSize(BuildingObject building)
+        {
+            if (building == null || building.Template == null) return Vector2Int.zero;
+            int effW = (building.ScaleOverride.x > 0) ? building.ScaleOverride.x : building.Template.originalScale.x;
+            int effH = (building.ScaleOverride.y > 0) ? building.ScaleOverride.y : building.Template.originalScale.y;
+            return new Vector2Int(effW, effH);
+        }
+
+        private static ColliderGridData CreateDefaultFootprintGrid(BuildingObject building, Vector2Int effectiveSize)
+        {
+            int cols = Mathf.Max(1, Mathf.CeilToInt(effectiveSize.x / 32f));
+            int rows = Mathf.Max(1, Mathf.CeilToInt(effectiveSize.y / 32f));
+            var grid = CreateEmptyGrid(cols, rows, effectiveSize);
+            if (building == null || building.Template == null || !building.Template.solid)
+                return grid;
+
+            float split = building.SplitRatioOverride >= 0f
+                ? building.SplitRatioOverride
+                : building.Template.splitRatio;
+            float footprintTopNorm = Mathf.Clamp01(1f - split);
+
+            for (int row = 0; row < rows; row++)
+            {
+                float cellBottomNorm = (float)(rows - 1 - row) / rows;
+                if (cellBottomNorm >= footprintTopNorm) continue;
+                for (int col = 0; col < cols; col++)
+                    grid.collision[row][col] = "#";
+            }
+
+            return grid;
+        }
+
+        private static ColliderGridData CreateEmptyGrid(int cols, int rows, Vector2Int effectiveSize)
+        {
+            var collision = new string[rows][];
+            for (int row = 0; row < rows; row++)
+            {
+                collision[row] = new string[cols];
+                for (int col = 0; col < cols; col++)
+                    collision[row][col] = ".";
+            }
+
+            return new ColliderGridData
+            {
+                width = cols,
+                height = rows,
+                collision = collision,
+                gridRefSize = effectiveSize
+            };
+        }
+
+        private static ColliderGridData CloneGrid(ColliderGridData source)
+        {
+            if (source == null) return null;
+
+            var clone = new ColliderGridData
+            {
+                width = source.width,
+                height = source.height,
+                gridRefSize = source.gridRefSize,
+                collision = new string[source.height][]
+            };
+
+            for (int row = 0; row < source.height; row++)
+            {
+                clone.collision[row] = new string[source.width];
+                if (source.collision == null || row >= source.collision.Length || source.collision[row] == null)
+                {
+                    for (int col = 0; col < source.width; col++)
+                        clone.collision[row][col] = ".";
+                    continue;
+                }
+
+                for (int col = 0; col < source.width; col++)
+                {
+                    clone.collision[row][col] = col < source.collision[row].Length
+                        ? (source.collision[row][col] ?? ".")
+                        : ".";
+                }
+            }
+
+            return clone;
+        }
+
+        private static void CopyStore(Dictionary<string, ColliderGridData> source, Dictionary<string, ColliderGridData> destination)
+        {
+            destination.Clear();
+            foreach (var kvp in source)
+                destination[kvp.Key] = CloneGrid(kvp.Value);
+        }
+
+        private static void CopyStore(Dictionary<int, ColliderGridData> source, Dictionary<int, ColliderGridData> destination)
+        {
+            destination.Clear();
+            foreach (var kvp in source)
+                destination[kvp.Key] = CloneGrid(kvp.Value);
+        }
+
+        private static int CountSolidCells(ColliderGridData grid)
+        {
+            if (grid == null || grid.collision == null) return 0;
+            int count = 0;
+            for (int row = 0; row < grid.collision.Length; row++)
+            {
+                if (grid.collision[row] == null) continue;
+                for (int col = 0; col < grid.collision[row].Length; col++)
+                {
+                    if (grid.collision[row][col] == "#")
+                        count++;
+                }
+            }
+            return count;
+        }
+
+        private static bool GridHasSolidCells(ColliderGridData grid) => CountSolidCells(grid) > 0;
+
+        private static bool GridEquals(ColliderGridData a, ColliderGridData b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a == null || b == null) return false;
+            if (a.width != b.width || a.height != b.height || a.gridRefSize != b.gridRefSize) return false;
+
+            for (int row = 0; row < a.height; row++)
+            {
+                for (int col = 0; col < a.width; col++)
+                {
+                    string av = (a.collision != null && row < a.collision.Length && a.collision[row] != null && col < a.collision[row].Length)
+                        ? (a.collision[row][col] ?? ".")
+                        : ".";
+                    string bv = (b.collision != null && row < b.collision.Length && b.collision[row] != null && col < b.collision[row].Length)
+                        ? (b.collision[row][col] ?? ".")
+                        : ".";
+                    if (!string.Equals(av, bv, StringComparison.Ordinal))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static string NormalizeAssetPath(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Replace("\\", "/");
+        }
+
+        private bool IsSessionDirty(ActiveColliderGridSession session)
+        {
+            if (session == null) return false;
+            if (session.Scope == ColliderAuthoringScope.CU)
+            {
+                _colliderInstanceStore.TryGetValue(session.InstanceId, out var current);
+                _savedColliderInstanceStore.TryGetValue(session.InstanceId, out var saved);
+                return !GridEquals(current, saved);
+            }
+
+            string key = session.ImageKey ?? string.Empty;
+            _colliderImageStore.TryGetValue(key, out var currentImage);
+            _savedColliderImageStore.TryGetValue(key, out var savedImage);
+            return !GridEquals(currentImage, savedImage);
+        }
+
+        private void PersistSessionToStore(ActiveColliderGridSession session)
+        {
+            if (session == null || session.WorkingGrid == null) return;
+
+            var snapshot = CloneGrid(session.WorkingGrid);
+            if (session.Scope == ColliderAuthoringScope.CU)
+                _colliderInstanceStore[session.InstanceId] = snapshot;
+            else if (!string.IsNullOrEmpty(session.ImageKey))
+                _colliderImageStore[session.ImageKey] = snapshot;
+        }
+
+        private ColliderGridData GetStoredGrid(ColliderAuthoringScope scope, string imageKey, int instanceId)
+        {
+            if (scope == ColliderAuthoringScope.CU)
+            {
+                _colliderInstanceStore.TryGetValue(instanceId, out var instanceGrid);
+                return instanceGrid;
+            }
+
+            _colliderImageStore.TryGetValue(imageKey ?? string.Empty, out var imageGrid);
+            return imageGrid;
+        }
+
+        private void ApplyGridSnapshot(ColliderAuthoringScope scope, string imageKey, int instanceId, ColliderGridData grid)
+        {
+            EnsureColliderDataLoaded();
+
+            if (scope == ColliderAuthoringScope.CU)
+            {
+                if (grid == null) _colliderInstanceStore.Remove(instanceId);
+                else _colliderInstanceStore[instanceId] = CloneGrid(grid);
+            }
+            else
+            {
+                string key = imageKey ?? string.Empty;
+                if (grid == null) _colliderImageStore.Remove(key);
+                else _colliderImageStore[key] = CloneGrid(grid);
+            }
+
+            _activeColliderSession = null;
+            ApplyCollisionTargetsFor(scope, imageKey, instanceId);
+            RefreshCollidersPanel();
+        }
+
+        private void ApplyCollisionTargetsFor(ColliderAuthoringScope scope, string imageKey, int instanceId)
+        {
+            var all = FindObjectsOfType<BuildingObject>();
+            if (scope == ColliderAuthoringScope.CU)
+            {
+                for (int i = 0; i < all.Length; i++)
+                {
+                    if (all[i] != null && all[i].InstanceId == instanceId)
+                    {
+                        ApplyCollisionStateForBuilding(all[i]);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < all.Length; i++)
+                {
+                    var b = all[i];
+                    if (b == null || b.Template == null) continue;
+                    if (!string.Equals(NormalizeAssetPath(b.Template.sourceImagePath), imageKey ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    ApplyCollisionStateForBuilding(b);
+                }
+            }
+
+            if (_collidersVisible)
+            {
+                Physics2D.SyncTransforms();
+                RefreshCollidersOverlay();
+            }
+        }
+
+        private void ApplyCollisionStateForBuilding(BuildingObject building)
+        {
+            if (building == null) return;
+
+            if (!TryApplyAuthoredGrid(building))
+            {
+                var collisionLoader = FindObjectOfType<BuildingCollisionLoader>();
+                if (collisionLoader != null)
+                    collisionLoader.TryApplyGrid(building);
+                else
+                    ApplyGridOverrideToBuilding(building, null);
+            }
+        }
+
+        private bool TryApplyAuthoredGrid(BuildingObject building)
+        {
+            if (building == null || building.Template == null) return false;
+            EnsureColliderDataLoaded();
+
+            if (string.Equals(building.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase) &&
+                _colliderInstanceStore.TryGetValue(building.InstanceId, out var instanceGrid))
+            {
+                ApplyGridOverrideToBuilding(building, instanceGrid);
+                return true;
+            }
+
+            string imageKey = NormalizeAssetPath(building.Template.sourceImagePath);
+            if (!string.IsNullOrEmpty(imageKey) && _colliderImageStore.TryGetValue(imageKey, out var imageGrid))
+            {
+                ApplyGridOverrideToBuilding(building, imageGrid);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyGridOverrideToBuilding(BuildingObject building, ColliderGridData grid)
+        {
+            if (building == null || building.Template == null) return;
+
+            ClearCollisionTiles(building);
+            RestoreDefaultColliderState(building);
+
+            if (grid == null) return;
+
+            Vector2Int effectiveSize = GetEffectivePixelSize(building);
+            var effectiveGrid = ResampleGrid(grid, effectiveSize.x, effectiveSize.y);
+            if (effectiveGrid == null) return;
+
+            if (!GridHasSolidCells(effectiveGrid))
+            {
+                var mainCollider = building.GetComponent<BoxCollider2D>();
+                if (mainCollider != null)
+                    mainCollider.enabled = false;
+                return;
+            }
+
+            for (int row = 0; row < effectiveGrid.height; row++)
+            {
+                if (effectiveGrid.collision == null || row >= effectiveGrid.collision.Length || effectiveGrid.collision[row] == null)
+                    continue;
+
+                for (int col = 0; col < effectiveGrid.width; col++)
+                {
+                    if (col >= effectiveGrid.collision[row].Length || effectiveGrid.collision[row][col] != "#")
+                        continue;
+                    EnsureCollTile(building, row, col, effectiveGrid.height, effectiveGrid.width);
+                }
+            }
+
+            var main = building.GetComponent<BoxCollider2D>();
+            if (main != null)
+                main.enabled = false;
+        }
+
+        private void EnsureCollTile(BuildingObject building, int row, int col, int rows, int cols)
+        {
+            string childName = $"{CollTilePrefix}{row}_{col}";
+            Transform tileTransform = building.transform.Find(childName);
+            if (tileTransform == null)
+                tileTransform = TryReusePooledCollTile(building.transform, childName);
+
+            if (tileTransform == null)
+            {
+                var tileGo = new GameObject(childName);
+                tileGo.transform.SetParent(building.transform, worldPositionStays: false);
+                tileTransform = tileGo.transform;
+            }
+
+            Vector2 localSpriteSize = GetBuildingLocalSpriteSize(building);
+            float tileW_local = localSpriteSize.x / cols;
+            float tileH_local = localSpriteSize.y / rows;
+            float totalW_local = localSpriteSize.x;
+
+            float localX = (col + 0.5f) * tileW_local - totalW_local * 0.5f;
+            float localY = (rows - 1 - row + 0.5f) * tileH_local;
+
+            tileTransform.localPosition = new Vector3(localX, localY, 0f);
+            tileTransform.localRotation = Quaternion.identity;
+            tileTransform.localScale = Vector3.one;
+            tileTransform.gameObject.layer = ResolveCollisionLayer();
+            tileTransform.gameObject.SetActive(true);
+
+            var box = tileTransform.GetComponent<BoxCollider2D>();
+            if (box == null)
+                box = tileTransform.gameObject.AddComponent<BoxCollider2D>();
+            box.enabled = true;
+            box.offset = Vector2.zero;
+            box.size = new Vector2(tileW_local, tileH_local);
+        }
+
+        private static Transform TryReusePooledCollTile(Transform parent, string childName)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                var child = parent.GetChild(i);
+                if (!child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
+                    continue;
+
+                child.name = childName;
+                return child;
+            }
+
+            return null;
+        }
+
+        private static Vector2 GetBuildingLocalSpriteSize(BuildingObject building)
+        {
+            float width = 0f;
+            float height = 0f;
+
+            var footprint = building.transform.Find("Footprint")?.GetComponent<SpriteRenderer>();
+            if (footprint != null && footprint.sprite != null)
+            {
+                width = Mathf.Max(width, footprint.sprite.rect.width / 32f);
+                height += footprint.sprite.rect.height / 32f;
+            }
+
+            var canopy = building.transform.Find("Canopy")?.GetComponent<SpriteRenderer>();
+            if (canopy != null && canopy.sprite != null)
+            {
+                width = Mathf.Max(width, canopy.sprite.rect.width / 32f);
+                height += canopy.sprite.rect.height / 32f;
+            }
+
+            var mainCollider = building.GetComponent<BoxCollider2D>();
+            if (mainCollider != null)
+            {
+                width = Mathf.Max(width, mainCollider.size.x);
+                height = Mathf.Max(height, mainCollider.offset.y + mainCollider.size.y * 0.5f);
+            }
+
+            return new Vector2(
+                Mathf.Max(0.0001f, width),
+                Mathf.Max(0.0001f, height));
+        }
+
+        private static void ClearCollisionTiles(BuildingObject building)
+        {
+            if (building == null) return;
+
+            int pooledIndex = 0;
+            for (int i = building.transform.childCount - 1; i >= 0; i--)
+            {
+                var child = building.transform.GetChild(i);
+                if (!child.name.StartsWith(CollTilePrefix, StringComparison.Ordinal) &&
+                    !child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
+                    continue;
+
+                child.name = $"{PooledCollTilePrefix}{pooledIndex++}";
+                var box = child.GetComponent<BoxCollider2D>();
+                if (box != null)
+                    box.enabled = false;
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        private static void RestoreDefaultColliderState(BuildingObject building)
+        {
+            if (building == null || building.Template == null) return;
+            var mainCollider = building.GetComponent<BoxCollider2D>();
+            if (mainCollider != null)
+                mainCollider.enabled = building.Template.solid;
+        }
+
+        private static ColliderGridData ResampleGrid(ColliderGridData source, int targetW_px, int targetH_px)
+        {
+            if (source == null) return null;
+            if (source.gridRefSize == Vector2Int.zero ||
+                (source.gridRefSize.x == targetW_px && source.gridRefSize.y == targetH_px))
+            {
+                return CloneGrid(source);
+            }
+
+            int newCols = Mathf.Max(1, Mathf.CeilToInt(targetW_px / 32f));
+            int newRows = Mathf.Max(1, Mathf.CeilToInt(targetH_px / 32f));
+            if (newCols == source.width && newRows == source.height)
+            {
+                var sameSizeClone = CloneGrid(source);
+                sameSizeClone.gridRefSize = new Vector2Int(targetW_px, targetH_px);
+                return sameSizeClone;
+            }
+
+            var newGrid = CreateEmptyGrid(newCols, newRows, new Vector2Int(targetW_px, targetH_px));
+            for (int dr = 0; dr < newRows; dr++)
+            {
+                for (int dc = 0; dc < newCols; dc++)
+                {
+                    float srcRowStart = (float)dr / newRows * source.height;
+                    float srcRowEnd = (float)(dr + 1) / newRows * source.height;
+                    float srcColStart = (float)dc / newCols * source.width;
+                    float srcColEnd = (float)(dc + 1) / newCols * source.width;
+
+                    bool solid = false;
+                    for (int sr = Mathf.FloorToInt(srcRowStart); sr < Mathf.CeilToInt(srcRowEnd) && sr < source.height; sr++)
+                    {
+                        for (int sc = Mathf.FloorToInt(srcColStart); sc < Mathf.CeilToInt(srcColEnd) && sc < source.width; sc++)
+                        {
+                            if (source.collision != null &&
+                                sr < source.collision.Length &&
+                                source.collision[sr] != null &&
+                                sc < source.collision[sr].Length &&
+                                source.collision[sr][sc] == "#")
+                            {
+                                solid = true;
+                                break;
+                            }
+                        }
+                        if (solid) break;
+                    }
+                    newGrid.collision[dr][dc] = solid ? "#" : ".";
+                }
+            }
+
+            return newGrid;
+        }
+
+        private static ColliderGridData ParseColliderGrid(Dictionary<string, object> dict)
+        {
+            if (dict == null) return null;
+            int width = dict.TryGetValue("width", out var w) ? Convert.ToInt32(w) : 0;
+            int height = dict.TryGetValue("height", out var h) ? Convert.ToInt32(h) : 0;
+            if (width <= 0 || height <= 0) return null;
+
+            var grid = CreateEmptyGrid(width, height, Vector2Int.zero);
+            if (dict.TryGetValue("collision", out var collisionRaw) && collisionRaw is List<object> rows)
+            {
+                for (int row = 0; row < Mathf.Min(height, rows.Count); row++)
+                {
+                    if (!(rows[row] is List<object> cols)) continue;
+                    for (int col = 0; col < Mathf.Min(width, cols.Count); col++)
+                        grid.collision[row][col] = cols[col]?.ToString() == "#" ? "#" : ".";
+                }
+            }
+
+            if (dict.TryGetValue("grid_ref_size", out var refRaw) && refRaw is List<object> refList && refList.Count >= 2)
+            {
+                grid.gridRefSize = new Vector2Int(Convert.ToInt32(refList[0]), Convert.ToInt32(refList[1]));
+            }
+
+            return grid;
+        }
+
+        private static void LoadCollisionImageStore(string path, Dictionary<string, ColliderGridData> destination)
+        {
+            destination.Clear();
+            if (!File.Exists(path)) return;
+
+            var root = MiniJsonRuntime.Deserialize(File.ReadAllText(path)) as Dictionary<string, object>;
+            if (root == null) return;
+
+            foreach (var kvp in root)
+            {
+                if (!(kvp.Value is Dictionary<string, object> dict)) continue;
+                var grid = ParseColliderGrid(dict);
+                if (grid != null)
+                    destination[NormalizeAssetPath(kvp.Key)] = grid;
+            }
+        }
+
+        private static void LoadCollisionInstanceStore(string path, Dictionary<int, ColliderGridData> destination)
+        {
+            if (!File.Exists(path)) return;
+
+            var root = MiniJsonRuntime.Deserialize(File.ReadAllText(path)) as Dictionary<string, object>;
+            if (root == null) return;
+
+            foreach (var kvp in root)
+            {
+                if (!(kvp.Value is Dictionary<string, object> dict)) continue;
+                var grid = ParseColliderGrid(dict);
+                if (grid != null && int.TryParse(kvp.Key, out int id))
+                    destination[id] = grid;
+            }
+        }
+
+        private static void LoadInlineInstanceColliders(string path, Dictionary<int, ColliderGridData> destination)
+        {
+            if (!File.Exists(path)) return;
+
+            var raw = MiniJsonRuntime.Deserialize(File.ReadAllText(path)) as List<object>;
+            if (raw == null) return;
+
+            for (int i = 0; i < raw.Count; i++)
+            {
+                if (!(raw[i] is Dictionary<string, object> entry)) continue;
+                if (!entry.TryGetValue("id", out var idRaw) || idRaw == null) continue;
+                if (!entry.TryGetValue("overrides", out var overridesRaw) || !(overridesRaw is Dictionary<string, object> overrides)) continue;
+                if (!overrides.TryGetValue("collision_override", out var collisionRaw) || !(collisionRaw is Dictionary<string, object> collisionDict)) continue;
+                var grid = ParseColliderGrid(collisionDict);
+                if (grid != null)
+                    destination[Convert.ToInt32(idRaw)] = grid;
+            }
+        }
+
+        private void WriteColliderStoresToDisk(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
+            File.WriteAllText(
+                Path.Combine(directoryPath, "buildings_collisions_by_image.json"),
+                SerializeCollisionStore(_colliderImageStore));
+            File.WriteAllText(
+                Path.Combine(directoryPath, "buildings_collisions_by_building_instance_id.json"),
+                SerializeCollisionStore(_colliderInstanceStore));
+
+            CopyStore(_colliderImageStore, _savedColliderImageStore);
+            CopyStore(_colliderInstanceStore, _savedColliderInstanceStore);
+        }
+
+        private static string SerializeCollisionStore(Dictionary<string, ColliderGridData> store)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            var keys = store.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                string key = keys[i];
+                sb.Append("  \"").Append(EscapeJson(key)).Append("\": ");
+                AppendGridJson(sb, store[key], 2);
+                if (i < keys.Count - 1) sb.Append(",");
+                sb.AppendLine();
+            }
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private static string SerializeCollisionStore(Dictionary<int, ColliderGridData> store)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            var keys = store.Keys.OrderBy(k => k).ToList();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                int key = keys[i];
+                sb.Append("  \"").Append(key).Append("\": ");
+                AppendGridJson(sb, store[key], 2);
+                if (i < keys.Count - 1) sb.Append(",");
+                sb.AppendLine();
+            }
+            sb.AppendLine("}");
+            return sb.ToString();
+        }
+
+        private static void AppendGridJson(StringBuilder sb, ColliderGridData grid, int indentLevel)
+        {
+            string indent = new string(' ', indentLevel * 2);
+            string childIndent = indent + "  ";
+            string rowIndent = childIndent + "  ";
+
+            sb.AppendLine("{");
+            sb.Append(childIndent).Append("\"width\": ").Append(grid?.width ?? 0).AppendLine(",");
+            sb.Append(childIndent).Append("\"height\": ").Append(grid?.height ?? 0).AppendLine(",");
+            sb.Append(childIndent).Append("\"collision\": [").AppendLine();
+            for (int row = 0; row < (grid?.height ?? 0); row++)
+            {
+                sb.Append(rowIndent).Append("[");
+                for (int col = 0; col < grid.width; col++)
+                {
+                    if (col > 0) sb.Append(", ");
+                    string cell = grid.collision[row][col] == "#" ? "#" : ".";
+                    sb.Append("\"").Append(cell).Append("\"");
+                }
+                sb.Append("]");
+                if (row < grid.height - 1) sb.Append(",");
+                sb.AppendLine();
+            }
+            sb.Append(childIndent).AppendLine("],");
+            sb.Append(childIndent).Append("\"grid_ref_size\": [")
+                .Append(grid?.gridRefSize.x ?? 0).Append(", ")
+                .Append(grid?.gridRefSize.y ?? 0).AppendLine("]");
+            sb.Append(indent).Append("}");
+        }
+
+        private static string EscapeJson(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"");
+        }
+
+        private void RemapColliderInstanceStore(int oldId, int newId)
+        {
+            if (oldId == newId) return;
+
+            if (_colliderInstanceStore.TryGetValue(oldId, out var current))
+            {
+                _colliderInstanceStore.Remove(oldId);
+                _colliderInstanceStore[newId] = current;
+            }
+
+            if (_savedColliderInstanceStore.TryGetValue(oldId, out var saved))
+            {
+                _savedColliderInstanceStore.Remove(oldId);
+                _savedColliderInstanceStore[newId] = saved;
+            }
+
+            if (_activeColliderSession != null && _activeColliderSession.InstanceId == oldId)
+                _activeColliderSession.InstanceId = newId;
+        }
+
+        private void PruneColliderInstanceStore(IReadOnlyList<BuildingObject> buildings)
+        {
+            var validIds = new HashSet<int>(
+                buildings
+                    .Where(b => b != null && string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
+                    .Select(b => b.InstanceId));
+
+            foreach (int key in _colliderInstanceStore.Keys.ToList())
+            {
+                if (!validIds.Contains(key))
+                    _colliderInstanceStore.Remove(key);
+            }
+
+            foreach (int key in _savedColliderInstanceStore.Keys.ToList())
+            {
+                if (!validIds.Contains(key))
+                    _savedColliderInstanceStore.Remove(key);
+            }
+        }
+
+        private void RefreshCollisionFor(BuildingObject building)
+        {
+            if (building == null) return;
+            if (_activeBuilding == building)
+                _activeColliderSession = null;
+
+            ApplyCollisionStateForBuilding(building);
+            Physics2D.SyncTransforms();
+
+            if (_collidersVisible)
+                RefreshCollidersOverlay();
+
+            if (_activeBuilding == building)
+                RefreshCollidersPanel();
+        }
+
+        private int ResolveCollisionLayer()
+        {
+            var collisionLoader = FindObjectOfType<BuildingCollisionLoader>();
+            return collisionLoader != null ? collisionLoader.CollisionLayer : 11;
         }
     }
 }

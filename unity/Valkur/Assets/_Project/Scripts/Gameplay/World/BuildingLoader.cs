@@ -137,6 +137,10 @@ namespace Valkur.Gameplay.World
                 }
             }
 
+            var collisionLoader = FindObjectOfType<BuildingCollisionLoader>();
+            if (collisionLoader != null)
+                collisionLoader.ApplyCollisionGrids();
+
             Debug.Log($"[BuildingLoader] Spawned {spawned}/{instances.Count} building instances ({errors} errors).");
         }
 
@@ -201,6 +205,7 @@ namespace Valkur.Gameplay.World
             bObj.ZoneName           = inst.Zone;
             bObj.InstanceId         = inst.Id;
             bObj.Apply(template, inst.ScaleOverride, inst.SplitRatioOverride);
+            bObj.ColliderScopeOverride = inst.ColliderScopeOverride;
 
             _spawnedBuildings.Add(bObj);
             return true;
@@ -248,6 +253,9 @@ namespace Valkur.Gameplay.World
 
                     if (overrides.TryGetValue("split_ratio", out var srRaw))
                         inst.SplitRatioOverride = Convert.ToSingle(srRaw);
+
+                    if (overrides.TryGetValue("collider_scope", out var scopeRaw) && scopeRaw != null)
+                        inst.ColliderScopeOverride = scopeRaw.ToString();
                 }
 
                 result.Add(inst);
@@ -286,6 +294,8 @@ namespace Valkur.Gameplay.World
             public Vector2Int ScaleOverride;
             /// <summary>Negative = use template.splitRatio.</summary>
             public float      SplitRatioOverride;
+            /// <summary>Empty = use template.colliderScope.</summary>
+            public string     ColliderScopeOverride;
         }
     }
 }

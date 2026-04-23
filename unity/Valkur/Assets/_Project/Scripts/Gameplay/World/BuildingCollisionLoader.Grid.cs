@@ -5,20 +5,15 @@ namespace Valkur.Gameplay.World
 {
     public partial class BuildingCollisionLoader
     {
+        private const string CollTilePrefix = "CollTile_";
+        private const string PooledCollTilePrefix = "_PooledCollTile_";
+
         // ------------------------------------------------------------------
         // Grid Application
         // ------------------------------------------------------------------
 
         private void ApplyGridToBuilding(BuildingObject bObj, CollisionGrid grid)
         {
-            // Remove existing grid collider children (tag-based cleanup)
-            for (int i = bObj.transform.childCount - 1; i >= 0; i--)
-            {
-                var child = bObj.transform.GetChild(i);
-                if (child.name.StartsWith("CollTile_"))
-                    Destroy(child.gameObject);
-            }
-
             if (bObj.Template == null) return;
 
             // Effective pixel dimensions
@@ -33,18 +28,6 @@ namespace Valkur.Gameplay.World
             int gridCols = effectiveGrid.width;
             int gridRows = effectiveGrid.height;
 
-            // Tile size in pixels
-            float tileW_px = (float)effW / gridCols;
-            float tileH_px = (float)effH / gridRows;
-
-            // Tile size in local units (before transform.localScale)
-            float tileW_local = tileW_px / PPU / bObj.transform.localScale.x;
-            float tileH_local = tileH_px / PPU / bObj.transform.localScale.y;
-
-            // Total building size in local units
-            float totalW_local = (float)origW / PPU;
-            float totalH_local = (float)origH / PPU;
-
             int count = 0;
             for (int row = 0; row < gridRows; row++)
             {
@@ -54,22 +37,7 @@ namespace Valkur.Gameplay.World
                         continue;
                     if (effectiveGrid.collision[row][col] != "#")
                         continue;
-
-                    // Python grid: row 0 = top of image (Y-down)
-                    // Unity local: Y=0 = bottom of building, Y increases upward
-                    // localX: col * tileW_local, centered at building center (pivot is 0.5 horizontal)
-                    float localX = (col + 0.5f) * tileW_local - totalW_local * 0.5f;
-                    // localY: (gridRows - 1 - row) flips Y, * tileH_local, + half tile for center
-                    float localY = (gridRows - 1 - row + 0.5f) * tileH_local;
-
-                    var tileGo = new GameObject($"CollTile_{row}_{col}");
-                    tileGo.transform.SetParent(bObj.transform, worldPositionStays: false);
-                    tileGo.transform.localPosition = new Vector3(localX, localY, 0f);
-                    tileGo.transform.localScale = Vector3.one;
-                    tileGo.layer = _collisionLayer;
-
-                    var box = tileGo.AddComponent<BoxCollider2D>();
-                    box.size = new Vector2(tileW_local, tileH_local);
+                    EnsureCollisionTile(bObj, row, col, gridRows, gridCols);
                     count++;
                 }
             }
@@ -78,6 +46,117 @@ namespace Valkur.Gameplay.World
             var mainCollider = bObj.GetComponent<BoxCollider2D>();
             if (mainCollider != null && count > 0)
                 mainCollider.enabled = false;
+        }
+
+        private void EnsureCollisionTile(BuildingObject bObj, int row, int col, int rows, int cols)
+        {
+            string childName = $"{CollTilePrefix}{row}_{col}";
+            Transform tileTransform = bObj.transform.Find(childName);
+            if (tileTransform == null)
+                tileTransform = TryReusePooledTile(bObj.transform, childName);
+
+            if (tileTransform == null)
+            {
+                var tileGo = new GameObject(childName);
+                tileGo.transform.SetParent(bObj.transform, worldPositionStays: false);
+                tileTransform = tileGo.transform;
+            }
+
+            Vector2 localSpriteSize = GetBuildingLocalSpriteSize(bObj);
+            float tileW_local = localSpriteSize.x / cols;
+            float tileH_local = localSpriteSize.y / rows;
+            float totalW_local = localSpriteSize.x;
+
+            float localX = (col + 0.5f) * tileW_local - totalW_local * 0.5f;
+            float localY = (rows - 1 - row + 0.5f) * tileH_local;
+
+            tileTransform.localPosition = new Vector3(localX, localY, 0f);
+            tileTransform.localRotation = Quaternion.identity;
+            tileTransform.localScale = Vector3.one;
+            tileTransform.gameObject.layer = _collisionLayer;
+            tileTransform.gameObject.SetActive(true);
+
+            var box = tileTransform.GetComponent<BoxCollider2D>();
+            if (box == null)
+                box = tileTransform.gameObject.AddComponent<BoxCollider2D>();
+            box.enabled = true;
+            box.offset = Vector2.zero;
+            box.size = new Vector2(tileW_local, tileH_local);
+        }
+
+        private static Transform TryReusePooledTile(Transform parent, string childName)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                var child = parent.GetChild(i);
+                if (!child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
+                    continue;
+
+                child.name = childName;
+                return child;
+            }
+
+            return null;
+        }
+
+        private static void ClearCollisionTiles(BuildingObject bObj)
+        {
+            if (bObj == null) return;
+
+            int pooledIndex = 0;
+            for (int i = bObj.transform.childCount - 1; i >= 0; i--)
+            {
+                var child = bObj.transform.GetChild(i);
+                if (!child.name.StartsWith(CollTilePrefix, StringComparison.Ordinal) &&
+                    !child.name.StartsWith(PooledCollTilePrefix, StringComparison.Ordinal))
+                    continue;
+
+                child.name = $"{PooledCollTilePrefix}{pooledIndex++}";
+                var box = child.GetComponent<BoxCollider2D>();
+                if (box != null)
+                    box.enabled = false;
+                child.gameObject.SetActive(false);
+            }
+        }
+
+        private static void RestoreDefaultColliderState(BuildingObject bObj)
+        {
+            if (bObj == null || bObj.Template == null) return;
+
+            var mainCollider = bObj.GetComponent<BoxCollider2D>();
+            if (mainCollider != null)
+                mainCollider.enabled = bObj.Template.solid;
+        }
+
+        private static Vector2 GetBuildingLocalSpriteSize(BuildingObject bObj)
+        {
+            float width = 0f;
+            float height = 0f;
+
+            var footprint = bObj.transform.Find("Footprint")?.GetComponent<SpriteRenderer>();
+            if (footprint != null && footprint.sprite != null)
+            {
+                width = Mathf.Max(width, footprint.sprite.rect.width / PPU);
+                height += footprint.sprite.rect.height / PPU;
+            }
+
+            var canopy = bObj.transform.Find("Canopy")?.GetComponent<SpriteRenderer>();
+            if (canopy != null && canopy.sprite != null)
+            {
+                width = Mathf.Max(width, canopy.sprite.rect.width / PPU);
+                height += canopy.sprite.rect.height / PPU;
+            }
+
+            var mainCollider = bObj.GetComponent<BoxCollider2D>();
+            if (mainCollider != null)
+            {
+                width = Mathf.Max(width, mainCollider.size.x);
+                height = Mathf.Max(height, mainCollider.offset.y + mainCollider.size.y * 0.5f);
+            }
+
+            return new Vector2(
+                Mathf.Max(0.0001f, width),
+                Mathf.Max(0.0001f, height));
         }
 
         /// <summary>

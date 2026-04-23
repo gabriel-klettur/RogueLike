@@ -27,14 +27,18 @@ namespace Valkur.Gameplay.World
         private const string BY_IMAGE_FILE = "buildings_collisions_by_image.json";
         private const string BY_INSTANCE_FILE = "buildings_collisions_by_building_instance_id.json";
         private const string BY_SPAWN_FILE = "buildings_collisions_by_spawn_id.json";
+        private const string INSTANCES_FILE = "buildings_instances.json";
 
         [Tooltip("Physics layer for collision tile children. 11 = World.")]
         [SerializeField] private int _collisionLayer = 11;
+
+        public int CollisionLayer => _collisionLayer;
 
         // Loaded data
         private Dictionary<string, CollisionGrid> _byImage;
         private Dictionary<string, CollisionGrid> _byInstanceId;
         private Dictionary<string, CollisionGrid> _bySpawnId;
+        private Dictionary<string, CollisionGrid> _inlineInstanceOverrides;
 
         private bool _loaded;
 
@@ -66,22 +70,22 @@ namespace Valkur.Gameplay.World
         /// </summary>
         public bool TryApplyGrid(BuildingObject bObj)
         {
+            if (bObj == null) return false;
             if (!_loaded) LoadData();
+
+            ClearCollisionTiles(bObj);
+            RestoreDefaultColliderState(bObj);
 
             var grid = ResolveGrid(bObj);
             if (grid == null) return false;
 
-            // Only apply if the grid contains at least one '#' cell
-            bool hasSolid = false;
-            foreach (var row in grid.collision)
+            if (!HasSolidCells(grid))
             {
-                foreach (var cell in row)
-                {
-                    if (cell == "#") { hasSolid = true; break; }
-                }
-                if (hasSolid) break;
+                var mainCollider = bObj.GetComponent<BoxCollider2D>();
+                if (mainCollider != null)
+                    mainCollider.enabled = false;
+                return true;
             }
-            if (!hasSolid) return false;
 
             ApplyGridToBuilding(bObj, grid);
             return true;
@@ -93,17 +97,17 @@ namespace Valkur.Gameplay.World
 
         private void LoadData()
         {
-            string basePath = Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER);
-            _byImage = LoadCollisionFile(Path.Combine(basePath, BY_IMAGE_FILE));
-            _byInstanceId = LoadCollisionFile(Path.Combine(basePath, BY_INSTANCE_FILE));
-            _bySpawnId = LoadCollisionFile(Path.Combine(basePath, BY_SPAWN_FILE));
+            _byImage = LoadCollisionFile(ResolveCollisionFilePath(BY_IMAGE_FILE, isGlobalData: true));
+            _byInstanceId = LoadCollisionFile(ResolveCollisionFilePath(BY_INSTANCE_FILE, isGlobalData: false));
+            _bySpawnId = LoadCollisionFile(ResolveCollisionFilePath(BY_SPAWN_FILE, isGlobalData: false));
+            _inlineInstanceOverrides = LoadInlineInstanceOverrides(ResolveInstancesFilePath());
             _loaded = true;
         }
 
         private static Dictionary<string, CollisionGrid> LoadCollisionFile(string path)
         {
             var result = new Dictionary<string, CollisionGrid>();
-            if (!File.Exists(path)) return result;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return result;
 
             string json = File.ReadAllText(path);
             var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
@@ -118,6 +122,33 @@ namespace Valkur.Gameplay.World
                         result[kvp.Key] = grid;
                 }
             }
+            return result;
+        }
+
+        private static Dictionary<string, CollisionGrid> LoadInlineInstanceOverrides(string path)
+        {
+            var result = new Dictionary<string, CollisionGrid>();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return result;
+
+            var raw = MiniJsonRuntime.Deserialize(File.ReadAllText(path)) as List<object>;
+            if (raw == null) return result;
+
+            foreach (var item in raw)
+            {
+                if (!(item is Dictionary<string, object> dict)) continue;
+                if (!dict.TryGetValue("id", out var idObj) || idObj == null) continue;
+                if (!dict.TryGetValue("overrides", out var overridesObj) ||
+                    !(overridesObj is Dictionary<string, object> overrides))
+                    continue;
+                if (!overrides.TryGetValue("collision_override", out var collisionOverrideObj) ||
+                    !(collisionOverrideObj is Dictionary<string, object> collisionOverride))
+                    continue;
+
+                var grid = ParseGrid(collisionOverride);
+                if (grid != null)
+                    result[Convert.ToInt32(idObj).ToString()] = grid;
+            }
+
             return result;
         }
 
@@ -169,24 +200,110 @@ namespace Valkur.Gameplay.World
 
         private CollisionGrid ResolveGrid(BuildingObject bObj)
         {
-            // Priority 1: Per-instance ID
-            string instanceKey = bObj.InstanceId.ToString();
-            if (_byInstanceId != null && _byInstanceId.TryGetValue(instanceKey, out var byInst))
-                return byInst;
+            bool usePerInstanceScope = string.Equals(
+                bObj.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase);
+
+            if (usePerInstanceScope)
+            {
+                string instanceKey = bObj.InstanceId.ToString();
+                if (_inlineInstanceOverrides != null &&
+                    _inlineInstanceOverrides.TryGetValue(instanceKey, out var inlineOverride))
+                    return inlineOverride;
+
+                if (_byInstanceId != null && _byInstanceId.TryGetValue(instanceKey, out var byInst))
+                    return byInst;
+            }
 
             // Priority 2: Per-spawn-id (future use; currently empty in base world)
             // Would need spawn_id on BuildingObject — skip for now
 
-            // Priority 3: Per-image (template asset path)
             if (bObj.Template != null && _byImage != null)
             {
-                // Python keys use "assets/buildings/..." relative paths
                 string assetKey = bObj.Template.sourceImagePath;
-                if (!string.IsNullOrEmpty(assetKey) && _byImage.TryGetValue(assetKey, out var byImg))
-                    return byImg;
+                if (!string.IsNullOrEmpty(assetKey))
+                {
+                    if (_byImage.TryGetValue(assetKey, out var byImg))
+                        return byImg;
+                    string normalizedKey = assetKey.Replace("\\", "/");
+                    if (_byImage.TryGetValue(normalizedKey, out byImg))
+                        return byImg;
+                    string windowsKey = assetKey.Replace("/", "\\");
+                    if (_byImage.TryGetValue(windowsKey, out byImg))
+                        return byImg;
+                }
             }
 
             return null;
+        }
+
+        private static bool HasSolidCells(CollisionGrid grid)
+        {
+            foreach (var row in grid.collision)
+            {
+                foreach (var cell in row)
+                {
+                    if (cell == "#") return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string ResolveCollisionFilePath(string fileName, bool isGlobalData)
+        {
+            foreach (var candidate in GetCollisionFileCandidates(fileName, isGlobalData))
+            {
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static string ResolveInstancesFilePath()
+        {
+            foreach (var candidate in GetInstanceFileCandidates())
+            {
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> GetCollisionFileCandidates(string fileName, bool isGlobalData)
+        {
+            yield return Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, fileName);
+
+            string repoRoot = TryGetRepoRootPath();
+            if (string.IsNullOrEmpty(repoRoot)) yield break;
+
+            if (isGlobalData)
+                yield return Path.Combine(repoRoot, "python", "data", "buildings", fileName);
+            else
+                yield return Path.Combine(repoRoot, "python", "data", "worlds", "base", "buildings", fileName);
+        }
+
+        private static IEnumerable<string> GetInstanceFileCandidates()
+        {
+            yield return Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILE);
+
+            string repoRoot = TryGetRepoRootPath();
+            if (string.IsNullOrEmpty(repoRoot)) yield break;
+
+            yield return Path.Combine(repoRoot, "python", "data", "worlds", "base", "buildings", INSTANCES_FILE);
+        }
+
+        private static string TryGetRepoRootPath()
+        {
+            try
+            {
+                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", ".."));
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         // Grid Application + ResampleGrid + CollisionGrid are in BuildingCollisionLoader.Grid.cs

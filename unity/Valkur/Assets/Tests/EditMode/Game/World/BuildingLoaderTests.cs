@@ -263,6 +263,21 @@ namespace Valkur.Tests.EditMode
         // ─────────────────────────────────────────────────────────────────────────
 
         // Constants matching BuildingLoader (Python→Unity coordinate mapping).
+        [Test]
+        public void ParseInstances_ColliderScopeOverride_ParsesFromOverrides()
+        {
+            const string json =
+                @"[{""id"":1,""template_id"":1,""zone"":""lobby"",""rel_x"":0,""rel_y"":0," +
+                @"""overrides"":{""collider_scope"":""CU""}}]";
+
+            IList items = InvokeParse(json);
+            Assert.AreEqual(1, items.Count);
+
+            string scope = GetField<string>(items[0], "ColliderScopeOverride");
+            Assert.AreEqual("CU", scope,
+                "ColliderScopeOverride must be parsed from overrides.collider_scope.");
+        }
+
         private const float PPU = 32f;
 
         [Test]
