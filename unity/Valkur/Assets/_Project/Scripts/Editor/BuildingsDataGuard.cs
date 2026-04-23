@@ -29,20 +29,40 @@ namespace Valkur.Editor
             if (!assetPath.Replace('\\', '/').Contains("StreamingAssets/Buildings/buildings_instances.json"))
                 return AssetDeleteResult.DidNotDelete;
 
+            // OnWillDeleteAsset fires both when the user explicitly deletes from the Project
+            // window AND when AssetDatabase.Refresh() detects the file has disappeared from
+            // disk (e.g. after test teardown or git operations). In either case, attempt an
+            // auto-restore from backup first and cancel the deletion silently.
+            string streamingPath = GetStreamingPath();
+            string backupPath    = GetBackupPath();
+            if (File.Exists(backupPath))
+            {
+                string dir = Path.GetDirectoryName(streamingPath);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.Copy(backupPath, streamingPath, overwrite: true);
+                AssetDatabase.Refresh();
+                Debug.LogWarning("[BuildingsDataGuard] buildings_instances.json deletion blocked — " +
+                                 "auto-restored from backup. If you intended to delete it use " +
+                                 "File Explorer and run:  " + GIT_RESTORE_CMD);
+                return AssetDeleteResult.FailedDelete;  // cancel the deletion
+            }
+
+            // No backup available — ask the user explicitly before allowing deletion.
             bool confirmed = EditorUtility.DisplayDialog(
                 "⚠ Cannot delete buildings data",
-                "buildings_instances.json contains the position of all 142 buildings.\n\n" +
+                "buildings_instances.json contains the positions of all buildings.\n\n" +
+                "No backup copy was found.\n\n" +
                 "Deleting it will make ALL buildings disappear in-game.\n\n" +
                 "Are you absolutely sure?",
                 "Yes, delete it",
                 "Cancel");
 
             if (!confirmed)
-                return AssetDeleteResult.FailedDelete;   // cancels the delete
+                return AssetDeleteResult.FailedDelete;
 
-            Debug.LogWarning("[BuildingsDataGuard] buildings_instances.json was deleted by user. " +
+            Debug.LogWarning("[BuildingsDataGuard] buildings_instances.json was deleted by user (no backup). " +
                              $"Restore with:  {GIT_RESTORE_CMD}");
-            return AssetDeleteResult.DidNotDelete;       // let Unity proceed if confirmed
+            return AssetDeleteResult.DidNotDelete;   // let Unity proceed
         }
 
         // ── 2. Warn on editor startup if file is absent ──────────────────────────────

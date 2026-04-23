@@ -2373,18 +2373,12 @@ namespace Valkur.Gameplay.Buildings
             if (building == null || building.Template == null || !building.Template.solid)
                 return grid;
 
-            float split = building.SplitRatioOverride >= 0f
-                ? building.SplitRatioOverride
-                : building.Template.splitRatio;
-            float footprintTopNorm = Mathf.Clamp01(1f - split);
-
+            // split_ratio is VISUAL-ONLY — it does not determine the default collision
+            // zone. For a solid building with no authored grid every cell is solid,
+            // matching the full-height BoxCollider2D set in BuildingObject.Apply().
             for (int row = 0; row < rows; row++)
-            {
-                float cellBottomNorm = (float)(rows - 1 - row) / rows;
-                if (cellBottomNorm >= footprintTopNorm) continue;
                 for (int col = 0; col < cols; col++)
                     grid.collision[row][col] = "#";
-            }
 
             return grid;
         }

@@ -99,19 +99,40 @@ namespace Valkur.Gameplay.World
         public bool TryGetWorldRect(out Rect rect)
         {
             rect = default;
-            if (_bottomRenderer == null || _bottomRenderer.sprite == null) return false;
-            float sx = transform.localScale.x;
-            float sy = transform.localScale.y;
-            float bottomH = _bottomRenderer.sprite.rect.height / PPU;
-            float topH    = (_topRenderer != null && _topRenderer.sprite != null)
-                ? _topRenderer.sprite.rect.height / PPU
-                : 0f;
-            float spriteW = _bottomRenderer.sprite.rect.width / PPU;
-            float w = spriteW * sx;
-            float h = (bottomH + topH) * sy;
-            Vector3 pos = transform.position;
-            rect = new Rect(pos.x - w * 0.5f, pos.y, w, h);
-            return true;
+
+            // Primary path: derive from actual sprites (most accurate, accounts for texture
+            // size which may differ from originalScale after import).
+            if (_bottomRenderer != null && _bottomRenderer.sprite != null)
+            {
+                float sx = transform.localScale.x;
+                float sy = transform.localScale.y;
+                float bottomH = _bottomRenderer.sprite.rect.height / PPU;
+                float topH    = (_topRenderer != null && _topRenderer.sprite != null)
+                    ? _topRenderer.sprite.rect.height / PPU
+                    : 0f;
+                float spriteW = _bottomRenderer.sprite.rect.width / PPU;
+                float w = spriteW * sx;
+                float h = (bottomH + topH) * sy;
+                Vector3 pos = transform.position;
+                rect = new Rect(pos.x - w * 0.5f, pos.y, w, h);
+                return true;
+            }
+
+            // Fallback: derive from template + scale override when renderers are not yet
+            // set up (e.g. EditMode tests that inject the template directly without calling
+            // Apply(), or buildings whose sprite failed to load).
+            if (_template != null && _template.originalScale.x > 0 && _template.originalScale.y > 0)
+            {
+                int effW = (_scaleOverride.x > 0) ? _scaleOverride.x : _template.originalScale.x;
+                int effH = (_scaleOverride.y > 0) ? _scaleOverride.y : _template.originalScale.y;
+                float w = effW / PPU;
+                float h = effH / PPU;
+                Vector3 pos = transform.position;
+                rect = new Rect(pos.x - w * 0.5f, pos.y, w, h);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -256,14 +277,20 @@ namespace Valkur.Gameplay.World
             _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset;
             _topRenderer.sortingOrder    = ySortOrder + _zTopOffset;
 
-            // ── 5. Collider (footprint rect) ───────────────────────────────────────
+            // ── 5. Collider (full sprite height) ────────────────────────────────────
+            // split_ratio is a VISUAL-ONLY property: it controls which sorting layer
+            // each half of the sprite renders on, NOT the collision footprint.
+            // The default BoxCollider2D covers the full sprite so that buildings with
+            // no authored collision grid still block movement correctly regardless of
+            // how the split slider is set. Whenever a custom collision grid is applied
+            // (BuildingCollisionLoader / BuildingsRuntimeEditor) the root collider is
+            // disabled and per-cell child BoxCollider2Ds are used instead.
             _collider.enabled = template.solid;
             if (template.solid)
             {
-                // Collider covers the footprint portion in LOCAL (unscaled) space.
-                // Transform.localScale then stretches it to the correct world size.
-                _collider.size   = new Vector2(texW / PPU, bottomH);
-                _collider.offset = new Vector2(0f, bottomH * 0.5f);
+                float fullH = (bottomH + topH);
+                _collider.size   = new Vector2(texW / PPU, fullH);
+                _collider.offset = new Vector2(0f, fullH * 0.5f);
             }
         }
 

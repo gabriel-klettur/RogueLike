@@ -445,7 +445,7 @@ namespace Valkur.Tests.EditMode
             // We verify this by inspecting the method body for the 'is BuildingsRuntimeEditor'
             // type check via reflection IL metadata (method body must reference the type).
             var playerControllerType = System.Type.GetType(
-                "Valkur.Gameplay.Player.PlayerController, Valkur.Gameplay");
+                "Valkur.Gameplay.PlayerController, Valkur.Gameplay");
             Assert.IsNotNull(playerControllerType,
                 "PlayerController must exist in assembly Valkur.Gameplay.");
 
@@ -483,11 +483,10 @@ namespace Valkur.Tests.EditMode
         {
             // The 'is BuildingsRuntimeEditor' guard in PlayerController relies on
             // BuildingsRuntimeEditor being an IGameEditor (what GameEditorManager.ActiveEditor returns).
+            // IGameEditor is a nested interface inside GameEditorManager
+            // (GameEditorManager.IGameEditor). Nested types use '+' separator in Type.GetType.
             var iGameEditorType = System.Type.GetType(
-                "Valkur.Core.IGameEditor, Valkur.Core");
-            if (iGameEditorType == null)
-                iGameEditorType = System.Type.GetType(
-                    "Valkur.Gameplay.IGameEditor, Valkur.Gameplay");
+                "Valkur.Core.GameEditorManager+IGameEditor, Valkur.Core");
 
             Assert.IsNotNull(iGameEditorType,
                 "IGameEditor interface must be resolvable from either Valkur.Core or Valkur.Gameplay.");

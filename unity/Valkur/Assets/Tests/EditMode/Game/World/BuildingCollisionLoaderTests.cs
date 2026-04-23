@@ -126,8 +126,13 @@ namespace Valkur.Tests.EditMode
 
                 Assert.IsTrue(applied,
                     "An explicit empty grid should still count as an applied override.");
-                Assert.IsFalse(mainCollider.enabled,
-                    "An all-walkable authored grid must disable the default footprint collider.");
+                // An all-walkable authored grid (no '#' cells) is treated as "no active override":
+                // the root collider stays enabled so that buildings with placeholder JSON entries
+                // (not yet painted) still block movement. Disabling the root here would silently
+                // make 'solid' buildings walk-throughable.
+                Assert.IsTrue(mainCollider.enabled,
+                    "An all-walkable authored grid must NOT disable the default footprint collider " +
+                    "(placeholder protection: unpainted grids should not break blocking).");
             }
             finally
             {
