@@ -1605,12 +1605,54 @@ namespace Valkur.Gameplay.Buildings
             {
                 ReapplyAllColliderStates();
                 Physics2D.SyncTransforms();
+                LogColliderDiagnostics();
             }
             int total = RefreshCollidersOverlay();
             if (_uiRefs.CollVisibilityBtnLabel != null)
                 _uiRefs.CollVisibilityBtnLabel.text = _collidersVisible ? "Hide Colliders" : "Show Colliders";
             RefreshCollidersPanel();
             Toast(_collidersVisible ? $"Colliders visible ({total} shapes)." : "Colliders hidden.");
+        }
+
+        /// <summary>
+        /// Print a one-shot diagnostic snapshot of every BuildingObject's
+        /// physical collider state (root collider + CollTile children) so we
+        /// can verify in the Console exactly what the physics engine sees:
+        /// per-tile world position, world size, layer, isTrigger flag. If the
+        /// player walks through a "wall", the offending row will look wrong
+        /// here (wrong layer, isTrigger=true, zero size, far-away position…).
+        /// </summary>
+        private void LogColliderDiagnostics()
+        {
+            int worldLayer = LayerMask.NameToLayer("World");
+            var all = FindObjectsOfType<BuildingObject>();
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[BuildingsEditor] Show Colliders → diagnostics for {all.Length} buildings " +
+                          $"(expected layer 'World' = {worldLayer}):");
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null) continue;
+                int tiles = 0, mismatched = 0, triggers = 0;
+                var boxes = b.GetComponentsInChildren<BoxCollider2D>(includeInactive: false);
+                BoxCollider2D first = null;
+                for (int j = 0; j < boxes.Length; j++)
+                {
+                    var box = boxes[j];
+                    if (!box.enabled) continue;
+                    if (box.transform.name.StartsWith("_ColliderDebug_", StringComparison.Ordinal)) continue;
+                    tiles++;
+                    if (first == null) first = box;
+                    if (box.gameObject.layer != worldLayer && worldLayer >= 0) mismatched++;
+                    if (box.isTrigger) triggers++;
+                }
+                string firstInfo = first != null
+                    ? $" first={first.name} center={first.bounds.center} size={first.bounds.size} layer={LayerMask.LayerToName(first.gameObject.layer)} trigger={first.isTrigger}"
+                    : " (no enabled colliders)";
+                sb.AppendLine($"  • {b.name} (id={b.InstanceId}) → {tiles} active colliders, " +
+                              $"{mismatched} on wrong layer, {triggers} triggers." + firstInfo);
+            }
+            Debug.Log(sb.ToString(), this);
         }
 
         private bool BrushOn => _collBrushMode != CollBrushMode.Off;
@@ -1759,17 +1801,15 @@ namespace Valkur.Gameplay.Buildings
             if (_collidersVisible)
                 Physics2D.SyncTransforms();
 
-            // Single source of truth for the active building's overlay: the
-            // working grid + world rect that the editor itself uses to interpret
-            // mouse clicks. We push the per-cell world rects directly to the
-            // overlay so click-target, stored grid and visual feedback all share
-            // one coordinate system. All OTHER buildings keep using the default
-            // BoxCollider2D-derived rendering.
-            BuildingColliderDebugOverlay activeOverlay = null;
-            List<Rect> activeAuthoringCells = null;
-            if (_collidersVisible && _activeBuilding != null && _openDropdowns.Contains("colliders"))
-                activeAuthoringCells = TryComputeActiveAuthoringCells(out activeOverlay);
-
+            // Compute authoring cells (the editor's working grid in world space)
+            // for EVERY building in the scene — not only the currently active
+            // one. This guarantees that when the user toggles "Show Colliders"
+            // ON, every building's authored collision rectangles light up at
+            // exactly the position where the BoxCollider2D children sit. For
+            // buildings with no authored data (no editor-stored grid AND no
+            // JSON grid) the overlay falls back to enumerating its own
+            // BoxCollider2D children (root footprint, etc.) so the user always
+            // sees SOMETHING when a building has any physical collider at all.
             int total = 0;
             var all = FindObjectsOfType<BuildingObject>();
             for (int i = 0; i < all.Length; i++)
@@ -1780,10 +1820,18 @@ namespace Valkur.Gameplay.Buildings
                 if (overlay == null)
                     overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
 
-                if (overlay == activeOverlay && activeAuthoringCells != null)
-                    overlay.SetAuthoringCells(activeAuthoringCells);
+                if (_collidersVisible)
+                {
+                    var cells = TryComputeAuthoringCellsFor(b);
+                    if (cells != null && cells.Count > 0)
+                        overlay.SetAuthoringCells(cells);
+                    else
+                        overlay.ClearAuthoringCells();
+                }
                 else
+                {
                     overlay.ClearAuthoringCells();
+                }
 
                 overlay.SetVisible(_collidersVisible);
                 if (_collidersVisible)
@@ -1794,47 +1842,94 @@ namespace Valkur.Gameplay.Buildings
         }
 
         /// <summary>
-        /// Build the world-space cell rects for the active building's overlay
-        /// using the SAME rect/grid math <see cref="HandleColliderPaint"/>
-        /// uses to map mouse clicks. Returns null when there is no active
-        /// building, no working grid, or no valid world rect.
+        /// Build the world-space cell rects for ANY building's overlay using
+        /// the SAME rect/grid math <see cref="HandleColliderPaint"/> uses to
+        /// map mouse clicks AND the same math <see cref="EnsureCollTile"/>
+        /// uses to place physical BoxCollider2D children. Resolution order
+        /// matches <see cref="ApplyCollisionStateForBuilding"/>:
+        ///   1. Editor-stored CU grid (per instance), if scope = CU.
+        ///   2. Editor-stored CG grid (per image).
+        ///   3. JSON grid loaded by <see cref="BuildingCollisionLoader"/>.
+        /// Returns null/empty when no authored data exists; callers fall back
+        /// to BoxCollider2D enumeration so root-collider buildings still show.
         /// </summary>
-        private List<Rect> TryComputeActiveAuthoringCells(out BuildingColliderDebugOverlay overlay)
+        private List<Rect> TryComputeAuthoringCellsFor(BuildingObject building)
         {
-            overlay = null;
-            if (_activeBuilding == null || _activeBuilding.Template == null) return null;
-            if (!_activeBuilding.TryGetWorldRect(out var rect) || rect.width <= 0f || rect.height <= 0f) return null;
+            if (building == null || building.Template == null) return null;
+            if (!building.TryGetWorldRect(out var rect) || rect.width <= 0f || rect.height <= 0f) return null;
 
-            EnsureColliderDataLoaded();
-            var session = EnsureActiveColliderSession();
-            if (session == null || session.WorkingGrid == null) return null;
-            int rows = session.WorkingGrid.height;
-            int cols = session.WorkingGrid.width;
-            if (rows <= 0 || cols <= 0 || session.WorkingGrid.collision == null) return null;
+            ColliderGridData grid = ResolveStoredGridForOverlay(building);
+            if (grid == null || grid.collision == null || grid.height <= 0 || grid.width <= 0) return null;
 
-            overlay = _activeBuilding.GetComponent<BuildingColliderDebugOverlay>();
-            if (overlay == null)
-                overlay = _activeBuilding.gameObject.AddComponent<BuildingColliderDebugOverlay>();
-
-            float cellW = rect.width  / cols;
-            float cellH = rect.height / rows;
+            int rows = grid.height;
+            int cols = grid.width;
             var cells = new List<Rect>(Mathf.Min(rows * cols, 256));
             for (int row = 0; row < rows; row++)
             {
-                var rowArr = session.WorkingGrid.collision[row];
+                var rowArr = grid.collision[row];
                 if (rowArr == null) continue;
                 for (int col = 0; col < cols && col < rowArr.Length; col++)
                 {
                     if (rowArr[col] != "#") continue;
-                    // Use BuildingObject.TryGetWorldCellRect — the SAME helper
-                    // EnsureCollTile and BuildingCollisionLoader use to place
-                    // the physical BoxCollider2D children. This guarantees the
-                    // overlay rectangle matches the actual collider exactly.
-                    if (_activeBuilding.TryGetWorldCellRect(row, col, rows, cols, out var cell))
+                    if (building.TryGetWorldCellRect(row, col, rows, cols, out var cell))
                         cells.Add(cell);
                 }
             }
             return cells;
+        }
+
+        /// <summary>
+        /// Resolve the collision grid the overlay should mirror for this
+        /// building. For the active building we prefer the in-progress
+        /// WorkingGrid (un-saved edits visible immediately); for the others
+        /// we hit the editor stores and finally the runtime JSON loader so
+        /// every building reflects its true authored state.
+        /// </summary>
+        private ColliderGridData ResolveStoredGridForOverlay(BuildingObject building)
+        {
+            EnsureColliderDataLoaded();
+
+            if (building == _activeBuilding)
+            {
+                var session = EnsureActiveColliderSession();
+                if (session != null && session.WorkingGrid != null)
+                    return session.WorkingGrid;
+            }
+
+            Vector2Int effectiveSize = GetEffectivePixelSize(building);
+            if (string.Equals(building.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase) &&
+                _colliderInstanceStore.TryGetValue(building.InstanceId, out var instanceGrid))
+            {
+                return ResampleGrid(instanceGrid, effectiveSize.x, effectiveSize.y);
+            }
+
+            string imageKey = NormalizeAssetPath(building.Template.sourceImagePath);
+            if (!string.IsNullOrEmpty(imageKey) &&
+                _colliderImageStore.TryGetValue(imageKey, out var imageGrid))
+            {
+                return ResampleGrid(imageGrid, effectiveSize.x, effectiveSize.y);
+            }
+
+            // Note: the editor stores (_colliderImageStore / _colliderInstanceStore)
+            // are populated from BOTH the live editor session AND the JSON files
+            // loaded by EnsureColliderDataLoaded → so checking them is enough,
+            // there is no need to also poll BuildingCollisionLoader here.
+            return null;
+        }
+
+        /// <summary>
+        /// Backwards-compatible wrapper kept for any external call sites; the
+        /// overlay refresh now uses <see cref="TryComputeAuthoringCellsFor"/>
+        /// directly so EVERY building (not just the active one) lights up.
+        /// </summary>
+        private List<Rect> TryComputeActiveAuthoringCells(out BuildingColliderDebugOverlay overlay)
+        {
+            overlay = null;
+            if (_activeBuilding == null) return null;
+            overlay = _activeBuilding.GetComponent<BuildingColliderDebugOverlay>();
+            if (overlay == null)
+                overlay = _activeBuilding.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+            return TryComputeAuthoringCellsFor(_activeBuilding);
         }
 
         private void ReapplyAllColliderStates()
