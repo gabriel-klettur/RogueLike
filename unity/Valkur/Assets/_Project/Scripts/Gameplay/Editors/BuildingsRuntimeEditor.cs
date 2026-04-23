@@ -1826,10 +1826,12 @@ namespace Valkur.Gameplay.Buildings
                 for (int col = 0; col < cols && col < rowArr.Length; col++)
                 {
                     if (rowArr[col] != "#") continue;
-                    // row 0 = top of image (HandleColliderPaint inverse: row = floor((1 - v) * rows))
-                    float xMin = rect.xMin + col * cellW;
-                    float yMin = rect.yMin + (rows - 1 - row) * cellH;
-                    cells.Add(new Rect(xMin, yMin, cellW, cellH));
+                    // Use BuildingObject.TryGetWorldCellRect — the SAME helper
+                    // EnsureCollTile and BuildingCollisionLoader use to place
+                    // the physical BoxCollider2D children. This guarantees the
+                    // overlay rectangle matches the actual collider exactly.
+                    if (_activeBuilding.TryGetWorldCellRect(row, col, rows, cols, out var cell))
+                        cells.Add(cell);
                 }
             }
             return cells;
@@ -2370,15 +2372,28 @@ namespace Valkur.Gameplay.Buildings
                 tileTransform = tileGo.transform;
             }
 
-            Vector2 localSpriteSize = GetBuildingLocalSpriteSize(building);
-            float tileW_local = localSpriteSize.x / cols;
-            float tileH_local = localSpriteSize.y / rows;
-            float totalW_local = localSpriteSize.x;
+            // Single source of truth: derive the cell's WORLD rect from the
+            // building's own helper so this BoxCollider2D, the visual overlay
+            // and the click-to-paint hit test all share one coordinate system.
+            // Then convert center+size into the building's local space (taking
+            // its lossy scale into account so non-uniform scales are correct).
+            if (!building.TryGetWorldCellRect(row, col, rows, cols, out var worldCell))
+            {
+                Debug.LogWarning(
+                    $"[BuildingsRuntimeEditor] Could not compute world cell rect for {building.name} cell ({row},{col}) — collider skipped.",
+                    building);
+                tileTransform.gameObject.SetActive(false);
+                return;
+            }
 
-            float localX = (col + 0.5f) * tileW_local - totalW_local * 0.5f;
-            float localY = (rows - 1 - row + 0.5f) * tileH_local;
+            Vector3 worldCenter = new Vector3(worldCell.center.x, worldCell.center.y, 0f);
+            Vector3 localCenter = building.transform.InverseTransformPoint(worldCenter);
+            Vector3 lossy = building.transform.lossyScale;
+            float invSx = Mathf.Abs(lossy.x) > 0.0001f ? 1f / lossy.x : 1f;
+            float invSy = Mathf.Abs(lossy.y) > 0.0001f ? 1f / lossy.y : 1f;
+            Vector2 localSize = new Vector2(worldCell.width * invSx, worldCell.height * invSy);
 
-            tileTransform.localPosition = new Vector3(localX, localY, 0f);
+            tileTransform.localPosition = new Vector3(localCenter.x, localCenter.y, 0f);
             tileTransform.localRotation = Quaternion.identity;
             tileTransform.localScale = Vector3.one;
             tileTransform.gameObject.layer = ResolveCollisionLayer();
@@ -2388,8 +2403,9 @@ namespace Valkur.Gameplay.Buildings
             if (box == null)
                 box = tileTransform.gameObject.AddComponent<BoxCollider2D>();
             box.enabled = true;
+            box.isTrigger = false; // explicit: must block movement, not just detect
             box.offset = Vector2.zero;
-            box.size = new Vector2(tileW_local, tileH_local);
+            box.size = localSize;
         }
 
         private static Transform TryReusePooledCollTile(Transform parent, string childName)

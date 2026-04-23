@@ -62,15 +62,26 @@ namespace Valkur.Gameplay.World
                 tileTransform = tileGo.transform;
             }
 
-            Vector2 localSpriteSize = GetBuildingLocalSpriteSize(bObj);
-            float tileW_local = localSpriteSize.x / cols;
-            float tileH_local = localSpriteSize.y / rows;
-            float totalW_local = localSpriteSize.x;
+            // Single source of truth: derive the cell's WORLD rect from the
+            // building helper, then convert to local space. Matches the editor
+            // (BuildingsRuntimeEditor.EnsureCollTile) and the visual overlay.
+            if (!bObj.TryGetWorldCellRect(row, col, rows, cols, out var worldCell))
+            {
+                Debug.LogWarning(
+                    $"[BuildingCollisionLoader] Could not compute world cell rect for {bObj.name} cell ({row},{col}) — collider skipped.",
+                    bObj);
+                tileTransform.gameObject.SetActive(false);
+                return;
+            }
 
-            float localX = (col + 0.5f) * tileW_local - totalW_local * 0.5f;
-            float localY = (rows - 1 - row + 0.5f) * tileH_local;
+            Vector3 worldCenter = new Vector3(worldCell.center.x, worldCell.center.y, 0f);
+            Vector3 localCenter = bObj.transform.InverseTransformPoint(worldCenter);
+            Vector3 lossy = bObj.transform.lossyScale;
+            float invSx = Mathf.Abs(lossy.x) > 0.0001f ? 1f / lossy.x : 1f;
+            float invSy = Mathf.Abs(lossy.y) > 0.0001f ? 1f / lossy.y : 1f;
+            Vector2 localSize = new Vector2(worldCell.width * invSx, worldCell.height * invSy);
 
-            tileTransform.localPosition = new Vector3(localX, localY, 0f);
+            tileTransform.localPosition = new Vector3(localCenter.x, localCenter.y, 0f);
             tileTransform.localRotation = Quaternion.identity;
             tileTransform.localScale = Vector3.one;
             tileTransform.gameObject.layer = _collisionLayer;
@@ -80,8 +91,9 @@ namespace Valkur.Gameplay.World
             if (box == null)
                 box = tileTransform.gameObject.AddComponent<BoxCollider2D>();
             box.enabled = true;
+            box.isTrigger = false; // explicit: must block movement, not just detect
             box.offset = Vector2.zero;
-            box.size = new Vector2(tileW_local, tileH_local);
+            box.size = localSize;
         }
 
         private static Transform TryReusePooledTile(Transform parent, string childName)

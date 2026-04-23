@@ -365,5 +365,140 @@ namespace Valkur.Tests.EditMode
 
             Object.DestroyImmediate(go);
         }
+
+        // ── TryGetWorldCellRect ─────────────────────────────────────────────
+        // Single source of truth: visual overlay, click-to-paint and physical
+        // BoxCollider2D placement all read cells from this helper. Drift here
+        // means colliders end up where the visual ISN'T, and the player walks
+        // through what looks like a wall.
+
+        [Test]
+        public void TryGetWorldCellRect_InvalidGridDimensions_ReturnsFalse()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+            var sr = MakeChildRenderer(go, "Footprint", 64, 64);
+            SetPrivateField(bObj, "_bottomRenderer", sr);
+
+            Assert.IsFalse(bObj.TryGetWorldCellRect(0, 0, 0, 1, out _),
+                "rows == 0 must return false.");
+            Assert.IsFalse(bObj.TryGetWorldCellRect(0, 0, 1, 0, out _),
+                "cols == 0 must return false.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryGetWorldCellRect_NoBottomRenderer_ReturnsFalse()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+
+            Assert.IsFalse(bObj.TryGetWorldCellRect(0, 0, 1, 1, out _),
+                "Must return false when TryGetWorldRect itself fails.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryGetWorldCellRect_SingleCell_EqualsFullWorldRect()
+        {
+            // 1×1 grid → the only cell must equal the full world rect.
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            go.transform.position = new Vector3(10f, 20f, 0f);
+            var bObj = go.AddComponent<BuildingObject>();
+            var sr = MakeChildRenderer(go, "Footprint", 64, 64); // 2×2 world units
+            SetPrivateField(bObj, "_bottomRenderer", sr);
+
+            Assert.IsTrue(bObj.TryGetWorldRect(out var full));
+            Assert.IsTrue(bObj.TryGetWorldCellRect(0, 0, 1, 1, out var cell));
+
+            Assert.AreEqual(full.xMin,   cell.xMin,   0.001f);
+            Assert.AreEqual(full.yMin,   cell.yMin,   0.001f);
+            Assert.AreEqual(full.width,  cell.width,  0.001f);
+            Assert.AreEqual(full.height, cell.height, 0.001f);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryGetWorldCellRect_Row0_IsTopOfBuilding()
+        {
+            // Row 0 must map to the TOP of the building (highest yMin).
+            // This is the contract HandleColliderPaint relies on:
+            // row = floor((1 - v) * rows). v=1 (top) → row 0.
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            go.transform.position = Vector3.zero;
+            var bObj = go.AddComponent<BuildingObject>();
+            var sr = MakeChildRenderer(go, "Footprint", 64, 128); // 2 wide × 4 tall
+            SetPrivateField(bObj, "_bottomRenderer", sr);
+
+            // 4 rows → cell height = 1
+            Assert.IsTrue(bObj.TryGetWorldCellRect(0, 0, 4, 1, out var top));
+            Assert.IsTrue(bObj.TryGetWorldCellRect(3, 0, 4, 1, out var bottom));
+
+            Assert.Greater(top.yMin, bottom.yMin,
+                "Row 0 must be ABOVE row 3 (row 0 = top of building, row N-1 = bottom).");
+            Assert.AreEqual(0f, bottom.yMin, 0.001f, "Row N-1 sits on the ground anchor.");
+            Assert.AreEqual(3f, top.yMin,    0.001f, "Row 0 sits at (rows-1) cell heights above the ground.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryGetWorldCellRect_TilesCoverFullRect_NoGapsNoOverlap()
+        {
+            // Iterating every cell of an N×M grid must reproduce exactly the
+            // full world rect — no gaps, no overlap, no rounding drift.
+            LogAssert.ignoreFailingMessages = true;
+
+            var go = new GameObject("TestBuilding");
+            go.transform.position = new Vector3(7f, 13f, 0f);
+            var bObj = go.AddComponent<BuildingObject>();
+            var sr = MakeChildRenderer(go, "Footprint", 96, 64); // 3 wide × 2 tall
+            SetPrivateField(bObj, "_bottomRenderer", sr);
+
+            int rows = 4, cols = 6;
+            Assert.IsTrue(bObj.TryGetWorldRect(out var full));
+
+            float minX = float.PositiveInfinity, minY = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity, maxY = float.NegativeInfinity;
+            float totalArea = 0f;
+            for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+            {
+                Assert.IsTrue(bObj.TryGetWorldCellRect(r, c, rows, cols, out var cell));
+                minX = Mathf.Min(minX, cell.xMin); minY = Mathf.Min(minY, cell.yMin);
+                maxX = Mathf.Max(maxX, cell.xMax); maxY = Mathf.Max(maxY, cell.yMax);
+                totalArea += cell.width * cell.height;
+            }
+
+            Assert.AreEqual(full.xMin, minX, 0.001f, "Cells must start at building xMin.");
+            Assert.AreEqual(full.yMin, minY, 0.001f, "Cells must start at building yMin.");
+            Assert.AreEqual(full.xMax, maxX, 0.001f, "Cells must end at building xMax.");
+            Assert.AreEqual(full.yMax, maxY, 0.001f, "Cells must end at building yMax.");
+            Assert.AreEqual(full.width * full.height, totalArea, 0.001f,
+                "Sum of cell areas must equal full rect area (no gaps, no overlap).");
+
+            Object.DestroyImmediate(go);
+        }
+
+        // ── Small helper to keep the new tests compact ─────────────────────
+        private static SpriteRenderer MakeChildRenderer(GameObject parent, string name, int texW, int texH)
+        {
+            var childGo = new GameObject(name);
+            childGo.transform.SetParent(parent.transform);
+            var sr = childGo.AddComponent<SpriteRenderer>();
+            sr.sprite = MakeSprite(texW, texH, 32f);
+            return sr;
+        }
     }
 }

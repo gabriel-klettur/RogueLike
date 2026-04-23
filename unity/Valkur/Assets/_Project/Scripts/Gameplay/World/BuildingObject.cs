@@ -114,6 +114,30 @@ namespace Valkur.Gameplay.World
             return true;
         }
 
+        /// <summary>
+        /// World-space rect of grid cell (row, col) in a (rows × cols) collision
+        /// grid. Row 0 = top of the building's sprite (matches the JSON authored
+        /// format and <see cref="World.BuildingsRuntimeEditor.HandleColliderPaint"/>).
+        ///
+        /// This is the SINGLE SOURCE OF TRUTH used by every consumer that needs
+        /// per-cell geometry — the in-editor visual overlay, the click-to-paint
+        /// hit test, the editor-side BoxCollider2D placement, and the runtime
+        /// BuildingCollisionLoader. Sharing this helper guarantees those four
+        /// systems can never drift apart.
+        /// </summary>
+        public bool TryGetWorldCellRect(int row, int col, int rows, int cols, out Rect cell)
+        {
+            cell = default;
+            if (rows <= 0 || cols <= 0) return false;
+            if (!TryGetWorldRect(out var rect)) return false;
+            float cellW = rect.width  / cols;
+            float cellH = rect.height / rows;
+            float xMin = rect.xMin + col * cellW;
+            float yMin = rect.yMin + (rows - 1 - row) * cellH; // row 0 = top → highest yMin
+            cell = new Rect(xMin, yMin, cellW, cellH);
+            return true;
+        }
+
         private void ApplyZOffsets()
         {
             int baseY = SortingConfig.YToSortingOrder(transform.position.y);
