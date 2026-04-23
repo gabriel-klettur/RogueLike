@@ -332,5 +332,124 @@ namespace Valkur.Tests.EditMode
             Assert.GreaterOrEqual(worldY, gridY - 5f,
                 "WorldY must not be far below the zone's bottom edge.");
         }
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // 4. BuildingsDataGuard — backup integrity tests
+        // ─────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that a .bak copy of buildings_instances.json is maintained under
+        /// _Project/Data/Backups/. This backup is used by BuildingsDataGuard to
+        /// auto-restore the file if it is accidentally deleted from StreamingAssets.
+        /// If this test fails run: Valkur > Migration > Dry-Run All  or just open
+        /// the Buildings Runtime Editor (F10) and press Save once.
+        /// </summary>
+        [Test]
+        [Category("DataIntegrity")]
+        public void BackupFile_Exists_AtExpectedPath()
+        {
+            string backupPath = Path.Combine(
+                Application.dataPath, "_Project", "Data", "Backups",
+                "buildings_instances.json.bak");
+
+            Assert.IsTrue(File.Exists(backupPath),
+                $"Backup file is missing at:\n  {backupPath}\n" +
+                "The backup is created/refreshed every time you save from BuildingsRuntimeEditor " +
+                "or run an importer. Open the Buildings Editor (F10 in Play Mode) and press Save.");
+        }
+
+        /// <summary>
+        /// Verifies that the .bak count matches the live StreamingAssets count.
+        /// If they differ someone ran the importer after the last in-engine save
+        /// (or vice-versa) and the backup is stale.
+        /// </summary>
+        [Test]
+        [Category("DataIntegrity")]
+        public void BackupFile_EntryCountMatchesLiveFile()
+        {
+            string livePath = Path.Combine(
+                Application.streamingAssetsPath, "Buildings", "buildings_instances.json");
+            string backupPath = Path.Combine(
+                Application.dataPath, "_Project", "Data", "Backups",
+                "buildings_instances.json.bak");
+
+            Assume.That(File.Exists(livePath),   "Live buildings_instances.json not found — covered by InstancesJson_Exists test.");
+            Assume.That(File.Exists(backupPath), "Backup file not found — covered by BackupFile_Exists test.");
+
+            IList liveItems   = InvokeParse(File.ReadAllText(livePath));
+            IList backupItems = InvokeParse(File.ReadAllText(backupPath));
+
+            Assert.IsNotNull(liveItems,   "Live file could not be parsed.");
+            Assert.IsNotNull(backupItems, "Backup file could not be parsed.");
+            Assert.AreEqual(liveItems.Count, backupItems.Count,
+                $"Backup ({backupItems.Count}) and live ({liveItems.Count}) entry counts differ.\n" +
+                "Refresh the backup: open the Buildings Editor (F10) and press Save — OR call " +
+                "BuildingsDataGuard.RefreshBackup() from any editor script.");
+        }
+
+        /// <summary>
+        /// Confirms that the live file has the expected minimum number of entries
+        /// (142 is the count at commit dfa57b25a — the baseline after in-engine edits).
+        /// If the count drops below 142, data was lost.
+        /// </summary>
+        [Test]
+        [Category("DataIntegrity")]
+        public void InstancesJson_HasAtLeast142Entries()
+        {
+            string path = Path.Combine(
+                Application.streamingAssetsPath, "Buildings", "buildings_instances.json");
+            Assume.That(File.Exists(path), "File not found — covered by InstancesJson_Exists test.");
+
+            IList items = InvokeParse(File.ReadAllText(path));
+            Assume.That(items != null, "Parser returned null.");
+
+            Assert.GreaterOrEqual(items.Count, 142,
+                $"Expected at least 142 buildings but found {items.Count}.\n" +
+                "Possible causes:\n" +
+                "  • WorldZoneImporter overwrote the Unity file with an older Python version.\n" +
+                "  • BuildingImporter.CopyInstances ran without the safety guard.\n" +
+                "  • The file was restored from a stale backup.\n" +
+                "Restore with:  git checkout dfa57b25a -- " +
+                "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json");
+        }
+
+        /// <summary>
+        /// Verifies that all entries have valid positive IDs and required fields
+        /// so BuildingLoader can spawn every building without silent failures.
+        /// </summary>
+        [Test]
+        [Category("DataIntegrity")]
+        public void InstancesJson_AllEntries_HavePositiveIdAndRequiredFields()
+        {
+            string path = Path.Combine(
+                Application.streamingAssetsPath, "Buildings", "buildings_instances.json");
+            Assume.That(File.Exists(path));
+
+            IList items = InvokeParse(File.ReadAllText(path));
+            Assume.That(items != null && items.Count > 0, "No items to validate.");
+
+            var invalidIds    = new System.Collections.Generic.List<int>();
+            var emptyZones    = new System.Collections.Generic.List<int>();
+            var zeroTemplates = new System.Collections.Generic.List<int>();
+
+            foreach (object dto in items)
+            {
+                int    id         = GetField<int>(dto, "Id");
+                int    templateId = GetField<int>(dto, "TemplateId");
+                string zone       = GetField<string>(dto, "Zone");
+
+                if (id <= 0)                                 invalidIds.Add(id);
+                if (string.IsNullOrWhiteSpace(zone))         emptyZones.Add(id);
+                if (templateId <= 0)                         zeroTemplates.Add(id);
+            }
+
+            Assert.IsEmpty(invalidIds,
+                $"Entries with id ≤ 0: [{string.Join(", ", invalidIds)}]. All IDs must be positive.");
+            Assert.IsEmpty(emptyZones,
+                $"Entries with empty zone (IDs): [{string.Join(", ", emptyZones)}]. Zone is required.");
+            Assert.IsEmpty(zeroTemplates,
+                $"Entries with template_id ≤ 0 (IDs): [{string.Join(", ", zeroTemplates)}]. " +
+                "BuildingLoader will skip entries without a valid template.");
+        }
     }
 }

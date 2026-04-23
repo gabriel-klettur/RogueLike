@@ -1108,6 +1108,20 @@ namespace Valkur.Gameplay.Buildings
                 sb.AppendLine("]");
 
                 File.WriteAllText(path, sb.ToString());
+#if UNITY_EDITOR
+                // Refresh the backup copy via reflection so we don't create a
+                // runtime→editor assembly dependency. BuildingsDataGuard.RefreshBackup()
+                // lives in Valkur.Editor (Editor-only assembly).
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    var t = System.Type.GetType(
+                        "Valkur.Editor.BuildingsDataGuard, Valkur.Editor");
+                    t?.GetMethod("RefreshBackup",
+                        System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.Static)
+                     ?.Invoke(null, null);
+                };
+#endif
                 if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {INSTANCES_REL_PATH}";
                 Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path}");
             }

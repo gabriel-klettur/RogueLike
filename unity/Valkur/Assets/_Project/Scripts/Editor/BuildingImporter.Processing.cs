@@ -164,6 +164,18 @@ namespace Valkur.Editor
                 return;
             }
 
+            // SAFETY: Unity's buildings_instances.json is the authoritative source.
+            // The importer only writes if the Unity file does not already exist.
+            // If it exists, log a warning and skip — use BuildingsRuntimeEditor to edit in-engine.
+            if (File.Exists(destPath))
+            {
+                report.AddWarning("buildings_instances.json", "-",
+                    $"SKIPPED: Unity file already exists at {destPath}. " +
+                    "It is the authoritative source (edited in-engine via BuildingsRuntimeEditor). " +
+                    "Delete the file manually and re-run if you really want to import from Python.");
+                return;
+            }
+
             if (!Directory.Exists(streamingDir))
                 Directory.CreateDirectory(streamingDir);
 
@@ -196,6 +208,7 @@ namespace Valkur.Editor
 
             string outJson = MiniJson.Serialize(cleanedInstances);
             File.WriteAllText(destPath, outJson);
+            BuildingsDataGuard.RefreshBackup();
             AssetDatabase.Refresh();
             report.AddOk("buildings_instances.json", "-",
                 $"Copied {cleanedInstances.Count} building instances (all zones) to {destPath}");

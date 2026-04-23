@@ -57,13 +57,28 @@ namespace Valkur.Editor
             copied += CopyJsonFiles(collisionsDir, collisionsDst, "*.json", ref skipped);
 
             // 4) Copy building instances (full file with all zones)
+            //    SAFETY: Unity's buildings_instances.json is the authoritative source because
+            //    buildings are edited in-engine via BuildingsRuntimeEditor. We only copy from
+            //    Python if the Unity file does not exist yet; otherwise we skip and warn.
             string buildingsSrc = Path.Combine(pythonWorldsDir, "buildings/buildings_instances.json");
             string buildingsDst = Path.Combine(streamingAssets, "Buildings/buildings_instances.json");
             EnsureDirectory(Path.GetDirectoryName(buildingsDst));
             if (File.Exists(buildingsSrc))
             {
-                File.Copy(buildingsSrc, buildingsDst, overwrite: true);
-                copied++;
+                if (File.Exists(buildingsDst))
+                {
+                    skipped++;
+                    Debug.LogWarning("[WorldZoneImporter] SKIPPED buildings_instances.json — Unity file " +
+                                     "already exists and is the authoritative source (edited in-engine).\n" +
+                                     "To force-overwrite run: Valkur > Migration > Import Buildings from Python JSON");
+                }
+                else
+                {
+                    File.Copy(buildingsSrc, buildingsDst, overwrite: false);
+                    BuildingsDataGuard.RefreshBackup();
+                    copied++;
+                    Debug.Log("[WorldZoneImporter] buildings_instances.json copied from Python (Unity file was absent).");
+                }
             }
 
             // 5) Copy spawner instances
