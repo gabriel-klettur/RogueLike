@@ -204,6 +204,12 @@ namespace Valkur.Gameplay.Buildings
             UpdateFloatingHandles();
             UpdateIdLabel();
             UpdateSplitLine();
+            // Re-push the authoring cells every frame the colliders panel is
+            // open so the overlay always tracks the active building's current
+            // world rect (move, resize, split-ratio change, etc.). Cheap: a few
+            // hundred rect copies at most.
+            if (_collidersVisible && _openDropdowns.Contains("colliders"))
+                RefreshCollidersOverlay();
         }
 
         public void Activate()
@@ -1029,8 +1035,15 @@ namespace Valkur.Gameplay.Buildings
 
         private void SetActiveBuilding(BuildingObject b)
         {
+            bool changed = _activeBuilding != b;
             _activeBuilding = b;
+            // Drop the cached session so the next paint refreshes it for the new
+            // building, and refresh the overlay so the OLD active building reverts
+            // to BoxCollider2D rendering and the NEW one (if any) gets authoring
+            // cells pushed in.
+            if (changed) _activeColliderSession = null;
             RefreshInspector();
+            if (_collidersVisible) RefreshCollidersOverlay();
             if (_statusTmp != null && b != null) _statusTmp.text = $"Active: ID {b.InstanceId} ({b.Template?.name})";
         }
 
@@ -1746,6 +1759,17 @@ namespace Valkur.Gameplay.Buildings
             if (_collidersVisible)
                 Physics2D.SyncTransforms();
 
+            // Single source of truth for the active building's overlay: the
+            // working grid + world rect that the editor itself uses to interpret
+            // mouse clicks. We push the per-cell world rects directly to the
+            // overlay so click-target, stored grid and visual feedback all share
+            // one coordinate system. All OTHER buildings keep using the default
+            // BoxCollider2D-derived rendering.
+            BuildingColliderDebugOverlay activeOverlay = null;
+            List<Rect> activeAuthoringCells = null;
+            if (_collidersVisible && _activeBuilding != null && _openDropdowns.Contains("colliders"))
+                activeAuthoringCells = TryComputeActiveAuthoringCells(out activeOverlay);
+
             int total = 0;
             var all = FindObjectsOfType<BuildingObject>();
             for (int i = 0; i < all.Length; i++)
@@ -1755,12 +1779,60 @@ namespace Valkur.Gameplay.Buildings
                 var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
                 if (overlay == null)
                     overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+
+                if (overlay == activeOverlay && activeAuthoringCells != null)
+                    overlay.SetAuthoringCells(activeAuthoringCells);
+                else
+                    overlay.ClearAuthoringCells();
+
                 overlay.SetVisible(_collidersVisible);
                 if (_collidersVisible)
                     total += overlay.CurrentVisualCount;
             }
 
             return total;
+        }
+
+        /// <summary>
+        /// Build the world-space cell rects for the active building's overlay
+        /// using the SAME rect/grid math <see cref="HandleColliderPaint"/>
+        /// uses to map mouse clicks. Returns null when there is no active
+        /// building, no working grid, or no valid world rect.
+        /// </summary>
+        private List<Rect> TryComputeActiveAuthoringCells(out BuildingColliderDebugOverlay overlay)
+        {
+            overlay = null;
+            if (_activeBuilding == null || _activeBuilding.Template == null) return null;
+            if (!_activeBuilding.TryGetWorldRect(out var rect) || rect.width <= 0f || rect.height <= 0f) return null;
+
+            EnsureColliderDataLoaded();
+            var session = EnsureActiveColliderSession();
+            if (session == null || session.WorkingGrid == null) return null;
+            int rows = session.WorkingGrid.height;
+            int cols = session.WorkingGrid.width;
+            if (rows <= 0 || cols <= 0 || session.WorkingGrid.collision == null) return null;
+
+            overlay = _activeBuilding.GetComponent<BuildingColliderDebugOverlay>();
+            if (overlay == null)
+                overlay = _activeBuilding.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+
+            float cellW = rect.width  / cols;
+            float cellH = rect.height / rows;
+            var cells = new List<Rect>(Mathf.Min(rows * cols, 256));
+            for (int row = 0; row < rows; row++)
+            {
+                var rowArr = session.WorkingGrid.collision[row];
+                if (rowArr == null) continue;
+                for (int col = 0; col < cols && col < rowArr.Length; col++)
+                {
+                    if (rowArr[col] != "#") continue;
+                    // row 0 = top of image (HandleColliderPaint inverse: row = floor((1 - v) * rows))
+                    float xMin = rect.xMin + col * cellW;
+                    float yMin = rect.yMin + (rows - 1 - row) * cellH;
+                    cells.Add(new Rect(xMin, yMin, cellW, cellH));
+                }
+            }
+            return cells;
         }
 
         private void ReapplyAllColliderStates()

@@ -231,6 +231,158 @@ namespace Valkur.Tests.EditMode
         }
 
         // ──────────────────────────────────────────────────────────────────────
+        //  Authoring mode (single source of truth = caller-supplied cell rects)
+        // ──────────────────────────────────────────────────────────────────────
+
+        [Test]
+        public void SetAuthoringCells_RendersOneVisualPerSuppliedRect()
+        {
+            // A building with NO BoxCollider2D — the authoring cells are the
+            // only thing the overlay should render. Proves the authoring path
+            // is fully decoupled from the BoxCollider2D enumeration.
+            var go = new GameObject("Building");
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+            var cells = new[]
+            {
+                new Rect(0f, 0f, 1f, 1f),
+                new Rect(1f, 0f, 1f, 1f),
+                new Rect(0f, 1f, 1f, 1f),
+            };
+
+            overlay.SetAuthoringCells(cells);
+            overlay.SetVisible(true);
+
+            Assert.IsTrue(overlay.IsAuthoringMode);
+            Assert.AreEqual(3, overlay.AuthoringCellCount);
+            Assert.AreEqual(3, overlay.CurrentVisualCount);
+            Assert.AreEqual(3, CountActiveVisualHosts(go.transform));
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SetAuthoringCells_OverridesBoxColliderRendering()
+        {
+            // Building has both a root collider AND child CollTiles, but
+            // authoring mode supplies a single cell — only that cell renders.
+            // This is the exact contract that fixes the editor drift bug:
+            // when authoring mode is active the visual ignores the live
+            // physics shapes entirely.
+            var go = NewBuilding(rootSize: new Vector2(4f, 4f));
+            AddTileCollider(go, "CollTile_0_0", new Vector2(1f, 1f));
+            AddTileCollider(go, "CollTile_1_1", new Vector2(1f, 1f));
+
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+            overlay.SetAuthoringCells(new[] { new Rect(5f, 5f, 0.5f, 0.5f) });
+            overlay.SetVisible(true);
+
+            Assert.AreEqual(1, overlay.CurrentVisualCount,
+                "Authoring mode must drive the visual count, not the BoxCollider2D children.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void ClearAuthoringCells_RevertsToBoxColliderInferredRendering()
+        {
+            // Round-trip: enter authoring mode, then exit. Should resume
+            // rendering the live BoxCollider2D shapes (root + tiles).
+            var go = NewBuilding(rootSize: new Vector2(2f, 2f));
+            AddTileCollider(go, "CollTile_0_0", new Vector2(1f, 1f));
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+
+            overlay.SetAuthoringCells(new[] { new Rect(0f, 0f, 1f, 1f) });
+            overlay.SetVisible(true);
+            Assert.AreEqual(1, overlay.CurrentVisualCount);
+            Assert.IsTrue(overlay.IsAuthoringMode);
+
+            overlay.ClearAuthoringCells();
+            Assert.IsFalse(overlay.IsAuthoringMode);
+            Assert.AreEqual(0, overlay.AuthoringCellCount);
+            Assert.AreEqual(2, overlay.CurrentVisualCount,
+                "After clearing authoring mode, root + CollTile must render again.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SetAuthoringCells_NullOrEmpty_ProducesNoVisuals()
+        {
+            var go = NewBuilding(rootSize: new Vector2(2f, 2f));
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+
+            overlay.SetAuthoringCells(null);
+            overlay.SetVisible(true);
+            Assert.IsTrue(overlay.IsAuthoringMode);
+            Assert.AreEqual(0, overlay.CurrentVisualCount,
+                "Authoring mode with null cells must render no visuals (root collider must be ignored).");
+
+            overlay.SetAuthoringCells(new Rect[0]);
+            Assert.AreEqual(0, overlay.CurrentVisualCount,
+                "Authoring mode with empty cells must render no visuals.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SetAuthoringCells_RepeatedReplacement_DoesNotLeakVisuals()
+        {
+            // Stress: replace the cell list 10 times alternating large/small
+            // counts. Inactive visuals must be deactivated (not destroyed +
+            // recreated) and CurrentVisualCount must always reflect the
+            // current cell count exactly.
+            var go = new GameObject("Building");
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+            overlay.SetVisible(true);
+
+            for (int i = 0; i < 10; i++)
+            {
+                int n = (i % 2 == 0) ? 5 : 1;
+                var rects = new Rect[n];
+                for (int k = 0; k < n; k++)
+                    rects[k] = new Rect(k, 0, 1, 1);
+
+                overlay.SetAuthoringCells(rects);
+                Assert.AreEqual(n, overlay.CurrentVisualCount, $"Iteration {i}: visual count must equal cell count.");
+                Assert.AreEqual(n, CountActiveVisualHosts(go.transform), $"Iteration {i}: active visual hosts must equal cell count.");
+            }
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void SetAuthoringCells_PositionsVisualsAtSuppliedWorldRect()
+        {
+            // Geometry contract: the SpriteRenderer fill must sit at the
+            // CENTER of each supplied world rect, with localScale matching
+            // the rect size (after the parent's inverse-scale compensation).
+            // This is what guarantees click coordinates and visual feedback
+            // share one coordinate system.
+            var go = new GameObject("Building");
+            go.transform.position = new Vector3(10f, 20f, 0f);
+            var overlay = go.AddComponent<BuildingColliderDebugOverlay>();
+            var cell = new Rect(7f, 13f, 2f, 4f);
+            overlay.SetAuthoringCells(new[] { cell });
+            overlay.SetVisible(true);
+
+            // Find the visual host (only one)
+            Transform host = null;
+            for (int i = 0; i < go.transform.childCount; i++)
+            {
+                var c = go.transform.GetChild(i);
+                if (c.name.StartsWith(VisualPrefix) && c.gameObject.activeSelf) { host = c; break; }
+            }
+            Assert.IsNotNull(host, "Authoring mode must produce one active visual host.");
+
+            // Host position == cell center in world space.
+            Vector2 expectedCenter = cell.center;
+            Assert.AreEqual(expectedCenter.x, host.position.x, 0.001f, "Visual host X must equal cell center X.");
+            Assert.AreEqual(expectedCenter.y, host.position.y, 0.001f, "Visual host Y must equal cell center Y.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        // ──────────────────────────────────────────────────────────────────────
         //  Helpers
         // ──────────────────────────────────────────────────────────────────────
 

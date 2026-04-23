@@ -39,8 +39,28 @@ namespace Valkur.Gameplay.World
         private readonly List<VisualEntry> _visuals = new List<VisualEntry>();
         private bool _visible;
 
+        // Authoring mode: when set, the overlay renders ONE visual per supplied
+        // world-space cell rect (single source of truth = the editor's grid +
+        // building rect). When cleared, the overlay falls back to its original
+        // behaviour of inferring rects from the building's BoxCollider2D shapes.
+        //
+        // The buildings editor enables authoring mode for the active building
+        // while the colliders panel is open so click-to-paint, grid storage and
+        // the visual feedback all share a single coordinate system. This
+        // eliminates the historical drift caused by re-deriving collider tile
+        // positions through GetBuildingLocalSpriteSize / ResampleGrid.
+        private bool        _authoringMode;
+        private Rect[]      _authoringCells;
+        private int         _authoringCellCount;
+
         public bool Visible => _visible;
         public int CurrentVisualCount { get; private set; }
+
+        /// <summary>True while the overlay is rendering from supplied cell rects.</summary>
+        public bool IsAuthoringMode => _authoringMode;
+
+        /// <summary>Number of authoring cells currently driving the overlay (0 when not in authoring mode).</summary>
+        public int AuthoringCellCount => _authoringMode ? _authoringCellCount : 0;
 
         public void SetVisible(bool visible)
         {
@@ -53,6 +73,40 @@ namespace Valkur.Gameplay.World
             }
 
             SyncVisuals();
+        }
+
+        /// <summary>
+        /// Switch the overlay into authoring mode and replace its cell list with
+        /// the supplied world-space rects. Each rect produces exactly one filled
+        /// visual at that world position. Call <see cref="ClearAuthoringCells"/>
+        /// to revert to BoxCollider2D-derived rendering.
+        /// </summary>
+        /// <param name="worldCellRects">
+        /// World-space rects, one per visible collider cell. May be null/empty
+        /// (in that case the overlay enters authoring mode but renders nothing).
+        /// </param>
+        public void SetAuthoringCells(IList<Rect> worldCellRects)
+        {
+            _authoringMode = true;
+            int count = worldCellRects != null ? worldCellRects.Count : 0;
+            if (_authoringCells == null || _authoringCells.Length < count)
+                _authoringCells = new Rect[Mathf.Max(count, 8)];
+            for (int i = 0; i < count; i++)
+                _authoringCells[i] = worldCellRects[i];
+            _authoringCellCount = count;
+            if (_visible) SyncVisuals();
+        }
+
+        /// <summary>
+        /// Leave authoring mode and revert to enumerating live BoxCollider2D
+        /// shapes for the visuals. Idempotent.
+        /// </summary>
+        public void ClearAuthoringCells()
+        {
+            if (!_authoringMode && _authoringCellCount == 0) return;
+            _authoringMode = false;
+            _authoringCellCount = 0;
+            if (_visible) SyncVisuals();
         }
 
         private void LateUpdate()
@@ -76,21 +130,36 @@ namespace Valkur.Gameplay.World
             EnsureSharedAssets();
             CleanupOrphanedVisualRoots();
 
-            int colliderCount = 0;
-            foreach (var box in EnumerateActiveColliders())
+            int visualCount = 0;
+
+            if (_authoringMode)
             {
-                EnsureVisualCapacity(colliderCount + 1);
-                UpdateVisual(_visuals[colliderCount], box, colliderCount);
-                colliderCount++;
+                // Authoring mode: render exactly one visual per supplied world-space cell rect.
+                for (int i = 0; i < _authoringCellCount; i++)
+                {
+                    EnsureVisualCapacity(visualCount + 1);
+                    UpdateVisualFromWorldRect(_visuals[visualCount], _authoringCells[i], visualCount);
+                    visualCount++;
+                }
+            }
+            else
+            {
+                // Default mode: infer rects from the building's live BoxCollider2D shapes.
+                foreach (var box in EnumerateActiveColliders())
+                {
+                    EnsureVisualCapacity(visualCount + 1);
+                    UpdateVisualFromCollider(_visuals[visualCount], box, visualCount);
+                    visualCount++;
+                }
             }
 
-            for (int i = colliderCount; i < _visuals.Count; i++)
+            for (int i = visualCount; i < _visuals.Count; i++)
             {
                 if (_visuals[i] != null && _visuals[i].Host != null)
                     _visuals[i].Host.SetActive(false);
             }
 
-            CurrentVisualCount = colliderCount;
+            CurrentVisualCount = visualCount;
         }
 
         private IEnumerable<BoxCollider2D> EnumerateActiveColliders()
@@ -166,14 +235,26 @@ namespace Valkur.Gameplay.World
             };
         }
 
-        private void UpdateVisual(VisualEntry visual, BoxCollider2D box, int index)
+        private void UpdateVisualFromCollider(VisualEntry visual, BoxCollider2D box, int index)
         {
             if (visual == null || visual.Host == null || box == null) return;
-
             Bounds bounds = box.bounds;
+            UpdateVisualFromWorldAabb(visual, bounds.center, bounds.size, index);
+        }
+
+        private void UpdateVisualFromWorldRect(VisualEntry visual, Rect worldRect, int index)
+        {
+            if (visual == null || visual.Host == null) return;
+            Vector2 center = worldRect.center;
+            Vector2 size = worldRect.size;
+            UpdateVisualFromWorldAabb(visual, new Vector3(center.x, center.y, 0f), new Vector3(size.x, size.y, 0f), index);
+        }
+
+        private void UpdateVisualFromWorldAabb(VisualEntry visual, Vector3 worldCenter, Vector3 worldSize, int index)
+        {
             visual.Host.name = $"{VISUAL_PREFIX}{index}";
             visual.Host.layer = gameObject.layer;
-            visual.Host.transform.position = new Vector3(bounds.center.x, bounds.center.y, Z_OFFSET);
+            visual.Host.transform.position = new Vector3(worldCenter.x, worldCenter.y, Z_OFFSET);
             visual.Host.transform.rotation = Quaternion.identity;
             visual.Host.transform.localScale = GetInverseLossyScale(transform);
 
@@ -181,7 +262,7 @@ namespace Valkur.Gameplay.World
             {
                 visual.Fill.transform.localPosition = Vector3.zero;
                 visual.Fill.transform.localRotation = Quaternion.identity;
-                visual.Fill.transform.localScale = new Vector3(bounds.size.x, bounds.size.y, 1f);
+                visual.Fill.transform.localScale = new Vector3(worldSize.x, worldSize.y, 1f);
                 visual.Fill.color = FillColor;
                 visual.Fill.enabled = true;
             }
@@ -193,10 +274,14 @@ namespace Valkur.Gameplay.World
                 visual.Line.startColor = LineColor;
                 visual.Line.endColor = LineColor;
                 visual.Line.enabled = true;
-                visual.Line.SetPosition(0, new Vector3(bounds.min.x, bounds.min.y, Z_OFFSET));
-                visual.Line.SetPosition(1, new Vector3(bounds.max.x, bounds.min.y, Z_OFFSET));
-                visual.Line.SetPosition(2, new Vector3(bounds.max.x, bounds.max.y, Z_OFFSET));
-                visual.Line.SetPosition(3, new Vector3(bounds.min.x, bounds.max.y, Z_OFFSET));
+                float minX = worldCenter.x - worldSize.x * 0.5f;
+                float maxX = worldCenter.x + worldSize.x * 0.5f;
+                float minY = worldCenter.y - worldSize.y * 0.5f;
+                float maxY = worldCenter.y + worldSize.y * 0.5f;
+                visual.Line.SetPosition(0, new Vector3(minX, minY, Z_OFFSET));
+                visual.Line.SetPosition(1, new Vector3(maxX, minY, Z_OFFSET));
+                visual.Line.SetPosition(2, new Vector3(maxX, maxY, Z_OFFSET));
+                visual.Line.SetPosition(3, new Vector3(minX, maxY, Z_OFFSET));
             }
 
             visual.Host.SetActive(_visible);
