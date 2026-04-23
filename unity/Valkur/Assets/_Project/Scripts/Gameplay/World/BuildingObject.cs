@@ -53,6 +53,15 @@ namespace Valkur.Gameplay.World
         [Tooltip("Per-instance split ratio override in [0,1]. Values < 0 use template.splitRatio.")]
         [SerializeField, Range(-0.01f, 1f)] private float _splitRatioOverride = -1f;
 
+        [Tooltip("Per-instance Z-bottom offset (added to footprint sortingOrder). Maps to Python building.z_bottom.")]
+        [SerializeField] private int _zBottomOffset;
+
+        [Tooltip("Per-instance Z-top offset (added to canopy sortingOrder). Maps to Python building.z_top.")]
+        [SerializeField] private int _zTopOffset;
+
+        [Tooltip("Per-instance collider scope override: empty = use template, 'CG' = shared, 'CU' = per-instance.")]
+        [SerializeField] private string _colliderScopeOverride = "";
+
         [Header("Runtime Info (read-only)")]
         [Tooltip("Zone name this building belongs to. Set by BuildingLoader.")]
         [SerializeField] private string _zoneName;
@@ -71,6 +80,46 @@ namespace Valkur.Gameplay.World
         public int                  InstanceId    { get => _instanceId;         set => _instanceId = value;         }
         public Vector2Int           ScaleOverride { get => _scaleOverride;      set => _scaleOverride = value;       }
         public float SplitRatioOverride           { get => _splitRatioOverride; set => _splitRatioOverride = value;  }
+        public int   ZBottomOffset                { get => _zBottomOffset;      set { _zBottomOffset = value; ApplyZOffsets(); } }
+        public int   ZTopOffset                   { get => _zTopOffset;         set { _zTopOffset    = value; ApplyZOffsets(); } }
+        public string ColliderScopeOverride       { get => _colliderScopeOverride; set => _colliderScopeOverride = value ?? ""; }
+
+        /// <summary>
+        /// Effective collider scope: instance override (if set) else template's value.
+        /// "CG" = collision map shared per-image, "CU" = unique per-instance.
+        /// </summary>
+        public string EffectiveColliderScope =>
+            string.IsNullOrEmpty(_colliderScopeOverride) ? (_template?.colliderScope ?? "CG") : _colliderScopeOverride;
+
+        /// <summary>
+        /// World-space AABB of the rendered building (full sprite, top + bottom).
+        /// Returns false when the renderers haven't been built yet.
+        /// Used by the runtime Buildings Editor for hover detection and outline drawing.
+        /// </summary>
+        public bool TryGetWorldRect(out Rect rect)
+        {
+            rect = default;
+            if (_bottomRenderer == null || _bottomRenderer.sprite == null) return false;
+            float sx = transform.localScale.x;
+            float sy = transform.localScale.y;
+            float bottomH = _bottomRenderer.sprite.rect.height / PPU;
+            float topH    = (_topRenderer != null && _topRenderer.sprite != null)
+                ? _topRenderer.sprite.rect.height / PPU
+                : 0f;
+            float spriteW = _bottomRenderer.sprite.rect.width / PPU;
+            float w = spriteW * sx;
+            float h = (bottomH + topH) * sy;
+            Vector3 pos = transform.position;
+            rect = new Rect(pos.x - w * 0.5f, pos.y, w, h);
+            return true;
+        }
+
+        private void ApplyZOffsets()
+        {
+            int baseY = SortingConfig.YToSortingOrder(transform.position.y);
+            if (_bottomRenderer != null) _bottomRenderer.sortingOrder = baseY + _zBottomOffset;
+            if (_topRenderer    != null) _topRenderer.sortingOrder    = baseY + _zTopOffset;
+        }
 
         // ── Unity lifecycle ────────────────────────────────────────────────────────
 
@@ -180,8 +229,8 @@ namespace Valkur.Gameplay.World
             // Y-sort within layer: buildings farther down on screen (lower worldY)
             // rank in front. SortingConfig.YToSortingOrder returns -(int)(y*100).
             int ySortOrder = SortingConfig.YToSortingOrder(transform.position.y);
-            _bottomRenderer.sortingOrder = ySortOrder;
-            _topRenderer.sortingOrder    = ySortOrder;
+            _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset;
+            _topRenderer.sortingOrder    = ySortOrder + _zTopOffset;
 
             // ── 5. Collider (footprint rect) ───────────────────────────────────────
             _collider.enabled = template.solid;
