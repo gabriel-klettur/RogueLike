@@ -58,13 +58,16 @@ namespace Valkur.Gameplay.Buildings
             public Image           ScopeBtnImg;
             public TextMeshProUGUI ScopeBtnLabel;
 
-            // Colliders panel refs
-            public Image           CollVisibilityBtnImg;  public TextMeshProUGUI CollVisibilityBtnLabel;
-            public Image           CollBrushOffBtnImg, CollBrushSolidBtnImg, CollBrushWalkBtnImg, CollBrushEraseBtnImg;
+            // Colliders panel refs (redesigned: ON/OFF toggle + Paint/Erase action + scope + size).
+            public Image           CollVisibilityBtnImg;   public TextMeshProUGUI CollVisibilityBtnLabel;
+            public Image           CollScopeBtnImg;        public TextMeshProUGUI CollScopeBtnLabel;
+            public Image           CollBrushToggleImg;     public TextMeshProUGUI CollBrushToggleLabel;
+            public Image           CollPaintBtnImg;        // # action button
+            public Image           CollEraseBtnImg;        // . action button
             public Slider          CollBrushSizeSlider;
             public TextMeshProUGUI CollBrushSizeVal;
-            public TextMeshProUGUI CollTargetText;
-            public TextMeshProUGUI CollStateText;
+            public TextMeshProUGUI CollTargetText;         // "ID 142 | Scope CG\nimage:..."
+            public TextMeshProUGUI CollStateText;          // "Grid 8x6 | Solids 12 | Dirty | ON #"
             public TextMeshProUGUI CollHintText;
         }
 
@@ -75,7 +78,7 @@ namespace Valkur.Gameplay.Buildings
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
         private const float BUILDINGS_H = TILES_DROP_H;          // 564 px
         private const float COLLIDERS_W = 220f;                  // narrower than props
-        private const float COLLIDERS_H = 430f + PANEL_HDR_H;
+        private const float COLLIDERS_H = 470f + PANEL_HDR_H;
         private const float PROPS_W     = INSPECTOR_DROP_W;      // 250 px
         private const float PROPS_H     = 400f + PANEL_HDR_H;    // 424 px
 
@@ -108,12 +111,13 @@ namespace Valkur.Gameplay.Buildings
             Action         onColliderScope,
             Action         onPaintSolid,   Action onPaintWalk, Action onSaveCU,
             Action         onDeleteBuilding,
-            // Colliders panel callbacks
+            // Colliders panel callbacks (redesigned)
             Action         onToggleCollidersVisible,
-            Action         onCollBrushOff, Action onCollBrushSolid,
-            Action         onCollBrushWalk, Action onCollBrushErase,
+            Action         onCollScopeToggle,
+            Action         onBrushToggle,                 // B → toggle brush ON/OFF
+            Action         onBrushPaint,                  // # → action = Paint
+            Action         onBrushErase,                  // . → action = Erase
             Action<float>  onCollBrushSizeChanged,
-            Action         onCollRevert, Action onCollFill, Action onCollClear,
             Action         onCollSave)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
@@ -128,8 +132,9 @@ namespace Valkur.Gameplay.Buildings
             BuildBuildingsPanel(canvasT, ref refs, onSearchChanged);
             BuildCollidersPanel(canvasT, ref refs,
                 onToggleCollidersVisible,
-                onCollBrushOff, onCollBrushSolid, onCollBrushWalk, onCollBrushErase,
-                onCollBrushSizeChanged, onCollRevert, onCollFill, onCollClear, onCollSave);
+                onCollScopeToggle,
+                onBrushToggle, onBrushPaint, onBrushErase,
+                onCollBrushSizeChanged, onCollSave);
             BuildPropertiesPanel(canvasT, ref refs, onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
                 onColliderScope, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding);
@@ -394,19 +399,26 @@ namespace Valkur.Gameplay.Buildings
         }
 
         // ── Colliders Panel ───────────────────────────────────────────────────────
-        // Sits between Buildings and Properties. Provides: visibility toggle for
-        // collider overlays, brush mode (Off / Solid / Walk / Erase), brush size
-        // slider (1-8 cells), and Save Colliders action.
+        // Sits between Buildings and Properties. Provides:
+        //   • Visibility toggle for the per-building collider overlay (red shapes).
+        //   • Scope toggle (CG = shared by image / CU = unique to this instance).
+        //   • Brush ON/OFF + Action (# Paint / . Erase) + Size slider [1..8].
+        //   • Status (target id, scope, grid size, dirty flag, brush state).
+        //   • Save Colliders.
+        // Keyboard shortcuts (handled in BuildingsRuntimeEditor while panel is open):
+        //   B  → toggle brush ON/OFF
+        //   #  → set action = Paint
+        //   .  → set action = Erase
+        //   [  → brush size −1     ]  → brush size +1
+        //   Tab→ toggle scope CG ↔ CU
 
         private static void BuildCollidersPanel(Transform canvasT, ref UIRefs refs,
             Action onToggleVisible,
-            Action onBrushOff, Action onBrushSolid, Action onBrushWalk, Action onBrushErase,
+            Action onScopeToggle,
+            Action onBrushToggle, Action onBrushPaint, Action onBrushErase,
             Action<float> onBrushSizeChanged,
-            Action onRevert, Action onFill, Action onClear,
             Action onSave)
         {
-            // Place between Buildings and Properties → docked top-right is busy with Properties.
-            // Easiest: dock TopLeft past the Buildings panel.
             float collX = PANEL_GAP + MODES_W + PANEL_GAP + BUILDINGS_W + PANEL_GAP;
             refs.CollidersDropdown = MakeDrop("CollidersPanel", canvasT,
                 PanelDock.TopLeft, collX, PANEL_TOP_OFFSET,
@@ -414,54 +426,42 @@ namespace Valkur.Gameplay.Buildings
 
             // ── Visibility toggle ──
             BuildSeparator(t);
-            var visLbl       = CreateUI("VisLbl", t);
-            visLbl.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var visLblTmp    = visLbl.AddComponent<TextMeshProUGUI>();
-            visLblTmp.text   = "Visibility";
-            visLblTmp.fontSize = 10f;
-            visLblTmp.color  = TEXT_SECONDARY;
+            AddSectionLabel(t, "Visibility");
+            (refs.CollVisibilityBtnImg, refs.CollVisibilityBtnLabel) =
+                AddFullWidthBtn(t, "Show Colliders", 30f, onToggleVisible);
 
-            var visBtnGo = CreateUI("VisBtn", t);
-            visBtnGo.AddComponent<LayoutElement>().preferredHeight = 30f;
-            refs.CollVisibilityBtnImg       = visBtnGo.AddComponent<Image>();
-            refs.CollVisibilityBtnImg.color = BTN_NORMAL;
-            var visBtn                      = visBtnGo.AddComponent<Button>();
-            var visC                        = visBtn.colors;
-            visC.normalColor = BTN_NORMAL; visC.highlightedColor = BTN_HOVER; visC.pressedColor = BTN_ACTIVE;
-            visBtn.colors = visC; visBtn.targetGraphic = refs.CollVisibilityBtnImg;
-            if (onToggleVisible != null) visBtn.onClick.AddListener(() => onToggleVisible.Invoke());
-            refs.CollVisibilityBtnLabel = AddCenteredText(visBtnGo.transform,
-                "Show Colliders", 11f, FontStyles.Bold, TEXT_PRIMARY);
-
-            // ── Brush mode (radio-style row of 4 buttons) ──
+            // ── Scope toggle (CG / CU) ──
             BuildSeparator(t);
-            var brushLbl       = CreateUI("BrushLbl", t);
-            brushLbl.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var brushLblTmp    = brushLbl.AddComponent<TextMeshProUGUI>();
-            brushLblTmp.text   = "Brush mode";
-            brushLblTmp.fontSize = 10f;
-            brushLblTmp.color  = TEXT_SECONDARY;
+            AddSectionLabel(t, "Scope (Tab)");
+            (refs.CollScopeBtnImg, refs.CollScopeBtnLabel) =
+                AddFullWidthBtn(t, "Scope: --", 30f, onScopeToggle);
 
-            var brushRow = CreateUI("BrushRow", t);
-            brushRow.AddComponent<LayoutElement>().preferredHeight = 32f;
-            var bhlg = brushRow.AddComponent<HorizontalLayoutGroup>();
-            bhlg.spacing                 = 3f;
-            bhlg.childForceExpandWidth   = true;
-            bhlg.childForceExpandHeight  = true;
-            bhlg.childControlWidth       = true;
-            bhlg.childControlHeight      = true;
+            // ── Brush ON / OFF ──
+            BuildSeparator(t);
+            AddSectionLabel(t, "Brush (B)");
+            (refs.CollBrushToggleImg, refs.CollBrushToggleLabel) =
+                AddFullWidthBtn(t, "Brush: OFF", 30f, onBrushToggle);
 
-            refs.CollBrushOffBtnImg   = AddBrushModeBtn(brushRow.transform, "Off",   onBrushOff);
-            refs.CollBrushSolidBtnImg = AddBrushModeBtn(brushRow.transform, "#",     onBrushSolid);
-            refs.CollBrushWalkBtnImg  = AddBrushModeBtn(brushRow.transform, ".",     onBrushWalk);
-            refs.CollBrushEraseBtnImg = AddBrushModeBtn(brushRow.transform, "Erase", onBrushErase);
+            // ── Action: # Paint / . Erase ──
+            AddSectionLabel(t, "Action");
+            var actionRow = CreateUI("ActionRow", t);
+            actionRow.AddComponent<LayoutElement>().preferredHeight = 28f;
+            var ahlg = actionRow.AddComponent<HorizontalLayoutGroup>();
+            ahlg.spacing                = 4f;
+            ahlg.childForceExpandWidth  = true;
+            ahlg.childForceExpandHeight = true;
+            ahlg.childControlWidth      = true;
+            ahlg.childControlHeight     = true;
 
-            // ── Brush size slider ──
+            refs.CollPaintBtnImg = AddBrushActionBtn(actionRow.transform, "# Paint", onBrushPaint);
+            refs.CollEraseBtnImg = AddBrushActionBtn(actionRow.transform, ". Erase", onBrushErase);
+
+            // ── Brush size slider [1..8] ──
             BuildSeparator(t);
             var sizeRow = CreateUI("SizeRow", t);
             sizeRow.AddComponent<LayoutElement>().preferredHeight = 18f;
             var srhlg = sizeRow.AddComponent<HorizontalLayoutGroup>();
-            srhlg.spacing             = 4f;
+            srhlg.spacing                = 4f;
             srhlg.childForceExpandWidth  = false;
             srhlg.childForceExpandHeight = true;
             srhlg.childControlWidth      = true;
@@ -470,14 +470,14 @@ namespace Valkur.Gameplay.Buildings
             var sizeLblGo = CreateUI("Lbl", sizeRow.transform);
             sizeLblGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
             var sizeLblTmp = sizeLblGo.AddComponent<TextMeshProUGUI>();
-            sizeLblTmp.text = "Brush size";
-            sizeLblTmp.fontSize = 10f;
-            sizeLblTmp.color = TEXT_SECONDARY;
+            sizeLblTmp.text      = "Brush size [ / ]";
+            sizeLblTmp.fontSize  = 10f;
+            sizeLblTmp.color     = TEXT_SECONDARY;
             sizeLblTmp.alignment = TextAlignmentOptions.MidlineLeft;
 
             var sizeValGo = CreateUI("Val", sizeRow.transform);
             sizeValGo.AddComponent<LayoutElement>().preferredWidth = 30f;
-            refs.CollBrushSizeVal = sizeValGo.AddComponent<TextMeshProUGUI>();
+            refs.CollBrushSizeVal           = sizeValGo.AddComponent<TextMeshProUGUI>();
             refs.CollBrushSizeVal.text      = "1";
             refs.CollBrushSizeVal.fontSize  = 11f;
             refs.CollBrushSizeVal.alignment = TextAlignmentOptions.MidlineRight;
@@ -498,82 +498,82 @@ namespace Valkur.Gameplay.Buildings
             var sFillGo = CreateUI("Fill", sFillArea.transform);
             StretchFill(sFillGo);
             sFillGo.AddComponent<Image>().color = ACCENT;
-            refs.CollBrushSizeSlider.fillRect = sFillGo.GetComponent<RectTransform>();
-            refs.CollBrushSizeSlider.minValue   = 1f;
-            refs.CollBrushSizeSlider.maxValue   = 8f;
+            refs.CollBrushSizeSlider.fillRect     = sFillGo.GetComponent<RectTransform>();
+            refs.CollBrushSizeSlider.minValue     = 1f;
+            refs.CollBrushSizeSlider.maxValue     = 8f;
             refs.CollBrushSizeSlider.wholeNumbers = true;
-            refs.CollBrushSizeSlider.value      = 1f;
+            refs.CollBrushSizeSlider.value        = 1f;
             if (onBrushSizeChanged != null)
                 refs.CollBrushSizeSlider.onValueChanged.AddListener(v => onBrushSizeChanged(v));
 
+            // ── Status texts ──
+            BuildSeparator(t);
+            var targetGo = CreateUI("CollTarget", t);
+            targetGo.AddComponent<LayoutElement>().preferredHeight = 28f;
+            refs.CollTargetText                     = targetGo.AddComponent<TextMeshProUGUI>();
+            refs.CollTargetText.text                = "No building selected.";
+            refs.CollTargetText.fontSize            = 10f;
+            refs.CollTargetText.color               = TEXT_PRIMARY;
+            refs.CollTargetText.alignment           = TextAlignmentOptions.TopLeft;
+            refs.CollTargetText.enableWordWrapping  = true;
+
+            var stateGo = CreateUI("CollState", t);
+            stateGo.AddComponent<LayoutElement>().preferredHeight = 22f;
+            refs.CollStateText                      = stateGo.AddComponent<TextMeshProUGUI>();
+            refs.CollStateText.text                 = "Grid: -- | Brush OFF";
+            refs.CollStateText.fontSize             = 9f;
+            refs.CollStateText.color                = TEXT_MUTED;
+            refs.CollStateText.alignment            = TextAlignmentOptions.TopLeft;
+            refs.CollStateText.enableWordWrapping   = true;
+
             // ── Save action ──
-            BuildSeparator(t);
-            BuildSeparator(t);
-            var targetLbl = CreateUI("TargetLbl", t);
-            targetLbl.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var targetLblTmp = targetLbl.AddComponent<TextMeshProUGUI>();
-            targetLblTmp.text = "Selection";
-            targetLblTmp.fontSize = 10f;
-            targetLblTmp.color = TEXT_SECONDARY;
-
-            var targetInfo = CreateUI("TargetInfo", t);
-            targetInfo.AddComponent<LayoutElement>().preferredHeight = 44f;
-            refs.CollTargetText = targetInfo.AddComponent<TextMeshProUGUI>();
-            refs.CollTargetText.text = "No building selected.";
-            refs.CollTargetText.fontSize = 9f;
-            refs.CollTargetText.color = TEXT_PRIMARY;
-            refs.CollTargetText.alignment = TextAlignmentOptions.TopLeft;
-            refs.CollTargetText.enableWordWrapping = true;
-
-            var stateInfo = CreateUI("StateInfo", t);
-            stateInfo.AddComponent<LayoutElement>().preferredHeight = 28f;
-            refs.CollStateText = stateInfo.AddComponent<TextMeshProUGUI>();
-            refs.CollStateText.text = "Grid: --";
-            refs.CollStateText.fontSize = 9f;
-            refs.CollStateText.color = TEXT_MUTED;
-            refs.CollStateText.alignment = TextAlignmentOptions.TopLeft;
-            refs.CollStateText.enableWordWrapping = true;
-
-            BuildSeparator(t);
-            var actionsLbl = CreateUI("ActionsLbl", t);
-            actionsLbl.AddComponent<LayoutElement>().preferredHeight = 16f;
-            var actionsLblTmp = actionsLbl.AddComponent<TextMeshProUGUI>();
-            actionsLblTmp.text = "Quick actions";
-            actionsLblTmp.fontSize = 10f;
-            actionsLblTmp.color = TEXT_SECONDARY;
-
-            var actionsRow = CreateUI("ActionsRow", t);
-            actionsRow.AddComponent<LayoutElement>().preferredHeight = 28f;
-            var actionsLayout = actionsRow.AddComponent<HorizontalLayoutGroup>();
-            actionsLayout.spacing = 4f;
-            actionsLayout.childForceExpandWidth = true;
-            actionsLayout.childForceExpandHeight = true;
-            actionsLayout.childControlWidth = true;
-            actionsLayout.childControlHeight = true;
-
-            EditorUIHelpers.MakeButton(actionsRow.transform, "Revert", () => onRevert?.Invoke(), 26f, 9f);
-            EditorUIHelpers.MakeButton(actionsRow.transform, "Fill",   () => onFill?.Invoke(),   26f, 9f);
-            EditorUIHelpers.MakeButton(actionsRow.transform, "Clear",  () => onClear?.Invoke(),  26f, 9f);
-
             BuildSeparator(t);
             EditorUIHelpers.MakeButton(t, "Save Colliders", () => onSave?.Invoke(), 30f, 11f);
 
             // ── Hint text ──
             var hintGo = CreateUI("Hint", t);
-            hintGo.AddComponent<LayoutElement>().preferredHeight = 78f;
-            refs.CollHintText                 = hintGo.AddComponent<TextMeshProUGUI>();
-            refs.CollHintText.text            = "Select a building, choose a brush, then LMB-drag over the sprite to edit the collider grid. 'Walk' marks walkable cells, 'Erase' restores the scope fallback, and Save writes CG/CU data to disk.";
-            refs.CollHintText.fontSize        = 9f;
-            refs.CollHintText.color           = TEXT_MUTED;
-            refs.CollHintText.alignment       = TextAlignmentOptions.TopLeft;
-            refs.CollHintText.enableWordWrapping = true;
+            hintGo.AddComponent<LayoutElement>().preferredHeight = 64f;
+            refs.CollHintText                     = hintGo.AddComponent<TextMeshProUGUI>();
+            refs.CollHintText.text                =
+                "B brush · # paint · . erase · [ ] size · Tab scope. LMB on the building to apply.";
+            refs.CollHintText.fontSize            = 9f;
+            refs.CollHintText.color               = TEXT_MUTED;
+            refs.CollHintText.alignment           = TextAlignmentOptions.TopLeft;
+            refs.CollHintText.enableWordWrapping  = true;
 
             refs.CollidersDropdown.SetActive(false);
         }
 
-        private static Image AddBrushModeBtn(Transform parent, string label, Action onClick)
+        private static void AddSectionLabel(Transform parent, string text)
         {
-            var go = CreateUI($"BrushBtn_{label}", parent);
+            var go = CreateUI($"Lbl_{text}", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = 16f;
+            var tmp       = go.AddComponent<TextMeshProUGUI>();
+            tmp.text      = text;
+            tmp.fontSize  = 10f;
+            tmp.color     = TEXT_SECONDARY;
+            tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        }
+
+        private static (Image img, TextMeshProUGUI label) AddFullWidthBtn(
+            Transform parent, string label, float height, Action onClick)
+        {
+            var go = CreateUI($"Btn_{label}", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
+            var img = go.AddComponent<Image>();
+            img.color = BTN_NORMAL;
+            var btn = go.AddComponent<Button>();
+            var c   = btn.colors;
+            c.normalColor = BTN_NORMAL; c.highlightedColor = BTN_HOVER; c.pressedColor = BTN_ACTIVE;
+            btn.colors = c; btn.targetGraphic = img;
+            if (onClick != null) btn.onClick.AddListener(() => onClick.Invoke());
+            var tmp = AddCenteredText(go.transform, label, 11f, FontStyles.Bold, TEXT_PRIMARY);
+            return (img, tmp);
+        }
+
+        private static Image AddBrushActionBtn(Transform parent, string label, Action onClick)
+        {
+            var go = CreateUI($"ActionBtn_{label}", parent);
             var img = go.AddComponent<Image>();
             img.color = BTN_NORMAL;
             var btn = go.AddComponent<Button>();

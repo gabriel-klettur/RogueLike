@@ -370,17 +370,14 @@ namespace Valkur.Gameplay.Buildings
                 onPaintWalk:       () => SetCollBrushMode(CollBrushMode.Walk),
                 onSaveCU:          () => SaveColliderAuthoring(),
                 onDeleteBuilding:  () => RequestDeleteActiveWithConfirm(),
-                // Colliders panel callbacks
+                // Colliders panel callbacks (redesigned: ON/OFF + #/. action + scope)
                 onToggleCollidersVisible: () => ToggleCollidersVisible(),
-                onCollBrushOff:    () => SetCollBrushMode(CollBrushMode.Off),
-                onCollBrushSolid:  () => SetCollBrushMode(CollBrushMode.Solid),
-                onCollBrushWalk:   () => SetCollBrushMode(CollBrushMode.Walk),
-                onCollBrushErase:  () => SetCollBrushMode(CollBrushMode.Erase),
-                onCollBrushSizeChanged: v => OnCollBrushSizeChanged(v),
-                onCollRevert:      () => RevertActiveColliderEntry(),
-                onCollFill:        () => FillActiveColliderEntry(),
-                onCollClear:       () => ClearActiveColliderEntry(),
-                onCollSave:        () => SaveColliderAuthoring());
+                onCollScopeToggle:        () => ToggleColliderScope(),
+                onBrushToggle:            () => SetBrushOn(!BrushOn),
+                onBrushPaint:             () => SetBrushAction(CollBrushMode.Solid),
+                onBrushErase:             () => SetBrushAction(CollBrushMode.Walk),
+                onCollBrushSizeChanged:   v  => OnCollBrushSizeChanged(v),
+                onCollSave:               () => SaveColliderAuthoring());
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -783,6 +780,40 @@ namespace Valkur.Gameplay.Buildings
                 else if (_tutorialRoot != null && _tutorialRoot.activeSelf) _tutorialRoot.SetActive(false);
                 else { SaveInstancesToJson(); Deactivate(); }
             }
+
+            // Colliders panel shortcuts — only active when the panel is open so we
+            // never steal keys (especially '.') from other systems while not editing
+            // colliders. All keys are explicitly read; pressing them while the panel
+            // is open consumes the action regardless of any other listeners.
+            if (_openDropdowns.Contains("colliders"))
+                HandleColliderEditorShortcuts(kb);
+        }
+
+        private void HandleColliderEditorShortcuts(Keyboard kb)
+        {
+            // B → toggle brush ON/OFF
+            if (kb.bKey.wasPressedThisFrame && !kb.ctrlKey.isPressed)
+                SetBrushOn(!BrushOn);
+
+            // # (Shift+3) or numpad-3 → action = Paint (writes "#")
+            if (kb.digit3Key.wasPressedThisFrame && kb.shiftKey.isPressed)
+                SetBrushAction(CollBrushMode.Solid);
+            if (kb.numpad3Key.wasPressedThisFrame)
+                SetBrushAction(CollBrushMode.Solid);
+
+            // . (period) or numpad-. → action = Erase (writes ".")
+            if (kb.periodKey.wasPressedThisFrame || kb.numpadPeriodKey.wasPressedThisFrame)
+                SetBrushAction(CollBrushMode.Walk);
+
+            // [ / ] → brush size −/+
+            if (kb.leftBracketKey.wasPressedThisFrame)
+                OnCollBrushSizeChanged(_collBrushSize - 1);
+            if (kb.rightBracketKey.wasPressedThisFrame)
+                OnCollBrushSizeChanged(_collBrushSize + 1);
+
+            // Tab → toggle scope CG ↔ CU on the active building
+            if (kb.tabKey.wasPressedThisFrame && _activeBuilding != null)
+                ToggleColliderScope();
         }
 
         private void HandleMapInteraction()
@@ -1536,6 +1567,11 @@ namespace Valkur.Gameplay.Buildings
 
         private bool          _collidersVisible;
         private CollBrushMode _collBrushMode = CollBrushMode.Off;
+        // Remembered action for when the brush is toggled back ON. Only Solid (=#)
+        // and Walk (=.) are valid actions in the redesigned UX. The Off/Erase
+        // values of CollBrushMode are kept internally for back-compat with
+        // HandleColliderPaint, but Erase is no longer reachable from the UI.
+        private CollBrushMode _lastBrushAction = CollBrushMode.Solid;
         private int           _collBrushSize = 1;
         private bool          _colliderDataLoaded;
         private readonly Dictionary<string, ColliderGridData> _colliderImageStore =
@@ -1564,9 +1600,52 @@ namespace Valkur.Gameplay.Buildings
             Toast(_collidersVisible ? $"Colliders visible ({total} shapes)." : "Colliders hidden.");
         }
 
+        private bool BrushOn => _collBrushMode != CollBrushMode.Off;
+
+        private void SetBrushOn(bool on)
+        {
+            if (on)
+            {
+                // Resume the last selected action; default to Paint if none.
+                if (_lastBrushAction != CollBrushMode.Solid && _lastBrushAction != CollBrushMode.Walk)
+                    _lastBrushAction = CollBrushMode.Solid;
+                SetCollBrushMode(_lastBrushAction);
+            }
+            else
+            {
+                SetCollBrushMode(CollBrushMode.Off);
+            }
+        }
+
+        private void SetBrushAction(CollBrushMode action)
+        {
+            // Only Paint (Solid → "#") and Erase (Walk → ".") are valid actions in the new UX.
+            if (action != CollBrushMode.Solid && action != CollBrushMode.Walk) return;
+            _lastBrushAction = action;
+            if (BrushOn)
+            {
+                SetCollBrushMode(action);
+            }
+            else
+            {
+                // Brush is OFF — just remember the choice and refresh the panel so the
+                // user can see which action will be applied when they toggle back ON.
+                RefreshBrushButtonHighlights();
+                RefreshCollidersPanel();
+                Toast($"Brush action set to {ActionLabel(action)} (brush is OFF — press B to enable).");
+            }
+        }
+
+        private static string ActionLabel(CollBrushMode action)
+            => action == CollBrushMode.Solid ? "# Paint"
+             : action == CollBrushMode.Walk  ? ". Erase"
+             : action.ToString();
+
         private void SetCollBrushMode(CollBrushMode mode)
         {
             _collBrushMode = mode;
+            if (mode == CollBrushMode.Solid || mode == CollBrushMode.Walk)
+                _lastBrushAction = mode;
             RefreshBrushButtonHighlights();
             if (mode != CollBrushMode.Off && !_collidersVisible)
             {
@@ -1577,8 +1656,12 @@ namespace Valkur.Gameplay.Buildings
                 Physics2D.SyncTransforms();
                 RefreshCollidersOverlay();
             }
+            if (_uiRefs.CollBrushToggleLabel != null)
+                _uiRefs.CollBrushToggleLabel.text = BrushOn
+                    ? $"Brush: ON ({ActionLabel(_lastBrushAction)})"
+                    : "Brush: OFF";
             RefreshCollidersPanel();
-            Toast($"Brush: {mode}");
+            Toast(BrushOn ? $"Brush ON ({ActionLabel(_collBrushMode)})." : "Brush OFF.");
         }
 
         private void OnCollBrushSizeChanged(float v)
@@ -1586,15 +1669,24 @@ namespace Valkur.Gameplay.Buildings
             _collBrushSize = Mathf.Clamp(Mathf.RoundToInt(v), 1, 8);
             if (_uiRefs.CollBrushSizeVal != null)
                 _uiRefs.CollBrushSizeVal.text = _collBrushSize.ToString();
+            if (_uiRefs.CollBrushSizeSlider != null
+                && !Mathf.Approximately(_uiRefs.CollBrushSizeSlider.value, _collBrushSize))
+            {
+                _uiRefs.CollBrushSizeSlider.SetValueWithoutNotify(_collBrushSize);
+            }
             RefreshCollidersPanel();
         }
 
         private void RefreshBrushButtonHighlights()
         {
-            ApplyBrushBtnStyle(_uiRefs.CollBrushOffBtnImg,   _collBrushMode == CollBrushMode.Off);
-            ApplyBrushBtnStyle(_uiRefs.CollBrushSolidBtnImg, _collBrushMode == CollBrushMode.Solid);
-            ApplyBrushBtnStyle(_uiRefs.CollBrushWalkBtnImg,  _collBrushMode == CollBrushMode.Walk);
-            ApplyBrushBtnStyle(_uiRefs.CollBrushEraseBtnImg, _collBrushMode == CollBrushMode.Erase);
+            // Brush ON/OFF toggle highlight.
+            ApplyBrushBtnStyle(_uiRefs.CollBrushToggleImg, BrushOn);
+            // Action highlight: highlight the action that would apply on next click.
+            // When brush is OFF, still indicate the remembered action so the user knows
+            // what will activate when they press B.
+            CollBrushMode shownAction = BrushOn ? _collBrushMode : _lastBrushAction;
+            ApplyBrushBtnStyle(_uiRefs.CollPaintBtnImg, shownAction == CollBrushMode.Solid);
+            ApplyBrushBtnStyle(_uiRefs.CollEraseBtnImg, shownAction == CollBrushMode.Walk);
         }
 
         private static void ApplyBrushBtnStyle(Image img, bool selected)
@@ -1606,11 +1698,26 @@ namespace Valkur.Gameplay.Buildings
 
         private void RefreshCollidersPanel()
         {
+            // Update scope button label whenever we refresh.
+            if (_uiRefs.CollScopeBtnLabel != null)
+            {
+                string scopeNow = _activeBuilding != null
+                    ? _activeBuilding.EffectiveColliderScope
+                    : "--";
+                string scopeDesc = scopeNow == "CU" ? "this only"
+                                 : scopeNow == "CG" ? "all of type"
+                                 : "no selection";
+                _uiRefs.CollScopeBtnLabel.text = $"Scope: {scopeNow} ({scopeDesc})";
+            }
+
             if (_uiRefs.CollTargetText == null || _uiRefs.CollStateText == null) return;
+
+            string brushLabel = BrushOn ? $"ON {ActionLabel(_collBrushMode)}" : "OFF";
+
             if (_activeBuilding == null || _activeBuilding.Template == null)
             {
                 _uiRefs.CollTargetText.text = "No building selected.";
-                _uiRefs.CollStateText.text = $"Grid: -- | Brush {_collBrushMode} x{_collBrushSize}";
+                _uiRefs.CollStateText.text  = $"Grid: -- | Brush {brushLabel} x{_collBrushSize}";
                 return;
             }
 
@@ -1619,7 +1726,7 @@ namespace Valkur.Gameplay.Buildings
             if (session == null || session.WorkingGrid == null)
             {
                 _uiRefs.CollTargetText.text = $"ID {_activeBuilding.InstanceId} | Scope {_activeBuilding.EffectiveColliderScope}";
-                _uiRefs.CollStateText.text = $"Grid: -- | Brush {_collBrushMode} x{_collBrushSize}";
+                _uiRefs.CollStateText.text  = $"Grid: -- | Brush {brushLabel} x{_collBrushSize}";
                 return;
             }
 
@@ -1631,7 +1738,7 @@ namespace Valkur.Gameplay.Buildings
             int solids = CountSolidCells(session.WorkingGrid);
             _uiRefs.CollTargetText.text = $"ID {session.InstanceId} | Scope {scope}\n{target}";
             _uiRefs.CollStateText.text =
-                $"Grid: {session.WorkingGrid.width}x{session.WorkingGrid.height} | Solids {solids} | {dirty} | Brush {_collBrushMode} x{_collBrushSize}";
+                $"Grid: {session.WorkingGrid.width}x{session.WorkingGrid.height} | Solids {solids} | {dirty} | Brush {brushLabel} x{_collBrushSize}";
         }
 
         private int RefreshCollidersOverlay()
@@ -1752,58 +1859,9 @@ namespace Valkur.Gameplay.Buildings
             RefreshCollidersPanel();
         }
 
-        private void FillActiveColliderEntry()
-        {
-            var session = EnsureActiveColliderSession();
-            if (session == null || session.WorkingGrid == null) return;
-
-            for (int r = 0; r < session.WorkingGrid.height; r++)
-                for (int c = 0; c < session.WorkingGrid.width; c++)
-                    session.WorkingGrid.collision[r][c] = "#";
-
-            PersistSessionToStore(session);
-            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
-            RefreshCollidersPanel();
-            Toast("Collider grid filled.");
-        }
-
-        private void ClearActiveColliderEntry()
-        {
-            var session = EnsureActiveColliderSession();
-            if (session == null || session.WorkingGrid == null) return;
-
-            for (int r = 0; r < session.WorkingGrid.height; r++)
-                for (int c = 0; c < session.WorkingGrid.width; c++)
-                    session.WorkingGrid.collision[r][c] = ".";
-
-            PersistSessionToStore(session);
-            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
-            RefreshCollidersPanel();
-            Toast("Collider grid cleared.");
-        }
-
-        private void RevertActiveColliderEntry()
-        {
-            var session = EnsureActiveColliderSession();
-            if (session == null) return;
-
-            if (session.Scope == ColliderAuthoringScope.CU)
-            {
-                if (_savedColliderInstanceStore.TryGetValue(session.InstanceId, out var saved))
-                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, saved);
-                else
-                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, null);
-            }
-            else
-            {
-                if (_savedColliderImageStore.TryGetValue(session.ImageKey ?? string.Empty, out var saved))
-                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, saved);
-                else
-                    ApplyGridSnapshot(session.Scope, session.ImageKey, session.InstanceId, null);
-            }
-
-            Toast("Collider entry reverted.");
-        }
+        // NOTE: Quick Actions (Fill / Clear / Revert) were removed by user request
+        // to keep the colliders authoring UX strictly brush-driven (paint vs. erase).
+        // Bulk operations are now achieved with a large brush size on top of LMB-drag.
 
         private void SaveColliderAuthoring()
         {

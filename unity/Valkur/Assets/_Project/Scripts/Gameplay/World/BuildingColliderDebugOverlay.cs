@@ -17,6 +17,8 @@ namespace Valkur.Gameplay.World
     public sealed class BuildingColliderDebugOverlay : MonoBehaviour
     {
         private const string VISUAL_PREFIX = "_ColliderDebug_";
+        private const string COLL_TILE_PREFIX        = "CollTile_";
+        private const string POOLED_COLL_TILE_PREFIX = "_PooledCollTile_";
         private const float OUTLINE_WIDTH = 0.05f;
         private const float Z_OFFSET = -0.1f;
 
@@ -93,13 +95,24 @@ namespace Valkur.Gameplay.World
 
         private IEnumerable<BoxCollider2D> EnumerateActiveColliders()
         {
+            // Strict filter: only the building's own root BoxCollider2D and the
+            // explicitly-authored CollTile_* / _PooledCollTile_* children. This
+            // guarantees we never visualise stray colliders that may have been
+            // (accidentally or deliberately) parented under the building, such as
+            // pickups, NPCs that walked into a trigger, debug markers, etc.
+            // Without this filter the overlay was pickup up unrelated colliders
+            // and producing visuals that "followed" other entities.
             var colliders = GetComponentsInChildren<BoxCollider2D>(includeInactive: false);
             for (int i = 0; i < colliders.Length; i++)
             {
                 var box = colliders[i];
                 if (box == null || !box.enabled) continue;
-                if (box.transform.name.StartsWith(VISUAL_PREFIX)) continue;
-                yield return box;
+                var tName = box.transform.name;
+                if (tName.StartsWith(VISUAL_PREFIX)) continue;            // our own visuals
+                if (box.transform == transform) { yield return box; continue; } // root building collider
+                if (tName.StartsWith(COLL_TILE_PREFIX)) { yield return box; continue; }
+                if (tName.StartsWith(POOLED_COLL_TILE_PREFIX)) continue;  // pooled & inactive (or active but unused)
+                // Any other child collider is intentionally skipped.
             }
         }
 
