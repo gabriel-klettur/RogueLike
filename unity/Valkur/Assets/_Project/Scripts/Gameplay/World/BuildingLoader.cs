@@ -206,6 +206,8 @@ namespace Valkur.Gameplay.World
             bObj.InstanceId         = inst.Id;
             bObj.Apply(template, inst.ScaleOverride, inst.SplitRatioOverride);
             bObj.ColliderScopeOverride = inst.ColliderScopeOverride;
+            if (inst.ZBottomOffset != 0) bObj.ZBottomOffset = inst.ZBottomOffset;
+            if (inst.ZTopOffset    != 0) bObj.ZTopOffset    = inst.ZTopOffset;
 
             _spawnedBuildings.Add(bObj);
             return true;
@@ -256,6 +258,12 @@ namespace Valkur.Gameplay.World
 
                     if (overrides.TryGetValue("collider_scope", out var scopeRaw) && scopeRaw != null)
                         inst.ColliderScopeOverride = scopeRaw.ToString();
+
+                    if (overrides.TryGetValue("z_bottom", out var zBotRaw) && zBotRaw != null)
+                        inst.ZBottomOffset = Convert.ToInt32(zBotRaw);
+
+                    if (overrides.TryGetValue("z_top", out var zTopRaw) && zTopRaw != null)
+                        inst.ZTopOffset = Convert.ToInt32(zTopRaw);
                 }
 
                 result.Add(inst);
@@ -296,6 +304,10 @@ namespace Valkur.Gameplay.World
             public float      SplitRatioOverride;
             /// <summary>Empty = use template.colliderScope.</summary>
             public string     ColliderScopeOverride;
+            /// <summary>Sorting order delta for the bottom (WallsBottom) renderer. 0 = no override.</summary>
+            public int        ZBottomOffset;
+            /// <summary>Sorting order delta for the top (WallsTop) renderer. 0 = no override.</summary>
+            public int        ZTopOffset;
         }
     }
 }

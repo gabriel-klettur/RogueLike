@@ -128,13 +128,37 @@ namespace Valkur.Gameplay.World
         /// </param>
         public void SetAuthoringCells(IList<Rect> worldCellRects)
         {
-            _authoringMode = true;
             int count = worldCellRects != null ? worldCellRects.Count : 0;
+            bool wasAuthoring = _authoringMode;
+            _authoringMode = true;
             if (_authoringCells == null || _authoringCells.Length < count)
                 _authoringCells = new Rect[Mathf.Max(count, 8)];
+
+            // Fast path: if neither the cell count nor any individual rect
+            // changed since the last call, skip the dirty mark + SyncVisuals.
+            // This is critical because the editor pushes the active building's
+            // cells every frame and the overlay's SyncVisuals would otherwise
+            // re-apply transforms / line positions across every visual on every
+            // frame, even when nothing moved.
+            bool sameAsBefore = wasAuthoring && count == _authoringCellCount;
+            if (sameAsBefore)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    if (_authoringCells[i] != worldCellRects[i])
+                    {
+                        sameAsBefore = false;
+                        break;
+                    }
+                }
+            }
+
             for (int i = 0; i < count; i++)
                 _authoringCells[i] = worldCellRects[i];
             _authoringCellCount = count;
+
+            if (sameAsBefore) return;
+
             _dirty = true;
             if (_visible) SyncVisuals();
         }

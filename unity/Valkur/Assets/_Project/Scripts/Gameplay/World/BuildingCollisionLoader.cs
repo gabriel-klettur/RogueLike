@@ -79,15 +79,26 @@ namespace Valkur.Gameplay.World
             var grid = ResolveGrid(bObj);
             if (grid == null) return false;
 
-            // An authored grid with NO solid cells is treated as "no override"
-            // (i.e. fall back to the template's default root collider that
-            // RestoreDefaultColliderState just re-enabled). Disabling the
-            // root here would silently make 'solid' buildings non-blocking
-            // — that's how 140/142 buildings ended up walk-throughable when
-            // their image had a placeholder JSON entry but the user had not
-            // painted any '#' yet.
+            // An authored grid with NO solid cells is treated differently by scope:
+            //
+            //   CG (per-image): treat as an unintentional placeholder. Keep the root
+            //     collider enabled so buildings with empty/unpainted image-level JSON
+            //     entries still block movement. This prevented 140/142 buildings from
+            //     accidentally becoming walk-throughable.
+            //
+            //   CU (per-instance): treat as an intentional "reset to walkable" action
+            //     (e.g. produced by BuildingsRuntimeEditor "Reset All to Walkable").
+            //     Disable the root collider so physics matches the Buildings Editor's
+            //     authored state — i.e. both systems agree the building is passable.
             if (!HasSolidCells(grid))
+            {
+                if (string.Equals(bObj.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
+                {
+                    var mainColl = bObj.GetComponent<BoxCollider2D>();
+                    if (mainColl != null) mainColl.enabled = false;
+                }
                 return true;
+            }
 
             ApplyGridToBuilding(bObj, grid);
             return true;

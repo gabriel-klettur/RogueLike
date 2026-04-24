@@ -277,20 +277,19 @@ namespace Valkur.Gameplay.World
             _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset;
             _topRenderer.sortingOrder    = ySortOrder + _zTopOffset;
 
-            // ── 5. Collider (full sprite height) ────────────────────────────────────
-            // split_ratio is a VISUAL-ONLY property: it controls which sorting layer
-            // each half of the sprite renders on, NOT the collision footprint.
-            // The default BoxCollider2D covers the full sprite so that buildings with
-            // no authored collision grid still block movement correctly regardless of
-            // how the split slider is set. Whenever a custom collision grid is applied
-            // (BuildingCollisionLoader / BuildingsRuntimeEditor) the root collider is
-            // disabled and per-cell child BoxCollider2Ds are used instead.
+            // ── 5. Collider (footprint only = below the split line) ─────────────────
+            // Matching Python collision_rect: only the footprint (below the visual
+            // split line) blocks movement. The canopy (above the split) is rendered
+            // over entities but is physically passable — entities walk "behind"
+            // tall buildings as in the Python reference. When a custom per-cell
+            // collision grid is applied (BuildingCollisionLoader / BuildingsRuntimeEditor)
+            // this root collider is disabled and per-cell child BoxCollider2Ds are
+            // used instead, positioned via TryGetWorldCellRect().
             _collider.enabled = template.solid;
             if (template.solid)
             {
-                float fullH = (bottomH + topH);
-                _collider.size   = new Vector2(texW / PPU, fullH);
-                _collider.offset = new Vector2(0f, fullH * 0.5f);
+                _collider.size   = new Vector2(texW / PPU, bottomH);
+                _collider.offset = new Vector2(0f, bottomH * 0.5f);
             }
         }
 
