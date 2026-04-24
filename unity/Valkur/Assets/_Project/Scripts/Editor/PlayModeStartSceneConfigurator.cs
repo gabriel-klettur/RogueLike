@@ -19,9 +19,33 @@ namespace Valkur.Editor
             EditorApplication.delayCall += EnsureBootstrapAsPlayModeStartScene;
         }
 
+        /// <summary>
+        /// True when Unity was launched with <c>-runTests</c> (CI / batchmode).
+        /// We must NOT install a Bootstrap → MainMenu start scene in that case
+        /// because it hijacks every PlayMode test (the test runner waits for the
+        /// start scene flow to settle before loading the test scene, but the
+        /// game's full startup flow never returns control).
+        /// </summary>
+        private static bool IsRunningCommandLineTests()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-runTests") return true;
+            }
+            return false;
+        }
+
         [MenuItem("Valkur/Scenes/Set Play Mode Start Scene (Bootstrap)")]
         public static void EnsureBootstrapAsPlayModeStartScene()
         {
+            if (IsRunningCommandLineTests())
+            {
+                EditorSceneManager.playModeStartScene = null;
+                Debug.Log("[PlayModeStartSceneConfigurator] -runTests detected; cleared playModeStartScene so PlayMode tests can run.");
+                return;
+            }
+
             var bootstrapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(BootstrapScenePath);
             if (bootstrapScene == null)
             {

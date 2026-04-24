@@ -170,10 +170,11 @@ namespace Valkur.Gameplay
             if (_statusEffects != null && _statusEffects.IsStunned) return;
 
             // Suspend all player input while any runtime editor is active,
-            // EXCEPT the Buildings Editor which intentionally allows movement so
-            // the developer can walk around and test colliders manually.
+            // EXCEPT the Buildings Editor and Tile Editor which intentionally allow
+            // movement so the developer can walk around and test colliders manually.
             if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive &&
-                !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor))
+                !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor) &&
+                !(GameEditorManager.Instance.ActiveEditor is Valkur.Gameplay.TileEditor.TileEditorManager))
             {
                 _moveInput = Vector2.zero;
                 return;

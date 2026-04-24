@@ -268,7 +268,15 @@ namespace Valkur.Gameplay
 
         private void EnsureBuildingLoader()
         {
-            if (FindObjectOfType<World.BuildingLoader>() != null) return;
+            var existing = FindObjectOfType<World.BuildingLoader>();
+            if (existing != null)
+            {
+                // The scene-placed loader may have autoLoad=false — ensure buildings are
+                // loaded now if they haven't been yet (e.g. first play after scene open).
+                if (existing.SpawnedBuildings.Count == 0)
+                    existing.LoadBuildings();
+                return;
+            }
 
             if (_buildingCatalog == null)
             {
@@ -284,6 +292,62 @@ namespace Valkur.Gameplay
             loader.LoadBuildings();
 
             Debug.Log("[GameplaySceneSetup] BuildingLoader created and loaded.");
+        }
+
+        /// <summary>
+        /// Bake all CompositeCollider2D geometry after tiles are painted at runtime.
+        /// WorldLoader.SetTile() invalidates the composite geometry — without this call
+        /// the Collision tilemap's CompositeCollider2D has pathCount=0 and blocks nothing.
+        ///
+        /// CRITICAL race fix: <see cref="UnityEngine.Tilemaps.TilemapCollider2D"/> processes
+        /// queued <c>SetTile</c> changes deferred. Calling <c>GenerateGeometry()</c> on the
+        /// same frame as the <c>SetTile</c> calls (which is what <see cref="Start"/> does:
+        /// LoadWorld → RebakeTilemapColliders, no yield) yields a composite with
+        /// <c>pathCount = 0</c> and the player walks through walls. Calling
+        /// <c>RefreshAllTiles()</c> flushes the pending changes synchronously so the
+        /// immediate bake sees them. We additionally schedule a deferred re-bake on the
+        /// next frame to catch anything (BuildingLoader, override loaders) that paints
+        /// after this method returns.
+        ///
+        /// Regression: <c>PlayerTileCollisionPlayTests.SameFrame_PaintThenBake_*</c>.
+        /// </summary>
+        private void RebakeTilemapColliders()
+        {
+            int baked = 0;
+            int refreshed = 0;
+            foreach (var cc in FindObjectsOfType<UnityEngine.CompositeCollider2D>())
+            {
+                // Flush pending SetTile changes to the TilemapCollider2D before bake.
+                var tilemap = cc.GetComponent<UnityEngine.Tilemaps.Tilemap>();
+                if (tilemap != null)
+                {
+                    tilemap.RefreshAllTiles();
+                    refreshed++;
+                }
+                cc.GenerateGeometry();
+                baked++;
+            }
+            Debug.Log($"[GameplaySceneSetup] Rebaked {baked} CompositeCollider2D(s) (refreshed {refreshed} tilemap(s)).");
+            World.TileCollisionDiagnostics.Report();
+
+            // Safety-net re-bake one frame later — catches tiles painted by loaders
+            // that run after Start() (BuildingLoader, override appliers, etc.).
+            StartCoroutine(DeferredRebakeNextFrame());
+        }
+
+        private System.Collections.IEnumerator DeferredRebakeNextFrame()
+        {
+            yield return null; // Wait one frame so post-Start loaders complete their SetTile bursts.
+            int baked = 0;
+            foreach (var cc in FindObjectsOfType<UnityEngine.CompositeCollider2D>())
+            {
+                var tilemap = cc.GetComponent<UnityEngine.Tilemaps.Tilemap>();
+                if (tilemap != null) tilemap.RefreshAllTiles();
+                cc.GenerateGeometry();
+                baked++;
+            }
+            Debug.Log($"[GameplaySceneSetup] Deferred re-bake completed for {baked} CompositeCollider2D(s).");
+            World.TileCollisionDiagnostics.Report();
         }
 
         private void EnsureSpawnerInstanceLoader()

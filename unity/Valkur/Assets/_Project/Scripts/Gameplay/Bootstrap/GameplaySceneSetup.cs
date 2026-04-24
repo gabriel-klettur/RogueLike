@@ -81,6 +81,7 @@ namespace Valkur.Gameplay
             BuildWorldGrid();
             EnsureZoneManager();
             LoadWorld();
+            RebakeTilemapColliders(); // repaint tiles → CompositeCollider2D geometry must be rebuilt
             EnsureGlobalLight2D();
             EnsureVFXManager();
             EnsureParticleInstancesLoader();
