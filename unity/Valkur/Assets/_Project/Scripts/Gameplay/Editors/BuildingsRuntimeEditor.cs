@@ -91,6 +91,7 @@ namespace Valkur.Gameplay.Buildings
         // map and any UI panels. Pure white was reading as a dull "shadow" before.
         private static readonly Color DRAG_GHOST_TINT     = new Color(0.55f, 1f, 1f, 0.85f);
         private static readonly Color DRAG_GHOST_OUTLINE  = new Color(1f, 0.85f, 0.10f, 0.95f); // golden ring
+        private const float           DRAG_GHOST_BORDER   = 10f; // px — border thickness
 
         // Resize (drag with R-handle)
         private bool       _resizing;
@@ -1042,32 +1043,50 @@ namespace Valkur.Gameplay.Buildings
         /// Creates the picker drag preview — a vivid-colored UI Image rendered on the
         /// editor's Canvas Overlay so it floats above the world AND any UI panels.
         /// Always rendered as the topmost sibling of the canvas so panels can't occlude it.
+        ///
+        /// Hierarchy (Canvas render order: parent first → children in order):
+        ///   PickerDragGhost (container, no Image — anchor 0.5/0.5 for correct cursor mapping)
+        ///     Outline  (Image — extends DRAG_GHOST_BORDER px outward, renders BEHIND sprite)
+        ///     Sprite   (Image — fills ghost rect exactly, renders ON TOP of outline)
         /// </summary>
         private void BuildDragGhost()
         {
             if (_dragGhostGo != null) return;
-            _dragGhostGo  = EditorUIHelpers.CreateUI("PickerDragGhost", _canvas.transform);
-            _dragGhostRt  = _dragGhostGo.GetComponent<RectTransform>();
-            _dragGhostRt.sizeDelta  = new Vector2(80f, 80f);
-            _dragGhostRt.anchorMin  = _dragGhostRt.anchorMax = new Vector2(0f, 0f);
-            _dragGhostRt.pivot      = new Vector2(0.5f, 0.5f);
 
-            // Bright outline ring as a sibling Image behind the sprite so the preview
-            // reads clearly against both dark map tiles and bright UI panels.
+            // Container — no Image component on this node.
+            // Anchor at 0.5/0.5 so ScreenPointToLocalPointInRectangle output maps
+            // directly to anchoredPosition without a canvas-center offset.
+            _dragGhostGo = EditorUIHelpers.CreateUI("PickerDragGhost", _canvas.transform);
+            _dragGhostRt = _dragGhostGo.GetComponent<RectTransform>();
+            _dragGhostRt.sizeDelta = new Vector2(80f, 80f);
+            _dragGhostRt.anchorMin = _dragGhostRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _dragGhostRt.pivot     = new Vector2(0.5f, 0.5f);
+
+            // Child 1 — outline border (renders first = behind the sprite).
+            // Extends DRAG_GHOST_BORDER px outside the ghost rect on all sides.
             var outlineGo = EditorUIHelpers.CreateUI("Outline", _dragGhostGo.transform);
             var outlineRt = outlineGo.GetComponent<RectTransform>();
             outlineRt.anchorMin = Vector2.zero;
             outlineRt.anchorMax = Vector2.one;
-            outlineRt.offsetMin = new Vector2(-6f, -6f);
-            outlineRt.offsetMax = new Vector2( 6f,  6f);
-            _dragGhostOutline = outlineGo.AddComponent<Image>();
+            outlineRt.offsetMin = new Vector2(-DRAG_GHOST_BORDER, -DRAG_GHOST_BORDER);
+            outlineRt.offsetMax = new Vector2( DRAG_GHOST_BORDER,  DRAG_GHOST_BORDER);
+            _dragGhostOutline               = outlineGo.AddComponent<Image>();
             _dragGhostOutline.color         = DRAG_GHOST_OUTLINE;
             _dragGhostOutline.raycastTarget = false;
 
-            _dragGhostImg = _dragGhostGo.AddComponent<Image>();
-            _dragGhostImg.raycastTarget  = false;
-            _dragGhostImg.preserveAspect = true;
-            _dragGhostImg.color          = DRAG_GHOST_TINT;
+            // Child 2 — building sprite (renders second = on top of outline).
+            // Fills the ghost rect exactly. No preserveAspect — SizeDragGhostToWorldFootprint
+            // already sets both axes to match the real footprint ratio, so there is no
+            // letterboxing and the outline hugs the actual asset edges.
+            var spriteGo = EditorUIHelpers.CreateUI("Sprite", _dragGhostGo.transform);
+            var spriteRt = spriteGo.GetComponent<RectTransform>();
+            spriteRt.anchorMin = Vector2.zero;
+            spriteRt.anchorMax = Vector2.one;
+            spriteRt.offsetMin = spriteRt.offsetMax = Vector2.zero;
+            _dragGhostImg               = spriteGo.AddComponent<Image>();
+            _dragGhostImg.raycastTarget = false;
+            _dragGhostImg.color         = DRAG_GHOST_TINT;
+
             var cg = _dragGhostGo.AddComponent<CanvasGroup>();
             cg.blocksRaycasts     = false;
             cg.ignoreParentGroups = false;
@@ -1173,6 +1192,15 @@ namespace Valkur.Gameplay.Buildings
                 _dragGhostRt.anchoredPosition = canvasPos;
             }
 
+            // Blink the yellow border (5 Hz sine pulse, 0.35 → 1.0 alpha range).
+            if (_dragGhostOutline != null)
+            {
+                float t = (Mathf.Sin(Time.time * Mathf.PI * 5f) + 1f) * 0.5f; // 0..1
+                var c = DRAG_GHOST_OUTLINE;
+                c.a = Mathf.Lerp(0.35f, 1.0f, t);
+                _dragGhostOutline.color = c;
+            }
+
             // Drop
             if (mouse.leftButton.wasReleasedThisFrame)
             {
@@ -1182,6 +1210,15 @@ namespace Valkur.Gameplay.Buildings
                 {
                     Vector3 worldPos = _mainCamera.ScreenToWorldPoint(screenPos);
                     worldPos.z = 0f;
+                    // BuildingObject pivot is bottom-center (sprites grow upward from Y=0).
+                    // The ghost pivot is center (0.5, 0.5), so the cursor sits at the visual
+                    // center of the preview. Without correction the building's bottom lands at
+                    // the cursor and the whole sprite appears shifted up by halfHeight.
+                    // → Shift worldPos down by half the building's world height so the visual
+                    //   center of the placed building matches where the ghost was shown.
+                    var dropTmpl = _catalog?.GetById(_pickerDragTemplateId);
+                    if (dropTmpl != null && dropTmpl.originalScale.y > 0)
+                        worldPos.y -= (dropTmpl.originalScale.y / BUILDING_PPU) * 0.5f;
                     // Drag-only placement: PlaceBuilding() spawns at the drop
                     // position regardless of current EditorMode. We do NOT mutate
                     // _mode here so the user stays in Select after placing.
