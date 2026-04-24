@@ -24,7 +24,9 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildCollidersDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action onShowCollidersClicked,
             System.Action onDrawCollidersClicked,
-            System.Action onEraseCollidersClicked)
+            System.Action onEraseCollidersClicked,
+            System.Action onAutoGenerateCollidersClicked,
+            System.Action onClearAllCollidersClicked)
         {
             refs.CollidersDropdown = MakeDropdownPanel("CollidersDropdown", canvasT,
                 PanelDock.TopRight, CollidersX, CollidersY, COLLIDERS_DROP_W, COLLIDERS_DROP_H,
@@ -59,6 +61,12 @@ namespace Valkur.Gameplay.TileEditor
             BuildColliderToggleRow(t, "Erase Colliders",
                 state.CurrentColliderMode == TileEditorState.ColliderMode.Erase, onEraseCollidersClicked,
                 out refs.EraseCollidersToggleImg, out refs.EraseCollidersToggleLabel);
+
+            BuildSeparator(t);
+
+            // Bulk-action buttons.
+            BuildColliderActionButton(t, "Auto-Generate from Walls", onAutoGenerateCollidersClicked);
+            BuildColliderActionButton(t, "Clear All Colliders", onClearAllCollidersClicked);
 
             BuildSeparator(t);
 
@@ -138,6 +146,42 @@ namespace Valkur.Gameplay.TileEditor
             stateTmp.fontStyle = FontStyles.Bold;
             stateTmp.alignment = TextAlignmentOptions.Right;
             stateTmp.color = initialOn ? RED_ACCENT : TEXT_MUTED;
+
+            btn.onClick.AddListener(() => onClicked?.Invoke());
+        }
+
+        /// <summary>
+        /// Single-shot action button (no on/off state). Used for bulk operations
+        /// like "Auto-Generate from Walls" and "Clear All Colliders".
+        /// </summary>
+        private static void BuildColliderActionButton(Transform parent, string label, System.Action onClicked)
+        {
+            var row = CreateUI($"Action_{label}", parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 26f;
+
+            var bg = row.AddComponent<Image>();
+            bg.color = BTN_NORMAL;
+
+            var btn = row.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor = BTN_ACTIVE;
+            btn.colors = c;
+            btn.targetGraphic = bg;
+
+            var lblGo = CreateUI("Lbl", row.transform);
+            var lblRT = lblGo.GetComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero;
+            lblRT.anchorMax = Vector2.one;
+            lblRT.offsetMin = new Vector2(8f, 0f);
+            lblRT.offsetMax = new Vector2(-8f, 0f);
+            var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
+            lblTmp.text = label;
+            lblTmp.fontSize = 11f;
+            lblTmp.fontStyle = FontStyles.Bold;
+            lblTmp.alignment = TextAlignmentOptions.Center;
+            lblTmp.color = TEXT_PRIMARY;
 
             btn.onClick.AddListener(() => onClicked?.Invoke());
         }

@@ -131,6 +131,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowColliders = null,
             System.Action onDrawColliders = null,
             System.Action onEraseColliders = null,
+            System.Action onAutoGenerateColliders = null,
+            System.Action onClearAllColliders = null,
             System.Action onPerfToggle = null,
             System.Action onAllPanelsToggle = null)
         {
@@ -151,7 +153,8 @@ namespace Valkur.Gameplay.TileEditor
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);
             BuildCollidersDropdown(canvasT, state, ref refs,
-                onShowColliders, onDrawColliders, onEraseColliders);
+                onShowColliders, onDrawColliders, onEraseColliders,
+                onAutoGenerateColliders, onClearAllColliders);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);

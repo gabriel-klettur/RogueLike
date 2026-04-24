@@ -30,6 +30,8 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onShowCollidersClicked;
         private System.Action _onDrawCollidersClicked;
         private System.Action _onEraseCollidersClicked;
+        private System.Action _onAutoGenerateCollidersClicked;
+        private System.Action _onClearAllCollidersClicked;
         private System.Action _onPerfToggle;
 
         // ── UI refs from builder ──
@@ -61,6 +63,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowCollidersClicked = null,
             System.Action onDrawCollidersClicked = null,
             System.Action onEraseCollidersClicked = null,
+            System.Action onAutoGenerateCollidersClicked = null,
+            System.Action onClearAllCollidersClicked = null,
             System.Action onPerfToggle = null)
         {
             _state = state;
@@ -76,6 +80,8 @@ namespace Valkur.Gameplay.TileEditor
             _onShowCollidersClicked = onShowCollidersClicked;
             _onDrawCollidersClicked = onDrawCollidersClicked;
             _onEraseCollidersClicked = onEraseCollidersClicked;
+            _onAutoGenerateCollidersClicked = onAutoGenerateCollidersClicked;
+            _onClearAllCollidersClicked = onClearAllCollidersClicked;
             _onPerfToggle = onPerfToggle;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 

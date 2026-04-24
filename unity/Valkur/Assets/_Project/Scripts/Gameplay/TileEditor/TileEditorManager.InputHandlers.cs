@@ -25,13 +25,13 @@ namespace Valkur.Gameplay.TileEditor
                 _ui.RefreshBrushSizeLabel();
                 _ui.RefreshTilePicker();
                 _ui.RefreshColliderToggles();
-                _ui.SetStatus("Tile Editor active. F8 to close.");
+                _ui.SetStatus("Tile Editor active. F8 to close. Player movement enabled.");
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
                 UpdateBorderToolLabel();
-                if (Valkur.Gameplay.CameraSetup.Instance != null)
-                    Valkur.Gameplay.CameraSetup.Instance.DetachFollow();
+                // Camera stays attached so the player can walk and test tile colliders.
+                // Middle-mouse pan is still available via HandleCameraPan() → DetachFollow.
 
                 // ── Force uncapped FPS while editing so we can see real perf ──
                 _savedTargetFrameRate = Application.targetFrameRate;
@@ -53,6 +53,7 @@ namespace Valkur.Gameplay.TileEditor
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(false);
                 // Keep perf probe state — re-enabled on activate via CreatePerfProbe defaults
                 _isPanning = false;
+                // Re-attach in case middle-mouse pan had detached the camera during editing.
                 if (Valkur.Gameplay.CameraSetup.Instance != null)
                     Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
 
@@ -324,26 +325,34 @@ namespace Valkur.Gameplay.TileEditor
             if (_mainCamera == null) _mainCamera = Camera.main;
             if (_mainCamera == null) return;
 
-            // Move the Cinemachine vcam transform (Camera.main is driven by Cinemachine
-            // and would be overridden every LateUpdate). CameraSetup detached the Follow
-            // target when the editor opened, so the vcam transform is free.
+            // Camera normally follows the player so the developer can walk and test
+            // tile colliders. Middle-mouse drag temporarily detaches and pans; on
+            // release the camera re-attaches to the player.
             var camSetup = Valkur.Gameplay.CameraSetup.Instance;
-            Transform vcamT = camSetup != null ? camSetup.GetDetachedTransform() : null;
-            if (vcamT == null) return;
+            if (camSetup == null) return;
 
             if (mouse.middleButton.wasPressedThisFrame)
             {
-                _isPanning = true;
-                _panAnchorScreenPos = mouse.position.ReadValue();
-                _panAnchorCamPos = vcamT.position;
+                camSetup.DetachFollow();
+                Transform anchorT = camSetup.GetDetachedTransform();
+                if (anchorT != null)
+                {
+                    _isPanning = true;
+                    _panAnchorScreenPos = mouse.position.ReadValue();
+                    _panAnchorCamPos = anchorT.position;
+                }
             }
             else if (mouse.middleButton.wasReleasedThisFrame)
             {
                 _isPanning = false;
+                camSetup.ReattachFollow();
             }
 
             if (_isPanning && mouse.middleButton.isPressed)
             {
+                Transform vcamT = camSetup.GetDetachedTransform();
+                if (vcamT == null) return;
+
                 Vector2 currentScreenPos = mouse.position.ReadValue();
                 Vector2 screenDelta = currentScreenPos - _panAnchorScreenPos;
 
