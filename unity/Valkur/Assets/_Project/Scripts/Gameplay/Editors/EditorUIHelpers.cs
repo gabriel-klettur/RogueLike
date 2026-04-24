@@ -356,6 +356,58 @@ namespace Valkur.Gameplay.Editors
         }
 
         /// <summary>
+        /// Adds a thin vertical scrollbar (matching the Tiles editor style) to an existing ScrollRect.
+        /// Also offsets the viewport to leave room for the scrollbar, and sets visibility to Permanent.
+        /// </summary>
+        public static Scrollbar AddVerticalScrollbar(ScrollRect scrollRect, float sbWidth = 12f)
+        {
+            // Offset viewport so it does not overlap the scrollbar
+            var vpRt = scrollRect.viewport;
+            vpRt.offsetMax = new Vector2(-sbWidth, vpRt.offsetMax.y);
+
+            var sbGo = CreateUI("VScrollbar", scrollRect.transform);
+            var sbRt = sbGo.GetComponent<RectTransform>();
+            sbRt.anchorMin        = new Vector2(1f, 0f);
+            sbRt.anchorMax        = new Vector2(1f, 1f);
+            sbRt.pivot            = new Vector2(1f, 1f);
+            sbRt.sizeDelta        = new Vector2(sbWidth, 0f);
+            sbRt.anchoredPosition = Vector2.zero;
+            sbGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+
+            var scrollbar       = sbGo.AddComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+
+            var slidingArea = CreateUI("SlidingArea", sbGo.transform);
+            var saRt        = slidingArea.GetComponent<RectTransform>();
+            saRt.anchorMin  = Vector2.zero;
+            saRt.anchorMax  = Vector2.one;
+            saRt.offsetMin  = new Vector2(2f,  2f);
+            saRt.offsetMax  = new Vector2(-2f, -2f);
+
+            var handleGo        = CreateUI("Handle", slidingArea.transform);
+            var hRt             = handleGo.GetComponent<RectTransform>();
+            hRt.anchorMin       = Vector2.zero;
+            hRt.anchorMax       = Vector2.one;
+            hRt.offsetMin       = Vector2.zero;
+            hRt.offsetMax       = Vector2.zero;
+            var hImg            = handleGo.AddComponent<Image>();
+            hImg.color          = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            scrollbar.targetGraphic = hImg;
+            scrollbar.handleRect    = hRt;
+
+            var sbColors              = scrollbar.colors;
+            sbColors.normalColor      = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            sbColors.highlightedColor = new Color(0.75f, 0.62f, 0.30f, 0.95f);
+            sbColors.pressedColor     = new Color(0.90f, 0.76f, 0.38f, 1f);
+            scrollbar.colors          = sbColors;
+
+            scrollRect.verticalScrollbar = scrollbar;
+            scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+            return scrollbar;
+        }
+
+        /// <summary>
         /// Creates a confirmation dialog overlay.
         /// </summary>
         public static (GameObject root, TextMeshProUGUI message, Button confirmBtn, Button cancelBtn)

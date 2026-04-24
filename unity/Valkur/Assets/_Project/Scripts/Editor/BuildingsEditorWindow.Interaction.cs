@@ -177,7 +177,8 @@ namespace Valkur.Editor
                 sb.Append($"\"rel_x\": {relX}, ");
                 sb.Append($"\"rel_y\": {relY}");
 
-                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0;
+                bool hasZOv = b.ZBottomOffset != 0 || b.ZTopOffset != 0;
+                bool hasOverrides = splitOverride >= 0f || scaleOv.x > 0 || scaleOv.y > 0 || hasZOv;
                 if (hasOverrides)
                 {
                     sb.Append(", \"overrides\": {");
@@ -191,6 +192,18 @@ namespace Valkur.Editor
                     {
                         if (!firstOv) sb.Append(", ");
                         sb.Append($"\"split_ratio\": {splitOverride:F4}");
+                        firstOv = false;
+                    }
+                    if (b.ZBottomOffset != 0)
+                    {
+                        if (!firstOv) sb.Append(", ");
+                        sb.Append($"\"z_bottom\": {b.ZBottomOffset}");
+                        firstOv = false;
+                    }
+                    if (b.ZTopOffset != 0)
+                    {
+                        if (!firstOv) sb.Append(", ");
+                        sb.Append($"\"z_top\": {b.ZTopOffset}");
                     }
                     sb.Append("}");
                 }

@@ -7,6 +7,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using Valkur.Core;
 using Valkur.Data;
@@ -70,6 +71,27 @@ namespace Valkur.Gameplay.Buildings
         private bool    _dragging;
         private Vector3 _dragOffset;
 
+        // Drag-from-picker (LMB drag a slot from the Buildings panel to the map to
+        // place it directly — mirrors Python building_picker_controller.start_drag).
+        private bool          _pickerDragging;
+        private int           _pickerDragTemplateId  = -1;
+        private Vector2       _pickerDragStartScreen;
+        private const float   PICKER_DRAG_THRESHOLD  = 8f; // pixels before drag activates
+        // Drag preview: a UI Image rendered on the editor's Canvas (Overlay) so it
+        // floats above EVERYTHING — the world map AND any panels, menus or HUD.
+        // Sized to the building's actual world footprint scaled to the current camera
+        // zoom, and tinted a vivid color so it's immediately obvious the user is
+        // dragging a building (not a generic faded thumbnail).
+        private GameObject    _dragGhostGo;
+        private RectTransform _dragGhostRt;
+        private Image         _dragGhostImg;
+        private Image         _dragGhostOutline;            // bright outline border
+        private const float   BUILDING_PPU = 32f;           // matches BUILDING_PPU in importer
+        // Cyan-leaning, additive-feeling tint with high alpha so it pops over both the
+        // map and any UI panels. Pure white was reading as a dull "shadow" before.
+        private static readonly Color DRAG_GHOST_TINT     = new Color(0.55f, 1f, 1f, 0.85f);
+        private static readonly Color DRAG_GHOST_OUTLINE  = new Color(1f, 0.85f, 0.10f, 0.95f); // golden ring
+
         // Resize (drag with R-handle)
         private bool       _resizing;
         private Vector3    _resizeStartMouse;
@@ -84,6 +106,15 @@ namespace Valkur.Gameplay.Buildings
         // Outline renderers (cyan hover + yellow active + red remove)
         private BuildingOutlineRenderer _hoverFx;
         private BuildingOutlineRenderer _activeFx;
+
+        // Collider-brush hover cursor (cyan, matches TileEditorGridCursor style)
+        private GameObject     _collBrushCursorGo;
+        private LineRenderer   _collBrushCursorLine;
+        private SpriteRenderer _collBrushCursorFill;
+        private Material       _collBrushCursorMat;
+        private static readonly Color CollBrushCursorColor    = new Color(0f, 0.863f, 1f, 0.85f);
+        private const  float          CollBrushCursorFillAlpha = 0.235f;
+        private const  float          CollBrushCursorLineWidth  = 0.06f;
 
         // ── UI ─────────────────────────────────────────────────────────────────────
 
@@ -149,7 +180,7 @@ namespace Valkur.Gameplay.Buildings
         {
             ("1. Open editor",   "Press F10 anywhere in-game to toggle the Buildings Editor."),
             ("2. Pick template", "In the left picker, click a building thumbnail to select it. Use the search box to filter by ID or asset path."),
-            ("3. Place a building", "Click the Add (+) button or press the Place toolbar button, then click on the map to drop the selected template."),
+            ("3. Place a building", "DRAG a building thumbnail from the Buildings panel and DROP it on the map. Click-to-place is disabled — the only way to place a building is to drag it from the panel."),
             ("4. Hover & select",  "Move the mouse over a building — it outlines in CYAN. Use the mouse wheel to cycle through stacked buildings. Click to select (outline turns YELLOW)."),
             ("5. Move & resize",   "RMB-drag the active building to move it. Drag the R handle (top-right of the building) with LMB to resize proportionally."),
             ("6. Inspector edits", "On the right panel, drag the Split slider, change Z-Bottom / Z-Top with –/+, or toggle Collider Scope between CG (shared) and CU (per-instance)."),
@@ -193,6 +224,7 @@ namespace Valkur.Gameplay.Buildings
         protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
+            if (_collBrushCursorMat != null) Destroy(_collBrushCursorMat);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -211,17 +243,24 @@ namespace Valkur.Gameplay.Buildings
             HandleKeyboardShortcuts();
             HandleCameraPan();
             HandleMapInteraction();
+            UpdateCollBrushCursor();
+            UpdatePickerDrag();
             UpdateOutlineState();
             UpdateFloatingHandles();
             UpdateIdLabel();
             UpdateZBadges();
             UpdateSplitLine();
-            // Re-push the authoring cells every frame the colliders panel is
-            // open so the overlay always tracks the active building's current
-            // world rect (move, resize, split-ratio change, etc.). Cheap: a few
-            // hundred rect copies at most.
+            // Per-frame overlay refresh: only the ACTIVE building's geometry
+            // can change live (drag, resize, split-ratio). All other buildings
+            // are static while the editor is open, so a full RefreshCollidersOverlay()
+            // every frame (FindObjectsOfType + ResampleGrid clones + per-overlay
+            // dirty mark) was the dominant FPS cost when Show Colliders is on
+            // (~20 fps with 142 buildings). Touching only the active overlay
+            // cuts per-frame cost from O(N · cells) to O(cells_active).
+            // Full refreshes still happen on toggle, on SetActiveBuilding, on
+            // brush stroke end, on undo/redo, and on any structural change.
             if (_collidersVisible && _openDropdowns.Contains("colliders"))
-                RefreshCollidersOverlay();
+                RefreshActiveBuildingOverlayCells();
         }
 
         public void Activate()
@@ -276,6 +315,8 @@ namespace Valkur.Gameplay.Buildings
             _activeColliderSession = null;
             _colliderStroke.Active = false;
             _isPanning = false;
+            HideCollBrushCursor();
+            CancelPickerDrag();
             HideConfirm();
             if (Valkur.Gameplay.CameraSetup.Instance != null)
                 Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
@@ -306,6 +347,8 @@ namespace Valkur.Gameplay.Buildings
             _idLabelTmp = null; _idLabelRt = null;
             _splitLineRt = null; _splitLineImg = null;
             _splitHandleRt = null; _splitHandleImg = null;
+            _dragGhostGo = null; _dragGhostRt = null; _dragGhostImg = null; _dragGhostOutline = null;
+            _pickerDragging = false; _pickerDragTemplateId = -1;
             _uiBuilt = false;
         }
 
@@ -337,6 +380,118 @@ namespace Valkur.Gameplay.Buildings
             if (_zBotBadgeRt != null) _zBotBadgeRt.gameObject.SetActive(false);
             if (_splitLineRt   != null) _splitLineRt.gameObject.SetActive(false);
             if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
+        }
+
+        // ── Collider-brush hover cursor ───────────────────────────────────────────
+
+        private void EnsureCollBrushCursor()
+        {
+            if (_collBrushCursorGo != null) return;
+
+            _collBrushCursorMat = new Material(
+                Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                ?? Shader.Find("Sprites/Default"))
+                { hideFlags = HideFlags.HideAndDontSave };
+
+            _collBrushCursorGo = new GameObject("BuildingsEditor.CollBrushCursor");
+            _collBrushCursorGo.transform.SetParent(transform, false);
+
+            var lr = _collBrushCursorGo.AddComponent<LineRenderer>();
+            lr.useWorldSpace   = true;
+            lr.loop            = true;
+            lr.positionCount   = 4;
+            lr.startWidth      = CollBrushCursorLineWidth;
+            lr.endWidth        = CollBrushCursorLineWidth;
+            lr.sortingOrder    = 998;
+            lr.sharedMaterial  = _collBrushCursorMat;
+            lr.startColor      = CollBrushCursorColor;
+            lr.endColor        = CollBrushCursorColor;
+            _collBrushCursorLine = lr;
+
+            var fillGo = new GameObject("Fill");
+            fillGo.transform.SetParent(_collBrushCursorGo.transform, false);
+            _collBrushCursorFill              = fillGo.AddComponent<SpriteRenderer>();
+            _collBrushCursorFill.sortingOrder  = 997;
+            var fillColor = CollBrushCursorColor;
+            fillColor.a   = CollBrushCursorFillAlpha;
+            _collBrushCursorFill.color  = fillColor;
+            _collBrushCursorFill.sprite = CreateCursorSprite();
+            _collBrushCursorGo.SetActive(false);
+        }
+
+        private void HideCollBrushCursor()
+        {
+            if (_collBrushCursorGo != null) _collBrushCursorGo.SetActive(false);
+        }
+
+        private void UpdateCollBrushCursor()
+        {
+            if (!BrushOn || _activeBuilding == null)
+            {
+                HideCollBrushCursor();
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse == null) { HideCollBrushCursor(); return; }
+
+            var cam = Camera.main;
+            if (cam == null) { HideCollBrushCursor(); return; }
+
+            if (!_activeBuilding.TryGetWorldRect(out var rect)) { HideCollBrushCursor(); return; }
+
+            Vector2 screenPos = mouse.position.ReadValue();
+            Vector3 worldPos  = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
+            worldPos.z = 0f;
+
+            if (!rect.Contains(worldPos)) { HideCollBrushCursor(); return; }
+
+            var session = EnsureActiveColliderSession();
+            if (session?.WorkingGrid == null || session.WorkingGrid.width <= 0 || session.WorkingGrid.height <= 0)
+            {
+                HideCollBrushCursor();
+                return;
+            }
+
+            int gridW = session.WorkingGrid.width;
+            int gridH = session.WorkingGrid.height;
+            float cellW = rect.width  / gridW;
+            float cellH = rect.height / gridH;
+
+            float u = Mathf.Clamp01((worldPos.x - rect.xMin) / rect.width);
+            float v = Mathf.Clamp01((worldPos.y - rect.yMin) / rect.height);
+            int col = Mathf.Clamp(Mathf.FloorToInt(u * gridW), 0, gridW - 1);
+            int row = Mathf.Clamp(Mathf.FloorToInt((1f - v) * gridH), 0, gridH - 1);
+
+            // Cursor is centred on the hit cell and covers the full brush footprint.
+            float cx = rect.xMin + (col + 0.5f) * cellW;
+            float cy = rect.yMax - (row + 0.5f) * cellH;  // row 0 = top of building
+            float halfW = _collBrushSize * cellW * 0.5f;
+            float halfH = _collBrushSize * cellH * 0.5f;
+            var center  = new Vector3(cx, cy, 0f);
+
+            EnsureCollBrushCursor();
+            _collBrushCursorGo.SetActive(true);
+
+            // Border
+            _collBrushCursorLine.SetPosition(0, center + new Vector3(-halfW, -halfH));
+            _collBrushCursorLine.SetPosition(1, center + new Vector3( halfW, -halfH));
+            _collBrushCursorLine.SetPosition(2, center + new Vector3( halfW,  halfH));
+            _collBrushCursorLine.SetPosition(3, center + new Vector3(-halfW,  halfH));
+
+            // Fill
+            _collBrushCursorFill.transform.position   = center;
+            _collBrushCursorFill.transform.localScale  = new Vector3(halfW * 2f, halfH * 2f, 1f);
+        }
+
+        private static Sprite CreateCursorSprite()
+        {
+            var tex    = new Texture2D(4, 4) { filterMode = FilterMode.Point };
+            var pixels = new Color[16];
+            for (int i = 0; i < 16; i++) pixels[i] = Color.white;
+            tex.SetPixels(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
         }
 
         private void CacheBuildingLoader()
@@ -396,12 +551,12 @@ namespace Valkur.Gameplay.Buildings
                 // Colliders panel callbacks (redesigned: ON/OFF + #/. action + scope)
                 onToggleCollidersVisible: () => ToggleCollidersVisible(),
                 onCollScopeToggle:        () => ToggleColliderScope(),
-                onBrushToggle:            () => SetBrushOn(!BrushOn),
-                onBrushPaint:             () => SetBrushAction(CollBrushMode.Solid),
-                onBrushErase:             () => SetBrushAction(CollBrushMode.Walk),
-                onCollBrushSizeChanged:   v  => OnCollBrushSizeChanged(v),
-                onCollSave:               () => SaveColliderAuthoring(),
-                onPerfToggle:             () => TogglePerfProbe());
+                onBrushPaint:                () => SetBrushAction(CollBrushMode.Solid),
+                onBrushErase:                () => SetBrushAction(CollBrushMode.Walk),
+                onCollBrushSizeChanged:      v  => OnCollBrushSizeChanged(v),
+                onCollBrushSizeStepDown:     () => OnCollBrushSizeChanged(_collBrushSize - 1),
+                onCollBrushSizeStepUp:       () => OnCollBrushSizeChanged(_collBrushSize + 1),
+                onPerfToggle:                () => TogglePerfProbe());
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -855,6 +1010,14 @@ namespace Valkur.Gameplay.Buildings
                 label.text = $"#{id}";
                 if (id == _selectedTemplateId)
                     btn.GetComponent<Image>().color = EditorUIHelpers.SLOT_SELECTED;
+
+                // Drag-from-picker: register PointerDown so LMB-dragging the slot
+                // onto the map places the building directly (Python parity).
+                int capturedId = id;
+                var et  = btn.gameObject.AddComponent<EventTrigger>();
+                var pde = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+                pde.callback.AddListener(_ => OnPickerSlotPointerDown(capturedId));
+                et.triggers.Add(pde);
             }
             if (_statusTmp != null)
                 _statusTmp.text = filter.Length == 0 ? $"{shown} templates" : $"{shown} match '{_searchFilter}'";
@@ -864,8 +1027,180 @@ namespace Valkur.Gameplay.Buildings
         {
             _selectedTemplateId = id;
             RefreshPicker();
-            // If user picked a template while not in Place mode, auto-switch
-            if (_mode != EditorMode.Place) SetMode(EditorMode.Place);
+            // Placement is drag-only: do NOT auto-switch to Place mode. The user
+            // must drag the slot from the picker onto the map to actually place a
+            // building. A simple click only highlights the slot for inspection.
+            if (_statusTmp != null)
+                _statusTmp.text = $"Template #{id} highlighted. DRAG it from the panel onto the map to place.";
+        }
+
+        // ── Drag-from-picker ──────────────────────────────────────────────────────
+        // Mirrors Python building_picker_controller.start_drag / place_building and
+        // building_picker_view._draw_drag_preview.
+
+        /// <summary>
+        /// Creates the picker drag preview — a vivid-colored UI Image rendered on the
+        /// editor's Canvas Overlay so it floats above the world AND any UI panels.
+        /// Always rendered as the topmost sibling of the canvas so panels can't occlude it.
+        /// </summary>
+        private void BuildDragGhost()
+        {
+            if (_dragGhostGo != null) return;
+            _dragGhostGo  = EditorUIHelpers.CreateUI("PickerDragGhost", _canvas.transform);
+            _dragGhostRt  = _dragGhostGo.GetComponent<RectTransform>();
+            _dragGhostRt.sizeDelta  = new Vector2(80f, 80f);
+            _dragGhostRt.anchorMin  = _dragGhostRt.anchorMax = new Vector2(0f, 0f);
+            _dragGhostRt.pivot      = new Vector2(0.5f, 0.5f);
+
+            // Bright outline ring as a sibling Image behind the sprite so the preview
+            // reads clearly against both dark map tiles and bright UI panels.
+            var outlineGo = EditorUIHelpers.CreateUI("Outline", _dragGhostGo.transform);
+            var outlineRt = outlineGo.GetComponent<RectTransform>();
+            outlineRt.anchorMin = Vector2.zero;
+            outlineRt.anchorMax = Vector2.one;
+            outlineRt.offsetMin = new Vector2(-6f, -6f);
+            outlineRt.offsetMax = new Vector2( 6f,  6f);
+            _dragGhostOutline = outlineGo.AddComponent<Image>();
+            _dragGhostOutline.color         = DRAG_GHOST_OUTLINE;
+            _dragGhostOutline.raycastTarget = false;
+
+            _dragGhostImg = _dragGhostGo.AddComponent<Image>();
+            _dragGhostImg.raycastTarget  = false;
+            _dragGhostImg.preserveAspect = true;
+            _dragGhostImg.color          = DRAG_GHOST_TINT;
+            var cg = _dragGhostGo.AddComponent<CanvasGroup>();
+            cg.blocksRaycasts     = false;
+            cg.ignoreParentGroups = false;
+            // Force topmost so panels/menus can't render on top of the preview.
+            _dragGhostGo.transform.SetAsLastSibling();
+            _dragGhostGo.SetActive(false);
+        }
+
+        /// <summary>
+        /// Sizes the drag-ghost RectTransform so its on-screen pixel size matches the
+        /// building's actual world footprint at the current camera zoom. Returns true
+        /// when the size could be computed; falls back to the default 80×80 otherwise.
+        /// </summary>
+        private void SizeDragGhostToWorldFootprint(BuildingTemplateData tmpl)
+        {
+            if (tmpl == null || _dragGhostRt == null) return;
+            float worldW = Mathf.Max(0.01f, tmpl.originalScale.x / BUILDING_PPU);
+            float worldH = Mathf.Max(0.01f, tmpl.originalScale.y / BUILDING_PPU);
+
+            float pxPerWorldUnit = 32f; // safe default
+            if (_mainCamera != null && _mainCamera.orthographic && _mainCamera.orthographicSize > 0.001f)
+                pxPerWorldUnit = Screen.height / (2f * _mainCamera.orthographicSize);
+
+            float scaleFactor = (_canvas != null && _canvas.scaleFactor > 0.001f) ? _canvas.scaleFactor : 1f;
+            float wPx = worldW * pxPerWorldUnit / scaleFactor;
+            float hPx = worldH * pxPerWorldUnit / scaleFactor;
+            // Clamp so absurdly large buildings (e.g. catedrals) don't fill the entire screen.
+            const float MAX_PX = 512f;
+            if (wPx > MAX_PX || hPx > MAX_PX)
+            {
+                float k = MAX_PX / Mathf.Max(wPx, hPx);
+                wPx *= k; hPx *= k;
+            }
+            _dragGhostRt.sizeDelta = new Vector2(wPx, hPx);
+        }
+
+        /// <summary>Called from each slot's EventTrigger.PointerDown — records drag origin.</summary>
+        private void OnPickerSlotPointerDown(int templateId)
+        {
+            _pickerDragTemplateId  = templateId;
+            _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+        }
+
+        /// <summary>
+        /// Activates the ghost once the drag threshold is crossed, moves it with the
+        /// cursor, and on LMB release over the map places the building.
+        /// </summary>
+        private void UpdatePickerDrag()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            Vector2 screenPos = mouse.position.ReadValue();
+
+            // Phase 1 — waiting for drag threshold
+            if (!_pickerDragging && _pickerDragTemplateId >= 0)
+            {
+                if (mouse.leftButton.isPressed)
+                {
+                    if (Vector2.Distance(screenPos, _pickerDragStartScreen) >= PICKER_DRAG_THRESHOLD)
+                    {
+                        var tmpl = _catalog?.GetById(_pickerDragTemplateId);
+                        if (tmpl != null)
+                        {
+                            _pickerDragging     = true;
+                            _selectedTemplateId = _pickerDragTemplateId;
+                            RefreshPicker();
+                            BuildDragGhost();
+                            _dragGhostImg.sprite  = tmpl.previewSprite;
+                            _dragGhostImg.enabled = tmpl.previewSprite != null;
+                            _dragGhostImg.color   = DRAG_GHOST_TINT;
+                            // Size the on-screen ghost to match the building's real footprint.
+                            SizeDragGhostToWorldFootprint(tmpl);
+                            // Make sure the ghost stays above any panel that may have been
+                            // re-parented or rebuilt since the editor was opened.
+                            _dragGhostGo.transform.SetAsLastSibling();
+                            _dragGhostGo.SetActive(true);
+
+                            if (_statusTmp != null)
+                                _statusTmp.text = $"Dragging template #{_pickerDragTemplateId} — release over the map to place.";
+                        }
+                    }
+                }
+                else
+                {
+                    // Released before threshold — normal click handled by Button.onClick.
+                    _pickerDragTemplateId = -1;
+                }
+                return;
+            }
+
+            if (!_pickerDragging) return;
+
+            // Phase 2 — ghost follows the cursor on the canvas. Because the ghost lives
+            // on the editor's Canvas Overlay AND is forced to the last sibling, it
+            // renders above the world AND above every UI panel/menu in the scene.
+            if (_dragGhostRt != null && _canvas != null)
+            {
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    _canvas.GetComponent<RectTransform>(),
+                    screenPos,
+                    _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _mainCamera,
+                    out Vector2 canvasPos);
+                _dragGhostRt.anchoredPosition = canvasPos;
+            }
+
+            // Drop
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                bool overUi = EventSystem.current != null
+                           && EventSystem.current.IsPointerOverGameObject();
+                if (!overUi && _mainCamera != null)
+                {
+                    Vector3 worldPos = _mainCamera.ScreenToWorldPoint(screenPos);
+                    worldPos.z = 0f;
+                    // Drag-only placement: PlaceBuilding() spawns at the drop
+                    // position regardless of current EditorMode. We do NOT mutate
+                    // _mode here so the user stays in Select after placing.
+                    PlaceBuilding(worldPos);
+                }
+                else if (_statusTmp != null)
+                {
+                    _statusTmp.text = "Drag cancelled (released over UI). Drop on the map to place.";
+                }
+                CancelPickerDrag();
+            }
+        }
+
+        /// <summary>Hides the ghost and resets all drag-from-picker state.</summary>
+        private void CancelPickerDrag()
+        {
+            _pickerDragging       = false;
+            _pickerDragTemplateId = -1;
+            if (_dragGhostGo != null) _dragGhostGo.SetActive(false);
         }
 
         private void SetMode(EditorMode mode)
@@ -876,8 +1211,8 @@ namespace Valkur.Gameplay.Buildings
             if (_statusTmp == null) return;
             _statusTmp.text = _mode switch
             {
-                EditorMode.Select => "Select: click building on map. Wheel to cycle stack.",
-                EditorMode.Place  => _selectedTemplateId >= 0 ? "Click map to place selected template." : "Pick a template first.",
+                EditorMode.Select => "Select: click building on map. Wheel to cycle stack. Drag thumbnails from the Buildings panel to place new ones.",
+                EditorMode.Place  => "Placement is drag-only: drag a thumbnail from the Buildings panel onto the map.",
                 EditorMode.Delete => "Click building to delete (with confirm).",
                 EditorMode.Resize => "LMB-drag the R handle (top-right) to resize proportionally.",
                 _ => ""
@@ -900,12 +1235,11 @@ namespace Valkur.Gameplay.Buildings
 
         private void OnAddBuildingClicked()
         {
-            if (_selectedTemplateId < 0)
-            {
-                Toast("Pick a template from the grid first.");
-                return;
-            }
-            SetMode(EditorMode.Place);
+            // Placement is drag-only. The Add (+) button no longer enters a
+            // "click-to-place" mode — it just reminds the user how to place.
+            Toast(_selectedTemplateId >= 0
+                ? $"Drag template #{_selectedTemplateId} from the Buildings panel onto the map to place it."
+                : "Pick a template from the Buildings panel and DRAG it onto the map to place.");
         }
 
         private void ToggleRemoveMode()
@@ -1200,12 +1534,9 @@ namespace Valkur.Gameplay.Buildings
                     if (_hoveredBuilding != null) RequestDeleteWithConfirm(_hoveredBuilding);
                     return;
                 }
-                if (_mode == EditorMode.Place && _selectedTemplateId >= 0)
-                {
-                    PlaceBuilding(worldPos);
-                    return;
-                }
-                // Default: select hovered
+                // Click-to-place was removed: placement is drag-only (drag a
+                // thumbnail from the Buildings panel onto the map). A bare LMB
+                // click on the map only ever selects the hovered building.
                 if (_hoveredBuilding != null) SetActiveBuilding(_hoveredBuilding);
             }
 
@@ -1365,12 +1696,13 @@ namespace Valkur.Gameplay.Buildings
                     bObj.Apply(template, Vector2Int.zero, -1f);
                     RefreshCollisionFor(bObj);
                     created = bObj;
+                    InvalidateBuildingCache();
                     SetActiveBuilding(bObj);
                     if (_statusTmp != null) _statusTmp.text = $"Placed #{template.templateId} at ({worldPos.x:F1}, {worldPos.y:F1}) → ID {newId}";
                 },
                 () =>
                 {
-                    if (created != null) { Destroy(created.gameObject); created = null; }
+                    if (created != null) { Destroy(created.gameObject); created = null; InvalidateBuildingCache(); }
                     if (_activeBuilding == null) RefreshInspector();
                 });
         }
@@ -1398,8 +1730,8 @@ namespace Valkur.Gameplay.Buildings
             Vector3 savedPos = go.transform.position;
             string  savedName = go.name;
             _undo.Do($"Delete {savedName}",
-                () => { if (go) go.SetActive(false); if (_activeBuilding == b) { _activeBuilding = null; RefreshInspector(); } },
-                () => { if (go) { go.transform.position = savedPos; go.name = savedName; go.SetActive(true); } });
+                () => { if (go) go.SetActive(false); InvalidateBuildingCache(); if (_activeBuilding == b) { _activeBuilding = null; RefreshInspector(); } },
+                () => { if (go) { go.transform.position = savedPos; go.name = savedName; go.SetActive(true); InvalidateBuildingCache(); } });
             if (_statusTmp != null) _statusTmp.text = $"Deleted: {savedName}";
         }
 
@@ -1826,6 +2158,7 @@ namespace Valkur.Gameplay.Buildings
                 Physics2D.SyncTransforms();
                 LogColliderDiagnostics();
             }
+            SetTilemapCollidersVisible(_collidersVisible);
             int total = RefreshCollidersOverlay();
             if (_uiRefs.CollVisibilityBtnLabel != null)
                 _uiRefs.CollVisibilityBtnLabel.text = _collidersVisible ? "Hide Colliders" : "Show Colliders";
@@ -1876,6 +2209,30 @@ namespace Valkur.Gameplay.Buildings
 
         private bool BrushOn => _collBrushMode != CollBrushMode.Off;
 
+        /// <summary>
+        /// Add or remove <see cref="TilemapColliderDebugOverlay"/> on every
+        /// <see cref="CompositeCollider2D"/> that is backed by a <see cref="UnityEngine.Tilemaps.TilemapCollider2D"/>.
+        /// Called alongside building-collider visibility changes so the user sees
+        /// a single unified "Show Colliders" view covering both building BoxCollider2Ds
+        /// and tile-layer composite paths.
+        /// </summary>
+        private static void SetTilemapCollidersVisible(bool visible)
+        {
+            var composites = FindObjectsOfType<CompositeCollider2D>();
+            foreach (var cc in composites)
+            {
+                // Only decorate composites that are driven by a TilemapCollider2D —
+                // skip physics-only CompositeCollider2Ds on regular rigidbodies.
+                if (cc.GetComponent<UnityEngine.Tilemaps.TilemapCollider2D>() == null) continue;
+
+                var overlay = cc.GetComponent<TilemapColliderDebugOverlay>();
+                if (overlay == null && visible)
+                    overlay = cc.gameObject.AddComponent<TilemapColliderDebugOverlay>();
+                if (overlay != null)
+                    overlay.SetVisible(visible);
+            }
+        }
+
         private void SetBrushOn(bool on)
         {
             if (on)
@@ -1893,21 +2250,16 @@ namespace Valkur.Gameplay.Buildings
 
         private void SetBrushAction(CollBrushMode action)
         {
-            // Only Paint (Solid → "#") and Erase (Walk → ".") are valid actions in the new UX.
+            // Only Paint (Solid → "#") and Erase (Walk → ".") are valid actions.
             if (action != CollBrushMode.Solid && action != CollBrushMode.Walk) return;
+            // Clicking the already-active action toggles the brush OFF.
+            if (BrushOn && _collBrushMode == action)
+            {
+                SetCollBrushMode(CollBrushMode.Off);
+                return;
+            }
             _lastBrushAction = action;
-            if (BrushOn)
-            {
-                SetCollBrushMode(action);
-            }
-            else
-            {
-                // Brush is OFF — just remember the choice and refresh the panel so the
-                // user can see which action will be applied when they toggle back ON.
-                RefreshBrushButtonHighlights();
-                RefreshCollidersPanel();
-                Toast($"Brush action set to {ActionLabel(action)} (brush is OFF — press B to enable).");
-            }
+            SetCollBrushMode(action);
         }
 
         private static string ActionLabel(CollBrushMode action)
@@ -1928,6 +2280,7 @@ namespace Valkur.Gameplay.Buildings
                     _uiRefs.CollVisibilityBtnLabel.text = "Hide Colliders";
                 ReapplyAllColliderStates();
                 Physics2D.SyncTransforms();
+                SetTilemapCollidersVisible(true);
                 RefreshCollidersOverlay();
             }
             if (_uiRefs.CollBrushToggleLabel != null)
@@ -1938,17 +2291,31 @@ namespace Valkur.Gameplay.Buildings
             Toast(BrushOn ? $"Brush ON ({ActionLabel(_collBrushMode)})." : "Brush OFF.");
         }
 
-        private void OnCollBrushSizeChanged(float v)
+        private void OnCollBrushSizeChanged(int v)
         {
-            _collBrushSize = Mathf.Clamp(Mathf.RoundToInt(v), 1, 8);
-            if (_uiRefs.CollBrushSizeVal != null)
-                _uiRefs.CollBrushSizeVal.text = _collBrushSize.ToString();
-            if (_uiRefs.CollBrushSizeSlider != null
-                && !Mathf.Approximately(_uiRefs.CollBrushSizeSlider.value, _collBrushSize))
-            {
-                _uiRefs.CollBrushSizeSlider.SetValueWithoutNotify(_collBrushSize);
-            }
+            _collBrushSize = Mathf.Clamp(v, 1, 8);
+            RefreshCollBrushSizePresets();
             RefreshCollidersPanel();
+        }
+
+        private void RefreshCollBrushSizePresets()
+        {
+            if (_uiRefs.CollBrushSizePresetImgs == null) return;
+            for (int i = 0; i < _uiRefs.CollBrushSizePresetImgs.Count; i++)
+            {
+                int size   = i + 1;
+                bool active = size == _collBrushSize;
+                if (_uiRefs.CollBrushSizePresetImgs[i] != null)
+                    _uiRefs.CollBrushSizePresetImgs[i].color =
+                        active ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
+                if (_uiRefs.CollBrushSizePresetLabels != null
+                    && i < _uiRefs.CollBrushSizePresetLabels.Count
+                    && _uiRefs.CollBrushSizePresetLabels[i] != null)
+                    _uiRefs.CollBrushSizePresetLabels[i].color =
+                        active ? EditorUIHelpers.ACCENT : EditorUIHelpers.TEXT_SECONDARY;
+            }
+            if (_uiRefs.CollBrushSizeLabel != null)
+                _uiRefs.CollBrushSizeLabel.text = $"{_collBrushSize}x{_collBrushSize}";
         }
 
         private void RefreshBrushButtonHighlights()
@@ -2015,11 +2382,55 @@ namespace Valkur.Gameplay.Buildings
                 $"Grid: {session.WorkingGrid.width}x{session.WorkingGrid.height} | Solids {solids} | {dirty} | Brush {brushLabel} x{_collBrushSize}";
         }
 
+        // Reusable scratch buffer for authoring-cell computation. Authoring cell
+        // sets are pushed to overlays via IList<Rect>; the overlay copies the
+        // contents into its own array, so we can safely reuse this list across
+        // every building/frame and avoid the per-call List<Rect>(256) allocation.
+        private readonly List<Rect> _authoringCellsScratch = new List<Rect>(256);
+
+        // Cached BuildingObject snapshot used by full-refresh paths. Invalidated
+        // by InvalidateBuildingCache() whenever the editor knows the set may
+        // have changed (placement, deletion, undo/redo, scene reload). Avoids
+        // repeated FindObjectsOfType allocations.
+        private BuildingObject[] _buildingsCache;
+        private bool             _buildingsCacheValid;
+
+        internal void InvalidateBuildingCache()
+        {
+            _buildingsCacheValid = false;
+        }
+
+        private BuildingObject[] GetCachedBuildings()
+        {
+            if (!_buildingsCacheValid || _buildingsCache == null)
+            {
+                _buildingsCache = FindObjectsOfType<BuildingObject>();
+                _buildingsCacheValid = true;
+            }
+            return _buildingsCache;
+        }
+
+        /// <summary>
+        /// Per-frame fast path: refresh only the ACTIVE building's overlay
+        /// cells. The other buildings are static while the editor is open, so
+        /// they keep whatever cells the last full RefreshCollidersOverlay()
+        /// pushed. This is the difference between 20 fps and 120+ fps when
+        /// Show Colliders is on with many buildings in the scene.
+        /// </summary>
+        private void RefreshActiveBuildingOverlayCells()
+        {
+            if (!_collidersVisible || _activeBuilding == null) return;
+            var overlay = _activeBuilding.GetComponent<BuildingColliderDebugOverlay>();
+            if (overlay == null) return;
+            int filled = ComputeAuthoringCellsInto(_activeBuilding, _authoringCellsScratch);
+            if (filled > 0)
+                overlay.SetAuthoringCells(_authoringCellsScratch);
+            else
+                overlay.ClearAuthoringCells();
+        }
+
         private int RefreshCollidersOverlay()
         {
-            if (_collidersVisible)
-                Physics2D.SyncTransforms();
-
             // Compute authoring cells (the editor's working grid in world space)
             // for EVERY building in the scene — not only the currently active
             // one. This guarantees that when the user toggles "Show Colliders"
@@ -2029,8 +2440,12 @@ namespace Valkur.Gameplay.Buildings
             // JSON grid) the overlay falls back to enumerating its own
             // BoxCollider2D children (root footprint, etc.) so the user always
             // sees SOMETHING when a building has any physical collider at all.
+            //
+            // Heavy path — invoked only on toggle, SetActiveBuilding, brush
+            // stroke end, undo/redo, and other structural changes. Per-frame
+            // updates use the lighter RefreshActiveBuildingOverlayCells.
             int total = 0;
-            var all = FindObjectsOfType<BuildingObject>();
+            var all = GetCachedBuildings();
             for (int i = 0; i < all.Length; i++)
             {
                 var b = all[i];
@@ -2041,9 +2456,9 @@ namespace Valkur.Gameplay.Buildings
 
                 if (_collidersVisible)
                 {
-                    var cells = TryComputeAuthoringCellsFor(b);
-                    if (cells != null && cells.Count > 0)
-                        overlay.SetAuthoringCells(cells);
+                    int filled = ComputeAuthoringCellsInto(b, _authoringCellsScratch);
+                    if (filled > 0)
+                        overlay.SetAuthoringCells(_authoringCellsScratch);
                     else
                         overlay.ClearAuthoringCells();
                 }
@@ -2074,15 +2489,31 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private List<Rect> TryComputeAuthoringCellsFor(BuildingObject building)
         {
-            if (building == null || building.Template == null) return null;
-            if (!building.TryGetWorldRect(out var rect) || rect.width <= 0f || rect.height <= 0f) return null;
+            // Allocating overload kept for back-compat with any external caller.
+            // Internal hot paths use ComputeAuthoringCellsInto with a shared
+            // scratch buffer to avoid per-frame allocations.
+            var cells = new List<Rect>(64);
+            int filled = ComputeAuthoringCellsInto(building, cells);
+            return filled > 0 ? cells : null;
+        }
+
+        /// <summary>
+        /// Allocation-free variant: fills <paramref name="cells"/> with the
+        /// world-space rects of every solid ("#") cell in <paramref name="building"/>'s
+        /// authoring grid and returns the count. The list is cleared first so
+        /// callers can reuse a single shared buffer across frames/buildings.
+        /// </summary>
+        private int ComputeAuthoringCellsInto(BuildingObject building, List<Rect> cells)
+        {
+            cells.Clear();
+            if (building == null || building.Template == null) return 0;
+            if (!building.TryGetWorldRect(out var rect) || rect.width <= 0f || rect.height <= 0f) return 0;
 
             ColliderGridData grid = ResolveStoredGridForOverlay(building);
-            if (grid == null || grid.collision == null || grid.height <= 0 || grid.width <= 0) return null;
+            if (grid == null || grid.collision == null || grid.height <= 0 || grid.width <= 0) return 0;
 
             int rows = grid.height;
             int cols = grid.width;
-            var cells = new List<Rect>(Mathf.Min(rows * cols, 256));
             for (int row = 0; row < rows; row++)
             {
                 var rowArr = grid.collision[row];
@@ -2094,7 +2525,7 @@ namespace Valkur.Gameplay.Buildings
                         cells.Add(cell);
                 }
             }
-            return cells;
+            return cells.Count;
         }
 
         /// <summary>
@@ -2195,6 +2626,9 @@ namespace Valkur.Gameplay.Buildings
             _undo.Do("Paint colliders",
                 () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, after),
                 () => ApplyGridSnapshot(strokeScope, strokeImageKey, strokeInstanceId, before));
+            // Auto-save: persist JSON immediately so the user never needs to press
+            // "Save Colliders" manually after painting or erasing.
+            SaveColliderAuthoring();
         }
 
         private void HandleColliderPaint(Vector3 worldPos)
@@ -2214,9 +2648,9 @@ namespace Valkur.Gameplay.Buildings
 
             int half = (_collBrushSize - 1) / 2;
             int extra = (_collBrushSize - 1) - half;
-            ColliderGridData fallback = _collBrushMode == CollBrushMode.Erase
-                ? CreateFallbackGridFor(_activeBuilding, session)
-                : null;
+            // CollBrushMode.Erase is an internal enum value that is no longer
+            // reachable from the redesigned UX (the UI "Erase" button maps to
+            // CollBrushMode.Walk). Kept in the enum for undo-snapshot compatibility.
 
             bool changed = false;
             for (int dr = -half; dr <= extra; dr++)
@@ -2228,10 +2662,8 @@ namespace Valkur.Gameplay.Buildings
                     if (r < 0 || r >= session.WorkingGrid.height || c < 0 || c >= session.WorkingGrid.width)
                         continue;
 
-                    string next = ".";
-                    if (_collBrushMode == CollBrushMode.Solid) next = "#";
-                    else if (_collBrushMode == CollBrushMode.Erase && fallback != null)
-                        next = fallback.collision[r][c];
+                    // Solid mode writes "#"; Walk (UI "Erase") writes ".".
+                    string next = _collBrushMode == CollBrushMode.Solid ? "#" : ".";
 
                     if (session.WorkingGrid.collision[r][c] == next) continue;
                     session.WorkingGrid.collision[r][c] = next;
@@ -2243,7 +2675,13 @@ namespace Valkur.Gameplay.Buildings
 
             PersistSessionToStore(session);
             _colliderStroke.Changed = true;
-            ApplyCollisionTargetsFor(session.Scope, session.ImageKey, session.InstanceId);
+            // During an active stroke we skip the heavy ApplyCollisionTargetsFor
+            // (FindObjectsOfType + ClearCollisionTiles + EnsureCollTile for every
+            // building that shares this image key) to avoid 1-fps stalls on large scenes.
+            // Physical colliders are synced exactly once when the stroke ends via
+            // EndColliderStroke → UndoStack.Do → ApplyGridSnapshot → ApplyCollisionTargetsFor.
+            // For live visual feedback we only refresh the active building's overlay cells.
+            RefreshActiveBuildingOverlayCells();
             RefreshCollidersPanel();
         }
 
@@ -2254,6 +2692,53 @@ namespace Valkur.Gameplay.Buildings
         private void SaveColliderAuthoring()
         {
             SaveInstancesToJson();
+        }
+
+        /// <summary>
+        /// Wipes all existing collision authoring data and assigns an all-walkable
+        /// (all "." cells) CU-scope grid to every building so the user can repaint
+        /// from scratch. All-walkable CU grids are preserved across sessions because
+        /// the per-instance JSON loaders no longer apply the GridHasSolidCells filter.
+        /// </summary>
+        private void ResetAllCollidersToWalkable()
+        {
+            EnsureColliderDataLoaded();
+
+            // Clear both in-memory stores and the active authoring session.
+            _colliderImageStore.Clear();
+            _colliderInstanceStore.Clear();
+            _activeColliderSession = null;
+
+            var all = GetCachedBuildings();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null || b.Template == null) continue;
+
+                // Force per-instance (CU) scope so every building gets its own
+                // all-walkable grid regardless of previous scope setting.
+                b.ColliderScopeOverride = "CU";
+
+                var sz       = GetEffectivePixelSize(b);
+                int cols     = Mathf.Max(1, Mathf.CeilToInt(sz.x / 32f));
+                int rows     = Mathf.Max(1, Mathf.CeilToInt(sz.y / 32f));
+                var walkable = CreateEmptyGrid(cols, rows, sz); // all "." cells
+
+                _colliderInstanceStore[b.InstanceId] = walkable;
+                ApplyGridOverrideToBuilding(b, walkable);
+            }
+
+            InvalidateBuildingCache();
+            SaveColliderAuthoring();
+
+            if (_collidersVisible)
+            {
+                Physics2D.SyncTransforms();
+                RefreshCollidersOverlay();
+            }
+            RefreshCollidersPanel();
+            Toast("All colliders reset to walkable. Paint solid cells from scratch.");
+            Debug.Log($"[BuildingsEditor] ResetAllCollidersToWalkable — {all.Length} buildings cleared.");
         }
 
         private void ResetColliderAuthoringState()
@@ -2373,10 +2858,16 @@ namespace Valkur.Gameplay.Buildings
             if (building == null || building.Template == null || !building.Template.solid)
                 return grid;
 
-            // split_ratio is VISUAL-ONLY — it does not determine the default collision
-            // zone. For a solid building with no authored grid every cell is solid,
-            // matching the full-height BoxCollider2D set in BuildingObject.Apply().
-            for (int row = 0; row < rows; row++)
+            // Only mark footprint rows as solid, matching BuildingObject.Apply() which
+            // sizes the root BoxCollider2D to the footprint (below the split line) only.
+            // Row 0 = top of building (canopy), Row rows-1 = bottom (footprint base).
+            // footprintStartRow = first grid row (counting from top=0) that is inside
+            // the footprint: footprintStartRow = ceil(rows * splitRatio).
+            float splitRatio = (building.SplitRatioOverride >= 0f)
+                ? building.SplitRatioOverride
+                : (building.Template.splitRatio);
+            int footprintStartRow = Mathf.Clamp(Mathf.CeilToInt(rows * splitRatio), 0, rows);
+            for (int row = footprintStartRow; row < rows; row++)
                 for (int col = 0; col < cols; col++)
                     grid.collision[row][col] = "#";
 
@@ -2558,7 +3049,10 @@ namespace Valkur.Gameplay.Buildings
 
         private void ApplyCollisionTargetsFor(ColliderAuthoringScope scope, string imageKey, int instanceId)
         {
-            var all = FindObjectsOfType<BuildingObject>();
+            // Use the cached snapshot — this is only called from structural-change sites
+            // (stroke end, undo/redo, scope change) so the cache is either already valid
+            // or correctly invalidated before the call.
+            var all = GetCachedBuildings();
             if (scope == ColliderAuthoringScope.CU)
             {
                 for (int i = 0; i < all.Length; i++)
@@ -2640,14 +3134,13 @@ namespace Valkur.Gameplay.Buildings
             var effectiveGrid = ResampleGrid(grid, effectiveSize.x, effectiveSize.y);
             if (effectiveGrid == null) return;
 
-            // An authored grid with NO solid cells is treated as "no override":
-            // RestoreDefaultColliderState above already re-enabled the root
-            // collider per the template. Disabling it here would silently make
-            // 'solid' buildings walk-throughable as soon as their image has a
-            // placeholder JSON entry without any '#' painted yet.
-            if (!GridHasSolidCells(effectiveGrid))
-                return;
-
+            // Apply every authored cell, even if none are solid — the user may have
+            // deliberately erased all "#" cells to make a building fully walk-through.
+            // All-walkable grids loaded from JSON are already filtered out at load time
+            // (see LoadCollisionImageStore / LoadCollisionInstanceStore), so reaching
+            // this point with zero solid cells always reflects an explicit user edit.
+            // When zero CollTiles are created below, the main BoxCollider2D is still
+            // disabled at the end, correctly leaving the building with no collision.
             for (int row = 0; row < effectiveGrid.height; row++)
             {
                 if (effectiveGrid.collision == null || row >= effectiveGrid.collision.Length || effectiveGrid.collision[row] == null)
@@ -2880,7 +3373,11 @@ namespace Valkur.Gameplay.Buildings
             {
                 if (!(kvp.Value is Dictionary<string, object> dict)) continue;
                 var grid = ParseColliderGrid(dict);
-                if (grid != null)
+                // Skip all-walkable JSON entries: they are unintentional placeholders
+                // written by old editor versions into the CG (per-image) store.
+                // Per-instance (CU) stores keep all-walkable grids so that an
+                // intentional "reset all to walkable" survives across sessions.
+                if (grid != null && GridHasSolidCells(grid))
                     destination[NormalizeAssetPath(kvp.Key)] = grid;
             }
         }
@@ -2896,6 +3393,8 @@ namespace Valkur.Gameplay.Buildings
             {
                 if (!(kvp.Value is Dictionary<string, object> dict)) continue;
                 var grid = ParseColliderGrid(dict);
+                // Per-instance (CU) grids: no solid-cell filter. An all-walkable grid
+                // here is intentional (e.g. produced by "Reset all to walkable").
                 if (grid != null && int.TryParse(kvp.Key, out int id))
                     destination[id] = grid;
             }
@@ -2915,6 +3414,8 @@ namespace Valkur.Gameplay.Buildings
                 if (!entry.TryGetValue("overrides", out var overridesRaw) || !(overridesRaw is Dictionary<string, object> overrides)) continue;
                 if (!overrides.TryGetValue("collision_override", out var collisionRaw) || !(collisionRaw is Dictionary<string, object> collisionDict)) continue;
                 var grid = ParseColliderGrid(collisionDict);
+                // Per-instance (CU) inline grids: no solid-cell filter (same as
+                // LoadCollisionInstanceStore — all-walkable may be intentional).
                 if (grid != null)
                     destination[Convert.ToInt32(idRaw)] = grid;
             }
