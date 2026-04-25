@@ -76,6 +76,12 @@ namespace Valkur.Gameplay.Combat
 
         private static void EnsurePool()
         {
+            // _prefab is a runtime-created GameObject. If the scene was reloaded it will
+            // have been destroyed (Unity null-check catches this). Reset both statics so
+            // a fresh pool and prefab are created for the new scene.
+            if (_prefab == null)
+                _pool = null;
+
             if (_pool != null) return;
 
             _prefab = new GameObject("DmgNumPrefab");

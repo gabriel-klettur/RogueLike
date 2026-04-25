@@ -57,16 +57,19 @@ namespace Valkur.Core
                 if (obj == null)
                 {
                     obj = CreateInstance();
+                    if (obj == null) return null;
                 }
             }
             else
             {
                 if (_maxSize > 0 && _active.Count >= _maxSize)
                 {
-                    Debug.LogWarning($"[ObjectPool] Max size ({_maxSize}) reached for {_prefab.name}. Reusing oldest.");
+                    string prefabName = _prefab != null ? _prefab.name : "<destroyed>";
+                    Debug.LogWarning($"[ObjectPool] Max size ({_maxSize}) reached for {prefabName}. Reusing oldest.");
                     return null;
                 }
                 obj = CreateInstance();
+                if (obj == null) return null;
             }
 
             obj.transform.SetPositionAndRotation(position, rotation);
@@ -123,6 +126,12 @@ namespace Valkur.Core
 
         private GameObject CreateInstance()
         {
+            if (_prefab == null)
+            {
+                Debug.LogError("[ObjectPool] Prefab has been destroyed or is null — cannot create a new pool instance. " +
+                               "Ensure the pool owner resets the pool when the scene is reloaded.");
+                return null;
+            }
             var obj = UnityEngine.Object.Instantiate(_prefab, _parent);
             obj.name = $"{_prefab.name}_pooled";
             return obj;
