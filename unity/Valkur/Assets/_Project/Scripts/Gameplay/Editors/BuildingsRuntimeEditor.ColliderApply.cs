@@ -104,7 +104,7 @@ namespace Valkur.Gameplay.Buildings
                 {
                     var b = all[i];
                     if (b == null || b.Template == null) continue;
-                    if (!string.Equals(NormalizeAssetPath(b.Template.sourceImagePath), imageKey ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(ResolveSharedScopeKey(b), imageKey ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                         continue;
                     if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
                         continue;
@@ -145,8 +145,8 @@ namespace Valkur.Gameplay.Buildings
                 return true;
             }
 
-            string imageKey = NormalizeAssetPath(building.Template.sourceImagePath);
-            if (!string.IsNullOrEmpty(imageKey) && _colliderImageStore.TryGetValue(imageKey, out var imageGrid))
+            string imageKey = ResolveSharedScopeKey(building);
+            if (TryGetSharedGrid(building, imageKey, out var imageGrid))
             {
                 ApplyGridOverrideToBuilding(building, imageGrid);
                 return true;
@@ -164,27 +164,20 @@ namespace Valkur.Gameplay.Buildings
 
             if (grid == null) return;
 
-            Vector2Int effectiveSize = GetEffectivePixelSize(building);
-            var effectiveGrid = ResampleGrid(grid, effectiveSize.x, effectiveSize.y);
-            if (effectiveGrid == null) return;
-
-            // Apply every authored cell, even if none are solid — the user may have
-            // deliberately erased all "#" cells to make a building fully walk-through.
-            // All-walkable grids loaded from JSON are already filtered out at load time
-            // (see LoadCollisionImageStore / LoadCollisionInstanceStore), so reaching
-            // this point with zero solid cells always reflects an explicit user edit.
-            // When zero CollTiles are created below, the main BoxCollider2D is still
-            // disabled at the end, correctly leaving the building with no collision.
-            for (int row = 0; row < effectiveGrid.height; row++)
+            // The grid is a LOGICAL N×M topology applied as-is. Cell-to-world
+            // mapping is proportional via BuildingObject.TryGetWorldCellRect()
+            // inside EnsureCollTile, so different-size instances naturally get
+            // proportionally-sized cells without any pixel-based resampling.
+            for (int row = 0; row < grid.height; row++)
             {
-                if (effectiveGrid.collision == null || row >= effectiveGrid.collision.Length || effectiveGrid.collision[row] == null)
+                if (grid.collision == null || row >= grid.collision.Length || grid.collision[row] == null)
                     continue;
 
-                for (int col = 0; col < effectiveGrid.width; col++)
+                for (int col = 0; col < grid.width; col++)
                 {
-                    if (col >= effectiveGrid.collision[row].Length || effectiveGrid.collision[row][col] != "#")
+                    if (col >= grid.collision[row].Length || grid.collision[row][col] != "#")
                         continue;
-                    EnsureCollTile(building, row, col, effectiveGrid.height, effectiveGrid.width);
+                    EnsureCollTile(building, row, col, grid.height, grid.width);
                 }
             }
 

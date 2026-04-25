@@ -175,18 +175,19 @@ namespace Valkur.Gameplay.Buildings
                     return session.WorkingGrid;
             }
 
-            Vector2Int effectiveSize = GetEffectivePixelSize(building);
+            // Logical grid: NOT resampled by per-instance pixel size. Both CU and
+            // CG return the stored topology as-is so all sharing buildings render
+            // an identical pattern (cells map proportionally via TryGetWorldCellRect).
             if (string.Equals(building.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase) &&
                 _colliderInstanceStore.TryGetValue(building.InstanceId, out var instanceGrid))
             {
-                return ResampleGrid(instanceGrid, effectiveSize.x, effectiveSize.y);
+                return CloneGrid(instanceGrid);
             }
 
-            string imageKey = NormalizeAssetPath(building.Template.sourceImagePath);
-            if (!string.IsNullOrEmpty(imageKey) &&
-                _colliderImageStore.TryGetValue(imageKey, out var imageGrid))
+            string imageKey = ResolveSharedScopeKey(building);
+            if (TryGetSharedGrid(building, imageKey, out var imageGrid))
             {
-                return ResampleGrid(imageGrid, effectiveSize.x, effectiveSize.y);
+                return CloneGrid(imageGrid);
             }
 
             // Note: the editor stores (_colliderImageStore / _colliderInstanceStore)

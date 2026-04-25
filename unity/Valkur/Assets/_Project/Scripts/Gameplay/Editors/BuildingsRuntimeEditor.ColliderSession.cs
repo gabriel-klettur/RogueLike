@@ -46,7 +46,7 @@ namespace Valkur.Gameplay.Buildings
             EnsureColliderDataLoaded();
 
             Vector2Int effectiveSize = GetEffectivePixelSize(_activeBuilding);
-            string imageKey = NormalizeAssetPath(_activeBuilding.Template.sourceImagePath);
+            string imageKey = ResolveSharedScopeKey(_activeBuilding);
             ColliderAuthoringScope scope = string.Equals(
                 _activeBuilding.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase)
                 ? ColliderAuthoringScope.CU
@@ -74,6 +74,12 @@ namespace Valkur.Gameplay.Buildings
             return _activeColliderSession;
         }
 
+        // The collider grid is a LOGICAL N×M topology that belongs to the
+        // shared image (CG) or the building instance (CU). It is NEVER resampled
+        // by per-instance pixel size: all buildings using the same image share
+        // the exact same grid, and each one maps the cells proportionally to its
+        // own world rect via BuildingObject.TryGetWorldCellRect(). This keeps
+        // the painted pattern visually consistent across instances of any size.
         private ColliderGridData ResolveWorkingGridFor(
             BuildingObject building,
             ColliderAuthoringScope scope,
@@ -84,29 +90,27 @@ namespace Valkur.Gameplay.Buildings
             if (scope == ColliderAuthoringScope.CU &&
                 _colliderInstanceStore.TryGetValue(instanceId, out var instanceGrid))
             {
-                return ResampleGrid(instanceGrid, effectiveSize.x, effectiveSize.y);
+                return CloneGrid(instanceGrid);
             }
 
-            if (!string.IsNullOrEmpty(imageKey) &&
-                _colliderImageStore.TryGetValue(imageKey, out var sharedGrid))
+            if (TryGetSharedGrid(building, imageKey, out var sharedGrid))
             {
-                return ResampleGrid(sharedGrid, effectiveSize.x, effectiveSize.y);
+                return CloneGrid(sharedGrid);
             }
 
-            return CreateDefaultFootprintGrid(building, effectiveSize);
+            return CreateDefaultFootprintGrid(building);
         }
 
         private ColliderGridData CreateFallbackGridFor(BuildingObject building, ActiveColliderGridSession session)
         {
             if (session == null) return null;
             if (session.Scope == ColliderAuthoringScope.CU &&
-                !string.IsNullOrEmpty(session.ImageKey) &&
-                _colliderImageStore.TryGetValue(session.ImageKey, out var sharedGrid))
+                TryGetSharedGrid(building, session.ImageKey, out var sharedGrid))
             {
-                return ResampleGrid(sharedGrid, session.EffectivePixelSize.x, session.EffectivePixelSize.y);
+                return CloneGrid(sharedGrid);
             }
 
-            return CreateDefaultFootprintGrid(building, session.EffectivePixelSize);
+            return CreateDefaultFootprintGrid(building);
         }
 
         private static Vector2Int GetEffectivePixelSize(BuildingObject building)
@@ -117,11 +121,21 @@ namespace Valkur.Gameplay.Buildings
             return new Vector2Int(effW, effH);
         }
 
-        private static ColliderGridData CreateDefaultFootprintGrid(BuildingObject building, Vector2Int effectiveSize)
+        // Default grid resolution is derived from the TEMPLATE's natural size
+        // (originalScale), not the per-instance effective size, so all instances
+        // of the same template (regardless of scale override) get the same
+        // default grid — a pre-condition for shared CG colliders to work.
+        private static ColliderGridData CreateDefaultFootprintGrid(BuildingObject building)
         {
-            int cols = Mathf.Max(1, Mathf.CeilToInt(effectiveSize.x / 32f));
-            int rows = Mathf.Max(1, Mathf.CeilToInt(effectiveSize.y / 32f));
-            var grid = CreateEmptyGrid(cols, rows, effectiveSize);
+            Vector2Int natural = (building != null && building.Template != null)
+                ? building.Template.originalScale
+                : Vector2Int.zero;
+            if (natural.x <= 0) natural.x = 32;
+            if (natural.y <= 0) natural.y = 32;
+
+            int cols = Mathf.Max(1, Mathf.CeilToInt(natural.x / 32f));
+            int rows = Mathf.Max(1, Mathf.CeilToInt(natural.y / 32f));
+            var grid = CreateEmptyGrid(cols, rows, natural);
             if (building == null || building.Template == null || !building.Template.solid)
                 return grid;
 
@@ -252,6 +266,45 @@ namespace Valkur.Gameplay.Buildings
         private static string NormalizeAssetPath(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Replace("\\", "/");
+        }
+
+        // Primary shared-scope key: all buildings whose sprite comes from the same
+        // source image file (sourceImagePath) should share a single CG collider grid.
+        // Previously this returned "template:{templateId}", which prevented buildings
+        // with different templateIds (but the same image) from sharing — fixed here.
+        private static string ResolveSharedScopeKey(BuildingObject building)
+        {
+            if (building == null || building.Template == null) return string.Empty;
+            return NormalizeAssetPath(building.Template.sourceImagePath ?? string.Empty);
+        }
+
+        // Backward-compat fallback: data saved before this fix used templateId as key.
+        private static string ResolveLegacyImageScopeKey(BuildingObject building)
+        {
+            if (building == null || building.Template == null) return string.Empty;
+            return $"template:{building.Template.templateId}";
+        }
+
+        private bool TryGetSharedGrid(BuildingObject building, string sharedKey, out ColliderGridData sharedGrid)
+        {
+            sharedGrid = null;
+
+            if (!string.IsNullOrEmpty(sharedKey) &&
+                _colliderImageStore.TryGetValue(sharedKey, out sharedGrid))
+            {
+                return true;
+            }
+
+            // Backward compatibility: older sessions stored CG by source image path.
+            string legacyImageKey = ResolveLegacyImageScopeKey(building);
+            if (!string.IsNullOrEmpty(legacyImageKey) &&
+                !string.Equals(legacyImageKey, sharedKey, StringComparison.OrdinalIgnoreCase) &&
+                _colliderImageStore.TryGetValue(legacyImageKey, out sharedGrid))
+            {
+                return true;
+            }
+
+            return false;
         }
 
     }
