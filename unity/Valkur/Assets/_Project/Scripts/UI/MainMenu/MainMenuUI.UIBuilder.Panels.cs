@@ -28,6 +28,7 @@ namespace Valkur.UI.MainMenu
             float panelH = padY * 2 + count * rowH + (count - 1) * gap;
 
             var panelGo   = CreateUIObject("MenuPanel", canvas);
+            _menuPanelGo  = panelGo;
             var panelRect = panelGo.GetComponent<RectTransform>();
             panelRect.anchorMin        = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax        = new Vector2(0.5f, 0.5f);

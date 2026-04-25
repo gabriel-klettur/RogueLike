@@ -55,33 +55,19 @@ namespace Valkur.UI.MainMenu
             if (index < 0 || _menuOptions == null || index >= _menuOptions.Length) return;
             switch (_menuOptions[index])
             {
-                case "Continuar":    ContinueGame();      break;
+                case "Continuar":    ShowMenuScreen(MenuScreen.LoadGame); break;
                 case "Nuevo juego":  OpenClassSelector();  break;
-                case "Cargar juego": ShowMenuScreen(MenuScreen.LoadGame); break;
                 case "Opciones":     ShowMenuScreen(MenuScreen.Options); break;
                 case "Salir":        QuitGame();           break;
             }
         }
 
-        private void ContinueGame()
-        {
-            var saves = SaveFileManager.ListSaves();
-            if (saves.Count > 0)
-            {
-                PendingSaveLoad.Path = saves[0].path;
-                Debug.Log($"[MainMenu] Continuing most recent save: {saves[0].fileName}");
-            }
-            else
-            {
-                Debug.LogWarning("[MainMenu] No saves found for Continue.");
-            }
-            TransitionAudioToGame();
-            LoadingScreenController.Show(gameplaySceneName);
-        }
-
         private void StartNewGame()
         {
             Debug.Log("[MainMenu] Starting new game...");
+            // Clear any stale position checkpoint so the new character spawns at the
+            // default spawn point rather than the previous session's last position.
+            Valkur.Gameplay.Save.SaveFileManager.DeletePositionCheckpoint();
             TransitionAudioToGame();
             LoadingScreenController.Show(gameplaySceneName);
         }

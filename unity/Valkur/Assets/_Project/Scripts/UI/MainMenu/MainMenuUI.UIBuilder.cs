@@ -35,6 +35,8 @@ namespace Valkur.UI.MainMenu
             scaler.matchWidthOrHeight = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
+            _canvasTransform = canvasGo.transform;
+
             BuildBackground(canvasGo.transform);
             BuildOverlay(canvasGo.transform);
             BuildLogo(canvasGo.transform);

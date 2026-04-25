@@ -61,6 +61,8 @@ namespace Valkur.UI.MainMenu
         private Image[]              _pillImages;
         private Image[]              _accentBars;
         private TextMeshProUGUI[]    _menuTexts;
+        private GameObject           _menuPanelGo;
+        private Transform            _canvasTransform;
 
         // Class selector
         private GameObject _classSelectionPanel;
@@ -192,10 +194,23 @@ namespace Valkur.UI.MainMenu
             var opts = new List<string>();
             if (hasSaves) opts.Add("Continuar");
             opts.Add("Nuevo juego");
-            if (hasSaves) opts.Add("Cargar juego");
             opts.Add("Opciones");
             opts.Add("Salir");
             _menuOptions = opts.ToArray();
+        }
+
+        /// <summary>
+        /// Rebuilds the main menu panel (e.g. after deleting all saves so the
+        /// "Continuar" entry must disappear). Safe to call any time after BuildUI().
+        /// </summary>
+        private void RebuildMenuPanel()
+        {
+            if (_canvasTransform == null) return;
+            BuildMenuOptions();
+            if (_menuPanelGo != null) Destroy(_menuPanelGo);
+            BuildMenuPanel(_canvasTransform);
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _menuOptions.Length - 1));
+            UpdateSelection();
         }
 
 

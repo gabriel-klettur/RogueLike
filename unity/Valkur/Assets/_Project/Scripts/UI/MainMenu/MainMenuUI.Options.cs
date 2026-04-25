@@ -81,7 +81,11 @@ namespace Valkur.UI.MainMenu
                 case MenuScreen.Options:  ShowMenuScreen(MenuScreen.Main); break;
                 case MenuScreen.Sounds:   ShowMenuScreen(MenuScreen.Options); break;
                 case MenuScreen.Inputs:   ShowMenuScreen(MenuScreen.Options); break;
-                case MenuScreen.LoadGame: ShowMenuScreen(MenuScreen.Main); break;
+                case MenuScreen.LoadGame:
+                    ShowMenuScreen(MenuScreen.Main);
+                    // Saves may have been deleted while in the load panel; refresh main menu
+                    RebuildMenuPanel();
+                    break;
                 default: break;
             }
         }
