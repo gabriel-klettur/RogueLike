@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
@@ -87,6 +88,7 @@ namespace Valkur.Gameplay
             EnsureParticleInstancesLoader();
             EnsureTileEditor();
             EnsureMapEditor();
+            EnsureSaveService();
             EnsureSaveLoadInput();
             EnsureNPCSeparation();
             EnsureVendorShopUI();
@@ -126,9 +128,56 @@ namespace Valkur.Gameplay
                 if (SaveService.Instance != null)
                 {
                     SaveService.Instance.Load(savePath);
+                    // After loading the full save, apply the position checkpoint only if
+                    // it is strictly newer — protects position lost to a crash between the
+                    // last save and quit. Then delete it: the checkpoint belongs to the
+                    // previous session. The in-session timer will write a fresh one.
+                    ApplyPositionCheckpointIfNewer(SaveService.Instance.LastLoadedTimestamp);
                     Debug.Log($"[GameplaySceneSetup] Loaded pending save: {savePath}");
                 }
             }
+            else
+            {
+                // No explicit save selected (e.g., direct scene load in editor).
+                // Restore position from the most recent checkpoint if one exists.
+                ApplyPositionCheckpointIfNewer(null);
+            }
+
+            // Always clear the checkpoint after consuming it so that stale data from
+            // a previous session can never interfere with future scene loads.
+            Save.SaveFileManager.DeletePositionCheckpoint();
+        }
+
+        /// <summary>
+        /// Moves the player to the position stored in the crash-safe position checkpoint
+        /// if the checkpoint is strictly newer than <paramref name="loadedSaveTimestamp"/>
+        /// and within a 60-minute window (so intentionally loading an old save never
+        /// overrides the player's chosen starting position).
+        /// When <paramref name="loadedSaveTimestamp"/> is null the checkpoint is applied
+        /// unconditionally (direct scene entry with no main-menu save selection).
+        /// </summary>
+        private void ApplyPositionCheckpointIfNewer(string loadedSaveTimestamp)
+        {
+            var checkpoint = Save.SaveFileManager.ReadPositionCheckpoint();
+            if (checkpoint == null) return;
+
+            if (!string.IsNullOrEmpty(loadedSaveTimestamp))
+            {
+                if (!DateTime.TryParse(checkpoint.timestamp, out var cpTime))  return;
+                if (!DateTime.TryParse(loadedSaveTimestamp,  out var saveTime)) return;
+
+                double diffMinutes = (cpTime - saveTime).TotalMinutes;
+                // Only apply if checkpoint is newer than the save AND within 60 minutes.
+                // A gap > 60 min means the player loaded an old save intentionally.
+                if (diffMinutes <= 0 || diffMinutes > 60) return;
+            }
+
+            var player = EntityRegistry.Player;
+            if (player == null) return;
+
+            player.transform.position = new Vector3(checkpoint.x, checkpoint.y, 0f);
+            Debug.Log($"[GameplaySceneSetup] Position restored from crash-safe checkpoint: " +
+                      $"({checkpoint.x:F2}, {checkpoint.y:F2}) [{checkpoint.timestamp}]");
         }
     }
 }

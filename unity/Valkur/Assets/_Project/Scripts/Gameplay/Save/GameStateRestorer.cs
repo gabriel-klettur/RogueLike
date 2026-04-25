@@ -51,7 +51,10 @@ namespace Valkur.Gameplay.Save
             if (health == null) return;
 
             health.Initialize(psd.maxHp);
-            int damage = psd.maxHp - psd.hp;
+            // Guard: a save with hp==0 means the player died before saving.
+            // Restore to full health so the player is never loaded in a dead state.
+            int safeHp = (psd.hp > 0) ? psd.hp : psd.maxHp;
+            int damage = psd.maxHp - safeHp;
             if (damage > 0)
                 health.TakeDamage(damage);
         }

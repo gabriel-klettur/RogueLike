@@ -120,10 +120,11 @@ namespace Valkur.Gameplay
                 baked++;
             }
             Debug.Log($"[GameplaySceneSetup] Rebaked {baked} CompositeCollider2D(s) (refreshed {refreshed} tilemap(s)).");
-            World.TileCollisionDiagnostics.Report();
 
             // Safety-net re-bake one frame later — catches tiles painted by loaders
             // that run after Start() (BuildingLoader, override appliers, etc.).
+            // Diagnostic report is deferred to that pass so it reflects the final
+            // baked state (GenerateGeometry results are only visible after a physics step).
             StartCoroutine(DeferredRebakeNextFrame());
         }
 

@@ -23,6 +23,16 @@ namespace Valkur.Gameplay.Save
             var player = EntityRegistry.Player;
             if (player == null) return null;
 
+            // Refuse to persist an uninitialized or dead player.
+            // maxHp==0 means EntitySetup.ConfigurePlayer hasn't run yet.
+            var healthCheck = player.GetComponent<Health>();
+            if (healthCheck == null || healthCheck.MaxHp <= 0 || healthCheck.CurrentHp <= 0)
+            {
+                Debug.LogWarning("[GameStateCollector] Skipping save: player HP is invalid " +
+                                 $"(hp={healthCheck?.CurrentHp}, maxHp={healthCheck?.MaxHp}).");
+                return null;
+            }
+
             var data = new GameSaveData
             {
                 timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")

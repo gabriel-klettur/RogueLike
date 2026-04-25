@@ -118,6 +118,14 @@ namespace Valkur.Gameplay
             Debug.Log($"[GameplaySceneSetup] Global Light 2D created. lightTypeSet={lightTypeSet}");
         }
 
+        private void EnsureSaveService()
+        {
+            if (SaveService.HasInstance) return;
+            var go = new GameObject("SaveService");
+            go.AddComponent<SaveService>();
+            Debug.Log("[GameplaySceneSetup] SaveService created.");
+        }
+
         private void EnsureSaveLoadInput()
         {
             if (FindObjectOfType<SaveLoadInputHandler>() != null) return;

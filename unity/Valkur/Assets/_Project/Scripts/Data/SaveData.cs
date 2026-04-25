@@ -81,6 +81,19 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// Lightweight position-only checkpoint for crash-safe position persistence.
+    /// Written every few seconds during gameplay; separate from full save files.
+    /// </summary>
+    [Serializable]
+    public class PositionCheckpointData
+    {
+        public float x;
+        public float y;
+        public string zone;
+        public string timestamp;
+    }
+
+    /// <summary>
     /// Root save file structure.
     /// Combines player state, NPC memory, and game metadata.
     /// </summary>
