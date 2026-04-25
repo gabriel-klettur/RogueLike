@@ -66,15 +66,54 @@ namespace Valkur.Gameplay.Buildings
             PersistSessionToStore(session);
             _colliderStroke.Changed = true;
             ApplyGridOverrideToBuilding(_activeBuilding, session.WorkingGrid);
+
+            // Live propagation for Shared (CG) scope: every other building that
+            // resolves to the same shared key (template-based) and has not been
+            // overridden to CU must reflect the brush stroke immediately, not
+            // only when the stroke ends. The cached buildings list keeps this
+            // O(N) loop cheap, and CU buildings are skipped so per-instance
+            // overrides remain authoritative.
+            if (session.Scope == ColliderAuthoringScope.CG)
+                PropagateLiveStrokeToSharedTemplates(session);
+
             Physics2D.SyncTransforms();
-            // During an active stroke we skip the heavy ApplyCollisionTargetsFor
-            // (FindObjectsOfType + ClearCollisionTiles + EnsureCollTile for every
-            // building that shares this image key) to avoid 1-fps stalls on large scenes.
-            // Physical colliders are synced exactly once when the stroke ends via
-            // EndColliderStroke → UndoStack.Do → ApplyGridSnapshot → ApplyCollisionTargetsFor.
-            // For live visual feedback we only refresh the active building's overlay cells.
+            // For CU strokes, the heavier ApplyCollisionTargetsFor is still
+            // deferred to EndColliderStroke (single building → cheap there).
+            // For CG strokes, propagation above already touched all matching
+            // buildings, so we only need the lightweight overlay refresh here.
             RefreshActiveBuildingOverlayCells();
             RefreshCollidersPanel();
+        }
+
+        private void PropagateLiveStrokeToSharedTemplates(ActiveColliderGridSession session)
+        {
+            if (session == null || session.WorkingGrid == null) return;
+            string sharedKey = session.ImageKey ?? string.Empty;
+            if (string.IsNullOrEmpty(sharedKey)) return;
+
+            var all = GetCachedBuildings();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var b = all[i];
+                if (b == null || b.Template == null) continue;
+                if (ReferenceEquals(b, _activeBuilding)) continue;
+                if (string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!string.Equals(ResolveSharedScopeKey(b), sharedKey, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                ApplyGridOverrideToBuilding(b, session.WorkingGrid);
+
+                if (_collidersVisible)
+                {
+                    var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
+                    if (overlay == null)
+                        overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+                    int filled = ComputeAuthoringCellsInto(b, _authoringCellsScratch);
+                    if (filled > 0) overlay.SetAuthoringCells(_authoringCellsScratch);
+                    else overlay.ClearAuthoringCells();
+                }
+            }
         }
 
         // NOTE: Quick Actions (Fill / Clear / Revert) were removed by user request

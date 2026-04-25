@@ -240,6 +240,7 @@ namespace Valkur.Gameplay.Buildings
             // to BoxCollider2D rendering and the NEW one (if any) gets authoring
             // cells pushed in.
             if (changed) _activeColliderSession = null;
+            if (changed) RebuildSameTemplateFx(b);
             RefreshInspector();
             if (_collidersVisible) RefreshCollidersOverlay();
             if (_statusTmp != null && b != null) _statusTmp.text = $"Active: ID {b.InstanceId} ({b.Template?.name})";

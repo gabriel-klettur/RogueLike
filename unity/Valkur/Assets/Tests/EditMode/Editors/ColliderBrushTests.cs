@@ -32,7 +32,7 @@ namespace Valkur.Tests.EditMode
     ///   • Begin records before-snapshot; End registers undo only when cells changed.
     ///
     ///   GROUP 4 — EnsureActiveColliderSession scope resolution
-    ///   • CG uses imageKey; CU uses instanceId; session is cached.
+    ///   • CG uses template shared key; CU uses instanceId; session is cached.
     ///
     ///   GROUP 5 — PersistSessionToStore
     ///   • CG writes to image store; CU writes to instance store.
@@ -135,9 +135,11 @@ namespace Valkur.Tests.EditMode
         /// World rect: Rect(-1, 0, 2, 2) when at origin — 2×2 cell grid (32 px PPU).
         /// </summary>
         private BuildingObject CreateSolidBuilding(string imageKey = "assets/buildings/test.png",
-                                                   bool solid = true, string scope = "CG", int instanceId = 1)
+                                                   bool solid = true, string scope = "CG", int instanceId = 1,
+                                                   int templateId = 1)
         {
             var template = ScriptableObject.CreateInstance<BuildingTemplateData>();
+            template.templateId      = templateId;
             template.originalScale   = new Vector2Int(64, 64);
             template.solid           = solid;
             template.colliderScope   = scope;
@@ -319,10 +321,10 @@ namespace Valkur.Tests.EditMode
         // Helper: sets up editor + building + brush mode, invokes HandleColliderPaint.
         private (BuildingsRuntimeEditor ed, BuildingObject building) SetupForPaint(
             string brushMode, int brushSize = 1, bool solidBuilding = false,
-            string scope = "CG", int instanceId = 1)
+            string scope = "CG", int instanceId = 1, int templateId = 1)
         {
             var ed       = CreateEditor();
-            var building = CreateSolidBuilding(solid: solidBuilding, scope: scope, instanceId: instanceId);
+            var building = CreateSolidBuilding(solid: solidBuilding, scope: scope, instanceId: instanceId, templateId: templateId);
 
             // Map brush mode enum value by name.
             var modeField = Field(ed, "_collBrushMode");
@@ -522,26 +524,22 @@ namespace Valkur.Tests.EditMode
         // ═══════════════════════════════════════════════════════════════════════════
 
         [Test]
-        public void EnsureActiveColliderSession_CG_UsesImageKey()
+        public void EnsureActiveColliderSession_CG_UsesSourceImageKey()
         {
-            const string imgPath = "assets/buildings/wall.png";
+            // SetupForPaint uses the default imageKey = "assets/buildings/test.png" for the building.
+            const string expectedImageKey = "assets/buildings/test.png";
             var (ed, building) = SetupForPaint("Solid", solidBuilding: false, scope: "CG");
-            // Override sourceImagePath on the template.
-            var templateField = typeof(BuildingObject).GetField("_template",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            var template = (BuildingTemplateData)templateField.GetValue(building);
-            template.sourceImagePath = imgPath;
 
             var session = GetSession(ed);
             Assert.IsNotNull(session);
 
-            var imageKey = (string)s_sessionType.GetField("ImageKey").GetValue(session);
-            var scope    = s_sessionType.GetField("Scope").GetValue(session);
+            var imageKey  = (string)s_sessionType.GetField("ImageKey").GetValue(session);
+            var scope     = s_sessionType.GetField("Scope").GetValue(session);
             var scopeType = s_sessionType.GetField("Scope").FieldType;
-            var cgValue  = Enum.Parse(scopeType, "CG");
+            var cgValue   = Enum.Parse(scopeType, "CG");
 
-            Assert.AreEqual(imgPath.Replace("\\", "/"), imageKey,
-                "ImageKey must be the normalised sourceImagePath for CG scope.");
+            Assert.AreEqual(expectedImageKey, imageKey,
+                "ImageKey for CG scope must be the normalized sourceImagePath so all buildings sharing the same image share the same collider grid.");
             Assert.AreEqual(cgValue, scope, "Scope must be CG.");
         }
 
@@ -680,22 +678,24 @@ namespace Valkur.Tests.EditMode
         {
             // Solid building (CG, all "#" by default); erase center cell; store has updated grid.
             var (ed, building) = SetupForPaint("Walk", solidBuilding: true, scope: "CG");
-            // Ensure imageKey is non-empty so PersistSessionToStore writes the store.
+            // Shared store key is sourceImagePath-based in CG mode (all buildings using the same
+            // image file share a single collider grid, regardless of templateId).
             var templateField = typeof(BuildingObject).GetField("_template",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             var template = (BuildingTemplateData)templateField.GetValue(building);
             template.sourceImagePath = "assets/buildings/solid_wall.png";
+            string sharedKey = "assets/buildings/solid_wall.png";
 
             InvokePaint(ed, new Vector3(0f, 1f, 0f));
 
             // Check that _colliderImageStore has the painted (updated) grid.
             var storeField = Field(ed, "_colliderImageStore");
             var dict = storeField.GetValue(ed) as System.Collections.IDictionary;
-            Assert.IsTrue(dict.Contains("assets/buildings/solid_wall.png"),
-                "After painting, image store must contain the key for this building's image.");
+            Assert.IsTrue(dict.Contains(sharedKey),
+                "After painting, shared store must contain the key for this building template.");
 
             // At least one cell must be "." (the erased cell).
-            var storedGrid = dict["assets/buildings/solid_wall.png"];
+            var storedGrid = dict[sharedKey];
             var collision  = (string[][])s_gridType.GetField("collision").GetValue(storedGrid);
             bool hasDot = false;
             foreach (var row in collision)
@@ -995,12 +995,13 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void EndColliderStroke_WithChange_PopulatesCGImageStore()
         {
-            const string imgKey = "assets/buildings/wall_cg.png";
-            var (ed, building)  = SetupForPaint("Walk", solidBuilding: true, scope: "CG");
+            const int templateId = 456;
+            const string expectedKey = "assets/buildings/wall_cg.png";
+            var (ed, building)  = SetupForPaint("Walk", solidBuilding: true, scope: "CG", templateId: templateId);
             var templateField   = typeof(BuildingObject).GetField("_template",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             var template = (BuildingTemplateData)templateField.GetValue(building);
-            template.sourceImagePath = imgKey;
+            template.sourceImagePath = "assets/buildings/wall_cg.png";
 
             var beginMethod = Method(s_editorType, "BeginColliderStroke", Type.EmptyTypes);
             var paintMethod = Method(s_editorType, "HandleColliderPaint",  new[] { typeof(Vector3) });
@@ -1013,8 +1014,36 @@ namespace Valkur.Tests.EditMode
             var store = Field(ed, "_colliderImageStore")?.GetValue(ed)
                             as System.Collections.IDictionary;
             Assert.IsNotNull(store);
-            Assert.IsTrue(store.Contains(imgKey),
-                "Image store must contain the imageKey after CG stroke end.");
+            Assert.IsTrue(store.Contains(expectedKey),
+                "Image store must contain the template shared key after CG stroke end.");
+        }
+
+        [Test]
+        public void EndColliderStroke_CG_SharedAppliesToSameImagePathOnly()
+        {
+            var ed = CreateEditor();
+            // source and siblingDifferentTemplateId share the same image → must both receive the authoured colliders.
+            var source = CreateSolidBuilding(imageKey: "assets/buildings/test.png",  solid: false, scope: "CG", instanceId: 10, templateId: 700);
+            var siblingDifferentTemplateId = CreateSolidBuilding(imageKey: "assets/buildings/test.png",  solid: false, scope: "CG", instanceId: 11, templateId: 701);
+            // Different image path: must NOT receive source colliders.
+            var differentImage = CreateSolidBuilding(imageKey: "assets/buildings/other_asset.png", solid: false, scope: "CG", instanceId: 12, templateId: 702);
+
+            Field(ed, "_activeBuilding")?.SetValue(ed, source);
+            var modeField = Field(ed, "_collBrushMode");
+            modeField.SetValue(ed, Enum.Parse(modeField.FieldType, "Solid"));
+
+            var beginMethod = Method(s_editorType, "BeginColliderStroke", Type.EmptyTypes);
+            var paintMethod = Method(s_editorType, "HandleColliderPaint",  new[] { typeof(Vector3) });
+            var endMethod   = Method(s_editorType, "EndColliderStroke",    Type.EmptyTypes);
+
+            beginMethod.Invoke(ed, null);
+            paintMethod.Invoke(ed, new object[] { new Vector3(0f, 1f, 0f) });
+            endMethod.Invoke(ed, null);
+
+            Assert.IsNotNull(siblingDifferentTemplateId.transform.Find("CollTile_1_1"),
+                "CG edit must propagate to buildings sharing the same source image path, regardless of templateId.");
+            Assert.IsNull(differentImage.transform.Find("CollTile_1_1"),
+                "CG edit must not propagate to buildings with a different source image path.");
         }
 
         [Test]
