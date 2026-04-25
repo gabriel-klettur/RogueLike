@@ -51,6 +51,10 @@ namespace Valkur.Gameplay.Buildings
                 onZBottomPlus:     () => AdjustZ(_activeBuilding, bottom: true,  delta: +1),
                 onZTopMinus:       () => AdjustZ(_activeBuilding, bottom: false, delta: -1),
                 onZTopPlus:        () => AdjustZ(_activeBuilding, bottom: false, delta: +1),
+                onGridColsMinus:   () => AdjustGridResolution(dCols: -1, dRows:  0),
+                onGridColsPlus:    () => AdjustGridResolution(dCols: +1, dRows:  0),
+                onGridRowsMinus:   () => AdjustGridResolution(dCols:  0, dRows: -1),
+                onGridRowsPlus:    () => AdjustGridResolution(dCols:  0, dRows: +1),
                 onColliderScope:   () => ToggleColliderScope(),
                 onPaintSolid:      () => SetCollBrushMode(CollBrushMode.Solid),
                 onPaintWalk:       () => SetCollBrushMode(CollBrushMode.Walk),
@@ -86,6 +90,8 @@ namespace Valkur.Gameplay.Buildings
             _splitSlider   = _uiRefs.SplitSlider;
             _zBottomVal    = _uiRefs.ZBottomVal;
             _zTopVal       = _uiRefs.ZTopVal;
+            _gridColsVal   = _uiRefs.GridColsVal;
+            _gridRowsVal   = _uiRefs.GridRowsVal;
             _scopeBtnImg   = _uiRefs.ScopeBtnImg;
             _scopeBtnLabel = _uiRefs.ScopeBtnLabel;
             _selectBtnImg  = _uiRefs.SelectBtnImg;

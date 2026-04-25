@@ -60,6 +60,7 @@ namespace Valkur.Gameplay.Buildings
             public GameObject      InspectorRoot;   // hidden until a building is selected
             public Slider          SplitSlider;
             public TextMeshProUGUI ZBottomVal, ZTopVal;
+            public TextMeshProUGUI GridColsVal, GridRowsVal;   // collider grid resolution stepper values
             public Image           ScopeBtnImg;
             public TextMeshProUGUI ScopeBtnLabel;
 
@@ -87,7 +88,7 @@ namespace Valkur.Gameplay.Buildings
         private const float COLLIDERS_W = 220f;                  // narrower than props
         private const float COLLIDERS_H = 470f + PANEL_HDR_H;
         private const float PROPS_W     = INSPECTOR_DROP_W;      // 250 px
-        private const float PROPS_H     = 400f + PANEL_HDR_H;    // 424 px
+        private const float PROPS_H     = 480f + PANEL_HDR_H;    // 504 px (extra room for grid resolution rows)
 
         // ── Menu button widths ─────────────────────────────────────────────────
 
@@ -116,6 +117,8 @@ namespace Valkur.Gameplay.Buildings
             Action<float>  onSplitChanged,
             Action         onZBottomMinus, Action onZBottomPlus,
             Action         onZTopMinus,    Action onZTopPlus,
+            Action         onGridColsMinus, Action onGridColsPlus,
+            Action         onGridRowsMinus, Action onGridRowsPlus,
             Action         onColliderScope,
             Action         onPaintSolid,   Action onPaintWalk, Action onSaveCU,
             Action         onDeleteBuilding,
@@ -149,6 +152,7 @@ namespace Valkur.Gameplay.Buildings
                 onCollBrushSizeChanged, onCollBrushSizeStepDown, onCollBrushSizeStepUp);
             BuildPropertiesPanel(canvasT, ref refs, onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
+                onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
                 onColliderScope, onPaintSolid, onPaintWalk, onSaveCU, onDeleteBuilding, onResetBuilding);
             return refs;
         }

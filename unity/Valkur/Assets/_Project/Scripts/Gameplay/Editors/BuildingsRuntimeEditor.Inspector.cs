@@ -52,10 +52,18 @@ namespace Valkur.Gameplay.Buildings
             _splitSlider.SetValueWithoutNotify(Mathf.Clamp(sr, _splitSlider.minValue, _splitSlider.maxValue));
             if (_zBottomVal != null) _zBottomVal.text = _activeBuilding.ZBottomOffset.ToString();
             if (_zTopVal    != null) _zTopVal.text    = _activeBuilding.ZTopOffset.ToString();
+            RefreshGridResolutionLabels();
             string scope = _activeBuilding.EffectiveColliderScope;
-            if (_scopeBtnLabel != null) _scopeBtnLabel.text = scope;
+            if (_scopeBtnLabel != null) _scopeBtnLabel.text = GetScopeButtonLabel(scope);
             if (_scopeBtnImg   != null) _scopeBtnImg.color = scope == "CU" ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL;
             RefreshCollidersPanel();
+        }
+
+        private static string GetScopeButtonLabel(string scope)
+        {
+            if (string.Equals(scope, "CU", StringComparison.OrdinalIgnoreCase)) return "Instance";
+            if (string.Equals(scope, "CG", StringComparison.OrdinalIgnoreCase)) return "Shared";
+            return string.IsNullOrEmpty(scope) ? "Shared" : scope;
         }
 
         private void OnSplitSliderChanged(float v)

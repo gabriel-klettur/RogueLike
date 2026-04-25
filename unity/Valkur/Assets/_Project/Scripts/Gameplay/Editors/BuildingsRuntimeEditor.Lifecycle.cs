@@ -96,6 +96,7 @@ namespace Valkur.Gameplay.Buildings
             _searchBox = null;
             _inspectorRoot = null; _splitSlider = null;
             _zBottomVal = _zTopVal = null;
+            _gridColsVal = _gridRowsVal = null;
             _scopeBtnLabel = null; _scopeBtnImg = null;
             _handlesRoot = null; _handleR = null;
             _zTopBadgeRt = null; _zBotBadgeRt = null;
@@ -132,12 +133,68 @@ namespace Valkur.Gameplay.Buildings
         {
             if (_hoverFx  != null) { _hoverFx.Follow(null);  _hoverFx.SetVisible(false); }
             if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
+            foreach (var fx in _sameTemplateFxPool)
+                if (fx != null) { fx.Follow(null); fx.SetVisible(false); }
             if (_idLabelRt  != null) _idLabelRt.gameObject.SetActive(false);
             if (_handlesRoot != null) _handlesRoot.SetActive(false);
             if (_zTopBadgeRt != null) _zTopBadgeRt.gameObject.SetActive(false);
             if (_zBotBadgeRt != null) _zBotBadgeRt.gameObject.SetActive(false);
             if (_splitLineRt   != null) _splitLineRt.gameObject.SetActive(false);
             if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Rebuilds the pool of orange-outline renderers that highlight every scene
+        /// building that uses the same source image asset as <paramref name="active"/>.
+        /// Called whenever the selected building changes.
+        /// </summary>
+        private void RebuildSameTemplateFx(BuildingObject active)
+        {
+            _sameTemplateBuildings.Clear();
+
+            if (active != null && active.Template != null)
+            {
+                // Match by source image path so ALL buildings that visually use the
+                // same sprite asset are highlighted, regardless of templateId.
+                string activeImage = NormalizeAssetPath(active.Template.sourceImagePath ?? "");
+                if (!string.IsNullOrEmpty(activeImage))
+                {
+                    var all = GetCachedBuildings();
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var b = all[i];
+                        if (b == null || b == active || b.Template == null) continue;
+                        string bImage = NormalizeAssetPath(b.Template.sourceImagePath ?? "");
+                        if (string.Equals(bImage, activeImage, StringComparison.OrdinalIgnoreCase))
+                            _sameTemplateBuildings.Add(b);
+                    }
+                }
+            }
+
+            // Grow the pool if this selection has more peers than we've seen before.
+            while (_sameTemplateFxPool.Count < _sameTemplateBuildings.Count)
+            {
+                var go = new GameObject("BuildingsEditor.SameTemplateFx");
+                go.transform.SetParent(transform, false);
+                var fx = go.AddComponent<BuildingOutlineRenderer>();
+                fx.Configure(SAME_TEMPLATE_ORANGE, SAME_TEMPLATE_THICKNESS_WORLD, drawFill: false, fillColor: Color.clear);
+                _sameTemplateFxPool.Add(fx);
+            }
+
+            // Assign Follow targets; hide surplus pool entries.
+            for (int i = 0; i < _sameTemplateFxPool.Count; i++)
+            {
+                if (i < _sameTemplateBuildings.Count)
+                {
+                    _sameTemplateFxPool[i].Follow(_sameTemplateBuildings[i]);
+                    _sameTemplateFxPool[i].SetVisible(true);
+                }
+                else
+                {
+                    _sameTemplateFxPool[i].Follow(null);
+                    _sameTemplateFxPool[i].SetVisible(false);
+                }
+            }
         }
 
         // ── Collider-brush hover cursor ───────────────────────────────────────────

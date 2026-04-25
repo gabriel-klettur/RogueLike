@@ -17,6 +17,8 @@ namespace Valkur.Gameplay.Buildings
             Action<float> onSplitChanged,
             Action onZBottomMinus, Action onZBottomPlus,
             Action onZTopMinus,    Action onZTopPlus,
+            Action onGridColsMinus, Action onGridColsPlus,
+            Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
             Action onDelete, Action onReset)
@@ -49,6 +51,7 @@ namespace Valkur.Gameplay.Buildings
             BuildInspectorControls(refs.InspectorRoot.transform, ref refs,
                 onSplitChanged,
                 onZBottomMinus, onZBottomPlus, onZTopMinus, onZTopPlus,
+                onGridColsMinus, onGridColsPlus, onGridRowsMinus, onGridRowsPlus,
                 onScope, onPaintSolid, onPaintWalk, onSaveCU, onDelete, onReset);
 
             refs.InspectorRoot.SetActive(false);
@@ -59,6 +62,8 @@ namespace Valkur.Gameplay.Buildings
             Action<float> onSplitChanged,
             Action onZBottomMinus, Action onZBottomPlus,
             Action onZTopMinus,    Action onZTopPlus,
+            Action onGridColsMinus, Action onGridColsPlus,
+            Action onGridRowsMinus, Action onGridRowsPlus,
             Action onScope,
             Action onPaintSolid, Action onPaintWalk, Action onSaveCU,
             Action onDelete, Action onReset)
@@ -100,6 +105,19 @@ namespace Valkur.Gameplay.Buildings
             BuildZRow(parent, "Z-Bottom", onZBottomMinus, onZBottomPlus, out refs.ZBottomVal);
             BuildZRow(parent, "Z-Top",    onZTopMinus,    onZTopPlus,    out refs.ZTopVal);
 
+            // Collider grid resolution (cols × rows). Edits the SHARED logical
+            // grid for CG buildings (every instance of the same image gets the
+            // same N×M topology) or the per-instance grid for CU buildings.
+            BuildSeparator(parent);
+            var gridLbl       = CreateUI("GridLbl", parent);
+            gridLbl.AddComponent<LayoutElement>().preferredHeight = 18f;
+            var gridLblTmp    = gridLbl.AddComponent<TextMeshProUGUI>();
+            gridLblTmp.text   = "Collider grid resolution";
+            gridLblTmp.fontSize = 10f;
+            gridLblTmp.color  = TEXT_SECONDARY;
+            BuildZRow(parent, "Cols", onGridColsMinus, onGridColsPlus, out refs.GridColsVal);
+            BuildZRow(parent, "Rows", onGridRowsMinus, onGridRowsPlus, out refs.GridRowsVal);
+
             // Collider scope
             BuildSeparator(parent);
             var scopeRow = CreateUI("ScopeRow", parent);
@@ -120,7 +138,7 @@ namespace Valkur.Gameplay.Buildings
             scopeLblTmp.alignment = TextAlignmentOptions.MidlineLeft;
 
             var scopeBtn           = CreateUI("ScopeBtn", scopeRow.transform);
-            scopeBtn.AddComponent<LayoutElement>().preferredWidth = 44f;
+            scopeBtn.AddComponent<LayoutElement>().preferredWidth = 72f;
             refs.ScopeBtnImg       = scopeBtn.AddComponent<Image>();
             refs.ScopeBtnImg.color = BTN_NORMAL;
             var sbtn               = scopeBtn.AddComponent<Button>();
@@ -128,7 +146,7 @@ namespace Valkur.Gameplay.Buildings
             sc.normalColor = BTN_NORMAL; sc.highlightedColor = BTN_HOVER; sc.pressedColor = BTN_ACTIVE;
             sbtn.colors = sc; sbtn.targetGraphic = refs.ScopeBtnImg;
             if (onScope != null) sbtn.onClick.AddListener(() => onScope.Invoke());
-            refs.ScopeBtnLabel = AddCenteredText(scopeBtn.transform, "CG", 10f, FontStyles.Bold, TEXT_PRIMARY);
+            refs.ScopeBtnLabel = AddCenteredText(scopeBtn.transform, "Shared", 10f, FontStyles.Bold, TEXT_PRIMARY);
 
             // Delete building (danger) + Reset building
             BuildSeparator(parent);

@@ -45,12 +45,16 @@ namespace Valkur.Gameplay.Buildings
 
         // ── Constants matching Python (building_editor_view.py) ────────────────────
 
-        private static readonly Color HOVER_CYAN          = new Color(0f, 1f, 1f, 1f);
+        private static readonly Color HOVER_CYAN           = new Color(0f, 1f, 1f, 1f);
         private static readonly Color HOVER_REMOVE_RED    = new Color(1f, 0f, 0f, 1f);
         private static readonly Color HOVER_REMOVE_FILL   = new Color(1f, 0f, 0f, 60f / 255f);
         private static readonly Color ACTIVE_YELLOW       = new Color(1f, 215f / 255f, 0f, 1f);
-        private const float HOVER_THICKNESS_WORLD         = 0.06f;  // ~ 2 px @ PPU 32
-        private const float ACTIVE_THICKNESS_WORLD        = 0.15f;  // ~ 5 px @ PPU 32
+        // Orange outline shown on all buildings that share the same template as the
+        // currently selected (active) building.
+        private static readonly Color SAME_TEMPLATE_ORANGE = new Color(1f, 0.55f, 0f, 1f);
+        private const float HOVER_THICKNESS_WORLD          = 0.06f;  // ~ 2 px @ PPU 32
+        private const float ACTIVE_THICKNESS_WORLD         = 0.15f;  // ~ 5 px @ PPU 32
+        private const float SAME_TEMPLATE_THICKNESS_WORLD  = 0.10f;  // ~ 3 px @ PPU 32
 
         // ── State ──────────────────────────────────────────────────────────────────
 
@@ -107,6 +111,11 @@ namespace Valkur.Gameplay.Buildings
         private BuildingOutlineRenderer _hoverFx;
         private BuildingOutlineRenderer _activeFx;
 
+        // Orange outlines for buildings that share the same template as the active one.
+        // Pooled so we never allocate per-frame; rebuilt whenever the active building changes.
+        private readonly List<BuildingOutlineRenderer> _sameTemplateFxPool     = new List<BuildingOutlineRenderer>();
+        private readonly List<BuildingObject>          _sameTemplateBuildings  = new List<BuildingObject>();
+
         // Collider-brush hover cursor (cyan, matches TileEditorGridCursor style)
         private GameObject     _collBrushCursorGo;
         private LineRenderer   _collBrushCursorLine;
@@ -157,6 +166,7 @@ namespace Valkur.Gameplay.Buildings
         private GameObject _inspectorRoot;
         private Slider _splitSlider;
         private TextMeshProUGUI _zBottomVal, _zTopVal;
+        private TextMeshProUGUI _gridColsVal, _gridRowsVal;
         private TextMeshProUGUI _scopeBtnLabel;
         private Image _scopeBtnImg;
 
