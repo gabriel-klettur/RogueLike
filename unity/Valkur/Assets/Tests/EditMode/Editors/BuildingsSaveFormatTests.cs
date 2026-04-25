@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -27,17 +28,23 @@ namespace Valkur.Tests.EditMode
     [TestFixture]
     public class BuildingsSaveFormatTests
     {
-        // Written by SaveInstancesToJson — cleaned up in TearDown.
-        private string _savedFilePath;
+        // SaveInstancesToJson writes real StreamingAssets files; preserve them so
+        // serialization tests cannot corrupt the project data-integrity fixtures.
+        private readonly Dictionary<string, string> _fileBackups = new Dictionary<string, string>();
 
         [TearDown]
         public void TearDown()
         {
             LogAssert.ignoreFailingMessages = false;
 
-            if (_savedFilePath != null && File.Exists(_savedFilePath))
-                File.Delete(_savedFilePath);
-            _savedFilePath = null;
+            foreach (var kvp in _fileBackups)
+            {
+                if (kvp.Value != null)
+                    File.WriteAllText(kvp.Key, kvp.Value);
+                else if (File.Exists(kvp.Key))
+                    File.Delete(kvp.Key);
+            }
+            _fileBackups.Clear();
 
             // Clean up any BuildingObjects left in the scene.
             foreach (var b in Object.FindObjectsOfType<BuildingObject>())
@@ -124,12 +131,26 @@ namespace Valkur.Tests.EditMode
 
         private string InvokeAndReadJson(BuildingsRuntimeEditor editor)
         {
+            CaptureSaveOutputs();
             InvokeMethod(editor, "SaveInstancesToJson");
             string dir  = Path.Combine(Application.streamingAssetsPath, "Buildings");
             string path = Path.Combine(dir, "buildings_instances.json");
-            _savedFilePath = path;
             if (!File.Exists(path)) return null;
             return File.ReadAllText(path);
+        }
+
+        private void CaptureSaveOutputs()
+        {
+            string dir = Path.Combine(Application.streamingAssetsPath, "Buildings");
+            CaptureFile(Path.Combine(dir, "buildings_instances.json"));
+            CaptureFile(Path.Combine(dir, "buildings_collisions_by_image.json"));
+            CaptureFile(Path.Combine(dir, "buildings_collisions_by_building_instance_id.json"));
+        }
+
+        private void CaptureFile(string path)
+        {
+            if (_fileBackups.ContainsKey(path)) return;
+            _fileBackups[path] = File.Exists(path) ? File.ReadAllText(path) : null;
         }
 
         // ── Pure-formula unit tests (no Unity objects needed) ─────────────────────

@@ -2025,7 +2025,7 @@
   ],
   "grid_ref_size": [191, 260]
 }}},
-  {"id": 130, "template_id": 308, "zone": "lobby", "rel_x": 918, "rel_y": 327, "overrides": {"scale": [405, 607], "collider_scope": "CU", "collision_override": {
+  {"id": 130, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "collider_scope": "CU", "collision_override": {
   "width": 13,
   "height": 19,
   "collision": [

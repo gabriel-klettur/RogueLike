@@ -336,10 +336,12 @@ namespace Valkur.Tests.EditMode
             go.AddComponent<CompositeCollider2D>();
 
             var first  = go.AddComponent<TilemapColliderDebugOverlay>();
-            var second = go.AddComponent<TilemapColliderDebugOverlay>(); // [DisallowMultipleComponent] returns existing
+            var second = go.AddComponent<TilemapColliderDebugOverlay>(); // Unity may return null, but must not duplicate.
 
-            Assert.AreSame(first, second,
-                "[DisallowMultipleComponent] must return the existing overlay, not create a duplicate.");
+            Assert.IsTrue(second == null || ReferenceEquals(first, second),
+                "[DisallowMultipleComponent] must not create a duplicate overlay.");
+            Assert.AreEqual(1, go.GetComponents<TilemapColliderDebugOverlay>().Length,
+                "[DisallowMultipleComponent] must leave exactly one overlay on the GameObject.");
 
             Object.DestroyImmediate(go);
         }

@@ -190,6 +190,15 @@ namespace Valkur.Tests.EditMode
             return collision[row][col];
         }
 
+        private static string FlattenGrid(object grid)
+        {
+            var collision = (string[][])s_gridType.GetField("collision").GetValue(grid);
+            var rows = new List<string>(collision.Length);
+            foreach (var row in collision)
+                rows.Add(string.Join("", row));
+            return string.Join("|", rows);
+        }
+
         // ── setup / teardown ──────────────────────────────────────────────────────
 
         [TearDown]
@@ -387,19 +396,18 @@ namespace Valkur.Tests.EditMode
         {
             // Solid building (all "#"); click well outside the building rect.
             var (ed, building) = SetupForPaint("Walk", solidBuilding: true);
+            var beforeSession = GetSession(ed);
+            var beforeGrid = s_sessionType.GetField("WorkingGrid").GetValue(beforeSession);
+            string before = FlattenGrid(beforeGrid);
+
             // Building rect: Rect(-1, 0, 2, 2) — click at y=-1 is below yMin.
             InvokePaint(ed, new Vector3(0f, -1f, 0f));
 
             var session = GetSession(ed);
             if (session == null) return; // No session = no paint = correct.
             var grid = s_sessionType.GetField("WorkingGrid").GetValue(session);
-            // All cells should remain "#" for a solid building.
-            int changed = 0;
-            var collision = (string[][])s_gridType.GetField("collision").GetValue(grid);
-            foreach (var row in collision)
-                foreach (var cell in row)
-                    if (cell != "#") changed++;
-            Assert.AreEqual(0, changed, "No cells should change when clicking outside the building rect.");
+            Assert.AreEqual(before, FlattenGrid(grid),
+                "No cells should change when clicking outside the building rect.");
         }
 
         [Test]
