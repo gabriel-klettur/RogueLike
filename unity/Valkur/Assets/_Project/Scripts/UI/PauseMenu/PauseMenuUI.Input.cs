@@ -178,7 +178,7 @@ namespace Valkur.UI.PauseMenu
         // Sounds input
         // ════════════════════════════════════════════════════════════════════
 
-        // Input setup and sounds/inputs handlers extracted to PauseMenuUI.Input.cs
+        // Input setup implemented in PauseMenuUI.InputSetup.cs
         partial void SetupInputActions();
 
         // ════════════════════════════════════════════════════════════════════
