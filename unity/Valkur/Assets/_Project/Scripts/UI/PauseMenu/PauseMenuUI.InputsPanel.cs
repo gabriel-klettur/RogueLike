@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -190,6 +191,42 @@ namespace Valkur.UI.PauseMenu
                 _rebinder = null;
             };
             _rebinder.Start();
+        }
+
+        // ── Inputs panel input ───────────────────────────────────────────────
+
+        private void HandleInputsTabInput()
+        {
+            if (_rebinder != null && _rebinder.IsActive)
+            {
+                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                    _rebinder.Cancel();
+                return;
+            }
+
+            int tabCount = _tabLabels != null ? _tabLabels.Length : 0;
+            bool tabLeft  = Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame;
+            bool tabRight = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+
+            if (tabLeft && tabCount > 0)
+            { _inputsTabSel = (_inputsTabSel - 1 + tabCount) % tabCount; UpdateInputsPanel(); }
+            else if (tabRight && tabCount > 0)
+            { _inputsTabSel = (_inputsTabSel + 1) % tabCount; UpdateInputsPanel(); }
+            else if (_cancel != null && _cancel.WasPerformedThisFrame())
+            { GoBack(); }
+        }
+
+        private void UpdateInputsPanel()
+        {
+            if (_tabLabels == null || _inputsPanel == null) return;
+            for (int i = 0; i < _tabLabels.Length; i++)
+            {
+                if (_tabLabels[i] != null)
+                    _tabLabels[i].color = i == _inputsTabSel ? TextSelected : TextNormal;
+
+                var container = _inputsPanel.transform.Find($"TabContent_{i}");
+                if (container != null) container.gameObject.SetActive(i == _inputsTabSel);
+            }
         }
     }
 }

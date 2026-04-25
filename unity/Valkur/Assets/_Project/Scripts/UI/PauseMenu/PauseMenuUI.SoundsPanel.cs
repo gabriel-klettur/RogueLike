@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -117,6 +118,65 @@ namespace Valkur.UI.PauseMenu
 
             AddHint(panel.transform, "<- -> Ajustar  |  R Resetear  |  Esc Volver", panelH);
             return panel;
+        }
+
+        // ── Sounds panel input ───────────────────────────────────────────────
+
+        private void HandleSoundsInput()
+        {
+            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            { _soundSel = (_soundSel - 1 + _soundRows.Count) % _soundRows.Count; UpdateSoundsPanel(); }
+            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            { _soundSel = (_soundSel + 1) % _soundRows.Count; UpdateSoundsPanel(); }
+            else if (_navLeft != null && _navLeft.WasPerformedThisFrame())
+            { ChangeSound(_soundSel, -1); }
+            else if (_navRight != null && _navRight.WasPerformedThisFrame())
+            { ChangeSound(_soundSel, +1); }
+            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            { SaveAndBack(); }
+            else if (_cancel != null && _cancel.WasPerformedThisFrame())
+            { GoBack(); }
+        }
+
+        private void ChangeSound(int i, int dir)
+        {
+            if (i < 0 || i >= _soundRows.Count) return;
+            var row = _soundRows[i];
+            float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
+            row.set(v);
+            RefreshSoundRowText(i);
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            Valkur.Core.GameSettings.Instance?.Save();
+        }
+
+        private void SaveAndBack()
+        {
+            Valkur.Core.GameSettings.Instance?.Save();
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            GoBack();
+        }
+
+        private void UpdateSoundsPanel()
+        {
+            if (_soundPills == null || _soundBars == null) return;
+            for (int i = 0; i < _soundPills.Length; i++)
+            {
+                bool s = i == _soundSel;
+                if (i < _soundPills.Length) _soundPills[i].color         = s ? PillColor    : Color.clear;
+                if (i < _soundBars.Length)  _soundBars[i].color          = s ? AccentGold   : Color.clear;
+                if (_soundRowLabels != null && i < _soundRowLabels.Length)
+                    _soundRowLabels[i].color = s ? TextSelected : TextNormal;
+            }
+        }
+
+        private void RefreshSoundRowText(int i)
+        {
+            if (i < 0 || i >= _soundRows.Count) return;
+            var row = _soundRows[i];
+            float v = row.get();
+            row.valueText.text = row.max <= 1f
+                ? Mathf.RoundToInt(v * 100f).ToString()
+                : v.ToString("F1");
         }
     }
 }

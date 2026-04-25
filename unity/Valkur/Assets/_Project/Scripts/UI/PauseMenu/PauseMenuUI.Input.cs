@@ -1,132 +1,194 @@
+﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using TMPro;
 using Valkur.Core;
+using Valkur.Gameplay;
+using Valkur.Gameplay.Save;
 
 namespace Valkur.UI.PauseMenu
 {
-    public partial class PauseMenuUI
+    public partial class PauseMenuUI : MonoBehaviour
     {
-        // ── Input setup ──────────────────────────────────────────────────────
 
-        partial void SetupInputActions()
+        private void Update()
         {
-            _pauseAction = new InputAction("Pause", InputActionType.Button, "<Keyboard>/escape");
-            _pauseAction.Enable();
-
-            _navUp    = new InputAction("PauseNavUp",    InputActionType.Button);
-            _navDown  = new InputAction("PauseNavDown",  InputActionType.Button);
-            _navLeft  = new InputAction("PauseNavLeft",  InputActionType.Button);
-            _navRight = new InputAction("PauseNavRight", InputActionType.Button);
-            _confirm  = new InputAction("PauseConfirm",  InputActionType.Button);
-            _cancel   = new InputAction("PauseCancel",   InputActionType.Button);
-
-            _navUp.AddBinding("<Keyboard>/upArrow");     _navUp.AddBinding("<Keyboard>/w");
-            _navDown.AddBinding("<Keyboard>/downArrow"); _navDown.AddBinding("<Keyboard>/s");
-            _navLeft.AddBinding("<Keyboard>/leftArrow"); _navLeft.AddBinding("<Keyboard>/a");
-            _navRight.AddBinding("<Keyboard>/rightArrow"); _navRight.AddBinding("<Keyboard>/d");
-            _confirm.AddBinding("<Keyboard>/enter");     _confirm.AddBinding("<Keyboard>/space");
-            _cancel.AddBinding("<Keyboard>/escape");
-
-            _navUp.Enable(); _navDown.Enable(); _navLeft.Enable();
-            _navRight.Enable(); _confirm.Enable(); _cancel.Enable();
-        }
-
-        // ── Sounds panel input ───────────────────────────────────────────────
-
-        private void HandleSoundsInput()
-        {
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
-            { _soundSel = (_soundSel - 1 + _soundRows.Count) % _soundRows.Count; UpdateSoundsPanel(); }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
-            { _soundSel = (_soundSel + 1) % _soundRows.Count; UpdateSoundsPanel(); }
-            else if (_navLeft != null && _navLeft.WasPerformedThisFrame())
-            { ChangeSound(_soundSel, -1); }
-            else if (_navRight != null && _navRight.WasPerformedThisFrame())
-            { ChangeSound(_soundSel, +1); }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
-            { SaveAndBack(); }
-            else if (_cancel != null && _cancel.WasPerformedThisFrame())
-            { GoBack(); }
-        }
-
-        private void ChangeSound(int i, int dir)
-        {
-            if (i < 0 || i >= _soundRows.Count) return;
-            var row = _soundRows[i];
-            float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
-            row.set(v);
-            RefreshSoundRowText(i);
-            ServiceLocator.Get<IAudioService>()?.ApplySettings();
-            Valkur.Core.GameSettings.Instance?.Save();
-        }
-
-        private void SaveAndBack()
-        {
-            Valkur.Core.GameSettings.Instance?.Save();
-            ServiceLocator.Get<IAudioService>()?.ApplySettings();
-            GoBack();
-        }
-
-        private void UpdateSoundsPanel()
-        {
-            if (_soundPills == null || _soundBars == null) return;
-            for (int i = 0; i < _soundPills.Length; i++)
+            // ESC when menu is closed → open pause; don't fall through to
+            // sub-screen input this frame (_cancel also binds ESC and would
+            // immediately close the menu again).
+            if (_screen == PauseScreen.None)
             {
-                bool s = i == _soundSel;
-                if (i < _soundPills.Length) _soundPills[i].color         = s ? PillColor    : Color.clear;
-                if (i < _soundBars.Length)  _soundBars[i].color          = s ? AccentGold   : Color.clear;
-                if (_soundRowLabels != null && i < _soundRowLabels.Length)
-                    _soundRowLabels[i].color = s ? TextSelected : TextNormal;
-            }
-        }
-
-        private void RefreshSoundRowText(int i)
-        {
-            if (i < 0 || i >= _soundRows.Count) return;
-            var row = _soundRows[i];
-            float v = row.get();
-            row.valueText.text = row.max <= 1f
-                ? Mathf.RoundToInt(v * 100f).ToString()
-                : v.ToString("F1");
-        }
-
-        // ── Inputs panel input ───────────────────────────────────────────────
-
-        private void HandleInputsTabInput()
-        {
-            // While interactive rebinding is active, swallow all navigation input
-            // so Q/E/Esc don't both switch tabs AND capture the rebind.
-            if (_rebinder != null && _rebinder.IsActive)
-            {
-                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-                    _rebinder.Cancel();
+                if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+                    OpenPause();
                 return;
             }
 
-            int tabCount = _tabLabels != null ? _tabLabels.Length : 0;
-            bool tabLeft  = Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame;
-            bool tabRight = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+            // Menu is open – sub-screen input handles ESC via _cancel → GoBack()
+            switch (_screen)
+            {
+                case PauseScreen.Pause:   HandlePauseListInput(); break;
+                case PauseScreen.Options: HandleListInput(_optOptions.Length,   ref _optSel,   _optPills,   _optBars,   _optTexts,   ExecuteOption); break;
+                case PauseScreen.Sounds:  HandleSoundsInput();  break;
+                case PauseScreen.Inputs:  HandleInputsTabInput(); break;
+                case PauseScreen.LoadGame: HandleLoadGameInput(); break;
+            }
+        }
 
-            if (tabLeft && tabCount > 0)
-            { _inputsTabSel = (_inputsTabSel - 1 + tabCount) % tabCount; UpdateInputsPanel(); }
-            else if (tabRight && tabCount > 0)
-            { _inputsTabSel = (_inputsTabSel + 1) % tabCount; UpdateInputsPanel(); }
+        /// <summary>
+        /// Pause screen handles ESC directly via _pauseAction (not _cancel)
+        /// so that ESC closes the menu cleanly from the top-level list.
+        /// </summary>
+        private void HandlePauseListInput()
+        {
+            if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+            { ClosePause(); return; }
+            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            { _pauseSel = (_pauseSel - 1 + _pauseOptions.Length) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
+            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            { _pauseSel = (_pauseSel + 1) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
+            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            { ExecutePause(_pauseSel); }
+        }
+
+        private void OnDestroy()
+        {
+            _pauseAction?.Disable(); _pauseAction?.Dispose();
+            _navUp?.Disable();   _navUp?.Dispose();
+            _navDown?.Disable(); _navDown?.Dispose();
+            _navLeft?.Disable(); _navLeft?.Dispose();
+            _navRight?.Disable(); _navRight?.Dispose();
+            _confirm?.Disable(); _confirm?.Dispose();
+            _cancel?.Disable();  _cancel?.Dispose();
+            _rebinder?.Dispose(); _rebinder = null;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Public API
+        // ════════════════════════════════════════════════════════════════════
+
+        public void TogglePause()
+        {
+            if (_screen == PauseScreen.None)
+                OpenPause();
+            else
+                ClosePause();
+        }
+
+        public void OpenPause()
+        {
+            RebuildPauseOptions();
+            ShowScreen(PauseScreen.Pause);
+            if (GameDirector.Instance != null) GameDirector.Instance.SetPaused(true);
+        }
+
+        public void ClosePause()
+        {
+            ShowScreen(PauseScreen.None);
+            if (GameDirector.Instance != null) GameDirector.Instance.SetPaused(false);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Screen management
+        // ════════════════════════════════════════════════════════════════════
+
+        private void ShowScreen(PauseScreen s)
+        {
+            _screen = s;
+            _overlayRoot?.SetActive(s != PauseScreen.None);
+            _pausePanel?.SetActive(s == PauseScreen.Pause);
+            _optionsPanel?.SetActive(s == PauseScreen.Options);
+            _soundsPanel?.SetActive(s == PauseScreen.Sounds);
+            _inputsPanel?.SetActive(s == PauseScreen.Inputs);
+            _loadGamePanel?.SetActive(s == PauseScreen.LoadGame);
+
+            if (s == PauseScreen.Pause)   { _pauseSel = 0;  UpdateListVisuals(_pauseSel,  _pausePills,  _pauseBars,  _pauseTexts); }
+            if (s == PauseScreen.Options) { _optSel = 0;    UpdateListVisuals(_optSel,    _optPills,    _optBars,    _optTexts);   }
+            if (s == PauseScreen.Sounds)  { _soundSel = 0;  UpdateSoundsPanel(); }
+            if (s == PauseScreen.Inputs)  { _inputsTabSel = 0; _inputsRowSel = 0; UpdateInputsPanel(); }
+            if (s == PauseScreen.LoadGame) { RefreshLoadGamePanel(); }
+        }
+
+        private void HideAll() => ShowScreen(PauseScreen.None);
+
+        // ════════════════════════════════════════════════════════════════════
+        // Pause menu execution
+        // ════════════════════════════════════════════════════════════════════
+
+        private void RebuildPauseOptions()
+        {
+            bool hasSaves = SaveFileManager.ListSaves().Count > 0;
+            var opts = new List<string> { "Continuar", "Nueva Partida", "Guardar partida" };
+            if (hasSaves) opts.Add("Cargar juego");
+            opts.Add("Opciones");
+            opts.Add("Salir");
+            _pauseOptions = opts.ToArray();
+            // Rebuild panel rows to match new count
+            RebuildPausePanelRows();
+        }
+
+
+        // ════════════════════════════════════════════════════════════════════
+        // Generic list input
+
+        // ════════════════════════════════════════════════════════════════════
+
+        private void HandleListInput(int count, ref int sel,
+            Image[] pills, Image[] bars, TextMeshProUGUI[] texts,
+            System.Action<int> execute)
+        {
+            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            { sel = (sel - 1 + count) % count; UpdateListVisuals(sel, pills, bars, texts); }
+            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            { sel = (sel + 1) % count; UpdateListVisuals(sel, pills, bars, texts); }
+            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            { execute(sel); }
             else if (_cancel != null && _cancel.WasPerformedThisFrame())
             { GoBack(); }
         }
 
-        private void UpdateInputsPanel()
+        private void UpdateListVisuals(int sel, Image[] pills, Image[] bars, TextMeshProUGUI[] texts)
         {
-            if (_tabLabels == null || _inputsPanel == null) return;
-            for (int i = 0; i < _tabLabels.Length; i++)
+            if (pills == null) return;
+            for (int i = 0; i < pills.Length; i++)
             {
-                if (_tabLabels[i] != null)
-                    _tabLabels[i].color = i == _inputsTabSel ? TextSelected : TextNormal;
-
-                var container = _inputsPanel.transform.Find($"TabContent_{i}");
-                if (container != null) container.gameObject.SetActive(i == _inputsTabSel);
+                bool s = i == sel;
+                if (pills != null && i < pills.Length) pills[i].color = s ? PillColor  : Color.clear;
+                if (bars  != null && i < bars.Length)  bars[i].color  = s ? AccentGold : Color.clear;
+                if (texts != null && i < texts.Length) texts[i].color = s ? TextSelected : TextNormal;
             }
         }
+
+        private void GoBack()
+        {
+            switch (_screen)
+            {
+                case PauseScreen.Options:  ShowScreen(PauseScreen.Pause);   break;
+                case PauseScreen.Sounds:   ShowScreen(PauseScreen.Options); break;
+                case PauseScreen.Inputs:   ShowScreen(PauseScreen.Options); break;
+                case PauseScreen.LoadGame: ShowScreen(PauseScreen.Pause);   break;
+                default:                   ClosePause();                     break;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Sounds input
+        // ════════════════════════════════════════════════════════════════════
+
+        // Input setup and sounds/inputs handlers extracted to PauseMenuUI.Input.cs
+        partial void SetupInputActions();
+
+        // ════════════════════════════════════════════════════════════════════
+        // UI Construction
+        // ════════════════════════════════════════════════════════════════════
+
+        // UI builder methods extracted to PauseMenuUI.Builder.cs
+        partial void BuildCanvas();
+
+        // Builder helpers extracted to PauseMenuUI.Builder.cs
+        partial void RebuildPausePanelRows();
     }
 }
