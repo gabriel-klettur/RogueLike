@@ -16,13 +16,28 @@ namespace Valkur.Gameplay.Save
     public static class SaveFileManager
     {
         private const string SAVE_DIR = "Saves";
+        private const string RECOVERY_SUBDIR = ".recovery";
         private const string SAVE_EXTENSION = ".json";
         private const string CHECKSUM_EXTENSION = ".sha256";
         private const int MAX_BACKUPS = 5;
 
+        // Reserved names that must never appear in the user-visible save list.
+        // Defensive filter — even after files are moved to the .recovery subdir,
+        // legacy installs may still have these in the top-level Saves folder.
+        private static readonly HashSet<string> ReservedSaveNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "position_checkpoint",
+            "position_checkpoint_bak",
+        };
+
         public static string GetSaveDirectory()
         {
             return Path.Combine(Application.persistentDataPath, SAVE_DIR);
+        }
+
+        public static string GetRecoveryDirectory()
+        {
+            return Path.Combine(GetSaveDirectory(), RECOVERY_SUBDIR);
         }
 
         public static string GetSavePath(string fileName)
@@ -37,6 +52,47 @@ namespace Valkur.Gameplay.Save
             {
                 Directory.CreateDirectory(dir);
                 Debug.Log($"[SaveFileManager] Created save directory: {dir}");
+            }
+            string recoveryDir = GetRecoveryDirectory();
+            if (!Directory.Exists(recoveryDir))
+            {
+                Directory.CreateDirectory(recoveryDir);
+            }
+            MigrateLegacyRecoveryFiles();
+        }
+
+        /// <summary>
+        /// One-shot migration: move pre-refactor recovery files
+        /// (Saves/position_checkpoint*.json) into the new hidden subfolder
+        /// (Saves/.recovery/). If a destination file already exists, the legacy
+        /// file is deleted instead of overwriting (the new one is more recent).
+        /// Safe to call on every boot — no-op when nothing to migrate.
+        /// </summary>
+        private static void MigrateLegacyRecoveryFiles()
+        {
+            try
+            {
+                foreach (string reserved in ReservedSaveNames)
+                {
+                    string legacy = Path.Combine(GetSaveDirectory(), reserved + SAVE_EXTENSION);
+                    if (!File.Exists(legacy)) continue;
+
+                    string dest = Path.Combine(GetRecoveryDirectory(), reserved + SAVE_EXTENSION);
+                    try
+                    {
+                        if (File.Exists(dest)) File.Delete(legacy);
+                        else                   File.Move(legacy, dest);
+                        Debug.Log($"[SaveFileManager] Migrated legacy recovery file: {reserved}{SAVE_EXTENSION}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[SaveFileManager] Could not migrate {legacy}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SaveFileManager] Recovery migration failed: {ex.Message}");
             }
         }
 
@@ -162,8 +218,15 @@ namespace Valkur.Gameplay.Save
 
             if (!Directory.Exists(dir)) return saves;
 
-            foreach (string file in Directory.GetFiles(dir, $"*{SAVE_EXTENSION}"))
+            // Top-level only — recovery files live in the .recovery subdir and must
+            // never appear here. SearchOption.TopDirectoryOnly is the default but we
+            // pass it explicitly for safety.
+            foreach (string file in Directory.GetFiles(dir, $"*{SAVE_EXTENSION}", SearchOption.TopDirectoryOnly))
             {
+                // Defensive filter for any legacy file that wasn't migrated yet.
+                string nameNoExt = Path.GetFileNameWithoutExtension(file);
+                if (ReservedSaveNames.Contains(nameNoExt)) continue;
+
                 try
                 {
                     string json = File.ReadAllText(file);
@@ -171,20 +234,28 @@ namespace Valkur.Gameplay.Save
 
                     saves.Add(new SaveSlotInfo
                     {
-                        path = file,
-                        fileName = Path.GetFileNameWithoutExtension(file),
-                        timestamp = data?.timestamp ?? "",
-                        schemaVersion = data?.schemaVersion ?? "unknown"
+                        path          = file,
+                        fileName      = Path.GetFileNameWithoutExtension(file),
+                        timestamp     = data?.timestamp ?? "",
+                        schemaVersion = data?.schemaVersion ?? "unknown",
+                        isCorrupted   = false,
+                        playerClass   = data?.player?.playerClass  ?? "",
+                        level         = data?.player?.level        ?? 0,
+                        experience    = data?.player?.experience   ?? 0,
+                        hp            = data?.player?.hp           ?? 0,
+                        maxHp         = data?.player?.maxHp        ?? 0,
+                        currentZone   = data?.player?.currentZone  ?? "",
                     });
                 }
                 catch
                 {
                     saves.Add(new SaveSlotInfo
                     {
-                        path = file,
-                        fileName = Path.GetFileNameWithoutExtension(file),
-                        timestamp = "corrupted",
-                        schemaVersion = "unknown"
+                        path          = file,
+                        fileName      = Path.GetFileNameWithoutExtension(file),
+                        timestamp     = "corrupted",
+                        schemaVersion = "unknown",
+                        isCorrupted   = true,
                     });
                 }
             }
@@ -193,8 +264,83 @@ namespace Valkur.Gameplay.Save
             return saves;
         }
 
+        // ── Position checkpoint ──────────────────────────────────────────────
+
+        private const string POSITION_CHECKPOINT_FILE     = "position_checkpoint";
+        private const string POSITION_CHECKPOINT_BAK_FILE = "position_checkpoint_bak";
+
+        public static string GetPositionCheckpointPath() =>
+            Path.Combine(GetRecoveryDirectory(), POSITION_CHECKPOINT_FILE + SAVE_EXTENSION);
+
+        public static string GetPositionCheckpointBakPath() =>
+            Path.Combine(GetRecoveryDirectory(), POSITION_CHECKPOINT_BAK_FILE + SAVE_EXTENSION);
+
+        // Legacy paths (pre-refactor — files lived in the top-level Saves/ folder
+        // alongside user saves). Kept only so DeletePositionCheckpoint can clean
+        // any stragglers on installs that haven't yet been migrated.
+        private static string GetLegacyPositionCheckpointPath() =>
+            Path.Combine(GetSaveDirectory(), POSITION_CHECKPOINT_FILE + SAVE_EXTENSION);
+        private static string GetLegacyPositionCheckpointBakPath() =>
+            Path.Combine(GetSaveDirectory(), POSITION_CHECKPOINT_BAK_FILE + SAVE_EXTENSION);
+
         /// <summary>
-        /// Delete a save file from disk.
+        /// Atomically write a position checkpoint and keep a backup copy.
+        /// Safe to call every few seconds — tiny file, no checksum overhead.
+        /// </summary>
+        public static void WritePositionCheckpoint(PositionCheckpointData data)
+        {
+            EnsureSaveDirectory();
+            string json = JsonUtility.ToJson(data, false);
+            string path = GetPositionCheckpointPath();
+            string tmp  = path + ".tmp";
+
+            // Atomic primary write (temp → rename)
+            File.WriteAllText(tmp, json);
+            if (File.Exists(path)) File.Delete(path);
+            File.Move(tmp, path);
+
+            // Backup copy (non-atomic; primary is already committed)
+            try { File.WriteAllText(GetPositionCheckpointBakPath(), json); }
+            catch { /* backup failure is non-fatal */ }
+        }
+
+        /// <summary>
+        /// Read the most recent valid position checkpoint.
+        /// Falls back to the backup copy on any read error.
+        /// Returns null if no checkpoint exists.
+        /// </summary>
+        public static PositionCheckpointData ReadPositionCheckpoint() =>
+            TryReadPositionCheckpoint(GetPositionCheckpointPath())
+            ?? TryReadPositionCheckpoint(GetPositionCheckpointBakPath());
+
+        private static PositionCheckpointData TryReadPositionCheckpoint(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return null;
+                string json = File.ReadAllText(path);
+                if (string.IsNullOrWhiteSpace(json)) return null;
+                var data = JsonUtility.FromJson<PositionCheckpointData>(json);
+                return (data != null && !string.IsNullOrEmpty(data.timestamp)) ? data : null;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Delete both position checkpoint files (call on "New Game" to prevent
+        /// a stale checkpoint from a previous session being applied).
+        /// </summary>
+        public static void DeletePositionCheckpoint()
+        {
+            try { if (File.Exists(GetPositionCheckpointPath()))    File.Delete(GetPositionCheckpointPath()); }    catch { /* ignored */ }
+            try { if (File.Exists(GetPositionCheckpointBakPath())) File.Delete(GetPositionCheckpointBakPath()); } catch { /* ignored */ }
+            // Legacy locations (kept defensively until everyone has migrated)
+            try { if (File.Exists(GetLegacyPositionCheckpointPath()))    File.Delete(GetLegacyPositionCheckpointPath()); }    catch { /* ignored */ }
+            try { if (File.Exists(GetLegacyPositionCheckpointBakPath())) File.Delete(GetLegacyPositionCheckpointBakPath()); } catch { /* ignored */ }
+        }
+
+        /// <summary>
+        /// Delete a save file (and its checksum sidecar) from disk.
         /// </summary>
         public static bool DeleteSave(string path)
         {
@@ -203,6 +349,8 @@ namespace Valkur.Gameplay.Save
                 if (File.Exists(path))
                 {
                     File.Delete(path);
+                    string checksumPath = path.Replace(SAVE_EXTENSION, CHECKSUM_EXTENSION);
+                    if (File.Exists(checksumPath)) File.Delete(checksumPath);
                     Debug.Log($"[SaveFileManager] Deleted save: {path}");
                     return true;
                 }
@@ -212,6 +360,76 @@ namespace Valkur.Gameplay.Save
             {
                 Debug.LogError($"[SaveFileManager] Delete failed: {ex.Message}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Sanitize an arbitrary user-entered string into a safe save filename
+        /// (without extension). Replaces invalid characters with underscores.
+        /// Returns null/empty if the input cannot produce a valid name.
+        /// </summary>
+        public static string SanitizeSaveName(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            var invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder(raw.Length);
+            foreach (char c in raw.Trim())
+                sb.Append(System.Array.IndexOf(invalid, c) >= 0 ? '_' : c);
+            string name = sb.ToString().Trim('.', ' ');
+            return string.IsNullOrEmpty(name) ? null : name;
+        }
+
+        /// <summary>
+        /// Rename a save slot. Renames both the .json and the .sha256 sidecar.
+        /// Returns the new full path on success, or null on failure
+        /// (invalid name, target already exists, or IO error).
+        /// </summary>
+        public static string RenameSave(string currentPath, string newName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(currentPath) || !File.Exists(currentPath))
+                {
+                    Debug.LogWarning($"[SaveFileManager] Rename: source missing: {currentPath}");
+                    return null;
+                }
+
+                string sanitized = SanitizeSaveName(newName);
+                if (sanitized == null)
+                {
+                    Debug.LogWarning("[SaveFileManager] Rename: invalid name.");
+                    return null;
+                }
+
+                string dir = Path.GetDirectoryName(currentPath);
+                string newPath = Path.Combine(dir, sanitized + SAVE_EXTENSION);
+
+                if (string.Equals(newPath, currentPath, StringComparison.OrdinalIgnoreCase))
+                    return currentPath; // no change
+
+                if (File.Exists(newPath))
+                {
+                    Debug.LogWarning($"[SaveFileManager] Rename: target already exists: {newPath}");
+                    return null;
+                }
+
+                File.Move(currentPath, newPath);
+
+                string oldChecksum = currentPath.Replace(SAVE_EXTENSION, CHECKSUM_EXTENSION);
+                string newChecksum = newPath.Replace(SAVE_EXTENSION, CHECKSUM_EXTENSION);
+                if (File.Exists(oldChecksum))
+                {
+                    if (File.Exists(newChecksum)) File.Delete(newChecksum);
+                    File.Move(oldChecksum, newChecksum);
+                }
+
+                Debug.Log($"[SaveFileManager] Renamed save: {Path.GetFileName(currentPath)} → {Path.GetFileName(newPath)}");
+                return newPath;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SaveFileManager] Rename failed: {ex.Message}");
+                return null;
             }
         }
 
