@@ -296,6 +296,46 @@ private void Update()
 - Pivot at `(0.5, 0.5)` unless designing for stretch.
 - For dynamic UI (dropdowns, lists): use object pooling via `Scripts/UI/Common/UIPool.cs`.
 
+### Mouse + Keyboard Parity (MANDATORY for every menu)
+**Every interactive UI control must be reachable with both mouse AND keyboard.** No exceptions for main menu, pause menu, options, load/save panels, modal overlays, in-game editors, dialogs, character selector, etc.
+
+Required pattern for every list row, button, tab, slider, or modal action:
+
+```csharp
+// 1. Click → executes the action
+var btn = hitGo.AddComponent<Button>();
+btn.targetGraphic = hitImg;
+int cap = i; // capture loop index
+btn.onClick.AddListener(() =>
+{
+    int idx = scrollOffset + cap;
+    if (idx < 0 || idx >= items.Count) return; // GUARD: empty hit zones
+    selectedIndex = idx;
+    UpdateVisuals();
+});
+
+// 2. Hover → moves the keyboard cursor (so Enter then operates on hovered row)
+var trig  = hitGo.AddComponent<EventTrigger>();
+var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+enter.callback.AddListener(_ =>
+{
+    int idx = scrollOffset + cap;
+    if (idx < 0 || idx >= items.Count) return; // SAME GUARD
+    selectedIndex = idx;
+    UpdateVisuals();
+});
+trig.triggers.Add(enter);
+```
+
+**Modal overlays (rename, confirm-delete, prompt, etc.):** never rely on Enter/Esc only. Always include visible mouse-clickable buttons (typical pair: `Cancelar` left + `Aceptar`/`Borrar` right). Use `BuildOverlayButton` or equivalent helper.
+
+**Common bugs to avoid:**
+- Hit-areas covering empty rows (e.g. 8 fixed slots, only 3 saves) reassign selection to out-of-range indices on hover. Always guard `idx < items.Count`.
+- Modal overlays without visible action buttons — keyboard-only flows are *never* acceptable.
+- Forgetting `EventSystem` + `GraphicRaycaster` when bootstrapping a canvas at runtime — clicks silently die.
+- Buttons on `Image+TMP` same GameObject — NRE (see rule above).
+- Missing `targetGraphic` on `Button` — no click hit response.
+
 ### Editor UIs (Tile/Map/Spells)
 Pattern: `XxxManager.cs` (logic) + `XxxUI.cs` (root canvas) + `XxxUIBuilder.cs` (programmatic construction).
 - All pixel sizes in `XxxUIHelpers.cs` constants (`TOOLS_DROP_H = 150` etc.)
