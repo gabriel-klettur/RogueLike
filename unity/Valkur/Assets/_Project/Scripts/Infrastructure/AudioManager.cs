@@ -54,6 +54,10 @@ namespace Valkur.Infrastructure
         private Coroutine _duckingCoroutine;
         private float _duckTarget = 1f; // 1 = no duck
 
+        // Deduplicate missing-SFX warnings: only log once per ID so active spells
+        // (e.g. laser_beam called every frame in AdvancePhase) don't spam the console.
+        private readonly HashSet<string> _warnedMissingSfxIds = new HashSet<string>();
+
         protected override bool Persist => true;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

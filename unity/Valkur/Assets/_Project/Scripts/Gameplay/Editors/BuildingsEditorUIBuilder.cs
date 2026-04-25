@@ -223,13 +223,13 @@ namespace Valkur.Gameplay.Buildings
 
             AddMenuDivider(t);
 
-            refs.ModesMenuBtnImg     = AddMenuBtn(t, "Tools \u25be",      MODES_BTN_W,
+            refs.ModesMenuBtnImg     = AddMenuBtn(t, "Tools v",      MODES_BTN_W,
                 () => onToggle?.Invoke("modes"),     out refs.ModesMenuBtnTmp);
-            refs.BuildingsMenuBtnImg = AddMenuBtn(t, "Buildings \u25be",  BUILDINGS_BTN_W,
+            refs.BuildingsMenuBtnImg = AddMenuBtn(t, "Buildings v",  BUILDINGS_BTN_W,
                 () => onToggle?.Invoke("buildings"), out refs.BuildingsMenuBtnTmp);
-            refs.CollidersMenuBtnImg = AddMenuBtn(t, "Colliders \u25be",  COLLIDERS_BTN_W,
+            refs.CollidersMenuBtnImg = AddMenuBtn(t, "Colliders v",  COLLIDERS_BTN_W,
                 () => onToggle?.Invoke("colliders"), out refs.CollidersMenuBtnTmp);
-            refs.PropsMenuBtnImg     = AddMenuBtn(t, "Properties \u25be", PROPS_BTN_W,
+            refs.PropsMenuBtnImg     = AddMenuBtn(t, "Properties v", PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),     out refs.PropsMenuBtnTmp);
 
             // Flexible spacer

@@ -45,6 +45,8 @@ namespace Valkur.Gameplay.TileEditor
             else
             {
                 _undo.EndStroke();
+                // Flush any unsaved tile edits so changes aren't lost when the editor is closed.
+                if (Application.isPlaying) _persistence?.SaveAllDirty();
                 _state.SelectedCellPos = null;
                 _state.BrushStrokeCells.Clear();
                 HideBrushPreview();
@@ -177,6 +179,9 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.EndStroke();
                 _state.IsDragging = false;
                 _state.BrushStrokeCells.Clear();
+                // Auto-persist: flush dirty zones immediately so painted tiles
+                // survive a scene reload without requiring an explicit Save click.
+                if (Application.isPlaying) _persistence?.SaveAllDirty();
             }
         }
 

@@ -36,6 +36,9 @@ namespace Valkur.Gameplay.TileEditor
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;
+                // Auto-persist: flush dirty zones immediately so erased tiles
+                // survive a scene reload without requiring an explicit Save click.
+                if (Application.isPlaying) _persistence?.SaveAllDirty();
             }
         }
 
@@ -53,6 +56,8 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
                 _undo.EndStroke();
+                // Auto-persist: fill is atomic so we save immediately after the operation.
+                if (Application.isPlaying) _persistence?.SaveAllDirty();
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
                     _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");

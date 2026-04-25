@@ -99,7 +99,8 @@ namespace Valkur.Infrastructure
             var entry = catalog.GetSfx(sfxId);
             if (entry == null || entry.clip == null)
             {
-                Debug.LogWarning($"[AudioManager] SFX not found in catalog: '{sfxId}'");
+                if (_warnedMissingSfxIds.Add(sfxId))
+                    Debug.LogWarning($"[AudioManager] SFX not found in catalog: '{sfxId}' — assign an AudioClip to this ID in the AudioCatalog asset. (This warning fires once per ID.)");
                 return;
             }
 
