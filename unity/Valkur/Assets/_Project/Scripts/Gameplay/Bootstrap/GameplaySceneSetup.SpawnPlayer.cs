@@ -31,6 +31,7 @@ namespace Valkur.Gameplay
 
             var playerGo = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
             playerGo.tag = "Player";
+            playerGo.transform.SetParent(GetSceneContainer("[Entities]"), true);
 
             var selectedDef = ResolveSelectedPlayerDefinition();
             if (selectedDef != null)
@@ -107,11 +108,13 @@ namespace Valkur.Gameplay
         {
             if (monsterPrefab == null || testMonsterDef == null) return;
 
+            var entitiesContainer = GetSceneContainer("[Entities]");
             for (int i = 0; i < testMonsterCount; i++)
             {
                 Vector2 offset = Random.insideUnitCircle * spawnRadius;
                 Vector3 pos = new Vector3(offset.x, offset.y, 0f);
                 var monsterGo = Instantiate(monsterPrefab, pos, Quaternion.identity);
+                monsterGo.transform.SetParent(entitiesContainer, true);
                 EntitySetup.ConfigureMonster(monsterGo, testMonsterDef);
             }
         }

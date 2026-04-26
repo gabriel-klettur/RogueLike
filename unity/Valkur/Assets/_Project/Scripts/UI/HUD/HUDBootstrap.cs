@@ -30,6 +30,8 @@ namespace Valkur.UI.HUD
             // Create HUDManager
             var hudGo = new GameObject("HUDManager");
             var hudManager = hudGo.AddComponent<HUDManager>();
+            var uiContainer = GameObject.Find("[UI]");
+            if (uiContainer != null) hudGo.transform.SetParent(uiContainer.transform, false);
             hudManager.InitializeForPlayer(health, mana);
 
             var targetHUD = hudManager.TargetHUD;
@@ -52,12 +54,14 @@ namespace Valkur.UI.HUD
             // Create DebugHUD overlay (F1 to toggle)
             var debugGo = new GameObject("DebugHUD");
             debugGo.AddComponent<DebugHUD>();
+            if (uiContainer != null) debugGo.transform.SetParent(uiContainer.transform, false);
 
             // Create DeathScreen overlay
             if (FindObjectOfType<DeathScreenUI>() == null)
             {
                 var deathGo = new GameObject("DeathScreenUI");
                 deathGo.AddComponent<DeathScreenUI>();
+                if (uiContainer != null) deathGo.transform.SetParent(uiContainer.transform, false);
             }
 
             _initialized = true;

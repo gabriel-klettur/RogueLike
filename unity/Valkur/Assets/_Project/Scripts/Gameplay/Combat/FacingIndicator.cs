@@ -47,7 +47,8 @@ namespace Valkur.Gameplay.Combat
         private void CreateArrowVisual()
         {
             _arrowGo = new GameObject("FacingArrow");
-            _arrowGo.transform.SetParent(null); // world space, not child (avoids flip issues)
+            var container = GameObject.Find("[Debug]");
+            _arrowGo.transform.SetParent(container != null ? container.transform : null); // world space, not child (avoids flip issues)
 
             _arrowSr = _arrowGo.AddComponent<SpriteRenderer>();
             _arrowSr.sprite = CreateArrowSprite();

@@ -56,6 +56,8 @@ namespace Valkur.Core
 
             var perfGo = new GameObject("PerformanceMonitor");
             perfGo.AddComponent<PerformanceMonitor>();
+            var container = GameObject.Find("[Debug]");
+            if (container != null) perfGo.transform.SetParent(container.transform, false);
             Debug.Log("[GameDirector] PerformanceMonitor created.");
         }
     }

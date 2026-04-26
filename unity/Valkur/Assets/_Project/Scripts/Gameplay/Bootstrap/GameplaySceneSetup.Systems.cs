@@ -22,6 +22,7 @@ namespace Valkur.Gameplay
             if (TileEditorManager.Instance != null) return;
             var editorGo = new GameObject("TileEditorManager");
             var manager = editorGo.AddComponent<TileEditorManager>();
+            editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
             manager.SetGridBuilder(_gridBuilder);
             Debug.Log("[GameplaySceneSetup] TileEditorManager created. Press F6 to toggle.");
         }
@@ -31,6 +32,7 @@ namespace Valkur.Gameplay
             if (MapEditorManager.Instance != null) return;
             var editorGo = new GameObject("MapEditorManager");
             editorGo.AddComponent<MapEditorManager>();
+            editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
             Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
         }
 
@@ -64,6 +66,8 @@ namespace Valkur.Gameplay
                 Destroy(lightGo);
                 return;
             }
+
+            lightGo.transform.SetParent(GetSceneContainer("[Camera]"), false);
 
             bool lightTypeSet = false;
             var lightTypeProp = light2DType.GetProperty("lightType",
@@ -123,6 +127,7 @@ namespace Valkur.Gameplay
             if (SaveService.HasInstance) return;
             var go = new GameObject("SaveService");
             go.AddComponent<SaveService>();
+            go.transform.SetParent(GetSceneContainer("[Core]"), false);
             Debug.Log("[GameplaySceneSetup] SaveService created.");
         }
 
@@ -131,6 +136,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<SaveLoadInputHandler>() != null) return;
             var go = new GameObject("SaveLoadInputHandler");
             go.AddComponent<SaveLoadInputHandler>();
+            go.transform.SetParent(GetSceneContainer("[Core]"), false);
             Debug.Log("[GameplaySceneSetup] SaveLoadInputHandler created (F5/F9).");
         }
 
@@ -141,6 +147,7 @@ namespace Valkur.Gameplay
             {
                 var vfxGo = new GameObject("VFXManager");
                 vfxGo.AddComponent<VFXManager>();
+                vfxGo.transform.SetParent(GetSceneContainer("[VFX]"), false);
             }
 
             if (_particlePresetCatalog != null)
@@ -159,6 +166,7 @@ namespace Valkur.Gameplay
 
             var loaderGo = new GameObject("ParticleInstancesLoader");
             var loader = loaderGo.AddComponent<ParticleInstancesLoader>();
+            loaderGo.transform.SetParent(GetSceneContainer("[VFX]"), false);
             loader.Initialize(_particlePresetCatalog);
             Debug.Log("[GameplaySceneSetup] ParticleInstancesLoader created.");
         }
@@ -168,6 +176,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<World.NPCSeparationSystem>() != null) return;
             var go = new GameObject("NPCSeparationSystem");
             go.AddComponent<World.NPCSeparationSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] NPCSeparationSystem created.");
         }
 
@@ -176,6 +185,7 @@ namespace Valkur.Gameplay
             if (VendorShopUI.Instance != null) return;
             var go = new GameObject("VendorShopUI");
             go.AddComponent<VendorShopUI>();
+            go.transform.SetParent(GetSceneContainer("[UI]"), false);
             Debug.Log("[GameplaySceneSetup] VendorShopUI created.");
         }
 
@@ -184,6 +194,7 @@ namespace Valkur.Gameplay
             if (DevConsole.Instance != null) return;
             var go = new GameObject("DevConsole");
             go.AddComponent<DevConsole>();
+            go.transform.SetParent(GetSceneContainer("[Debug]"), false);
             Debug.Log("[GameplaySceneSetup] DevConsole created (` or F4 to toggle).");
         }
 
@@ -192,12 +203,14 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<ChatSystem>() != null) return;
             var go = new GameObject("ChatSystem");
             go.AddComponent<ChatSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] ChatSystem created.");
 
             if (FindObjectOfType<ChatUI>() == null)
             {
                 var uiGo = new GameObject("ChatUI");
                 uiGo.AddComponent<ChatUI>();
+                uiGo.transform.SetParent(GetSceneContainer("[UI]"), false);
                 Debug.Log("[GameplaySceneSetup] ChatUI created.");
             }
         }
@@ -207,6 +220,7 @@ namespace Valkur.Gameplay
             if (VendorEconomyService.Instance != null) return;
             var go = new GameObject("VendorEconomyService");
             go.AddComponent<VendorEconomyService>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] VendorEconomyService created.");
         }
 
@@ -222,6 +236,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("WorldLightLoader");
             var loader = go.AddComponent<World.WorldLightLoader>();
+            go.transform.SetParent(GetSceneContainer("[World]"), false);
             loader.SetCatalog(_lightPresetCatalog);
             Debug.Log("[GameplaySceneSetup] WorldLightLoader created.");
         }
@@ -231,6 +246,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<World.BuildingCollisionLoader>() != null) return;
             var go = new GameObject("BuildingCollisionLoader");
             go.AddComponent<World.BuildingCollisionLoader>();
+            go.transform.SetParent(GetSceneContainer("[World]"), false);
             Debug.Log("[GameplaySceneSetup] BuildingCollisionLoader created.");
         }
 

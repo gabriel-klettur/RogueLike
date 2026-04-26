@@ -38,6 +38,14 @@ namespace Valkur.Gameplay
         private readonly List<(GameObject item, Vector2 pos)> _queryResults = new List<(GameObject, Vector2)>(16);
 
         private Transform _playerTransform;
+        private Transform _entitiesContainer;
+
+        private Transform GetEntitiesContainer()
+        {
+            if (_entitiesContainer == null)
+                _entitiesContainer = GameObject.Find("[Entities]")?.transform;
+            return _entitiesContainer;
+        }
 
         private struct SpawnRequest
         {
@@ -99,6 +107,8 @@ namespace Valkur.Gameplay
             if (monsterPrefab == null) return null;
 
             var go = Instantiate(monsterPrefab, position, Quaternion.identity);
+            var container = GetEntitiesContainer();
+            if (container != null) go.transform.SetParent(container, true);
             EntitySetup.ConfigureMonster(go, def);
 
             _activeMonsters.Add(go);
@@ -147,6 +157,8 @@ namespace Valkur.Gameplay
             if (monsterPrefab == null) return;
 
             var go = Instantiate(monsterPrefab, req.Position, Quaternion.identity);
+            var container = GetEntitiesContainer();
+            if (container != null) go.transform.SetParent(container, true);
             EntitySetup.ConfigureMonster(go, req.Definition);
 
             _activeMonsters.Add(go);

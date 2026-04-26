@@ -19,6 +19,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<World.ZoneManager>() != null) return;
             var zoneManagerGo = new GameObject("ZoneManager");
             zoneManagerGo.AddComponent<World.ZoneManager>();
+            zoneManagerGo.transform.SetParent(GetSceneContainer("[Core]"), false);
             Debug.Log("[GameplaySceneSetup] ZoneManager created.");
         }
 
@@ -26,6 +27,7 @@ namespace Valkur.Gameplay
         {
             var gridGo = new GameObject("WorldGridBuilder");
             _gridBuilder = gridGo.AddComponent<World.WorldGridBuilder>();
+            gridGo.transform.SetParent(GetSceneContainer("[World]"), false);
         }
 
         /// <summary>
@@ -40,12 +42,14 @@ namespace Valkur.Gameplay
                 // 1) Load zone database → populates ZoneManager with all zones
                 var dbLoaderGo = new GameObject("ZoneDatabaseLoader");
                 var dbLoader = dbLoaderGo.AddComponent<World.ZoneDatabaseLoader>();
+                dbLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
                 // Call manually (Start() won't fire until next frame)
                 dbLoader.LoadDatabase();
 
                 // 2) Load full world overlays + collision grids at zone offsets
                 var worldLoaderGo = new GameObject("WorldLoader");
                 var worldLoader = worldLoaderGo.AddComponent<World.WorldLoader>();
+                worldLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
                 worldLoader.LoadFullWorld();
 
                 // 3) Generate procedural dungeon at runtime
@@ -108,6 +112,7 @@ namespace Valkur.Gameplay
 
             var loaderGo = new GameObject("DungeonLoader");
             var dungeonLoader = loaderGo.AddComponent<World.DungeonLoader>();
+            loaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
             dungeonLoader.SetConfig(_dungeonConfig);
             dungeonLoader.GenerateAndPaint(
                 _gridBuilder,

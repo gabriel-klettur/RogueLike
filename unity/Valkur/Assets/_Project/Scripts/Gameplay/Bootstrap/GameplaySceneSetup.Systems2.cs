@@ -24,6 +24,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("SpawnerEditorManager");
             var mgr = go.AddComponent<SpawnerEditorManager>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
             if (_spawnerTemplateCatalog != null)
             {
@@ -49,6 +50,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("MonsterSpawner");
             var spawner = go.AddComponent<MonsterSpawner>();
+            go.transform.SetParent(GetSceneContainer("[Spawning]"), false);
 
             if (monsterPrefab != null)
                 spawner.Initialize(monsterPrefab, _monsterCatalog);
@@ -80,6 +82,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("BuildingLoader");
             var loader = go.AddComponent<World.BuildingLoader>();
+            go.transform.SetParent(GetSceneContainer("[World]"), false);
             loader.Initialize(_buildingCatalog, zm);
             loader.LoadBuildings();
 
@@ -157,6 +160,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("SpawnerInstanceLoader");
             var loader = go.AddComponent<Spawners.SpawnerInstanceLoader>();
+            go.transform.SetParent(GetSceneContainer("[Spawning]"), false);
             loader.Initialize(_spawnerTemplateCatalog, monsterSpawner);
             loader.LoadInstances();
 
@@ -175,6 +179,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("AudioManager");
             var mgr = go.AddComponent<AudioManager>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             mgr.SetCatalog(_audioCatalog);
             Debug.Log("[GameplaySceneSetup] AudioManager created.");
         }
@@ -191,6 +196,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("CombatAudioSystem");
             var sys = go.AddComponent<Combat.CombatAudioSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             sys.Initialize(_combatSfxConfig);
             Debug.Log("[GameplaySceneSetup] CombatAudioSystem created.");
         }
@@ -208,6 +214,7 @@ namespace Valkur.Gameplay
 
             var go = new GameObject("BuildingsRuntimeEditor");
             var editor = go.AddComponent<BuildingsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
             if (_buildingCatalog != null)
             {
@@ -230,6 +237,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<DeathDropSystem>() != null) return;
             var go = new GameObject("DeathDropSystem");
             go.AddComponent<DeathDropSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] DeathDropSystem created.");
         }
 
@@ -238,6 +246,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<NPCRespawnSystem>() != null) return;
             var go = new GameObject("NPCRespawnSystem");
             go.AddComponent<NPCRespawnSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] NPCRespawnSystem created.");
         }
 
@@ -246,6 +255,7 @@ namespace Valkur.Gameplay
             if (FindObjectOfType<Combat.ToastSystem>() != null) return;
             var go = new GameObject("ToastSystem");
             go.AddComponent<Combat.ToastSystem>();
+            go.transform.SetParent(GetSceneContainer("[UI]"), false);
             Debug.Log("[GameplaySceneSetup] ToastSystem created.");
         }
     }

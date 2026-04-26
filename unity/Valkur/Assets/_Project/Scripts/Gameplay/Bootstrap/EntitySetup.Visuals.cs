@@ -119,6 +119,8 @@ namespace Valkur.Gameplay
             if (InventoryUI.Instance != null) return;
             var uiGo = new GameObject("InventoryUI");
             uiGo.AddComponent<InventoryUI>();
+            var container = GameObject.Find("[UI]");
+            if (container != null) uiGo.transform.SetParent(container.transform, false);
         }
 
         private static void EnsureCombatRangeVisualizer()
@@ -126,6 +128,8 @@ namespace Valkur.Gameplay
             if (CombatRangeVisualizer.Instance != null) return;
             var vizGo = new GameObject("CombatRangeVisualizer");
             vizGo.AddComponent<CombatRangeVisualizer>();
+            var container = GameObject.Find("[Debug]");
+            if (container != null) vizGo.transform.SetParent(container.transform, false);
         }
 
         // ── Minimap dot helper (reflection to avoid Gameplay→UI circular dep) ──

@@ -252,5 +252,28 @@ namespace Valkur.Gameplay
             Debug.Log($"[GameplaySceneSetup] Position restored from crash-safe checkpoint: " +
                       $"({checkpoint.x:F2}, {checkpoint.y:F2}) [{checkpoint.timestamp}]");
         }
+
+        // ── Scene Hierarchy Containers ──────────────────────────────────────────────
+
+        private readonly System.Collections.Generic.Dictionary<string, Transform> _containerCache =
+            new System.Collections.Generic.Dictionary<string, Transform>();
+
+        /// <summary>
+        /// Returns the Transform of a scene container GameObject (e.g. "[World]").
+        /// Cached on first access. Returns null (root level) if the container is not found.
+        /// </summary>
+        private Transform GetSceneContainer(string name)
+        {
+            if (_containerCache.TryGetValue(name, out var cached))
+                return cached;
+
+            var go = GameObject.Find(name);
+            if (go == null)
+                Debug.LogWarning($"[GameplaySceneSetup] Scene container '{name}' not found — object will spawn at root.");
+
+            var t = go != null ? go.transform : null;
+            _containerCache[name] = t;
+            return t;
+        }
     }
 }
