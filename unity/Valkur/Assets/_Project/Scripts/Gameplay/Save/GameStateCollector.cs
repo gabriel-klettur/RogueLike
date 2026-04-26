@@ -5,6 +5,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.Save
 {
@@ -59,7 +60,7 @@ namespace Valkur.Gameplay.Save
                 maxHp = health != null ? health.MaxHp : 0,
                 mana = mana != null ? mana.CurrentMana : 0,
                 maxMana = mana != null ? mana.MaxMana : 0,
-                currentZone = "",
+                currentZone = UnityEngine.Object.FindObjectOfType<ZoneManager>()?.CurrentZone ?? "",
                 experience = experience != null ? experience.TotalXp : 0,
                 level = experience != null ? experience.Level : 1
             };

@@ -30,6 +30,9 @@ namespace Valkur.Gameplay
         private float _positionCheckpointTimer;
         private string _currentSavePath;
         private string _lastLoadedTimestamp;
+        private string _currentRunId = "";
+
+        public string RunId => _currentRunId;
 
         // Cached as plain C# values so OnApplicationQuit can read them
         // without touching any Unity Object reference during teardown.
@@ -86,6 +89,18 @@ namespace Valkur.Gameplay
             }
         }
 
+        /// <summary>Starts a new run by generating a fresh run ID. Call before the first autosave of a new game.</summary>
+        public void BeginNewRun()
+        {
+            _currentRunId = Guid.NewGuid().ToString("N");
+            Debug.Log($"[SaveService] New run started: {_currentRunId}");
+        }
+
+        public List<RunGroupInfo> ListSavesByRun()
+        {
+            return SaveFileManager.ListSavesByRun();
+        }
+
         public bool Save(string slotName = null)
         {
             try
@@ -96,6 +111,9 @@ namespace Valkur.Gameplay
                     Debug.LogWarning("[SaveService] No save data collected — nothing to save.");
                     return false;
                 }
+
+                if (!string.IsNullOrEmpty(_currentRunId))
+                    data.SetMeta("run_id", _currentRunId);
 
                 string fileName = string.IsNullOrEmpty(slotName)
                     ? $"save_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}"
@@ -127,6 +145,9 @@ namespace Valkur.Gameplay
                 var data = GameStateCollector.Collect();
                 if (data == null) return;
 
+                if (!string.IsNullOrEmpty(_currentRunId))
+                    data.SetMeta("run_id", _currentRunId);
+
                 SaveFileManager.RotateBackups(AUTOSAVE_PREFIX);
 
                 string path = SaveFileManager.GetSavePath($"{AUTOSAVE_PREFIX}_0");
@@ -151,8 +172,9 @@ namespace Valkur.Gameplay
 
             data = SaveSchemaMigrator.Migrate(data);
             GameStateRestorer.Restore(data);
-            _currentSavePath = path;
+            _currentSavePath     = path;
             _lastLoadedTimestamp = data.timestamp;
+            _currentRunId        = data.GetMeta("run_id", "");
 
             Debug.Log($"[SaveService] Game loaded from: {path} (schema {data.schemaVersion})");
             return true;
@@ -233,6 +255,7 @@ namespace Valkur.Gameplay
         public string timestamp;
         public string schemaVersion;
         public bool   isCorrupted;
+        public string runId;          // empty = legacy save (no run_id in file)
 
         // ── Gameplay metadata ────────────────────────────────────────────────
         public string playerClass;
@@ -241,5 +264,20 @@ namespace Valkur.Gameplay
         public int    hp;
         public int    maxHp;
         public string currentZone;
+    }
+
+    /// <summary>
+    /// Aggregates saves belonging to a single gameplay run, used by the Load Game panel.
+    /// </summary>
+    [Serializable]
+    public class RunGroupInfo
+    {
+        public string           runId;            // empty = legacy group
+        public string           displayName;
+        public string           playerClass;
+        public int              maxLevel;
+        public string           latestTimestamp;
+        public bool             isLegacy;
+        public List<SaveSlotInfo> saves = new List<SaveSlotInfo>();
     }
 }

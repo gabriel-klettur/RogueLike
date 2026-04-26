@@ -239,6 +239,7 @@ namespace Valkur.Gameplay.Save
                         timestamp     = data?.timestamp ?? "",
                         schemaVersion = data?.schemaVersion ?? "unknown",
                         isCorrupted   = false,
+                        runId         = data?.GetMeta("run_id", "") ?? "",
                         playerClass   = data?.player?.playerClass  ?? "",
                         level         = data?.player?.level        ?? 0,
                         experience    = data?.player?.experience   ?? 0,
@@ -262,6 +263,66 @@ namespace Valkur.Gameplay.Save
 
             saves.Sort((a, b) => string.Compare(b.timestamp, a.timestamp, StringComparison.Ordinal));
             return saves;
+        }
+
+        /// <summary>
+        /// Returns saves grouped by run_id, sorted newest group first.
+        /// Saves without a run_id are collected in a single legacy group.
+        /// </summary>
+        public static List<RunGroupInfo> ListSavesByRun()
+        {
+            var allSaves = ListSaves(); // already sorted newest-first
+
+            var byRunId    = new Dictionary<string, RunGroupInfo>(StringComparer.Ordinal);
+            RunGroupInfo legacyGroup = null;
+
+            foreach (var save in allSaves)
+            {
+                if (string.IsNullOrEmpty(save.runId))
+                {
+                    if (legacyGroup == null)
+                        legacyGroup = new RunGroupInfo { runId = "", isLegacy = true };
+                    legacyGroup.saves.Add(save);
+                }
+                else
+                {
+                    if (!byRunId.TryGetValue(save.runId, out var group))
+                    {
+                        group = new RunGroupInfo { runId = save.runId, isLegacy = false };
+                        byRunId[save.runId] = group;
+                    }
+                    group.saves.Add(save);
+                }
+            }
+
+            var result = new List<RunGroupInfo>(byRunId.Values);
+            if (legacyGroup != null) result.Add(legacyGroup);
+
+            // Populate display fields from each group’s newest save
+            foreach (var group in result)
+            {
+                var newest = group.saves.Count > 0 ? group.saves[0] : default;
+                group.playerClass     = newest.playerClass;
+                group.latestTimestamp = newest.timestamp;
+                group.maxLevel        = 0;
+                foreach (var s in group.saves)
+                    if (s.level > group.maxLevel) group.maxLevel = s.level;
+
+                if (group.isLegacy)
+                {
+                    group.displayName = "Partidas antiguas";
+                }
+                else
+                {
+                    string cls  = string.IsNullOrEmpty(newest.playerClass) ? "?" : newest.playerClass;
+                    string zone = string.IsNullOrEmpty(newest.currentZone) ? "—" : newest.currentZone;
+                    group.displayName = $"{cls} · {zone} · Lv.{group.maxLevel}";
+                }
+            }
+
+            // Sort groups by latest timestamp descending
+            result.Sort((a, b) => string.Compare(b.latestTimestamp, a.latestTimestamp, StringComparison.Ordinal));
+            return result;
         }
 
         // ── Position checkpoint ──────────────────────────────────────────────
