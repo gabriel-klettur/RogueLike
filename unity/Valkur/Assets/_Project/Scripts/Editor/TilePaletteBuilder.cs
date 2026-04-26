@@ -22,7 +22,7 @@ namespace Valkur.Editor
         private const string TILE_ASSETS_FOLDER = "Assets/_Project/Art/Tiles/TileAssets";
         private const string PALETTE_PATH = "Assets/_Project/Art/Tiles/Palettes";
 
-        [MenuItem("Valkur/Atlas/Generate Tile Assets")]
+        [MenuItem("Valkur/Tiles/Generate Tile Assets")]
         public static void GenerateTileAssets()
         {
             // Ensure output folder exists
@@ -77,7 +77,7 @@ namespace Valkur.Editor
             Debug.Log($"[TilePaletteBuilder] Generated {created} tile assets, skipped {skipped} existing. Total sprites: {guids.Length}");
         }
 
-        [MenuItem("Valkur/Atlas/Generate Tile Palette")]
+        [MenuItem("Valkur/Tiles/Generate Tile Palette")]
         public static void GenerateTilePalette()
         {
             if (!AssetDatabase.IsValidFolder(PALETTE_PATH))
@@ -158,7 +158,7 @@ namespace Valkur.Editor
                       "Open Window > 2D > Tile Palette and select 'ValkurTilePalette' to use it.");
         }
 
-        [MenuItem("Valkur/Atlas/Generate Tile Catalog (Runtime)")]
+        [MenuItem("Valkur/Tiles/Generate Tile Catalog (Runtime)")]
         public static void GenerateTileCatalog()
         {
             string[] guids = AssetDatabase.FindAssets("t:Tile", new[] { TILE_ASSETS_FOLDER });

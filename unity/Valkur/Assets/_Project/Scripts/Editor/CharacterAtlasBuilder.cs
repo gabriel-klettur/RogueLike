@@ -16,7 +16,7 @@ namespace Valkur.Editor
         private const string CharactersFolder = "Assets/_Project/Art/Characters";
         private const string PlayerCatalogRoot = "Assets/_Project/Data/Catalogs/Players";
 
-        [MenuItem("Valkur/Atlas/Build Character Atlas (Players)")]
+        [MenuItem("Valkur/Characters/Build Character Atlas (Players)")]
         public static void BuildCharacterAtlas()
         {
             var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AtlasPath);
@@ -78,7 +78,7 @@ namespace Valkur.Editor
             Debug.Log($"[CharacterAtlasBuilder] {action} atlas at {AtlasPath} — {spriteCount} sprites from {playerFolders.Count} player folders.");
         }
 
-        [MenuItem("Valkur/Atlas/Validate Character Atlas (Players)")]
+        [MenuItem("Valkur/Characters/Validate Character Atlas (Players)")]
         public static void ValidateCharacterAtlas()
         {
             var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AtlasPath);

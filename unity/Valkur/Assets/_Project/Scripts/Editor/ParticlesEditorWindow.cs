@@ -60,7 +60,7 @@ namespace Valkur.Editor
 
         // ------------------------------------------------------------------ menu item
 
-        [MenuItem("Valkur/Particles/Particles Editor")]
+        [MenuItem("Valkur/Editors/Particles Editor")]
         public static void OpenWindow()
         {
             var win = GetWindow<ParticlesEditorWindow>("Particles Editor");

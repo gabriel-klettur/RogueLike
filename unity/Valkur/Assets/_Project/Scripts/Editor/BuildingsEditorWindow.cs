@@ -51,7 +51,7 @@ namespace Valkur.Editor
 
         // â”€â”€ Menu item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        [MenuItem("Valkur/Buildings Editor")]
+        [MenuItem("Valkur/Editors/Buildings Editor")]
         public static void Open()
         {
             var window = GetWindow<BuildingsEditorWindow>("Buildings Editor");

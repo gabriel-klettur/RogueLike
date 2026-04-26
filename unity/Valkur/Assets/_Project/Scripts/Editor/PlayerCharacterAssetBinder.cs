@@ -18,7 +18,7 @@ namespace Valkur.Editor
         private const int FrameSizePx = 128;
         private const int CharacterPpu = 64;
 
-        [MenuItem("Valkur/Characters/Rebuild Player Character Assets")]
+        [MenuItem("Valkur/Setup/Rebuild Player Character Assets")]
         public static void RebuildPlayerCharacterAssets()
         {
             string[] playerGuids = AssetDatabase.FindAssets("t:PlayerDefinition", new[] { PlayerCatalogRoot });

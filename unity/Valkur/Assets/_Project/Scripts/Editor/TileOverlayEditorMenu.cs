@@ -15,7 +15,7 @@ namespace Valkur.Editor
         private const string OVERLAY_SOURCE_DIR = "../../../python/data/worlds/base/zones/overlays";
         private const string STREAMING_MAPS_DIR = "StreamingAssets/Maps";
 
-        [MenuItem("Valkur/Tile Editor/Open Override Folder")]
+        [MenuItem("Valkur/Tiles/Overrides/Open Override Folder")]
         public static void OpenOverrideFolder()
         {
             string dir = TileOverlayPersistence.OverrideDirectory;
@@ -24,7 +24,7 @@ namespace Valkur.Editor
             EditorUtility.RevealInFinder(dir);
         }
 
-        [MenuItem("Valkur/Tile Editor/List Overrides")]
+        [MenuItem("Valkur/Tiles/Overrides/List Overrides")]
         public static void ListOverrides()
         {
             var files = TileOverlayPersistence.ListOverrideFiles();
@@ -40,7 +40,7 @@ namespace Valkur.Editor
             EditorUtility.DisplayDialog("Tile Editor — Overrides", sb.ToString(), "OK");
         }
 
-        [MenuItem("Valkur/Tile Editor/Bake Overrides into StreamingAssets")]
+        [MenuItem("Valkur/Tiles/Overrides/Bake Overrides into StreamingAssets")]
         public static void BakeOverridesToStreamingAssets()
         {
             var files = TileOverlayPersistence.ListOverrideFiles();
@@ -86,7 +86,7 @@ namespace Valkur.Editor
             Debug.Log($"[TileOverlayEditorMenu] {msg}");
         }
 
-        [MenuItem("Valkur/Tile Editor/Clear All Overrides")]
+        [MenuItem("Valkur/Tiles/Overrides/Clear All Overrides")]
         public static void ClearAllOverrides()
         {
             var files = TileOverlayPersistence.ListOverrideFiles();

@@ -30,7 +30,7 @@ namespace Valkur.Editor
 
         // ── Entry points ─────────────────────────────────────────────────────────
 
-        [MenuItem("Valkur/Migration/Import Zones from Python JSON")]
+        [MenuItem("Valkur/Migration/Setup Zone Manager in Scene")]
         public static void ImportZones()
         {
             string zonesPath = FullPythonPath(ZONES_JSON);

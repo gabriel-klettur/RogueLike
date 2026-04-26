@@ -30,7 +30,7 @@ namespace Valkur.Editor
 
         // ── Menu item ────────────────────────────────────────────────────────────────
 
-        [MenuItem("Valkur/Spells Editor")]
+        [MenuItem("Valkur/Editors/Spells Editor")]
         public static void Open()
         {
             var win = GetWindow<SpellsEditorWindow>("Spells Editor");

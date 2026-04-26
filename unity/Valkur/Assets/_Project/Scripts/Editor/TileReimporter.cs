@@ -15,19 +15,19 @@ namespace Valkur.Editor
         private const int CHARACTER_PPU = 64;
         private const int BUILDING_PPU = 32;
 
-        [MenuItem("Valkur/Migration/Force Reimport Tiles")]
+        [MenuItem("Valkur/Tiles/Force Reimport Tiles")]
         private static void ReimportTiles()
         {
             ReimportFolder("Assets/_Project/Resources/Tiles", "Tile", TILE_PPU, new Vector2(0.5f, 0.5f));
         }
 
-        [MenuItem("Valkur/Migration/Force Reimport NPCs")]
+        [MenuItem("Valkur/Tiles/Force Reimport NPCs")]
         private static void ReimportNPCs()
         {
             ReimportFolder("Assets/_Project/Art/NPC", "NPC", NPC_PPU, new Vector2(0.5f, 0f));
         }
 
-        [MenuItem("Valkur/Migration/Force Reimport All Game Art")]
+        [MenuItem("Valkur/Tiles/Force Reimport All Game Art")]
         private static void ReimportAll()
         {
             AssetDatabase.StartAssetEditing();

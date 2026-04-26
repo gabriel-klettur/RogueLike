@@ -90,7 +90,7 @@ namespace Valkur.Editor
             Debug.Log($"[VendorDataImporter] Imported {count} vendor configs.");
         }
 
-        [MenuItem("Valkur/Vendors/Copy Collision Data to StreamingAssets")]
+        [MenuItem("Valkur/Buildings/Copy Collision Data to StreamingAssets")]
         public static void CopyCollisionData()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "../../.."));

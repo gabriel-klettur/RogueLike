@@ -36,7 +36,7 @@ namespace Valkur.Editor
             return false;
         }
 
-        [MenuItem("Valkur/Scenes/Set Play Mode Start Scene (Bootstrap)")]
+        [MenuItem("Valkur/Setup/Set Play Mode Start Scene (Bootstrap)")]
         public static void EnsureBootstrapAsPlayModeStartScene()
         {
             if (IsRunningCommandLineTests())

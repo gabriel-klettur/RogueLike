@@ -11,7 +11,8 @@ namespace Valkur.Editor
     public static partial class PythonDataMigrator
     {
 
-        [MenuItem("Valkur/Migration/Import Spells from Python JSON")]
+        // Spells import is exposed via Valkur/Spells/Import Spells from Python JSON (SpellDataImporter.cs)
+        // Kept as internal method for use by Import All Python Data
         public static void ImportSpells() => ImportSpells(dryRun: false);
 
         public static MigrationReport ImportSpells(bool dryRun)

@@ -21,7 +21,7 @@ namespace Valkur.Editor
         private const string ATLAS_PATH = "Assets/_Project/Art/Tiles/Atlas_Tiles.spriteatlas";
         private const string TILES_READY_FOLDER = "Assets/_Project/Art/Tiles/ready";
 
-        [MenuItem("Valkur/Atlas/Build Tile Atlas")]
+        [MenuItem("Valkur/Tiles/Build Tile Atlas")]
         public static void BuildTileAtlas()
         {
             // Create or load existing atlas
@@ -92,7 +92,7 @@ namespace Valkur.Editor
             Debug.Log($"[TileAtlasBuilder] {action} atlas at {ATLAS_PATH} — {guids.Length} sprites from {TILES_READY_FOLDER}");
         }
 
-        [MenuItem("Valkur/Atlas/Validate Tile Atlas")]
+        [MenuItem("Valkur/Tiles/Validate Tile Atlas")]
         public static void ValidateTileAtlas()
         {
             var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(ATLAS_PATH);
