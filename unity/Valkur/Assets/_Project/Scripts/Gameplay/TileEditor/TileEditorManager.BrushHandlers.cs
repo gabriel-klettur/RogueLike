@@ -138,10 +138,11 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         // ── Middle-mouse camera pan ──
-        // Mirrors Python camera_pan.py: handle_pan_state()
-        //   MOUSEBUTTONDOWN 2 → save anchor
-        //   MOUSEMOTION while panning → camera.offset -= rel / zoom
-        //   MOUSEBUTTONUP 2 → stop panning
+        // Mirrors BuildingsRuntimeEditor.HandleCameraPan() and Python camera_pan.py.
+        //   MMB press   → detach camera from player follow, save anchor
+        //   MMB held    → offset vcam from anchor by screen-space delta
+        //   MMB release → stop panning; camera stays at panned position
+        //   Editor close → ReattachFollow() restores normal camera follow
 
         private partial void HandleCameraPan()
         {
@@ -151,8 +152,9 @@ namespace Valkur.Gameplay.TileEditor
             if (_mainCamera == null) return;
 
             // Camera normally follows the player so the developer can walk and test
-            // tile colliders. Middle-mouse drag temporarily detaches and pans; on
-            // release the camera re-attaches to the player.
+            // tile colliders. Middle-mouse drag permanently detaches the camera so
+            // the view stays at the panned position after release. The camera is
+            // re-attached to the player when the editor is closed (HandleToggle).
             var camSetup = Valkur.Gameplay.CameraSetup.Instance;
             if (camSetup == null) return;
 
@@ -169,8 +171,10 @@ namespace Valkur.Gameplay.TileEditor
             }
             else if (mouse.middleButton.wasReleasedThisFrame)
             {
+                // Do NOT call ReattachFollow() here — the camera must stay at the
+                // panned position (mirrors Building Editor behaviour). Re-attach
+                // only happens when the editor is closed via HandleToggle().
                 _isPanning = false;
-                camSetup.ReattachFollow();
             }
 
             if (_isPanning && mouse.middleButton.isPressed)

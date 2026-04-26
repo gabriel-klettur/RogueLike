@@ -126,14 +126,24 @@ namespace Valkur.Gameplay.TileEditor
             return bottomLeft + new Vector3(cellSize.x * 0.5f, cellSize.y * 0.5f, 0f);
         }
 
-        private bool CanEditCell(Vector3Int cellPos)
-        {
-            return _editConstraint == null || _editConstraint(cellPos);
-        }
+        // The Tile Editor must allow Brush, Eraser, Fill and Collider Draw/Erase
+        // to operate on EVERY cell of EVERY zone. Earlier the F11 MapEditor could
+        // install an `_editConstraint` (ZoneManager.IsTileInEditableZone) that
+        // silently rejected paints in zones flagged `editableInTileEditor=false`
+        // (e.g. the lobby) and in any cell outside a defined zone. That produced
+        // dead spots on the map where the brush appeared to do nothing.
+        //
+        // Per product requirement the gate is now disabled at this single
+        // choke point. SetEditConstraint / ClearEditConstraint remain on the
+        // public API for backwards compatibility but no longer affect editing.
+        // If a future need arises to re-introduce zone locks, restore the
+        // original body and audit every TileBrush.* call site.
+        private bool CanEditCell(Vector3Int cellPos) => true;
 
         protected override void OnDestroy()
         {
             _input?.Dispose();
+            DisposeColliderTile();
             base.OnDestroy();
         }
     }

@@ -30,7 +30,11 @@ namespace Valkur.Gameplay.TileEditor
             _colliderTile.color = new Color(1f, 1f, 1f, 0f);
             _colliderTile.colliderType = Tile.ColliderType.Grid;
             _colliderTile.hideFlags = HideFlags.HideAndDontSave;
-            _colliderTile.name = "TileEditorColliderTile";
+            // Use the sprite name (e.g. "wall") so TileRegistry.GetName returns a
+            // name that OverlayLoader.ResolveSprite can resolve on reload. If we used a
+            // custom name like "TileEditorColliderTile", the overlay JSON would reference
+            // a non-existent sprite and all drawn colliders would be lost after a restart.
+            _colliderTile.name = sprite != null ? sprite.name : "wall";
             return _colliderTile;
         }
 
@@ -129,7 +133,10 @@ namespace Valkur.Gameplay.TileEditor
                         if (src.GetTile(pos) == null) continue;
 
                         if (collision.GetTile(pos) != null) { alreadySolid++; continue; }
-                        if (!CanEditCell(pos)) { skippedLocked++; continue; }
+                        // Bulk auto-collider intentionally ignores CanEditCell:
+                        // collision tiles are authoring metadata, and the user
+                        // must be able to seed colliders even in zones flagged
+                        // `editableInTileEditor = false` (e.g. the lobby).
 
                         var prev = collision.GetTile(pos);
                         collision.SetTile(pos, tile);
@@ -183,7 +190,8 @@ namespace Valkur.Gameplay.TileEditor
                     var pos = new Vector3Int(x, y, 0);
                     var prev = collision.GetTile(pos);
                     if (prev == null) continue;
-                    if (!CanEditCell(pos)) { skippedLocked++; continue; }
+                    // Clear-all intentionally ignores CanEditCell — see
+                    // OnAutoGenerateCollidersClicked for rationale.
 
                     collision.SetTile(pos, null);
                     edits.Add(new TileEdit(pos, prev, null));

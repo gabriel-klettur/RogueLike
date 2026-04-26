@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
@@ -77,75 +78,147 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private void Start()
+        private const int SetupStepTotal = 32;
+        private int _setupStep;
+
+        private IEnumerator Start()
         {
+            _setupStep = 0;
+
             BuildWorldGrid();
+            Report("Construyendo cuadrícula"); yield return null;
+
             EnsureZoneManager();
+            Report("Inicializando zonas"); yield return null;
+
             LoadWorld();
-            RebakeTilemapColliders(); // repaint tiles → CompositeCollider2D geometry must be rebuilt
+            Report("Cargando mundo"); yield return null;
+
+            RebakeTilemapColliders();
+            Report("Recalculando colisiones de tiles"); yield return null;
+
             EnsureGlobalLight2D();
+            Report("Inicializando iluminación global"); yield return null;
+
             EnsureVFXManager();
+            Report("Inicializando efectos visuales"); yield return null;
+
             EnsureParticleInstancesLoader();
+            Report("Cargando partículas"); yield return null;
+
             EnsureTileEditor();
+            Report("Inicializando editor de tiles"); yield return null;
+
             EnsureMapEditor();
+            Report("Inicializando editor de mapa"); yield return null;
+
             EnsureSaveService();
+            Report("Inicializando guardado"); yield return null;
+
             EnsureSaveLoadInput();
+            Report("Inicializando input de guardado"); yield return null;
+
             EnsureNPCSeparation();
+            Report("Inicializando separación de NPCs"); yield return null;
+
             EnsureVendorShopUI();
+            Report("Inicializando tiendas"); yield return null;
+
             EnsureVendorEconomyService();
+            Report("Inicializando economía"); yield return null;
+
             EnsureChatSystem();
+            Report("Inicializando chat"); yield return null;
+
             EnsureWorldLightLoader();
+            Report("Cargando luces del mundo"); yield return null;
+
             EnsureBuildingCollisionLoader();
+            Report("Cargando colisiones de edificios"); yield return null;
+
             EnsureSpawnerEditor();
+            Report("Inicializando editor de spawners"); yield return null;
+
             EnsureBuildingsRuntimeEditor();
+            Report("Inicializando editor de edificios"); yield return null;
+
             EnsureDevConsole();
+            Report("Inicializando consola de desarrollo"); yield return null;
 
-            // Combat support systems (death drops, respawn, toast)
             EnsureDeathDropSystem();
+            Report("Inicializando drops de muerte"); yield return null;
+
             EnsureNPCRespawnSystem();
+            Report("Inicializando respawn de NPCs"); yield return null;
+
             EnsureToastSystem();
+            Report("Inicializando notificaciones"); yield return null;
 
-            // Player & camera MUST be created before risky loaders
-            // so a loader crash can never leave the scene without a camera target.
+            // Pre-apply player class from pending save so SpawnPlayer() uses the correct
+            // class for visuals and stats. The full restore (position, HP, etc.) happens
+            // later via SaveService.Load().
+            if (Save.PendingSaveLoad.HasPending && !string.IsNullOrWhiteSpace(Save.PendingSaveLoad.PlayerClass))
+                PlayerSelectionState.SetSelectedPlayer(Save.PendingSaveLoad.PlayerClass);
+
             SpawnPlayer();
+            Report("Spawneando jugador"); yield return null;
+
             SpawnTestMonsters();
+            Report("Spawneando monstruos de prueba"); yield return null;
 
-            // Buildings / spawners may fail (missing sprites, templates, etc.).
-            // Wrap in try-catch so the game remains playable even when data is incomplete.
-            try { EnsureMonsterSpawner(); }            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
-            try { EnsureBuildingLoader(); }             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] BuildingLoader failed: {ex.Message}"); }
-            try { EnsureSpawnerInstanceLoader(); }      catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
+            try { EnsureMonsterSpawner(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
+            Report("Inicializando spawner de monstruos"); yield return null;
 
-            // Audio must init after all gameplay systems are ready
-            try { EnsureAudioManager(); }               catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] AudioManager failed: {ex.Message}"); }
-            try { EnsureCombatAudioSystem(); }           catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] CombatAudioSystem failed: {ex.Message}"); }
+            try { EnsureBuildingLoader(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] BuildingLoader failed: {ex.Message}"); }
+            Report("Cargando edificios"); yield return null;
+
+            try { EnsureSpawnerInstanceLoader(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
+            Report("Cargando instancias de spawners"); yield return null;
+
+            try { EnsureAudioManager(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] AudioManager failed: {ex.Message}"); }
+            Report("Inicializando audio"); yield return null;
+
+            try { EnsureCombatAudioSystem(); }
+            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] CombatAudioSystem failed: {ex.Message}"); }
+            Report("Inicializando audio de combate"); yield return null;
+
             EnterGameAudio();
+            Report("Iniciando música del juego"); yield return null;
 
-            // If we're coming from a menu "Continue" or "Load Game", apply saved state
+            // Apply saved state / checkpoint
             if (Save.PendingSaveLoad.HasPending)
             {
                 string savePath = Save.PendingSaveLoad.Consume();
                 if (SaveService.Instance != null)
                 {
                     SaveService.Instance.Load(savePath);
-                    // After loading the full save, apply the position checkpoint only if
-                    // it is strictly newer — protects position lost to a crash between the
-                    // last save and quit. Then delete it: the checkpoint belongs to the
-                    // previous session. The in-session timer will write a fresh one.
                     ApplyPositionCheckpointIfNewer(SaveService.Instance.LastLoadedTimestamp);
                     Debug.Log($"[GameplaySceneSetup] Loaded pending save: {savePath}");
                 }
             }
             else
             {
-                // No explicit save selected (e.g., direct scene load in editor).
-                // Restore position from the most recent checkpoint if one exists.
+                // New game — generate a fresh run ID so all autosaves from this session
+                // are grouped together in the Load Game panel.
+                SaveService.Instance?.BeginNewRun();
                 ApplyPositionCheckpointIfNewer(null);
             }
-
-            // Always clear the checkpoint after consuming it so that stale data from
-            // a previous session can never interfere with future scene loads.
             Save.SaveFileManager.DeletePositionCheckpoint();
+            Report("Restaurando sesión"); yield return null;
+
+            // All systems ready — signal the loading screen to fade out
+            LoadingReporter.ReportGameplayReady();
+        }
+
+        /// <summary>Reports progress to the loading screen for the current setup step.</summary>
+        private void Report(string message)
+        {
+            _setupStep++;
+            LoadingReporter.ReportStage(message, (float)_setupStep / SetupStepTotal);
         }
 
         /// <summary>

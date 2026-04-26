@@ -131,25 +131,30 @@ namespace Valkur.Gameplay.TileEditor
             bool drawing = _state.CurrentColliderMode == TileEditorState.ColliderMode.Draw;
             TileBase tileToPaint = drawing ? GetOrCreateColliderTile() : null;
 
+            // Collider Draw / Erase intentionally bypasses the zone-editability
+            // gate (CanEditCell). Tile painting on game-content layers respects
+            // zone locks (e.g. the lobby is read-only via the F11 Map Editor),
+            // but collision tiles are pure authoring metadata — the user must
+            // be able to add or remove physical blockers in any zone, including
+            // ones marked `editableInTileEditor = false`. Passing canEditCell:null
+            // makes TileBrush.Paint accept every cell in the brush footprint.
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(collision);
-                var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, CanEditCell);
+                var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
                 if (edits.Count > 0)
                     RegenerateCompositeCollider(collision);
-                else if (!CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
             }
             else if (mouse.leftButton.isPressed && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
-                var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, CanEditCell);
+                var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
                 AddCellsToBrushStroke(cellPos);
@@ -161,6 +166,10 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.EndStroke();
                 _state.IsDragging = false;
                 _state.BrushStrokeCells.Clear();
+                // Auto-persist: flush dirty zones immediately so collider edits
+                // survive a scene reload without requiring an explicit Save click.
+                // Mirrors the behaviour of HandleBrushInput / HandleEraserInput.
+                if (Application.isPlaying) _persistence?.SaveAllDirty();
             }
         }
 

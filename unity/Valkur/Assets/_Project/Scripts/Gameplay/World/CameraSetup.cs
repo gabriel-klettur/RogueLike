@@ -111,6 +111,16 @@ namespace Valkur.Gameplay
         {
             if (_vcam == null) return;
 
+            // Acquire the follow target lazily: GameplaySceneSetup spawns the player
+            // from a long coroutine, so EntityRegistry.Player is usually still null
+            // when CameraSetup.Start() runs. Without this, the camera stays at the
+            // origin and the player (spawned at ~75,75) renders off-screen.
+            if (_vcam.Follow == null && !_detached)
+            {
+                var player = EntityRegistry.Player;
+                if (player != null) _vcam.Follow = player.transform;
+            }
+
             var mouse = Mouse.current;
             if (mouse == null) return;
 

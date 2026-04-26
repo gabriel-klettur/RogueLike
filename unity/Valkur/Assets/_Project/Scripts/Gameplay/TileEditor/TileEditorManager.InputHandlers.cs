@@ -157,8 +157,9 @@ namespace Valkur.Gameplay.TileEditor
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
 
-                if (edits.Count == 0 && !CanEditCell(cellPos))
-                    _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
+                // Note: zone-editability gating was removed in TileEditorManager.CanEditCell
+                // so brushes now work in every zone, including the lobby. The previous
+                // "Blocked: zone is not editable" status path is unreachable.
 
                 if (!_brushDiagLogged)
                 {
