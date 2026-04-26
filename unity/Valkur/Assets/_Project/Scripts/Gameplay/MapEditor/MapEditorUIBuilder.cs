@@ -41,11 +41,8 @@ namespace Valkur.Gameplay.MapEditor
             // Zones panel
             public ScrollRect      ZonesScrollRect;
             public RectTransform   ZonesListContent;
-            public TextMeshProUGUI SelectedZoneText;
-            public TextMeshProUGUI SelectedEditableText;
 
-            // Actions panel
-            public TMP_InputField  NameInput;
+            // Actions panel (no longer holds NameInput — moved to Properties)
 
             // Settings panel
             public Toggle          RestrictToggle;
@@ -61,20 +58,34 @@ namespace Valkur.Gameplay.MapEditor
             // DeleteZone dialog
             public GameObject      DeleteZoneDialog;
             public TextMeshProUGUI DeleteZonePrompt;
+
+            // Properties panel
+            public Image           PropsMenuBtnImg;  public TextMeshProUGUI PropsMenuBtnTmp;
+            public GameObject      PropsDropdown;    public DraggablePanel  PropsPanelDrag;
+            public TextMeshProUGUI PropsHintText;
+            public TMP_InputField  NameInput;         // zone-name input (Rename)
+            public Button          PropsRenameBtn;
+            public TextMeshProUGUI PropsOffsetText;
+            public TextMeshProUGUI PropsDimText;
+            public TextMeshProUGUI PropsEditableText;
+            public Button          PropsToggleEditableBtn;
         }
 
         // ── Panel sizes (mirror Buildings Editor constants) ──────────────────────
 
         private const float ZONES_W    = 280f;
-        private const float ZONES_H    = 460f + PANEL_HDR_H;   // 484 px
+        private const float ZONES_H    = 420f + PANEL_HDR_H;   // 444 px (removed selection header)
 
         private const float ACTIONS_W  = 230f;
-        private const float ACTIONS_H  = 290f + PANEL_HDR_H;   // 314 px
+        private const float ACTIONS_H  = 175f + PANEL_HDR_H;   // 199 px (Rename+ToggleEditable moved to Props)
 
         private const float SETTINGS_W = 240f;
         private const float SETTINGS_H = 110f + PANEL_HDR_H;   // 134 px
 
         private const float BTN_H      = 32f;                   // action button height
+
+        private const float PROPS_W        = 260f;
+        private const float PROPS_H        = 255f + PANEL_HDR_H;   // ~279 px (now includes name input + buttons)
 
         // ── Menu button widths ───────────────────────────────────────────────────
 
@@ -82,6 +93,7 @@ namespace Valkur.Gameplay.MapEditor
         private const float ZONES_BTN_W    = 74f;
         private const float ACTIONS_BTN_W  = 82f;
         private const float SETTINGS_BTN_W = 86f;
+        private const float PROPS_BTN_W    = 68f;
 
         // ── BuildAll ─────────────────────────────────────────────────────────────
 
@@ -107,9 +119,9 @@ namespace Valkur.Gameplay.MapEditor
             BuildZonesPanel(canvasT, ref refs);
             BuildActionsPanel(canvasT, ref refs,
                 onBeginAddZoneFlow, onDuplicateSelectedZone,
-                onRequestDeleteSelectedZone, onRenameSelectedZone,
-                onToggleSelectedZoneEditable, onMoveSelectedZone);
+                onRequestDeleteSelectedZone, onMoveSelectedZone);
             BuildSettingsPanel(canvasT, ref refs, onRestrictEditChanged);
+            BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone, onToggleSelectedZoneEditable);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
             BuildDeleteZoneDialog(canvasT, ref refs, onConfirmDeleteSelectedZone, onCancelDeleteZone);
             return refs;
@@ -187,6 +199,8 @@ namespace Valkur.Gameplay.MapEditor
                 () => onToggle?.Invoke("actions"),  out refs.ActionsMenuBtnTmp);
             refs.SettingsMenuBtnImg = AddMenuBtn(t, "Settings v", SETTINGS_BTN_W,
                 () => onToggle?.Invoke("settings"), out refs.SettingsMenuBtnTmp);
+            refs.PropsMenuBtnImg    = AddMenuBtn(t, "Props v",    PROPS_BTN_W,
+                () => onToggle?.Invoke("props"),    out refs.PropsMenuBtnTmp);
 
             // Flexible spacer pushes status text to the right
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;
@@ -213,31 +227,7 @@ namespace Valkur.Gameplay.MapEditor
                 PanelDock.TopLeft, x, PANEL_TOP_OFFSET,
                 ZONES_W, ZONES_H, "ZONES", out var t, out refs.ZonesPanelDrag);
 
-            // Selected zone info
-            BuildSeparator(t);
-            var selGo           = CreateUI("SelectedZone", t);
-            selGo.AddComponent<LayoutElement>().preferredHeight = 20f;
-            refs.SelectedZoneText        = selGo.AddComponent<TextMeshProUGUI>();
-            refs.SelectedZoneText.text   = "Selected: (none)";
-            refs.SelectedZoneText.fontSize     = 13f;
-            refs.SelectedZoneText.fontStyle    = FontStyles.Bold;
-            refs.SelectedZoneText.color        = TEXT_PRIMARY;
-            refs.SelectedZoneText.alignment    = TextAlignmentOptions.Left;
-            refs.SelectedZoneText.enableWordWrapping = false;
-            refs.SelectedZoneText.overflowMode = TextOverflowModes.Ellipsis;
-
-            var editGo          = CreateUI("SelectedEditable", t);
-            editGo.AddComponent<LayoutElement>().preferredHeight = 16f;
-            refs.SelectedEditableText        = editGo.AddComponent<TextMeshProUGUI>();
-            refs.SelectedEditableText.text   = "Editable: n/a";
-            refs.SelectedEditableText.fontSize     = 11f;
-            refs.SelectedEditableText.color        = TEXT_SECONDARY;
-            refs.SelectedEditableText.alignment    = TextAlignmentOptions.Left;
-            refs.SelectedEditableText.enableWordWrapping = false;
-
-            BuildSeparator(t);
-
-            // Zone list scroll view
+            // Zone list scroll view (selection info moved to Properties panel)
             var scrollGo = MakeScrollView("ZonesList", t, out var content, 380f);
             var scrollLE = scrollGo.AddComponent<LayoutElement>();
             scrollLE.flexibleHeight = 1f;
@@ -254,8 +244,6 @@ namespace Valkur.Gameplay.MapEditor
             Action onBeginAdd,
             Action onDuplicate,
             Action onRequestDelete,
-            Action<string> onRename,
-            Action onToggleEditable,
             Action<Vector2Int> onMove)
         {
             float x = PANEL_GAP + ZONES_W + PANEL_GAP;
@@ -263,26 +251,16 @@ namespace Valkur.Gameplay.MapEditor
                 PanelDock.TopLeft, x, PANEL_TOP_OFFSET,
                 ACTIONS_W, ACTIONS_H, "ACTIONS", out var t, out refs.ActionsPanelDrag);
 
-            // Name input (used by Rename button)
-            BuildSectionLabel(t, "Zone name");
-            var nameHost = CreateUI("NameHost", t);
-            nameHost.AddComponent<LayoutElement>().preferredHeight = 34f;
-            refs.NameInput = MakeTmpInput(nameHost, "zone_name");
-            var localNameInput = refs.NameInput; // local capture for lambda (CS1628: ref params can't be captured)
-
-            BuildSeparator(t);
             BuildSectionLabel(t, "Operations");
 
-            AddActionBtn(t, "Add Zone",        BTN_H, onBeginAdd);
-            AddActionBtn(t, "Duplicate",       BTN_H, onDuplicate);
-            AddActionBtn(t, "Rename",          BTN_H, () => onRename?.Invoke(localNameInput?.text ?? ""));
-            AddActionBtn(t, "Delete",          BTN_H, onRequestDelete, danger: true);
-            AddActionBtn(t, "Toggle Editable", BTN_H, onToggleEditable);
+            AddActionBtn(t, "Add Zone",  BTN_H, onBeginAdd);
+            AddActionBtn(t, "Duplicate", BTN_H, onDuplicate);
+            AddActionBtn(t, "Delete",    BTN_H, onRequestDelete, danger: true);
 
             BuildSeparator(t);
             BuildSectionLabel(t, "Move selected zone");
 
-            // Move arrows — 2×2 grid
+            // Move arrows — left ↑ ↓ right
             var moveRow1 = MakeRow("MoveRow1", t, 32f);
             AddArrowBtn(moveRow1.transform, "\u2190",  () => onMove?.Invoke(Vector2Int.left));
             AddArrowBtn(moveRow1.transform, "\u2191",  () => onMove?.Invoke(Vector2Int.up));
@@ -318,6 +296,86 @@ namespace Valkur.Gameplay.MapEditor
             refs.RestrictToggle.onValueChanged.AddListener(v => onRestrictChanged?.Invoke(v));
 
             refs.SettingsDropdown.SetActive(false);
+        }
+
+        // ── Properties Panel ─────────────────────────────────────────────────────
+
+        private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs,
+            Action<string> onRename, Action onToggleEditable)
+        {
+            refs.PropsDropdown = MakeDrop("PropertiesPanel", canvasT,
+                PanelDock.TopRight, PANEL_GAP, PANEL_TOP_OFFSET,
+                PROPS_W, PROPS_H, "PROPERTIES", out var t, out refs.PropsPanelDrag);
+
+            // Hint text — shown when no zone is selected
+            var hintGo = CreateUI("PropsHint", t);
+            hintGo.AddComponent<LayoutElement>().preferredHeight = 34f;
+            refs.PropsHintText                    = hintGo.AddComponent<TextMeshProUGUI>();
+            refs.PropsHintText.text               = "Select a zone to\nview its properties.";
+            refs.PropsHintText.fontSize           = 11f;
+            refs.PropsHintText.color              = TEXT_SECONDARY;
+            refs.PropsHintText.alignment          = TextAlignmentOptions.TopLeft;
+            refs.PropsHintText.enableWordWrapping = true;
+
+            BuildSeparator(t);
+
+            // ── Zone name (editable) ──────────────────────────────────────────
+            BuildSectionLabel(t, "Zone name");
+            var nameHost = CreateUI("NameHost", t);
+            nameHost.AddComponent<LayoutElement>().preferredHeight = 34f;
+            refs.NameInput = MakeTmpInput(nameHost, "zone_name");
+            var localNameInput = refs.NameInput; // local capture — CS1628: ref params can't be in lambdas
+
+            refs.PropsRenameBtn = AddActionBtn(t, "Rename", BTN_H,
+                () => onRename?.Invoke(localNameInput?.text ?? ""));
+
+            BuildSeparator(t);
+
+            // ── Read-only info rows ───────────────────────────────────────────
+            refs.PropsOffsetText = BuildPropRow(t, "Offset");
+            refs.PropsDimText    = BuildPropRow(t, "Size");
+
+            BuildSeparator(t);
+
+            // ── Editable state ────────────────────────────────────────────────
+            refs.PropsEditableText      = BuildPropRow(t, "Editable");
+            refs.PropsToggleEditableBtn = AddActionBtn(t, "Toggle Editable", BTN_H, onToggleEditable);
+
+            refs.PropsDropdown.SetActive(false);
+        }
+
+        /// <summary>Creates a two-column label + value row inside a panel VLG.</summary>
+        private static TextMeshProUGUI BuildPropRow(Transform parent, string label)
+        {
+            var row = CreateUI($"PropRow_{label}", parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 22f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing                = 4f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+
+            var lblGo = CreateUI("Lbl", row.transform);
+            lblGo.AddComponent<LayoutElement>().preferredWidth = 66f;
+            var lbl           = lblGo.AddComponent<TextMeshProUGUI>();
+            lbl.text          = $"{label}:";
+            lbl.fontSize      = 10f;
+            lbl.color         = TEXT_SECONDARY;
+            lbl.alignment     = TextAlignmentOptions.MidlineLeft;
+            lbl.raycastTarget = false;
+
+            var valGo = CreateUI("Val", row.transform);
+            valGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var val                  = valGo.AddComponent<TextMeshProUGUI>();
+            val.text                 = "\u2014";  // em-dash placeholder
+            val.fontSize             = 10f;
+            val.color                = TEXT_PRIMARY;
+            val.fontStyle            = FontStyles.Bold;
+            val.alignment            = TextAlignmentOptions.MidlineLeft;
+            val.enableWordWrapping   = false;
+            val.raycastTarget        = false;
+            return val;
         }
 
         // ── AddZone Dialog ───────────────────────────────────────────────────────
@@ -597,7 +655,7 @@ namespace Valkur.Gameplay.MapEditor
             r.sizeDelta = new Vector2(width, height);
         }
 
-        private static void AddActionBtn(Transform parent, string label, float height,
+        private static Button AddActionBtn(Transform parent, string label, float height,
             Action onClick, bool danger = false)
         {
             var go  = CreateUI($"Btn_{label}", parent);
@@ -617,6 +675,7 @@ namespace Valkur.Gameplay.MapEditor
             if (onClick != null) btn.onClick.AddListener(() => onClick.Invoke());
 
             AddCenteredText(go.transform, label, 12f, FontStyles.Bold, TEXT_PRIMARY);
+            return btn;
         }
 
         private static void AddArrowBtn(Transform parent, string arrow, Action onClick)

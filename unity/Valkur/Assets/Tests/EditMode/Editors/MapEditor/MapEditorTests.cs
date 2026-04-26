@@ -333,15 +333,14 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             var ui = CreateInitializedUI();
             ui.SetVisible(true);
-            ui.OnDropdownToggle("zones");   // open zones panel so refs are active
+            ui.OnDropdownToggle("props");   // open Properties panel so refs are active
 
             ui.SetSelectedZone("TestZone", editable: true);
 
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            StringAssert.Contains("TestZone", refs.SelectedZoneText?.text ?? "",
-                "SelectedZoneText must contain the zone name.");
-            StringAssert.Contains("YES", refs.SelectedEditableText?.text ?? "",
-                "SelectedEditableText must reflect editable=true as YES.");
+            // Zone name must be pre-filled in the Properties panel rename input.
+            Assert.AreEqual("TestZone", refs.NameInput?.text ?? "",
+                "NameInput must contain the zone name after SetSelectedZone.");
         }
 
         [Test]
@@ -351,8 +350,9 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             ui.SetSelectedZone(string.Empty, editable: false);
 
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            StringAssert.Contains("(none)", refs.SelectedZoneText?.text ?? "",
-                "SelectedZoneText must show '(none)' for empty zone name.");
+            // For an empty zone name, NameInput must not be changed (stays empty / untouched).
+            Assert.IsFalse((refs.NameInput?.text ?? "").Contains("TestZone"),
+                "NameInput must not contain a stale zone name when zone is cleared.");
         }
 
         // ── MapEditorUI: SetRestrictToggle + SetStatus ─────────────────────────────

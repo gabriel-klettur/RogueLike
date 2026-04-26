@@ -103,7 +103,15 @@ namespace Valkur.Gameplay.MapEditor
         {
             bool editable = false;
             if (_state.HasSelection && zoneManager.TryGetZone(_state.SelectedZone, out var zone))
+            {
                 editable = zone.editableInTileEditor;
+                _ui?.SetPropertiesData(true, zone.zoneName, zone.gridOffset, editable,
+                    zoneManager.ZoneWidthTiles, zoneManager.ZoneHeightTiles);
+            }
+            else
+            {
+                _ui?.SetPropertiesData(false, null, Vector2Int.zero, false, 0, 0);
+            }
 
             _ui?.SetSelectedZone(_state.SelectedZone, editable);
             RecolorZoneOverlays();

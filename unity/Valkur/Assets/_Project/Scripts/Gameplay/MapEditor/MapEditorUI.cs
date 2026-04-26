@@ -64,6 +64,7 @@ namespace Valkur.Gameplay.MapEditor
             SetDropdownVisible("zones",    _refs.ZonesDropdown);
             SetDropdownVisible("actions",  _refs.ActionsDropdown);
             SetDropdownVisible("settings", _refs.SettingsDropdown);
+            SetDropdownVisible("props",    _refs.PropsDropdown);
             UpdateMenuBtnStyles();
         }
 
@@ -81,6 +82,8 @@ namespace Valkur.Gameplay.MapEditor
                 _refs.ActionsMenuBtnImg,  _refs.ActionsMenuBtnTmp,  _openDropdowns.Contains("actions"));
             MapEditorUIBuilder.ApplyMenuBtnStyle(
                 _refs.SettingsMenuBtnImg, _refs.SettingsMenuBtnTmp, _openDropdowns.Contains("settings"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.PropsMenuBtnImg,    _refs.PropsMenuBtnTmp,    _openDropdowns.Contains("props"));
         }
 
         public void Initialize(
@@ -129,6 +132,7 @@ namespace Valkur.Gameplay.MapEditor
                 SetDropdownVisible("zones",    _refs.ZonesDropdown);
                 SetDropdownVisible("actions",  _refs.ActionsDropdown);
                 SetDropdownVisible("settings", _refs.SettingsDropdown);
+                SetDropdownVisible("props",    _refs.PropsDropdown);
                 UpdateMenuBtnStyles();
                 HideAddZoneDialog();
                 HideDeleteZoneDialog();
@@ -186,23 +190,51 @@ namespace Valkur.Gameplay.MapEditor
 
         public void SetSelectedZone(string zoneName, bool editable)
         {
-            if (_refs.SelectedZoneText != null)
-                _refs.SelectedZoneText.text = string.IsNullOrWhiteSpace(zoneName)
-                    ? "Selected: (none)"
-                    : $"Selected: {zoneName}";
-
-            if (_refs.SelectedEditableText != null)
-            {
-                _refs.SelectedEditableText.text = string.IsNullOrWhiteSpace(zoneName)
-                    ? "Editable: n/a"
-                    : $"Editable: {(editable ? "YES" : "NO")}";
-                _refs.SelectedEditableText.color = editable
-                    ? new Color(0.62f, 1f, 0.62f, 1f)
-                    : new Color(1f, 0.62f, 0.62f, 1f);
-            }
-
+            // Pre-fill the rename input in the Properties panel with the selected zone name.
             if (_refs.NameInput != null && !string.IsNullOrWhiteSpace(zoneName))
                 _refs.NameInput.text = zoneName;
+        }
+
+        /// <summary>
+        /// Populates the Properties panel with data for the currently selected zone,
+        /// or clears it to the idle hint state when <paramref name="hasZone"/> is false.
+        /// </summary>
+        public void SetPropertiesData(bool hasZone, string zoneName,
+            UnityEngine.Vector2Int gridOffset, bool editable,
+            int widthTiles, int heightTiles)
+        {
+            if (_refs.PropsHintText != null)
+                _refs.PropsHintText.text = hasZone
+                    ? string.Empty
+                    : "Select a zone to\nview its properties.";
+
+            if (_refs.NameInput != null)
+                _refs.NameInput.text = hasZone ? (zoneName ?? string.Empty) : string.Empty;
+
+            if (_refs.PropsOffsetText != null)
+                _refs.PropsOffsetText.text = hasZone
+                    ? $"[{gridOffset.x}, {gridOffset.y}]"
+                    : "\u2014";
+
+            if (_refs.PropsDimText != null)
+                _refs.PropsDimText.text = hasZone
+                    ? $"{widthTiles}\u00D7{heightTiles} tiles"
+                    : "\u2014";
+
+            if (_refs.PropsEditableText != null)
+            {
+                _refs.PropsEditableText.text = hasZone ? (editable ? "YES" : "NO") : "\u2014";
+                _refs.PropsEditableText.color = hasZone
+                    ? (editable
+                        ? new Color(0.4f, 0.95f, 0.4f, 1f)
+                        : new Color(1f, 0.42f, 0.42f, 1f))
+                    : new Color(0.55f, 0.60f, 0.70f, 0.85f);
+            }
+
+            if (_refs.PropsRenameBtn != null)
+                _refs.PropsRenameBtn.interactable = hasZone;
+            if (_refs.PropsToggleEditableBtn != null)
+                _refs.PropsToggleEditableBtn.interactable = hasZone;
         }
 
         public void SetRestrictToggle(bool restrict)

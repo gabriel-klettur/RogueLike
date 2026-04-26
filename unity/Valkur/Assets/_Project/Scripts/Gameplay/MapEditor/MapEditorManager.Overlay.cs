@@ -101,14 +101,21 @@ namespace Valkur.Gameplay.MapEditor
             if (_zoneOverlayObjects == null || _zoneOverlayObjects.Count == 0)
                 return;
 
-            float w = ComputeAdaptiveLineWidth();
+            float w            = ComputeAdaptiveLineWidth();
+            float wSelected    = w * 1.6f;
+            string selectedZone = _state?.SelectedZone;
+            bool   hasSelection = _state != null && _state.HasSelection;
 
             for (int i = 0; i < _zoneOverlayObjects.Count; i++)
             {
                 var go = _zoneOverlayObjects[i];
                 if (go == null) continue;
                 var lr = go.GetComponent<LineRenderer>();
-                if (lr != null) lr.widthMultiplier = w;
+                if (lr == null) continue;
+
+                bool isSelected = hasSelection &&
+                                  go.name == "ZoneOverlay_" + selectedZone;
+                lr.widthMultiplier = isSelected ? wSelected : w;
             }
 
             if (_addZonePreviewObject != null)
@@ -188,7 +195,12 @@ namespace Valkur.Gameplay.MapEditor
                         : new Color(1f, 0.36f, 0.36f, 0.82f);
 
                 var lr = zoneGo.GetComponent<LineRenderer>();
-                if (lr != null) { lr.startColor = lineColor; lr.endColor = lineColor; }
+                if (lr != null)
+                {
+                    lr.startColor  = lineColor;
+                    lr.endColor    = lineColor;
+                    lr.sortingOrder = selected ? SortingConfig.Z_UI + 1 : SortingConfig.Z_UI;
+                }
 
                 var text = zoneGo.GetComponentInChildren<TextMeshPro>();
                 if (text != null)
