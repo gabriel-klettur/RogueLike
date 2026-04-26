@@ -3,7 +3,7 @@ using UnityEngine;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Player;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Player
 {
     public class HungerTests
     {

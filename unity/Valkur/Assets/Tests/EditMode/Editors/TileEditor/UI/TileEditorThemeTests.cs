@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.TileEditor;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {
     /// <summary>
     /// Unit tests for <see cref="TileEditorTheme"/>: defaults, mutation, ResetToDefaults

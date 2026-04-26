@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Unit tests for the properties and helpers added to <see cref="BuildingObject"/>

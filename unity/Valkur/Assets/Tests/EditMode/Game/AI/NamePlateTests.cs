@@ -3,7 +3,7 @@ using UnityEngine;
 using TMPro;
 using Valkur.UI;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.AI
 {
     public class NamePlateTests
     {

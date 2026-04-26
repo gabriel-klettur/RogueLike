@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
 {
     /// <summary>
     /// Comprehensive coverage of <see cref="TileBrush"/> — the core painting/erasing/
@@ -15,7 +15,7 @@ namespace Valkur.Tests.EditMode.TileEditor
     /// flood-fill connectivity (4-neighbour), max-cells cap, and erase semantics.
     /// </summary>
     [TestFixture]
-    public class TileBrushTests
+    public class TileBrushExhaustiveTests
     {
         private GameObject _root;
         private Tilemap _tilemap;

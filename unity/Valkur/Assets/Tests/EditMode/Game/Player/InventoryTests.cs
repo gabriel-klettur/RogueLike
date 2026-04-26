@@ -3,7 +3,7 @@ using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Player
 {
     public class InventoryTests
     {

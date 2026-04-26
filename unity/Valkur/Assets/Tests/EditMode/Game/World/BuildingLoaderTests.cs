@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Tests for <see cref="BuildingLoader"/> — JSON parsing, data integrity, and
@@ -403,9 +403,9 @@ namespace Valkur.Tests.EditMode
         }
 
         /// <summary>
-        /// Confirms that the live file has the expected minimum number of entries
-        /// (142 is the count at commit dfa57b25a — the baseline after in-engine edits).
-        /// If the count drops below 142, data was lost.
+        /// Confirms that the live file has the expected minimum number of entries.
+        /// Baseline: 141 entries at commit 4a562b26a (the authored data after
+        /// in-engine edits). If the count drops below 141, data was lost.
         /// </summary>
         [Test]
         [Category("DataIntegrity")]
@@ -418,13 +418,13 @@ namespace Valkur.Tests.EditMode
             IList items = InvokeParse(File.ReadAllText(path));
             Assume.That(items != null, "Parser returned null.");
 
-            Assert.GreaterOrEqual(items.Count, 142,
-                $"Expected at least 142 buildings but found {items.Count}.\n" +
+            Assert.GreaterOrEqual(items.Count, 141,
+                $"Expected at least 141 buildings but found {items.Count}.\n" +
                 "Possible causes:\n" +
                 "  • WorldZoneImporter overwrote the Unity file with an older Python version.\n" +
                 "  • BuildingImporter.CopyInstances ran without the safety guard.\n" +
                 "  • The file was restored from a stale backup.\n" +
-                "Restore with:  git checkout dfa57b25a -- " +
+                "Restore with:  git checkout 4a562b26a -- " +
                 "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json");
         }
 

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay;
 
-namespace Valkur.Tests.PlayMode
+namespace Valkur.Tests.PlayMode.Gameplay
 {
     /// <summary>
     /// PlayMode tests for the Health + Mana combat system.

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.UI.HUD;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Combat
 {
     public class CooldownRingTests
     {

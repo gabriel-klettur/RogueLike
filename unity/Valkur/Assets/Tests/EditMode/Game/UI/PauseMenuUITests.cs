@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.UI.PauseMenu;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.UI
 {
     public class PauseMenuUITests
     {

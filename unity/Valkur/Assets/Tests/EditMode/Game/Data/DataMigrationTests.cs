@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Golden data tests: validate that Python JSON data was correctly

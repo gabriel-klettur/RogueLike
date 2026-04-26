@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Tests for the <c>z_bottom</c> / <c>z_top</c> overrides parsed by

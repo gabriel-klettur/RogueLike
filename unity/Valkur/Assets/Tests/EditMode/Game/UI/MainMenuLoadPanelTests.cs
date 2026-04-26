@@ -3,10 +3,12 @@ using System.Reflection;
 using NUnit.Framework;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
 using Valkur.UI.MainMenu;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.UI
 {
     /// <summary>
     /// Regression tests for the MainMenu load panel.
@@ -81,6 +83,30 @@ namespace Valkur.Tests.EditMode
             return list;
         }
 
+        /// <summary>Creates a single RunGroupInfo containing the named saves.</summary>
+        private static RunGroupInfo MakeRun(params string[] names)
+        {
+            var run = new RunGroupInfo
+            {
+                runId           = "run-test",
+                displayName     = "Test Run",
+                playerClass     = "elven",
+                maxLevel        = 1,
+                latestTimestamp = "2026-01-01T00:00:00"
+            };
+            run.saves.AddRange(MakeSaves(names));
+            return run;
+        }
+
+        /// <summary>Creates a list of N RunGroupInfo objects, each with one save (s0..sN-1).</summary>
+        private static List<RunGroupInfo> MakeRunList(int count)
+        {
+            var list = new List<RunGroupInfo>();
+            for (int i = 0; i < count; i++)
+                list.Add(MakeRun($"s{i}"));
+            return list;
+        }
+
         // ── Target label ("Operará sobre") ────────────────────────────────────
 
         [Test]
@@ -94,9 +120,10 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void TargetLabel_ReflectsSelectedSaveName()
         {
-            var saves = MakeSaves("autosave_0", "autosave_1");
-            SetField("_mmLoadSaves", saves);
-            SetField("_mmLoadSel",   0);
+            var runs = new List<RunGroupInfo> { MakeRun("autosave_0", "autosave_1") };
+            SetField("_mmLoadRuns",    runs);
+            SetField("_mmLoadRunSel",  0);
+            SetField("_mmLoadSaveSel", 0);
             InvokePrivate("UpdateMMLoadVisuals");
 
             var label = GetField<TextMeshProUGUI>("_mmLoadTargetLabel");
@@ -108,16 +135,17 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void TargetLabel_UpdatesWhenSelectionChanges()
         {
-            var saves = MakeSaves("save_a", "save_b", "save_c");
-            SetField("_mmLoadSaves", saves);
+            var runs = new List<RunGroupInfo> { MakeRun("save_a", "save_b", "save_c") };
+            SetField("_mmLoadRuns",    runs);
+            SetField("_mmLoadRunSel",  0);
 
-            SetField("_mmLoadSel", 0);
+            SetField("_mmLoadSaveSel", 0);
             InvokePrivate("UpdateMMLoadVisuals");
             var label = GetField<TextMeshProUGUI>("_mmLoadTargetLabel");
             Assert.IsNotNull(label, "Label must exist");
             string labelAt0 = label.text;
 
-            SetField("_mmLoadSel", 2);
+            SetField("_mmLoadSaveSel", 2);
             InvokePrivate("UpdateMMLoadVisuals");
             string labelAt2 = label.text;
 
@@ -130,8 +158,9 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void TargetLabel_EmptyWhenNoSaves()
         {
-            SetField("_mmLoadSaves", new List<SaveSlotInfo>());
-            SetField("_mmLoadSel",   0);
+            SetField("_mmLoadRuns",    new List<RunGroupInfo>());
+            SetField("_mmLoadRunSel",  0);
+            SetField("_mmLoadSaveSel", 0);
             InvokePrivate("UpdateMMLoadVisuals");
 
             var label = GetField<TextMeshProUGUI>("_mmLoadTargetLabel");
@@ -145,15 +174,15 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void SelectedRow_Pill_IsNotClear()
         {
-            var saves = MakeSaves("autosave_0", "autosave_1");
-            SetField("_mmLoadSaves", saves);
-            SetField("_mmLoadSel",   1);
-            SetField("_mmLoadScroll", 0);
+            var runs = new List<RunGroupInfo> { MakeRun("autosave_0", "autosave_1") };
+            SetField("_mmLoadRuns",    runs);
+            SetField("_mmLoadRunSel",  0);
+            SetField("_mmLoadSaveSel", 1);
             InvokePrivate("UpdateMMLoadVisuals");
 
-            var pills = GetField<Image[]>("_mmLoadPills");
-            Assert.IsNotNull(pills, "_mmLoadPills must exist");
-            Assert.Greater(pills.Length, 1, "Must have at least 2 pill elements");
+            var pills = GetField<Image[]>("_mmSavePills");
+            Assert.IsNotNull(pills, "_mmSavePills must exist");
+            Assert.Greater(pills.Length, 1, "Must have at least 2 save pill elements");
 
             Assert.AreNotEqual(Color.clear, pills[1].color,
                 "The selected row's pill must not be transparent");
@@ -162,15 +191,15 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void UnselectedRow_Pill_IsClear()
         {
-            var saves = MakeSaves("autosave_0", "autosave_1");
-            SetField("_mmLoadSaves", saves);
-            SetField("_mmLoadSel",   1);
-            SetField("_mmLoadScroll", 0);
+            var runs = new List<RunGroupInfo> { MakeRun("autosave_0", "autosave_1") };
+            SetField("_mmLoadRuns",    runs);
+            SetField("_mmLoadRunSel",  0);
+            SetField("_mmLoadSaveSel", 1);
             InvokePrivate("UpdateMMLoadVisuals");
 
-            var pills = GetField<Image[]>("_mmLoadPills");
-            Assert.IsNotNull(pills, "_mmLoadPills must exist");
-            Assert.Greater(pills.Length, 1, "Must have at least 2 pill elements");
+            var pills = GetField<Image[]>("_mmSavePills");
+            Assert.IsNotNull(pills, "_mmSavePills must exist");
+            Assert.Greater(pills.Length, 1, "Must have at least 2 save pill elements");
 
             Assert.AreEqual(Color.clear, pills[0].color,
                 "An unselected row's pill must be transparent");
@@ -179,14 +208,15 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void SelectionIndex_NotResetBy_UpdateMMLoadVisuals()
         {
-            var saves = MakeSaves("a", "b", "c");
-            SetField("_mmLoadSaves", saves);
-            SetField("_mmLoadSel",   2);
+            var runs = new List<RunGroupInfo> { MakeRun("a", "b", "c") };
+            SetField("_mmLoadRuns",    runs);
+            SetField("_mmLoadRunSel",  0);
+            SetField("_mmLoadSaveSel", 2);
             InvokePrivate("UpdateMMLoadVisuals");
 
-            int sel = GetField<int>("_mmLoadSel");
+            int sel = GetField<int>("_mmLoadSaveSel");
             Assert.AreEqual(2, sel,
-                "UpdateMMLoadVisuals must not reset _mmLoadSel to 0");
+                "UpdateMMLoadVisuals must not reset _mmLoadSaveSel to 0");
         }
 
         // ── Empty-row hover guard ─────────────────────────────────────────────
@@ -222,44 +252,44 @@ namespace Valkur.Tests.EditMode
         [Test]
         public void EnsureMMLoadScroll_ScrollsDown_WhenSelectedRowIsBelowWindow()
         {
-            // 10 saves, window height = 8. Select row 9 — scroll must advance.
-            var saves = MakeSaves("s0","s1","s2","s3","s4","s5","s6","s7","s8","s9");
-            SetField("_mmLoadSaves",  saves);
-            SetField("_mmLoadSel",    9);
-            SetField("_mmLoadScroll", 0);
+            // 10 runs, window height = MM_RUN_ROWS (7). Select run 9 — scroll must advance.
+            var runs = MakeRunList(10);
+            SetField("_mmLoadRuns",      runs);
+            SetField("_mmLoadRunSel",    9);
+            SetField("_mmLoadRunScroll", 0);
             InvokePrivate("EnsureMMLoadScroll");
 
-            int scroll = GetField<int>("_mmLoadScroll");
+            int scroll = GetField<int>("_mmLoadRunScroll");
             Assert.GreaterOrEqual(scroll, 2,
-                "Scroll must advance so row 9 is visible in an 8-row window");
+                "Scroll must advance so run 9 is visible in a 7-row window (MM_RUN_ROWS=7)");
         }
 
         [Test]
         public void EnsureMMLoadScroll_ScrollsUp_WhenSelectedRowIsAboveWindow()
         {
-            var saves = MakeSaves("s0","s1","s2","s3","s4","s5","s6","s7","s8","s9");
-            SetField("_mmLoadSaves",  saves);
-            SetField("_mmLoadSel",    1);
-            SetField("_mmLoadScroll", 5);
+            var runs = MakeRunList(10);
+            SetField("_mmLoadRuns",      runs);
+            SetField("_mmLoadRunSel",    1);
+            SetField("_mmLoadRunScroll", 5);
             InvokePrivate("EnsureMMLoadScroll");
 
-            int scroll = GetField<int>("_mmLoadScroll");
+            int scroll = GetField<int>("_mmLoadRunScroll");
             Assert.AreEqual(1, scroll,
-                "Scroll must retreat to 1 so the selected row appears at the top of the window");
+                "Scroll must retreat to 1 so the selected run appears at the top of the window");
         }
 
         [Test]
         public void EnsureMMLoadScroll_NoChange_WhenSelectionIsAlreadyVisible()
         {
-            var saves = MakeSaves("s0","s1","s2","s3","s4","s5","s6","s7","s8","s9");
-            SetField("_mmLoadSaves",  saves);
-            SetField("_mmLoadSel",    3);
-            SetField("_mmLoadScroll", 0);
+            var runs = MakeRunList(10);
+            SetField("_mmLoadRuns",      runs);
+            SetField("_mmLoadRunSel",    3);
+            SetField("_mmLoadRunScroll", 0);
             InvokePrivate("EnsureMMLoadScroll");
 
-            int scroll = GetField<int>("_mmLoadScroll");
+            int scroll = GetField<int>("_mmLoadRunScroll");
             Assert.AreEqual(0, scroll,
-                "Scroll must stay at 0 when selected row 3 is already visible");
+                "Scroll must stay at 0 when selected run 3 is already visible in a 7-row window");
         }
 
         // ── SetLoadMode isolation ─────────────────────────────────────────────

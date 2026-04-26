@@ -9,7 +9,7 @@ using UnityEngine.UI;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
     /// Tests for the drag-from-picker feature in <see cref="BuildingsRuntimeEditor"/>.

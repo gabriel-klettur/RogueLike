@@ -4,7 +4,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.UI.HUD;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     public class MinimapFogOfWarTests
     {

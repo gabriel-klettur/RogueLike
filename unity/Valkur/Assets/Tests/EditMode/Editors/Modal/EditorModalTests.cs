@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.Editors.EditorKit;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Modal
 {
     public class EditorModalTests
     {

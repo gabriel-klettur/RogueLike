@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UI;
 using Valkur.Gameplay.Editors;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.MapEditor
 {
     /// <summary>
     /// Tests for <see cref="EditorUIHelpers.AddVerticalScrollbar"/> — the gold-themed

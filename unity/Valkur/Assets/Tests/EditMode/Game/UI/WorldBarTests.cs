@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.UI
 {
     internal static class WorldBarTestHelper
     {

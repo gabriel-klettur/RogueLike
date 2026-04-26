@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.Combat;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Player
 {
     public class GrayscaleDeathTests
     {

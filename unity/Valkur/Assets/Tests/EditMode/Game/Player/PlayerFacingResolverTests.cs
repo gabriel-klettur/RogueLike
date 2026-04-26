@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Player
 {
     /// <summary>
     /// Regression tests for <see cref="PlayerFacingResolver"/>.

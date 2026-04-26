@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.FSM;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.AI
 {
     public class PatrolWaypointTests
     {

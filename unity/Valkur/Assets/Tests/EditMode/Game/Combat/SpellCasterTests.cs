@@ -6,7 +6,7 @@ using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Spells;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Combat
 {
     public class SpellCasterTests
     {

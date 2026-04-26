@@ -4,7 +4,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     public class SaveMigrationChainTests
     {

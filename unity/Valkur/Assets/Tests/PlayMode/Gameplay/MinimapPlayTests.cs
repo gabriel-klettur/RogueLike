@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.UI.HUD;
 
-namespace Valkur.Tests.PlayMode
+namespace Valkur.Tests.PlayMode.Gameplay
 {
     /// <summary>
     /// PlayMode tests for the Minimap system (MinimapManager + MinimapDot).

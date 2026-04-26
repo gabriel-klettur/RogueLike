@@ -9,7 +9,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
     /// Tests for <see cref="BuildingsRuntimeEditor"/> JSON serialization (Gap 10 – Save).

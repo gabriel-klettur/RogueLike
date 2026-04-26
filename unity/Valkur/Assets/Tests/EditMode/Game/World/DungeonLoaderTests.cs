@@ -4,7 +4,7 @@ using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Comprehensive tests for the dungeon migration pipeline:

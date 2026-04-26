@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Valkur.Gameplay.Editors.EditorKit;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Undo
 {
     public class UndoStackTests
     {

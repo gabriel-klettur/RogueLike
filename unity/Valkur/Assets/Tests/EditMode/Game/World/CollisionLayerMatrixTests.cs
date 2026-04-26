@@ -13,7 +13,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Valkur.Tests.EditMode.World
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Asserts the Physics2D layer collision matrix has not regressed for the

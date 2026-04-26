@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Catalog
 {
     /// <summary>
     /// Tests for the runtime tile catalog + registry pair.

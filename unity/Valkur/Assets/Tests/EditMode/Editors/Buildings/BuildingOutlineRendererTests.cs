@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
     /// Unit tests for <see cref="BuildingOutlineRenderer"/> — the world-space

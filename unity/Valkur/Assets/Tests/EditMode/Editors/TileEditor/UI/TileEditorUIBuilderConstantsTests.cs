@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Gameplay.TileEditor;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {
     /// <summary>
     /// Layout sanity tests for the menu-bar button widths and dropdown panel sizes.

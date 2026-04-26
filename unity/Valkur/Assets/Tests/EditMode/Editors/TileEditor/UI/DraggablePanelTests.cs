@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.TileEditor;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {
     /// <summary>
     /// Tests for <see cref="DraggablePanel"/>: Minimize/Maximize/Close behaviour,

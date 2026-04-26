@@ -4,7 +4,7 @@ using Valkur.Data;
 using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.Inventory;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.AI
 {
     public class VendorNPCTests
     {

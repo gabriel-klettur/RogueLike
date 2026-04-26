@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Lock-down tests for the performance-oriented changes in

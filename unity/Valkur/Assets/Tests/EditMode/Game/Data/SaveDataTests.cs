@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     public class SaveDataTests
     {

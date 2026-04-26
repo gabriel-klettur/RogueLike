@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Brush
 {
     public class TileBrushTests
     {

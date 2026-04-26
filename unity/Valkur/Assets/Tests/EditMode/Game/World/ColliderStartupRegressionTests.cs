@@ -5,7 +5,7 @@ using UnityEngine.Tilemaps;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Regression tests for the collider startup bugs fixed in GameplaySceneSetup:

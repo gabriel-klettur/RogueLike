@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -17,7 +17,7 @@ using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
 using Valkur.UI.HUD;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Bootstrap
 {
     /// <summary>
     /// Validates that Unity F-key bindings match the Python reference (_input_defaults.py).

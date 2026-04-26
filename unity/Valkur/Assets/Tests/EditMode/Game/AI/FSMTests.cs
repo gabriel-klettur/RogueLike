@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Valkur.Gameplay.FSM;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.AI
 {
     public class FSMTests
     {

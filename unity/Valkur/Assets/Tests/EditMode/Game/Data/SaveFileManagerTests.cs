@@ -1,9 +1,11 @@
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Data;
+using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Regression tests for SaveFileManager.

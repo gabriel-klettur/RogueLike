@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Regression tests for the buildings-editor "Show / Hide Colliders" toggle.

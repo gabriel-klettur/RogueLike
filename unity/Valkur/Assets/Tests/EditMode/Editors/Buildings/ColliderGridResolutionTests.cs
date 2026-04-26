@@ -8,7 +8,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
     /// Tests for the logical-grid (N×M topology) design introduced in Phase 5 of the

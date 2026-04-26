@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Core;
 
-namespace Valkur.Tests.PlayMode
+namespace Valkur.Tests.PlayMode.Core
 {
     /// <summary>
     /// PlayMode tests for ObjectPool. Validates get/return lifecycle,

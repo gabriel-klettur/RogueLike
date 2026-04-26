@@ -9,7 +9,7 @@ using TMPro;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Editors.Buildings
 {
     /// <summary>
     /// Tests for the Buildings Editor PERF PROBE system introduced in the Buildings Editor

@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode.World
+namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
     /// Data-integrity smoke tests for every overlay JSON shipped with the game.

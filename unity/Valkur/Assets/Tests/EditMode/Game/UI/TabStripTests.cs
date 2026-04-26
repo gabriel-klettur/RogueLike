@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Gameplay.Editors.EditorKit;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.UI
 {
     public class TabStripTests
     {

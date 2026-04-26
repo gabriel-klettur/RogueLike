@@ -5,7 +5,7 @@ using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Regression guards for the player walk/idle animation bug.

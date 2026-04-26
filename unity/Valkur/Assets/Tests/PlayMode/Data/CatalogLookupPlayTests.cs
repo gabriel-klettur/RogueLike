@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Data;
 
-namespace Valkur.Tests.PlayMode
+namespace Valkur.Tests.PlayMode.Data
 {
     /// <summary>
     /// PlayMode tests for ScriptableObject catalogs.

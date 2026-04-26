@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Valkur.Gameplay.Save;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     public class PendingSaveLoadTests
     {

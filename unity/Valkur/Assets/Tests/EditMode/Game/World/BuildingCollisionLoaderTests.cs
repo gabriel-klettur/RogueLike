@@ -5,7 +5,7 @@ using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.World
 {
     [TestFixture]
     public class BuildingCollisionLoaderTests

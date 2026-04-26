@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Bootstrap
 {
     /// <summary>
     /// Smoke tests to verify project structure and core setup.

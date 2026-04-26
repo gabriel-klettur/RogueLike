@@ -7,7 +7,7 @@ using UnityEngine.Tilemaps;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
-namespace Valkur.Tests.EditMode.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
 {
     /// <summary>
     /// Tests for <see cref="OverlayLoader"/> — the JSON→Tilemap painter shared by

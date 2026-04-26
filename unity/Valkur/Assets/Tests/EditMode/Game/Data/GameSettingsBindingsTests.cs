@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Valkur.Core;
 
-namespace Valkur.Tests.EditMode
+namespace Valkur.Tests.EditMode.Game.Data
 {
     public class GameSettingsBindingsTests
     {
