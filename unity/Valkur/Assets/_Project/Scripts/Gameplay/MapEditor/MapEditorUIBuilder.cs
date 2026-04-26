@@ -13,10 +13,10 @@ namespace Valkur.Gameplay.MapEditor
     /// and Buildings Editor (F10).
     ///
     /// Layout:
-    ///   • 30 px menu bar at top — brand + "Zones v", "Actions v", "Settings v" buttons
-    ///   • Zones panel    (280 px)  ≡ TileEditor "Tiles" panel  — zone list + selection info
-    ///   • Actions panel  (230 px)  ≡ TileEditor "Tools" panel  — CRUD ops + move arrows
-    ///   • Settings panel (240 px)  ≡ TileEditor "Inspector"    — restrict toggle + name input
+    ///   • 30 px menu bar at top — brand + "Zones v", "Actions v", "Props v" buttons
+    ///   • Zones panel    (280 px)  — zone list
+    ///   • Actions panel  (230 px)  — CRUD ops + move arrows
+    ///   • Properties panel (260 px) — zone name / offset / size / editable + restrict toggle
     ///   • AddZone dialog  (modal overlay)
     ///   • DeleteZone dialog (modal overlay)
     /// </summary>
@@ -30,22 +30,17 @@ namespace Valkur.Gameplay.MapEditor
             public GameObject      MenuBar;
             public Image           ZonesMenuBtnImg;    public TextMeshProUGUI ZonesMenuBtnTmp;
             public Image           ActionsMenuBtnImg;  public TextMeshProUGUI ActionsMenuBtnTmp;
-            public Image           SettingsMenuBtnImg; public TextMeshProUGUI SettingsMenuBtnTmp;
             public TextMeshProUGUI StatusBarText;
 
             // Floating panel roots + drag handles
             public GameObject    ZonesDropdown;    public DraggablePanel ZonesPanelDrag;
             public GameObject    ActionsDropdown;  public DraggablePanel ActionsPanelDrag;
-            public GameObject    SettingsDropdown; public DraggablePanel SettingsPanelDrag;
 
             // Zones panel
             public ScrollRect      ZonesScrollRect;
             public RectTransform   ZonesListContent;
 
             // Actions panel (no longer holds NameInput — moved to Properties)
-
-            // Settings panel
-            public Toggle          RestrictToggle;
 
             // AddZone dialog
             public GameObject      AddZoneDialog;
@@ -63,36 +58,31 @@ namespace Valkur.Gameplay.MapEditor
             public Image           PropsMenuBtnImg;  public TextMeshProUGUI PropsMenuBtnTmp;
             public GameObject      PropsDropdown;    public DraggablePanel  PropsPanelDrag;
             public TextMeshProUGUI PropsHintText;
-            public TMP_InputField  NameInput;         // zone-name input (Rename)
-            public Button          PropsRenameBtn;
+            public TMP_InputField  NameInput;         // zone-name input (live rename on EndEdit)
             public TextMeshProUGUI PropsOffsetText;
             public TextMeshProUGUI PropsDimText;
-            public TextMeshProUGUI PropsEditableText;
-            public Button          PropsToggleEditableBtn;
+            public TextMeshProUGUI PropsEditableText; // clickable row (toggle on click)
+            public Toggle          RestrictToggle;    // restrict tile editor to editable zones
         }
 
         // ── Panel sizes (mirror Buildings Editor constants) ──────────────────────
 
         private const float ZONES_W    = 280f;
-        private const float ZONES_H    = 420f + PANEL_HDR_H;   // 444 px (removed selection header)
+        private const float ZONES_H    = 420f + PANEL_HDR_H;   // 444 px
 
         private const float ACTIONS_W  = 230f;
-        private const float ACTIONS_H  = 175f + PANEL_HDR_H;   // 199 px (Rename+ToggleEditable moved to Props)
-
-        private const float SETTINGS_W = 240f;
-        private const float SETTINGS_H = 110f + PANEL_HDR_H;   // 134 px
+        private const float ACTIONS_H  = 175f + PANEL_HDR_H;   // 199 px
 
         private const float BTN_H      = 32f;                   // action button height
 
         private const float PROPS_W        = 260f;
-        private const float PROPS_H        = 255f + PANEL_HDR_H;   // ~279 px (now includes name input + buttons)
+        private const float PROPS_H        = 237f + PANEL_HDR_H;   // +46 px for restrict toggle section
 
         // ── Menu button widths ───────────────────────────────────────────────────
 
         private const float BRAND_BTN_W    = 126f;
         private const float ZONES_BTN_W    = 74f;
         private const float ACTIONS_BTN_W  = 82f;
-        private const float SETTINGS_BTN_W = 86f;
         private const float PROPS_BTN_W    = 68f;
 
         // ── BuildAll ─────────────────────────────────────────────────────────────
@@ -120,8 +110,8 @@ namespace Valkur.Gameplay.MapEditor
             BuildActionsPanel(canvasT, ref refs,
                 onBeginAddZoneFlow, onDuplicateSelectedZone,
                 onRequestDeleteSelectedZone, onMoveSelectedZone);
-            BuildSettingsPanel(canvasT, ref refs, onRestrictEditChanged);
-            BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone, onToggleSelectedZoneEditable);
+            BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone,
+                onToggleSelectedZoneEditable, onRestrictEditChanged);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
             BuildDeleteZoneDialog(canvasT, ref refs, onConfirmDeleteSelectedZone, onCancelDeleteZone);
             return refs;
@@ -197,8 +187,6 @@ namespace Valkur.Gameplay.MapEditor
                 () => onToggle?.Invoke("zones"),    out refs.ZonesMenuBtnTmp);
             refs.ActionsMenuBtnImg  = AddMenuBtn(t, "Actions v",  ACTIONS_BTN_W,
                 () => onToggle?.Invoke("actions"),  out refs.ActionsMenuBtnTmp);
-            refs.SettingsMenuBtnImg = AddMenuBtn(t, "Settings v", SETTINGS_BTN_W,
-                () => onToggle?.Invoke("settings"), out refs.SettingsMenuBtnTmp);
             refs.PropsMenuBtnImg    = AddMenuBtn(t, "Props v",    PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),    out refs.PropsMenuBtnTmp);
 
@@ -270,38 +258,10 @@ namespace Valkur.Gameplay.MapEditor
             refs.ActionsDropdown.SetActive(false);
         }
 
-        // ── Settings Panel ───────────────────────────────────────────────────────
-
-        private static void BuildSettingsPanel(Transform canvasT, ref UIRefs refs,
-            Action<bool> onRestrictChanged)
-        {
-            float x = PANEL_GAP + ZONES_W + PANEL_GAP + ACTIONS_W + PANEL_GAP;
-            refs.SettingsDropdown = MakeDrop("SettingsPanel", canvasT,
-                PanelDock.TopLeft, x, PANEL_TOP_OFFSET,
-                SETTINGS_W, SETTINGS_H, "SETTINGS", out var t, out refs.SettingsPanelDrag);
-
-            BuildSectionLabel(t, "Tile editor constraint");
-
-            var toggleRow = MakeRow("RestrictRow", t, 28f);
-            var restrictLabel            = CreateUI("RestrictLabel", toggleRow.transform);
-            restrictLabel.AddComponent<LayoutElement>().flexibleWidth = 1f;
-            var rlTmp                    = restrictLabel.AddComponent<TextMeshProUGUI>();
-            rlTmp.text                   = "Restrict editing to editable zones";
-            rlTmp.fontSize               = 11f;
-            rlTmp.color                  = TEXT_PRIMARY;
-            rlTmp.alignment              = TextAlignmentOptions.MidlineLeft;
-            rlTmp.enableWordWrapping     = true;
-
-            refs.RestrictToggle = MakeToggle(toggleRow.transform);
-            refs.RestrictToggle.onValueChanged.AddListener(v => onRestrictChanged?.Invoke(v));
-
-            refs.SettingsDropdown.SetActive(false);
-        }
-
         // ── Properties Panel ─────────────────────────────────────────────────────
 
         private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs,
-            Action<string> onRename, Action onToggleEditable)
+            Action<string> onRename, Action onToggleEditable, Action<bool> onRestrictChanged)
         {
             refs.PropsDropdown = MakeDrop("PropertiesPanel", canvasT,
                 PanelDock.TopRight, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -319,15 +279,13 @@ namespace Valkur.Gameplay.MapEditor
 
             BuildSeparator(t);
 
-            // ── Zone name (editable) ──────────────────────────────────────────
+            // ── Zone name (live rename on EndEdit) ───────────────────────────
             BuildSectionLabel(t, "Zone name");
             var nameHost = CreateUI("NameHost", t);
             nameHost.AddComponent<LayoutElement>().preferredHeight = 34f;
             refs.NameInput = MakeTmpInput(nameHost, "zone_name");
-            var localNameInput = refs.NameInput; // local capture — CS1628: ref params can't be in lambdas
-
-            refs.PropsRenameBtn = AddActionBtn(t, "Rename", BTN_H,
-                () => onRename?.Invoke(localNameInput?.text ?? ""));
+            // Rename fires automatically when the user presses Enter or leaves the field.
+            refs.NameInput.onEndEdit.AddListener(name => onRename?.Invoke(name));
 
             BuildSeparator(t);
 
@@ -337,9 +295,40 @@ namespace Valkur.Gameplay.MapEditor
 
             BuildSeparator(t);
 
-            // ── Editable state ────────────────────────────────────────────────
-            refs.PropsEditableText      = BuildPropRow(t, "Editable");
-            refs.PropsToggleEditableBtn = AddActionBtn(t, "Toggle Editable", BTN_H, onToggleEditable);
+            // ── Editable state (click anywhere on row to toggle) ──────────────
+            refs.PropsEditableText = BuildPropRow(t, "Editable");
+            // Add a transparent button over the whole row so clicking it anywhere toggles editable.
+            var editRow = refs.PropsEditableText.transform.parent.gameObject;
+            var editImg = editRow.AddComponent<Image>();
+            editImg.color = Color.clear;
+            var editBtn = editRow.AddComponent<Button>();
+            var ec = editBtn.colors;
+            ec.normalColor      = Color.clear;
+            ec.highlightedColor = new Color(1f, 1f, 1f, 0.07f);
+            ec.pressedColor     = new Color(1f, 1f, 1f, 0.15f);
+            ec.selectedColor    = Color.clear;
+            ec.colorMultiplier  = 1f;
+            editBtn.colors      = ec;
+            editBtn.targetGraphic = editImg;
+            editBtn.onClick.AddListener(() => onToggleEditable?.Invoke());
+            // Make label & value TMP non-raycast so clicks pass through to the button.
+            refs.PropsEditableText.raycastTarget = true;  // already false in BuildPropRow; button covers row
+
+            BuildSeparator(t);
+
+            // ── Tile editor constraint (was Settings panel) ────────────────────
+            BuildSectionLabel(t, "Tile editor constraint");
+            var toggleRow = MakeRow("RestrictRow", t, 28f);
+            var restrictLabel            = CreateUI("RestrictLabel", toggleRow.transform);
+            restrictLabel.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var rlTmp                    = restrictLabel.AddComponent<TextMeshProUGUI>();
+            rlTmp.text                   = "Restrict editing to editable zones";
+            rlTmp.fontSize               = 10f;
+            rlTmp.color                  = TEXT_SECONDARY;
+            rlTmp.alignment              = TextAlignmentOptions.MidlineLeft;
+            rlTmp.enableWordWrapping     = true;
+            refs.RestrictToggle = MakeToggle(toggleRow.transform);
+            refs.RestrictToggle.onValueChanged.AddListener(v => onRestrictChanged?.Invoke(v));
 
             refs.PropsDropdown.SetActive(false);
         }

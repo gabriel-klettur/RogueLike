@@ -95,16 +95,19 @@ namespace Valkur.Gameplay.MapEditor
         /// Per-frame applier that keeps zone-border line widths visually constant
         /// in screen pixels regardless of camera zoom — fixes "borders disappear
         /// when zoomed out" bug.
+        /// Also re-applies inset positions so each border's outer edge stays exactly
+        /// on the zone boundary at all zoom levels (prevents adjacent borders overlapping).
         /// </summary>
         private void UpdateOverlayLineWidths()
         {
             if (_zoneOverlayObjects == null || _zoneOverlayObjects.Count == 0)
                 return;
 
-            float w            = ComputeAdaptiveLineWidth();
-            float wSelected    = w * 1.6f;
+            float w             = ComputeAdaptiveLineWidth();
+            float wSelected     = w * 1.6f;
             string selectedZone = _state?.SelectedZone;
             bool   hasSelection = _state != null && _state.HasSelection;
+            float tileSize      = zoneManager != null ? Mathf.Max(0.01f, zoneManager.TileSize) : 1f;
 
             for (int i = 0; i < _zoneOverlayObjects.Count; i++)
             {
@@ -113,9 +116,20 @@ namespace Valkur.Gameplay.MapEditor
                 var lr = go.GetComponent<LineRenderer>();
                 if (lr == null) continue;
 
-                bool isSelected = hasSelection &&
-                                  go.name == "ZoneOverlay_" + selectedZone;
-                lr.widthMultiplier = isSelected ? wSelected : w;
+                bool isSelected = hasSelection && go.name == "ZoneOverlay_" + selectedZone;
+                float thisW = isSelected ? wSelected : w;
+                lr.widthMultiplier = thisW;
+
+                // Re-apply inset so each border's outer edge is flush with the zone boundary.
+                // Inset = half the line width so the line sits fully inside the zone.
+                string zoneName = go.name.Replace("ZoneOverlay_", string.Empty);
+                if (zoneManager != null && zoneManager.TryGetZone(zoneName, out var zone))
+                {
+                    var r = zoneManager.GetZoneRect(zone);
+                    var worldRect = new Rect(r.xMin * tileSize, r.yMin * tileSize,
+                                            r.width * tileSize, r.height * tileSize);
+                    ApplyZoneBorderPositions(lr, worldRect, thisW * 0.5f);
+                }
             }
 
             if (_addZonePreviewObject != null)
@@ -123,6 +137,24 @@ namespace Valkur.Gameplay.MapEditor
                 var prev = _addZonePreviewObject.GetComponent<LineRenderer>();
                 if (prev != null) prev.widthMultiplier = w * 1.15f;
             }
+        }
+
+        /// <summary>
+        /// Sets the 5 positions of a zone-border LineRenderer so that the line is
+        /// inset by <paramref name="inset"/> world units from every edge of <paramref name="worldRect"/>.
+        /// Passing inset = lineWidth/2 places the outer edge of the line exactly on the
+        /// zone boundary, preventing adjacent zones' borders from visually overlapping.
+        /// </summary>
+        private static void ApplyZoneBorderPositions(LineRenderer lr, Rect worldRect, float inset)
+        {
+            float minX = worldRect.xMin + inset, maxX = worldRect.xMax - inset;
+            float minY = worldRect.yMin + inset, maxY = worldRect.yMax - inset;
+            const float z = -0.02f;
+            lr.SetPosition(0, new Vector3(minX, minY, z));
+            lr.SetPosition(1, new Vector3(maxX, minY, z));
+            lr.SetPosition(2, new Vector3(maxX, maxY, z));
+            lr.SetPosition(3, new Vector3(minX, maxY, z));
+            lr.SetPosition(4, new Vector3(minX, minY, z));
         }
 
         private void RebuildZoneOverlays()
@@ -156,10 +188,12 @@ namespace Valkur.Gameplay.MapEditor
 
                 float minX = zoneRect.xMin * tileSize, maxX = zoneRect.xMax * tileSize;
                 float minY = zoneRect.yMin * tileSize, maxY = zoneRect.yMax * tileSize;
-                float z    = -0.02f;
-                line.SetPosition(0, new Vector3(minX, minY, z)); line.SetPosition(1, new Vector3(maxX, minY, z));
-                line.SetPosition(2, new Vector3(maxX, maxY, z)); line.SetPosition(3, new Vector3(minX, maxY, z));
-                line.SetPosition(4, new Vector3(minX, minY, z));
+                const float z = -0.02f;
+                // Initial inset = overlayLineWidth/2 so the border sits inside the zone boundary.
+                // UpdateOverlayLineWidths() will keep the inset in sync with adaptive line width.
+                ApplyZoneBorderPositions(line,
+                    new Rect(minX, minY, maxX - minX, maxY - minY),
+                    overlayLineWidth * 0.5f);
 
                 var labelGo = new GameObject("Label");
                 labelGo.transform.SetParent(zoneGo.transform, false);
@@ -191,8 +225,8 @@ namespace Valkur.Gameplay.MapEditor
                 Color lineColor = selected
                     ? new Color(1f, 0.82f, 0.3f, 0.95f)
                     : zone.editableInTileEditor
-                        ? new Color(0.4f, 0.96f, 0.4f, 0.82f)
-                        : new Color(1f, 0.36f, 0.36f, 0.82f);
+                        ? new Color(0.4f, 0.96f, 0.4f, 0.85f)
+                        : new Color(1f, 0.04f, 0.04f, 1f);   // vivid red for locked zones
 
                 var lr = zoneGo.GetComponent<LineRenderer>();
                 if (lr != null)

@@ -362,7 +362,7 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             var ui = CreateInitializedUI();
             ui.SetVisible(true);
-            ui.OnDropdownToggle("settings");
+            ui.OnDropdownToggle("props");
 
             ui.SetRestrictToggle(true);
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");

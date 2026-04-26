@@ -63,7 +63,6 @@ namespace Valkur.Gameplay.MapEditor
 
             SetDropdownVisible("zones",    _refs.ZonesDropdown);
             SetDropdownVisible("actions",  _refs.ActionsDropdown);
-            SetDropdownVisible("settings", _refs.SettingsDropdown);
             SetDropdownVisible("props",    _refs.PropsDropdown);
             UpdateMenuBtnStyles();
         }
@@ -80,8 +79,6 @@ namespace Valkur.Gameplay.MapEditor
                 _refs.ZonesMenuBtnImg,    _refs.ZonesMenuBtnTmp,    _openDropdowns.Contains("zones"));
             MapEditorUIBuilder.ApplyMenuBtnStyle(
                 _refs.ActionsMenuBtnImg,  _refs.ActionsMenuBtnTmp,  _openDropdowns.Contains("actions"));
-            MapEditorUIBuilder.ApplyMenuBtnStyle(
-                _refs.SettingsMenuBtnImg, _refs.SettingsMenuBtnTmp, _openDropdowns.Contains("settings"));
             MapEditorUIBuilder.ApplyMenuBtnStyle(
                 _refs.PropsMenuBtnImg,    _refs.PropsMenuBtnTmp,    _openDropdowns.Contains("props"));
         }
@@ -131,7 +128,6 @@ namespace Valkur.Gameplay.MapEditor
                 _openDropdowns.Clear();
                 SetDropdownVisible("zones",    _refs.ZonesDropdown);
                 SetDropdownVisible("actions",  _refs.ActionsDropdown);
-                SetDropdownVisible("settings", _refs.SettingsDropdown);
                 SetDropdownVisible("props",    _refs.PropsDropdown);
                 UpdateMenuBtnStyles();
                 HideAddZoneDialog();
@@ -231,10 +227,9 @@ namespace Valkur.Gameplay.MapEditor
                     : new Color(0.55f, 0.60f, 0.70f, 0.85f);
             }
 
-            if (_refs.PropsRenameBtn != null)
-                _refs.PropsRenameBtn.interactable = hasZone;
-            if (_refs.PropsToggleEditableBtn != null)
-                _refs.PropsToggleEditableBtn.interactable = hasZone;
+            // Enable/disable interactive controls based on whether a zone is selected.
+            if (_refs.NameInput != null)
+                _refs.NameInput.interactable = hasZone;
         }
 
         public void SetRestrictToggle(bool restrict)

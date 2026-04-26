@@ -13,7 +13,11 @@ namespace Valkur.Gameplay.MapEditor
         private void RenameSelectedZone(string newName)
         {
             if (!_state.HasSelection) { _ui?.SetStatus("Select a zone before renaming."); return; }
-            RenameZoneByName(_state.SelectedZone, newName);
+            // Guard: skip rename if the name hasn't actually changed (e.g. onEndEdit fired on focus-loss
+            // without editing, or when SetPropertiesData pre-populated the field on zone selection).
+            string trimmed = (newName ?? string.Empty).Trim();
+            if (string.Equals(trimmed, _state.SelectedZone, System.StringComparison.Ordinal)) return;
+            RenameZoneByName(_state.SelectedZone, trimmed);
         }
 
         private void RenameZoneByName(string oldName, string newName)
