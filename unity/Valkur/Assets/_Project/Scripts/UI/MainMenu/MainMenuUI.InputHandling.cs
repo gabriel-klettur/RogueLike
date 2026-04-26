@@ -85,15 +85,17 @@ namespace Valkur.UI.MainMenu
         private void OpenClassSelector()
         {
             if (_classSelectionPanel == null) return;
-            _showingClassSelector = true;
-            _classSelectionPanel.SetActive(true);
+            // Route through ShowMenuScreen so the main-menu panel and any other
+            // sub-screen are hidden, and the class-selector is promoted to the
+            // last sibling (drawn on top regardless of canvas creation order).
+            ShowMenuScreen(MenuScreen.ClassSelector);
             SetSelectedClassIndex(FindSelectedClassIndex());
         }
 
         private void CloseClassSelector()
         {
-            _showingClassSelector = false;
-            if (_classSelectionPanel != null) _classSelectionPanel.SetActive(false);
+            // Restore the main menu via the single-source-of-truth screen switch.
+            ShowMenuScreen(MenuScreen.Main);
         }
 
         private void HandleClassSelectorInput()

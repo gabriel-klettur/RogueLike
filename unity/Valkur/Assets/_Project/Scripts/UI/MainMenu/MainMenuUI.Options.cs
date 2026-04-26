@@ -15,7 +15,7 @@ namespace Valkur.UI.MainMenu
     public partial class MainMenuUI
     {
         // ── Screen state ─────────────────────────────────────────────────────
-        private enum MenuScreen { Main, Options, Sounds, Inputs, LoadGame }
+        private enum MenuScreen { Main, Options, Sounds, Inputs, LoadGame, ClassSelector }
         private MenuScreen _menuScreen = MenuScreen.Main;
 
         // ── Options overlay & panels ─────────────────────────────────────────
@@ -53,16 +53,46 @@ namespace Valkur.UI.MainMenu
         // Screen management
         // ════════════════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Single source of truth for which menu screen is visible.
+        ///
+        /// Every screen has its own root container (<c>_menuPanelGo</c> for
+        /// Main, <c>_optOverlay</c> for Options/Sounds/Inputs, <c>_mmLoadOverlay</c>
+        /// for LoadGame). Exactly one root is kept active at a time so panels
+        /// can never overlap and intercept each other's mouse events.
+        ///
+        /// Calling this method also bumps the active overlay to the last sibling
+        /// so it's drawn (and raycast) on top of any always-on layers (footer,
+        /// title, etc.) regardless of when those siblings were created.
+        /// </summary>
         private void ShowMenuScreen(MenuScreen screen)
         {
             _menuScreen = screen;
-            bool showOpt = screen == MenuScreen.Options || screen == MenuScreen.Sounds || screen == MenuScreen.Inputs;
-            bool showLoad = screen == MenuScreen.LoadGame;
-            if (_optOverlay != null) _optOverlay.SetActive(showOpt);
-            if (_optPanel != null) _optPanel.SetActive(screen == MenuScreen.Options);
-            if (_optSoundsPanel != null) _optSoundsPanel.SetActive(screen == MenuScreen.Sounds);
-            if (_optInputsPanel != null) _optInputsPanel.SetActive(screen == MenuScreen.Inputs);
-            if (_mmLoadOverlay != null) _mmLoadOverlay.SetActive(showLoad);
+            bool showMain  = screen == MenuScreen.Main;
+            bool showOpt   = screen == MenuScreen.Options || screen == MenuScreen.Sounds || screen == MenuScreen.Inputs;
+            bool showLoad  = screen == MenuScreen.LoadGame;
+            bool showClass = screen == MenuScreen.ClassSelector;
+
+            // Sync legacy input-routing flag with screen state so Update()
+            // dispatches keyboard/gamepad input to the correct handler.
+            _showingClassSelector = showClass;
+
+            // Main menu panel is hidden whenever a sub-screen is open.
+            if (_menuPanelGo        != null) _menuPanelGo.SetActive(showMain);
+            if (_optOverlay         != null) _optOverlay.SetActive(showOpt);
+            if (_optPanel           != null) _optPanel.SetActive(screen == MenuScreen.Options);
+            if (_optSoundsPanel     != null) _optSoundsPanel.SetActive(screen == MenuScreen.Sounds);
+            if (_optInputsPanel     != null) _optInputsPanel.SetActive(screen == MenuScreen.Inputs);
+            if (_mmLoadOverlay      != null) _mmLoadOverlay.SetActive(showLoad);
+            if (_classSelectionPanel != null) _classSelectionPanel.SetActive(showClass);
+
+            // Defensive z-order: the active root is moved to the last sibling so
+            // it's always drawn on top of anything created after BuildUI() (e.g.
+            // a rebuilt _menuPanelGo after a save was deleted).
+            if      (showClass && _classSelectionPanel != null) _classSelectionPanel.transform.SetAsLastSibling();
+            else if (showLoad  && _mmLoadOverlay       != null) _mmLoadOverlay.transform.SetAsLastSibling();
+            else if (showOpt   && _optOverlay          != null) _optOverlay.transform.SetAsLastSibling();
+            else if (showMain  && _menuPanelGo         != null) _menuPanelGo.transform.SetAsLastSibling();
 
             if (screen == MenuScreen.Options)
             { _optMenuSel = 0; UpdateOptListVisuals(); }
@@ -82,9 +112,11 @@ namespace Valkur.UI.MainMenu
                 case MenuScreen.Sounds:   ShowMenuScreen(MenuScreen.Options); break;
                 case MenuScreen.Inputs:   ShowMenuScreen(MenuScreen.Options); break;
                 case MenuScreen.LoadGame:
-                    ShowMenuScreen(MenuScreen.Main);
-                    // Saves may have been deleted while in the load panel; refresh main menu
+                    // Saves may have been deleted while in the load panel.
+                    // Rebuild first (so _menuPanelGo is fresh) then switch screens —
+                    // ShowMenuScreen will activate the rebuilt panel and put it on top.
                     RebuildMenuPanel();
+                    ShowMenuScreen(MenuScreen.Main);
                     break;
                 default: break;
             }

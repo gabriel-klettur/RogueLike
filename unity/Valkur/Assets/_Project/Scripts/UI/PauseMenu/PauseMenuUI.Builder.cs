@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -27,7 +28,9 @@ namespace Valkur.UI.PauseMenu
 
             // Options, Sounds, Inputs panels
             _optionsPanel = BuildListPanel(_overlayRoot.transform, "Opciones",
-                _optOptions, out _optPills, out _optBars, out _optTexts);
+                _optOptions, out _optPills, out _optBars, out _optTexts,
+                onHover:   i => { _optSel = i; UpdateListVisuals(_optSel, _optPills, _optBars, _optTexts); },
+                onExecute: ExecuteOption);
             _soundsPanel = BuildSoundsPanel(_overlayRoot.transform);
             _inputsPanel = BuildInputsPanel(_overlayRoot.transform);
             _loadGamePanel = BuildLoadGamePanel(_overlayRoot.transform);
@@ -54,11 +57,11 @@ namespace Valkur.UI.PauseMenu
             const float barW   = 4f;
             const float panelW = 380f;
 
-            // Remove old rows
+            // Remove old rows (including mouse hit zones)
             foreach (Transform child in _pausePanel.transform)
             {
                 var n = child.name;
-                if (n.StartsWith("Pill_") || n.StartsWith("Bar_") || n.StartsWith("Text_"))
+                if (n.StartsWith("Pill_") || n.StartsWith("Bar_") || n.StartsWith("Text_") || n.StartsWith("Hit_"))
                     Destroy(child.gameObject);
             }
 
@@ -99,13 +102,30 @@ namespace Valkur.UI.PauseMenu
                 tmp.text = _pauseOptions[i]; tmp.fontSize = 22f;
                 tmp.alignment = TextAlignmentOptions.Left; tmp.color = TextNormal;
                 _pauseTexts[i] = tmp;
+
+                // Mouse hit zone — hover highlights, click executes
+                int cap = i;
+                var hGo = CreateUIObject($"Hit_{i}", _pausePanel.transform);
+                var hR  = hGo.GetComponent<RectTransform>();
+                hR.anchorMin = new Vector2(0f, 1f); hR.anchorMax = new Vector2(1f, 1f);
+                hR.pivot = new Vector2(0.5f, 0.5f);
+                hR.anchoredPosition = new Vector2(0f, cy);
+                hR.sizeDelta = new Vector2(0f, rowH - 4f);
+                var hImg = hGo.AddComponent<Image>(); hImg.color = Color.clear;
+                var hBtn = hGo.AddComponent<Button>(); hBtn.targetGraphic = hImg;
+                hBtn.onClick.AddListener(() => ExecutePause(cap));
+                var trig  = hGo.AddComponent<EventTrigger>();
+                var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                enter.callback.AddListener(_ => { _pauseSel = cap; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); });
+                trig.triggers.Add(enter);
             }
         }
 
         // ── Static list panel ────────────────────────────────────────────────
 
         private GameObject BuildListPanel(Transform parent, string title, string[] options,
-            out Image[] pills, out Image[] bars, out TextMeshProUGUI[] texts)
+            out Image[] pills, out Image[] bars, out TextMeshProUGUI[] texts,
+            System.Action<int> onHover = null, System.Action<int> onExecute = null)
         {
             const float panelW = 380f;
             const float rowH   = 52f;
@@ -157,6 +177,25 @@ namespace Valkur.UI.PauseMenu
                 tmp.text = options[i]; tmp.fontSize = 22f;
                 tmp.alignment = TextAlignmentOptions.Left; tmp.color = TextNormal;
                 texts[i] = tmp;
+
+                // Mouse hit zone — hover highlights, click executes
+                if (onHover != null || onExecute != null)
+                {
+                    int cap = i;
+                    var hitGo  = CreateUIObject($"Hit_{i}", panel.transform);
+                    var hitR   = hitGo.GetComponent<RectTransform>();
+                    hitR.anchorMin = new Vector2(0f, 1f); hitR.anchorMax = new Vector2(1f, 1f);
+                    hitR.pivot = new Vector2(0.5f, 0.5f);
+                    hitR.anchoredPosition = new Vector2(0f, cy);
+                    hitR.sizeDelta = new Vector2(0f, rowH - 4f);
+                    var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
+                    var hitBtn = hitGo.AddComponent<Button>(); hitBtn.targetGraphic = hitImg;
+                    if (onExecute != null) hitBtn.onClick.AddListener(() => onExecute(cap));
+                    var trig  = hitGo.AddComponent<EventTrigger>();
+                    var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                    enter.callback.AddListener(_ => onHover?.Invoke(cap));
+                    trig.triggers.Add(enter);
+                }
             }
 
             return panel;

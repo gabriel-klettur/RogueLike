@@ -202,15 +202,48 @@ namespace Valkur.UI.MainMenu
         /// <summary>
         /// Rebuilds the main menu panel (e.g. after deleting all saves so the
         /// "Continuar" entry must disappear). Safe to call any time after BuildUI().
+        ///
+        /// The new <c>_menuPanelGo</c> is created as a sibling of the canvas
+        /// (always at the end of the sibling list) and is freshly active by
+        /// default. To prevent it from popping up over any open sub-screen
+        /// (LoadGame, Options, ...), its <c>activeSelf</c> is forced to match
+        /// the current <c>_menuScreen</c>: only visible when on the Main screen.
         /// </summary>
         private void RebuildMenuPanel()
         {
             if (_canvasTransform == null) return;
             BuildMenuOptions();
-            if (_menuPanelGo != null) Destroy(_menuPanelGo);
+            if (_menuPanelGo != null)
+            {
+                if (Application.isPlaying) Destroy(_menuPanelGo);
+                else DestroyImmediate(_menuPanelGo);
+            }
             BuildMenuPanel(_canvasTransform);
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _menuOptions.Length - 1));
             UpdateSelection();
+
+            // Honour the current screen so the rebuilt panel doesn't appear on
+            // top of an open sub-screen (e.g. after deleting a save from the
+            // Load Game panel).
+            if (_menuPanelGo != null)
+                _menuPanelGo.SetActive(_menuScreen == MenuScreen.Main);
+
+            // If a sub-screen is open, make sure its overlay stays on top of the
+            // freshly created main-menu sibling.
+            switch (_menuScreen)
+            {
+                case MenuScreen.LoadGame:
+                    if (_mmLoadOverlay != null) _mmLoadOverlay.transform.SetAsLastSibling();
+                    break;
+                case MenuScreen.Options:
+                case MenuScreen.Sounds:
+                case MenuScreen.Inputs:
+                    if (_optOverlay != null) _optOverlay.transform.SetAsLastSibling();
+                    break;
+                case MenuScreen.ClassSelector:
+                    if (_classSelectionPanel != null) _classSelectionPanel.transform.SetAsLastSibling();
+                    break;
+            }
         }
 
 

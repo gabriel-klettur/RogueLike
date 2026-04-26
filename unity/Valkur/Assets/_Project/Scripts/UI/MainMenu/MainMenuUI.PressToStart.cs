@@ -41,6 +41,9 @@ namespace Valkur.UI.MainMenu
             _pressToStartActive = true;
             _blinkTimer = 0f;
             _blinkVisible = true;
+
+            // Hide the menu panel until the player acknowledges the press-to-start screen
+            if (_menuPanelGo != null) _menuPanelGo.SetActive(false);
         }
 
         // ── Update (called before menu input) ────────────────────────────────
@@ -71,6 +74,12 @@ namespace Valkur.UI.MainMenu
                 _pressToStartActive = false;
                 if (_pressToStartOverlay != null)
                     _pressToStartOverlay.SetActive(false);
+                if (_menuPanelGo != null)
+                {
+                    _menuPanelGo.SetActive(true);
+                    UpdateSelection();
+                }
+                return false;
             }
 
             return true; // Still in press-to-start mode

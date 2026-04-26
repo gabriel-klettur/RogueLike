@@ -32,6 +32,15 @@ namespace Valkur.UI.PauseMenu
                     ShowScreen(PauseScreen.Options);
                     break;
                 case "Salir":
+                    // Quicksave before returning to the main menu so the player can
+                    // pick "Continuar" on next launch (otherwise their progress is
+                    // silently lost when they exit through the pause menu).
+                    if (SaveService.Instance != null)
+                    {
+                        try { SaveService.Instance.QuickSave(); }
+                        catch (System.Exception ex)
+                        { Debug.LogError($"[PauseMenu] Quicksave on exit failed: {ex.Message}"); }
+                    }
                     ClosePause();
                     SceneTransitionManager.LoadScene("MainMenu");
                     break;

@@ -15,15 +15,32 @@ namespace Valkur.UI.MainMenu
     {
         // ── Load game state ──────────────────────────────────────────────────
         private GameObject _mmLoadOverlay;
-        private List<SaveSlotInfo> _mmLoadSaves = new List<SaveSlotInfo>();
-        private int _mmLoadSel;
-        private int _mmLoadScroll;
-        private const int MM_LOAD_ROWS = 8;
-        private Image[] _mmLoadPills;
-        private Image[] _mmLoadBars;
-        private TextMeshProUGUI[] _mmLoadTexts;
-        private TextMeshProUGUI _mmLoadDetailText;
-        private TextMeshProUGUI _mmLoadTargetLabel; // "Operará sobre: <save>" hint above action buttons
+
+        // Two-level data: Runs (left column) → Saves of selected run (right column)
+        private List<RunGroupInfo>  _mmLoadRuns      = new List<RunGroupInfo>();
+        private int  _mmLoadRunSel    = 0;   // selected run index
+        private int  _mmLoadRunScroll = 0;   // scroll offset for run list
+        private int  _mmLoadSaveSel   = 0;   // selected save index within the run
+
+        private const int MM_RUN_ROWS  = 7;  // visible run rows in left column
+        private const int MM_SAVE_ROWS = 5;  // visible save rows in right column
+
+        // Run list widgets (left column)
+        private Image[]            _mmRunPills;
+        private Image[]            _mmRunBars;
+        private TextMeshProUGUI[]  _mmRunTexts;
+        private Image[][]          _mmRunHoverBorders;
+        private int                _mmRunHover = -1;
+
+        // Save list widgets (right column, top)
+        private Image[]            _mmSavePills;
+        private Image[]            _mmSaveBars;
+        private TextMeshProUGUI[]  _mmSaveTexts;
+        private Image[][]          _mmSaveHoverBorders;
+        private int                _mmSaveHover = -1;
+
+        private TextMeshProUGUI    _mmLoadDetailText;
+        private TextMeshProUGUI    _mmLoadTargetLabel;
 
         // ── Sub-modes (rename / delete confirm) ──────────────────────────────
         private enum LoadPanelMode { List, Rename, ConfirmDelete }
@@ -41,6 +58,19 @@ namespace Valkur.UI.MainMenu
         private Image[]          _mmConfirmPills;
         private TextMeshProUGUI[] _mmConfirmTexts;
 
+        // ── Helpers ──────────────────────────────────────────────────────────
+
+        /// <summary>Returns true and fills <paramref name="save"/> when a save is selected.</summary>
+        private bool TryGetSelectedSave(out SaveSlotInfo save)
+        {
+            save = default;
+            if (_mmLoadRunSel < 0 || _mmLoadRunSel >= _mmLoadRuns.Count) return false;
+            var run = _mmLoadRuns[_mmLoadRunSel];
+            if (_mmLoadSaveSel < 0 || _mmLoadSaveSel >= run.saves.Count) return false;
+            save = run.saves[_mmLoadSaveSel];
+            return true;
+        }
+
         // ── Build ────────────────────────────────────────────────────────────
 
         private void BuildLoadGameSubmenu(Transform canvas)
@@ -51,6 +81,7 @@ namespace Valkur.UI.MainMenu
 
             const float panelW = 700f;
             const float panelH = 480f;
+            const float splitX = 0.41f; // right edge of left (run) column
 
             var panel = CreateUIObject("LoadPanel", _mmLoadOverlay.transform);
             var pr = panel.GetComponent<RectTransform>();
@@ -79,87 +110,170 @@ namespace Valkur.UI.MainMenu
             hR.anchoredPosition = new Vector2(0f, 8f);
             hR.sizeDelta = new Vector2(0f, 28f);
             var hintTMP = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTMP.text = "W/S Navegar  |  Enter Cargar  |  F2 Renombrar  |  Supr Borrar  |  Esc Volver";
-            hintTMP.fontSize = 14f;
+            hintTMP.text = "W/S Partida  |  A/D Save  |  Enter Cargar  |  F2 Renombrar  |  Supr Borrar  |  Esc Volver";
+            hintTMP.fontSize = 13f;
             hintTMP.alignment = TextAlignmentOptions.Center;
             hintTMP.color = VersionCol;
 
-            // Left: save list
-            const float listW = 0.48f;
-            var listC = CreateUIObject("MMSaveList", panel.transform);
-            var lcR = listC.GetComponent<RectTransform>();
-            lcR.anchorMin = new Vector2(0.02f, 0.08f); lcR.anchorMax = new Vector2(listW, 0.86f);
-            lcR.pivot = new Vector2(0f, 1f); lcR.sizeDelta = Vector2.zero;
-            lcR.anchoredPosition = Vector2.zero;
+            // Column separator
+            var sep = CreateUIObject("ColSep", panel.transform);
+            var sepRt = sep.GetComponent<RectTransform>();
+            sepRt.anchorMin = new Vector2(splitX + 0.005f, 0.10f);
+            sepRt.anchorMax = new Vector2(splitX + 0.005f, 0.90f);
+            sepRt.pivot = new Vector2(0.5f, 0.5f); sepRt.sizeDelta = new Vector2(1f, 0f);
+            sep.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
 
-            _mmLoadPills = new Image[MM_LOAD_ROWS];
-            _mmLoadBars  = new Image[MM_LOAD_ROWS];
-            _mmLoadTexts = new TextMeshProUGUI[MM_LOAD_ROWS];
+            // Column headers
+            BuildMMColHeader("PARTIDAS", panel.transform, 0.01f, splitX);
+            BuildMMColHeader("SAVES",    panel.transform, splitX + 0.02f, 0.98f);
 
-            float rowH = 36f; float gap = 4f;
-            for (int i = 0; i < MM_LOAD_ROWS; i++)
+            // ── LEFT: run list ──────────────────────────────────────────────
+            var runList = CreateUIObject("MMRunList", panel.transform);
+            var rlR = runList.GetComponent<RectTransform>();
+            rlR.anchorMin = new Vector2(0.01f, 0.12f); rlR.anchorMax = new Vector2(splitX, 0.87f);
+            rlR.pivot = new Vector2(0f, 1f); rlR.sizeDelta = Vector2.zero;
+            rlR.anchoredPosition = Vector2.zero;
+
+            _mmRunPills        = new Image[MM_RUN_ROWS];
+            _mmRunBars         = new Image[MM_RUN_ROWS];
+            _mmRunTexts        = new TextMeshProUGUI[MM_RUN_ROWS];
+            _mmRunHoverBorders = new Image[MM_RUN_ROWS][];
+
+            float runRowH = 37f, runGap = 3f;
+            for (int i = 0; i < MM_RUN_ROWS; i++)
             {
-                float cy = -i * (rowH + gap);
+                float cy = -i * (runRowH + runGap);
 
-                var pillGo = CreateUIObject($"MLPill_{i}", listC.transform);
+                var pillGo = CreateUIObject($"RnPill_{i}", runList.transform);
                 var pRt = pillGo.GetComponent<RectTransform>();
                 pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
                 pRt.pivot = new Vector2(0.5f, 1f);
-                pRt.anchoredPosition = new Vector2(0f, cy);
-                pRt.sizeDelta = new Vector2(0f, rowH);
-                _mmLoadPills[i] = pillGo.AddComponent<Image>(); _mmLoadPills[i].color = Color.clear;
+                pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, runRowH);
+                _mmRunPills[i] = pillGo.AddComponent<Image>(); _mmRunPills[i].color = Color.clear;
 
-                var barGo = CreateUIObject($"MLBar_{i}", listC.transform);
+                var barGo = CreateUIObject($"RnBar_{i}", runList.transform);
                 var bRt = barGo.GetComponent<RectTransform>();
                 bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
                 bRt.pivot = new Vector2(0f, 1f);
-                bRt.anchoredPosition = new Vector2(0f, cy);
-                bRt.sizeDelta = new Vector2(4f, rowH);
-                _mmLoadBars[i] = barGo.AddComponent<Image>(); _mmLoadBars[i].color = Color.clear;
+                bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, runRowH);
+                _mmRunBars[i] = barGo.AddComponent<Image>(); _mmRunBars[i].color = Color.clear;
 
-                var txtGo = CreateUIObject($"MLText_{i}", listC.transform);
+                var txtGo = CreateUIObject($"RnTxt_{i}", runList.transform);
                 var txtR = txtGo.GetComponent<RectTransform>();
                 txtR.anchorMin = new Vector2(0f, 1f); txtR.anchorMax = new Vector2(1f, 1f);
                 txtR.pivot = new Vector2(0f, 1f);
-                txtR.anchoredPosition = new Vector2(12f, cy);
-                txtR.sizeDelta = new Vector2(-12f, rowH);
-                var tmp = txtGo.AddComponent<TextMeshProUGUI>();
-                tmp.text = ""; tmp.fontSize = 17f;
-                tmp.alignment = TextAlignmentOptions.Left; tmp.color = TextNormal;
-                tmp.enableWordWrapping = false;
-                _mmLoadTexts[i] = tmp;
+                txtR.anchoredPosition = new Vector2(12f, cy); txtR.sizeDelta = new Vector2(-12f, runRowH);
+                _mmRunTexts[i] = txtGo.AddComponent<TextMeshProUGUI>();
+                _mmRunTexts[i].text = ""; _mmRunTexts[i].fontSize = 15f;
+                _mmRunTexts[i].alignment = TextAlignmentOptions.Left; _mmRunTexts[i].color = TextNormal;
+                _mmRunTexts[i].enableWordWrapping = false;
 
-                // Click + hover
-                var hitGo = CreateUIObject($"MLHit_{i}", listC.transform);
-                var hitRt = hitGo.GetComponent<RectTransform>();
-                hitRt.anchorMin = new Vector2(0f, 1f); hitRt.anchorMax = new Vector2(1f, 1f);
-                hitRt.pivot = new Vector2(0.5f, 1f);
-                hitRt.anchoredPosition = new Vector2(0f, cy);
-                hitRt.sizeDelta = new Vector2(0f, rowH);
-                var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
-                var btn = hitGo.AddComponent<Button>(); btn.targetGraphic = hitImg;
-                int cap = i;
-                btn.onClick.AddListener(() =>
+                var runHitGo = CreateUIObject($"RnHit_{i}", runList.transform);
+                var runHitRt = runHitGo.GetComponent<RectTransform>();
+                runHitRt.anchorMin = new Vector2(0f, 1f); runHitRt.anchorMax = new Vector2(1f, 1f);
+                runHitRt.pivot = new Vector2(0.5f, 1f);
+                runHitRt.anchoredPosition = new Vector2(0f, cy); runHitRt.sizeDelta = new Vector2(0f, runRowH);
+                var runHitImg = runHitGo.AddComponent<Image>(); runHitImg.color = Color.clear;
+                var runBtn = runHitGo.AddComponent<Button>(); runBtn.targetGraphic = runHitImg;
+                int rCap = i;
+                runBtn.onClick.AddListener(() =>
                 {
-                    int idx = _mmLoadScroll + cap;
-                    if (idx < 0 || idx >= _mmLoadSaves.Count) return;
-                    _mmLoadSel = idx; UpdateMMLoadVisuals();
+                    int idx = _mmLoadRunScroll + rCap;
+                    if (idx < 0 || idx >= _mmLoadRuns.Count) return;
+                    _mmLoadRunSel = idx; _mmLoadSaveSel = 0; UpdateMMLoadVisuals();
                 });
-                var trig = hitGo.AddComponent<EventTrigger>();
-                var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                enter.callback.AddListener(_ =>
+                var runTrig = runHitGo.AddComponent<EventTrigger>();
+                var rEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                rEnter.callback.AddListener(_ =>
                 {
-                    int idx = _mmLoadScroll + cap;
-                    if (idx < 0 || idx >= _mmLoadSaves.Count) return;
-                    _mmLoadSel = idx; UpdateMMLoadVisuals();
+                    int di = _mmLoadRunScroll + rCap;
+                    _mmRunHover = (di >= 0 && di < _mmLoadRuns.Count) ? rCap : -1;
+                    UpdateMMLoadHoverBorders();
                 });
-                trig.triggers.Add(enter);
+                runTrig.triggers.Add(rEnter);
+                var rExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+                rExit.callback.AddListener(_ => { _mmRunHover = -1; UpdateMMLoadHoverBorders(); });
+                runTrig.triggers.Add(rExit);
+
+                _mmRunHoverBorders[i] = BuildHoverBorderStrips(runList.transform, cy, runRowH);
             }
 
-            // Right: details
+            // ── RIGHT TOP: save list ────────────────────────────────────────
+            var saveList = CreateUIObject("MMSaveList", panel.transform);
+            var svR = saveList.GetComponent<RectTransform>();
+            svR.anchorMin = new Vector2(splitX + 0.02f, 0.51f); svR.anchorMax = new Vector2(0.98f, 0.87f);
+            svR.pivot = new Vector2(0f, 1f); svR.sizeDelta = Vector2.zero;
+            svR.anchoredPosition = Vector2.zero;
+
+            _mmSavePills        = new Image[MM_SAVE_ROWS];
+            _mmSaveBars         = new Image[MM_SAVE_ROWS];
+            _mmSaveTexts        = new TextMeshProUGUI[MM_SAVE_ROWS];
+            _mmSaveHoverBorders = new Image[MM_SAVE_ROWS][];
+
+            float svRowH = 31f, svGap = 3f;
+            for (int i = 0; i < MM_SAVE_ROWS; i++)
+            {
+                float cy = -i * (svRowH + svGap);
+
+                var pillGo = CreateUIObject($"SvPill_{i}", saveList.transform);
+                var pRt = pillGo.GetComponent<RectTransform>();
+                pRt.anchorMin = new Vector2(0f, 1f); pRt.anchorMax = new Vector2(1f, 1f);
+                pRt.pivot = new Vector2(0.5f, 1f);
+                pRt.anchoredPosition = new Vector2(0f, cy); pRt.sizeDelta = new Vector2(0f, svRowH);
+                _mmSavePills[i] = pillGo.AddComponent<Image>(); _mmSavePills[i].color = Color.clear;
+
+                var barGo = CreateUIObject($"SvBar_{i}", saveList.transform);
+                var bRt = barGo.GetComponent<RectTransform>();
+                bRt.anchorMin = new Vector2(0f, 1f); bRt.anchorMax = new Vector2(0f, 1f);
+                bRt.pivot = new Vector2(0f, 1f);
+                bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, svRowH);
+                _mmSaveBars[i] = barGo.AddComponent<Image>(); _mmSaveBars[i].color = Color.clear;
+
+                var txtGo = CreateUIObject($"SvTxt_{i}", saveList.transform);
+                var txtR = txtGo.GetComponent<RectTransform>();
+                txtR.anchorMin = new Vector2(0f, 1f); txtR.anchorMax = new Vector2(1f, 1f);
+                txtR.pivot = new Vector2(0f, 1f);
+                txtR.anchoredPosition = new Vector2(12f, cy); txtR.sizeDelta = new Vector2(-12f, svRowH);
+                _mmSaveTexts[i] = txtGo.AddComponent<TextMeshProUGUI>();
+                _mmSaveTexts[i].text = ""; _mmSaveTexts[i].fontSize = 14f;
+                _mmSaveTexts[i].alignment = TextAlignmentOptions.Left; _mmSaveTexts[i].color = TextNormal;
+                _mmSaveTexts[i].enableWordWrapping = false;
+
+                var svHitGo = CreateUIObject($"SvHit_{i}", saveList.transform);
+                var svHitRt = svHitGo.GetComponent<RectTransform>();
+                svHitRt.anchorMin = new Vector2(0f, 1f); svHitRt.anchorMax = new Vector2(1f, 1f);
+                svHitRt.pivot = new Vector2(0.5f, 1f);
+                svHitRt.anchoredPosition = new Vector2(0f, cy); svHitRt.sizeDelta = new Vector2(0f, svRowH);
+                var svHitImg = svHitGo.AddComponent<Image>(); svHitImg.color = Color.clear;
+                var svBtn = svHitGo.AddComponent<Button>(); svBtn.targetGraphic = svHitImg;
+                int sCap = i;
+                svBtn.onClick.AddListener(() =>
+                {
+                    if (_mmLoadRunSel < 0 || _mmLoadRunSel >= _mmLoadRuns.Count) return;
+                    if (sCap >= _mmLoadRuns[_mmLoadRunSel].saves.Count) return;
+                    _mmLoadSaveSel = sCap; UpdateMMLoadVisuals();
+                });
+                var svTrig = svHitGo.AddComponent<EventTrigger>();
+                var sEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+                sEnter.callback.AddListener(_ =>
+                {
+                    int saveCount = (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
+                        ? _mmLoadRuns[_mmLoadRunSel].saves.Count : 0;
+                    _mmSaveHover = (sCap < saveCount) ? sCap : -1;
+                    UpdateMMLoadHoverBorders();
+                });
+                svTrig.triggers.Add(sEnter);
+                var sExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+                sExit.callback.AddListener(_ => { _mmSaveHover = -1; UpdateMMLoadHoverBorders(); });
+                svTrig.triggers.Add(sExit);
+
+                _mmSaveHoverBorders[i] = BuildHoverBorderStrips(saveList.transform, cy, svRowH);
+            }
+
+            // ── RIGHT BOTTOM: detail panel ──────────────────────────────────
             var detC = CreateUIObject("MMSaveDetails", panel.transform);
             var dcR = detC.GetComponent<RectTransform>();
-            dcR.anchorMin = new Vector2(listW + 0.02f, 0.08f); dcR.anchorMax = new Vector2(0.98f, 0.86f);
+            dcR.anchorMin = new Vector2(splitX + 0.02f, 0.11f); dcR.anchorMax = new Vector2(0.98f, 0.49f);
             dcR.pivot = new Vector2(0f, 1f); dcR.sizeDelta = Vector2.zero;
             dcR.anchoredPosition = Vector2.zero;
 
@@ -168,42 +282,55 @@ namespace Valkur.UI.MainMenu
             detRt.anchorMin = Vector2.zero; detRt.anchorMax = Vector2.one;
             detRt.sizeDelta = Vector2.zero; detRt.anchoredPosition = Vector2.zero;
             _mmLoadDetailText = detGo.AddComponent<TextMeshProUGUI>();
-            _mmLoadDetailText.fontSize = 16f;
+            _mmLoadDetailText.fontSize = 14f;
             _mmLoadDetailText.alignment = TextAlignmentOptions.TopLeft;
             _mmLoadDetailText.color = TextNormal;
             _mmLoadDetailText.text = "Selecciona una partida.";
 
-            // Target-save indicator (sits just above the action button row so the
-            // user always sees which slot the next click will affect).
+            // Target label (just above action buttons)
             var targetGo = CreateUIObject("MMTargetLabel", panel.transform);
             var targetRt = targetGo.GetComponent<RectTransform>();
-            targetRt.anchorMin = new Vector2(listW + 0.04f, 0f);
-            targetRt.anchorMax = new Vector2(0.98f,         0f);
+            targetRt.anchorMin = new Vector2(splitX + 0.02f, 0f);
+            targetRt.anchorMax = new Vector2(0.98f,          0f);
             targetRt.pivot = new Vector2(0.5f, 0f);
-            targetRt.anchoredPosition = new Vector2(0f, 76f); // just above button row at y=36
+            targetRt.anchoredPosition = new Vector2(0f, 76f);
             targetRt.sizeDelta = new Vector2(0f, 22f);
             _mmLoadTargetLabel = targetGo.AddComponent<TextMeshProUGUI>();
-            _mmLoadTargetLabel.fontSize = 14f;
+            _mmLoadTargetLabel.fontSize = 13f;
             _mmLoadTargetLabel.alignment = TextAlignmentOptions.Center;
             _mmLoadTargetLabel.color = AccentGold;
             _mmLoadTargetLabel.text = "";
             _mmLoadTargetLabel.raycastTarget = false;
 
-            // Action buttons (3 columns: Cargar / Renombrar / Borrar)
-            AddMMLoadButton(panel.transform, "Cargar", new Vector2(listW + 0.04f, 0f),
-                new Vector2(listW + 0.18f, 0f),
+            // Action buttons (bottom of right column)
+            float bL = splitX + 0.02f;
+            float bW = (0.96f - splitX) / 3f;
+            AddMMLoadButton(panel.transform, "Cargar",
+                new Vector2(bL,              0f), new Vector2(bL + bW,          0f),
                 new Color(0.24f, 0.47f, 0.2f, 1f), MMLoadSelectedSave);
-            AddMMLoadButton(panel.transform, "Renombrar", new Vector2(listW + 0.20f, 0f),
-                new Vector2(listW + 0.34f, 0f),
+            AddMMLoadButton(panel.transform, "Renombrar",
+                new Vector2(bL + bW + 0.01f, 0f), new Vector2(bL + bW * 2f + 0.01f, 0f),
                 new Color(0.30f, 0.40f, 0.55f, 1f), BeginRenameSelectedSave);
-            AddMMLoadButton(panel.transform, "Borrar", new Vector2(listW + 0.36f, 0f),
-                new Vector2(listW + 0.50f, 0f),
+            AddMMLoadButton(panel.transform, "Borrar",
+                new Vector2(bL + bW * 2f + 0.02f, 0f), new Vector2(0.97f, 0f),
                 new Color(0.47f, 0.2f, 0.2f, 1f), RequestDeleteSelectedSave);
 
             BuildRenameOverlay(_mmLoadOverlay.transform);
             BuildDeleteConfirmOverlay(_mmLoadOverlay.transform);
 
             _mmLoadOverlay.SetActive(false);
+        }
+
+        private void BuildMMColHeader(string label, Transform parent, float anchorL, float anchorR)
+        {
+            var go = CreateUIObject($"ColHdr_{label}", parent);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(anchorL, 0.88f); rt.anchorMax = new Vector2(anchorR, 0.94f);
+            rt.pivot = new Vector2(0f, 0.5f); rt.sizeDelta = Vector2.zero; rt.anchoredPosition = Vector2.zero;
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.text = label; tmp.fontSize = 12f; tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Left; tmp.color = VersionCol;
+            tmp.raycastTarget = false;
         }
 
         private void AddMMLoadButton(Transform parent, string label,
@@ -274,19 +401,39 @@ namespace Valkur.UI.MainMenu
             if (_cancelAction.WasPerformedThisFrame())
             { OptionsGoBack(); return; }
 
-            if (_mmLoadSaves.Count == 0) return;
+            if (_mmLoadRuns.Count == 0) return;
 
+            // W/S navigate runs (left column)
             if (_navUpAction.WasPerformedThisFrame())
             {
-                _mmLoadSel = Mathf.Max(0, _mmLoadSel - 1);
+                _mmLoadRunSel = Mathf.Max(0, _mmLoadRunSel - 1);
+                _mmLoadSaveSel = 0;
                 EnsureMMLoadScroll();
                 UpdateMMLoadVisuals();
             }
             else if (_navDownAction.WasPerformedThisFrame())
             {
-                _mmLoadSel = Mathf.Min(_mmLoadSaves.Count - 1, _mmLoadSel + 1);
+                _mmLoadRunSel = Mathf.Min(_mmLoadRuns.Count - 1, _mmLoadRunSel + 1);
+                _mmLoadSaveSel = 0;
                 EnsureMMLoadScroll();
                 UpdateMMLoadVisuals();
+            }
+            // A/D navigate saves within selected run (right column)
+            else if (_navLeftAction.WasPerformedThisFrame())
+            {
+                if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
+                {
+                    int saves = _mmLoadRuns[_mmLoadRunSel].saves.Count;
+                    if (saves > 0) { _mmLoadSaveSel = Mathf.Max(0, _mmLoadSaveSel - 1); UpdateMMLoadVisuals(); }
+                }
+            }
+            else if (_navRightAction.WasPerformedThisFrame())
+            {
+                if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
+                {
+                    int saves = _mmLoadRuns[_mmLoadRunSel].saves.Count;
+                    if (saves > 0) { _mmLoadSaveSel = Mathf.Min(saves - 1, _mmLoadSaveSel + 1); UpdateMMLoadVisuals(); }
+                }
             }
             else if (_confirmAction.WasPerformedThisFrame())
             {
@@ -304,34 +451,44 @@ namespace Valkur.UI.MainMenu
 
         private void EnsureMMLoadScroll()
         {
-            if (_mmLoadSel < _mmLoadScroll) _mmLoadScroll = _mmLoadSel;
-            if (_mmLoadSel >= _mmLoadScroll + MM_LOAD_ROWS)
-                _mmLoadScroll = _mmLoadSel - MM_LOAD_ROWS + 1;
+            if (_mmLoadRunSel < _mmLoadRunScroll) _mmLoadRunScroll = _mmLoadRunSel;
+            if (_mmLoadRunSel >= _mmLoadRunScroll + MM_RUN_ROWS)
+                _mmLoadRunScroll = _mmLoadRunSel - MM_RUN_ROWS + 1;
         }
 
         // ── Data ─────────────────────────────────────────────────────────────
 
         private void RefreshMMLoadPanel()
         {
-            // Preserve selection across refresh by file path so rename / delete
-            // do not silently jump the cursor back to slot 0 (which would make
-            // it look like "the autosave I clicked is no longer selected").
-            string previouslySelectedPath = (_mmLoadSel >= 0 && _mmLoadSel < _mmLoadSaves.Count)
-                ? _mmLoadSaves[_mmLoadSel].path
-                : null;
-
-            _mmLoadSaves = SaveFileManager.ListSaves();
-            _mmLoadSel = 0;
-            if (!string.IsNullOrEmpty(previouslySelectedPath))
+            // Try to preserve the previously selected save by file path.
+            string prevSavePath = null;
+            if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
             {
-                for (int i = 0; i < _mmLoadSaves.Count; i++)
+                var pr = _mmLoadRuns[_mmLoadRunSel];
+                if (_mmLoadSaveSel >= 0 && _mmLoadSaveSel < pr.saves.Count)
+                    prevSavePath = pr.saves[_mmLoadSaveSel].path;
+            }
+
+            _mmLoadRuns     = SaveFileManager.ListSavesByRun();
+            _mmLoadRunSel   = 0;
+            _mmLoadSaveSel  = 0;
+            _mmLoadRunScroll = 0;
+
+            // Try to restore previously selected save
+            if (!string.IsNullOrEmpty(prevSavePath))
+            {
+                for (int ri = 0; ri < _mmLoadRuns.Count; ri++)
                 {
-                    if (string.Equals(_mmLoadSaves[i].path, previouslySelectedPath,
-                                      System.StringComparison.OrdinalIgnoreCase))
-                    { _mmLoadSel = i; break; }
+                    var grp = _mmLoadRuns[ri];
+                    for (int si = 0; si < grp.saves.Count; si++)
+                    {
+                        if (string.Equals(grp.saves[si].path, prevSavePath,
+                                          System.StringComparison.OrdinalIgnoreCase))
+                        { _mmLoadRunSel = ri; _mmLoadSaveSel = si; break; }
+                    }
                 }
             }
-            _mmLoadScroll = 0;
+
             EnsureMMLoadScroll();
             SetLoadMode(LoadPanelMode.List);
             UpdateMMLoadVisuals();
@@ -339,50 +496,72 @@ namespace Valkur.UI.MainMenu
 
         private void UpdateMMLoadVisuals()
         {
-            if (_mmLoadPills == null) return;
+            if (_mmRunPills == null) return;
 
-            for (int i = 0; i < MM_LOAD_ROWS; i++)
+            // ── Left column: run list ─────────────────────────────────────────
+            for (int i = 0; i < MM_RUN_ROWS; i++)
             {
-                int dataIdx = _mmLoadScroll + i;
-                bool hasData = dataIdx < _mmLoadSaves.Count;
-                bool selected = dataIdx == _mmLoadSel;
+                int dataIdx = _mmLoadRunScroll + i;
+                bool hasRun  = dataIdx < _mmLoadRuns.Count;
+                bool selRun  = dataIdx == _mmLoadRunSel;
 
-                _mmLoadPills[i].color = selected && hasData ? PillColor  : Color.clear;
-                _mmLoadBars[i].color  = selected && hasData ? AccentGold : Color.clear;
-                _mmLoadTexts[i].color = selected && hasData ? TextSelected : TextNormal;
-                if (hasData)
+                _mmRunPills[i].color = selRun && hasRun ? PillColor  : Color.clear;
+                _mmRunBars[i].color  = selRun && hasRun ? AccentGold : Color.clear;
+                _mmRunTexts[i].color = selRun && hasRun ? TextSelected : TextNormal;
+
+                if (hasRun)
                 {
-                    var s = _mmLoadSaves[dataIdx];
-                    _mmLoadTexts[i].text = s.isCorrupted
-                        ? $"<color=#FF6666>[Corrupta]</color> {s.fileName}"
-                        : s.fileName;
+                    var run = _mmLoadRuns[dataIdx];
+                    string cls = run.isLegacy
+                        ? "<color=#808080>Partidas antiguas</color>"
+                        : FormatClassName(run.playerClass);
+                    string lv  = run.isLegacy ? "" : $"  <color=#808080>Lv.{run.maxLevel}</color>";
+                    _mmRunTexts[i].text = cls + lv;
                 }
-                else
-                {
-                    _mmLoadTexts[i].text = "";
-                }
+                else _mmRunTexts[i].text = "";
             }
 
-            // Target indicator above the action buttons. Always reflects what
-            // Cargar / Renombrar / Borrar will operate on, so the user never
-            // has to guess which row is "active".
+            // ── Right column: save list ────────────────────────────────────────
+            var currentRun = (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
+                ? _mmLoadRuns[_mmLoadRunSel] : null;
+
+            for (int i = 0; i < MM_SAVE_ROWS; i++)
+            {
+                bool hasSave = currentRun != null && i < currentRun.saves.Count;
+                bool selSave = i == _mmLoadSaveSel;
+
+                _mmSavePills[i].color = selSave && hasSave ? PillColor  : Color.clear;
+                _mmSaveBars[i].color  = selSave && hasSave ? AccentGold : Color.clear;
+                _mmSaveTexts[i].color = selSave && hasSave ? TextSelected : TextNormal;
+
+                if (hasSave)
+                {
+                    var sv = currentRun.saves[i];
+                    _mmSaveTexts[i].text = sv.isCorrupted
+                        ? $"<color=#FF6666>[Corrupta]</color> {sv.fileName}"
+                        : $"{sv.fileName}  <color=#808080><size=12>{sv.timestamp}</size></color>";
+                }
+                else _mmSaveTexts[i].text = "";
+            }
+
+            // ── Target label ──────────────────────────────────────────────────
             if (_mmLoadTargetLabel != null)
             {
-                if (_mmLoadSel >= 0 && _mmLoadSel < _mmLoadSaves.Count)
-                    _mmLoadTargetLabel.text = $"Operará sobre: <b>{_mmLoadSaves[_mmLoadSel].fileName}</b>";
+                if (TryGetSelectedSave(out var tsv))
+                    _mmLoadTargetLabel.text = $"Operará sobre: <b>{tsv.fileName}</b>";
                 else
                     _mmLoadTargetLabel.text = "";
             }
 
+            // ── Detail panel ──────────────────────────────────────────────────
             if (_mmLoadDetailText != null)
             {
-                if (_mmLoadSaves.Count == 0)
+                if (_mmLoadRuns.Count == 0)
                 {
                     _mmLoadDetailText.text = "No hay partidas guardadas.";
                 }
-                else if (_mmLoadSel >= 0 && _mmLoadSel < _mmLoadSaves.Count)
+                else if (TryGetSelectedSave(out var info))
                 {
-                    var info = _mmLoadSaves[_mmLoadSel];
                     if (info.isCorrupted)
                     {
                         _mmLoadDetailText.text =
@@ -403,8 +582,85 @@ namespace Valkur.UI.MainMenu
                             $"<color=#FFC800>XP:</color>  {info.experience}\n" +
                             $"<color=#FFC800>HP:</color>    {hp}\n\n" +
                             $"<color=#FFC800>Guardado:</color> {info.timestamp}\n\n" +
-                            $"<color=#808080><size=13>{info.fileName}</size></color>";
+                            $"<color=#808080><size=12>{info.fileName}</size></color>";
                     }
+                }
+                else
+                {
+                    _mmLoadDetailText.text = "Selecciona una partida.";
+                }
+            }
+
+            UpdateMMLoadHoverBorders();
+        }
+
+        // ── Hover border helpers ─────────────────────────────────────────────
+
+        private static readonly Color HoverBorderColor = new Color(1f, 0.84f, 0f, 0.85f);
+
+        /// <summary>Creates 4 thin strip Images around a row rect to form an outline.</summary>
+        private Image[] BuildHoverBorderStrips(Transform parent, float cy, float rowH)
+        {
+            const float T = 2f; // border thickness in pixels
+            var strips = new Image[4];
+            // top
+            strips[0] = MakeBorderStrip($"BT", parent, new Vector2(0f,1f), new Vector2(1f,1f),
+                new Vector2(0.5f,1f), new Vector2(0f, cy),      new Vector2(0f, T));
+            // bottom
+            strips[1] = MakeBorderStrip($"BB", parent, new Vector2(0f,1f), new Vector2(1f,1f),
+                new Vector2(0.5f,1f), new Vector2(0f, cy-rowH+T), new Vector2(0f, T));
+            // left
+            strips[2] = MakeBorderStrip($"BL", parent, new Vector2(0f,1f), new Vector2(0f,1f),
+                new Vector2(0f,1f),   new Vector2(0f, cy),      new Vector2(T, rowH));
+            // right
+            strips[3] = MakeBorderStrip($"BR", parent, new Vector2(1f,1f), new Vector2(1f,1f),
+                new Vector2(1f,1f),   new Vector2(0f, cy),      new Vector2(T, rowH));
+            return strips;
+        }
+
+        private Image MakeBorderStrip(string name, Transform parent,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+            Vector2 anchoredPos, Vector2 sizeDelta)
+        {
+            var go = CreateUIObject(name, parent);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+            rt.pivot = pivot; rt.anchoredPosition = anchoredPos; rt.sizeDelta = sizeDelta;
+            var img = go.AddComponent<Image>();
+            img.color = Color.clear;
+            img.raycastTarget = false;
+            return img;
+        }
+
+        private void UpdateMMLoadHoverBorders()
+        {
+            // Run column borders
+            if (_mmRunHoverBorders != null)
+            {
+                for (int i = 0; i < MM_RUN_ROWS; i++)
+                {
+                    var strips = _mmRunHoverBorders[i];
+                    if (strips == null) continue;
+                    int dataIdx = _mmLoadRunScroll + i;
+                    bool isSel = dataIdx == _mmLoadRunSel && dataIdx < _mmLoadRuns.Count;
+                    Color c = (i == _mmRunHover && !isSel) ? HoverBorderColor : Color.clear;
+                    foreach (var img in strips) if (img != null) img.color = c;
+                }
+            }
+
+            // Save column borders
+            if (_mmSaveHoverBorders != null)
+            {
+                var cr = (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
+                    ? _mmLoadRuns[_mmLoadRunSel] : null;
+                for (int i = 0; i < MM_SAVE_ROWS; i++)
+                {
+                    var strips = _mmSaveHoverBorders[i];
+                    if (strips == null) continue;
+                    bool hasSave = cr != null && i < cr.saves.Count;
+                    bool isSel = i == _mmLoadSaveSel && hasSave;
+                    Color c = (i == _mmSaveHover && !isSel) ? HoverBorderColor : Color.clear;
+                    foreach (var img in strips) if (img != null) img.color = c;
                 }
             }
         }
@@ -413,23 +669,22 @@ namespace Valkur.UI.MainMenu
 
         private void MMLoadSelectedSave()
         {
-            if (_mmLoadSel < 0 || _mmLoadSel >= _mmLoadSaves.Count) return;
-            var info = _mmLoadSaves[_mmLoadSel];
+            if (!TryGetSelectedSave(out var info)) return;
             if (info.isCorrupted)
             {
                 Debug.LogWarning($"[MainMenu] Cannot load corrupted save: {info.fileName}");
                 return;
             }
             Debug.Log($"[MainMenu] Loading save: {info.path}");
-            PendingSaveLoad.Path = info.path;
+            PendingSaveLoad.Path        = info.path;
+            PendingSaveLoad.PlayerClass = info.playerClass;
             TransitionAudioToGame();
             LoadingScreenController.Show(gameplaySceneName);
         }
 
         private void MMDeleteSelectedSave()
         {
-            if (_mmLoadSel < 0 || _mmLoadSel >= _mmLoadSaves.Count) return;
-            var info = _mmLoadSaves[_mmLoadSel];
+            if (!TryGetSelectedSave(out var info)) return;
             Debug.Log($"[MainMenu] Deleting save: {info.path}");
             SaveFileManager.DeleteSave(info.path);
             RefreshMMLoadPanel();
@@ -441,8 +696,7 @@ namespace Valkur.UI.MainMenu
 
         private void BeginRenameSelectedSave()
         {
-            if (_mmLoadSel < 0 || _mmLoadSel >= _mmLoadSaves.Count) return;
-            var info = _mmLoadSaves[_mmLoadSel];
+            if (!TryGetSelectedSave(out var info)) return;
             if (info.isCorrupted)
             {
                 Debug.LogWarning("[MainMenu] Cannot rename corrupted save.");
@@ -484,8 +738,7 @@ namespace Valkur.UI.MainMenu
 
         private void CommitRename()
         {
-            if (_mmLoadSel < 0 || _mmLoadSel >= _mmLoadSaves.Count) { CancelRename(); return; }
-            var info = _mmLoadSaves[_mmLoadSel];
+            if (!TryGetSelectedSave(out var info)) { CancelRename(); return; }
             string newName = _mmRenameInput != null ? _mmRenameInput.text : null;
             string sanitized = SaveFileManager.SanitizeSaveName(newName);
             if (sanitized == null)
@@ -505,11 +758,16 @@ namespace Valkur.UI.MainMenu
                 return;
             }
             // Re-list and try to keep the renamed slot selected
-            _mmLoadSaves = SaveFileManager.ListSaves();
-            for (int i = 0; i < _mmLoadSaves.Count; i++)
+            _mmLoadRuns = SaveFileManager.ListSavesByRun();
+            for (int ri = 0; ri < _mmLoadRuns.Count; ri++)
             {
-                if (string.Equals(_mmLoadSaves[i].path, newPath, System.StringComparison.OrdinalIgnoreCase))
-                { _mmLoadSel = i; break; }
+                var grp = _mmLoadRuns[ri];
+                for (int si = 0; si < grp.saves.Count; si++)
+                {
+                    if (string.Equals(grp.saves[si].path, newPath,
+                                      System.StringComparison.OrdinalIgnoreCase))
+                    { _mmLoadRunSel = ri; _mmLoadSaveSel = si; break; }
+                }
             }
             EnsureMMLoadScroll();
             CancelRename();
@@ -519,8 +777,7 @@ namespace Valkur.UI.MainMenu
 
         private void RequestDeleteSelectedSave()
         {
-            if (_mmLoadSel < 0 || _mmLoadSel >= _mmLoadSaves.Count) return;
-            var info = _mmLoadSaves[_mmLoadSel];
+            if (!TryGetSelectedSave(out var info)) return;
             if (_mmConfirmText != null)
                 _mmConfirmText.text = $"¿Borrar la partida\n<b>{info.fileName}</b>?\nEsta acción no se puede deshacer.";
             _mmConfirmSel = 0; // default to Cancelar
