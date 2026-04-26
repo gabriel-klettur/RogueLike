@@ -30,6 +30,9 @@ namespace Valkur.Gameplay.MapEditor
                 line.sortingOrder = SortingConfig.Z_UI + 2;
                 line.startColor = new Color(0.36f, 0.86f, 1f, 0.95f);
                 line.endColor   = line.startColor;
+                line.numCapVertices    = 2;
+                line.numCornerVertices = 2;
+                line.alignment         = LineAlignment.View;
 
                 var labelGo = new GameObject("Label");
                 labelGo.transform.SetParent(_addZonePreviewObject.transform, false);
@@ -68,6 +71,53 @@ namespace Valkur.Gameplay.MapEditor
             UpdateAddZonePreviewVisibility();
         }
 
+        /// <summary>
+        /// Returns the world-units width that corresponds to a target on-screen
+        /// pixel width for the active orthographic camera. Clamped to the
+        /// inspector-configured <see cref="overlayLineWidth"/> /
+        /// <see cref="overlayLineMaxWidth"/> range so borders stay visible at
+        /// close zoom and don't blow up at far zoom.
+        /// </summary>
+        private float ComputeAdaptiveLineWidth()
+        {
+            if (_mainCamera == null) _mainCamera = Camera.main;
+            float baseWidth = overlayLineWidth;
+            if (_mainCamera == null || !_mainCamera.orthographic || Screen.height <= 1)
+                return baseWidth;
+
+            // worldPerPixel = (2 * orthoSize) / screenHeight  → constant pixel size in world units
+            float worldPerPixel = (2f * _mainCamera.orthographicSize) / Screen.height;
+            float adaptive      = worldPerPixel * Mathf.Max(0.5f, overlayLinePixelWidth);
+            return Mathf.Clamp(adaptive, baseWidth, Mathf.Max(baseWidth, overlayLineMaxWidth));
+        }
+
+        /// <summary>
+        /// Per-frame applier that keeps zone-border line widths visually constant
+        /// in screen pixels regardless of camera zoom — fixes "borders disappear
+        /// when zoomed out" bug.
+        /// </summary>
+        private void UpdateOverlayLineWidths()
+        {
+            if (_zoneOverlayObjects == null || _zoneOverlayObjects.Count == 0)
+                return;
+
+            float w = ComputeAdaptiveLineWidth();
+
+            for (int i = 0; i < _zoneOverlayObjects.Count; i++)
+            {
+                var go = _zoneOverlayObjects[i];
+                if (go == null) continue;
+                var lr = go.GetComponent<LineRenderer>();
+                if (lr != null) lr.widthMultiplier = w;
+            }
+
+            if (_addZonePreviewObject != null)
+            {
+                var prev = _addZonePreviewObject.GetComponent<LineRenderer>();
+                if (prev != null) prev.widthMultiplier = w * 1.15f;
+            }
+        }
+
         private void RebuildZoneOverlays()
         {
             for (int i = 0; i < _zoneOverlayObjects.Count; i++)
@@ -93,6 +143,9 @@ namespace Valkur.Gameplay.MapEditor
                 line.material        = _overlayLineMaterial;
                 line.sortingLayerName = SortingConfig.LAYER_OVERHEAD;
                 line.sortingOrder     = SortingConfig.Z_UI;
+                line.numCapVertices    = 2;
+                line.numCornerVertices = 2;
+                line.alignment         = LineAlignment.View;
 
                 float minX = zoneRect.xMin * tileSize, maxX = zoneRect.xMax * tileSize;
                 float minY = zoneRect.yMin * tileSize, maxY = zoneRect.yMax * tileSize;
@@ -114,6 +167,7 @@ namespace Valkur.Gameplay.MapEditor
             }
 
             RecolorZoneOverlays();
+            UpdateOverlayLineWidths();
         }
 
         private void RecolorZoneOverlays()

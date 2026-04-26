@@ -30,39 +30,58 @@ namespace Valkur.Gameplay.MapEditor
         private System.Action<Vector2Int> _onMoveSelectedZone;
         private System.Action<bool> _onRestrictEditChanged;
 
+        // Runtime-only references set by BuildUI(). NOT [SerializeField] — ResolveCanvas()
+        // handles domain-reload recovery via GetComponentInChildren fallback; keeping these
+        // as plain private fields avoids Unity serialization writing stale destroyed-object
+        // references from prior instances into freshly created components.
         private Transform _canvasRoot;
-        private GameObject _root;
-        private Transform _zonesListContent;
+        private Canvas    _cachedCanvas;
+        private MapEditorUIBuilder.UIRefs _refs;
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
         private readonly List<Button> _zoneButtons = new List<Button>();
         private ZoneManager.ZoneDefinition[] _cachedZones = Array.Empty<ZoneManager.ZoneDefinition>();
         private string _inlineRenameZoneName;
 
-        private TMP_Text _selectedZoneText;
-        private TMP_Text _selectedEditableText;
-        private TMP_Text _statusText;
-        private TMP_InputField _nameInput;
-        private Toggle _restrictToggle;
-
-        private GameObject _addZoneDialog;
-        private TMP_InputField _addZoneNameInput;
-        private TMP_Text _addZoneSourceText;
-        private TMP_Text _addZoneTargetText;
-        private Toggle _addUseTemplateToggle;
-        private Toggle _addEditableToggle;
-
-        private GameObject _deleteZoneDialog;
-        private TMP_Text _deleteZonePrompt;
-
         private static Sprite _whiteSprite;
 
-        public string NameInput => _nameInput != null ? _nameInput.text : string.Empty;
+        public string NameInput => _refs.NameInput != null ? _refs.NameInput.text : string.Empty;
         public bool IsTypingInput =>
             EventSystem.current != null &&
             EventSystem.current.currentSelectedGameObject != null &&
             EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null;
         public bool IsModalOpen =>
-            (_addZoneDialog != null && _addZoneDialog.activeSelf) ||
-            (_deleteZoneDialog != null && _deleteZoneDialog.activeSelf);
+            (_refs.AddZoneDialog != null && _refs.AddZoneDialog.activeSelf) ||
+            (_refs.DeleteZoneDialog != null && _refs.DeleteZoneDialog.activeSelf);
+
+        /// <summary>Toggles the named floating panel open/closed and updates menu button styles.</summary>
+        public void OnDropdownToggle(string key)
+        {
+            if (_openDropdowns.Contains(key))
+                _openDropdowns.Remove(key);
+            else
+                _openDropdowns.Add(key);
+
+            SetDropdownVisible("zones",    _refs.ZonesDropdown);
+            SetDropdownVisible("actions",  _refs.ActionsDropdown);
+            SetDropdownVisible("settings", _refs.SettingsDropdown);
+            UpdateMenuBtnStyles();
+        }
+
+        private void SetDropdownVisible(string key, GameObject panel)
+        {
+            if (panel != null)
+                panel.SetActive(_openDropdowns.Contains(key));
+        }
+
+        private void UpdateMenuBtnStyles()
+        {
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.ZonesMenuBtnImg,    _refs.ZonesMenuBtnTmp,    _openDropdowns.Contains("zones"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.ActionsMenuBtnImg,  _refs.ActionsMenuBtnTmp,  _openDropdowns.Contains("actions"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.SettingsMenuBtnImg, _refs.SettingsMenuBtnTmp, _openDropdowns.Contains("settings"));
+        }
 
         public void Initialize(
             MapEditorState state,
@@ -101,14 +120,48 @@ namespace Valkur.Gameplay.MapEditor
 
         public void SetVisible(bool visible)
         {
-            if (_root != null)
-                _root.SetActive(visible);
+            var canvas = ResolveCanvas();
+            if (canvas != null) canvas.enabled = visible;
 
             if (!visible)
             {
+                _openDropdowns.Clear();
+                SetDropdownVisible("zones",    _refs.ZonesDropdown);
+                SetDropdownVisible("actions",  _refs.ActionsDropdown);
+                SetDropdownVisible("settings", _refs.SettingsDropdown);
+                UpdateMenuBtnStyles();
                 HideAddZoneDialog();
                 HideDeleteZoneDialog();
             }
+        }
+
+        /// <summary>
+        /// Robustly resolve the editor's canvas. Tolerates lost private references
+        /// after Unity domain reloads / hot-reloads while in Play Mode by falling
+        /// back to the actual canvas component in this UI's children.
+        /// </summary>
+        private Canvas ResolveCanvas()
+        {
+            // Unity's overloaded == treats destroyed objects as null.
+            if (_cachedCanvas != null) return _cachedCanvas;
+
+            if (_canvasRoot != null)
+            {
+                _cachedCanvas = _canvasRoot.GetComponent<Canvas>();
+                if (_cachedCanvas != null) return _cachedCanvas;
+            }
+
+            _cachedCanvas = GetComponentInChildren<Canvas>(true);
+            if (_cachedCanvas != null)
+                _canvasRoot = _cachedCanvas.transform;
+
+            return _cachedCanvas;
+        }
+
+        private void OnEnable()
+        {
+            // Re-bind canvas reference if it was lost across a hot-reload.
+            ResolveCanvas();
         }
 
         public void RefreshZones(ZoneManager.ZoneDefinition[] zones)
@@ -133,97 +186,97 @@ namespace Valkur.Gameplay.MapEditor
 
         public void SetSelectedZone(string zoneName, bool editable)
         {
-            if (_selectedZoneText != null)
-                _selectedZoneText.text = string.IsNullOrWhiteSpace(zoneName)
+            if (_refs.SelectedZoneText != null)
+                _refs.SelectedZoneText.text = string.IsNullOrWhiteSpace(zoneName)
                     ? "Selected: (none)"
                     : $"Selected: {zoneName}";
 
-            if (_selectedEditableText != null)
+            if (_refs.SelectedEditableText != null)
             {
-                _selectedEditableText.text = string.IsNullOrWhiteSpace(zoneName)
+                _refs.SelectedEditableText.text = string.IsNullOrWhiteSpace(zoneName)
                     ? "Editable: n/a"
                     : $"Editable: {(editable ? "YES" : "NO")}";
-                _selectedEditableText.color = editable
+                _refs.SelectedEditableText.color = editable
                     ? new Color(0.62f, 1f, 0.62f, 1f)
                     : new Color(1f, 0.62f, 0.62f, 1f);
             }
 
-            if (_nameInput != null && !string.IsNullOrWhiteSpace(zoneName))
-                _nameInput.text = zoneName;
+            if (_refs.NameInput != null && !string.IsNullOrWhiteSpace(zoneName))
+                _refs.NameInput.text = zoneName;
         }
 
         public void SetRestrictToggle(bool restrict)
         {
-            if (_restrictToggle != null)
-                _restrictToggle.SetIsOnWithoutNotify(restrict);
+            if (_refs.RestrictToggle != null)
+                _refs.RestrictToggle.SetIsOnWithoutNotify(restrict);
         }
 
         public void SetStatus(string text)
         {
-            if (_statusText != null)
-                _statusText.text = text;
+            if (_refs.StatusBarText != null)
+                _refs.StatusBarText.text = text;
         }
 
         public void ShowAddZoneDialog(string suggestedName, string sourceZoneName, bool sourceEditable)
         {
-            if (_addZoneDialog == null) return;
+            if (_refs.AddZoneDialog == null) return;
 
-            _addZoneDialog.SetActive(true);
+            _refs.AddZoneDialog.SetActive(true);
 
-            if (_addZoneNameInput != null)
-                _addZoneNameInput.text = suggestedName;
+            if (_refs.AddZoneNameInput != null)
+                _refs.AddZoneNameInput.text = suggestedName;
 
             SetAddZoneSource(sourceZoneName, sourceEditable);
 
-            if (_addUseTemplateToggle != null)
-                _addUseTemplateToggle.SetIsOnWithoutNotify(true);
-            if (_addEditableToggle != null)
-                _addEditableToggle.SetIsOnWithoutNotify(sourceEditable);
+            if (_refs.AddUseTemplateToggle != null)
+                _refs.AddUseTemplateToggle.SetIsOnWithoutNotify(true);
+            if (_refs.AddEditableToggle != null)
+                _refs.AddEditableToggle.SetIsOnWithoutNotify(sourceEditable);
 
             SetAddZoneTarget(Vector2Int.zero, 50, 50, false);
         }
 
         public void HideAddZoneDialog()
         {
-            if (_addZoneDialog != null)
-                _addZoneDialog.SetActive(false);
+            if (_refs.AddZoneDialog != null)
+                _refs.AddZoneDialog.SetActive(false);
         }
 
         public void SetAddZoneSource(string sourceZoneName, bool editable)
         {
-            if (_addZoneSourceText == null)
+            if (_refs.AddZoneSourceText == null)
                 return;
 
             string source = string.IsNullOrWhiteSpace(sourceZoneName) ? "(none)" : sourceZoneName;
-            _addZoneSourceText.text = $"Source: {source} ({(editable ? "EDIT" : "LOCK")})";
+            _refs.AddZoneSourceText.text = $"Source: {source} ({(editable ? "EDIT" : "LOCK")})";
 
-            if (_addEditableToggle != null && _addUseTemplateToggle != null && _addUseTemplateToggle.isOn)
-                _addEditableToggle.SetIsOnWithoutNotify(editable);
+            if (_refs.AddEditableToggle != null && _refs.AddUseTemplateToggle != null && _refs.AddUseTemplateToggle.isOn)
+                _refs.AddEditableToggle.SetIsOnWithoutNotify(editable);
         }
 
         public void SetAddZoneTarget(Vector2Int gridOffset, int zoneWidth, int zoneHeight, bool hasTarget)
         {
-            if (_addZoneTargetText == null)
+            if (_refs.AddZoneTargetText == null)
                 return;
 
-            _addZoneTargetText.text = hasTarget
+            _refs.AddZoneTargetText.text = hasTarget
                 ? $"Target: [{gridOffset.x},{gridOffset.y}] ({zoneWidth}x{zoneHeight})"
                 : $"Target: click map to mark ({zoneWidth}x{zoneHeight})";
         }
 
         public void ShowDeleteZoneDialog(string zoneName)
         {
-            if (_deleteZoneDialog == null || _deleteZonePrompt == null)
+            if (_refs.DeleteZoneDialog == null || _refs.DeleteZonePrompt == null)
                 return;
 
-            _deleteZonePrompt.text = $"Delete zone '{zoneName}'?";
-            _deleteZoneDialog.SetActive(true);
+            _refs.DeleteZonePrompt.text = $"Delete zone '{zoneName}'?";
+            _refs.DeleteZoneDialog.SetActive(true);
         }
 
         public void HideDeleteZoneDialog()
         {
-            if (_deleteZoneDialog != null)
-                _deleteZoneDialog.SetActive(false);
+            if (_refs.DeleteZoneDialog != null)
+                _refs.DeleteZoneDialog.SetActive(false);
         }
 
     }

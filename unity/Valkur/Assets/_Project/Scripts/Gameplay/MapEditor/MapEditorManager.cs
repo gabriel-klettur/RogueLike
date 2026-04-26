@@ -22,7 +22,13 @@ namespace Valkur.Gameplay.MapEditor
         [SerializeField] private TileEditorManager tileEditorManager;
 
         [Header("Overlay")]
-        [SerializeField] private float overlayLineWidth = 0.08f;
+        [Tooltip("Minimum zone-border thickness in world units (close zoom).")]
+        [SerializeField] private float overlayLineWidth = 0.12f;
+        [Tooltip("Target on-screen thickness in pixels for zone borders. The line " +
+                 "width is scaled with camera zoom so borders stay visible at any zoom.")]
+        [SerializeField] private float overlayLinePixelWidth = 3.5f;
+        [Tooltip("Maximum zone-border thickness in world units (far zoom cap).")]
+        [SerializeField] private float overlayLineMaxWidth = 1.6f;
 
         private MapEditorState _state;
         private MapEditorInputHandler _input;
@@ -38,6 +44,11 @@ namespace Valkur.Gameplay.MapEditor
         private Vector2Int _pendingAddZoneOffset;
         private GameObject _addZonePreviewObject;
         private string _pendingDeleteZoneName;
+
+        // Camera pan (middle-mouse drag — mirrors TileEditor behaviour)
+        private bool _isPanning;
+        private Vector2 _panAnchorScreenPos;
+        private Vector3 _panAnchorCamPos;
 
         public bool IsActive => _state != null && _state.Active;
 
@@ -79,9 +90,28 @@ namespace Valkur.Gameplay.MapEditor
 
         protected override void OnSingletonAwake()
         {
-            _state = new MapEditorState();
-            _input = new MapEditorInputHandler();
-            _input.CreateActions();
+            EnsureCoreInitialized();
+        }
+
+        /// <summary>
+        /// Ensures non-serialized core state (state, input handler) is created.
+        /// Safe to call repeatedly. Defends against hot-reload nulling private
+        /// fields while in Play Mode.
+        /// </summary>
+        private void EnsureCoreInitialized()
+        {
+            if (_state == null)
+                _state = new MapEditorState();
+            if (_input == null)
+            {
+                _input = new MapEditorInputHandler();
+                _input.CreateActions();
+            }
+        }
+
+        protected virtual void OnEnable()
+        {
+            EnsureCoreInitialized();
         }
 
         private void Start()
@@ -126,6 +156,9 @@ namespace Valkur.Gameplay.MapEditor
             }
 
             if (!_state.Active) return;
+
+            UpdateOverlayLineWidths();
+            HandleCameraPan();
 
             if (_ui != null && _ui.IsTypingInput)
                 return;
@@ -179,10 +212,53 @@ namespace Valkur.Gameplay.MapEditor
             }
             else
             {
+                _isPanning = false;
+                Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
                 CancelAddZoneFlow();
                 if (_ui != null)
                     _ui.SetStatus("Map Editor inactive.");
                 Debug.Log("[MapEditor] Deactivated (F7).");
+            }
+        }
+
+        private void HandleCameraPan()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null) return;
+            if (_mainCamera == null) _mainCamera = Camera.main;
+            if (_mainCamera == null) return;
+
+            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
+            if (camSetup == null) return;
+
+            if (mouse.middleButton.wasPressedThisFrame)
+            {
+                camSetup.DetachFollow();
+                Transform anchorT = camSetup.GetDetachedTransform();
+                if (anchorT != null)
+                {
+                    _isPanning        = true;
+                    _panAnchorScreenPos = mouse.position.ReadValue();
+                    _panAnchorCamPos    = anchorT.position;
+                }
+            }
+            else if (mouse.middleButton.wasReleasedThisFrame)
+            {
+                _isPanning = false;
+            }
+
+            if (_isPanning && mouse.middleButton.isPressed)
+            {
+                Transform vcamT = camSetup.GetDetachedTransform();
+                if (vcamT == null) return;
+
+                Vector2 currentScreenPos = mouse.position.ReadValue();
+                Vector2 screenDelta      = currentScreenPos - _panAnchorScreenPos;
+                float unitsPerPixel      = _mainCamera.orthographicSize * 2f / Screen.height;
+                Vector3 worldDelta       = new Vector3(screenDelta.x, screenDelta.y, 0f) * unitsPerPixel;
+                Vector3 newPos           = _panAnchorCamPos - worldDelta;
+                newPos.z         = vcamT.position.z;
+                vcamT.position   = newPos;
             }
         }
 
