@@ -33,12 +33,16 @@ namespace Valkur.Gameplay.Editors.EditorKit
         {
             var btnGo = EditorUIHelpers.CreateUI("Tab_" + key, transform);
             var le = btnGo.AddComponent<LayoutElement>();
-            le.preferredHeight = 26f; le.flexibleWidth = 1f;
+            // Lock height tightly so the parent VLG/HLG can't stretch the buttons.
+            le.minHeight       = 24f;
+            le.preferredHeight = 24f;
+            le.flexibleHeight  = 0f;
+            le.flexibleWidth   = 1f;
             var bg = btnGo.AddComponent<Image>();
             bg.color = EditorUIHelpers.BTN_NORMAL;
             var btn = btnGo.AddComponent<Button>();
             btn.targetGraphic = bg;
-            var tmp = EditorUIHelpers.AddCenteredText(btnGo.transform, label, 12f,
+            var tmp = EditorUIHelpers.AddCenteredText(btnGo.transform, label, 11f,
                 FontStyles.Bold, EditorUIHelpers.TEXT_PRIMARY);
             int idx = _tabs.Count;
             btn.onClick.AddListener(() => SetActive(idx));
@@ -74,13 +78,24 @@ namespace Valkur.Gameplay.Editors.EditorKit
 
         public int Count => _tabs.Count;
 
-        public static TabStrip Create(Transform parent, string name, float height = 28f)
+        public static TabStrip Create(Transform parent, string name, float height = 26f)
         {
             var go = EditorUIHelpers.CreateUI(name, parent);
-            go.AddComponent<LayoutElement>().preferredHeight = height;
+            // HLG also implements ILayoutElement and reports preferred height from its
+            // children; add the LayoutElement AFTER and bump its priority so the parent
+            // VLG honours our explicit, locked height instead of stretching the strip.
             var hlg = go.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 2f; hlg.childForceExpandWidth = true;
-            hlg.childControlWidth = true; hlg.childControlHeight = true;
+            hlg.spacing                = 2f;
+            hlg.childForceExpandWidth  = true;
+            hlg.childForceExpandHeight = false; // do NOT stretch tab buttons vertically
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            hlg.childAlignment         = TextAnchor.MiddleCenter;
+            var le = go.AddComponent<LayoutElement>();
+            le.minHeight       = height;
+            le.preferredHeight = height;
+            le.flexibleHeight  = 0f;
+            le.layoutPriority  = 2; // beat HLG's default priority of 1
             return go.AddComponent<TabStrip>();
         }
     }

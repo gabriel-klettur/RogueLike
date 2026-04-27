@@ -423,14 +423,36 @@ namespace Valkur.Gameplay.Spells
 
         private static void AddSectionHeader(PropertyForm form, string text)
         {
-            var go = EditorUIHelpers.CreateUI("SecHdr_" + text, form.transform);
-            go.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 16f;
-            var tmp       = go.AddComponent<TMPro.TextMeshProUGUI>();
-            tmp.text      = text;
-            tmp.fontSize  = 11f;
-            tmp.fontStyle = TMPro.FontStyles.Bold;
-            tmp.alignment = TMPro.TextAlignmentOptions.Left;
-            tmp.color     = EditorUIHelpers.ACCENT;
+            // Mirror Buildings/Tiles "BuildSeparator + bold-uppercase label" pattern
+            // so spells properties read with the same visual hierarchy as the rest
+            // of the runtime editors.
+            //
+            // Strip the legacy "── X ──" decoration so we can re-render the X with
+            // letter-spacing + a thin rule above (matches BuildSeparator in TileEditorUIHelpers).
+            string clean = text;
+            if (!string.IsNullOrEmpty(clean))
+                clean = clean.Replace("─", "").Trim();
+
+            // Top spacer
+            var spacer = EditorUIHelpers.CreateUI("SecGap_" + clean, form.transform);
+            spacer.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 6f;
+
+            // Thin separator rule
+            var sep = EditorUIHelpers.CreateUI("SecSep_" + clean, form.transform);
+            sep.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 1f;
+            sep.AddComponent<UnityEngine.UI.Image>().color = EditorUIHelpers.SEPARATOR;
+
+            // Bold spaced-out section title (uppercase for hierarchy)
+            var go = EditorUIHelpers.CreateUI("SecHdr_" + clean, form.transform);
+            go.AddComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 18f;
+            var tmp              = go.AddComponent<TMPro.TextMeshProUGUI>();
+            tmp.text             = (clean ?? "").ToUpperInvariant();
+            tmp.fontSize         = 11f;
+            tmp.fontStyle        = TMPro.FontStyles.Bold;
+            tmp.alignment        = TMPro.TextAlignmentOptions.Left;
+            tmp.color            = EditorUIHelpers.ACCENT;
+            tmp.characterSpacing = 4f;
+            tmp.margin           = new Vector4(2f, 0f, 0f, 0f);
         }
     }
 }

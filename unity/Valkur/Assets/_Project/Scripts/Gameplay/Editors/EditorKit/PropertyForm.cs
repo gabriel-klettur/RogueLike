@@ -119,14 +119,18 @@ namespace Valkur.Gameplay.Editors.EditorKit
         private GameObject BuildRow(string label)
         {
             var row = EditorUIHelpers.CreateUI("Row_" + label, transform);
-            row.AddComponent<LayoutElement>().preferredHeight = 26f;
+            row.AddComponent<LayoutElement>().preferredHeight = 24f;
             var hlg = row.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 6f;
+            hlg.padding = new RectOffset(4, 4, 0, 0);
             hlg.childControlWidth = true; hlg.childControlHeight = true;
             hlg.childForceExpandWidth = false;
-            var lblTmp = EditorUIHelpers.AddLabel(row.transform, label, 12f, TextAlignmentOptions.Left);
-            lblTmp.GetComponent<LayoutElement>().preferredWidth = 110f;
-            lblTmp.color = EditorUIHelpers.TEXT_PRIMARY;
+            hlg.childAlignment = TextAnchor.MiddleLeft;
+            // Label styled like Buildings/Tiles inspectors: small, secondary colour,
+            // so the input value visually pops as the primary content.
+            var lblTmp = EditorUIHelpers.AddLabel(row.transform, label, 11f, TextAlignmentOptions.MidlineLeft);
+            lblTmp.GetComponent<LayoutElement>().preferredWidth = 120f;
+            lblTmp.color = EditorUIHelpers.TEXT_SECONDARY;
             return row;
         }
 

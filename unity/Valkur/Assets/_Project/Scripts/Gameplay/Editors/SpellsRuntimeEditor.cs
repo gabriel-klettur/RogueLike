@@ -31,6 +31,9 @@ namespace Valkur.Gameplay.Spells
         [SerializeField, Tooltip("Spell catalog asset")]
         private SpellCatalog _catalog;
 
+        [SerializeField, Tooltip("Optional particle preset catalog — used to derive a tint colour for spells with no sprite.")]
+        private ParticlePresetCatalog _particleCatalog;
+
         // ── State ──
         private bool _active;
         private bool _uiBuilt;

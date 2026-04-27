@@ -63,9 +63,10 @@ namespace Valkur.Data
         public float channelDuration;
         public float cooldownDuration;
 
-        [Header("Projectile")]
+        [Header("Projectile / Beam")]
         public float speed;
         public float damage;
+        [Tooltip("Maximum travel distance in world units. Used by projectiles (max flight before despawn), beams (max ray length / hit search) and any ranged spell that needs a hard cap. <= 0 means 'use the system default'.")]
         public float range;
         public float lifetime;
 

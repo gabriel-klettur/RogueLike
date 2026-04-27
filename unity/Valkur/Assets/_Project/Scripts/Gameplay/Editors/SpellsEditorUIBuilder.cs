@@ -76,10 +76,12 @@ namespace Valkur.Gameplay.Spells
 
         private const float MODES_W    = TOOLS_DROP_W;          // 60
         private const float MODES_H    = 320f + PANEL_HDR_H;
-        private const float SPELLS_W   = TILES_DROP_W;          // 256
+        // Wider than TILES_DROP_W (256) so 4 columns of 64×64 cells fit cleanly:
+        // 4*64 + 3*4 spacing + 8 grid pad + 12 scrollbar + 16 outer pad = ~304 → 312 with breathing room.
+        private const float SPELLS_W   = 312f;
         private const float SPELLS_H   = TILES_DROP_H;          // 564
-        private const float PROPS_W    = 320f;
-        private const float PROPS_H    = 520f + PANEL_HDR_H;
+        private const float PROPS_W    = 340f;
+        private const float PROPS_H    = 560f + PANEL_HDR_H;
         private const float TUT_W      = 360f;
         private const float TUT_H      = 300f + PANEL_HDR_H;
 
