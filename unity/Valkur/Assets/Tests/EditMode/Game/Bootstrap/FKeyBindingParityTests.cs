@@ -154,18 +154,20 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
         }
 
         // -------------------------------------------------------------------
-        // Ctrl+F1 → Particles Editor
+        // F1 → Particles Editor (plain, NOT Ctrl) — matches Tiles (F8) /
+        // Buildings (F10) hotkey style; see ParticlesRuntimeEditor.cs.
         // -------------------------------------------------------------------
 
         [Test]
-        public void ParticlesEditor_BoundTo_F1_WithCtrlModifier()
+        public void ParticlesEditor_BoundTo_F1_WithoutCtrl()
         {
             var editor = CreateSingleton<ParticlesRuntimeEditor>("TestParticlesEditor");
 
             string path = GetBindingPath(editor, "_toggleAction");
             Assert.AreEqual("<Keyboard>/f1", path,
-                "ParticlesRuntimeEditor should bind to F1 (Ctrl modifier checked in Update)");
-            AssertModifierExists(editor, "_ctrlModifier");
+                "ParticlesRuntimeEditor should bind to plain F1 (no modifier)");
+            Assert.IsNull(FindField(editor, "_ctrlModifier"),
+                "ParticlesRuntimeEditor must NOT carry a '_ctrlModifier' field — F1 is bound plain.");
 
             Object.DestroyImmediate(editor.gameObject);
         }
