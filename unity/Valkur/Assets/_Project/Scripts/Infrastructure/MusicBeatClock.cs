@@ -156,6 +156,34 @@ namespace Valkur.Infrastructure
             }
         }
 
+        /// <summary>
+        /// Live tempo override: lets the HUD (or a tap-tempo tool) re-tune the
+        /// running clock without going through <see cref="IAudioService"/>.
+        /// Pass a <paramref name="bpm"/> &lt;= 0 to keep the current BPM.
+        /// Pass a negative <paramref name="offsetSec"/> to keep the current offset.
+        /// Resets the beat counter so the next downbeat fires cleanly.
+        /// </summary>
+        public void OverrideTempo(float bpm, float offsetSec)
+        {
+            if (bpm > 0f) _bpm = bpm;
+            if (offsetSec >= 0f) _offsetSec = offsetSec;
+            // Re-anchor: don't replay missed beats from time 0 after a live retune.
+            if (_audio != null && _audio.IsMusicPlaying && _bpm > 0f)
+            {
+                float musicTime = Mathf.Max(0f, _audio.CurrentMusicTime - _offsetSec);
+                _beatTime = musicTime * (_bpm / 60f);
+                _lastBeatIndex = Mathf.FloorToInt(_beatTime);
+            }
+            else
+            {
+                _beatTime = 0f;
+                _lastBeatIndex = -1;
+            }
+        }
+
+        /// <summary>Current first-beat offset in seconds (downbeat 0 lives here).</summary>
+        public float FirstBeatOffsetSec => _offsetSec;
+
         // ── Test helpers ────────────────────────────────────────────────────
         /// <summary>Editor / unit-test only: feed a synthetic music time and emit beats.</summary>
         internal void DebugTick(float musicTime)

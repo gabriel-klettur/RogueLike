@@ -16,7 +16,6 @@ namespace Valkur.Editor
     public static class MusicAnalysisImporter
     {
         private const string ANALYSIS_JSON = "python/data/audio/music_analysis.json";
-        private const string CATALOG_PATH  = "Assets/_Project/Data/AudioCatalog.asset";
 
         [MenuItem("Valkur/Audio/Import BPM_Key Analysis", priority = 22)]
         public static void ImportFromJson()
@@ -36,12 +35,12 @@ namespace Valkur.Editor
                 return;
             }
 
-            var catalog = AssetDatabase.LoadAssetAtPath<AudioCatalogSO>(CATALOG_PATH);
-            if (catalog == null)
+            string[] guids = AssetDatabase.FindAssets("t:" + nameof(AudioCatalogSO));
+            if (guids == null || guids.Length == 0)
             {
                 EditorUtility.DisplayDialog(
                     "AudioCatalog missing",
-                    "AudioCatalog.asset not found. Run\n" +
+                    "No AudioCatalogSO asset found. Run\n" +
                     "Valkur > Audio > Import Catalog from Python JSON first.",
                     "OK");
                 return;
@@ -64,38 +63,56 @@ namespace Valkur.Editor
                     byStem[kv.Key] = entry;
             }
 
-            int updated = 0, missing = 0;
-            var unmatched = new List<string>();
+            int catalogsTouched = 0, totalUpdated = 0;
+            var perCatalog = new List<string>();
+            var unmatchedAll = new HashSet<string>();
 
-            var tracks = catalog.Tracks;
-            for (int i = 0; i < tracks.Length; i++)
+            foreach (string guid in guids)
             {
-                var t = tracks[i];
-                if (t == null || t.clip == null) { missing++; continue; }
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var catalog = AssetDatabase.LoadAssetAtPath<AudioCatalogSO>(path);
+                if (catalog == null) continue;
 
-                string stem = t.clip.name;
-                if (!byStem.TryGetValue(stem, out var data))
+                int updated = 0, missingClip = 0;
+                var unmatched = new List<string>();
+
+                var tracks = catalog.Tracks;
+                for (int i = 0; i < tracks.Length; i++)
                 {
-                    unmatched.Add($"{t.id} ({stem})");
-                    continue;
+                    var t = tracks[i];
+                    if (t == null || t.clip == null) { missingClip++; continue; }
+
+                    string stem = t.clip.name;
+                    if (!byStem.TryGetValue(stem, out var data))
+                    {
+                        unmatched.Add($"{t.id} ({stem})");
+                        unmatchedAll.Add(stem);
+                        continue;
+                    }
+
+                    t.bpm                = (float)GetDouble(data, "bpm",                t.bpm);
+                    t.firstBeatOffsetSec = (float)GetDouble(data, "first_beat_offset_sec", t.firstBeatOffsetSec);
+                    t.key                = GetString(data, "key", t.key);
+                    t.keyConfidence      = (float)GetDouble(data, "key_confidence",     t.keyConfidence);
+                    updated++;
                 }
 
-                t.bpm                = (float)GetDouble(data, "bpm",                t.bpm);
-                t.firstBeatOffsetSec = (float)GetDouble(data, "first_beat_offset_sec", t.firstBeatOffsetSec);
-                t.key                = GetString(data, "key", t.key);
-                t.keyConfidence      = (float)GetDouble(data, "key_confidence",     t.keyConfidence);
-                updated++;
+                EditorUtility.SetDirty(catalog);
+                catalogsTouched++;
+                totalUpdated += updated;
+                perCatalog.Add($"  • {path}: {updated} updated" +
+                               (missingClip > 0 ? $", {missingClip} no clip" : "") +
+                               (unmatched.Count > 0 ? $", {unmatched.Count} unmatched" : ""));
             }
 
-            EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             string summary =
-                $"Updated {updated} tracks. " +
-                (missing > 0 ? $"{missing} entries had no clip. " : string.Empty) +
-                (unmatched.Count > 0
-                    ? $"\n\nNo analysis match for:\n - {string.Join("\n - ", unmatched)}"
+                $"Patched {catalogsTouched} catalog asset(s), {totalUpdated} track entries total.\n\n" +
+                string.Join("\n", perCatalog) +
+                (unmatchedAll.Count > 0
+                    ? $"\n\nClips with no analysis entry:\n - {string.Join("\n - ", unmatchedAll)}"
                     : string.Empty);
             Debug.Log("[MusicAnalysisImporter] " + summary);
             EditorUtility.DisplayDialog("Music analysis imported", summary, "OK");

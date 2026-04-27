@@ -28,13 +28,20 @@ namespace Valkur.UI.HUD
         [SerializeField, Tooltip("Minimum size while resizing (px).")]
         private Vector2 minSize = new Vector2(140f, 52f);
         [SerializeField, Tooltip("Maximum size while resizing (px).")]
-        private Vector2 maxSize = new Vector2(720f, 320f);
+        private Vector2 maxSize = new Vector2(720f, 720f);
 
         // Reference design size used as the basis for uniform scaling.
         // Everything (fonts, buttons, slider, icons) is laid out for this size
         // and then scaled via RectTransform.localScale so the look stays proportional.
         private const float BaseW = 320f;
-        private const float BaseH = 78f;
+        // Simple mode is the compact transport-only widget.
+        // Expanded mode adds a spectrum analyzer + beat-dot row above it,
+        // so the user can visually align the configured BPM with the actual audio peaks.
+        private const float BaseHSimple   = 78f;
+        // Expanded mode hosts (top→bottom): beat-dot row, full-song waveform with
+        // bar/beat grid + playhead, and the realtime spectrum bar analyzer.
+        private const float BaseHExpanded = 320f;
+        private float CurrentBaseH => _isExpanded ? BaseHExpanded : BaseHSimple;
         [SerializeField, Tooltip("Edge inset from screen border.")]
         private float edgeInset = 16f;
         [SerializeField, Tooltip("Vertical lift to leave room for toasts above.")]
@@ -60,20 +67,85 @@ namespace Valkur.UI.HUD
         private Image _muteIcon;
         private Slider _volumeSlider;
 
+        // Expanded-mode widgets (built once, hidden in simple mode).
+        private bool _isExpanded;
+        private GameObject _simpleContent;
+        private GameObject _spectrumPanel;
+        private Image _expandIcon;
+        private Button _expandBtn;
+        private Image[] _specBars;
+        private float[] _specSmoothed;
+        private float[] _specSamples;
+        private Image[] _beatDots;
+        private const int SpecBars = 64;
+        private const int FftSize = 256; // power of two, gives 256 frequency bins
+
+        // Full-song waveform (Ableton-style overview) — built once per AudioClip.
+        private GameObject _waveformPanel;
+        private Image _waveformImage;
+        private RectTransform _waveformPlayhead;
+        private AudioClip _cachedWaveformClip;
+        private float _cachedWaveformBpm;
+        private float _cachedWaveformOffset;
+        private int _cachedWaveformBeatsPerBar;
+        private Texture2D _waveformTex;
+        private Sprite _waveformSprite;
+        private const int WaveformTexW = 512;
+        private const int WaveformTexH = 96;
+        // Progressive waveform: for streaming clips that don't support GetData,
+        // we sample GetOutputData each frame and bake peaks at the playhead column.
+        private float[] _waveformOutputBuf;
+        private float[] _waveformColumnPeak;   // accumulated peak per column, 0..1
+        private Color32[] _waveformGridPixels; // baseline (bg + grid + axis) — re-stamped every refresh
+        private Color32[] _waveformWorkPixels; // current frame buffer (grid + waveform peaks so far)
+        private bool _waveformProgressive;
+        private int _waveformLastCol = -1;
+        private float _waveformDirtyTimer;
+        // User-controlled vertical zoom on the waveform (1.0 = baseline, 0.25..6.0).
+        // Adjustable via mouse wheel over the waveform panel.
+        private float _waveformAmplitude = 1f;
+        // Track screen size changes so we can re-clamp the widget on resolution change.
+        private int _lastScreenW, _lastScreenH;
+
         private IAudioService _audio;
         private MusicBeatClock _clock;
         private float _flashTimer;
         private float _volumeBeforeMute = 0.7f;
 
         // ── Lifecycle ───────────────────────────────────────────────────────
-        private const string PrefKeyW = "valkur.musichud.width";
-        private const string PrefKeyH = "valkur.musichud.height";
+        // Per-mode size keys: simple and expanded modes are sized independently
+        // so toggling between them restores each one's last user-chosen extent.
+        private const string PrefKeyWSimple   = "valkur.musichud.width.simple";
+        private const string PrefKeyHSimple   = "valkur.musichud.height.simple";
+        private const string PrefKeyWExpanded = "valkur.musichud.width.expanded";
+        private const string PrefKeyHExpanded = "valkur.musichud.height.expanded";
+        // Legacy keys (single shared size) kept for one-shot migration.
+        private const string PrefKeyW         = "valkur.musichud.width";
+        private const string PrefKeyH         = "valkur.musichud.height";
+        private const string PrefKeyExpanded  = "valkur.musichud.expanded";
+        private const string PrefKeyAmplitude = "valkur.musichud.amplitude";
+
+        private string PrefKeyWForMode => _isExpanded ? PrefKeyWExpanded : PrefKeyWSimple;
+        private string PrefKeyHForMode => _isExpanded ? PrefKeyHExpanded : PrefKeyHSimple;
 
         private void Awake()
         {
-            // Restore last user-chosen size before building UI.
-            if (PlayerPrefs.HasKey(PrefKeyW)) widgetWidth  = PlayerPrefs.GetFloat(PrefKeyW);
-            if (PlayerPrefs.HasKey(PrefKeyH)) widgetHeight = PlayerPrefs.GetFloat(PrefKeyH);
+            // Restore last user-chosen expand state before building UI.
+            if (PlayerPrefs.HasKey(PrefKeyExpanded))
+                _isExpanded = PlayerPrefs.GetInt(PrefKeyExpanded) != 0;
+            // Migrate legacy single-size keys to the simple slot the first time.
+            if (PlayerPrefs.HasKey(PrefKeyW) && !PlayerPrefs.HasKey(PrefKeyWSimple))
+                PlayerPrefs.SetFloat(PrefKeyWSimple, PlayerPrefs.GetFloat(PrefKeyW));
+            if (PlayerPrefs.HasKey(PrefKeyH) && !PlayerPrefs.HasKey(PrefKeyHSimple))
+                PlayerPrefs.SetFloat(PrefKeyHSimple, PlayerPrefs.GetFloat(PrefKeyH));
+
+            // Load the size belonging to whichever mode we're starting in.
+            float defW = BaseW;
+            float defH = _isExpanded ? BaseHExpanded : BaseHSimple;
+            widgetWidth  = PlayerPrefs.GetFloat(PrefKeyWForMode, defW);
+            widgetHeight = PlayerPrefs.GetFloat(PrefKeyHForMode, defH);
+            if (PlayerPrefs.HasKey(PrefKeyAmplitude))
+                _waveformAmplitude = Mathf.Clamp(PlayerPrefs.GetFloat(PrefKeyAmplitude), 0.25f, 6f);
             widgetWidth  = Mathf.Clamp(widgetWidth,  minSize.x, maxSize.x);
             widgetHeight = Mathf.Clamp(widgetHeight, minSize.y, maxSize.y);
             BuildUI();
@@ -115,6 +187,14 @@ namespace Valkur.UI.HUD
             }
             if (_clock == null) _clock = MusicBeatClock.Instance;
 
+            // Re-clamp size when the screen resolution changes so the widget always fits.
+            if (Screen.width != _lastScreenW || Screen.height != _lastScreenH)
+            {
+                _lastScreenW = Screen.width;
+                _lastScreenH = Screen.height;
+                ApplySize(widgetWidth, widgetHeight);
+            }
+
             bool playing = _audio != null && _audio.IsMusicPlaying;
             bool paused  = _audio != null && _audio.IsMusicPaused;
             bool active  = playing || paused;
@@ -145,6 +225,7 @@ namespace Valkur.UI.HUD
                 if (_nextBtn != null) _nextBtn.interactable = false;
                 if (_playBtn != null) _playBtn.interactable = false;
                 if (_bg != null) _bg.color = new Color(0.06f, 0.06f, 0.08f, 0.85f);
+                UpdateSpectrum(false);
                 return;
             }
 
@@ -206,6 +287,8 @@ namespace Valkur.UI.HUD
             {
                 _bg.color = new Color(0.06f, 0.06f, 0.08f, 0.85f);
             }
+
+            UpdateSpectrum(playing && !paused);
         }
 
         private void UpdateStaticLabels(string title, float bpm, int beatsPerBar, string key = null)
@@ -289,7 +372,7 @@ namespace Valkur.UI.HUD
             _rt.anchoredPosition = new Vector2(-edgeInset, edgeInset + bottomLift);
             // Inner sizeDelta is fixed to the design size; the widget is resized
             // by changing localScale so all children scale uniformly with it.
-            _rt.sizeDelta = new Vector2(BaseW, BaseH);
+            _rt.sizeDelta = new Vector2(BaseW, CurrentBaseH);
             ApplyScaleFromSize();
 
             _bg = gameObject.AddComponent<Image>();
@@ -300,8 +383,19 @@ namespace Valkur.UI.HUD
             _cg.blocksRaycasts = true;
             _cg.interactable = true;
 
+            // Simple-mode content container: anchored to the BOTTOM of the root
+            // and fixed at BaseHSimple px tall. The expanded mode adds a spectrum
+            // panel ABOVE this container (the root grows upward, pivot is bottom-right).
+            _simpleContent = NewChild("SimpleContent");
+            var scRt = _simpleContent.GetComponent<RectTransform>();
+            scRt.anchorMin = new Vector2(0f, 0f);
+            scRt.anchorMax = new Vector2(1f, 0f);
+            scRt.pivot     = new Vector2(0.5f, 0f);
+            scRt.anchoredPosition = new Vector2(0f, 0f);
+            scRt.sizeDelta = new Vector2(0f, BaseHSimple);
+
             // Metronome dot
-            var dotGo = NewChild("Metronome");
+            var dotGo = NewChild("Metronome", _simpleContent.transform);
             var dotRt = dotGo.GetComponent<RectTransform>();
             dotRt.anchorMin = new Vector2(0f, 1f);
             dotRt.anchorMax = new Vector2(0f, 1f);
@@ -314,7 +408,7 @@ namespace Valkur.UI.HUD
             _metronome.raycastTarget = false;
 
             // Title (top-left)
-            _title = NewLabel("Title", 14, FontStyles.Bold, new Color(1f, 0.95f, 0.85f));
+            _title = NewLabel("Title", 14, FontStyles.Bold, new Color(1f, 0.95f, 0.85f), _simpleContent.transform);
             var titleRt = _title.rectTransform;
             titleRt.anchorMin = new Vector2(0f, 1f);
             titleRt.anchorMax = new Vector2(1f, 1f);
@@ -327,7 +421,7 @@ namespace Valkur.UI.HUD
             _title.text = "—";
 
             // Meta (BPM · TS)
-            _meta = NewLabel("Meta", 10, FontStyles.Normal, new Color(0.75f, 0.85f, 1f, 0.95f));
+            _meta = NewLabel("Meta", 10, FontStyles.Normal, new Color(0.75f, 0.85f, 1f, 0.95f), _simpleContent.transform);
             var metaRt = _meta.rectTransform;
             metaRt.anchorMin = new Vector2(0f, 1f);
             metaRt.anchorMax = new Vector2(0f, 1f);
@@ -338,7 +432,7 @@ namespace Valkur.UI.HUD
             _meta.text = "no tempo";
 
             // Beat counter (top-right)
-            _beatCounter = NewLabel("BeatCounter", 10, FontStyles.Bold, new Color(1f, 1f, 1f, 0.95f));
+            _beatCounter = NewLabel("BeatCounter", 10, FontStyles.Bold, new Color(1f, 1f, 1f, 0.95f), _simpleContent.transform);
             var bcRt = _beatCounter.rectTransform;
             bcRt.anchorMin = new Vector2(1f, 1f);
             bcRt.anchorMax = new Vector2(1f, 1f);
@@ -349,7 +443,7 @@ namespace Valkur.UI.HUD
             _beatCounter.text = "—";
 
             // Time label
-            _timeLabel = NewLabel("Time", 10, FontStyles.Normal, new Color(0.85f, 0.85f, 0.85f, 0.85f));
+            _timeLabel = NewLabel("Time", 10, FontStyles.Normal, new Color(0.85f, 0.85f, 0.85f, 0.85f), _simpleContent.transform);
             var tlRt = _timeLabel.rectTransform;
             tlRt.anchorMin = new Vector2(1f, 1f);
             tlRt.anchorMax = new Vector2(1f, 1f);
@@ -360,20 +454,37 @@ namespace Valkur.UI.HUD
             _timeLabel.text = "0:00 / 0:00";
 
             // Progress bar (just under meta line, just above buttons; no dead space)
-            var barBgGo = NewChild("ProgressBg");
+            var barBgGo = NewChild("ProgressBg", _simpleContent.transform);
             var barBgRt = barBgGo.GetComponent<RectTransform>();
             barBgRt.anchorMin = new Vector2(0f, 1f);
             barBgRt.anchorMax = new Vector2(1f, 1f);
             barBgRt.pivot     = new Vector2(0f, 1f);
-            barBgRt.anchoredPosition = new Vector2(8f, -40f);
-            barBgRt.sizeDelta = new Vector2(-16f, 3f);
+            // Give the bar more click area than its visible thickness so it's draggable.
+            barBgRt.anchoredPosition = new Vector2(8f, -36f);
+            barBgRt.sizeDelta = new Vector2(-16f, 12f);
             var bgImg = barBgGo.AddComponent<Image>();
             bgImg.sprite = BuildSolidSprite();
             bgImg.type = Image.Type.Sliced;
-            bgImg.color = new Color(1f, 1f, 1f, 0.18f);
-            bgImg.raycastTarget = false;
+            // Transparent click hit area (visible track is the inner Image below).
+            bgImg.color = new Color(1f, 1f, 1f, 0.001f);
+            bgImg.raycastTarget = true;
+            var seekHandler = barBgGo.AddComponent<ProgressBarSeekHandler>();
+            seekHandler.Init(this, barBgRt);
 
-            var fillGo = NewChild("ProgressFill", barBgGo.transform);
+            // Visible thin track inside the larger hit area.
+            var trackGo = NewChild("Track", barBgGo.transform);
+            var tRt = trackGo.GetComponent<RectTransform>();
+            tRt.anchorMin = new Vector2(0f, 0.5f);
+            tRt.anchorMax = new Vector2(1f, 0.5f);
+            tRt.pivot     = new Vector2(0.5f, 0.5f);
+            tRt.anchoredPosition = Vector2.zero;
+            tRt.sizeDelta = new Vector2(0f, 3f);
+            var trackImg = trackGo.AddComponent<Image>();
+            trackImg.sprite = BuildSolidSprite();
+            trackImg.color = new Color(1f, 1f, 1f, 0.18f);
+            trackImg.raycastTarget = false;
+
+            var fillGo = NewChild("ProgressFill", trackGo.transform);
             var fillRt = fillGo.GetComponent<RectTransform>();
             fillRt.anchorMin = Vector2.zero;
             fillRt.anchorMax = Vector2.one;
@@ -390,16 +501,29 @@ namespace Valkur.UI.HUD
 
             // Transport buttons (bottom row)
             float btnY = 5f;
-            _prevBtn = BuildIconButton("PrevBtn", SpritePrev, 8f,  btnY, OnPrevClicked, out _);
-            _playBtn = BuildIconButton("PlayBtn", SpritePlay, 36f, btnY, OnPlayClicked, out _playIcon);
-            _nextBtn = BuildIconButton("NextBtn", SpriteNext, 64f, btnY, OnNextClicked, out _);
-            _muteBtn = BuildIconButton("MuteBtn", SpriteSpeaker, 100f, btnY, OnMuteClicked, out _muteIcon);
+            _prevBtn   = BuildIconButton("PrevBtn",   SpritePrev,    8f,   btnY, OnPrevClicked,   out _,           _simpleContent.transform);
+            _playBtn   = BuildIconButton("PlayBtn",   SpritePlay,    36f,  btnY, OnPlayClicked,   out _playIcon,   _simpleContent.transform);
+            _nextBtn   = BuildIconButton("NextBtn",   SpriteNext,    64f,  btnY, OnNextClicked,   out _,           _simpleContent.transform);
+            _muteBtn   = BuildIconButton("MuteBtn",   SpriteSpeaker, 100f, btnY, OnMuteClicked,   out _muteIcon,   _simpleContent.transform);
+            _expandBtn = BuildIconButton("ExpandBtn", SpriteChevronUp, 128f, btnY, OnExpandClicked, out _expandIcon, _simpleContent.transform);
 
             // Volume slider (right of buttons)
-            BuildVolumeSlider(132f, btnY + 5f);
+            BuildVolumeSlider(160f, btnY + 5f);
+
+            // Spectrum panel (expanded mode only) — sits above the simple content.
+            BuildSpectrumPanel();
 
             // Resize grip (top-left corner) — drag to resize
             BuildResizeHandle();
+
+            // Apply initial expand state (built collapsed by default; toggle if persisted).
+            ApplyExpandedState();
+
+            // Re-clamp to current screen so a previously-saved size that no longer
+            // fits the resolution is shrunk back into view on first show.
+            _lastScreenW = Screen.width;
+            _lastScreenH = Screen.height;
+            ApplySize(widgetWidth, widgetHeight);
         }
 
         private void BuildResizeHandle()
@@ -431,44 +555,649 @@ namespace Valkur.UI.HUD
             handler.Init(this);
         }
 
+        // ── Spectrum panel (expanded mode) ──────────────────────────────────
+
+        private void BuildSpectrumPanel()
+        {
+            _specSamples  = new float[FftSize];
+            _specSmoothed = new float[SpecBars];
+            _specBars     = new Image[SpecBars];
+
+            _spectrumPanel = NewChild("SpectrumPanel");
+            var spRt = _spectrumPanel.GetComponent<RectTransform>();
+            // Top of root: occupies the area above the simple content.
+            spRt.anchorMin = new Vector2(0f, 0f);
+            spRt.anchorMax = new Vector2(1f, 1f);
+            spRt.pivot     = new Vector2(0.5f, 1f);
+            // Sit between top of root and top of simple content (BaseHSimple px from bottom).
+            spRt.offsetMin = new Vector2(8f, BaseHSimple);
+            spRt.offsetMax = new Vector2(-8f, -8f);
+
+            var bg = _spectrumPanel.AddComponent<Image>();
+            bg.sprite = BuildRoundedRectSprite();
+            bg.type = Image.Type.Sliced;
+            bg.color = new Color(0.02f, 0.02f, 0.04f, 0.65f);
+            bg.raycastTarget = false;
+
+            // Beat dot row at the very top: BeatsPerBar markers, light up on the active beat.
+            // The row is also interactive: clicks = tap-tempo; horizontal drag = BPM fine-tune,
+            // vertical drag = first-beat offset fine-tune. See BeatDotsTapHandler.
+            var dotsRoot = NewChild("BeatDots", _spectrumPanel.transform);
+            var drRt = dotsRoot.GetComponent<RectTransform>();
+            drRt.anchorMin = new Vector2(0f, 1f);
+            drRt.anchorMax = new Vector2(1f, 1f);
+            drRt.pivot     = new Vector2(0.5f, 1f);
+            drRt.anchoredPosition = new Vector2(0f, -2f);
+            // Make the strip tall enough to be a comfortable click/drag target.
+            drRt.sizeDelta = new Vector2(0f, 18f);
+            // Invisible-but-raycastable backplate so the whole strip catches input.
+            var dotsBg = dotsRoot.AddComponent<Image>();
+            dotsBg.color = new Color(1f, 1f, 1f, 0.001f);
+            dotsBg.raycastTarget = true;
+            var tapHandler = dotsRoot.AddComponent<BeatDotsTapHandler>();
+            tapHandler.Init(this);
+
+            // Build up to 16 dots; we only show BeatsPerBar of them per Update().
+            const int MaxBeatDots = 16;
+            _beatDots = new Image[MaxBeatDots];
+            for (int i = 0; i < MaxBeatDots; i++)
+            {
+                var d = NewChild("Dot" + i, dotsRoot.transform);
+                var dRt = d.GetComponent<RectTransform>();
+                dRt.anchorMin = new Vector2(0f, 0.5f);
+                dRt.anchorMax = new Vector2(0f, 0.5f);
+                dRt.pivot     = new Vector2(0.5f, 0.5f);
+                dRt.sizeDelta = new Vector2(8f, 8f);
+                var di = d.AddComponent<Image>();
+                di.sprite = BuildCircleSprite();
+                di.color = new Color(1f, 1f, 1f, 0.25f);
+                di.raycastTarget = false;
+                _beatDots[i] = di;
+            }
+
+            // Full-song waveform overview (Ableton-style) sits between beat dots and bars.
+            // It shows peaks per pixel column with bar/beat grid lines baked in,
+            // plus a moving playhead so the user can visually align BPM with audio peaks.
+            _waveformPanel = NewChild("Waveform", _spectrumPanel.transform);
+            var wfRt = _waveformPanel.GetComponent<RectTransform>();
+            wfRt.anchorMin = new Vector2(0f, 1f);
+            wfRt.anchorMax = new Vector2(1f, 1f);
+            wfRt.pivot     = new Vector2(0.5f, 1f);
+            // Top-pinned: 4 px below the beat-dot row (which occupies top 18 px), 100 px tall.
+            wfRt.offsetMin = new Vector2(6f, -122f);  // bottom = top - 122
+            wfRt.offsetMax = new Vector2(-6f, -22f);  // top    = top - 22
+
+            var wfBg = _waveformPanel.AddComponent<Image>();
+            wfBg.color = new Color(0.03f, 0.03f, 0.06f, 0.9f);
+            // Mouse-wheel zoom on the waveform area.
+            wfBg.raycastTarget = true;
+            var zoomHandler = _waveformPanel.AddComponent<WaveformZoomHandler>();
+            zoomHandler.Init(this);
+
+            _waveformImage = NewChild("WaveformImage", _waveformPanel.transform).AddComponent<Image>();
+            var wiRt = _waveformImage.rectTransform;
+            wiRt.anchorMin = Vector2.zero;
+            wiRt.anchorMax = Vector2.one;
+            wiRt.offsetMin = Vector2.zero;
+            wiRt.offsetMax = Vector2.zero;
+            _waveformImage.preserveAspect = false;
+            _waveformImage.raycastTarget = false;
+            _waveformImage.color = Color.white;
+
+            // Playhead: 2 px vertical line that slides with playback.
+            var phGo = NewChild("Playhead", _waveformPanel.transform);
+            _waveformPlayhead = phGo.GetComponent<RectTransform>();
+            _waveformPlayhead.anchorMin = new Vector2(0f, 0f);
+            _waveformPlayhead.anchorMax = new Vector2(0f, 1f);
+            _waveformPlayhead.pivot     = new Vector2(0.5f, 0.5f);
+            _waveformPlayhead.sizeDelta = new Vector2(2f, 0f);
+            _waveformPlayhead.anchoredPosition = Vector2.zero;
+            var phImg = phGo.AddComponent<Image>();
+            phImg.color = new Color(1f, 0.35f, 0.35f, 0.95f);
+            phImg.raycastTarget = false;
+
+            // Bars row sits below the waveform.
+            var barsRoot = NewChild("Bars", _spectrumPanel.transform);
+            var brRt = barsRoot.GetComponent<RectTransform>();
+            brRt.anchorMin = new Vector2(0f, 0f);
+            brRt.anchorMax = new Vector2(1f, 1f);
+            brRt.offsetMin = new Vector2(6f, 6f);
+            brRt.offsetMax = new Vector2(-6f, -126f); // leave 18 (dots) + 4 + 100 (waveform) + 4
+
+            for (int i = 0; i < SpecBars; i++)
+            {
+                var b = NewChild("Bar" + i, barsRoot.transform);
+                var bRt = b.GetComponent<RectTransform>();
+                // Each bar: anchored to bottom of bars area, evenly distributed across X.
+                float xMin = i / (float)SpecBars;
+                float xMax = (i + 1) / (float)SpecBars;
+                bRt.anchorMin = new Vector2(xMin, 0f);
+                bRt.anchorMax = new Vector2(xMax, 0f);
+                bRt.pivot     = new Vector2(0.5f, 0f);
+                bRt.offsetMin = new Vector2(1f, 0f);
+                bRt.offsetMax = new Vector2(-1f, 2f); // initial tiny height
+                var bi = b.AddComponent<Image>();
+                bi.sprite = BuildSolidSprite();
+                bi.type = Image.Type.Sliced;
+                bi.color = new Color(0.95f, 0.78f, 0.25f, 0.95f);
+                bi.raycastTarget = false;
+                _specBars[i] = bi;
+            }
+        }
+
+        private void OnExpandClicked()
+        {
+            _isExpanded = !_isExpanded;
+            ApplyExpandedState();
+            PlayerPrefs.SetInt(PrefKeyExpanded, _isExpanded ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        private void ApplyExpandedState()
+        {
+            if (_rt != null) _rt.sizeDelta = new Vector2(BaseW, CurrentBaseH);
+            if (_spectrumPanel != null) _spectrumPanel.SetActive(_isExpanded);
+            if (_expandIcon != null)    _expandIcon.sprite = _isExpanded ? SpriteChevronDown : SpriteChevronUp;
+            // Re-clamp current pixel size in the new vertical reference frame.
+            ApplySize(widgetWidth, widgetHeight);
+            PersistSize();
+        }
+
+        // ── Spectrum data update ────────────────────────────────────────────
+        private void UpdateSpectrum(bool playing)
+        {
+            if (!_isExpanded || _specBars == null || _specSamples == null) return;
+
+            bool got = playing && _audio != null && _audio.GetMusicSpectrumData(_specSamples);
+            float dt = Mathf.Max(Time.unscaledDeltaTime, 1f / 240f);
+            float fall = 2.2f * dt; // smoothed bar fall-off rate
+
+            // Map FFT bins to log-spaced bars: low bins occupy more screen than high bins,
+            // matching how the human ear perceives frequency.
+            int N = _specSamples.Length;
+            for (int i = 0; i < SpecBars; i++)
+            {
+                float t0 = (float)i / SpecBars;
+                float t1 = (float)(i + 1) / SpecBars;
+                int lo = Mathf.Clamp(Mathf.FloorToInt(Mathf.Pow(N, t0)), 1, N - 1);
+                int hi = Mathf.Clamp(Mathf.FloorToInt(Mathf.Pow(N, t1)), lo + 1, N);
+
+                float v = 0f;
+                if (got)
+                {
+                    for (int k = lo; k < hi; k++) v += _specSamples[k];
+                    v /= Mathf.Max(1, hi - lo);
+                    // Logarithmic compression so quiet detail is visible.
+                    v = Mathf.Clamp01(Mathf.Log10(1f + v * 800f) * 0.5f);
+                }
+
+                if (v > _specSmoothed[i]) _specSmoothed[i] = v;
+                else                       _specSmoothed[i] = Mathf.Max(0f, _specSmoothed[i] - fall);
+
+                var bar = _specBars[i];
+                if (bar == null) continue;
+                var rt = bar.rectTransform;
+                // Height as percentage of bar area, anchored bottom.
+                rt.anchorMax = new Vector2(rt.anchorMax.x, _specSmoothed[i]);
+                // Color shifts from gold → magenta with intensity.
+                bar.color = Color.Lerp(new Color(0.45f, 0.65f, 1f, 0.9f),
+                                       new Color(1f, 0.4f, 0.6f, 0.95f),
+                                       _specSmoothed[i]);
+            }
+
+            // Beat dot row: light up the active beat in the bar.
+            if (_beatDots != null)
+            {
+                int bpb = (_clock != null && _clock.IsActive) ? Mathf.Max(1, _clock.BeatsPerBar) : 4;
+                bpb = Mathf.Min(bpb, _beatDots.Length);
+                int active = (_clock != null && _clock.IsActive) ? _clock.CurrentBeatInBar : -1;
+                float spacing = 1f / Mathf.Max(1, bpb);
+                for (int i = 0; i < _beatDots.Length; i++)
+                {
+                    var dot = _beatDots[i];
+                    if (dot == null) continue;
+                    bool used = i < bpb;
+                    dot.gameObject.SetActive(used);
+                    if (!used) continue;
+                    var dRt = dot.rectTransform;
+                    dRt.anchorMin = new Vector2((i + 0.5f) * spacing, 0.5f);
+                    dRt.anchorMax = dRt.anchorMin;
+                    if (i == active && playing)
+                    {
+                        bool downbeat = (i == 0);
+                        dot.color = downbeat ? new Color(1f, 0.85f, 0.3f, 1f) : new Color(1f, 1f, 1f, 1f);
+                        float pulse = 1f + (1f - (_clock != null ? _clock.BeatPhase01 : 0f)) * 0.5f;
+                        dRt.localScale = new Vector3(pulse, pulse, 1f);
+                    }
+                    else
+                    {
+                        dot.color = (i == 0) ? new Color(1f, 0.85f, 0.3f, 0.45f) : new Color(1f, 1f, 1f, 0.30f);
+                        dRt.localScale = Vector3.one;
+                    }
+                }
+            }
+
+            // Full-song waveform: rebuild on track change, update playhead every frame.
+            UpdateWaveform(playing);
+        }
+
+        // ── Waveform overview (Ableton-style) ──────────────────────────────
+        private void UpdateWaveform(bool playing)
+        {
+            if (_waveformImage == null || _audio == null) return;
+
+            var clip = _audio.CurrentMusicClip;
+            float bpm    = _audio.CurrentTrackBpm;
+            float offset = _audio.CurrentTrackBeatOffsetSec;
+            int   bpb    = Mathf.Max(1, _audio.CurrentTrackBeatsPerBar);
+
+            bool needsRebuild = clip != null && (
+                clip != _cachedWaveformClip ||
+                !Mathf.Approximately(bpm,    _cachedWaveformBpm) ||
+                !Mathf.Approximately(offset, _cachedWaveformOffset) ||
+                bpb != _cachedWaveformBeatsPerBar);
+
+            if (needsRebuild)
+                RebuildWaveformTexture(clip, bpm, offset, bpb);
+
+            // Move the playhead to the current playback position.
+            if (clip != null && _waveformPlayhead != null)
+            {
+                float duration = clip.length;
+                float t = _audio.CurrentMusicTime;
+                float p = duration > 0f ? Mathf.Clamp01(t / duration) : 0f;
+                _waveformPlayhead.anchorMin = new Vector2(p, 0f);
+                _waveformPlayhead.anchorMax = new Vector2(p, 1f);
+                _waveformPlayhead.gameObject.SetActive(true);
+
+                // Progressive streaming-clip waveform: sample output, write column.
+                if (playing && _waveformProgressive && _waveformWorkPixels != null && duration > 0f)
+                    BakeProgressiveWaveformColumn(p);
+            }
+            else if (_waveformPlayhead != null)
+            {
+                _waveformPlayhead.gameObject.SetActive(false);
+            }
+        }
+
+        private void BakeProgressiveWaveformColumn(float position01)
+        {
+            if (_waveformOutputBuf == null) _waveformOutputBuf = new float[256];
+            if (!_audio.GetMusicOutputData(_waveformOutputBuf)) return;
+
+            // Peak amplitude in this audio buffer.
+            float peak = 0f;
+            for (int i = 0; i < _waveformOutputBuf.Length; i++)
+            {
+                float a = _waveformOutputBuf[i];
+                if (a < 0f) a = -a;
+                if (a > peak) peak = a;
+            }
+            peak = Mathf.Clamp01(peak * 1.4f * _waveformAmplitude); // gentle gain + user zoom
+
+            int col = Mathf.Clamp(Mathf.FloorToInt(position01 * WaveformTexW), 0, WaveformTexW - 1);
+            if (_waveformColumnPeak == null) _waveformColumnPeak = new float[WaveformTexW];
+
+            // Snap to the bar grid so the progressive output renders as discrete
+            // bars (matching the bulk path style: 3 px bar + 1 px gap).
+            const int BarW = 3;
+            const int GapW = 1;
+            int stride = BarW + GapW;
+            int barStart = (col / stride) * stride;
+            int barEnd   = Mathf.Min(barStart + BarW, WaveformTexW);
+
+            // Accumulate (max) peak for this bar group.
+            if (peak > _waveformColumnPeak[barStart]) _waveformColumnPeak[barStart] = peak;
+
+            int midY = WaveformTexH / 2;
+            float halfH = WaveformTexH * 0.45f;
+            int span = Mathf.Max(1, (int)(_waveformColumnPeak[barStart] * halfH));
+            var waveC = new Color32(220, 180, 90, 255);
+
+            // Restore baseline + draw the symmetric peak across the whole bar width.
+            int y0 = Mathf.Clamp(midY - span, 0, WaveformTexH - 1);
+            int y1 = Mathf.Clamp(midY + span, 0, WaveformTexH - 1);
+            for (int x = barStart; x < barEnd; x++)
+            {
+                for (int y = 0; y < WaveformTexH; y++)
+                    _waveformWorkPixels[y * WaveformTexW + x] = _waveformGridPixels[y * WaveformTexW + x];
+                for (int y = y0; y <= y1; y++)
+                    _waveformWorkPixels[y * WaveformTexW + x] = waveC;
+            }
+
+            // Throttle GPU upload — apply once per ~33 ms or when column advances.
+            _waveformDirtyTimer += Time.unscaledDeltaTime;
+            if (col != _waveformLastCol || _waveformDirtyTimer >= 0.033f)
+            {
+                _waveformLastCol = col;
+                _waveformDirtyTimer = 0f;
+                _waveformTex.SetPixels32(_waveformWorkPixels);
+                _waveformTex.Apply(false, false);
+            }
+        }
+
+        private void RebuildWaveformTexture(AudioClip clip, float bpm, float offsetSec, int beatsPerBar)
+        {
+            if (clip == null) return;
+
+            if (_waveformTex == null)
+            {
+                _waveformTex = new Texture2D(WaveformTexW, WaveformTexH, TextureFormat.RGBA32, false)
+                    { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            }
+
+            // Build the static baseline first: bg + center axis + bar/beat grid.
+            var grid = new Color32[WaveformTexW * WaveformTexH];
+            var bgC   = new Color32(8, 8, 16, 230);
+            var axisC = new Color32(40, 40, 60, 200);
+            for (int i = 0; i < grid.Length; i++) grid[i] = bgC;
+            int midY = WaveformTexH / 2;
+            for (int x = 0; x < WaveformTexW; x++) grid[midY * WaveformTexW + x] = axisC;
+
+            float duration = clip.length;
+            if (bpm > 0f && duration > 0f)
+            {
+                float spb = 60f / bpm;
+                int beatCount = Mathf.Max(0, Mathf.FloorToInt((duration - offsetSec) / spb)) + 1;
+                int safeBpb = Mathf.Max(1, beatsPerBar);
+                // If beats are too dense (less than ~4 px apart), only draw downbeats.
+                float pxPerBeat = WaveformTexW * (spb / duration);
+                bool drawOffBeats = pxPerBeat >= 4f;
+                var downbeatC = new Color32(255, 220, 80, 220);
+                var beatC     = new Color32(140, 140, 180, 110);
+                for (int b = 0; b < beatCount; b++)
+                {
+                    float ts = offsetSec + b * spb;
+                    if (ts < 0f || ts > duration) continue;
+                    int x = Mathf.Clamp((int)(ts / duration * WaveformTexW), 0, WaveformTexW - 1);
+                    bool downbeat = (b % safeBpb) == 0;
+                    if (!downbeat && !drawOffBeats) continue;
+                    var c = downbeat ? downbeatC : beatC;
+                    for (int y = 0; y < WaveformTexH; y++)
+                    {
+                        int i = y * WaveformTexW + x;
+                        if (downbeat) grid[i] = c;
+                        else
+                        {
+                            var prev = grid[i];
+                            float ca = c.a / 255f;
+                            byte r  = (byte)(prev.r * (1f - ca) + c.r * ca);
+                            byte g2 = (byte)(prev.g * (1f - ca) + c.g * ca);
+                            byte bl = (byte)(prev.b * (1f - ca) + c.b * ca);
+                            grid[i] = new Color32(r, g2, bl, 255);
+                        }
+                    }
+                }
+            }
+
+            _waveformGridPixels = grid;
+            _waveformWorkPixels = new Color32[grid.Length];
+            System.Array.Copy(grid, _waveformWorkPixels, grid.Length);
+            if (_waveformColumnPeak == null || _waveformColumnPeak.Length != WaveformTexW)
+                _waveformColumnPeak = new float[WaveformTexW];
+            else
+                System.Array.Clear(_waveformColumnPeak, 0, _waveformColumnPeak.Length);
+            _waveformLastCol = -1;
+            _waveformDirtyTimer = 0f;
+
+            // Streaming clips can't use GetData → fall back to progressive sampling.
+            // CompressedInMemory + DecompressOnLoad both support GetData.
+            _waveformProgressive = clip.loadType == AudioClipLoadType.Streaming;
+
+            if (!_waveformProgressive)
+            {
+                int channels = Mathf.Max(1, clip.channels);
+                int totalPerChannel = clip.samples;
+                float[] data = null;
+                if (totalPerChannel > 0)
+                {
+                    try
+                    {
+                        data = new float[totalPerChannel * channels];
+                        if (!clip.GetData(data, 0)) data = null;
+                    }
+                    catch
+                    {
+                        data = null;
+                    }
+                }
+
+                if (data != null)
+                {
+                    var waveC = new Color32(220, 180, 90, 255);
+                    float halfH = WaveformTexH * 0.45f;
+                    float amp = _waveformAmplitude;
+                    // Bar-style rendering (like the spectrum below): paint groups of
+                    // BarW columns and skip GapW between them, so the waveform reads
+                    // as discrete bars instead of a solid silhouette.
+                    const int BarW = 3;
+                    const int GapW = 1;
+                    int stride = BarW + GapW;
+                    for (int gx = 0; gx < WaveformTexW; gx += stride)
+                    {
+                        // Aggregate peak across the bar's pixel-column span.
+                        long lo = (long)gx * totalPerChannel / WaveformTexW;
+                        long hi = (long)Mathf.Min(gx + BarW, WaveformTexW) * totalPerChannel / WaveformTexW;
+                        if (hi <= lo) hi = lo + 1;
+                        float vMin = 0f, vMax = 0f;
+                        for (long s = lo; s < hi; s++)
+                        {
+                            int idx = (int)s * channels;
+                            float v = data[idx];
+                            if (v < vMin) vMin = v;
+                            if (v > vMax) vMax = v;
+                        }
+                        vMin = Mathf.Clamp(vMin * amp, -1f, 1f);
+                        vMax = Mathf.Clamp(vMax * amp, -1f, 1f);
+                        int y0 = Mathf.Clamp(midY + (int)(vMin * halfH), 0, WaveformTexH - 1);
+                        int y1 = Mathf.Clamp(midY + (int)(vMax * halfH), 0, WaveformTexH - 1);
+                        int xEnd = Mathf.Min(gx + BarW, WaveformTexW);
+                        for (int x = gx; x < xEnd; x++)
+                            for (int y = y0; y <= y1; y++)
+                                _waveformWorkPixels[y * WaveformTexW + x] = waveC;
+                    }
+                }
+            }
+
+            _waveformTex.SetPixels32(_waveformWorkPixels);
+            _waveformTex.Apply(false, false);
+            if (_waveformSprite == null)
+                _waveformSprite = Sprite.Create(_waveformTex, new Rect(0, 0, WaveformTexW, WaveformTexH),
+                                                new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            _waveformImage.sprite = _waveformSprite;
+            _waveformImage.SetMaterialDirty();
+
+            _cachedWaveformClip        = clip;
+            _cachedWaveformBpm         = bpm;
+            _cachedWaveformOffset      = offsetSec;
+            _cachedWaveformBeatsPerBar = beatsPerBar;
+        }
+
         // Called by the ResizeHandle while the user drags.
+        // Width and height are independent: the user can stretch the widget
+        // freely on either axis without the other one following.
         internal void ApplySize(float w, float h)
         {
-            // Use the larger of the two normalized deltas as a uniform scale so
-            // the user can drag in any direction and the widget grows proportionally.
             float wn = Mathf.Clamp(w, minSize.x, maxSize.x);
             float hn = Mathf.Clamp(h, minSize.y, maxSize.y);
-            float scale = Mathf.Max(wn / BaseW, hn / BaseH);
-            // Final clamped scale derived from the global min/max bounds.
-            float minScale = Mathf.Max(minSize.x / BaseW, minSize.y / BaseH);
-            float maxScale = Mathf.Min(maxSize.x / BaseW, maxSize.y / BaseH);
-            scale = Mathf.Clamp(scale, minScale, maxScale);
 
-            widgetWidth  = BaseW * scale;
-            widgetHeight = BaseH * scale;
+            // Hard clamp to the actual on-screen rectangle so the widget never
+            // overflows the top/left of the screen (especially in expanded mode).
+            // CRITICAL: widget sizes are in CANVAS units, but Screen.* / pixelRect
+            // are in SCREEN pixels. Convert via canvas.scaleFactor so the clamp
+            // is correct under any CanvasScaler setting.
+            float screenW = Screen.width;
+            float screenH = Screen.height;
+            if (_canvas != null)
+            {
+                var pr = _canvas.pixelRect;
+                if (pr.width  > 0f) screenW = pr.width;
+                if (pr.height > 0f) screenH = pr.height;
+            }
+            float canvasScale = (_canvas != null && _canvas.scaleFactor > 0.0001f) ? _canvas.scaleFactor : 1f;
+            // Available room for the widget expressed in CANVAS units.
+            float availW = Mathf.Max(minSize.x, screenW / canvasScale - edgeInset * 2f);
+            float availH = Mathf.Max(minSize.y, screenH / canvasScale - edgeInset * 2f - bottomLift);
+            wn = Mathf.Min(wn, availW);
+            hn = Mathf.Min(hn, availH);
+
+            widgetWidth  = wn;
+            widgetHeight = hn;
             ApplyScaleFromSize();
         }
 
         private void ApplyScaleFromSize()
         {
             if (_rt == null) return;
-            float scale = widgetWidth / BaseW;
-            _rt.localScale = new Vector3(scale, scale, 1f);
+            // Independent X / Y stretch so the user can freely change aspect ratio.
+            float sx = widgetWidth  / BaseW;
+            float sy = widgetHeight / CurrentBaseH;
+            _rt.localScale = new Vector3(sx, sy, 1f);
         }
 
         // Called by the ResizeHandle on EndDrag to persist the choice.
+        // Persists into the slot belonging to the current expanded/simple mode
+        // so each mode keeps its own remembered size.
         internal void PersistSize()
         {
-            PlayerPrefs.SetFloat(PrefKeyW, widgetWidth);
-            PlayerPrefs.SetFloat(PrefKeyH, widgetHeight);
+            PlayerPrefs.SetFloat(PrefKeyWForMode, widgetWidth);
+            PlayerPrefs.SetFloat(PrefKeyHForMode, widgetHeight);
             PlayerPrefs.Save();
         }
 
         internal Vector2 CurrentSize => new Vector2(widgetWidth, widgetHeight);
 
+        /// <summary>Called by ProgressBarSeekHandler when the user clicks/drags the yellow bar.</summary>
+        internal void SeekToFraction(float frac01)
+        {
+            if (_audio == null) return;
+            var clip = _audio.CurrentMusicClip;
+            if (clip == null) return;
+            float t = Mathf.Clamp01(frac01) * clip.length;
+            _audio.SeekMusic(t);
+            // Update the visible fill immediately so the drag feels responsive.
+            if (_progressFill != null) _progressFill.fillAmount = Mathf.Clamp01(frac01);
+        }
+
+        /// <summary>Called by WaveformZoomHandler when the user scrolls the wheel over the waveform.</summary>
+        internal void AdjustWaveformAmplitude(float factor)
+        {
+            float prev = _waveformAmplitude;
+            _waveformAmplitude = Mathf.Clamp(_waveformAmplitude * factor, 0.25f, 6f);
+            if (Mathf.Approximately(prev, _waveformAmplitude)) return;
+            PlayerPrefs.SetFloat(PrefKeyAmplitude, _waveformAmplitude);
+            PlayerPrefs.Save();
+            // Force a full waveform repaint with the new amplitude.
+            // For bulk-mode (non-streaming) clips this re-bakes the static peaks.
+            // For progressive (streaming) clips it scales subsequent peaks; existing
+            // peaks are scaled in-place so the viewer reflects the new zoom now.
+            if (_audio != null)
+            {
+                var clip = _audio.CurrentMusicClip;
+                if (clip != null)
+                {
+                    if (_waveformProgressive)
+                    {
+                        // Rescale already-painted peak columns visually.
+                        if (_waveformColumnPeak != null && _waveformWorkPixels != null && _waveformGridPixels != null)
+                        {
+                            int midY = WaveformTexH / 2;
+                            float halfH = WaveformTexH * 0.45f;
+                            float scaleK = _waveformAmplitude / Mathf.Max(0.0001f, prev);
+                            var waveC = new Color32(220, 180, 90, 255);
+                            const int BarW = 3;
+                            const int GapW = 1;
+                            int stride = BarW + GapW;
+                            for (int gx = 0; gx < WaveformTexW; gx += stride)
+                            {
+                                _waveformColumnPeak[gx] = Mathf.Clamp01(_waveformColumnPeak[gx] * scaleK);
+                                int span = Mathf.Max(0, (int)(_waveformColumnPeak[gx] * halfH));
+                                int y0 = Mathf.Clamp(midY - span, 0, WaveformTexH - 1);
+                                int y1 = Mathf.Clamp(midY + span, 0, WaveformTexH - 1);
+                                int xEnd = Mathf.Min(gx + BarW, WaveformTexW);
+                                for (int x = gx; x < xEnd; x++)
+                                {
+                                    for (int y = 0; y < WaveformTexH; y++)
+                                        _waveformWorkPixels[y * WaveformTexW + x] = _waveformGridPixels[y * WaveformTexW + x];
+                                    if (span > 0)
+                                        for (int y = y0; y <= y1; y++)
+                                            _waveformWorkPixels[y * WaveformTexW + x] = waveC;
+                                }
+                            }
+                            _waveformTex.SetPixels32(_waveformWorkPixels);
+                            _waveformTex.Apply(false, false);
+                        }
+                    }
+                    else
+                    {
+                        // Force a clean rebuild for bulk clips.
+                        _cachedWaveformClip = null;
+                        UpdateWaveform(true);
+                    }
+                }
+            }
+        }
+
+        // ── Tap-tempo / live tempo override ──────────────────────────────────
+        // Buffer of the last few click timestamps used to estimate BPM.
+        private readonly System.Collections.Generic.List<float> _tapTimes = new System.Collections.Generic.List<float>(8);
+        private const float TapResetSec = 2.0f; // gap longer than this resets the buffer
+
+        /// <summary>
+        /// Called by <see cref="BeatDotsTapHandler"/> on each pointer-up that wasn't a drag.
+        /// Builds a rolling tap-tempo estimate; once we have at least 2 taps the clock
+        /// is re-tuned and the most-recent tap becomes the new downbeat anchor.
+        /// </summary>
+        internal void RegisterBeatTap()
+        {
+            if (_audio == null) return;
+            if (_clock == null) _clock = MusicBeatClock.Instance;
+            if (_clock == null) return;
+
+            float now = Time.unscaledTime;
+            // Reset the buffer if the user paused between taps.
+            if (_tapTimes.Count > 0 && now - _tapTimes[_tapTimes.Count - 1] > TapResetSec)
+                _tapTimes.Clear();
+            _tapTimes.Add(now);
+            // Keep only the most recent ~6 taps for a stable, responsive average.
+            const int MaxTaps = 6;
+            if (_tapTimes.Count > MaxTaps) _tapTimes.RemoveRange(0, _tapTimes.Count - MaxTaps);
+            if (_tapTimes.Count < 2) return;
+
+            // Average inter-tap interval → BPM.
+            float total = _tapTimes[_tapTimes.Count - 1] - _tapTimes[0];
+            int intervals = _tapTimes.Count - 1;
+            if (total <= 0f || intervals <= 0) return;
+            float secPerBeat = total / intervals;
+            if (secPerBeat <= 0.05f) return; // ignore impossibly fast taps
+            float bpm = Mathf.Clamp(60f / secPerBeat, 40f, 240f);
+
+            // Anchor the downbeat to the latest tap: offset = currentMusicTime - 0
+            // (so when the clock reads currentMusicTime, beat 0 fires immediately).
+            float musicTime = _audio.CurrentMusicTime;
+            // Snap to the nearest existing beat-grid offset within the same bar so the
+            // dots stay roughly aligned to bars, not jumping randomly.
+            float offset = Mathf.Max(0f, musicTime);
+            _clock.OverrideTempo(bpm, offset);
+        }
+
+        /// <summary>
+        /// Called by <see cref="BeatDotsTapHandler"/> while the user drags. Horizontal delta
+        /// fine-tunes BPM (right = faster), vertical delta fine-tunes the first-beat offset.
+        /// </summary>
+        internal void AdjustTempoByDrag(Vector2 deltaPixels)
+        {
+            if (_clock == null) _clock = MusicBeatClock.Instance;
+            if (_clock == null || _clock.Bpm <= 0f) return;
+            // ~0.2 BPM per pixel of horizontal drag; ~0.005s per pixel of vertical drag.
+            float bpm = Mathf.Clamp(_clock.Bpm + deltaPixels.x * 0.2f, 40f, 240f);
+            float off = Mathf.Max(0f, _clock.FirstBeatOffsetSec - deltaPixels.y * 0.005f);
+            _clock.OverrideTempo(bpm, off);
+        }
+
         private void BuildVolumeSlider(float x, float y)
         {
-            var sliderGo = NewChild("VolumeSlider");
+            var sliderGo = NewChild("VolumeSlider", _simpleContent.transform);
             var slRt = sliderGo.GetComponent<RectTransform>();
             slRt.anchorMin = new Vector2(0f, 0f);
             slRt.anchorMax = new Vector2(1f, 0f);
@@ -523,9 +1252,9 @@ namespace Valkur.UI.HUD
 
         private Button BuildIconButton(string label, Sprite icon, float x, float y,
                                        UnityEngine.Events.UnityAction onClick,
-                                       out Image iconImg)
+                                       out Image iconImg, Transform parent = null)
         {
-            var go = NewChild(label);
+            var go = NewChild(label, parent);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0f, 0f);
             rt.anchorMax = new Vector2(0f, 0f);
@@ -577,9 +1306,9 @@ namespace Valkur.UI.HUD
             return go;
         }
 
-        private TextMeshProUGUI NewLabel(string label, int size, FontStyles style, Color color)
+        private TextMeshProUGUI NewLabel(string label, int size, FontStyles style, Color color, Transform parent = null)
         {
-            var go = NewChild(label);
+            var go = NewChild(label, parent);
             var t = go.AddComponent<TextMeshProUGUI>();
             t.fontSize = size;
             t.fontStyle = style;
@@ -625,7 +1354,7 @@ namespace Valkur.UI.HUD
         // ── Procedural icon sprites ─────────────────────────────────────────
         // Cached per-icon. Each is rendered into a small RGBA32 texture with
         // antialiased edges so the icons look crisp at any scale.
-        private static Sprite _sPlay, _sPause, _sPrev, _sNext, _sSpeaker, _sSpeakerMute, _sRoundRect;
+        private static Sprite _sPlay, _sPause, _sPrev, _sNext, _sSpeaker, _sSpeakerMute, _sRoundRect, _sChevUp, _sChevDown;
 
         private static Sprite SpritePlay        { get { if (_sPlay        == null) _sPlay        = BuildPlaySprite();        return _sPlay; } }
         private static Sprite SpritePause       { get { if (_sPause       == null) _sPause       = BuildPauseSprite();       return _sPause; } }
@@ -633,6 +1362,8 @@ namespace Valkur.UI.HUD
         private static Sprite SpriteNext        { get { if (_sNext        == null) _sNext        = BuildPrevNextSprite(false); return _sNext; } }
         private static Sprite SpriteSpeaker     { get { if (_sSpeaker     == null) _sSpeaker     = BuildSpeakerSprite(false); return _sSpeaker; } }
         private static Sprite SpriteSpeakerMute { get { if (_sSpeakerMute == null) _sSpeakerMute = BuildSpeakerSprite(true);  return _sSpeakerMute; } }
+        private static Sprite SpriteChevronUp   { get { if (_sChevUp      == null) _sChevUp      = BuildChevronSprite(true);  return _sChevUp; } }
+        private static Sprite SpriteChevronDown { get { if (_sChevDown    == null) _sChevDown    = BuildChevronSprite(false); return _sChevDown; } }
 
         private const int IcoN = 32;
 
@@ -710,6 +1441,26 @@ namespace Valkur.UI.HUD
                 DrawLineAA(px, IcoN, new Vector2(22f, 9f),  new Vector2(IcoN - 4f, IcoN - 9f), 1.4f);
                 DrawLineAA(px, IcoN, new Vector2(IcoN - 4f, 9f), new Vector2(22f, IcoN - 9f), 1.4f);
             }
+            return SpriteFromBuffer(px);
+        }
+
+        private static Sprite BuildChevronSprite(bool pointUp)
+        {
+            // A double chevron (two stacked V shapes) so it reads as "expand" / "collapse".
+            var px = NewIconBuffer();
+            float cx = IcoN * 0.5f;
+            float w = 8f;     // half-width of the chevron arms
+            float t = 1.6f;   // line thickness
+            // y positions for the two stacked Vs (one above the other)
+            float y1 = pointUp ? 11f : 21f;
+            float y2 = pointUp ? 19f : 13f;
+            float dy = pointUp ? 5f  : -5f; // arm tip drops downward in down-chevron
+            // First V
+            DrawLineAA(px, IcoN, new Vector2(cx - w, y1 + dy), new Vector2(cx, y1), t);
+            DrawLineAA(px, IcoN, new Vector2(cx,     y1),       new Vector2(cx + w, y1 + dy), t);
+            // Second V
+            DrawLineAA(px, IcoN, new Vector2(cx - w, y2 + dy), new Vector2(cx, y2), t);
+            DrawLineAA(px, IcoN, new Vector2(cx,     y2),       new Vector2(cx + w, y2 + dy), t);
             return SpriteFromBuffer(px);
         }
 
@@ -840,6 +1591,98 @@ namespace Valkur.UI.HUD
         public void OnEndDrag(PointerEventData e)
         {
             if (_owner != null) _owner.PersistSize();
+        }
+    }
+
+    /// <summary>
+    /// Click + drag the progress bar to seek the music. Uses the bar's RectTransform
+    /// to convert pointer X into a 0..1 fraction, then asks the HUD to seek.
+    /// </summary>
+    internal sealed class ProgressBarSeekHandler : MonoBehaviour,
+        IPointerDownHandler, IDragHandler, IPointerUpHandler
+    {
+        private MusicPlayerHUD _owner;
+        private RectTransform _rt;
+
+        public void Init(MusicPlayerHUD owner, RectTransform rt) { _owner = owner; _rt = rt; }
+
+        public void OnPointerDown(PointerEventData e) => Seek(e);
+        public void OnDrag(PointerEventData e)        => Seek(e);
+        public void OnPointerUp(PointerEventData e)   => Seek(e);
+
+        private void Seek(PointerEventData e)
+        {
+            if (_owner == null || _rt == null) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_rt, e.position, e.pressEventCamera, out var local))
+                return;
+            // Bar is left-pivot (0,1) with full width; local.x is 0..rect.width.
+            float w = _rt.rect.width;
+            if (w <= 0f) return;
+            float frac = Mathf.Clamp01(local.x / w);
+            _owner.SeekToFraction(frac);
+        }
+    }
+
+    /// <summary>
+    /// Mouse-wheel zoom on the waveform area. Each scroll step multiplies the
+    /// vertical amplitude by ~1.2 (or 1/1.2 down). Persisted via PlayerPrefs.
+    /// </summary>
+    internal sealed class WaveformZoomHandler : MonoBehaviour, IScrollHandler
+    {
+        private MusicPlayerHUD _owner;
+        public void Init(MusicPlayerHUD owner) { _owner = owner; }
+        public void OnScroll(PointerEventData e)
+        {
+            if (_owner == null) return;
+            float dy = e.scrollDelta.y;
+            if (Mathf.Abs(dy) < 0.001f) return;
+            float factor = dy > 0f ? 1.2f : (1f / 1.2f);
+            _owner.AdjustWaveformAmplitude(factor);
+        }
+    }
+
+    /// <summary>
+    /// Beat-dots strip input handler. Distinguishes:
+    ///  • Click (no drag) → tap-tempo: each click contributes to a rolling BPM estimate.
+    ///  • Drag             → live tempo nudge: horizontal = BPM, vertical = first-beat offset.
+    /// </summary>
+    internal sealed class BeatDotsTapHandler : MonoBehaviour,
+        IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler
+    {
+        private MusicPlayerHUD _owner;
+        private bool _isDragging;
+        private const float DragThresholdPx = 4f;
+        private Vector2 _downPos;
+
+        public void Init(MusicPlayerHUD owner) { _owner = owner; }
+
+        public void OnPointerDown(PointerEventData e)
+        {
+            _isDragging = false;
+            _downPos = e.position;
+        }
+
+        public void OnPointerUp(PointerEventData e)
+        {
+            // Only count as a tap if the pointer didn't move enough to be a drag.
+            if (_isDragging) { _isDragging = false; return; }
+            if ((e.position - _downPos).sqrMagnitude > DragThresholdPx * DragThresholdPx) return;
+            _owner?.RegisterBeatTap();
+        }
+
+        public void OnBeginDrag(PointerEventData e)
+        {
+            _isDragging = true;
+        }
+
+        public void OnDrag(PointerEventData e)
+        {
+            if (_owner == null) return;
+            float scale = 1f;
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas != null && canvas.scaleFactor > 0.0001f) scale = canvas.scaleFactor;
+            Vector2 deltaPx = e.delta / scale;
+            _owner.AdjustTempoByDrag(deltaPx);
         }
     }
 }

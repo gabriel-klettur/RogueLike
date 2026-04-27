@@ -75,6 +75,32 @@ namespace Valkur.Core
         /// <summary>Playback time of the active music source (seconds since clip start).</summary>
         float CurrentMusicTime { get; }
 
+        /// <summary>Seek the active music source to <paramref name="seconds"/> (clamped to clip length).</summary>
+        void SeekMusic(float seconds);
+
+        /// <summary>
+        /// Persistently override BPM and first-beat offset for the given track id.
+        /// Stored in PlayerPrefs so the override survives app restarts. Pass
+        /// <paramref name="bpm"/> &lt;= 0 to clear the override.
+        /// Re-emits <c>OnTrackChanged</c> if the override applies to the active track.
+        /// </summary>
+        void SetTrackTempoOverride(string trackId, float bpm, float firstBeatOffsetSec);
+
+        /// <summary>
+        /// Fill <paramref name="buffer"/> with the spectrum (FFT magnitudes) of the
+        /// active music source. Buffer length must be a power of two between 64 and 8192.
+        /// Returns false if no music is currently playing (buffer left untouched).
+        /// </summary>
+        bool GetMusicSpectrumData(float[] buffer, int channel = 0, FFTWindow window = FFTWindow.BlackmanHarris);
+
+        /// <summary>
+        /// Fill <paramref name="buffer"/> with the raw output samples of the active
+        /// music source. Returns false if no music is currently playing.
+        /// Used by visualizers that need waveform peaks (e.g. progressive overview
+        /// for streaming clips that don't support AudioClip.GetData).
+        /// </summary>
+        bool GetMusicOutputData(float[] buffer, int channel = 0);
+
         /// <summary>
         /// Raised whenever the active music track changes. Args: trackId, displayTitle, bpm, beatsPerBar.
         /// MusicBeatClock and MusicPlayerHUD subscribe to this.
