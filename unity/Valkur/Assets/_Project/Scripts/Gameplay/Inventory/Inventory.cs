@@ -123,6 +123,72 @@ namespace Valkur.Gameplay.Inventory
         public bool IsFull => _slots.Count >= capacity;
 
         /// <summary>
+        /// Swap two slots by visual index. Indices outside the live list are
+        /// treated as empty cells (compact-list semantics: dropping onto an
+        /// empty visual cell is a no-op for now).
+        /// Returns true if anything changed.
+        /// </summary>
+        public bool SwapSlots(int a, int b)
+        {
+            if (a == b) return false;
+            int n = _slots.Count;
+            if (a < 0 || b < 0) return false;
+            if (a >= n && b >= n) return false;
+
+            // If one index is past the live list, move the other to its end
+            // (drag-to-empty-cell visual behaviour).
+            if (a >= n)
+            {
+                _slots.Add(_slots[b]);
+                _slots.RemoveAt(b);
+            }
+            else if (b >= n)
+            {
+                _slots.Add(_slots[a]);
+                _slots.RemoveAt(a);
+            }
+            else
+            {
+                (_slots[a], _slots[b]) = (_slots[b], _slots[a]);
+            }
+            OnInventoryChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Try to merge stack at <paramref name="src"/> into <paramref name="dst"/>
+        /// when both hold the same stackable item. Honours <c>maxStack</c>.
+        /// Returns true if any quantity was moved.
+        /// </summary>
+        public bool TryMergeStacks(int src, int dst)
+        {
+            if (src == dst) return false;
+            int n = _slots.Count;
+            if (src < 0 || dst < 0 || src >= n || dst >= n) return false;
+
+            var s = _slots[src];
+            var d = _slots[dst];
+            if (s.IsEmpty || d.IsEmpty) return false;
+            if (s.Item != d.Item || !s.Item.stackable) return false;
+
+            int cap = Mathf.Max(1, s.Item.maxStack);
+            if (d.Quantity >= cap) return false;
+
+            int canMove = Mathf.Min(s.Quantity, cap - d.Quantity);
+            if (canMove <= 0) return false;
+
+            _slots[dst] = new InventorySlot(d.Item, d.Quantity + canMove);
+            int newSrcQty = s.Quantity - canMove;
+            if (newSrcQty <= 0)
+                _slots.RemoveAt(src);
+            else
+                _slots[src] = new InventorySlot(s.Item, newSrcQty);
+
+            OnInventoryChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
         /// Convert to serializable InventoryData for save/load.
         /// </summary>
         public InventoryData ToSaveData(string playerId)

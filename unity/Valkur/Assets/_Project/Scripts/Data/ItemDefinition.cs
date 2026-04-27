@@ -16,13 +16,37 @@ namespace Valkur.Data
 
     /// <summary>
     /// Equipment slot matching Python's equip_slot enum.
+    /// Order kept stable so existing serialized assets do not shift values.
     /// </summary>
     public enum EquipSlot
     {
-        None,
-        Head,
-        Body,
-        Weapon
+        None    = 0,
+        Head    = 1,   // legacy alias of Helmet
+        Body    = 2,   // legacy alias of Chest
+        Weapon  = 3,
+        Helmet  = 4,
+        Chest   = 5,
+        Boots   = 6,
+        Offhand = 7,
+        Shield  = 8,
+        Book    = 9,
+        Ring    = 10,
+        Amulet  = 11,
+        Trinket = 12,
+        Accessory = 13
+    }
+
+    /// <summary>
+    /// High-level inventory tab category, derived from ItemDefinition fields.
+    /// Mirrors Python's pick_category_for_item rules.
+    /// </summary>
+    public enum ItemCategory
+    {
+        Equipment,
+        Material,
+        Consumable,
+        Quest,
+        Other
     }
 
     /// <summary>
@@ -70,6 +94,9 @@ namespace Valkur.Data
 
         [Header("Effect")]
         public string effect;
+
+        [Header("Quest")]
+        public string questId;
 
         [Header("Visual")]
         public float scaleEditor = 1f;

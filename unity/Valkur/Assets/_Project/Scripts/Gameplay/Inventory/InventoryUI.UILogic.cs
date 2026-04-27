@@ -1,46 +1,49 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.Inventory
 {
     /// <summary>
-    /// Player-facing Inventory UI builder.
-    /// Phase 1 (UI/UX only): mirrors the Python inventory layout
-    /// (portrait + name + level header, 3×3 equipment grid + character preview,
-    /// tab bar Equipo/Materiales/Consumibles/Otros/Quest, 5×5 item grid,
-    /// gold footer pill) using the same dark theme tokens as the
-    /// Buildings / Tile editors for visual consistency.
-    /// Equipment slots, character preview, tab filtering and gold counter are
-    /// placeholders; data wiring lands in Phase 2.
+    /// Inventory UI builder + runtime behaviour (Phase 2: full functionality).
+    /// Mirrors Python's InventoryUISystem: header (portrait/name/level),
+    /// 3×3 equipment preview, character body avatar, 5×5 grid with tab filter,
+    /// gold pill footer, drag-and-drop (slot↔slot swap/merge, drop-to-world),
+    /// double-click to use, single-click to select.
     /// </summary>
     public partial class InventoryUI
     {
         // ── Layout constants (mirror Python ui_constants where relevant) ──
-        private const int   GRID_COLS_PY   = 5;
-        private const int   GRID_ROWS_PY   = 5;     // visual grid is always 5×5
-        private const float SLOT_PX        = 52f;
-        private const float SLOT_GAP       = 4f;
-        private const float PANEL_PAD_X    = 12f;
-        private const float PANEL_PAD_Y    = 10f;
-        private const float HDR_BAR_H      = 26f;
-        private const float CHAR_BLOCK_H   = SLOT_PX * 3 + SLOT_GAP * 2 + 8f;
-        private const float TABS_H         = 28f;
-        private const float TITLE_H        = 22f;
-        private const float TOOLTIP_H      = 38f;
-        private const float FOOTER_H       = 32f;
+        private const int   GRID_COLS_PY = 5;
+        private const int   GRID_ROWS_PY = 5;
+        private const float SLOT_PX      = 52f;
+        private const float SLOT_GAP     = 4f;
+        private const float PANEL_PAD_X  = 12f;
+        private const float PANEL_PAD_Y  = 10f;
+        private const float HDR_BAR_H    = 48f;                          // taller so 48-px portrait fits
+        private const float CHAR_BLOCK_H = SLOT_PX * 3 + SLOT_GAP * 2;   // matches 3×3 equipment grid
+        private const float TABS_H       = 28f;
+        private const float TITLE_H      = 22f;
+        private const float TOOLTIP_H    = 38f;
+        private const float FOOTER_H     = 32f;
 
         private static readonly string[] TAB_LABELS =
             { "Equipo", "Materiales", "Consumibles", "Otros", "Quest" };
 
-        // ── Phase-1 visual-only refs ──
+        private static readonly string[] CURRENCY_ITEM_IDS =
+            { "gold", "coins", "coin", "gold_coin" };
+
+        // ── Phase-2 visual refs ──
         private TextMeshProUGUI _hdrNameText;
         private TextMeshProUGUI _hdrLevelText;
         private Image           _portraitImg;
-        private Image[]         _equipBgs;        // 9 slots (3×3)
+        private Image[]         _equipBgs;     // 9 slots (3×3)
         private Image[]         _equipIcons;
         private Image           _characterPreviewImg;
         private Image[]         _tabBgs;
@@ -48,28 +51,32 @@ namespace Valkur.Gameplay.Inventory
         private TextMeshProUGUI _goldText;
         private int             _activeTabIndex = 0;
 
+        // Drag state
+        private GameObject _dragGhost;
+        private Image      _dragGhostImg;
+        private int        _dragSourceIndex = -1;
+        private RectTransform _dragGhostRt;
+
         // ─────────────────────────────────────────────────────────────────────
         //  BuildUI — full visual rebuild
         // ─────────────────────────────────────────────────────────────────────
         private void BuildUI()
         {
-            // ── Canvas ──
+            // Canvas
             var canvasGo = new GameObject("InventoryCanvas");
             canvasGo.transform.SetParent(transform);
             _canvas = canvasGo.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 200;
 
             var scaler = canvasGo.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1600, 800);
-            scaler.matchWidthOrHeight = 0.5f;
-
+            scaler.uiScaleMode          = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution  = new Vector2(1600, 800);
+            scaler.matchWidthOrHeight   = 0.5f;
             canvasGo.AddComponent<GraphicRaycaster>();
 
-            // ── Panel sizing ──
-            int totalSlots = GRID_COLS_PY * GRID_ROWS_PY; // always 25 visual cells
-
+            // Panel sizing
+            int totalSlots = GRID_COLS_PY * GRID_ROWS_PY;
             float gridW = GRID_COLS_PY * SLOT_PX + (GRID_COLS_PY - 1) * SLOT_GAP;
             float gridH = GRID_ROWS_PY * SLOT_PX + (GRID_ROWS_PY - 1) * SLOT_GAP;
             float panelWidth  = gridW + PANEL_PAD_X * 2;
@@ -85,7 +92,7 @@ namespace Valkur.Gameplay.Inventory
                               + FOOTER_H
                               + PANEL_PAD_Y;
 
-            _panelGo = CreateUIObject("InventoryPanel", _canvas.transform);
+            _panelGo   = CreateUIObject("InventoryPanel", _canvas.transform);
             _panelRect = _panelGo.GetComponent<RectTransform>();
             _panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             _panelRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -101,7 +108,7 @@ namespace Valkur.Gameplay.Inventory
 
             _panelGroup = _panelGo.AddComponent<CanvasGroup>();
 
-            // ── Chrome header (matches floating editor panels) ──
+            // Chrome header
             var hdrGo = CreateUIObject("ChromeHeader", _panelGo.transform);
             var hdrRt = hdrGo.GetComponent<RectTransform>();
             hdrRt.anchorMin = new Vector2(0f, 1f);
@@ -109,16 +116,18 @@ namespace Valkur.Gameplay.Inventory
             hdrRt.pivot     = new Vector2(0.5f, 1f);
             hdrRt.anchoredPosition = Vector2.zero;
             hdrRt.sizeDelta = new Vector2(0f, PANEL_HDR_H);
+            hdrGo.AddComponent<Image>().color = TileEditorTheme.HeaderBg;
 
-            var hdrBg = hdrGo.AddComponent<Image>();
-            hdrBg.color = TileEditorTheme.HeaderBg;
+            // Window drag: clicking-and-dragging the header moves the panel.
+            var dragger = hdrGo.AddComponent<WindowDragHandler>();
+            dragger.Target = _panelRect;
 
             var hdrTitleGo = CreateUIObject("Title", hdrGo.transform);
             var hdrTitleRt = hdrTitleGo.GetComponent<RectTransform>();
             hdrTitleRt.anchorMin = Vector2.zero;
             hdrTitleRt.anchorMax = Vector2.one;
             hdrTitleRt.offsetMin = new Vector2(10f, 0f);
-            hdrTitleRt.offsetMax = new Vector2(-PANEL_HDR_BTN_W - 4f, 0f);
+            hdrTitleRt.offsetMax = new Vector2(-(PANEL_HDR_BTN_W * 2f + 6f), 0f);
             var hdrTitleTmp = hdrTitleGo.AddComponent<TextMeshProUGUI>();
             hdrTitleTmp.text             = "INVENTORY";
             hdrTitleTmp.fontSize         = 11f;
@@ -128,8 +137,9 @@ namespace Valkur.Gameplay.Inventory
             hdrTitleTmp.characterSpacing = 2f;
 
             BuildHeaderCloseBtn(hdrGo.transform);
+            BuildHeaderMinimizeBtn(hdrGo.transform);
 
-            // 1-px separator under chrome header
+            // Separator
             var sepGo = CreateUIObject("HdrSep", _panelGo.transform);
             var sepRt = sepGo.GetComponent<RectTransform>();
             sepRt.anchorMin = new Vector2(0f, 1f);
@@ -139,7 +149,7 @@ namespace Valkur.Gameplay.Inventory
             sepRt.sizeDelta = new Vector2(0f, 1f);
             sepGo.AddComponent<Image>().color = TileEditorTheme.Separator;
 
-            // ── Content area (everything below the chrome header) ──
+            // Content area
             var contentGo = CreateUIObject("Content", _panelGo.transform);
             var contentRt = contentGo.GetComponent<RectTransform>();
             contentRt.anchorMin = new Vector2(0f, 0f);
@@ -148,54 +158,44 @@ namespace Valkur.Gameplay.Inventory
             contentRt.offsetMax = new Vector2(-PANEL_PAD_X, -(PANEL_HDR_H + 1f + PANEL_PAD_Y));
 
             float y = 0f;
+            BuildHeaderRow(contentGo.transform, ref y);                 y += 6f;
+            BuildEquipmentAndCharacter(contentGo.transform, ref y);     y += 8f;
 
-            BuildHeaderRow(contentGo.transform, ref y);
-            y += 6f;
-
-            BuildEquipmentAndCharacter(contentGo.transform, ref y);
-            y += 8f;
-
-            // "Inventory" centered title
+            // "Inventory" title
             var titleGo = CreateUIObject("InventoryTitle", contentGo.transform);
             PlaceTopAnchored(titleGo, y, 0f, TITLE_H);
-            _titleText               = titleGo.AddComponent<TextMeshProUGUI>();
-            _titleText.text          = "Inventory";
-            _titleText.fontSize      = 14f;
-            _titleText.fontStyle     = FontStyles.Bold;
-            _titleText.alignment     = TextAlignmentOptions.Center;
-            _titleText.color         = TileEditorTheme.HeaderTitle;
+            _titleText           = titleGo.AddComponent<TextMeshProUGUI>();
+            _titleText.text      = "Inventory";
+            _titleText.fontSize  = 14f;
+            _titleText.fontStyle = FontStyles.Bold;
+            _titleText.alignment = TextAlignmentOptions.Center;
+            _titleText.color     = TileEditorTheme.HeaderTitle;
             y += TITLE_H + 4f;
 
-            BuildTabsRow(contentGo.transform, ref y);
-            y += 6f;
+            BuildTabsRow(contentGo.transform, ref y); y += 6f;
 
-            // Separator between tabs and grid
             var tabSepGo = CreateUIObject("TabsSep", contentGo.transform);
             PlaceTopAnchored(tabSepGo, y, 0f, 1f);
             tabSepGo.AddComponent<Image>().color = TileEditorTheme.Separator;
             y += 1f + 6f;
 
-            // 5×5 main grid
             _slotObjects     = new GameObject[totalSlots];
             _slotBackgrounds = new Image[totalSlots];
             _slotIcons       = new Image[totalSlots];
             _slotQuantities  = new TextMeshProUGUI[totalSlots];
-
-            BuildMainGrid(contentGo.transform, ref y, totalSlots);
-            y += 6f;
+            BuildMainGrid(contentGo.transform, ref y, totalSlots); y += 6f;
 
             // Tooltip
             var tooltipGo = CreateUIObject("Tooltip", contentGo.transform);
             PlaceTopAnchored(tooltipGo, y, 0f, TOOLTIP_H);
             _tooltipText           = tooltipGo.AddComponent<TextMeshProUGUI>();
-            _tooltipText.text      = "Tab/I: cerrar  |  Q: soltar item seleccionado";
+            _tooltipText.text      = "Tab/I cerrar  |  Q soltar  |  doble-click usar  |  arrastrar mover";
             _tooltipText.fontSize  = 11f;
             _tooltipText.alignment = TextAlignmentOptions.Center;
             _tooltipText.color     = TEXT_MUTED;
             _tooltipText.enableWordWrapping = true;
             y += TOOLTIP_H + 6f;
 
-            // Footer: gold pill
             BuildGoldFooter(contentGo.transform, y);
 
             UpdateTabHighlights();
@@ -230,12 +230,60 @@ namespace Valkur.Gameplay.Inventory
             AddCenteredText(go.transform, "X", 12f, FontStyles.Bold, TEXT_PRIMARY);
         }
 
+        private void BuildHeaderMinimizeBtn(Transform hdrParent)
+        {
+            var go = CreateUIObject("MinimizeBtn", hdrParent);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot     = new Vector2(1f, 0.5f);
+            // Sit immediately to the left of the close (X) button.
+            rt.anchoredPosition = new Vector2(-(PANEL_HDR_BTN_W + 4f), 0f);
+            rt.sizeDelta = new Vector2(PANEL_HDR_BTN_W, 0f);
+
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.18f, 0.18f, 0.22f, 0.85f);
+
+            var btn = go.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor      = new Color(0.18f, 0.18f, 0.22f, 0.85f);
+            c.highlightedColor = new Color(0.30f, 0.30f, 0.36f, 1f);
+            c.pressedColor     = new Color(0.10f, 0.10f, 0.12f, 1f);
+            btn.colors = c;
+            btn.targetGraphic = img;
+            btn.onClick.AddListener(MinimizeToTray);
+
+            AddCenteredText(go.transform, "_", 14f, FontStyles.Bold, TEXT_PRIMARY);
+        }
+
+        private void MinimizeToTray()
+        {
+            SetVisible(false);
+        }
+
+        internal void RegisterTrayButton()
+        {
+            var tray = Valkur.Gameplay.UIKit.MinimizedHUDTray.Instance;
+            if (tray == null) return;
+            var sprite = LoadHUDSprite("Assets/_Project/Art/UI/hud/inventory_hud_button.png");
+            tray.Register("inventory", sprite, () => SetVisible(!_visible));
+        }
+
+        private static Sprite LoadHUDSprite(string assetPath)
+        {
+#if UNITY_EDITOR
+            return UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+#else
+            return null;
+#endif
+        }
+
         private void BuildHeaderRow(Transform parent, ref float y)
         {
             var rowGo = CreateUIObject("HeaderRow", parent);
             PlaceTopAnchored(rowGo, y, 0f, HDR_BAR_H);
 
-            // Portrait (left)
+            // Portrait (left) — square HDR_BAR_H x HDR_BAR_H
             var portraitGo = CreateUIObject("Portrait", rowGo.transform);
             var portRt = portraitGo.GetComponent<RectTransform>();
             portRt.anchorMin = new Vector2(0f, 0f);
@@ -243,10 +291,9 @@ namespace Valkur.Gameplay.Inventory
             portRt.pivot     = new Vector2(0f, 0.5f);
             portRt.anchoredPosition = new Vector2(0f, 0f);
             portRt.sizeDelta = new Vector2(HDR_BAR_H, 0f);
-            var portFrame = portraitGo.AddComponent<Image>();
-            portFrame.color = BG_SURFACE;
+            portraitGo.AddComponent<Image>().color = BG_SURFACE;
             var portOl = portraitGo.AddComponent<Outline>();
-            portOl.effectColor = TileEditorTheme.Border;
+            portOl.effectColor    = TileEditorTheme.Border;
             portOl.effectDistance = new Vector2(1f, 1f);
 
             var portIconGo = CreateUIObject("Icon", portraitGo.transform);
@@ -259,17 +306,17 @@ namespace Valkur.Gameplay.Inventory
             _portraitImg.preserveAspect = true;
             _portraitImg.enabled = false;
 
-            // Name (next to portrait)
+            // Name (centered vertically, beside portrait)
             var nameGo = CreateUIObject("Name", rowGo.transform);
             var nameRt = nameGo.GetComponent<RectTransform>();
             nameRt.anchorMin = new Vector2(0f, 0f);
             nameRt.anchorMax = new Vector2(1f, 1f);
             nameRt.pivot     = new Vector2(0f, 0.5f);
             nameRt.offsetMin = new Vector2(HDR_BAR_H + 8f, 0f);
-            nameRt.offsetMax = new Vector2(-110f, 0f);
+            nameRt.offsetMax = new Vector2(-130f, 0f);
             _hdrNameText           = nameGo.AddComponent<TextMeshProUGUI>();
             _hdrNameText.text      = "Hero";
-            _hdrNameText.fontSize  = 14f;
+            _hdrNameText.fontSize  = 16f;
             _hdrNameText.fontStyle = FontStyles.Bold;
             _hdrNameText.alignment = TextAlignmentOptions.MidlineLeft;
             _hdrNameText.color     = TEXT_PRIMARY;
@@ -283,10 +330,10 @@ namespace Valkur.Gameplay.Inventory
             lvlRt.anchorMax = new Vector2(1f, 1f);
             lvlRt.pivot     = new Vector2(1f, 0.5f);
             lvlRt.anchoredPosition = new Vector2(0f, 0f);
-            lvlRt.sizeDelta = new Vector2(108f, 0f);
+            lvlRt.sizeDelta = new Vector2(128f, 0f);
             _hdrLevelText           = lvlGo.AddComponent<TextMeshProUGUI>();
             _hdrLevelText.text      = "Lvl 1 (0%)";
-            _hdrLevelText.fontSize  = 12f;
+            _hdrLevelText.fontSize  = 13f;
             _hdrLevelText.fontStyle = FontStyles.Bold;
             _hdrLevelText.alignment = TextAlignmentOptions.MidlineRight;
             _hdrLevelText.color     = ACCENT;
@@ -305,10 +352,9 @@ namespace Valkur.Gameplay.Inventory
             var rowGo = CreateUIObject("EquipCharRow", parent);
             PlaceTopAnchored(rowGo, y, 0f, blockH);
 
-            // Equipment grid (left)
-            _equipBgs   = new Image[EQ_COLS * EQ_ROWS];
-            _equipIcons = new Image[EQ_COLS * EQ_ROWS];
-            for (int i = 0; i < EQ_COLS * EQ_ROWS; i++)
+            _equipBgs   = new Image[EquipmentView.SLOT_COUNT];
+            _equipIcons = new Image[EquipmentView.SLOT_COUNT];
+            for (int i = 0; i < EquipmentView.SLOT_COUNT; i++)
             {
                 int r = i / EQ_COLS;
                 int c = i % EQ_COLS;
@@ -326,7 +372,7 @@ namespace Valkur.Gameplay.Inventory
                 var bg = slotGo.AddComponent<Image>();
                 bg.color = SLOT_BG;
                 var ol = slotGo.AddComponent<Outline>();
-                ol.effectColor = TileEditorTheme.Border;
+                ol.effectColor    = TileEditorTheme.Border;
                 ol.effectDistance = new Vector2(1f, 1f);
                 _equipBgs[i] = bg;
 
@@ -338,11 +384,12 @@ namespace Valkur.Gameplay.Inventory
                 irt.offsetMax = new Vector2(-4f, -4f);
                 var img = iconGo.AddComponent<Image>();
                 img.preserveAspect = true;
-                img.enabled = false;
+                img.raycastTarget  = false;
+                img.enabled        = false;
                 _equipIcons[i] = img;
             }
 
-            // Character preview (right)
+            // Character preview
             var charGo = CreateUIObject("CharacterPreview", rowGo.transform);
             var crt = charGo.GetComponent<RectTransform>();
             crt.anchorMin = new Vector2(0f, 0f);
@@ -350,11 +397,9 @@ namespace Valkur.Gameplay.Inventory
             crt.pivot     = new Vector2(0f, 0.5f);
             crt.offsetMin = new Vector2(eqW + 12f, 0f);
             crt.offsetMax = new Vector2(0f, 0f);
-
-            var charBg = charGo.AddComponent<Image>();
-            charBg.color = BG_SURFACE;
+            charGo.AddComponent<Image>().color = BG_SURFACE;
             var charOl = charGo.AddComponent<Outline>();
-            charOl.effectColor = TileEditorTheme.Border;
+            charOl.effectColor    = TileEditorTheme.Border;
             charOl.effectDistance = new Vector2(1f, 1f);
 
             var bodyGo = CreateUIObject("Body", charGo.transform);
@@ -365,7 +410,8 @@ namespace Valkur.Gameplay.Inventory
             brt.offsetMax = new Vector2(-6f, -6f);
             _characterPreviewImg = bodyGo.AddComponent<Image>();
             _characterPreviewImg.preserveAspect = true;
-            _characterPreviewImg.enabled = false;
+            _characterPreviewImg.raycastTarget  = false;
+            _characterPreviewImg.enabled        = false;
 
             y += blockH;
         }
@@ -443,18 +489,12 @@ namespace Valkur.Gameplay.Inventory
                 var bg = slotGo.AddComponent<Image>();
                 bg.color = SLOT_BG;
                 var ol = slotGo.AddComponent<Outline>();
-                ol.effectColor = TileEditorTheme.Border;
+                ol.effectColor    = TileEditorTheme.Border;
                 ol.effectDistance = new Vector2(1f, 1f);
 
-                var btn = slotGo.AddComponent<Button>();
-                int slotIndex = i;
-                var bc = btn.colors;
-                bc.normalColor      = SLOT_BG;
-                bc.highlightedColor = SLOT_HOVER;
-                bc.pressedColor     = SLOT_SELECTED;
-                btn.colors = bc;
-                btn.targetGraphic = bg;
-                btn.onClick.AddListener(() => SelectSlot(slotIndex));
+                // Drag/click handler
+                var handler = slotGo.AddComponent<InventorySlotDragHandler>();
+                handler.Bind(this, i);
 
                 var iconGo = CreateUIObject("Icon", slotGo.transform);
                 var irt = iconGo.GetComponent<RectTransform>();
@@ -464,8 +504,8 @@ namespace Valkur.Gameplay.Inventory
                 irt.offsetMax = new Vector2(-4f, -4f);
                 var iconImg = iconGo.AddComponent<Image>();
                 iconImg.preserveAspect = true;
-                iconImg.raycastTarget = false;
-                iconImg.enabled = false;
+                iconImg.raycastTarget  = false;
+                iconImg.enabled        = false;
 
                 var qtyGo = CreateUIObject("Qty", slotGo.transform);
                 var qrt = qtyGo.GetComponent<RectTransform>();
@@ -499,15 +539,13 @@ namespace Valkur.Gameplay.Inventory
             prt.anchorMax = new Vector2(0.5f, 1f);
             prt.pivot     = new Vector2(0.5f, 1f);
             prt.anchoredPosition = new Vector2(0f, -y);
-            prt.sizeDelta = new Vector2(120f, FOOTER_H);
+            prt.sizeDelta = new Vector2(140f, FOOTER_H);
 
-            var bg = pillGo.AddComponent<Image>();
-            bg.color = BG_SURFACE;
+            pillGo.AddComponent<Image>().color = BG_SURFACE;
             var ol = pillGo.AddComponent<Outline>();
             ol.effectColor    = TileEditorTheme.Border;
             ol.effectDistance = new Vector2(1f, 1f);
 
-            // Gold dot (placeholder coin) on the left, text on the right
             var dotGo = CreateUIObject("Coin", pillGo.transform);
             var drt = dotGo.GetComponent<RectTransform>();
             drt.anchorMin = new Vector2(0f, 0.5f);
@@ -515,8 +553,7 @@ namespace Valkur.Gameplay.Inventory
             drt.pivot     = new Vector2(0f, 0.5f);
             drt.anchoredPosition = new Vector2(10f, 0f);
             drt.sizeDelta = new Vector2(16f, 16f);
-            var dot = dotGo.AddComponent<Image>();
-            dot.color = ACCENT;
+            dotGo.AddComponent<Image>().color = ACCENT;
 
             var goldGo = CreateUIObject("GoldText", pillGo.transform);
             var grt = goldGo.GetComponent<RectTransform>();
@@ -533,13 +570,9 @@ namespace Valkur.Gameplay.Inventory
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Layout helpers
+        //  Layout helper
         // ─────────────────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Anchors a child to the top edge of its parent and sets a fixed Y
-        /// offset (downwards positive). Width = 0 → stretch full width.
-        /// </summary>
         private static void PlaceTopAnchored(GameObject go, float yFromTop, float width, float height)
         {
             var rt = go.GetComponent<RectTransform>();
@@ -562,7 +595,7 @@ namespace Valkur.Gameplay.Inventory
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Tab handling (Phase 1: visual selection only)
+        //  Tab handling
         // ─────────────────────────────────────────────────────────────────────
 
         private void SetActiveTab(int index)
@@ -570,6 +603,7 @@ namespace Valkur.Gameplay.Inventory
             if (_tabBgs == null || index < 0 || index >= _tabBgs.Length) return;
             _activeTabIndex = index;
             UpdateTabHighlights();
+            RefreshSlots();
         }
 
         private void UpdateTabHighlights()
@@ -584,8 +618,18 @@ namespace Valkur.Gameplay.Inventory
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Refresh / interaction
+        //  Refresh
         // ─────────────────────────────────────────────────────────────────────
+
+        private void RefreshAll()
+        {
+            UpdateHeaderInfo();
+            UpdateEquipmentView();
+            RefreshSlots();
+            UpdateGold();
+            UpdateSlotHighlights();
+            UpdateTooltip();
+        }
 
         private void RefreshSlots()
         {
@@ -597,16 +641,21 @@ namespace Valkur.Gameplay.Inventory
 
             for (int i = 0; i < slotCount; i++)
             {
+                bool show = false;
                 if (slots != null && i < playerSlotCount && !slots[i].IsEmpty)
                 {
                     var slot = slots[i];
-                    _slotIcons[i].enabled = true;
-                    _slotIcons[i].sprite  = slot.Item.icon ?? slot.Item.iconSmall;
-                    _slotQuantities[i].text = slot.Quantity > 1 ? slot.Quantity.ToString() : "";
+                    if (slot.Item.MatchesTab(_activeTabIndex))
+                    {
+                        _slotIcons[i].enabled  = true;
+                        _slotIcons[i].sprite   = slot.Item.icon ?? slot.Item.iconSmall;
+                        _slotQuantities[i].text = slot.Quantity > 1 ? slot.Quantity.ToString() : "";
+                        show = true;
+                    }
                 }
-                else
+                if (!show)
                 {
-                    _slotIcons[i].enabled = false;
+                    _slotIcons[i].enabled  = false;
                     _slotQuantities[i].text = "";
                 }
             }
@@ -615,10 +664,91 @@ namespace Valkur.Gameplay.Inventory
                 _titleText.text = $"Inventory ({_playerInventory.UsedSlots}/{_playerInventory.Capacity})";
         }
 
+        private void UpdateEquipmentView()
+        {
+            EquipmentView.Resolve(_playerInventory, _equipResolved);
+            for (int i = 0; i < EquipmentView.SLOT_COUNT && i < _equipIcons.Length; i++)
+            {
+                var item = _equipResolved[i];
+                if (item != null)
+                {
+                    _equipIcons[i].enabled = true;
+                    _equipIcons[i].sprite  = item.icon ?? item.iconSmall;
+                }
+                else
+                {
+                    _equipIcons[i].enabled = false;
+                    _equipIcons[i].sprite  = null;
+                }
+            }
+        }
+
+        private void UpdateHeaderInfo()
+        {
+            // Name (class display name → fallback to playerKey or "Hero")
+            if (_hdrNameText != null)
+            {
+                string name = _playerDef != null && !string.IsNullOrEmpty(_playerDef.displayName)
+                    ? _playerDef.displayName
+                    : (PlayerSelectionState.SelectedPlayerKey ?? "Hero");
+                if (!string.IsNullOrEmpty(name))
+                    name = char.ToUpperInvariant(name[0]) + name.Substring(1);
+                _hdrNameText.text = name;
+            }
+
+            // Level + xp%
+            if (_hdrLevelText != null)
+            {
+                int lvl = _playerXp != null ? Mathf.Max(1, _playerXp.Level) : 1;
+                int pct = _playerXp != null ? Mathf.RoundToInt(_playerXp.NormalizedProgress * 100f) : 0;
+                _hdrLevelText.text = $"Lvl {lvl} ({pct}%)";
+            }
+
+            // Portrait + body avatar — mirror the player sprite (same as Python)
+            Sprite sp = _playerSprite != null ? _playerSprite.sprite : null;
+            if (_portraitImg != null)
+            {
+                _portraitImg.sprite  = sp;
+                _portraitImg.enabled = sp != null;
+            }
+            if (_characterPreviewImg != null)
+            {
+                _characterPreviewImg.sprite  = sp;
+                _characterPreviewImg.enabled = sp != null;
+            }
+        }
+
+        private void UpdateGold()
+        {
+            if (_goldText == null) return;
+
+            int total = 0;
+            if (_playerWallet != null) total += _playerWallet.Coins;
+
+            // Also sum currency item-id stacks in the inventory (Python parity).
+            if (_playerInventory != null)
+            {
+                var slots = _playerInventory.Slots;
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    if (slots[i].IsEmpty) continue;
+                    string id = slots[i].Item.itemId;
+                    for (int k = 0; k < CURRENCY_ITEM_IDS.Length; k++)
+                    {
+                        if (string.Equals(id, CURRENCY_ITEM_IDS[k], System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            total += slots[i].Quantity;
+                            break;
+                        }
+                    }
+                }
+            }
+            _goldText.text = total.ToString();
+        }
+
         private void UpdateSlotHighlights()
         {
             if (_slotBackgrounds == null) return;
-
             for (int i = 0; i < _slotBackgrounds.Length; i++)
                 _slotBackgrounds[i].color = (i == _selectedSlot) ? SLOT_SELECTED : SLOT_BG;
         }
@@ -642,37 +772,156 @@ namespace Valkur.Gameplay.Inventory
                 }
             }
 
-            _tooltipText.text  = "Tab/I: cerrar  |  Q: soltar item seleccionado";
+            _tooltipText.text  = "Tab/I cerrar  |  Q soltar  |  doble-click usar  |  arrastrar mover";
             _tooltipText.color = TEXT_MUTED;
         }
 
-        private void DropSelectedItem()
-        {
-            if (_playerInventory == null || _selectedSlot < 0) return;
-            if (_selectedSlot >= _playerInventory.Slots.Count) return;
+        // ─────────────────────────────────────────────────────────────────────
+        //  Slot interactions (called from InventorySlotDragHandler)
+        // ─────────────────────────────────────────────────────────────────────
 
-            var slot = _playerInventory.Slots[_selectedSlot];
+        public void UseSlot(int slotIndex)
+        {
+            if (_playerInventory == null) return;
+            if (slotIndex < 0 || slotIndex >= _playerInventory.Slots.Count) return;
+            var slot = _playerInventory.Slots[slotIndex];
+            if (slot.IsEmpty) return;
+
+            if (slot.Item.GetCategory() == ItemCategory.Consumable && _playerConsumer != null)
+            {
+                _playerConsumer.TryConsume(slot.Item);
+                _selectedSlot = -1;
+                UpdateSlotHighlights();
+                UpdateTooltip();
+            }
+            else
+            {
+                // Non-consumable: just keep selection.
+                SelectSlot(slotIndex);
+            }
+        }
+
+        public void BeginSlotDrag(int srcIndex, PointerEventData ev)
+        {
+            if (_playerInventory == null) return;
+            if (srcIndex < 0 || srcIndex >= _playerInventory.Slots.Count) return;
+            var src = _playerInventory.Slots[srcIndex];
+            if (src.IsEmpty) return;
+
+            _dragSourceIndex = srcIndex;
+            CreateDragGhost(src.Item);
+            UpdateSlotDrag(ev);
+        }
+
+        public void UpdateSlotDrag(PointerEventData ev)
+        {
+            if (_dragGhostRt == null) return;
+            _dragGhostRt.position = ev.position;
+        }
+
+        public void EndSlotDrag(int srcIndex, PointerEventData ev)
+        {
+            DestroyDragGhost();
+            if (_dragSourceIndex < 0) return;
+            int src = _dragSourceIndex;
+            _dragSourceIndex = -1;
+
+            // 1) Dropped on another slot inside the panel?
+            int dst = HitTestSlot(ev);
+            if (dst >= 0 && dst != src)
+            {
+                if (!_playerInventory.TryMergeStacks(src, dst))
+                    _playerInventory.SwapSlots(src, dst);
+                SelectSlot(dst);
+                return;
+            }
+
+            // 2) Dropped outside the panel → world drop.
+            if (!IsPointerOverPanel(ev))
+            {
+                DropSlotToWorld(src);
+            }
+        }
+
+        private int HitTestSlot(PointerEventData ev)
+        {
+            if (_slotObjects == null) return -1;
+            for (int i = 0; i < _slotObjects.Length; i++)
+            {
+                var rt = _slotObjects[i].GetComponent<RectTransform>();
+                if (rt == null) continue;
+                if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
+                    return i;
+            }
+            return -1;
+        }
+
+        private bool IsPointerOverPanel(PointerEventData ev)
+        {
+            if (_panelRect == null) return true;
+            return RectTransformUtility.RectangleContainsScreenPoint(_panelRect, ev.position, ev.pressEventCamera);
+        }
+
+        private void DropSlotToWorld(int srcIndex)
+        {
+            if (_playerInventory == null) return;
+            if (srcIndex < 0 || srcIndex >= _playerInventory.Slots.Count) return;
+            var slot = _playerInventory.Slots[srcIndex];
             if (slot.IsEmpty) return;
 
             var item = slot.Item;
             int qty  = slot.Quantity;
-
             int removed = _playerInventory.RemoveItem(item, qty);
             if (removed <= 0) return;
 
             var player = EntityRegistry.Player;
             if (player != null)
             {
-                Vector3 dropPos = player.transform.position +
-                    (Vector3)(Random.insideUnitCircle.normalized * 1.5f);
-                DropSystem.SpawnDrop(item, removed, dropPos);
+                Vector3 pos = player.transform.position +
+                              (Vector3)(Random.insideUnitCircle.normalized * 1.5f);
+                DropSystem.SpawnDrop(item, removed, pos);
             }
 
             _selectedSlot = -1;
             UpdateSlotHighlights();
             UpdateTooltip();
+        }
 
-            Debug.Log($"[InventoryUI] Dropped {removed}x {item.displayName}");
+        private void CreateDragGhost(ItemDefinition item)
+        {
+            if (item == null || _canvas == null) return;
+            DestroyDragGhost();
+
+            _dragGhost = new GameObject("DragGhost", typeof(RectTransform), typeof(CanvasGroup));
+            _dragGhost.transform.SetParent(_canvas.transform, false);
+            _dragGhostRt = _dragGhost.GetComponent<RectTransform>();
+            _dragGhostRt.sizeDelta = new Vector2(SLOT_PX, SLOT_PX);
+
+            var cg = _dragGhost.GetComponent<CanvasGroup>();
+            cg.blocksRaycasts = false;
+            cg.alpha = 0.85f;
+
+            _dragGhostImg = _dragGhost.AddComponent<Image>();
+            _dragGhostImg.sprite         = item.icon ?? item.iconSmall;
+            _dragGhostImg.preserveAspect = true;
+            _dragGhostImg.raycastTarget  = false;
+        }
+
+        private void DestroyDragGhost()
+        {
+            if (_dragGhost != null) Destroy(_dragGhost);
+            _dragGhost    = null;
+            _dragGhostImg = null;
+            _dragGhostRt  = null;
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        //  Drop selected (Q key)
+        // ─────────────────────────────────────────────────────────────────────
+
+        private void DropSelectedItem()
+        {
+            DropSlotToWorld(_selectedSlot);
         }
 
         private static GameObject CreateUIObject(string name, Transform parent)
@@ -690,6 +939,8 @@ namespace Valkur.Gameplay.Inventory
 
         protected override void OnDestroy()
         {
+            UnsubscribePlayer();
+            DestroyDragGhost();
             _toggleAction?.Dispose();
             _dropAction?.Dispose();
             base.OnDestroy();
