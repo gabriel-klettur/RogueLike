@@ -78,6 +78,7 @@ namespace Valkur.Gameplay.Buildings
                         float rawRatio = 1f - Mathf.Clamp01((worldPos.y - dragRect.yMin) / dragRect.height);
                         float newRatio = Mathf.Clamp(rawRatio, 0.01f, 0.99f);
                         _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, newRatio);
+                        MarkInstanceDataDirty();
                         RefreshInspector();
                         if (_statusTmp != null)
                             _statusTmp.text = $"Split ratio → {newRatio:F3}";
@@ -90,7 +91,7 @@ namespace Valkur.Gameplay.Buildings
                     // Register as undoable action only if ratio actually changed
                     if (!Mathf.Approximately(finalRatio, startRatio))
                     {
-                        _undo.Do($"Split {finalRatio:F3}",
+                        ExecutePersistedEdit($"Split {finalRatio:F3}",
                             () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, finalRatio),
                             () => _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, startRatio));
                     }
@@ -129,15 +130,13 @@ namespace Valkur.Gameplay.Buildings
                     int newW = Mathf.Max(8, _resizeStartScale.x + Mathf.RoundToInt(pixDelta));
                     int newH = Mathf.Max(8, Mathf.RoundToInt(newW / aspect));
                     _activeBuilding.Apply(_activeBuilding.Template, new Vector2Int(newW, newH), _activeBuilding.SplitRatioOverride);
+                    MarkInstanceDataDirty();
                     if (_statusTmp != null) _statusTmp.text = $"Resize → {newW}×{newH} px (ratio {aspect:F2})";
                     RefreshInspector();
                 }
                 else if (mouse.leftButton.wasReleasedThisFrame)
                 {
-                    _resizing = false;
-                    RefreshCollisionFor(_activeBuilding);
-                    RefreshInspector();
-                    if (_statusTmp != null) _statusTmp.text = "Resize done.";
+                    FinalizeResizeDrag();
                 }
                 return;
             }
@@ -146,7 +145,8 @@ namespace Valkur.Gameplay.Buildings
             if (_dragging && _activeBuilding != null)
             {
                 _activeBuilding.transform.position = worldPos + _dragOffset;
-                if (mouse.rightButton.wasReleasedThisFrame) _dragging = false;
+                MarkInstanceDataDirty();
+                if (mouse.rightButton.wasReleasedThisFrame) FinalizeMoveDrag();
                 return;
             }
 
@@ -203,8 +203,83 @@ namespace Valkur.Gameplay.Buildings
             {
                 SetActiveBuilding(_hoveredBuilding);
                 _dragging   = true;
+                _dragStartWorldPos = _activeBuilding.transform.position;
                 _dragOffset = _activeBuilding.transform.position - worldPos;
             }
+        }
+
+        private void FinalizeMoveDrag()
+        {
+            if (_activeBuilding == null)
+            {
+                _dragging = false;
+                return;
+            }
+
+            _dragging = false;
+            var building = _activeBuilding;
+            Vector3 startPos = _dragStartWorldPos;
+            Vector3 finalPos = building.transform.position;
+
+            if ((finalPos - startPos).sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            ExecutePersistedEdit($"Move {building.InstanceId}",
+                () =>
+                {
+                    if (building == null) return;
+                    building.transform.position = finalPos;
+                    RefreshInspector();
+                    if (_statusTmp != null) _statusTmp.text = $"Move saved → ({finalPos.x:F2}, {finalPos.y:F2})";
+                },
+                () =>
+                {
+                    if (building == null) return;
+                    building.transform.position = startPos;
+                    RefreshInspector();
+                    if (_statusTmp != null) _statusTmp.text = $"Move reverted → ({startPos.x:F2}, {startPos.y:F2})";
+                });
+        }
+
+        private void FinalizeResizeDrag()
+        {
+            if (_activeBuilding == null)
+            {
+                _resizing = false;
+                return;
+            }
+
+            _resizing = false;
+            var building = _activeBuilding;
+            Vector2Int startScale = _resizeStartScale;
+            Vector2Int finalScale = building.ScaleOverride;
+
+            if (finalScale == startScale)
+            {
+                RefreshCollisionFor(building);
+                RefreshInspector();
+                return;
+            }
+
+            ExecutePersistedEdit($"Resize {finalScale.x}x{finalScale.y}",
+                () =>
+                {
+                    if (building == null) return;
+                    building.Apply(building.Template, finalScale, building.SplitRatioOverride);
+                    RefreshCollisionFor(building);
+                    RefreshInspector();
+                    if (_statusTmp != null) _statusTmp.text = "Resize saved.";
+                },
+                () =>
+                {
+                    if (building == null) return;
+                    building.Apply(building.Template, startScale, building.SplitRatioOverride);
+                    RefreshCollisionFor(building);
+                    RefreshInspector();
+                    if (_statusTmp != null) _statusTmp.text = "Resize reverted.";
+                });
         }
 
         private void RecomputeHoverStack(Vector3 worldPos)

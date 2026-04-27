@@ -88,9 +88,9 @@ namespace Valkur.Gameplay.Enemies.FSM
             tmp.enableWordWrapping = true;
             tmp.overflowMode = TextOverflowModes.Truncate;
 
-            // Click handler
+            // Click handler — dispatched via current GraphTool
             var btn = go.AddComponent<Button>();
-            btn.onClick.AddListener(() => SelectState(state));
+            btn.onClick.AddListener(() => OnNodeClicked(state));
 
             return rt;
         }
@@ -141,10 +141,10 @@ namespace Valkur.Gameplay.Enemies.FSM
             lbl.enableWordWrapping = false;
             lbl.overflowMode = TextOverflowModes.Truncate;
 
-            // Click handler on edge label
+            // Click handler on edge label — dispatched via current GraphTool
             var edgeBtnGo = labelGo;
             var edgeBtn = edgeBtnGo.AddComponent<Button>();
-            edgeBtn.onClick.AddListener(() => SelectTransition(trans));
+            edgeBtn.onClick.AddListener(() => OnEdgeClicked(trans));
 
             _edgeObjects.Add(lineGo);
             _edgeObjects.Add(labelGo);

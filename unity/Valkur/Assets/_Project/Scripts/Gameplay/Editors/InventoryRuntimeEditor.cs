@@ -4,63 +4,127 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.Editors.EditorKit;
-using Valkur.Gameplay.Inventory;
 
-namespace Valkur.Gameplay.Editors
+namespace Valkur.Gameplay.Inventory
 {
     /// <summary>
     /// Runtime in-game Inventory Editor (F6).
-    /// Inspect and modify player/monster/map inventories.
-    /// Mirrors Python's inventory_editor (F6): category tabs (player/monsters/map),
-    /// entity list, inventory grid, drag-drop, add/delete items.
+    ///
+    /// UI/UX mirrors the Unity Items / Buildings / Tile editors:
+    ///   • 30 px menu bar at top (brand + Modes/Entities/Slots/Items dropdowns + ? + PERF)
+    ///   • Floating, draggable panels for each section.
+    ///
+    /// Content mirrors Python's inventory_editor (F6):
+    ///   • Title + Toolbar (Show Default / Show Active / Save / Add Item / Delete Item)
+    ///   • Left panel: category tabs (Player / Monsters / Map) + side tabs (Default / Active)
+    ///                 + search + scrollable entity list
+    ///   • Right panel: inventory grid (5 cols of slots) + entity owner header
+    ///   • Item Selection panel: Default / Ground tabs + search + grid catalog
+    ///                           + quantity input + "Add to Inventory" button
+    ///   • Tutorial overlay
+    ///
+    /// PHASE 1: UI/UX scaffolding only.
+    ///   • Mode/category/side toggles update visual state and status toast.
+    ///   • Entity list, slot grid and item catalog are populated from runtime
+    ///     data when available, but mutations (Add/Delete/Save/Drag) are
+    ///     placeholders. Phase 2 will wire the data layer (defaults JSON,
+    ///     active JSON, ECS sync, drag &amp; drop).
     /// </summary>
-    public class InventoryRuntimeEditor : SingletonMonoBehaviour<InventoryRuntimeEditor>, GameEditorManager.IGameEditor
+    public partial class InventoryRuntimeEditor
+        : SingletonMonoBehaviour<InventoryRuntimeEditor>, GameEditorManager.IGameEditor
     {
         private bool _active;
+        private bool _uiBuilt;
         private InputAction _toggleAction;
 
-        // UI
+        // ── State ────────────────────────────────────────────────────────────────
+
+        private enum EditorCategory { Player, Monsters, Map }
+        private enum EditorSide     { Default, Active }
+        private enum EditorMode     { View, AddItem, DeleteItem }
+        private enum CatalogTab     { Default, Ground }
+
+        private EditorCategory _category = EditorCategory.Player;
+        private EditorSide     _side     = EditorSide.Active;
+        private EditorMode     _mode     = EditorMode.View;
+        private CatalogTab     _catalog  = CatalogTab.Default;
+
+        private Inventory _selectedInventory;
+        private string _selectedEntityName;
+
+        private string _entitySearch  = "";
+        private string _catalogSearch = "";
+        private int    _spinnerQty    = 1;
+
+        // ── Root UI ─────────────────────────────────────────────────────────────
+
         private Canvas _canvas;
         private GameObject _root;
-        private TextMeshProUGUI _statusTmp;
-        private TextMeshProUGUI _detailsTmp;
-        private RectTransform _entityListContent;
-        private RectTransform _gridContent;
-        private TextMeshProUGUI _categoryLabel;
 
-        // State
-        private enum Category { Player, Monsters, Map }
-        private Category _category = Category.Player;
-        private Inventory.Inventory _selectedInventory;
+        // UI builder refs
+        private InventoryEditorUIBuilder.UIRefs _uiRefs;
+
+        // Convenience aliases populated from _uiRefs after BuildUI()
+        private RectTransform _entityListContent;
+        private RectTransform _slotGridContent;
+        private RectTransform _catalogGridContent;
+        private TextMeshProUGUI _statusTmp;
+        private TextMeshProUGUI _ownerTmp;
+        private TMP_InputField  _entitySearchBox;
+        private TMP_InputField  _catalogSearchBox;
+        private TMP_InputField  _qtyInput;
+
+        private Image _viewBtnImg;
+        private Image _addItemBtnImg;
+        private Image _deleteItemBtnImg;
+        private Image _playerTabImg;
+        private Image _monstersTabImg;
+        private Image _mapTabImg;
+        private Image _sideDefaultImg;
+        private Image _sideActiveImg;
+        private Image _catDefaultImg;
+        private Image _catGroundImg;
+
+        // Catalog data
+        private ItemDefinition[] _allItems;
 
         // EditorKit extras
-        private string _searchFilter = "";
-        private TMP_InputField _searchBox;
         private GameObject _tutorial;
+        private readonly UndoStack _undo = new UndoStack(64);
 
-        // IGameEditor
+        // Dropdown state — mirrors BuildingsRuntimeEditor.UI.cs
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
+
+        // ── IGameEditor ──────────────────────────────────────────────────────────
+
         public string EditorName => "Inventory Editor";
         public bool IsActive => _active;
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleInventoryEditor", InputActionType.Button, "<Keyboard>/f6");
+            _toggleAction = new InputAction("ToggleInventoryEditor",
+                InputActionType.Button, "<Keyboard>/f6");
             _toggleAction.Enable();
         }
 
         private void Start()
         {
-            BuildUI();
-            _root.SetActive(false);
-            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
+            // Lazy UI build (mirrors ItemsRuntimeEditor / BuildingsRuntimeEditor):
+            // nothing is created until the user presses F6 the first time. This
+            // avoids the menu bar being briefly drawn at scene start.
+            _active = false;
+            if (GameEditorManager.HasInstance)
+                GameEditorManager.Instance.Register(this);
         }
 
         protected override void OnDestroy()
         {
             _toggleAction?.Dispose();
-            if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            if (GameEditorManager.HasInstance)
+                GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
 
@@ -73,24 +137,45 @@ namespace Valkur.Gameplay.Editors
                 else
                     ToggleActive();
             }
-            if (!_active) return;
         }
 
         public void Activate()
         {
+            if (!_uiBuilt)
+            {
+                try
+                {
+                    _allItems = Resources.LoadAll<ItemDefinition>("Items");
+                    if (_allItems == null || _allItems.Length == 0)
+                        _allItems = Resources.LoadAll<ItemDefinition>("");
+                    BuildUI();
+                    _uiBuilt = true;
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[InventoryEditor] BuildUI failed: {ex.GetType().Name} :: {ex.Message}");
+                    Debug.LogException(ex);
+                    return;
+                }
+            }
             _active = true;
             _root.SetActive(true);
-            _category = Category.Player;
-            RefreshEntityList();
-            _statusTmp.text = "Inventory Editor active. F6 to close.";
+            _category = EditorCategory.Player;
+            _side     = EditorSide.Active;
+            _mode     = EditorMode.View;
+            _catalog  = CatalogTab.Default;
+            OpenAllPanels();
+            RefreshAll();
+            Toast("Inventory Editor active. F6 to close.");
             Debug.Log("[InventoryEditor] Activated (F6)");
         }
 
         public void Deactivate()
         {
             _active = false;
-            _root.SetActive(false);
-            _selectedInventory = null;
+            if (_root != null) _root.SetActive(false);
+            _selectedInventory  = null;
+            _selectedEntityName = null;
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[InventoryEditor] Deactivated (F6)");
@@ -101,7 +186,7 @@ namespace Valkur.Gameplay.Editors
             if (_active) Deactivate(); else Activate();
         }
 
-        // ── UI Construction ──
+        // ── UI Construction ─────────────────────────────────────────────────────
 
         private void BuildUI()
         {
@@ -112,141 +197,149 @@ namespace Valkur.Gameplay.Editors
             _root.transform.SetParent(_canvas.transform, false);
             EditorUIHelpers.StretchFill(_root);
 
-            // Left sidebar — Entity list
-            var left = EditorUIHelpers.MakeSidebar("EntityPanel", _root.transform, 280f);
-            EditorUIHelpers.AddVLG(left, 8, 4f);
-            EditorUIHelpers.MakeTitleBar(left.transform, "INVENTORY EDITOR");
+            _uiRefs = InventoryEditorUIBuilder.BuildAll(
+                _root.transform,
+                onDropdownToggle: ToggleDropdown,
+                onUndo:           () => { _undo.Undo(); Toast("Undo"); },
+                onRedo:           () => { _undo.Redo(); Toast("Redo"); },
+                onSave:           () => Toast("Save \u2014 Phase 2"),
+                onShowDefault:    () => SetSide(EditorSide.Default),
+                onShowActive:     () => SetSide(EditorSide.Active),
+                onModeView:       () => SetMode(EditorMode.View),
+                onModeAddItem:    () => SetMode(EditorMode.AddItem),
+                onModeDeleteItem: () => SetMode(EditorMode.DeleteItem),
+                onCatPlayer:      () => SetCategory(EditorCategory.Player),
+                onCatMonsters:    () => SetCategory(EditorCategory.Monsters),
+                onCatMap:         () => SetCategory(EditorCategory.Map),
+                onEntitySearch:   v => { _entitySearch  = v ?? ""; RefreshEntityList(); },
+                onCatalogSearch:  v => { _catalogSearch = v ?? ""; RefreshCatalog(); },
+                onCatalogTabDefault: () => SetCatalogTab(CatalogTab.Default),
+                onCatalogTabGround:  () => SetCatalogTab(CatalogTab.Ground),
+                onQtyMinus:       () => AdjustQty(-1),
+                onQtyPlus:        () => AdjustQty(+1),
+                onAddToInventory: () => Toast("Add to Inventory \u2014 Phase 2"),
+                onToggleTutorial: ToggleTutorial,
+                onPerfToggle:     null);
 
-            // Category tabs
-            var tabRow = EditorUIHelpers.CreateUI("TabRow", left.transform);
-            tabRow.AddComponent<LayoutElement>().preferredHeight = 28f;
-            var hlg = tabRow.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 4f; hlg.childForceExpandWidth = true;
+            // Sync dropdown highlights when a panel is closed via its X
+            if (_uiRefs.ModesPanelDrag    != null)
+                _uiRefs.ModesPanelDrag.OnClose    = () => { _openDropdowns.Remove("modes");    RefreshMenuBtnHighlights(); };
+            if (_uiRefs.EntitiesPanelDrag != null)
+                _uiRefs.EntitiesPanelDrag.OnClose = () => { _openDropdowns.Remove("entities"); RefreshMenuBtnHighlights(); };
+            if (_uiRefs.SlotsPanelDrag    != null)
+                _uiRefs.SlotsPanelDrag.OnClose    = () => { _openDropdowns.Remove("slots");    RefreshMenuBtnHighlights(); };
+            if (_uiRefs.CatalogPanelDrag  != null)
+                _uiRefs.CatalogPanelDrag.OnClose  = () => { _openDropdowns.Remove("catalog");  RefreshMenuBtnHighlights(); };
 
-            EditorUIHelpers.MakeButton(tabRow.transform, "Player", () =>
+            // Map UIBuilder refs to private fields
+            _entityListContent  = _uiRefs.EntityListContent;
+            _slotGridContent    = _uiRefs.SlotGridContent;
+            _catalogGridContent = _uiRefs.CatalogGridContent;
+            _statusTmp          = _uiRefs.StatusText;
+            _ownerTmp           = _uiRefs.OwnerText;
+            _entitySearchBox    = _uiRefs.EntitySearchBox;
+            _catalogSearchBox   = _uiRefs.CatalogSearchBox;
+            _qtyInput           = _uiRefs.QtyInput;
+
+            _viewBtnImg         = _uiRefs.ViewBtnImg;
+            _addItemBtnImg      = _uiRefs.AddItemBtnImg;
+            _deleteItemBtnImg   = _uiRefs.DeleteItemBtnImg;
+
+            _playerTabImg       = _uiRefs.PlayerTabImg;
+            _monstersTabImg     = _uiRefs.MonstersTabImg;
+            _mapTabImg          = _uiRefs.MapTabImg;
+            _sideDefaultImg     = _uiRefs.SideDefaultImg;
+            _sideActiveImg      = _uiRefs.SideActiveImg;
+            _catDefaultImg      = _uiRefs.CatDefaultImg;
+            _catGroundImg       = _uiRefs.CatGroundImg;
+
+            BuildTutorial();
+        }
+
+        // ── Dropdown management (mirrors BuildingsRuntimeEditor.UI.cs) ──────────
+
+        private void ToggleDropdown(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_openDropdowns.Contains(name))
             {
-                _category = Category.Player; RefreshEntityList();
-            }, 26f, 11f);
-            EditorUIHelpers.MakeButton(tabRow.transform, "Monsters", () =>
+                SetDropdownOpen(name, false);
+                _openDropdowns.Remove(name);
+            }
+            else
             {
-                _category = Category.Monsters; RefreshEntityList();
-            }, 26f, 11f);
-            EditorUIHelpers.MakeButton(tabRow.transform, "Map", () =>
+                SetDropdownOpen(name, true);
+                _openDropdowns.Add(name);
+            }
+            RefreshMenuBtnHighlights();
+        }
+
+        private void OpenAllPanels()
+        {
+            foreach (var n in new[] { "modes", "entities", "slots", "catalog" })
             {
-                _category = Category.Map; RefreshEntityList();
-            }, 26f, 11f);
+                SetDropdownOpen(n, true);
+                _openDropdowns.Add(n);
+            }
+            RefreshMenuBtnHighlights();
+        }
 
-            _categoryLabel = EditorUIHelpers.AddLabel(left.transform, "Player", 12f, TextAlignmentOptions.Center);
-            _categoryLabel.color = EditorUIHelpers.ACCENT;
+        private void SetDropdownOpen(string name, bool open)
+        {
+            var go = name switch
+            {
+                "modes"    => _uiRefs.ModesDropdown,
+                "entities" => _uiRefs.EntitiesDropdown,
+                "slots"    => _uiRefs.SlotsDropdown,
+                "catalog"  => _uiRefs.CatalogDropdown,
+                _          => null
+            };
+            go?.SetActive(open);
+        }
 
-            EditorUIHelpers.BuildSeparator(left.transform);
+        private void RefreshMenuBtnHighlights()
+        {
+            InventoryEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.ModesMenuBtnImg,    _uiRefs.ModesMenuBtnTmp,    _openDropdowns.Contains("modes"));
+            InventoryEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.EntitiesMenuBtnImg, _uiRefs.EntitiesMenuBtnTmp, _openDropdowns.Contains("entities"));
+            InventoryEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.SlotsMenuBtnImg,    _uiRefs.SlotsMenuBtnTmp,    _openDropdowns.Contains("slots"));
+            InventoryEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.CatalogMenuBtnImg,  _uiRefs.CatalogMenuBtnTmp,  _openDropdowns.Contains("catalog"));
+        }
 
-            // Search filter
-            _searchBox = SearchBox.Create(left.transform, "Search entities\u2026",
-                v => { _searchFilter = v ?? ""; RefreshEntityList(); });
+        // ── Tutorial overlay ────────────────────────────────────────────────────
 
-            var (entScroll, entContent) = EditorUIHelpers.MakeScrollView(left.transform, "EntityList");
-            _entityListContent = entContent;
-
-            _statusTmp = EditorUIHelpers.MakeStatusText(left.transform);
-
-            // Right panel — Inventory grid + details
-            var right = EditorUIHelpers.MakeRightPanel("GridPanel", _root.transform, 360f);
-            EditorUIHelpers.AddVLG(right, 8, 4f);
-            EditorUIHelpers.BuildSectionHeader(right.transform, "INVENTORY SLOTS");
-
-            var (gridScroll, gridContent) = EditorUIHelpers.MakeGridPicker(
-                right.transform, "InvGrid", 5, 56f, 4f);
-            _gridContent = gridContent;
-
-            EditorUIHelpers.BuildSeparator(right.transform);
-            EditorUIHelpers.BuildSectionHeader(right.transform, "DETAILS", 12f);
-
-            var (dScroll, dContent) = EditorUIHelpers.MakeScrollView(right.transform, "DetailsScroll");
-            _detailsTmp = EditorUIHelpers.AddLabel(dContent, "Select an inventory to inspect.", 11f);
-            _detailsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
-
-            // Tutorial overlay
+        private void BuildTutorial()
+        {
             _tutorial = TutorialOverlay.Build(_root.transform, "INVENTORY HOTKEYS", new[]
             {
-                ("F6",    "Toggle Inventory Editor"),
-                ("Tabs",  "Switch Player/Monsters/Map"),
-                ("Click", "Select entity / slot"),
-                ("Type",  "Filter entities"),
-                ("Esc",   "Close all editors"),
+                ("F6",     "Toggle Inventory Editor"),
+                ("Tabs",   "Switch Player / Monsters / Map"),
+                ("D / A",  "Show Default / Show Active"),
+                ("Click",  "Select entity / slot / item"),
+                ("Type",   "Filter entities or items"),
+                ("+ / -",  "Adjust quantity"),
+                ("Ctrl+Z", "Undo"),
+                ("Ctrl+Y", "Redo"),
+                ("Esc",    "Close all editors"),
             });
             _tutorial.SetActive(false);
         }
 
-        // ── Entity List ──
-
-        private void RefreshEntityList()
+        private void ToggleTutorial()
         {
-            for (int i = _entityListContent.childCount - 1; i >= 0; i--)
-                Destroy(_entityListContent.GetChild(i).gameObject);
-
-            _categoryLabel.text = _category.ToString();
-            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
-
-            if (_category == Category.Player)
-            {
-                var player = EntityRegistry.Player;
-                if (player != null)
-                {
-                    var inv = player.GetComponent<Inventory.Inventory>();
-                    if (inv != null && (filter.Length == 0 || "player".Contains(filter)))
-                    {
-                        EditorUIHelpers.MakeButton(_entityListContent, "Player", () => SelectInventory(inv), 28f, 11f);
-                    }
-                }
-            }
-            else if (_category == Category.Monsters)
-            {
-                foreach (var monster in EntityRegistry.Monsters)
-                {
-                    if (monster == null) continue;
-                    var inv = monster.GetComponent<Inventory.Inventory>();
-                    if (inv == null) continue;
-                    var name = monster.name;
-                    if (filter.Length > 0 && !name.ToLowerInvariant().Contains(filter)) continue;
-                    var capturedInv = inv;
-                    EditorUIHelpers.MakeButton(_entityListContent, name, () => SelectInventory(capturedInv), 26f, 10f);
-                }
-            }
-
-            ClearGrid();
+            if (_tutorial == null) return;
+            _tutorial.SetActive(!_tutorial.activeSelf);
         }
 
-        private void SelectInventory(Inventory.Inventory inv)
+        // ── Status toast ────────────────────────────────────────────────────────
+
+        private void Toast(string msg)
         {
-            _selectedInventory = inv;
-            RefreshGrid();
-            _statusTmp.text = $"Viewing: {inv.gameObject.name}";
-        }
-
-        // ── Grid ──
-
-        private void RefreshGrid()
-        {
-            ClearGrid();
-            if (_selectedInventory == null)
-            {
-                _detailsTmp.text = "No inventory selected.";
-                return;
-            }
-
-            // Use reflection or public API to read slots
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"<b>Owner:</b> {_selectedInventory.gameObject.name}");
-            sb.AppendLine($"<b>Full:</b> {_selectedInventory.IsFull}");
-            _detailsTmp.text = sb.ToString();
-            _detailsTmp.richText = true;
-        }
-
-        private void ClearGrid()
-        {
-            for (int i = _gridContent.childCount - 1; i >= 0; i--)
-                Destroy(_gridContent.GetChild(i).gameObject);
+            if (_statusTmp != null) _statusTmp.text = msg;
+            Debug.Log($"[InventoryEditor] {msg}");
         }
     }
 }

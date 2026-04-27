@@ -63,8 +63,17 @@ namespace Valkur.Gameplay.Enemies.FSM
                 if (mouse.leftButton.wasReleasedThisFrame)
                 {
                     _draggingNode = false;
-                    RefreshGraph(); // Redraw edges
+                    PersistSets();                  // persist new x/y inside set raw
+                    PersistLayoutForSelectedSet();  // mirror into layouts.json
+                    RefreshGraph();                 // Redraw edges
                 }
+            }
+
+            // Empty-canvas click → tool-aware (Add/cancel-pending)
+            if (mouse.leftButton.wasPressedThisFrame && !_draggingNode &&
+                TryGetEmptyCanvasContentPos(out var localPos))
+            {
+                OnEmptyCanvasClicked(localPos);
             }
         }
 
@@ -95,10 +104,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private void RefreshProperties()
         {
-            if (_propsTab == PropsTab.State)
-                ShowStateProperties();
-            else
-                ShowTransitionProperties();
+            RebuildPropertiesContent();
         }
 
         private void ShowStateProperties()

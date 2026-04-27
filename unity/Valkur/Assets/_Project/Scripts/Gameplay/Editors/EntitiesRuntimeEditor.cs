@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
@@ -11,48 +12,61 @@ namespace Valkur.Gameplay.Entities
 {
     /// <summary>
     /// Runtime in-game Entities Editor (F5).
-    /// Browse, inspect, spawn/delete entities on the map.
-    /// Mirrors Python's entities_editor (F5): picker grid, properties panel,
-    /// spawn/delete modes. Supports players, hostiles, neutrals.
+    ///
+    /// UI/UX layer mirrors the professional menu-bar + draggable-panel
+    /// architecture used by the Buildings (F10), FSM (F12) and Tile (F8)
+    /// editors. The Python source of truth is <c>roguelike_editors/entities</c>
+    /// (panels: tool_bar, picker, add_remove, properties, tutorial).
+    ///
+    /// This first migration phase wires the full UI shell. Functional
+    /// integrations (real spawn/save/load) are stubbed and surface their
+    /// status through the picker status label so feel/parity work can begin
+    /// without blocking on the data layer.
     /// </summary>
     public partial class EntitiesRuntimeEditor : SingletonMonoBehaviour<EntitiesRuntimeEditor>, GameEditorManager.IGameEditor
     {
-        [SerializeField, Tooltip("Monster catalog asset")]
+        [SerializeField, Tooltip("Monster catalog asset (drives Hostiles / Neutrals / Specials picker)")]
         private MonsterCatalog _monsterCatalog;
+
+        // ── State ────────────────────────────────────────────────────────────────
 
         private bool _active;
         private InputAction _toggleAction;
 
-        private enum EditorMode { Select, Spawn, Delete }
+        private enum EditorMode { Select, Spawn, Delete, AddOnSystem }
         private EditorMode _mode = EditorMode.Select;
-        private string _selectedKey;
+        private string     _selectedKey;
+#pragma warning disable CS0414 // assigned-but-not-yet-read; reserved for Phase 2 player/monster property dispatch
+        private bool       _selectedIsPlayer;
+#pragma warning restore CS0414
 
-        // UI
-        private Canvas _canvas;
-        private GameObject _root;
-        private RectTransform _pickerContent;
-        private TextMeshProUGUI _statusTmp;
-        private TextMeshProUGUI _propsTmp;
-        private Image _spawnBtnImg;
-        private Image _deleteBtnImg;
-        private Image _selectBtnImg;
-
-        // Category
-        private enum EntityCategory { Hostiles, Players }
+        private enum EntityCategory { Hostiles, Neutrals, Specials, Players }
         private EntityCategory _category = EntityCategory.Hostiles;
 
-        // EditorKit extras
         private string _searchFilter = "";
-        private TMP_InputField _searchBox;
-        private GameObject _tutorial;
         private readonly UndoStack _undo = new UndoStack(64);
 
-        // IGameEditor
+        // ── UI ───────────────────────────────────────────────────────────────────
+
+        private Canvas        _canvas;
+        private GameObject    _root;
+        private GameObject    _tutorial;
+        private EntitiesEditorUIBuilder.UIRefs _ui;
+
+        // Open-dropdown tracking (mirrors BuildingsRuntimeEditor.UI pattern).
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
+
+        // ── IGameEditor ─────────────────────────────────────────────────────────
+
         public string EditorName => "Entities Editor";
-        public bool IsActive => _active;
+        public bool   IsActive   => _active;
+
+        // ── Lifecycle ───────────────────────────────────────────────────────────
 
         protected override void OnSingletonAwake()
         {
+            // F5 binding — DO NOT rename _toggleAction. FKeyBindingParityTests
+            // reflects this field to verify the bound key.
             _toggleAction = new InputAction("ToggleEntitiesEditor", InputActionType.Button, "<Keyboard>/f5");
             _toggleAction.Enable();
         }
@@ -75,13 +89,16 @@ namespace Valkur.Gameplay.Entities
         {
             if (_toggleAction.WasPerformedThisFrame())
             {
-                if (GameEditorManager.HasInstance)
-                    GameEditorManager.Instance.ToggleExclusive(this);
-                else
-                    ToggleActive();
+                if (GameEditorManager.HasInstance) GameEditorManager.Instance.ToggleExclusive(this);
+                else                               ToggleActive();
             }
 
             if (!_active) return;
+            UpdatePickerDrag();
+            // Suppress click-spawn while a drag is active so releasing over the
+            // map only triggers the drag-spawn path (HandleMapInteraction would
+            // otherwise fire Spawn/Delete on the same release frame).
+            if (_pickerDragging) return;
             HandleMapInteraction();
         }
 
@@ -90,9 +107,11 @@ namespace Valkur.Gameplay.Entities
             _active = true;
             _root.SetActive(true);
             _mode = EditorMode.Select;
+            OpenDefaultDropdowns();
+            RefreshCategoryTabs();
             RefreshPicker();
             RefreshModeButtons();
-            _statusTmp.text = "Entities Editor active. F5 to close.";
+            SetStatus("Entities Editor active. F5 to close.");
             Debug.Log("[EntitiesEditor] Activated (F5)");
         }
 
@@ -101,17 +120,14 @@ namespace Valkur.Gameplay.Entities
             _active = false;
             _root.SetActive(false);
             _selectedKey = null;
-            if (GameEditorManager.HasInstance)
-                GameEditorManager.Instance.NotifyDeactivated(this);
+            CancelPickerDrag();
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[EntitiesEditor] Deactivated (F5)");
         }
 
-        private void ToggleActive()
-        {
-            if (_active) Deactivate(); else Activate();
-        }
+        private void ToggleActive() { if (_active) Deactivate(); else Activate(); }
 
-        // ── UI Construction ──
+        // ── UI Construction ─────────────────────────────────────────────────────
 
         private void BuildUI()
         {
@@ -122,75 +138,113 @@ namespace Valkur.Gameplay.Entities
             _root.transform.SetParent(_canvas.transform, false);
             EditorUIHelpers.StretchFill(_root);
 
-            // Left sidebar — Picker
-            var left = EditorUIHelpers.MakeSidebar("PickerPanel", _root.transform, 320f);
-            EditorUIHelpers.AddVLG(left, 8, 4f);
-            EditorUIHelpers.MakeTitleBar(left.transform, "ENTITIES EDITOR");
+            _ui = EntitiesEditorUIBuilder.BuildAll(
+                _root.transform,
+                onDropdownToggle: ToggleDropdown,
+                onUndo:           () => { _undo.Undo();  SetStatus("Undo"); },
+                onRedo:           () => { _undo.Redo();  SetStatus("Redo"); },
+                onSave:           () => SetStatus("Save: not yet wired (UI-only phase)"),
+                onReload:         () => { RefreshPicker(); SetStatus("Reload: catalog refreshed"); },
+                onCatHostiles:    () => SelectCategory(EntityCategory.Hostiles),
+                onCatNeutrals:    () => SelectCategory(EntityCategory.Neutrals),
+                onCatSpecials:    () => SelectCategory(EntityCategory.Specials),
+                onCatPlayers:     () => SelectCategory(EntityCategory.Players),
+                onSearchChanged:  v => { _searchFilter = v ?? ""; RefreshPicker(); },
+                onAdd:            () => SetMode(EditorMode.Spawn),
+                onRemove:         () => SetMode(EditorMode.Delete),
+                onAddOnSystem:    () => SetMode(EditorMode.AddOnSystem),
+                onConfirm:        OnConfirmAddOnSystem,
+                onToggleTutorial: ToggleTutorial);
 
-            // Category tabs
-            var tabRow = EditorUIHelpers.CreateUI("TabRow", left.transform);
-            tabRow.AddComponent<LayoutElement>().preferredHeight = 28f;
-            var hlg = tabRow.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 4f; hlg.childForceExpandWidth = true;
-
-            EditorUIHelpers.MakeButton(tabRow.transform, "Hostiles", () =>
-            {
-                _category = EntityCategory.Hostiles; RefreshPicker();
-            }, 26f, 11f);
-            EditorUIHelpers.MakeButton(tabRow.transform, "Players", () =>
-            {
-                _category = EntityCategory.Players; RefreshPicker();
-            }, 26f, 11f);
-
-            // Toolbar
-            var toolbar = EditorUIHelpers.CreateUI("Toolbar", left.transform);
-            toolbar.AddComponent<LayoutElement>().preferredHeight = 30f;
-            var toolHlg = toolbar.AddComponent<HorizontalLayoutGroup>();
-            toolHlg.spacing = 4f; toolHlg.childForceExpandWidth = true;
-
-            var selectBtn = EditorUIHelpers.MakeButton(toolbar.transform, "Select", () => SetMode(EditorMode.Select), 28f, 11f);
-            _selectBtnImg = selectBtn.GetComponent<Image>();
-            var spawnBtn = EditorUIHelpers.MakeButton(toolbar.transform, "Spawn", () => SetMode(EditorMode.Spawn), 28f, 11f);
-            _spawnBtnImg = spawnBtn.GetComponent<Image>();
-            var deleteBtn = EditorUIHelpers.MakeDangerButton(toolbar.transform, "Delete", () => SetMode(EditorMode.Delete), 28f);
-            _deleteBtnImg = deleteBtn.GetComponent<Image>();
-            EditorUIHelpers.MakeButton(toolbar.transform, "Undo", () => _undo.Undo(), 28f, 11f);
-            EditorUIHelpers.MakeButton(toolbar.transform, "Redo", () => _undo.Redo(), 28f, 11f);
-
-            EditorUIHelpers.BuildSeparator(left.transform);
-
-            // Search filter
-            _searchBox = SearchBox.Create(left.transform, "Search entities\u2026",
-                v => { _searchFilter = v ?? ""; RefreshPicker(); });
-
-            var (scroll, content) = EditorUIHelpers.MakeGridPicker(left.transform, "EntityGrid", 4, 72f, 4f);
-            _pickerContent = content;
-
-            _statusTmp = EditorUIHelpers.MakeStatusText(left.transform);
-
-            // Right sidebar — Properties
-            var right = EditorUIHelpers.MakeRightPanel("PropsPanel", _root.transform, 340f);
-            EditorUIHelpers.AddVLG(right, 8, 4f);
-            EditorUIHelpers.BuildSectionHeader(right.transform, "ENTITY PROPERTIES");
-
-            var (pScroll, pContent) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
-            _propsTmp = EditorUIHelpers.AddLabel(pContent, "Select an entity to view properties.", 11f);
-            _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
-
-            // Tutorial overlay
+            // Tutorial overlay (F5-aware hotkey list)
             _tutorial = TutorialOverlay.Build(_root.transform, "ENTITIES HOTKEYS", new[]
             {
                 ("F5",     "Toggle Entities Editor"),
-                ("Click",  "Select / spawn / delete"),
-                ("Type",   "Filter by name"),
+                ("Click",  "Select / Spawn / Delete on map"),
+                ("Drag",   "Drag picker slot → map to spawn"),
+                ("Type",   "Filter picker by name"),
                 ("Ctrl+Z", "Undo"),
                 ("Ctrl+Y", "Redo"),
+                ("MMB",    "Pan camera (drag)"),
                 ("Esc",    "Close all editors"),
             });
             _tutorial.SetActive(false);
         }
 
-        // ── Mode ──
+        // ── Dropdown management ────────────────────────────────────────────────
 
+        private void OpenDefaultDropdowns()
+        {
+            _openDropdowns.Clear();
+            // Open the working set on activation, matching Python entities_editor:
+            // tools, categories+picker (browsing), add/remove (mode switching), props.
+            SetDropdownOpen("tools",      true);
+            SetDropdownOpen("categories", true);
+            SetDropdownOpen("picker",     true);
+            SetDropdownOpen("addremove",  true);
+            SetDropdownOpen("props",      true);
+            RefreshMenuBtnHighlights();
+        }
+
+        private void ToggleDropdown(string name)
+        {
+            bool willOpen = !_openDropdowns.Contains(name);
+            SetDropdownOpen(name, willOpen);
+            RefreshMenuBtnHighlights();
+        }
+
+        private void SetDropdownOpen(string name, bool open)
+        {
+            var go = GetDropdown(name);
+            if (go == null) return;
+
+            if (open) _openDropdowns.Add(name);
+            else      _openDropdowns.Remove(name);
+            go.SetActive(open);
+        }
+
+        private GameObject GetDropdown(string name) => name switch
+        {
+            "tools"      => _ui.ToolsDropdown,
+            "categories" => _ui.CategoriesDropdown,
+            "picker"     => _ui.PickerDropdown,
+            "addremove"  => _ui.AddRemoveDropdown,
+            "props"      => _ui.PropsDropdown,
+            _            => null
+        };
+
+        private void RefreshMenuBtnHighlights()
+        {
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.ToolsMenuBtnImg,      _ui.ToolsMenuBtnTmp,      _openDropdowns.Contains("tools"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.CategoriesMenuBtnImg, _ui.CategoriesMenuBtnTmp, _openDropdowns.Contains("categories"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.PickerMenuBtnImg,     _ui.PickerMenuBtnTmp,     _openDropdowns.Contains("picker"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.AddRemoveMenuBtnImg,  _ui.AddRemoveMenuBtnTmp,  _openDropdowns.Contains("addremove"));
+            EntitiesEditorUIBuilder.ApplyMenuBtnStyle(_ui.PropsMenuBtnImg,      _ui.PropsMenuBtnTmp,      _openDropdowns.Contains("props"));
+        }
+
+        private void ToggleTutorial()
+        {
+            if (_tutorial == null) return;
+            _tutorial.SetActive(!_tutorial.activeSelf);
+        }
+
+        // ── Status helper ──────────────────────────────────────────────────────
+
+        private void SetStatus(string msg)
+        {
+            if (_ui.StatusText != null) _ui.StatusText.text = msg;
+        }
+
+        // ── Confirm (Add-On-System stub) ───────────────────────────────────────
+
+        private void OnConfirmAddOnSystem()
+        {
+            if (_mode != EditorMode.AddOnSystem)
+            {
+                SetStatus("Confirm: switch to Add-On-System mode first.");
+                return;
+            }
+            SetStatus("Confirm: persistence not wired (UI-only phase).");
+        }
     }
 }

@@ -53,6 +53,7 @@ namespace Valkur.Gameplay.Buildings
 
         public void Deactivate()
         {
+            PersistDirtyInstanceChanges("Deactivate");
             _active = false;
             if (_uiBuilt && _root != null)
             {
@@ -80,6 +81,11 @@ namespace Valkur.Gameplay.Buildings
                 Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[BuildingsEditor] Deactivated (F10)");
+        }
+
+        private void OnApplicationQuit()
+        {
+            PersistDirtyInstanceChanges("ApplicationQuit");
         }
 
         private void ToggleActive() { if (_active) Deactivate(); else Activate(); }

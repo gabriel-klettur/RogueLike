@@ -52,10 +52,20 @@ namespace Valkur.Gameplay.Enemies.FSM
         private TextMeshProUGUI _statusTmp;
         private TextMeshProUGUI _graphInfoTmp;
 
-        // Tab tracking
-        private enum PropsTab { State, Transition }
+        // Tab tracking — mirrors Python fsm_properties_panel tab set.
+        private enum PropsTab { State, Transition, Actions, Conditions, Blackboard }
         private PropsTab _propsTab = PropsTab.State;
-        private Image _stateTabImg, _transTabImg;
+
+        // Graph editing tools — mirrors Python fsm_graph_panel toolbar tools.
+        private enum GraphTool { Select, AddNode, CloneNode, Connect, Disconnect, Delete, MarkInitial, MarkTerminal }
+        private GraphTool _graphTool = GraphTool.Select;
+
+        // Connect/disconnect tool: id of the first state clicked (waiting for second).
+        private string _pendingConnectFrom;
+
+        // UI builder refs (replaces individual sidebar fields; kept aliases below).
+        private FSMEditorUIBuilder.UIRefs _uiRefs;
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
 
         // Graph node visuals
         private readonly Dictionary<string, RectTransform> _nodeRects = new Dictionary<string, RectTransform>();
@@ -71,9 +81,18 @@ namespace Valkur.Gameplay.Enemies.FSM
         public string EditorName => "FSM Editor";
         public bool IsActive => _active;
 
-        // ── Data Classes ──
+        // Raw root dict (parity with Python sets.json — preserves all fields).
+        private Dictionary<string, object> _setsRoot;
+        // Per-set assignments + animation_map (raw dict round-trip).
+        private Dictionary<string, object> _assignmentsRoot;
+        private Dictionary<string, object> _animationMapRoot;
+        // Per-set layouts (positions + viewport).
+        private Dictionary<string, object> _layoutsRoot;
 
-        [System.Serializable]
+        // ── Data Classes ──
+        // Each typed view holds a back-pointer to its raw dict so edits are
+        // round-trippable via MiniJsonRuntime.Serialize.
+
         public class FSMSetData
         {
             public string id;
@@ -81,9 +100,9 @@ namespace Valkur.Gameplay.Enemies.FSM
             public string initial;
             public List<FSMStateNode> states = new List<FSMStateNode>();
             public List<FSMTransitionData> transitions = new List<FSMTransitionData>();
+            public Dictionary<string, object> raw;   // pointer into _setsRoot["sets"][i]
         }
 
-        [System.Serializable]
         public class FSMStateNode
         {
             public string id;
@@ -92,9 +111,9 @@ namespace Valkur.Gameplay.Enemies.FSM
             public bool isInitial;
             public bool isTerminal;
             public float x, y, w, h;
+            public Dictionary<string, object> raw;   // pointer into set.raw["states"][i]
         }
 
-        [System.Serializable]
         public class FSMTransitionData
         {
             public string id;
@@ -105,6 +124,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             public string condition;
             public int priority;
             public int cooldownFrames;
+            public Dictionary<string, object> raw;   // pointer into set.raw["transitions"][i]
         }
 
         // ── Lifecycle ──

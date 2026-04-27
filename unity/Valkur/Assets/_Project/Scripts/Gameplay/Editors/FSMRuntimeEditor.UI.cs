@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -12,6 +11,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 {
     public partial class FSMRuntimeEditor : SingletonMonoBehaviour<FSMRuntimeEditor>, GameEditorManager.IGameEditor
     {
+        // ── UI Construction ──────────────────────────────────────────────────────
 
         private void BuildUI()
         {
@@ -22,10 +22,54 @@ namespace Valkur.Gameplay.Enemies.FSM
             _root.transform.SetParent(_canvas.transform, false);
             EditorUIHelpers.StretchFill(_root);
 
-            BuildSetsPanel();
-            BuildGraphPanel();
-            BuildPropsPanel();
+            _uiRefs = FSMEditorUIBuilder.BuildAll(
+                _root.transform,
+                onDropdownToggle: ToggleDropdown,
+                onUndo:           () => _undo.Undo(),
+                onRedo:           () => _undo.Redo(),
+                onSave:           () => PersistSets(),
+                onReload:         () => { LoadSets(); RefreshSetsList(); RefreshGraph(); RefreshProperties(); },
+                onSearchChanged:  v  => { _searchFilter = v ?? ""; RefreshSetsList(); },
+                onTabState:       () => SwitchTab(PropsTab.State),
+                onTabTransition:  () => SwitchTab(PropsTab.Transition),
+                onTabActions:     () => SwitchTab(PropsTab.Actions),
+                onTabConditions:  () => SwitchTab(PropsTab.Conditions),
+                onTabBlackboard:  () => SwitchTab(PropsTab.Blackboard),
+                onToolSelect:     () => SetGraphTool(GraphTool.Select),
+                onToolConnect:    () => SetGraphTool(GraphTool.Connect),
+                onToolDelete:     () => SetGraphTool(GraphTool.Delete),
+                onZoomIn:         () => AdjustZoom(+0.1f),
+                onZoomOut:        () => AdjustZoom(-0.1f),
+                onToolMarkIni:    () => SetGraphTool(GraphTool.MarkInitial),
+                onToolMarkEnd:    () => SetGraphTool(GraphTool.MarkTerminal),
+                onToolAddNode:    () => SetGraphTool(GraphTool.AddNode),
+                onToolCloneNode:  () => SetGraphTool(GraphTool.CloneNode),
+                onToolDisconnect: () => SetGraphTool(GraphTool.Disconnect),
+                onToggleTutorial: () => ToggleTutorial(),
+                onPerfToggle:     null);
 
+            // Wire panel close → keep dropdown state in sync (mirrors Buildings Editor)
+            if (_uiRefs.ToolsPanelDrag != null)
+                _uiRefs.ToolsPanelDrag.OnClose      = () => { _openDropdowns.Remove("tools");      RefreshMenuBtnHighlights(); };
+            if (_uiRefs.SetsPanelDrag != null)
+                _uiRefs.SetsPanelDrag.OnClose       = () => { _openDropdowns.Remove("sets");       RefreshMenuBtnHighlights(); };
+            if (_uiRefs.EntitiesPanelDrag != null)
+                _uiRefs.EntitiesPanelDrag.OnClose   = () => { _openDropdowns.Remove("entities");   RefreshMenuBtnHighlights(); };
+            if (_uiRefs.AnimationsPanelDrag != null)
+                _uiRefs.AnimationsPanelDrag.OnClose = () => { _openDropdowns.Remove("animations"); RefreshMenuBtnHighlights(); };
+            if (_uiRefs.PropsPanelDrag != null)
+                _uiRefs.PropsPanelDrag.OnClose      = () => { _openDropdowns.Remove("props");      RefreshMenuBtnHighlights(); };
+
+            // Map builder refs to private fields so existing Graph / Selection partials keep working.
+            _setsContent  = _uiRefs.SetsContent;
+            _graphArea    = _uiRefs.GraphArea;
+            _graphContent = _uiRefs.GraphContent;
+            _graphInfoTmp = _uiRefs.GraphInfoText;
+            _propsTmp     = _uiRefs.PropsText;
+            _statusTmp    = _uiRefs.StatusText;
+            _searchBox    = _uiRefs.SearchBox;
+
+            // Tutorial overlay (mirrors Python fsm_tutorial_panel content).
             _tutorial = TutorialOverlay.Build(_root.transform, "FSM HOTKEYS", new[]
             {
                 ("F12",    "Toggle FSM Editor"),
@@ -39,94 +83,64 @@ namespace Valkur.Gameplay.Enemies.FSM
                 ("Esc",    "Close all editors"),
             });
             _tutorial.SetActive(false);
-        }
 
-        private void BuildSetsPanel()
-        {
-            var left = EditorUIHelpers.MakeSidebar("SetsPanel", _root.transform, 220f);
-            EditorUIHelpers.AddVLG(left, 6, 4f);
-            EditorUIHelpers.MakeTitleBar(left.transform, "FSM SETS");
-
-            var toolRow = EditorUIHelpers.CreateUI("ToolRow", left.transform);
-            toolRow.AddComponent<LayoutElement>().preferredHeight = 30f;
-            var thlg = toolRow.AddComponent<HorizontalLayoutGroup>();
-            thlg.spacing = 4f; thlg.childForceExpandWidth = true;
-            EditorUIHelpers.MakeButton(toolRow.transform, "Undo", () => _undo.Undo(), 28f, 11f);
-            EditorUIHelpers.MakeButton(toolRow.transform, "Redo", () => _undo.Redo(), 28f, 11f);
-
-            _searchBox = SearchBox.Create(left.transform, "Search sets\u2026",
-                v => { _searchFilter = v ?? ""; RefreshSetsList(); });
-
-            var (scroll, content) = EditorUIHelpers.MakeScrollView(left.transform, "SetsScroll");
-            _setsContent = content;
-
-            _statusTmp = EditorUIHelpers.MakeStatusText(left.transform);
-        }
-
-        private void BuildGraphPanel()
-        {
-            // Centre panel for the graph
-            var graphPanel = new GameObject("GraphPanel", typeof(RectTransform), typeof(Image));
-            graphPanel.transform.SetParent(_root.transform, false);
-            var grt = graphPanel.GetComponent<RectTransform>();
-            grt.anchorMin = new Vector2(0f, 0f);
-            grt.anchorMax = new Vector2(1f, 1f);
-            grt.offsetMin = new Vector2(224f, 4f);
-            grt.offsetMax = new Vector2(-324f, -4f);
-            graphPanel.GetComponent<Image>().color = new Color(0.06f, 0.06f, 0.08f, 0.95f);
-
-            // Clip mask
-            var mask = graphPanel.AddComponent<RectMask2D>();
-
-            // Scrollable content inside
-            _graphArea = grt;
-            var contentGo = new GameObject("GraphContent", typeof(RectTransform));
-            contentGo.transform.SetParent(graphPanel.transform, false);
-            _graphContent = contentGo.GetComponent<RectTransform>();
-            _graphContent.anchorMin = Vector2.zero;
-            _graphContent.anchorMax = Vector2.one;
-            _graphContent.offsetMin = Vector2.zero;
-            _graphContent.offsetMax = Vector2.zero;
-            _graphContent.pivot = new Vector2(0.5f, 0.5f);
-
-            // Info label
-            _graphInfoTmp = EditorUIHelpers.AddLabel(contentGo.transform, "Select an FSM Set to view graph.", 11f);
-            _graphInfoTmp.alignment = TextAlignmentOptions.Center;
-            _graphInfoTmp.color = EditorUIHelpers.TEXT_SECONDARY;
-            var irt = _graphInfoTmp.GetComponent<RectTransform>();
-            irt.anchorMin = new Vector2(0.3f, 0.45f);
-            irt.anchorMax = new Vector2(0.7f, 0.55f);
-            irt.offsetMin = Vector2.zero;
-            irt.offsetMax = Vector2.zero;
-        }
-
-        private void BuildPropsPanel()
-        {
-            var right = EditorUIHelpers.MakeRightPanel("PropsPanel", _root.transform, 320f);
-            EditorUIHelpers.AddVLG(right, 6, 4f);
-
-            // Tabs bar
-            var tabBar = EditorUIHelpers.CreateUI("TabBar", right.transform);
-            tabBar.AddComponent<LayoutElement>().preferredHeight = 30f;
-            var hlg = tabBar.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 4f; hlg.childForceExpandWidth = true;
-
-            var stateTab = EditorUIHelpers.MakeButton(tabBar.transform, "State", () => SwitchTab(PropsTab.State), 28f, 11f);
-            _stateTabImg = stateTab.GetComponent<Image>();
-            var transTab = EditorUIHelpers.MakeButton(tabBar.transform, "Transition", () => SwitchTab(PropsTab.Transition), 28f, 11f);
-            _transTabImg = transTab.GetComponent<Image>();
-
-            EditorUIHelpers.BuildSeparator(right.transform);
-
-            var (scroll, content) = EditorUIHelpers.MakeScrollView(right.transform, "PropsScroll");
-            _propsTmp = EditorUIHelpers.AddLabel(content, "Select a state or transition.", 11f);
-            _propsTmp.color = EditorUIHelpers.TEXT_SECONDARY;
-            _propsTmp.richText = true;
-
+            OpenAllPanels();
             RefreshTabs();
+            RefreshGraphToolHighlights();
         }
 
-        // ── Tabs ──
+        // ── Dropdown / Panel Management ──────────────────────────────────────────
+
+        private void ToggleDropdown(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_openDropdowns.Contains(name))
+            {
+                SetDropdownOpen(name, false);
+                _openDropdowns.Remove(name);
+            }
+            else
+            {
+                SetDropdownOpen(name, true);
+                _openDropdowns.Add(name);
+            }
+            RefreshMenuBtnHighlights();
+        }
+
+        private void OpenAllPanels()
+        {
+            foreach (var n in new[] { "tools", "sets", "entities", "animations", "props" })
+            {
+                SetDropdownOpen(n, true);
+                _openDropdowns.Add(n);
+            }
+            RefreshMenuBtnHighlights();
+        }
+
+        private void SetDropdownOpen(string name, bool open)
+        {
+            var go = name switch
+            {
+                "tools"      => _uiRefs.ToolsDropdown,
+                "sets"       => _uiRefs.SetsDropdown,
+                "entities"   => _uiRefs.EntitiesDropdown,
+                "animations" => _uiRefs.AnimationsDropdown,
+                "props"      => _uiRefs.PropsDropdown,
+                _            => null
+            };
+            go?.SetActive(open);
+        }
+
+        private void RefreshMenuBtnHighlights()
+        {
+            FSMEditorUIBuilder.ApplyMenuBtnStyle(_uiRefs.ToolsMenuBtnImg,      _uiRefs.ToolsMenuBtnTmp,      _openDropdowns.Contains("tools"));
+            FSMEditorUIBuilder.ApplyMenuBtnStyle(_uiRefs.SetsMenuBtnImg,       _uiRefs.SetsMenuBtnTmp,       _openDropdowns.Contains("sets"));
+            FSMEditorUIBuilder.ApplyMenuBtnStyle(_uiRefs.EntitiesMenuBtnImg,   _uiRefs.EntitiesMenuBtnTmp,   _openDropdowns.Contains("entities"));
+            FSMEditorUIBuilder.ApplyMenuBtnStyle(_uiRefs.AnimationsMenuBtnImg, _uiRefs.AnimationsMenuBtnTmp, _openDropdowns.Contains("animations"));
+            FSMEditorUIBuilder.ApplyMenuBtnStyle(_uiRefs.PropsMenuBtnImg,      _uiRefs.PropsMenuBtnTmp,      _openDropdowns.Contains("props"));
+        }
+
+        // ── Tabs ─────────────────────────────────────────────────────────────────
 
         private void SwitchTab(PropsTab tab)
         {
@@ -137,48 +151,70 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private void RefreshTabs()
         {
-            if (_stateTabImg) _stateTabImg.color = _propsTab == PropsTab.State ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
-            if (_transTabImg) _transTabImg.color = _propsTab == PropsTab.Transition ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.StateTabImg,      _uiRefs.StateTabTmp,      _propsTab == PropsTab.State);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.TransitionTabImg, _uiRefs.TransitionTabTmp, _propsTab == PropsTab.Transition);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.ActionsTabImg,    _uiRefs.ActionsTabTmp,    _propsTab == PropsTab.Actions);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.ConditionsTabImg, _uiRefs.ConditionsTabTmp, _propsTab == PropsTab.Conditions);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.BlackboardTabImg, _uiRefs.BlackboardTabTmp, _propsTab == PropsTab.Blackboard);
         }
 
-        // ── Data Loading ──
+        // ── Graph Tool Selection (UI only \u2014 functionality pending) ───────────
+
+        private void SetGraphTool(GraphTool tool)
+        {
+            _graphTool = tool;
+            _pendingConnectFrom = null;
+            RefreshGraphToolHighlights();
+            if (_statusTmp != null)
+                _statusTmp.text = $"Tool: {tool}";
+        }
+
+        private void RefreshGraphToolHighlights()
+        {
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.SelectToolImg,     null, _graphTool == GraphTool.Select);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.AddNodeToolImg,    null, _graphTool == GraphTool.AddNode);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.CloneNodeToolImg,  null, _graphTool == GraphTool.CloneNode);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.ConnectToolImg,    null, _graphTool == GraphTool.Connect);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.DisconnectToolImg, null, _graphTool == GraphTool.Disconnect);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.DeleteToolImg,     null, _graphTool == GraphTool.Delete);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.MarkIniToolImg,    null, _graphTool == GraphTool.MarkInitial);
+            FSMEditorUIBuilder.ApplyTabStyle(_uiRefs.MarkEndToolImg,    null, _graphTool == GraphTool.MarkTerminal);
+        }
+
+        private void AdjustZoom(float delta)
+        {
+            _zoom = Mathf.Clamp(_zoom + delta, 0.25f, 3f);
+            if (_uiRefs.GraphZoomLabel != null)
+                _uiRefs.GraphZoomLabel.text = $"{Mathf.RoundToInt(_zoom * 100f)}%";
+            ApplyZoomPan();
+        }
+
+        // ── Tutorial / Save Stub ─────────────────────────────────────────────────
+
+        private void ToggleTutorial()
+        {
+            if (_tutorial == null) return;
+            _tutorial.SetActive(!_tutorial.activeSelf);
+        }
+
+        private void SaveFsmStub()
+        {
+            // UI-only migration phase: save logic will be ported in the
+            // functionality-migration phase (mirrors Python fsm_persistence).
+            if (_statusTmp != null)
+                _statusTmp.text = "Save: not yet implemented (UI-only phase).";
+        }
+
+        // ── Data Loading ─────────────────────────────────────────────────────────
 
         private void LoadSets()
         {
-            _fsmSets.Clear();
-            if (_setsJsonAsset == null)
-            {
-                var path = System.IO.Path.Combine(Application.streamingAssetsPath, "FSM", "sets.json");
-                if (System.IO.File.Exists(path))
-                {
-                    ParseSetsJson(System.IO.File.ReadAllText(path));
-                }
-                else
-                {
-                    Debug.LogWarning("[FSMEditor] No sets JSON found.");
-                }
-            }
-            else
-            {
-                ParseSetsJson(_setsJsonAsset.text);
-            }
-        }
-
-        private void ParseSetsJson(string json)
-        {
-            // Unity JsonUtility doesn't handle nested arrays of custom objects well;
-            // use a wrapper for the top-level "sets" array.
-            var wrapper = JsonUtility.FromJson<FSMSetsWrapper>("{\"sets\":" + json + "}");
-            if (wrapper?.sets != null)
-                _fsmSets = wrapper.sets;
-
-            // Fallback: try direct wrapper if JSON has {"sets": [...]}
-            if (_fsmSets.Count == 0)
-            {
-                wrapper = JsonUtility.FromJson<FSMSetsWrapper>(json);
-                if (wrapper?.sets != null)
-                    _fsmSets = wrapper.sets;
-            }
+            // Persistence-driven load: parses raw dict (preserves props/style/blackboard)
+            // and rebuilds typed view + applies persisted layouts.
+            LoadSetsFromDisk();
+            LoadAssignmentsFromDisk();
+            LoadAnimationMapFromDisk();
+            LoadLayoutsFromDisk();
         }
 
         [System.Serializable]
@@ -187,36 +223,9 @@ namespace Valkur.Gameplay.Enemies.FSM
             public List<FSMSetData> sets;
         }
 
-        // ── Sets List ──
+        // ── Sets List ────────────────────────────────────────────────────────────
 
-        private void RefreshSetsList()
-        {
-            for (int i = _setsContent.childCount - 1; i >= 0; i--)
-                Destroy(_setsContent.GetChild(i).gameObject);
-
-            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
-            int shown = 0;
-            foreach (var set in _fsmSets)
-            {
-                var s = set;
-                if (filter.Length > 0)
-                {
-                    string n = ((set.label ?? set.id) ?? "").ToLowerInvariant();
-                    if (!n.Contains(filter) && !(set.id ?? "").ToLowerInvariant().Contains(filter)) continue;
-                }
-                shown++;
-                var btn = EditorUIHelpers.MakeButton(_setsContent, set.label ?? set.id,
-                    () => SelectSet(s), 26f, 11f);
-                if (s == _selectedSet)
-                    btn.GetComponent<Image>().color = EditorUIHelpers.BTN_ACTIVE;
-            }
-
-            if (shown == 0)
-            {
-                EditorUIHelpers.AddLabel(_setsContent,
-                    _fsmSets.Count == 0 ? "No FSM sets loaded." : $"No sets match '{_searchFilter}'.", 11f);
-            }
-        }
+        private void RefreshSetsList() => RefreshSetsListInteractive();
 
         private void SelectSet(FSMSetData set)
         {
@@ -225,13 +234,16 @@ namespace Valkur.Gameplay.Enemies.FSM
             _selectedTransition = null;
             _pan = Vector2.zero;
             _zoom = 1f;
+            ApplyLayoutToSelectedSet();
+            if (_uiRefs.GraphZoomLabel != null)
+                _uiRefs.GraphZoomLabel.text = $"{Mathf.RoundToInt(_zoom * 100f)}%";
             RefreshSetsList();
             RefreshGraph();
             RefreshProperties();
-            _statusTmp.text = $"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans)";
+            RefreshEntities();
+            RefreshAnimations();
+            if (_statusTmp != null)
+                _statusTmp.text = $"Set: {set.label ?? set.id} ({set.states.Count} states, {set.transitions.Count} trans)";
         }
-
-        // ── Graph Rendering ──
-
     }
 }

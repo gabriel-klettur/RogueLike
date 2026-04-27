@@ -154,6 +154,49 @@ namespace Valkur.Gameplay.Editors
             tmp.characterSpacing = 4f;
         }
 
+        /// <summary>
+        /// Lightweight TMP_InputField used by editor property/entity rows.
+        /// Commits via <paramref name="onCommit"/> when the user presses Enter
+        /// or the field loses focus (TMP onEndEdit semantics).
+        /// </summary>
+        public static TMP_InputField AddInputField(Transform parent, string initial,
+            System.Action<string> onCommit, float height = 24f, float fontSize = 11f)
+        {
+            var go = CreateUI("Input", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
+
+            var bg = go.AddComponent<Image>();
+            bg.color = new Color(0.10f, 0.12f, 0.14f, 0.95f);
+
+            var input = go.AddComponent<TMP_InputField>();
+            input.targetGraphic = bg;
+
+            // Text area
+            var textArea = CreateUI("TextArea", go.transform);
+            StretchFill(textArea);
+            var taRT = textArea.GetComponent<RectTransform>();
+            taRT.offsetMin = new Vector2(4, 2); taRT.offsetMax = new Vector2(-4, -2);
+            textArea.AddComponent<RectMask2D>();
+
+            var textGo = CreateUI("Text", textArea.transform);
+            StretchFill(textGo);
+            var textTMP = textGo.AddComponent<TextMeshProUGUI>();
+            textTMP.fontSize = fontSize;
+            textTMP.color = TEXT_PRIMARY;
+            textTMP.alignment = TextAlignmentOptions.MidlineLeft;
+            textTMP.enableWordWrapping = false;
+            textTMP.overflowMode = TextOverflowModes.Truncate;
+
+            input.textViewport = textArea.GetComponent<RectTransform>();
+            input.textComponent = textTMP;
+            input.text = initial ?? string.Empty;
+
+            if (onCommit != null)
+                input.onEndEdit.AddListener(v => onCommit.Invoke(v ?? string.Empty));
+
+            return input;
+        }
+
         public static void BuildSeparator(Transform parent)
         {
             var go = CreateUI("Sep", parent);

@@ -20,11 +20,43 @@ namespace Valkur.Gameplay.Buildings
 {
     public partial class BuildingsRuntimeEditor : SingletonMonoBehaviour<BuildingsRuntimeEditor>, GameEditorManager.IGameEditor
     {
+        private void MarkInstanceDataDirty()
+        {
+            _hasUnsavedInstanceChanges = true;
+        }
+
+        private void PersistDirtyInstanceChanges(string reason = null, bool force = false)
+        {
+            if ((!_hasUnsavedInstanceChanges && !force) || _isPersistingInstanceChanges)
+                return;
+
+            SaveInstancesToJson();
+        }
+
+        private void ExecutePersistedEdit(string label, Action doAction, Action undoAction)
+        {
+            _undo.Do(label,
+                () =>
+                {
+                    doAction?.Invoke();
+                    MarkInstanceDataDirty();
+                    PersistDirtyInstanceChanges(label, force: true);
+                },
+                () =>
+                {
+                    undoAction?.Invoke();
+                    MarkInstanceDataDirty();
+                    PersistDirtyInstanceChanges($"Undo {label}", force: true);
+                });
+        }
 
         private void SaveInstancesToJson()
         {
+            if (_isPersistingInstanceChanges) return;
+
             string dir  = Path.Combine(Application.streamingAssetsPath, "Buildings");
             string path = Path.Combine(dir, "buildings_instances.json");
+            _isPersistingInstanceChanges = true;
             try
             {
                 EnsureColliderDataLoaded();
@@ -73,7 +105,9 @@ namespace Valkur.Gameplay.Buildings
                     bool writeCollisionOverride = hasCollisionOverride &&
                         string.Equals(b.EffectiveColliderScope, "CU", StringComparison.OrdinalIgnoreCase);
                     bool hasColliderScope = !string.IsNullOrEmpty(b.ColliderScopeOverride);
-                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || writeCollisionOverride;
+                    bool hasZBottomOverride = b.ZBottomOffset != 0;
+                    bool hasZTopOverride = b.ZTopOffset != 0;
+                    bool hasOv = b.SplitRatioOverride >= 0f || sov.x > 0 || sov.y > 0 || hasColliderScope || hasZBottomOverride || hasZTopOverride || writeCollisionOverride;
                     if (hasOv)
                     {
                         sb.Append(", \"overrides\": {");
@@ -90,6 +124,18 @@ namespace Valkur.Gameplay.Buildings
                         {
                             if (!first) sb.Append(", ");
                             sb.Append($"\"collider_scope\": \"{EscapeJson(b.ColliderScopeOverride)}\"");
+                            first = false;
+                        }
+                        if (hasZBottomOverride)
+                        {
+                            if (!first) sb.Append(", ");
+                            sb.Append($"\"z_bottom\": {b.ZBottomOffset}");
+                            first = false;
+                        }
+                        if (hasZTopOverride)
+                        {
+                            if (!first) sb.Append(", ");
+                            sb.Append($"\"z_top\": {b.ZTopOffset}");
                             first = false;
                         }
                         if (writeCollisionOverride && instanceGrid != null)
@@ -128,12 +174,18 @@ namespace Valkur.Gameplay.Buildings
 #endif
                 if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {INSTANCES_REL_PATH}";
                 Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path}");
+                _hasUnsavedInstanceChanges = false;
                 RefreshCollidersPanel();
             }
             catch (System.Exception ex)
             {
+                _hasUnsavedInstanceChanges = true;
                 Debug.LogError($"[BuildingsEditor] Save failed: {ex.Message}\n{ex.StackTrace}");
                 if (_statusTmp != null) _statusTmp.text = "Save FAILED — see console.";
+            }
+            finally
+            {
+                _isPersistingInstanceChanges = false;
             }
         }
         private const string INSTANCES_REL_PATH = "StreamingAssets/Buildings/buildings_instances.json";

@@ -74,6 +74,7 @@ namespace Valkur.Gameplay.Buildings
         // Drag (move active with RMB)
         private bool    _dragging;
         private Vector3 _dragOffset;
+        private Vector3 _dragStartWorldPos;
 
         // Drag-from-picker (LMB drag a slot from the Buildings panel to the map to
         // place it directly — mirrors Python building_picker_controller.start_drag).
@@ -207,6 +208,8 @@ namespace Valkur.Gameplay.Buildings
 
         // Undo/redo
         private readonly UndoStack _undo = new UndoStack(64);
+        private bool _hasUnsavedInstanceChanges;
+        private bool _isPersistingInstanceChanges;
 
         // Cached BuildingLoader for spawn-root + ref counting
         private BuildingLoader _buildingLoader;

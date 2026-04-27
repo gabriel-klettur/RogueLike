@@ -70,7 +70,8 @@ namespace Valkur.Gameplay.Buildings
         {
             if (_activeBuilding == null) return;
             float oldVal = _activeBuilding.SplitRatioOverride;
-            _undo.Do($"Split {v:F2}",
+            if (Mathf.Approximately(oldVal, v)) return;
+            ExecutePersistedEdit($"Split {v:F2}",
                 () => { _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, v); RefreshCollisionFor(_activeBuilding); },
                 () => { _activeBuilding.Apply(_activeBuilding.Template, _activeBuilding.ScaleOverride, oldVal); RefreshCollisionFor(_activeBuilding); });
         }
@@ -80,7 +81,7 @@ namespace Valkur.Gameplay.Buildings
             if (b == null) return;
             int oldVal = bottom ? b.ZBottomOffset : b.ZTopOffset;
             int newVal = oldVal + delta;
-            _undo.Do($"Z{(bottom?"B":"T")} {newVal}",
+            ExecutePersistedEdit($"Z{(bottom?"B":"T")} {newVal}",
                 () => { if (bottom) b.ZBottomOffset = newVal; else b.ZTopOffset = newVal; RefreshInspector(); },
                 () => { if (bottom) b.ZBottomOffset = oldVal; else b.ZTopOffset = oldVal; RefreshInspector(); });
         }
@@ -91,7 +92,7 @@ namespace Valkur.Gameplay.Buildings
             string current = _activeBuilding.EffectiveColliderScope;
             string next    = current == "CU" ? "CG" : "CU";
             string oldOv   = _activeBuilding.ColliderScopeOverride;
-            _undo.Do($"Scope {next}",
+            ExecutePersistedEdit($"Scope {next}",
                 () => { _activeBuilding.ColliderScopeOverride = next; RefreshCollisionFor(_activeBuilding); RefreshInspector(); },
                 () => { _activeBuilding.ColliderScopeOverride = oldOv; RefreshCollisionFor(_activeBuilding); RefreshInspector(); });
         }
@@ -105,7 +106,7 @@ namespace Valkur.Gameplay.Buildings
             var oldZB = b.ZBottomOffset;
             var oldZT = b.ZTopOffset;
             var oldScope = b.ColliderScopeOverride;
-            _undo.Do("Reset building",
+            ExecutePersistedEdit("Reset building",
                 () => { b.Apply(b.Template, Vector2Int.zero, -1f); b.ZBottomOffset = 0; b.ZTopOffset = 0; b.ColliderScopeOverride = ""; RefreshCollisionFor(b); RefreshInspector(); },
                 () => { b.Apply(b.Template, oldScale, oldSplit); b.ZBottomOffset = oldZB; b.ZTopOffset = oldZT; b.ColliderScopeOverride = oldScope; RefreshCollisionFor(b); RefreshInspector(); });
         }
@@ -125,7 +126,7 @@ namespace Valkur.Gameplay.Buildings
             string zoneName = DetectZoneAt(worldPos);
 
             BuildingObject created = null;
-            _undo.Do($"Place #{template.templateId}",
+            ExecutePersistedEdit($"Place #{template.templateId}",
                 () =>
                 {
                     var go = new GameObject($"Building_{newId}_{template.name}");
@@ -144,7 +145,13 @@ namespace Valkur.Gameplay.Buildings
                 },
                 () =>
                 {
-                    if (created != null) { Destroy(created.gameObject); created = null; InvalidateBuildingCache(); }
+                    if (created != null)
+                    {
+                        created.gameObject.SetActive(false);
+                        Destroy(created.gameObject);
+                        created = null;
+                        InvalidateBuildingCache();
+                    }
                     if (_activeBuilding == null) RefreshInspector();
                 });
         }
@@ -171,7 +178,7 @@ namespace Valkur.Gameplay.Buildings
             var go = b.gameObject;
             Vector3 savedPos = go.transform.position;
             string  savedName = go.name;
-            _undo.Do($"Delete {savedName}",
+            ExecutePersistedEdit($"Delete {savedName}",
                 () => { if (go) go.SetActive(false); InvalidateBuildingCache(); if (_activeBuilding == b) { _activeBuilding = null; RefreshInspector(); } },
                 () => { if (go) { go.transform.position = savedPos; go.name = savedName; go.SetActive(true); InvalidateBuildingCache(); } });
             if (_statusTmp != null) _statusTmp.text = $"Deleted: {savedName}";
