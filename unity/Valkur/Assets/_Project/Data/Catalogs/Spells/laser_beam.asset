@@ -15,7 +15,7 @@ MonoBehaviour:
   spellKey: laser_beam
   displayName: Laser
   type: 5
-  manaCost: 10
+  manaCost: 2
   maxInstances: 1
   allowOverlap: 1
   allowMovement: 0
@@ -24,11 +24,11 @@ MonoBehaviour:
   automaticCastPunish: 2
   lockCastDirection: 1
   prepareDuration: 0.1
-  channelDuration: 0.2
+  channelDuration: 0
   cooldownDuration: 1
   speed: 0
   damage: 0.25
-  range: 62.5
+  range: 6
   lifetime: 0.016666668
   radius: 0
   hitRadius: 0

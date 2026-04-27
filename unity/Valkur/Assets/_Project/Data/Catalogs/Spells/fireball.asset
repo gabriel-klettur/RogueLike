@@ -25,10 +25,10 @@ MonoBehaviour:
   lockCastDirection: 0
   prepareDuration: 0.015
   channelDuration: 0.015
-  cooldownDuration: 0.033
-  speed: 112.5
+  cooldownDuration: 0.4
+  speed: 16
   damage: 20
-  range: 112.5
+  range: 15
   lifetime: 1
   radius: 0
   hitRadius: 0
@@ -53,8 +53,8 @@ MonoBehaviour:
   meteorImpactRadius: 0
   armingTime: 0
   triggerRadius: 0
-  explosionRadius: 0
-  explosionDamage: 0
+  explosionRadius: 1.5
+  explosionDamage: 30
   ttl: 0
   wallWidth: 0
   wallHeight: 0
