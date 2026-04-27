@@ -131,6 +131,26 @@ namespace Valkur.Editor
             return def;
         }
 
+        /// <summary>
+        /// Parses a Python tint array <c>[r, g, b]</c> (0-255) into a Unity <see cref="Color"/>.
+        /// Returns <see cref="Color.white"/> when the value is missing, null, or malformed.
+        /// Pygame's BLEND_RGB_MULT semantics map 1:1 to a SpriteRenderer/Image color tint.
+        /// </summary>
+        private static Color ParseTint(Dictionary<string, object> d, string key = "tint")
+        {
+            if (d == null) return Color.white;
+            if (!d.TryGetValue(key, out var v) || v == null) return Color.white;
+            if (v is List<object> list && list.Count >= 3)
+            {
+                float r = Convert.ToSingle(list[0]) / 255f;
+                float g = Convert.ToSingle(list[1]) / 255f;
+                float b = Convert.ToSingle(list[2]) / 255f;
+                float a = list.Count >= 4 ? Convert.ToSingle(list[3]) / 255f : 1f;
+                return new Color(r, g, b, a);
+            }
+            return Color.white;
+        }
+
         #endregion
 
         #region Serialization helpers (JsonUtility fallback)

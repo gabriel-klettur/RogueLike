@@ -10,6 +10,11 @@ namespace Valkur.Editor
 {
     public static partial class PythonDataMigrator
     {
+        // Keep spell unit conversions aligned with SpellDataImporter so both
+        // import entry points generate identical runtime data.
+        private const float SpellPxToWorld = 1f / 16f;
+        private const float SpellSpeedToWorld = 60f / 16f;
+        private const float SpellTickToSeconds = 1f / 60f;
 
         // Spells import is exposed via Valkur/Spells/Import Spells from Python JSON (SpellDataImporter.cs)
         // Kept as internal method for use by Import All Python Data
@@ -127,11 +132,11 @@ namespace Valkur.Editor
                 if (effect != null)
                 {
                     so.damage = GetFloat(effect, "damage");
-                    so.range = GetFloat(effect, "range");
-                    so.speed = GetFloat(effect, "speed");
-                    so.lifetime = GetFloat(effect, "lifetime");
-                    so.radius = GetFloat(effect, "radius");
-                    so.hitRadius = GetFloat(effect, "hit_radius");
+                    so.range = GetFloat(effect, "range") * SpellPxToWorld;
+                    so.speed = GetFloat(effect, "speed") * SpellSpeedToWorld;
+                    so.lifetime = GetFloat(effect, "lifetime") * SpellTickToSeconds;
+                    so.radius = GetFloat(effect, "radius") * SpellPxToWorld;
+                    so.hitRadius = GetFloat(effect, "hit_radius") * SpellPxToWorld;
                     so.arcRangeDegrees = GetFloat(effect, "arc_range_degrees");
                     so.hitArcDegrees = GetFloat(effect, "hit_arc_degrees");
                 }
@@ -140,7 +145,7 @@ namespace Valkur.Editor
                 if (meta != null)
                 {
                     so.speedMultiplier = GetFloat(meta, "speed_multiplier", 1f);
-                    so.offset = GetFloat(meta, "offset");
+                    so.offset = GetFloat(meta, "offset") * SpellPxToWorld;
                 }
 
                 string assetPath = $"{outputDir}/{spellKey}.asset";

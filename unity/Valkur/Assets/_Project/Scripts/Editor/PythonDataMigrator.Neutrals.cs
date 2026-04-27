@@ -144,7 +144,7 @@ namespace Valkur.Editor
                                     scaleAttack = GetFloat(scaleData, "scale_attack", 1f),
                                     scaleDamage = GetFloat(scaleData, "scale_damage", 1f),
                                     scaleDeath = GetFloat(scaleData, "scale_death", 1f),
-                                    tint = Color.white
+                                    tint = ParseTint(scaleData)
                                 };
                             }
 

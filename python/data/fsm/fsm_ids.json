@@ -5,7 +5,8 @@
     "Monster_Default",
     "Spawner_Periodic_Cooldown",
     "Spawner_Waves_Clear",
-    "Spawner_Periodic_BetweenWaves"
+    "Spawner_Periodic_BetweenWaves",
+    "Spawner_Periodic_BetweenWaves_1"
   ],
   "STATES_BY_SET": {
     "Monster_Default": [
@@ -35,21 +36,32 @@
       "SpawningWave",
       "WaitCooldown",
       "WaitRestart",
-      "Finished"
+      "Finished",
+      "Damage"
+    ],
+    "Spawner_Periodic_BetweenWaves_1": [
+      "AwaitTrigger",
+      "SpawningWave",
+      "WaitCooldown",
+      "WaitRestart",
+      "Finished",
+      "Damage"
     ],
     "Spawner_Periodic_Cooldown": [
       "AwaitTrigger",
       "SpawningWave",
       "WaitCooldown",
       "WaitRestart",
-      "Finished"
+      "Finished",
+      "Damage"
     ],
     "Spawner_Waves_Clear": [
       "AwaitTrigger",
       "SpawningWave",
       "WaitClear",
       "WaitRestart",
-      "Finished"
+      "Finished",
+      "Damage"
     ]
   },
   "TRANSITIONS_BY_SET": {
@@ -83,6 +95,16 @@
       "tr_b52b3ae2"
     ],
     "Spawner_Periodic_BetweenWaves": [
+      "tr_b2edf240",
+      "tr_9c867845",
+      "tr_6b5b77e2",
+      "tr_a35a81a6",
+      "tr_2474bd1c",
+      "tr_a82b5258",
+      "tr_d936810d",
+      "tr_3cf9cb39"
+    ],
+    "Spawner_Periodic_BetweenWaves_1": [
       "tr_b2edf240",
       "tr_9c867845",
       "tr_6b5b77e2",

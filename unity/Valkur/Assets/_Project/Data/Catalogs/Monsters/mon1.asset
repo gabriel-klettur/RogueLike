@@ -34,6 +34,7 @@ MonoBehaviour:
     feetWidthFactor: 0
     feetHeightFactor: 0
     faction: EVIL
+    chatRange: 0
   fsmSet: 
   patrolType: 
   useAttackTelegraph: 0

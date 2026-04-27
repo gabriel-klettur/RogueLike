@@ -104,6 +104,12 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             m?.Invoke(obj, args);
         }
 
+        private static T GetFieldValue<T>(object obj, string name)
+        {
+            var field = FindInstanceField(obj, name);
+            return field != null ? (T)field.GetValue(obj) : default;
+        }
+
         private static BuildingTemplateData MakeTemplate(int id, int origW = 64, int origH = 64)
         {
             var t = ScriptableObject.CreateInstance<BuildingTemplateData>();
@@ -129,6 +135,14 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             return bObj;
         }
 
+        private static ZoneManager MakeZoneManager()
+        {
+            var go = new GameObject("TestZoneManager");
+            var zm = go.AddComponent<ZoneManager>();
+            zm.AddZone("Lobby", Vector2Int.zero, true);
+            return zm;
+        }
+
         private string InvokeAndReadJson(BuildingsRuntimeEditor editor)
         {
             CaptureSaveOutputs();
@@ -145,6 +159,13 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             CaptureFile(Path.Combine(dir, "buildings_instances.json"));
             CaptureFile(Path.Combine(dir, "buildings_collisions_by_image.json"));
             CaptureFile(Path.Combine(dir, "buildings_collisions_by_building_instance_id.json"));
+        }
+
+        private static string ReadSavedInstancesJson()
+        {
+            string dir  = Path.Combine(Application.streamingAssetsPath, "Buildings");
+            string path = Path.Combine(dir, "buildings_instances.json");
+            return File.Exists(path) ? File.ReadAllText(path) : null;
         }
 
         private void CaptureFile(string path)
@@ -513,6 +534,92 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             StringAssert.Contains("\"Lobby\"", json,
                 "Null ZoneName must fall back to 'Lobby' in the JSON output.");
 
+            Object.DestroyImmediate(editor.gameObject);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [Test]
+        public void MoveCommit_PersistsUpdatedPositionImmediately()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var editor = CreateSingleton<BuildingsRuntimeEditor>("TestEditor");
+            var zm     = MakeZoneManager();
+            var tmpl   = MakeTemplate(id: 5, origW: 64, origH: 64);
+            var bObj   = MakeBuildingInScene("B1", tmpl, instanceId: 1, zone: "Lobby");
+            bObj.transform.position = new Vector3(1f, 2f, 0f);
+            CaptureSaveOutputs();
+
+            SetField(editor, "_activeBuilding", bObj);
+            SetField(editor, "_dragStartWorldPos", bObj.transform.position);
+
+            bObj.transform.position = new Vector3(3f, 2f, 0f);
+            InvokeMethod(editor, "FinalizeMoveDrag");
+
+            string json = ReadSavedInstancesJson();
+
+            Assert.IsNotNull(json);
+            StringAssert.Contains("\"rel_x\": 64", json,
+                "Moving a 64px-wide building from x=1 to x=3 should persist the new rel_x immediately.");
+            Assert.IsFalse(GetFieldValue<bool>(editor, "_hasUnsavedInstanceChanges"),
+                "Autosave after move commit must clear the dirty flag.");
+
+            Object.DestroyImmediate(zm.gameObject);
+            Object.DestroyImmediate(editor.gameObject);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [Test]
+        public void ResizeCommit_PersistsScaleOverrideImmediately()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var editor = CreateSingleton<BuildingsRuntimeEditor>("TestEditor");
+            var tmpl   = MakeTemplate(id: 9, origW: 64, origH: 64);
+            var bObj   = MakeBuildingInScene("B1", tmpl, instanceId: 1, zone: "Lobby");
+            bObj.ScaleOverride = new Vector2Int(128, 128);
+            CaptureSaveOutputs();
+
+            SetField(editor, "_activeBuilding", bObj);
+            SetField(editor, "_resizeStartScale", new Vector2Int(64, 64));
+
+            InvokeMethod(editor, "FinalizeResizeDrag");
+
+            string json = ReadSavedInstancesJson();
+
+            Assert.IsNotNull(json);
+            StringAssert.Contains("\"scale\": [128, 128]", json,
+                "Resizing a building must persist the new scale override as soon as the drag commits.");
+            Assert.IsFalse(GetFieldValue<bool>(editor, "_hasUnsavedInstanceChanges"),
+                "Autosave after resize commit must clear the dirty flag.");
+
+            Object.DestroyImmediate(editor.gameObject);
+            Object.DestroyImmediate(tmpl);
+        }
+
+        [Test]
+        public void OnApplicationQuit_PersistsDirtyTransformsWithoutManualSave()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var editor = CreateSingleton<BuildingsRuntimeEditor>("TestEditor");
+            var zm     = MakeZoneManager();
+            var tmpl   = MakeTemplate(id: 11, origW: 64, origH: 64);
+            var bObj   = MakeBuildingInScene("B1", tmpl, instanceId: 1, zone: "Lobby");
+            bObj.transform.position = new Vector3(4f, 2f, 0f);
+            CaptureSaveOutputs();
+
+            SetField(editor, "_activeBuilding", bObj);
+            SetField(editor, "_hasUnsavedInstanceChanges", true);
+
+            InvokeMethod(editor, "OnApplicationQuit");
+
+            string json = ReadSavedInstancesJson();
+
+            Assert.IsNotNull(json);
+            StringAssert.Contains("\"rel_x\": 96", json,
+                "Closing the game with dirty building edits must flush the latest transform to disk.");
+            Assert.IsFalse(GetFieldValue<bool>(editor, "_hasUnsavedInstanceChanges"),
+                "Shutdown persistence must clear the dirty flag after a successful write.");
+
+            Object.DestroyImmediate(zm.gameObject);
             Object.DestroyImmediate(editor.gameObject);
             Object.DestroyImmediate(tmpl);
         }

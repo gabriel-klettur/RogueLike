@@ -34,6 +34,7 @@ MonoBehaviour:
     feetWidthFactor: 0.5
     feetHeightFactor: 0.2
     faction: NEUTRAL
+    chatRange: 0
   fsmSet: 
   patrolType: 
   useAttackTelegraph: 0

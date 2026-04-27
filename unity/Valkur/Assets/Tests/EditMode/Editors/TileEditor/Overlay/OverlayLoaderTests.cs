@@ -81,6 +81,21 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
                     found.Count > 1 ? found[1] : null);
         }
 
+        private static string DiscoverFirstTileNameInFolder(string folder)
+        {
+            var sprites = Resources.LoadAll<Sprite>(folder);
+            if (sprites == null) return null;
+
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                var sprite = sprites[i];
+                if (sprite != null && !string.IsNullOrEmpty(sprite.name))
+                    return sprite.name;
+            }
+
+            return null;
+        }
+
         private void RequireResourceTiles()
         {
             if (string.IsNullOrEmpty(_tileNameA) || string.IsNullOrEmpty(_tileNameB))
@@ -155,6 +170,27 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
             Assert.IsNotNull(ground.GetTile(new Vector3Int(101, 200, 0)));
             Assert.IsNull(ground.GetTile(new Vector3Int(0, 0, 0)),
                 "Tiles must NOT be painted at (0,0) when offset is non-zero.");
+        }
+
+        [Test]
+        public void LoadOverlayFromPath_TileStoredInCategorySubfolder_ResolvesByTileName()
+        {
+            string sandOceanTileName = DiscoverFirstTileNameInFolder("Tiles/sand_ocean");
+            if (string.IsNullOrEmpty(sandOceanTileName))
+                Assert.Inconclusive("No sprites found in Resources/Tiles/sand_ocean/.");
+
+            string json = WriteOverlay("sand_ocean.json", new[]
+            {
+                new[] { sandOceanTileName },
+            });
+
+            OverlayLoader.LoadOverlayFromPath(json, _grid, offsetX: 0, offsetY: 0,
+                clearLayerRegion: false, regionWidth: 0, regionHeight: 0);
+
+            var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
+            var restored = ground.GetTile(new Vector3Int(0, 0, 0));
+            Assert.IsNotNull(restored, "Subfolder-backed tiles must be restored by tile name alone.");
+            Assert.AreEqual(sandOceanTileName, TileRegistry.Instance.GetName(restored));
         }
 
         // ── Bounds clipping (anti-bleed) ─────────────────────────────────

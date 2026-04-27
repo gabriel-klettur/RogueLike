@@ -8,6 +8,7 @@ using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Enemies.FSM;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.Entities;
+using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Items;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.Spawners;

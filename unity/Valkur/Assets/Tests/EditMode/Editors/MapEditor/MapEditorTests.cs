@@ -112,7 +112,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 (o, n) => { },      // onRenameZoneByName
                 () => { },          // onToggleSelectedZoneEditable
                 _ => { },           // onToggleZoneEditableByName
-                _ => { },           // onMoveSelectedZone
                 _ => { });          // onRestrictEditChanged
 
             return ui;
@@ -776,15 +775,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         // ── Add Zone Flow ─────────────────────────────────────────────────────────
 
         [Test]
-        public void Operation_BeginAddZoneFlow_NoSelection_DoesNotActivateFlow()
+        public void Operation_BeginAddZoneFlow_NoSelection_StillActivatesFlow()
         {
             var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
             GetState(mgr).ClearSelection();
 
             InvokeMethod(mgr, "BeginAddZoneFlow");
 
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "Add Zone flow must not activate without a source selection.");
+            Assert.IsTrue((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
+                "Add Zone flow must activate even without a pre-selection — source zone is optional.");
         }
 
         [Test]
@@ -903,6 +902,85 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 "Adaptive line width must grow (or stay equal at clamp) when zooming out.");
             Assert.GreaterOrEqual(wClose, 0.01f,
                 "Adaptive line width must stay strictly positive.");
+        }
+
+        // ── Add Zone Mode: blinking button + deferred dialog ──────────────────────
+
+        [Test]
+        public void MapEditorUI_AddZoneBtnOutline_NotNull_AfterInitialize()
+        {
+            var ui   = CreateInitializedUI();
+            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
+            Assert.IsNotNull(refs.AddZoneBtnOutline,
+                "UIRefs.AddZoneBtnOutline must be set during BuildAll.");
+        }
+
+        [Test]
+        public void MapEditorUI_AddZoneBtnImage_NotNull_AfterInitialize()
+        {
+            var ui   = CreateInitializedUI();
+            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
+            Assert.IsNotNull(refs.AddZoneBtnImage,
+                "UIRefs.AddZoneBtnImage must be set during BuildAll.");
+        }
+
+        [Test]
+        public void MapEditorUI_SetAddZoneMode_True_SetsField()
+        {
+            var ui = CreateInitializedUI();
+            ui.SetAddZoneMode(true);
+            Assert.IsTrue((bool) GetFieldValue(ui, "_isAddZoneMode"),
+                "SetAddZoneMode(true) must set the _isAddZoneMode field.");
+        }
+
+        [Test]
+        public void MapEditorUI_SetAddZoneMode_False_ClearsField()
+        {
+            var ui = CreateInitializedUI();
+            ui.SetAddZoneMode(true);
+            ui.SetAddZoneMode(false);
+            Assert.IsFalse((bool) GetFieldValue(ui, "_isAddZoneMode"),
+                "SetAddZoneMode(false) must clear the _isAddZoneMode field.");
+        }
+
+        [Test]
+        public void MapEditorUI_SetAddZoneMode_False_ResetsOutlineToTransparent()
+        {
+            var ui   = CreateInitializedUI();
+            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
+            ui.SetAddZoneMode(true);
+            ui.SetAddZoneMode(false);
+            Assert.AreEqual(0f, refs.AddZoneBtnOutline.effectColor.a,
+                "Outline alpha must be reset to 0 when SetAddZoneMode(false) is called.");
+        }
+
+        [Test]
+        public void Operation_BeginAddZoneFlow_WithSelection_ActivatesFlow()
+        {
+            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
+            GetState(mgr).SelectZone("Alpha");
+
+            InvokeMethod(mgr, "BeginAddZoneFlow");
+
+            Assert.IsTrue((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
+                "BeginAddZoneFlow must set _isAddZoneFlowActive to true.");
+            Assert.IsFalse((bool) GetFieldValue(mgr, "_hasPendingAddTarget"),
+                "_hasPendingAddTarget must start false — user has not clicked the map yet.");
+        }
+
+        [Test]
+        public void Operation_CancelAddZoneFlow_ClearsAllFlowState()
+        {
+            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
+            SetField(mgr, "_isAddZoneFlowActive", true);
+            SetField(mgr, "_hasPendingAddTarget",  true);
+
+            InvokeMethod(mgr, "CancelAddZoneFlow");
+
+            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
+                "CancelAddZoneFlow must clear _isAddZoneFlowActive.");
+            Assert.IsFalse((bool) GetFieldValue(mgr, "_hasPendingAddTarget"),
+                "CancelAddZoneFlow must clear _hasPendingAddTarget.");
         }
     }
 }

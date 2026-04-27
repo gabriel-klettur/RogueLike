@@ -34,6 +34,7 @@ MonoBehaviour:
     feetWidthFactor: 0.5
     feetHeightFactor: 0.2
     faction: EVIL
+    chatRange: 0
   fsmSet: Monster_Default
   patrolType: line
   useAttackTelegraph: 1

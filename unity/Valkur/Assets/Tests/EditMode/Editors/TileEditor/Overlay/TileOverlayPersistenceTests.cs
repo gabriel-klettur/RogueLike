@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -263,6 +264,103 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
             foreach (var name in candidates)
                 if (Resources.Load<Sprite>("Tiles/" + name) != null) return name;
             return null;
+        }
+
+        private static string DiscoverFirstResourceTileNameInFolder(string folder)
+        {
+            var sprites = Resources.LoadAll<Sprite>(folder);
+            if (sprites == null) return null;
+
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                var sprite = sprites[i];
+                if (sprite != null && !string.IsNullOrEmpty(sprite.name))
+                    return sprite.name;
+            }
+
+            return null;
+        }
+
+        private string ReadGroundCellFromOverride(string zoneName, int localX, int localYFromBottom)
+        {
+            string path = TileOverlayPersistence.OverridePathForZone(zoneName);
+            Assert.IsTrue(File.Exists(path), $"Override file for zone '{zoneName}' must exist.");
+
+            string json = File.ReadAllText(path);
+            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
+            Assert.IsNotNull(root, "Override JSON must deserialize.");
+
+            var layers = root["layers"] as Dictionary<string, object>;
+            Assert.IsNotNull(layers, "Override JSON must contain 'layers'.");
+
+            if (!layers.TryGetValue("Ground", out var groundLayer))
+                return string.Empty;
+
+            var rows = groundLayer as List<object>;
+            Assert.IsNotNull(rows, "Override JSON must contain the Ground layer.");
+
+            int rowIndex = _zones.ZoneHeightTiles - 1 - localYFromBottom;
+            var row = rows[rowIndex] as List<object>;
+            Assert.IsNotNull(row, "Expected a valid Ground row in override JSON.");
+
+            return row[localX] as string;
+        }
+
+        [Test]
+        public void ApplyAllOverrides_RestoresSandOceanTileStoredInCategorySubfolder()
+        {
+            string sandOceanTileName = DiscoverFirstResourceTileNameInFolder("Tiles/sand_ocean");
+            if (string.IsNullOrEmpty(sandOceanTileName))
+                Assert.Inconclusive("No sprites found under Resources/Tiles/sand_ocean/.");
+
+            var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
+            var sprite = Resources.Load<Sprite>("Tiles/sand_ocean/" + sandOceanTileName);
+            Assert.IsNotNull(sprite, $"Expected to load sand_ocean sprite '{sandOceanTileName}'.");
+
+            var sandOceanTile = ScriptableObject.CreateInstance<Tile>();
+            sandOceanTile.sprite = sprite;
+            sandOceanTile.name = sandOceanTileName;
+            TileRegistry.Instance.Register(sandOceanTileName, sandOceanTile);
+
+            var cell = new Vector3Int(4, 6, 0);
+            ground.SetTile(cell, sandOceanTile);
+            _persistence.MarkCellDirty(cell);
+            Assert.IsTrue(_persistence.SaveZone(ZONE_A), "Initial save must succeed.");
+
+            ground.SetTile(cell, null);
+            Assert.IsNull(ground.GetTile(cell), "Sanity: cell must be empty before re-apply.");
+
+            int applied = TileOverlayPersistence.ApplyAllOverrides(_grid, _zones);
+
+            Assert.GreaterOrEqual(applied, 1);
+            var restored = ground.GetTile(cell);
+            Assert.IsNotNull(restored, "sand_ocean tiles must survive a full save/reload round-trip.");
+            Assert.AreEqual(sandOceanTileName, TileRegistry.Instance.GetName(restored));
+
+            UnityEngine.Object.DestroyImmediate(sandOceanTile);
+        }
+
+        [Test]
+        public void SaveZone_ErasedTile_IsSerializedToItsOwningZoneOnly()
+        {
+            var ground = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
+            var zoneATile = new Vector3Int(2, 3, 0);
+            var zoneBTile = new Vector3Int(52, 7, 0);
+
+            ground.SetTile(zoneATile, _floorTile);
+            ground.SetTile(zoneBTile, _floorTile);
+            _persistence.MarkCellDirty(zoneATile);
+            _persistence.MarkCellDirty(zoneBTile);
+            Assert.AreEqual(2, _persistence.SaveAllDirty(), "Baseline save for both zones must succeed.");
+
+            ground.SetTile(zoneATile, null);
+            _persistence.MarkCellDirty(zoneATile);
+            Assert.IsTrue(_persistence.SaveZone(ZONE_A), "Erased zone must save successfully.");
+
+            Assert.AreEqual(string.Empty, ReadGroundCellFromOverride(ZONE_A, localX: 2, localYFromBottom: 3),
+                "The erased tile must be persisted as empty in zone A.");
+            Assert.AreEqual("test_floor", ReadGroundCellFromOverride(ZONE_B, localX: 2, localYFromBottom: 7),
+                "Saving zone A must not rewrite zone B's persisted tile data.");
         }
     }
 }

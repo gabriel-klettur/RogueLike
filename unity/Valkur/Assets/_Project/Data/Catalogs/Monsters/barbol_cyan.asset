@@ -34,6 +34,7 @@ MonoBehaviour:
     feetWidthFactor: 0.5
     feetHeightFactor: 0.2
     faction: EVIL
+    chatRange: 0
   fsmSet: Monster_Default
   patrolType: 
   useAttackTelegraph: 0
@@ -120,4 +121,4 @@ MonoBehaviour:
       scaleAttack: 0.15
       scaleDamage: 0.15
       scaleDeath: 0.175
-      tint: {r: 1, g: 1, b: 1, a: 1}
+      tint: {r: 0, g: 1, b: 1, a: 1}

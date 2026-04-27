@@ -1,5 +1,5 @@
 [
-  {"id": 1, "template_id": 269, "zone": "Forest", "rel_x": 1370, "rel_y": -259, "overrides": {"scale": [289, 368], "collider_scope": "CU", "collision_override": {
+  {"id": 1, "template_id": 269, "zone": "Forest", "rel_x": 805, "rel_y": -197, "overrides": {"scale": [289, 368], "collider_scope": "CU", "collision_override": {
   "width": 10,
   "height": 12,
   "collision": [
@@ -369,7 +369,7 @@
   "grid_ref_size": [206, 206]
 }}},
   {"id": 25, "template_id": 32, "zone": "lobby", "rel_x": 567, "rel_y": 207, "overrides": {"scale": [197, 269], "split_ratio": 0.6669, "collider_scope": "CG"}},
-  {"id": 26, "template_id": 34, "zone": "Forest", "rel_x": 909, "rel_y": -104, "overrides": {"scale": [176, 240], "collider_scope": "CU", "collision_override": {
+  {"id": 26, "template_id": 34, "zone": "Forest", "rel_x": 821, "rel_y": -333, "overrides": {"scale": [176, 240], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 8,
   "collision": [
@@ -384,7 +384,7 @@
   ],
   "grid_ref_size": [176, 240]
 }}},
-  {"id": 27, "template_id": 35, "zone": "Forest", "rel_x": 1003, "rel_y": -14, "overrides": {"scale": [166, 227], "collider_scope": "CU", "collision_override": {
+  {"id": 27, "template_id": 35, "zone": "Forest", "rel_x": 1033, "rel_y": -115, "overrides": {"scale": [166, 227], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 8,
   "collision": [
@@ -399,7 +399,7 @@
   ],
   "grid_ref_size": [166, 227]
 }}},
-  {"id": 28, "template_id": 36, "zone": "Forest", "rel_x": 1103, "rel_y": -96, "overrides": {"scale": [177, 242], "collider_scope": "CU", "collision_override": {
+  {"id": 28, "template_id": 36, "zone": "Forest", "rel_x": 897, "rel_y": -246, "overrides": {"scale": [177, 242], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 8,
   "collision": [
@@ -414,7 +414,7 @@
   ],
   "grid_ref_size": [177, 242]
 }}},
-  {"id": 29, "template_id": 37, "zone": "Forest", "rel_x": 1242, "rel_y": -79, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
+  {"id": 29, "template_id": 37, "zone": "Forest", "rel_x": 1493, "rel_y": -107, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 5,
   "collision": [
@@ -426,7 +426,7 @@
   ],
   "grid_ref_size": [114, 156]
 }}},
-  {"id": 30, "template_id": 38, "zone": "Forest", "rel_x": 679, "rel_y": -52, "overrides": {"scale": [164, 224], "collider_scope": "CU", "collision_override": {
+  {"id": 30, "template_id": 38, "zone": "Forest", "rel_x": 569, "rel_y": -747, "overrides": {"scale": [164, 224], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 7,
   "collision": [
@@ -440,7 +440,7 @@
   ],
   "grid_ref_size": [164, 224]
 }}},
-  {"id": 31, "template_id": 39, "zone": "Forest", "rel_x": 831, "rel_y": -46, "overrides": {"scale": [162, 221], "collider_scope": "CU", "collision_override": {
+  {"id": 31, "template_id": 39, "zone": "Forest", "rel_x": 737, "rel_y": -637, "overrides": {"scale": [162, 221], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 7,
   "collision": [
@@ -454,7 +454,7 @@
   ],
   "grid_ref_size": [162, 221]
 }}},
-  {"id": 32, "template_id": 40, "zone": "Forest", "rel_x": 578, "rel_y": 14, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
+  {"id": 32, "template_id": 40, "zone": "Forest", "rel_x": 661, "rel_y": -107, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 5,
   "collision": [
@@ -466,7 +466,7 @@
   ],
   "grid_ref_size": [114, 156]
 }}},
-  {"id": 33, "template_id": 40, "zone": "Forest", "rel_x": 537, "rel_y": 46, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
+  {"id": 33, "template_id": 40, "zone": "Forest", "rel_x": 379, "rel_y": -118, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 5,
   "collision": [
@@ -478,7 +478,7 @@
   ],
   "grid_ref_size": [114, 156]
 }}},
-  {"id": 34, "template_id": 40, "zone": "Forest", "rel_x": 477, "rel_y": -17, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
+  {"id": 34, "template_id": 40, "zone": "Forest", "rel_x": 519, "rel_y": -198, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 5,
   "collision": [
@@ -490,7 +490,7 @@
   ],
   "grid_ref_size": [114, 156]
 }}},
-  {"id": 35, "template_id": 42, "zone": "Forest", "rel_x": 737, "rel_y": 6, "overrides": {"scale": [203, 276], "collider_scope": "CU", "collision_override": {
+  {"id": 35, "template_id": 42, "zone": "Forest", "rel_x": 326, "rel_y": -670, "overrides": {"scale": [203, 276], "collider_scope": "CU", "collision_override": {
   "width": 7,
   "height": 9,
   "collision": [
@@ -506,7 +506,7 @@
   ],
   "grid_ref_size": [203, 276]
 }}},
-  {"id": 36, "template_id": 43, "zone": "Forest", "rel_x": 1298, "rel_y": -47, "overrides": {"scale": [139, 190], "collider_scope": "CU", "collision_override": {
+  {"id": 36, "template_id": 43, "zone": "Forest", "rel_x": 1488, "rel_y": -247, "overrides": {"scale": [139, 190], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 6,
   "collision": [
@@ -519,7 +519,7 @@
   ],
   "grid_ref_size": [139, 190]
 }}},
-  {"id": 37, "template_id": 44, "zone": "Forest", "rel_x": 644, "rel_y": 51, "overrides": {"scale": [129, 176], "collider_scope": "CU", "collision_override": {
+  {"id": 37, "template_id": 44, "zone": "Forest", "rel_x": 688, "rel_y": -334, "overrides": {"scale": [129, 176], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 6,
   "collision": [
@@ -532,7 +532,7 @@
   ],
   "grid_ref_size": [129, 176]
 }}},
-  {"id": 38, "template_id": 45, "zone": "Forest", "rel_x": 568, "rel_y": -90, "overrides": {"scale": [141, 192], "collider_scope": "CU", "collision_override": {
+  {"id": 38, "template_id": 45, "zone": "Forest", "rel_x": 418, "rel_y": -454, "overrides": {"scale": [141, 192], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 6,
   "collision": [
@@ -545,7 +545,7 @@
   ],
   "grid_ref_size": [141, 192]
 }}},
-  {"id": 39, "template_id": 46, "zone": "Forest", "rel_x": 895, "rel_y": -48, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
+  {"id": 39, "template_id": 46, "zone": "Forest", "rel_x": 527, "rel_y": -575, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 11,
   "collision": [
@@ -581,7 +581,7 @@
   ],
   "grid_ref_size": [251, 324]
 }}},
-  {"id": 41, "template_id": 48, "zone": "Forest", "rel_x": 325, "rel_y": -228, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
+  {"id": 41, "template_id": 48, "zone": "Forest", "rel_x": 226, "rel_y": -445, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 11,
   "collision": [
@@ -599,7 +599,7 @@
   ],
   "grid_ref_size": [251, 324]
 }}},
-  {"id": 42, "template_id": 49, "zone": "Forest", "rel_x": 225, "rel_y": -247, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
+  {"id": 42, "template_id": 49, "zone": "Forest", "rel_x": 39, "rel_y": -419, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 11,
   "collision": [
@@ -617,7 +617,7 @@
   ],
   "grid_ref_size": [233, 333]
 }}},
-  {"id": 43, "template_id": 48, "zone": "Forest", "rel_x": 73, "rel_y": -236, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
+  {"id": 43, "template_id": 48, "zone": "Forest", "rel_x": 30, "rel_y": -297, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 11,
   "collision": [
@@ -1995,7 +1995,7 @@
   ],
   "grid_ref_size": [191, 260]
 }}},
-  {"id": 129, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "collider_scope": "CU", "collision_override": {
+  {"id": 129, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "split_ratio": 0.8142, "collider_scope": "CU", "collision_override": {
   "width": 13,
   "height": 19,
   "collision": [

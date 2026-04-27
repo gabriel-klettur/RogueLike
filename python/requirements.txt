@@ -14,3 +14,7 @@ check-jsonschema
 alembic
 sqlalchemy
 referencing
+# Music analysis (BPM + key extraction for the audio catalog)
+librosa>=0.10
+numpy
+soundfile
