@@ -2321,56 +2321,5 @@
             "z_top": 5,
             "z": 3
         }
-    },
-    {
-        "id": 410,
-        "template_id": 157,
-        "zone": "Forest",
-        "rel_x": 688,
-        "rel_y": 397,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ]
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9",
-        "spawner_visual": true
-    },
-    {
-        "id": 411,
-        "template_id": 155,
-        "zone": "Forest",
-        "rel_x": 688,
-        "rel_y": 398,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ]
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9",
-        "spawner_visual": true
-    },
-    {
-        "id": 412,
-        "template_id": 158,
-        "zone": "Forest",
-        "rel_x": 688,
-        "rel_y": 395,
-        "overrides": {
-            "_is_spawner_visual": true,
-            "scale": [
-                256,
-                384
-            ]
-        },
-        "spawn_id": "survival_10_forest_14_9",
-        "spawner_instance_id": "survival_10_forest_14_9",
-        "spawner_visual": true
     }
 ]
