@@ -26,7 +26,8 @@ namespace Valkur.Infrastructure
             _activeMusicSource.clip   = clip;
             _activeMusicSource.volume = 0f;
             _activeMusicSource.Play();
-            _currentTrackTitle = ResolveTrackTitle(clip);
+            _isPaused = false;
+            SetCurrentTrack(clip);
             _crossfadeCoroutine = StartCoroutine(FadeSource(_activeMusicSource, 0f, EffectiveMusicVolume, fadeInSec));
         }
 
@@ -44,7 +45,8 @@ namespace Valkur.Infrastructure
             to.Play();
 
             _activeMusicSource = to;
-            _currentTrackTitle = ResolveTrackTitle(clip);
+            _isPaused = false;
+            SetCurrentTrack(clip);
             _crossfadeCoroutine = StartCoroutine(CrossfadeRoutine(from, to, durationSec));
         }
 
@@ -57,6 +59,7 @@ namespace Valkur.Infrastructure
         {
             StopCrossfade();
             StopPlaylistInternal();
+            _isPaused = false;
             if (_activeMusicSource.isPlaying)
                 _crossfadeCoroutine = StartCoroutine(FadeAndStop(_activeMusicSource, fadeOutSec));
         }
@@ -68,9 +71,52 @@ namespace Valkur.Infrastructure
                 _activeMusicSource.volume = EffectiveMusicVolume;
         }
 
+        public void PauseMusic()
+        {
+            if (_activeMusicSource != null && _activeMusicSource.isPlaying)
+            {
+                _activeMusicSource.Pause();
+                _isPaused = true;
+            }
+        }
+
+        public void ResumeMusic()
+        {
+            if (_activeMusicSource != null && _isPaused)
+            {
+                _activeMusicSource.UnPause();
+                _isPaused = false;
+            }
+        }
+
+        public bool  IsMusicPaused    => _isPaused;
+        public float MusicVolume      => _musicVolume;
+        public bool  HasActivePlaylist => _playlistTracks != null && _playlistTracks.Length > 0;
+
+        public void SkipToNextTrack()
+        {
+            if (_playlistTracks == null || _playlistTracks.Length == 0) return;
+            _playlistIndex = (_playlistIndex + 1) % _playlistTracks.Length;
+            CrossfadeTo(_playlistTracks[_playlistIndex]);
+        }
+
+        public void SkipToPreviousTrack()
+        {
+            if (_playlistTracks == null || _playlistTracks.Length == 0) return;
+            _playlistIndex = (_playlistIndex - 1 + _playlistTracks.Length) % _playlistTracks.Length;
+            CrossfadeTo(_playlistTracks[_playlistIndex]);
+        }
+
         public bool IsMusicPlaying => _activeMusicSource != null && _activeMusicSource.isPlaying;
         public AudioClip CurrentMusicClip => _activeMusicSource != null ? _activeMusicSource.clip : null;
         public string CurrentTrackTitle => _currentTrackTitle;
+
+        public string CurrentTrackId            => _currentTrackId ?? string.Empty;
+        public float  CurrentTrackBpm           => _currentTrack != null ? _currentTrack.bpm : 0f;
+        public int    CurrentTrackBeatsPerBar   => _currentTrack != null ? Mathf.Max(1, _currentTrack.beatsPerBar) : 4;
+        public float  CurrentTrackBeatOffsetSec => _currentTrack != null ? _currentTrack.firstBeatOffsetSec : 0f;
+        public string CurrentTrackKey           => _currentTrack != null ? (_currentTrack.key ?? string.Empty) : string.Empty;
+        public float  CurrentMusicTime          => _activeMusicSource != null ? _activeMusicSource.time : 0f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // IAudioService â€” SFX

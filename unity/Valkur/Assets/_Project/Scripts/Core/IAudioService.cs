@@ -17,6 +17,25 @@ namespace Valkur.Core
         void StopMusic(float fadeOutSec);
         void SetMusicVolume(float vol);
 
+        // ── Transport (pause / resume / skip) ───────────────────────────────
+        /// <summary>Pause the current music track, keeping its position.</summary>
+        void PauseMusic();
+        /// <summary>Resume a previously paused track.</summary>
+        void ResumeMusic();
+        /// <summary>True if the music source is currently paused.</summary>
+        bool IsMusicPaused { get; }
+        /// <summary>Current music master volume (0..1, before ducking).</summary>
+        float MusicVolume { get; }
+        /// <summary>
+        /// Advance to the next track in the active playlist (wraps).
+        /// No-op when no playlist is running.
+        /// </summary>
+        void SkipToNextTrack();
+        /// <summary>Go back to the previous track in the active playlist (wraps).</summary>
+        void SkipToPreviousTrack();
+        /// <summary>True if a playlist is currently controlling music.</summary>
+        bool HasActivePlaylist { get; }
+
         // ── SFX ─────────────────────────────────────────────────────────────
         void PlaySFX(AudioClip clip, float volumeScale = 1f);
         void PlaySFXAtPosition(AudioClip clip, Vector3 position, float volumeScale = 1f);
@@ -42,6 +61,25 @@ namespace Valkur.Core
         bool IsMusicPlaying { get; }
         AudioClip CurrentMusicClip { get; }
         string CurrentTrackTitle { get; }
+
+        /// <summary>Catalog ID of the currently playing track (empty if none).</summary>
+        string CurrentTrackId { get; }
+        /// <summary>Tempo of the current track in BPM. 0 if unset.</summary>
+        float CurrentTrackBpm { get; }
+        /// <summary>Beats per bar (time-signature numerator) for the current track.</summary>
+        int CurrentTrackBeatsPerBar { get; }
+        /// <summary>Offset in seconds from clip start to the first downbeat.</summary>
+        float CurrentTrackBeatOffsetSec { get; }
+        /// <summary>Estimated musical key (e.g. "C major"). Empty if unknown.</summary>
+        string CurrentTrackKey { get; }
+        /// <summary>Playback time of the active music source (seconds since clip start).</summary>
+        float CurrentMusicTime { get; }
+
+        /// <summary>
+        /// Raised whenever the active music track changes. Args: trackId, displayTitle, bpm, beatsPerBar.
+        /// MusicBeatClock and MusicPlayerHUD subscribe to this.
+        /// </summary>
+        event System.Action<string, string, float, int> OnTrackChanged;
 
         // ── Zone-aware transitions ──────────────────────────────────────────
         /// <summary>

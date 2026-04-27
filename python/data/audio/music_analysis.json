@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "tracks": {
+    "covetus_main_theme": {
+      "filename": "covetus_main_theme.mp3",
+      "stem": "covetus_main_theme",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\covetus_main_theme.mp3",
+      "duration_sec": 144.92,
+      "bpm": 112.35,
+      "first_beat_offset_sec": 1.649,
+      "key": "B minor",
+      "key_confidence": 0.037
+    },
+    "covetus_theme_2": {
+      "filename": "covetus_theme_2.mp3",
+      "stem": "covetus_theme_2",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\covetus_theme_2.mp3",
+      "duration_sec": 134.96,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 0.511,
+      "key": "E minor",
+      "key_confidence": 0.29
+    },
+    "covetus_theme_3": {
+      "filename": "covetus_theme_3.mp3",
+      "stem": "covetus_theme_3",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\covetus_theme_3.mp3",
+      "duration_sec": 326.32,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 0.836,
+      "key": "G minor",
+      "key_confidence": 0.142
+    },
+    "covetus_theme_4": {
+      "filename": "covetus_theme_4.mp3",
+      "stem": "covetus_theme_4",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\covetus_theme_4.mp3",
+      "duration_sec": 209.08,
+      "bpm": 161.5,
+      "first_beat_offset_sec": 1.904,
+      "key": "C major",
+      "key_confidence": 0.089
+    },
+    "covetus_theme_5": {
+      "filename": "covetus_theme_5.mp3",
+      "stem": "covetus_theme_5",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\covetus_theme_5.mp3",
+      "duration_sec": 149.92,
+      "bpm": 99.38,
+      "first_beat_offset_sec": 0.07,
+      "key": "D minor",
+      "key_confidence": 0.047
+    },
+    "desert_main_theme": {
+      "filename": "desert_main_theme.mp3",
+      "stem": "desert_main_theme",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\desert_main_theme.mp3",
+      "duration_sec": 219.96,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 0.627,
+      "key": "G major",
+      "key_confidence": 0.061
+    },
+    "desert_theme_2": {
+      "filename": "desert_theme_2.mp3",
+      "stem": "desert_theme_2",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\desert_theme_2.mp3",
+      "duration_sec": 244.96,
+      "bpm": 107.67,
+      "first_beat_offset_sec": 0.186,
+      "key": "A minor",
+      "key_confidence": 0.206
+    },
+    "desert_theme_3": {
+      "filename": "desert_theme_3.mp3",
+      "stem": "desert_theme_3",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\desert_theme_3.mp3",
+      "duration_sec": 233.88,
+      "bpm": 99.38,
+      "first_beat_offset_sec": 2.461,
+      "key": "D minor",
+      "key_confidence": 0.091
+    },
+    "desert_theme_4": {
+      "filename": "desert_theme_4.mp3",
+      "stem": "desert_theme_4",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\desert_theme_4.mp3",
+      "duration_sec": 271.92,
+      "bpm": 99.38,
+      "first_beat_offset_sec": 1.207,
+      "key": "A minor",
+      "key_confidence": 0.303
+    },
+    "Forest_main_theme": {
+      "filename": "Forest_main_theme.mp3",
+      "stem": "Forest_main_theme",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\Forest_main_theme.mp3",
+      "duration_sec": 175.84,
+      "bpm": 78.3,
+      "first_beat_offset_sec": 22.059,
+      "key": "D major",
+      "key_confidence": 0.007
+    },
+    "intro_theme": {
+      "filename": "intro_theme.mp3",
+      "stem": "intro_theme",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\intro_theme.mp3",
+      "duration_sec": 162.0,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 1.068,
+      "key": "A minor",
+      "key_confidence": 0.055
+    },
+    "pepitoria_main_theme": {
+      "filename": "pepitoria_main_theme.mp3",
+      "stem": "pepitoria_main_theme",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_main_theme.mp3",
+      "duration_sec": 187.52,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 0.557,
+      "key": "C major",
+      "key_confidence": 0.028
+    },
+    "pepitoria_theme_10": {
+      "filename": "pepitoria_theme_10.mp3",
+      "stem": "pepitoria_theme_10",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_10.mp3",
+      "duration_sec": 139.96,
+      "bpm": 103.36,
+      "first_beat_offset_sec": 1.741,
+      "key": "G minor",
+      "key_confidence": 0.138
+    },
+    "pepitoria_theme_11": {
+      "filename": "pepitoria_theme_11.mp3",
+      "stem": "pepitoria_theme_11",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_11.mp3",
+      "duration_sec": 149.76,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 0.58,
+      "key": "A minor",
+      "key_confidence": 0.251
+    },
+    "pepitoria_theme_12": {
+      "filename": "pepitoria_theme_12.mp3",
+      "stem": "pepitoria_theme_12",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_12.mp3",
+      "duration_sec": 184.96,
+      "bpm": 86.13,
+      "first_beat_offset_sec": 2.09,
+      "key": "G major",
+      "key_confidence": 0.049
+    },
+    "pepitoria_theme_13": {
+      "filename": "pepitoria_theme_13.mp3",
+      "stem": "pepitoria_theme_13",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_13.mp3",
+      "duration_sec": 183.28,
+      "bpm": 172.27,
+      "first_beat_offset_sec": 1.602,
+      "key": "E major",
+      "key_confidence": 0.239
+    },
+    "pepitoria_theme_2": {
+      "filename": "pepitoria_theme_2.mp3",
+      "stem": "pepitoria_theme_2",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_2.mp3",
+      "duration_sec": 175.0,
+      "bpm": 99.38,
+      "first_beat_offset_sec": 1.207,
+      "key": "D minor",
+      "key_confidence": 0.024
+    },
+    "pepitoria_theme_3": {
+      "filename": "pepitoria_theme_3.mp3",
+      "stem": "pepitoria_theme_3",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_3.mp3",
+      "duration_sec": 170.16,
+      "bpm": 117.45,
+      "first_beat_offset_sec": 0.557,
+      "key": "A minor",
+      "key_confidence": 0.11
+    },
+    "pepitoria_theme_4": {
+      "filename": "pepitoria_theme_4.mp3",
+      "stem": "pepitoria_theme_4",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_4.mp3",
+      "duration_sec": 193.04,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 2.415,
+      "key": "E minor",
+      "key_confidence": 0.278
+    },
+    "pepitoria_theme_5": {
+      "filename": "pepitoria_theme_5.mp3",
+      "stem": "pepitoria_theme_5",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_5.mp3",
+      "duration_sec": 193.96,
+      "bpm": 86.13,
+      "first_beat_offset_sec": 0.975,
+      "key": "D minor",
+      "key_confidence": 0.133
+    },
+    "pepitoria_theme_6": {
+      "filename": "pepitoria_theme_6.mp3",
+      "stem": "pepitoria_theme_6",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_6.mp3",
+      "duration_sec": 208.4,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 0.743,
+      "key": "F# minor",
+      "key_confidence": 0.14
+    },
+    "pepitoria_theme_7": {
+      "filename": "pepitoria_theme_7.mp3",
+      "stem": "pepitoria_theme_7",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_7.mp3",
+      "duration_sec": 179.92,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 0.488,
+      "key": "E minor",
+      "key_confidence": 0.039
+    },
+    "pepitoria_theme_8": {
+      "filename": "pepitoria_theme_8.mp3",
+      "stem": "pepitoria_theme_8",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_8.mp3",
+      "duration_sec": 137.08,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 0.697,
+      "key": "D minor",
+      "key_confidence": 0.226
+    },
+    "pepitoria_theme_9": {
+      "filename": "pepitoria_theme_9.mp3",
+      "stem": "pepitoria_theme_9",
+      "path": "D:\\Python\\RogueLike\\unity\\Valkur\\Assets\\_Project\\Audio\\Music\\pepitoria_theme_9.mp3",
+      "duration_sec": 93.24,
+      "bpm": 89.1,
+      "first_beat_offset_sec": 2.206,
+      "key": "A minor",
+      "key_confidence": 0.127
+    }
+  },
+  "generated_at": "2026-04-27T04:43:15"
+}

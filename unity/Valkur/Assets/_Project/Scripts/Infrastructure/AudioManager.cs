@@ -33,6 +33,12 @@ namespace Valkur.Infrastructure
         private Coroutine _crossfadeCoroutine;
         private float _musicVolume;
         private string _currentTrackTitle;
+        private MusicTrackEntry _currentTrack;
+        private string _currentTrackId;
+        private bool _isPaused;
+
+        /// <inheritdoc cref="IAudioService.OnTrackChanged"/>
+        public event System.Action<string, string, float, int> OnTrackChanged;
 
         // â”€â”€ SFX state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private readonly List<AudioSource> _sfxPool = new List<AudioSource>();

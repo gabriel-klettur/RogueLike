@@ -2,6 +2,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
+using Valkur.Infrastructure;
 using Valkur.UI;
 
 namespace Valkur.UI.HUD
@@ -55,6 +56,24 @@ namespace Valkur.UI.HUD
             var debugGo = new GameObject("DebugHUD");
             debugGo.AddComponent<DebugHUD>();
             if (uiContainer != null) debugGo.transform.SetParent(uiContainer.transform, false);
+
+            // Music beat clock (one per scene, lives next to HUD root)
+            if (MusicBeatClock.Instance == null)
+            {
+                var clockGo = new GameObject("MusicBeatClock");
+                clockGo.AddComponent<MusicBeatClock>();
+                if (uiContainer != null) clockGo.transform.SetParent(uiContainer.transform, false);
+            }
+
+            // Now-playing widget (bottom-right, always-on; replaces python ToastRenderSystem)
+            if (FindObjectOfType<MusicPlayerHUD>() == null)
+            {
+                // Create with RectTransform up-front and parent BEFORE adding the
+                // MonoBehaviour so its Awake/BuildUI sees the correct Canvas hierarchy.
+                var musicGo = new GameObject("MusicPlayerHUD", typeof(RectTransform));
+                if (uiContainer != null) musicGo.transform.SetParent(uiContainer.transform, false);
+                musicGo.AddComponent<MusicPlayerHUD>();
+            }
 
             // Create DeathScreen overlay
             if (FindObjectOfType<DeathScreenUI>() == null)

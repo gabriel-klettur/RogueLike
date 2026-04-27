@@ -157,6 +157,40 @@ namespace Valkur.Infrastructure
             return clip.name;
         }
 
+        /// <summary>
+        /// Resolves the catalog entry for the given clip, updates current-track state
+        /// and raises <see cref="OnTrackChanged"/> if the track actually changed.
+        /// </summary>
+        private void SetCurrentTrack(AudioClip clip)
+        {
+            MusicTrackEntry entry = null;
+            if (catalog != null && clip != null)
+            {
+                foreach (var t in catalog.Tracks)
+                {
+                    if (t.clip == clip) { entry = t; break; }
+                }
+            }
+
+            string newId    = entry?.id ?? (clip != null ? clip.name : string.Empty);
+            string newTitle = entry?.title ?? (clip != null ? clip.name : null);
+
+            _currentTrack      = entry;
+            _currentTrackId    = newId;
+            _currentTrackTitle = newTitle;
+
+            float bpm        = entry != null ? entry.bpm         : 0f;
+            int   beatsPerBar = entry != null ? Mathf.Max(1, entry.beatsPerBar) : 4;
+            try
+            {
+                OnTrackChanged?.Invoke(newId, newTitle, bpm, beatsPerBar);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[AudioManager] OnTrackChanged subscriber threw: {ex.Message}");
+            }
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // Public convenience: apply settings from GameSettings
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

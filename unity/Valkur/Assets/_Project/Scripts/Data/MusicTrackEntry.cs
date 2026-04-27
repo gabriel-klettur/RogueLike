@@ -18,5 +18,22 @@ namespace Valkur.Data
 
         [Tooltip("AudioClip asset for this track")]
         public AudioClip clip;
+
+        // ── Beat metadata (drives MusicBeatClock + boss choreography) ───────
+        [Header("Beat Metadata")]
+        [Tooltip("Tempo in beats per minute. 0 disables the beat clock for this track.")]
+        [Min(0f)] public float bpm = 0f;
+
+        [Tooltip("Beats per bar (time signature numerator). Default 4/4.")]
+        [Min(1)] public int beatsPerBar = 4;
+
+        [Tooltip("Offset in seconds from clip start to the first downbeat (silent intros).")]
+        [Min(0f)] public float firstBeatOffsetSec = 0f;
+
+        [Tooltip("Estimated musical key (e.g. 'C major', 'A minor'). Empty if unknown.")]
+        public string key = string.Empty;
+
+        [Tooltip("Confidence 0..1 of the key estimate (gap to second-best correlation).")]
+        [Range(0f, 1f)] public float keyConfidence = 0f;
     }
 }
