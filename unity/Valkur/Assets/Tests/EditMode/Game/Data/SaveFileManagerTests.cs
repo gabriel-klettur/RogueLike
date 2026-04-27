@@ -33,9 +33,26 @@ namespace Valkur.Tests.EditMode.Game.Data
         [TearDown]
         public void TearDown()
         {
-            // Remove only files we created (prefix "_test_") to avoid touching real saves.
-            foreach (var f in Directory.GetFiles(_saveDir, "_test_*.*"))
-                File.Delete(f);
+            // Remove only files we created (prefix "_test_") — including those moved
+            // by the boot-time legacy-flat-save migration into the legacy/ subfolder
+            // and any per-run subfolders that may contain test fixtures.
+            CleanTestFiles(_saveDir);
+            string legacy = Path.Combine(_saveDir, "legacy");
+            if (Directory.Exists(legacy))
+            {
+                CleanTestFiles(legacy);
+                if (Directory.GetFileSystemEntries(legacy).Length == 0)
+                    Directory.Delete(legacy);
+            }
+        }
+
+        private static void CleanTestFiles(string dir)
+        {
+            if (!Directory.Exists(dir)) return;
+            foreach (var f in Directory.GetFiles(dir, "_test_*.*", SearchOption.TopDirectoryOnly))
+            {
+                try { File.Delete(f); } catch { /* best-effort */ }
+            }
         }
 
         // ── Recovery-directory path routing ───────────────────────────────────
@@ -135,24 +152,27 @@ namespace Valkur.Tests.EditMode.Game.Data
         }
 
         [Test]
-        public void ListSaves_SearchesOnlyTopLevelDir_NotSubdirectories()
+        public void ListSaves_DoesNotRecurseIntoHiddenSubdirectories()
         {
-            // Create a nested subdir with a json file.
-            string subDir = Path.Combine(_saveDir, "_test_subdir");
-            Directory.CreateDirectory(subDir);
-            string nested = Path.Combine(subDir, "_test_nested.json");
+            // After the per-run-folder refactor, ListSaves DOES include saves
+            // inside per-run subfolders (any non-hidden direct child of Saves/),
+            // but it must NEVER recurse into hidden folders such as `.recovery/`
+            // or a run's `.backups/` history.
+            string hiddenDir = Path.Combine(_saveDir, ".test_hidden");
+            Directory.CreateDirectory(hiddenDir);
+            string nested = Path.Combine(hiddenDir, "_test_nested.json");
             File.WriteAllText(nested, "{\"timestamp\":\"2026-01-01T00:00:00\"}");
             try
             {
                 var saves = SaveFileManager.ListSaves();
                 foreach (var s in saves)
                     Assert.AreNotEqual("_test_nested", s.fileName,
-                        "ListSaves must not recurse into subdirectories");
+                        "ListSaves must not recurse into hidden subdirectories");
             }
             finally
             {
                 if (File.Exists(nested)) File.Delete(nested);
-                if (Directory.Exists(subDir)) Directory.Delete(subDir);
+                if (Directory.Exists(hiddenDir)) Directory.Delete(hiddenDir);
             }
         }
 

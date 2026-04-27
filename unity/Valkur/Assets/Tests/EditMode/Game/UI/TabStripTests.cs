@@ -211,7 +211,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             var le = _tabStrip.GetComponent<LayoutElement>();
 
             Assert.IsNotNull(le, "TabStrip should have LayoutElement");
-            Assert.AreEqual(28f, le.preferredHeight, "Default height should be 28");
+            Assert.AreEqual(26f, le.preferredHeight, "Default height should match TabStrip.Create's default (26)");
         }
     }
 }

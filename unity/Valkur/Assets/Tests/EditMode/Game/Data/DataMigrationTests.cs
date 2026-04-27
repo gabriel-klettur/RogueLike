@@ -55,8 +55,10 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.AreEqual(SpellType.Projectile, fireball.type);
             Assert.AreEqual(20f, fireball.damage);
             Assert.AreEqual(1f, fireball.manaCost);
-            Assert.AreEqual(112.5f, fireball.range);
-            Assert.AreEqual(112.5f, fireball.speed);
+            // Hand-tuned values (not raw Python parity): see chat history.
+            // Range/speed were lowered for better game feel during gameplay testing.
+            Assert.AreEqual(15f, fireball.range);
+            Assert.AreEqual(16f, fireball.speed);
         }
 
         [Test]
