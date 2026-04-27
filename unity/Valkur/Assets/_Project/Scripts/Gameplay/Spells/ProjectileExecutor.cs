@@ -19,7 +19,13 @@ namespace Valkur.Gameplay.Spells
             if (ctx.ProjectilePrefab == null) return;
 
             string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
-            Vector3 spawnPos = ctx.Caster.position + (Vector3)(ctx.Direction * 0.5f);
+            // Spawn slightly in front of the caster along the fire direction so the
+            // projectile clears the caster's own collider and doesn't start overlapping
+            // adjacent walls/buildings (which would make the swept-collision detect a
+            // distance==0 hit and detonate the fireball at the player's feet).
+            const float SPAWN_FORWARD_OFFSET = 0.5f;
+            Vector3 spawnPos = ctx.Caster.position
+                + (Vector3)(ctx.Direction.normalized * SPAWN_FORWARD_OFFSET);
 
             // Try pool-based spawn, fall back to Instantiate
             GameObject go = null;
@@ -33,6 +39,11 @@ namespace Valkur.Gameplay.Spells
                 go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
             go.SetActive(true);
 
+            // Attach the correct procedural visual for this element. Idempotent: if the
+            // prefab already has the right component (e.g. fireball comes pre-configured)
+            // we don't add another one.
+            AttachElementalVisual(go, ctx.Spell.spellKey);
+
             var proj = go.GetComponent<Projectile>();
             if (proj != null)
             {
@@ -45,6 +56,8 @@ namespace Valkur.Gameplay.Spells
                     ctx.Spell.range > 0 ? ctx.Spell.range : 20f,
                     ctx.TargetLayers
                 );
+                if (!string.IsNullOrEmpty(ctx.Spell.impactPreset))
+                    proj.SetImpactPreset(ctx.Spell.impactPreset);
             }
 
             if (ctx.Spell.sprite != null)
@@ -69,15 +82,9 @@ namespace Valkur.Gameplay.Spells
                 if (sr != null) sr.color = ctx.Spell.particleColor;
             }
 
-            // VFX: spawn trail particle preset if defined
-            if (!string.IsNullOrEmpty(ctx.Spell.vfxPreset))
-            {
-                var vfx = ServiceLocator.Get<IVFXService>();
-                if (vfx != null)
-                    vfx.SpawnParticlePreset(ctx.Spell.vfxPreset, spawnPos, ctx.Spell.lifetime > 0 ? ctx.Spell.lifetime : 3f);
-            }
-
             // VFX: spawn muzzle flash at caster
+            // NOTE: vfxPreset (trail) is handled by FireballVisual on the projectile itself.
+            // impactPreset is applied at impact position via Projectile.Expire().
             var vfxService = ServiceLocator.Get<IVFXService>();
             if (vfxService != null)
             {
@@ -86,6 +93,40 @@ namespace Valkur.Gameplay.Spells
             }
 
             Debug.Log($"[SpellDebug] Projectile '{ctx.Spell.spellKey}' spawned at {spawnPos}, speed={ctx.Spell.speed}, dmg={ctx.Spell.damage}, lifetime={ctx.Spell.lifetime}");
+        }
+
+        /// <summary>
+        /// Attach the element-specific procedural visual based on spellKey. Each
+        /// element (dark/ice/light/lightning/arcane) gets its own palette-driven
+        /// <see cref="ElementalProjectileVisual"/>. Fireball keeps the bespoke
+        /// <see cref="FireballVisual"/> already configured on its prefab.
+        /// </summary>
+        private static void AttachElementalVisual(GameObject go, string spellKey)
+        {
+            // If the prefab already carries any IProjectileVisual (e.g. FireballVisual),
+            // respect it.
+            if (go.GetComponent<IProjectileVisual>() != null) return;
+
+            SpellElement? element = MapSpellKeyToElement(spellKey);
+            if (!element.HasValue) return;
+
+            var v = go.AddComponent<ElementalProjectileVisual>();
+            v.SetElement(element.Value);
+        }
+
+        private static SpellElement? MapSpellKeyToElement(string spellKey)
+        {
+            if (string.IsNullOrEmpty(spellKey)) return null;
+            switch (spellKey)
+            {
+                case "darkball":  return SpellElement.Dark;
+                case "iceball":   return SpellElement.Ice;
+                case "lightball": return SpellElement.Light;
+                case "arcane_flame": return SpellElement.Arcane;
+                case "firework_launch": return SpellElement.Fire;
+                // boomerang/chain_lightning use their own controllers, not ProjectileExecutor
+                default: return null;
+            }
         }
     }
 }

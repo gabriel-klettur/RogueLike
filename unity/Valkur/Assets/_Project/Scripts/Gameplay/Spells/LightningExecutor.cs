@@ -65,14 +65,15 @@ namespace Valkur.Gameplay.Spells
 
                 hit.Add(c.gameObject);
 
+                // Epic procedural lightning bolt from previous link to this target
+                LightningBoltFX.Spawn(
+                    new Vector3(chainOrigin.x, chainOrigin.y, 0f),
+                    c.transform.position,
+                    col,
+                    shake: chains == 0); // shake only on first arc to avoid spam
+
                 if (VFXManager.Instance != null)
-                {
-                    Vector3 midPt = Vector3.Lerp((Vector3)chainOrigin, c.transform.position, 0.5f);
-                    VFXManager.Instance.SpawnSlashArc(midPt,
-                        ((Vector2)c.transform.position - chainOrigin).normalized,
-                        col, 90f, d * 0.5f, 0.25f);
                     VFXManager.Instance.SpawnImpact(c.transform.position, col, 0.2f);
-                }
 
                 chainOrigin = c.transform.position;
                 chains++;

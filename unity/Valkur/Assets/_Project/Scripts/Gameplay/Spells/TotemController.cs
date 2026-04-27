@@ -1,12 +1,13 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Gameplay.Combat;
-using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Controls a healing totem: periodically heals the caster (and nearby friendlies) within radius.
-    /// Mirrors Python's TotemComponent with kind=heal.
+    /// Healing totem with epic green visuals: rotating ground rune, halo, rising
+    /// sparkle particles, dynamic Light2D pulse on heal tick.
+    /// Mirrors Python's TotemComponent (kind=heal).
     /// </summary>
     public class TotemController : MonoBehaviour
     {
@@ -16,7 +17,9 @@ namespace Valkur.Gameplay.Spells
         private float _tickPeriod;
         private float _tickTimer;
         private Transform _owner;
-        private SpriteRenderer _sr;
+
+        private AreaFXRig _rig;
+        private float _pulse;
 
         public void Initialize(float duration, float radius, int healPerTick, float tickPeriod, Transform owner)
         {
@@ -26,7 +29,20 @@ namespace Valkur.Gameplay.Spells
             _tickPeriod = tickPeriod;
             _tickTimer = 0f;
             _owner = owner;
-            _sr = GetComponent<SpriteRenderer>();
+
+            BuildVisual();
+
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio != null) audio.PlaySfxById("spell_totem_create");
+        }
+
+        private void BuildVisual()
+        {
+            _rig = AreaFXRig.Attach(transform, AreaPalette.HealingTotem(), _radius);
+            transform.localScale = Vector3.one * Mathf.Max(0.5f, _radius);
+
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
         }
 
         private void Update()
@@ -34,6 +50,7 @@ namespace Valkur.Gameplay.Spells
             _remaining -= Time.deltaTime;
             if (_remaining <= 0f)
             {
+                _rig?.Destroy();
                 Debug.Log($"[SpellDebug] Totem expired at {transform.position}");
                 Destroy(gameObject);
                 return;
@@ -44,21 +61,29 @@ namespace Valkur.Gameplay.Spells
             {
                 HealTick();
                 _tickTimer = _tickPeriod;
+                _pulse = 1f;
             }
 
-            // Pulse glow
-            if (_sr != null)
-            {
-                float pulse = 0.8f + Mathf.Sin(Time.time * 3f) * 0.15f;
-                var c = _sr.color;
-                c.a = pulse * (_remaining < 2f ? Mathf.Clamp01(_remaining * 0.5f) : 1f);
-                _sr.color = c;
-            }
+            Animate();
+        }
 
-            // Periodic healing VFX ring
-            if (VFXManager.Instance != null && Mathf.FloorToInt(Time.time * 2f) % 2 == 0)
+        private void Animate()
+        {
+            float t = Time.time;
+            _pulse = Mathf.Max(0f, _pulse - Time.deltaTime * 2f);
+            float baseFlick = 0.85f + 0.15f * Mathf.Sin(t * 3f);
+            float fade = (_remaining < 2f) ? Mathf.Clamp01(_remaining * 0.5f) : 1f;
+
+            if (_rig != null)
             {
-                // Small pulse every ~0.5s
+                if (_rig.Rune != null)
+                    _rig.Rune.transform.localRotation = Quaternion.Euler(0f, 0f, t * _rig.Palette.runeSpinSpeed);
+                if (_rig.Core != null)
+                    _rig.Core.transform.localScale = Vector3.one * _rig.Palette.coreScale * (1f + 0.30f * _pulse);
+                if (_rig.Glow != null)
+                    _rig.Glow.transform.localScale = Vector3.one * _rig.Palette.glowScale * (1f + 0.20f * _pulse);
+                _rig.SetGlobalAlpha(fade * baseFlick);
+                _rig.SetIntensity(_rig.Palette.lightIntensity * baseFlick + 1.2f * _pulse);
             }
         }
 
@@ -66,7 +91,6 @@ namespace Valkur.Gameplay.Spells
         {
             if (_owner == null) return;
 
-            // Heal owner if within radius
             float dist = Vector2.Distance(transform.position, _owner.position);
             if (dist <= _radius)
             {
@@ -74,6 +98,8 @@ namespace Valkur.Gameplay.Spells
                 if (health != null && !health.IsDead)
                 {
                     health.Heal(_healPerTick);
+                    var audio = ServiceLocator.Get<IAudioService>();
+                    if (audio != null) audio.PlaySfxById("spell_totem_heal_tick");
                     Debug.Log($"[SpellDebug] Totem healed {_owner.name} for {_healPerTick} HP (dist={dist:F1})");
                 }
             }

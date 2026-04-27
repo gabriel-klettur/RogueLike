@@ -5,8 +5,9 @@ using Valkur.Gameplay.VFX;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Spawns sequential meteor impacts in a circular area.
-    /// Each meteor deals AoE damage at a random position within the area.
+    /// Spawns sequential meteors falling from the sky in a circular area. Each meteor
+    /// uses <see cref="MeteorMissileFX"/> for the descent and <see cref="ElementalImpactFX"/>
+    /// for the landing burst. Damage resolves on impact, not at spawn time.
     /// </summary>
     public class MeteorStrikeController : MonoBehaviour
     {
@@ -36,7 +37,7 @@ namespace Valkur.Gameplay.Spells
         {
             if (_remaining <= 0)
             {
-                Destroy(gameObject, 0.5f);
+                Destroy(gameObject, 1.5f);
                 enabled = false;
                 return;
             }
@@ -44,20 +45,26 @@ namespace Valkur.Gameplay.Spells
             _timer -= Time.deltaTime;
             if (_timer <= 0f)
             {
-                SpawnMeteorStrike();
+                LaunchMeteor();
                 _remaining--;
                 _timer = _interval;
             }
         }
 
-        private void SpawnMeteorStrike()
+        private void LaunchMeteor()
         {
-            // Random position within area
             Vector2 offset = Random.insideUnitCircle * _areaRadius;
             Vector2 impactPos = (Vector2)transform.position + offset;
 
-            // Damage
-            var hits = Physics2D.OverlapCircleAll(impactPos, _impactRadius, _targetLayers);
+            // Falling missile resolves damage + extra preset on landing
+            MeteorMissileFX.Spawn(impactPos, OnMeteorLanded);
+
+            Debug.Log($"[SpellDebug] Meteor launched (#{_remaining}) → {impactPos}");
+        }
+
+        private void OnMeteorLanded(Vector3 worldImpact)
+        {
+            var hits = Physics2D.OverlapCircleAll(worldImpact, _impactRadius, _targetLayers);
             foreach (var hit in hits)
             {
                 var health = hit.GetComponent<Health>();
@@ -65,18 +72,13 @@ namespace Valkur.Gameplay.Spells
                     health.TakeDamage(_damage);
             }
 
-            // VFX
             if (VFXManager.Instance != null)
             {
-                Color impactColor = new Color(1f, 0.3f, 0.05f, 0.8f);
-                VFXManager.Instance.SpawnAreaIndicator((Vector3)impactPos, impactColor, _impactRadius, 0.5f);
-                VFXManager.Instance.SpawnImpact((Vector3)impactPos, new Color(1f, 0.5f, 0.1f), 0.4f, _impactRadius);
-
+                VFXManager.Instance.SpawnAreaIndicator(worldImpact,
+                    new Color(1f, 0.3f, 0.05f, 0.7f), _impactRadius, 0.6f);
                 if (!string.IsNullOrEmpty(_impactPreset))
-                    VFXManager.Instance.SpawnParticlePreset(_impactPreset, (Vector3)impactPos);
+                    VFXManager.Instance.SpawnParticlePreset(_impactPreset, worldImpact);
             }
-
-            Debug.Log($"[SpellDebug] Meteor strike #{_remaining} at {impactPos}, dmg={_damage}");
         }
     }
 }

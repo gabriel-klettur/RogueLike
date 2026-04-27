@@ -49,6 +49,17 @@ namespace Valkur.Gameplay.Spells
                 if (sr != null) sr.sprite = ctx.Spell.sprite;
             }
 
+            // Procedural epic visual: spinning blade halo + green ember trail.
+            if (go.GetComponent<IProjectileVisual>() == null)
+            {
+                var v = go.AddComponent<ElementalProjectileVisual>();
+                v.SetElement(SpellElement.Boomerang);
+            }
+
+            // Audio cue
+            var audio = Valkur.Core.ServiceLocator.Get<Valkur.Core.IAudioService>();
+            if (audio != null) audio.PlaySfxById("spell_boomerang_throw");
+
             if (!string.IsNullOrEmpty(ctx.Spell.vfxPreset) && VFXManager.Instance != null)
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, spawnPos);
         }

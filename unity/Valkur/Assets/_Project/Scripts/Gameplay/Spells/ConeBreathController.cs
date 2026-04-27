@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
@@ -21,6 +22,9 @@ namespace Valkur.Gameplay.Spells
         private LayerMask _targetLayers;
         private string _element;
         private LineRenderer _lr;
+        private ParticleSystem _ps;
+        private GameObject _lightGo;
+        private Component _light;
 
         public void Initialize(float duration, float arc, float length, int damagePerTick,
             float tickPeriod, Vector2 direction, Transform caster, LayerMask targetLayers, string element)
@@ -37,31 +41,141 @@ namespace Valkur.Gameplay.Spells
             _element = element;
 
             SetupVisual();
+
+            // Audio cue at cast
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio != null) audio.PlaySfxById(_element == "fire" ? "spell_flame_breath_loop" : "spell_frost_breath_loop");
         }
 
         private void SetupVisual()
         {
+            ElementalSprites.EnsureAll();
+
+            bool fire = _element == "fire";
+
             _lr = gameObject.AddComponent<LineRenderer>();
             _lr.positionCount = 12;
-            _lr.startWidth = 0.1f;
-            _lr.endWidth = 0.1f;
-            _lr.sortingLayerName = "VFX";
+            _lr.startWidth = 0.12f;
+            _lr.endWidth = 0.30f;
+            _lr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
+            _lr.sortingLayerName = SortingConfig.LAYER_VFX;
             _lr.sortingOrder = 4;
             _lr.useWorldSpace = true;
 
-            // Use default sprite material
             var mat = new Material(Shader.Find("Sprites/Default"));
             mat.hideFlags = HideFlags.HideAndDontSave;
 
-            Color coneColor = _element == "fire"
-                ? new Color(1f, 0.4f, 0.05f, 0.6f)
-                : new Color(0.4f, 0.9f, 1f, 0.6f);
-            mat.color = coneColor;
+            Color hotColor = fire
+                ? new Color(1.00f, 0.85f, 0.30f, 0.85f)
+                : new Color(0.85f, 0.98f, 1.00f, 0.80f);
+            Color coolColor = fire
+                ? new Color(0.95f, 0.30f, 0.05f, 0.10f)
+                : new Color(0.30f, 0.65f, 1.00f, 0.10f);
+            mat.color = hotColor;
             _lr.material = mat;
-            _lr.startColor = coneColor;
-            _lr.endColor = new Color(coneColor.r, coneColor.g, coneColor.b, 0.1f);
+            _lr.startColor = hotColor;
+            _lr.endColor = coolColor;
+
+            BuildParticles(fire);
+            TryAttachLight(fire);
 
             UpdateConeVisual();
+        }
+
+        private void BuildParticles(bool fire)
+        {
+            var psGo = new GameObject("BreathParticles");
+            psGo.transform.SetParent(transform, false);
+            psGo.transform.localPosition = Vector3.zero;
+            _ps = psGo.AddComponent<ParticleSystem>();
+
+            var main = _ps.main;
+            main.duration = 999f;
+            main.loop = true;
+            main.startLifetime = _length / Mathf.Max(2f, _length * 1.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(_length * 1.4f, _length * 2.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.20f);
+            main.startColor = fire
+                ? new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.40f, 1f), new Color(1f, 0.30f, 0.05f, 1f))
+                : new ParticleSystem.MinMaxGradient(new Color(0.85f, 0.98f, 1f, 1f), new Color(0.40f, 0.75f, 1f, 1f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 600;
+            main.gravityModifier = fire ? -0.2f : 0.1f;
+
+            var emission = _ps.emission;
+            emission.rateOverTime = 80f;
+
+            var shape = _ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = _arc * 0.5f;
+            shape.radius = 0.15f;
+            shape.radiusThickness = 1f;
+            // ConeShape emits along +Z by default; we'll rotate the GO to face direction in Update.
+
+            var col = _ps.colorOverLifetime;
+            col.enabled = true;
+            var grad = new Gradient();
+            if (fire)
+            {
+                grad.SetKeys(
+                    new[] {
+                        new GradientColorKey(new Color(1f, 0.95f, 0.55f), 0f),
+                        new GradientColorKey(new Color(1f, 0.55f, 0.10f), 0.4f),
+                        new GradientColorKey(new Color(0.45f, 0.05f, 0.00f), 1f),
+                    },
+                    new[] {
+                        new GradientAlphaKey(0f, 0f),
+                        new GradientAlphaKey(0.95f, 0.15f),
+                        new GradientAlphaKey(0f, 1f),
+                    });
+            }
+            else
+            {
+                grad.SetKeys(
+                    new[] {
+                        new GradientColorKey(new Color(0.95f, 1f, 1f), 0f),
+                        new GradientColorKey(new Color(0.45f, 0.85f, 1f), 0.5f),
+                        new GradientColorKey(new Color(0.20f, 0.45f, 0.85f), 1f),
+                    },
+                    new[] {
+                        new GradientAlphaKey(0f, 0f),
+                        new GradientAlphaKey(0.85f, 0.15f),
+                        new GradientAlphaKey(0f, 1f),
+                    });
+            }
+            col.color = grad;
+
+            var size = _ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.4f, 1f, 1.6f));
+
+            var psr = _ps.GetComponent<ParticleSystemRenderer>();
+            psr.material = ElementalSprites.SharedUnlitMaterial;
+            psr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
+            psr.sortingLayerName = SortingConfig.LAYER_VFX;
+            psr.sortingOrder = 5;
+        }
+
+        private void TryAttachLight(bool fire)
+        {
+            var l2dType = ElementalProjectileVisual.GetLight2DType();
+            if (l2dType == null) return;
+            _lightGo = new GameObject("BreathLight");
+            _lightGo.transform.SetParent(transform, false);
+            _lightGo.transform.localPosition = Vector3.zero;
+            try
+            {
+                _light = _lightGo.AddComponent(l2dType);
+                var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
+                if (lt != null) lt.SetValue(_light, System.Enum.ToObject(lt.PropertyType, 2));
+                ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light,
+                    fire ? new Color(1f, 0.55f, 0.15f, 1f) : new Color(0.45f, 0.75f, 1f, 1f));
+                ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 1.8f);
+                ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, _length * 0.7f);
+                ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.5f);
+                ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(_light, 0.85f);
+            }
+            catch { _light = null; }
         }
 
         private void Update()
@@ -75,6 +189,25 @@ namespace Valkur.Gameplay.Spells
 
             transform.position = _caster.position;
             UpdateConeVisual();
+
+            // Orient cone-shape particle emitter along _direction
+            if (_ps != null)
+            {
+                float deg = Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg;
+                // ConeShape emits along +Z; we rotate the GO so particles emit toward _direction in 2D.
+                _ps.transform.rotation = Quaternion.Euler(deg - 90f, 90f, 0f);
+            }
+
+            // Animate light flicker
+            if (_light != null)
+            {
+                try
+                {
+                    float flick = 1.6f + 0.4f * Mathf.PerlinNoise(Time.time * 18f, 0.31f);
+                    ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, flick);
+                }
+                catch { }
+            }
 
             _tickTimer -= Time.deltaTime;
             if (_tickTimer <= 0f)
@@ -157,6 +290,7 @@ namespace Valkur.Gameplay.Spells
         {
             if (_lr != null && _lr.material != null)
                 Object.Destroy(_lr.material);
+            if (_lightGo != null) Destroy(_lightGo);
             Destroy(gameObject);
         }
 
