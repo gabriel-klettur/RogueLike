@@ -78,7 +78,27 @@ namespace Valkur.UI.HUD
         private bool _isMinimized;
         private Button _minimizeBtn;
         private Image _minimizeIcon;
+        private Image _minimizeBg;
+        private RectTransform _minimizeBtnRt;
         private GameObject _resizeHandle;
+        [SerializeField]
+        [Tooltip("Sprite shown as the restore button when the player is minimized. " +
+                 "Assign Assets/_Project/Art/UI/music_player_button.png in the Inspector. " +
+                 "If left empty the sprite is loaded automatically in the Editor.")]
+        private Sprite _restoreButtonSprite;
+
+        // Path used for automatic editor-side loading (no Resources folder needed).
+        private const string RestoreButtonSpritePath = "Assets/_Project/Art/UI/music_player_button.png";
+
+        private Sprite GetRestoreSprite()
+        {
+            if (_restoreButtonSprite != null) return _restoreButtonSprite;
+#if UNITY_EDITOR
+            _restoreButtonSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(RestoreButtonSpritePath);
+            if (_restoreButtonSprite != null) return _restoreButtonSprite;
+#endif
+            return SpriteChevronUp; // safe fallback
+        }
         private Image[] _specBars;
         private float[] _specSmoothed;
         private float[] _specSamples;
@@ -180,6 +200,10 @@ namespace Valkur.UI.HUD
                 // override for that track so the user's calibration sticks.
                 ApplySavedTempoOverride(_audio.CurrentTrackId);
             }
+            // Safety: re-apply minimized state on enable to guarantee the icon/btn/root
+            // sizes are correct on the very first frame even if Awake ran before the
+            // Canvas was fully initialized.
+            ApplyMinimizedState();
         }
 
         private void OnDisable()
@@ -632,11 +656,13 @@ namespace Valkur.UI.HUD
             rt.pivot     = new Vector2(1f, 1f);
             rt.anchoredPosition = new Vector2(-2f, -2f);
             rt.sizeDelta = new Vector2(20f, 20f);
+            _minimizeBtnRt = rt;
 
             var bgImg = go.AddComponent<Image>();
             bgImg.sprite = BuildRoundedRectSprite();
             bgImg.type = Image.Type.Sliced;
             bgImg.color = new Color(1f, 1f, 1f, 0.10f);
+            _minimizeBg = bgImg;
 
             var btn = go.AddComponent<Button>();
             var colors = btn.colors;
@@ -658,12 +684,26 @@ namespace Valkur.UI.HUD
             ir.anchorMax = new Vector2(0.5f, 0.5f);
             ir.pivot     = new Vector2(0.5f, 0.5f);
             ir.anchoredPosition = Vector2.zero;
-            ir.sizeDelta = new Vector2(12f, 12f);
             _minimizeIcon = iconGo.AddComponent<Image>();
-            _minimizeIcon.sprite = SpriteMinus;
-            _minimizeIcon.color = new Color(1f, 1f, 1f, 0.95f);
             _minimizeIcon.raycastTarget = false;
             _minimizeIcon.preserveAspect = true;
+
+            // Build at the correct initial state so the very first frame is already right.
+            if (_isMinimized)
+            {
+                ir.sizeDelta        = new Vector2(MinimizeIconSizeMinimized, MinimizeIconSizeMinimized);
+                rt.sizeDelta        = new Vector2(MinimizeBtnSizeMinimized,  MinimizeBtnSizeMinimized);
+                _minimizeIcon.sprite = GetRestoreSprite();
+                _minimizeIcon.color  = Color.white;
+                bgImg.color          = Color.clear;
+            }
+            else
+            {
+                ir.sizeDelta        = new Vector2(MinimizeIconSizeExpanded, MinimizeIconSizeExpanded);
+                rt.sizeDelta        = new Vector2(MinimizeBtnSizeExpanded,  MinimizeBtnSizeExpanded);
+                _minimizeIcon.sprite = SpriteMinus;
+                _minimizeIcon.color  = new Color(1f, 1f, 1f, 0.95f);
+            }
         }
 
         private void OnMinimizeClicked()
@@ -677,9 +717,14 @@ namespace Valkur.UI.HUD
             PlayerPrefs.Save();
         }
 
-        // Tiny pill size shown when minimized: just the title text + restore button.
-        private const float MinimizedW = 28f;
-        private const float MinimizedH = 28f;
+        // Size of the root pill when minimized — large enough to host the restore tile.
+        private const float MinimizedW = 36f;
+        private const float MinimizedH = 36f;
+        // Button / icon sizes for the two states.
+        private const float MinimizeBtnSizeExpanded  = 20f;
+        private const float MinimizeBtnSizeMinimized = 32f;
+        private const float MinimizeIconSizeExpanded  = 12f;
+        private const float MinimizeIconSizeMinimized = 28f;
 
         private void ApplyMinimizedState()
         {
@@ -688,17 +733,38 @@ namespace Valkur.UI.HUD
             if (_spectrumPanel != null)  _spectrumPanel.SetActive(!_isMinimized && _isExpanded);
             if (_resizeHandle != null)   _resizeHandle.SetActive(!_isMinimized);
 
-            if (_minimizeIcon != null)
-                _minimizeIcon.sprite = _isMinimized ? SpriteChevronUp : SpriteMinus;
-
             if (_isMinimized)
             {
-                // Shrink root to a small square showing only the restore button.
+                // Show the stone music-note image as a standalone restore tile.
+                Sprite restoreSprite = GetRestoreSprite();
+                if (_minimizeIcon != null)
+                {
+                    _minimizeIcon.sprite = restoreSprite;
+                    _minimizeIcon.color  = Color.white;
+                    var ir = _minimizeIcon.rectTransform;
+                    ir.sizeDelta = new Vector2(MinimizeIconSizeMinimized, MinimizeIconSizeMinimized);
+                }
+                // Remove the button BG so the stone image stands on its own.
+                if (_minimizeBg   != null) _minimizeBg.color = Color.clear;
+                if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeMinimized, MinimizeBtnSizeMinimized);
+
+                // Shrink root to just the restore tile.
                 if (_rt != null) _rt.sizeDelta = new Vector2(MinimizedW, MinimizedH);
                 if (_rt != null) _rt.localScale = Vector3.one;
             }
             else
             {
+                // Restore button to its normal small minus-sign look.
+                if (_minimizeIcon != null)
+                {
+                    _minimizeIcon.sprite = SpriteMinus;
+                    _minimizeIcon.color  = new Color(1f, 1f, 1f, 0.95f);
+                    var ir = _minimizeIcon.rectTransform;
+                    ir.sizeDelta = new Vector2(MinimizeIconSizeExpanded, MinimizeIconSizeExpanded);
+                }
+                if (_minimizeBg    != null) _minimizeBg.color = new Color(1f, 1f, 1f, 0.10f);
+                if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeExpanded, MinimizeBtnSizeExpanded);
+
                 // Restore the cached per-mode size.
                 widgetWidth  = _isExpanded ? _expandedW : _simpleW;
                 widgetHeight = _isExpanded ? _expandedH : _simpleH;

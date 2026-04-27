@@ -123,6 +123,24 @@ namespace Valkur.Gameplay
             if (container != null) uiGo.transform.SetParent(container.transform, false);
         }
 
+        private static void EnsureSpellBarHUD()
+        {
+            if (Valkur.Gameplay.UI.SpellBarHUD.Instance != null) return;
+            var go = new GameObject("SpellBarHUD");
+            go.AddComponent<Valkur.Gameplay.UI.SpellBarHUD>();
+            var container = GameObject.Find("[UI]");
+            if (container != null) go.transform.SetParent(container.transform, false);
+        }
+
+        private static void EnsureMinimizedTray()
+        {
+            if (Valkur.Gameplay.UIKit.MinimizedHUDTray.Instance != null) return;
+            var go = new GameObject("MinimizedHUDTray");
+            go.AddComponent<Valkur.Gameplay.UIKit.MinimizedHUDTray>();
+            var container = GameObject.Find("[UI]");
+            if (container != null) go.transform.SetParent(container.transform, false);
+        }
+
         private static void EnsureCombatRangeVisualizer()
         {
             if (CombatRangeVisualizer.Instance != null) return;

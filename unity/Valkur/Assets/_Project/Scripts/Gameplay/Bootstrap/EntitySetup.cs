@@ -48,6 +48,8 @@ namespace Valkur.Gameplay
             ApplyPlayerClassInitialMarker(go, def.playerKey);
 
             EnsureInventoryUI();
+            EnsureSpellBarHUD();
+            EnsureMinimizedTray();
             EnsureCombatRangeVisualizer();
 
             EntityRegistry.RegisterPlayer(go);

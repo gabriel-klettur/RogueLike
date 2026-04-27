@@ -162,6 +162,9 @@ namespace Valkur.Gameplay
             EnsureInventoryRuntimeEditor();
             Report("Inicializando editor de inventario"); yield return null;
 
+            EnsureParticlesRuntimeEditor();
+            Report("Inicializando editor de partículas"); yield return null;
+
             EnsureDevConsole();
             Report("Inicializando consola de desarrollo"); yield return null;
 

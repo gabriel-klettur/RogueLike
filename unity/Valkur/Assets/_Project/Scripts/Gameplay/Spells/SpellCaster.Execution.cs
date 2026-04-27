@@ -189,6 +189,18 @@ namespace Valkur.Gameplay.Spells
             return spell;
         }
 
+        /// <summary>
+        /// Read-only enumeration of all spells registered in the spell book
+        /// (used by HUD action bars). Order is dictionary-insertion order.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, SpellDefinition>> GetAllRegisteredSpells()
+        {
+            return _spellBook;
+        }
+
+        /// <summary>Number of spells in the spell book.</summary>
+        public int RegisteredSpellCount => _spellBook.Count;
+
         public float GetBookCooldownRemaining(string key)
         {
             if (_spellBookCooldowns.TryGetValue(key, out float cd))

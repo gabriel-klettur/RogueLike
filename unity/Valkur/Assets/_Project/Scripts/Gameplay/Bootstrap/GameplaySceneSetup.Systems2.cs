@@ -318,6 +318,34 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] InventoryRuntimeEditor created. Press F6 to toggle.");
         }
 
+        private void EnsureParticlesRuntimeEditor()
+        {
+            if (ParticlesRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("ParticlesRuntimeEditor");
+            var editor = go.AddComponent<ParticlesRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            if (_particlePresetCatalog != null)
+            {
+#if UNITY_EDITOR
+                var serialized = new UnityEditor.SerializedObject(editor);
+                var catalogProp = serialized.FindProperty("_catalog");
+                if (catalogProp != null)
+                {
+                    catalogProp.objectReferenceValue = _particlePresetCatalog;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+#endif
+            }
+            else
+            {
+                Debug.LogWarning("[GameplaySceneSetup] ParticlesRuntimeEditor created without ParticlePresetCatalog — picker will be empty.");
+            }
+
+            Debug.Log("[GameplaySceneSetup] ParticlesRuntimeEditor created. Press F1 to toggle.");
+        }
+
         private void EnsureDeathDropSystem()
         {
             if (FindObjectOfType<DeathDropSystem>() != null) return;
