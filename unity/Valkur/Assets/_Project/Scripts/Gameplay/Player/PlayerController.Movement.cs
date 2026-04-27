@@ -124,7 +124,8 @@ namespace Valkur.Gameplay
 
             // Primary attack (left click) → fireball (spell slot 0)
             // Python parity: M_LEFT → fireball
-            if (_primaryAttackAction != null && _primaryAttackAction.WasPerformedThisFrame())
+            // IsPressed allows hold-to-fire; SpellCaster cooldown (0.4 s) gates the rate.
+            if (_primaryAttackAction != null && _primaryAttackAction.IsPressed())
             {
                 if (_spellCaster != null)
                     _spellCaster.TryCastByKey("fireball", _facingDirection);
@@ -138,12 +139,26 @@ namespace Valkur.Gameplay
                     _spellCaster.TryCastByKey("slash", _facingDirection);
             }
 
-            // Middle click → laser beam
+            // Middle click → laser beam (hold-to-channel)
             // Python parity: M_MIDDLE → laser_beam
-            if (_middleClickAction != null && _middleClickAction.WasPerformedThisFrame())
+            // First press starts the beam through the spell system; subsequent frames
+            // refresh the controller directly (TryCastByKey is gated by cooldown so we
+            // can't rely on it to keep the beam alive).
+            if (_middleClickAction != null && _middleClickAction.IsPressed())
             {
                 if (_spellCaster != null)
-                    _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+                {
+                    var existingBeam = _spellCaster.GetComponent<LaserBeamController>();
+                    if (existingBeam != null)
+                        existingBeam.Refresh();
+                    else
+                        _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+                }
+            }
+            if (_middleClickAction != null && _middleClickAction.WasReleasedThisFrame())
+            {
+                var beam = _spellCaster != null ? _spellCaster.GetComponent<LaserBeamController>() : null;
+                if (beam != null) beam.Stop();
             }
 
             // Dash (Ctrl) → dash spell through spell system

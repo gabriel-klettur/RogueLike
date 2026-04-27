@@ -14,8 +14,9 @@ namespace Valkur.Gameplay
     /// </summary>
     public class SaveService : SingletonMonoBehaviour<SaveService>
     {
-        private const string AUTOSAVE_PREFIX = "autosave";
-        private const string QUICKSAVE_PREFIX = "quicksave";
+        // All auto-save semantics (timer autosave, shutdown save, quicksave-on-exit)
+        // collapse to the same per-run autosave file via SaveFileManager.GetAutosavePath.
+        // Manual saves use SaveFileManager.GetManualSavePath inside the same run folder.
 
         [Header("Autosave")]
         [SerializeField] private bool autosaveEnabled = true;
@@ -101,6 +102,11 @@ namespace Valkur.Gameplay
             return SaveFileManager.ListSavesByRun();
         }
 
+        /// <summary>
+        /// Manual save into the current run folder.  When <paramref name="slotName"/>
+        /// is null/empty a timestamp-based name is used.  Reserved names
+        /// ("autosave", etc.) are silently rerouted to a timestamp-based name.
+        /// </summary>
         public bool Save(string slotName = null)
         {
             try
@@ -112,14 +118,14 @@ namespace Valkur.Gameplay
                     return false;
                 }
 
-                if (!string.IsNullOrEmpty(_currentRunId))
-                    data.SetMeta("run_id", _currentRunId);
+                EnsureRunId();
+                data.SetMeta("run_id", _currentRunId);
 
-                string fileName = string.IsNullOrEmpty(slotName)
-                    ? $"save_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}"
-                    : slotName;
+                string fileName = SaveFileManager.SanitizeSaveName(slotName);
+                if (string.IsNullOrEmpty(fileName) || SaveFileManager.IsReservedSaveName(fileName))
+                    fileName = $"save_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}";
 
-                string path = SaveFileManager.GetSavePath(fileName);
+                string path = SaveFileManager.GetManualSavePath(_currentRunId, fileName);
                 SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
                 _currentSavePath = path;
 
@@ -133,31 +139,51 @@ namespace Valkur.Gameplay
             }
         }
 
+        /// <summary>
+        /// QuickSave is an alias of <see cref="Autosave"/> — both write to the
+        /// per-run "Auto-Save" entry.  Returns true on success.
+        /// </summary>
         public bool QuickSave()
         {
-            return Save(QUICKSAVE_PREFIX);
+            return Autosave();
         }
 
-        public void Autosave()
+        /// <summary>
+        /// Writes/overwrites the per-run <c>autosave.json</c>, after rotating
+        /// the previous one into the hidden <c>.backups/</c> history.
+        /// </summary>
+        public bool Autosave()
         {
             try
             {
                 var data = GameStateCollector.Collect();
-                if (data == null) return;
+                if (data == null) return false;
 
-                if (!string.IsNullOrEmpty(_currentRunId))
-                    data.SetMeta("run_id", _currentRunId);
+                EnsureRunId();
+                data.SetMeta("run_id", _currentRunId);
 
-                SaveFileManager.RotateBackups(AUTOSAVE_PREFIX);
+                SaveFileManager.RotateAutosaveBackups(_currentRunId);
 
-                string path = SaveFileManager.GetSavePath($"{AUTOSAVE_PREFIX}_0");
+                string path = SaveFileManager.GetAutosavePath(_currentRunId);
                 SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
+                _currentSavePath = path;
 
                 Debug.Log($"[SaveService] Autosave completed: {path}");
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[SaveService] Autosave failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private void EnsureRunId()
+        {
+            if (string.IsNullOrEmpty(_currentRunId))
+            {
+                _currentRunId = Guid.NewGuid().ToString("N");
+                Debug.Log($"[SaveService] No active run — generated new run id: {_currentRunId}");
             }
         }
 
@@ -176,14 +202,39 @@ namespace Valkur.Gameplay
             _lastLoadedTimestamp = data.timestamp;
             _currentRunId        = data.GetMeta("run_id", "");
 
-            Debug.Log($"[SaveService] Game loaded from: {path} (schema {data.schemaVersion})");
+            // Legacy save without a run id — adopt a fresh one so all subsequent
+            // autosaves from this session are isolated in their own run folder.
+            if (string.IsNullOrEmpty(_currentRunId))
+            {
+                _currentRunId = Guid.NewGuid().ToString("N");
+                Debug.Log($"[SaveService] Loaded legacy save without run_id — assigned: {_currentRunId}");
+            }
+
+            Debug.Log($"[SaveService] Game loaded from: {path} (schema {data.schemaVersion}, run_id={_currentRunId})");
             return true;
         }
 
+        /// <summary>
+        /// Loads the newest auto-save across all runs.  Returns false when
+        /// there are no saves at all.
+        /// </summary>
         public bool QuickLoad()
         {
-            string path = SaveFileManager.GetSavePath(QUICKSAVE_PREFIX);
-            return Load(path);
+            var groups = SaveFileManager.ListSavesByRun();
+            foreach (var grp in groups)
+            {
+                if (grp.isLegacy) continue;
+                foreach (var s in grp.saves)
+                    if (s.isAutoSave && !s.isCorrupted)
+                        return Load(s.path);
+            }
+            // Fallback: any non-corrupt save (legacy bucket included)
+            foreach (var grp in groups)
+                foreach (var s in grp.saves)
+                    if (!s.isCorrupted) return Load(s.path);
+
+            Debug.LogWarning("[SaveService] QuickLoad: no saves available.");
+            return false;
         }
 
         public List<SaveSlotInfo> ListSaves()
@@ -234,12 +285,12 @@ namespace Valkur.Gameplay
 
         private void OnApplicationQuit()
         {
-            Debug.Log("[SaveService] Application quitting — triggering position checkpoint + shutdown save.");
+            Debug.Log("[SaveService] Application quitting — triggering position checkpoint + autosave.");
             SavePositionCheckpoint();
-            // Only write shutdown_save when the player is alive.
-            // A dead-state save would restore the player with 0 HP on next "Continue".
+            // Only write the per-run autosave when the player is alive.  A dead-state
+            // save would restore the player with 0 HP on next "Continue".
             if (_hasKnownPlayerPos && _lastKnownPlayerHp > 0)
-                Save("shutdown_save");
+                Autosave();
         }
     }
 
@@ -255,6 +306,7 @@ namespace Valkur.Gameplay
         public string timestamp;
         public string schemaVersion;
         public bool   isCorrupted;
+        public bool   isAutoSave;     // true = the per-run autosave.json ("Auto-Save")
         public string runId;          // empty = legacy save (no run_id in file)
 
         // ── Gameplay metadata ────────────────────────────────────────────────

@@ -208,7 +208,15 @@ namespace Valkur.UI.PauseMenu
                 _loadPills[i].color = selected && hasData ? PillColor  : Color.clear;
                 _loadBars[i].color  = selected && hasData ? AccentGold : Color.clear;
                 _loadTexts[i].color = selected && hasData ? TextSelected : TextNormal;
-                _loadTexts[i].text  = hasData ? _loadSaves[dataIdx].fileName : "";
+                if (hasData)
+                {
+                    var sv = _loadSaves[dataIdx];
+                    string display = sv.isAutoSave
+                        ? $"<color=#FFC800>{SaveFileManager.AUTOSAVE_DISPLAY}</color>"
+                        : sv.fileName;
+                    _loadTexts[i].text = $"{display}  <color=#808080><size=12>{sv.timestamp}</size></color>";
+                }
+                else _loadTexts[i].text = "";
             }
 
             // Update details

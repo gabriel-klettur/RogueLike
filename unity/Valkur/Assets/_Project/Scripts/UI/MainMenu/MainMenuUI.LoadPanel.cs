@@ -565,9 +565,12 @@ namespace Valkur.UI.MainMenu
                 if (hasSave)
                 {
                     var sv = currentRun.saves[i];
+                    string display = sv.isAutoSave
+                        ? $"<b><color=#FFC800>{Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY}</color></b>"
+                        : sv.fileName;
                     _mmSaveTexts[i].text = sv.isCorrupted
-                        ? $"<color=#FF6666>[Corrupta]</color> {sv.fileName}"
-                        : $"{sv.fileName}  <color=#808080><size=12>{sv.timestamp}</size></color>";
+                        ? $"<color=#FF6666>[Corrupta]</color> {display}"
+                        : $"{display}  <color=#808080><size=12>{sv.timestamp}</size></color>";
                 }
                 else _mmSaveTexts[i].text = "";
             }
@@ -576,7 +579,10 @@ namespace Valkur.UI.MainMenu
             if (_mmLoadTargetLabel != null)
             {
                 if (TryGetSelectedSave(out var tsv))
-                    _mmLoadTargetLabel.text = $"Operará sobre: <b>{tsv.fileName}</b>";
+                {
+                    string label = tsv.isAutoSave ? Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY : tsv.fileName;
+                    _mmLoadTargetLabel.text = $"Operará sobre: <b>{label}</b>";
+                }
                 else
                     _mmLoadTargetLabel.text = "";
             }
@@ -728,6 +734,11 @@ namespace Valkur.UI.MainMenu
             if (info.isCorrupted)
             {
                 Debug.LogWarning("[MainMenu] Cannot rename corrupted save.");
+                return;
+            }
+            if (info.isAutoSave)
+            {
+                Debug.LogWarning("[MainMenu] The Auto-Save entry cannot be renamed.");
                 return;
             }
             if (_mmRenameInput != null)
