@@ -165,8 +165,7 @@ namespace Valkur.Gameplay.MapEditor
 
             if (_ui != null && _ui.IsModalOpen)
             {
-                if (_isAddZoneFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI())
-                    MarkAddZoneTargetAtCursor();
+                // Dialog is open — block all map interactions until confirmed/cancelled
                 return;
             }
 
@@ -293,7 +292,6 @@ namespace Valkur.Gameplay.MapEditor
                 RenameZoneByName,
                 ToggleSelectedZoneEditable,
                 ToggleZoneEditableByName,
-                MoveSelectedZone,
                 SetRestrictTileEditing);
             _ui.SetVisible(false);
             _ui.SetRestrictToggle(_state.RestrictTileEditingToEditableZones);

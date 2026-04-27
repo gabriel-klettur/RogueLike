@@ -13,12 +13,16 @@ namespace Valkur.Gameplay.World
     public static class OverlayLoader
     {
         private static readonly Dictionary<string, TileBase> _tileCache = new Dictionary<string, TileBase>();
+        private static readonly Dictionary<string, Sprite> _spriteByName = new Dictionary<string, Sprite>();
+        private static bool _spriteIndexBuilt;
         private static int _missingCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnPlayModeEnter()
         {
             _tileCache.Clear();
+            _spriteByName.Clear();
+            _spriteIndexBuilt = false;
             _missingCount = 0;
         }
 
@@ -179,14 +183,13 @@ namespace Valkur.Gameplay.World
         {
             // Cache key includes collision context since same tile may need different collider types
             string cacheKey = isCollisionLayer ? tileName + "__col" : tileName;
-            if (_tileCache.TryGetValue(cacheKey, out var cached))
+            if (_tileCache.TryGetValue(cacheKey, out var cached) && cached != null)
                 return cached;
 
             Sprite sprite = ResolveSprite(tileName);
             if (sprite == null)
             {
                 _missingCount++;
-                _tileCache[cacheKey] = null;
                 return null;
             }
 
@@ -220,10 +223,39 @@ namespace Valkur.Gameplay.World
                 string stripped = tileName.Substring(6); // Remove "ready/"
                 sprite = Resources.Load<Sprite>("Tiles/" + stripped);
                 if (sprite != null) return sprite;
+                tileName = stripped;
+            }
+
+            EnsureSpriteIndex();
+            if (_spriteByName.TryGetValue(tileName, out sprite) && sprite != null)
+                return sprite;
+
+            if (tileName.Contains("/"))
+            {
+                string fileName = Path.GetFileName(tileName);
+                if (_spriteByName.TryGetValue(fileName, out sprite) && sprite != null)
+                    return sprite;
             }
 
             Debug.LogWarning($"[OverlayLoader] Could not resolve tile: '{tileName}' (tried Resources/Tiles/{tileName})");
             return null;
+        }
+
+        private static void EnsureSpriteIndex()
+        {
+            if (_spriteIndexBuilt) return;
+
+            var sprites = Resources.LoadAll<Sprite>("Tiles");
+            if (sprites == null || sprites.Length == 0) return;
+            _spriteIndexBuilt = true;
+
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                var sprite = sprites[i];
+                if (sprite == null || string.IsNullOrEmpty(sprite.name)) continue;
+                if (!_spriteByName.ContainsKey(sprite.name))
+                    _spriteByName[sprite.name] = sprite;
+            }
         }
     }
 }

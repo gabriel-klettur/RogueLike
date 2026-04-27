@@ -8,6 +8,9 @@ using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
+using Valkur.Gameplay.Enemies.FSM;
+using Valkur.Gameplay.Items;
+using Valkur.Gameplay.Entities;
 using Valkur.Infrastructure;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -230,6 +233,63 @@ namespace Valkur.Gameplay
             }
 
             Debug.Log("[GameplaySceneSetup] BuildingsRuntimeEditor created. Press F10 to toggle.");
+        }
+
+        private void EnsureFSMRuntimeEditor()
+        {
+            if (FSMRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("FSMRuntimeEditor");
+            go.AddComponent<FSMRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] FSMRuntimeEditor created. Press F12 to toggle.");
+        }
+
+        private void EnsureItemsRuntimeEditor()
+        {
+            if (ItemsRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("ItemsRuntimeEditor");
+            go.AddComponent<ItemsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] ItemsRuntimeEditor created. Press F7 to toggle.");
+        }
+
+        private void EnsureEntitiesRuntimeEditor()
+        {
+            if (EntitiesRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("EntitiesRuntimeEditor");
+            var editor = go.AddComponent<EntitiesRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            if (_monsterCatalog != null)
+            {
+#if UNITY_EDITOR
+                var serialized = new UnityEditor.SerializedObject(editor);
+                var catalogProp = serialized.FindProperty("_monsterCatalog");
+                if (catalogProp != null)
+                {
+                    catalogProp.objectReferenceValue = _monsterCatalog;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+#endif
+            }
+
+            Debug.Log("[GameplaySceneSetup] EntitiesRuntimeEditor created. Press F5 to toggle.");
+        }
+
+        private void EnsureInventoryRuntimeEditor()
+        {
+            if (Valkur.Gameplay.Inventory.InventoryRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("InventoryRuntimeEditor");
+            go.AddComponent<Valkur.Gameplay.Inventory.InventoryRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] InventoryRuntimeEditor created. Press F6 to toggle.");
         }
 
         private void EnsureDeathDropSystem()

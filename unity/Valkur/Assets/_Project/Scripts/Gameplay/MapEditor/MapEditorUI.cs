@@ -27,7 +27,6 @@ namespace Valkur.Gameplay.MapEditor
         private System.Action<string, string> _onRenameZoneByName;
         private System.Action _onToggleSelectedZoneEditable;
         private System.Action<string> _onToggleZoneEditableByName;
-        private System.Action<Vector2Int> _onMoveSelectedZone;
         private System.Action<bool> _onRestrictEditChanged;
 
         // Runtime-only references set by BuildUI(). NOT [SerializeField] — ResolveCanvas()
@@ -41,6 +40,9 @@ namespace Valkur.Gameplay.MapEditor
         private readonly List<Button> _zoneButtons = new List<Button>();
         private ZoneManager.ZoneDefinition[] _cachedZones = Array.Empty<ZoneManager.ZoneDefinition>();
         private string _inlineRenameZoneName;
+
+        // Add Zone blinking mode
+        private bool _isAddZoneMode;
 
         private static Sprite _whiteSprite;
 
@@ -96,7 +98,6 @@ namespace Valkur.Gameplay.MapEditor
             System.Action<string, string> onRenameZoneByName,
             System.Action onToggleSelectedZoneEditable,
             System.Action<string> onToggleZoneEditableByName,
-            System.Action<Vector2Int> onMoveSelectedZone,
             System.Action<bool> onRestrictEditChanged)
         {
             _state = state;
@@ -111,11 +112,40 @@ namespace Valkur.Gameplay.MapEditor
             _onRenameZoneByName = onRenameZoneByName;
             _onToggleSelectedZoneEditable = onToggleSelectedZoneEditable;
             _onToggleZoneEditableByName = onToggleZoneEditableByName;
-            _onMoveSelectedZone = onMoveSelectedZone;
             _onRestrictEditChanged = onRestrictEditChanged;
 
             BuildUI();
             SetVisible(false);
+        }
+
+        /// <summary>
+        /// Activates or deactivates the Add Zone blinking mode on the button.
+        /// When active the button outline pulses yellow in Update().
+        /// </summary>
+        public void SetAddZoneMode(bool active)
+        {
+            _isAddZoneMode = active;
+            if (!active)
+            {
+                if (_refs.AddZoneBtnOutline != null)
+                    _refs.AddZoneBtnOutline.effectColor = new Color(0f, 0f, 0f, 0f);
+                if (_refs.AddZoneBtnImage != null)
+                    _refs.AddZoneBtnImage.color = new Color(0.16f, 0.16f, 0.21f, 1f); // BTN_NORMAL
+            }
+        }
+
+        private void Update()
+        {
+            if (!_isAddZoneMode) return;
+            if (_refs.AddZoneBtnOutline == null) return;
+            float pulse = (Mathf.Sin(Time.unscaledTime * 5f) + 1f) * 0.5f;
+            _refs.AddZoneBtnOutline.effectColor =
+                new Color(1f, 0.85f, 0f, Mathf.Lerp(0.15f, 1f, pulse));
+            if (_refs.AddZoneBtnImage != null)
+                _refs.AddZoneBtnImage.color = Color.Lerp(
+                    new Color(0.16f, 0.16f, 0.21f, 1f),
+                    new Color(0.30f, 0.25f, 0.06f, 1f),
+                    pulse * 0.45f);
         }
 
         public void SetVisible(bool visible)

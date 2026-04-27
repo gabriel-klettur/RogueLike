@@ -26,6 +26,7 @@ namespace Valkur.Gameplay
                 var rb = _fireballPrefab.AddComponent<Rigidbody2D>();
                 rb.gravityScale = 0f;
                 rb.freezeRotation = true;
+                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
                 var col = _fireballPrefab.AddComponent<CircleCollider2D>();
                 col.radius = 0.15f;

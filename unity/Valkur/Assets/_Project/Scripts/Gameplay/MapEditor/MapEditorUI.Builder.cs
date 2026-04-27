@@ -179,7 +179,6 @@ namespace Valkur.Gameplay.MapEditor
                 HideDeleteZoneDialog,
                 _onRenameSelectedZone,
                 _onToggleSelectedZoneEditable,
-                _onMoveSelectedZone,
                 _onRestrictEditChanged);
         }
 

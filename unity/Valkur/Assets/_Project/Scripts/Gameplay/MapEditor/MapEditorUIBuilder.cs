@@ -63,6 +63,10 @@ namespace Valkur.Gameplay.MapEditor
             public TextMeshProUGUI PropsDimText;
             public TextMeshProUGUI PropsEditableText; // clickable row (toggle on click)
             public Toggle          RestrictToggle;    // restrict tile editor to editable zones
+
+            // Add Zone mode visual indicators
+            public Image   AddZoneBtnImage;
+            public Outline AddZoneBtnOutline;
         }
 
         // ── Panel sizes (mirror Buildings Editor constants) ──────────────────────
@@ -71,7 +75,7 @@ namespace Valkur.Gameplay.MapEditor
         private const float ZONES_H    = 420f + PANEL_HDR_H;   // 444 px
 
         private const float ACTIONS_W  = 230f;
-        private const float ACTIONS_H  = 175f + PANEL_HDR_H;   // 199 px
+        private const float ACTIONS_H  = 112f + PANEL_HDR_H;   // 136 px
 
         private const float BTN_H      = 32f;                   // action button height
 
@@ -99,7 +103,6 @@ namespace Valkur.Gameplay.MapEditor
             Action                 onCancelDeleteZone,
             Action<string>         onRenameSelectedZone,
             Action                 onToggleSelectedZoneEditable,
-            Action<Vector2Int>     onMoveSelectedZone,
             Action<bool>           onRestrictEditChanged)
         {
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -109,7 +112,7 @@ namespace Valkur.Gameplay.MapEditor
             BuildZonesPanel(canvasT, ref refs);
             BuildActionsPanel(canvasT, ref refs,
                 onBeginAddZoneFlow, onDuplicateSelectedZone,
-                onRequestDeleteSelectedZone, onMoveSelectedZone);
+                onRequestDeleteSelectedZone);
             BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone,
                 onToggleSelectedZoneEditable, onRestrictEditChanged);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
@@ -231,8 +234,7 @@ namespace Valkur.Gameplay.MapEditor
         private static void BuildActionsPanel(Transform canvasT, ref UIRefs refs,
             Action onBeginAdd,
             Action onDuplicate,
-            Action onRequestDelete,
-            Action<Vector2Int> onMove)
+            Action onRequestDelete)
         {
             float x = PANEL_GAP + ZONES_W + PANEL_GAP;
             refs.ActionsDropdown = MakeDrop("ActionsPanel", canvasT,
@@ -241,19 +243,15 @@ namespace Valkur.Gameplay.MapEditor
 
             BuildSectionLabel(t, "Operations");
 
-            AddActionBtn(t, "Add Zone",  BTN_H, onBeginAdd);
+            var addZoneBtn = AddActionBtn(t, "Add Zone",  BTN_H, onBeginAdd);
+            refs.AddZoneBtnImage   = addZoneBtn.GetComponent<Image>();
+            var addOutline         = addZoneBtn.gameObject.AddComponent<Outline>();
+            addOutline.effectColor    = new Color(0f, 0f, 0f, 0f);   // invisible until mode active
+            addOutline.effectDistance = new Vector2(2f, 2f);
+            refs.AddZoneBtnOutline = addOutline;
+
             AddActionBtn(t, "Duplicate", BTN_H, onDuplicate);
             AddActionBtn(t, "Delete",    BTN_H, onRequestDelete, danger: true);
-
-            BuildSeparator(t);
-            BuildSectionLabel(t, "Move selected zone");
-
-            // Move arrows — left ↑ ↓ right
-            var moveRow1 = MakeRow("MoveRow1", t, 32f);
-            AddArrowBtn(moveRow1.transform, "\u2190",  () => onMove?.Invoke(Vector2Int.left));
-            AddArrowBtn(moveRow1.transform, "\u2191",  () => onMove?.Invoke(Vector2Int.up));
-            AddArrowBtn(moveRow1.transform, "\u2193",  () => onMove?.Invoke(Vector2Int.down));
-            AddArrowBtn(moveRow1.transform, "\u2192",  () => onMove?.Invoke(Vector2Int.right));
 
             refs.ActionsDropdown.SetActive(false);
         }

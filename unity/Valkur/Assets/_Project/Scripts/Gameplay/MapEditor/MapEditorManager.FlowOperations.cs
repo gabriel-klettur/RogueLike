@@ -31,22 +31,15 @@ namespace Valkur.Gameplay.MapEditor
 
         private void BeginAddZoneFlow()
         {
-            if (!_state.HasSelection || !zoneManager.TryGetZone(_state.SelectedZone, out var sourceZone))
-            {
-                _ui?.SetStatus("Select a source zone before Add Zone.");
-                return;
-            }
-
-            _isAddZoneFlowActive = true;
-            _hasPendingAddTarget = false;
+            _isAddZoneFlowActive  = true;
+            _hasPendingAddTarget  = false;
             _pendingAddZoneOffset = default;
 
             int width  = Mathf.Max(1, zoneManager.ZoneWidthTiles);
             int height = Mathf.Max(1, zoneManager.ZoneHeightTiles);
 
-            _ui?.ShowAddZoneDialog(GenerateUniqueZoneName(), sourceZone.zoneName, sourceZone.editableInTileEditor);
-            _ui?.SetAddZoneTarget(default, width, height, false);
-            _ui?.SetStatus("Add Zone mode: click world to mark a 50x50 zone target, then confirm.");
+            _ui?.SetAddZoneMode(true);
+            _ui?.SetStatus($"Add Zone mode: click on the map to place a {width}\u00d7{height} zone.");
             UpdateAddZonePreviewVisibility();
         }
 
@@ -70,8 +63,19 @@ namespace Valkur.Gameplay.MapEditor
             _hasPendingAddTarget  = true;
 
             UpdateAddZonePreview();
+            _ui?.SetAddZoneMode(false);   // stop blinking — target is now committed
+
+            // Determine optional source zone for the template toggle
+            string sourceName    = _state.HasSelection &&
+                                   zoneManager.TryGetZone(_state.SelectedZone, out var srcZone)
+                                   ? srcZone.zoneName : string.Empty;
+            bool sourceEditable  = !string.IsNullOrEmpty(sourceName) &&
+                                   zoneManager.TryGetZone(sourceName, out var srcZ2) &&
+                                   srcZ2.editableInTileEditor;
+
+            _ui?.ShowAddZoneDialog(GenerateUniqueZoneName(), sourceName, sourceEditable);
             _ui?.SetAddZoneTarget(_pendingAddZoneOffset, width, height, true);
-            _ui?.SetStatus($"Add Zone target marked at [{alignedX},{alignedY}] ({width}x{height}).");
+            _ui?.SetStatus($"Add Zone target at [{alignedX},{alignedY}] — fill in details and confirm.");
         }
 
         private void ConfirmAddZone(string requestedZoneName, bool useSelectedZoneAsTemplate, bool editableInTileEditor)
@@ -107,6 +111,7 @@ namespace Valkur.Gameplay.MapEditor
         {
             _isAddZoneFlowActive = false;
             _hasPendingAddTarget = false;
+            _ui?.SetAddZoneMode(false);
             _ui?.HideAddZoneDialog();
             UpdateAddZonePreviewVisibility();
         }

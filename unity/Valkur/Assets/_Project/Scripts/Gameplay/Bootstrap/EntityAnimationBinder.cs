@@ -72,6 +72,13 @@ namespace Valkur.Gameplay
 
             ApplyEntityScale(go, assetConfig.scaleConfig, renderer);
 
+            // Match Pygame's BLEND_RGB_MULT tint baked into sprites at load time.
+            // A zero/unset Color (alpha == 0) means "no tint configured"; treat as white.
+            Color tint = assetConfig.scaleConfig.tint;
+            if (tint.a <= 0f && tint.r == 0f && tint.g == 0f && tint.b == 0f)
+                tint = Color.white;
+            renderer.color = new Color(tint.r, tint.g, tint.b, 1f);
+
             return true;
         }
 

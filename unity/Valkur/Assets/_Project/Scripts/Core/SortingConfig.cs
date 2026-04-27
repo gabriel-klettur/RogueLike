@@ -21,8 +21,11 @@ namespace Valkur.Core
         public const string LAYER_DECORATIONS = "Decorations";
         public const string LAYER_WALLS_TOP = "WallsTop";
         public const string LAYER_OBJECTS_HIGH = "ObjectsHigh";
+        public const string LAYER_PROJECTILES = "Projectiles";
+        public const string LAYER_VFX = "VFX";
         public const string LAYER_OVERHEAD = "Overhead";
         public const string LAYER_UI_WORLD = "UI_World";
+        public const string LAYER_OVERLAY = "Overlay";
 
         // --- Entity Z-Layer base orders (within Entities sorting layer) ---
         // Maps to Python's Z_LAYERS dict. Used as base sortingOrder before Y-offset.

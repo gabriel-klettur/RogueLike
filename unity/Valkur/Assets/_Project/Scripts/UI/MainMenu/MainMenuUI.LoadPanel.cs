@@ -29,6 +29,7 @@ namespace Valkur.UI.MainMenu
         private Image[]            _mmRunPills;
         private Image[]            _mmRunBars;
         private TextMeshProUGUI[]  _mmRunTexts;
+        private RawImage[]         _mmRunFaceImages;
         private Image[][]          _mmRunHoverBorders;
         private int                _mmRunHover = -1;
 
@@ -137,6 +138,7 @@ namespace Valkur.UI.MainMenu
             _mmRunPills        = new Image[MM_RUN_ROWS];
             _mmRunBars         = new Image[MM_RUN_ROWS];
             _mmRunTexts        = new TextMeshProUGUI[MM_RUN_ROWS];
+            _mmRunFaceImages   = new RawImage[MM_RUN_ROWS];
             _mmRunHoverBorders = new Image[MM_RUN_ROWS][];
 
             float runRowH = 37f, runGap = 3f;
@@ -158,13 +160,24 @@ namespace Valkur.UI.MainMenu
                 bRt.anchoredPosition = new Vector2(0f, cy); bRt.sizeDelta = new Vector2(4f, runRowH);
                 _mmRunBars[i] = barGo.AddComponent<Image>(); _mmRunBars[i].color = Color.clear;
 
+                // Character face thumbnail (crops portrait to face area via uvRect)
+                float faceSize = runRowH - 4f;
+                var faceGo = CreateUIObject($"RnFace_{i}", runList.transform);
+                var faceRt = faceGo.GetComponent<RectTransform>();
+                faceRt.anchorMin = new Vector2(0f, 1f); faceRt.anchorMax = new Vector2(0f, 1f);
+                faceRt.pivot = new Vector2(0f, 1f);
+                faceRt.anchoredPosition = new Vector2(6f, cy - 2f);
+                faceRt.sizeDelta = new Vector2(faceSize, faceSize);
+                _mmRunFaceImages[i] = faceGo.AddComponent<RawImage>();
+                _mmRunFaceImages[i].color = Color.clear;
+
                 var txtGo = CreateUIObject($"RnTxt_{i}", runList.transform);
                 var txtR = txtGo.GetComponent<RectTransform>();
                 txtR.anchorMin = new Vector2(0f, 1f); txtR.anchorMax = new Vector2(1f, 1f);
                 txtR.pivot = new Vector2(0f, 1f);
-                txtR.anchoredPosition = new Vector2(12f, cy); txtR.sizeDelta = new Vector2(-12f, runRowH);
+                txtR.anchoredPosition = new Vector2(46f, cy); txtR.sizeDelta = new Vector2(-46f, runRowH);
                 _mmRunTexts[i] = txtGo.AddComponent<TextMeshProUGUI>();
-                _mmRunTexts[i].text = ""; _mmRunTexts[i].fontSize = 15f;
+                _mmRunTexts[i].text = ""; _mmRunTexts[i].fontSize = 12f;
                 _mmRunTexts[i].alignment = TextAlignmentOptions.Left; _mmRunTexts[i].color = TextNormal;
                 _mmRunTexts[i].enableWordWrapping = false;
 
@@ -512,13 +525,28 @@ namespace Valkur.UI.MainMenu
                 if (hasRun)
                 {
                     var run = _mmLoadRuns[dataIdx];
-                    string cls = run.isLegacy
-                        ? "<color=#808080>Partidas antiguas</color>"
-                        : FormatClassName(run.playerClass);
-                    string lv  = run.isLegacy ? "" : $"  <color=#808080>Lv.{run.maxLevel}</color>";
-                    _mmRunTexts[i].text = cls + lv;
+                    if (run.isLegacy)
+                    {
+                        if (_mmRunFaceImages?[i] != null) _mmRunFaceImages[i].color = Color.clear;
+                        _mmRunTexts[i].text = "<color=#808080>Antiguas</color>";
+                    }
+                    else
+                    {
+                        if (_mmRunFaceImages?[i] != null)
+                        {
+                            var tex = GetCachedPortraitTexture(run.playerClass);
+                            _mmRunFaceImages[i].texture = tex;
+                            _mmRunFaceImages[i].uvRect  = GetFaceUvRect(run.playerClass);
+                            _mmRunFaceImages[i].color   = tex != null ? Color.white : Color.clear;
+                        }
+                        _mmRunTexts[i].text = $"<color=#808080>Lv.{run.maxLevel}</color>";
+                    }
                 }
-                else _mmRunTexts[i].text = "";
+                else
+                {
+                    if (_mmRunFaceImages?[i] != null) _mmRunFaceImages[i].color = Color.clear;
+                    _mmRunTexts[i].text = "";
+                }
             }
 
             // ── Right column: save list ────────────────────────────────────────
@@ -993,6 +1021,40 @@ namespace Valkur.UI.MainMenu
         {
             if (string.IsNullOrEmpty(key)) return "—";
             return char.ToUpperInvariant(key[0]) + key.Substring(1).ToLowerInvariant();
+        }
+
+        // ── Character face crop helpers ──────────────────────────────────────
+        // UV rects for each class portrait image (1536×1024 group portraits).
+        // Each rect crops the specific character's face from their highlighted portrait.
+        // Format: Rect(x_left, y_bottom, width, height) — Unity UV origin = bottom-left.
+        // All crops are ~280×280px (square) for distortion-free display in square containers.
+        private static readonly System.Collections.Generic.Dictionary<string, Rect> ClassFaceUvRects =
+            new System.Collections.Generic.Dictionary<string, Rect>(System.StringComparer.OrdinalIgnoreCase)
+            {
+                { "barbarian", new Rect(0.000f, 0.552f, 0.182f, 0.273f) },
+                { "elven",     new Rect(0.156f, 0.566f, 0.182f, 0.273f) },
+                { "mague",     new Rect(0.352f, 0.449f, 0.182f, 0.273f) },
+                { "valkyrie",  new Rect(0.592f, 0.576f, 0.182f, 0.273f) },
+                { "dwarf",     new Rect(0.801f, 0.547f, 0.182f, 0.273f) },
+            };
+
+        private static Rect GetFaceUvRect(string playerClass)
+        {
+            if (!string.IsNullOrEmpty(playerClass) &&
+                ClassFaceUvRects.TryGetValue(playerClass, out var rect))
+                return rect;
+            return new Rect(0f, 0f, 1f, 1f);
+        }
+
+        private Texture2D GetCachedPortraitTexture(string playerKey)
+        {
+            if (string.IsNullOrEmpty(playerKey)) return null;
+            // Re-use the same sprite cache entry if already loaded
+            if (_portraitSpriteCache.TryGetValue(playerKey, out var cached) && cached != null)
+                return cached.texture;
+            // Otherwise load the texture directly (Resources caches internally)
+            if (!ClassPortraitPaths.TryGetValue(playerKey, out var path)) return null;
+            return Resources.Load<Texture2D>(path);
         }
     }
 }

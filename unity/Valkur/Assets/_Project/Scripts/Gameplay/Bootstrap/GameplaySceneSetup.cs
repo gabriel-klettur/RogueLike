@@ -30,6 +30,11 @@ namespace Valkur.Gameplay
         [SerializeField] private int testMonsterCount = 3;
         [SerializeField] private float spawnRadius = 5f;
 
+        // Public accessors so runtime editors (e.g. EntitiesRuntimeEditor) can spawn
+        // additional players / monsters without duplicating the prefab references.
+        public GameObject PlayerPrefab => playerPrefab;
+        public GameObject MonsterPrefab => monsterPrefab;
+
         [Header("Map")]
         [Tooltip("Overlay JSON filename in StreamingAssets/Maps/ (single-zone fallback)")]
         [SerializeField] private string overlayFile = "lobby.overlay.json";
@@ -141,6 +146,18 @@ namespace Valkur.Gameplay
 
             EnsureBuildingsRuntimeEditor();
             Report("Inicializando editor de edificios"); yield return null;
+
+            EnsureFSMRuntimeEditor();
+            Report("Inicializando editor de FSM"); yield return null;
+
+            EnsureItemsRuntimeEditor();
+            Report("Inicializando editor de items"); yield return null;
+
+            EnsureEntitiesRuntimeEditor();
+            Report("Inicializando editor de entidades"); yield return null;
+
+            EnsureInventoryRuntimeEditor();
+            Report("Inicializando editor de inventario"); yield return null;
 
             EnsureDevConsole();
             Report("Inicializando consola de desarrollo"); yield return null;

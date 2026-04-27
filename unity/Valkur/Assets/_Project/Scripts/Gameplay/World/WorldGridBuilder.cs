@@ -146,6 +146,8 @@ namespace Valkur.Gameplay.World
             // Collision layer gets a TilemapCollider2D
             if (layer == TilemapLayerSetup.TilemapLayer.Collision)
             {
+                go.layer = LayerMask.NameToLayer("World"); // Projectile layer matrix: 10 ↔ 11
+
                 var collider = go.AddComponent<TilemapCollider2D>();
                 if (tilemapPhysicsMaterial != null)
                     collider.sharedMaterial = tilemapPhysicsMaterial;
@@ -168,6 +170,8 @@ namespace Valkur.Gameplay.World
             // WallsBottom also gets collision
             if (layer == TilemapLayerSetup.TilemapLayer.WallsBottom)
             {
+                go.layer = LayerMask.NameToLayer("World"); // Projectile layer matrix: 10 ↔ 11
+
                 var collider = go.AddComponent<TilemapCollider2D>();
                 if (tilemapPhysicsMaterial != null)
                     collider.sharedMaterial = tilemapPhysicsMaterial;
