@@ -58,7 +58,7 @@ namespace Valkur.Gameplay
             _fireballSpell.prepareDuration = 0f;
             _fireballSpell.channelDuration = 0f;
             _fireballSpell.cooldownDuration = 0.4f;
-            _fireballSpell.speed = 8f;
+            _fireballSpell.speed = 1.5f;
             _fireballSpell.damage = 15f;
             _fireballSpell.range = 12f;
             _fireballSpell.lifetime = 3f;

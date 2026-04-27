@@ -39,8 +39,17 @@ namespace Valkur.Gameplay.Spells
         // Scale multiplier applied to the impact particle preset.
         private const float ImpactPresetScale = 5f;
 
+        // Acceleration: increases speed over time (world units/s²). 0 = constant speed.
+        private float _acceleration;
+
+        // Explosion AOE on impact (radius = 0 means no AOE).
+        private float _explosionRadius;
+        private float _explosionDamage;
+
         // Reused buffer for swept collision queries (no per-frame allocations)
         private static readonly RaycastHit2D[] _sweepHits = new RaycastHit2D[8];
+        // Reused buffer for explosion overlap queries
+        private static readonly Collider2D[] _explosionHits = new Collider2D[16];
 
         /// <summary>
         /// Set the pool key so the projectile returns to pool instead of being destroyed.
@@ -56,6 +65,12 @@ namespace Valkur.Gameplay.Spells
         /// Set the particle preset played on impact (e.g. "explosion_small").
         /// </summary>
         public void SetImpactPreset(string preset) => _impactPreset = preset;
+
+        /// <summary>Constant acceleration applied to speed each second (world units/s²).</summary>
+        public void SetAcceleration(float accel) => _acceleration = accel;
+
+        /// <summary>Enable AOE explosion on impact that damages all targets within radius.</summary>
+        public void SetExplosion(float radius, float dmg) { _explosionRadius = radius; _explosionDamage = dmg; }
 
         public void Initialize(Vector2 direction, float spd, float dmg, float life, float rng, LayerMask targets)
         {
@@ -92,6 +107,10 @@ namespace Valkur.Gameplay.Spells
         private void FixedUpdate()
         {
             if (_expired) return;
+
+            // Apply acceleration before computing the step this frame.
+            if (_acceleration > 0f)
+                speed += _acceleration * Time.fixedDeltaTime;
 
             float step = speed * Time.fixedDeltaTime;
             if (step <= 0f) return;
@@ -198,6 +217,20 @@ namespace Valkur.Gameplay.Spells
             // the projectile centre (fallback for OnTriggerEnter2D path or lifetime expiry).
             Vector3 vfxPos = _impactVfxPos ?? transform.position;
 
+            // AOE explosion: damage all targets within explosion radius.
+            if (_explosionRadius > 0f)
+            {
+                int count = Physics2D.OverlapCircleNonAlloc((Vector2)vfxPos, _explosionRadius, _explosionHits, targetLayers);
+                for (int i = 0; i < count; i++)
+                {
+                    if (_explosionHits[i] == null) continue;
+                    var h = _explosionHits[i].GetComponent<Health>()
+                         ?? _explosionHits[i].GetComponentInParent<Health>();
+                    if (h != null && !h.IsDead)
+                        h.TakeDamage(Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage));
+                }
+            }
+
             // Epic impact for any procedural projectile visual (fireball, darkball,
             // iceball, lightball, lightning, boomerang...). Each visual implements
             // IProjectileVisual.OnImpact() with its own shockwave + flash + element
@@ -234,6 +267,9 @@ namespace Valkur.Gameplay.Spells
             _timer = 0f;
             _expired = false;
             _impactVfxPos = null;
+            _acceleration = 0f;
+            _explosionRadius = 0f;
+            _explosionDamage = 0f;
             if (_rb != null) _rb.velocity = Vector2.zero;
         }
     }

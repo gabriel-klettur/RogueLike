@@ -19,12 +19,18 @@ namespace Valkur.Gameplay.Spells
             if (ctx.ProjectilePrefab == null) return;
 
             string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
+            // Resolve caster center from the visual sprite bounds so projectiles originate
+            // from the middle of the character, not the pivot (which is at the feet for 2D
+            // sprites with bottom-center pivot). Falls back to collider bounds, then to a
+            // fixed +0.5 Y offset.
+            Vector3 casterCenter = ResolveCasterCenter(ctx.Caster);
+
             // Spawn slightly in front of the caster along the fire direction so the
             // projectile clears the caster's own collider and doesn't start overlapping
             // adjacent walls/buildings (which would make the swept-collision detect a
             // distance==0 hit and detonate the fireball at the player's feet).
             const float SPAWN_FORWARD_OFFSET = 0.5f;
-            Vector3 spawnPos = ctx.Caster.position
+            Vector3 spawnPos = casterCenter
                 + (Vector3)(ctx.Direction.normalized * SPAWN_FORWARD_OFFSET);
 
             // Try pool-based spawn, fall back to Instantiate
@@ -58,6 +64,13 @@ namespace Valkur.Gameplay.Spells
                 );
                 if (!string.IsNullOrEmpty(ctx.Spell.impactPreset))
                     proj.SetImpactPreset(ctx.Spell.impactPreset);
+                // Acceleration: reuses the SpellDefinition.distance field (unused for projectiles).
+                if (ctx.Spell.distance > 0f)
+                    proj.SetAcceleration(ctx.Spell.distance);
+                // AOE explosion on impact.
+                if (ctx.Spell.explosionRadius > 0f)
+                    proj.SetExplosion(ctx.Spell.explosionRadius,
+                        ctx.Spell.explosionDamage > 0f ? ctx.Spell.explosionDamage : ctx.Spell.damage);
             }
 
             if (ctx.Spell.sprite != null)
@@ -93,6 +106,48 @@ namespace Valkur.Gameplay.Spells
             }
 
             Debug.Log($"[SpellDebug] Projectile '{ctx.Spell.spellKey}' spawned at {spawnPos}, speed={ctx.Spell.speed}, dmg={ctx.Spell.damage}, lifetime={ctx.Spell.lifetime}");
+        }
+
+        /// <summary>
+        /// Resolves the world-space "center" of a caster for projectile spawning.
+        /// Priority: SpriteRenderer.bounds.center (visual center) → any Collider2D
+        /// bounds.center → transform.position. A guaranteed minimum upward lift of
+        /// <see cref="MIN_LIFT_ABOVE_PIVOT"/> world units is applied so the spawn
+        /// never sits at the feet of a 2D character (handles sprites with
+        /// center pivot, null sprite frames, and centered colliders).
+        /// Public + static so it can be unit-tested independently from spell execution.
+        /// </summary>
+        public const float MIN_LIFT_ABOVE_PIVOT = 0.5f;
+
+        public static Vector3 ResolveCasterCenter(Transform caster)
+        {
+            if (caster == null) return Vector3.zero;
+
+            Vector3 fallback = caster.position + new Vector3(0f, MIN_LIFT_ABOVE_PIVOT, 0f);
+            Vector3 result = fallback;
+
+            // 1. Prefer the visual sprite bounds. Use root component first so we
+            //    don't accidentally pick up a child shadow / aura SpriteRenderer.
+            var sr = caster.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = caster.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null && sr.sprite != null)
+            {
+                result = sr.bounds.center;
+            }
+            else
+            {
+                // 2. Fall back to any Collider2D bounds.
+                var col2d = caster.GetComponent<Collider2D>();
+                if (col2d == null) col2d = caster.GetComponentInChildren<Collider2D>();
+                if (col2d != null) result = col2d.bounds.center;
+            }
+
+            // 3. Enforce a minimum lift above the transform pivot. This handles
+            //    center-pivot sprites and centered colliders (offset 0,0) where
+            //    bounds.center coincides with the character's feet.
+            float minY = caster.position.y + MIN_LIFT_ABOVE_PIVOT;
+            if (result.y < minY) result.y = minY;
+            return result;
         }
 
         /// <summary>

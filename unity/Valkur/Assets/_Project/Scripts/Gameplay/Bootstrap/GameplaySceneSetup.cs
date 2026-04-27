@@ -153,6 +153,9 @@ namespace Valkur.Gameplay
             EnsureItemsRuntimeEditor();
             Report("Inicializando editor de items"); yield return null;
 
+            EnsureSpellsRuntimeEditor();
+            Report("Inicializando editor de hechizos"); yield return null;
+
             EnsureEntitiesRuntimeEditor();
             Report("Inicializando editor de entidades"); yield return null;
 

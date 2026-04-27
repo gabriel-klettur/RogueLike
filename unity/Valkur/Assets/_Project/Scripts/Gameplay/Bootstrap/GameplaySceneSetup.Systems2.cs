@@ -257,6 +257,32 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] ItemsRuntimeEditor created. Press F7 to toggle.");
         }
 
+        private void EnsureSpellsRuntimeEditor()
+        {
+            if (Valkur.Gameplay.Spells.SpellsRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("SpellsRuntimeEditor");
+            var editor = go.AddComponent<Valkur.Gameplay.Spells.SpellsRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+#if UNITY_EDITOR
+            var serialized = new UnityEditor.SerializedObject(editor);
+            if (_spellCatalog != null)
+            {
+                var catalogProp = serialized.FindProperty("_catalog");
+                if (catalogProp != null) catalogProp.objectReferenceValue = _spellCatalog;
+            }
+            if (_particlePresetCatalog != null)
+            {
+                var particleProp = serialized.FindProperty("_particleCatalog");
+                if (particleProp != null) particleProp.objectReferenceValue = _particlePresetCatalog;
+            }
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+#endif
+
+            Debug.Log("[GameplaySceneSetup] SpellsRuntimeEditor created. Press F4 to toggle.");
+        }
+
         private void EnsureEntitiesRuntimeEditor()
         {
             if (EntitiesRuntimeEditor.Instance != null) return;
