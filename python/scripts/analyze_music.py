@@ -56,15 +56,23 @@ _PITCH_CLASSES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B
 _AUDIO_EXTS = {".mp3", ".wav", ".ogg", ".flac", ".m4a"}
 
 
-def estimate_bpm(y: np.ndarray, sr: int) -> tuple[float, float]:
-    """Return ``(bpm, first_beat_offset_sec)`` for an audio buffer."""
+def estimate_bpm(y: np.ndarray, sr: int) -> tuple[float, float, list[float]]:
+    """Return ``(bpm, first_beat_offset_sec, beat_times)`` for an audio buffer.
+
+    ``beat_times`` is the full list of beat onsets (seconds from clip start) as
+    detected by librosa. Storing it lets the runtime ``MusicBeatClock`` use the
+    real (slightly variable) beat positions instead of a constant-BPM model,
+    which matters because real songs drift and rubato over their duration.
+    """
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="frames")
     bpm = float(np.atleast_1d(tempo)[0])
+    beat_times: list[float] = []
     offset = 0.0
     if len(beats) > 0:
-        first_beat = librosa.frames_to_time(beats[:1], sr=sr)
-        offset = float(first_beat[0])
-    return round(bpm, 2), round(offset, 3)
+        times = librosa.frames_to_time(beats, sr=sr)
+        beat_times = [round(float(t), 4) for t in times]
+        offset = beat_times[0]
+    return round(bpm, 2), round(offset, 3), beat_times
 
 
 def estimate_key(y: np.ndarray, sr: int) -> tuple[str, float]:
@@ -114,7 +122,7 @@ def analyze_file(path: Path) -> dict:
     # mono load is sufficient for tempo + chroma; 22050 Hz keeps it fast.
     y, sr = librosa.load(str(path), sr=22050, mono=True)
     duration = float(len(y) / sr) if sr > 0 else 0.0
-    bpm, offset = estimate_bpm(y, sr)
+    bpm, offset, beat_times = estimate_bpm(y, sr)
     key, conf = estimate_key(y, sr)
     return {
         "filename": path.name,
@@ -123,6 +131,7 @@ def analyze_file(path: Path) -> dict:
         "duration_sec": round(duration, 3),
         "bpm": bpm,
         "first_beat_offset_sec": offset,
+        "beat_times": beat_times,
         "key": key,
         "key_confidence": conf,
     }

@@ -112,9 +112,10 @@ namespace Valkur.Infrastructure
         public string CurrentTrackTitle => _currentTrackTitle;
 
         public string CurrentTrackId            => _currentTrackId ?? string.Empty;
-        public float  CurrentTrackBpm           => GetEffectiveBpm(_currentTrackId, _currentTrack != null ? _currentTrack.bpm : 0f);
+        public float  CurrentTrackBpm           => _currentTrack != null ? _currentTrack.bpm : 0f;
         public int    CurrentTrackBeatsPerBar   => _currentTrack != null ? Mathf.Max(1, _currentTrack.beatsPerBar) : 4;
-        public float  CurrentTrackBeatOffsetSec => GetEffectiveOffset(_currentTrackId, _currentTrack != null ? _currentTrack.firstBeatOffsetSec : 0f);
+        public float  CurrentTrackBeatOffsetSec => _currentTrack != null ? _currentTrack.firstBeatOffsetSec : 0f;
+        public float[] CurrentTrackBeatTimes    => _currentTrack != null ? _currentTrack.beatTimes : null;
         public string CurrentTrackKey           => _currentTrack != null ? (_currentTrack.key ?? string.Empty) : string.Empty;
         public float  CurrentMusicTime          => _activeMusicSource != null ? _activeMusicSource.time : 0f;
 
@@ -142,58 +143,6 @@ namespace Valkur.Infrastructure
             if (_activeMusicSource == null || !_activeMusicSource.isPlaying) return false;
             _activeMusicSource.GetOutputData(buffer, Mathf.Max(0, channel));
             return true;
-        }
-
-        // ── Per-track tempo overrides ───────────────────────────────────────
-        // PlayerPrefs-backed, keyed by trackId. These persist across sessions
-        // so the user only has to tap-tempo a track once.
-        private const string TempoBpmPrefix    = "valkur.tempo.bpm.";
-        private const string TempoOffsetPrefix = "valkur.tempo.off.";
-
-        internal float GetEffectiveBpm(string trackId, float fallback)
-        {
-            if (string.IsNullOrEmpty(trackId)) return fallback;
-            string k = TempoBpmPrefix + trackId;
-            return PlayerPrefs.HasKey(k) ? PlayerPrefs.GetFloat(k) : fallback;
-        }
-
-        internal float GetEffectiveOffset(string trackId, float fallback)
-        {
-            if (string.IsNullOrEmpty(trackId)) return fallback;
-            string k = TempoOffsetPrefix + trackId;
-            return PlayerPrefs.HasKey(k) ? PlayerPrefs.GetFloat(k) : fallback;
-        }
-
-        public void SetTrackTempoOverride(string trackId, float bpm, float firstBeatOffsetSec)
-        {
-            if (string.IsNullOrEmpty(trackId)) return;
-            string kb = TempoBpmPrefix + trackId;
-            string ko = TempoOffsetPrefix + trackId;
-            if (bpm <= 0f)
-            {
-                PlayerPrefs.DeleteKey(kb);
-                PlayerPrefs.DeleteKey(ko);
-            }
-            else
-            {
-                PlayerPrefs.SetFloat(kb, bpm);
-                PlayerPrefs.SetFloat(ko, Mathf.Max(0f, firstBeatOffsetSec));
-            }
-            PlayerPrefs.Save();
-
-            // If the override applies to the active track, broadcast immediately
-            // so MusicBeatClock and the HUD pick up the new tempo without waiting
-            // for the next track switch.
-            if (!string.IsNullOrEmpty(_currentTrackId) && _currentTrackId == trackId)
-            {
-                float emitBpm = bpm > 0f ? bpm : (_currentTrack != null ? _currentTrack.bpm : 0f);
-                int   bpb     = _currentTrack != null ? Mathf.Max(1, _currentTrack.beatsPerBar) : 4;
-                try { OnTrackChanged?.Invoke(_currentTrackId, _currentTrackTitle, emitBpm, bpb); }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[AudioManager] OnTrackChanged (tempo override) subscriber threw: {ex.Message}");
-                }
-            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

@@ -17,107 +17,137 @@ MonoBehaviour:
     title: Menu Intro
     clip: {fileID: 8300000, guid: cc8147b6b224a8e4797eafb00ad43f87, type: 3}
     bpm: 117.45
+    beatsPerBar: 4
     firstBeatOffsetSec: 1.068
     key: A minor
     keyConfidence: 0.055
+    beatTimes: []
   - id: main_theme
     title: Pepitoria Main Theme
     clip: {fileID: 8300000, guid: 7c822a4e568746f42baceb340de845ab, type: 3}
     bpm: 117.45
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.557
     key: C major
     keyConfidence: 0.028
+    beatTimes: []
   - id: pepitoria_theme_2
     title: Pepitoria Theme 2
     clip: {fileID: 8300000, guid: bc47e7bb1510d9d4a9286c9498210026, type: 3}
     bpm: 99.38
+    beatsPerBar: 4
     firstBeatOffsetSec: 1.207
     key: D minor
     keyConfidence: 0.024
+    beatTimes: []
   - id: pepitoria_theme_3
     title: Pepitoria Theme 3
     clip: {fileID: 8300000, guid: 1d0847f4f98932a48bd54519c1bfd9d2, type: 3}
     bpm: 117.45
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.557
     key: A minor
-    keyConfidence: 0.110
+    keyConfidence: 0.11
+    beatTimes: []
   - id: pepitoria_theme_4
     title: Pepitoria Theme 4
     clip: {fileID: 8300000, guid: 0313d25aa7c72d64fbc0a1ac09f10ad9, type: 3}
-    bpm: 89.10
+    bpm: 89.1
+    beatsPerBar: 4
     firstBeatOffsetSec: 2.415
     key: E minor
     keyConfidence: 0.278
+    beatTimes: []
   - id: pepitoria_theme_5
     title: Pepitoria Theme 5
     clip: {fileID: 8300000, guid: 516aac323602655478f76d42b8ef41d7, type: 3}
     bpm: 86.13
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.975
     key: D minor
     keyConfidence: 0.133
+    beatTimes: []
   - id: pepitoria_theme_6
     title: Pepitoria Theme 6
     clip: {fileID: 8300000, guid: 98009d95e1d1bf84d98d50e602a2100a, type: 3}
-    bpm: 89.10
+    bpm: 89.1
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.743
     key: F# minor
-    keyConfidence: 0.140
+    keyConfidence: 0.14
+    beatTimes: []
   - id: pepitoria_theme_7
     title: Pepitoria Theme 7
     clip: {fileID: 8300000, guid: ba4eea861738b8e45b43bc820f2b9094, type: 3}
-    bpm: 89.10
+    bpm: 89.1
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.488
     key: E minor
     keyConfidence: 0.039
+    beatTimes: []
   - id: pepitoria_theme_8
     title: Pepitoria Theme 8
     clip: {fileID: 8300000, guid: 53be1d16b9009954c85838e99bb583f5, type: 3}
-    bpm: 89.10
+    bpm: 89.1
+    beatsPerBar: 4
     firstBeatOffsetSec: 0.697
     key: D minor
     keyConfidence: 0.226
+    beatTimes: []
   - id: pepitoria_theme_9
     title: Pepitoria Theme 9
     clip: {fileID: 8300000, guid: 6861cdd8a49dc1e4e8b0b122a346299a, type: 3}
-    bpm: 89.10
+    bpm: 89.1
+    beatsPerBar: 4
     firstBeatOffsetSec: 2.206
     key: A minor
     keyConfidence: 0.127
+    beatTimes: []
   - id: pepitoria_theme_10
     title: Pepitoria Theme 10
     clip: {fileID: 8300000, guid: 3491e0e95f84faf418b20bc6c6fae1c9, type: 3}
     bpm: 103.36
+    beatsPerBar: 4
     firstBeatOffsetSec: 1.741
     key: G minor
     keyConfidence: 0.138
+    beatTimes: []
   - id: pepitoria_theme_11
     title: Pepitoria Theme 11
     clip: {fileID: 8300000, guid: d4d29a149d1130d4eb69ff18de0c7cab, type: 3}
-    bpm: 89.10
-    firstBeatOffsetSec: 0.580
+    bpm: 89.1
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0.58
     key: A minor
     keyConfidence: 0.251
+    beatTimes: []
   - id: pepitoria_theme_12
     title: Pepitoria Theme 12
     clip: {fileID: 8300000, guid: 1f052e4108f2d584ebacdc76ae1655e1, type: 3}
     bpm: 86.13
-    firstBeatOffsetSec: 2.090
+    beatsPerBar: 4
+    firstBeatOffsetSec: 2.09
     key: G major
     keyConfidence: 0.049
+    beatTimes: []
   - id: pepitoria_theme_13
     title: Pepitoria Theme 13
     clip: {fileID: 8300000, guid: 8b7aed386bed88b4e8ea320f81ead54b, type: 3}
     bpm: 172.27
+    beatsPerBar: 4
     firstBeatOffsetSec: 1.602
     key: E major
     keyConfidence: 0.239
+    beatTimes: []
   - id: forest_main_theme
     title: Forest Main Theme
     clip: {fileID: 8300000, guid: cb6d8248295c3e947b80595668dd4aed, type: 3}
-    bpm: 78.30
+    bpm: 78.3
+    beatsPerBar: 4
     firstBeatOffsetSec: 22.059
     key: D major
     keyConfidence: 0.007
+    beatTimes: []
   sfxEntries:
   - id: inv_open
     clip: {fileID: 8300000, guid: cbc59960b603abf4f9d7e2d02e50a8bd, type: 3}

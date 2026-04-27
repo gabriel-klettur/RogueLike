@@ -35,5 +35,11 @@ namespace Valkur.Data
 
         [Tooltip("Confidence 0..1 of the key estimate (gap to second-best correlation).")]
         [Range(0f, 1f)] public float keyConfidence = 0f;
+
+        [Tooltip("Per-beat onsets in seconds from clip start, produced by analyze_music.py. " +
+                 "When non-empty the MusicBeatClock fires beats from these timestamps directly " +
+                 "(precise mode), so boss choreography lands on the actual musical beat even if " +
+                 "the song's tempo drifts. Empty = fall back to constant-BPM model.")]
+        public float[] beatTimes;
     }
 }

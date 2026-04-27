@@ -34,6 +34,16 @@ namespace Valkur.Infrastructure
         private int   _lastBeatIndex = -1;
         private float _beatTime;          // continuous beats since downbeat 0
 
+        // ── Precise mode (beat-map driven) ──────────────────────────────────
+        // When the active track was analysed by analyze_music.py we get the
+        // exact onset of every beat in seconds. Driving OnBeat from that array
+        // (instead of a constant-BPM model) keeps the clock locked to the song
+        // even when its tempo drifts. Falls back to BPM mode when null/empty
+        // or after a tap-tempo OverrideTempo() call.
+        private float[] _beatTimes;       // copy of MusicTrackEntry.beatTimes
+        private bool    _preciseMode;     // true when _beatTimes is usable
+        private int     _searchHint;      // last index searched (forward-scan optimisation)
+
         // ── Public API ──────────────────────────────────────────────────────
         public string TrackId       => _trackId ?? string.Empty;
         public string TrackTitle    => _trackTitle ?? string.Empty;
@@ -49,6 +59,17 @@ namespace Valkur.Infrastructure
         {
             get
             {
+                if (_preciseMode && _audio != null)
+                {
+                    // Phase = position within the [prev, next] beat window.
+                    int k = Mathf.Max(0, _lastBeatIndex);
+                    if (k + 1 >= _beatTimes.Length) return 0f;
+                    float t  = _audio.CurrentMusicTime;
+                    float t0 = _beatTimes[k];
+                    float t1 = _beatTimes[k + 1];
+                    if (t1 <= t0) return 0f;
+                    return Mathf.Clamp01((t - t0) / (t1 - t0));
+                }
                 if (_bpm <= 0f) return 0f;
                 float frac = _beatTime - Mathf.Floor(_beatTime);
                 return Mathf.Clamp01(frac);
@@ -56,7 +77,21 @@ namespace Valkur.Infrastructure
         }
 
         /// <summary>Total seconds per beat (60 / bpm). 0 if no BPM.</summary>
-        public float SecondsPerBeat => _bpm > 0f ? 60f / _bpm : 0f;
+        public float SecondsPerBeat
+        {
+            get
+            {
+                if (_preciseMode)
+                {
+                    int k = Mathf.Max(0, _lastBeatIndex);
+                    if (k + 1 < _beatTimes.Length) return Mathf.Max(0.001f, _beatTimes[k + 1] - _beatTimes[k]);
+                }
+                return _bpm > 0f ? 60f / _bpm : 0f;
+            }
+        }
+
+        /// <summary>True if the active track has a per-beat onset map (sample-accurate sync).</summary>
+        public bool HasBeatMap => _preciseMode;
 
         /// <summary>(beatIndex, beatInBar, bar). Fired exactly once per beat crossing.</summary>
         public event Action<int, int, int> OnBeat;
@@ -119,21 +154,68 @@ namespace Valkur.Infrastructure
             _offsetSec     = _audio != null ? _audio.CurrentTrackBeatOffsetSec : 0f;
             _lastBeatIndex = -1;
             _beatTime      = 0f;
+            _searchHint    = 0;
+
+            // Adopt the beat-map if the catalog provides one (precise mode).
+            float[] beats = _audio != null ? _audio.CurrentTrackBeatTimes : null;
+            _beatTimes  = beats;
+            _preciseMode = beats != null && beats.Length >= 2;
         }
 
         private void Update()
         {
             if (!_subscribed) TrySubscribe();
-            if (_audio == null || _bpm <= 0f) return;
+            if (_audio == null) return;
             if (!_audio.IsMusicPlaying) return;
 
-            float musicTime = _audio.CurrentMusicTime - _offsetSec;
-            if (musicTime < 0f)
+            float musicTime = _audio.CurrentMusicTime;
+
+            if (_preciseMode)
+            {
+                // Forward-scan from the last index; if we somehow seek backwards,
+                // re-anchor by binary search.
+                if (_lastBeatIndex >= 0 && _lastBeatIndex < _beatTimes.Length &&
+                    musicTime + 0.0005f < _beatTimes[_lastBeatIndex])
+                {
+                    _lastBeatIndex = -1;
+                    _searchHint    = 0;
+                }
+                int target = _lastBeatIndex;
+                int i = Mathf.Max(_searchHint, _lastBeatIndex + 1);
+                while (i < _beatTimes.Length && _beatTimes[i] <= musicTime)
+                {
+                    target = i;
+                    i++;
+                }
+                _searchHint = i;
+                if (target > _lastBeatIndex)
+                {
+                    for (int b = _lastBeatIndex + 1; b <= target; b++)
+                    {
+                        int beatInBar = b % _beatsPerBar;
+                        int bar       = b / _beatsPerBar;
+                        try { OnBeat?.Invoke(b, beatInBar, bar); }
+                        catch (Exception ex) { Debug.LogWarning($"[MusicBeatClock] OnBeat handler error: {ex.Message}"); }
+                        if (beatInBar == 0)
+                        {
+                            try { OnBar?.Invoke(bar); }
+                            catch (Exception ex) { Debug.LogWarning($"[MusicBeatClock] OnBar handler error: {ex.Message}"); }
+                        }
+                    }
+                    _lastBeatIndex = target;
+                }
+                return;
+            }
+
+            // ── Constant-BPM fallback ───────────────────────────────────────
+            if (_bpm <= 0f) return;
+            float t = musicTime - _offsetSec;
+            if (t < 0f)
             {
                 _beatTime = 0f;
                 return;
             }
-            _beatTime = musicTime * (_bpm / 60f);
+            _beatTime = t * (_bpm / 60f);
 
             int beatIndex = Mathf.FloorToInt(_beatTime);
             if (beatIndex > _lastBeatIndex)
@@ -165,6 +247,10 @@ namespace Valkur.Infrastructure
         /// </summary>
         public void OverrideTempo(float bpm, float offsetSec)
         {
+            // Manual tap-tempo override always drops out of precise mode — the user
+            // is intentionally retuning, so the imported beat-map no longer applies.
+            _preciseMode = false;
+            _beatTimes   = null;
             if (bpm > 0f) _bpm = bpm;
             if (offsetSec >= 0f) _offsetSec = offsetSec;
             // Re-anchor: don't replay missed beats from time 0 after a live retune.

@@ -181,8 +181,6 @@ namespace Valkur.Infrastructure
 
             float bpm        = entry != null ? entry.bpm         : 0f;
             int   beatsPerBar = entry != null ? Mathf.Max(1, entry.beatsPerBar) : 4;
-            // Apply persisted per-track tempo override (PlayerPrefs) before broadcasting.
-            bpm = GetEffectiveBpm(_currentTrackId, bpm);
             try
             {
                 OnTrackChanged?.Invoke(newId, newTitle, bpm, beatsPerBar);

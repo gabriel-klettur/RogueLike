@@ -73,6 +73,12 @@ namespace Valkur.UI.HUD
         private GameObject _spectrumPanel;
         private Image _expandIcon;
         private Button _expandBtn;
+        // Minimize: collapses the whole widget to a tiny pill with a single restore icon.
+        // Available in both simple and expanded modes — toggling restores the previous mode.
+        private bool _isMinimized;
+        private Button _minimizeBtn;
+        private Image _minimizeIcon;
+        private GameObject _resizeHandle;
         private Image[] _specBars;
         private float[] _specSmoothed;
         private float[] _specSamples;
@@ -113,39 +119,46 @@ namespace Valkur.UI.HUD
         private float _volumeBeforeMute = 0.7f;
 
         // ── Lifecycle ───────────────────────────────────────────────────────
-        // Per-mode size keys: simple and expanded modes are sized independently
-        // so toggling between them restores each one's last user-chosen extent.
-        private const string PrefKeyWSimple   = "valkur.musichud.width.simple";
-        private const string PrefKeyHSimple   = "valkur.musichud.height.simple";
-        private const string PrefKeyWExpanded = "valkur.musichud.width.expanded";
-        private const string PrefKeyHExpanded = "valkur.musichud.height.expanded";
-        // Legacy keys (single shared size) kept for one-shot migration.
-        private const string PrefKeyW         = "valkur.musichud.width";
-        private const string PrefKeyH         = "valkur.musichud.height";
-        private const string PrefKeyExpanded  = "valkur.musichud.expanded";
-        private const string PrefKeyAmplitude = "valkur.musichud.amplitude";
+        // Sizes are stored separately for simple vs expanded mode so each layout
+        // remembers its own preferred footprint.
+        private const string PrefKeyWSimple    = "valkur.musichud.simple.width";
+        private const string PrefKeyHSimple    = "valkur.musichud.simple.height";
+        private const string PrefKeyWExpanded  = "valkur.musichud.expanded.width";
+        private const string PrefKeyHExpanded  = "valkur.musichud.expanded.height";
+        private const string PrefKeyExpanded   = "valkur.musichud.expanded";
+        private const string PrefKeyMinimized  = "valkur.musichud.minimized";
+        private const string PrefKeyAmplitude  = "valkur.musichud.amplitude";
+        private const string PrefKeyVolume     = "valkur.musichud.volume";
+        // Per-track tempo overrides (tap-tempo persistence).
+        // Keys are prefixed with the track id so each song keeps its own calibration.
+        private const string PrefKeyTempoBpmFmt    = "valkur.musichud.tempo.{0}.bpm";
+        private const string PrefKeyTempoOffsetFmt = "valkur.musichud.tempo.{0}.offset";
 
-        private string PrefKeyWForMode => _isExpanded ? PrefKeyWExpanded : PrefKeyWSimple;
-        private string PrefKeyHForMode => _isExpanded ? PrefKeyHExpanded : PrefKeyHSimple;
+        // Cached per-mode sizes so toggling expand/collapse restores the prior footprint.
+        private float _simpleW   = 320f;
+        private float _simpleH   = 78f;
+        private float _expandedW = 320f;
+        private float _expandedH = 320f;
 
         private void Awake()
         {
-            // Restore last user-chosen expand state before building UI.
+            // Restore last user-chosen sizes (per-mode) + expand state before building UI.
             if (PlayerPrefs.HasKey(PrefKeyExpanded))
                 _isExpanded = PlayerPrefs.GetInt(PrefKeyExpanded) != 0;
-            // Migrate legacy single-size keys to the simple slot the first time.
-            if (PlayerPrefs.HasKey(PrefKeyW) && !PlayerPrefs.HasKey(PrefKeyWSimple))
-                PlayerPrefs.SetFloat(PrefKeyWSimple, PlayerPrefs.GetFloat(PrefKeyW));
-            if (PlayerPrefs.HasKey(PrefKeyH) && !PlayerPrefs.HasKey(PrefKeyHSimple))
-                PlayerPrefs.SetFloat(PrefKeyHSimple, PlayerPrefs.GetFloat(PrefKeyH));
-
-            // Load the size belonging to whichever mode we're starting in.
-            float defW = BaseW;
-            float defH = _isExpanded ? BaseHExpanded : BaseHSimple;
-            widgetWidth  = PlayerPrefs.GetFloat(PrefKeyWForMode, defW);
-            widgetHeight = PlayerPrefs.GetFloat(PrefKeyHForMode, defH);
+            if (PlayerPrefs.HasKey(PrefKeyMinimized))
+                _isMinimized = PlayerPrefs.GetInt(PrefKeyMinimized) != 0;
+            // Defaults if nothing persisted yet.
+            _simpleW   = PlayerPrefs.GetFloat(PrefKeyWSimple,   320f);
+            _simpleH   = PlayerPrefs.GetFloat(PrefKeyHSimple,   78f);
+            _expandedW = PlayerPrefs.GetFloat(PrefKeyWExpanded, 320f);
+            _expandedH = PlayerPrefs.GetFloat(PrefKeyHExpanded, 320f);
             if (PlayerPrefs.HasKey(PrefKeyAmplitude))
                 _waveformAmplitude = Mathf.Clamp(PlayerPrefs.GetFloat(PrefKeyAmplitude), 0.25f, 6f);
+            if (PlayerPrefs.HasKey(PrefKeyVolume))
+                _volumeBeforeMute = Mathf.Clamp(PlayerPrefs.GetFloat(PrefKeyVolume), 0f, 1f);
+            // Adopt the size belonging to the current mode.
+            widgetWidth  = _isExpanded ? _expandedW : _simpleW;
+            widgetHeight = _isExpanded ? _expandedH : _simpleH;
             widgetWidth  = Mathf.Clamp(widgetWidth,  minSize.x, maxSize.x);
             widgetHeight = Mathf.Clamp(widgetHeight, minSize.y, maxSize.y);
             BuildUI();
@@ -157,7 +170,15 @@ namespace Valkur.UI.HUD
             if (_audio != null)
             {
                 _audio.OnTrackChanged += HandleTrackChanged;
-                if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(_audio.MusicVolume);
+                // Restore persisted volume BEFORE syncing the slider so the AudioManager
+                // already plays at the saved level when the game starts.
+                float savedVol = PlayerPrefs.GetFloat(PrefKeyVolume, 0.7f);
+                _audio.SetMusicVolume(savedVol);
+                if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(savedVol);
+                // Catch-up: a track may already be playing when the HUD enables for
+                // the first time (HUD spawned mid-song). Re-apply any saved tempo
+                // override for that track so the user's calibration sticks.
+                ApplySavedTempoOverride(_audio.CurrentTrackId);
             }
         }
 
@@ -172,6 +193,33 @@ namespace Valkur.UI.HUD
             _flashTimer = 0.6f;
             string key = _audio != null ? _audio.CurrentTrackKey : null;
             UpdateStaticLabels(title, bpm, beatsPerBar, key);
+            // New song = clean tap-tempo buffer.
+            _tapTimes.Clear();
+            // If the user has previously calibrated this track via tap-tempo,
+            // re-apply that override so the live BPM/offset persist across plays.
+            ApplySavedTempoOverride(id);
+        }
+
+        private void ApplySavedTempoOverride(string trackId)
+        {
+            if (string.IsNullOrEmpty(trackId)) return;
+            string bpmKey = string.Format(PrefKeyTempoBpmFmt, trackId);
+            string offKey = string.Format(PrefKeyTempoOffsetFmt, trackId);
+            if (!PlayerPrefs.HasKey(bpmKey) || !PlayerPrefs.HasKey(offKey)) return;
+            float bpm = PlayerPrefs.GetFloat(bpmKey);
+            float off = PlayerPrefs.GetFloat(offKey);
+            if (bpm <= 0f) return;
+            if (_clock == null) _clock = MusicBeatClock.Instance;
+            // Defer one frame so MusicBeatClock has time to sync to the new track
+            // (its own HandleTrackChanged also fires on the same event).
+            StartCoroutine(ApplyOverrideNextFrame(bpm, off));
+        }
+
+        private System.Collections.IEnumerator ApplyOverrideNextFrame(float bpm, float off)
+        {
+            yield return null;
+            if (_clock == null) _clock = MusicBeatClock.Instance;
+            _clock?.OverrideTempo(bpm, off);
         }
 
         private void Update()
@@ -341,10 +389,21 @@ namespace Valkur.UI.HUD
                 float v = _volumeBeforeMute > 0.05f ? _volumeBeforeMute : 0.7f;
                 _audio.SetMusicVolume(v);
                 _volumeSlider.SetValueWithoutNotify(v);
+                PlayerPrefs.SetFloat(PrefKeyVolume, v);
+                PlayerPrefs.Save();
             }
         }
 
-        private void OnVolumeChanged(float v) { _audio?.SetMusicVolume(v); }
+        private void OnVolumeChanged(float v)
+        {
+            _audio?.SetMusicVolume(v);
+            // Persist non-zero volumes so the next session starts at the same level.
+            if (v > 0.001f)
+            {
+                PlayerPrefs.SetFloat(PrefKeyVolume, v);
+                PlayerPrefs.Save();
+            }
+        }
 
         // ── UI Build ────────────────────────────────────────────────────────
         private void BuildUI()
@@ -515,9 +574,13 @@ namespace Valkur.UI.HUD
 
             // Resize grip (top-left corner) — drag to resize
             BuildResizeHandle();
+            // Minimize button (top-right corner) — collapses to a tiny restore pill.
+            BuildMinimizeButton();
 
             // Apply initial expand state (built collapsed by default; toggle if persisted).
             ApplyExpandedState();
+            // Apply minimized state AFTER expand so the cached size is correct.
+            ApplyMinimizedState();
 
             // Re-clamp to current screen so a previously-saved size that no longer
             // fits the resolution is shrunk back into view on first show.
@@ -553,6 +616,94 @@ namespace Valkur.UI.HUD
 
             var handler = go.AddComponent<ResizeHandle>();
             handler.Init(this);
+            _resizeHandle = go;
+        }
+
+        // ── Minimize button ─────────────────────────────────────────────────
+        // Sits at the top-right corner of the root and is ALWAYS visible (even
+        // while minimized) so the user can always restore the player. Available
+        // in both simple and expanded modes per user request.
+        private void BuildMinimizeButton()
+        {
+            var go = NewChild("MinimizeBtn");
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot     = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-2f, -2f);
+            rt.sizeDelta = new Vector2(20f, 20f);
+
+            var bgImg = go.AddComponent<Image>();
+            bgImg.sprite = BuildRoundedRectSprite();
+            bgImg.type = Image.Type.Sliced;
+            bgImg.color = new Color(1f, 1f, 1f, 0.10f);
+
+            var btn = go.AddComponent<Button>();
+            var colors = btn.colors;
+            colors.normalColor      = new Color(1f, 1f, 1f, 1f);
+            colors.highlightedColor = new Color(1f, 0.95f, 0.55f, 1f);
+            colors.pressedColor     = new Color(0.95f, 0.78f, 0.25f, 1f);
+            colors.selectedColor    = new Color(1f, 1f, 1f, 1f);
+            colors.disabledColor    = new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            colors.colorMultiplier  = 1f;
+            colors.fadeDuration     = 0.10f;
+            btn.colors = colors;
+            btn.targetGraphic = bgImg;
+            btn.onClick.AddListener(OnMinimizeClicked);
+            _minimizeBtn = btn;
+
+            var iconGo = NewChild("MinimizeIcon", go.transform);
+            var ir = iconGo.GetComponent<RectTransform>();
+            ir.anchorMin = new Vector2(0.5f, 0.5f);
+            ir.anchorMax = new Vector2(0.5f, 0.5f);
+            ir.pivot     = new Vector2(0.5f, 0.5f);
+            ir.anchoredPosition = Vector2.zero;
+            ir.sizeDelta = new Vector2(12f, 12f);
+            _minimizeIcon = iconGo.AddComponent<Image>();
+            _minimizeIcon.sprite = SpriteMinus;
+            _minimizeIcon.color = new Color(1f, 1f, 1f, 0.95f);
+            _minimizeIcon.raycastTarget = false;
+            _minimizeIcon.preserveAspect = true;
+        }
+
+        private void OnMinimizeClicked()
+        {
+            // Going INTO minimized: cache the current footprint so restore comes back
+            // to the exact same size the user was using.
+            if (!_isMinimized) CacheSizeForCurrentMode();
+            _isMinimized = !_isMinimized;
+            ApplyMinimizedState();
+            PlayerPrefs.SetInt(PrefKeyMinimized, _isMinimized ? 1 : 0);
+            PlayerPrefs.Save();
+        }
+
+        // Tiny pill size shown when minimized: just the title text + restore button.
+        private const float MinimizedW = 28f;
+        private const float MinimizedH = 28f;
+
+        private void ApplyMinimizedState()
+        {
+            // Hide everything except the minimize button (which becomes "restore").
+            if (_simpleContent != null)  _simpleContent.SetActive(!_isMinimized);
+            if (_spectrumPanel != null)  _spectrumPanel.SetActive(!_isMinimized && _isExpanded);
+            if (_resizeHandle != null)   _resizeHandle.SetActive(!_isMinimized);
+
+            if (_minimizeIcon != null)
+                _minimizeIcon.sprite = _isMinimized ? SpriteChevronUp : SpriteMinus;
+
+            if (_isMinimized)
+            {
+                // Shrink root to a small square showing only the restore button.
+                if (_rt != null) _rt.sizeDelta = new Vector2(MinimizedW, MinimizedH);
+                if (_rt != null) _rt.localScale = Vector3.one;
+            }
+            else
+            {
+                // Restore the cached per-mode size.
+                widgetWidth  = _isExpanded ? _expandedW : _simpleW;
+                widgetHeight = _isExpanded ? _expandedH : _simpleH;
+                ApplyExpandedState();
+            }
         }
 
         // ── Spectrum panel (expanded mode) ──────────────────────────────────
@@ -687,7 +838,15 @@ namespace Valkur.UI.HUD
 
         private void OnExpandClicked()
         {
+            // Don't allow expand-toggle while minimized — the restore button is the
+            // only meaningful action in that state.
+            if (_isMinimized) return;
+            // Persist the size of the OUTGOING mode so each layout remembers its own footprint.
+            CacheSizeForCurrentMode();
             _isExpanded = !_isExpanded;
+            // Adopt the size cached for the INCOMING mode.
+            widgetWidth  = _isExpanded ? _expandedW : _simpleW;
+            widgetHeight = _isExpanded ? _expandedH : _simpleH;
             ApplyExpandedState();
             PlayerPrefs.SetInt(PrefKeyExpanded, _isExpanded ? 1 : 0);
             PlayerPrefs.Save();
@@ -701,6 +860,12 @@ namespace Valkur.UI.HUD
             // Re-clamp current pixel size in the new vertical reference frame.
             ApplySize(widgetWidth, widgetHeight);
             PersistSize();
+        }
+
+        private void CacheSizeForCurrentMode()
+        {
+            if (_isExpanded) { _expandedW = widgetWidth; _expandedH = widgetHeight; }
+            else             { _simpleW   = widgetWidth; _simpleH   = widgetHeight; }
         }
 
         // ── Spectrum data update ────────────────────────────────────────────
@@ -1056,12 +1221,15 @@ namespace Valkur.UI.HUD
         }
 
         // Called by the ResizeHandle on EndDrag to persist the choice.
-        // Persists into the slot belonging to the current expanded/simple mode
-        // so each mode keeps its own remembered size.
         internal void PersistSize()
         {
-            PlayerPrefs.SetFloat(PrefKeyWForMode, widgetWidth);
-            PlayerPrefs.SetFloat(PrefKeyHForMode, widgetHeight);
+            // Always cache the size for the mode we're currently in, then write
+            // the per-mode keys so the simple and expanded layouts stay independent.
+            CacheSizeForCurrentMode();
+            PlayerPrefs.SetFloat(PrefKeyWSimple,   _simpleW);
+            PlayerPrefs.SetFloat(PrefKeyHSimple,   _simpleH);
+            PlayerPrefs.SetFloat(PrefKeyWExpanded, _expandedW);
+            PlayerPrefs.SetFloat(PrefKeyHExpanded, _expandedH);
             PlayerPrefs.Save();
         }
 
@@ -1139,14 +1307,21 @@ namespace Valkur.UI.HUD
         }
 
         // ── Tap-tempo / live tempo override ──────────────────────────────────
-        // Buffer of the last few click timestamps used to estimate BPM.
-        private readonly System.Collections.Generic.List<float> _tapTimes = new System.Collections.Generic.List<float>(8);
+        // We store *music-time* timestamps (CurrentMusicTime) instead of wall-clock
+        // time so the BPM estimate is robust against pause/seek and matches the
+        // beat clock 1:1. Tap intervals are also folded over candidate beat-multiples
+        // ({1, 1/2, 2, 1/3, 3, 1/4, 4}) so the user can tap on any subdivision
+        // (eighths, half-notes…) and we still recover the song's true beat period.
+        private readonly System.Collections.Generic.List<float> _tapTimes = new System.Collections.Generic.List<float>(16);
         private const float TapResetSec = 2.0f; // gap longer than this resets the buffer
 
         /// <summary>
         /// Called by <see cref="BeatDotsTapHandler"/> on each pointer-up that wasn't a drag.
-        /// Builds a rolling tap-tempo estimate; once we have at least 2 taps the clock
-        /// is re-tuned and the most-recent tap becomes the new downbeat anchor.
+        /// Builds a rolling music-time tap window, derives a robust BPM via the median
+        /// inter-tap interval, snaps the latest tap to the nearest beat boundary so the
+        /// downbeat counter stays continuous, persists the result per-track, and fires
+        /// <see cref="MusicBeatClock.OverrideTempo"/> so the change applies to the rest
+        /// of the song.
         /// </summary>
         internal void RegisterBeatTap()
         {
@@ -1154,45 +1329,85 @@ namespace Valkur.UI.HUD
             if (_clock == null) _clock = MusicBeatClock.Instance;
             if (_clock == null) return;
 
-            float now = Time.unscaledTime;
-            // Reset the buffer if the user paused between taps.
+            // Music time is the right reference: ignores pause/scale and matches the clock.
+            float now = _audio.CurrentMusicTime;
             if (_tapTimes.Count > 0 && now - _tapTimes[_tapTimes.Count - 1] > TapResetSec)
                 _tapTimes.Clear();
             _tapTimes.Add(now);
-            // Keep only the most recent ~6 taps for a stable, responsive average.
-            const int MaxTaps = 6;
+            const int MaxTaps = 12;
             if (_tapTimes.Count > MaxTaps) _tapTimes.RemoveRange(0, _tapTimes.Count - MaxTaps);
             if (_tapTimes.Count < 2) return;
 
-            // Average inter-tap interval → BPM.
-            float total = _tapTimes[_tapTimes.Count - 1] - _tapTimes[0];
-            int intervals = _tapTimes.Count - 1;
-            if (total <= 0f || intervals <= 0) return;
-            float secPerBeat = total / intervals;
-            if (secPerBeat <= 0.05f) return; // ignore impossibly fast taps
-            float bpm = Mathf.Clamp(60f / secPerBeat, 40f, 240f);
+            // Median inter-tap interval (robust to one mistimed tap).
+            int n = _tapTimes.Count - 1;
+            var ipi = new float[n];
+            for (int i = 0; i < n; i++) ipi[i] = _tapTimes[i + 1] - _tapTimes[i];
+            System.Array.Sort(ipi);
+            float medianIpi = (n % 2 == 1) ? ipi[n / 2] : 0.5f * (ipi[n / 2 - 1] + ipi[n / 2]);
+            if (medianIpi <= 0.05f) return; // impossibly fast taps
 
-            // Anchor the downbeat to the latest tap: offset = currentMusicTime - 0
-            // (so when the clock reads currentMusicTime, beat 0 fires immediately).
-            float musicTime = _audio.CurrentMusicTime;
-            // Snap to the nearest existing beat-grid offset within the same bar so the
-            // dots stay roughly aligned to bars, not jumping randomly.
-            float offset = Mathf.Max(0f, musicTime);
-            _clock.OverrideTempo(bpm, offset);
+            // Try multiple beat-multiples and keep the BPM closest (in log space) to the
+            // existing one — lets the user tap halves/quarters/eighths interchangeably.
+            float[] mults = { 1f, 0.5f, 2f, 1f / 3f, 3f, 0.25f, 4f };
+            float currentBpm = _clock.Bpm > 0f ? _clock.Bpm : 120f;
+            float bestBpm = currentBpm;
+            float bestErr = float.MaxValue;
+            for (int i = 0; i < mults.Length; i++)
+            {
+                float secPerBeat = medianIpi * mults[i];
+                float candidate  = 60f / secPerBeat;
+                if (candidate < 40f || candidate > 240f) continue;
+                float err = Mathf.Abs(Mathf.Log(candidate / currentBpm));
+                if (err < bestErr) { bestErr = err; bestBpm = candidate; }
+            }
+
+            // Snap the latest tap to the nearest beat: choose offset so the rounded
+            // beat index k = round((tap - prevOffset) / secPerBeat) lands exactly on
+            // the tap. Keeps the bar/beat counter continuous instead of jumping.
+            float secPerBeat2 = 60f / bestBpm;
+            float prevOffset  = _clock.FirstBeatOffsetSec;
+            float relTap      = now - prevOffset;
+            int   k           = Mathf.Max(0, Mathf.RoundToInt(relTap / secPerBeat2));
+            float newOffset   = now - k * secPerBeat2;
+            while (newOffset < 0f)           newOffset += secPerBeat2;
+            while (newOffset >= secPerBeat2) newOffset -= secPerBeat2;
+
+            _clock.OverrideTempo(bestBpm, newOffset);
+
+            // Only persist once we have a stable estimate (>=3 taps) so a single
+            // accidental click doesn't permanently retune the track.
+            if (_tapTimes.Count >= 3)
+            {
+                string trackId = _audio.CurrentTrackId;
+                if (!string.IsNullOrEmpty(trackId))
+                {
+                    PlayerPrefs.SetFloat(string.Format(PrefKeyTempoBpmFmt,    trackId), bestBpm);
+                    PlayerPrefs.SetFloat(string.Format(PrefKeyTempoOffsetFmt, trackId), newOffset);
+                    PlayerPrefs.Save();
+                }
+            }
         }
 
         /// <summary>
         /// Called by <see cref="BeatDotsTapHandler"/> while the user drags. Horizontal delta
         /// fine-tunes BPM (right = faster), vertical delta fine-tunes the first-beat offset.
+        /// Persisted per-track so manual tweaks survive across plays.
         /// </summary>
         internal void AdjustTempoByDrag(Vector2 deltaPixels)
         {
             if (_clock == null) _clock = MusicBeatClock.Instance;
             if (_clock == null || _clock.Bpm <= 0f) return;
-            // ~0.2 BPM per pixel of horizontal drag; ~0.005s per pixel of vertical drag.
             float bpm = Mathf.Clamp(_clock.Bpm + deltaPixels.x * 0.2f, 40f, 240f);
             float off = Mathf.Max(0f, _clock.FirstBeatOffsetSec - deltaPixels.y * 0.005f);
             _clock.OverrideTempo(bpm, off);
+            string trackId = _audio != null ? _audio.CurrentTrackId : null;
+            if (!string.IsNullOrEmpty(trackId))
+            {
+                // PlayerPrefs writes are coalesced; one Save() per drag burst is enough,
+                // but Unity's Save is cheap so we just write each tick.
+                PlayerPrefs.SetFloat(string.Format(PrefKeyTempoBpmFmt,    trackId), bpm);
+                PlayerPrefs.SetFloat(string.Format(PrefKeyTempoOffsetFmt, trackId), off);
+            }
         }
 
         private void BuildVolumeSlider(float x, float y)
@@ -1364,6 +1579,8 @@ namespace Valkur.UI.HUD
         private static Sprite SpriteSpeakerMute { get { if (_sSpeakerMute == null) _sSpeakerMute = BuildSpeakerSprite(true);  return _sSpeakerMute; } }
         private static Sprite SpriteChevronUp   { get { if (_sChevUp      == null) _sChevUp      = BuildChevronSprite(true);  return _sChevUp; } }
         private static Sprite SpriteChevronDown { get { if (_sChevDown    == null) _sChevDown    = BuildChevronSprite(false); return _sChevDown; } }
+        private static Sprite _sMinus;
+        private static Sprite SpriteMinus       { get { if (_sMinus       == null) _sMinus       = BuildMinusSprite();        return _sMinus; } }
 
         private const int IcoN = 32;
 
@@ -1461,6 +1678,15 @@ namespace Valkur.UI.HUD
             // Second V
             DrawLineAA(px, IcoN, new Vector2(cx - w, y2 + dy), new Vector2(cx, y2), t);
             DrawLineAA(px, IcoN, new Vector2(cx,     y2),       new Vector2(cx + w, y2 + dy), t);
+            return SpriteFromBuffer(px);
+        }
+
+        // A simple horizontal bar — universal "minimize / hide" affordance.
+        private static Sprite BuildMinusSprite()
+        {
+            var px = NewIconBuffer();
+            float cy = IcoN * 0.5f;
+            DrawLineAA(px, IcoN, new Vector2(7f, cy), new Vector2(IcoN - 7f, cy), 2.4f);
             return SpriteFromBuffer(px);
         }
 

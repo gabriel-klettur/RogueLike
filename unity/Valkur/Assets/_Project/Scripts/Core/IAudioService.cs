@@ -70,6 +70,13 @@ namespace Valkur.Core
         int CurrentTrackBeatsPerBar { get; }
         /// <summary>Offset in seconds from clip start to the first downbeat.</summary>
         float CurrentTrackBeatOffsetSec { get; }
+        /// <summary>
+        /// Per-beat onset timestamps (seconds from clip start) for the current track,
+        /// or <c>null</c> if no beat-map was imported. Populated by
+        /// <c>analyze_music.py</c> via <c>MusicAnalysisImporter</c> and consumed by
+        /// <see cref="Valkur.Infrastructure.MusicBeatClock"/> for sample-accurate sync.
+        /// </summary>
+        float[] CurrentTrackBeatTimes { get; }
         /// <summary>Estimated musical key (e.g. "C major"). Empty if unknown.</summary>
         string CurrentTrackKey { get; }
         /// <summary>Playback time of the active music source (seconds since clip start).</summary>
@@ -77,14 +84,6 @@ namespace Valkur.Core
 
         /// <summary>Seek the active music source to <paramref name="seconds"/> (clamped to clip length).</summary>
         void SeekMusic(float seconds);
-
-        /// <summary>
-        /// Persistently override BPM and first-beat offset for the given track id.
-        /// Stored in PlayerPrefs so the override survives app restarts. Pass
-        /// <paramref name="bpm"/> &lt;= 0 to clear the override.
-        /// Re-emits <c>OnTrackChanged</c> if the override applies to the active track.
-        /// </summary>
-        void SetTrackTempoOverride(string trackId, float bpm, float firstBeatOffsetSec);
 
         /// <summary>
         /// Fill <paramref name="buffer"/> with the spectrum (FFT magnitudes) of the

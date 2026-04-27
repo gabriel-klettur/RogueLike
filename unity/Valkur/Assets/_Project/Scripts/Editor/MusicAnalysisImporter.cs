@@ -94,6 +94,7 @@ namespace Valkur.Editor
                     t.firstBeatOffsetSec = (float)GetDouble(data, "first_beat_offset_sec", t.firstBeatOffsetSec);
                     t.key                = GetString(data, "key", t.key);
                     t.keyConfidence      = (float)GetDouble(data, "key_confidence",     t.keyConfidence);
+                    t.beatTimes          = GetFloatArray(data, "beat_times", t.beatTimes);
                     updated++;
                 }
 
@@ -140,6 +141,22 @@ namespace Valkur.Editor
                         System.Globalization.CultureInfo.InvariantCulture,
                         out var parsed) ? parsed : fallback;
             }
+        }
+
+        // MiniJson surfaces JSON arrays as List<object>; convert to a typed float[]
+        // for the SO field. Returns the fallback if the key is missing/empty so we
+        // don't wipe an existing beat-map by importing an old report.
+        private static float[] GetFloatArray(Dictionary<string, object> d, string key, float[] fallback)
+        {
+            if (d == null || !d.TryGetValue(key, out var v) || !(v is List<object> list) || list.Count == 0)
+                return fallback;
+            var result = new float[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                result[i] = (float)GetDouble(
+                    new Dictionary<string, object> { { "_", list[i] } }, "_", 0.0);
+            }
+            return result;
         }
     }
 }
