@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
@@ -18,6 +21,9 @@ namespace Valkur.Gameplay.Spells
     public partial class SpellsRuntimeEditor : SingletonMonoBehaviour<SpellsRuntimeEditor>, GameEditorManager.IGameEditor
     {
         private bool _propsFormSubscribed;
+        private bool _applyingProperty;
+        private bool _assetsTabBuilt;
+        private Button _browseSpriteBtn;
 
         private void RefreshPropertiesForm()
         {
@@ -138,6 +144,14 @@ namespace Valkur.Gameplay.Spells
             if (_uiRefs.AssetNameTmp != null)
                 _uiRefs.AssetNameTmp.text = "(no spell selected)";
 
+            // Build the Browse... button once.
+            if (!_assetsTabBuilt && _uiRefs.PropsAssetsRoot != null)
+            {
+                _browseSpriteBtn = EditorUIHelpers.MakeButton(
+                    _uiRefs.PropsAssetsRoot, "Browse…", OpenSpriteBrowser, 28f);
+                _assetsTabBuilt = true;
+            }
+
             if (string.IsNullOrEmpty(_selectedKey) || _catalog == null) return;
             if (!_catalog.TryGet(_selectedKey, out var s) || s == null) return;
 
@@ -151,11 +165,260 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
+        // ── Property mutation (reflection + Undo) ──
+
         private void OnPropertyChanged(string key, object val)
         {
-            // PHASE 1 stub — DO NOT mutate the SpellDefinition.
-            Debug.Log($"[SpellsEditor] Edit captured: {key} = {val} (not yet persisted)");
-            SetStatus($"Edited {key} (not yet persisted)");
+            if (_applyingProperty) return;
+            if (string.IsNullOrEmpty(key)) return;
+            if (_catalog == null || string.IsNullOrEmpty(_selectedKey))
+            {
+                Toast("No spell selected.");
+                return;
+            }
+            if (!_catalog.TryGet(_selectedKey, out var s) || s == null)
+            {
+                Toast("No spell selected.");
+                return;
+            }
+
+            var fi = typeof(SpellDefinition).GetField(key,
+                BindingFlags.Public | BindingFlags.Instance);
+            if (fi == null)
+            {
+                Debug.LogWarning($"[SpellsEditor] Field '{key}' not found on SpellDefinition.");
+                return;
+            }
+
+            object oldValue = fi.GetValue(s);
+            object newValue;
+            try { newValue = ConvertValue(val, fi.FieldType); }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SpellsEditor] Convert failed for '{key}': {ex.Message}");
+                return;
+            }
+
+            if (object.Equals(oldValue, newValue)) return;
+
+            // Special validation for spellKey rename (uniqueness).
+            if (key == "spellKey")
+            {
+                var newKey = (newValue as string ?? "").Trim();
+                if (string.IsNullOrEmpty(newKey))
+                {
+                    _applyingProperty = true;
+                    try { _uiRefs.PropsForm?.SetValue(key, oldValue); }
+                    finally { _applyingProperty = false; }
+                    EditorModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
+                    return;
+                }
+                if (!string.Equals(newKey, (string)oldValue, StringComparison.OrdinalIgnoreCase)
+                    && _catalog.TryGet(newKey, out var existing) && existing != null && existing != s)
+                {
+                    _applyingProperty = true;
+                    try { _uiRefs.PropsForm?.SetValue(key, oldValue); }
+                    finally { _applyingProperty = false; }
+                    EditorModal.Message(_canvas.transform, "Duplicate key",
+                        $"A spell with key '{newKey}' already exists.");
+                    return;
+                }
+                newValue = newKey;
+            }
+
+            ApplyFieldChange(s, fi, oldValue, newValue, key);
+        }
+
+        private void ApplyFieldChange(SpellDefinition s, FieldInfo fi,
+            object oldValue, object newValue, string key)
+        {
+            // Apply the change immediately.
+            _applyingProperty = true;
+            try { fi.SetValue(s, newValue); }
+            finally { _applyingProperty = false; }
+
+            string labelKey = key;
+            // Capture target identity for undo (in case spellKey changed).
+            var targetSpell = s;
+
+            _undo.Do(new UndoStack.LambdaCommand(
+                $"Edit {labelKey}",
+                doAction: () =>
+                {
+                    _applyingProperty = true;
+                    try { fi.SetValue(targetSpell, newValue); }
+                    finally { _applyingProperty = false; }
+                    if (key == "spellKey") _selectedKey = newValue as string;
+                    RefreshAfterMutation();
+                },
+                undoAction: () =>
+                {
+                    _applyingProperty = true;
+                    try { fi.SetValue(targetSpell, oldValue); }
+                    finally { _applyingProperty = false; }
+                    if (key == "spellKey") _selectedKey = oldValue as string;
+                    RefreshAfterMutation();
+                }));
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(s);
+#endif
+
+            // Side effects per key.
+            if (key == "spellKey")
+            {
+                _selectedKey = newValue as string;
+                RefreshAfterMutation();
+            }
+            else if (key == "type")
+            {
+                _catalog.SetSpellsRuntime(_catalog.AllSpells);
+                RefreshPropertiesForm();
+            }
+            else if (key == "displayName")
+            {
+                _catalog.SetSpellsRuntime(_catalog.AllSpells);
+                RefreshPicker();
+            }
+            else
+            {
+                _catalog.SetSpellsRuntime(_catalog.AllSpells);
+            }
+
+            Toast($"Edited {key} = {FormatVal(newValue)}");
+        }
+
+        internal void RefreshAfterMutation()
+        {
+            if (_catalog != null) _catalog.SetSpellsRuntime(_catalog.AllSpells);
+            RefreshPicker();
+            RefreshPropertiesForm();
+        }
+
+        private static string FormatVal(object v)
+        {
+            if (v == null) return "<null>";
+            if (v is UnityEngine.Object u) return u.name;
+            return v.ToString();
+        }
+
+        // ── Type conversion (form widget → SpellDefinition field) ──
+
+        private static object ConvertValue(object val, Type targetType)
+        {
+            if (targetType.IsEnum)
+            {
+                if (val is int i) return Enum.ToObject(targetType, i);
+                if (val is string s) return Enum.Parse(targetType, s);
+                return Enum.ToObject(targetType, System.Convert.ToInt32(val));
+            }
+            if (targetType == typeof(float))
+            {
+                if (val is float f) return f;
+                if (val is int i) return (float)i;
+                if (val is double d) return (float)d;
+                if (val is string s) { float.TryParse(s, out var p); return p; }
+                return System.Convert.ToSingle(val);
+            }
+            if (targetType == typeof(int))
+            {
+                if (val is int i) return i;
+                if (val is float f) return Mathf.RoundToInt(f);
+                if (val is string s) { int.TryParse(s, out var p); return p; }
+                return System.Convert.ToInt32(val);
+            }
+            if (targetType == typeof(bool))
+            {
+                if (val is bool b) return b;
+                if (val is string s) { bool.TryParse(s, out var p); return p; }
+                return System.Convert.ToBoolean(val);
+            }
+            if (targetType == typeof(string))
+            {
+                return val?.ToString() ?? string.Empty;
+            }
+            // Reference types (e.g. Sprite) — assign as-is.
+            return val;
+        }
+
+        // ── Sprite browser modal ──
+
+        private void OpenSpriteBrowser()
+        {
+            if (_catalog == null) return;
+            if (string.IsNullOrEmpty(_selectedKey))
+            {
+                Toast("Browse: select a spell first.");
+                return;
+            }
+            if (!_catalog.TryGet(_selectedKey, out var s) || s == null) return;
+
+            var modal = EditorUIHelpers.CreateUI("__SpellSpriteBrowser", _canvas.transform);
+            var mr = modal.GetComponent<RectTransform>();
+            mr.anchorMin = Vector2.zero; mr.anchorMax = Vector2.one;
+            mr.offsetMin = Vector2.zero; mr.offsetMax = Vector2.zero;
+            var shade = modal.AddComponent<Image>();
+            shade.color = new Color(0f, 0f, 0f, 0.65f);
+            shade.raycastTarget = true;
+
+            var card = EditorUIHelpers.MakePanel("Card", modal.transform,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, new Vector2(560f, 480f));
+            var vlg = card.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 8f; vlg.padding = new RectOffset(12, 12, 10, 10);
+            vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
+            vlg.childControlWidth = true; vlg.childControlHeight = true;
+
+            EditorUIHelpers.MakeTitleBar(card.transform, "Select Sprite", 28f);
+
+            var gridHost = EditorUIHelpers.CreateUI("GridHost", card.transform);
+            var gle = gridHost.AddComponent<LayoutElement>();
+            gle.preferredHeight = 380f; gle.flexibleHeight = 1f; gle.flexibleWidth = 1f;
+            var grid = AssetThumbnailGrid.Create(gridHost.transform, "Grid", 5, 72f);
+
+            var entries = new List<AssetThumbnailGrid.Entry>();
+            var seen = new HashSet<Sprite>();
+            foreach (var sp in _catalog.AllSpells)
+            {
+                if (sp != null && sp.sprite != null && seen.Add(sp.sprite))
+                    entries.Add(new AssetThumbnailGrid.Entry
+                    { Id = sp.sprite.name, Label = sp.sprite.name, Thumb = sp.sprite, Data = sp.sprite });
+            }
+            var loaded = Resources.LoadAll<Sprite>("Spells");
+            if (loaded != null)
+            {
+                foreach (var sp in loaded)
+                {
+                    if (sp != null && seen.Add(sp))
+                        entries.Add(new AssetThumbnailGrid.Entry
+                        { Id = sp.name, Label = sp.name, Thumb = sp, Data = sp });
+                }
+            }
+            grid.SetEntries(entries);
+            if (s.sprite != null) grid.SelectById(s.sprite.name);
+
+            var rowGo = EditorUIHelpers.CreateUI("Row", card.transform);
+            rowGo.AddComponent<LayoutElement>().preferredHeight = 32f;
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 8f; hlg.childForceExpandWidth = true;
+            EditorUIHelpers.MakeButton(rowGo.transform, "Cancel", () =>
+            {
+                if (modal != null) Destroy(modal);
+            });
+
+            grid.SelectionChanged += entry =>
+            {
+                var newSprite = entry?.Data as Sprite;
+                if (modal != null) Destroy(modal);
+
+                var fi = typeof(SpellDefinition).GetField("sprite",
+                    BindingFlags.Public | BindingFlags.Instance);
+                if (fi == null) return;
+                var oldSprite = s.sprite;
+                if (oldSprite == newSprite) return;
+                ApplyFieldChange(s, fi, oldSprite, newSprite, "sprite");
+                UpdateAssetsTab();
+            };
         }
 
         private static void AddSectionHeader(PropertyForm form, string text)

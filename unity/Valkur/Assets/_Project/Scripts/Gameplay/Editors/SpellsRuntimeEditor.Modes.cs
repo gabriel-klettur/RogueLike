@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.Editors.EditorKit;
 
@@ -17,22 +21,82 @@ namespace Valkur.Gameplay.Spells
 
         private void OnAddSpell()
         {
+            if (_catalog == null) { Toast("No catalog assigned."); return; }
+
             EditorModal.Prompt(_canvas.transform, "New Spell — key:", "new_spell",
                 onOk: v =>
                 {
                     var key = (v ?? string.Empty).Trim();
-                    Debug.Log($"[SpellsEditor] Add Spell stub — key='{key}'");
-                    SetStatus($"Add Spell — phase 2 (key={key})");
-                    // Phase 1: undo command is a no-op log so the stack isn't empty.
-                    _undo.Do(new UndoStack.LambdaCommand(
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        EditorModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
+                        return;
+                    }
+                    if (_catalog.TryGet(key, out var existing) && existing != null)
+                    {
+                        EditorModal.Message(_canvas.transform, "Duplicate key",
+                            $"A spell with key '{key}' already exists.");
+                        return;
+                    }
+
+                    var s = ScriptableObject.CreateInstance<SpellDefinition>();
+                    s.name        = key;
+                    s.spellKey    = key;
+                    s.displayName = key;
+                    s.type        = SpellType.Projectile;
+
+                    var current = _catalog.AllSpells ?? System.Array.Empty<SpellDefinition>();
+                    var appended = current.Concat(new[] { s }).ToArray();
+                    _catalog.SetSpellsRuntime(appended);
+
+#if UNITY_EDITOR
+                    const string SPELL_DIR = "Assets/_Project/Data/Catalogs/Spells";
+                    if (!UnityEditor.AssetDatabase.IsValidFolder(SPELL_DIR))
+                    {
+                        var parent = "Assets/_Project/Data/Catalogs";
+                        if (!UnityEditor.AssetDatabase.IsValidFolder(parent))
+                        {
+                            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/_Project/Data"))
+                                UnityEditor.AssetDatabase.CreateFolder("Assets/_Project", "Data");
+                            UnityEditor.AssetDatabase.CreateFolder("Assets/_Project/Data", "Catalogs");
+                        }
+                        UnityEditor.AssetDatabase.CreateFolder(parent, "Spells");
+                    }
+                    var assetPath = $"{SPELL_DIR}/{key}.asset";
+                    UnityEditor.AssetDatabase.CreateAsset(s, assetPath);
+                    UnityEditor.EditorUtility.SetDirty(_catalog);
+                    UnityEditor.AssetDatabase.SaveAssets();
+#endif
+
+                    _undo.Record(new UndoStack.LambdaCommand(
                         $"Add '{key}'",
-                        () => Debug.Log($"[SpellsEditor] (stub) redo Add '{key}'"),
-                        () => Debug.Log($"[SpellsEditor] (stub) undo Add '{key}'")));
+                        doAction: () =>
+                        {
+                            var arr = _catalog.AllSpells.Concat(new[] { s }).ToArray();
+                            _catalog.SetSpellsRuntime(arr);
+                            _selectedKey = key;
+                            RefreshPicker();
+                            RefreshPropertiesForm();
+                        },
+                        undoAction: () =>
+                        {
+                            var arr = _catalog.AllSpells.Where(x => x != s).ToArray();
+                            _catalog.SetSpellsRuntime(arr);
+                            if (_selectedKey == key) _selectedKey = null;
+                            RefreshPicker();
+                            RefreshPropertiesForm();
+                        }));
+
+                    _selectedKey = key;
+                    RefreshPicker();
+                    RefreshPropertiesForm();
+                    Toast($"Added '{key}'");
                 });
         }
 
         private void OnRemoveSpell()
         {
+            if (_catalog == null) { Toast("No catalog assigned."); return; }
             if (string.IsNullOrEmpty(_selectedKey))
             {
                 Toast("Remove: select a spell first.");
@@ -41,15 +105,51 @@ namespace Valkur.Gameplay.Spells
             var key = _selectedKey;
             EditorModal.Confirm(_canvas.transform,
                 "Delete spell?",
-                $"Are you sure you want to delete '{key}'?\nThis is a phase-1 stub — no data will be modified.",
+                $"Are you sure you want to delete '{key}'?",
                 onOk: () =>
                 {
-                    Debug.Log($"[SpellsEditor] Remove Spell stub — key='{key}'");
-                    SetStatus($"Remove Spell — phase 2 (key={key})");
-                    _undo.Do(new UndoStack.LambdaCommand(
+                    if (!_catalog.TryGet(key, out var removed) || removed == null)
+                    {
+                        Toast($"'{key}' not found.");
+                        return;
+                    }
+                    int removedIndex = System.Array.IndexOf(_catalog.AllSpells, removed);
+                    var newArr = _catalog.AllSpells.Where(x => x != removed).ToArray();
+                    _catalog.SetSpellsRuntime(newArr);
+
+#if UNITY_EDITOR
+                    var path = UnityEditor.AssetDatabase.GetAssetPath(removed);
+                    if (!string.IsNullOrEmpty(path))
+                        UnityEditor.AssetDatabase.DeleteAsset(path);
+                    UnityEditor.EditorUtility.SetDirty(_catalog);
+                    UnityEditor.AssetDatabase.SaveAssets();
+#endif
+
+                    _undo.Record(new UndoStack.LambdaCommand(
                         $"Remove '{key}'",
-                        () => Debug.Log($"[SpellsEditor] (stub) redo Remove '{key}'"),
-                        () => Debug.Log($"[SpellsEditor] (stub) undo Remove '{key}'")));
+                        doAction: () =>
+                        {
+                            var arr = _catalog.AllSpells.Where(x => x != removed).ToArray();
+                            _catalog.SetSpellsRuntime(arr);
+                            if (_selectedKey == key) _selectedKey = null;
+                            RefreshPicker();
+                            RefreshPropertiesForm();
+                        },
+                        undoAction: () =>
+                        {
+                            var list = new List<SpellDefinition>(_catalog.AllSpells);
+                            int idx = Mathf.Clamp(removedIndex, 0, list.Count);
+                            list.Insert(idx, removed);
+                            _catalog.SetSpellsRuntime(list.ToArray());
+                            _selectedKey = key;
+                            RefreshPicker();
+                            RefreshPropertiesForm();
+                        }));
+
+                    _selectedKey = null;
+                    RefreshPicker();
+                    RefreshPropertiesForm();
+                    Toast($"Removed '{key}'");
                 });
         }
 
@@ -57,14 +157,57 @@ namespace Valkur.Gameplay.Spells
 
         private void OnSave()
         {
-            Debug.Log("[SpellsEditor] Save stub — would persist to JSON in phase 2.");
-            SetStatus("Save — phase 2");
+#if UNITY_EDITOR
+            if (_catalog == null) { Toast("No catalog assigned."); return; }
+            int n = 0;
+            foreach (var s in _catalog.AllSpells)
+            {
+                if (s == null) continue;
+                UnityEditor.EditorUtility.SetDirty(s);
+                n++;
+            }
+            UnityEditor.EditorUtility.SetDirty(_catalog);
+            UnityEditor.AssetDatabase.SaveAssets();
+            Toast($"Saved {n} spells");
+#else
+            Toast("Save not supported in build (use Unity Editor)");
+#endif
         }
 
         private void OnReload()
         {
-            Debug.Log("[SpellsEditor] Reload stub — would reload catalog from JSON in phase 2.");
-            SetStatus("Reload — phase 2");
+#if UNITY_EDITOR
+            try
+            {
+                var t = System.Type.GetType("Valkur.Editor.SpellDataImporter, Valkur.Editor");
+                if (t == null)
+                {
+                    Toast("Reload: SpellDataImporter not found.");
+                    return;
+                }
+                var m = t.GetMethod("ImportAll",
+                    BindingFlags.Public | BindingFlags.Static);
+                if (m == null)
+                {
+                    Toast("Reload: ImportAll() not found.");
+                    return;
+                }
+                m.Invoke(null, null);
+                if (_catalog != null) _catalog.SetSpellsRuntime(_catalog.AllSpells);
+                _selectedKey = null;
+                _undo.Clear();
+                RefreshPicker();
+                RefreshPropertiesForm();
+                Toast("Reloaded from JSON");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+                Toast("Reload failed: " + ex.Message);
+            }
+#else
+            Toast("Reload requires Editor mode");
+#endif
         }
 
         // ── Undo / Redo ──

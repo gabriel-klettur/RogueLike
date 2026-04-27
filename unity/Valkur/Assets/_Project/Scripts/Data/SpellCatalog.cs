@@ -70,5 +70,15 @@ namespace Valkur.Data
             UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif
+
+        /// <summary>
+        /// Runtime-safe: replace the spells array and clear the lookup cache.
+        /// Used by the in-game F4 Spells Editor.
+        /// </summary>
+        public void SetSpellsRuntime(SpellDefinition[] newSpells)
+        {
+            spells = newSpells ?? System.Array.Empty<SpellDefinition>();
+            _lookup = null;
+        }
     }
 }

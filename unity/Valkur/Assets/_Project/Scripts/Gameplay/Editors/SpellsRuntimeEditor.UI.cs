@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.TileEditor;
 
 namespace Valkur.Gameplay.Spells
 {
