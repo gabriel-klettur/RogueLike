@@ -94,7 +94,7 @@ namespace Valkur.Gameplay.TileEditor
             _selectedCell = cell.HasValue ? new Vector2Int(cell.Value.x, cell.Value.y) : (Vector2Int?)null;
         }
 
-        /// <summary>Set the brush size used to render the cyan hover and green selection borders (1–5).</summary>
+        /// <summary>Set the brush size used to render the cyan hover and green selection borders (1–25).</summary>
         public void SetBrushSize(int size) => _brushSize = Mathf.Max(1, size);
 
         /// <summary>Set the active tool so stroke cells are tinted yellow (Brush/Erase) or green (Select).</summary>

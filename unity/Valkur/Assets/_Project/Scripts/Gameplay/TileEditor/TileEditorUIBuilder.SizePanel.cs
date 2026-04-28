@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.TileEditor
         private static float SizeY => PANEL_TOP_OFFSET;
 
         private const int MinBrushSize = 1;
-        private const int MaxBrushSize = 5;
+        private const int MaxBrushSize = 25;
 
         private static void BuildSizeDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged)
@@ -54,15 +54,16 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildSizePresetRow(Transform parent, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged)
         {
-            var row = CreateUI("PresetRow", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 32f;
-            var h = row.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 4f;
-            h.childForceExpandWidth = true;
-            h.childForceExpandHeight = true;
-            h.childControlWidth = true;
-            h.childControlHeight = true;
-            h.padding = new RectOffset(2, 2, 0, 0);
+            var gridContainer = CreateUI("PresetGrid", parent);
+            gridContainer.AddComponent<LayoutElement>().preferredHeight = 140f; // 5 rows * ~28px each
+            
+            var grid = gridContainer.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(32f, 26f); // Smaller buttons for grid
+            grid.spacing = new Vector2(2f, 2f);
+            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.childAlignment = TextAnchor.UpperLeft;
+            grid.padding = new RectOffset(2, 2, 2, 2);
 
             // Snapshot the lists (we're inside a `ref refs` scope but we can't capture
             // ref locals in lambdas — so reassign back at the end; lists are reference types).
@@ -72,7 +73,7 @@ namespace Valkur.Gameplay.TileEditor
             for (int i = MinBrushSize; i <= MaxBrushSize; i++)
             {
                 int size = i; // capture
-                var btnGo = CreateUI($"Size_{size}", row.transform);
+                var btnGo = CreateUI($"Size_{size}", gridContainer.transform);
                 var img = btnGo.AddComponent<Image>();
                 img.color = (size == state.BrushSize) ? BTN_ACTIVE : BTN_NORMAL;
 
@@ -92,9 +93,10 @@ namespace Valkur.Gameplay.TileEditor
                 lblRect.anchorMax = Vector2.one;
                 lblRect.offsetMin = Vector2.zero;
                 lblRect.offsetMax = Vector2.zero;
+
                 var tmp = lblGo.AddComponent<TextMeshProUGUI>();
-                tmp.text = $"{size}x{size}";
-                tmp.fontSize = 12f;
+                tmp.text = size <= 9 ? $"{size}x{size}" : $"{size}"; // Shorten text for larger numbers
+                tmp.fontSize = 10f; // Smaller font for grid
                 tmp.fontStyle = FontStyles.Bold;
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.color = (size == state.BrushSize) ? ACCENT : TEXT_SECONDARY;

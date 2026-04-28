@@ -200,7 +200,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var minus = CreateUI("Minus", group.transform);
             minus.AddComponent<LayoutElement>().preferredWidth = 18f;
-            MakeBtn(minus, "-", () => onBrushSizeChanged?.Invoke(Mathf.Max(1, state.BrushSize - 1)), 10f);
+            MakeBtn(minus, "-", () => onBrushSizeChanged?.Invoke(Mathf.Max(MinBrushSize, state.BrushSize - 1)), 10f);
 
             var val = CreateUI("Val", group.transform);
             val.AddComponent<LayoutElement>().flexibleWidth = 1f;
@@ -213,7 +213,7 @@ namespace Valkur.Gameplay.TileEditor
 
             var plus = CreateUI("Plus", group.transform);
             plus.AddComponent<LayoutElement>().preferredWidth = 18f;
-            MakeBtn(plus, "+", () => onBrushSizeChanged?.Invoke(Mathf.Min(5, state.BrushSize + 1)), 10f);
+            MakeBtn(plus, "+", () => onBrushSizeChanged?.Invoke(Mathf.Min(MaxBrushSize, state.BrushSize + 1)), 10f);
         }
     }
 }
