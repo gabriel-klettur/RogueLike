@@ -81,9 +81,12 @@ namespace Valkur.Gameplay.TileEditor
             float scrollDelta = _input.PollZoom();
             if (Mathf.Abs(scrollDelta) < 0.1f) return;
             
-            if (_mainCamera == null) _mainCamera = Camera.main;
-            if (_mainCamera == null || !_mainCamera.orthographic) return;
+            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
+            if (camSetup == null) return;
 
+            // Get current size from CameraSetup
+            float currentSize = camSetup.GetCurrentOrthographicSize();
+            
             // Normalize scroll delta to get consistent zoom behavior
             // Most mice return 1 or -1 per click, but some return larger values
             float normalizedScroll = Mathf.Sign(scrollDelta);
@@ -93,7 +96,6 @@ namespace Valkur.Gameplay.TileEditor
             float zoomFactor = 1f - (normalizedScroll * zoomSpeed);
             
             // Apply zoom to orthographic size
-            float currentSize = _mainCamera.orthographicSize;
             float newSize = currentSize * zoomFactor;
             
             // Set reasonable bounds to prevent extreme zoom levels
@@ -104,7 +106,7 @@ namespace Valkur.Gameplay.TileEditor
             // Only apply if size actually changed
             if (Mathf.Abs(newSize - currentSize) > 0.01f)
             {
-                _mainCamera.orthographicSize = newSize;
+                camSetup.SetTileEditorZoom(newSize);
                 Debug.Log($"[TileEditor] Zoom: {scrollDelta:F2} -> size {newSize:F2}");
             }
         }

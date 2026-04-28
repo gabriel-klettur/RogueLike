@@ -44,6 +44,10 @@ namespace Valkur.Gameplay
         private CinemachineVirtualCamera _vcam;
         private Transform _savedFollowTarget;
         private bool _detached;
+        
+        // Tile Editor zoom support
+        private bool _tileEditorZoomRequested;
+        private float _tileEditorTargetSize;
 
         private void Awake()
         {
@@ -121,10 +125,18 @@ namespace Valkur.Gameplay
                 if (player != null) _vcam.Follow = player.transform;
             }
 
+            // Handle Tile Editor zoom requests
+            if (_tileEditorZoomRequested)
+            {
+                _vcam.m_Lens.OrthographicSize = _tileEditorTargetSize;
+                _tileEditorZoomRequested = false;
+                return;
+            }
+
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Tile editor reserves wheel scrolling for layer switching.
+            // Tile editor handles its own zoom now
             if (TileEditorManager.Instance != null && TileEditorManager.Instance.IsActive)
                 return;
 
@@ -182,6 +194,26 @@ namespace Valkur.Gameplay
         public Transform GetDetachedTransform()
         {
             return _detached && _vcam != null ? _vcam.transform : null;
+        }
+
+        /// <summary>
+        /// Request a zoom change from the Tile Editor. This will be applied in the next Update frame.
+        /// </summary>
+        /// <param name="targetSize">The desired orthographic size</param>
+        public void SetTileEditorZoom(float targetSize)
+        {
+            // Clamp to reasonable bounds for tile editor
+            float clampedSize = Mathf.Clamp(targetSize, 0.5f, 50f);
+            _tileEditorTargetSize = clampedSize;
+            _tileEditorZoomRequested = true;
+        }
+
+        /// <summary>
+        /// Get current orthographic size for reference
+        /// </summary>
+        public float GetCurrentOrthographicSize()
+        {
+            return _vcam != null ? _vcam.m_Lens.OrthographicSize : 5f;
         }
     }
 }
