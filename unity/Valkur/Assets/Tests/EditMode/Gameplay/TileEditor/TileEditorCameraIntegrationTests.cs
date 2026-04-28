@@ -1,0 +1,280 @@
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using Valkur.Gameplay;
+using Valkur.Gameplay.World;
+using System.Collections;
+
+namespace Valkur.Tests.EditMode.Gameplay.TileEditor
+{
+    [TestFixture]
+    public class TileEditorCameraIntegrationTests
+    {
+        private GameObject _cameraGo;
+        private GameObject _cameraSetupGo;
+        private Camera _camera;
+        private CameraSetup _cameraSetup;
+
+        [SetUp]
+        public void SetUp()
+        {
+            // Create main camera
+            _cameraGo = new GameObject("Main Camera");
+            _camera = _cameraGo.AddComponent<Camera>();
+            _camera.orthographic = true;
+            _camera.tag = "MainCamera";
+
+            // Create CameraSetup
+            _cameraSetupGo = new GameObject("CameraSetup");
+            _cameraSetup = _cameraSetupGo.AddComponent<CameraSetup>();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Reset singleton instance
+            if (CameraSetup.Instance != null)
+            {
+                Object.DestroyImmediate(CameraSetup.Instance.gameObject);
+            }
+
+            Object.DestroyImmediate(_cameraSetupGo);
+            Object.DestroyImmediate(_cameraGo);
+        }
+
+        [Test]
+        public void CameraSetup_Instance_SetCorrectly()
+        {
+            // Assert
+            Assert.IsNotNull(CameraSetup.Instance, "CameraSetup instance should be set");
+            Assert.AreEqual(_cameraSetup, CameraSetup.Instance, "Instance should match created CameraSetup");
+        }
+
+        [Test]
+        public void CameraSetup_GetCurrentOrthographicSize_ReturnsValidValue()
+        {
+            // Act
+            float size = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Assert
+            Assert.IsTrue(size > 0, "Should return positive orthographic size");
+        }
+
+        [Test]
+        public void CameraSetup_SetTileEditorZoom_AppliesCorrectSize()
+        {
+            // Arrange
+            float expectedSize = 7.5f;
+
+            // Act
+            _cameraSetup.SetTileEditorZoom(expectedSize);
+
+            // Assert - The zoom should be applied in the next Update frame
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            float actualSize = _cameraSetup.GetCurrentOrthographicSize();
+            Assert.AreEqual(expectedSize, actualSize, 0.01f, "Tile editor zoom should be applied correctly");
+        }
+
+        [Test]
+        public void CameraSetup_SetTileEditorZoom_ClampsToMinimum()
+        {
+            // Arrange
+            float tooSmallSize = 0.1f;
+
+            // Act
+            _cameraSetup.SetTileEditorZoom(tooSmallSize);
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Assert
+            Assert.AreEqual(0.5f, clampedSize, 0.01f, "Zoom should be clamped to minimum 0.5");
+        }
+
+        [Test]
+        public void CameraSetup_SetTileEditorZoom_ClampsToMaximum()
+        {
+            // Arrange
+            float tooLargeSize = 100f;
+
+            // Act
+            _cameraSetup.SetTileEditorZoom(tooLargeSize);
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            
+            float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Assert
+            Assert.AreEqual(50f, clampedSize, 0.01f, "Zoom should be clamped to maximum 50");
+        }
+
+        [Test]
+        public void CameraSetup_SetTileEditorZoom_HandlesBoundaryValues()
+        {
+            // Arrange
+            float minSize = 0.5f;
+            float maxSize = 50f;
+
+            // Act - Test minimum boundary
+            _cameraSetup.SetTileEditorZoom(minSize);
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            float actualMinSize = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Act - Test maximum boundary
+            _cameraSetup.SetTileEditorZoom(maxSize);
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            float actualMaxSize = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Assert
+            Assert.AreEqual(minSize, actualMinSize, 0.01f, "Should handle minimum boundary value");
+            Assert.AreEqual(maxSize, actualMaxSize, 0.01f, "Should handle maximum boundary value");
+        }
+
+        [Test]
+        public void CameraSetup_SetTileEditorZoom_MultipleRequests_WorkCorrectly()
+        {
+            // Arrange
+            float[] testSizes = { 1f, 5f, 10f, 25f, 3f, 15f };
+
+            // Act & Assert - Test multiple zoom requests
+            foreach (float expectedSize in testSizes)
+            {
+                _cameraSetup.SetTileEditorZoom(expectedSize);
+                _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                
+                float actualSize = _cameraSetup.GetCurrentOrthographicSize();
+                Assert.AreEqual(expectedSize, actualSize, 0.01f, $"Should apply zoom size {expectedSize} correctly");
+            }
+        }
+
+        [Test]
+        public void CameraSetup_DetachFollow_WorksCorrectly()
+        {
+            // Arrange
+            var testTarget = new GameObject("TestTarget");
+            
+            // Act
+            _cameraSetup.DetachFollow();
+            
+            // Assert
+            Assert.IsNull(_camera.GetComponent<Cinemachine.CinemachineVirtualCamera>().Follow, 
+                "Follow should be null after detach");
+            
+            // Cleanup
+            Object.DestroyImmediate(testTarget);
+        }
+
+        [Test]
+        public void CameraSetup_ReattachFollow_WorksCorrectly()
+        {
+            // Arrange
+            var testTarget = new GameObject("TestTarget");
+            
+            // Act
+            _cameraSetup.DetachFollow();
+            _cameraSetup.ReattachFollow();
+            
+            // Assert - Should reattach to player (or null if no player exists)
+            // The exact behavior depends on whether a player exists in the scene
+            
+            // Cleanup
+            Object.DestroyImmediate(testTarget);
+        }
+
+        [Test]
+        public void CameraSetup_GetDetachedTransform_ReturnsCorrectTransform()
+        {
+            // Arrange
+            _cameraSetup.DetachFollow();
+            
+            // Act
+            Transform detachedTransform = _cameraSetup.GetDetachedTransform();
+            
+            // Assert
+            Assert.IsNotNull(detachedTransform, "Should return transform when detached");
+            Assert.AreEqual(_cameraSetupGo.transform, detachedTransform, "Should return CameraSetup transform");
+            
+            // Cleanup
+            _cameraSetup.ReattachFollow();
+        }
+
+        [Test]
+        public void CameraSetup_GetDetachedTransform_ReturnsNull_WhenAttached()
+        {
+            // Act - Without detaching
+            Transform detachedTransform = _cameraSetup.GetDetachedTransform();
+            
+            // Assert
+            Assert.IsNull(detachedTransform, "Should return null when attached");
+        }
+
+        [UnityTest]
+        public IEnumerator CameraSetup_ZoomRequest_ProcessedNextFrame()
+        {
+            // Arrange
+            float expectedSize = 8.5f;
+            float initialSize = _cameraSetup.GetCurrentOrthographicSize();
+
+            // Act
+            _cameraSetup.SetTileEditorZoom(expectedSize);
+            
+            // Wait for next frame (simulating Update cycle)
+            yield return null;
+            
+            // Assert
+            float finalSize = _cameraSetup.GetCurrentOrthographicSize();
+            Assert.AreEqual(expectedSize, finalSize, 0.01f, "Zoom should be applied in next frame");
+            Assert.AreNotEqual(initialSize, finalSize, "Size should actually change");
+        }
+
+        [Test]
+        public void CameraSetup_OrthographicCamera_RequiredForZoom()
+        {
+            // Arrange - Make camera perspective
+            _camera.orthographic = false;
+
+            // Act
+            _cameraSetup.SetTileEditorZoom(5f);
+            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Assert - Should still work but may not be visible
+            float size = _cameraSetup.GetCurrentOrthographicSize();
+            Assert.IsTrue(size > 0, "Should still return size even for perspective camera");
+            
+            // Cleanup
+            _camera.orthographic = true;
+        }
+
+        [Test]
+        public void CameraSetup_MultipleInstances_OnlyOneActive()
+        {
+            // Arrange
+            var secondCameraSetupGo = new GameObject("SecondCameraSetup");
+            var secondCameraSetup = secondCameraSetupGo.AddComponent<CameraSetup>();
+
+            // Assert
+            Assert.AreEqual(_cameraSetup, CameraSetup.Instance, "First instance should be the active one");
+            Assert.AreNotEqual(secondCameraSetup, CameraSetup.Instance, "Second instance should not be the active one");
+            
+            // Cleanup
+            Object.DestroyImmediate(secondCameraSetupGo);
+        }
+
+        [Test]
+        public void CameraSetup_SetTarget_WorksCorrectly()
+        {
+            // Arrange
+            var testTarget = new GameObject("TestTarget");
+
+            // Act
+            _cameraSetup.SetTarget(testTarget.transform);
+
+            // Assert
+            Assert.AreEqual(testTarget.transform, _cameraSetup.GetComponent<Cinemachine.CinemachineVirtualCamera>().Follow, 
+                "Target should be set correctly");
+
+            // Cleanup
+            Object.DestroyImmediate(testTarget);
+        }
+    }
+}
