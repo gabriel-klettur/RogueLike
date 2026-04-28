@@ -84,19 +84,29 @@ namespace Valkur.Gameplay.TileEditor
             if (_mainCamera == null) _mainCamera = Camera.main;
             if (_mainCamera == null || !_mainCamera.orthographic) return;
 
+            // Normalize scroll delta to get consistent zoom behavior
+            // Most mice return 1 or -1 per click, but some return larger values
+            float normalizedScroll = Mathf.Sign(scrollDelta);
+            
             // Zoom speed multiplier - can be adjusted for desired sensitivity
             float zoomSpeed = 0.1f;
-            float zoomFactor = 1f - (scrollDelta * zoomSpeed);
+            float zoomFactor = 1f - (normalizedScroll * zoomSpeed);
             
             // Apply zoom to orthographic size
-            float newSize = _mainCamera.orthographicSize * zoomFactor;
+            float currentSize = _mainCamera.orthographicSize;
+            float newSize = currentSize * zoomFactor;
             
             // Set reasonable bounds to prevent extreme zoom levels
             // Min: 0.5 units (very zoomed in)
             // Max: 50 units (very zoomed out) - this provides "infinite" feel while preventing issues
             newSize = Mathf.Clamp(newSize, 0.5f, 50f);
             
-            _mainCamera.orthographicSize = newSize;
+            // Only apply if size actually changed
+            if (Mathf.Abs(newSize - currentSize) > 0.01f)
+            {
+                _mainCamera.orthographicSize = newSize;
+                Debug.Log($"[TileEditor] Zoom: {scrollDelta:F2} -> size {newSize:F2}");
+            }
         }
 
         private partial void HandleUndoRedo()

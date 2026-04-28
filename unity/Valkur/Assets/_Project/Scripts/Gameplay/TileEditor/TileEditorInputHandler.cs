@@ -76,13 +76,23 @@ namespace Valkur.Gameplay.TileEditor
             var mouse = Mouse.current;
             if (mouse == null) return 0f;
             float scroll = mouse.scroll.ReadValue().y;
-            if (Mathf.Abs(scroll) < 0.1f) return 0f;
-
-            if (UnityEngine.EventSystems.EventSystem.current != null &&
-                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-                return 0f;
-
-            return scroll;
+            
+            // Debug log to help diagnose input issues
+            if (Mathf.Abs(scroll) >= 0.1f)
+            {
+                Debug.Log($"[TileEditor] Mouse scroll detected: {scroll:F2}");
+                
+                if (UnityEngine.EventSystems.EventSystem.current != null &&
+                    UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+                {
+                    Debug.Log("[TileEditor] Scroll blocked - pointer over UI");
+                    return 0f;
+                }
+                
+                return scroll;
+            }
+            
+            return 0f;
         }
 
         /// <summary>
