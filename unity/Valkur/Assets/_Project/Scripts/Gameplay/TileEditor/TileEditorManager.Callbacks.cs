@@ -64,7 +64,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OnBrushSizeChanged(int newSize)
         {
-            _state.BrushSize = Mathf.Clamp(newSize, 1, 5);
+            _state.BrushSize = Mathf.Clamp(newSize, TileEditorConstants.MinBrushSize, TileEditorConstants.MaxBrushSize);
             _ui.RefreshBrushSizeLabel();
         }
 

@@ -38,7 +38,7 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Re-tint the 1x1..5x5 preset buttons in the Size dropdown so the active
+        /// Re-tint the 1x1..25x25 preset buttons in the Size dropdown so the active
         /// brush size pops in accent. State is owned by <see cref="TileEditorState"/>;
         /// this method just repaints to match.
         /// </summary>
