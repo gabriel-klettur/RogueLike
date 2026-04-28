@@ -22,8 +22,8 @@ namespace Valkur.Gameplay.TileEditor
         private static float SizeX => PANEL_GAP + INSPECTOR_DROP_W + PANEL_GAP + COLLIDERS_DROP_W + PANEL_GAP;
         private static float SizeY => PANEL_TOP_OFFSET;
 
-        private const int MinBrushSize = 1;
-        private const int MaxBrushSize = 25;
+        // Use centralized constants to avoid duplication across partial classes
+        // Updated: 2025-04-28 - Fixed constant duplication issue
 
         private static void BuildSizeDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action<int> onBrushSizeChanged)
@@ -70,7 +70,7 @@ namespace Valkur.Gameplay.TileEditor
             var imgs = refs.BrushSizePresetImgs;
             var lbls = refs.BrushSizePresetLabels;
 
-            for (int i = MinBrushSize; i <= MaxBrushSize; i++)
+            for (int i = TileEditorConstants.MinBrushSize; i <= TileEditorConstants.MaxBrushSize; i++)
             {
                 int size = i; // capture
                 var btnGo = CreateUI($"Size_{size}", gridContainer.transform);
@@ -132,7 +132,7 @@ namespace Valkur.Gameplay.TileEditor
             var minus = CreateUI("Minus", row.transform);
             minus.AddComponent<LayoutElement>().preferredWidth = 28f;
             MakeBtn(minus, "-",
-                () => onBrushSizeChanged?.Invoke(Mathf.Max(MinBrushSize, state.BrushSize - 1)), 12f);
+                () => onBrushSizeChanged?.Invoke(Mathf.Max(TileEditorConstants.MinBrushSize, state.BrushSize - 1)), 12f);
 
             var val = CreateUI("Val", row.transform);
             val.AddComponent<LayoutElement>().flexibleWidth = 1f;
@@ -146,7 +146,7 @@ namespace Valkur.Gameplay.TileEditor
             var plus = CreateUI("Plus", row.transform);
             plus.AddComponent<LayoutElement>().preferredWidth = 28f;
             MakeBtn(plus, "+",
-                () => onBrushSizeChanged?.Invoke(Mathf.Min(MaxBrushSize, state.BrushSize + 1)), 12f);
+                () => onBrushSizeChanged?.Invoke(Mathf.Min(TileEditorConstants.MaxBrushSize, state.BrushSize + 1)), 12f);
         }
     }
 }
