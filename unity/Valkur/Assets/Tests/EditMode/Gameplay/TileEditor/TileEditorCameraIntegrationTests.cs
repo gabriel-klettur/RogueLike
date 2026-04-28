@@ -13,7 +13,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
         private GameObject _cameraGo;
         private GameObject _cameraSetupGo;
         private Camera _camera;
-        private CameraSetup _cameraSetup;
+        private Valkur.Gameplay.CameraSetup _cameraSetup;
 
         [SetUp]
         public void SetUp()
@@ -26,16 +26,16 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Create CameraSetup
             _cameraSetupGo = new GameObject("CameraSetup");
-            _cameraSetup = _cameraSetupGo.AddComponent<CameraSetup>();
+            _cameraSetup = _cameraSetupGo.AddComponent<Valkur.Gameplay.CameraSetup>();
         }
 
         [TearDown]
         public void TearDown()
         {
             // Reset singleton instance
-            if (CameraSetup.Instance != null)
+            if (Valkur.Gameplay.CameraSetup.Instance != null)
             {
-                Object.DestroyImmediate(CameraSetup.Instance.gameObject);
+                Object.DestroyImmediate(Valkur.Gameplay.CameraSetup.Instance.gameObject);
             }
 
             Object.DestroyImmediate(_cameraSetupGo);

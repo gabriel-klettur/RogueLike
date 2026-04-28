@@ -3,7 +3,10 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay;
 using System.Collections;
+
+// Integration tests for Tile Editor functionality
 
 namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 {
@@ -14,7 +17,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
         private GameObject _cameraSetupGo;
         private GameObject _tileEditorGo;
         private Camera _camera;
-        private CameraSetup _cameraSetup;
+        private Valkur.Gameplay.CameraSetup _cameraSetup;
         private TileEditorManager _tileEditor;
         private TileEditorState _state;
 
@@ -29,7 +32,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Create CameraSetup
             _cameraSetupGo = new GameObject("CameraSetup");
-            _cameraSetup = _cameraSetupGo.AddComponent<CameraSetup>();
+            _cameraSetup = _cameraSetupGo.AddComponent<Valkur.Gameplay.CameraSetup>();
 
             // Create TileEditorManager
             _tileEditorGo = new GameObject("TileEditorManager");
@@ -45,9 +48,9 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
         public void TearDown()
         {
             // Reset singleton instances
-            if (CameraSetup.Instance != null)
+            if (Valkur.Gameplay.CameraSetup.Instance != null)
             {
-                Object.DestroyImmediate(CameraSetup.Instance.gameObject);
+                Object.DestroyImmediate(Valkur.Gameplay.CameraSetup.Instance.gameObject);
             }
 
             if (TileEditorManager.HasInstance)
