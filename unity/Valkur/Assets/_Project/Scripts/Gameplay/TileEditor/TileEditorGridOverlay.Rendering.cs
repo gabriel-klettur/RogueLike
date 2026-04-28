@@ -47,6 +47,18 @@ namespace Valkur.Gameplay.TileEditor
                 new Vector3(Input.mousePosition.x, Input.mousePosition.y, -cam.transform.position.z));
             _hoverCell = new Vector2Int(Mathf.FloorToInt(mouseWorld.x), Mathf.FloorToInt(mouseWorld.y));
 
+            // Update Fill preview when using Fill tool
+            if (_currentTool == TileEditorState.Tool.Fill)
+            {
+                CalculateFillPreview();
+                _fillPreviewBlinkTime += Time.deltaTime;
+            }
+            else
+            {
+                _fillPreviewCells.Clear();
+                _fillPreviewBlinkTime = 0f;
+            }
+
             _mat.SetPass(0);
 
             GL.PushMatrix();
@@ -74,6 +86,10 @@ namespace Valkur.Gameplay.TileEditor
             // borders remain on top of the collider shading.
             if (_showColliderOverlay && _collisionTilemap != null)
                 DrawColliderOverlay(cam, xMin, yMin, xMax, yMax);
+
+            // ── Fill preview: blinking yellow fill for Fill tool ──
+            if (_currentTool == TileEditorState.Tool.Fill && _fillPreviewCells.Count > 0)
+                DrawFillPreview(cam);
 
             // ── Cell highlight quads: hover (cyan) / selected (green) / brush (yellow) ──
             // Thickness is the same for all; compute once from current zoom level.
@@ -192,6 +208,31 @@ namespace Valkur.Gameplay.TileEditor
                 int cy = sy + (i / w);
                 DrawBorderQuads(cx, cy, ColliderBorderColor, t);
             }
+            GL.End();
+        }
+
+        /// <summary>
+        /// Draws a blinking yellow fill for all cells that would be affected by the Fill operation.
+        /// The alpha oscillates between 0.2 and 0.6 to create a blinking effect.
+        /// </summary>
+        private void DrawFillPreview(Camera cam)
+        {
+            // Calculate blinking alpha (oscillates between 0.2 and 0.6)
+            float blinkAlpha = 0.4f + Mathf.Sin(_fillPreviewBlinkTime * 3f) * 0.2f;
+            Color blinkColor = new Color(FillPreviewColor.r, FillPreviewColor.g, FillPreviewColor.b, blinkAlpha);
+
+            GL.Begin(GL.QUADS);
+            GL.Color(blinkColor);
+
+            foreach (var cell in _fillPreviewCells)
+            {
+                // Draw filled quad for each cell in the Fill preview area
+                GL.Vertex3(cell.x,        cell.y,        0f);
+                GL.Vertex3(cell.x + 1f,   cell.y,        0f);
+                GL.Vertex3(cell.x + 1f,   cell.y + 1f,   0f);
+                GL.Vertex3(cell.x,        cell.y + 1f,   0f);
+            }
+
             GL.End();
         }
     }

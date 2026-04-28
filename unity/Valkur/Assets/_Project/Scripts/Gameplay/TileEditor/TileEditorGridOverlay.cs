@@ -30,6 +30,8 @@ namespace Valkur.Gameplay.TileEditor
         private static readonly Color SelectedColor = new Color(0f,  1f,  0f,  1f);
         // Yellow — cells painted during an active brush drag.
         private static readonly Color BrushColor    = new Color(1f,  1f,  0f,  1f);
+        // Yellow semi-transparent blinking — Fill preview area when hovering with Fill tool.
+        private static readonly Color FillPreviewColor = new Color(1f,  1f,  0f,  0.4f);
 
         // Red overlay drawn over every solid Collision cell when the Colliders panel
         // toggles "Show Colliders" ON. The fill is intentionally translucent so the
@@ -61,6 +63,12 @@ namespace Valkur.Gameplay.TileEditor
         // Collider overlay state (Colliders panel).
         private Tilemap _collisionTilemap;
         private bool    _showColliderOverlay;
+
+        // Fill preview state
+        private Tilemap _fillPreviewTilemap;
+        private TileBase _fillPreviewNewTile;
+        private readonly HashSet<Vector2Int> _fillPreviewCells = new HashSet<Vector2Int>();
+        private float _fillPreviewBlinkTime;
 
         // ── Public API ────────────────────────────────────────────────────────
 
@@ -117,6 +125,74 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Enable or disable the red collider overlay.</summary>
         public void SetShowColliderOverlay(bool show) => _showColliderOverlay = show;
+
+        /// <summary>Set the tilemap and new tile for Fill preview calculation.</summary>
+        public void SetFillPreview(Tilemap tilemap, TileBase newTile)
+        {
+            _fillPreviewTilemap = tilemap;
+            _fillPreviewNewTile = newTile;
+            _fillPreviewCells.Clear();
+            CalculateFillPreview();
+        }
+
+        /// <summary>Clear the Fill preview state.</summary>
+        public void ClearFillPreview()
+        {
+            _fillPreviewTilemap = null;
+            _fillPreviewNewTile = null;
+            _fillPreviewCells.Clear();
+        }
+
+        // ── Private Methods ─────────────────────────────────────────────────────
+
+        /// <summary>Calculate the Fill preview area based on current hover position.</summary>
+        private void CalculateFillPreview()
+        {
+            _fillPreviewCells.Clear();
+            
+            if (_currentTool != TileEditorState.Tool.Fill || _fillPreviewTilemap == null || _fillPreviewNewTile == null)
+                return;
+
+            var startPos = new Vector3Int(_hoverCell.x, _hoverCell.y, 0);
+            var targetTile = _fillPreviewTilemap.GetTile(startPos);
+            
+            // If target tile is the same as new tile, no fill needed
+            if (targetTile == _fillPreviewNewTile) return;
+
+            var visited = new HashSet<Vector2Int>();
+            var queue = new Queue<Vector2Int>();
+            queue.Enqueue(_hoverCell);
+            visited.Add(_hoverCell);
+
+            var directions = new Vector3Int[]
+            {
+                Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right
+            };
+
+            int maxCells = 10000; // Same limit as actual Fill
+            int count = 0;
+
+            while (queue.Count > 0 && count < maxCells)
+            {
+                var pos = queue.Dequeue();
+                var current = _fillPreviewTilemap.GetTile(new Vector3Int(pos.x, pos.y, 0));
+                
+                if (current != targetTile) continue;
+
+                _fillPreviewCells.Add(pos);
+                count++;
+
+                foreach (var dir in directions)
+                {
+                    var neighbor = pos + new Vector2Int(dir.x, dir.y);
+                    if (!visited.Contains(neighbor))
+                    {
+                        visited.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+        }
 
         // ── Lifecycle ────────────────────────────────────────────────────────
 

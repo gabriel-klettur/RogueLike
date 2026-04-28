@@ -104,6 +104,20 @@ namespace Valkur.Gameplay.TileEditor
                 _gridOverlay.SetCurrentTool(_state.CurrentTool);
                 _gridOverlay.SetCollisionTilemap(GetCollisionTilemap());
                 _gridOverlay.SetShowColliderOverlay(_state.ShowColliderOverlay);
+                
+                // Configure Fill preview when using Fill tool
+                if (_state.CurrentTool == TileEditorState.Tool.Fill)
+                {
+                    var currentTilemap = GetCurrentTilemap();
+                    if (currentTilemap != null)
+                    {
+                        _gridOverlay.SetFillPreview(currentTilemap, _state.SelectedTile);
+                    }
+                }
+                else
+                {
+                    _gridOverlay.ClearFillPreview();
+                }
             }
         }
 
