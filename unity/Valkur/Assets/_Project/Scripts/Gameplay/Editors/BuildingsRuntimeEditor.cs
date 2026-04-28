@@ -160,6 +160,7 @@ namespace Valkur.Gameplay.Buildings
 
         // Perf probe (PERF button in menu bar, Shift+PERF to toggle)
         private BuildingsPerfProbe _perfProbe;
+        private bool _buildingsVisible = true;
         private TMP_InputField _searchBox;
         private string _searchFilter = "";
 

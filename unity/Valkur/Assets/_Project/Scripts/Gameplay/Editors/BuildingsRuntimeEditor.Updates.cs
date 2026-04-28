@@ -29,6 +29,12 @@ namespace Valkur.Gameplay.Buildings
         private void UpdateSplitLine()
         {
             if (_splitLineRt == null) return;
+            if (!_buildingsVisible)
+            {
+                _splitLineRt.gameObject.SetActive(false);
+                if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
+                return;
+            }
             if (_activeBuilding == null || !_activeBuilding.TryGetWorldRect(out var rect))
             {
                 _splitLineRt.gameObject.SetActive(false);
@@ -87,6 +93,7 @@ namespace Valkur.Gameplay.Buildings
         private void UpdateIdLabel()
         {
             if (_idLabelRt == null) return;
+            if (!_buildingsVisible) { _idLabelRt.gameObject.SetActive(false); return; }
             if (_activeBuilding == null) { _idLabelRt.gameObject.SetActive(false); return; }
             if (!_activeBuilding.TryGetWorldRect(out var rect)) { _idLabelRt.gameObject.SetActive(false); return; }
             var cam = Camera.main;

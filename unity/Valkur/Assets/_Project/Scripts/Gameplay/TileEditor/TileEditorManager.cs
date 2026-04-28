@@ -198,7 +198,7 @@ namespace Valkur.Gameplay.TileEditor
 
             HandleCameraPan();
             HandleToolShortcuts();
-            HandleLayerScroll();
+            HandleCameraZoom();
             HandleUndoRedo();
             HandleMouseInput();
             UpdateBrushPreview();
@@ -211,7 +211,7 @@ namespace Valkur.Gameplay.TileEditor
         // ------------------------------------------------------------------
         private partial void HandleToggle();
         private partial void HandleToolShortcuts();
-        private partial void HandleLayerScroll();
+        private partial void HandleCameraZoom();
         private partial void HandleUndoRedo();
         private partial void HandleMouseInput();
         private partial void HandleCameraPan();

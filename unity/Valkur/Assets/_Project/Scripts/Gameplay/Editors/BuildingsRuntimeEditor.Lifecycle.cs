@@ -43,6 +43,8 @@ namespace Valkur.Gameplay.Buildings
             RefreshPicker();
             RefreshModeButtons();
             RefreshInspector();
+            ApplyBuildingsVisibility();
+            RefreshBuildingsVisibilityButton();
             if (_statusTmp != null)
                 _statusTmp.text = "Buildings Editor active. F10 = close. ESC = cancel.";
             _mainCamera = Camera.main;
@@ -54,6 +56,8 @@ namespace Valkur.Gameplay.Buildings
         public void Deactivate()
         {
             PersistDirtyInstanceChanges("Deactivate");
+            _buildingsVisible = true;
+            ApplyBuildingsVisibility();
             _active = false;
             if (_uiBuilt && _root != null)
             {

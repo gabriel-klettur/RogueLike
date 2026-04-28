@@ -26,6 +26,7 @@ namespace Valkur.Gameplay.UIKit
     {
         // ── Visual constants ────────────────────────────────────────────────
         private const float TRAY_GAP    = 8f;   // gap to the music pill
+        private const float BOTTOM_INSET = 16f; // fixed baseline from the screen bottom
         private const float BUTTON_SIZE = 36f;  // matches MusicPlayerHUD MinimizedW/H
         private const float BUTTON_GAP  = 4f;   // spacing between buttons
 
@@ -145,7 +146,7 @@ namespace Valkur.Gameplay.UIKit
             Vector2 musicAnchored = _musicRt.anchoredPosition;
             float   musicWidth    = _musicRt.rect.width;
             float   leftOfMusicX  = musicAnchored.x - musicWidth - TRAY_GAP;
-            _containerRt.anchoredPosition = new Vector2(leftOfMusicX, musicAnchored.y);
+            _containerRt.anchoredPosition = new Vector2(leftOfMusicX, BOTTOM_INSET);
         }
 
         // ─────────────────────────────────────────────────────────────────────

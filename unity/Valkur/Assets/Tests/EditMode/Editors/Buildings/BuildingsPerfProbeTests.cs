@@ -229,6 +229,48 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         }
 
         [Test]
+        public void UIRefs_HasBuildingVisibilityMenuBtnImg_Field()
+        {
+            var uiRefsType = typeof(BuildingsEditorUIBuilder).GetNestedType(
+                "UIRefs", BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.IsNotNull(uiRefsType, "BuildingsEditorUIBuilder.UIRefs nested type must exist.");
+
+            var field = uiRefsType.GetField("BuildingVisibilityMenuBtnImg",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field,
+                "UIRefs must have a BuildingVisibilityMenuBtnImg field (Image) for the VIS button appearance.");
+            Assert.AreEqual(typeof(Image), field.FieldType,
+                "UIRefs.BuildingVisibilityMenuBtnImg must be of type UnityEngine.UI.Image.");
+        }
+
+        [Test]
+        public void UIRefs_HasBuildingVisibilityMenuBtnTmp_Field()
+        {
+            var uiRefsType = typeof(BuildingsEditorUIBuilder).GetNestedType(
+                "UIRefs", BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.IsNotNull(uiRefsType, "BuildingsEditorUIBuilder.UIRefs nested type must exist.");
+
+            var field = uiRefsType.GetField("BuildingVisibilityMenuBtnTmp",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field,
+                "UIRefs must have a BuildingVisibilityMenuBtnTmp field (TextMeshProUGUI) for the VIS label styling.");
+            Assert.AreEqual(typeof(TextMeshProUGUI), field.FieldType,
+                "UIRefs.BuildingVisibilityMenuBtnTmp must be of type TextMeshProUGUI.");
+        }
+
+        [Test]
+        public void UIBuilder_VisibilityBtnWidth_Is40()
+        {
+            var field = GetStaticField(typeof(BuildingsEditorUIBuilder), "VIS_BTN_W");
+            Assert.IsNotNull(field,
+                "BuildingsEditorUIBuilder must have a VIS_BTN_W private constant.");
+
+            float value = (float)field.GetValue(null);
+            Assert.AreEqual(40f, value, 0.001f,
+                "VIS_BTN_W must be 40f so the VIS toggle matches the compact right-side controls.");
+        }
+
+        [Test]
         public void UIBuilder_PerfBtnWidth_Is46()
         {
             // PERF button should be 46f wide — matches TileEditor.
@@ -303,6 +345,25 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             }
         }
 
+        [Test]
+        public void UIBuilder_BuildAll_AcceptsOnToggleBuildingsVisible_Param()
+        {
+            var buildAll = typeof(BuildingsEditorUIBuilder).GetMethod(
+                "BuildAll", BindingFlags.Public | BindingFlags.Static);
+            Assert.IsNotNull(buildAll, "BuildAll must exist.");
+
+            bool found = false;
+            foreach (var p in buildAll.GetParameters())
+            {
+                if (p.Name != "onToggleBuildingsVisible") continue;
+                found = true;
+                break;
+            }
+
+            Assert.IsTrue(found,
+                "BuildAll must accept an 'onToggleBuildingsVisible' parameter so BuildingsRuntimeEditor can connect the VIS toggle.");
+        }
+
         // ════════════════════════════════════════════════════════════════════════
         //  3.  BuildingsRuntimeEditor — probe wiring
         // ════════════════════════════════════════════════════════════════════════
@@ -344,6 +405,14 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             Assert.IsNotNull(method,
                 "BuildingsRuntimeEditor must have a private TogglePerfProbe() method " +
                 "wired to the PERF button callback.");
+        }
+
+        [Test]
+        public void RuntimeEditor_HasToggleBuildingsVisibleMethod()
+        {
+            var method = GetMethod(typeof(BuildingsRuntimeEditor), "ToggleBuildingsVisible");
+            Assert.IsNotNull(method,
+                "BuildingsRuntimeEditor must have a private ToggleBuildingsVisible() method wired to the VIS button callback.");
         }
 
         [Test]

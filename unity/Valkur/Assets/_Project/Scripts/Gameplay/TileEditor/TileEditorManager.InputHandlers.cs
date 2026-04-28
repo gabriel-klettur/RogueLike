@@ -76,14 +76,27 @@ namespace Valkur.Gameplay.TileEditor
             if (tool.HasValue) OnToolChanged(tool.Value);
         }
 
-        private partial void HandleLayerScroll()
+        private partial void HandleCameraZoom()
         {
-            int delta = _input.PollLayerScroll();
-            if (delta == 0) return;
-            int val = (int)_state.CurrentLayer + delta;
-            if (val < 0) val = 8;
-            if (val > 8) val = 0;
-            OnLayerChanged((TilemapLayerSetup.TilemapLayer)val);
+            float scrollDelta = _input.PollZoom();
+            if (Mathf.Abs(scrollDelta) < 0.1f) return;
+            
+            if (_mainCamera == null) _mainCamera = Camera.main;
+            if (_mainCamera == null || !_mainCamera.orthographic) return;
+
+            // Zoom speed multiplier - can be adjusted for desired sensitivity
+            float zoomSpeed = 0.1f;
+            float zoomFactor = 1f - (scrollDelta * zoomSpeed);
+            
+            // Apply zoom to orthographic size
+            float newSize = _mainCamera.orthographicSize * zoomFactor;
+            
+            // Set reasonable bounds to prevent extreme zoom levels
+            // Min: 0.5 units (very zoomed in)
+            // Max: 50 units (very zoomed out) - this provides "infinite" feel while preventing issues
+            newSize = Mathf.Clamp(newSize, 0.5f, 50f);
+            
+            _mainCamera.orthographicSize = newSize;
         }
 
         private partial void HandleUndoRedo()

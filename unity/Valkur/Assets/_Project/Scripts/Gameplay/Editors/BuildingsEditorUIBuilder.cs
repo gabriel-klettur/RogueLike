@@ -43,6 +43,8 @@ namespace Valkur.Gameplay.Buildings
             public GameObject    PropsDropdown;     public DraggablePanel PropsPanelDrag;
 
             // Menu bar extras
+            public Image           BuildingVisibilityMenuBtnImg;
+            public TextMeshProUGUI BuildingVisibilityMenuBtnTmp;
             public Image           PerfProbeMenuBtnImg;
             public TextMeshProUGUI PerfProbeMenuBtnTmp;
 
@@ -96,8 +98,9 @@ namespace Valkur.Gameplay.Buildings
         private const float MODES_BTN_W     = 70f;
         private const float BUILDINGS_BTN_W = 92f;
         private const float COLLIDERS_BTN_W = 92f;
-        private const float PROPS_BTN_W     = 98f;
-        private const float TUTORIAL_BTN_W  = 40f;
+        private const float PROPS_BTN_W      = 98f;
+        private const float VIS_BTN_W        = 40f;
+        private const float TUTORIAL_BTN_W   = 40f;
         private const float PERF_BTN_W       = 46f;
 
         private const float BTN_H = 44f;   // mode/tool button height (same as TileEditor)
@@ -131,6 +134,7 @@ namespace Valkur.Gameplay.Buildings
             Action<int>    onCollBrushSizeChanged,
             Action         onCollBrushSizeStepDown,
             Action         onCollBrushSizeStepUp,
+            Action         onToggleBuildingsVisible,
             Action         onPerfToggle = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
@@ -139,7 +143,8 @@ namespace Valkur.Gameplay.Buildings
             var refs = new UIRefs();
             refs.CollBrushSizePresetImgs   = new List<Image>();
             refs.CollBrushSizePresetLabels = new List<TextMeshProUGUI>();
-            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial, onPerfToggle);
+            BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial,
+                onToggleBuildingsVisible, onPerfToggle);
             BuildModesPanel(canvasT, ref refs,
                 onModeSelect, onModePlace, onModeResize, onModeDelete,
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
@@ -176,7 +181,7 @@ namespace Valkur.Gameplay.Buildings
         // ── Menu Bar ──────────────────────────────────────────────────────────────
 
         private static void BuildMenuBar(Transform canvasT, ref UIRefs refs,
-            Action<string> onToggle, Action onTutorial, Action onPerfToggle)
+            Action<string> onToggle, Action onTutorial, Action onToggleBuildingsVisible, Action onPerfToggle)
         {
             var go = CreateUI("BuildingsMenuBar", canvasT);
             var r  = go.GetComponent<RectTransform>();
@@ -235,6 +240,9 @@ namespace Valkur.Gameplay.Buildings
             // Flexible spacer
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;
 
+            AddMenuDivider(t);
+            refs.BuildingVisibilityMenuBtnImg = AddMenuBtn(t, "VIS", VIS_BTN_W,
+                () => onToggleBuildingsVisible?.Invoke(), out refs.BuildingVisibilityMenuBtnTmp);
             AddMenuDivider(t);
             AddMenuBtn(t, "?", TUTORIAL_BTN_W, () => onTutorial?.Invoke(), out _);
             AddMenuDivider(t);

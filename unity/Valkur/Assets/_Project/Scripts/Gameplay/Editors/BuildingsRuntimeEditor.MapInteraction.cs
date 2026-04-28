@@ -56,7 +56,12 @@ namespace Valkur.Gameplay.Buildings
             }
 
             // Hover detection (skip when over UI): collect all buildings under cursor.
-            if (!overUi) RecomputeHoverStack(worldPos);
+            if (!_buildingsVisible)
+            {
+                _hoveredBuilding = null;
+                _hoverStack.Clear();
+            }
+            else if (!overUi) RecomputeHoverStack(worldPos);
             else { _hoveredBuilding = null; _hoverStack.Clear(); }
 
             // Wheel cycle within hover stack

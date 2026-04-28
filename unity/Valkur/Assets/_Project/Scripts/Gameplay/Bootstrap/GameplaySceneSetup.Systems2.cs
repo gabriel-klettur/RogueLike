@@ -172,7 +172,20 @@ namespace Valkur.Gameplay
 
         private void EnsureAudioManager()
         {
-            if (AudioManager.HasInstance) return;
+            // AudioManager is persistent (Persist => true): reuse existing instance
+            if (AudioManager.HasInstance)
+            {
+                var audio = ServiceLocator.Get<IAudioService>();
+                if (audio != null)
+                {
+                    Debug.Log("[GameplaySceneSetup] AudioManager already running (singleton persists).");
+                    return;
+                }
+                // Instance exists but not registered; register it
+                ServiceLocator.Register<IAudioService>(AudioManager.Instance);
+                Debug.Log("[GameplaySceneSetup] AudioManager found, registered with ServiceLocator.");
+                return;
+            }
 
             if (_audioCatalog == null)
             {
@@ -184,7 +197,7 @@ namespace Valkur.Gameplay
             var mgr = go.AddComponent<AudioManager>();
             go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             mgr.SetCatalog(_audioCatalog);
-            Debug.Log("[GameplaySceneSetup] AudioManager created.");
+            Debug.Log("[GameplaySceneSetup] AudioManager created (first instantiation).");
         }
 
         private void EnsureCombatAudioSystem()

@@ -69,6 +69,7 @@ namespace Valkur.Gameplay.Buildings
                 onCollBrushSizeChanged:      v  => OnCollBrushSizeChanged(v),
                 onCollBrushSizeStepDown:     () => OnCollBrushSizeChanged(_collBrushSize - 1),
                 onCollBrushSizeStepUp:       () => OnCollBrushSizeChanged(_collBrushSize + 1),
+                onToggleBuildingsVisible:    () => ToggleBuildingsVisible(),
                 onPerfToggle:                () => TogglePerfProbe());
 
             // Wire panel close callbacks to keep dropdown state in sync
@@ -112,6 +113,7 @@ namespace Valkur.Gameplay.Buildings
             OpenAllPanels();
             RefreshBrushButtonHighlights();
             RefreshCollidersPanel();
+            RefreshBuildingsVisibilityButton();
         }
 
         // ── Dropdown / panel management ────────────────────────────────────────────

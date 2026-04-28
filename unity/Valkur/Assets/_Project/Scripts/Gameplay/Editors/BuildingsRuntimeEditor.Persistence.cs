@@ -199,6 +199,8 @@ namespace Valkur.Gameplay.Buildings
             _undo.Clear();
             _activeBuilding = null;
             _hoveredBuilding = null;
+            InvalidateBuildingCache();
+            ApplyBuildingsVisibility();
             RefreshInspector();
             if (_statusTmp != null) _statusTmp.text = "Reloaded from JSON.";
         }
@@ -248,6 +250,50 @@ namespace Valkur.Gameplay.Buildings
             _tutorialBodyTmp.text = body;
         }
 
+        private void ToggleBuildingsVisible()
+        {
+            _buildingsVisible = !_buildingsVisible;
+            ApplyBuildingsVisibility();
+            RefreshBuildingsVisibilityButton();
+
+            if (!_buildingsVisible)
+            {
+                _hoveredBuilding = null;
+                _hoverStack.Clear();
+            }
+
+            if (_statusTmp != null)
+                _statusTmp.text = _buildingsVisible ? "Buildings visible." : "Buildings hidden.";
+        }
+
+        private void ApplyBuildingsVisibility()
+        {
+            var all = GetCachedBuildings();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var building = all[i];
+                if (building == null) continue;
+
+                var renderers = building.GetComponentsInChildren<SpriteRenderer>(true);
+                for (int j = 0; j < renderers.Length; j++)
+                {
+                    if (renderers[j] != null)
+                        renderers[j].enabled = _buildingsVisible;
+                }
+            }
+
+            if (!_buildingsVisible)
+                HideOutlines();
+        }
+
+        private void RefreshBuildingsVisibilityButton()
+        {
+            BuildingsEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.BuildingVisibilityMenuBtnImg,
+                _uiRefs.BuildingVisibilityMenuBtnTmp,
+                _buildingsVisible);
+        }
+
         // ──────────────────────────────────────────────────────────────────────────
         //  PER-FRAME OVERLAY UPDATES (outlines + handles + ID label)
         // ──────────────────────────────────────────────────────────────────────────
@@ -255,6 +301,11 @@ namespace Valkur.Gameplay.Buildings
         private void UpdateOutlineState()
         {
             if (_hoverFx == null || _activeFx == null) return;
+            if (!_buildingsVisible)
+            {
+                HideOutlines();
+                return;
+            }
 
             // Hover (skip if same as active to avoid double-drawing)
             if (_hoveredBuilding != null && _hoveredBuilding != _activeBuilding)
@@ -280,6 +331,11 @@ namespace Valkur.Gameplay.Buildings
         private void UpdateFloatingHandles()
         {
             if (_handlesRoot == null) return;
+            if (!_buildingsVisible)
+            {
+                _handlesRoot.SetActive(false);
+                return;
+            }
             bool show = _activeBuilding != null && !_removeMode;
             _handlesRoot.SetActive(show);
             if (!show) return;

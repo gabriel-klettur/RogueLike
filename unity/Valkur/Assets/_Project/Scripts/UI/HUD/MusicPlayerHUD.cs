@@ -34,6 +34,7 @@ namespace Valkur.UI.HUD
         // Everything (fonts, buttons, slider, icons) is laid out for this size
         // and then scaled via RectTransform.localScale so the look stays proportional.
         private const float BaseW = 320f;
+        private const float HeaderH = 18f;
         // Simple mode is the compact transport-only widget.
         // Expanded mode adds a spectrum analyzer + beat-dot row above it,
         // so the user can visually align the configured BPM with the actual audio peaks.
@@ -44,8 +45,8 @@ namespace Valkur.UI.HUD
         private float CurrentBaseH => _isExpanded ? BaseHExpanded : BaseHSimple;
         [SerializeField, Tooltip("Edge inset from screen border.")]
         private float edgeInset = 16f;
-        [SerializeField, Tooltip("Vertical lift to leave room for toasts above.")]
-        private float bottomLift = 0f;
+        [SerializeField, Tooltip("Vertical lift to leave room for minimized HUD buttons and toasts below.")]
+        private float bottomLift = 44f;
         [SerializeField, Tooltip("Fade widget out when no track is playing. Default off so the player is always visible (mirrors HP/MP HUD on the bottom-left).")]
         private bool hideWhenIdle = false;
 
@@ -53,6 +54,8 @@ namespace Valkur.UI.HUD
         private RectTransform _rt;
         private CanvasGroup _cg;
         private Image _bg;
+        private GameObject _headerBar;
+        private Image _headerBg;
         private Image _progressFill;
         private Image _metronome;
         private TextMeshProUGUI _title;
@@ -452,7 +455,7 @@ namespace Valkur.UI.HUD
             _rt.anchorMin = new Vector2(1f, 0f);
             _rt.anchorMax = new Vector2(1f, 0f);
             _rt.pivot     = new Vector2(1f, 0f);
-            _rt.anchoredPosition = new Vector2(-edgeInset, edgeInset + bottomLift);
+            ApplyRootAnchorPosition();
             // Inner sizeDelta is fixed to the design size; the widget is resized
             // by changing localScale so all children scale uniformly with it.
             _rt.sizeDelta = new Vector2(BaseW, CurrentBaseH);
@@ -465,6 +468,8 @@ namespace Valkur.UI.HUD
             _cg.alpha = hideWhenIdle ? 0f : 1f; // start visible by default
             _cg.blocksRaycasts = true;
             _cg.interactable = true;
+
+            BuildHeaderBar();
 
             // Simple-mode content container: anchored to the BOTTOM of the root
             // and fixed at BaseHSimple px tall. The expanded mode adds a spectrum
@@ -483,7 +488,7 @@ namespace Valkur.UI.HUD
             dotRt.anchorMin = new Vector2(0f, 1f);
             dotRt.anchorMax = new Vector2(0f, 1f);
             dotRt.pivot     = new Vector2(0.5f, 0.5f);
-            dotRt.anchoredPosition = new Vector2(20f, -12f);
+            dotRt.anchoredPosition = new Vector2(20f, -(HeaderH + 2f));
             dotRt.sizeDelta = new Vector2(12f, 12f);
             _metronome = dotGo.AddComponent<Image>();
             _metronome.color = new Color(0.6f, 0.8f, 1f, 1f);
@@ -496,7 +501,7 @@ namespace Valkur.UI.HUD
             titleRt.anchorMin = new Vector2(0f, 1f);
             titleRt.anchorMax = new Vector2(1f, 1f);
             titleRt.pivot     = new Vector2(0f, 1f);
-            titleRt.anchoredPosition = new Vector2(34f, -4f);
+            titleRt.anchoredPosition = new Vector2(34f, -(HeaderH + 2f));
             titleRt.sizeDelta = new Vector2(-44f, 18f);
             _title.alignment = TextAlignmentOptions.Left;
             _title.enableWordWrapping = false;
@@ -509,7 +514,7 @@ namespace Valkur.UI.HUD
             metaRt.anchorMin = new Vector2(0f, 1f);
             metaRt.anchorMax = new Vector2(0f, 1f);
             metaRt.pivot     = new Vector2(0f, 1f);
-            metaRt.anchoredPosition = new Vector2(34f, -22f);
+            metaRt.anchoredPosition = new Vector2(34f, -(HeaderH + 20f));
             metaRt.sizeDelta = new Vector2(180f, 12f);
             _meta.alignment = TextAlignmentOptions.Left;
             _meta.text = "no tempo";
@@ -520,7 +525,7 @@ namespace Valkur.UI.HUD
             bcRt.anchorMin = new Vector2(1f, 1f);
             bcRt.anchorMax = new Vector2(1f, 1f);
             bcRt.pivot     = new Vector2(1f, 1f);
-            bcRt.anchoredPosition = new Vector2(-8f, -4f);
+            bcRt.anchoredPosition = new Vector2(-8f, -(HeaderH + 2f));
             bcRt.sizeDelta = new Vector2(150f, 14f);
             _beatCounter.alignment = TextAlignmentOptions.Right;
             _beatCounter.text = "—";
@@ -531,7 +536,7 @@ namespace Valkur.UI.HUD
             tlRt.anchorMin = new Vector2(1f, 1f);
             tlRt.anchorMax = new Vector2(1f, 1f);
             tlRt.pivot     = new Vector2(1f, 1f);
-            tlRt.anchoredPosition = new Vector2(-8f, -22f);
+            tlRt.anchoredPosition = new Vector2(-8f, -(HeaderH + 20f));
             tlRt.sizeDelta = new Vector2(120f, 12f);
             _timeLabel.alignment = TextAlignmentOptions.Right;
             _timeLabel.text = "0:00 / 0:00";
@@ -543,7 +548,7 @@ namespace Valkur.UI.HUD
             barBgRt.anchorMax = new Vector2(1f, 1f);
             barBgRt.pivot     = new Vector2(0f, 1f);
             // Give the bar more click area than its visible thickness so it's draggable.
-            barBgRt.anchoredPosition = new Vector2(8f, -36f);
+            barBgRt.anchoredPosition = new Vector2(8f, -(HeaderH + 24f));
             barBgRt.sizeDelta = new Vector2(-16f, 12f);
             var bgImg = barBgGo.AddComponent<Image>();
             bgImg.sprite = BuildSolidSprite();
@@ -615,27 +620,29 @@ namespace Valkur.UI.HUD
 
         private void BuildResizeHandle()
         {
-            var go = NewChild("ResizeHandle");
+            var go = NewChild("ResizeHandle", _headerBar != null ? _headerBar.transform : transform);
             var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot     = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(2f, -2f);
-            rt.sizeDelta = new Vector2(18f, 18f);
+            rt.anchorMin = new Vector2(0f, 0.5f);
+            rt.anchorMax = new Vector2(0f, 0.5f);
+            rt.pivot     = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = new Vector2(4f, 0f);
+            rt.sizeDelta = new Vector2(16f, 16f);
 
-            // Transparent hit area so the entire 18x18 receives drag events.
+            // Subtle header-tile background so it reads as a menu control.
             var hit = go.AddComponent<Image>();
-            hit.color = new Color(1f, 1f, 1f, 0.001f);
+            hit.sprite = BuildRoundedRectSprite();
+            hit.type = Image.Type.Sliced;
+            hit.color = new Color(1f, 1f, 1f, 0.10f);
             hit.raycastTarget = true;
 
             // Triangle glyph on top.
-            var glyph = NewLabel("Glyph", 18, FontStyles.Bold, new Color(1f, 0.95f, 0.85f, 0.9f));
+            var glyph = NewLabel("Glyph", 14, FontStyles.Bold, new Color(1f, 0.95f, 0.85f, 0.9f));
             glyph.transform.SetParent(go.transform, false);
             var gr = glyph.rectTransform;
             gr.anchorMin = Vector2.zero; gr.anchorMax = Vector2.one;
             gr.sizeDelta = Vector2.zero; gr.anchoredPosition = Vector2.zero;
-            glyph.alignment = TextAlignmentOptions.TopLeft;
-            glyph.text = "◤"; // BLACK UPPER LEFT TRIANGLE
+            glyph.alignment = TextAlignmentOptions.Center;
+            glyph.text = "/";
             glyph.raycastTarget = false;
 
             var handler = go.AddComponent<ResizeHandle>();
@@ -649,13 +656,13 @@ namespace Valkur.UI.HUD
         // in both simple and expanded modes per user request.
         private void BuildMinimizeButton()
         {
-            var go = NewChild("MinimizeBtn");
+            var go = NewChild("MinimizeBtn", _headerBar != null ? _headerBar.transform : transform);
             var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(1f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot     = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-2f, -2f);
-            rt.sizeDelta = new Vector2(20f, 20f);
+            rt.anchorMin = new Vector2(1f, 0.5f);
+            rt.anchorMax = new Vector2(1f, 0.5f);
+            rt.pivot     = new Vector2(1f, 0.5f);
+            rt.anchoredPosition = new Vector2(-4f, 0f);
+            rt.sizeDelta = new Vector2(16f, 16f);
             _minimizeBtnRt = rt;
 
             var bgImg = go.AddComponent<Image>();
@@ -706,6 +713,34 @@ namespace Valkur.UI.HUD
             }
         }
 
+        private void BuildHeaderBar()
+        {
+            _headerBar = NewChild("HeaderBar");
+            var rt = _headerBar.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, HeaderH);
+
+            _headerBg = _headerBar.AddComponent<Image>();
+            _headerBg.sprite = BuildRoundedRectSprite();
+            _headerBg.type = Image.Type.Sliced;
+            _headerBg.color = new Color(1f, 1f, 1f, 0.06f);
+
+            var divider = NewChild("HeaderDivider", _headerBar.transform);
+            var dividerRt = divider.GetComponent<RectTransform>();
+            dividerRt.anchorMin = new Vector2(0f, 0f);
+            dividerRt.anchorMax = new Vector2(1f, 0f);
+            dividerRt.pivot = new Vector2(0.5f, 0f);
+            dividerRt.anchoredPosition = Vector2.zero;
+            dividerRt.sizeDelta = new Vector2(-8f, 1f);
+            var dividerImg = divider.AddComponent<Image>();
+            dividerImg.sprite = BuildSolidSprite();
+            dividerImg.color = new Color(1f, 1f, 1f, 0.10f);
+            dividerImg.raycastTarget = false;
+        }
+
         private void OnMinimizeClicked()
         {
             // Going INTO minimized: cache the current footprint so restore comes back
@@ -725,6 +760,13 @@ namespace Valkur.UI.HUD
         private const float MinimizeBtnSizeMinimized = 32f;
         private const float MinimizeIconSizeExpanded  = 12f;
         private const float MinimizeIconSizeMinimized = 28f;
+
+        private void ApplyRootAnchorPosition()
+        {
+            if (_rt == null) return;
+            float lift = _isMinimized ? 0f : bottomLift;
+            _rt.anchoredPosition = new Vector2(-edgeInset, edgeInset + lift);
+        }
 
         private void ApplyMinimizedState()
         {
@@ -747,10 +789,12 @@ namespace Valkur.UI.HUD
                 // Remove the button BG so the stone image stands on its own.
                 if (_minimizeBg   != null) _minimizeBg.color = Color.clear;
                 if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeMinimized, MinimizeBtnSizeMinimized);
+                if (_headerBg != null) _headerBg.color = Color.clear;
 
                 // Shrink root to just the restore tile.
                 if (_rt != null) _rt.sizeDelta = new Vector2(MinimizedW, MinimizedH);
                 if (_rt != null) _rt.localScale = Vector3.one;
+                if (_bg != null) _bg.color = Color.clear;
             }
             else
             {
@@ -764,12 +808,16 @@ namespace Valkur.UI.HUD
                 }
                 if (_minimizeBg    != null) _minimizeBg.color = new Color(1f, 1f, 1f, 0.10f);
                 if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeExpanded, MinimizeBtnSizeExpanded);
+                if (_headerBg != null) _headerBg.color = new Color(1f, 1f, 1f, 0.06f);
 
                 // Restore the cached per-mode size.
                 widgetWidth  = _isExpanded ? _expandedW : _simpleW;
                 widgetHeight = _isExpanded ? _expandedH : _simpleH;
+                if (_bg != null) _bg.color = new Color(0.06f, 0.06f, 0.08f, 0.85f);
                 ApplyExpandedState();
             }
+
+            ApplyRootAnchorPosition();
         }
 
         // ── Spectrum panel (expanded mode) ──────────────────────────────────

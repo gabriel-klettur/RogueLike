@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.Spells.UI;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -79,6 +80,11 @@ namespace Valkur.Gameplay.Spells
                         bgImg.color = tint;
                     }
                 }
+
+                // Add drag-drop support: make this spell draggable to the HUD
+                var draggable = btn.gameObject.AddComponent<DraggableSpellItem>();
+                draggable.Configure(spell, icon, SpellDragOrigin.Picker);
+
                 shown++;
             }
 

@@ -32,6 +32,8 @@ namespace Valkur.Gameplay.Inventory
         private const float TITLE_H      = 22f;
         private const float TOOLTIP_H    = 38f;
         private const float FOOTER_H     = 32f;
+        private const float PANEL_TOP_MARGIN   = 16f;
+        private const float PANEL_RIGHT_MARGIN = 16f;
 
         private static readonly string[] TAB_LABELS =
             { "Equipo", "Materiales", "Consumibles", "Otros", "Quest" };
@@ -94,9 +96,10 @@ namespace Valkur.Gameplay.Inventory
 
             _panelGo   = CreateUIObject("InventoryPanel", _canvas.transform);
             _panelRect = _panelGo.GetComponent<RectTransform>();
-            _panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-            _panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-            _panelRect.pivot     = new Vector2(0.5f, 0.5f);
+            _panelRect.anchorMin = new Vector2(1f, 1f);
+            _panelRect.anchorMax = new Vector2(1f, 1f);
+            _panelRect.pivot     = new Vector2(1f, 1f);
+            _panelRect.anchoredPosition = new Vector2(-PANEL_RIGHT_MARGIN, -PANEL_TOP_MARGIN);
             _panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
 
             var panelBg = _panelGo.AddComponent<Image>();

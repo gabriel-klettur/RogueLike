@@ -166,7 +166,20 @@ namespace Valkur.UI.MainMenu
 
         private void EnsureAudioManager()
         {
-            if (ServiceLocator.Get<IAudioService>() != null) return;
+            // Reuse existing AudioManager if already instantiated in ServiceLocator
+            if (ServiceLocator.Get<IAudioService>() != null)
+            {
+                Debug.Log("[MainMenuUI] AudioManager already running (singleton persists).");
+                return;
+            }
+
+            // Check if AudioManager exists in scene (e.g., created by GlobalBootstrap)
+            if (AudioManager.HasInstance)
+            {
+                ServiceLocator.Register<IAudioService>(AudioManager.Instance);
+                Debug.Log("[MainMenuUI] AudioManager found in scene, registered with ServiceLocator.");
+                return;
+            }
 
             var catalogAsset = Resources.Load<AudioCatalogSO>("AudioCatalog");
             if (catalogAsset == null)
@@ -178,7 +191,7 @@ namespace Valkur.UI.MainMenu
             var go = new GameObject("AudioManager");
             var mgr = go.AddComponent<AudioManager>();
             mgr.SetCatalog(catalogAsset);
-            Debug.Log("[MainMenuUI] AudioManager bootstrapped for menu.");
+            Debug.Log("[MainMenuUI] AudioManager bootstrapped for menu (first creation).");
         }
 
         private void PlayMenuMusic()

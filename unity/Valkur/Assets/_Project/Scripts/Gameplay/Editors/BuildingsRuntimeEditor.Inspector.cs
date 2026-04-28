@@ -137,6 +137,10 @@ namespace Valkur.Gameplay.Buildings
                     bObj.ZoneName   = zoneName;
                     bObj.InstanceId = newId;
                     bObj.Apply(template, Vector2Int.zero, -1f);
+                    var newRenderers = bObj.GetComponentsInChildren<SpriteRenderer>(true);
+                    for (int i = 0; i < newRenderers.Length; i++)
+                        if (newRenderers[i] != null)
+                            newRenderers[i].enabled = _buildingsVisible;
                     RefreshCollisionFor(bObj);
                     created = bObj;
                     InvalidateBuildingCache();

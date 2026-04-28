@@ -69,20 +69,20 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Check layer scroll input. Returns delta (-1 or +1) or 0 if no scroll.
+        /// Check mouse wheel input for camera zoom. Returns scroll delta or 0 if no scroll.
         /// </summary>
-        public int PollLayerScroll()
+        public float PollZoom()
         {
             var mouse = Mouse.current;
-            if (mouse == null) return 0;
+            if (mouse == null) return 0f;
             float scroll = mouse.scroll.ReadValue().y;
-            if (Mathf.Abs(scroll) < 0.1f) return 0;
+            if (Mathf.Abs(scroll) < 0.1f) return 0f;
 
             if (UnityEngine.EventSystems.EventSystem.current != null &&
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-                return 0;
+                return 0f;
 
-            return scroll > 0 ? 1 : -1;
+            return scroll;
         }
 
         /// <summary>

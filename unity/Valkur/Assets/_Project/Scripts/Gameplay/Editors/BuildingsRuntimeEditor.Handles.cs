@@ -101,6 +101,12 @@ namespace Valkur.Gameplay.Buildings
         private void UpdateZBadges()
         {
             if (_zTopBadgeRt == null || _zBotBadgeRt == null) return;
+            if (!_buildingsVisible)
+            {
+                _zTopBadgeRt.gameObject.SetActive(false);
+                _zBotBadgeRt.gameObject.SetActive(false);
+                return;
+            }
             bool show = _activeBuilding != null && !_removeMode;
             _zTopBadgeRt.gameObject.SetActive(show);
             _zBotBadgeRt.gameObject.SetActive(show);
