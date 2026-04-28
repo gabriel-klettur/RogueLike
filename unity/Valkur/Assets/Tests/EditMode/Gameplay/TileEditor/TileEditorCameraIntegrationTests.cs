@@ -69,8 +69,8 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             // Act
             _cameraSetup.SetTileEditorZoom(expectedSize);
 
-            // Assert - The zoom should be applied in the next Update frame
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Note: Zoom is applied in Update cycle, we check the current size
+            // // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             
             float actualSize = _cameraSetup.GetCurrentOrthographicSize();
             Assert.AreEqual(expectedSize, actualSize, 0.01f, "Tile editor zoom should be applied correctly");
@@ -84,7 +84,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act
             _cameraSetup.SetTileEditorZoom(tooSmallSize);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             
             float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
 
@@ -100,7 +100,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act
             _cameraSetup.SetTileEditorZoom(tooLargeSize);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             
             float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
 
@@ -117,12 +117,12 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act - Test minimum boundary
             _cameraSetup.SetTileEditorZoom(minSize);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             float actualMinSize = _cameraSetup.GetCurrentOrthographicSize();
 
             // Act - Test maximum boundary
             _cameraSetup.SetTileEditorZoom(maxSize);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             float actualMaxSize = _cameraSetup.GetCurrentOrthographicSize();
 
             // Assert
@@ -140,7 +140,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             foreach (float expectedSize in testSizes)
             {
                 _cameraSetup.SetTileEditorZoom(expectedSize);
-                _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
                 
                 float actualSize = _cameraSetup.GetCurrentOrthographicSize();
                 Assert.AreEqual(expectedSize, actualSize, 0.01f, $"Should apply zoom size {expectedSize} correctly");
@@ -235,7 +235,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act
             _cameraSetup.SetTileEditorZoom(5f);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
 
             // Assert - Should still work but may not be visible
             float size = _cameraSetup.GetCurrentOrthographicSize();

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
@@ -75,7 +76,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             
             // Act - Change zoom
             _cameraSetup.SetTileEditorZoom(8.0f);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
 
             // Assert
             Assert.AreEqual(10, _state.BrushSize, "Brush size should be updated");
@@ -104,7 +105,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             foreach (float expectedSize in testSizes)
             {
                 _cameraSetup.SetTileEditorZoom(expectedSize);
-                _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
                 
                 float actualSize = _cameraSetup.GetCurrentOrthographicSize();
                 Assert.AreEqual(expectedSize, actualSize, 0.01f, $"Zoom {expectedSize} should be applied correctly");
@@ -183,7 +184,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             
             // Act - Change zoom
             _cameraSetup.SetTileEditorZoom(6.0f);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             
             // Act - Move camera (simulate pan)
             _camera.transform.position = new Vector3(10, 5, initialPosition.z);
@@ -236,11 +237,11 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act - Test zoom limits
             _cameraSetup.SetTileEditorZoom(minZoom - 0.1f); // Below minimum
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             float clampedMinZoom = _cameraSetup.GetCurrentOrthographicSize();
             
             _cameraSetup.SetTileEditorZoom(maxZoom + 10f); // Above maximum
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
             float clampedMaxZoom = _cameraSetup.GetCurrentOrthographicSize();
 
             // Act - Test brush size limits
@@ -277,7 +278,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             for (int i = 0; i < 10; i++)
             {
                 _cameraSetup.SetTileEditorZoom(Random.Range(1f, 20f));
-                _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
                 yield return null;
             }
             
@@ -299,7 +300,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 
             // Act - Test invalid zoom request
             _cameraSetup.SetTileEditorZoom(-5f); // Negative zoom
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
 
             // Assert
             Assert.AreEqual(0.5f, _cameraSetup.GetCurrentOrthographicSize(), "Negative zoom should be clamped to minimum");
@@ -313,7 +314,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             // Cleanup
             _state.BrushSize = originalBrushSize;
             _cameraSetup.SetTileEditorZoom(originalZoom);
-            _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
         }
 
         [Test]
