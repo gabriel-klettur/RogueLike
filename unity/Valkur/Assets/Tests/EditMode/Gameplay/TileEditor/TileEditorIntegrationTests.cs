@@ -9,7 +9,7 @@ using System.Collections;
 
 // Integration tests for Tile Editor functionality
 
-namespace Valkur.Tests.EditMode.Editors.TileEditor
+namespace Valkur.Tests.EditMode.Gameplay.TileEditor
 {
     [TestFixture]
     public class TileEditorIntegrationTests
@@ -43,8 +43,6 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor
 
             // Create CameraSetup with CinemachineVirtualCamera
             _cameraSetupGo = new GameObject("CameraSetup");
-            // Add CinemachineVirtualCamera first (required by CameraSetup)
-            var vcam = _cameraSetupGo.AddComponent<Cinemachine.CinemachineVirtualCamera>();
             _cameraSetup = _cameraSetupGo.AddComponent<Valkur.Gameplay.CameraSetup>();
             
             // Force Awake to be called to set Instance

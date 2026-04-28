@@ -59,39 +59,13 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public TileEditorState.Tool? PollToolShortcut()
         {
-            // Check if _ctrlModifier is null (disposed state)
-            if (_ctrlModifier == null) return null;
-            
-            bool ctrl = _ctrlModifier.IsPressed();
+            bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
             if (_toolBrushAction != null && _toolBrushAction.WasPerformedThisFrame()) return TileEditorState.Tool.Brush;
             if (_toolEraserAction != null && _toolEraserAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eraser;
             if (_toolFillAction != null && _toolFillAction.WasPerformedThisFrame()) return TileEditorState.Tool.Fill;
             if (_toolEyedropperAction != null && _toolEyedropperAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eyedropper;
             if (_toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame() && !ctrl) return TileEditorState.Tool.Select;
             return null;
-        }
-
-        public void Dispose()
-        {
-            _toggleAction?.Disable();
-            _toolBrushAction?.Disable();
-            _toolEraserAction?.Disable();
-            _toolFillAction?.Disable();
-            _toolEyedropperAction?.Disable();
-            _toolSelectAction?.Disable();
-            _undoAction?.Disable();
-            _redoAction?.Disable();
-            _ctrlModifier?.Disable();
-            
-            _toggleAction = null;
-            _toolBrushAction = null;
-            _toolEraserAction = null;
-            _toolFillAction = null;
-            _toolEyedropperAction = null;
-            _toolSelectAction = null;
-            _undoAction = null;
-            _redoAction = null;
-            _ctrlModifier = null;
         }
 
         /// <summary>
