@@ -18,15 +18,24 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
         [SetUp]
         public void SetUp()
         {
+            // Reset singleton before test
+            if (Valkur.Gameplay.CameraSetup.Instance != null)
+            {
+                Object.DestroyImmediate(Valkur.Gameplay.CameraSetup.Instance.gameObject);
+            }
+
             // Create main camera
             _cameraGo = new GameObject("Main Camera");
             _camera = _cameraGo.AddComponent<Camera>();
             _camera.orthographic = true;
             _camera.tag = "MainCamera";
 
-            // Create CameraSetup
+            // Create CameraSetup with CinemachineVirtualCamera
             _cameraSetupGo = new GameObject("CameraSetup");
             _cameraSetup = _cameraSetupGo.AddComponent<Valkur.Gameplay.CameraSetup>();
+            
+            // Force Awake to be called to set Instance
+            _cameraSetup.Awake();
         }
 
         [TearDown]

@@ -115,6 +115,14 @@ namespace Valkur.Gameplay
         {
             if (_vcam == null) return;
 
+            // Handle Tile Editor zoom requests first
+            if (_tileEditorZoomRequested)
+            {
+                _vcam.m_Lens.OrthographicSize = _tileEditorTargetSize;
+                _tileEditorZoomRequested = false;
+                return;
+            }
+
             // Acquire the follow target lazily: GameplaySceneSetup spawns the player
             // from a long coroutine, so EntityRegistry.Player is usually still null
             // when CameraSetup.Start() runs. Without this, the camera stays at the
@@ -123,14 +131,6 @@ namespace Valkur.Gameplay
             {
                 var player = EntityRegistry.Player;
                 if (player != null) _vcam.Follow = player.transform;
-            }
-
-            // Handle Tile Editor zoom requests
-            if (_tileEditorZoomRequested)
-            {
-                _vcam.m_Lens.OrthographicSize = _tileEditorTargetSize;
-                _tileEditorZoomRequested = false;
-                return;
             }
 
             var mouse = Mouse.current;

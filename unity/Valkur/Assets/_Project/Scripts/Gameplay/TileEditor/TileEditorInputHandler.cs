@@ -60,11 +60,11 @@ namespace Valkur.Gameplay.TileEditor
         public TileEditorState.Tool? PollToolShortcut()
         {
             bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
-            if (_toolBrushAction.WasPerformedThisFrame()) return TileEditorState.Tool.Brush;
-            if (_toolEraserAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eraser;
-            if (_toolFillAction.WasPerformedThisFrame()) return TileEditorState.Tool.Fill;
-            if (_toolEyedropperAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eyedropper;
-            if (_toolSelectAction.WasPerformedThisFrame() && !ctrl) return TileEditorState.Tool.Select;
+            if (_toolBrushAction != null && _toolBrushAction.WasPerformedThisFrame()) return TileEditorState.Tool.Brush;
+            if (_toolEraserAction != null && _toolEraserAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eraser;
+            if (_toolFillAction != null && _toolFillAction.WasPerformedThisFrame()) return TileEditorState.Tool.Fill;
+            if (_toolEyedropperAction != null && _toolEyedropperAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eyedropper;
+            if (_toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame() && !ctrl) return TileEditorState.Tool.Select;
             return null;
         }
 
@@ -112,6 +112,57 @@ namespace Valkur.Gameplay.TileEditor
         {
             return UnityEngine.EventSystems.EventSystem.current != null &&
                    UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+        }
+
+        /// <summary>
+        /// Diagnostic method to check Input System health and mouse availability.
+        /// Call this if mouse is not working to identify the issue.
+        /// </summary>
+        public void DiagnoseInputSystem()
+        {
+            Debug.Log("[TileEditor] === Input System Diagnosis ===");
+            
+            // Check Input System availability
+            var mouse = Mouse.current;
+            var keyboard = Keyboard.current;
+            
+            Debug.Log($"[TileEditor] Mouse available: {mouse != null}");
+            Debug.Log($"[TileEditor] Keyboard available: {keyboard != null}");
+            
+            if (mouse != null)
+            {
+                Debug.Log($"[TileEditor] Mouse position: {mouse.position.ReadValue()}");
+                Debug.Log($"[TileEditor] Mouse scroll: {mouse.scroll.ReadValue()}");
+                Debug.Log($"[TileEditor] Mouse left button: {mouse.leftButton.isPressed}");
+                Debug.Log($"[TileEditor] Mouse right button: {mouse.rightButton.isPressed}");
+            }
+            
+            if (keyboard != null)
+            {
+                Debug.Log($"[TileEditor] Space key: {keyboard.spaceKey.isPressed}");
+                Debug.Log($"[TileEditor] Escape key: {keyboard.escapeKey.isPressed}");
+            }
+            
+            // Check EventSystem
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            Debug.Log($"[TileEditor] EventSystem available: {eventSystem != null}");
+            
+            if (eventSystem != null)
+            {
+                Debug.Log($"[TileEditor] EventSystem enabled: {eventSystem.enabled}");
+                Debug.Log($"[TileEditor] Pointer over UI: {eventSystem.IsPointerOverGameObject()}");
+            }
+            
+            // Check Input Actions
+            Debug.Log($"[TileEditor] Toggle action: {_toggleAction != null} (enabled: {_toggleAction?.enabled})");
+            Debug.Log($"[TileEditor] Tool actions: {_toolBrushAction != null && _toolEraserAction != null && _toolFillAction != null}");
+            Debug.Log($"[TileEditor] Undo/Redo actions: {_undoAction != null && _redoAction != null}");
+            
+            // Test PollZoom method
+            float scroll = PollZoom();
+            Debug.Log($"[TileEditor] PollZoom result: {scroll}");
+            
+            Debug.Log("[TileEditor] === End Diagnosis ===");
         }
 
         public void Dispose()
