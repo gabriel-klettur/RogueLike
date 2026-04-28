@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay;
 using System.Collections;
 
 namespace Valkur.Tests.EditMode.Gameplay.TileEditor
