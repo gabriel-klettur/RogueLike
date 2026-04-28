@@ -34,8 +34,10 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             _cameraSetupGo = new GameObject("CameraSetup");
             _cameraSetup = _cameraSetupGo.AddComponent<Valkur.Gameplay.CameraSetup>();
             
-            // Force Awake to be called to set Instance
-            _cameraSetup.Awake();
+            // Force Awake to be called to set Instance (private lifecycle method)
+            typeof(Valkur.Gameplay.CameraSetup).GetMethod("Awake",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.Invoke(_cameraSetup, null);
         }
 
         [TearDown]
