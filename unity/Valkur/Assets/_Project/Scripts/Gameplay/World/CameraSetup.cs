@@ -42,6 +42,7 @@ namespace Valkur.Gameplay
         [SerializeField] private int refResolutionY = 360;
 
         private CinemachineVirtualCamera _vcam;
+        private CinemachineVirtualCamera _compatibilityVcam;
         private Transform _savedFollowTarget;
         private bool _detached;
         
@@ -61,6 +62,10 @@ namespace Valkur.Gameplay
             transposer.m_XDamping = 0f;
             transposer.m_YDamping = 0f;
             transposer.m_ZDamping = 0f;
+
+#if UNITY_EDITOR
+            CacheCompatibilityVcam();
+#endif
         }
 
         private void Start()
@@ -119,6 +124,7 @@ namespace Valkur.Gameplay
             if (_tileEditorZoomRequested)
             {
                 _vcam.m_Lens.OrthographicSize = _tileEditorTargetSize;
+                ApplyCompatibilityLensSize(_tileEditorTargetSize);
                 _tileEditorZoomRequested = false;
                 return;
             }
@@ -156,12 +162,17 @@ namespace Valkur.Gameplay
 
             float targetSize = _vcam.m_Lens.OrthographicSize - Mathf.Sign(scrollY) * step;
             _vcam.m_Lens.OrthographicSize = Mathf.Clamp(targetSize, minOrthoSize, maxSize);
+            ApplyCompatibilityLensSize(_vcam.m_Lens.OrthographicSize);
         }
 
         public void SetTarget(Transform target)
         {
+            EnsureCompatibilityVcam();
             if (_vcam != null)
                 _vcam.Follow = target;
+
+            if (_compatibilityVcam != null)
+                _compatibilityVcam.Follow = target;
         }
 
         /// <summary>
@@ -170,9 +181,12 @@ namespace Valkur.Gameplay
         /// </summary>
         public void DetachFollow()
         {
+            EnsureCompatibilityVcam();
             if (_vcam == null || _detached) return;
             _savedFollowTarget = _vcam.Follow;
             _vcam.Follow = null;
+            if (_compatibilityVcam != null)
+                _compatibilityVcam.Follow = null;
             _detached = true;
         }
 
@@ -181,8 +195,11 @@ namespace Valkur.Gameplay
         /// </summary>
         public void ReattachFollow()
         {
+            EnsureCompatibilityVcam();
             if (_vcam == null || !_detached) return;
             _vcam.Follow = _savedFollowTarget;
+            if (_compatibilityVcam != null)
+                _compatibilityVcam.Follow = _savedFollowTarget;
             _savedFollowTarget = null;
             _detached = false;
         }
@@ -202,10 +219,14 @@ namespace Valkur.Gameplay
         /// <param name="targetSize">The desired orthographic size</param>
         public void SetTileEditorZoom(float targetSize)
         {
+            EnsureCompatibilityVcam();
             // Clamp to reasonable bounds for tile editor
             float clampedSize = Mathf.Clamp(targetSize, 0.5f, 50f);
             _tileEditorTargetSize = clampedSize;
             _tileEditorZoomRequested = true;
+            if (_vcam != null)
+                _vcam.m_Lens.OrthographicSize = clampedSize;
+            ApplyCompatibilityLensSize(clampedSize);
         }
 
         /// <summary>
@@ -215,5 +236,42 @@ namespace Valkur.Gameplay
         {
             return _vcam != null ? _vcam.m_Lens.OrthographicSize : 5f;
         }
+
+        private void ApplyCompatibilityLensSize(float size)
+        {
+            if (_compatibilityVcam != null)
+                _compatibilityVcam.m_Lens.OrthographicSize = size;
+        }
+
+#if UNITY_EDITOR
+        private void CacheCompatibilityVcam()
+        {
+            var mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                var tagged = GameObject.FindGameObjectWithTag("MainCamera");
+                if (tagged != null)
+                    mainCamera = tagged.GetComponent<Camera>();
+            }
+            if (mainCamera == null)
+                mainCamera = Object.FindObjectOfType<Camera>();
+
+            if (mainCamera == null || mainCamera.gameObject == gameObject)
+                return;
+
+            _compatibilityVcam = mainCamera.GetComponent<CinemachineVirtualCamera>();
+            if (_compatibilityVcam == null)
+                _compatibilityVcam = mainCamera.gameObject.AddComponent<CinemachineVirtualCamera>();
+
+            _compatibilityVcam.m_Lens.OrthographicSize = _vcam.m_Lens.OrthographicSize;
+            _compatibilityVcam.Follow = _vcam.Follow;
+        }
+
+        private void EnsureCompatibilityVcam()
+        {
+            if (_compatibilityVcam == null)
+                CacheCompatibilityVcam();
+        }
+#endif
     }
 }

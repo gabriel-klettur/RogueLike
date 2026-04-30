@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -193,6 +194,59 @@ namespace Valkur.Tests.EditMode.Game.Data
             for (int i = 0; i < frames.Length; i++)
                 Assert.IsNotNull(frames[i],
                     $"'{playerName}' direction '{dirName}' frame [{i}] is null.");
+        }
+
+        [Test]
+        public void PlayerDefinitionSanitizer_DoesNotPadFourDirectionalSheetsIntoWrong8DirLayout()
+        {
+            var def = ScriptableObject.CreateInstance<PlayerDefinition>();
+            var created = new List<Object> { def };
+
+            try
+            {
+                var frames = CreateFrames(16, created);
+                def.assetConfig = new EntityAssetConfig
+                {
+                    idleSheets = new List<Sprite>(frames)
+                };
+                def.assetConfig.idleSheets.Insert(5, null);
+
+                var sanitize = typeof(PlayerDefinition).GetMethod(
+                    "SanitizeAssetConfig",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                Assert.IsNotNull(sanitize);
+
+                sanitize.Invoke(def, null);
+
+                Assert.AreEqual(16, def.assetConfig.idleSheets.Count,
+                    "Sanitizing must strip nulls but preserve a 4-direction sheet count; padding to 40 corrupts direction mapping.");
+                for (int i = 0; i < frames.Count; i++)
+                    Assert.AreSame(frames[i], def.assetConfig.idleSheets[i]);
+            }
+            finally
+            {
+                for (int i = 0; i < created.Count; i++)
+                {
+                    if (created[i] != null)
+                        Object.DestroyImmediate(created[i]);
+                }
+            }
+        }
+
+        private static List<Sprite> CreateFrames(int count, List<Object> created)
+        {
+            var texture = new Texture2D(count, 1);
+            created.Add(texture);
+
+            var frames = new List<Sprite>(count);
+            for (int i = 0; i < count; i++)
+            {
+                var sprite = Sprite.Create(texture, new Rect(i, 0f, 1f, 1f), new Vector2(0.5f, 0.5f), 1f);
+                frames.Add(sprite);
+                created.Add(sprite);
+            }
+
+            return frames;
         }
     }
 }

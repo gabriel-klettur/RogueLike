@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.TileEditor
         [Tooltip("If null, will search for WorldGridBuilder at runtime.")]
         [SerializeField] private WorldGridBuilder worldGridBuilder;
 
-        private TileEditorState _state;
+        private TileEditorState _state = new TileEditorState();
         private TileEditorUI _ui;
         private Camera _mainCamera;
 
@@ -96,7 +96,7 @@ namespace Valkur.Gameplay.TileEditor
 
         protected override void OnSingletonAwake()
         {
-            _state = new TileEditorState();
+            _state ??= new TileEditorState();
             _input = new TileEditorInputHandler();
             _input.CreateActions();
             _undo = new TileEditorUndoSystem();

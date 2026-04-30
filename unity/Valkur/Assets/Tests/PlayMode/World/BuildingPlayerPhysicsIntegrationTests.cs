@@ -30,7 +30,6 @@ namespace Valkur.Tests.PlayMode.World
         [SetUp]
         public void SetUp()
         {
-            LogAssert.ignoreFailingMessages = true;
 
             // ── Building root — same layout as BuildingObject at runtime: ────────
             //   parent GO on Building layer with a Static Rigidbody2D, child
@@ -54,11 +53,12 @@ namespace Valkur.Tests.PlayMode.World
                 "Player↔Building collision MUST be enabled for this test to mean anything.");
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
             if (_buildingGo != null) Object.Destroy(_buildingGo);
             if (_playerGo != null) Object.Destroy(_playerGo);
+            yield return null;
         }
 
         /// <summary>

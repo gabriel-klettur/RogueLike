@@ -251,11 +251,13 @@ namespace Valkur.Gameplay.Spells
             // Return to pool or destroy
             if (!string.IsNullOrEmpty(_poolKey) && VFXManager.Instance != null)
             {
+                gameObject.SetActive(false);
                 ResetState();
                 VFXManager.Instance.Despawn(_poolKey, gameObject);
             }
             else
             {
+                gameObject.SetActive(false);
                 Destroy(gameObject);
             }
         }

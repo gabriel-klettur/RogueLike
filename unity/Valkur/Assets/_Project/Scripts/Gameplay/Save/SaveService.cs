@@ -192,7 +192,7 @@ namespace Valkur.Gameplay
             var data = SaveFileManager.TryLoadWithRecovery(path);
             if (data == null)
             {
-                Debug.LogError($"[SaveService] Load failed — no valid save found for: {path}");
+                Debug.LogWarning($"[SaveService] Load skipped - no valid save found for: {path}");
                 return false;
             }
 

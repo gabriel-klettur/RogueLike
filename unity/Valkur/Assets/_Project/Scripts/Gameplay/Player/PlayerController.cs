@@ -120,7 +120,13 @@ namespace Valkur.Gameplay
             AddSpellBinding("<Keyboard>/u", "summon_barbol");
             AddSpellBinding("<Keyboard>/m", "wall_ice");
 
-            // Enable all
+            EnableInputActions();
+
+            Debug.Log($"[PlayerController] Input actions created: {_spellBindings.Count} spell bindings + move/look/attack/dash.");
+        }
+
+        private void EnableInputActions()
+        {
             _moveAction.Enable();
             _lookAction.Enable();
             _primaryAttackAction.Enable();
@@ -129,14 +135,18 @@ namespace Valkur.Gameplay
             _dashAction.Enable();
             foreach (var (action, _) in _spellBindings)
                 action.Enable();
-
-            Debug.Log($"[PlayerController] Input actions created: {_spellBindings.Count} spell bindings + move/look/attack/dash.");
         }
 
         private void AddSpellBinding(string binding, string spellKey)
         {
             var action = new InputAction($"Spell_{spellKey}", InputActionType.Button, binding);
             _spellBindings.Add((action, spellKey));
+        }
+
+        private void OnEnable()
+        {
+            if (_moveAction != null)
+                EnableInputActions();
         }
 
         private void OnDisable()

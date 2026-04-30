@@ -85,6 +85,7 @@ namespace Valkur.Gameplay.Spells
         /// <summary>Get cooldown progress for a slot (0 = ready, 1 = full cooldown).</summary>
         public float GetCooldownNormalized(int slot)
         {
+            EnsureCooldownTimers();
             if (_cooldownTimers == null || slot < 0 || slot >= _cooldownTimers.Length) return 0f;
             if (_cooldownTimers[slot] <= 0f) return 0f;
             var spell = GetSpellAtSlot(slot);
@@ -94,7 +95,7 @@ namespace Valkur.Gameplay.Spells
 
         private void Awake()
         {
-            _cooldownTimers = new float[spellSlots.Length];
+            EnsureCooldownTimers();
             _mana = GetComponent<Mana>();
         }
 
@@ -187,12 +188,14 @@ namespace Valkur.Gameplay.Spells
 
         public float GetCooldownRemaining(int slotIndex)
         {
+            EnsureCooldownTimers();
             if (slotIndex < 0 || slotIndex >= _cooldownTimers.Length) return 0f;
             return Mathf.Max(0f, _cooldownTimers[slotIndex]);
         }
 
         public void SetSpell(int slotIndex, SpellDefinition spell)
         {
+            EnsureCooldownTimers();
             if (slotIndex >= 0 && slotIndex < spellSlots.Length)
                 spellSlots[slotIndex] = spell;
         }
@@ -205,6 +208,15 @@ namespace Valkur.Gameplay.Spells
         public void SetProjectilePrefab(GameObject prefab)
         {
             projectilePrefab = prefab;
+        }
+
+        private void EnsureCooldownTimers()
+        {
+            if (spellSlots == null)
+                return;
+
+            if (_cooldownTimers == null || _cooldownTimers.Length != spellSlots.Length)
+                _cooldownTimers = new float[spellSlots.Length];
         }
 
     }

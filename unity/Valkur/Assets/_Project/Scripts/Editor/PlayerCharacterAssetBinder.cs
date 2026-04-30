@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.U2D.Sprites;
 using UnityEngine;
 using Valkur.Data;
 
@@ -161,30 +162,26 @@ namespace Valkur.Editor
 
             // Use source width (not texture.width which returns the capped/imported size)
             int frameCount = Mathf.Max(1, sourceWidth / FrameSizePx);
-            var metas = new List<SpriteMetaData>(frameCount);
+            var spriteRects = new List<SpriteRect>(frameCount);
             for (int i = 0; i < frameCount; i++)
             {
+                string spriteName = $"{classKey}_{stateSuffix}_{i:D3}";
                 var rect = new Rect(i * FrameSizePx, 0, FrameSizePx, FrameSizePx);
-                metas.Add(new SpriteMetaData
+                spriteRects.Add(new SpriteRect
                 {
-                    name = $"{classKey}_{stateSuffix}_{i:D3}",
+                    name = spriteName,
                     rect = rect,
-                    alignment = (int)SpriteAlignment.Custom,
+                    alignment = SpriteAlignment.Custom,
                     pivot = new Vector2(0.5f, 0f),
-                    border = Vector4.zero
+                    border = Vector4.zero,
+                    spriteID = CreateStableSpriteGuid(texturePath, spriteName)
                 });
             }
 
-            // NOTE: This project still targets the importer workflow where spritesheet metadata is available.
-            // We keep this path for deterministic slicing from code and can migrate to
-            // ISpriteEditorDataProvider in a later refactor.
-#pragma warning disable 618
-            if (!SpriteMetaEquals(importer.spritesheet, metas))
+            if (ApplySpriteRects(importer, texturePath, spriteRects))
             {
-                importer.spritesheet = metas.ToArray();
                 needsReimport = true;
             }
-#pragma warning restore 618
 
             if (needsReimport)
             {
@@ -197,6 +194,41 @@ namespace Valkur.Editor
                 Debug.LogWarning($"[PlayerCharacterAssetBinder] No sliced sprites found at '{texturePath}'.");
 
             return sprites;
+        }
+
+        private static bool ApplySpriteRects(TextureImporter importer, string texturePath, List<SpriteRect> targetRects)
+        {
+            var factory = new SpriteDataProviderFactories();
+            factory.Init();
+
+            ISpriteEditorDataProvider dataProvider = factory.GetSpriteEditorDataProviderFromObject(importer);
+            if (dataProvider == null)
+            {
+                Debug.LogWarning($"[PlayerCharacterAssetBinder] Could not create sprite data provider for '{texturePath}'.");
+                return false;
+            }
+
+            dataProvider.InitSpriteEditorDataProvider();
+            SpriteRect[] existingRects = dataProvider.GetSpriteRects() ?? Array.Empty<SpriteRect>();
+            bool invalidSerializedIds = HasInvalidSerializedSpriteIds(importer, targetRects.Count);
+            if (!invalidSerializedIds && SpriteRectsEqual(existingRects, targetRects))
+                return false;
+
+            SpriteRect[] rectArray = targetRects.ToArray();
+            dataProvider.SetSpriteRects(rectArray);
+
+            ISpriteNameFileIdDataProvider nameFileIdProvider = dataProvider.GetDataProvider<ISpriteNameFileIdDataProvider>();
+            if (nameFileIdProvider != null)
+            {
+                var pairs = new List<SpriteNameFileIdPair>(rectArray.Length);
+                for (int i = 0; i < rectArray.Length; i++)
+                    pairs.Add(new SpriteNameFileIdPair(rectArray[i].name, rectArray[i].spriteID));
+
+                nameFileIdProvider.SetNameFileIdPairs(pairs);
+            }
+
+            dataProvider.Apply();
+            return true;
         }
 
         private static List<Sprite> LoadSpritesAtPath(string texturePath)
@@ -213,7 +245,7 @@ namespace Valkur.Editor
             return sprites;
         }
 
-        private static bool SpriteMetaEquals(SpriteMetaData[] existing, List<SpriteMetaData> target)
+        private static bool SpriteRectsEqual(SpriteRect[] existing, List<SpriteRect> target)
         {
             if (existing == null || existing.Length != target.Count)
                 return false;
@@ -228,9 +260,52 @@ namespace Valkur.Editor
                     Mathf.Abs(existing[i].rect.width - target[i].rect.width) > 0.01f ||
                     Mathf.Abs(existing[i].rect.height - target[i].rect.height) > 0.01f)
                     return false;
+
+                if (existing[i].alignment != target[i].alignment ||
+                    existing[i].pivot != target[i].pivot ||
+                    existing[i].border != target[i].border ||
+                    existing[i].spriteID != target[i].spriteID)
+                    return false;
             }
 
             return true;
+        }
+
+        private static bool HasInvalidSerializedSpriteIds(TextureImporter importer, int expectedFrameCount)
+        {
+            var serializedImporter = new SerializedObject(importer);
+            SerializedProperty sprites = serializedImporter.FindProperty("m_SpriteSheet.m_Sprites");
+            if (sprites == null || sprites.arraySize != expectedFrameCount)
+                return true;
+
+            for (int i = 0; i < sprites.arraySize; i++)
+            {
+                SerializedProperty sprite = sprites.GetArrayElementAtIndex(i);
+                if (sprite.FindPropertyRelative("m_InternalID").longValue == 0L)
+                    return true;
+
+                string spriteId = sprite.FindPropertyRelative("m_SpriteID").stringValue;
+                if (string.IsNullOrWhiteSpace(spriteId))
+                    return true;
+            }
+
+            SerializedProperty nameFileIdTable = serializedImporter.FindProperty("m_SpriteSheet.m_NameFileIdTable");
+            if (nameFileIdTable == null || nameFileIdTable.arraySize != expectedFrameCount)
+                return true;
+
+            for (int i = 0; i < nameFileIdTable.arraySize; i++)
+            {
+                SerializedProperty pair = nameFileIdTable.GetArrayElementAtIndex(i);
+                if (pair.FindPropertyRelative("second").longValue == 0L)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static GUID CreateStableSpriteGuid(string texturePath, string spriteName)
+        {
+            return new GUID(Hash128.Compute($"{texturePath}:{spriteName}").ToString());
         }
 
         private static string ResolveClassKey(PlayerDefinition playerDef)

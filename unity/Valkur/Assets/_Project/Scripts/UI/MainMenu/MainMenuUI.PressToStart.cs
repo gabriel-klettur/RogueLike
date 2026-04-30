@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core.Input;
 
 namespace Valkur.UI.MainMenu
 {
@@ -66,7 +67,7 @@ namespace Valkur.UI.MainMenu
             bool dismiss = false;
             if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
                 dismiss = true;
-            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
                 dismiss = true;
 
             if (dismiss)

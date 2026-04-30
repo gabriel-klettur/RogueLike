@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Valkur.Core.Input;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.MapEditor
@@ -145,12 +146,7 @@ namespace Valkur.Gameplay.MapEditor
 
         private void BuildUI()
         {
-            if (FindObjectOfType<EventSystem>() == null)
-            {
-                var esGo = new GameObject("EventSystem");
-                esGo.AddComponent<EventSystem>();
-                esGo.AddComponent<StandaloneInputModule>();
-            }
+            InputDiagnostics.EnsureEventSystem();
 
             var canvasGo = new GameObject("MapEditorCanvas");
             canvasGo.transform.SetParent(transform, false);

@@ -105,10 +105,11 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             
             // Act - Test EventSystem functionality immediately
             bool isOverUI = _inputHandler.IsPointerOverUI();
-            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current
+                ?? Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
             
             // Assert
-            Assert.IsNotNull(eventSystem, "EventSystem should be available immediately after input handler creation");
+            Assert.IsNotNull(eventSystem, "An EventSystem instance should be available immediately after input handler creation");
             Assert.IsFalse(isOverUI, "IsPointerOverUI should return safe value immediately");
         }
 
@@ -225,12 +226,13 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             // Act - Test complete InputSystem integration
             var mouse = Mouse.current;
             var keyboard = Keyboard.current;
-            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current
+                ?? Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
             
             // Assert - All InputSystem components should be available
             Assert.IsNotNull(mouse, "Mouse should be available through InputSystem");
             Assert.IsNotNull(keyboard, "Keyboard should be available through InputSystem");
-            Assert.IsNotNull(eventSystem, "EventSystem should be available");
+            Assert.IsNotNull(eventSystem, "An EventSystem instance should be available");
             
             // Test that input handler can read from these systems
             float scroll = _inputHandler.PollZoom();

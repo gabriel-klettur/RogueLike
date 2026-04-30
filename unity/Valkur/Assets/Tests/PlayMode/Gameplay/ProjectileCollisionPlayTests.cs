@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -26,13 +27,24 @@ namespace Valkur.Tests.PlayMode.Gameplay
         private GameObject _projectile;
         private GameObject _obstacle;
         private GameObject _target;
+        private readonly List<GameObject> _spawned = new List<GameObject>();
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
-            if (_projectile != null) Object.Destroy(_projectile);
-            if (_obstacle   != null) Object.Destroy(_obstacle);
-            if (_target     != null) Object.Destroy(_target);
+            for (int i = _spawned.Count - 1; i >= 0; i--)
+            {
+                var go = _spawned[i];
+                if (go != null)
+                    Object.Destroy(go);
+            }
+
+            _spawned.Clear();
+            _projectile = null;
+            _obstacle = null;
+            _target = null;
+
+            yield return null;
         }
 
         // ── Helpers ─────────────────────────────────────────────────────────
@@ -53,6 +65,7 @@ namespace Valkur.Tests.PlayMode.Gameplay
 
             var proj = go.AddComponent<Projectile>();
             proj.Initialize(dir, speed, 20f, lifetime, range, targets);
+            _spawned.Add(go);
             return go;
         }
 
@@ -65,6 +78,7 @@ namespace Valkur.Tests.PlayMode.Gameplay
             var box = go.AddComponent<BoxCollider2D>();
             box.size = size;
             box.isTrigger = isTrigger;
+            _spawned.Add(go);
             return go;
         }
 
@@ -80,6 +94,28 @@ namespace Valkur.Tests.PlayMode.Gameplay
 
             var h = go.AddComponent<Health>();
             h.Initialize(hp);
+            _spawned.Add(go);
+            return go;
+        }
+
+        private GameObject CreateConfiguredNpcTarget(Vector3 pos, int hp = 100)
+        {
+            var go = new GameObject("ConfiguredNpcTarget");
+            go.transform.position = pos;
+            go.layer = LayerNPC;
+
+            var renderer = go.AddComponent<SpriteRenderer>();
+            var texture = new Texture2D(32, 32);
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, 32f, 32f), new Vector2(0.5f, 0.5f), 32f);
+            renderer.sprite = sprite;
+
+            var legacy = go.AddComponent<CircleCollider2D>();
+            legacy.radius = 2f;
+            EntityColliderConfigurator.ConfigureNpcBodyCollider(go, renderer);
+
+            var h = go.AddComponent<Health>();
+            h.Initialize(hp);
+            _spawned.Add(go);
             return go;
         }
 
@@ -205,6 +241,30 @@ namespace Valkur.Tests.PlayMode.Gameplay
             Assert.Less(h.CurrentHp, 100, "Target should have taken damage (HP decreased).");
             Assert.IsTrue(_projectile == null || !_projectile.activeInHierarchy,
                 "Projectile must expire after dealing damage.");
+        }
+
+        [UnityTest]
+        public IEnumerator Projectile_AppliesDamage_ToConfiguredNpcBodyCollider()
+        {
+            _target     = CreateConfiguredNpcTarget(new Vector3(2f, 0f, 0f), hp: 100);
+            _projectile = CreateProjectile(Vector3.zero, Vector2.right, targets: 1 << LayerNPC);
+
+            float timeout = 0.5f;
+            float elapsed = 0f;
+            while (_projectile != null && _projectile.activeInHierarchy && elapsed < timeout)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            var box = _target.GetComponent<BoxCollider2D>();
+            var h = _target.GetComponent<Health>();
+
+            Assert.IsNotNull(box, "Configured NPCs must expose one cheap BoxCollider2D body.");
+            Assert.AreEqual(box.bounds.size.x, box.bounds.size.y, 0.001f, "NPC body collider must be square in world space.");
+            Assert.Less(h.CurrentHp, 100, "Projectile should damage the configured NPC body collider.");
+            Assert.IsTrue(_projectile == null || !_projectile.activeInHierarchy,
+                "Projectile must expire after hitting the configured NPC body collider.");
         }
 
         [UnityTest]
@@ -516,16 +576,21 @@ namespace Valkur.Tests.PlayMode.Gameplay
                 float timeout = 0.6f;
                 float elapsed = 0f;
                 Vector3 finalPos = Vector3.zero;
+                Vector3 lastKnownPos = _projectile.transform.position;
                 while (_projectile != null && elapsed < timeout)
                 {
+                    lastKnownPos = _projectile.transform.position;
                     if (!_projectile.activeInHierarchy)
                     {
-                        finalPos = _projectile.transform.position;
+                        finalPos = lastKnownPos;
                         break;
                     }
                     elapsed += Time.deltaTime;
                     yield return null;
                 }
+
+                if (finalPos == Vector3.zero)
+                    finalPos = lastKnownPos;
 
                 Assert.IsTrue(_projectile == null || !_projectile.activeInHierarchy,
                     "Projectile must detonate on the downstream obstacle B.");

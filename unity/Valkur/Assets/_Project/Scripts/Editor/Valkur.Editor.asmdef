@@ -4,7 +4,9 @@
     "references": [
         "Valkur.Core",
         "Valkur.Gameplay",
-        "Valkur.Data"
+        "Valkur.Data",
+        "Unity.InputSystem",
+        "Unity.2D.Sprite.Editor"
     ],
     "includePlatforms": [
         "Editor"

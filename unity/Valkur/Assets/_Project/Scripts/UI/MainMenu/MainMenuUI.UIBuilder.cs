@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
 
@@ -17,12 +18,7 @@ namespace Valkur.UI.MainMenu
     {
         private void BuildUI()
         {
-            if (FindObjectOfType<EventSystem>() == null)
-            {
-                var esGo = new GameObject("EventSystem");
-                esGo.AddComponent<EventSystem>();
-                esGo.AddComponent<InputSystemUIInputModule>();
-            }
+            InputDiagnostics.EnsureEventSystem();
 
             var canvasGo = new GameObject("MainMenuCanvas");
             canvasGo.transform.SetParent(transform);

@@ -86,13 +86,14 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
         public void DiagnoseInputSystem_ReportsEventSystemAvailability()
         {
             // Arrange
-            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current
+                ?? Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
             
             // Act
             _inputHandler.DiagnoseInputSystem();
             
             // Assert - If we get here without exceptions, the diagnostic worked
-            Assert.IsNotNull(eventSystem, "EventSystem should be available for diagnostic to report");
+            Assert.IsNotNull(eventSystem, "An EventSystem instance should be available for diagnostic to report");
         }
 
         [Test]
@@ -217,12 +218,13 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             
             var mouse = Mouse.current;
             var keyboard = Keyboard.current;
-            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current
+                ?? Object.FindObjectOfType<UnityEngine.EventSystems.EventSystem>();
             
             // These should be available for the diagnostic to report
             Assert.IsNotNull(mouse, "Mouse should be available for diagnostic");
             Assert.IsNotNull(keyboard, "Keyboard should be available for diagnostic");
-            Assert.IsNotNull(eventSystem, "EventSystem should be available for diagnostic");
+            Assert.IsNotNull(eventSystem, "An EventSystem instance should be available for diagnostic");
         }
 
         [Test]

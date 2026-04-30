@@ -45,7 +45,7 @@ namespace Valkur.Gameplay.World
                     if (npcGo == null || !npcGo.activeInHierarchy) continue;
 
                     var rbA = npcGo.GetComponent<Rigidbody2D>();
-                    var colA = npcGo.GetComponent<Collider2D>();
+                    var colA = EntityColliderConfigurator.GetBodyCollider(npcGo);
                     if (rbA == null || colA == null) continue;
                     if (rbA.isKinematic) continue;
 
@@ -95,13 +95,21 @@ namespace Valkur.Gameplay.World
 
         private static float GetColliderRadius(Collider2D col)
         {
-            if (col is CircleCollider2D cc) return cc.radius;
+            if (col is CircleCollider2D cc)
+                return cc.radius * Mathf.Max(Mathf.Abs(col.transform.lossyScale.x), Mathf.Abs(col.transform.lossyScale.y));
+
             if (col is BoxCollider2D bc)
             {
-                Vector2 s = bc.size * 0.5f;
+                Vector2 s = Vector2.Scale(bc.size, Abs(col.transform.lossyScale)) * 0.5f;
                 return Mathf.Min(s.x, s.y);
             }
+
             return 0.4f; // fallback
+        }
+
+        private static Vector2 Abs(Vector3 value)
+        {
+            return new Vector2(Mathf.Abs(value.x), Mathf.Abs(value.y));
         }
     }
 }

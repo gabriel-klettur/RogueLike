@@ -32,7 +32,6 @@ namespace Valkur.Tests.PlayMode.World
         [SetUp]
         public void SetUp()
         {
-            LogAssert.ignoreFailingMessages = true;
             _builderGo = new GameObject("TestWorldGridBuilder");
         }
 

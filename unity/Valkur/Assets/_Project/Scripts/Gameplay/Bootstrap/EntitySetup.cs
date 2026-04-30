@@ -58,7 +58,7 @@ namespace Valkur.Gameplay
 
         public static void ConfigureMonster(GameObject go, MonsterDefinition def)
         {
-            go.layer = NPCLayer;
+            EntityColliderConfigurator.ApplyLayerRecursively(go, NPCLayer);
             go.tag = "Monster";
 
             var brain = go.GetComponent<FSMMonsterBrain>();
@@ -76,7 +76,7 @@ namespace Valkur.Gameplay
             if (!appliedDataDrivenVisuals)
                 EntitySpriteHelper.EnsureMonsterSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
-            CompensateColliderForScale(go);
+            EntityColliderConfigurator.ConfigureNpcBodyCollider(go, spriteRenderer);
             InitHealth(go, def.stats.hp);
 
             if (go.GetComponent<FloatingDamageSpawner>() == null)
@@ -103,20 +103,6 @@ namespace Valkur.Gameplay
         }
 
         // ── Private helpers ──
-
-        /// <summary>
-        /// After EntityAnimationBinder scales the root transform for Python-parity visual sizing,
-        /// the CircleCollider2D radius must be compensated so its world-space size stays constant.
-        /// </summary>
-        private static void CompensateColliderForScale(GameObject go)
-        {
-            float scale = go.transform.localScale.x;
-            if (Mathf.Approximately(scale, 1f) || scale <= 0f) return;
-
-            var circle = go.GetComponent<CircleCollider2D>();
-            if (circle != null)
-                circle.radius /= scale;
-        }
 
         private static void InitHealth(GameObject go, int maxHp)
         {

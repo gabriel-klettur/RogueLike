@@ -34,7 +34,6 @@ namespace Valkur.Tests.PlayMode.World
         [SetUp]
         public void SetUp()
         {
-            LogAssert.ignoreFailingMessages = true;
             _gridGo = new GameObject("RegressionGrid");
             var grid = _gridGo.AddComponent<Grid>();
             grid.cellSize = new Vector3(1f, 1f, 0f);

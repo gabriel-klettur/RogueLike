@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 
 namespace Valkur.UI
 {
@@ -11,12 +12,7 @@ namespace Valkur.UI
         private partial void BuildUI()
         {
             // Ensure EventSystem exists (required for mouse clicks on UI)
-            if (FindObjectOfType<EventSystem>() == null)
-            {
-                var esGo = new GameObject("EventSystem");
-                esGo.AddComponent<EventSystem>();
-                esGo.AddComponent<StandaloneInputModule>();
-            }
+            InputDiagnostics.EnsureEventSystem();
 
             // Canvas (overlay, high sort order)
             var canvasGo = new GameObject("DeathScreenCanvas");

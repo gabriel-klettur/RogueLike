@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Data
@@ -36,5 +37,47 @@ namespace Valkur.Data
 
         [Header("Assets")]
         public EntityAssetConfig assetConfig;
+
+        private void OnEnable()
+        {
+            SanitizeAssetConfig();
+        }
+
+        private void OnValidate()
+        {
+            SanitizeAssetConfig();
+        }
+
+        private void SanitizeAssetConfig()
+        {
+            if (assetConfig == null)
+                return;
+
+            assetConfig.idleSheets = SanitizeSheet(assetConfig.idleSheets);
+            assetConfig.walkSheets = SanitizeSheet(assetConfig.walkSheets);
+            assetConfig.chaseSheets = SanitizeSheet(assetConfig.chaseSheets);
+            assetConfig.castSheets = SanitizeSheet(assetConfig.castSheets);
+            assetConfig.attackSheets = SanitizeSheet(assetConfig.attackSheets);
+            assetConfig.damageSheets = SanitizeSheet(assetConfig.damageSheets);
+            assetConfig.deathSheets = SanitizeSheet(assetConfig.deathSheets);
+        }
+
+        private static List<Sprite> SanitizeSheet(List<Sprite> source)
+        {
+            if (source == null || source.Count == 0)
+                return source ?? new List<Sprite>();
+
+            var clean = new List<Sprite>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (source[i] != null)
+                    clean.Add(source[i]);
+            }
+
+            if (clean.Count == 0)
+                return new List<Sprite>();
+
+            return clean;
+        }
     }
 }

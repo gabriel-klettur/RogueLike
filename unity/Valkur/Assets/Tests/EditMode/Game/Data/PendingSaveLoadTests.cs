@@ -10,6 +10,14 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             // Ensure clean state before each test
             PendingSaveLoad.Path = null;
+            PendingSaveLoad.PlayerClass = null;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            PendingSaveLoad.Path = null;
+            PendingSaveLoad.PlayerClass = null;
         }
 
         [Test]

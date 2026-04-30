@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read(//d/**)",
+      "Read(//c/Users/gabri/.claude/**)",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git ls-files:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python -c \"*)",
+      "Bash(python --version)",
+      "Bash(pip --version)",
+      "Bash(pip list:*)",
+      "Bash(pip show:*)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npx tsc:*)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet build:*)",
+      "Bash(where:*)",
+      "Bash(which:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\gabri\\.claude\\projects\\d--Python-RogueLike"
+    ]
+  },
+  "env": {
+    "VALKUR_UNITY_PROJECT": "d:/Python/RogueLike/unity/Valkur",
+    "VALKUR_PYTHON_REF": "d:/Python/RogueLike/python",
+    "VALKUR_INSPIRATION": "d:/Python/RogueLike/unity/Udemy_Inspiration/DungeonGunnerCourse",
+    "UNITY_EDITOR": "C:/Program Files/Unity/Hub/Editor/2022.3.62f1/Editor/Unity.exe"
+  }
+}

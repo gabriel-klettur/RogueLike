@@ -8,6 +8,7 @@
         "Valkur.Infrastructure",
         "Valkur.UI",
         "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

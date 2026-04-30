@@ -86,12 +86,13 @@ namespace Valkur.Tests.PlayMode.World
                 "Player layer must collide with Default layer for this test to be meaningful.");
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
             if (_playerGo != null) Object.Destroy(_playerGo);
             if (_gridGo != null) Object.Destroy(_gridGo);
             if (_wallTile != null) Object.Destroy(_wallTile);
+            yield return null;
         }
 
         // ── Helpers ──────────────────────────────────────────────────────

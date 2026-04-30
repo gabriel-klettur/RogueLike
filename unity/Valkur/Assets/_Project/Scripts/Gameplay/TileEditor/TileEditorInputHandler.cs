@@ -1,7 +1,9 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using Valkur.Core.Input;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
@@ -25,6 +27,9 @@ namespace Valkur.Gameplay.TileEditor
 
         public void CreateActions()
         {
+            TileEditorInputDevices.EnsureAvailable();
+            EnsureEventSystem();
+
             _toggleAction = new InputAction("ToggleTileEditor", InputActionType.Button, "<Keyboard>/f8");
             _toggleAction.Enable();
 
@@ -120,6 +125,7 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public void DiagnoseInputSystem()
         {
+            TileEditorInputDevices.EnsureAvailable();
             Debug.Log("[TileEditor] === Input System Diagnosis ===");
             
             // Check Input System availability
@@ -184,6 +190,11 @@ namespace Valkur.Gameplay.TileEditor
             action.Disable();
             action.Dispose();
             action = null;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            InputDiagnostics.EnsureEventSystem();
         }
     }
 }

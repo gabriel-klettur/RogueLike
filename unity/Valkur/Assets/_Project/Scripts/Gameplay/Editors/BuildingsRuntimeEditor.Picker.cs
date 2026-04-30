@@ -171,6 +171,14 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private void UpdatePickerDrag()
         {
+            if (!_pickerDragging && _pickerDragTemplateId >= 0 && (Mouse.current == null || !Mouse.current.leftButton.isPressed))
+            {
+                // A pending picker candidate must never survive past the release frame,
+                // even in EditMode tests where no Mouse device is bound.
+                _pickerDragTemplateId = -1;
+                return;
+            }
+
             var mouse = Mouse.current;
             if (mouse == null) return;
             Vector2 screenPos = mouse.position.ReadValue();
@@ -203,11 +211,6 @@ namespace Valkur.Gameplay.Buildings
                                 _statusTmp.text = $"Dragging template #{_pickerDragTemplateId} — release over the map to place.";
                         }
                     }
-                }
-                else
-                {
-                    // Released before threshold — normal click handled by Button.onClick.
-                    _pickerDragTemplateId = -1;
                 }
                 return;
             }

@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
@@ -14,21 +15,23 @@ namespace Valkur.Gameplay
         private void Update()
         {
             if (_health.IsDead) return;
-            if (_statusEffects != null && _statusEffects.IsStunned) return;
 
-            // Suspend all player input while any runtime editor is active,
-            // EXCEPT the Buildings Editor and Tile Editor which intentionally allow
-            // movement so the developer can walk around and test colliders manually.
-            if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive &&
-                !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor) &&
-                !(GameEditorManager.Instance.ActiveEditor is Valkur.Gameplay.TileEditor.TileEditorManager))
+            bool isStunned = _statusEffects != null && _statusEffects.IsStunned;
+            bool inputSuspended = IsGameplayInputSuspended();
+
+            if (isStunned || inputSuspended)
             {
                 _moveInput = Vector2.zero;
-                return;
+            }
+            else
+            {
+                ReadInput();
             }
 
-            ReadInput();
             UpdateFacingDirection();
+
+            if (isStunned || inputSuspended) return;
+
             PollCombatActions();
         }
 
@@ -60,33 +63,34 @@ namespace Valkur.Gameplay
                 _moveInput = _moveAction.ReadValue<Vector2>();
         }
 
+        private static bool IsGameplayInputSuspended()
+        {
+            // Suspend movement and combat while any runtime editor is active,
+            // except tools that intentionally allow walking around to test colliders.
+            return GameEditorManager.HasInstance &&
+                   GameEditorManager.Instance.AnyEditorActive &&
+                   !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor) &&
+                   !(GameEditorManager.Instance.ActiveEditor is Valkur.Gameplay.TileEditor.TileEditorManager);
+        }
+
         private void UpdateFacingDirection()
         {
             if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
                 _mainCamera = Camera.main;
 
-            // Read the mouse directly from the device. The InputAction bound to
-            // <Mouse>/position can return (0,0) when the cursor leaves the Game view
-            // (focus loss, hovering editor chrome, etc.), which would otherwise yank
-            // the player to face the bottom-left corner of the viewport. The pure
-            // resolver clamps to viewport and falls back to move input when needed.
-            // See PlayerFacingResolverTests for the regression coverage.
-            Vector2 mouseScreen = Mouse.current != null
-                ? Mouse.current.position.ReadValue()
-                : Vector2.zero;
-            Vector2 screenSize = new Vector2(Screen.width, Screen.height);
-            bool isMouseInView = Mouse.current != null
-                && PlayerFacingResolver.IsMouseWithinViewport(mouseScreen, screenSize);
-
-            Vector2 mouseWorld = _mainCamera != null && isMouseInView
-                ? (Vector2)_mainCamera.ScreenToWorldPoint(mouseScreen)
-                : (Vector2)transform.position;
+            bool hasMouseWorld = MouseInputManager.TryGetWorldMousePosition(
+                out Vector2 mouseWorld,
+                _mainCamera,
+                requireInView: true,
+                requireApplicationFocus: false);
+            if (!hasMouseWorld)
+                mouseWorld = transform.position;
 
             _facingDirection = PlayerFacingResolver.ResolveFacingDirection(
                 currentFacing: _facingDirection,
                 mouseWorld: mouseWorld,
-                isMouseInView: isMouseInView && _mainCamera != null,
-                playerPos: transform.position,
+                isMouseInView: hasMouseWorld,
+                playerPos: ResolveFacingOrigin(),
                 moveInput: _moveInput,
                 isMoving: IsMoving);
 
@@ -117,6 +121,20 @@ namespace Valkur.Gameplay
             }
         }
 
+        private Vector2 ResolveFacingOrigin()
+        {
+            if (spriteRenderer != null && spriteRenderer.enabled && spriteRenderer.sprite != null)
+                return spriteRenderer.bounds.center;
+
+            var collider2D = GetComponent<Collider2D>();
+            if (collider2D == null)
+                collider2D = GetComponentInChildren<Collider2D>();
+            if (collider2D != null)
+                return collider2D.bounds.center;
+
+            return transform.position;
+        }
+
         private void PollCombatActions()
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
@@ -125,7 +143,8 @@ namespace Valkur.Gameplay
             // Primary attack (left click) → fireball (spell slot 0)
             // Python parity: M_LEFT → fireball
             // IsPressed allows hold-to-fire; SpellCaster cooldown (0.4 s) gates the rate.
-            if (_primaryAttackAction != null && _primaryAttackAction.IsPressed())
+            if ((_primaryAttackAction != null && _primaryAttackAction.IsPressed()) ||
+                MouseInputManager.IsLeftMouseButtonPressed())
             {
                 if (_spellCaster != null)
                     _spellCaster.TryCastByKey("fireball", _facingDirection);
@@ -133,7 +152,8 @@ namespace Valkur.Gameplay
 
             // Secondary attack (right click) → slash spell
             // Python parity: M_RIGHT → slash
-            if (_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame())
+            if ((_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame()) ||
+                MouseInputManager.WasRightMouseButtonPressedThisFrame())
             {
                 if (_spellCaster != null)
                     _spellCaster.TryCastByKey("slash", _facingDirection);
@@ -144,7 +164,8 @@ namespace Valkur.Gameplay
             // First press starts the beam through the spell system; subsequent frames
             // refresh the controller directly (TryCastByKey is gated by cooldown so we
             // can't rely on it to keep the beam alive).
-            if (_middleClickAction != null && _middleClickAction.IsPressed())
+            if ((_middleClickAction != null && _middleClickAction.IsPressed()) ||
+                MouseInputManager.IsMiddleMouseButtonPressed())
             {
                 if (_spellCaster != null)
                 {
@@ -155,7 +176,8 @@ namespace Valkur.Gameplay
                         _spellCaster.TryCastByKey("laser_beam", _facingDirection);
                 }
             }
-            if (_middleClickAction != null && _middleClickAction.WasReleasedThisFrame())
+            if ((_middleClickAction != null && _middleClickAction.WasReleasedThisFrame()) ||
+                MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
             {
                 var beam = _spellCaster != null ? _spellCaster.GetComponent<LaserBeamController>() : null;
                 if (beam != null) beam.Stop();
