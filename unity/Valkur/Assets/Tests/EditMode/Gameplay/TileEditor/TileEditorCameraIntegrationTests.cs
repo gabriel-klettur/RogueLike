@@ -168,7 +168,10 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             _cameraSetup.DetachFollow();
             
             // Assert
-            Assert.IsNull(_camera.GetComponent<Cinemachine.CinemachineVirtualCamera>().Follow, 
+            var virtualCamera = _cameraSetup.GetComponent<Cinemachine.CinemachineVirtualCamera>()
+                ?? _camera.GetComponent<Cinemachine.CinemachineVirtualCamera>();
+            Assert.IsNotNull(virtualCamera, "A CinemachineVirtualCamera should exist for detach/follow assertions.");
+            Assert.IsNull(virtualCamera.Follow, 
                 "Follow should be null after detach");
             
             // Cleanup
@@ -234,7 +237,7 @@ namespace Valkur.Tests.EditMode.Gameplay.TileEditor
             
             // Assert
             float finalSize = _cameraSetup.GetCurrentOrthographicSize();
-            Assert.AreEqual(expectedSize, finalSize, 0.01f, "Zoom should be applied in next frame");
+            Assert.AreEqual(expectedSize, finalSize, 0.01f, "Zoom should be applied by the next frame");
             Assert.AreNotEqual(initialSize, finalSize, "Size should actually change");
         }
 
