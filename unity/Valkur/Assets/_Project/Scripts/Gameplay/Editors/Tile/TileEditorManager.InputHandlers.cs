@@ -29,6 +29,10 @@ namespace Valkur.Gameplay.TileEditor
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
+                // Show Map Editor's zone-border overlay so the user can see
+                // zone boundaries while painting (green = editable, red = locked).
+                if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)
+                    Valkur.Gameplay.MapEditor.MapEditorManager.Instance.SetExternalOverlayRequest(true);
                 UpdateBorderToolLabel();
                 // Camera stays attached so the player can walk and test tile colliders.
                 // Middle-mouse pan is still available via HandleCameraPan() → DetachFollow.
@@ -53,6 +57,10 @@ namespace Valkur.Gameplay.TileEditor
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(false);
+                // Release the zone-border overlay request so it hides unless
+                // the Map Editor itself is still active.
+                if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)
+                    Valkur.Gameplay.MapEditor.MapEditorManager.Instance.SetExternalOverlayRequest(false);
                 // Keep perf probe state — re-enabled on activate via CreatePerfProbe defaults
                 _cameraPan.Reset();
                 // Re-attach in case middle-mouse pan had detached the camera during editing.
