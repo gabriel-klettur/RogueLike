@@ -104,6 +104,16 @@ namespace Valkur.Gameplay.VFX
             refs.GroupToggleImg = AddActionBtn(groupRow.transform, "ALL", 26f, onToggleGroup,
                 out refs.GroupToggleLabel);
 
+            // Large preview box: 256×256 RenderTexture display for the selected preset.
+            // Mirrors the "ALL" preview area visible in the Python picker panel.
+            // RawImage used (not Image) so a RenderTexture can be assigned as the texture.
+            var largePreviewGo = CreateUI("LargePreview", t);
+            largePreviewGo.AddComponent<LayoutElement>().preferredHeight = 128f;
+            var largeRaw = largePreviewGo.AddComponent<RawImage>();
+            largeRaw.color   = new Color(0.08f, 0.08f, 0.10f, 1f); // dark bg until RT is assigned
+            largeRaw.enabled = false;                                // hidden until a preset is selected
+            refs.LargePreviewImage = largeRaw;
+
             // Grid picker
             var (scroll, content) = EditorUIHelpers.MakeGridPicker(t, "PresetGrid", 4, 64f, 4f);
             var le = scroll.gameObject.AddComponent<LayoutElement>();

@@ -59,8 +59,21 @@ namespace Valkur.Gameplay.VFX
                 });
             }
 
+            // Feed the visible list to the preview service so it configures emitters.
+            _previewService.SetVisiblePresets(visible);
+
             foreach (var preset in visible)
                 AddPickerSlot(preset);
+
+            // Sync the large preview box with the currently selected preset.
+            if (_ui.LargePreviewImage != null)
+            {
+                var largeTex  = _previewService.GetLargePreviewTexture();
+                bool hasLarge = largeTex != null && !string.IsNullOrEmpty(_selectedPresetId);
+                _ui.LargePreviewImage.texture = hasLarge ? largeTex : null;
+                _ui.LargePreviewImage.color   = hasLarge ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
+                _ui.LargePreviewImage.enabled = true;
+            }
 
             SetStatus(filter.Length == 0
                 ? $"{visible.Count} presets"
@@ -70,14 +83,44 @@ namespace Valkur.Gameplay.VFX
         private void AddPickerSlot(ParticlePresetDefinition preset)
         {
             string pid = preset.id ?? "";
+
             var (btn, _, label) = EditorUIHelpers.MakeSlotButton(
                 _ui.PickerContent, preset.displayName ?? pid, 64f,
                 () => SelectPreset(pid));
             label.text = TruncateName(preset.displayName ?? pid, 8);
 
+            // Slot background: dark neutral so the RenderTexture particles are readable.
             var slotImg = btn.GetComponent<Image>();
             if (slotImg != null)
-                slotImg.color = pid == _selectedPresetId ? UITheme.SLOT_SELECTED : UITheme.SLOT_BG;
+                slotImg.color = new Color(0.08f, 0.08f, 0.10f, 1f);
+
+            // RenderTexture thumbnail: live animated particle preview.
+            var rawGo = new GameObject("PreviewRT", typeof(RectTransform));
+            rawGo.transform.SetParent(btn.transform, false);
+            var rawRt = rawGo.GetComponent<RectTransform>();
+            rawRt.anchorMin = Vector2.zero;
+            rawRt.anchorMax = Vector2.one;
+            rawRt.offsetMin = new Vector2(2f, 18f);  // leave room for label at bottom
+            rawRt.offsetMax = new Vector2(-2f, -2f);
+            var raw = rawGo.AddComponent<RawImage>();
+            raw.raycastTarget = false;
+
+            var rt = _previewService.GetPreviewTexture(pid);
+            if (rt != null)
+            {
+                raw.texture = rt;
+                raw.color   = Color.white;
+            }
+            else
+            {
+                // Service not ready yet: show dark bg, texture will be assigned on next RefreshPicker.
+                raw.texture = null;
+                raw.color   = new Color(0f, 0f, 0f, 0f);
+            }
+
+            // Selection highlight via existing outline system (slot image tint).
+            if (slotImg != null && pid == _selectedPresetId)
+                slotImg.color = UITheme.SLOT_SELECTED;
 
             // EventTrigger: register pointer-down so the picker drag system can
             // start tracking before Button.onClick fires (Entities/Buildings parity).
@@ -90,9 +133,25 @@ namespace Valkur.Gameplay.VFX
         private void SelectPreset(string pid)
         {
             _selectedPresetId = pid;
+
+            // Notify preview service so the large preview RT starts rendering.
+            var def = _catalog?.GetById(pid);
+            _previewService.SetSelectedPreset(pid, def);
+
+            // Update large preview image immediately.
+            if (_ui.LargePreviewImage != null)
+            {
+                var largeTex = _previewService.GetLargePreviewTexture();
+                bool hasPreview = largeTex != null && !string.IsNullOrEmpty(pid);
+                _ui.LargePreviewImage.texture = hasPreview ? largeTex : null;
+                _ui.LargePreviewImage.color   = hasPreview ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
+                _ui.LargePreviewImage.enabled = true; // always show the box; dark bg when no preset
+            }
+
             RefreshPicker();
             ShowPresetProperties(pid);
             RefreshSpellsPanel();
+            RebuildSamePresetFx();
             if (_mode == EditorMode.Place && !string.IsNullOrEmpty(pid))
                 SetStatus($"Place: click on the map to spawn '{pid}'.");
         }

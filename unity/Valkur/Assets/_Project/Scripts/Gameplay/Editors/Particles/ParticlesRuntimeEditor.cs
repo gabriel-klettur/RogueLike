@@ -64,6 +64,9 @@ namespace Valkur.Gameplay.VFX
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
+        // ── Preview service ──────────────────────────────────────────────────────
+        private readonly ParticlePreviewService _previewService = new ParticlePreviewService();
+
         // ── UI ───────────────────────────────────────────────────────────────────
         private Canvas _canvas;
         private GameObject _root;
@@ -108,6 +111,7 @@ namespace Valkur.Gameplay.VFX
 
         protected override void OnDestroy()
         {
+            _previewService.Shutdown();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -123,8 +127,11 @@ namespace Valkur.Gameplay.VFX
 
             // Middle-mouse pan runs unconditionally.
             _cameraPan.Tick();
+            _previewService.Tick();
 
             UpdatePickerDrag();
+            UpdateOutlineState();
+
             // Suppress map click while a picker drag is in progress; the drag-drop
             // path is what spawns the emitter.
             if (_pickerDragging) return;
@@ -137,6 +144,8 @@ namespace Valkur.Gameplay.VFX
             _active = true;
             _root.SetActive(true);
             _mode = EditorMode.Select;
+            EnsureOutlineFx();
+            _previewService.Initialize(transform);
             OpenDefaultDropdowns();
             RefreshPicker();
             RefreshModeButtons();
@@ -152,9 +161,13 @@ namespace Valkur.Gameplay.VFX
             _root.SetActive(false);
             _selectedPresetId = null;
             _activeInstance = null;
+            _hoveredInstance = null;
+            _showAllOutlines = false;
+            HideAllOutlineFx();
             _dragging = false;
             _dragTarget = null;
             CancelPickerDrag();
+            _previewService.Shutdown();
             // Reattach the camera follow target if MMB pan had detached it.
             _cameraPan.Reset();
             Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();

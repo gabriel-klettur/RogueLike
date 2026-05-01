@@ -15,12 +15,18 @@ namespace Valkur.Gameplay.VFX
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             var cam = Camera.main;
             if (cam == null) return;
             Vector3 worldPos = cam.ScreenToWorldPoint(Valkur.Core.Input.MouseInputManager.GetScreenMousePosition());
             worldPos.z = 0f;
+
+            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+            // Update hover state every frame so the outline follows the cursor.
+            _hoveredInstance = overUi ? null : HitTestEmitter(worldPos);
+
+            if (overUi) return;
 
             // RMB drag to move an existing instance.
             if (_dragging && _dragTarget != null)

@@ -46,6 +46,7 @@ namespace Valkur.Gameplay.VFX
 
             // Presets panel
             public TMP_InputField   SearchBox;
+            public RawImage         LargePreviewImage;   // 256×256 selected-preset live preview
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
             public Image            GroupToggleImg;
