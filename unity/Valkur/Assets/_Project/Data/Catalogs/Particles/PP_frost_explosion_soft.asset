@@ -17,6 +17,7 @@ MonoBehaviour:
   type: explosion
   vfx:
     kind: explosion
+    loops: 0
     emitRate: 10
     count: 28
     burstIntervalSeconds: 0
@@ -47,3 +48,11 @@ MonoBehaviour:
     alphaBase: 110
     alphaWave: 70
     highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    dispersion: 0
+    gravityVector: {x: 0, y: 0}
+    useGravityVector: 0
+    sizeOverLife: []
+    alphaOverLife: []
+    colorOverLife: []
+    ellipseRatio: 1
+    outerRadius: 0
