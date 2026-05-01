@@ -9,7 +9,8 @@
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Cinemachine",
-        "Unity.2D.PixelPerfect"
+        "Unity.2D.PixelPerfect",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
