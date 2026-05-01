@@ -1,0 +1,178 @@
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using TMPro;
+using Valkur.Core;
+using Valkur.Data;
+using Valkur.Gameplay.Editors;
+using Valkur.UIKit;
+
+namespace Valkur.Gameplay.VFX
+{
+    public partial class ParticlesRuntimeEditor : SingletonMonoBehaviour<ParticlesRuntimeEditor>, GameEditorManager.IGameEditor
+    {
+        // ── Picker grid ─────────────────────────────────────────────────────────
+
+        private void RefreshPicker()
+        {
+            if (_ui.PickerContent == null) return;
+            for (int i = _ui.PickerContent.childCount - 1; i >= 0; i--)
+            {
+                var child = _ui.PickerContent.GetChild(i).gameObject;
+                if (Application.isPlaying) Destroy(child); else DestroyImmediate(child);
+            }
+
+            if (_catalog == null)
+            {
+                SetStatus("No ParticlePresetCatalog assigned.");
+                return;
+            }
+
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+
+            var visible = new List<ParticlePresetDefinition>();
+            foreach (var preset in _catalog.Presets)
+            {
+                if (preset == null) continue;
+                if (filter.Length > 0)
+                {
+                    string pid = (preset.id ?? "").ToLowerInvariant();
+                    string nm  = (preset.displayName ?? "").ToLowerInvariant();
+                    if (!pid.Contains(filter) && !nm.Contains(filter)) continue;
+                }
+                visible.Add(preset);
+            }
+
+            // GROUP-by-kind sorts by VFX kind (Python parity); ALL keeps catalog order.
+            if (_groupByKind)
+            {
+                visible.Sort((a, b) =>
+                {
+                    string ka = a.vfx?.kind ?? "";
+                    string kb = b.vfx?.kind ?? "";
+                    int c = string.CompareOrdinal(ka, kb);
+                    return c != 0 ? c : string.CompareOrdinal(
+                        a.displayName ?? a.id ?? "",
+                        b.displayName ?? b.id ?? "");
+                });
+            }
+
+            foreach (var preset in visible)
+                AddPickerSlot(preset);
+
+            SetStatus(filter.Length == 0
+                ? $"{visible.Count} presets"
+                : $"{visible.Count} match '{_searchFilter}'");
+        }
+
+        private void AddPickerSlot(ParticlePresetDefinition preset)
+        {
+            string pid = preset.id ?? "";
+            var (btn, _, label) = EditorUIHelpers.MakeSlotButton(
+                _ui.PickerContent, preset.displayName ?? pid, 64f,
+                () => SelectPreset(pid));
+            label.text = TruncateName(preset.displayName ?? pid, 8);
+
+            var slotImg = btn.GetComponent<Image>();
+            if (slotImg != null)
+                slotImg.color = pid == _selectedPresetId ? UITheme.SLOT_SELECTED : UITheme.SLOT_BG;
+
+            // EventTrigger: register pointer-down so the picker drag system can
+            // start tracking before Button.onClick fires (Entities/Buildings parity).
+            var trig = btn.gameObject.AddComponent<EventTrigger>();
+            var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+            entry.callback.AddListener(_ => OnPickerSlotPointerDown(pid));
+            trig.triggers.Add(entry);
+        }
+
+        private void SelectPreset(string pid)
+        {
+            _selectedPresetId = pid;
+            RefreshPicker();
+            ShowPresetProperties(pid);
+            RefreshSpellsPanel();
+            if (_mode == EditorMode.Place && !string.IsNullOrEmpty(pid))
+                SetStatus($"Place: click on the map to spawn '{pid}'.");
+        }
+
+        private void ShowPresetProperties(string pid)
+        {
+            if (_ui.PresetPropsText == null) return;
+            var preset = _catalog?.GetById(pid);
+            if (preset == null) { _ui.PresetPropsText.text = "Not found."; return; }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"<b>ID:</b> {preset.id}");
+            sb.AppendLine($"<b>Name:</b> {preset.displayName}");
+            sb.AppendLine($"<b>Type:</b> {preset.type}");
+            var v = preset.vfx;
+            if (v != null)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"<b>Kind:</b> {v.kind}");
+                sb.AppendLine($"<b>Emit Rate:</b> {v.emitRate:F1}/s");
+                sb.AppendLine($"<b>Burst Count:</b> {v.count}");
+                sb.AppendLine($"<b>Lifespan:</b> {v.lifespan:F2}s");
+                sb.AppendLine($"<b>Speed:</b> {v.speed:F2} u/s");
+                sb.AppendLine($"<b>Gravity:</b> {v.gravity:F2}");
+                sb.AppendLine($"<b>Drag:</b> {v.drag:F2}");
+                sb.AppendLine($"<b>Size:</b> {v.sizeMin:F2} – {v.sizeMax:F2}");
+                sb.AppendLine($"<b>Radius:</b> {v.radius:F2}");
+                sb.AppendLine($"<b>Additive:</b> {v.additive}");
+            }
+            _ui.PresetPropsText.text = sb.ToString();
+            _ui.PresetPropsText.richText = true;
+        }
+
+        private void ShowInstanceProperties(GameObject instance)
+        {
+            if (_ui.InstancePropsText == null) return;
+            if (instance == null)
+            {
+                _ui.InstancePropsText.text = "Select an instance on the map.";
+                _ui.InstancePropsText.color = UITheme.TEXT_SECONDARY;
+                return;
+            }
+            var pos = instance.transform.position;
+            var sb = new StringBuilder();
+            sb.AppendLine($"<b>Name:</b> {instance.name}");
+            sb.AppendLine($"<b>Position:</b> ({pos.x:F2}, {pos.y:F2})");
+            string presetId = ExtractPresetIdFromName(instance.name);
+            if (!string.IsNullOrEmpty(presetId))
+                sb.AppendLine($"<b>Preset:</b> {presetId}");
+            _ui.InstancePropsText.text = sb.ToString();
+            _ui.InstancePropsText.richText = true;
+            _ui.InstancePropsText.color = UITheme.TEXT_PRIMARY;
+        }
+
+        // Spawned emitters are named "PE_<preset_id>_<inst_id>" by ParticleInstancesLoader.
+        // Pull the preset id back out so the inspector can label the selection.
+        private static string ExtractPresetIdFromName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || !name.StartsWith("PE_")) return null;
+            int last = name.LastIndexOf('_');
+            if (last <= 3) return null;
+            return name.Substring(3, last - 3);
+        }
+
+        // ── ALL / GROUP toggle (Python picker_view parity) ─────────────────────
+
+        private void ToggleGroupByKind()
+        {
+            _groupByKind = !_groupByKind;
+            if (_ui.GroupToggleLabel != null)
+                _ui.GroupToggleLabel.text = _groupByKind ? "GROUP" : "ALL";
+            if (_ui.GroupToggleImg != null)
+                _ui.GroupToggleImg.color = _groupByKind ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
+            RefreshPicker();
+        }
+
+        private static string TruncateName(string name, int max)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            return name.Length <= max ? name : name.Substring(0, max - 1) + "…";
+        }
+    }
+}
