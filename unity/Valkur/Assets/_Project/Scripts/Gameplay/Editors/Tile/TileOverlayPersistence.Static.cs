@@ -72,6 +72,46 @@ namespace Valkur.Gameplay.TileEditor
             return true;
         }
 
+        /// <summary>
+        /// Move a zone's persisted tile-edit file to a new zone name. Used by
+        /// the Map Editor's rename flow so the override file (and the tiles
+        /// inside it) follows the zone — without this, renaming a zone with
+        /// painted tiles loses every tile on the next world load because
+        /// <see cref="ApplyAllOverrides"/> looks up the file's basename in the
+        /// ZoneManager and finds nothing.
+        /// </summary>
+        /// <returns>true if the file was moved (or there was nothing to move);
+        /// false if a file already exists at the new name (caller can
+        /// decide to overwrite).</returns>
+        public static bool RenameOverride(string oldZoneName, string newZoneName)
+        {
+            if (string.IsNullOrEmpty(oldZoneName) || string.IsNullOrEmpty(newZoneName)) return false;
+            if (string.Equals(oldZoneName, newZoneName, StringComparison.Ordinal)) return true;
+
+            string oldPath = OverridePathForZone(oldZoneName);
+            if (!File.Exists(oldPath)) return true;     // nothing to move — success
+
+            string newPath = OverridePathForZone(newZoneName);
+            if (File.Exists(newPath))
+            {
+                Debug.LogWarning(
+                    $"[TileOverlayPersistence] Cannot rename override '{oldZoneName}' → '{newZoneName}': " +
+                    $"a file already exists at the destination. Old file preserved.");
+                return false;
+            }
+
+            try
+            {
+                File.Move(oldPath, newPath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[TileOverlayPersistence] Failed to rename override '{oldZoneName}' → '{newZoneName}': {ex.Message}");
+                return false;
+            }
+        }
+
         // ─────────────────────────────────────────────────────────────────
         //  JSON build (Python-compatible format)
         // ─────────────────────────────────────────────────────────────────
