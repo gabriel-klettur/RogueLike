@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
@@ -11,8 +12,18 @@ namespace Valkur.Gameplay
     /// <summary>
     /// Player movement, combat, and ability controller.
     /// Maps to Python's player movement + combat + spell casting systems.
-    /// Uses standalone InputAction objects to avoid InputSystem 1.7.0 composite resolver bugs.
-    /// All 27+ spell key bindings from Python are mapped here via TryCastByKey.
+    ///
+    /// <para>
+    /// The five core actions (Move, Look, PrimaryAttack, SecondaryAttack, Dash)
+    /// come from the canonical <see cref="InputService.Gameplay"/> action map
+    /// — bindings live in <c>Resources/Input/ValkurInputActions.inputactions</c>
+    /// so a remap there propagates here automatically.
+    /// </para>
+    /// <para>
+    /// MiddleClick + the 23 spell bindings (1-0, q/e/r/t/f/g/c/v/x/p/l/u/m)
+    /// remain ad-hoc because the canonical asset's Gameplay map only ships 4
+    /// generic spell slots — expanding it to 23 is a follow-up.
+    /// </para>
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Health))]
@@ -35,15 +46,20 @@ namespace Valkur.Gameplay
         private Vector2 _facingDirection = Vector2.down;
         private Camera _mainCamera;
 
-        private InputAction _moveAction;
-        private InputAction _lookAction;
-        private InputAction _primaryAttackAction;
-        private InputAction _secondaryAttackAction;
-        private InputAction _middleClickAction;
-        private InputAction _dashAction;
+        // Resolved on demand from InputService.Gameplay — never cached as a long-lived
+        // reference (avoids the zombie-after-hot-reload class of bug). Use the helpers
+        // below (MoveAction, LookAction, …) at every read.
+        private InputAction MoveAction            => InputService.Instance?.Gameplay?.Move;
+        private InputAction LookAction            => InputService.Instance?.Gameplay?.Look;
+        private InputAction PrimaryAttackAction   => InputService.Instance?.Gameplay?.PrimaryAttack;
+        private InputAction SecondaryAttackAction => InputService.Instance?.Gameplay?.SecondaryAttack;
+        private InputAction DashAction            => InputService.Instance?.Gameplay?.Dash;
 
-        // Spell key bindings — each entry maps an InputAction to a spellKey string
-        private readonly List<(InputAction action, string spellKey)> _spellBindings = new List<(InputAction, string)>();
+        // Ad-hoc actions kept locally because the canonical asset doesn't model them.
+        // EnsureInputActionsLive() rebuilds these if a hot-recompile zombifies the fields.
+        private InputAction _middleClickAction;
+        private readonly List<(InputAction action, string spellKey)> _spellBindings =
+            new List<(InputAction, string)>();
 
         public Vector2 FacingDirection => _facingDirection;
         public Vector2 MoveInput => _moveInput;
@@ -67,32 +83,25 @@ namespace Valkur.Gameplay
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
-            CreateInputActions();
+            // Ensure the canonical Gameplay map is live (InputService leaves it
+            // disabled by default — pause / menus rely on that). The player's
+            // existence implies gameplay is active.
+            EnableGameplayMap();
+            CreateAdHocActions();
         }
 
-        private void CreateInputActions()
+        private void EnableGameplayMap()
         {
-            _moveAction = new InputAction("Move", InputActionType.Value);
-            _moveAction.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/w")
-                .With("Down", "<Keyboard>/s")
-                .With("Left", "<Keyboard>/a")
-                .With("Right", "<Keyboard>/d");
-            _moveAction.AddCompositeBinding("2DVector")
-                .With("Up", "<Keyboard>/upArrow")
-                .With("Down", "<Keyboard>/downArrow")
-                .With("Left", "<Keyboard>/leftArrow")
-                .With("Right", "<Keyboard>/rightArrow");
+            var gp = InputService.Instance?.Gameplay?.Map;
+            if (gp != null && !gp.enabled) gp.Enable();
+        }
 
-            _lookAction = new InputAction("Look", InputActionType.Value, "<Mouse>/position");
-            _primaryAttackAction = new InputAction("PrimaryAttack", InputActionType.Button, "<Mouse>/leftButton");
-            _secondaryAttackAction = new InputAction("SecondaryAttack", InputActionType.Button, "<Mouse>/rightButton");
+        private void CreateAdHocActions()
+        {
             _middleClickAction = new InputAction("MiddleClick", InputActionType.Button, "<Mouse>/middleButton");
-            _dashAction = new InputAction("Dash", InputActionType.Button, "<Keyboard>/rightCtrl");
-            _dashAction.AddBinding("<Keyboard>/rightShift");
-            _dashAction.AddBinding("<Keyboard>/leftCtrl");
+            _middleClickAction.Enable();
 
-            // Python parity: full spell key bindings
+            // Python parity: full spell key bindings.
             // Number keys
             AddSpellBinding("<Keyboard>/1", "darkball");
             AddSpellBinding("<Keyboard>/2", "iceball");
@@ -120,41 +129,25 @@ namespace Valkur.Gameplay
             AddSpellBinding("<Keyboard>/u", "summon_barbol");
             AddSpellBinding("<Keyboard>/m", "wall_ice");
 
-            EnableInputActions();
-
-            Debug.Log($"[PlayerController] Input actions created: {_spellBindings.Count} spell bindings + move/look/attack/dash.");
-        }
-
-        private void EnableInputActions()
-        {
-            _moveAction.Enable();
-            _lookAction.Enable();
-            _primaryAttackAction.Enable();
-            _secondaryAttackAction.Enable();
-            _middleClickAction.Enable();
-            _dashAction.Enable();
-            foreach (var (action, _) in _spellBindings)
-                action.Enable();
+            Debug.Log($"[PlayerController] Ad-hoc actions: middleClick + {_spellBindings.Count} spell bindings. " +
+                      "Move/Look/PrimaryAttack/SecondaryAttack/Dash come from InputService.Gameplay.");
         }
 
         /// <summary>
-        /// Detect post-hot-reload zombie state on any InputAction field and rebuild
-        /// the whole set if needed. Hot-recompile with Domain Reload off serialises
-        /// the InputAction fields and restores them as bindingless clones, so the
-        /// move/look/attack/dash actions silently stop firing. This guard runs once
-        /// per Update tick (cheap — just a binding count check).
+        /// Detect post-hot-reload zombie state on the ad-hoc <see cref="InputAction"/>
+        /// fields and rebuild them. The InputService.Gameplay actions never go zombie
+        /// because they are resolved on every read (see the *Action properties above);
+        /// only the locally-owned MiddleClick + spell bindings need this guard.
         /// </summary>
         private void EnsureInputActionsLive()
         {
-            if (_primaryAttackAction != null && _primaryAttackAction.bindings.Count > 0) return;
+            // Ensure the canonical map is enabled — pause / menu flows can disable it.
+            EnableGameplayMap();
+
+            if (_middleClickAction != null && _middleClickAction.bindings.Count > 0) return;
 
             // Dispose the zombies and rebuild from scratch.
-            DisposeIfNotNull(ref _moveAction);
-            DisposeIfNotNull(ref _lookAction);
-            DisposeIfNotNull(ref _primaryAttackAction);
-            DisposeIfNotNull(ref _secondaryAttackAction);
             DisposeIfNotNull(ref _middleClickAction);
-            DisposeIfNotNull(ref _dashAction);
             for (int i = 0; i < _spellBindings.Count; i++)
             {
                 var sb = _spellBindings[i];
@@ -162,10 +155,10 @@ namespace Valkur.Gameplay
             }
             _spellBindings.Clear();
 
-            CreateInputActions();
+            CreateAdHocActions();
         }
 
-        private static void DisposeIfNotNull(ref UnityEngine.InputSystem.InputAction action)
+        private static void DisposeIfNotNull(ref InputAction action)
         {
             if (action == null) return;
             try { action.Disable(); action.Dispose(); } catch { }
@@ -175,39 +168,33 @@ namespace Valkur.Gameplay
         private void AddSpellBinding(string binding, string spellKey)
         {
             var action = new InputAction($"Spell_{spellKey}", InputActionType.Button, binding);
+            action.Enable();
             _spellBindings.Add((action, spellKey));
         }
 
         private void OnEnable()
         {
-            if (_moveAction != null)
-                EnableInputActions();
+            EnableGameplayMap();
+            if (_middleClickAction != null) _middleClickAction.Enable();
+            foreach (var (action, _) in _spellBindings)
+                action?.Enable();
         }
 
         private void OnDisable()
         {
-            _moveAction?.Disable();
-            _lookAction?.Disable();
-            _primaryAttackAction?.Disable();
-            _secondaryAttackAction?.Disable();
+            // Don't disable the canonical Gameplay map here — pause/menu flows own
+            // its on/off cycle. Only disable our locally-owned actions.
             _middleClickAction?.Disable();
-            _dashAction?.Disable();
             foreach (var (action, _) in _spellBindings)
                 action?.Disable();
         }
 
         private void OnDestroy()
         {
-            _moveAction?.Dispose();
-            _lookAction?.Dispose();
-            _primaryAttackAction?.Dispose();
-            _secondaryAttackAction?.Dispose();
             _middleClickAction?.Dispose();
-            _dashAction?.Dispose();
             foreach (var (action, _) in _spellBindings)
                 action?.Dispose();
             _spellBindings.Clear();
         }
-
     }
 }

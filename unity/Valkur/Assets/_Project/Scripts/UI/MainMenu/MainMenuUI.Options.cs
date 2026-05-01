@@ -128,46 +128,44 @@ namespace Valkur.UI.MainMenu
 
         private void HandleOptionsListInput()
         {
-            // OR new-InputSystem actions with legacy fallback (InputCompat).
-            if (_navUpAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavUpPressed())
+            // InputCompat already ORs the new InputSystem with the legacy backend.
+            if (Valkur.Core.Input.InputCompat.NavUpPressed())
             { _optMenuSel = (_optMenuSel - 1 + _optMenuOptions.Length) % _optMenuOptions.Length; UpdateOptListVisuals(); }
-            else if (_navDownAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavDownPressed())
+            else if (Valkur.Core.Input.InputCompat.NavDownPressed())
             { _optMenuSel = (_optMenuSel + 1) % _optMenuOptions.Length; UpdateOptListVisuals(); }
-            else if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
+            else if (Valkur.Core.Input.InputCompat.ConfirmPressed())
             { ExecuteOptionsItem(_optMenuSel); }
-            else if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (Valkur.Core.Input.InputCompat.CancelPressed())
             { OptionsGoBack(); }
         }
 
         private void HandleOptionsSoundsInput()
         {
-            if (_navUpAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavUpPressed())
+            if (Valkur.Core.Input.InputCompat.NavUpPressed())
             { _optSoundSel = (_optSoundSel - 1 + _optSoundRows.Count) % _optSoundRows.Count; UpdateOptSoundsVisuals(); }
-            else if (_navDownAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavDownPressed())
+            else if (Valkur.Core.Input.InputCompat.NavDownPressed())
             { _optSoundSel = (_optSoundSel + 1) % _optSoundRows.Count; UpdateOptSoundsVisuals(); }
-            else if (_navLeftAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavLeftPressed())
+            else if (Valkur.Core.Input.InputCompat.NavLeftPressed())
             { ChangeOptSound(_optSoundSel, -1); }
-            else if (_navRightAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavRightPressed())
+            else if (Valkur.Core.Input.InputCompat.NavRightPressed())
             { ChangeOptSound(_optSoundSel, +1); }
-            else if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
+            else if (Valkur.Core.Input.InputCompat.ConfirmPressed())
             { GameSettings.Instance?.Save(); ServiceLocator.Get<IAudioService>()?.ApplySettings(); OptionsGoBack(); }
-            else if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (Valkur.Core.Input.InputCompat.CancelPressed())
             { OptionsGoBack(); }
         }
 
         private void HandleOptionsInputsInput()
         {
             int tabCount = _optTabLabels != null ? _optTabLabels.Length : 0;
-            bool tabLeft  = Valkur.Core.Input.InputCompat.KeyPressed(
-                UnityEngine.InputSystem.Key.Q, UnityEngine.KeyCode.Q);
-            bool tabRight = Valkur.Core.Input.InputCompat.KeyPressed(
-                UnityEngine.InputSystem.Key.E, UnityEngine.KeyCode.E);
+            bool tabLeft  = Valkur.Core.Input.KeyboardInputManager.WasQPressedThisFrame();
+            bool tabRight = Valkur.Core.Input.KeyboardInputManager.WasEPressedThisFrame();
 
             if (tabLeft && tabCount > 0)
             { _optInputsTabSel = (_optInputsTabSel - 1 + tabCount) % tabCount; UpdateOptInputsPanel(); }
             else if (tabRight && tabCount > 0)
             { _optInputsTabSel = (_optInputsTabSel + 1) % tabCount; UpdateOptInputsPanel(); }
-            else if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
+            else if (Valkur.Core.Input.InputCompat.CancelPressed())
             { OptionsGoBack(); }
         }
 

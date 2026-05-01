@@ -78,13 +78,12 @@ namespace Valkur.UI.MainMenu
         private readonly List<RectTransform> _classCardBgRects = new List<RectTransform>();
         private readonly Dictionary<string, Sprite> _portraitSpriteCache = new Dictionary<string, Sprite>();
 
-        // Input actions
-        private InputAction _navUpAction;
-        private InputAction _navDownAction;
-        private InputAction _navLeftAction;
-        private InputAction _navRightAction;
-        private InputAction _confirmAction;
-        private InputAction _cancelAction;
+        // Menu input is read directly from Valkur.Core.Input.InputCompat (which
+        // already ORs the new InputSystem with the legacy backend) so this UI
+        // doesn't need to spin up its own InputActions. The previous ad-hoc
+        // _navUp/Down/Left/Right/_confirm/_cancel fields were removed in favour
+        // of the centralized InputCompat helpers — single source of truth for
+        // menu navigation.
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoBootstrap()
@@ -109,7 +108,6 @@ namespace Valkur.UI.MainMenu
 
         private void Start()
         {
-            SetupInputActions();
             EnsureCamera();
             EnsureAudioManager();
             BuildMenuOptions();
@@ -133,13 +131,8 @@ namespace Valkur.UI.MainMenu
 
         private void OnDestroy()
         {
-            _navUpAction?.Disable();    _navUpAction?.Dispose();
-            _navDownAction?.Disable();  _navDownAction?.Dispose();
-            _navLeftAction?.Disable();  _navLeftAction?.Dispose();
-            _navRightAction?.Disable(); _navRightAction?.Dispose();
-            _confirmAction?.Disable();  _confirmAction?.Dispose();
-            _cancelAction?.Disable();   _cancelAction?.Dispose();
-
+            // Nav/Confirm/Cancel actions live in InputCompat (no per-instance state
+            // to dispose). Only the rebinder + portrait cache are owned here.
             _optRebinder?.Dispose(); _optRebinder = null;
 
             foreach (var s in _portraitSpriteCache.Values)

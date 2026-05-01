@@ -1,10 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
 using Valkur.UI.Loading;
@@ -13,10 +14,10 @@ namespace Valkur.UI.MainMenu
 {
     public partial class MainMenuUI
     {
-        // ── Load game state ──────────────────────────────────────────────────
+        // â”€â”€ Load game state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private GameObject _mmLoadOverlay;
 
-        // Two-level data: Runs (left column) → Saves of selected run (right column)
+        // Two-level data: Runs (left column) â†’ Saves of selected run (right column)
         private List<RunGroupInfo>  _mmLoadRuns      = new List<RunGroupInfo>();
         private int  _mmLoadRunSel    = 0;   // selected run index
         private int  _mmLoadRunScroll = 0;   // scroll offset for run list
@@ -43,7 +44,7 @@ namespace Valkur.UI.MainMenu
         private TextMeshProUGUI    _mmLoadDetailText;
         private TextMeshProUGUI    _mmLoadTargetLabel;
 
-        // ── Sub-modes (rename / delete confirm) ──────────────────────────────
+        // â”€â”€ Sub-modes (rename / delete confirm) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private enum LoadPanelMode { List, Rename, ConfirmDelete }
         private LoadPanelMode _mmLoadMode = LoadPanelMode.List;
 
@@ -59,7 +60,7 @@ namespace Valkur.UI.MainMenu
         private Image[]          _mmConfirmPills;
         private TextMeshProUGUI[] _mmConfirmTexts;
 
-        // ── Helpers ──────────────────────────────────────────────────────────
+        // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>Returns true and fills <paramref name="save"/> when a save is selected.</summary>
         private bool TryGetSelectedSave(out SaveSlotInfo save)
@@ -72,7 +73,7 @@ namespace Valkur.UI.MainMenu
             return true;
         }
 
-        // ── Build ────────────────────────────────────────────────────────────
+        // â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BuildLoadGameSubmenu(Transform canvas)
         {
@@ -128,7 +129,7 @@ namespace Valkur.UI.MainMenu
             BuildMMColHeader("PARTIDAS", panel.transform, 0.01f, splitX);
             BuildMMColHeader("SAVES",    panel.transform, splitX + 0.02f, 0.98f);
 
-            // ── LEFT: run list ──────────────────────────────────────────────
+            // â”€â”€ LEFT: run list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var runList = CreateUIObject("MMRunList", panel.transform);
             var rlR = runList.GetComponent<RectTransform>();
             rlR.anchorMin = new Vector2(0.01f, 0.12f); rlR.anchorMax = new Vector2(splitX, 0.87f);
@@ -211,7 +212,7 @@ namespace Valkur.UI.MainMenu
                 _mmRunHoverBorders[i] = BuildHoverBorderStrips(runList.transform, cy, runRowH);
             }
 
-            // ── RIGHT TOP: save list ────────────────────────────────────────
+            // â”€â”€ RIGHT TOP: save list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var saveList = CreateUIObject("MMSaveList", panel.transform);
             var svR = saveList.GetComponent<RectTransform>();
             svR.anchorMin = new Vector2(splitX + 0.02f, 0.51f); svR.anchorMax = new Vector2(0.98f, 0.87f);
@@ -283,7 +284,7 @@ namespace Valkur.UI.MainMenu
                 _mmSaveHoverBorders[i] = BuildHoverBorderStrips(saveList.transform, cy, svRowH);
             }
 
-            // ── RIGHT BOTTOM: detail panel ──────────────────────────────────
+            // â”€â”€ RIGHT BOTTOM: detail panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var detC = CreateUIObject("MMSaveDetails", panel.transform);
             var dcR = detC.GetComponent<RectTransform>();
             dcR.anchorMin = new Vector2(splitX + 0.02f, 0.11f); dcR.anchorMax = new Vector2(0.98f, 0.49f);
@@ -401,7 +402,7 @@ namespace Valkur.UI.MainMenu
             tmp.raycastTarget = false;
         }
 
-        // ── Input ────────────────────────────────────────────────────────────
+        // â”€â”€ Input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void HandleMMLoadInput()
         {
@@ -413,20 +414,20 @@ namespace Valkur.UI.MainMenu
 
             // OR new-InputSystem actions with legacy fallback (InputCompat) so the
             // panel still navigates when the new pipeline drops OS event delivery.
-            if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
+            if (InputCompat.CancelPressed() || Valkur.Core.Input.InputCompat.CancelPressed())
             { OptionsGoBack(); return; }
 
             if (_mmLoadRuns.Count == 0) return;
 
             // W/S navigate runs (left column)
-            if (_navUpAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavUpPressed())
+            if (InputCompat.NavUpPressed() || Valkur.Core.Input.InputCompat.NavUpPressed())
             {
                 _mmLoadRunSel = Mathf.Max(0, _mmLoadRunSel - 1);
                 _mmLoadSaveSel = 0;
                 EnsureMMLoadScroll();
                 UpdateMMLoadVisuals();
             }
-            else if (_navDownAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavDownPressed())
+            else if (InputCompat.NavDownPressed() || Valkur.Core.Input.InputCompat.NavDownPressed())
             {
                 _mmLoadRunSel = Mathf.Min(_mmLoadRuns.Count - 1, _mmLoadRunSel + 1);
                 _mmLoadSaveSel = 0;
@@ -434,7 +435,7 @@ namespace Valkur.UI.MainMenu
                 UpdateMMLoadVisuals();
             }
             // A/D navigate saves within selected run (right column)
-            else if (_navLeftAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavLeftPressed())
+            else if (InputCompat.NavLeftPressed() || Valkur.Core.Input.InputCompat.NavLeftPressed())
             {
                 if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
                 {
@@ -442,7 +443,7 @@ namespace Valkur.UI.MainMenu
                     if (saves > 0) { _mmLoadSaveSel = Mathf.Max(0, _mmLoadSaveSel - 1); UpdateMMLoadVisuals(); }
                 }
             }
-            else if (_navRightAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavRightPressed())
+            else if (InputCompat.NavRightPressed() || Valkur.Core.Input.InputCompat.NavRightPressed())
             {
                 if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
                 {
@@ -450,7 +451,7 @@ namespace Valkur.UI.MainMenu
                     if (saves > 0) { _mmLoadSaveSel = Mathf.Min(saves - 1, _mmLoadSaveSel + 1); UpdateMMLoadVisuals(); }
                 }
             }
-            else if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
+            else if (InputCompat.ConfirmPressed() || Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 MMLoadSelectedSave();
             }
@@ -471,7 +472,7 @@ namespace Valkur.UI.MainMenu
                 _mmLoadRunScroll = _mmLoadRunSel - MM_RUN_ROWS + 1;
         }
 
-        // ── Data ─────────────────────────────────────────────────────────────
+        // â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void RefreshMMLoadPanel()
         {
@@ -513,7 +514,7 @@ namespace Valkur.UI.MainMenu
         {
             if (_mmRunPills == null) return;
 
-            // ── Left column: run list ─────────────────────────────────────────
+            // â”€â”€ Left column: run list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             for (int i = 0; i < MM_RUN_ROWS; i++)
             {
                 int dataIdx = _mmLoadRunScroll + i;
@@ -551,7 +552,7 @@ namespace Valkur.UI.MainMenu
                 }
             }
 
-            // ── Right column: save list ────────────────────────────────────────
+            // â”€â”€ Right column: save list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var currentRun = (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
                 ? _mmLoadRuns[_mmLoadRunSel] : null;
 
@@ -577,19 +578,19 @@ namespace Valkur.UI.MainMenu
                 else _mmSaveTexts[i].text = "";
             }
 
-            // ── Target label ──────────────────────────────────────────────────
+            // â”€â”€ Target label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (_mmLoadTargetLabel != null)
             {
                 if (TryGetSelectedSave(out var tsv))
                 {
                     string label = tsv.isAutoSave ? Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY : tsv.fileName;
-                    _mmLoadTargetLabel.text = $"Operará sobre: <b>{label}</b>";
+                    _mmLoadTargetLabel.text = $"OperarÃ¡ sobre: <b>{label}</b>";
                 }
                 else
                     _mmLoadTargetLabel.text = "";
             }
 
-            // ── Detail panel ──────────────────────────────────────────────────
+            // â”€â”€ Detail panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (_mmLoadDetailText != null)
             {
                 if (_mmLoadRuns.Count == 0)
@@ -609,8 +610,8 @@ namespace Valkur.UI.MainMenu
                     else
                     {
                         string cls  = FormatClassName(info.playerClass);
-                        string zone = string.IsNullOrEmpty(info.currentZone) ? "—" : info.currentZone;
-                        string hp   = info.maxHp > 0 ? $"{info.hp}/{info.maxHp}" : "—";
+                        string zone = string.IsNullOrEmpty(info.currentZone) ? "â€”" : info.currentZone;
+                        string hp   = info.maxHp > 0 ? $"{info.hp}/{info.maxHp}" : "â€”";
                         _mmLoadDetailText.text =
                             $"<color=#FFC800>Clase:</color> {cls}\n" +
                             $"<color=#FFC800>Zona:</color>  {zone}\n\n" +
@@ -630,7 +631,7 @@ namespace Valkur.UI.MainMenu
             UpdateMMLoadHoverBorders();
         }
 
-        // ── Hover border helpers ─────────────────────────────────────────────
+        // â”€â”€ Hover border helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private static readonly Color HoverBorderColor = new Color(1f, 0.84f, 0f, 0.85f);
 
@@ -701,7 +702,7 @@ namespace Valkur.UI.MainMenu
             }
         }
 
-        // ── Actions ──────────────────────────────────────────────────────────
+        // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void MMLoadSelectedSave()
         {
@@ -728,7 +729,7 @@ namespace Valkur.UI.MainMenu
             RebuildMenuPanel();
         }
 
-        // ── Rename flow ──────────────────────────────────────────────────────
+        // â”€â”€ Rename flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BeginRenameSelectedSave()
         {
@@ -762,7 +763,7 @@ namespace Valkur.UI.MainMenu
                 return;
             }
             // Enter confirms (when input field has focus, Enter inserts newline by default
-            // for multiline fields — TMP_InputField single-line fires onSubmit instead)
+            // for multiline fields â€” TMP_InputField single-line fires onSubmit instead)
             if (Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 CommitRename();
@@ -782,7 +783,7 @@ namespace Valkur.UI.MainMenu
             string sanitized = SaveFileManager.SanitizeSaveName(newName);
             if (sanitized == null)
             {
-                if (_mmRenameError != null) _mmRenameError.text = "Nombre inválido.";
+                if (_mmRenameError != null) _mmRenameError.text = "Nombre invÃ¡lido.";
                 return;
             }
             if (string.Equals(sanitized, info.fileName, System.StringComparison.OrdinalIgnoreCase))
@@ -793,7 +794,7 @@ namespace Valkur.UI.MainMenu
             string newPath = SaveFileManager.RenameSave(info.path, sanitized);
             if (newPath == null)
             {
-                if (_mmRenameError != null) _mmRenameError.text = "No se pudo renombrar (¿nombre duplicado?).";
+                if (_mmRenameError != null) _mmRenameError.text = "No se pudo renombrar (Â¿nombre duplicado?).";
                 return;
             }
             // Re-list and try to keep the renamed slot selected
@@ -812,13 +813,13 @@ namespace Valkur.UI.MainMenu
             CancelRename();
         }
 
-        // ── Delete confirmation flow ─────────────────────────────────────────
+        // â”€â”€ Delete confirmation flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void RequestDeleteSelectedSave()
         {
             if (!TryGetSelectedSave(out var info)) return;
             if (_mmConfirmText != null)
-                _mmConfirmText.text = $"¿Borrar la partida\n<b>{info.fileName}</b>?\nEsta acción no se puede deshacer.";
+                _mmConfirmText.text = $"Â¿Borrar la partida\n<b>{info.fileName}</b>?\nEsta acciÃ³n no se puede deshacer.";
             _mmConfirmSel = 0; // default to Cancelar
             UpdateConfirmVisuals();
             SetLoadMode(LoadPanelMode.ConfirmDelete);
@@ -826,14 +827,14 @@ namespace Valkur.UI.MainMenu
 
         private void HandleConfirmDeleteInput()
         {
-            if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
+            if (InputCompat.CancelPressed() || Valkur.Core.Input.InputCompat.CancelPressed())
             { SetLoadMode(LoadPanelMode.List); return; }
 
-            if (_navLeftAction.WasPerformedThisFrame() || _navRightAction.WasPerformedThisFrame()
+            if (InputCompat.NavLeftPressed() || InputCompat.NavRightPressed()
                 || Valkur.Core.Input.InputCompat.NavLeftPressed() || Valkur.Core.Input.InputCompat.NavRightPressed())
             { _mmConfirmSel = 1 - _mmConfirmSel; UpdateConfirmVisuals(); }
 
-            if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
+            if (InputCompat.ConfirmPressed() || Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 if (_mmConfirmSel == 1) MMDeleteSelectedSave();
                 else SetLoadMode(LoadPanelMode.List);
@@ -852,7 +853,7 @@ namespace Valkur.UI.MainMenu
             }
         }
 
-        // ── Mode switching ───────────────────────────────────────────────────
+        // â”€â”€ Mode switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void SetLoadMode(LoadPanelMode mode)
         {
@@ -861,7 +862,7 @@ namespace Valkur.UI.MainMenu
             if (_mmConfirmOverlay != null) _mmConfirmOverlay.SetActive(mode == LoadPanelMode.ConfirmDelete);
         }
 
-        // ── Builders for sub-panels ──────────────────────────────────────────
+        // â”€â”€ Builders for sub-panels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BuildRenameOverlay(Transform parent)
         {
@@ -937,7 +938,7 @@ namespace Valkur.UI.MainMenu
             _mmRenameError.color = new Color(1f, 0.45f, 0.45f, 1f);
             _mmRenameError.text = "";
 
-            // Mouse-clickable buttons (Cancelar / Aceptar) — keyboard parity: Esc / Enter
+            // Mouse-clickable buttons (Cancelar / Aceptar) â€” keyboard parity: Esc / Enter
             BuildOverlayButton(box.transform, "Cancelar", new Vector2(0.5f, 0f),
                 new Vector2(-110f, 60f), new Vector2(180f, 38f),
                 new Color(0.30f, 0.30f, 0.30f, 1f), CancelRename);
@@ -1019,7 +1020,7 @@ namespace Valkur.UI.MainMenu
             hr.pivot = new Vector2(0.5f, 0f); hr.anchoredPosition = new Vector2(0f, 4f);
             hr.sizeDelta = new Vector2(0f, 20f);
             var htmp = hintGo.AddComponent<TextMeshProUGUI>();
-            htmp.text = "← → Elegir  |  Enter Confirmar  |  Esc Cancelar";
+            htmp.text = "â† â†’ Elegir  |  Enter Confirmar  |  Esc Cancelar";
             htmp.fontSize = 13f;
             htmp.alignment = TextAlignmentOptions.Center;
             htmp.color = VersionCol;
@@ -1027,19 +1028,19 @@ namespace Valkur.UI.MainMenu
             _mmConfirmOverlay.SetActive(false);
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
+        // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private static string FormatClassName(string key)
         {
-            if (string.IsNullOrEmpty(key)) return "—";
+            if (string.IsNullOrEmpty(key)) return "â€”";
             return char.ToUpperInvariant(key[0]) + key.Substring(1).ToLowerInvariant();
         }
 
-        // ── Character face crop helpers ──────────────────────────────────────
-        // UV rects for each class portrait image (1536×1024 group portraits).
+        // â”€â”€ Character face crop helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // UV rects for each class portrait image (1536Ã—1024 group portraits).
         // Each rect crops the specific character's face from their highlighted portrait.
-        // Format: Rect(x_left, y_bottom, width, height) — Unity UV origin = bottom-left.
-        // All crops are ~280×280px (square) for distortion-free display in square containers.
+        // Format: Rect(x_left, y_bottom, width, height) â€” Unity UV origin = bottom-left.
+        // All crops are ~280Ã—280px (square) for distortion-free display in square containers.
         private static readonly System.Collections.Generic.Dictionary<string, Rect> ClassFaceUvRects =
             new System.Collections.Generic.Dictionary<string, Rect>(System.StringComparer.OrdinalIgnoreCase)
             {

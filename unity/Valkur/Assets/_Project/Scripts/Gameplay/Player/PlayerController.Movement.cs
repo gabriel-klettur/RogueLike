@@ -66,20 +66,25 @@ namespace Valkur.Gameplay
 
         private void ReadInput()
         {
-            if (_moveAction != null)
-                _moveInput = _moveAction.ReadValue<Vector2>();
+            // Read from the canonical InputService.Gameplay.Move action.
+            var move = MoveAction;
+            if (move != null) _moveInput = move.ReadValue<Vector2>();
 
             // Legacy fallback: under Unity 2022.3 in the Editor the new
             // InputSystem package intermittently drops OS event delivery and
-            // _moveInput stays at (0,0) even while WASD is held. UnityEngine.Input
-            // works as long as activeInputHandler != "Input System Package only".
+            // _moveInput stays at (0,0) even while WASD is held. KeyboardInputManager
+            // wraps the OR-of-new-and-legacy for each key.
             if (_moveInput.sqrMagnitude < 0.01f)
             {
                 float lx = 0f, ly = 0f;
-                if (UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow))  lx -= 1f;
-                if (UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow)) lx += 1f;
-                if (UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow))  ly -= 1f;
-                if (UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow))    ly += 1f;
+                if (KeyboardInputManager.IsKeyPressed(Key.A, KeyCode.A) ||
+                    KeyboardInputManager.IsKeyPressed(Key.LeftArrow, KeyCode.LeftArrow))   lx -= 1f;
+                if (KeyboardInputManager.IsKeyPressed(Key.D, KeyCode.D) ||
+                    KeyboardInputManager.IsKeyPressed(Key.RightArrow, KeyCode.RightArrow)) lx += 1f;
+                if (KeyboardInputManager.IsKeyPressed(Key.S, KeyCode.S) ||
+                    KeyboardInputManager.IsKeyPressed(Key.DownArrow, KeyCode.DownArrow))   ly -= 1f;
+                if (KeyboardInputManager.IsKeyPressed(Key.W, KeyCode.W) ||
+                    KeyboardInputManager.IsKeyPressed(Key.UpArrow, KeyCode.UpArrow))       ly += 1f;
                 if (lx != 0f || ly != 0f)
                 {
                     var legacy = new Vector2(lx, ly);
@@ -169,8 +174,10 @@ namespace Valkur.Gameplay
             // Primary attack (left click) → fireball (spell slot 0)
             // Python parity: M_LEFT → fireball
             // IsPressed allows hold-to-fire; SpellCaster cooldown (0.4 s) gates the rate.
-            if ((_primaryAttackAction != null && _primaryAttackAction.IsPressed()) ||
-                MouseInputManager.IsLeftMouseButtonPressed())
+            // MouseInputManager already ORs new InputSystem with the legacy backend, so
+            // we don't need to read PrimaryAttackAction separately — both backends are
+            // covered.
+            if (MouseInputManager.IsLeftMouseButtonPressed())
             {
                 if (_spellCaster != null)
                     _spellCaster.TryCastByKey("fireball", _facingDirection);
@@ -178,8 +185,7 @@ namespace Valkur.Gameplay
 
             // Secondary attack (right click) → slash spell
             // Python parity: M_RIGHT → slash
-            if ((_secondaryAttackAction != null && _secondaryAttackAction.WasPerformedThisFrame()) ||
-                MouseInputManager.WasRightMouseButtonPressedThisFrame())
+            if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
             {
                 if (_spellCaster != null)
                     _spellCaster.TryCastByKey("slash", _facingDirection);
@@ -209,12 +215,15 @@ namespace Valkur.Gameplay
                 if (beam != null) beam.Stop();
             }
 
-            // Dash (Ctrl) → dash spell through spell system
+            // Dash (Ctrl/RightShift) → dash spell through spell system
             // Python parity: K_LCTRL / K_RCTRL → dash spell
-            bool dashNew = _dashAction != null && _dashAction.WasPerformedThisFrame();
-            bool dashLegacy = UnityEngine.Input.GetKeyDown(KeyCode.LeftControl)
-                           || UnityEngine.Input.GetKeyDown(KeyCode.RightControl)
-                           || UnityEngine.Input.GetKeyDown(KeyCode.RightShift);
+            // The canonical InputService.Gameplay.Dash action covers Ctrl; we OR
+            // with KeyboardInputManager (which folds new+legacy) for safety.
+            var dashAction = DashAction;
+            bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
+            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl, KeyCode.LeftControl)
+                           || KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl)
+                           || KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
             if (dashNew || dashLegacy)
             {
                 if (_spellCaster != null && !_spellCaster.TryCastByKey("dash", _facingDirection))
