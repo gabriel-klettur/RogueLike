@@ -150,29 +150,32 @@ namespace Valkur.UI.PauseMenu
 
         private void HandleLoadGameInput()
         {
-            if (_cancel != null && _cancel.WasPerformedThisFrame())
+            if ((_cancel != null && _cancel.WasPerformedThisFrame())
+                || Valkur.Core.Input.InputCompat.CancelPressed())
             { GoBack(); return; }
 
             if (_loadSaves.Count == 0) return;
 
-            if (_navUp != null && _navUp.WasPerformedThisFrame())
+            if ((_navUp != null && _navUp.WasPerformedThisFrame())
+                || Valkur.Core.Input.InputCompat.NavUpPressed())
             {
                 _loadSel = Mathf.Max(0, _loadSel - 1);
                 EnsureLoadScrollVisible();
                 UpdateLoadGameVisuals();
             }
-            else if (_navDown != null && _navDown.WasPerformedThisFrame())
+            else if ((_navDown != null && _navDown.WasPerformedThisFrame())
+                     || Valkur.Core.Input.InputCompat.NavDownPressed())
             {
                 _loadSel = Mathf.Min(_loadSaves.Count - 1, _loadSel + 1);
                 EnsureLoadScrollVisible();
                 UpdateLoadGameVisuals();
             }
-            else if (_confirm != null && _confirm.WasPerformedThisFrame())
+            else if ((_confirm != null && _confirm.WasPerformedThisFrame())
+                     || Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 LoadSelectedSave();
             }
-            else if (UnityEngine.InputSystem.Keyboard.current != null &&
-                     UnityEngine.InputSystem.Keyboard.current.deleteKey.wasPressedThisFrame)
+            else if (Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame())
             {
                 DeleteSelectedSave();
             }

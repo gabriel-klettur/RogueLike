@@ -199,20 +199,21 @@ namespace Valkur.UI.PauseMenu
         {
             if (_rebinder != null && _rebinder.IsActive)
             {
-                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
                     _rebinder.Cancel();
                 return;
             }
 
             int tabCount = _tabLabels != null ? _tabLabels.Length : 0;
-            bool tabLeft  = Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame;
-            bool tabRight = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+            bool tabLeft  = Valkur.Core.Input.KeyboardInputManager.WasQPressedThisFrame();
+            bool tabRight = Valkur.Core.Input.KeyboardInputManager.WasEPressedThisFrame();
 
             if (tabLeft && tabCount > 0)
             { _inputsTabSel = (_inputsTabSel - 1 + tabCount) % tabCount; UpdateInputsPanel(); }
             else if (tabRight && tabCount > 0)
             { _inputsTabSel = (_inputsTabSel + 1) % tabCount; UpdateInputsPanel(); }
-            else if (_cancel != null && _cancel.WasPerformedThisFrame())
+            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
+                  || Valkur.Core.Input.InputCompat.CancelPressed())
             { GoBack(); }
         }
 

@@ -96,16 +96,17 @@ namespace Valkur.Gameplay.Buildings
 
         private void HandleKeyboardShortcuts()
         {
-            var kb = Keyboard.current;
-            if (kb == null) return;
-            bool ctrl = kb.ctrlKey.isPressed;
-            if (ctrl && kb.zKey.wasPressedThisFrame) _undo.Undo();
-            if (ctrl && kb.yKey.wasPressedThisFrame) _undo.Redo();
-            if (ctrl && kb.sKey.wasPressedThisFrame) SaveInstancesToJson();
-            if (kb.deleteKey.wasPressedThisFrame && _activeBuilding != null) RequestDeleteActiveWithConfirm();
-            if (kb.dKey.wasPressedThisFrame && _activeBuilding != null && !ctrl) ResetActiveBuilding();
-            if (kb.rKey.wasPressedThisFrame && _activeBuilding != null) SetMode(EditorMode.Resize);
-            if (kb.escapeKey.wasPressedThisFrame)
+            // Routed through KeyboardInputManager so the legacy backend supplies
+            // these reads when the new InputSystem package drops OS events
+            // (recurring Unity 2022.3 Editor bug).
+            bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
+            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) _undo.Undo();
+            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) _undo.Redo();
+            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)) SaveInstancesToJson();
+            if (Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame() && _activeBuilding != null) RequestDeleteActiveWithConfirm();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.D, KeyCode.D) && _activeBuilding != null && !ctrl) ResetActiveBuilding();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.R, KeyCode.R) && _activeBuilding != null) SetMode(EditorMode.Resize);
+            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
             {
                 if (_confirmModal != null && _confirmModal.activeSelf) HideConfirm();
                 else if (_tutorialRoot != null && _tutorialRoot.activeSelf) _tutorialRoot.SetActive(false);
@@ -117,33 +118,40 @@ namespace Valkur.Gameplay.Buildings
             // colliders. All keys are explicitly read; pressing them while the panel
             // is open consumes the action regardless of any other listeners.
             if (_openDropdowns.Contains("colliders"))
-                HandleColliderEditorShortcuts(kb);
+                HandleColliderEditorShortcuts();
         }
 
-        private void HandleColliderEditorShortcuts(Keyboard kb)
+        private void HandleColliderEditorShortcuts()
         {
+            // All shortcut reads route through KeyboardInputManager so the
+            // legacy backend keeps them working under the InputSystem-drops-events
+            // bug. Same OR-fallback pattern used everywhere else in Valkur.
+            bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
+
             // B → toggle brush ON/OFF
-            if (kb.bKey.wasPressedThisFrame && !kb.ctrlKey.isPressed)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.B, KeyCode.B) && !ctrl)
                 SetBrushOn(!BrushOn);
 
             // # (Shift+3) or numpad-3 → action = Paint (writes "#")
-            if (kb.digit3Key.wasPressedThisFrame && kb.shiftKey.isPressed)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Digit3, KeyCode.Alpha3)
+                && Valkur.Core.Input.KeyboardInputManager.IsShiftHeld())
                 SetBrushAction(CollBrushMode.Solid);
-            if (kb.numpad3Key.wasPressedThisFrame)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Numpad3, KeyCode.Keypad3))
                 SetBrushAction(CollBrushMode.Solid);
 
             // . (period) or numpad-. → action = Erase (writes ".")
-            if (kb.periodKey.wasPressedThisFrame || kb.numpadPeriodKey.wasPressedThisFrame)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Period, KeyCode.Period)
+                || Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.NumpadPeriod, KeyCode.KeypadPeriod))
                 SetBrushAction(CollBrushMode.Walk);
 
             // [ / ] → brush size −/+
-            if (kb.leftBracketKey.wasPressedThisFrame)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftBracket, KeyCode.LeftBracket))
                 OnCollBrushSizeChanged(_collBrushSize - 1);
-            if (kb.rightBracketKey.wasPressedThisFrame)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.RightBracket, KeyCode.RightBracket))
                 OnCollBrushSizeChanged(_collBrushSize + 1);
 
             // Tab → toggle scope CG ↔ CU on the active building
-            if (kb.tabKey.wasPressedThisFrame && _activeBuilding != null)
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Tab, KeyCode.Tab) && _activeBuilding != null)
                 ToggleColliderScope();
         }
 

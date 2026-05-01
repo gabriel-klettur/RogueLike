@@ -126,12 +126,8 @@ namespace Valkur.Gameplay.TileEditor
                          || UnityEngine.Input.GetKeyDown(KeyCode.Z);
             if (!ctrl || !zPressed) return 0;
 
-            var kb = Keyboard.current;
-            bool shiftNew = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
-            bool shiftLegacy = UnityEngine.Input.GetKey(KeyCode.LeftShift)
-                            || UnityEngine.Input.GetKey(KeyCode.RightShift);
-            bool shift = shiftNew || shiftLegacy;
-            return shift ? 2 : 1;
+            // KeyboardInputManager folds the new+legacy OR for shift internally.
+            return Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() ? 2 : 1;
         }
 
         public bool IsPointerOverUI()

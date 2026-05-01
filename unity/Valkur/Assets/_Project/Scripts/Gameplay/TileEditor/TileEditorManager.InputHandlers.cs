@@ -126,9 +126,8 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             // Ctrl+S → save all dirty zones to disk
-            var kb = Keyboard.current;
-            if (kb != null && kb.sKey.wasPressedThisFrame &&
-                (kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed))
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)
+                && Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld())
             {
                 SaveAllChanges();
             }

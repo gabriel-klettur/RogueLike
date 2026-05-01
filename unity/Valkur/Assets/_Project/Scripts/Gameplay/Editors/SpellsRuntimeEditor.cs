@@ -120,7 +120,7 @@ namespace Valkur.Gameplay.Spells
             _cameraPan.Tick();
 
             // Esc: close tutorial first if open, otherwise close the editor.
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
             {
                 if (_uiRefs.TutorialDropdown != null && _uiRefs.TutorialDropdown.activeSelf)
                 {

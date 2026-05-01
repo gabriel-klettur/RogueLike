@@ -69,9 +69,10 @@ namespace Valkur.Gameplay.Chat
         {
             if (!_panel.activeSelf) return;
 
-            // Enter submits message (New Input System)
-            var kb = Keyboard.current;
-            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))
+            // Enter submits message. Routed through KeyboardInputManager so the
+            // legacy backend keeps it working when the new InputSystem package
+            // drops OS events (recurring Unity 2022.3 Editor bug).
+            if (Valkur.Core.Input.KeyboardInputManager.WasEnterPressedThisFrame())
             {
                 SubmitInput();
             }

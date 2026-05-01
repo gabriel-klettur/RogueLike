@@ -212,15 +212,15 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleBisectionHotkeys()
         {
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb == null) return;
-
-            if (kb.f2Key.wasPressedThisFrame) ToggleExtraCameras();
-            if (kb.f3Key.wasPressedThisFrame) ToggleSprites();
-            if (kb.f4Key.wasPressedThisFrame) ToggleLights();
-            if (kb.f5Key.wasPressedThisFrame) ToggleVolumes();
-            if (kb.f6Key.wasPressedThisFrame) TogglePostFx();
-            if (kb.f7Key.wasPressedThisFrame) ToggleExtraTilemaps();
+            // Routed through KeyboardInputManager so the legacy backend keeps
+            // these probe hotkeys working when the new InputSystem package
+            // drops OS events.
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F2, KeyCode.F2)) ToggleExtraCameras();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F3, KeyCode.F3)) ToggleSprites();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F4, KeyCode.F4)) ToggleLights();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F5, KeyCode.F5)) ToggleVolumes();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F6, KeyCode.F6)) TogglePostFx();
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F7, KeyCode.F7)) ToggleExtraTilemaps();
         }
 
     }

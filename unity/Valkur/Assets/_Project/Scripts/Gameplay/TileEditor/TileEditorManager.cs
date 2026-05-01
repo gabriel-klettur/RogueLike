@@ -187,9 +187,9 @@ namespace Valkur.Gameplay.TileEditor
             if (!_state.Active) return;
 
             // Shift+F8 toggles the perf probe overlay (only useful while editor is active).
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && kb.f8Key.wasPressedThisFrame &&
-                (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) && _perfProbe != null)
+            // Routed through KeyboardInputManager for legacy fallback.
+            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F8, KeyCode.F8) &&
+                Valkur.Core.Input.KeyboardInputManager.IsShiftHeld() && _perfProbe != null)
             {
                 _perfProbe.Visible = !_perfProbe.Visible;
                 Debug.Log($"[TileEditor] Perf probe -> {(_perfProbe.Visible ? "ON" : "OFF")}");

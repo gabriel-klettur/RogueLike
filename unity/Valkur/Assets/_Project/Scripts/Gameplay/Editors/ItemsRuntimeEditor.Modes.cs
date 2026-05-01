@@ -269,12 +269,12 @@ namespace Valkur.Gameplay.Items
 
         private void HandleKeyboardShortcuts()
         {
-            var kb = Keyboard.current;
-            if (kb == null) return;
-            bool ctrl = kb.ctrlKey.isPressed;
-            if (ctrl && kb.zKey.wasPressedThisFrame) DoUndo();
-            if (ctrl && kb.yKey.wasPressedThisFrame) DoRedo();
-            if (kb.escapeKey.wasPressedThisFrame)
+            // Routed through KeyboardInputManager so the legacy backend keeps
+            // these shortcuts working under the InputSystem-drops-events bug.
+            bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
+            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) DoUndo();
+            if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
+            if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
             {
                 if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);
                 else Deactivate();

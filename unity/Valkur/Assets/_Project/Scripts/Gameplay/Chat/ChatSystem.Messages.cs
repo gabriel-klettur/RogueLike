@@ -52,9 +52,8 @@ namespace Valkur.Gameplay.Chat
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
             }
 
-            // ESC closes chat (New Input System)
-            var kb = Keyboard.current;
-            if (_chatOpen && kb != null && kb.escapeKey.wasPressedThisFrame)
+            // ESC closes chat. Routed through KeyboardInputManager for legacy fallback.
+            if (_chatOpen && Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
                 CloseChat();
         }
 
