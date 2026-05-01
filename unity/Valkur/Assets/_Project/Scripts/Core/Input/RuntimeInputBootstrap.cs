@@ -7,7 +7,9 @@ namespace Valkur.Core.Input
 {
     /// <summary>
     /// Brings the input pipeline up before any scene loads:
-    ///   1. Adds Mouse / Keyboard devices if missing.
+    ///   1. Applies <see cref="InputSystemConfigurator"/> (focus settings, dedup,
+    ///      canRunInBackground flag) so devices and actions can never silently die
+    ///      when the Game View loses focus.
     ///   2. Boots <see cref="InputService"/> from the canonical asset.
     ///   3. Creates a persistent <see cref="EventSystem"/> wired to InputService.UI.
     ///
@@ -38,29 +40,27 @@ namespace Valkur.Core.Input
 
         public static EventSystem EnsureRuntimeInput()
         {
-            EnsureInputDevices();
+            // Apply the boot-time fix-ups: dedup duplicate devices, flip
+            // canRunInBackground bits, pin runtime InputSettings + force
+            // m_HasFocus=true. See InputSystemConfigurator XML doc.
+            InputSystemConfigurator.Apply();
             InputService.Initialize();
-            return PersistentEventSystem.Ensure();
+            var es = PersistentEventSystem.Ensure();
+            // Pin m_HasFocus=true on every frame so Editor focus changes
+            // (Console / Inspector / MCP / OS) cannot mute OS event delivery
+            // to the InputSystem. Play-Mode-only.
+            if (Application.isPlaying)
+                InputFocusKeepalive.Ensure();
+            return es;
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             // Re-ensure on every scene load so legacy scenes that still ship an
-            // EventSystem get collapsed into the persistent one.
+            // EventSystem get collapsed into the persistent one. The configurator's
+            // duplicate sweep also re-runs here, catching any device-add events that
+            // happened between scene transitions.
             EnsureRuntimeInput();
-        }
-
-        private static void EnsureInputDevices()
-        {
-            // Safety net: if the Input System has not yet auto-discovered the
-            // hardware Mouse / Keyboard by BeforeSceneLoad (rare race on first
-            // launch), add a virtual one so polling APIs and F-key actions are
-            // never dispatched into a null device. When the real hardware is
-            // discovered moments later, both coexist; <c>Mouse.current</c> /
-            // <c>Keyboard.current</c> follow the most recently used device, so
-            // real OS events take over the moment the user touches them.
-            if (Mouse.current == null)    InputSystem.AddDevice<Mouse>();
-            if (Keyboard.current == null) InputSystem.AddDevice<Keyboard>();
         }
     }
 }

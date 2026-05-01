@@ -306,85 +306,77 @@ namespace Valkur.Core.Input
                    !float.IsInfinity(value.x) && !float.IsInfinity(value.y);
         }
 
-        /// <summary>
-        /// Check if left mouse button is currently pressed.
-        /// </summary>
+        // ── Mouse-button polling ─────────────────────────────────────────────
+        // All button queries OR the new InputSystem result with the legacy
+        // UnityEngine.Input backend. Reason: in the Editor (Unity 2022.3.62f1)
+        // the new InputSystem package intermittently drops OS event delivery
+        // for mouse + keyboard while the legacy backend keeps working — the
+        // new device's `wasPressedThisFrame` stays false even though the user
+        // just clicked. ORing both backends restores reliable input across
+        // all of Valkur (UI, gameplay attack/cast, dash, etc.) without
+        // depending on whether the new pipeline currently has events flowing.
+
         public static bool IsLeftMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.isPressed;
+            bool newSystem = mouse != null && mouse.leftButton.isPressed;
+            return newSystem || UnityEngine.Input.GetMouseButton(0);
         }
 
-        /// <summary>
-        /// Check if left mouse button was pressed this frame.
-        /// </summary>
         public static bool WasLeftMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.wasPressedThisFrame;
+            bool newSystem = mouse != null && mouse.leftButton.wasPressedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonDown(0);
         }
 
-        /// <summary>
-        /// Check if left mouse button was released this frame.
-        /// </summary>
         public static bool WasLeftMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.wasReleasedThisFrame;
+            bool newSystem = mouse != null && mouse.leftButton.wasReleasedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonUp(0);
         }
 
-        /// <summary>
-        /// Check if right mouse button is currently pressed.
-        /// </summary>
         public static bool IsRightMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.rightButton.isPressed;
+            bool newSystem = mouse != null && mouse.rightButton.isPressed;
+            return newSystem || UnityEngine.Input.GetMouseButton(1);
         }
 
-        /// <summary>
-        /// Check if right mouse button was pressed this frame.
-        /// </summary>
         public static bool WasRightMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.rightButton.wasPressedThisFrame;
+            bool newSystem = mouse != null && mouse.rightButton.wasPressedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonDown(1);
         }
 
-        /// <summary>
-        /// Check if right mouse button was released this frame.
-        /// </summary>
         public static bool WasRightMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.rightButton.wasReleasedThisFrame;
+            bool newSystem = mouse != null && mouse.rightButton.wasReleasedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonUp(1);
         }
 
-        /// <summary>
-        /// Check if middle mouse button (mouse wheel button) is pressed.
-        /// </summary>
         public static bool IsMiddleMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.middleButton.isPressed;
+            bool newSystem = mouse != null && mouse.middleButton.isPressed;
+            return newSystem || UnityEngine.Input.GetMouseButton(2);
         }
 
-        /// <summary>
-        /// Check if middle mouse button was pressed this frame.
-        /// </summary>
         public static bool WasMiddleMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.middleButton.wasPressedThisFrame;
+            bool newSystem = mouse != null && mouse.middleButton.wasPressedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonDown(2);
         }
 
-        /// <summary>
-        /// Check if middle mouse button was released this frame.
-        /// </summary>
         public static bool WasMiddleMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return mouse != null && mouse.middleButton.wasReleasedThisFrame;
+            bool newSystem = mouse != null && mouse.middleButton.wasReleasedThisFrame;
+            return newSystem || UnityEngine.Input.GetMouseButtonUp(2);
         }
 
         /// <summary>

@@ -55,40 +55,46 @@ namespace Valkur.Core.Input
         {
             if (eventSystem == null) return;
 
+            // The new InputSystemUIInputModule cannot deliver clicks to Button
+            // handlers when the InputSystem package's OS event pipeline is
+            // dropping events (a known recurring problem in Unity 2022.3.62f1
+            // Editor — Mouse.current.position stays at (0,0) even when the
+            // user clicks). The legacy StandaloneInputModule reads from
+            // UnityEngine.Input which never breaks that way, so we install
+            // BOTH modules: the new one stays enabled in case the new pipeline
+            // recovers, but Standalone takes precedence and guarantees clicks
+            // always reach UI Button.OnClick handlers.
+
+            // Ensure StandaloneInputModule (legacy) is present and enabled — this
+            // is the one that actually delivers clicks reliably under the bug.
             var legacy = eventSystem.GetComponent<StandaloneInputModule>();
-            if (legacy != null)
-            {
-                if (Application.isPlaying) Object.Destroy(legacy);
-                else                       Object.DestroyImmediate(legacy);
-            }
+            if (legacy == null)
+                legacy = eventSystem.gameObject.AddComponent<StandaloneInputModule>();
+            legacy.enabled = true;
 
-            var module = eventSystem.GetComponent<InputSystemUIInputModule>();
-            if (module == null)
-                module = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            // Also install the InputSystemUIInputModule for parity with the
+            // canonical asset; it stays disabled because two enabled UI input
+            // modules on one EventSystem fight over the same events. If we
+            // ever fully fix the new pipeline we can enable it instead.
+            var newModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+            if (newModule == null)
+                newModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
 
-            // Wire from InputService — pure code, no scene-asset references.
-            // Toggle enabled around the rebind so OnEnable re-subscribes against
-            // the freshly-bound actions (Unity 2022.3 caches subscriptions in OnEnable).
             var ui = InputService.Instance?.UI;
             if (ui != null)
             {
-                bool wasEnabled = module.enabled;
-                if (wasEnabled) module.enabled = false;
-
-                module.actionsAsset = InputService.Instance.Asset;
-                module.point        = InputActionReference.Create(ui.Point);
-                module.leftClick    = InputActionReference.Create(ui.Click);
-                module.rightClick   = InputActionReference.Create(ui.RightClick);
-                module.middleClick  = InputActionReference.Create(ui.MiddleClick);
-                module.scrollWheel  = InputActionReference.Create(ui.ScrollWheel);
-                module.move         = InputActionReference.Create(ui.Navigate);
-                module.submit       = InputActionReference.Create(ui.Submit);
-                module.cancel       = InputActionReference.Create(ui.Cancel);
-
-                if (wasEnabled) module.enabled = true;
+                newModule.actionsAsset = InputService.Instance.Asset;
+                newModule.point        = InputActionReference.Create(ui.Point);
+                newModule.leftClick    = InputActionReference.Create(ui.Click);
+                newModule.rightClick   = InputActionReference.Create(ui.RightClick);
+                newModule.middleClick  = InputActionReference.Create(ui.MiddleClick);
+                newModule.scrollWheel  = InputActionReference.Create(ui.ScrollWheel);
+                newModule.move         = InputActionReference.Create(ui.Navigate);
+                newModule.submit       = InputActionReference.Create(ui.Submit);
+                newModule.cancel       = InputActionReference.Create(ui.Cancel);
             }
+            newModule.enabled = false;
 
-            module.enabled = true;
             eventSystem.enabled = true;
             RemoveDuplicates(eventSystem);
         }
