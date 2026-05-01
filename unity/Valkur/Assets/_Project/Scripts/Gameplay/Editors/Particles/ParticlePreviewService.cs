@@ -17,8 +17,15 @@ namespace Valkur.Gameplay.VFX
     ///   • ParticleEmitter GameObjects at y=OFFSCREEN_Y + i*SLOT_SPACING, never visible in gameplay.
     ///   • On Shutdown(): all RTs released, all GameObjects destroyed.
     ///
+    /// Fidelity guarantee:
+    ///   Preview calls the exact same ApplyPreset() path as SpawnEmitterAt() on the map — no
+    ///   parameters are altered. Camera ortho-size auto-fits to the particle bounds every frame
+    ///   so wide effects (water_flow, portal) are never cropped. Burst effects are looped:
+    ///   when IsAlive() returns false the emitter is replayed so the thumbnail stays animated.
+    ///
     /// URP note: the camera is always enabled with a targetTexture assigned so URP renders it
-    /// normally in its pipeline. We just relocate the camera each frame.
+    /// normally in its pipeline. Particle materials use Particles/Unlit or Sprites/Default —
+    /// no Light2D required.
     /// </summary>
     public sealed class ParticlePreviewService
     {
@@ -30,8 +37,16 @@ namespace Valkur.Gameplay.VFX
         private const float OFFSCREEN_Y       = -10000f;
         private const float SLOT_SPACING      = 12f;    // world-units between emitter slots
         private const float CAMERA_Z          = -50f;
-        private const float ORTHO_SIZE_THUMB  = 1.5f;
-        private const float ORTHO_SIZE_LARGE  = 2.25f;
+
+        // Default ortho sizes used as a minimum — auto-fit may grow them.
+        private const float ORTHO_SIZE_THUMB_MIN  = 1.5f;
+        private const float ORTHO_SIZE_LARGE_MIN  = 2.25f;
+        // Maximum ortho to cap very large effects in thumbnail view.
+        private const float ORTHO_SIZE_THUMB_MAX  = 4f;
+        private const float ORTHO_SIZE_LARGE_MAX  = 8f;
+        // Padding factor around the computed bounds.
+        private const float BOUNDS_PADDING    = 0.25f;
+
         private const int   LARGE_REFRESH_FRAMES = 3;  // render large preview every N thumb frames
 
         // ── State ────────────────────────────────────────────────────────────────
@@ -40,6 +55,7 @@ namespace Valkur.Gameplay.VFX
         private RenderTexture    _largeRT;
         private GameObject       _largeEmitterGo;
         private ParticleEmitter  _largeEmitter;
+        private ParticlePresetDefinition _largePresetDef;
         private string           _selectedPresetId;
         private int              _thumbFrameCounter;
         private int              _largeFrameCounter;
@@ -51,8 +67,11 @@ namespace Valkur.Gameplay.VFX
         // Mapping from preset id → pool slot index.
         private readonly Dictionary<string, int> _presetToSlot = new Dictionary<string, int>();
 
-        // Visible presets list.
+        // Visible presets list (parallel to pool slots).
         private readonly List<ParticlePresetDefinition> _visible = new List<ParticlePresetDefinition>();
+
+        // Per-slot definition cache so we can restart burst emitters.
+        private readonly ParticlePresetDefinition[] _slotDef = new ParticlePresetDefinition[POOL_SIZE];
 
         private bool _initialized;
 
@@ -82,7 +101,7 @@ namespace Valkur.Gameplay.VFX
             camGo.transform.SetParent(parent, false);
             _camera = camGo.AddComponent<Camera>();
             _camera.orthographic     = true;
-            _camera.orthographicSize = ORTHO_SIZE_THUMB;
+            _camera.orthographicSize = ORTHO_SIZE_THUMB_MIN;
             _camera.cullingMask      = 1 << layer;
             _camera.clearFlags       = CameraClearFlags.SolidColor;
             _camera.backgroundColor  = new Color(0.08f, 0.08f, 0.10f, 1f);
@@ -165,7 +184,8 @@ namespace Valkur.Gameplay.VFX
                 var slot = _pool[slotIdx];
                 if (slot.PresetId != pid)
                 {
-                    slot.PresetId = pid;
+                    slot.PresetId  = pid;
+                    _slotDef[slotIdx] = def;
                     SafeApplyPreset(slot.Emitter, def);
                     SetLayerRecursive(slot.EmitterGo, layer);
                 }
@@ -191,6 +211,7 @@ namespace Valkur.Gameplay.VFX
         {
             if (!_initialized) return;
             _selectedPresetId = presetId;
+            _largePresetDef   = def;
             if (def != null)
             {
                 SafeApplyPreset(_largeEmitter, def);
@@ -213,12 +234,16 @@ namespace Valkur.Gameplay.VFX
             if (renderLarge)
             {
                 _largeFrameCounter = 0;
+                RestartIfDead(_largeEmitter, _largePresetDef);
                 PointCameraAtLarge();
             }
             else
             {
                 // Advance to next thumb slot in round-robin.
                 _thumbFrameCounter = (_thumbFrameCounter + 1) % _activeSlotCount;
+                var slot = _pool[_thumbFrameCounter];
+                if (slot != null)
+                    RestartIfDead(slot.Emitter, _slotDef[_thumbFrameCounter]);
                 PointCameraAtThumb(_thumbFrameCounter);
             }
         }
@@ -237,6 +262,7 @@ namespace Valkur.Gameplay.VFX
                 if (s.EmitterGo != null) Object.Destroy(s.EmitterGo);
                 if (s.RT        != null) { s.RT.Release(); Object.Destroy(s.RT); }
                 _pool[i] = null;
+                _slotDef[i] = null;
             }
 
             if (_largeEmitterGo != null) Object.Destroy(_largeEmitterGo);
@@ -246,20 +272,68 @@ namespace Valkur.Gameplay.VFX
             _presetToSlot.Clear();
             _visible.Clear();
             _selectedPresetId = null;
+            _largePresetDef   = null;
             _activeSlotCount  = 0;
             _initialized      = false;
         }
 
         // ── Private ──────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// If a non-looping (burst) emitter has finished playing, restart it so
+        /// thumbnails remain animated. Identical to how a looping emitter behaves.
+        /// </summary>
+        private static void RestartIfDead(ParticleEmitter emitter, ParticlePresetDefinition def)
+        {
+            if (emitter == null || def == null) return;
+            var ps = emitter.GetComponentInChildren<ParticleSystem>();
+            if (ps == null) return;
+            // IsAlive() returns false when the system finished and no particles remain.
+            if (!ps.main.loop && !ps.IsAlive(true))
+                SafeApplyPreset(emitter, def); // re-applies which calls ps.Play()
+        }
+
+        /// <summary>
+        /// Compute the orthographic half-size needed to frame all active particles
+        /// in this slot, accounting for the RT aspect ratio.
+        /// Falls back to the provided minimum if bounds are degenerate.
+        /// </summary>
+        private static float ComputeOrthoSize(GameObject emitterGo, float minSize, float maxSize)
+        {
+            if (emitterGo == null) return minSize;
+
+            // Accumulate the world-space bounds of every ParticleSystemRenderer child.
+            bool hasBounds = false;
+            var combined = new Bounds(emitterGo.transform.position, Vector3.zero);
+
+            foreach (var psr in emitterGo.GetComponentsInChildren<ParticleSystemRenderer>())
+            {
+                if (psr == null) continue;
+                var b = psr.bounds;
+                // Discard degenerate zero-size bounds (system not yet emitted anything)
+                if (b.size.sqrMagnitude < 0.0001f) continue;
+                if (!hasBounds) { combined = b; hasBounds = true; }
+                else combined.Encapsulate(b);
+            }
+
+            if (!hasBounds) return minSize;
+
+            // Half-extents in X and Y, padded.
+            float halfX = combined.extents.x + BOUNDS_PADDING;
+            float halfY = combined.extents.y + BOUNDS_PADDING;
+            // Camera ortho size is half the vertical extent; scale X if wider than RT (square RT here).
+            float needed = Mathf.Max(halfX, halfY);
+            return Mathf.Clamp(needed, minSize, maxSize);
+        }
+
         private void PointCameraAtThumb(int slotIndex)
         {
             var slot = _pool[slotIndex];
-            if (slot == null || slot.RT == null) return;
+            if (slot == null || slot.RT == null || slot.EmitterGo == null) return;
 
             Vector3 ep = slot.EmitterGo.transform.position;
             _camera.transform.position  = new Vector3(ep.x, ep.y, CAMERA_Z);
-            _camera.orthographicSize    = ORTHO_SIZE_THUMB;
+            _camera.orthographicSize    = ComputeOrthoSize(slot.EmitterGo, ORTHO_SIZE_THUMB_MIN, ORTHO_SIZE_THUMB_MAX);
             _camera.targetTexture       = slot.RT;
         }
 
@@ -269,7 +343,7 @@ namespace Valkur.Gameplay.VFX
 
             Vector3 ep = _largeEmitterGo.transform.position;
             _camera.transform.position = new Vector3(ep.x, ep.y, CAMERA_Z);
-            _camera.orthographicSize   = ORTHO_SIZE_LARGE;
+            _camera.orthographicSize   = ComputeOrthoSize(_largeEmitterGo, ORTHO_SIZE_LARGE_MIN, ORTHO_SIZE_LARGE_MAX);
             _camera.targetTexture      = _largeRT;
         }
 

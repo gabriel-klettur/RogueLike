@@ -83,7 +83,7 @@ namespace Valkur.Gameplay.VFX
         {
             ("1. Open editor",        "Press F1 anywhere in-game to toggle the Particles Editor."),
             ("2. Pick a preset",      "In the Presets panel, click a thumbnail to select it. Type in the search box to filter by id or display name."),
-            ("3. ALL / GROUP",        "Toggle the picker between ALL (preset order) and GROUP (sorted by VFX kind)."),
+            ("3. Sort: Order / Kind",  "Toggle the picker sort between Order (catalog order) and Kind (grouped by VFX kind: aura, explosion, smoke…)."),
             ("4. Place an instance",  "Drag a preset from the Presets panel onto the map to spawn an emitter, or click \"Add System\" then click on the map."),
             ("5. Move an instance",   "Right-click + drag a particle instance on the map to move it. Release to commit."),
             ("6. Delete an instance", "Click \"Remove\" or press the Delete tool, then click an instance. A confirmation modal will ask before destroying."),
@@ -146,6 +146,11 @@ namespace Valkur.Gameplay.VFX
             _mode = EditorMode.Select;
             EnsureOutlineFx();
             _previewService.Initialize(transform);
+            // Sync Sort toggle label to current state in case the editor was re-activated.
+            if (_ui.GroupToggleLabel != null)
+                _ui.GroupToggleLabel.text = _groupByKind ? "Kind" : "Order";
+            if (_ui.GroupToggleImg != null)
+                _ui.GroupToggleImg.color = _groupByKind ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
             OpenDefaultDropdowns();
             RefreshPicker();
             RefreshModeButtons();

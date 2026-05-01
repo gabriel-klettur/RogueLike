@@ -168,7 +168,7 @@ namespace Valkur.Gameplay.VFX
                 {
                     if (em == null) continue;
                     if (em.gameObject == _activeInstance) continue;
-                    string pid = ExtractPresetIdFromName(em.gameObject.name);
+                    string pid = GetPresetIdFromGo(em.gameObject);
                     if (string.Equals(pid, _selectedPresetId,
                             System.StringComparison.OrdinalIgnoreCase))
                         _samePresetEmitters.Add(em.gameObject);
