@@ -51,15 +51,10 @@ namespace Valkur.Gameplay.VFX
 
         // ------------------------------------------------------------------ helpers
 
-        private static bool IsSingleBurst(string kind)
-        {
-            return kind is "explosion" or "smoke_burst" or "slash" or "firework";
-        }
-
         private static bool IsBurstWithInterval(string kind)
         {
             // Emitters that burst periodically when placed in the world
-            // (as opposed to continuous-rate emitters)
+            // (as opposed to continuous-rate emitters).
             return false; // extend if needed
         }
 

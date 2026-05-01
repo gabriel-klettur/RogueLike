@@ -26,17 +26,21 @@ namespace Valkur.Gameplay.VFX
         private void ConfigureParticleSystem(ParticleVfxParams p, float scale)
         {
             string kind = p.kind ?? "";
-            bool isBurst = IsSingleBurst(kind);
+            // Use the explicit loops attribute as the single source of truth.
+            // loops=false → finite one-shot burst (explosion, smoke_burst, slash, firework by default).
+            // loops=true  → continuous emitter that never self-disables.
+            bool isBurst = !p.loops;
             bool isBurstLoop = IsBurstWithInterval(kind);
-            bool isContinuous = !isBurst && !isBurstLoop;
 
             float lifeSec = Mathf.Max(0.05f, p.lifespan);
 
             // ---- Main ----
             var main = _ps.main;
             main.playOnAwake = false;
-            main.loop = isContinuous;
-            main.stopAction = isBurst ? ParticleSystemStopAction.Disable : ParticleSystemStopAction.None;
+            main.loop = p.loops;
+            main.stopAction = isBurst
+                ? ParticleSystemStopAction.Disable
+                : ParticleSystemStopAction.None;
             main.startLifetime = lifeSec;
             main.startSpeed = new ParticleSystem.MinMaxCurve(0f, p.speed * scale);
             main.startSize = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
@@ -130,42 +128,60 @@ namespace Valkur.Gameplay.VFX
 
         // ------------------------------------------------------------------ internal
 
+        // InstanceStore is settable for tests; defaults to file-based in Start().
+        private IParticleInstanceStore _instanceStore;
+
+        /// <summary>
+        /// Injects a custom store (e.g. <see cref="InMemoryParticleInstanceStore"/> for tests).
+        /// Must be called before <c>Start()</c> or <c>Reload()</c>.
+        /// </summary>
+        public void SetInstanceStore(IParticleInstanceStore store)
+        {
+            _instanceStore = store;
+        }
+
         private void LoadAndSpawn()
         {
-            string path = Path.Combine(Application.streamingAssetsPath, "Particles", _instancesFileName);
-            if (!File.Exists(path))
+            if (_instanceStore == null)
+                _instanceStore = new FileParticleInstanceStore(_instancesFileName);
+
+            string json = _instanceStore.Load();
+            if (string.IsNullOrEmpty(json))
             {
-                Debug.LogWarning($"[ParticleInstancesLoader] instances file not found: {path}");
+                Debug.LogWarning($"[ParticleInstancesLoader] instances file not found or empty.");
                 return;
             }
 
-            string json = File.ReadAllText(path);
-            var instances = ParseInstancesJson(json);
+            var zm = FindZoneManager();
+            int zoneHeightTiles = zm != null ? zm.ZoneHeightTiles : 50;
+
+            var instances = ParticleInstanceSerializer.Deserialize(json, zm, zoneHeightTiles, _tileSize, _flipY);
             if (instances == null || instances.Count == 0)
             {
                 Debug.Log("[ParticleInstancesLoader] No particle instances to spawn.");
                 return;
             }
 
-            // Build zone offset table from ZoneManager
-            var zm = FindZoneManager();
-            var zoneOffsets = BuildZoneOffsets(zm);
-            int zoneHeightTiles = zm != null ? zm.ZoneHeightTiles : 50;
-
             int spawned = 0;
-            foreach (var inst in instances)
+            foreach (var record in instances)
             {
-                if (string.IsNullOrEmpty(inst.preset_id)) continue;
+                if (string.IsNullOrEmpty(record.PresetId)) continue;
 
-                var preset = _catalog != null ? _catalog.GetById(inst.preset_id) : null;
+                var preset = _catalog != null ? _catalog.GetById(record.PresetId) : null;
                 if (preset == null)
                 {
-                    Debug.LogWarning($"[ParticleInstancesLoader] Preset not found in catalog: '{inst.preset_id}'");
+                    Debug.LogWarning($"[ParticleInstancesLoader] Preset not found in catalog: '{record.PresetId}'");
                     continue;
                 }
 
-                Vector2 worldPos = ComputeWorldPos(inst, zoneOffsets, zoneHeightTiles);
-                SpawnEmitter(preset, worldPos, inst);
+                // Skip finite (one-shot) presets — they cannot function as persistent map decorations.
+                if (preset.vfx != null && !preset.vfx.loops)
+                {
+                    Debug.LogWarning($"[ParticleInstancesLoader] Skipping finite preset '{record.PresetId}' (loops=false). Remove from JSON to suppress this warning.");
+                    continue;
+                }
+
+                SpawnEmitter(preset, record.WorldPos, record);
                 spawned++;
             }
 

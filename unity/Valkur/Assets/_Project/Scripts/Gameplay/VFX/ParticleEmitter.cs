@@ -46,6 +46,19 @@ namespace Valkur.Gameplay.VFX
                 ApplyPreset(_preset, _scaleMultiplier);
         }
 
+        // Resume playback whenever the GameObject is re-enabled (e.g. by the
+        // ParticleInstancesLoader's viewport culling). Without this, an emitter
+        // that gets SetActive(false) shortly after spawn never plays again when
+        // it re-enters the camera frustum — looping presets appear "static".
+        private void OnEnable()
+        {
+            // Play() is idempotent — calling it on an already-playing system is a
+            // no-op. We don't gate on _ps.isPlaying because that flag is unreliable
+            // right after a SetActive(false→true) cycle.
+            if (_ps != null && _preset != null)
+                _ps.Play();
+        }
+
         private void OnDestroy()
         {
             StopAllCoroutines();
