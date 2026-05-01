@@ -134,7 +134,7 @@ namespace Valkur.Gameplay.Inventory
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleInventory))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

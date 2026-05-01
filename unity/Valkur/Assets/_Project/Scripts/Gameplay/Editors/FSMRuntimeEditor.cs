@@ -153,7 +153,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleFSM))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

@@ -54,7 +54,8 @@ namespace Valkur.Gameplay.Combat
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame() && _altModifier.IsPressed())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleCombatRanges) &&
+                EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.AltModifier))
             {
                 _visible = !_visible;
                 Debug.Log($"[CombatRangeVisualizer] Ranges {(_visible ? "ON" : "OFF")}");

@@ -112,7 +112,8 @@ namespace Valkur.Gameplay.Spawners
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame() && !_ctrlModifier.IsPressed())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleSpawner) &&
+                !EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

@@ -63,7 +63,7 @@ namespace Valkur.Gameplay
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleDevConsole))
             {
                 _open = !_open;
                 if (_open) _focusInput = true;

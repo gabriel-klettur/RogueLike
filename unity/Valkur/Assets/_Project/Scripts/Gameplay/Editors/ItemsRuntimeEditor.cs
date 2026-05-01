@@ -143,7 +143,7 @@ namespace Valkur.Gameplay.Items
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleItems))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

@@ -47,13 +47,37 @@ namespace Valkur.Core.Input
         }
 
         /// <summary>
+        /// Reset statics so each Play Mode entry starts from a clean slate. Required
+        /// because Domain Reload is OFF in Valkur — without this the previous session's
+        /// <see cref="_instance"/> would carry over (along with whatever map-enabled
+        /// state the prior session ended in) and <see cref="Initialize"/> would skip
+        /// rebuilding, leaving the canonical asset's maps possibly disabled.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            _instance = null;
+        }
+
+        /// <summary>
         /// Bootstrap the service. Idempotent; safe to call from multiple places (the
-        /// runtime bootstrap and EditMode tests both call it). Returns the service so
-        /// callers can register it in <see cref="ServiceLocator"/> or chain.
+        /// runtime bootstrap and EditMode tests both call it).
+        ///
+        /// Defensive: when an existing instance is returned, this also re-enables the
+        /// always-on maps (UI + Editors). They can drift to disabled if a previous
+        /// code path (a test's <see cref="ResetForTests"/>, a hot-reload, an editor's
+        /// teardown that touched the canonical asset) left them off — and since with
+        /// Domain Reload off the canonical <see cref="InputActionAsset"/> persists
+        /// across sessions, the disabled state would otherwise be sticky and break
+        /// the entire input pipeline (mouse clicks AND F-keys).
         /// </summary>
         public static InputService Initialize()
         {
-            if (_instance != null) return _instance;
+            if (_instance != null)
+            {
+                EnsureAlwaysOnMapsEnabled(_instance);
+                return _instance;
+            }
 
             var asset = Resources.Load<InputActionAsset>(CanonicalAssetResourcePath);
             if (asset == null)
@@ -72,6 +96,18 @@ namespace Valkur.Core.Input
             _instance = new InputService(asset);
             ServiceLocator.Register(_instance);
             return _instance;
+        }
+
+        /// <summary>
+        /// Re-enables UI + Editors maps on an already-built service. Public so the
+        /// watchdog and tests can force a self-heal pass without going through the
+        /// full bootstrap chain.
+        /// </summary>
+        public static void EnsureAlwaysOnMapsEnabled(InputService svc)
+        {
+            if (svc == null) return;
+            if (svc.UI != null      && svc.UI.Map != null      && !svc.UI.Map.enabled)      svc.UI.Map.Enable();
+            if (svc.Editors != null && svc.Editors.Map != null && !svc.Editors.Map.enabled) svc.Editors.Map.Enable();
         }
 
         /// <summary>Test hook: drop the service so a fresh one can be initialized.

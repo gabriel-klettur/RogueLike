@@ -246,7 +246,7 @@ namespace Valkur.Gameplay.Buildings
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleBuildings))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Valkur.Core.Input
@@ -12,6 +14,15 @@ namespace Valkur.Core.Input
     /// In EditMode tests <see cref="InputService"/> is not initialized; the resolver
     /// falls back to a fresh ad-hoc <see cref="InputAction"/>. The <c>ownsAction</c>
     /// flag tells the caller whether to <see cref="InputAction.Dispose"/> on teardown.
+    ///
+    /// **Preferred runtime usage**: the stateless <see cref="WasPerformedThisFrame(Hotkey)"/>
+    /// and <see cref="IsPressed(Hotkey)"/> overloads. They look up the live action from
+    /// <see cref="InputService"/> on every call, so they are immune to the
+    /// "zombie InputAction" hot-reload bug (Unity serializes a MonoBehaviour's
+    /// <see cref="InputAction"/> field, the deserialized clone has <c>bindings.Count == 0</c>
+    /// and <c>actionMap == null</c>, and the editor's stored reference goes silently dead
+    /// while the canonical asset's action is still firing). Storing the result of
+    /// <see cref="Resolve"/> in a field is now discouraged for runtime code.
     /// </summary>
     public static class EditorHotkeyBindings
     {
@@ -50,6 +61,106 @@ namespace Valkur.Core.Input
             var action = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
             action.Enable();
             return action;
+        }
+
+        // ── Stateless query API (preferred for runtime) ─────────────────────────
+        //
+        // Resolves the live canonical action on every call so caller code never
+        // holds a stale reference. Eliminates the zombie-action class of bug.
+
+        public static bool WasPerformedThisFrame(Hotkey hotkey)
+        {
+            var a = ResolveLive(hotkey);
+            bool newSystem = a != null && a.WasPerformedThisFrame();
+            // Legacy fallback: under Unity 2022.3 in the Editor the new
+            // InputSystem package intermittently drops OS event delivery,
+            // and F-keys silently die. UnityEngine.Input always works as
+            // long as activeInputHandler != "Input System Package only".
+            return newSystem || LegacyKeyDown(hotkey);
+        }
+
+        public static bool IsPressed(Hotkey hotkey)
+        {
+            var a = ResolveLive(hotkey);
+            bool newSystem = a != null && a.IsPressed();
+            return newSystem || LegacyKeyHeld(hotkey);
+        }
+
+        public static bool WasReleasedThisFrame(Hotkey hotkey)
+        {
+            var a = ResolveLive(hotkey);
+            bool newSystem = a != null && a.WasReleasedThisFrame();
+            return newSystem || LegacyKeyUp(hotkey);
+        }
+
+        private static KeyCode LegacyKeyCode(Hotkey hotkey) => hotkey switch
+        {
+            Hotkey.ToggleParticles    => KeyCode.F1,
+            Hotkey.ToggleCombatRanges => KeyCode.F2,
+            Hotkey.ToggleSpawner      => KeyCode.F3,
+            Hotkey.ToggleLighting     => KeyCode.F3,
+            Hotkey.ToggleSpells       => KeyCode.F4,
+            Hotkey.ToggleEntities     => KeyCode.F5,
+            Hotkey.ToggleInventory    => KeyCode.F6,
+            Hotkey.ToggleItems        => KeyCode.F7,
+            Hotkey.ToggleTile         => KeyCode.F8,
+            Hotkey.ToggleDebugHUD     => KeyCode.F9,
+            Hotkey.ToggleBuildings    => KeyCode.F10,
+            Hotkey.ToggleMap          => KeyCode.F11,
+            Hotkey.ToggleFSM          => KeyCode.F12,
+            Hotkey.QuickSave          => KeyCode.F5,
+            Hotkey.QuickLoad          => KeyCode.F9,
+            Hotkey.CtrlModifier       => KeyCode.LeftControl,
+            Hotkey.AltModifier        => KeyCode.LeftAlt,
+            Hotkey.ToggleDevConsole   => KeyCode.BackQuote,
+            _ => KeyCode.None
+        };
+
+        private static bool LegacyKeyDown(Hotkey hotkey) =>
+            UnityEngine.Input.GetKeyDown(LegacyKeyCode(hotkey));
+        private static bool LegacyKeyHeld(Hotkey hotkey) =>
+            UnityEngine.Input.GetKey(LegacyKeyCode(hotkey));
+        private static bool LegacyKeyUp(Hotkey hotkey) =>
+            UnityEngine.Input.GetKeyUp(LegacyKeyCode(hotkey));
+
+        /// <summary>
+        /// Returns the canonical live action when InputService is up, or a cached
+        /// ad-hoc action when running in EditMode tests. Stateless from the caller's
+        /// perspective — they never need to dispose. The cache is reset on Play
+        /// Mode entry so it cannot leak across sessions with Domain Reload off.
+        /// </summary>
+        private static InputAction ResolveLive(Hotkey hotkey)
+        {
+            var svc = InputService.Instance;
+            if (svc != null) return Get(svc.Editors, hotkey);
+
+            if (_adHocCache.TryGetValue(hotkey, out var cached) &&
+                cached != null && cached.bindings.Count > 0)
+                return cached;
+
+            var fresh = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
+            fresh.Enable();
+            _adHocCache[hotkey] = fresh;
+            return fresh;
+        }
+
+        private static readonly Dictionary<Hotkey, InputAction> _adHocCache =
+            new Dictionary<Hotkey, InputAction>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetAdHocCache() => _adHocCache.Clear();
+
+        // ── Field-bound revival helper (for code that still stores InputAction) ─
+        //
+        // For MonoBehaviours that historically held a private InputAction field,
+        // call this from Update(). It detects the "zombie after hot-reload" state
+        // (action.bindings.Count == 0) and re-resolves from the canonical source.
+
+        public static InputAction ReviveIfZombie(InputAction current, Hotkey hotkey, ref bool ownsAction)
+        {
+            if (current != null && current.bindings.Count > 0) return current;
+            if (ownsAction && current != null) current.Dispose();
+            return Resolve(hotkey, out ownsAction);
         }
 
         public static string FallbackPath(Hotkey hotkey) => hotkey switch

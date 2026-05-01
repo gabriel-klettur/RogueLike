@@ -104,7 +104,8 @@ namespace Valkur.Gameplay.World
         private void Update()
         {
             // Ctrl+F3 only
-            if (_toggleAction.WasPerformedThisFrame() && _ctrlModifier.IsPressed())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleLighting) &&
+                EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);

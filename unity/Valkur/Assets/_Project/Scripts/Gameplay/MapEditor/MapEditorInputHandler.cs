@@ -46,7 +46,7 @@ namespace Valkur.Gameplay.MapEditor
 
         public bool WasTogglePressed()
         {
-            return _toggleAction != null && _toggleAction.WasPerformedThisFrame();
+            return EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleMap);
         }
 
         public bool WasSelectPressed()

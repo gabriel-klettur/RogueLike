@@ -137,6 +137,41 @@ namespace Valkur.Gameplay
                 action.Enable();
         }
 
+        /// <summary>
+        /// Detect post-hot-reload zombie state on any InputAction field and rebuild
+        /// the whole set if needed. Hot-recompile with Domain Reload off serialises
+        /// the InputAction fields and restores them as bindingless clones, so the
+        /// move/look/attack/dash actions silently stop firing. This guard runs once
+        /// per Update tick (cheap — just a binding count check).
+        /// </summary>
+        private void EnsureInputActionsLive()
+        {
+            if (_primaryAttackAction != null && _primaryAttackAction.bindings.Count > 0) return;
+
+            // Dispose the zombies and rebuild from scratch.
+            DisposeIfNotNull(ref _moveAction);
+            DisposeIfNotNull(ref _lookAction);
+            DisposeIfNotNull(ref _primaryAttackAction);
+            DisposeIfNotNull(ref _secondaryAttackAction);
+            DisposeIfNotNull(ref _middleClickAction);
+            DisposeIfNotNull(ref _dashAction);
+            for (int i = 0; i < _spellBindings.Count; i++)
+            {
+                var sb = _spellBindings[i];
+                try { sb.action?.Disable(); sb.action?.Dispose(); } catch { }
+            }
+            _spellBindings.Clear();
+
+            CreateInputActions();
+        }
+
+        private static void DisposeIfNotNull(ref UnityEngine.InputSystem.InputAction action)
+        {
+            if (action == null) return;
+            try { action.Disable(); action.Dispose(); } catch { }
+            action = null;
+        }
+
         private void AddSpellBinding(string binding, string spellKey)
         {
             var action = new InputAction($"Spell_{spellKey}", InputActionType.Button, binding);

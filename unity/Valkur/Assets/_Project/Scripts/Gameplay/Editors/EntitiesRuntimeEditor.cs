@@ -93,7 +93,7 @@ namespace Valkur.Gameplay.Entities
 
         private void Update()
         {
-            if (_toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleEntities))
             {
                 if (GameEditorManager.HasInstance) GameEditorManager.Instance.ToggleExclusive(this);
                 else                               ToggleActive();

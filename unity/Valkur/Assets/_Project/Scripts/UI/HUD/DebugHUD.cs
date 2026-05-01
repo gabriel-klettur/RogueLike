@@ -84,7 +84,7 @@ namespace Valkur.UI.HUD
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleDebugHUD))
             {
                 _visible = !_visible;
                 if (_canvas != null)

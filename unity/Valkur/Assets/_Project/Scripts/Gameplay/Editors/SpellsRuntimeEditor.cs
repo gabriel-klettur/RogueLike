@@ -106,7 +106,7 @@ namespace Valkur.Gameplay.Spells
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleSpells))
             {
                 if (GameEditorManager.HasInstance)
                     GameEditorManager.Instance.ToggleExclusive(this);
