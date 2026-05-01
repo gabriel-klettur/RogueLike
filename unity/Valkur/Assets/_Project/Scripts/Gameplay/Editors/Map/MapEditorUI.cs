@@ -285,8 +285,15 @@ namespace Valkur.Gameplay.MapEditor
 
             SetAddZoneSource(sourceZoneName, sourceEditable);
 
+            // Template only makes sense when there is a source zone selected.
+            // Without a source, default to OFF and disable the toggle so the
+            // user can't trigger the "source required" failure path silently.
+            bool hasSource = !string.IsNullOrWhiteSpace(sourceZoneName);
             if (_refs.AddUseTemplateToggle != null)
-                _refs.AddUseTemplateToggle.SetIsOnWithoutNotify(true);
+            {
+                _refs.AddUseTemplateToggle.SetIsOnWithoutNotify(hasSource);
+                _refs.AddUseTemplateToggle.interactable = hasSource;
+            }
             if (_refs.AddEditableToggle != null)
                 _refs.AddEditableToggle.SetIsOnWithoutNotify(sourceEditable);
 

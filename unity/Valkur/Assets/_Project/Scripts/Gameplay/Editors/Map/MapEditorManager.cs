@@ -44,6 +44,14 @@ namespace Valkur.Gameplay.MapEditor
         private bool _hasPendingAddTarget;
         private Vector2Int _pendingAddZoneOffset;
         private GameObject _addZonePreviewObject;
+
+        // Frame on which BeginAddZoneFlow was invoked. We ignore left-click on
+        // the same frame so the click that activated the flow (over the
+        // "Add Zone" UI button) cannot also race ahead and mark a target —
+        // EventSystem.IsPointerOverGameObject can lag the UI raycast by one
+        // frame depending on script execution order, which would otherwise
+        // immediately drop the target wherever the button happened to sit.
+        private int _addZoneFlowStartedFrame = -1;
         private string _pendingDeleteZoneName;
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
@@ -68,22 +76,12 @@ namespace Valkur.Gameplay.MapEditor
                 GameEditorManager.Instance.NotifyDeactivated(this);
         }
 
-        [Serializable]
-        private class ZonePersistenceFile
-        {
-            public bool restrictTileEditingToEditableZones;
-            public int nextZoneIndex;
-            public List<ZonePersistenceEntry> zones = new List<ZonePersistenceEntry>();
-        }
-
-        [Serializable]
-        private class ZonePersistenceEntry
-        {
-            public string zoneName;
-            public int gridOffsetX;
-            public int gridOffsetY;
-            public bool editableInTileEditor;
-        }
+        // NB: persistence DTOs are intentionally non-nested and internal.
+        // Unity's JsonUtility has historically had issues serialising private
+        // nested types (the "T must be a class with [Serializable]"
+        // restriction interacts badly with nested generics like List<T>).
+        // Keeping them at namespace scope removes any ambiguity and makes the
+        // round-trip deterministic across Unity versions.
 
         private string PersistencePath => Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
 
@@ -168,7 +166,8 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
-            if (_isAddZoneFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI())
+            if (_isAddZoneFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI()
+                && Time.frameCount != _addZoneFlowStartedFrame)
             {
                 MarkAddZoneTargetAtCursor();
                 return;
@@ -199,8 +198,7 @@ namespace Valkur.Gameplay.MapEditor
 
             if (_ui != null)
                 _ui.SetVisible(_state.Active);
-            if (_overlayRoot != null)
-                _overlayRoot.SetActive(_state.Active);
+            UpdateOverlayVisibility();
 
             if (_state.Active)
             {
@@ -217,6 +215,36 @@ namespace Valkur.Gameplay.MapEditor
                     _ui.SetStatus("Map Editor inactive.");
                 Debug.Log("[MapEditor] Deactivated (F7).");
             }
+        }
+
+        // ── External overlay sharing ────────────────────────────────────────────
+        //
+        // Other runtime editors (currently Tile Editor F8) can request that the
+        // zone-border overlay be shown without activating the full Map Editor
+        // UI. Useful for visualising zone boundaries while painting tiles so
+        // the user can see where each zone starts and ends.
+
+        private bool _externalOverlayRequested;
+
+        /// <summary>
+        /// Show or hide the zone-border overlay on behalf of an external
+        /// caller (e.g. Tile Editor). The overlay stays visible while either
+        /// the Map Editor itself is active OR an external request is held.
+        /// Safe to call before <see cref="Start"/> — the request is honoured
+        /// as soon as the overlay root is created.
+        /// </summary>
+        public void SetExternalOverlayRequest(bool show)
+        {
+            if (_externalOverlayRequested == show) return;
+            _externalOverlayRequested = show;
+            UpdateOverlayVisibility();
+        }
+
+        private void UpdateOverlayVisibility()
+        {
+            if (_overlayRoot == null) return;
+            bool show = (_state != null && _state.Active) || _externalOverlayRequested;
+            _overlayRoot.SetActive(show);
         }
 
         // Middle-mouse camera pan is handled by the shared EditorCameraPanController

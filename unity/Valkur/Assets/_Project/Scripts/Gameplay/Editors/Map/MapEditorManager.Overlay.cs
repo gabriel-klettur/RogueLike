@@ -283,5 +283,25 @@ namespace Valkur.Gameplay.MapEditor
             }
             return $"zone_{Guid.NewGuid().ToString("N").Substring(0, 6)}";
         }
+
+        /// <summary>
+        /// Suggests a zone name based on its tile-grid offset (e.g. "zone_150_150"
+        /// for an offset of [150,150]). If the offset-based name already exists,
+        /// appends "_2", "_3"… until a free name is found. This is more
+        /// informative than the sequential "zone_001" counter when zones are
+        /// being placed by clicking on the map.
+        /// </summary>
+        private string GenerateOffsetZoneName(Vector2Int offset)
+        {
+            string baseName = $"zone_{offset.x}_{offset.y}";
+            if (!zoneManager.TryGetZone(baseName, out _)) return baseName;
+
+            for (int i = 2; i < 1000; i++)
+            {
+                string candidate = $"{baseName}_{i}";
+                if (!zoneManager.TryGetZone(candidate, out _)) return candidate;
+            }
+            return $"{baseName}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
+        }
     }
 }

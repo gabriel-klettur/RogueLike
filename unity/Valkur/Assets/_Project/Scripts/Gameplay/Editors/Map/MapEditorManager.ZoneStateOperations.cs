@@ -27,6 +27,11 @@ namespace Valkur.Gameplay.MapEditor
             if (string.IsNullOrWhiteSpace(trimmed)) { _ui?.SetStatus("Rename failed: empty name."); return; }
             if (!zoneManager.RenameZone(oldName, trimmed)) { _ui?.SetStatus($"Rename failed: '{trimmed}' may already exist."); return; }
 
+            // Rename also moves the per-zone tile-override file so painted
+            // tiles follow the zone. Without this, renaming a zone with
+            // painted tiles loses every tile on the next world load.
+            Valkur.Gameplay.TileEditor.TileOverlayPersistence.RenameOverride(oldName, trimmed);
+
             _state.SelectZone(trimmed);
             PersistZonesToDisk();
             _ui?.SetStatus($"Renamed '{oldName}' to '{trimmed}'.");

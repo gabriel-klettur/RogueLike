@@ -37,6 +37,7 @@ namespace Valkur.Gameplay.MapEditor
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
                 File.WriteAllText(PersistencePath, json);
+                Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) to '{PersistencePath}'.");
             }
             catch (Exception ex)
             {
@@ -46,13 +47,29 @@ namespace Valkur.Gameplay.MapEditor
 
         private void LoadZonesFromDisk()
         {
-            if (zoneManager == null || !File.Exists(PersistencePath)) return;
+            if (zoneManager == null) { Debug.LogWarning("[MapEditor] LoadZonesFromDisk skipped — zoneManager is null."); return; }
+            if (!File.Exists(PersistencePath))
+            {
+                Debug.Log($"[MapEditor] No persisted zones file at '{PersistencePath}' (first run / file deleted).");
+                return;
+            }
 
             try
             {
                 string json = File.ReadAllText(PersistencePath);
                 var data = JsonUtility.FromJson<ZonePersistenceFile>(json);
-                if (data?.zones == null || data.zones.Count == 0) return;
+                if (data == null)
+                {
+                    Debug.LogError($"[MapEditor] Failed to parse persistence file '{PersistencePath}' — JsonUtility returned null. " +
+                                   $"File contents head: {(json.Length > 200 ? json.Substring(0, 200) : json)}");
+                    return;
+                }
+                if (data.zones == null || data.zones.Count == 0)
+                {
+                    Debug.Log($"[MapEditor] Persistence file '{PersistencePath}' has no zones to restore.");
+                    return;
+                }
+                Debug.Log($"[MapEditor] Reading {data.zones.Count} persisted zone(s) from '{PersistencePath}'.");
 
                 // Existing zones come from ZoneDatabaseLoader (the source of truth, with
                 // correct Y-flipped offsets). Treat them as authoritative — don't override
@@ -125,6 +142,32 @@ namespace Valkur.Gameplay.MapEditor
                 // Rewrite the persistence file in clean form so duplicates don't accumulate.
                 if (duplicatesDropped > 0 || dbDup > 0)
                     PersistZonesToDisk();
+
+                // Re-apply tile overrides now that the ZoneManager is fully
+                // populated. WorldLoader.LoadFullWorld runs ApplyAllOverrides
+                // before our Start, so any override file whose zone wasn't
+                // registered yet was logged as "skipped" and its tiles never
+                // painted. A second call here covers those — the call is
+                // idempotent for already-applied zones (it just repaints the
+                // same tiles into the same cells).
+                //
+                // Always run, regardless of newZonesAdded: even when the
+                // persistence file only restores flags on existing zones, an
+                // override file may exist that the WorldLoader pass missed
+                // (e.g. a base zone that was missing from the DB at the time
+                // WorldLoader iterated, but is present now). Robustness > the
+                // negligible cost of one extra directory scan at boot.
+                if (worldGridBuilder != null)
+                {
+                    int reapplied = Valkur.Gameplay.TileEditor.TileOverlayPersistence
+                        .ApplyAllOverrides(worldGridBuilder, zoneManager);
+                    if (reapplied > 0)
+                        Debug.Log($"[MapEditor] Re-applied {reapplied} tile override(s) after LoadZonesFromDisk.");
+                }
+                else
+                {
+                    Debug.LogWarning("[MapEditor] worldGridBuilder is null — cannot re-apply tile overrides for newly-registered zones.");
+                }
             }
             catch (Exception ex)
             {

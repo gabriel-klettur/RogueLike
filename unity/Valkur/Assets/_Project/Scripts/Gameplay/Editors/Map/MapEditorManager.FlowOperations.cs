@@ -31,9 +31,10 @@ namespace Valkur.Gameplay.MapEditor
 
         private void BeginAddZoneFlow()
         {
-            _isAddZoneFlowActive  = true;
-            _hasPendingAddTarget  = false;
-            _pendingAddZoneOffset = default;
+            _isAddZoneFlowActive   = true;
+            _hasPendingAddTarget   = false;
+            _pendingAddZoneOffset  = default;
+            _addZoneFlowStartedFrame = Time.frameCount;
 
             int width  = Mathf.Max(1, zoneManager.ZoneWidthTiles);
             int height = Mathf.Max(1, zoneManager.ZoneHeightTiles);
@@ -69,11 +70,14 @@ namespace Valkur.Gameplay.MapEditor
             string sourceName    = _state.HasSelection &&
                                    zoneManager.TryGetZone(_state.SelectedZone, out var srcZone)
                                    ? srcZone.zoneName : string.Empty;
-            bool sourceEditable  = !string.IsNullOrEmpty(sourceName) &&
-                                   zoneManager.TryGetZone(sourceName, out var srcZ2) &&
-                                   srcZ2.editableInTileEditor;
+            // For blank zones (no source) default editable=true — fresh zones
+            // should be editable in the tile editor unless the user opts out.
+            // For template zones, mirror the source's editable flag.
+            bool sourceEditable  = string.IsNullOrEmpty(sourceName)
+                ? true
+                : (zoneManager.TryGetZone(sourceName, out var srcZ2) && srcZ2.editableInTileEditor);
 
-            _ui?.ShowAddZoneDialog(GenerateUniqueZoneName(), sourceName, sourceEditable);
+            _ui?.ShowAddZoneDialog(GenerateOffsetZoneName(_pendingAddZoneOffset), sourceName, sourceEditable);
             _ui?.SetAddZoneTarget(_pendingAddZoneOffset, width, height, true);
             _ui?.SetStatus($"Add Zone target at [{alignedX},{alignedY}] — fill in details and confirm.");
         }
@@ -86,16 +90,14 @@ namespace Valkur.Gameplay.MapEditor
             string zoneName = (requestedZoneName ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(zoneName)) { _ui?.SetStatus("Add Zone failed: empty name."); return; }
 
-            bool created;
-            if (useSelectedZoneAsTemplate)
-            {
-                if (!_state.HasSelection) { _ui?.SetStatus("Add Zone failed: source zone is required for template mode."); return; }
-                created = zoneManager.AddZoneFromTemplate(_state.SelectedZone, zoneName, _pendingAddZoneOffset, editableInTileEditor);
-            }
-            else
-            {
-                created = zoneManager.AddZone(zoneName, _pendingAddZoneOffset, editableInTileEditor);
-            }
+            // Template mode requires a selected source zone. If the user left
+            // the toggle ON without a selection (or the dialog defaulted it ON
+            // before this guard moved to the UI side), fall back to creating
+            // a blank zone instead of failing silently behind the modal.
+            bool useTemplate = useSelectedZoneAsTemplate && _state.HasSelection;
+            bool created = useTemplate
+                ? zoneManager.AddZoneFromTemplate(_state.SelectedZone, zoneName, _pendingAddZoneOffset, editableInTileEditor)
+                : zoneManager.AddZone(zoneName, _pendingAddZoneOffset, editableInTileEditor);
 
             if (!created) { _ui?.SetStatus($"Add Zone failed for '{zoneName}'. Check name uniqueness and source-zone selection."); return; }
 
@@ -137,6 +139,10 @@ namespace Valkur.Gameplay.MapEditor
             var zones = zoneManager.GetZonesSnapshot();
             if (zones.Length <= 1) { _ui?.SetStatus("Cannot delete the last remaining zone."); return; }
             if (!zoneManager.RemoveZone(zoneName)) { _ui?.SetStatus($"Could not delete zone '{zoneName}'."); return; }
+
+            // Drop the orphan override file so it doesn't pile up on disk and
+            // doesn't trigger "no matching zone" warnings on the next boot.
+            Valkur.Gameplay.TileEditor.TileOverlayPersistence.DeleteOverride(zoneName);
 
             if (_state.HasSelection && _state.SelectedZone == zoneName) _state.ClearSelection();
             _ui?.HideDeleteZoneDialog();
