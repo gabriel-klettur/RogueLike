@@ -137,60 +137,9 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
-        // ── Middle-mouse camera pan ──
-        // Mirrors BuildingsRuntimeEditor.HandleCameraPan() and Python camera_pan.py.
-        //   MMB press   → detach camera from player follow, save anchor
-        //   MMB held    → offset vcam from anchor by screen-space delta
-        //   MMB release → stop panning; camera stays at panned position
-        //   Editor close → ReattachFollow() restores normal camera follow
-
-        private partial void HandleCameraPan()
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-            if (_mainCamera == null) _mainCamera = Camera.main;
-            if (_mainCamera == null) return;
-
-            // Camera normally follows the player so the developer can walk and test
-            // tile colliders. Middle-mouse drag permanently detaches the camera so
-            // the view stays at the panned position after release. The camera is
-            // re-attached to the player when the editor is closed (HandleToggle).
-            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
-            if (camSetup == null) return;
-
-            if (mouse.middleButton.wasPressedThisFrame)
-            {
-                camSetup.DetachFollow();
-                Transform anchorT = camSetup.GetDetachedTransform();
-                if (anchorT != null)
-                {
-                    _isPanning = true;
-                    _panAnchorScreenPos = mouse.position.ReadValue();
-                    _panAnchorCamPos = anchorT.position;
-                }
-            }
-            else if (mouse.middleButton.wasReleasedThisFrame)
-            {
-                // Do NOT call ReattachFollow() here — the camera must stay at the
-                // panned position (mirrors Building Editor behaviour). Re-attach
-                // only happens when the editor is closed via HandleToggle().
-                _isPanning = false;
-            }
-
-            if (_isPanning && mouse.middleButton.isPressed)
-            {
-                Transform vcamT = camSetup.GetDetachedTransform();
-                if (vcamT == null) return;
-
-                Vector2 currentScreenPos = mouse.position.ReadValue();
-                Vector2 screenDelta = currentScreenPos - _panAnchorScreenPos;
-
-                float unitsPerPixel = _mainCamera.orthographicSize * 2f / Screen.height;
-                Vector3 worldDelta = new Vector3(screenDelta.x, screenDelta.y, 0f) * unitsPerPixel;
-                Vector3 newPos = _panAnchorCamPos - worldDelta;
-                newPos.z = vcamT.position.z;
-                vcamT.position = newPos;
-            }
-        }
+        // Middle-mouse camera pan is handled by the shared EditorCameraPanController
+        // (Scripts/Gameplay/Editors/EditorCameraPanController.cs). The previous
+        // ~50-line implementation lived here and was duplicated in BuildingsRuntimeEditor.
+        private partial void HandleCameraPan() => _cameraPan.Tick();
     }
 }

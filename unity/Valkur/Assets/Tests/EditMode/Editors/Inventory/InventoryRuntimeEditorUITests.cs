@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.TileEditor;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.Inventory
 {

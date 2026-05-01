@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.TileEditor;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 

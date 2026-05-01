@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -17,11 +18,12 @@ namespace Valkur.Gameplay.MapEditor
         private InputAction _deleteAction;
         private InputAction _renameAction;
         private InputAction _toggleEditableAction;
+        private bool _ownsToggleAction;
 
         public void CreateActions()
         {
-            _toggleAction = new InputAction("ToggleMapEditor", InputActionType.Button, "<Keyboard>/f11");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleMap, out _ownsToggleAction);
 
             _selectAction = new InputAction("MapEditorSelect", InputActionType.Button, "<Mouse>/leftButton");
             _selectAction.Enable();
@@ -85,7 +87,7 @@ namespace Valkur.Gameplay.MapEditor
 
         public void Dispose()
         {
-            DisposeAction(ref _toggleAction);
+            if (_ownsToggleAction) DisposeAction(ref _toggleAction); else _toggleAction = null;
             DisposeAction(ref _selectAction);
             DisposeAction(ref _createAction);
             DisposeAction(ref _duplicateAction);

@@ -49,7 +49,7 @@ namespace Valkur.Gameplay
 
             EnsureInventoryUI();
             EnsureSpellBarHUD();
-            EnsureMinimizedTray();
+            EnsureHUDIconBar();
             EnsureCombatRangeVisualizer();
 
             EntityRegistry.RegisterPlayer(go);

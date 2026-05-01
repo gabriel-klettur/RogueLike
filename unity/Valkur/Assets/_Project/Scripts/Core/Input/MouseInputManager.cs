@@ -312,7 +312,7 @@ namespace Valkur.Core.Input
         public static bool IsLeftMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.leftButton.isPressed) || GetLegacyMouseButton(0);
+            return mouse != null && mouse.leftButton.isPressed;
         }
 
         /// <summary>
@@ -321,7 +321,7 @@ namespace Valkur.Core.Input
         public static bool WasLeftMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.leftButton.wasPressedThisFrame) || GetLegacyMouseButtonDown(0);
+            return mouse != null && mouse.leftButton.wasPressedThisFrame;
         }
 
         /// <summary>
@@ -330,7 +330,7 @@ namespace Valkur.Core.Input
         public static bool WasLeftMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.leftButton.wasReleasedThisFrame) || GetLegacyMouseButtonUp(0);
+            return mouse != null && mouse.leftButton.wasReleasedThisFrame;
         }
 
         /// <summary>
@@ -339,7 +339,7 @@ namespace Valkur.Core.Input
         public static bool IsRightMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.rightButton.isPressed) || GetLegacyMouseButton(1);
+            return mouse != null && mouse.rightButton.isPressed;
         }
 
         /// <summary>
@@ -348,7 +348,7 @@ namespace Valkur.Core.Input
         public static bool WasRightMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.rightButton.wasPressedThisFrame) || GetLegacyMouseButtonDown(1);
+            return mouse != null && mouse.rightButton.wasPressedThisFrame;
         }
 
         /// <summary>
@@ -357,7 +357,7 @@ namespace Valkur.Core.Input
         public static bool WasRightMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.rightButton.wasReleasedThisFrame) || GetLegacyMouseButtonUp(1);
+            return mouse != null && mouse.rightButton.wasReleasedThisFrame;
         }
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace Valkur.Core.Input
         public static bool IsMiddleMouseButtonPressed()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.middleButton.isPressed) || GetLegacyMouseButton(2);
+            return mouse != null && mouse.middleButton.isPressed;
         }
 
         /// <summary>
@@ -375,7 +375,7 @@ namespace Valkur.Core.Input
         public static bool WasMiddleMouseButtonPressedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.middleButton.wasPressedThisFrame) || GetLegacyMouseButtonDown(2);
+            return mouse != null && mouse.middleButton.wasPressedThisFrame;
         }
 
         /// <summary>
@@ -384,7 +384,7 @@ namespace Valkur.Core.Input
         public static bool WasMiddleMouseButtonReleasedThisFrame()
         {
             var mouse = Mouse.current;
-            return (mouse != null && mouse.middleButton.wasReleasedThisFrame) || GetLegacyMouseButtonUp(2);
+            return mouse != null && mouse.middleButton.wasReleasedThisFrame;
         }
 
         /// <summary>
@@ -393,35 +393,7 @@ namespace Valkur.Core.Input
         public static float GetMouseWheelDelta()
         {
             var mouse = Mouse.current;
-            float inputSystemDelta = mouse != null ? mouse.scroll.ReadValue().y : 0f;
-            if (Mathf.Abs(inputSystemDelta) > 0.01f)
-                return inputSystemDelta;
-
-            return GetLegacyMouseScrollDelta();
-        }
-
-        private static bool GetLegacyMouseButton(int button)
-        {
-            try { return UnityEngine.Input.GetMouseButton(button); }
-            catch (System.InvalidOperationException) { return false; }
-        }
-
-        private static bool GetLegacyMouseButtonDown(int button)
-        {
-            try { return UnityEngine.Input.GetMouseButtonDown(button); }
-            catch (System.InvalidOperationException) { return false; }
-        }
-
-        private static bool GetLegacyMouseButtonUp(int button)
-        {
-            try { return UnityEngine.Input.GetMouseButtonUp(button); }
-            catch (System.InvalidOperationException) { return false; }
-        }
-
-        private static float GetLegacyMouseScrollDelta()
-        {
-            try { return UnityEngine.Input.mouseScrollDelta.y; }
-            catch (System.InvalidOperationException) { return 0f; }
+            return mouse != null ? mouse.scroll.ReadValue().y : 0f;
         }
 
         /// <summary>

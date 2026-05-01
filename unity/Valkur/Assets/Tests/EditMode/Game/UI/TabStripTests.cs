@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Game.UI
 {

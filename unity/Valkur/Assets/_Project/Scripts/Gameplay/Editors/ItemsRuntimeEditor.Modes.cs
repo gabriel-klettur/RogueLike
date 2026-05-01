@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Valkur.Data;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay.Items

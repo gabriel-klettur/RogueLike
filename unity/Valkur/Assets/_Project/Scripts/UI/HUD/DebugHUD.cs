@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
@@ -57,6 +58,7 @@ namespace Valkur.UI.HUD
         private float _currentMs;
 
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         // Throttle the (very expensive) text rebuild. TMP mesh rebuild + dozens of
         // string allocations per frame was costing ~30-50 ms/frame and ~450 KB/s GC.
@@ -66,9 +68,18 @@ namespace Valkur.UI.HUD
 
         private void Start()
         {
-            _toggleAction = new InputAction("ToggleDebugHUD", InputActionType.Button, "<Keyboard>/f9");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleDebugHUD, out _ownsToggleAction);
             CreateOverlay();
+        }
+
+        private void OnDestroy()
+        {
+            if (_ownsToggleAction)
+            {
+                _toggleAction?.Disable();
+                _toggleAction?.Dispose();
+            }
         }
 
         private void Update()

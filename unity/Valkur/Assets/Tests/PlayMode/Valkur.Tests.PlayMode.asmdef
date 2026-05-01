@@ -7,6 +7,7 @@
         "Valkur.Data",
         "Valkur.Infrastructure",
         "Valkur.UI",
+        "Valkur.UIKit",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
         "Unity.TextMeshPro",

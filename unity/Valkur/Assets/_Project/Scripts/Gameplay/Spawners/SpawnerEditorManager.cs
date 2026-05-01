@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Spawners
@@ -39,6 +40,8 @@ namespace Valkur.Gameplay.Spawners
         private InputAction _clickAction;
         private InputAction _rightClickAction;
         private InputAction _escapeAction;
+        private bool _ownsToggleAction;
+        private bool _ownsCtrlModifier;
 
         // --- State ---
         private bool _visible;
@@ -82,11 +85,10 @@ namespace Valkur.Gameplay.Spawners
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleSpawnerEditor", InputActionType.Button);
-            _toggleAction.AddBinding("<Keyboard>/f3");
-            _toggleAction.Enable();
-            _ctrlModifier = new InputAction("CtrlModSpawner", InputActionType.Button, "<Keyboard>/leftCtrl");
-            _ctrlModifier.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleSpawner, out _ownsToggleAction);
+            _ctrlModifier = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrlModifier);
 
             _clickAction = new InputAction("SpawnerEditorClick", InputActionType.Button);
             _clickAction.AddBinding("<Mouse>/leftButton");
@@ -129,8 +131,8 @@ namespace Valkur.Gameplay.Spawners
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Disable(); _toggleAction?.Dispose();
-            _ctrlModifier?.Disable(); _ctrlModifier?.Dispose();
+            if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
+            if (_ownsCtrlModifier) { _ctrlModifier?.Disable(); _ctrlModifier?.Dispose(); }
             _clickAction?.Disable(); _clickAction?.Dispose();
             _rightClickAction?.Disable(); _rightClickAction?.Dispose();
             _escapeAction?.Disable(); _escapeAction?.Dispose();

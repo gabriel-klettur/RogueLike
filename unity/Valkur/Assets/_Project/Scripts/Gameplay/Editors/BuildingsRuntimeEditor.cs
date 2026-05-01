@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,9 +10,10 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
@@ -60,6 +61,7 @@ namespace Valkur.Gameplay.Buildings
 
         private bool        _active;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         private enum EditorMode { Select, Place, Delete, Resize }
         private EditorMode  _mode = EditorMode.Select;
@@ -102,10 +104,9 @@ namespace Valkur.Gameplay.Buildings
         private Vector3    _resizeStartMouse;
         private Vector2Int _resizeStartScale;
 
-        // Middle-mouse camera pan (mirrors Python camera_pan.py / TileEditor behaviour)
-        private bool    _isPanning;
-        private Vector2 _panAnchorScreenPos;
-        private Vector3 _panAnchorCamPos;
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly Valkur.Gameplay.Editors.EditorCameraPanController _cameraPan
+            = new Valkur.Gameplay.Editors.EditorCameraPanController();
         private Camera  _mainCamera;
 
         // Outline renderers (cyan hover + yellow active + red remove)
@@ -225,19 +226,19 @@ namespace Valkur.Gameplay.Buildings
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleBuildingsEditor", InputActionType.Button, "<Keyboard>/f10");
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleBuildings, out _ownsToggleAction);
         }
 
         private void Start()
         {
             _active = false;
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
-            _toggleAction.Enable();
         }
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (_collBrushCursorMat != null) Destroy(_collBrushCursorMat);
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();

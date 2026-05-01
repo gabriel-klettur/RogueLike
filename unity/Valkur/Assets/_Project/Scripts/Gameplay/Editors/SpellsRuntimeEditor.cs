@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -38,6 +39,7 @@ namespace Valkur.Gameplay.Spells
         private bool _active;
         private bool _uiBuilt;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         // UI
         private Canvas _canvas;
@@ -53,6 +55,9 @@ namespace Valkur.Gameplay.Spells
 
         // Undo
         private readonly UndoStack _undo = new UndoStack(64);
+
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
         // Tutorial state (6-step guided walkthrough)
         private int _tutorialStep;
@@ -80,8 +85,8 @@ namespace Valkur.Gameplay.Spells
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleSpellsEditor", InputActionType.Button, "<Keyboard>/f4");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleSpells, out _ownsToggleAction);
         }
 
         private void Start()
@@ -94,7 +99,7 @@ namespace Valkur.Gameplay.Spells
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -110,6 +115,9 @@ namespace Valkur.Gameplay.Spells
             }
 
             if (!_active) return;
+
+            // Middle-mouse camera pan — same UX as every other runtime editor.
+            _cameraPan.Tick();
 
             // Esc: close tutorial first if open, otherwise close the editor.
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -155,6 +163,9 @@ namespace Valkur.Gameplay.Spells
         {
             _active = false;
             if (_root != null) _root.SetActive(false);
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[SpellsEditor] Deactivated (F4)");

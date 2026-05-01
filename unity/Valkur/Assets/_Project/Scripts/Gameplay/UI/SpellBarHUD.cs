@@ -8,7 +8,7 @@ using Valkur.Data;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.Spells.UI;
 using Valkur.Gameplay.TileEditor;
-using Valkur.Gameplay.UIKit;
+using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.UI
@@ -74,10 +74,10 @@ namespace Valkur.Gameplay.UI
 
         private void RegisterTrayButton()
         {
-            var tray = MinimizedHUDTray.Instance;
-            if (tray == null) return;
+            var bar = HUDIconBar.Instance;
+            if (bar == null) return;
             var sprite = LoadHUDSprite("Assets/_Project/Art/UI/hud/spells_hud_button.png");
-            tray.Register("spellbar", sprite, ToggleVisible);
+            bar.Register("spellbar", sprite, ToggleVisible, order: 1);
         }
 
         private void ToggleVisible()

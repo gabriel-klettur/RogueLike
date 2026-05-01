@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.Modal
 {
@@ -26,7 +26,7 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         [Test]
         public void Message_ShowsModalWithOkButton()
         {
-            EditorModal.Message(_testCanvas.transform, "Test Title", "Test Body", () => { });
+            UIModal.Message(_testCanvas.transform, "Test Title", "Test Body", () => { });
 
             // Modal creates a child GameObject with "Modal" or similar in name
             Assert.Greater(_testCanvas.transform.childCount, 0, "Modal should create child GameObject");
@@ -35,7 +35,7 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         [Test]
         public void Confirm_CreatesModalWithOkAndCancelButtons()
         {
-            EditorModal.Confirm(_testCanvas.transform, "Confirm Test", "Are you sure?",
+            UIModal.Confirm(_testCanvas.transform, "Confirm Test", "Are you sure?",
                 () => { },
                 () => { });
 
@@ -47,7 +47,7 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         {
             string result = null;
 
-            EditorModal.Prompt(_testCanvas.transform, "Enter Name", "DefaultName",
+            UIModal.Prompt(_testCanvas.transform, "Enter Name", "DefaultName",
                 value => result = value,
                 null);
 
@@ -58,16 +58,16 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         [Test]
         public void Form_CreatesModalWithMultipleFields()
         {
-            EditorModal.FormResult result = null;
+            UIModal.FormResult result = null;
 
             var fields = new[]
             {
-                EditorModal.FormField.Text("Name", "DefaultName"),
-                EditorModal.FormField.Int("HP", 100),
-                EditorModal.FormField.Dropdown("Type", new[] { "A", "B", "C" }, 0)
+                UIModal.FormField.Text("Name", "DefaultName"),
+                UIModal.FormField.Int("HP", 100),
+                UIModal.FormField.Dropdown("Type", new[] { "A", "B", "C" }, 0)
             };
 
-            EditorModal.Form(_testCanvas.transform, "Add Entity", fields,
+            UIModal.Form(_testCanvas.transform, "Add Entity", fields,
                 r => result = r,
                 null);
 
@@ -78,7 +78,7 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         [Test]
         public void ModalHierarchy_IsCreatedCorrectly()
         {
-            EditorModal.Message(_testCanvas.transform, "Hierarchy Test", "Check structure", null);
+            UIModal.Message(_testCanvas.transform, "Hierarchy Test", "Check structure", null);
 
             Assert.AreEqual(1, _testCanvas.transform.childCount, "Should create exactly one modal root");
 
@@ -90,20 +90,20 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         [Test]
         public void FormField_TextFieldCreatesCorrectly()
         {
-            var field = EditorModal.FormField.Text("TestKey", "TestDefault");
+            var field = UIModal.FormField.Text("TestKey", "TestDefault");
 
             Assert.AreEqual("TestKey", field.Key);
-            Assert.AreEqual(EditorModal.FieldKind.Text, field.Kind);
+            Assert.AreEqual(UIModal.FieldKind.Text, field.Kind);
             Assert.AreEqual("TestDefault", field.Default);
         }
 
         [Test]
         public void FormField_IntFieldCreatesCorrectly()
         {
-            var field = EditorModal.FormField.Int("HPKey", 50);
+            var field = UIModal.FormField.Int("HPKey", 50);
 
             Assert.AreEqual("HPKey", field.Key);
-            Assert.AreEqual(EditorModal.FieldKind.Int, field.Kind);
+            Assert.AreEqual(UIModal.FieldKind.Int, field.Kind);
             Assert.AreEqual(50, field.Default);
         }
 
@@ -111,10 +111,10 @@ namespace Valkur.Tests.EditMode.Editors.Modal
         public void FormField_DropdownFieldCreatesCorrectly()
         {
             var options = new[] { "Option1", "Option2", "Option3" };
-            var field = EditorModal.FormField.Dropdown("TypeKey", options, 1);
+            var field = UIModal.FormField.Dropdown("TypeKey", options, 1);
 
             Assert.AreEqual("TypeKey", field.Key);
-            Assert.AreEqual(EditorModal.FieldKind.Dropdown, field.Kind);
+            Assert.AreEqual(UIModal.FieldKind.Dropdown, field.Kind);
             Assert.AreEqual(options, field.Options);
             Assert.AreEqual(1, field.Default);
         }

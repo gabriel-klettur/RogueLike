@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay
 {
@@ -15,15 +16,15 @@ namespace Valkur.Gameplay
         private InputAction _quickSaveAction;
         private InputAction _quickLoadAction;
         private InputAction _ctrlModifier;
+        private bool _ownsQuickSave;
+        private bool _ownsQuickLoad;
+        private bool _ownsCtrl;
 
         private void Awake()
         {
-            _quickSaveAction = new InputAction("QuickSave", InputActionType.Button, "<Keyboard>/f5");
-            _quickLoadAction = new InputAction("QuickLoad", InputActionType.Button, "<Keyboard>/f9");
-            _ctrlModifier = new InputAction("CtrlModSave", InputActionType.Button, "<Keyboard>/leftCtrl");
-            _quickSaveAction.Enable();
-            _quickLoadAction.Enable();
-            _ctrlModifier.Enable();
+            _quickSaveAction = EditorHotkeyBindings.Resolve(EditorHotkeyBindings.Hotkey.QuickSave,    out _ownsQuickSave);
+            _quickLoadAction = EditorHotkeyBindings.Resolve(EditorHotkeyBindings.Hotkey.QuickLoad,    out _ownsQuickLoad);
+            _ctrlModifier    = EditorHotkeyBindings.Resolve(EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrl);
         }
 
         private void Update()
@@ -43,16 +44,18 @@ namespace Valkur.Gameplay
 
         private void OnDisable()
         {
-            _quickSaveAction?.Disable();
-            _quickLoadAction?.Disable();
-            _ctrlModifier?.Disable();
+            // Only disable shared actions when we created them locally; the
+            // InputService keeps its own actions enabled across scene loads.
+            if (_ownsQuickSave) _quickSaveAction?.Disable();
+            if (_ownsQuickLoad) _quickLoadAction?.Disable();
+            if (_ownsCtrl)      _ctrlModifier?.Disable();
         }
 
         private void OnDestroy()
         {
-            _quickSaveAction?.Dispose();
-            _quickLoadAction?.Dispose();
-            _ctrlModifier?.Dispose();
+            if (_ownsQuickSave) _quickSaveAction?.Dispose();
+            if (_ownsQuickLoad) _quickLoadAction?.Dispose();
+            if (_ownsCtrl)      _ctrlModifier?.Dispose();
         }
     }
 }

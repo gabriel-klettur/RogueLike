@@ -9,8 +9,8 @@ namespace Valkur.Tests.EditMode.Game
     /// <summary>
     /// Regression guard against the duplicate-class / unbalanced-brace corruption
     /// that produced <c>CS1022 Type or namespace definition, or end-of-file expected</c>
-    /// (originally hit on <c>MinimizedHUDTray.cs</c>: a stale second copy of the
-    /// class was pasted after the namespace's closing brace).
+    /// (originally hit on a HUD script: a stale second copy of the class was
+    /// pasted after the namespace's closing brace).
     ///
     /// This test does a fast lexical scan of every <c>.cs</c> file under
     /// <c>Assets/_Project/Scripts</c> and asserts that <c>{</c> / <c>}</c> are

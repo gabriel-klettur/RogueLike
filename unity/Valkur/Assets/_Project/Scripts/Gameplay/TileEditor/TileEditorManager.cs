@@ -2,6 +2,7 @@
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
@@ -47,10 +48,8 @@ namespace Valkur.Gameplay.TileEditor
         private int _savedTargetFrameRate = -1;
         private int _savedVSyncCount = 1;
 
-        // Middle-mouse camera pan (mirrors Python camera_pan.py)
-        private bool _isPanning;
-        private Vector2 _panAnchorScreenPos;
-        private Vector3 _panAnchorCamPos;
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;

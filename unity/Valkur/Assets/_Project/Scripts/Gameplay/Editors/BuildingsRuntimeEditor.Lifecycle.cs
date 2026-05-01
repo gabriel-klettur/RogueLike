@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,7 +12,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
@@ -77,7 +77,7 @@ namespace Valkur.Gameplay.Buildings
             _collBrushMode = CollBrushMode.Off;
             _activeColliderSession = null;
             _colliderStroke.Active = false;
-            _isPanning = false;
+            _cameraPan.Reset();
             HideCollBrushCursor();
             CancelPickerDrag();
             HideConfirm();

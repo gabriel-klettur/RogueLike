@@ -96,8 +96,11 @@ namespace Valkur.Gameplay.FSM
             if (c?.Rb != null)
                 c.Rb.velocity = moveDir * chaseSpeed;
 
-            if (c?.Sprite != null)
-                c.Sprite.flipX = moveDir.x < 0;
+            if (c?.Animator != null && moveDir.sqrMagnitude > 0.0001f)
+            {
+                var dir = c.Animator.ResolveDirectionFromVector(moveDir);
+                c.Animator.SetState(DirectionalAnimator.AnimState.Chase, dir);
+            }
         }
 
         public void Exit(StateMachine fsm)

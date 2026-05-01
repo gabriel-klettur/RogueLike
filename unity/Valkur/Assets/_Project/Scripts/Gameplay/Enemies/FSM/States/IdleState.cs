@@ -13,6 +13,8 @@ namespace Valkur.Gameplay.FSM
         {
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+            if (c?.Animator != null)
+                c.Animator.SetState(DirectionalAnimator.AnimState.Idle, c.Animator.CurrentDirection);
         }
 
         public void Execute(StateMachine fsm, float dt)

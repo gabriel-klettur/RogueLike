@@ -1,11 +1,12 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.VFX
 {
@@ -33,6 +34,7 @@ namespace Valkur.Gameplay.VFX
 
         private bool _active;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         private enum EditorMode { Select, Place, Delete }
         private EditorMode _mode = EditorMode.Select;
@@ -70,14 +72,17 @@ namespace Valkur.Gameplay.VFX
         private GameObject _tutorial;
         private readonly UndoStack _undo = new UndoStack(64);
 
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+
         // IGameEditor
         public string EditorName => "Particles Editor";
         public bool IsActive => _active;
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleParticlesEditor", InputActionType.Button, "<Keyboard>/f1");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleParticles, out _ownsToggleAction);
         }
 
         private void Start()
@@ -89,7 +94,7 @@ namespace Valkur.Gameplay.VFX
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -105,6 +110,10 @@ namespace Valkur.Gameplay.VFX
                     ToggleActive();
             }
             if (!_active) return;
+
+            // Middle-mouse camera pan — same UX as every other runtime editor.
+            _cameraPan.Tick();
+
             HandleMapInteraction();
         }
 
@@ -127,6 +136,9 @@ namespace Valkur.Gameplay.VFX
             _selectedPresetId = null;
             _dragging = false;
             _dragTarget = null;
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[ParticlesEditor] Deactivated (F1)");

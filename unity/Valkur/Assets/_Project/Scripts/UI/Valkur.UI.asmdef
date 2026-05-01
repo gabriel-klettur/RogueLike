@@ -6,6 +6,7 @@
         "Valkur.Gameplay",
         "Valkur.Data",
         "Valkur.Infrastructure",
+        "Valkur.UIKit",
         "Unity.TextMeshPro",
         "Unity.InputSystem"
     ],

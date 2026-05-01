@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Enemies.FSM
 {
@@ -176,8 +176,8 @@ namespace Valkur.Gameplay.Enemies.FSM
             // Add row
             var addBtn = EditorUIHelpers.MakeButton(content, $"+ Add {rawKey} entry", () =>
             {
-                EditorModal.Form(_canvas.transform, $"Add {rawKey} entry",
-                    new[] { EditorModal.FormField.Text("key", ""), EditorModal.FormField.Text("value", "") },
+                UIModal.Form(_canvas.transform, $"Add {rawKey} entry",
+                    new[] { UIModal.FormField.Text("key", ""), UIModal.FormField.Text("value", "") },
                     res =>
                     {
                         var k2 = res.GetString("key").Trim();

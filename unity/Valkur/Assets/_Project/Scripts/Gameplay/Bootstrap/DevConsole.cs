@@ -4,6 +4,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.World;
 
@@ -37,6 +38,7 @@ namespace Valkur.Gameplay
         private bool _focusInput;
 
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
         private GUIStyle _boxStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _inputStyle;
@@ -49,15 +51,13 @@ namespace Valkur.Gameplay
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("DevConsoleToggle", InputActionType.Button);
-            _toggleAction.AddBinding("<Keyboard>/backquote");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleDevConsole, out _ownsToggleAction);
         }
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Disable();
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
             base.OnDestroy();
         }
 

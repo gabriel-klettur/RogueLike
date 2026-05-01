@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,7 +12,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
@@ -88,45 +88,11 @@ namespace Valkur.Gameplay.Buildings
         //  INTERACTION (mouse + keyboard)
         // ──────────────────────────────────────────────────────────────────────────
 
-        // ── Middle-mouse camera pan ──────────────────────────────────────────────────
-        // Mirrors TileEditorManager.HandleCameraPan() and Python camera_pan.py.
-        //   MMB press   → save vcam anchor
-        //   MMB held    → offset vcam from anchor by screen-space delta
-        //   MMB release → stop panning
-        private void HandleCameraPan()
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-            if (_mainCamera == null) _mainCamera = Camera.main;
-            if (_mainCamera == null) return;
-
-            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
-            Transform vcamT = camSetup != null ? camSetup.GetDetachedTransform() : null;
-            if (vcamT == null) return;
-
-            if (mouse.middleButton.wasPressedThisFrame)
-            {
-                _isPanning = true;
-                _panAnchorScreenPos = mouse.position.ReadValue();
-                _panAnchorCamPos = vcamT.position;
-            }
-            else if (mouse.middleButton.wasReleasedThisFrame)
-            {
-                _isPanning = false;
-            }
-
-            if (_isPanning && mouse.middleButton.isPressed)
-            {
-                Vector2 currentScreenPos = mouse.position.ReadValue();
-                Vector2 screenDelta = currentScreenPos - _panAnchorScreenPos;
-
-                float unitsPerPixel = _mainCamera.orthographicSize * 2f / Screen.height;
-                Vector3 worldDelta = new Vector3(screenDelta.x, screenDelta.y, 0f) * unitsPerPixel;
-                Vector3 newPos = _panAnchorCamPos - worldDelta;
-                newPos.z = vcamT.position.z;
-                vcamT.position = newPos;
-            }
-        }
+        // Middle-mouse camera pan is handled by the shared EditorCameraPanController
+        // (Scripts/Gameplay/Editors/EditorCameraPanController.cs). The previous
+        // ~35-line implementation lived here and was duplicated in TileEditorManager
+        // and MapEditorManager.
+        private void HandleCameraPan() => _cameraPan.Tick();
 
         private void HandleKeyboardShortcuts()
         {

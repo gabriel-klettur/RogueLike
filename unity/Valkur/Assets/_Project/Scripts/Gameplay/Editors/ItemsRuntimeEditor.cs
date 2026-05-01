@@ -5,9 +5,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.TileEditor;
 
@@ -42,6 +43,7 @@ namespace Valkur.Gameplay.Items
         private bool _active;
         private bool _uiBuilt;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         private enum EditorMode { Select, Spawn, Delete }
         private EditorMode _mode = EditorMode.Select;
@@ -108,6 +110,9 @@ namespace Valkur.Gameplay.Items
         // ── Undo (Phase 2) ──
         private readonly UndoStack _undo = new UndoStack(64);
 
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+
         // ── IGameEditor ──
         public string EditorName => "Items Editor";
         public bool IsActive => _active;
@@ -116,8 +121,8 @@ namespace Valkur.Gameplay.Items
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleItemsEditor", InputActionType.Button, "<Keyboard>/f7");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleItems, out _ownsToggleAction);
         }
 
         private void Start()
@@ -131,7 +136,7 @@ namespace Valkur.Gameplay.Items
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -147,6 +152,10 @@ namespace Valkur.Gameplay.Items
             }
 
             if (!_active) return;
+
+            // Middle-mouse pan runs unconditionally so dragging the camera works
+            // even while hover/drag/hold-focus interactions are in progress.
+            _cameraPan.Tick();
 
             HandleKeyboardShortcuts();
             HandleMapInteraction();      // hover/select WorldPickups + delete-mode click
@@ -189,6 +198,9 @@ namespace Valkur.Gameplay.Items
             ClearAllSpriteTints();
             _hoveredInstance  = null;
             _selectedInstance = null;
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[ItemsEditor] Deactivated (F7)");

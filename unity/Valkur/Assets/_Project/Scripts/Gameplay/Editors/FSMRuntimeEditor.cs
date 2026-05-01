@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Enemies.FSM
 {
@@ -27,6 +28,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private bool _active;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         // Loaded data
         private List<FSMSetData> _fsmSets = new List<FSMSetData>();
@@ -131,8 +133,8 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleFSMEditor", InputActionType.Button, "<Keyboard>/f12");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleFSM, out _ownsToggleAction);
         }
 
         private void Start()
@@ -144,7 +146,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }

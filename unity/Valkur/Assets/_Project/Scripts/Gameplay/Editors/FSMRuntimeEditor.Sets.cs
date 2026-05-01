@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Enemies.FSM
 {
@@ -117,7 +117,7 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void AskDeleteSet(FSMSetData set)
         {
             if (set == null) return;
-            EditorModal.Confirm(_canvas.transform,
+            UIModal.Confirm(_canvas.transform,
                 "Delete FSM Set",
                 $"Delete set '{set.id}'?\nThis action cannot be undone.",
                 () => DeleteSetConfirmed(set));
@@ -154,7 +154,7 @@ namespace Valkur.Gameplay.Enemies.FSM
 
         private void CreateNewSet()
         {
-            EditorModal.Prompt(_canvas.transform, "New FSM Set", "NewSet",
+            UIModal.Prompt(_canvas.transform, "New FSM Set", "NewSet",
                 rawId =>
                 {
                     var name = (rawId ?? "").Trim();

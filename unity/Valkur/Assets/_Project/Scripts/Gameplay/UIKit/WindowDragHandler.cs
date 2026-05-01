@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace Valkur.Gameplay.UIKit
+namespace Valkur.UIKit
 {
     /// <summary>
     /// Generic "Windows-style" window drag handler.

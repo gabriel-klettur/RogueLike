@@ -25,14 +25,24 @@ namespace Valkur.Gameplay.TileEditor
         private InputAction _redoAction;
         private InputAction _ctrlModifier;
 
+        private bool _ownsToggleAction;
+        private bool _ownsCtrlModifier;
+
         public void CreateActions()
         {
             TileEditorInputDevices.EnsureAvailable();
             EnsureEventSystem();
 
-            _toggleAction = new InputAction("ToggleTileEditor", InputActionType.Button, "<Keyboard>/f8");
-            _toggleAction.Enable();
+            // F8 toggle and Ctrl modifier come from the canonical InputService when
+            // running under the play-mode bootstrap; otherwise (EditMode tests) the
+            // resolver builds an ad-hoc binding so isolated handler tests still work.
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleTile, out _ownsToggleAction);
+            _ctrlModifier = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrlModifier);
 
+            // Tool-specific shortcuts are scoped to the Tile Editor only — kept
+            // ad-hoc to avoid polluting the canonical asset with editor-internals.
             _toolBrushAction = new InputAction("ToolBrush", InputActionType.Button, "<Keyboard>/b");
             _toolBrushAction.Enable();
             _toolEraserAction = new InputAction("ToolEraser", InputActionType.Button, "<Keyboard>/e");
@@ -48,10 +58,6 @@ namespace Valkur.Gameplay.TileEditor
             _undoAction.Enable();
             _redoAction = new InputAction("Redo", InputActionType.Button, "<Keyboard>/z");
             _redoAction.Enable();
-            _ctrlModifier = new InputAction("CtrlMod", InputActionType.Button);
-            _ctrlModifier.AddBinding("<Keyboard>/leftCtrl");
-            _ctrlModifier.AddBinding("<Keyboard>/rightCtrl");
-            _ctrlModifier.Enable();
         }
 
         public bool WasTogglePressed()
@@ -173,7 +179,11 @@ namespace Valkur.Gameplay.TileEditor
 
         public void Dispose()
         {
-            DisposeAction(ref _toggleAction);
+            // Shared (InputService-owned) actions must NOT be disposed by us; only
+            // dispose the ones we created locally as fallbacks in EditMode tests.
+            if (_ownsToggleAction) DisposeAction(ref _toggleAction); else _toggleAction = null;
+            if (_ownsCtrlModifier) DisposeAction(ref _ctrlModifier); else _ctrlModifier = null;
+
             DisposeAction(ref _toolBrushAction);
             DisposeAction(ref _toolEraserAction);
             DisposeAction(ref _toolFillAction);
@@ -181,7 +191,6 @@ namespace Valkur.Gameplay.TileEditor
             DisposeAction(ref _toolSelectAction);
             DisposeAction(ref _undoAction);
             DisposeAction(ref _redoAction);
-            DisposeAction(ref _ctrlModifier);
         }
 
         private static void DisposeAction(ref InputAction action)

@@ -23,6 +23,8 @@ namespace Valkur.Gameplay.FSM
 
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+
+            FacePlayer(fsm, c);
         }
 
         public void Execute(StateMachine fsm, float dt)
@@ -35,6 +37,9 @@ namespace Valkur.Gameplay.FSM
             }
 
             _timer += dt;
+
+            // Keep facing the player throughout the swing.
+            FacePlayer(fsm, c);
 
             // Windup phase
             if (!_attacked && _timer >= _windupDuration)
@@ -73,5 +78,16 @@ namespace Valkur.Gameplay.FSM
         }
 
         public void Exit(StateMachine fsm) { }
+
+        private static void FacePlayer(StateMachine fsm, FSMComponents c)
+        {
+            if (c?.Animator == null) return;
+            var player = EntityRegistry.Player;
+            if (player == null) return;
+            Vector2 toPlayer = (Vector2)player.transform.position - (Vector2)fsm.Owner.transform.position;
+            if (toPlayer.sqrMagnitude < 0.0001f) return;
+            var dir = c.Animator.ResolveDirectionFromVector(toPlayer);
+            c.Animator.SetState(DirectionalAnimator.AnimState.Attack, dir);
+        }
     }
 }

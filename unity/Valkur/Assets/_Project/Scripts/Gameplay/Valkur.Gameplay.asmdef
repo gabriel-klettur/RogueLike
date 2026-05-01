@@ -5,6 +5,7 @@
         "Valkur.Core",
         "Valkur.Data",
         "Valkur.Infrastructure",
+        "Valkur.UIKit",
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Cinemachine",

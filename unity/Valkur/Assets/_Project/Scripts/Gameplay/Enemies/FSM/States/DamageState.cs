@@ -23,6 +23,15 @@ namespace Valkur.Gameplay.FSM
             _timer = 0f;
             var c = fsm.GetContext<FSMComponents>(FSMComponents.KEY);
             if (c?.Rb != null) c.Rb.velocity = Vector2.zero;
+
+            // Match Python parity: face the incoming hit (left/right).
+            if (c?.Animator != null)
+            {
+                var dir = _fromLeft
+                    ? DirectionalAnimator.Direction.West
+                    : DirectionalAnimator.Direction.East;
+                c.Animator.SetState(DirectionalAnimator.AnimState.Damage, dir);
+            }
         }
 
         public void Execute(StateMachine fsm, float dt)

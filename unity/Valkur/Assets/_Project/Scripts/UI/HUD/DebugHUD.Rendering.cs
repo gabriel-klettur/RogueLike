@@ -277,11 +277,5 @@ namespace Valkur.UI.HUD
         {
             _toggleAction?.Enable();
         }
-
-        private void OnDestroy()
-        {
-            _toggleAction?.Disable();
-            _toggleAction?.Dispose();
-        }
     }
 }

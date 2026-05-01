@@ -146,8 +146,12 @@ namespace Valkur.Tests.EditMode.Editors.Entities
 
             Assert.AreEqual(InputActionType.Button, action.type, "_toggleAction must be Button type.");
             Assert.IsTrue(action.enabled, "_toggleAction must be enabled so F5 triggers.");
-            Assert.AreEqual("ToggleEntitiesEditor", action.name,
-                "Action name must match Python parity expectations.");
+            // Action name now comes from the canonical Editors map (post-input-refactor).
+            // Accept either the new canonical name or the legacy ad-hoc name so the
+            // assertion stays robust if the asset is renamed in either direction.
+            Assert.That(action.name,
+                Is.EqualTo("ToggleEntities").Or.EqualTo("ToggleEntitiesEditor"),
+                "Action name must match the canonical Editors map (ToggleEntities) or the legacy ad-hoc fallback.");
         }
 
         // ════════════════════════════════════════════════════════════════════════

@@ -92,7 +92,13 @@ namespace Valkur.Gameplay.FSM
             }
             else
             {
-                if (c?.Rb != null) c.Rb.velocity = dir.normalized * speed;
+                Vector2 moveDir = dir.normalized;
+                if (c?.Rb != null) c.Rb.velocity = moveDir * speed;
+                if (c?.Animator != null && moveDir.sqrMagnitude > 0.0001f)
+                {
+                    var animDir = c.Animator.ResolveDirectionFromVector(moveDir);
+                    c.Animator.SetState(DirectionalAnimator.AnimState.Walk, animDir);
+                }
             }
         }
 

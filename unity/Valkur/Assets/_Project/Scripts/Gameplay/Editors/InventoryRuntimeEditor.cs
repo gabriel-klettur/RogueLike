@@ -4,9 +4,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Inventory
 {
@@ -39,6 +40,7 @@ namespace Valkur.Gameplay.Inventory
         private bool _active;
         private bool _uiBuilt;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         // ── State ────────────────────────────────────────────────────────────────
 
@@ -95,6 +97,9 @@ namespace Valkur.Gameplay.Inventory
         private GameObject _tutorial;
         private readonly UndoStack _undo = new UndoStack(64);
 
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+
         // Dropdown state — mirrors BuildingsRuntimeEditor.UI.cs
         private readonly HashSet<string> _openDropdowns = new HashSet<string>();
 
@@ -105,9 +110,8 @@ namespace Valkur.Gameplay.Inventory
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleInventoryEditor",
-                InputActionType.Button, "<Keyboard>/f6");
-            _toggleAction.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleInventory, out _ownsToggleAction);
         }
 
         private void Start()
@@ -122,7 +126,7 @@ namespace Valkur.Gameplay.Inventory
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
@@ -137,6 +141,9 @@ namespace Valkur.Gameplay.Inventory
                 else
                     ToggleActive();
             }
+
+            // Middle-mouse camera pan — same UX as every other runtime editor.
+            if (_active) _cameraPan.Tick();
         }
 
         public void Activate()
@@ -176,6 +183,9 @@ namespace Valkur.Gameplay.Inventory
             if (_root != null) _root.SetActive(false);
             _selectedInventory  = null;
             _selectedEntityName = null;
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[InventoryEditor] Deactivated (F6)");

@@ -4,6 +4,13 @@ namespace Valkur.UI.MainMenu
 {
     public partial class MainMenuUI
     {
+        /// <summary>
+        /// Per-direction keyboard navigation actions for the menu list. Owned and
+        /// disposed by <see cref="MainMenuUI"/>; the canonical asset's UI map covers
+        /// pointer + EventSystem routing through <see cref="Valkur.Core.Input.InputService"/>,
+        /// while these handle "previous / next option" semantics that a Vector2
+        /// composite cannot express cleanly.
+        /// </summary>
         private void SetupInputActions()
         {
             _navUpAction = new InputAction("MenuNavUp", InputActionType.Button);

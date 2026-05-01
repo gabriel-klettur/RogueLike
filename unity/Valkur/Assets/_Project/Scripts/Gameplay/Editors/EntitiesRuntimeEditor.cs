@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Entities
 {
@@ -32,6 +33,7 @@ namespace Valkur.Gameplay.Entities
 
         private bool _active;
         private InputAction _toggleAction;
+        private bool _ownsToggleAction;
 
         private enum EditorMode { Select, Spawn, Delete, AddOnSystem }
         private EditorMode _mode = EditorMode.Select;
@@ -45,6 +47,9 @@ namespace Valkur.Gameplay.Entities
 
         private string _searchFilter = "";
         private readonly UndoStack _undo = new UndoStack(64);
+
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
         // ── UI ───────────────────────────────────────────────────────────────────
 
@@ -65,10 +70,11 @@ namespace Valkur.Gameplay.Entities
 
         protected override void OnSingletonAwake()
         {
-            // F5 binding — DO NOT rename _toggleAction. FKeyBindingParityTests
-            // reflects this field to verify the bound key.
-            _toggleAction = new InputAction("ToggleEntitiesEditor", InputActionType.Button, "<Keyboard>/f5");
-            _toggleAction.Enable();
+            // F5 binding routed through InputService.Editors when bootstrapped (play mode);
+            // EditMode tests fall back to a fresh ad-hoc InputAction so reflection-based
+            // binding-path checks in FKeyBindingParityTests still see <Keyboard>/f5.
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleEntities, out _ownsToggleAction);
         }
 
         private void Start()
@@ -80,7 +86,7 @@ namespace Valkur.Gameplay.Entities
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -94,11 +100,22 @@ namespace Valkur.Gameplay.Entities
             }
 
             if (!_active) return;
+
+            // Middle-mouse pan runs unconditionally so dragging the camera works
+            // even while a picker drag or entity drag is in progress.
+            _cameraPan.Tick();
+
             UpdatePickerDrag();
             // Suppress click-spawn while a drag is active so releasing over the
             // map only triggers the drag-spawn path (HandleMapInteraction would
             // otherwise fire Spawn/Delete on the same release frame).
             if (_pickerDragging) return;
+
+            // Selection (LMB) and move-drag (RMB) take priority — they consume
+            // the click when they hit an NPC so the spawn/delete handler below
+            // doesn't double-fire on the same frame.
+            if (UpdateEntitySelectionAndDrag()) return;
+
             HandleMapInteraction();
         }
 
@@ -107,6 +124,7 @@ namespace Valkur.Gameplay.Entities
             _active = true;
             _root.SetActive(true);
             _mode = EditorMode.Select;
+            EnsureSelectionFx();
             OpenDefaultDropdowns();
             RefreshCategoryTabs();
             RefreshPicker();
@@ -121,6 +139,12 @@ namespace Valkur.Gameplay.Entities
             _root.SetActive(false);
             _selectedKey = null;
             CancelPickerDrag();
+            // Drop world-side selection + outlines so the next Activate starts clean.
+            _entityDragging = false;
+            SetActiveEntity(null);
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[EntitiesEditor] Deactivated (F5)");
         }
@@ -160,7 +184,9 @@ namespace Valkur.Gameplay.Entities
             _tutorial = TutorialOverlay.Build(_root.transform, "ENTITIES HOTKEYS", new[]
             {
                 ("F5",     "Toggle Entities Editor"),
-                ("Click",  "Select / Spawn / Delete on map"),
+                ("LMB",    "Select NPC (yellow outline; same-key peers turn orange)"),
+                ("RMB",    "Drag-and-drop selected NPC on the map"),
+                ("Click",  "Spawn / Delete on map (mode-aware)"),
                 ("Drag",   "Drag picker slot → map to spawn"),
                 ("Type",   "Filter picker by name"),
                 ("Ctrl+Z", "Undo"),

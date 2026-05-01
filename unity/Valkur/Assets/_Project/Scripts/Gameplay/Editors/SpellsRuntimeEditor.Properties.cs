@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -210,7 +210,7 @@ namespace Valkur.Gameplay.Spells
                     _applyingProperty = true;
                     try { _uiRefs.PropsForm?.SetValue(key, oldValue); }
                     finally { _applyingProperty = false; }
-                    EditorModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
+                    UIModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
                     return;
                 }
                 if (!string.Equals(newKey, (string)oldValue, StringComparison.OrdinalIgnoreCase)
@@ -219,7 +219,7 @@ namespace Valkur.Gameplay.Spells
                     _applyingProperty = true;
                     try { _uiRefs.PropsForm?.SetValue(key, oldValue); }
                     finally { _applyingProperty = false; }
-                    EditorModal.Message(_canvas.transform, "Duplicate key",
+                    UIModal.Message(_canvas.transform, "Duplicate key",
                         $"A spell with key '{newKey}' already exists.");
                     return;
                 }

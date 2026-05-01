@@ -5,7 +5,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.TileEditor;
-using Valkur.Gameplay.UIKit;
+using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.Inventory
@@ -266,10 +266,10 @@ namespace Valkur.Gameplay.Inventory
 
         internal void RegisterTrayButton()
         {
-            var tray = Valkur.Gameplay.UIKit.MinimizedHUDTray.Instance;
-            if (tray == null) return;
+            var bar = Valkur.UIKit.HUDIconBar.Instance;
+            if (bar == null) return;
             var sprite = LoadHUDSprite("Assets/_Project/Art/UI/hud/inventory_hud_button.png");
-            tray.Register("inventory", sprite, () => SetVisible(!_visible));
+            bar.Register("inventory", sprite, () => SetVisible(!_visible), order: 0);
         }
 
         private static Sprite LoadHUDSprite(string assetPath)

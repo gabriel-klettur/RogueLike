@@ -5,6 +5,7 @@
         "Valkur.Core",
         "Valkur.Gameplay",
         "Valkur.Data",
+        "Valkur.UIKit",
         "Unity.InputSystem",
         "Unity.2D.Sprite.Editor"
     ],

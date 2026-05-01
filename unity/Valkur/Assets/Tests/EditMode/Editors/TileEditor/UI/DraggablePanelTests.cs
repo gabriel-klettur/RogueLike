@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Valkur.Gameplay.TileEditor;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {

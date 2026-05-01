@@ -132,11 +132,11 @@ namespace Valkur.Gameplay
             if (container != null) go.transform.SetParent(container.transform, false);
         }
 
-        private static void EnsureMinimizedTray()
+        private static void EnsureHUDIconBar()
         {
-            if (Valkur.Gameplay.UIKit.MinimizedHUDTray.Instance != null) return;
-            var go = new GameObject("MinimizedHUDTray");
-            go.AddComponent<Valkur.Gameplay.UIKit.MinimizedHUDTray>();
+            if (Valkur.UIKit.HUDIconBar.Instance != null) return;
+            var go = new GameObject("HUDIconBar");
+            go.AddComponent<Valkur.UIKit.HUDIconBar>();
             var container = GameObject.Find("[UI]");
             if (container != null) go.transform.SetParent(container.transform, false);
         }

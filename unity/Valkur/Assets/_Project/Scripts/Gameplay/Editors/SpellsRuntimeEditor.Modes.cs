@@ -5,7 +5,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -23,18 +23,18 @@ namespace Valkur.Gameplay.Spells
         {
             if (_catalog == null) { Toast("No catalog assigned."); return; }
 
-            EditorModal.Prompt(_canvas.transform, "New Spell — key:", "new_spell",
+            UIModal.Prompt(_canvas.transform, "New Spell — key:", "new_spell",
                 onOk: v =>
                 {
                     var key = (v ?? string.Empty).Trim();
                     if (string.IsNullOrEmpty(key))
                     {
-                        EditorModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
+                        UIModal.Message(_canvas.transform, "Invalid key", "Spell key cannot be empty.");
                         return;
                     }
                     if (_catalog.TryGet(key, out var existing) && existing != null)
                     {
-                        EditorModal.Message(_canvas.transform, "Duplicate key",
+                        UIModal.Message(_canvas.transform, "Duplicate key",
                             $"A spell with key '{key}' already exists.");
                         return;
                     }
@@ -103,7 +103,7 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
             var key = _selectedKey;
-            EditorModal.Confirm(_canvas.transform,
+            UIModal.Confirm(_canvas.transform,
                 "Delete spell?",
                 $"Are you sure you want to delete '{key}'?",
                 onOk: () =>

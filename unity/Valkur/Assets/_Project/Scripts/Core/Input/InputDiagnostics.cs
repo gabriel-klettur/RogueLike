@@ -112,15 +112,18 @@ namespace Valkur.Core.Input
         {
             try
             {
-                var actions = Resources.Load<InputActionAsset>("Input/ValkurInputActions");
+                var actions = Resources.Load<InputActionAsset>(CanonicalUIActionsResourcePath);
                 if (actions == null)
                 {
-                    Debug.Log("[InputDiagnostics] ValkurInputActions is not in Resources/Input; runtime code uses standalone actions.");
+                    Debug.LogWarning(
+                        $"[InputDiagnostics] Canonical UI actions asset is missing at " +
+                        $"Resources/{CanonicalUIActionsResourcePath}. Menus will fall back to a " +
+                        "runtime-built action set (still functional, but not designer-tweakable).");
                     return;
                 }
 
-                Debug.Log("[InputDiagnostics] ValkurInputActions found at Resources/Input/ValkurInputActions");
-                Debug.Log($"[InputDiagnostics] Input action maps: {actions.actionMaps.Count}");
+                Debug.Log($"[InputDiagnostics] Canonical UI actions found at Resources/{CanonicalUIActionsResourcePath} " +
+                          $"({actions.actionMaps.Count} action maps).");
             }
             catch (System.Exception ex)
             {
@@ -171,10 +174,23 @@ namespace Valkur.Core.Input
 
         /// <summary>
         /// Ensure EventSystem is set up properly for UI interactions.
-        /// Creates one if missing and ensures it uses the Input System UI module.
+        ///
+        /// In play mode this delegates to <see cref="PersistentEventSystem.Ensure"/>
+        /// so callers (MainMenuUI, TileEditorInputHandler, etc.) all converge on the
+        /// same singleton with InputService-backed action references. This prevents
+        /// the "two EventSystems with conflicting wiring" bug where one is
+        /// configured by the canonical bootstrap and a second is reconfigured by a
+        /// per-screen helper using the legacy fallback path.
+        ///
+        /// In EditMode tests the legacy construction path is preserved so unit
+        /// tests can build an isolated EventSystem without bootstrapping the
+        /// process-wide singleton.
         /// </summary>
         public static EventSystem EnsureEventSystem()
         {
+            if (Application.isPlaying)
+                return PersistentEventSystem.Ensure();
+
             var eventSystem = EventSystem.current;
             if (eventSystem == null)
                 eventSystem = Object.FindObjectOfType<EventSystem>();
@@ -216,8 +232,32 @@ namespace Valkur.Core.Input
             if (module == null)
                 return;
 
+            // Single canonical source of truth: if the scene's authored config
+            // is already usable (developer-customised), respect it. Otherwise
+            // assign the Valkur canonical asset (Resources/Input/ValkurInputActions).
+            //
+            // We deliberately do NOT call Unity's AssignDefaultActions: in
+            // certain Unity 2022.3 builds it silently produces unbound action
+            // refs, leaving keyboard nav working but mouse hover/click dead —
+            // exactly the bug we're protecting against.
+            //
+            // Final defensive layer: if the canonical Resources asset is also
+            // missing (unusual in a clean build), AssignValkurFallbackUIActions
+            // builds an explicit in-memory asset with the same bindings.
             if (!HasUsableUIActions(module))
-                module.AssignDefaultActions();
+            {
+                // Reassigning action references on a live module does not
+                // always rewire its internal pointer-callback subscriptions
+                // (Unity 2022.3 caches them in OnEnable). Toggle enabled
+                // around the assignment so the module re-subscribes against
+                // the freshly-bound actions on the next OnEnable.
+                bool wasEnabled = module.enabled;
+                if (wasEnabled) module.enabled = false;
+
+                AssignValkurFallbackUIActions(module);
+
+                if (wasEnabled) module.enabled = true;
+            }
 
             module.actionsAsset?.Enable();
             EnableAction(module.point);
@@ -230,9 +270,192 @@ namespace Valkur.Core.Input
             EnableAction(module.cancel);
         }
 
-        private static bool HasUsableUIActions(InputSystemUIInputModule module)
+        // Cached so we don't churn ScriptableObjects on every scene load.
+        // Reset in ResetStaticsOnPlayModeEnter (separate field, see below).
+        private static InputActionAsset _fallbackUIActions;
+        private static InputActionReference _fallbackPoint;
+        private static InputActionReference _fallbackLeftClick;
+        private static InputActionReference _fallbackRightClick;
+        private static InputActionReference _fallbackMiddleClick;
+        private static InputActionReference _fallbackScrollWheel;
+        private static InputActionReference _fallbackMove;
+        private static InputActionReference _fallbackSubmit;
+        private static InputActionReference _fallbackCancel;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetFallbackStatics()
         {
-            return module.actionsAsset != null &&
+            // With Domain Reload off the static refs would point at destroyed
+            // assets across Play sessions. Wipe so the next request rebuilds.
+            _fallbackUIActions   = null;
+            _fallbackPoint       = null;
+            _fallbackLeftClick   = null;
+            _fallbackRightClick  = null;
+            _fallbackMiddleClick = null;
+            _fallbackScrollWheel = null;
+            _fallbackMove        = null;
+            _fallbackSubmit      = null;
+            _fallbackCancel      = null;
+            _initialized         = false;
+        }
+
+        /// <summary>
+        /// Assigns a runtime-built <see cref="InputActionAsset"/> to the module so
+        /// the EventSystem can route mouse + keyboard events even when the scene's
+        /// authored actions asset is missing or AssignDefaultActions failed.
+        ///
+        /// Public so EditMode tests can call it directly without an EventSystem.
+        /// </summary>
+        public static void AssignValkurFallbackUIActions(InputSystemUIInputModule module)
+        {
+            if (module == null) return;
+
+            EnsureFallbackAssetBuilt();
+
+            module.actionsAsset = _fallbackUIActions;
+            module.point        = _fallbackPoint;
+            module.leftClick    = _fallbackLeftClick;
+            module.rightClick   = _fallbackRightClick;
+            module.middleClick  = _fallbackMiddleClick;
+            module.scrollWheel  = _fallbackScrollWheel;
+            module.move         = _fallbackMove;
+            module.submit       = _fallbackSubmit;
+            module.cancel       = _fallbackCancel;
+        }
+
+        /// <summary>
+        /// Resources path of the canonical Valkur UI input asset. Designers can
+        /// edit this asset in the Inspector; runtime code loads it as the single
+        /// source of truth for menu mouse + keyboard navigation.
+        /// </summary>
+        public const string CanonicalUIActionsResourcePath = "Input/ValkurInputActions";
+
+        /// <summary>
+        /// Name of the action map inside the canonical asset that owns UI bindings.
+        /// </summary>
+        public const string CanonicalUIActionsMapName = "UI";
+
+        private static void EnsureFallbackAssetBuilt()
+        {
+            if (_fallbackUIActions != null && _fallbackPoint != null) return;
+
+            // Stage A — preferred path: the canonical Valkur asset shipped at
+            // Resources/Input/ValkurInputActions. Single source of truth that
+            // designers can tweak in the Inspector. We only fall through to
+            // building a runtime asset (Stage B) when the canonical asset is
+            // missing or incomplete (which should never happen in a clean build).
+            var canonical = Resources.Load<InputActionAsset>(CanonicalUIActionsResourcePath);
+            if (canonical != null && TryAdoptCanonicalAsset(canonical))
+                return;
+
+            BuildRuntimeFallbackAsset();
+        }
+
+        private static bool TryAdoptCanonicalAsset(InputActionAsset asset)
+        {
+            var map = asset.FindActionMap(CanonicalUIActionsMapName);
+            if (map == null) return false;
+
+            // Required actions for InputSystemUIInputModule's 8 properties.
+            // Move is named "Navigate" in the canonical asset (Unity's UI module
+            // exposes it via `module.move`, but the name is irrelevant — we
+            // bind by reference, not by string match).
+            var point        = map.FindAction("Point");
+            var leftClick    = map.FindAction("Click");
+            var rightClick   = map.FindAction("RightClick");
+            var middleClick  = map.FindAction("MiddleClick");
+            var scrollWheel  = map.FindAction("ScrollWheel");
+            var move         = map.FindAction("Navigate") ?? map.FindAction("Move");
+            var submit       = map.FindAction("Submit");
+            var cancel       = map.FindAction("Cancel");
+
+            if (point == null || leftClick == null || rightClick == null ||
+                middleClick == null || scrollWheel == null || move == null ||
+                submit == null || cancel == null)
+            {
+                Debug.LogWarning(
+                    $"[InputDiagnostics] Canonical UI actions asset at " +
+                    $"Resources/{CanonicalUIActionsResourcePath} is missing required actions " +
+                    $"in map '{CanonicalUIActionsMapName}'. Falling back to runtime-built asset. " +
+                    $"Required: Point, Click, RightClick, MiddleClick, ScrollWheel, Navigate, Submit, Cancel.");
+                return false;
+            }
+
+            _fallbackUIActions   = asset;
+            _fallbackPoint       = InputActionReference.Create(point);
+            _fallbackLeftClick   = InputActionReference.Create(leftClick);
+            _fallbackRightClick  = InputActionReference.Create(rightClick);
+            _fallbackMiddleClick = InputActionReference.Create(middleClick);
+            _fallbackScrollWheel = InputActionReference.Create(scrollWheel);
+            _fallbackMove        = InputActionReference.Create(move);
+            _fallbackSubmit      = InputActionReference.Create(submit);
+            _fallbackCancel      = InputActionReference.Create(cancel);
+            return true;
+        }
+
+        /// <summary>
+        /// Last-resort builder: synthesises an in-memory UI input asset when
+        /// the canonical Resources asset is absent (unusual in a clean build).
+        /// Bindings mirror the canonical asset so menu navigation behaviour is
+        /// identical regardless of which path was taken.
+        /// </summary>
+        private static void BuildRuntimeFallbackAsset()
+        {
+            var asset = ScriptableObject.CreateInstance<InputActionAsset>();
+            asset.name = "Valkur.UIFallback";
+            asset.hideFlags = HideFlags.HideAndDontSave;
+
+            var map = asset.AddActionMap(CanonicalUIActionsMapName);
+
+            var point        = map.AddAction("Point",       InputActionType.PassThrough, "<Mouse>/position");
+            point.expectedControlType = "Vector2";
+
+            var leftClick    = map.AddAction("Click",       InputActionType.PassThrough, "<Mouse>/leftButton");
+            leftClick.expectedControlType = "Button";
+
+            var rightClick   = map.AddAction("RightClick",  InputActionType.PassThrough, "<Mouse>/rightButton");
+            rightClick.expectedControlType = "Button";
+
+            var middleClick  = map.AddAction("MiddleClick", InputActionType.PassThrough, "<Mouse>/middleButton");
+            middleClick.expectedControlType = "Button";
+
+            var scroll       = map.AddAction("ScrollWheel", InputActionType.PassThrough, "<Mouse>/scroll");
+            scroll.expectedControlType = "Vector2";
+
+            var move = map.AddAction("Navigate", InputActionType.PassThrough);
+            move.expectedControlType = "Vector2";
+            move.AddCompositeBinding("2DVector")
+                .With("Up",    "<Keyboard>/upArrow")
+                .With("Down",  "<Keyboard>/downArrow")
+                .With("Left",  "<Keyboard>/leftArrow")
+                .With("Right", "<Keyboard>/rightArrow");
+            move.AddCompositeBinding("2DVector")
+                .With("Up",    "<Keyboard>/w")
+                .With("Down",  "<Keyboard>/s")
+                .With("Left",  "<Keyboard>/a")
+                .With("Right", "<Keyboard>/d");
+
+            var submit = map.AddAction("Submit", InputActionType.Button, "<Keyboard>/enter");
+            submit.AddBinding("<Keyboard>/numpadEnter");
+            submit.AddBinding("<Keyboard>/space");
+
+            var cancel = map.AddAction("Cancel", InputActionType.Button, "<Keyboard>/escape");
+
+            _fallbackUIActions   = asset;
+            _fallbackPoint       = InputActionReference.Create(point);
+            _fallbackLeftClick   = InputActionReference.Create(leftClick);
+            _fallbackRightClick  = InputActionReference.Create(rightClick);
+            _fallbackMiddleClick = InputActionReference.Create(middleClick);
+            _fallbackScrollWheel = InputActionReference.Create(scroll);
+            _fallbackMove        = InputActionReference.Create(move);
+            _fallbackSubmit      = InputActionReference.Create(submit);
+            _fallbackCancel      = InputActionReference.Create(cancel);
+        }
+
+        public static bool HasUsableUIActions(InputSystemUIInputModule module)
+        {
+            return module != null &&
+                   module.actionsAsset != null &&
                    HasAction(module.point) &&
                    HasAction(module.leftClick) &&
                    HasAction(module.rightClick) &&

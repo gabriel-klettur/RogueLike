@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
 
 namespace Valkur.Gameplay.Items

@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
@@ -45,10 +46,8 @@ namespace Valkur.Gameplay.MapEditor
         private GameObject _addZonePreviewObject;
         private string _pendingDeleteZoneName;
 
-        // Camera pan (middle-mouse drag — mirrors TileEditor behaviour)
-        private bool _isPanning;
-        private Vector2 _panAnchorScreenPos;
-        private Vector3 _panAnchorCamPos;
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
         public bool IsActive => _state != null && _state.Active;
 
@@ -211,7 +210,7 @@ namespace Valkur.Gameplay.MapEditor
             }
             else
             {
-                _isPanning = false;
+                _cameraPan.Reset();
                 Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
                 CancelAddZoneFlow();
                 if (_ui != null)
@@ -220,46 +219,11 @@ namespace Valkur.Gameplay.MapEditor
             }
         }
 
-        private void HandleCameraPan()
-        {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-            if (_mainCamera == null) _mainCamera = Camera.main;
-            if (_mainCamera == null) return;
-
-            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
-            if (camSetup == null) return;
-
-            if (mouse.middleButton.wasPressedThisFrame)
-            {
-                camSetup.DetachFollow();
-                Transform anchorT = camSetup.GetDetachedTransform();
-                if (anchorT != null)
-                {
-                    _isPanning        = true;
-                    _panAnchorScreenPos = mouse.position.ReadValue();
-                    _panAnchorCamPos    = anchorT.position;
-                }
-            }
-            else if (mouse.middleButton.wasReleasedThisFrame)
-            {
-                _isPanning = false;
-            }
-
-            if (_isPanning && mouse.middleButton.isPressed)
-            {
-                Transform vcamT = camSetup.GetDetachedTransform();
-                if (vcamT == null) return;
-
-                Vector2 currentScreenPos = mouse.position.ReadValue();
-                Vector2 screenDelta      = currentScreenPos - _panAnchorScreenPos;
-                float unitsPerPixel      = _mainCamera.orthographicSize * 2f / Screen.height;
-                Vector3 worldDelta       = new Vector3(screenDelta.x, screenDelta.y, 0f) * unitsPerPixel;
-                Vector3 newPos           = _panAnchorCamPos - worldDelta;
-                newPos.z         = vcamT.position.z;
-                vcamT.position   = newPos;
-            }
-        }
+        // Middle-mouse camera pan is handled by the shared EditorCameraPanController
+        // (Scripts/Gameplay/Editors/EditorCameraPanController.cs). The previous
+        // ~40-line implementation lived here and was duplicated in TileEditorManager
+        // and BuildingsRuntimeEditor.
+        private void HandleCameraPan() => _cameraPan.Tick();
 
         private void CreateOverlayRoot()
         {

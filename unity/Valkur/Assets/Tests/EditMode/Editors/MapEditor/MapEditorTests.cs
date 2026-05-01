@@ -152,17 +152,23 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         }
 
         [Test]
-        public void MapEditorManager_HasCameraPanFields()
+        public void MapEditorManager_UsesSharedCameraPanController()
         {
             LogAssert.ignoreFailingMessages = true;
             var mgr = CreateSingleton<MapEditorManager>("TestMapEditorManager");
 
-            Assert.IsNotNull(GetField(mgr, "_isPanning"),
-                "_isPanning field required for MMB camera pan.");
-            Assert.IsNotNull(GetField(mgr, "_panAnchorScreenPos"),
-                "_panAnchorScreenPos field required for MMB camera pan.");
-            Assert.IsNotNull(GetField(mgr, "_panAnchorCamPos"),
-                "_panAnchorCamPos field required for MMB camera pan.");
+            // After the editor-camera-pan refactor, every runtime editor
+            // (Tile / Buildings / Map / Entities / Items / Inventory / Spells /
+            // Lighting / Particles) holds an EditorCameraPanController instance
+            // instead of duplicating _isPanning / _panAnchor* state inline.
+            var panField = GetField(mgr, "_cameraPan");
+            Assert.IsNotNull(panField,
+                "_cameraPan field required (shared EditorCameraPanController).");
+            Assert.AreEqual(typeof(Valkur.Gameplay.Editors.EditorCameraPanController),
+                panField.FieldType,
+                "_cameraPan must be of type EditorCameraPanController.");
+            Assert.IsNotNull(panField.GetValue(mgr),
+                "_cameraPan should be initialised by the field initializer.");
         }
 
         // ── MapEditorUIBuilder: ApplyMenuBtnStyle ─────────────────────────────────

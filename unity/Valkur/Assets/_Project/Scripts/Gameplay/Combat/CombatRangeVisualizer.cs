@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Gameplay.FSM;
 
 namespace Valkur.Gameplay.Combat
@@ -34,6 +35,8 @@ namespace Valkur.Gameplay.Combat
         private int _lineIndex;
         private InputAction _toggleAction;
         private InputAction _altModifier;
+        private bool _ownsToggleAction;
+        private bool _ownsAltModifier;
 
         protected override void OnSingletonAwake()
         {
@@ -43,10 +46,10 @@ namespace Valkur.Gameplay.Combat
                 ?? Shader.Find("Sprites/Default"));
             _lineMaterial.hideFlags = HideFlags.HideAndDontSave;
 
-            _toggleAction = new InputAction("ToggleRanges", InputActionType.Button, "<Keyboard>/f2");
-            _toggleAction.Enable();
-            _altModifier = new InputAction("AltModRanges", InputActionType.Button, "<Keyboard>/leftAlt");
-            _altModifier.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleCombatRanges, out _ownsToggleAction);
+            _altModifier = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.AltModifier, out _ownsAltModifier);
         }
 
         private void Update()
@@ -223,10 +226,8 @@ namespace Valkur.Gameplay.Combat
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Disable();
-            _toggleAction?.Dispose();
-            _altModifier?.Disable();
-            _altModifier?.Dispose();
+            if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
+            if (_ownsAltModifier)  { _altModifier?.Disable();  _altModifier?.Dispose(); }
 
             if (_lineMaterial != null)
                 DestroyImmediate(_lineMaterial);

@@ -13,6 +13,7 @@ namespace Valkur.Gameplay.FSM
         public readonly Health Health;
         public readonly MeleeCombat Combat;
         public readonly SpriteRenderer Sprite;
+        public readonly DirectionalAnimator Animator;
 
         public FSMComponents(GameObject owner)
         {
@@ -20,6 +21,7 @@ namespace Valkur.Gameplay.FSM
             Health = owner.GetComponent<Health>();
             Combat = owner.GetComponent<MeleeCombat>();
             Sprite = owner.GetComponentInChildren<SpriteRenderer>();
+            Animator = owner.GetComponent<DirectionalAnimator>();
         }
 
         public const string KEY = "components";

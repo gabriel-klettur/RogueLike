@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.UIKit;
 using Valkur.Infrastructure;
 
 namespace Valkur.UI.HUD
@@ -76,31 +77,35 @@ namespace Valkur.UI.HUD
         private GameObject _spectrumPanel;
         private Image _expandIcon;
         private Button _expandBtn;
-        // Minimize: collapses the whole widget to a tiny pill with a single restore icon.
-        // Available in both simple and expanded modes — toggling restores the previous mode.
-        private bool _isMinimized;
-        private Button _minimizeBtn;
-        private Image _minimizeIcon;
-        private Image _minimizeBg;
-        private RectTransform _minimizeBtnRt;
+        // Close: hides the whole panel. The HUDIconBar's "music" icon brings
+        // it back. There is intentionally NO in-place "minimized pill" mode —
+        // the bar IS the minimized state, shared with the other HUD buttons.
+        // Default is HIDDEN: on a fresh launch the panel stays closed and the
+        // user opens it by clicking the music icon in the bar. Persisted state
+        // (PrefKeyHidden) overrides this default after the first toggle.
+        private bool _panelHidden = true;
+        private Button _closeBtn;
+        private Image _closeIcon;
+        private Image _closeBg;
+        private RectTransform _closeBtnRt;
         private GameObject _resizeHandle;
         [SerializeField]
-        [Tooltip("Sprite shown as the restore button when the player is minimized. " +
+        [Tooltip("Sprite shown in the persistent HUD icon bar to re-open the player. " +
                  "Assign Assets/_Project/Art/UI/music_player_button.png in the Inspector. " +
                  "If left empty the sprite is loaded automatically in the Editor.")]
-        private Sprite _restoreButtonSprite;
+        private Sprite _barIconSprite;
 
         // Path used for automatic editor-side loading (no Resources folder needed).
-        private const string RestoreButtonSpritePath = "Assets/_Project/Art/UI/music_player_button.png";
+        private const string BarIconSpritePath = "Assets/_Project/Art/UI/music_player_button.png";
 
-        private Sprite GetRestoreSprite()
+        private Sprite GetBarIconSprite()
         {
-            if (_restoreButtonSprite != null) return _restoreButtonSprite;
+            if (_barIconSprite != null) return _barIconSprite;
 #if UNITY_EDITOR
-            _restoreButtonSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(RestoreButtonSpritePath);
-            if (_restoreButtonSprite != null) return _restoreButtonSprite;
+            _barIconSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(BarIconSpritePath);
+            if (_barIconSprite != null) return _barIconSprite;
 #endif
-            return SpriteChevronUp; // safe fallback
+            return null;
         }
         private Image[] _specBars;
         private float[] _specSmoothed;
@@ -149,9 +154,12 @@ namespace Valkur.UI.HUD
         private const string PrefKeyWExpanded  = "valkur.musichud.expanded.width";
         private const string PrefKeyHExpanded  = "valkur.musichud.expanded.height";
         private const string PrefKeyExpanded   = "valkur.musichud.expanded";
-        private const string PrefKeyMinimized  = "valkur.musichud.minimized";
+        private const string PrefKeyHidden     = "valkur.musichud.hidden";
         private const string PrefKeyAmplitude  = "valkur.musichud.amplitude";
         private const string PrefKeyVolume     = "valkur.musichud.volume";
+
+        // ID used to register the music button in the persistent HUDIconBar.
+        private const string BarButtonId = "music";
         // Per-track tempo overrides (tap-tempo persistence).
         // Keys are prefixed with the track id so each song keeps its own calibration.
         private const string PrefKeyTempoBpmFmt    = "valkur.musichud.tempo.{0}.bpm";
@@ -168,8 +176,8 @@ namespace Valkur.UI.HUD
             // Restore last user-chosen sizes (per-mode) + expand state before building UI.
             if (PlayerPrefs.HasKey(PrefKeyExpanded))
                 _isExpanded = PlayerPrefs.GetInt(PrefKeyExpanded) != 0;
-            if (PlayerPrefs.HasKey(PrefKeyMinimized))
-                _isMinimized = PlayerPrefs.GetInt(PrefKeyMinimized) != 0;
+            if (PlayerPrefs.HasKey(PrefKeyHidden))
+                _panelHidden = PlayerPrefs.GetInt(PrefKeyHidden) != 0;
             // Defaults if nothing persisted yet.
             _simpleW   = PlayerPrefs.GetFloat(PrefKeyWSimple,   320f);
             _simpleH   = PlayerPrefs.GetFloat(PrefKeyHSimple,   78f);
@@ -203,16 +211,39 @@ namespace Valkur.UI.HUD
                 // override for that track so the user's calibration sticks.
                 ApplySavedTempoOverride(_audio.CurrentTrackId);
             }
-            // Safety: re-apply minimized state on enable to guarantee the icon/btn/root
-            // sizes are correct on the very first frame even if Awake ran before the
-            // Canvas was fully initialized.
-            ApplyMinimizedState();
+            // Safety: re-apply visibility on enable to guarantee the CanvasGroup is
+            // in the right state on the very first frame even if Awake ran before
+            // the Canvas was fully initialized.
+            ApplyPanelVisibility();
+
+            RegisterBarButton();
         }
 
         private void OnDisable()
         {
             if (_audio != null) _audio.OnTrackChanged -= HandleTrackChanged;
             _audio = null;
+
+            // Tray button is owned by the HUDIconBar singleton; remove on disable
+            // so the icon doesn't dangle if this widget is destroyed.
+            var bar = HUDIconBar.Instance;
+            if (bar != null) bar.Unregister(BarButtonId);
+        }
+
+        private void RegisterBarButton()
+        {
+            var bar = HUDIconBar.Instance;
+            if (bar == null) return;
+            // order=2 keeps inventory(0) → spells(1) → music(2) left-to-right.
+            bar.Register(BarButtonId, GetBarIconSprite(), TogglePanel, order: 2);
+        }
+
+        private void TogglePanel()
+        {
+            _panelHidden = !_panelHidden;
+            ApplyPanelVisibility();
+            PlayerPrefs.SetInt(PrefKeyHidden, _panelHidden ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         private void HandleTrackChanged(string id, string title, float bpm, int beatsPerBar)
@@ -276,7 +307,12 @@ namespace Valkur.UI.HUD
 
             if (_cg != null)
             {
-                float target = (hideWhenIdle && !active) ? 0f : 1f;
+                // Respect _panelHidden: when the user closed the panel via the
+                // close button (or it starts closed by default), Update must NOT
+                // bring alpha back to 1 every frame — that would leave the panel
+                // visually visible while blocksRaycasts is false, looking like
+                // "buttons don't work".
+                float target = (_panelHidden || (hideWhenIdle && !active)) ? 0f : 1f;
                 _cg.alpha = Mathf.MoveTowards(_cg.alpha, target, Time.unscaledDeltaTime * 4f);
             }
 
@@ -603,13 +639,15 @@ namespace Valkur.UI.HUD
 
             // Resize grip (top-left corner) — drag to resize
             BuildResizeHandle();
-            // Minimize button (top-right corner) — collapses to a tiny restore pill.
-            BuildMinimizeButton();
+            // Close button (top-right corner) — hides the panel; the HUDIconBar
+            // music icon brings it back.
+            BuildCloseButton();
 
             // Apply initial expand state (built collapsed by default; toggle if persisted).
             ApplyExpandedState();
-            // Apply minimized state AFTER expand so the cached size is correct.
-            ApplyMinimizedState();
+            // Apply panel visibility so the CanvasGroup matches the persisted state
+            // on the very first frame.
+            ApplyPanelVisibility();
 
             // Re-clamp to current screen so a previously-saved size that no longer
             // fits the resolution is shrunk back into view on first show.
@@ -650,26 +688,25 @@ namespace Valkur.UI.HUD
             _resizeHandle = go;
         }
 
-        // ── Minimize button ─────────────────────────────────────────────────
-        // Sits at the top-right corner of the root and is ALWAYS visible (even
-        // while minimized) so the user can always restore the player. Available
-        // in both simple and expanded modes per user request.
-        private void BuildMinimizeButton()
+        // ── Close button ────────────────────────────────────────────────────
+        // Top-right corner of the player. Click → hide the whole panel.
+        // Re-opens via the persistent HUDIconBar music icon.
+        private void BuildCloseButton()
         {
-            var go = NewChild("MinimizeBtn", _headerBar != null ? _headerBar.transform : transform);
+            var go = NewChild("CloseBtn", _headerBar != null ? _headerBar.transform : transform);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(1f, 0.5f);
             rt.anchorMax = new Vector2(1f, 0.5f);
             rt.pivot     = new Vector2(1f, 0.5f);
             rt.anchoredPosition = new Vector2(-4f, 0f);
-            rt.sizeDelta = new Vector2(16f, 16f);
-            _minimizeBtnRt = rt;
+            rt.sizeDelta = new Vector2(CloseBtnSize, CloseBtnSize);
+            _closeBtnRt = rt;
 
             var bgImg = go.AddComponent<Image>();
             bgImg.sprite = BuildRoundedRectSprite();
             bgImg.type = Image.Type.Sliced;
             bgImg.color = new Color(1f, 1f, 1f, 0.10f);
-            _minimizeBg = bgImg;
+            _closeBg = bgImg;
 
             var btn = go.AddComponent<Button>();
             var colors = btn.colors;
@@ -682,35 +719,21 @@ namespace Valkur.UI.HUD
             colors.fadeDuration     = 0.10f;
             btn.colors = colors;
             btn.targetGraphic = bgImg;
-            btn.onClick.AddListener(OnMinimizeClicked);
-            _minimizeBtn = btn;
+            btn.onClick.AddListener(OnCloseClicked);
+            _closeBtn = btn;
 
-            var iconGo = NewChild("MinimizeIcon", go.transform);
+            var iconGo = NewChild("CloseIcon", go.transform);
             var ir = iconGo.GetComponent<RectTransform>();
             ir.anchorMin = new Vector2(0.5f, 0.5f);
             ir.anchorMax = new Vector2(0.5f, 0.5f);
             ir.pivot     = new Vector2(0.5f, 0.5f);
             ir.anchoredPosition = Vector2.zero;
-            _minimizeIcon = iconGo.AddComponent<Image>();
-            _minimizeIcon.raycastTarget = false;
-            _minimizeIcon.preserveAspect = true;
-
-            // Build at the correct initial state so the very first frame is already right.
-            if (_isMinimized)
-            {
-                ir.sizeDelta        = new Vector2(MinimizeIconSizeMinimized, MinimizeIconSizeMinimized);
-                rt.sizeDelta        = new Vector2(MinimizeBtnSizeMinimized,  MinimizeBtnSizeMinimized);
-                _minimizeIcon.sprite = GetRestoreSprite();
-                _minimizeIcon.color  = Color.white;
-                bgImg.color          = Color.clear;
-            }
-            else
-            {
-                ir.sizeDelta        = new Vector2(MinimizeIconSizeExpanded, MinimizeIconSizeExpanded);
-                rt.sizeDelta        = new Vector2(MinimizeBtnSizeExpanded,  MinimizeBtnSizeExpanded);
-                _minimizeIcon.sprite = SpriteMinus;
-                _minimizeIcon.color  = new Color(1f, 1f, 1f, 0.95f);
-            }
+            ir.sizeDelta = new Vector2(CloseIconSize, CloseIconSize);
+            _closeIcon = iconGo.AddComponent<Image>();
+            _closeIcon.raycastTarget = false;
+            _closeIcon.preserveAspect = true;
+            _closeIcon.sprite = SpriteMinus;
+            _closeIcon.color  = new Color(1f, 1f, 1f, 0.95f);
         }
 
         private void BuildHeaderBar()
@@ -741,82 +764,36 @@ namespace Valkur.UI.HUD
             dividerImg.raycastTarget = false;
         }
 
-        private void OnMinimizeClicked()
+        private void OnCloseClicked()
         {
-            // Going INTO minimized: cache the current footprint so restore comes back
-            // to the exact same size the user was using.
-            if (!_isMinimized) CacheSizeForCurrentMode();
-            _isMinimized = !_isMinimized;
-            ApplyMinimizedState();
-            PlayerPrefs.SetInt(PrefKeyMinimized, _isMinimized ? 1 : 0);
+            // Hide the whole panel. The HUDIconBar's "music" button toggles
+            // visibility back on (it calls TogglePanel).
+            _panelHidden = true;
+            ApplyPanelVisibility();
+            PlayerPrefs.SetInt(PrefKeyHidden, 1);
             PlayerPrefs.Save();
         }
 
-        // Size of the root pill when minimized — large enough to host the restore tile.
-        private const float MinimizedW = 36f;
-        private const float MinimizedH = 36f;
-        // Button / icon sizes for the two states.
-        private const float MinimizeBtnSizeExpanded  = 20f;
-        private const float MinimizeBtnSizeMinimized = 32f;
-        private const float MinimizeIconSizeExpanded  = 12f;
-        private const float MinimizeIconSizeMinimized = 28f;
+        // Fixed close-button footprint (no longer transitions between sizes).
+        private const float CloseBtnSize  = 20f;
+        private const float CloseIconSize = 12f;
 
         private void ApplyRootAnchorPosition()
         {
             if (_rt == null) return;
-            float lift = _isMinimized ? 0f : bottomLift;
-            _rt.anchoredPosition = new Vector2(-edgeInset, edgeInset + lift);
+            _rt.anchoredPosition = new Vector2(-edgeInset, edgeInset + bottomLift);
         }
 
-        private void ApplyMinimizedState()
+        private void ApplyPanelVisibility()
         {
-            // Hide everything except the minimize button (which becomes "restore").
-            if (_simpleContent != null)  _simpleContent.SetActive(!_isMinimized);
-            if (_spectrumPanel != null)  _spectrumPanel.SetActive(!_isMinimized && _isExpanded);
-            if (_resizeHandle != null)   _resizeHandle.SetActive(!_isMinimized);
-
-            if (_isMinimized)
+            // Whole-panel show/hide via CanvasGroup. When hidden, the panel is
+            // invisible AND non-interactive — clicks fall through to the bar.
+            if (_cg != null)
             {
-                // Show the stone music-note image as a standalone restore tile.
-                Sprite restoreSprite = GetRestoreSprite();
-                if (_minimizeIcon != null)
-                {
-                    _minimizeIcon.sprite = restoreSprite;
-                    _minimizeIcon.color  = Color.white;
-                    var ir = _minimizeIcon.rectTransform;
-                    ir.sizeDelta = new Vector2(MinimizeIconSizeMinimized, MinimizeIconSizeMinimized);
-                }
-                // Remove the button BG so the stone image stands on its own.
-                if (_minimizeBg   != null) _minimizeBg.color = Color.clear;
-                if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeMinimized, MinimizeBtnSizeMinimized);
-                if (_headerBg != null) _headerBg.color = Color.clear;
-
-                // Shrink root to just the restore tile.
-                if (_rt != null) _rt.sizeDelta = new Vector2(MinimizedW, MinimizedH);
-                if (_rt != null) _rt.localScale = Vector3.one;
-                if (_bg != null) _bg.color = Color.clear;
+                _cg.alpha           = _panelHidden ? 0f : 1f;
+                _cg.blocksRaycasts  = !_panelHidden;
+                _cg.interactable    = !_panelHidden;
             }
-            else
-            {
-                // Restore button to its normal small minus-sign look.
-                if (_minimizeIcon != null)
-                {
-                    _minimizeIcon.sprite = SpriteMinus;
-                    _minimizeIcon.color  = new Color(1f, 1f, 1f, 0.95f);
-                    var ir = _minimizeIcon.rectTransform;
-                    ir.sizeDelta = new Vector2(MinimizeIconSizeExpanded, MinimizeIconSizeExpanded);
-                }
-                if (_minimizeBg    != null) _minimizeBg.color = new Color(1f, 1f, 1f, 0.10f);
-                if (_minimizeBtnRt != null) _minimizeBtnRt.sizeDelta = new Vector2(MinimizeBtnSizeExpanded, MinimizeBtnSizeExpanded);
-                if (_headerBg != null) _headerBg.color = new Color(1f, 1f, 1f, 0.06f);
-
-                // Restore the cached per-mode size.
-                widgetWidth  = _isExpanded ? _expandedW : _simpleW;
-                widgetHeight = _isExpanded ? _expandedH : _simpleH;
-                if (_bg != null) _bg.color = new Color(0.06f, 0.06f, 0.08f, 0.85f);
-                ApplyExpandedState();
-            }
-
             ApplyRootAnchorPosition();
         }
 
@@ -952,9 +929,6 @@ namespace Valkur.UI.HUD
 
         private void OnExpandClicked()
         {
-            // Don't allow expand-toggle while minimized — the restore button is the
-            // only meaningful action in that state.
-            if (_isMinimized) return;
             // Persist the size of the OUTGOING mode so each layout remembers its own footprint.
             CacheSizeForCurrentMode();
             _isExpanded = !_isExpanded;

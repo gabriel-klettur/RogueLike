@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Enemies.FSM
 {
@@ -92,11 +92,11 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             var add = EditorUIHelpers.MakeButton(parent, $"+ Add to {_entitiesCategory}", () =>
             {
-                EditorModal.Form(_canvas.transform, $"Add {_entitiesCategory}",
+                UIModal.Form(_canvas.transform, $"Add {_entitiesCategory}",
                     new[]
                     {
-                        EditorModal.FormField.Text("key", ""),
-                        EditorModal.FormField.Text("fsm_set_id", ""),
+                        UIModal.FormField.Text("key", ""),
+                        UIModal.FormField.Text("fsm_set_id", ""),
                     },
                     result =>
                     {

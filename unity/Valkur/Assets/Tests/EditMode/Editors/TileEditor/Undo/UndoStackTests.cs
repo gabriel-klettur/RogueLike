@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.Undo
 {

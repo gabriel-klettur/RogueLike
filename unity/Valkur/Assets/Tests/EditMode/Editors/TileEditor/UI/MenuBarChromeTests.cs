@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Gameplay.TileEditor;
+using Valkur.UIKit;
 
 namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
 {

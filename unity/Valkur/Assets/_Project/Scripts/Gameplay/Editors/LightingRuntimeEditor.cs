@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
-using Valkur.Gameplay.Editors.EditorKit;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.World
 {
@@ -24,6 +25,8 @@ namespace Valkur.Gameplay.World
         private bool _active;
         private InputAction _toggleAction;
         private InputAction _ctrlModifier;
+        private bool _ownsToggleAction;
+        private bool _ownsCtrlModifier;
 
         // State
         private enum EditorMode { Select, Spawn, Delete }
@@ -68,16 +71,19 @@ namespace Valkur.Gameplay.World
         private RectTransform _presetButtonsParent;
         private readonly UndoStack _undo = new UndoStack(64);
 
+        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+
         // IGameEditor
         public string EditorName => "Lighting Editor";
         public bool IsActive => _active;
 
         protected override void OnSingletonAwake()
         {
-            _toggleAction = new InputAction("ToggleLightingEditor", InputActionType.Button, "<Keyboard>/f3");
-            _toggleAction.Enable();
-            _ctrlModifier = new InputAction("CtrlModLight", InputActionType.Button, "<Keyboard>/leftCtrl");
-            _ctrlModifier.Enable();
+            _toggleAction = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleLighting, out _ownsToggleAction);
+            _ctrlModifier = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.CtrlModifier, out _ownsCtrlModifier);
         }
 
         private void Start()
@@ -89,8 +95,8 @@ namespace Valkur.Gameplay.World
 
         protected override void OnDestroy()
         {
-            _toggleAction?.Dispose();
-            _ctrlModifier?.Dispose();
+            if (_ownsToggleAction) _toggleAction?.Dispose();
+            if (_ownsCtrlModifier) _ctrlModifier?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
@@ -106,6 +112,10 @@ namespace Valkur.Gameplay.World
                     ToggleActive();
             }
             if (!_active) return;
+
+            // Middle-mouse camera pan — same UX as every other runtime editor.
+            _cameraPan.Tick();
+
             UpdateDayTimeDisplay();
             HandleMapInteraction();
         }
@@ -126,6 +136,9 @@ namespace Valkur.Gameplay.World
             _root.SetActive(false);
             _dragging = false;
             _dragTarget = null;
+            // Reattach the camera follow target if MMB pan had detached it.
+            _cameraPan.Reset();
+            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
                 GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[LightingEditor] Deactivated (Ctrl+F3)");
