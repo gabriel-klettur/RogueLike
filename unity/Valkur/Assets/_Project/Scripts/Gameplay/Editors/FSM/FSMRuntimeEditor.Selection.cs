@@ -25,10 +25,11 @@ namespace Valkur.Gameplay.Enemies.FSM
         private void HandleGraphInput()
         {
             var mouse = Mouse.current;
-            if (mouse == null) return;
 
-            // Zoom with scroll wheel (when pointer is over graph area)
-            var scrollDelta = mouse.scroll.ReadValue().y;
+            // Zoom with scroll wheel (when pointer is over graph area).
+            // MouseInputManager.GetMouseWheelDelta() ORs new + legacy backends so
+            // the graph keeps zooming when the new InputSystem package drops events.
+            float scrollDelta = Valkur.Core.Input.MouseInputManager.GetMouseWheelDelta();
             if (Mathf.Abs(scrollDelta) > 0.01f)
             {
                 _zoom = Mathf.Clamp(_zoom + scrollDelta * 0.001f, 0.3f, 2f);
