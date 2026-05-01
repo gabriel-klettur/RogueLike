@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.VFX
 {
@@ -127,6 +128,12 @@ namespace Valkur.Gameplay.VFX
                 SetStatus($"Spawn failed: preset '{presetId}' not in catalog.");
                 return;
             }
+            // Reject finite (one-shot) presets — they cannot be placed as persistent decorations.
+            if (preset.vfx != null && !preset.vfx.loops)
+            {
+                SetStatus($"'{presetId}' es one-shot (loops=false); no se puede colocar como decoración persistente.");
+                return;
+            }
             var go = SpawnEmitterAt(preset, worldPos);
             if (go == null) return;
 
@@ -139,9 +146,18 @@ namespace Valkur.Gameplay.VFX
 
         // â”€â”€ Delete (with confirm modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+        private static string GetPresetIdFromGo(GameObject go)
+        {
+            if (go == null) return null;
+            var identity = go.GetComponent<PersistedParticleInstance>();
+            if (identity != null && !string.IsNullOrEmpty(identity.PresetId))
+                return identity.PresetId;
+            return ExtractPresetIdFromName(go.name);
+        }
+
         private void RequestDeleteWithConfirm(GameObject instance)
         {
-            string pid = ExtractPresetIdFromName(instance.name) ?? "(unknown)";
+            string pid = GetPresetIdFromGo(instance) ?? "(unknown)";
             ShowConfirm(
                 $"Delete particle instance?\n<b>{instance.name}</b>\nPreset: {pid}",
                 () => DeleteInstance(instance));
@@ -151,7 +167,7 @@ namespace Valkur.Gameplay.VFX
         {
             if (instance == null) return;
             Vector3 pos = instance.transform.position;
-            string  pid = ExtractPresetIdFromName(instance.name);
+            string  pid = GetPresetIdFromGo(instance);
             if (instance == _activeInstance) SetActiveInstance(null);
 
             // For undo, we re-spawn from the preset (the original GO is gone after destroy).
@@ -167,20 +183,139 @@ namespace Valkur.Gameplay.VFX
 
         // â”€â”€ Spawn helper (shared by click + drag + undo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        private GameObject SpawnEmitterAt(ParticlePresetDefinition preset, Vector3 worldPos)
+        private GameObject SpawnEmitterAt(ParticlePresetDefinition preset, Vector3 worldPos, float scaleMultiplier = -1f)
         {
             if (preset == null) return null;
             var loader = FindObjectOfType<ParticleInstancesLoader>();
             Transform parent = loader != null ? loader.transform : null;
 
-            var go = new GameObject($"PE_{preset.id}_{System.DateTime.UtcNow.Ticks}");
+            float scale = scaleMultiplier > 0f
+                ? scaleMultiplier
+                : (preset.id != null && preset.id.StartsWith("portal_", System.StringComparison.Ordinal) ? 2f : 1f);
+
+            var go = new GameObject($"PE_{preset.id}");
             if (parent != null) go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(worldPos.x, worldPos.y, 0f);
 
+            // Attach the identity component — marks this as an editor-owned persisted emitter.
+            var identity = go.AddComponent<PersistedParticleInstance>();
+            identity.Initialize(preset.id, scale);
+
             var emitter = go.AddComponent<ParticleEmitter>();
-            float scale = preset.id != null && preset.id.StartsWith("portal_", System.StringComparison.Ordinal) ? 2f : 1f;
             emitter.ApplyPreset(preset, scale);
             return go;
+        }
+
+        // -- Delete all in zone (double-confirm via two sequential modals) ----------
+
+        // First modal: summary warning with zone name and instance count.
+        // Second modal: final confirm before executing (same modal pattern reused).
+        private void RequestDeleteAllInZoneWithConfirm()
+        {
+            var zm      = FindObjectOfType<ZoneManager>();
+            string zone = zm != null ? zm.CurrentZone : "Lobby";
+
+            var all = FindObjectsOfType<ParticleEmitter>();
+            int count = 0;
+            foreach (var em in all)
+            {
+                if (em == null || !em.gameObject.activeInHierarchy) continue;
+                if (IsPreviewEmitter(em.gameObject)) continue;
+                string emZone = ResolveZoneName(zm, em.transform.position);
+                if (string.Equals(emZone, zone, System.StringComparison.OrdinalIgnoreCase))
+                    count++;
+            }
+
+            if (count == 0)
+            {
+                SetStatus($"No particle instances in zone '{zone}'.");
+                return;
+            }
+
+            // First confirmation modal.
+            ShowConfirm(
+                $"Borrar <b>{count}</b> instancias de partículas en zona <b>{zone}</b>?\n\nEsta acción puede deshacerse con Undo.",
+                () =>
+                {
+                    // Second confirmation modal (final).
+                    ShowConfirm(
+                        $"CONFIRMAR BORRADO: <b>{count}</b> instancias en <b>{zone}</b>.\n¿Continuar?",
+                        () => DeleteAllInZone(zone));
+                });
+        }
+
+        private void DeleteAllInZone(string zoneName)
+        {
+            var zm  = FindObjectOfType<ZoneManager>();
+            var all = FindObjectsOfType<ParticleEmitter>();
+
+            var targets = new System.Collections.Generic.List<(GameObject go, string pid, Vector3 pos)>();
+            foreach (var em in all)
+            {
+                if (em == null || !em.gameObject.activeInHierarchy) continue;
+                if (IsPreviewEmitter(em.gameObject)) continue;
+                string emZone = ResolveZoneName(zm, em.transform.position);
+                if (!string.Equals(emZone, zoneName, System.StringComparison.OrdinalIgnoreCase)) continue;
+                string pid = GetPresetIdFromGo(em.gameObject);
+                targets.Add((em.gameObject, pid, em.transform.position));
+            }
+
+            if (targets.Count == 0)
+            {
+                SetStatus("No particle instances found in zone to delete.");
+                return;
+            }
+
+            foreach (var (go, _, _) in targets)
+            {
+                if (go == _activeInstance) SetActiveInstance(null);
+                if (go == _hoveredInstance) _hoveredInstance = null;
+            }
+
+            ExecutePersistedEdit($"Delete all in zone ({zoneName})",
+                () =>
+                {
+                    foreach (var (go, _, _) in targets)
+                        if (go != null)
+                        {
+                            if (Application.isPlaying) Destroy(go);
+                            else                       DestroyImmediate(go);
+                        }
+                },
+                () =>
+                {
+                    foreach (var (_, pid, pos) in targets)
+                    {
+                        if (string.IsNullOrEmpty(pid) || _catalog == null) continue;
+                        var preset = _catalog.GetById(pid);
+                        if (preset != null) SpawnEmitterAt(preset, pos);
+                    }
+                });
+
+            SetStatus($"Deleted {targets.Count} instance(s) in zone '{zoneName}'.");
+        }
+
+        // -- Delete selected instance from Properties panel -------------------------
+
+        private void RequestDeleteSelectedInstanceWithConfirm()
+        {
+            if (_activeInstance == null)
+            {
+                SetStatus("No instance selected. Click an emitter on the map first.");
+                return;
+            }
+            RequestDeleteWithConfirm(_activeInstance);
+        }
+
+        // Skip off-screen preview emitters owned by ParticlePreviewService — their
+        // GameObjects are named "PPrev_Emitter_*" and live as children of this
+        // editor's transform, NOT under the world. Without this filter, delete-all-
+        // in-zone destroys them (DetectZone falls back to currentZone for off-world
+        // positions) and the preview service then NREs each frame.
+        private static bool IsPreviewEmitter(GameObject go)
+        {
+            return go != null && go.name != null &&
+                   go.name.StartsWith("PPrev_", System.StringComparison.Ordinal);
         }
     }
 }
