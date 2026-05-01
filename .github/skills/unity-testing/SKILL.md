@@ -14,19 +14,26 @@ The Test Runner hierarchy is driven **entirely by C# namespace**, not by folder.
 | Folder (relative to `Assets/Tests/`) | Namespace |
 |---------------------------------------|-----------|
 | `EditMode/Editors/Buildings/` | `Valkur.Tests.EditMode.Editors.Buildings` |
+| `EditMode/Editors/Entities/` | `Valkur.Tests.EditMode.Editors.Entities` |
+| `EditMode/Editors/Inventory/` | `Valkur.Tests.EditMode.Editors.Inventory` |
+| `EditMode/Editors/Items/` | `Valkur.Tests.EditMode.Editors.Items` |
 | `EditMode/Editors/MapEditor/` | `Valkur.Tests.EditMode.Editors.MapEditor` |
 | `EditMode/Editors/Modal/` | `Valkur.Tests.EditMode.Editors.Modal` |
 | `EditMode/Editors/TileEditor/Brush/` | `Valkur.Tests.EditMode.Editors.TileEditor.Brush` |
 | `EditMode/Editors/TileEditor/Catalog/` | `Valkur.Tests.EditMode.Editors.TileEditor.Catalog` |
 | `EditMode/Editors/TileEditor/Diagnostics/` | `Valkur.Tests.EditMode.Editors.TileEditor.Diagnostics` |
+| `EditMode/Editors/TileEditor/Input/` | `Valkur.Tests.EditMode.Editors.TileEditor.Input` |
 | `EditMode/Editors/TileEditor/Overlay/` | `Valkur.Tests.EditMode.Editors.TileEditor.Overlay` |
 | `EditMode/Editors/TileEditor/State/` | `Valkur.Tests.EditMode.Editors.TileEditor.State` |
 | `EditMode/Editors/TileEditor/UI/` | `Valkur.Tests.EditMode.Editors.TileEditor.UI` |
 | `EditMode/Editors/TileEditor/Undo/` | `Valkur.Tests.EditMode.Editors.TileEditor.Undo` |
 | `EditMode/Game/AI/` | `Valkur.Tests.EditMode.Game.AI` |
+| `EditMode/Game/Audio/` | `Valkur.Tests.EditMode.Game.Audio` |
 | `EditMode/Game/Bootstrap/` | `Valkur.Tests.EditMode.Game.Bootstrap` |
 | `EditMode/Game/Combat/` | `Valkur.Tests.EditMode.Game.Combat` |
 | `EditMode/Game/Data/` | `Valkur.Tests.EditMode.Game.Data` |
+| `EditMode/Game/Input/` | `Valkur.Tests.EditMode.Game.Input` |
+| `EditMode/Game/Meta/` | `Valkur.Tests.EditMode.Game.Meta` |
 | `EditMode/Game/Player/` | `Valkur.Tests.EditMode.Game.Player` |
 | `EditMode/Game/UI/` | `Valkur.Tests.EditMode.Game.UI` |
 | `EditMode/Game/VFX/` | `Valkur.Tests.EditMode.Game.VFX` |
@@ -34,26 +41,39 @@ The Test Runner hierarchy is driven **entirely by C# namespace**, not by folder.
 | `PlayMode/Core/` | `Valkur.Tests.PlayMode.Core` |
 | `PlayMode/Data/` | `Valkur.Tests.PlayMode.Data` |
 | `PlayMode/Gameplay/` | `Valkur.Tests.PlayMode.Gameplay` |
+| `PlayMode/Input/` | `Valkur.Tests.PlayMode.Input` |
+| `PlayMode/UI/` | `Valkur.Tests.PlayMode.UI` |
 | `PlayMode/World/` | `Valkur.Tests.PlayMode.World` |
+
+> **No-go folders.** Do **not** create `EditMode/Gameplay/` (only `PlayMode/Gameplay/` exists) or
+> `EditMode/Game/Core/` — TileEditor tests live under `Editors/TileEditor/<sub>/`, and
+> Input / EventSystem / hotkey tests under `Game/Input/`.
 
 ### Where to place a new test
 
 | System | Folder | Namespace |
 |--------|--------|-----------|
 | BuildingsEditor, ColliderBrush | `Editors/Buildings/` | `…Editors.Buildings` |
+| EntitiesRuntimeEditor | `Editors/Entities/` | `…Editors.Entities` |
+| InventoryRuntimeEditor | `Editors/Inventory/` | `…Editors.Inventory` |
+| ItemsRuntimeEditor | `Editors/Items/` | `…Editors.Items` |
 | MapEditor, EditorUIHelpers | `Editors/MapEditor/` | `…Editors.MapEditor` |
 | EditorModal | `Editors/Modal/` | `…Editors.Modal` |
 | TileEditor brush/paint | `Editors/TileEditor/Brush/` | `…TileEditor.Brush` |
 | TileEditor catalog/registry | `Editors/TileEditor/Catalog/` | `…TileEditor.Catalog` |
-| TileEditor diagnostics | `Editors/TileEditor/Diagnostics/` | `…TileEditor.Diagnostics` |
+| TileEditor diagnostics (TileEditorDiagnostics logger) | `Editors/TileEditor/Diagnostics/` | `…TileEditor.Diagnostics` |
+| TileEditor input handler (mouse, zoom, hotkeys, input diagnose) | `Editors/TileEditor/Input/` | `…TileEditor.Input` |
 | TileEditor overlay/persistence | `Editors/TileEditor/Overlay/` | `…TileEditor.Overlay` |
-| TileEditor state machine | `Editors/TileEditor/State/` | `…TileEditor.State` |
+| TileEditor state, init, camera, integration | `Editors/TileEditor/State/` | `…TileEditor.State` |
 | TileEditor UI (PanelChrome, Theme…) | `Editors/TileEditor/UI/` | `…TileEditor.UI` |
 | TileEditor undo/redo | `Editors/TileEditor/Undo/` | `…TileEditor.Undo` |
 | Monster/NPC AI, FSM | `Game/AI/` | `…Game.AI` |
+| MusicBeat, BossBeat, audio clocks | `Game/Audio/` | `…Game.Audio` |
 | Bootstrap, ServiceLocator, FKeys | `Game/Bootstrap/` | `…Game.Bootstrap` |
 | Combat, spells, hitboxes, VFX rings | `Game/Combat/` | `…Game.Combat` |
 | Save/load, settings, data migration | `Game/Data/` | `…Game.Data` |
+| InputService, MouseInputManager, EventSystem, hotkey bindings | `Game/Input/` | `…Game.Input` |
+| Source-tree regression / brace-balance / meta tests | `Game/Meta/` | `…Game.Meta` |
 | Player (health, energy, inventory) | `Game/Player/` | `…Game.Player` |
 | Menus, HUD, TabStrip | `Game/UI/` | `…Game.UI` |
 | VFX, timed despawn | `Game/VFX/` | `…Game.VFX` |
@@ -61,6 +81,8 @@ The Test Runner hierarchy is driven **entirely by C# namespace**, not by folder.
 | Core systems (ServiceLocator, Pool) | `PlayMode/Core/` | `…PlayMode.Core` |
 | Data/catalog runtime | `PlayMode/Data/` | `…PlayMode.Data` |
 | Combat/minimap runtime | `PlayMode/Gameplay/` | `…PlayMode.Gameplay` |
+| Editor-hotkey dispatch (PlayMode) | `PlayMode/Input/` | `…PlayMode.Input` |
+| Runtime mouse / menu input UI | `PlayMode/UI/` | `…PlayMode.UI` |
 | Collision/physics/tiles runtime | `PlayMode/World/` | `…PlayMode.World` |
 
 ## Enforce Namespaces Script
