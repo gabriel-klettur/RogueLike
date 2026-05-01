@@ -143,12 +143,16 @@ namespace Valkur.Gameplay
             var caster = player.GetComponent<SpellCaster>();
             if (caster == null) { Log("Player has no SpellCaster."); return; }
 
-            // Get facing direction (toward mouse or default right)
+            // Get facing direction (toward mouse or default right). Routed
+            // through MouseInputManager so the legacy backend supplies the
+            // position when the new InputSystem package drops OS events.
             Vector2 dir = Vector2.right;
             var cam = Camera.main;
             if (cam != null)
             {
-                Vector2 mouseScreen = Mouse.current != null ? Mouse.current.position.ReadValue() : new Vector2(Screen.width / 2f, Screen.height / 2f);
+                Vector2 mouseScreen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
+                if (mouseScreen.sqrMagnitude < 1f)
+                    mouseScreen = new Vector2(Screen.width / 2f, Screen.height / 2f);
                 Vector3 mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
                 dir = ((Vector2)mouseWorld - (Vector2)player.position).normalized;
                 if (dir.sqrMagnitude < 0.01f) dir = Vector2.right;

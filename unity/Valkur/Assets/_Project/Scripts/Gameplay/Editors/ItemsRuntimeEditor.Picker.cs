@@ -190,14 +190,16 @@ namespace Valkur.Gameplay.Items
         private void OnPickerSlotPointerDown(string itemId)
         {
             _pickerDragItemId      = itemId;
-            _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+            // MouseInputManager wraps the OR-of-new-and-legacy fallback so the
+            // start screen position survives an InputSystem-drops-events frame.
+            _pickerDragStartScreen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
         }
 
-        /// <summary>State machine: arm drag â†’ follow cursor â†’ drop on map.</summary>
+        /// <summary>State machine: arm drag → follow cursor → drop on map.</summary>
         private void UpdatePickerDrag()
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
+            // Don't bail when Mouse.current is null — MouseInputManager has a
+            // legacy backend fallback that keeps reading.
             Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
 
             // Phase 1 â€” waiting for threshold

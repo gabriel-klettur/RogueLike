@@ -153,7 +153,9 @@ namespace Valkur.Gameplay.Spawners
                 if (_camera == null) return;
             }
 
-            Vector2 mousePos = Mouse.current.position.ReadValue();
+            // Use MouseInputManager so the legacy backend supplies the position
+            // when the new InputSystem package is dropping OS events.
+            Vector2 mousePos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             Vector3 worldPos = _camera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0f));
             worldPos.z = 0f;
 

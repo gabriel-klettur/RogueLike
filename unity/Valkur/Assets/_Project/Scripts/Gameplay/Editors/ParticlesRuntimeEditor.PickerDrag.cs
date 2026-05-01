@@ -39,11 +39,13 @@ namespace Valkur.Gameplay.VFX
             ? _cachedMainCamera
             : (_cachedMainCamera = Camera.main);
 
-        // â”€â”€ Picker slot pointer-down (registered by Picker.AddPickerSlot) â”€â”€â”€â”€â”€â”€
+        // ── Picker slot pointer-down (registered by Picker.AddPickerSlot) ──────
         private void OnPickerSlotPointerDown(string presetId)
         {
             _pickerDragPresetId    = presetId;
-            _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+            // MouseInputManager wraps the OR-of-new-and-legacy fallback so the
+            // start screen position survives an InputSystem-drops-events frame.
+            _pickerDragStartScreen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
         }
 
         // â”€â”€ Ghost construction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -88,8 +90,8 @@ namespace Valkur.Gameplay.VFX
         // â”€â”€ Per-frame drag update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void UpdatePickerDrag()
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
+            // Don't bail when Mouse.current is null — MouseInputManager has a
+            // legacy backend fallback that keeps reading.
             Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
 
             // Phase 1: waiting for drag threshold.
