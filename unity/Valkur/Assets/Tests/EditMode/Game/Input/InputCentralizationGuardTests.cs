@@ -68,10 +68,10 @@ namespace Valkur.Tests.EditMode.Game.Input
             "Core/Input/PersistentEventSystem.cs",
             "Core/Input/RuntimeInputBootstrap.cs",
             // Boot-time device manager — runs before the helpers are alive.
-            "Gameplay/TileEditor/TileEditorInputDevices.cs",
+            "Gameplay/Editors/Tile/TileEditorInputDevices.cs",
             // DiagnoseInputSystem method intentionally reports raw backend
             // state to the console for debugging "no input" conditions.
-            "Gameplay/TileEditor/TileEditorInputHandler.cs",
+            "Gameplay/Editors/Tile/TileEditorInputHandler.cs",
         };
 
         // Patterns that are STRICTLY forbidden anywhere outside the whitelist.
