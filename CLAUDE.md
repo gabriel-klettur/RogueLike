@@ -32,6 +32,27 @@ Inspiration project (architecture only, do not copy code wholesale): `unity/Udem
 3. **Never modify `unity/Udemy_Inspiration/`** — reference only.
 4. **Check existing scripts before creating new ones.** Many systems are partially migrated; duplicates are the #1 source of regression.
 5. **Preserve numerical parity with Python** — damage, speed, cooldowns, AoE radii, projectile speed, AI timings. Use the conversion table below.
+6. **Never read `Mouse.current` / `Keyboard.current` / `UnityEngine.Input.*` directly outside the Input core helpers.** Use the centralized fachadas — see "Input pipeline" below.
+
+## Input pipeline (single source of truth)
+
+Every input read in Valkur goes through one of four centralized helpers. Touching `Mouse.current` / `Keyboard.current` / `UnityEngine.Input` directly anywhere else is a regression: it breaks under the recurring Unity 2022.3 Editor "InputSystem drops events" bug.
+
+| Helper | Location | Use for |
+|---|---|---|
+| **`InputService`** | `Scripts/Core/Input/InputService.cs` | Bindings — exposes `UI.Click`, `Gameplay.Move`, `Editors.ToggleTile`, etc. from the canonical `ValkurInputActions.inputactions` asset. THIS is the binding source of truth. |
+| **`MouseInputManager`** | `Scripts/Core/Input/MouseInputManager.cs` | Mouse buttons + position. `IsLeftMouseButtonPressed()`, `WasLeftMouseButtonReleasedThisFrame()`, `GetScreenMousePosition()`, etc. ORs new InputSystem with legacy `UnityEngine.Input` automatically. |
+| **`KeyboardInputManager`** | `Scripts/Core/Input/KeyboardInputManager.cs` | Keyboard keys. `WasKeyPressedThisFrame(Key, KeyCode)`, `IsCtrlHeld()`, `WasEnterPressedThisFrame()`, `WasEscapePressedThisFrame()`, etc. Same OR-fallback pattern. |
+| **`InputCompat`** | `Scripts/Core/Input/InputCompat.cs` | Semantic menu helpers — `NavUpPressed()`, `ConfirmPressed()`, `CancelPressed()`. Wraps `KeyboardInputManager`. |
+| **`EditorHotkeyBindings`** | `Scripts/Core/Input/EditorHotkeyBindings.cs` | F1–F12 hotkeys + Ctrl/Alt modifiers. Stateless API: `WasPerformedThisFrame(Hotkey.ToggleTile)`. Resolves the live action from `InputService.Editors` on every call (immune to zombie-after-hot-reload). |
+
+The **only legitimate exceptions** to the rule are:
+
+- The four core helpers themselves (they obviously read from both backends).
+- Diagnostic / boot-race null-checks (`if (Mouse.current == null) ...`).
+- `mouse.scroll.ReadValue()` / `mouse.delta.ReadValue()` for scroll-wheel and mouse-delta which `MouseInputManager` doesn't expose yet — flag as a TODO if you find a third callsite.
+
+If you need a key the existing helpers don't expose (e.g. `KeyboardInputManager.WasF2PressedThisFrame()` for F2-rename), add the helper rather than a new direct read.
 
 ## Unity assemblies & dependency rule
 

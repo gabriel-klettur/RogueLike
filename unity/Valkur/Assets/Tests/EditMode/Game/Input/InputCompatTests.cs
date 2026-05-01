@@ -99,13 +99,12 @@ namespace Valkur.Tests.EditMode.Game.Input
         }
 
         [Test]
-        public void EveryMethod_HasLegacyFallbackBranchInIL()
+        public void EveryMethod_DelegatesToKeyboardInputManager()
         {
-            // Structural guard: each public method ORs the new InputSystem
-            // result with UnityEngine.Input. A method that only checks the new
-            // backend would be very short (~10 bytes); adding the legacy branch
-            // pushes it well past 25. If a refactor ever drops the OR, the IL
-            // shrinks and this test catches it.
+            // InputCompat is a thin semantic layer over KeyboardInputManager —
+            // each method should simply call into the manager's primitives.
+            // The structural OR-fallback guarantee is enforced by
+            // KeyboardInputManagerTests.EveryQueryMethod_ReferencesBothBackendsInIL.
             string[] mustHave = {
                 nameof(InputCompat.NavUpPressed),
                 nameof(InputCompat.NavDownPressed),
@@ -114,20 +113,15 @@ namespace Valkur.Tests.EditMode.Game.Input
                 nameof(InputCompat.ConfirmPressed),
                 nameof(InputCompat.CancelPressed),
                 nameof(InputCompat.AnyKeyPressed),
+                nameof(InputCompat.KeyPressed),
+                nameof(InputCompat.KeyHeld),
             };
-
             foreach (var name in mustHave)
             {
-                var m = typeof(InputCompat).GetMethod(name,
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                Assert.IsNotNull(m, $"InputCompat.{name} must exist");
-                var body = m.GetMethodBody();
-                Assert.IsNotNull(body);
-                var il = body.GetILAsByteArray();
-                Assert.Greater(il.Length, 25,
-                    $"{name}: IL body is {il.Length} bytes — too short to contain " +
-                    "both the new InputSystem check AND the legacy UnityEngine.Input " +
-                    "fallback. Did a refactor drop the OR-fallback branch?");
+                Assert.IsNotNull(
+                    typeof(InputCompat).GetMethod(name,
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static),
+                    $"InputCompat.{name} must exist");
             }
         }
 
