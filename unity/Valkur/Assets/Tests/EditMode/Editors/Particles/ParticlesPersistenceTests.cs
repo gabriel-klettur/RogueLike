@@ -16,8 +16,8 @@ namespace Valkur.Tests.EditMode.Editors.Particles
     /// The test snapshots any pre-existing particles_instances.json and restores it in
     /// TearDown so the production data file is never destroyed.
     ///
-    /// With no active particle emitters in the scene the file is written as an empty
-    /// JSON array <c>[\n]\n</c>.  The test asserts the file is valid JSON-array syntax.
+    /// With no active particle emitters in the scene the file is written as v2 JSON:
+    /// <c>{"version":2,"instances":[]}</c>. Tests assert valid v2 JSON syntax.
     /// </summary>
     [TestFixture]
     public class ParticlesPersistenceTests
@@ -95,6 +95,13 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             else if (!_fileExistedBefore && File.Exists(_jsonPath))
                 File.Delete(_jsonPath);
 
+            // Also clean up .tmp and .bak artefacts that AtomicJsonFile may leave.
+            foreach (var ext in new[] { ".tmp", ".bak" })
+            {
+                string p = _jsonPath + ext;
+                if (File.Exists(p)) File.Delete(p);
+            }
+
             foreach (var go in _sceneObjects)
                 if (go != null) UnityEngine.Object.DestroyImmediate(go);
             _sceneObjects.Clear();
@@ -119,6 +126,10 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             catalog.SetPresets(new[] { preset });
             SetVal(editor, "_catalog", catalog);
 
+            // Inject in-memory store so no disk access occurs by default.
+            var store = new InMemoryParticleInstanceStore();
+            editor.SetInstanceStore(store);
+
             Invoke(editor, "Start");
             return editor;
         }
@@ -128,34 +139,45 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         [Test]
         public void SaveInstancesToJson_WritesFile_WithBracketSyntax()
         {
-            var editor = CreateEditor();
+            // Use a real file store for this test so we can assert the file on disk.
+            ClearSingleton<ParticlesRuntimeEditor>();
+            var go = new GameObject("PersistenceFileSyntaxEditor");
+            _sceneObjects.Add(go);
+            var editor = go.AddComponent<ParticlesRuntimeEditor>();
+            Invoke(editor, "OnSingletonAwake");
+            var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
+            SetVal(editor, "_catalog", catalog);
+            Invoke(editor, "Start");
 
-            // No particle emitters in scene → save should write empty array.
+            // No particle emitters in scene → save should write empty v2 object.
             Invoke(editor, "SaveInstancesToJson");
 
             Assert.IsTrue(File.Exists(_jsonPath),
                 $"SaveInstancesToJson must create {_jsonPath}.");
 
             string content = File.ReadAllText(_jsonPath);
-            Assert.IsTrue(content.TrimStart().StartsWith("["),
-                "JSON file must start with '[' (JSON array).");
-            Assert.IsTrue(content.TrimEnd().EndsWith("]"),
-                "JSON file must end with ']' (JSON array).");
+            // v2 format wraps in an object; compact it and check for version:2 and instances array.
+            Assert.IsTrue(content.Contains("\"version\""),
+                "JSON file must contain \"version\" field (v2 format).");
+            Assert.IsTrue(content.Contains("\"instances\""),
+                "JSON file must contain \"instances\" array (v2 format).");
         }
 
         [Test]
-        public void SaveInstancesToJson_EmptyScene_WritesEmptyArray()
+        public void SaveInstancesToJson_EmptyScene_WritesEmptyInstancesArray()
         {
             var editor = CreateEditor();
 
             Invoke(editor, "SaveInstancesToJson");
 
-            string content = File.ReadAllText(_jsonPath);
-            // The builder writes "[\n]\n" for zero emitters.
-            // Strip all whitespace and assert we get "[]".
-            string compact = System.Text.RegularExpressions.Regex.Replace(content, @"\s", "");
-            Assert.AreEqual("[]", compact,
-                "Empty scene must produce exactly '[]' after whitespace removal.");
+            var store = (InMemoryParticleInstanceStore)FindField(editor, "_instanceStore")?.GetValue(editor);
+            Assert.IsNotNull(store, "InMemoryStore must be injected.");
+            string content = store.CurrentJson;
+            Assert.IsFalse(string.IsNullOrEmpty(content),
+                "Store must hold JSON after save.");
+            // v2: {"version":2,"instances":[]}
+            Assert.IsTrue(content.Contains("\"instances\":[]"),
+                $"Empty scene must produce {{\"instances\":[]}} in v2 JSON. Got: {content}");
         }
 
         [Test]
@@ -164,7 +186,6 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             // Ensure the directory does not exist for this test.
             string dir = Path.GetDirectoryName(_jsonPath);
             bool dirExisted = Directory.Exists(dir);
-            string[] existingFiles = dirExisted ? Directory.GetFiles(dir) : null;
 
             if (dirExisted)
             {
@@ -175,8 +196,16 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 return;
             }
 
-            // Directory is absent — create editor and save.
-            var editorNew = CreateEditor();
+            // Directory is absent — create editor and save using file store.
+            ClearSingleton<ParticlesRuntimeEditor>();
+            var go = new GameObject("PersistNoDirEditor");
+            _sceneObjects.Add(go);
+            var editorNew = go.AddComponent<ParticlesRuntimeEditor>();
+            Invoke(editorNew, "OnSingletonAwake");
+            var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
+            SetVal(editorNew, "_catalog", catalog);
+            Invoke(editorNew, "Start");
+
             Invoke(editorNew, "SaveInstancesToJson");
 
             Assert.IsTrue(Directory.Exists(dir),
@@ -187,17 +216,18 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         public void SaveInstancesToJson_DoesNotThrow_WhenNoCatalog()
         {
             // Build editor but remove catalog so SaveInstancesToJson only writes an
-            // empty emitter list (FindEditorOwnedEmitters returns nothing).
+            // empty instances list.
             ClearSingleton<ParticlesRuntimeEditor>();
             var go = new GameObject("PersistNoCatalogEditor");
             _sceneObjects.Add(go);
             var editor = go.AddComponent<ParticlesRuntimeEditor>();
             Invoke(editor, "OnSingletonAwake");
             SetVal(editor, "_catalog", null);
+            editor.SetInstanceStore(new InMemoryParticleInstanceStore());
             Invoke(editor, "Start");
 
             Assert.DoesNotThrow(() => Invoke(editor, "SaveInstancesToJson"),
-                "SaveInstancesToJson must not throw when catalog is null — emitter list is just empty.");
+                "SaveInstancesToJson must not throw when catalog is null — instance list is just empty.");
         }
     }
 }

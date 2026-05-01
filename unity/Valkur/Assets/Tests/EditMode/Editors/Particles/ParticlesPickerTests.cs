@@ -178,9 +178,9 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         // ── GroupToggle tests ─────────────────────────────────────────────────────
 
         [Test]
-        public void ToggleGroupByKind_FlipsLabel_ALL_to_GROUP()
+        public void ToggleGroupByKind_FlipsLabel_Order_to_Kind()
         {
-            // Start state: _groupByKind is false → label should be "ALL".
+            // Start state: _groupByKind is false → label should be "Order".
             SetVal(_editor, "_searchFilter", "");
             Invoke(_editor, "RefreshPicker");  // ensure UI is in sync
 
@@ -191,17 +191,17 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             // Initial state — before any toggle _groupByKind is false.
             bool initialGroupByKind = (bool) GetVal(_editor, "_groupByKind");
-            Assert.IsFalse(initialGroupByKind, "_groupByKind must start false (ALL mode).");
+            Assert.IsFalse(initialGroupByKind, "_groupByKind must start false (Order mode).");
 
-            // First toggle → GROUP.
+            // First toggle → Kind.
             Invoke(_editor, "ToggleGroupByKind");
-            Assert.AreEqual("GROUP", label.text,
-                "After first toggle, GroupToggleLabel must read 'GROUP'.");
+            Assert.AreEqual("Kind", label.text,
+                "After first toggle, GroupToggleLabel must read 'Kind'.");
 
-            // Second toggle → ALL.
+            // Second toggle → Order.
             Invoke(_editor, "ToggleGroupByKind");
-            Assert.AreEqual("ALL", label.text,
-                "After second toggle, GroupToggleLabel must read 'ALL'.");
+            Assert.AreEqual("Order", label.text,
+                "After second toggle, GroupToggleLabel must read 'Order'.");
         }
 
         [Test]
