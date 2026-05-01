@@ -380,12 +380,19 @@ namespace Valkur.Core.Input
         }
 
         /// <summary>
-        /// Get mouse wheel scroll delta.
+        /// Get mouse wheel scroll delta. ORs the new InputSystem backend with the
+        /// legacy <see cref="UnityEngine.Input"/> backend so the wheel keeps
+        /// working when the new package drops OS events (recurring Unity 2022.3
+        /// Editor bug). The new backend reports pixels (~±120 per detent) while
+        /// the legacy backend reports ticks (~±1 per detent), so we scale the
+        /// legacy value ×120 to keep callers' thresholds consistent.
         /// </summary>
         public static float GetMouseWheelDelta()
         {
             var mouse = Mouse.current;
-            return mouse != null ? mouse.scroll.ReadValue().y : 0f;
+            float newScroll = mouse != null ? mouse.scroll.ReadValue().y : 0f;
+            if (Mathf.Abs(newScroll) >= 0.1f) return newScroll;
+            return UnityEngine.Input.mouseScrollDelta.y * 120f;
         }
 
         /// <summary>
