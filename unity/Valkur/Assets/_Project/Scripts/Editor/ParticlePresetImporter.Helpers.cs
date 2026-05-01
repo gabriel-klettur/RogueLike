@@ -28,6 +28,16 @@ namespace Valkur.Editor
 
         // ------------------------------------------------------------------ directory
 
+        /// <summary>
+        /// Returns true for one-shot burst kinds that should NOT loop.
+        /// Rule: explosion, smoke_burst, slash, firework → finite (loops=false).
+        /// All other kinds are continuous (loops=true).
+        /// </summary>
+        internal static bool IsFiniteKind(string kind)
+        {
+            return kind is "explosion" or "smoke_burst" or "slash" or "firework";
+        }
+
         private static void EnsureOutputDirectory(bool dryRun)
         {
             if (dryRun) return;

@@ -24,6 +24,13 @@ namespace Valkur.Data
                  "smoke, smoke_emitter, arcane_flame, firework, water_fountain, falling_leaf, water_flow.")]
         public string kind = "explosion";
 
+        // --------------- Loop behaviour ---------------
+        [Tooltip("If true, the particle system runs continuously (looped). " +
+                 "If false, it is a finite one-shot burst that dies after playing once. " +
+                 "Auto-set by importer based on kind (explosion/smoke_burst/slash/firework → false, all others → true), " +
+                 "but persisted in the asset so it can be tweaked per-preset without re-importing.")]
+        public bool loops = true;
+
         // --------------- Emission ---------------
         [Tooltip("Particles emitted per second for looping emitters. Python: emit_rate * 60.")]
         public float emitRate = 10f;

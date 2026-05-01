@@ -73,6 +73,11 @@ namespace Valkur.Editor
 
             v.kind = GetString(p, "kind", "explosion");
 
+            // ---- Loop behaviour ----
+            // Finite one-shot kinds: explosion, smoke_burst, slash, firework.
+            // All other kinds run continuously.
+            v.loops = !IsFiniteKind(v.kind);
+
             // ---- Emission ----
             float rawEmitRate = GetFloat(p, "emit_rate", 0f);
             v.emitRate = rawEmitRate > 0f ? rawEmitRate * TICK_RATE : 10f;

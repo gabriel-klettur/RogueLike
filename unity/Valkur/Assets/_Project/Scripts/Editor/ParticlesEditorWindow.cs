@@ -108,23 +108,38 @@ namespace Valkur.Editor
             try
             {
                 string json = File.ReadAllText(InstancesFilePath);
-                var parsed = MiniJson.Deserialize(json) as List<object>;
-                if (parsed == null) return;
+                var rawParsed = MiniJson.Deserialize(json);
 
-                foreach (var item in parsed)
+                // Support both v1 (bare array) and v2 ({"version":2,"instances":[...]}) formats.
+                List<object> list = null;
+                if (rawParsed is List<object> bareArray)
+                {
+                    list = bareArray; // v1
+                }
+                else if (rawParsed is Dictionary<string, object> obj &&
+                         obj.TryGetValue("instances", out var inst) &&
+                         inst is List<object> v2List)
+                {
+                    list = v2List; // v2
+                }
+
+                if (list == null) return;
+
+                foreach (var item in list)
                 {
                     if (item is not Dictionary<string, object> d) continue;
-                    var inst = new ParticleInstanceData
+                    // v2 uses string "id" (GUID); v1 uses int. For editor window, use sequential int ids.
+                    var data = new ParticleInstanceData
                     {
-                        id             = GetInt(d, "id"),
-                        preset_id      = GetString(d, "preset_id"),
-                        zone           = GetString(d, "zone"),
-                        rel_x          = GetInt(d, "rel_x"),
-                        rel_y          = GetInt(d, "rel_y"),
+                        id               = GetInt(d, "id"),
+                        preset_id        = GetString(d, "preset_id"),
+                        zone             = GetString(d, "zone"),
+                        rel_x            = GetInt(d, "rel_x"),
+                        rel_y            = GetInt(d, "rel_y"),
                         scale_multiplier = GetFloat(d, "scale_multiplier", 1f)
                     };
-                    _instances.Add(inst);
-                    if (inst.id >= _nextId) _nextId = inst.id + 1;
+                    _instances.Add(data);
+                    if (data.id >= _nextId) _nextId = data.id + 1;
                 }
             }
             catch (Exception ex)

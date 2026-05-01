@@ -40,6 +40,33 @@ namespace Valkur.Editor
         [MenuItem("Valkur/Particles/Dry-Run Preset Import")]
         public static void DryRunMenu() => ImportPresets(dryRun: true);
 
+        [MenuItem("Valkur/Particles/Backfill loops attribute on existing presets")]
+        public static void BackfillLoopsAttribute()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:ParticlePresetDefinition",
+                new[] { "Assets/_Project/Data" });
+
+            int updated = 0;
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var preset  = AssetDatabase.LoadAssetAtPath<ParticlePresetDefinition>(path);
+                if (preset == null || preset.vfx == null) continue;
+
+                bool expected = !IsFiniteKind(preset.vfx.kind);
+                if (preset.vfx.loops != expected)
+                {
+                    preset.vfx.loops = expected;
+                    EditorUtility.SetDirty(preset);
+                    updated++;
+                    Debug.Log($"[ParticlePresetImporter] Backfilled loops={expected} on '{preset.id}' (kind='{preset.vfx.kind}').");
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[ParticlePresetImporter] Backfill complete: {updated} preset(s) updated out of {guids.Length} scanned.");
+        }
+
         // ------------------------------------------------------------------ public API
 
         public static MigrationReport ImportPresets(bool dryRun)
