@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
 using Valkur.Core.Input;
 
-namespace Valkur.Tests.EditMode.Game.Core
+namespace Valkur.Tests.EditMode.Game.Input
 {
     /// <summary>
     /// Verifies <see cref="InputService"/> bootstraps correctly from the canonical

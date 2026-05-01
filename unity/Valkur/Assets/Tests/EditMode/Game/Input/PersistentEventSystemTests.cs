@@ -6,7 +6,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.TestTools;
 using Valkur.Core.Input;
 
-namespace Valkur.Tests.EditMode.Game.Core
+namespace Valkur.Tests.EditMode.Game.Input
 {
     /// <summary>
     /// Verifies <see cref="PersistentEventSystem"/> ends up with exactly one
@@ -123,17 +123,21 @@ namespace Valkur.Tests.EditMode.Game.Core
         }
 
         [Test]
-        public void Ensure_StripsLegacyStandaloneInputModule()
+        public void Ensure_KeepsStandaloneInputModuleAsActiveUIModule()
         {
-            // Some scene-authored EventSystems still ship with the deprecated module.
-            var go = new GameObject("LegacyES");
-            go.AddComponent<EventSystem>();
-            go.AddComponent<StandaloneInputModule>();
-
+            // Earlier versions of PersistentEventSystem stripped StandaloneInputModule
+            // in favor of InputSystemUIInputModule. That regressed UI clicks under the
+            // recurring Unity 2022.3 InputSystem-drops-events bug, so the policy is
+            // now reversed: Standalone is kept enabled (reads UnityEngine.Input which
+            // never breaks), and the new module is installed but disabled. See
+            // PersistentEventSystem.ConfigureModule for the rationale.
             PersistentEventSystem.Ensure();
 
-            Assert.IsNull(go.GetComponent<StandaloneInputModule>(),
-                "Ensure must remove StandaloneInputModule so it cannot fight the InputSystemUIInputModule for events.");
+            var es = PersistentEventSystem.Instance;
+            Assert.IsNotNull(es);
+            var standalone = es.GetComponent<StandaloneInputModule>();
+            Assert.IsNotNull(standalone, "StandaloneInputModule must be present and active.");
+            Assert.IsTrue(standalone.enabled);
         }
 
         // ─── Idempotence ────────────────────────────────────────────────────────

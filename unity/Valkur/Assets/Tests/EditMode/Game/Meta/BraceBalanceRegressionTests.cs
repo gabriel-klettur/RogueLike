@@ -4,7 +4,7 @@ using System.Text;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Valkur.Tests.EditMode.Game
+namespace Valkur.Tests.EditMode.Game.Meta
 {
     /// <summary>
     /// Regression guard against the duplicate-class / unbalanced-brace corruption

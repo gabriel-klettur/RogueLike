@@ -6,7 +6,7 @@ using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 using System.Collections;
 
-namespace Valkur.Tests.EditMode.Gameplay.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.Input
 {
     [TestFixture]
     public class TileEditorMouseTests

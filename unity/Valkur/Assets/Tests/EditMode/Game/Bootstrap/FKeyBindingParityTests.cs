@@ -16,6 +16,7 @@ using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
+using Valkur.Core.Input;
 using Valkur.UI.HUD;
 
 namespace Valkur.Tests.EditMode.Game.Bootstrap
@@ -161,15 +162,26 @@ namespace Valkur.Tests.EditMode.Game.Bootstrap
         [Test]
         public void ParticlesEditor_BoundTo_F1_WithoutCtrl()
         {
-            var editor = CreateSingleton<ParticlesRuntimeEditor>("TestParticlesEditor");
+            // ParticlesRuntimeEditor uses the stateless EditorHotkeyBindings API
+            // (no cached _toggleAction field — see EditorHotkeyBindingsStatelessTests
+            // for the rationale). Verify the F1 binding lives on the canonical
+            // input asset under Hotkey.ToggleParticles, with no Ctrl modifier in
+            // the binding path itself.
+            var action = EditorHotkeyBindings.Resolve(
+                EditorHotkeyBindings.Hotkey.ToggleParticles, out bool owns);
+            Assert.IsNotNull(action, "EditorHotkeyBindings must resolve ToggleParticles");
+            Assert.Greater(action.bindings.Count, 0, "ToggleParticles must have at least one binding");
 
-            string path = GetBindingPath(editor, "_toggleAction");
-            Assert.AreEqual("<Keyboard>/f1", path,
-                "ParticlesRuntimeEditor should bind to plain F1 (no modifier)");
-            Assert.IsNull(FindField(editor, "_ctrlModifier"),
-                "ParticlesRuntimeEditor must NOT carry a '_ctrlModifier' field — F1 is bound plain.");
+            bool foundF1 = false;
+            foreach (var b in action.bindings)
+            {
+                if (b.path == "<Keyboard>/f1") foundF1 = true;
+                Assert.IsFalse(b.path != null && b.path.ToLowerInvariant().Contains("ctrl"),
+                    "ParticlesEditor binding must NOT contain a Ctrl modifier path.");
+            }
+            Assert.IsTrue(foundF1, "ParticlesEditor must include a <Keyboard>/f1 binding");
 
-            Object.DestroyImmediate(editor.gameObject);
+            if (owns) action.Dispose();
         }
 
         // -------------------------------------------------------------------

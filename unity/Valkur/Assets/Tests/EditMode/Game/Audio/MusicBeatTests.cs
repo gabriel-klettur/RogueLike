@@ -4,7 +4,7 @@ using Valkur.Infrastructure;
 using Valkur.Data;
 using Valkur.Gameplay.Enemies;
 
-namespace Valkur.Tests.EditMode.Game
+namespace Valkur.Tests.EditMode.Game.Audio
 {
     /// <summary>
     /// Tests for MusicBeatClock + BossBeatChoreographer + BossBeatPattern.

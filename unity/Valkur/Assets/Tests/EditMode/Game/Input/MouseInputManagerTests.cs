@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using Valkur.Core.Input;
 
-namespace Valkur.Tests.EditMode.Game.Core
+namespace Valkur.Tests.EditMode.Game.Input
 {
     public class MouseInputManagerTests
     {

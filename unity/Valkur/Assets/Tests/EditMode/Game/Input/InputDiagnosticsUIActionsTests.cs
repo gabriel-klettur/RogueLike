@@ -6,7 +6,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.TestTools;
 using Valkur.Core.Input;
 
-namespace Valkur.Tests.EditMode.Game.Core
+namespace Valkur.Tests.EditMode.Game.Input
 {
     /// <summary>
     /// EditMode regression tests for the EventSystem-UI-action pipeline that

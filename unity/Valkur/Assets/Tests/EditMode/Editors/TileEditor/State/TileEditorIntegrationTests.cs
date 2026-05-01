@@ -9,7 +9,7 @@ using System.Collections;
 
 // Integration tests for Tile Editor functionality
 
-namespace Valkur.Tests.EditMode.Gameplay.TileEditor
+namespace Valkur.Tests.EditMode.Editors.TileEditor.State
 {
     [TestFixture]
     public class TileEditorIntegrationTests

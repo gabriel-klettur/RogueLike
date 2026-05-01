@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using Valkur.Core.Input;
 
-namespace Valkur.Tests.EditMode.Game.Core
+namespace Valkur.Tests.EditMode.Game.Input
 {
     public class InputDiagnosticsTests
     {
@@ -199,7 +199,13 @@ namespace Valkur.Tests.EditMode.Game.Core
         private static void AssertRuntimeUIModuleConfigured(InputSystemUIInputModule module)
         {
             Assert.IsNotNull(module, "InputSystemUIInputModule must exist.");
-            Assert.IsTrue(module.enabled, "InputSystemUIInputModule must be enabled.");
+            // Note: under the new dual-module setup (StandaloneInputModule active +
+            // InputSystemUIInputModule disabled — see PersistentEventSystem.ConfigureModule),
+            // the new module is intentionally disabled because two enabled UI input
+            // modules on one EventSystem fight over events. We still verify it is
+            // structurally configured (asset + action refs bound) so the project
+            // can re-enable it if a future Unity release fixes the OS event delivery
+            // flake that motivated the switch.
             Assert.IsNotNull(module.actionsAsset, "Runtime UI actions asset must be assigned.");
             Assert.IsNotNull(module.point?.action, "Point action must be assigned for hover/click raycasts.");
             Assert.IsNotNull(module.leftClick?.action, "LeftClick action must be assigned for menu buttons.");
