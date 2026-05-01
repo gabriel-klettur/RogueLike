@@ -98,7 +98,7 @@ main.py                              Bootstrap.unity scene
 | `roguelike_engine/input/` | New Input System | ✅ Done |
 | `roguelike_engine/db/` | ScriptableObjects | ✅ Done |
 | `roguelike_ui/` | `Valkur.UI` | ✅ Done |
-| `roguelike_editors/` | `Valkur.Gameplay/TileEditor/` + `MapEditor/` | ✅ Done |
+| `roguelike_editors/` | `Valkur.Gameplay/Editors/Tile/` + `Editors/Map/` | ✅ Done |
 | `roguelike_engine/rendering/day_night/` | — | ❌ Pending |
 | `roguelike_engine/audio/` | `Valkur.Infrastructure/AudioManager` | ❌ Empty |
 | `minigames/` | — | ❌ Not started |

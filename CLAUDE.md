@@ -67,6 +67,57 @@ If you need a key the existing helpers don't expose (e.g. `KeyboardInputManager.
 
 **Forbidden:** `Valkur.Gameplay → Valkur.UI` (circular). Cross-system signaling goes through `ServiceLocator` or `GameEvents`.
 
+## `Scripts/Gameplay/` folder layout
+
+The Gameplay assembly is subdivided by feature so any single folder stays under ~20 files. When porting or extending, place files in the matching subfolder (or create one rather than dumping into a flat root).
+
+| Folder | Contents |
+|---|---|
+| `Bootstrap/` | Game/EntitySetup, DevConsole, scene composition |
+| `Chat/` | In-game chat |
+| `Combat/Resources/` | Health, Mana, Experience |
+| `Combat/Damage/` | FloatingDamageNumber/Spawner, GrayscaleDeath, DeathDropSystem |
+| `Combat/Mechanics/` | MeleeCombat, DashAbility, MouseTargetDetector, ComboCounter, NPCRespawnSystem |
+| `Combat/Feedback/` | CastOutline, CombatFeedback, CombatAudioSystem, ToastSystem, ExplosionEffect, CombatRangeVisualizer |
+| `Combat/WorldUI/` | WorldHealthBar, WorldManaBar, WorldDashBar, FacingIndicator |
+| `Combat/Lifecycle/` | TimedDespawn, SpawnStabilizer |
+| `Combat/StatusEffects/` | Status effect implementations |
+| `Editors/_Shared/` | EditorCameraPanController, EditorUIHelpers (cross-editor) |
+| `Editors/Buildings/` | Buildings runtime editor (F10) — partials + UIBuilder + Outline + PerfProbe |
+| `Editors/Entities/` | Entities runtime editor — partials + UIBuilder + Outline |
+| `Editors/FSM/` | FSM runtime editor — partials + UIBuilder |
+| `Editors/Inventory/` | Inventory runtime editor — partials + UIBuilder |
+| `Editors/Items/` | Items runtime editor — partials + UIBuilder |
+| `Editors/Lighting/` | Lighting runtime editor — partials |
+| `Editors/Map/` | Map runtime editor (F11, formerly `Gameplay/MapEditor/`) |
+| `Editors/Particles/` | Particles runtime editor — partials + UIBuilder |
+| `Editors/Spells/` | Spells runtime editor — partials + UIBuilder + SpellPreviewGraphic |
+| `Editors/Tile/` | Tile runtime editor (F6, formerly `Gameplay/TileEditor/`) |
+| `Enemies/` | NPC AI, FSM behaviors |
+| `HUD/` | In-world HUD overlays (e.g. SpellBarHUD; formerly `Gameplay/UI/`) |
+| `Inventory/` | Inventory model + UI runtime |
+| `Player/` | PlayerController, PlayerStats |
+| `Save/` | Save/load systems |
+| `Spawners/` | Entity spawners |
+| `Spells/Core/` | ISpellExecutor, SpellCaster, SpellCaster.Execution |
+| `Spells/Executors/` | `*Executor.cs` (Projectile, Area, Slash, Dash, …) |
+| `Spells/Controllers/` | Aura, Beam, Mine, Puddle, Shield, Summon, Totem, Vortex, Wall, MeteorStrike, Cone, ArcaneFlame |
+| `Spells/Projectiles/` | Projectile, BoomerangProjectile, IProjectileVisual |
+| `Spells/Visuals/` | ElementalProjectileVisual, FireballVisual, FireballImpactFX, LightningBoltFX, MeteorMissileFX, AreaFXRig |
+| `UIKit/` | Reusable runtime UI primitives (own asmdef — leave alone) |
+| `Vendors/` | Shop / vendor logic |
+| `VFX/` | Pooled VFX |
+| `World/Dungeon/` | DungeonGenerator, DungeonLoader.*, TilemapLayerSetup, debug overlays |
+| `World/Buildings/` | BuildingLoader.*, BuildingObject.*, BuildingCollisionLoader.*, debug overlays |
+| `World/Zones/` | ZoneManager.*, ZoneDatabaseLoader, ZonePortal |
+| `World/Navigation/` | PathFinder, SpatialHash, NPCSeparationSystem, YSortEntity |
+| `World/Lighting/` | WorldLightLoader, DayNightCycle |
+| `World/Setup/` | WorldLoader, OverlayLoader, CameraSetup, WorldGridBuilder |
+| `World/Pickups/` | CoinPickup |
+| `World/_Util/` | MiniJsonRuntime |
+
+Namespaces are independent of folder paths — `using Valkur.Gameplay.Buildings;` resolves regardless of whether the file lives in `Gameplay/World/Buildings/` or elsewhere. Use `git mv` (preserves `.meta` GUIDs) when relocating files.
+
 ## Code style (C#)
 
 - `[SerializeField] private` + `[Tooltip("…")]` for inspector fields. **Never** public fields.

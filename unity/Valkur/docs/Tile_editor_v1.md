@@ -130,7 +130,7 @@ foreach (var r in renderers)
 
 ### Archivos principales
 ```
-Scripts/Gameplay/TileEditor/
+Scripts/Gameplay/Editors/Tile/
 ├── TileEditorManager.cs       — Orquestador principal, input, undo/redo, toggle F6
 ├── TileEditorState.cs         — Estado mutable (tool, layer, tile, brush size)
 ├── TileEditorUI.cs            — UI programática completa (Canvas, paneles, botones)

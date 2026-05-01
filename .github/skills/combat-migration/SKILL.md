@@ -58,31 +58,23 @@ mitigated = max(1, raw_damage - target.defense)
 ### Existing Scripts
 ```
 Assets/_Project/Scripts/Gameplay/Combat/
-├── Health.cs                  # HP system
-├── Mana.cs                    # Mana system
-├── Experience.cs              # XP/leveling
-├── MeleeCombat.cs             # Melee attack resolution
-├── DashAbility.cs             # Dash mechanics
-├── CombatFeedback.cs          # Hit feedback (knockback, stun)
-├── CombatRangeVisualizer.cs   # Range indicator
-├── FacingIndicator.cs         # Direction indicator
-├── FloatingDamageNumber.cs    # Damage popup
-├── FloatingDamageSpawner.cs   # Damage popup spawner
-├── MouseTargetDetector.cs     # Mouse targeting
-├── WorldHealthBar.cs          # HP bar above entities
+├── Resources/         # Health.cs, Mana.cs, Experience.cs
+├── Damage/            # FloatingDamageNumber, FloatingDamageSpawner, GrayscaleDeath, DeathDropSystem
+├── Mechanics/         # MeleeCombat, DashAbility, MouseTargetDetector, ComboCounter, NPCRespawnSystem
+├── Feedback/          # CastOutline, CombatFeedback, CombatAudioSystem, ToastSystem, ExplosionEffect, CombatRangeVisualizer
+├── WorldUI/           # WorldHealthBar, WorldManaBar, WorldDashBar, FacingIndicator
+├── Lifecycle/         # TimedDespawn, SpawnStabilizer
+└── StatusEffects/     # Status effect implementations
 ```
 
 ### Spell Scripts
 ```
 Assets/_Project/Scripts/Gameplay/Spells/
-├── SpellCaster.cs             # Main casting system
-├── ISpellExecutor.cs          # Interface
-├── ProjectileExecutor.cs      # Projectile spells
-├── AreaExecutor.cs            # AoE spells
-├── SlashExecutor.cs           # Slash spells
-├── DashExecutor.cs            # Dash spells
-├── Projectile.cs              # Projectile physics
-├── FireballVisual.cs          # Fireball VFX
+├── Core/              # ISpellExecutor, SpellCaster, SpellCaster.Execution
+├── Executors/         # *Executor.cs (Projectile, Area, Slash, Dash, …)
+├── Controllers/       # Aura, Beam, Mine, Puddle, Shield, Summon, Totem, Vortex, Wall, MeteorStrike, Cone, ArcaneFlame
+├── Projectiles/       # Projectile, BoomerangProjectile, IProjectileVisual
+└── Visuals/           # ElementalProjectileVisual, FireballVisual, FireballImpactFX, LightningBoltFX, MeteorMissileFX, AreaFXRig
 ```
 
 ## Migration Procedure

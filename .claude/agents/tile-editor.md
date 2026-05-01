@@ -15,7 +15,7 @@ You are the **Valkur Tile Editor specialist**. Subsystem entry point: F6 toggles
 
 ## Subsystem map
 
-Location: `unity/Valkur/Assets/_Project/Scripts/Gameplay/TileEditor/`
+Location: `unity/Valkur/Assets/_Project/Scripts/Gameplay/Editors/Tile/`
 
 | File | Role |
 |---|---|

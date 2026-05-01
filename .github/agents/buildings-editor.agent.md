@@ -47,13 +47,13 @@ The Buildings Editor has **two surfaces**:
 | `Scripts/Editor/BuildingsEditorWindow.cs` | `Valkur.Editor` | EditorWindow entry point + state |
 | `Scripts/Editor/BuildingsEditorWindow.DrawPanel.cs` | `Valkur.Editor` | Palette, inspector, buildings list, toolbar |
 | `Scripts/Editor/BuildingsEditorWindow.Interaction.cs` | `Valkur.Editor` | SceneView interaction, placement, save/load |
-| `Scripts/Gameplay/Editors/BuildingsRuntimeEditor.cs` | `Valkur.Gameplay.Buildings` | Runtime editor (F10), ~3000 lines |
-| `Scripts/Gameplay/Editors/BuildingsEditorUIBuilder.cs` | `Valkur.Gameplay.Buildings` | Builds all runtime UI panels (menu bar, Modes, Buildings picker, Properties, Colliders) |
-| `Scripts/Gameplay/World/BuildingObject.cs` | `Valkur.Gameplay.World` | Runtime building entity (split-render, collider, Apply()) |
-| `Scripts/Gameplay/World/BuildingLoader.cs` | `Valkur.Gameplay.World` | Loads `buildings_instances.json`, spawns BuildingObjects |
-| `Scripts/Gameplay/World/BuildingCollisionLoader.cs` | `Valkur.Gameplay.World` | Loads per-cell collision grids from JSON |
-| `Scripts/Gameplay/World/BuildingCollisionLoader.Grid.cs` | `Valkur.Gameplay.World` | Grid data types for collision |
-| `Scripts/Gameplay/World/BuildingColliderDebugOverlay.cs` | `Valkur.Gameplay.World` | Debug gizmos for collision cells |
+| `Scripts/Gameplay/Editors/Buildings/BuildingsRuntimeEditor.cs` | `Valkur.Gameplay.Buildings` | Runtime editor (F10), ~3000 lines |
+| `Scripts/Gameplay/Editors/Buildings/BuildingsEditorUIBuilder.cs` | `Valkur.Gameplay.Buildings` | Builds all runtime UI panels (menu bar, Modes, Buildings picker, Properties, Colliders) |
+| `Scripts/Gameplay/World/Buildings/BuildingObject.cs` | `Valkur.Gameplay.World` | Runtime building entity (split-render, collider, Apply()) |
+| `Scripts/Gameplay/World/Buildings/BuildingLoader.cs` | `Valkur.Gameplay.World` | Loads `buildings_instances.json`, spawns BuildingObjects |
+| `Scripts/Gameplay/World/Buildings/BuildingCollisionLoader.cs` | `Valkur.Gameplay.World` | Loads per-cell collision grids from JSON |
+| `Scripts/Gameplay/World/Buildings/BuildingCollisionLoader.Grid.cs` | `Valkur.Gameplay.World` | Grid data types for collision |
+| `Scripts/Gameplay/World/Buildings/BuildingColliderDebugOverlay.cs` | `Valkur.Gameplay.World` | Debug gizmos for collision cells |
 | `Data/Catalogs/Buildings/BuildingCatalog.asset` | — | ScriptableObject catalog of all templates |
 | `Data/Catalogs/Buildings/BuildingTemplate_*.asset` | — | Per-template ScriptableObjects |
 | `StreamingAssets/Buildings/buildings_instances.json` | — | Serialized placed instances |

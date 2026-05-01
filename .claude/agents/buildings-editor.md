@@ -44,7 +44,7 @@ Also read the `unity-development` skill for general conventions: [.github/skills
 ## Hard constraints
 
 - **DO NOT** modify Python source.
-- **DO NOT** create duplicate scripts (search `Scripts/Gameplay/Editors/` and `Scripts/Editor/` first).
+- **DO NOT** create duplicate scripts (search `Scripts/Gameplay/Editors/Buildings/` and `Scripts/Editor/` first).
 - **DO NOT** use raw singletons (use `ServiceLocator` or `SingletonMonoBehaviour<T>`).
 - **DO NOT** hardcode values that should live in `BuildingTemplateData`.
 - **DO NOT** reference `Valkur.UI` from `Valkur.Gameplay`.
