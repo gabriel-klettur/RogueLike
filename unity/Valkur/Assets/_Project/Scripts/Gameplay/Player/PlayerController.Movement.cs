@@ -16,6 +16,13 @@ namespace Valkur.Gameplay
         {
             if (_health.IsDead) return;
 
+            // Hot-reload guard: with Domain Reload off, Unity serialises private
+            // InputAction fields and restores them as zombies (bindings.Count == 0,
+            // actionMap == null) — left-click attack and dash silently die. Detect
+            // and rebuild before reading so the player's combat input survives any
+            // mid-Play recompile.
+            EnsureInputActionsLive();
+
             bool isStunned = _statusEffects != null && _statusEffects.IsStunned;
             bool inputSuspended = IsGameplayInputSuspended();
 
@@ -61,6 +68,25 @@ namespace Valkur.Gameplay
         {
             if (_moveAction != null)
                 _moveInput = _moveAction.ReadValue<Vector2>();
+
+            // Legacy fallback: under Unity 2022.3 in the Editor the new
+            // InputSystem package intermittently drops OS event delivery and
+            // _moveInput stays at (0,0) even while WASD is held. UnityEngine.Input
+            // works as long as activeInputHandler != "Input System Package only".
+            if (_moveInput.sqrMagnitude < 0.01f)
+            {
+                float lx = 0f, ly = 0f;
+                if (UnityEngine.Input.GetKey(KeyCode.A) || UnityEngine.Input.GetKey(KeyCode.LeftArrow))  lx -= 1f;
+                if (UnityEngine.Input.GetKey(KeyCode.D) || UnityEngine.Input.GetKey(KeyCode.RightArrow)) lx += 1f;
+                if (UnityEngine.Input.GetKey(KeyCode.S) || UnityEngine.Input.GetKey(KeyCode.DownArrow))  ly -= 1f;
+                if (UnityEngine.Input.GetKey(KeyCode.W) || UnityEngine.Input.GetKey(KeyCode.UpArrow))    ly += 1f;
+                if (lx != 0f || ly != 0f)
+                {
+                    var legacy = new Vector2(lx, ly);
+                    if (legacy.sqrMagnitude > 1f) legacy = legacy.normalized;
+                    _moveInput = legacy;
+                }
+            }
         }
 
         private static bool IsGameplayInputSuspended()
@@ -185,7 +211,11 @@ namespace Valkur.Gameplay
 
             // Dash (Ctrl) → dash spell through spell system
             // Python parity: K_LCTRL / K_RCTRL → dash spell
-            if (_dashAction != null && _dashAction.WasPerformedThisFrame())
+            bool dashNew = _dashAction != null && _dashAction.WasPerformedThisFrame();
+            bool dashLegacy = UnityEngine.Input.GetKeyDown(KeyCode.LeftControl)
+                           || UnityEngine.Input.GetKeyDown(KeyCode.RightControl)
+                           || UnityEngine.Input.GetKeyDown(KeyCode.RightShift);
+            if (dashNew || dashLegacy)
             {
                 if (_spellCaster != null && !_spellCaster.TryCastByKey("dash", _facingDirection))
                 {
@@ -196,12 +226,15 @@ namespace Valkur.Gameplay
             }
 
             // All spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m)
-            // Python parity: full 23 spell key bindings
+            // Python parity: full 23 spell key bindings.
+            // OR new-system action with legacy KeyCode fallback (see InputCompat XML doc).
             if (_spellCaster != null)
             {
                 foreach (var (action, spellKey) in _spellBindings)
                 {
-                    if (action != null && action.WasPerformedThisFrame())
+                    bool fired = (action != null && action.WasPerformedThisFrame())
+                              || LegacyKeyDownForSpell(spellKey);
+                    if (fired)
                     {
                         _spellCaster.TryCastByKey(spellKey, _facingDirection);
                         break; // only one spell per frame
@@ -209,6 +242,34 @@ namespace Valkur.Gameplay
                 }
             }
         }
+
+        private static bool LegacyKeyDownForSpell(string spellKey) => spellKey switch
+        {
+            "darkball"            => UnityEngine.Input.GetKeyDown(KeyCode.Alpha1),
+            "iceball"             => UnityEngine.Input.GetKeyDown(KeyCode.Alpha2),
+            "lightball"           => UnityEngine.Input.GetKeyDown(KeyCode.Alpha3),
+            "puddle_lava"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha4),
+            "mine_basic"          => UnityEngine.Input.GetKeyDown(KeyCode.Alpha5),
+            "boomerang"           => UnityEngine.Input.GetKeyDown(KeyCode.Alpha6),
+            "chain_lightning"     => UnityEngine.Input.GetKeyDown(KeyCode.Alpha7),
+            "vortex_pull"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha8),
+            "vortex_push"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha9),
+            "flame_breath"        => UnityEngine.Input.GetKeyDown(KeyCode.Alpha0),
+            "teleport"            => UnityEngine.Input.GetKeyDown(KeyCode.Q),
+            "slash"               => UnityEngine.Input.GetKeyDown(KeyCode.E),
+            "lightning"           => UnityEngine.Input.GetKeyDown(KeyCode.R),
+            "sphere_magic_shield" => UnityEngine.Input.GetKeyDown(KeyCode.T),
+            "smoke"               => UnityEngine.Input.GetKeyDown(KeyCode.F),
+            "smoke_emitter"       => UnityEngine.Input.GetKeyDown(KeyCode.G),
+            "arcane_flame"        => UnityEngine.Input.GetKeyDown(KeyCode.C),
+            "firework_launch"     => UnityEngine.Input.GetKeyDown(KeyCode.V),
+            "healing_aura"        => UnityEngine.Input.GetKeyDown(KeyCode.X),
+            "meteor_shower"       => UnityEngine.Input.GetKeyDown(KeyCode.P),
+            "healing_totem"       => UnityEngine.Input.GetKeyDown(KeyCode.L),
+            "summon_barbol"       => UnityEngine.Input.GetKeyDown(KeyCode.U),
+            "wall_ice"            => UnityEngine.Input.GetKeyDown(KeyCode.M),
+            _ => false,
+        };
 
         public void SetMoveSpeed(float speed)
         {

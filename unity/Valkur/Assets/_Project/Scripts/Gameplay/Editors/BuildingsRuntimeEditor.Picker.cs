@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -70,25 +70,25 @@ namespace Valkur.Gameplay.Buildings
                 _statusTmp.text = $"Template #{id} highlighted. DRAG it from the panel onto the map to place.";
         }
 
-        // ── Drag-from-picker ──────────────────────────────────────────────────────
+        // â”€â”€ Drag-from-picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Mirrors Python building_picker_controller.start_drag / place_building and
         // building_picker_view._draw_drag_preview.
 
         /// <summary>
-        /// Creates the picker drag preview — a vivid-colored UI Image rendered on the
+        /// Creates the picker drag preview â€” a vivid-colored UI Image rendered on the
         /// editor's Canvas Overlay so it floats above the world AND any UI panels.
         /// Always rendered as the topmost sibling of the canvas so panels can't occlude it.
         ///
-        /// Hierarchy (Canvas render order: parent first → children in order):
-        ///   PickerDragGhost (container, no Image — anchor 0.5/0.5 for correct cursor mapping)
-        ///     Outline  (Image — extends DRAG_GHOST_BORDER px outward, renders BEHIND sprite)
-        ///     Sprite   (Image — fills ghost rect exactly, renders ON TOP of outline)
+        /// Hierarchy (Canvas render order: parent first â†’ children in order):
+        ///   PickerDragGhost (container, no Image â€” anchor 0.5/0.5 for correct cursor mapping)
+        ///     Outline  (Image â€” extends DRAG_GHOST_BORDER px outward, renders BEHIND sprite)
+        ///     Sprite   (Image â€” fills ghost rect exactly, renders ON TOP of outline)
         /// </summary>
         private void BuildDragGhost()
         {
             if (_dragGhostGo != null) return;
 
-            // Container — no Image component on this node.
+            // Container â€” no Image component on this node.
             // Anchor at 0.5/0.5 so ScreenPointToLocalPointInRectangle output maps
             // directly to anchoredPosition without a canvas-center offset.
             _dragGhostGo = EditorUIHelpers.CreateUI("PickerDragGhost", _canvas.transform);
@@ -97,7 +97,7 @@ namespace Valkur.Gameplay.Buildings
             _dragGhostRt.anchorMin = _dragGhostRt.anchorMax = new Vector2(0.5f, 0.5f);
             _dragGhostRt.pivot     = new Vector2(0.5f, 0.5f);
 
-            // Child 1 — outline border (renders first = behind the sprite).
+            // Child 1 â€” outline border (renders first = behind the sprite).
             // Extends DRAG_GHOST_BORDER px outside the ghost rect on all sides.
             var outlineGo = EditorUIHelpers.CreateUI("Outline", _dragGhostGo.transform);
             var outlineRt = outlineGo.GetComponent<RectTransform>();
@@ -109,7 +109,7 @@ namespace Valkur.Gameplay.Buildings
             _dragGhostOutline.color         = DRAG_GHOST_OUTLINE;
             _dragGhostOutline.raycastTarget = false;
 
-            // Child 2 — building sprite (renders second = on top of outline).
+            // Child 2 â€” building sprite (renders second = on top of outline).
             // Fills the ghost rect exactly while preserving sprite aspect so the
             // preview never stretches if a source asset has unusual dimensions.
             var spriteGo = EditorUIHelpers.CreateUI("Sprite", _dragGhostGo.transform);
@@ -133,7 +133,7 @@ namespace Valkur.Gameplay.Buildings
         /// <summary>
         /// Sizes the drag-ghost RectTransform so its on-screen pixel size matches the
         /// building's actual world footprint at the current camera zoom. Returns true
-        /// when the size could be computed; falls back to the default 80×80 otherwise.
+        /// when the size could be computed; falls back to the default 80Ã—80 otherwise.
         /// </summary>
         private void SizeDragGhostToWorldFootprint(BuildingTemplateData tmpl)
         {
@@ -158,7 +158,7 @@ namespace Valkur.Gameplay.Buildings
             _dragGhostRt.sizeDelta = new Vector2(wPx, hPx);
         }
 
-        /// <summary>Called from each slot's EventTrigger.PointerDown — records drag origin.</summary>
+        /// <summary>Called from each slot's EventTrigger.PointerDown â€” records drag origin.</summary>
         private void OnPickerSlotPointerDown(int templateId)
         {
             _pickerDragTemplateId  = templateId;
@@ -181,12 +181,12 @@ namespace Valkur.Gameplay.Buildings
 
             var mouse = Mouse.current;
             if (mouse == null) return;
-            Vector2 screenPos = mouse.position.ReadValue();
+            Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
 
-            // Phase 1 — waiting for drag threshold
+            // Phase 1 â€” waiting for drag threshold
             if (!_pickerDragging && _pickerDragTemplateId >= 0)
             {
-                if (mouse.leftButton.isPressed)
+                if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed())
                 {
                     if (Vector2.Distance(screenPos, _pickerDragStartScreen) >= PICKER_DRAG_THRESHOLD)
                     {
@@ -208,7 +208,7 @@ namespace Valkur.Gameplay.Buildings
                             _dragGhostGo.SetActive(true);
 
                             if (_statusTmp != null)
-                                _statusTmp.text = $"Dragging template #{_pickerDragTemplateId} — release over the map to place.";
+                                _statusTmp.text = $"Dragging template #{_pickerDragTemplateId} â€” release over the map to place.";
                         }
                     }
                 }
@@ -217,7 +217,7 @@ namespace Valkur.Gameplay.Buildings
 
             if (!_pickerDragging) return;
 
-            // Phase 2 — ghost follows the cursor on the canvas. Because the ghost lives
+            // Phase 2 â€” ghost follows the cursor on the canvas. Because the ghost lives
             // on the editor's Canvas Overlay AND is forced to the last sibling, it
             // renders above the world AND above every UI panel/menu in the scene.
             if (_dragGhostRt != null && _canvas != null)
@@ -230,7 +230,7 @@ namespace Valkur.Gameplay.Buildings
                 _dragGhostRt.anchoredPosition = canvasPos;
             }
 
-            // Blink the yellow border (5 Hz sine pulse, 0.35 → 1.0 alpha range).
+            // Blink the yellow border (5 Hz sine pulse, 0.35 â†’ 1.0 alpha range).
             if (_dragGhostOutline != null)
             {
                 float t = (Mathf.Sin(Time.time * Mathf.PI * 5f) + 1f) * 0.5f; // 0..1
@@ -240,7 +240,7 @@ namespace Valkur.Gameplay.Buildings
             }
 
             // Drop
-            if (mouse.leftButton.wasReleasedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 bool overUi = EventSystem.current != null
                            && EventSystem.current.IsPointerOverGameObject();
@@ -252,7 +252,7 @@ namespace Valkur.Gameplay.Buildings
                     // The ghost pivot is center (0.5, 0.5), so the cursor sits at the visual
                     // center of the preview. Without correction the building's bottom lands at
                     // the cursor and the whole sprite appears shifted up by halfHeight.
-                    // → Shift worldPos down by half the building's world height so the visual
+                    // â†’ Shift worldPos down by half the building's world height so the visual
                     //   center of the placed building matches where the ghost was shown.
                     var dropTmpl = _catalog?.GetById(_pickerDragTemplateId);
                     if (dropTmpl != null && dropTmpl.originalScale.y > 0)

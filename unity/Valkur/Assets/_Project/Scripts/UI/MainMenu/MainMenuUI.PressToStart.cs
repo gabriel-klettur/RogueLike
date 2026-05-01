@@ -63,15 +63,23 @@ namespace Valkur.UI.MainMenu
                     _pressToStartText.enabled = _blinkVisible;
             }
 
-            // Any key/click dismisses
-            bool dismiss = false;
-            if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
-                dismiss = true;
-            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
-                dismiss = true;
+            // Any key/click dismisses. Check BOTH the new Input System and the
+            // legacy backend — in the Editor, the new InputSystem package
+            // intermittently drops OS event delivery while the legacy backend
+            // keeps working, so we OR them together. Same logic mirrored in
+            // MouseInputManager.WasLeftMouseButtonPressedThisFrame.
+            bool keyboardNew = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame;
+            bool keyboardLegacy = UnityEngine.Input.anyKeyDown;
+            bool mouseNew = MouseInputManager.WasLeftMouseButtonPressedThisFrame();
+            bool mouseLegacy = UnityEngine.Input.GetMouseButtonDown(0);
+
+            bool dismiss = keyboardNew || keyboardLegacy || mouseNew || mouseLegacy;
 
             if (dismiss)
             {
+                Debug.Log($"[PressToStart] Dismiss triggered. " +
+                          $"keyboardNew={keyboardNew} keyboardLegacy={keyboardLegacy} " +
+                          $"mouseNew={mouseNew} mouseLegacy={mouseLegacy}");
                 _pressToStartActive = false;
                 if (_pressToStartOverlay != null)
                     _pressToStartOverlay.SetActive(false);

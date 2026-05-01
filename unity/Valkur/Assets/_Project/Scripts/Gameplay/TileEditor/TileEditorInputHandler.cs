@@ -62,20 +62,31 @@ namespace Valkur.Gameplay.TileEditor
 
         public bool WasTogglePressed()
         {
-            return _toggleAction != null && _toggleAction.WasPerformedThisFrame();
+            // Stateless query — immune to the InputAction zombification that
+            // happens after hot-recompile with Domain Reload off.
+            return EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleTile);
         }
 
         /// <summary>
         /// Check tool shortcut keys. Returns the tool if one was pressed, null otherwise.
+        /// OR'd with the legacy backend so the editor stays usable when the new
+        /// InputSystem package drops OS event delivery (recurring Unity 2022.3 bug).
         /// </summary>
         public TileEditorState.Tool? PollToolShortcut()
         {
-            bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
-            if (_toolBrushAction != null && _toolBrushAction.WasPerformedThisFrame()) return TileEditorState.Tool.Brush;
-            if (_toolEraserAction != null && _toolEraserAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eraser;
-            if (_toolFillAction != null && _toolFillAction.WasPerformedThisFrame()) return TileEditorState.Tool.Fill;
-            if (_toolEyedropperAction != null && _toolEyedropperAction.WasPerformedThisFrame()) return TileEditorState.Tool.Eyedropper;
-            if (_toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame() && !ctrl) return TileEditorState.Tool.Select;
+            bool ctrl = (_ctrlModifier != null && _ctrlModifier.IsPressed())
+                     || EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier);
+
+            bool brushNew = _toolBrushAction != null && _toolBrushAction.WasPerformedThisFrame();
+            if (brushNew || UnityEngine.Input.GetKeyDown(KeyCode.B))         return TileEditorState.Tool.Brush;
+            bool eraserNew = _toolEraserAction != null && _toolEraserAction.WasPerformedThisFrame();
+            if (eraserNew || UnityEngine.Input.GetKeyDown(KeyCode.E))        return TileEditorState.Tool.Eraser;
+            bool fillNew = _toolFillAction != null && _toolFillAction.WasPerformedThisFrame();
+            if (fillNew || UnityEngine.Input.GetKeyDown(KeyCode.F))          return TileEditorState.Tool.Fill;
+            bool eyeNew = _toolEyedropperAction != null && _toolEyedropperAction.WasPerformedThisFrame();
+            if (eyeNew || UnityEngine.Input.GetKeyDown(KeyCode.I))           return TileEditorState.Tool.Eyedropper;
+            bool selNew = _toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame();
+            if ((selNew || UnityEngine.Input.GetKeyDown(KeyCode.S)) && !ctrl) return TileEditorState.Tool.Select;
             return null;
         }
 
@@ -84,25 +95,23 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public float PollZoom()
         {
+            // OR new + legacy. Legacy mouseScrollDelta is more reliable in Editor.
+            float newScroll = 0f;
             var mouse = Mouse.current;
-            if (mouse == null) return 0f;
-            float scroll = mouse.scroll.ReadValue().y;
-            
-            // Debug log to help diagnose input issues
+            if (mouse != null) newScroll = mouse.scroll.ReadValue().y;
+            float legacyScroll = UnityEngine.Input.mouseScrollDelta.y * 120f; // legacy returns ticks; new system returns pixels — scale.
+            float scroll = Mathf.Abs(newScroll) >= 0.1f ? newScroll : legacyScroll;
+
             if (Mathf.Abs(scroll) >= 0.1f)
             {
-                Debug.Log($"[TileEditor] Mouse scroll detected: {scroll:F2}");
-                
                 if (UnityEngine.EventSystems.EventSystem.current != null &&
                     UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
                 {
-                    Debug.Log("[TileEditor] Scroll blocked - pointer over UI");
                     return 0f;
                 }
-                
                 return scroll;
             }
-            
+
             return 0f;
         }
 
@@ -111,11 +120,17 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public int PollUndoRedo()
         {
-            bool ctrl = _ctrlModifier != null && _ctrlModifier.IsPressed();
-            if (!ctrl || !_undoAction.WasPerformedThisFrame()) return 0;
+            bool ctrl = (_ctrlModifier != null && _ctrlModifier.IsPressed())
+                     || EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier);
+            bool zPressed = (_undoAction != null && _undoAction.WasPerformedThisFrame())
+                         || UnityEngine.Input.GetKeyDown(KeyCode.Z);
+            if (!ctrl || !zPressed) return 0;
 
             var kb = Keyboard.current;
-            bool shift = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
+            bool shiftNew = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
+            bool shiftLegacy = UnityEngine.Input.GetKey(KeyCode.LeftShift)
+                            || UnityEngine.Input.GetKey(KeyCode.RightShift);
+            bool shift = shiftNew || shiftLegacy;
             return shift ? 2 : 1;
         }
 

@@ -168,10 +168,10 @@ namespace Valkur.Gameplay.TileEditor
         private void HandleBrushInput(Tilemap tilemap, Vector3Int cellPos)
         {
             if (_state.SelectedTile == null) return;
-            var mouse = Mouse.current;
-            if (mouse == null) return;
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            // Use MouseInputManager so the legacy backend kicks in if the new
+            // InputSystem package is dropping OS events.
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cellPos;
@@ -182,17 +182,13 @@ namespace Valkur.Gameplay.TileEditor
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
 
-                // Note: zone-editability gating was removed in TileEditorManager.CanEditCell
-                // so brushes now work in every zone, including the lobby. The previous
-                // "Blocked: zone is not editable" status path is unreachable.
-
                 if (!_brushDiagLogged)
                 {
                     _brushDiagLogged = true;
                     TileEditorDiagnostics.LogBrushDiagnostics(this, tilemap, cellPos, _state.SelectedTile);
                 }
             }
-            else if (mouse.leftButton.isPressed && _state.IsDragging)
+            else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
                 var edits = TileBrush.Paint(tilemap, cellPos, _state.SelectedTile, _state.BrushSize, CanEditCell);
@@ -200,7 +196,7 @@ namespace Valkur.Gameplay.TileEditor
                 _persistence?.MarkBatchDirty(edits);
                 AddCellsToBrushStroke(cellPos);
             }
-            else if (mouse.leftButton.wasReleasedThisFrame)
+            else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;

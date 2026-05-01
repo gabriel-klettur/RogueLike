@@ -411,20 +411,22 @@ namespace Valkur.UI.MainMenu
                 case LoadPanelMode.ConfirmDelete: HandleConfirmDeleteInput(); return;
             }
 
-            if (_cancelAction.WasPerformedThisFrame())
+            // OR new-InputSystem actions with legacy fallback (InputCompat) so the
+            // panel still navigates when the new pipeline drops OS event delivery.
+            if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
             { OptionsGoBack(); return; }
 
             if (_mmLoadRuns.Count == 0) return;
 
             // W/S navigate runs (left column)
-            if (_navUpAction.WasPerformedThisFrame())
+            if (_navUpAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavUpPressed())
             {
                 _mmLoadRunSel = Mathf.Max(0, _mmLoadRunSel - 1);
                 _mmLoadSaveSel = 0;
                 EnsureMMLoadScroll();
                 UpdateMMLoadVisuals();
             }
-            else if (_navDownAction.WasPerformedThisFrame())
+            else if (_navDownAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavDownPressed())
             {
                 _mmLoadRunSel = Mathf.Min(_mmLoadRuns.Count - 1, _mmLoadRunSel + 1);
                 _mmLoadSaveSel = 0;
@@ -432,7 +434,7 @@ namespace Valkur.UI.MainMenu
                 UpdateMMLoadVisuals();
             }
             // A/D navigate saves within selected run (right column)
-            else if (_navLeftAction.WasPerformedThisFrame())
+            else if (_navLeftAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavLeftPressed())
             {
                 if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
                 {
@@ -440,7 +442,7 @@ namespace Valkur.UI.MainMenu
                     if (saves > 0) { _mmLoadSaveSel = Mathf.Max(0, _mmLoadSaveSel - 1); UpdateMMLoadVisuals(); }
                 }
             }
-            else if (_navRightAction.WasPerformedThisFrame())
+            else if (_navRightAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.NavRightPressed())
             {
                 if (_mmLoadRunSel >= 0 && _mmLoadRunSel < _mmLoadRuns.Count)
                 {
@@ -448,15 +450,15 @@ namespace Valkur.UI.MainMenu
                     if (saves > 0) { _mmLoadSaveSel = Mathf.Min(saves - 1, _mmLoadSaveSel + 1); UpdateMMLoadVisuals(); }
                 }
             }
-            else if (_confirmAction.WasPerformedThisFrame())
+            else if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 MMLoadSelectedSave();
             }
-            else if (Keyboard.current != null && Keyboard.current.deleteKey.wasPressedThisFrame)
+            else if (Valkur.Core.Input.InputCompat.KeyPressed(Key.Delete, KeyCode.Delete))
             {
                 RequestDeleteSelectedSave();
             }
-            else if (Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame)
+            else if (Valkur.Core.Input.InputCompat.KeyPressed(Key.F2, KeyCode.F2))
             {
                 BeginRenameSelectedSave();
             }
@@ -754,16 +756,14 @@ namespace Valkur.UI.MainMenu
         private void HandleRenameInput()
         {
             // Esc cancels
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (Valkur.Core.Input.InputCompat.CancelPressed())
             {
                 CancelRename();
                 return;
             }
             // Enter confirms (when input field has focus, Enter inserts newline by default
             // for multiline fields — TMP_InputField single-line fires onSubmit instead)
-            if (Keyboard.current != null &&
-                (Keyboard.current.enterKey.wasPressedThisFrame ||
-                 Keyboard.current.numpadEnterKey.wasPressedThisFrame))
+            if (Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 CommitRename();
             }
@@ -826,13 +826,14 @@ namespace Valkur.UI.MainMenu
 
         private void HandleConfirmDeleteInput()
         {
-            if (_cancelAction.WasPerformedThisFrame())
+            if (_cancelAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.CancelPressed())
             { SetLoadMode(LoadPanelMode.List); return; }
 
-            if (_navLeftAction.WasPerformedThisFrame() || _navRightAction.WasPerformedThisFrame())
+            if (_navLeftAction.WasPerformedThisFrame() || _navRightAction.WasPerformedThisFrame()
+                || Valkur.Core.Input.InputCompat.NavLeftPressed() || Valkur.Core.Input.InputCompat.NavRightPressed())
             { _mmConfirmSel = 1 - _mmConfirmSel; UpdateConfirmVisuals(); }
 
-            if (_confirmAction.WasPerformedThisFrame())
+            if (_confirmAction.WasPerformedThisFrame() || Valkur.Core.Input.InputCompat.ConfirmPressed())
             {
                 if (_mmConfirmSel == 1) MMDeleteSelectedSave();
                 else SetLoadMode(LoadPanelMode.List);

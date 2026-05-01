@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,7 +20,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             _graphContent.anchoredPosition = _pan;
         }
 
-        // ── Graph Input (Pan/Zoom) ──
+        // â”€â”€ Graph Input (Pan/Zoom) â”€â”€
 
         private void HandleGraphInput()
         {
@@ -36,31 +36,31 @@ namespace Valkur.Gameplay.Enemies.FSM
             }
 
             // Pan with MMB
-            if (mouse.middleButton.wasPressedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
             {
                 _panning = true;
-                _panStart = mouse.position.ReadValue() - _pan;
+                _panStart = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition() - _pan;
             }
-            if (mouse.middleButton.wasReleasedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
                 _panning = false;
 
             if (_panning)
             {
-                _pan = (Vector2)mouse.position.ReadValue() - _panStart;
+                _pan = (Vector2)Valkur.Core.Input.MouseInputManager.GetScreenMousePosition() - _panStart;
                 ApplyZoomPan();
             }
 
             // Drag selected node with LMB
             if (_selectedState != null && _draggingNode)
             {
-                if (mouse.leftButton.isPressed && _nodeRects.TryGetValue(_selectedState.id, out var nrt))
+                if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _nodeRects.TryGetValue(_selectedState.id, out var nrt))
                 {
                     var delta = (Vector2)mouse.delta.ReadValue() / _zoom;
                     _selectedState.x += delta.x;
                     _selectedState.y -= delta.y;
                     nrt.anchoredPosition = new Vector2(_selectedState.x, -_selectedState.y);
                 }
-                if (mouse.leftButton.wasReleasedThisFrame)
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
                 {
                     _draggingNode = false;
                     PersistSets();                  // persist new x/y inside set raw
@@ -69,15 +69,15 @@ namespace Valkur.Gameplay.Enemies.FSM
                 }
             }
 
-            // Empty-canvas click → tool-aware (Add/cancel-pending)
-            if (mouse.leftButton.wasPressedThisFrame && !_draggingNode &&
+            // Empty-canvas click â†’ tool-aware (Add/cancel-pending)
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame() && !_draggingNode &&
                 TryGetEmptyCanvasContentPos(out var localPos))
             {
                 OnEmptyCanvasClicked(localPos);
             }
         }
 
-        // ── Selection ──
+        // â”€â”€ Selection â”€â”€
 
         private void SelectState(FSMStateNode state)
         {
@@ -100,7 +100,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             RefreshGraph();
         }
 
-        // ── Properties ──
+        // â”€â”€ Properties â”€â”€
 
         private void RefreshProperties()
         {
@@ -124,7 +124,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             sb.AppendLine($"<b>Initial:</b> {s.isInitial || (_selectedSet?.initial == s.id)}");
             sb.AppendLine($"<b>Terminal:</b> {s.isTerminal}");
             sb.AppendLine($"<b>Position:</b> ({s.x:F0}, {s.y:F0})");
-            sb.AppendLine($"<b>Size:</b> {s.w:F0} × {s.h:F0}");
+            sb.AppendLine($"<b>Size:</b> {s.w:F0} Ã— {s.h:F0}");
 
             // Show outgoing transitions
             if (_selectedSet != null)
@@ -135,14 +135,14 @@ namespace Valkur.Gameplay.Enemies.FSM
                     sb.AppendLine();
                     sb.AppendLine($"<b>Outgoing Transitions ({outgoing.Count}):</b>");
                     foreach (var t in outgoing)
-                        sb.AppendLine($"  → {t.to} [{t.label ?? t.whenEvent ?? "?"}]");
+                        sb.AppendLine($"  â†’ {t.to} [{t.label ?? t.whenEvent ?? "?"}]");
                 }
                 var incoming = _selectedSet.transitions.Where(t => t.to == s.id).ToList();
                 if (incoming.Count > 0)
                 {
                     sb.AppendLine($"<b>Incoming Transitions ({incoming.Count}):</b>");
                     foreach (var t in incoming)
-                        sb.AppendLine($"  ← {t.from} [{t.label ?? t.whenEvent ?? "?"}]");
+                        sb.AppendLine($"  â† {t.from} [{t.label ?? t.whenEvent ?? "?"}]");
                 }
             }
 
@@ -165,13 +165,13 @@ namespace Valkur.Gameplay.Enemies.FSM
             sb.AppendLine($"<b>To:</b> {t.to}");
             sb.AppendLine($"<b>Label:</b> {t.label}");
             sb.AppendLine($"<b>Event:</b> {t.whenEvent}");
-            sb.AppendLine($"<b>Condition:</b> {(string.IsNullOrEmpty(t.condition) ? "–" : t.condition)}");
+            sb.AppendLine($"<b>Condition:</b> {(string.IsNullOrEmpty(t.condition) ? "â€“" : t.condition)}");
             sb.AppendLine($"<b>Priority:</b> {t.priority}");
             sb.AppendLine($"<b>Cooldown:</b> {t.cooldownFrames} frames");
             _propsTmp.text = sb.ToString();
         }
 
-        // ── Live Entity Inspection ──
+        // â”€â”€ Live Entity Inspection â”€â”€
 
         /// <summary>
         /// Called by external systems to inspect the FSM of a specific entity at runtime.
@@ -181,7 +181,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             var brain = entity.GetComponent<Valkur.Gameplay.FSM.FSMMonsterBrain>();
             if (brain == null) return;
 
-            _statusTmp.text = $"Inspecting: {entity.name} — State: {brain.CurrentStateName}";
+            _statusTmp.text = $"Inspecting: {entity.name} â€” State: {brain.CurrentStateName}";
         }
     }
 }

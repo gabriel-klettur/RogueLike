@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -207,7 +207,7 @@ namespace Valkur.Gameplay.Buildings
             }
         }
 
-        // ── Collider-brush hover cursor ───────────────────────────────────────────
+        // â”€â”€ Collider-brush hover cursor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void EnsureCollBrushCursor()
         {
@@ -265,7 +265,7 @@ namespace Valkur.Gameplay.Buildings
 
             if (!_activeBuilding.TryGetWorldRect(out var rect)) { HideCollBrushCursor(); return; }
 
-            Vector2 screenPos = mouse.position.ReadValue();
+            Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             Vector3 worldPos  = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -cam.transform.position.z));
             worldPos.z = 0f;
 
@@ -333,9 +333,9 @@ namespace Valkur.Gameplay.Buildings
             if (_buildingsRoot == null) _buildingsRoot = transform;
         }
 
-        // ──────────────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //  UI BUILD
-        // ──────────────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     }
 }

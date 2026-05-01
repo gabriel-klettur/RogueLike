@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -10,12 +10,12 @@ using Valkur.Gameplay.Editors;
 namespace Valkur.Gameplay.Items
 {
     /// <summary>
-    /// Items Editor — picker grid (left "Items" panel).
+    /// Items Editor â€” picker grid (left "Items" panel).
     /// Mirrors Python <c>roguelike_editors/items/ui/picker_view.py</c>:
-    ///  • One slot per ItemDefinition, scaled icon + truncated label.
-    ///  • LMB = select (drives Properties panel).
-    ///  • RMB = spawn one at the player's current world position.
-    ///  • Selection is highlighted with the SLOT_SELECTED color.
+    ///  â€¢ One slot per ItemDefinition, scaled icon + truncated label.
+    ///  â€¢ LMB = select (drives Properties panel).
+    ///  â€¢ RMB = spawn one at the player's current world position.
+    ///  â€¢ Selection is highlighted with the SLOT_SELECTED color.
     /// </summary>
     public partial class ItemsRuntimeEditor
     {
@@ -58,7 +58,7 @@ namespace Valkur.Gameplay.Items
                     if (img != null) img.color = PickerSlotSelected;
                 }
 
-                // Right-click → spawn at player. We attach a custom event trigger because
+                // Right-click â†’ spawn at player. We attach a custom event trigger because
                 // UnityEngine.UI.Button does not natively distinguish LMB vs RMB.
                 AddRightClickHandler(btn.gameObject, () => SpawnAtPlayer(capId));
 
@@ -105,10 +105,10 @@ namespace Valkur.Gameplay.Items
         private static string TruncateName(string name, int max)
         {
             if (string.IsNullOrEmpty(name)) return "";
-            return name.Length <= max ? name : name.Substring(0, max - 1) + "…";
+            return name.Length <= max ? name : name.Substring(0, max - 1) + "â€¦";
         }
 
-        // ── Drag-from-picker ──────────────────────────────────────────────────────
+        // â”€â”€ Drag-from-picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Mirrors BuildingsRuntimeEditor.Picker.cs (BuildDragGhost / OnPickerSlotPointerDown
         // / UpdatePickerDrag / CancelPickerDrag). Items are center-pivot so we drop
         // directly at worldPos (no Y bottom-center correction needed).
@@ -124,7 +124,7 @@ namespace Valkur.Gameplay.Items
             _dragGhostRt.anchorMin = _dragGhostRt.anchorMax = new Vector2(0.5f, 0.5f);
             _dragGhostRt.pivot     = new Vector2(0.5f, 0.5f);
 
-            // Outline child — extends DRAG_GHOST_BORDER px outward.
+            // Outline child â€” extends DRAG_GHOST_BORDER px outward.
             var outlineGo = EditorUIHelpers.CreateUI("Outline", _dragGhostGo.transform);
             var outlineRt = outlineGo.GetComponent<RectTransform>();
             outlineRt.anchorMin = Vector2.zero;
@@ -135,7 +135,7 @@ namespace Valkur.Gameplay.Items
             _dragGhostOutline.color         = DRAG_GHOST_OUTLINE;
             _dragGhostOutline.raycastTarget = false;
 
-            // Sprite child — fills the ghost rect, preserves aspect.
+            // Sprite child â€” fills the ghost rect, preserves aspect.
             var spriteGo = EditorUIHelpers.CreateUI("Sprite", _dragGhostGo.transform);
             var spriteRt = spriteGo.GetComponent<RectTransform>();
             spriteRt.anchorMin = Vector2.zero;
@@ -158,7 +158,7 @@ namespace Valkur.Gameplay.Items
         {
             if (def == null || _dragGhostRt == null) return;
 
-            // Derive world size from the icon's pixel rect via PPU (defaults to 1×1u when missing).
+            // Derive world size from the icon's pixel rect via PPU (defaults to 1Ã—1u when missing).
             float worldW = 1f, worldH = 1f;
             var spr = def.icon ?? def.iconLarge ?? def.iconSmall;
             if (spr != null)
@@ -174,7 +174,7 @@ namespace Valkur.Gameplay.Items
             float scaleFactor = (_canvas != null && _canvas.scaleFactor > 0.001f) ? _canvas.scaleFactor : 1f;
             float wPx = worldW * pxPerWorldUnit / scaleFactor;
             float hPx = worldH * pxPerWorldUnit / scaleFactor;
-            // Min visible size so 16×16 icons aren't invisible at high zooms.
+            // Min visible size so 16Ã—16 icons aren't invisible at high zooms.
             wPx = Mathf.Max(wPx, 32f);
             hPx = Mathf.Max(hPx, 32f);
             const float MAX_PX = 256f;
@@ -193,17 +193,17 @@ namespace Valkur.Gameplay.Items
             _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
         }
 
-        /// <summary>State machine: arm drag → follow cursor → drop on map.</summary>
+        /// <summary>State machine: arm drag â†’ follow cursor â†’ drop on map.</summary>
         private void UpdatePickerDrag()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
-            Vector2 screenPos = mouse.position.ReadValue();
+            Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
 
-            // Phase 1 — waiting for threshold
+            // Phase 1 â€” waiting for threshold
             if (!_pickerDragging && !string.IsNullOrEmpty(_pickerDragItemId))
             {
-                if (mouse.leftButton.isPressed)
+                if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed())
                 {
                     if (Vector2.Distance(screenPos, _pickerDragStartScreen) >= PICKER_DRAG_THRESHOLD)
                     {
@@ -221,13 +221,13 @@ namespace Valkur.Gameplay.Items
                             SizeDragGhostToWorldFootprint(def);
                             _dragGhostGo.transform.SetAsLastSibling();
                             _dragGhostGo.SetActive(true);
-                            SetStatus($"Dragging '{def.displayName ?? def.itemId}' — release over the map to drop.");
+                            SetStatus($"Dragging '{def.displayName ?? def.itemId}' â€” release over the map to drop.");
                         }
                     }
                 }
                 else
                 {
-                    // Released before threshold → treat as plain click (handled by Button.onClick).
+                    // Released before threshold â†’ treat as plain click (handled by Button.onClick).
                     _pickerDragItemId = null;
                 }
                 return;
@@ -235,7 +235,7 @@ namespace Valkur.Gameplay.Items
 
             if (!_pickerDragging) return;
 
-            // Phase 2 — ghost follows cursor on the editor canvas.
+            // Phase 2 â€” ghost follows cursor on the editor canvas.
             if (_dragGhostRt != null && _canvas != null)
             {
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -246,7 +246,7 @@ namespace Valkur.Gameplay.Items
                 _dragGhostRt.anchoredPosition = canvasPos;
             }
 
-            // Pulse outline alpha (5 Hz sine, 0.35 → 1.0).
+            // Pulse outline alpha (5 Hz sine, 0.35 â†’ 1.0).
             if (_dragGhostOutline != null)
             {
                 float t = (Mathf.Sin(Time.time * Mathf.PI * 5f) + 1f) * 0.5f;
@@ -256,7 +256,7 @@ namespace Valkur.Gameplay.Items
             }
 
             // Drop on LMB release
-            if (mouse.leftButton.wasReleasedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 bool overUi = EventSystem.current != null
                            && EventSystem.current.IsPointerOverGameObject();
@@ -268,7 +268,7 @@ namespace Valkur.Gameplay.Items
                         Vector3 sp = new Vector3(screenPos.x, screenPos.y, -_mainCamera.transform.position.z);
                         Vector3 worldPos = _mainCamera.ScreenToWorldPoint(sp);
                         worldPos.z = 0f;
-                        // Items are center-pivot — no Y correction needed (unlike Buildings).
+                        // Items are center-pivot â€” no Y correction needed (unlike Buildings).
                         SpawnAt(worldPos);
                     }
                 }

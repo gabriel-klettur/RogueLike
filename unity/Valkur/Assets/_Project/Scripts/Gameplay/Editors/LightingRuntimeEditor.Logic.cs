@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -56,7 +56,7 @@ namespace Valkur.Gameplay.World
             _propsTmp.text = sb.ToString();
         }
 
-        // ── Mode ──
+        // â”€â”€ Mode â”€â”€
 
         private void SetMode(EditorMode m)
         {
@@ -71,7 +71,7 @@ namespace Valkur.Gameplay.World
             if (_deleteBtnImg) _deleteBtnImg.color = _mode == EditorMode.Delete ? EditorUIHelpers.DANGER : new Color(0.55f, 0.15f, 0.15f, 1f);
         }
 
-        // ── Day/Night ──
+        // â”€â”€ Day/Night â”€â”€
 
         private void AdjustTime(int minutes)
         {
@@ -89,7 +89,7 @@ namespace Valkur.Gameplay.World
             int h = Mathf.FloorToInt(_dayTimeMinutes / 60f);
             int m = Mathf.FloorToInt(_dayTimeMinutes % 60f);
             string phase = GetPhase(_dayTimeMinutes);
-            _dayTimeTmp.text = $"{h:D2}:{m:D2} — {phase}";
+            _dayTimeTmp.text = $"{h:D2}:{m:D2} â€” {phase}";
         }
 
         private static string GetPhase(float minutes)
@@ -103,7 +103,7 @@ namespace Valkur.Gameplay.World
             return "Night";
         }
 
-        // ── Map Interaction ──
+        // â”€â”€ Map Interaction â”€â”€
 
         private void HandleMapInteraction()
         {
@@ -114,19 +114,19 @@ namespace Valkur.Gameplay.World
 
             var cam = Camera.main;
             if (cam == null) return;
-            var worldPos = (Vector3)cam.ScreenToWorldPoint(mouse.position.ReadValue());
+            var worldPos = (Vector3)cam.ScreenToWorldPoint(Valkur.Core.Input.MouseInputManager.GetScreenMousePosition());
             worldPos.z = 0;
 
             // Drag in Select mode
             if (_dragging && _dragTarget != null)
             {
                 _dragTarget.transform.position = worldPos + _dragOffset;
-                if (mouse.leftButton.wasReleasedThisFrame)
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
                     _dragging = false;
                 return;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 if (_mode == EditorMode.Spawn && !string.IsNullOrEmpty(_selectedPresetKey))
                 {
@@ -163,7 +163,7 @@ namespace Valkur.Gameplay.World
             Debug.Log("[LightingEditor] Save requested.");
         }
 
-        // ── Helpers ──
+        // â”€â”€ Helpers â”€â”€
 
         private static void MakeToggle(Transform parent, string label, bool initial, System.Action<bool> onChange)
         {
@@ -207,7 +207,7 @@ namespace Valkur.Gameplay.World
             var valLabel = EditorUIHelpers.AddLabel(row.transform, $"{val}{suffix}", 10f);
             valLabel.alignment = TextAlignmentOptions.Center;
 
-            EditorUIHelpers.MakeButton(row.transform, "−", () =>
+            EditorUIHelpers.MakeButton(row.transform, "âˆ’", () =>
             {
                 val = Mathf.Max(min, val - 1);
                 valLabel.text = $"{val}{suffix}";

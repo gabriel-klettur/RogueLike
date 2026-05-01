@@ -1,19 +1,20 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
+using Valkur.Core.Input;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {
     public partial class TileEditorManager
     {
+        // Read mouse-button state through MouseInputManager so the legacy
+        // backend kicks in when the new InputSystem package drops OS events
+        // (recurring Unity 2022.3 Editor bug — see MouseInputManager XML).
 
         private void HandleEraserInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
@@ -25,14 +26,14 @@ namespace Valkur.Gameplay.TileEditor
                 if (edits.Count == 0 && !CanEditCell(cellPos))
                     _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");
             }
-            else if (mouse.leftButton.isPressed && _state.IsDragging)
+            else if (MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
                 var edits = TileBrush.Erase(tilemap, cellPos, _state.BrushSize, CanEditCell);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
             }
-            else if (mouse.leftButton.wasReleasedThisFrame)
+            else if (MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;
@@ -45,10 +46,8 @@ namespace Valkur.Gameplay.TileEditor
         private void HandleFillInput(Tilemap tilemap, Vector3Int cellPos)
         {
             if (_state.SelectedTile == null) return;
-            var mouse = Mouse.current;
-            if (mouse == null) return;
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.SelectedCellPos = cellPos;
                 _undo.StartStroke(tilemap);
@@ -66,10 +65,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleEyedropperInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.SelectedCellPos = cellPos;
                 var picked = TileBrush.Pick(tilemap, cellPos);
@@ -90,10 +86,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void HandleSelectInput(Tilemap tilemap, Vector3Int cellPos)
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.SelectedCellPos = cellPos;
 

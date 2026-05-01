@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,12 +14,12 @@ namespace Valkur.Gameplay.Entities
 {
     /// <summary>
     /// Interaction layer: mode switching, picker refresh, structured property
-    /// rendering, map click-handling. UI-only phase — spawn/delete/persist
+    /// rendering, map click-handling. UI-only phase â€” spawn/delete/persist
     /// remain stubs but emit status messages so the workflow can be exercised.
     /// </summary>
     public partial class EntitiesRuntimeEditor : SingletonMonoBehaviour<EntitiesRuntimeEditor>, GameEditorManager.IGameEditor
     {
-        // ── Category & mode highlighting ───────────────────────────────────────
+        // â”€â”€ Category & mode highlighting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void SelectCategory(EntityCategory cat)
         {
@@ -72,11 +72,11 @@ namespace Valkur.Gameplay.Entities
             Apply(_ui.AddBtnImg,         _ui.AddBtnTmp,         _mode == EditorMode.Spawn);
             Apply(_ui.RemoveBtnImg,      _ui.RemoveBtnTmp,      _mode == EditorMode.Delete, danger: true);
             Apply(_ui.AddOnSystemBtnImg, _ui.AddOnSystemBtnTmp, _mode == EditorMode.AddOnSystem);
-            // Confirm is an action button, not a mode — keep neutral.
+            // Confirm is an action button, not a mode â€” keep neutral.
             Apply(_ui.ConfirmBtnImg,     _ui.ConfirmBtnTmp,     false);
         }
 
-        // ── Picker ──────────────────────────────────────────────────────────────
+        // â”€â”€ Picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void RefreshPicker()
         {
@@ -199,7 +199,7 @@ namespace Valkur.Gameplay.Entities
             return new Color(c.r, c.g, c.b, 1f);
         }
 
-        // ── Player icons ────────────────────────────────────────────────────────
+        // â”€â”€ Player icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //
         // The picker shows player classes using their south-facing idle sprite
         // (Python parity: ClassSelectorManager renders the down/idle frame).
@@ -225,7 +225,7 @@ namespace Valkur.Gameplay.Entities
             Sprite icon = def.assetConfig.idle.south;
 
             // Fallback: first frame of the idle spritesheet (south-facing in the
-            // 8-direction × 5-frame layout used by all migrated player sheets).
+            // 8-direction Ã— 5-frame layout used by all migrated player sheets).
             if (icon == null && def.assetConfig.idleSheets != null)
             {
                 for (int i = 0; i < def.assetConfig.idleSheets.Count; i++)
@@ -278,7 +278,7 @@ namespace Valkur.Gameplay.Entities
             return null;
         }
 
-        // ── Selection → properties ──────────────────────────────────────────────
+        // â”€â”€ Selection â†’ properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void SelectEntity(string key)
         {
@@ -337,11 +337,11 @@ namespace Valkur.Gameplay.Entities
             }
             else
             {
-                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAutoCastSection, "—", "no auto-cast");
+                EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAutoCastSection, "â€”", "no auto-cast");
             }
 
             string idle = (def.assetConfig != null && def.assetConfig.idle.south != null)
-                ? def.assetConfig.idle.south.name : "—";
+                ? def.assetConfig.idle.south.name : "â€”";
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite", idle);
 
             SetStatus($"Selected: {def.displayName ?? key}");
@@ -393,19 +393,19 @@ namespace Valkur.Gameplay.Entities
             _ui.PropsHintText.gameObject.SetActive(false);
         }
 
-        // ── Map Interaction ─────────────────────────────────────────────────────
+        // â”€â”€ Map Interaction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void HandleMapInteraction()
         {
             var mouse = Mouse.current;
-            if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+            if (mouse == null || !Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
             if (UnityEngine.EventSystems.EventSystem.current != null &&
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
 
             var cam = Camera.main;
             if (cam == null) return;
 
-            var worldPos = cam.ScreenToWorldPoint(mouse.position.ReadValue());
+            var worldPos = cam.ScreenToWorldPoint(Valkur.Core.Input.MouseInputManager.GetScreenMousePosition());
             worldPos.z = 0;
 
             switch (_mode)
@@ -413,13 +413,13 @@ namespace Valkur.Gameplay.Entities
                 case EditorMode.Spawn       when !string.IsNullOrEmpty(_selectedKey): SpawnEntityAtPosition(worldPos);  break;
                 case EditorMode.Delete:                                                DeleteEntityAtPosition(worldPos); break;
                 case EditorMode.Select:                                                SelectEntityAtPosition(worldPos); break;
-                case EditorMode.AddOnSystem when !string.IsNullOrEmpty(_selectedKey): SetStatus($"Add-On-System: ({worldPos.x:F1}, {worldPos.y:F1}) — Confirm to persist."); break;
+                case EditorMode.AddOnSystem when !string.IsNullOrEmpty(_selectedKey): SetStatus($"Add-On-System: ({worldPos.x:F1}, {worldPos.y:F1}) â€” Confirm to persist."); break;
             }
         }
 
         private void SpawnEntityAtPosition(Vector3 worldPos)
         {
-            // UI-only stub — spawn pipeline integration is the next phase.
+            // UI-only stub â€” spawn pipeline integration is the next phase.
             SetStatus($"Spawn '{_selectedKey}' at ({worldPos.x:F1}, {worldPos.y:F1})  [stub]");
             Debug.Log($"[EntitiesEditor] Spawn {_selectedKey} at {worldPos}");
         }

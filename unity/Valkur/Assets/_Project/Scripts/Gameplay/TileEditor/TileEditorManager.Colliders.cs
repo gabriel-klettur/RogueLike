@@ -123,22 +123,14 @@ namespace Valkur.Gameplay.TileEditor
             var collision = GetCollisionTilemap();
             if (collision == null) return;
 
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
             Vector3Int cellPos = GetCellUnderMouse(collision);
 
             bool drawing = _state.CurrentColliderMode == TileEditorState.ColliderMode.Draw;
             TileBase tileToPaint = drawing ? GetOrCreateColliderTile() : null;
 
-            // Collider Draw / Erase intentionally bypasses the zone-editability
-            // gate (CanEditCell). Tile painting on game-content layers respects
-            // zone locks (e.g. the lobby is read-only via the F11 Map Editor),
-            // but collision tiles are pure authoring metadata — the user must
-            // be able to add or remove physical blockers in any zone, including
-            // ones marked `editableInTileEditor = false`. Passing canEditCell:null
-            // makes TileBrush.Paint accept every cell in the brush footprint.
-            if (mouse.leftButton.wasPressedThisFrame)
+            // Use MouseInputManager so the legacy backend kicks in if the new
+            // InputSystem package drops OS events (recurring Unity 2022.3 bug).
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 _state.BrushStrokeCells.Clear();
                 _state.SelectedCellPos = cellPos;
@@ -151,7 +143,7 @@ namespace Valkur.Gameplay.TileEditor
                 if (edits.Count > 0)
                     RegenerateCompositeCollider(collision);
             }
-            else if (mouse.leftButton.isPressed && _state.IsDragging)
+            else if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() && _state.IsDragging)
             {
                 _state.SelectedCellPos = cellPos;
                 var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
@@ -161,7 +153,7 @@ namespace Valkur.Gameplay.TileEditor
                 if (edits.Count > 0)
                     RegenerateCompositeCollider(collision);
             }
-            else if (mouse.leftButton.wasReleasedThisFrame)
+            else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 _undo.EndStroke();
                 _state.IsDragging = false;

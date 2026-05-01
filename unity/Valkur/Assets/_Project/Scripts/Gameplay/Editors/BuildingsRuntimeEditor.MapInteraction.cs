@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
@@ -32,17 +32,17 @@ namespace Valkur.Gameplay.Buildings
             var cam = Camera.main;
             if (cam == null) return;
 
-            Vector2 screenPos = mouse.position.ReadValue();
+            Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             Vector3 worldPos  = cam.ScreenToWorldPoint(screenPos);
             worldPos.z = 0f;
 
-            if (_colliderStroke.Active && mouse.leftButton.wasReleasedThisFrame)
+            if (_colliderStroke.Active && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 EndColliderStroke();
                 if (overUi) return;
             }
 
-            // ── Hover proximity for split line (always computed, drives highlight colour)
+            // â”€â”€ Hover proximity for split line (always computed, drives highlight colour)
             _splitHovering = false;
             if (!overUi && _activeBuilding != null && _activeBuilding.TryGetWorldRect(out var hoverRect))
             {
@@ -72,10 +72,10 @@ namespace Valkur.Gameplay.Buildings
                 if (scroll < -0.01f) { _hoverIndex = (_hoverIndex + 1) % _hoverStack.Count;                     _hoveredBuilding = _hoverStack[_hoverIndex]; }
             }
 
-            // Split-ratio drag — LMB held on the split handle
+            // Split-ratio drag â€” LMB held on the split handle
             if (_splitDragging && _activeBuilding != null)
             {
-                if (mouse.leftButton.isPressed)
+                if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed())
                 {
                     if (_activeBuilding.TryGetWorldRect(out var dragRect))
                     {
@@ -86,10 +86,10 @@ namespace Valkur.Gameplay.Buildings
                         MarkInstanceDataDirty();
                         RefreshInspector();
                         if (_statusTmp != null)
-                            _statusTmp.text = $"Split ratio → {newRatio:F3}";
+                            _statusTmp.text = $"Split ratio â†’ {newRatio:F3}";
                     }
                 }
-                else if (mouse.leftButton.wasReleasedThisFrame)
+                else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
                 {
                     float finalRatio = _activeBuilding.SplitRatioOverride;
                     float startRatio = _splitDragStartRatio;
@@ -122,10 +122,10 @@ namespace Valkur.Gameplay.Buildings
                 if (_statusTmp != null) _statusTmp.text = "Resize: drag to scale (proportional).";
             }
 
-            // Resize drag — driven by LMB while _resizing is set by the R handle.
+            // Resize drag â€” driven by LMB while _resizing is set by the R handle.
             if (_resizing && _activeBuilding != null)
             {
-                if (mouse.leftButton.isPressed)
+                if (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed())
                 {
                     var delta = (Vector2)(worldPos - _resizeStartMouse);
                     // Preserve aspect ratio: dominant axis (|dx| vs |dy|) drives scale.
@@ -136,10 +136,10 @@ namespace Valkur.Gameplay.Buildings
                     int newH = Mathf.Max(8, Mathf.RoundToInt(newW / aspect));
                     _activeBuilding.Apply(_activeBuilding.Template, new Vector2Int(newW, newH), _activeBuilding.SplitRatioOverride);
                     MarkInstanceDataDirty();
-                    if (_statusTmp != null) _statusTmp.text = $"Resize → {newW}×{newH} px (ratio {aspect:F2})";
+                    if (_statusTmp != null) _statusTmp.text = $"Resize â†’ {newW}Ã—{newH} px (ratio {aspect:F2})";
                     RefreshInspector();
                 }
-                else if (mouse.leftButton.wasReleasedThisFrame)
+                else if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
                 {
                     FinalizeResizeDrag();
                 }
@@ -151,26 +151,26 @@ namespace Valkur.Gameplay.Buildings
             {
                 _activeBuilding.transform.position = worldPos + _dragOffset;
                 MarkInstanceDataDirty();
-                if (mouse.rightButton.wasReleasedThisFrame) FinalizeMoveDrag();
+                if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonReleasedThisFrame()) FinalizeMoveDrag();
                 return;
             }
 
             if (overUi) return;
 
-            // Collider painting — when a brush mode is active, LMB hold paints/erases
+            // Collider painting â€” when a brush mode is active, LMB hold paints/erases
             // collider tiles on the active building. Returns early so it doesn't
             // interfere with selection/placement.
             if (_collBrushMode != CollBrushMode.Off && _activeBuilding != null
-                && (mouse.leftButton.isPressed || mouse.leftButton.wasPressedThisFrame))
+                && (Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed() || Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()))
             {
-                if (mouse.leftButton.wasPressedThisFrame)
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
                     BeginColliderStroke();
                 HandleColliderPaint(worldPos);
                 return;
             }
 
-            // LMB on split handle — start split-ratio drag
-            if (!overUi && mouse.leftButton.wasPressedThisFrame && _activeBuilding != null
+            // LMB on split handle â€” start split-ratio drag
+            if (!overUi && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame() && _activeBuilding != null
                 && _activeBuilding.TryGetWorldRect(out var checkRect))
             {
                 float sr = _activeBuilding.SplitRatioOverride >= 0f
@@ -189,8 +189,8 @@ namespace Valkur.Gameplay.Buildings
                 }
             }
 
-            // LMB — primary action
-            if (mouse.leftButton.wasPressedThisFrame)
+            // LMB â€” primary action
+            if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 if (_removeMode || _mode == EditorMode.Delete)
                 {
@@ -203,8 +203,8 @@ namespace Valkur.Gameplay.Buildings
                 if (_hoveredBuilding != null) SetActiveBuilding(_hoveredBuilding);
             }
 
-            // RMB on a building → move drag (resize is now LMB-drag via the R handle).
-            if (mouse.rightButton.wasPressedThisFrame && _hoveredBuilding != null)
+            // RMB on a building â†’ move drag (resize is now LMB-drag via the R handle).
+            if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame() && _hoveredBuilding != null)
             {
                 SetActiveBuilding(_hoveredBuilding);
                 _dragging   = true;
@@ -237,14 +237,14 @@ namespace Valkur.Gameplay.Buildings
                     if (building == null) return;
                     building.transform.position = finalPos;
                     RefreshInspector();
-                    if (_statusTmp != null) _statusTmp.text = $"Move saved → ({finalPos.x:F2}, {finalPos.y:F2})";
+                    if (_statusTmp != null) _statusTmp.text = $"Move saved â†’ ({finalPos.x:F2}, {finalPos.y:F2})";
                 },
                 () =>
                 {
                     if (building == null) return;
                     building.transform.position = startPos;
                     RefreshInspector();
-                    if (_statusTmp != null) _statusTmp.text = $"Move reverted → ({startPos.x:F2}, {startPos.y:F2})";
+                    if (_statusTmp != null) _statusTmp.text = $"Move reverted â†’ ({startPos.x:F2}, {startPos.y:F2})";
                 });
         }
 
@@ -307,9 +307,9 @@ namespace Valkur.Gameplay.Buildings
             _hoveredBuilding = _hoverStack[_hoverIndex];
         }
 
-        // ──────────────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         //  ACTIVE BUILDING + INSPECTOR
-        // ──────────────────────────────────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void SetActiveBuilding(BuildingObject b)
         {

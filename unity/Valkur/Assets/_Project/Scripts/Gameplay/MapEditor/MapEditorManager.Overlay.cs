@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -85,7 +85,7 @@ namespace Valkur.Gameplay.MapEditor
             if (_mainCamera == null || !_mainCamera.orthographic || Screen.height <= 1)
                 return baseWidth;
 
-            // worldPerPixel = (2 * orthoSize) / screenHeight  → constant pixel size in world units
+            // worldPerPixel = (2 * orthoSize) / screenHeight  â†’ constant pixel size in world units
             float worldPerPixel = (2f * _mainCamera.orthographicSize) / Screen.height;
             float adaptive      = worldPerPixel * Mathf.Max(0.5f, overlayLinePixelWidth);
             return Mathf.Clamp(adaptive, baseWidth, Mathf.Max(baseWidth, overlayLineMaxWidth));
@@ -93,7 +93,7 @@ namespace Valkur.Gameplay.MapEditor
 
         /// <summary>
         /// Per-frame applier that keeps zone-border line widths visually constant
-        /// in screen pixels regardless of camera zoom — fixes "borders disappear
+        /// in screen pixels regardless of camera zoom â€” fixes "borders disappear
         /// when zoomed out" bug.
         /// Also re-applies inset positions so each border's outer edge stays exactly
         /// on the zone boundary at all zoom levels (prevents adjacent borders overlapping).
@@ -251,7 +251,7 @@ namespace Valkur.Gameplay.MapEditor
             var mouse = Mouse.current;
             if (_mainCamera == null || mouse == null) { tilePos = default; return false; }
 
-            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(mouse.position.ReadValue());
+            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(Valkur.Core.Input.MouseInputManager.GetScreenMousePosition());
             mouseWorld.z = 0f;
 
             if (worldGridBuilder != null)

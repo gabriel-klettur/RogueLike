@@ -112,9 +112,10 @@ namespace Valkur.Gameplay.TileEditor
         private Vector3Int GetCellUnderMouse(Tilemap tilemap)
         {
             if (_mainCamera == null) _mainCamera = Camera.main;
-            var mouse = Mouse.current;
-            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(
-                mouse != null ? (Vector3)mouse.position.ReadValue() : Vector3.zero);
+            // Use MouseInputManager so the legacy backend supplies the position
+            // when the new InputSystem package's Mouse.current is stale at (0,0).
+            Vector3 screenPos = (Vector3)Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
+            Vector3 mouseWorld = _mainCamera.ScreenToWorldPoint(screenPos);
             mouseWorld.z = 0f;
             return tilemap.WorldToCell(mouseWorld);
         }

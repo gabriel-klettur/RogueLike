@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
@@ -11,10 +11,10 @@ namespace Valkur.Gameplay.Entities
     /// <summary>
     /// World-side selection + drag for the Entities Editor (F5), mirroring the
     /// Buildings Editor (F10):
-    ///   • LMB on an NPC in Select mode → set as active (YELLOW outline);
+    ///   â€¢ LMB on an NPC in Select mode â†’ set as active (YELLOW outline);
     ///     all other NPCs sharing the same <c>MonsterDefinition.monsterKey</c>
     ///     get an ORANGE outline.
-    ///   • RMB-press on a hovered NPC → start a move-drag (the NPC follows the
+    ///   â€¢ RMB-press on a hovered NPC â†’ start a move-drag (the NPC follows the
     ///     cursor while RMB is held; release commits with undo support, parity
     ///     with Buildings <c>FinalizeMoveDrag</c>).
     ///
@@ -24,16 +24,16 @@ namespace Valkur.Gameplay.Entities
     /// </summary>
     public partial class EntitiesRuntimeEditor : SingletonMonoBehaviour<EntitiesRuntimeEditor>, GameEditorManager.IGameEditor
     {
-        // ── Selection state ─────────────────────────────────────────────────────
+        // â”€â”€ Selection state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private FSMMonsterBrain _activeEntity;
         private readonly List<FSMMonsterBrain> _sameKeyEntities = new List<FSMMonsterBrain>();
 
-        // ── Drag state (RMB on hovered entity) ──────────────────────────────────
+        // â”€â”€ Drag state (RMB on hovered entity) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private bool    _entityDragging;
         private Vector3 _entityDragStartWorldPos;
         private Vector3 _entityDragOffset;
 
-        // ── Outline FX ──────────────────────────────────────────────────────────
+        // â”€â”€ Outline FX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private EntityOutlineRenderer        _activeFx;
         private readonly List<EntityOutlineRenderer> _sameKeyFxPool = new List<EntityOutlineRenderer>();
 
@@ -42,7 +42,7 @@ namespace Valkur.Gameplay.Entities
         private const float ACTIVE_THICKNESS_WORLD        = 0.10f;   // ~ 1.6 px @ PPU 16
         private const float SAME_KEY_THICKNESS_WORLD      = 0.06f;
 
-        // ── FX construction / teardown ─────────────────────────────────────────
+        // â”€â”€ FX construction / teardown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void EnsureSelectionFx()
         {
@@ -69,7 +69,7 @@ namespace Valkur.Gameplay.Entities
             }
         }
 
-        // ── Active entity → outlines ───────────────────────────────────────────
+        // â”€â”€ Active entity â†’ outlines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Set the editor's active NPC, refresh the yellow outline, and rebuild
@@ -150,7 +150,7 @@ namespace Valkur.Gameplay.Entities
             }
         }
 
-        // ── Hit-test ──────────────────────────────────────────────────────────
+        // â”€â”€ Hit-test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Returns the front-most NPC whose sprite bounds (or 0.5-radius collider)
@@ -186,7 +186,7 @@ namespace Valkur.Gameplay.Entities
             return best;
         }
 
-        // ── Per-frame world interaction (called from Update while editor is active) ─
+        // â”€â”€ Per-frame world interaction (called from Update while editor is active) â”€
 
         /// <summary>
         /// LMB selection (Select mode) + RMB-drag move on any hovered NPC, regardless
@@ -204,22 +204,22 @@ namespace Valkur.Gameplay.Entities
             var cam = Camera.main;
             if (cam == null) return false;
 
-            Vector3 worldPos = cam.ScreenToWorldPoint(mouse.position.ReadValue());
+            Vector3 worldPos = cam.ScreenToWorldPoint(Valkur.Core.Input.MouseInputManager.GetScreenMousePosition());
             worldPos.z = 0f;
 
-            // ── Active drag → follow cursor while RMB is held ───────────────────
+            // â”€â”€ Active drag â†’ follow cursor while RMB is held â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (_entityDragging && _activeEntity != null)
             {
                 _activeEntity.transform.position = worldPos + _entityDragOffset;
-                if (mouse.rightButton.wasReleasedThisFrame) FinalizeEntityDrag();
+                if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonReleasedThisFrame()) FinalizeEntityDrag();
                 return true;
             }
 
             if (overUi) return false;
 
-            // ── LMB → select hovered NPC (Select mode only; spawn/delete keep their
-            //         own LMB handlers) ────────────────────────────────────────────
-            if (_mode == EditorMode.Select && mouse.leftButton.wasPressedThisFrame)
+            // â”€â”€ LMB â†’ select hovered NPC (Select mode only; spawn/delete keep their
+            //         own LMB handlers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            if (_mode == EditorMode.Select && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
             {
                 var hit = FindEntityAtWorldPosition(worldPos);
                 if (hit != null)
@@ -238,8 +238,8 @@ namespace Valkur.Gameplay.Entities
                 return true;
             }
 
-            // ── RMB → start move-drag on hovered NPC (selects it too, Buildings parity) ─
-            if (mouse.rightButton.wasPressedThisFrame)
+            // â”€â”€ RMB â†’ start move-drag on hovered NPC (selects it too, Buildings parity) â”€
+            if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame())
             {
                 var hit = FindEntityAtWorldPosition(worldPos);
                 if (hit != null)
@@ -248,7 +248,7 @@ namespace Valkur.Gameplay.Entities
                     _entityDragging = true;
                     _entityDragStartWorldPos = hit.transform.position;
                     _entityDragOffset = hit.transform.position - worldPos;
-                    SetStatus($"Move drag: '{hit.gameObject.name}' — release RMB to commit.");
+                    SetStatus($"Move drag: '{hit.gameObject.name}' â€” release RMB to commit.");
                     return true;
                 }
             }
@@ -276,7 +276,7 @@ namespace Valkur.Gameplay.Entities
                 doAction:   () => { if (brain != null) brain.transform.position = to;   },
                 undoAction: () => { if (brain != null) brain.transform.position = from; }));
 
-            SetStatus($"Moved '{brain.gameObject.name}' → ({to.x:F1}, {to.y:F1}).");
+            SetStatus($"Moved '{brain.gameObject.name}' â†’ ({to.x:F1}, {to.y:F1}).");
         }
 
         /// <summary>

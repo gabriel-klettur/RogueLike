@@ -84,12 +84,20 @@ namespace Valkur.Gameplay.Inventory
 
         private void Update()
         {
-            if (_toggleAction != null && _toggleAction.WasPerformedThisFrame())
+            // OR new-system action with legacy KeyCode fallback (Tab and I).
+            // Same pattern as InputCompat / EditorHotkeyBindings — protects
+            // against the recurring Unity 2022.3 Editor InputSystem drop-out.
+            bool toggleNew = _toggleAction != null && _toggleAction.WasPerformedThisFrame();
+            bool toggleLegacy = UnityEngine.Input.GetKeyDown(KeyCode.Tab) ||
+                                UnityEngine.Input.GetKeyDown(KeyCode.I);
+            if (toggleNew || toggleLegacy)
                 SetVisible(!_visible);
 
             if (_visible)
             {
-                if (_dropAction != null && _dropAction.WasPerformedThisFrame() && _selectedSlot >= 0)
+                bool dropNew = _dropAction != null && _dropAction.WasPerformedThisFrame();
+                bool dropLegacy = UnityEngine.Input.GetKeyDown(KeyCode.Q);
+                if ((dropNew || dropLegacy) && _selectedSlot >= 0)
                     DropSelectedItem();
             }
         }

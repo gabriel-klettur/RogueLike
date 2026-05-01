@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -18,7 +18,7 @@ namespace Valkur.Gameplay.Enemies.FSM
     /// </summary>
     public partial class FSMRuntimeEditor : SingletonMonoBehaviour<FSMRuntimeEditor>, GameEditorManager.IGameEditor
     {
-        // ── Per-element click dispatch (called from CreateNodeVisual / CreateEdgeVisual) ──
+        // â”€â”€ Per-element click dispatch (called from CreateNodeVisual / CreateEdgeVisual) â”€â”€
 
         private void OnNodeClicked(FSMStateNode state)
         {
@@ -56,7 +56,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             }
         }
 
-        // ── Tool implementations ─────────────────────────────────────────────────
+        // â”€â”€ Tool implementations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void AddNodeAt(Vector2 contentLocalPos)
         {
@@ -105,7 +105,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             _selectedState = node;
             RefreshGraph();
             RefreshProperties();
-            if (_statusTmp != null) _statusTmp.text = $"Cloned → '{newId}'";
+            if (_statusTmp != null) _statusTmp.text = $"Cloned â†’ '{newId}'";
         }
 
         private void DeleteNode(FSMStateNode node)
@@ -131,7 +131,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             PersistSets();
             RefreshGraph();
             RefreshProperties();
-            if (_statusTmp != null) _statusTmp.text = $"Deleted edge {tr.from}→{tr.to}";
+            if (_statusTmp != null) _statusTmp.text = $"Deleted edge {tr.from}â†’{tr.to}";
         }
 
         private void HandleConnectClick(FSMStateNode node, bool isConnect)
@@ -171,12 +171,12 @@ namespace Valkur.Gameplay.Enemies.FSM
                 };
                 _selectedSet.transitions.Add(tr);
                 _selectedTransition = tr;
-                if (_statusTmp != null) _statusTmp.text = $"Connected {from}→{to}";
+                if (_statusTmp != null) _statusTmp.text = $"Connected {from}â†’{to}";
             }
             else
             {
                 int n = _selectedSet.transitions.RemoveAll(t => t.from == from && t.to == to);
-                if (_statusTmp != null) _statusTmp.text = $"Disconnected {from}→{to} ({n} edges)";
+                if (_statusTmp != null) _statusTmp.text = $"Disconnected {from}â†’{to} ({n} edges)";
             }
             PersistSets();
             RefreshGraph();
@@ -205,7 +205,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             if (_statusTmp != null) _statusTmp.text = $"Terminal '{node.id}' = {node.isTerminal}";
         }
 
-        // ── Empty-canvas hit testing ─────────────────────────────────────────────
+        // â”€â”€ Empty-canvas hit testing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Returns true if the screen-space mouse position currently lies inside
@@ -218,7 +218,7 @@ namespace Valkur.Gameplay.Enemies.FSM
             var canvasArea = _graphContent.parent as RectTransform;
             if (canvasArea == null) return false;
             var mouse = Mouse.current; if (mouse == null) return false;
-            Vector2 screen = mouse.position.ReadValue();
+            Vector2 screen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             // Mouse over scrollable canvas area (not toolbar)?
             if (!RectTransformUtility.RectangleContainsScreenPoint(canvasArea, screen, _canvas.worldCamera))
                 return false;

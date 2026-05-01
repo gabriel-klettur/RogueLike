@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
 using Valkur.UI.Loading;
@@ -19,17 +20,20 @@ namespace Valkur.UI.MainMenu
         private void HandleKeyboardNavigation()
         {
             if (_menuOptions == null || _menuOptions.Length == 0) return;
-            if (_navUpAction.WasPerformedThisFrame())
+            // OR new-InputSystem actions with legacy fallback so the menu still
+            // navigates when the new pipeline drops OS event delivery (recurring
+            // Unity 2022.3 Editor bug — see InputCompat XML doc).
+            if (_navUpAction.WasPerformedThisFrame() || InputCompat.NavUpPressed())
             {
                 _selectedIndex = (_selectedIndex - 1 + _menuOptions.Length) % _menuOptions.Length;
                 UpdateSelection();
             }
-            else if (_navDownAction.WasPerformedThisFrame())
+            else if (_navDownAction.WasPerformedThisFrame() || InputCompat.NavDownPressed())
             {
                 _selectedIndex = (_selectedIndex + 1) % _menuOptions.Length;
                 UpdateSelection();
             }
-            else if (_confirmAction.WasPerformedThisFrame())
+            else if (_confirmAction.WasPerformedThisFrame() || InputCompat.ConfirmPressed())
             {
                 ExecuteOption(_selectedIndex);
             }
@@ -100,13 +104,14 @@ namespace Valkur.UI.MainMenu
 
         private void HandleClassSelectorInput()
         {
-            if (_cancelAction.WasPerformedThisFrame()) { CloseClassSelector(); return; }
+            if (_cancelAction.WasPerformedThisFrame() || InputCompat.CancelPressed())
+            { CloseClassSelector(); return; }
             if (_classButtons.Count == 0) return;
-            if (_navLeftAction.WasPerformedThisFrame())
+            if (_navLeftAction.WasPerformedThisFrame() || InputCompat.NavLeftPressed())
                 SetSelectedClassIndex(_selectedClassIndex - 1);
-            else if (_navRightAction.WasPerformedThisFrame())
+            else if (_navRightAction.WasPerformedThisFrame() || InputCompat.NavRightPressed())
                 SetSelectedClassIndex(_selectedClassIndex + 1);
-            else if (_confirmAction.WasPerformedThisFrame())
+            else if (_confirmAction.WasPerformedThisFrame() || InputCompat.ConfirmPressed())
                 ApplySelectedClassAndStartGame();
         }
 

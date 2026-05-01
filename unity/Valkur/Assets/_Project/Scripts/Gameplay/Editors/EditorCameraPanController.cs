@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Valkur.Gameplay.Editors
@@ -44,7 +44,7 @@ namespace Valkur.Gameplay.Editors
             var camSetup = CameraSetup.Instance;
             if (camSetup == null) return;
 
-            if (mouse.middleButton.wasPressedThisFrame)
+            if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
             {
                 // Idempotent: DetachFollow returns early if already detached
                 // (BuildingsRuntimeEditor detaches in Activate; others rely on
@@ -54,23 +54,23 @@ namespace Valkur.Gameplay.Editors
                 if (anchorT != null)
                 {
                     _isPanning = true;
-                    _anchorScreenPos = mouse.position.ReadValue();
+                    _anchorScreenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
                     _anchorCamPos    = anchorT.position;
                 }
             }
-            else if (mouse.middleButton.wasReleasedThisFrame)
+            else if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
             {
                 // Camera stays at the panned position; ReattachFollow() is the
                 // editor's responsibility on close (mirrors Tile + Buildings).
                 _isPanning = false;
             }
 
-            if (_isPanning && mouse.middleButton.isPressed)
+            if (_isPanning && Valkur.Core.Input.MouseInputManager.IsMiddleMouseButtonPressed())
             {
                 Transform vcamT = camSetup.GetDetachedTransform();
                 if (vcamT == null) return;
 
-                Vector2 currentScreenPos = mouse.position.ReadValue();
+                Vector2 currentScreenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
                 Vector2 screenDelta      = currentScreenPos - _anchorScreenPos;
 
                 float unitsPerPixel = _mainCamera.orthographicSize * 2f / Screen.height;
@@ -82,7 +82,7 @@ namespace Valkur.Gameplay.Editors
         }
 
         /// <summary>
-        /// Stop tracking input. Does NOT call <c>CameraSetup.ReattachFollow</c> —
+        /// Stop tracking input. Does NOT call <c>CameraSetup.ReattachFollow</c> â€”
         /// the editor calls it itself on close so behaviour stays explicit.
         /// </summary>
         public void Reset()

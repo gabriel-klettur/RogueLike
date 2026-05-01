@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -9,37 +9,37 @@ using Valkur.Gameplay.Inventory;
 namespace Valkur.Gameplay.Items
 {
     /// <summary>
-    /// Items Editor — world interaction (Spawn / Delete modes) and toolbar buttons
+    /// Items Editor â€” world interaction (Spawn / Delete modes) and toolbar buttons
     /// (Add / Remove / Add-On-System) and Undo/Redo.
     ///
     /// Mirrors Python <c>roguelike_editors/items/services/drop_service.py</c>:
-    ///  • Spawn: <c>spawn_item_at_screen_pos</c> → click on map drops the selected item.
-    ///  • Spawn at player (RMB on icon) → <c>spawn_at_player</c>.
-    ///  • Delete: <c>delete_drop_at_screen_pos</c> → click on a drop removes it.
-    ///  • Add → enter Spawn mode, Remove → enter Delete mode.
-    ///  • Add-On-System → would create a new ItemDefinition asset; here we surface a
+    ///  â€¢ Spawn: <c>spawn_item_at_screen_pos</c> â†’ click on map drops the selected item.
+    ///  â€¢ Spawn at player (RMB on icon) â†’ <c>spawn_at_player</c>.
+    ///  â€¢ Delete: <c>delete_drop_at_screen_pos</c> â†’ click on a drop removes it.
+    ///  â€¢ Add â†’ enter Spawn mode, Remove â†’ enter Delete mode.
+    ///  â€¢ Add-On-System â†’ would create a new ItemDefinition asset; here we surface a
     ///    runtime-friendly toast (asset creation requires the Editor; documented).
     /// </summary>
     public partial class ItemsRuntimeEditor
     {
-        // ── World mouse handling per mode ──
+        // â”€â”€ World mouse handling per mode â”€â”€
 
         /// <summary>
         /// Hover-test world drops every frame; on LMB pressed-this-frame outside UI:
-        ///  • Delete mode → DeleteAtWorld.
-        ///  • Any other mode with a hovered drop → SetActiveInstance (mirrors Buildings).
-        ///  • Spawn mode without hovered drop → SpawnAt (legacy click-to-spawn path).
+        ///  â€¢ Delete mode â†’ DeleteAtWorld.
+        ///  â€¢ Any other mode with a hovered drop â†’ SetActiveInstance (mirrors Buildings).
+        ///  â€¢ Spawn mode without hovered drop â†’ SpawnAt (legacy click-to-spawn path).
         /// </summary>
         private void HandleMapInteraction()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Compute world cursor position (always — even without click — so we can hover).
+            // Compute world cursor position (always â€” even without click â€” so we can hover).
             if (_mainCamera == null) _mainCamera = Camera.main;
             if (_mainCamera == null) { _hoveredInstance = null; return; }
 
-            Vector2 screenPos = mouse.position.ReadValue();
+            Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
             Vector3 sp = new Vector3(screenPos.x, screenPos.y, -_mainCamera.transform.position.z);
             Vector3 worldPos = _mainCamera.ScreenToWorldPoint(sp);
             worldPos.z = 0f;
@@ -47,10 +47,10 @@ namespace Valkur.Gameplay.Items
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             _hoveredInstance = overUi ? null : FindHoveredPickup(worldPos);
 
-            if (!mouse.leftButton.wasPressedThisFrame) return;
+            if (!Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
             if (overUi) return;
 
-            // While a drag-from-picker is in progress, swallow this click — the drag
+            // While a drag-from-picker is in progress, swallow this click â€” the drag
             // ghost owns the LMB-release placement and the click should not also fire.
             if (_pickerDragging) return;
 
@@ -91,7 +91,7 @@ namespace Valkur.Gameplay.Items
             return best;
         }
 
-        // ── Outline FX (sprite tinting) ─────────────────────────────────────────
+        // â”€â”€ Outline FX (sprite tinting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>Paint hovered/active sprites with cyan/yellow tints; restore others.</summary>
         private void UpdateOutlineState()
@@ -133,7 +133,7 @@ namespace Valkur.Gameplay.Items
             _originalSpriteColors.Clear();
         }
 
-        // ── Spawn ──
+        // â”€â”€ Spawn â”€â”€
 
         /// <summary>Spawn the currently-selected item at <paramref name="worldPos"/>.</summary>
         private void SpawnAt(Vector3 worldPos)
@@ -152,7 +152,7 @@ namespace Valkur.Gameplay.Items
                 $"Spawn {def.itemId}",
                 doAction: () =>
                 {
-                    // Re-execute (after Undo) → respawn at same position.
+                    // Re-execute (after Undo) â†’ respawn at same position.
                     if (captured == null)
                         captured = DropSystem.SpawnDrop(def, 1, worldPos);
                 },
@@ -176,7 +176,7 @@ namespace Valkur.Gameplay.Items
             SpawnAt(player.transform.position);
         }
 
-        // ── Delete ──
+        // â”€â”€ Delete â”€â”€
 
         private void DeleteAtWorld(Vector3 worldPos)
         {
@@ -221,7 +221,7 @@ namespace Valkur.Gameplay.Items
             return best;
         }
 
-        // ── Toolbar buttons (Add / Remove / Add-On-System) ──
+        // â”€â”€ Toolbar buttons (Add / Remove / Add-On-System) â”€â”€
 
         private void OnAddClicked()
         {
@@ -242,10 +242,10 @@ namespace Valkur.Gameplay.Items
             // Python's "add_item_on_system" persists a new entry into items.json. The
             // Unity equivalent is creating a new ItemDefinition asset, which is an
             // Editor-only action. At runtime we surface a clear instruction.
-            Toast("Add-on-system: create new ItemDefinition via Project ▸ Create ▸ Valkur ▸ Data ▸ Item Definition (Editor only).");
+            Toast("Add-on-system: create new ItemDefinition via Project â–¸ Create â–¸ Valkur â–¸ Data â–¸ Item Definition (Editor only).");
         }
 
-        // ── Undo / Redo ──
+        // â”€â”€ Undo / Redo â”€â”€
 
         private void DoUndo()
         {
@@ -265,7 +265,7 @@ namespace Valkur.Gameplay.Items
             Toast($"Redo: {label}");
         }
 
-        // ── Keyboard shortcuts ──
+        // â”€â”€ Keyboard shortcuts â”€â”€
 
         private void HandleKeyboardShortcuts()
         {

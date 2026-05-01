@@ -3,6 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Valkur.Core;
+using Valkur.Core.Input;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
 
@@ -53,7 +54,9 @@ namespace Valkur.Gameplay.Entities
             _pickerDragIsPlayer    = isPlayer;
             _pickerDragSprite      = sprite;
             _pickerDragTint        = tint;
-            _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+            // Use MouseInputManager so we transparently fall back to the legacy
+            // backend if the new InputSystem package is dropping OS events.
+            _pickerDragStartScreen = MouseInputManager.GetScreenMousePosition();
         }
 
         // ── Ghost construction ────────────────────────────────────────────────
@@ -120,14 +123,17 @@ namespace Valkur.Gameplay.Entities
         // ── Per-frame drag update (called from Update while editor is active) ─
         private void UpdatePickerDrag()
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-            Vector2 screenPos = mouse.position.ReadValue();
+            // Read mouse state through MouseInputManager so the legacy fallback
+            // kicks in when the new InputSystem package is dropping OS events
+            // (recurring Unity 2022.3 Editor bug — see MouseInputManager XML).
+            Vector2 screenPos = MouseInputManager.GetScreenMousePosition();
+            bool leftPressed = MouseInputManager.IsLeftMouseButtonPressed();
+            bool leftReleasedThisFrame = MouseInputManager.WasLeftMouseButtonReleasedThisFrame();
 
             // Phase 1: waiting for drag threshold
             if (!_pickerDragging && !string.IsNullOrEmpty(_pickerDragKey))
             {
-                if (mouse.leftButton.isPressed)
+                if (leftPressed)
                 {
                     if (Vector2.Distance(screenPos, _pickerDragStartScreen) >= PICKER_DRAG_THRESHOLD)
                     {
@@ -176,7 +182,7 @@ namespace Valkur.Gameplay.Entities
             }
 
             // Drop
-            if (mouse.leftButton.wasReleasedThisFrame)
+            if (leftReleasedThisFrame)
             {
                 bool overUi = EventSystem.current != null
                            && EventSystem.current.IsPointerOverGameObject();
