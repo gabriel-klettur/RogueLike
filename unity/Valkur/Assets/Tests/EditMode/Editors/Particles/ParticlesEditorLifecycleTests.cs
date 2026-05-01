@@ -102,10 +102,66 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             var catalog = MakeCatalog("preset_a", "preset_b");
             SetFieldValue(editor, "_catalog", catalog);
 
+            // Stub the preview service: mark it as already initialized so that
+            // Activate() → _previewService.Initialize() does nothing.
+            // This prevents Camera + RenderTexture creation in EditMode, which
+            // requires URP and GPU resources unavailable without PlayMode.
+            StubPreviewService(editor);
+
             if (withUI)
                 InvokeMethod(editor, "Start");
 
             return editor;
+        }
+
+        /// <summary>
+        /// Stubs out the <see cref="ParticlePreviewService"/> inside <paramref name="editor"/>
+        /// so that all its public methods are safe to call in EditMode (no Camera,
+        /// no RenderTexture, no GPU resources created).
+        ///
+        /// Strategy:
+        ///   1. Mark _initialized = true so Initialize() returns immediately (early-out).
+        ///   2. Pre-populate the _pool array with empty ThumbSlot objects so that
+        ///      SetVisiblePresets() can traverse the pool without NullReferenceException.
+        ///      All ThumbSlot fields (RT, EmitterGo, Emitter) remain null — the production
+        ///      code guards against null in SafeApplyPreset and SetLayerRecursive.
+        ///   3. Assign a no-op Camera stub is not needed because Shutdown() guards
+        ///      against null camera before Destroying it.
+        /// </summary>
+        private static void StubPreviewService(ParticlesRuntimeEditor editor)
+        {
+            var serviceField = FindField(editor, "_previewService");
+            if (serviceField == null) return;
+
+            var service = serviceField.GetValue(editor);
+            if (service == null) return;
+
+            var serviceType = service.GetType();
+            const BindingFlags bf = BindingFlags.NonPublic | BindingFlags.Instance;
+
+            // Step 1: Mark as initialized (Initialize() will early-return).
+            var initField = serviceType.GetField("_initialized", bf);
+            initField?.SetValue(service, true);
+
+            // Step 2: Pre-populate the pool array with empty ThumbSlot instances.
+            // ThumbSlot is a private sealed nested class; create via Activator.
+            var poolField = serviceType.GetField("_pool", bf);
+            if (poolField != null)
+            {
+                var pool = poolField.GetValue(service) as System.Array;
+                if (pool != null)
+                {
+                    // Locate the ThumbSlot nested type.
+                    var thumbSlotType = serviceType.GetNestedType(
+                        "ThumbSlot", BindingFlags.NonPublic);
+                    if (thumbSlotType != null)
+                    {
+                        for (int i = 0; i < pool.Length; i++)
+                            if (pool.GetValue(i) == null)
+                                pool.SetValue(System.Activator.CreateInstance(thumbSlotType), i);
+                    }
+                }
+            }
         }
 
         [TearDown]

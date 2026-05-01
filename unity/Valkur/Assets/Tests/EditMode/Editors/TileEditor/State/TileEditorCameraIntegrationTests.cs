@@ -88,57 +88,40 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         }
 
         [Test]
-        public void CameraSetup_SetTileEditorZoom_ClampsToMinimum()
+        public void CameraSetup_SetTileEditorZoom_SanitisesInvalidInput()
         {
-            // Arrange
-            float tooSmallSize = 0.1f;
+            // Zoom is intentionally UNBOUNDED, but Cinemachine still rejects
+            // 0 / negative / Inf / NaN as malformed. SetTileEditorZoom must
+            // sanitise those to a strictly-positive size so the camera keeps
+            // rendering even if the caller passes garbage.
+            _cameraSetup.SetTileEditorZoom(0f);
+            Assert.Greater(_cameraSetup.GetCurrentOrthographicSize(), 0f, "Zero size must be sanitised to >0");
 
-            // Act
-            _cameraSetup.SetTileEditorZoom(tooSmallSize);
-            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-            
-            float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
+            _cameraSetup.SetTileEditorZoom(-100f);
+            Assert.Greater(_cameraSetup.GetCurrentOrthographicSize(), 0f, "Negative size must be sanitised to >0");
 
-            // Assert
-            Assert.AreEqual(0.5f, clampedSize, 0.01f, "Zoom should be clamped to minimum 0.5");
+            _cameraSetup.SetTileEditorZoom(float.PositiveInfinity);
+            Assert.IsTrue(float.IsFinite(_cameraSetup.GetCurrentOrthographicSize()), "+Inf size must be sanitised to a finite value");
         }
 
         [Test]
-        public void CameraSetup_SetTileEditorZoom_ClampsToMaximum()
+        public void CameraSetup_SetTileEditorZoom_AcceptsExtremeValues()
         {
-            // Arrange
-            float tooLargeSize = 100f;
+            // Arrange — zoom is unbounded, so even absurd positive values
+            // should pass through unchanged. The user wants to explore where
+            // the rendering pipeline breaks.
+            float tinySize  = 1e-6f;     // 1 micron
+            float hugeSize  = 1e10f;     // 10 billion units
 
-            // Act
-            _cameraSetup.SetTileEditorZoom(tooLargeSize);
-            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-            
-            float clampedSize = _cameraSetup.GetCurrentOrthographicSize();
+            // Act + Assert — tiny
+            _cameraSetup.SetTileEditorZoom(tinySize);
+            Assert.AreEqual(tinySize, _cameraSetup.GetCurrentOrthographicSize(), tinySize * 0.01f,
+                "Extremely small positive zoom must pass through unchanged (no min clamp)");
 
-            // Assert
-            Assert.AreEqual(50f, clampedSize, 0.01f, "Zoom should be clamped to maximum 50");
-        }
-
-        [Test]
-        public void CameraSetup_SetTileEditorZoom_HandlesBoundaryValues()
-        {
-            // Arrange
-            float minSize = 0.5f;
-            float maxSize = 50f;
-
-            // Act - Test minimum boundary
-            _cameraSetup.SetTileEditorZoom(minSize);
-            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-            float actualMinSize = _cameraSetup.GetCurrentOrthographicSize();
-
-            // Act - Test maximum boundary
-            _cameraSetup.SetTileEditorZoom(maxSize);
-            // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-            float actualMaxSize = _cameraSetup.GetCurrentOrthographicSize();
-
-            // Assert
-            Assert.AreEqual(minSize, actualMinSize, 0.01f, "Should handle minimum boundary value");
-            Assert.AreEqual(maxSize, actualMaxSize, 0.01f, "Should handle maximum boundary value");
+            // Act + Assert — huge
+            _cameraSetup.SetTileEditorZoom(hugeSize);
+            Assert.AreEqual(hugeSize, _cameraSetup.GetCurrentOrthographicSize(), hugeSize * 0.01f,
+                "Extremely large positive zoom must pass through unchanged (no max clamp)");
         }
 
         [Test]

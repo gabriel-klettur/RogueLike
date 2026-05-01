@@ -34,9 +34,10 @@ namespace Valkur.Tests.EditMode.Game.Input
     /// <list type="bullet">
     /// <item>The Input core helpers themselves (they ARE the OR-fallback).</item>
     /// <item>EditMode / PlayMode tests (they synthesise events directly).</item>
-    /// <item><c>mouse.scroll.ReadValue()</c> / <c>mouse.delta.ReadValue()</c>
-    /// — MouseInputManager doesn't expose them yet; flag a TODO if a third
-    /// callsite appears.</item>
+    /// <item><c>mouse.delta.ReadValue()</c> — MouseInputManager doesn't
+    /// expose it yet; flag a TODO if a third callsite appears.
+    /// (<c>mouse.scroll.ReadValue()</c> IS centralized — see
+    /// <c>MouseInputManager.GetMouseWheelDelta()</c>.)</item>
     /// <item>Pure null-checks (<c>if (Mouse.current == null) ...</c>) used
     /// for diagnostics or boot races — they don't actually read state.</item>
     /// </list>
@@ -80,6 +81,13 @@ namespace Valkur.Tests.EditMode.Game.Input
         {
             (new Regex(@"Mouse\.current\??\.position\.ReadValue\s*\("),
              "Mouse.current.position.ReadValue() — use MouseInputManager.GetScreenMousePosition()"),
+
+            (new Regex(@"Mouse\.current\??\.scroll\.ReadValue\s*\("),
+             "Mouse.current.scroll.ReadValue() — use MouseInputManager.GetMouseWheelDelta()"),
+
+            // Local form: `var mouse = Mouse.current; ... mouse.scroll.ReadValue()`.
+            (new Regex(@"\bmouse\.scroll\.ReadValue\s*\("),
+             "local `mouse.scroll.ReadValue()` — use MouseInputManager.GetMouseWheelDelta()"),
 
             (new Regex(@"Mouse\.current\??\.leftButton\.(isPressed|wasPressedThisFrame|wasReleasedThisFrame)"),
              "Mouse.current.leftButton.* — use MouseInputManager.{Is,Was}LeftMouseButton*"),

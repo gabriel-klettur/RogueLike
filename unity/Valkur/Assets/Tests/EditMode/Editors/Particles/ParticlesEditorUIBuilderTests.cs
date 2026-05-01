@@ -129,6 +129,17 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.IsTrue(_ui.SearchBox           != null, "SearchBox must be populated.");
             Assert.IsTrue(_ui.GroupToggleImg      != null, "GroupToggleImg must be populated.");
             Assert.IsTrue(_ui.GroupToggleLabel    != null, "GroupToggleLabel must be populated.");
+            Assert.IsTrue(_ui.LargePreviewImage   != null, "LargePreviewImage (RawImage) must be populated.");
+        }
+
+        [Test]
+        public void BuildAll_LargePreviewImage_StartsDisabled_WithDarkBackground()
+        {
+            Assert.IsTrue(_ui.LargePreviewImage != null, "LargePreviewImage must exist.");
+            Assert.IsFalse(_ui.LargePreviewImage.enabled,
+                "LargePreviewImage must start disabled (hidden until a preset is selected).");
+            Assert.IsNull(_ui.LargePreviewImage.texture,
+                "LargePreviewImage texture must be null until a preset is selected.");
         }
 
         // ── Properties panel refs ────────────────────────────────────────────────
