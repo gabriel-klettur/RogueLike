@@ -54,7 +54,13 @@ namespace Valkur.Gameplay.VFX
 
             // Properties panel
             public TextMeshProUGUI  PresetPropsText;
+            public Toggle           LoopsToggle;          // edits preset.vfx.loops in-memory
             public TextMeshProUGUI  InstancePropsText;
+            public GameObject       DeleteInstanceBtnGo;  // shown only when an instance is selected
+            public Image            DeleteInstanceBtnImg;
+
+            // Tools panel — danger zone
+            public Image            DeleteInZoneBtnImg;
 
             // Spells panel
             public TextMeshProUGUI  SpellsHeaderTmp;
@@ -89,14 +95,17 @@ namespace Valkur.Gameplay.VFX
         public static UIRefs BuildAll(
             Transform      canvasT,
             Action<string> onDropdownToggle,
-            Action         onUndo,         Action onRedo,
-            Action         onSave,         Action onReload,
-            Action         onModeSelect,   Action onModePlace, Action onModeDelete,
-            Action         onAddSystem,    Action onRemoveSystem,
+            Action         onUndo,              Action onRedo,
+            Action         onSave,              Action onReload,
+            Action         onModeSelect,        Action onModePlace, Action onModeDelete,
+            Action         onAddSystem,         Action onRemoveSystem,
             Action<string> onSearchChanged,
             Action         onToggleGroup,
             Action         onToggleSpells,
-            Action         onToggleTutorial)
+            Action         onToggleTutorial,
+            Action         onDeleteInZone    = null,
+            Action         onDeleteInstance  = null,
+            UnityEngine.Events.UnityAction<bool> onLoopsToggled = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -107,9 +116,10 @@ namespace Valkur.Gameplay.VFX
             BuildToolsPanel(canvasT, ref refs,
                 onModeSelect, onModePlace, onModeDelete,
                 onAddSystem, onRemoveSystem,
-                onUndo, onRedo, onSave, onReload);
+                onUndo, onRedo, onSave, onReload,
+                onDeleteInZone);
             BuildPresetsPanel(canvasT, ref refs, onSearchChanged, onToggleGroup);
-            BuildPropertiesPanel(canvasT, ref refs);
+            BuildPropertiesPanel(canvasT, ref refs, onDeleteInstance, onLoopsToggled);
             BuildSpellsPanel(canvasT, ref refs, onToggleSpells);
 
             return refs;

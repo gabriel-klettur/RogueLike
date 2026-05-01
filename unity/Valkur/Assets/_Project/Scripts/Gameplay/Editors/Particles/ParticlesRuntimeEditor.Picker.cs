@@ -183,11 +183,42 @@ namespace Valkur.Gameplay.VFX
             }
             _ui.PresetPropsText.text = sb.ToString();
             _ui.PresetPropsText.richText = true;
+
+            // Sync the Loops toggle with the preset's current value.
+            // We disable the callback temporarily to avoid re-triggering on programmatic set.
+            if (_ui.LoopsToggle != null)
+            {
+                _ui.LoopsToggle.onValueChanged.RemoveListener(OnLoopsToggled);
+                _ui.LoopsToggle.isOn = v != null && v.loops;
+                _ui.LoopsToggle.onValueChanged.AddListener(OnLoopsToggled);
+                _ui.LoopsToggle.interactable = preset != null;
+            }
+        }
+
+        private void OnLoopsToggled(bool value)
+        {
+            if (string.IsNullOrEmpty(_selectedPresetId) || _catalog == null) return;
+            var preset = _catalog.GetById(_selectedPresetId);
+            if (preset?.vfx == null) return;
+
+            preset.vfx.loops = value;
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(preset);
+#endif
+            // Refresh properties text to reflect the new state.
+            ShowPresetProperties(_selectedPresetId);
+            SetStatus($"'{_selectedPresetId}' loops = {value}.");
         }
 
         private void ShowInstanceProperties(GameObject instance)
         {
             if (_ui.InstancePropsText == null) return;
+
+            // Show/hide the Delete Instance button depending on selection.
+            if (_ui.DeleteInstanceBtnGo != null)
+                _ui.DeleteInstanceBtnGo.SetActive(instance != null);
+
             if (instance == null)
             {
                 _ui.InstancePropsText.text = "Select an instance on the map.";
@@ -198,7 +229,7 @@ namespace Valkur.Gameplay.VFX
             var sb = new StringBuilder();
             sb.AppendLine($"<b>Name:</b> {instance.name}");
             sb.AppendLine($"<b>Position:</b> ({pos.x:F2}, {pos.y:F2})");
-            string presetId = ExtractPresetIdFromName(instance.name);
+            string presetId = GetPresetIdFromGo(instance);
             if (!string.IsNullOrEmpty(presetId))
                 sb.AppendLine($"<b>Preset:</b> {presetId}");
             _ui.InstancePropsText.text = sb.ToString();
@@ -222,7 +253,8 @@ namespace Valkur.Gameplay.VFX
         {
             _groupByKind = !_groupByKind;
             if (_ui.GroupToggleLabel != null)
-                _ui.GroupToggleLabel.text = _groupByKind ? "GROUP" : "ALL";
+                // "Order" = natural catalog order (default). "Kind" = sorted by vfx.kind group.
+                _ui.GroupToggleLabel.text = _groupByKind ? "Kind" : "Order";
             if (_ui.GroupToggleImg != null)
                 _ui.GroupToggleImg.color = _groupByKind ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
             RefreshPicker();

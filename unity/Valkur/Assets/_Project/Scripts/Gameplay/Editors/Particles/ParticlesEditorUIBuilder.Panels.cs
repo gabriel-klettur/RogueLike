@@ -18,7 +18,8 @@ namespace Valkur.Gameplay.VFX
         private static void BuildToolsPanel(Transform canvasT, ref UIRefs refs,
             Action onModeSelect, Action onModePlace, Action onModeDelete,
             Action onAddSystem,  Action onRemoveSystem,
-            Action onUndo, Action onRedo, Action onSave, Action onReload)
+            Action onUndo, Action onRedo, Action onSave, Action onReload,
+            Action onDeleteInZone = null)
         {
             refs.ToolsDropdown = MakeDrop("ParticlesToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -67,6 +68,12 @@ namespace Valkur.Gameplay.VFX
             refs.UndoBtnImg = AddActionBtn(t, "Undo", 28f, onUndo, out refs.UndoBtnLabel);
             refs.RedoBtnImg = AddActionBtn(t, "Redo", 28f, onRedo, out refs.RedoBtnLabel);
 
+            // DANGER ZONE — Delete all instances in current zone (double-confirm)
+            BuildSeparator(t);
+            BuildSectionLabel(t, "DANGER ZONE");
+            refs.DeleteInZoneBtnImg = AddDangerBtn(t, "Delete all in zone", 32f,
+                onDeleteInZone, out _);
+
             refs.ToolsDropdown.SetActive(false);
         }
 
@@ -94,14 +101,16 @@ namespace Valkur.Gameplay.VFX
             gh.childControlWidth = true;      gh.childControlHeight = true;
 
             var lblGo = CreateUI("DispLbl", groupRow.transform);
-            lblGo.AddComponent<LayoutElement>().preferredWidth = 60f;
+            lblGo.AddComponent<LayoutElement>().preferredWidth = 48f;
             var dispLbl       = lblGo.AddComponent<TextMeshProUGUI>();
-            dispLbl.text      = "Display:";
+            dispLbl.text      = "Sort:";
             dispLbl.fontSize  = 10f;
             dispLbl.alignment = TextAlignmentOptions.MidlineLeft;
             dispLbl.color     = TEXT_MUTED;
 
-            refs.GroupToggleImg = AddActionBtn(groupRow.transform, "ALL", 26f, onToggleGroup,
+            // Toggle between "Order" (catalog order, default) and "Kind" (grouped by VFX kind).
+            // "Order" = natural catalog order. "Kind" = alphabetical within each vfx.kind group.
+            refs.GroupToggleImg = AddActionBtn(groupRow.transform, "Order", 26f, onToggleGroup,
                 out refs.GroupToggleLabel);
 
             // Large preview box: 256×256 RenderTexture display for the selected preset.
