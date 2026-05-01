@@ -177,7 +177,11 @@ namespace Valkur.Gameplay.TileEditor
 
         private void Update()
         {
-            if (_state == null) return;
+            // Guard against the rare frame where Update() runs before
+            // OnSingletonAwake() has wired _input/_state — happens after a
+            // domain reload when the manager component is reactivated by
+            // Unity before its lifecycle methods fire.
+            if (_state == null || _input == null) return;
 
             if (_input.WasTogglePressed())
             {
