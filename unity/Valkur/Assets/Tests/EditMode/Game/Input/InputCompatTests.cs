@@ -85,20 +85,6 @@ namespace Valkur.Tests.EditMode.Game.Input
         }
 
         [Test]
-        public void KeyPressed_OnIdleFrame_ReturnsFalse()
-        {
-            Assert.IsFalse(InputCompat.KeyPressed(Key.A, KeyCode.A));
-            Assert.IsFalse(InputCompat.KeyPressed(Key.Space, KeyCode.Space));
-        }
-
-        [Test]
-        public void KeyHeld_OnIdleFrame_ReturnsFalse()
-        {
-            Assert.IsFalse(InputCompat.KeyHeld(Key.A, KeyCode.A));
-            Assert.IsFalse(InputCompat.KeyHeld(Key.LeftCtrl, KeyCode.LeftControl));
-        }
-
-        [Test]
         public void EveryMethod_DelegatesToKeyboardInputManager()
         {
             // InputCompat is a thin semantic layer over KeyboardInputManager —
@@ -113,8 +99,6 @@ namespace Valkur.Tests.EditMode.Game.Input
                 nameof(InputCompat.ConfirmPressed),
                 nameof(InputCompat.CancelPressed),
                 nameof(InputCompat.AnyKeyPressed),
-                nameof(InputCompat.KeyPressed),
-                nameof(InputCompat.KeyHeld),
             };
             foreach (var name in mustHave)
             {
@@ -140,8 +124,6 @@ namespace Valkur.Tests.EditMode.Game.Input
             Assert.DoesNotThrow(() => InputCompat.ConfirmPressed());
             Assert.DoesNotThrow(() => InputCompat.CancelPressed());
             Assert.DoesNotThrow(() => InputCompat.AnyKeyPressed());
-            Assert.DoesNotThrow(() => InputCompat.KeyPressed(Key.A, KeyCode.A));
-            Assert.DoesNotThrow(() => InputCompat.KeyHeld(Key.A, KeyCode.A));
 
             // Restore for subsequent tests
             InputSystem.AddDevice<Keyboard>();

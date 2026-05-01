@@ -42,14 +42,5 @@ namespace Valkur.Core.Input
 
         public static bool AnyKeyPressed()
             => KeyboardInputManager.WasAnyKeyPressedThisFrame();
-
-        // Forwarders kept for backwards compatibility with existing callers.
-        // New code should call KeyboardInputManager directly for non-menu keys.
-
-        public static bool KeyPressed(Key newKey, KeyCode legacyKey)
-            => KeyboardInputManager.WasKeyPressedThisFrame(newKey, legacyKey);
-
-        public static bool KeyHeld(Key newKey, KeyCode legacyKey)
-            => KeyboardInputManager.IsKeyPressed(newKey, legacyKey);
     }
 }

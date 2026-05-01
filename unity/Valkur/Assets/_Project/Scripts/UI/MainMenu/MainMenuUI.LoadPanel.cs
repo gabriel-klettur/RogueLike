@@ -455,11 +455,11 @@ namespace Valkur.UI.MainMenu
             {
                 MMLoadSelectedSave();
             }
-            else if (Valkur.Core.Input.InputCompat.KeyPressed(Key.Delete, KeyCode.Delete))
+            else if (Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame())
             {
                 RequestDeleteSelectedSave();
             }
-            else if (Valkur.Core.Input.InputCompat.KeyPressed(Key.F2, KeyCode.F2))
+            else if (Valkur.Core.Input.KeyboardInputManager.WasF2PressedThisFrame())
             {
                 BeginRenameSelectedSave();
             }

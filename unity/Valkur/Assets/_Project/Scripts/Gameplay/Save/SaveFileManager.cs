@@ -82,14 +82,6 @@ namespace Valkur.Gameplay.Save
         public static string GetManualSavePath(string runId, string slotName) =>
             Path.Combine(GetRunDirectory(runId), slotName + SAVE_EXTENSION);
 
-        /// <summary>
-        /// Legacy helper retained for back-compat with older tests and callers
-        /// that still write top-level files. New code MUST use
-        /// <see cref="GetAutosavePath"/> or <see cref="GetManualSavePath"/>.
-        /// </summary>
-        public static string GetSavePath(string fileName) =>
-            Path.Combine(GetSaveDirectory(), fileName + SAVE_EXTENSION);
-
         public static bool IsReservedSaveName(string name) =>
             !string.IsNullOrEmpty(name) && ReservedSaveNames.Contains(name);
 
@@ -340,26 +332,6 @@ namespace Valkur.Gameplay.Save
             string firstBackup = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_1" + SAVE_EXTENSION);
             if (File.Exists(firstBackup)) File.Delete(firstBackup);
             File.Copy(srcAutosave, firstBackup, overwrite: true);
-        }
-
-        /// <summary>Legacy alias retained for back-compat with old tests.</summary>
-        [Obsolete("Use RotateAutosaveBackups(runId). Kept for backward compatibility with pre-refactor tests.")]
-        public static void RotateBackups(string prefix)
-        {
-            // No-op when no legacy autosave_N files exist; otherwise mimic old behavior.
-            string dir = GetSaveDirectory();
-            for (int i = MAX_BACKUPS - 1; i >= 0; i--)
-            {
-                string current = GetSavePath($"{prefix}_{i}");
-                if (!File.Exists(current)) continue;
-                if (i == MAX_BACKUPS - 1) File.Delete(current);
-                else
-                {
-                    string next = GetSavePath($"{prefix}_{i + 1}");
-                    if (File.Exists(next)) File.Delete(next);
-                    File.Move(current, next);
-                }
-            }
         }
 
         // ── Listing ──────────────────────────────────────────────────────────
