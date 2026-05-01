@@ -257,9 +257,8 @@ namespace Valkur.Gameplay.Buildings
                 return;
             }
 
-            var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (mouse == null) { HideCollBrushCursor(); return; }
-
+            // Don't bail when Mouse.current is null — MouseInputManager wraps
+            // the legacy backend so we still have a position to render the cursor.
             var cam = Camera.main;
             if (cam == null) { HideCollBrushCursor(); return; }
 

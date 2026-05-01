@@ -23,9 +23,10 @@ namespace Valkur.Gameplay.Buildings
 
         private void HandleMapInteraction()
         {
-            var mouse = Mouse.current;
-            if (mouse == null) return;
-
+            // Don't bail when Mouse.current is null — MouseInputManager wraps the
+            // legacy backend, which keeps reading even when the new InputSystem
+            // package is dropping events. The original `if (mouse == null) return;`
+            // suppressed all map interaction under the bug.
             bool overUi = UnityEngine.EventSystems.EventSystem.current != null &&
                           UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
 
@@ -64,10 +65,13 @@ namespace Valkur.Gameplay.Buildings
             else if (!overUi) RecomputeHoverStack(worldPos);
             else { _hoveredBuilding = null; _hoverStack.Clear(); }
 
-            // Wheel cycle within hover stack
+            // Wheel cycle within hover stack. The new-system mouse may be cut
+            // off; legacy Input.mouseScrollDelta keeps working — OR them.
             if (!overUi && _hoverStack.Count > 1)
             {
-                float scroll = mouse.scroll.ReadValue().y;
+                float scrollNew = Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0f;
+                float scrollLegacy = UnityEngine.Input.mouseScrollDelta.y * 120f;
+                float scroll = Mathf.Abs(scrollNew) >= 0.1f ? scrollNew : scrollLegacy;
                 if (scroll >  0.01f) { _hoverIndex = (_hoverIndex - 1 + _hoverStack.Count) % _hoverStack.Count; _hoveredBuilding = _hoverStack[_hoverIndex]; }
                 if (scroll < -0.01f) { _hoverIndex = (_hoverIndex + 1) % _hoverStack.Count;                     _hoveredBuilding = _hoverStack[_hoverIndex]; }
             }

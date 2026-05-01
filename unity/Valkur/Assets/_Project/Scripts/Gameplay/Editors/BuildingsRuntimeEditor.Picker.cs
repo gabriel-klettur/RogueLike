@@ -158,11 +158,14 @@ namespace Valkur.Gameplay.Buildings
             _dragGhostRt.sizeDelta = new Vector2(wPx, hPx);
         }
 
-        /// <summary>Called from each slot's EventTrigger.PointerDown â€” records drag origin.</summary>
+        /// <summary>Called from each slot's EventTrigger.PointerDown — records drag origin.</summary>
         private void OnPickerSlotPointerDown(int templateId)
         {
             _pickerDragTemplateId  = templateId;
-            _pickerDragStartScreen = Mouse.current?.position.ReadValue() ?? Vector2.zero;
+            // Read through MouseInputManager so the legacy backend supplies the
+            // start position when the new InputSystem package is dropping OS
+            // events (recurring Unity 2022.3 Editor bug — see MouseInputManager).
+            _pickerDragStartScreen = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
         }
 
         /// <summary>
@@ -171,16 +174,17 @@ namespace Valkur.Gameplay.Buildings
         /// </summary>
         private void UpdatePickerDrag()
         {
-            if (!_pickerDragging && _pickerDragTemplateId >= 0 && (Mouse.current == null || !Mouse.current.leftButton.isPressed))
+            // Cancel the pending picker candidate if the user released the mouse
+            // before the drag threshold was crossed. Routed through MouseInputManager
+            // so a temporarily-broken new InputSystem doesn't falsely report
+            // "released" (the legacy backend keeps the real held state).
+            if (!_pickerDragging && _pickerDragTemplateId >= 0
+                && !Valkur.Core.Input.MouseInputManager.IsLeftMouseButtonPressed())
             {
-                // A pending picker candidate must never survive past the release frame,
-                // even in EditMode tests where no Mouse device is bound.
                 _pickerDragTemplateId = -1;
                 return;
             }
 
-            var mouse = Mouse.current;
-            if (mouse == null) return;
             Vector2 screenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
 
             // Phase 1 â€” waiting for drag threshold
