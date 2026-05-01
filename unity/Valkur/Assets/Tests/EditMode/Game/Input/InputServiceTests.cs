@@ -197,14 +197,37 @@ namespace Valkur.Tests.EditMode.Game.Input
             Assert.IsNotNull(g.Look);
             Assert.IsNotNull(g.PrimaryAttack);
             Assert.IsNotNull(g.SecondaryAttack);
+            Assert.IsNotNull(g.MiddleClick);
             Assert.IsNotNull(g.Dash);
             Assert.IsNotNull(g.Interact);
             Assert.IsNotNull(g.Inventory);
-            Assert.IsNotNull(g.Spell1);
-            Assert.IsNotNull(g.Spell2);
-            Assert.IsNotNull(g.Spell3);
-            Assert.IsNotNull(g.Spell4);
             Assert.IsNotNull(g.Pause);
+            // 23 named spells (Spell1-4 were renamed to semantic names; the
+            // canonical asset is now the single source of truth for the full
+            // player spell binding table — no ad-hoc actions in PlayerController).
+            Assert.IsNotNull(g.SpellDarkball);
+            Assert.IsNotNull(g.SpellIceball);
+            Assert.IsNotNull(g.SpellLightball);
+            Assert.IsNotNull(g.SpellPuddleLava);
+            Assert.IsNotNull(g.SpellMineBasic);
+            Assert.IsNotNull(g.SpellBoomerang);
+            Assert.IsNotNull(g.SpellChainLightning);
+            Assert.IsNotNull(g.SpellVortexPull);
+            Assert.IsNotNull(g.SpellVortexPush);
+            Assert.IsNotNull(g.SpellFlameBreath);
+            Assert.IsNotNull(g.SpellTeleport);
+            Assert.IsNotNull(g.SpellSlash);
+            Assert.IsNotNull(g.SpellLightning);
+            Assert.IsNotNull(g.SpellSphereMagicShield);
+            Assert.IsNotNull(g.SpellSmoke);
+            Assert.IsNotNull(g.SpellSmokeEmitter);
+            Assert.IsNotNull(g.SpellArcaneFlame);
+            Assert.IsNotNull(g.SpellFireworkLaunch);
+            Assert.IsNotNull(g.SpellHealingAura);
+            Assert.IsNotNull(g.SpellMeteorShower);
+            Assert.IsNotNull(g.SpellHealingTotem);
+            Assert.IsNotNull(g.SpellSummonBarbol);
+            Assert.IsNotNull(g.SpellWallIce);
         }
 
         // ─── Helpers ────────────────────────────────────────────────────────────

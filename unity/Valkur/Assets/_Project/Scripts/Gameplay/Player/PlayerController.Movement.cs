@@ -195,9 +195,9 @@ namespace Valkur.Gameplay
             // Python parity: M_MIDDLE → laser_beam
             // First press starts the beam through the spell system; subsequent frames
             // refresh the controller directly (TryCastByKey is gated by cooldown so we
-            // can't rely on it to keep the beam alive).
-            if ((_middleClickAction != null && _middleClickAction.IsPressed()) ||
-                MouseInputManager.IsMiddleMouseButtonPressed())
+            // can't rely on it to keep the beam alive). MouseInputManager covers both
+            // backends, so we don't need to consult MiddleClickAction separately.
+            if (MouseInputManager.IsMiddleMouseButtonPressed())
             {
                 if (_spellCaster != null)
                 {
@@ -208,8 +208,7 @@ namespace Valkur.Gameplay
                         _spellCaster.TryCastByKey("laser_beam", _facingDirection);
                 }
             }
-            if ((_middleClickAction != null && _middleClickAction.WasReleasedThisFrame()) ||
-                MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
+            if (MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
             {
                 var beam = _spellCaster != null ? _spellCaster.GetComponent<LaserBeamController>() : null;
                 if (beam != null) beam.Stop();
@@ -217,8 +216,9 @@ namespace Valkur.Gameplay
 
             // Dash (Ctrl/RightShift) → dash spell through spell system
             // Python parity: K_LCTRL / K_RCTRL → dash spell
-            // The canonical InputService.Gameplay.Dash action covers Ctrl; we OR
-            // with KeyboardInputManager (which folds new+legacy) for safety.
+            // The canonical InputService.Gameplay.Dash action covers space; we OR
+            // with KeyboardInputManager (which folds new+legacy) for the legacy
+            // Ctrl / RightShift fallback the Python build supported.
             var dashAction = DashAction;
             bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
             bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl, KeyCode.LeftControl)
@@ -234,15 +234,17 @@ namespace Valkur.Gameplay
                 }
             }
 
-            // All spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m)
-            // Python parity: full 23 spell key bindings.
-            // OR new-system action with legacy KeyCode fallback (see InputCompat XML doc).
-            if (_spellCaster != null)
+            // All 23 spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m).
+            // Python parity. The (action, spellKey, legacyKey) triples come from
+            // InputService.Gameplay.EnumerateSpellBindings — single source of truth
+            // for both the InputAction reference and the legacy KeyCode fallback.
+            var gp = InputService.Instance?.Gameplay;
+            if (_spellCaster != null && gp != null)
             {
-                foreach (var (action, spellKey) in _spellBindings)
+                foreach (var (action, spellKey, legacyKey) in gp.EnumerateSpellBindings())
                 {
                     bool fired = (action != null && action.WasPerformedThisFrame())
-                              || LegacyKeyDownForSpell(spellKey);
+                              || UnityEngine.Input.GetKeyDown(legacyKey);
                     if (fired)
                     {
                         _spellCaster.TryCastByKey(spellKey, _facingDirection);
@@ -251,34 +253,6 @@ namespace Valkur.Gameplay
                 }
             }
         }
-
-        private static bool LegacyKeyDownForSpell(string spellKey) => spellKey switch
-        {
-            "darkball"            => UnityEngine.Input.GetKeyDown(KeyCode.Alpha1),
-            "iceball"             => UnityEngine.Input.GetKeyDown(KeyCode.Alpha2),
-            "lightball"           => UnityEngine.Input.GetKeyDown(KeyCode.Alpha3),
-            "puddle_lava"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha4),
-            "mine_basic"          => UnityEngine.Input.GetKeyDown(KeyCode.Alpha5),
-            "boomerang"           => UnityEngine.Input.GetKeyDown(KeyCode.Alpha6),
-            "chain_lightning"     => UnityEngine.Input.GetKeyDown(KeyCode.Alpha7),
-            "vortex_pull"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha8),
-            "vortex_push"         => UnityEngine.Input.GetKeyDown(KeyCode.Alpha9),
-            "flame_breath"        => UnityEngine.Input.GetKeyDown(KeyCode.Alpha0),
-            "teleport"            => UnityEngine.Input.GetKeyDown(KeyCode.Q),
-            "slash"               => UnityEngine.Input.GetKeyDown(KeyCode.E),
-            "lightning"           => UnityEngine.Input.GetKeyDown(KeyCode.R),
-            "sphere_magic_shield" => UnityEngine.Input.GetKeyDown(KeyCode.T),
-            "smoke"               => UnityEngine.Input.GetKeyDown(KeyCode.F),
-            "smoke_emitter"       => UnityEngine.Input.GetKeyDown(KeyCode.G),
-            "arcane_flame"        => UnityEngine.Input.GetKeyDown(KeyCode.C),
-            "firework_launch"     => UnityEngine.Input.GetKeyDown(KeyCode.V),
-            "healing_aura"        => UnityEngine.Input.GetKeyDown(KeyCode.X),
-            "meteor_shower"       => UnityEngine.Input.GetKeyDown(KeyCode.P),
-            "healing_totem"       => UnityEngine.Input.GetKeyDown(KeyCode.L),
-            "summon_barbol"       => UnityEngine.Input.GetKeyDown(KeyCode.U),
-            "wall_ice"            => UnityEngine.Input.GetKeyDown(KeyCode.M),
-            _ => false,
-        };
 
         public void SetMoveSpeed(float speed)
         {

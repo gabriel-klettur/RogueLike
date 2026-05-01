@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -158,34 +159,118 @@ namespace Valkur.Core.Input
         public sealed class GameplayActions
         {
             public InputActionMap Map { get; }
+
+            // Movement + camera
             public InputAction Move { get; }
             public InputAction Look { get; }
-            public InputAction PrimaryAttack { get; }
+
+            // Combat / attacks
+            public InputAction PrimaryAttack   { get; }
             public InputAction SecondaryAttack { get; }
-            public InputAction Dash { get; }
-            public InputAction Interact { get; }
+            public InputAction MiddleClick     { get; }
+            public InputAction Dash            { get; }
+
+            // Misc
+            public InputAction Interact  { get; }
             public InputAction Inventory { get; }
-            public InputAction Spell1 { get; }
-            public InputAction Spell2 { get; }
-            public InputAction Spell3 { get; }
-            public InputAction Spell4 { get; }
-            public InputAction Pause { get; }
+            public InputAction Pause     { get; }
+
+            // 23 named spells (Python parity, see PlayerController spell list)
+            public InputAction SpellDarkball         { get; }
+            public InputAction SpellIceball          { get; }
+            public InputAction SpellLightball        { get; }
+            public InputAction SpellPuddleLava       { get; }
+            public InputAction SpellMineBasic        { get; }
+            public InputAction SpellBoomerang        { get; }
+            public InputAction SpellChainLightning   { get; }
+            public InputAction SpellVortexPull       { get; }
+            public InputAction SpellVortexPush       { get; }
+            public InputAction SpellFlameBreath      { get; }
+            public InputAction SpellTeleport         { get; }
+            public InputAction SpellSlash            { get; }
+            public InputAction SpellLightning        { get; }
+            public InputAction SpellSphereMagicShield{ get; }
+            public InputAction SpellSmoke            { get; }
+            public InputAction SpellSmokeEmitter     { get; }
+            public InputAction SpellArcaneFlame      { get; }
+            public InputAction SpellFireworkLaunch   { get; }
+            public InputAction SpellHealingAura      { get; }
+            public InputAction SpellMeteorShower     { get; }
+            public InputAction SpellHealingTotem     { get; }
+            public InputAction SpellSummonBarbol     { get; }
+            public InputAction SpellWallIce          { get; }
 
             internal GameplayActions(InputActionMap map)
             {
-                Map             = map;
+                Map = map;
+
                 Move            = map.FindAction("Move",            throwIfNotFound: true);
                 Look            = map.FindAction("Look",            throwIfNotFound: true);
                 PrimaryAttack   = map.FindAction("PrimaryAttack",   throwIfNotFound: true);
                 SecondaryAttack = map.FindAction("SecondaryAttack", throwIfNotFound: true);
+                MiddleClick     = map.FindAction("MiddleClick",     throwIfNotFound: true);
                 Dash            = map.FindAction("Dash",            throwIfNotFound: true);
                 Interact        = map.FindAction("Interact",        throwIfNotFound: true);
                 Inventory       = map.FindAction("Inventory",       throwIfNotFound: true);
-                Spell1          = map.FindAction("Spell1",          throwIfNotFound: true);
-                Spell2          = map.FindAction("Spell2",          throwIfNotFound: true);
-                Spell3          = map.FindAction("Spell3",          throwIfNotFound: true);
-                Spell4          = map.FindAction("Spell4",          throwIfNotFound: true);
                 Pause           = map.FindAction("Pause",           throwIfNotFound: true);
+
+                SpellDarkball          = map.FindAction("SpellDarkball",          throwIfNotFound: true);
+                SpellIceball           = map.FindAction("SpellIceball",           throwIfNotFound: true);
+                SpellLightball         = map.FindAction("SpellLightball",         throwIfNotFound: true);
+                SpellPuddleLava        = map.FindAction("SpellPuddleLava",        throwIfNotFound: true);
+                SpellMineBasic         = map.FindAction("SpellMineBasic",         throwIfNotFound: true);
+                SpellBoomerang         = map.FindAction("SpellBoomerang",         throwIfNotFound: true);
+                SpellChainLightning    = map.FindAction("SpellChainLightning",    throwIfNotFound: true);
+                SpellVortexPull        = map.FindAction("SpellVortexPull",        throwIfNotFound: true);
+                SpellVortexPush        = map.FindAction("SpellVortexPush",        throwIfNotFound: true);
+                SpellFlameBreath       = map.FindAction("SpellFlameBreath",       throwIfNotFound: true);
+                SpellTeleport          = map.FindAction("SpellTeleport",          throwIfNotFound: true);
+                SpellSlash             = map.FindAction("SpellSlash",             throwIfNotFound: true);
+                SpellLightning         = map.FindAction("SpellLightning",         throwIfNotFound: true);
+                SpellSphereMagicShield = map.FindAction("SpellSphereMagicShield", throwIfNotFound: true);
+                SpellSmoke             = map.FindAction("SpellSmoke",             throwIfNotFound: true);
+                SpellSmokeEmitter      = map.FindAction("SpellSmokeEmitter",      throwIfNotFound: true);
+                SpellArcaneFlame       = map.FindAction("SpellArcaneFlame",       throwIfNotFound: true);
+                SpellFireworkLaunch    = map.FindAction("SpellFireworkLaunch",    throwIfNotFound: true);
+                SpellHealingAura       = map.FindAction("SpellHealingAura",       throwIfNotFound: true);
+                SpellMeteorShower      = map.FindAction("SpellMeteorShower",      throwIfNotFound: true);
+                SpellHealingTotem      = map.FindAction("SpellHealingTotem",      throwIfNotFound: true);
+                SpellSummonBarbol      = map.FindAction("SpellSummonBarbol",      throwIfNotFound: true);
+                SpellWallIce           = map.FindAction("SpellWallIce",           throwIfNotFound: true);
+            }
+
+            /// <summary>
+            /// Enumerates every spell action paired with the <c>spellKey</c> string
+            /// that <see cref="Valkur.Gameplay.Spells.SpellCaster.TryCastByKey"/>
+            /// expects, plus the legacy <see cref="UnityEngine.KeyCode"/> fallback
+            /// for the OR pipeline. Used by <c>PlayerController.PollCombatActions</c>.
+            /// </summary>
+            public IEnumerable<(InputAction action, string spellKey, UnityEngine.KeyCode legacyKey)>
+                EnumerateSpellBindings()
+            {
+                yield return (SpellDarkball,          "darkball",            UnityEngine.KeyCode.Alpha1);
+                yield return (SpellIceball,           "iceball",             UnityEngine.KeyCode.Alpha2);
+                yield return (SpellLightball,         "lightball",           UnityEngine.KeyCode.Alpha3);
+                yield return (SpellPuddleLava,        "puddle_lava",         UnityEngine.KeyCode.Alpha4);
+                yield return (SpellMineBasic,         "mine_basic",          UnityEngine.KeyCode.Alpha5);
+                yield return (SpellBoomerang,         "boomerang",           UnityEngine.KeyCode.Alpha6);
+                yield return (SpellChainLightning,    "chain_lightning",     UnityEngine.KeyCode.Alpha7);
+                yield return (SpellVortexPull,        "vortex_pull",         UnityEngine.KeyCode.Alpha8);
+                yield return (SpellVortexPush,        "vortex_push",         UnityEngine.KeyCode.Alpha9);
+                yield return (SpellFlameBreath,       "flame_breath",        UnityEngine.KeyCode.Alpha0);
+                yield return (SpellTeleport,          "teleport",            UnityEngine.KeyCode.Q);
+                yield return (SpellSlash,             "slash",               UnityEngine.KeyCode.E);
+                yield return (SpellLightning,         "lightning",           UnityEngine.KeyCode.R);
+                yield return (SpellSphereMagicShield, "sphere_magic_shield", UnityEngine.KeyCode.T);
+                yield return (SpellSmoke,             "smoke",               UnityEngine.KeyCode.F);
+                yield return (SpellSmokeEmitter,      "smoke_emitter",       UnityEngine.KeyCode.G);
+                yield return (SpellArcaneFlame,       "arcane_flame",        UnityEngine.KeyCode.C);
+                yield return (SpellFireworkLaunch,    "firework_launch",     UnityEngine.KeyCode.V);
+                yield return (SpellHealingAura,       "healing_aura",        UnityEngine.KeyCode.X);
+                yield return (SpellMeteorShower,      "meteor_shower",       UnityEngine.KeyCode.P);
+                yield return (SpellHealingTotem,      "healing_totem",       UnityEngine.KeyCode.L);
+                yield return (SpellSummonBarbol,      "summon_barbol",       UnityEngine.KeyCode.U);
+                yield return (SpellWallIce,           "wall_ice",            UnityEngine.KeyCode.M);
             }
         }
 

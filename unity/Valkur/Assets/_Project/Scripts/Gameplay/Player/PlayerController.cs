@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
@@ -14,15 +13,18 @@ namespace Valkur.Gameplay
     /// Maps to Python's player movement + combat + spell casting systems.
     ///
     /// <para>
-    /// The five core actions (Move, Look, PrimaryAttack, SecondaryAttack, Dash)
-    /// come from the canonical <see cref="InputService.Gameplay"/> action map
-    /// — bindings live in <c>Resources/Input/ValkurInputActions.inputactions</c>
-    /// so a remap there propagates here automatically.
+    /// Every input read goes through <see cref="InputService.Gameplay"/>:
+    /// Move / Look / PrimaryAttack / SecondaryAttack / MiddleClick / Dash /
+    /// the 23 named spells (<see cref="InputService.GameplayActions.SpellDarkball"/> …
+    /// <see cref="InputService.GameplayActions.SpellWallIce"/>). Bindings live in
+    /// the canonical <c>Resources/Input/ValkurInputActions.inputactions</c> asset
+    /// — no ad-hoc <see cref="InputAction"/> definitions remain in this class.
     /// </para>
     /// <para>
-    /// MiddleClick + the 23 spell bindings (1-0, q/e/r/t/f/g/c/v/x/p/l/u/m)
-    /// remain ad-hoc because the canonical asset's Gameplay map only ships 4
-    /// generic spell slots — expanding it to 23 is a follow-up.
+    /// All <c>WasPerformedThisFrame</c> reads on those actions are OR'd with the
+    /// legacy <see cref="UnityEngine.Input"/> backend at the call site so the
+    /// player keeps responding when the new InputSystem package drops OS events
+    /// (recurring Unity 2022.3 Editor bug — see <c>MouseInputManager</c> XML).
     /// </para>
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
@@ -46,20 +48,14 @@ namespace Valkur.Gameplay
         private Vector2 _facingDirection = Vector2.down;
         private Camera _mainCamera;
 
-        // Resolved on demand from InputService.Gameplay — never cached as a long-lived
-        // reference (avoids the zombie-after-hot-reload class of bug). Use the helpers
-        // below (MoveAction, LookAction, …) at every read.
+        // Resolved on demand from InputService.Gameplay — never cached as long-lived
+        // references (avoids the zombie-after-hot-reload class of bug).
         private InputAction MoveAction            => InputService.Instance?.Gameplay?.Move;
         private InputAction LookAction            => InputService.Instance?.Gameplay?.Look;
         private InputAction PrimaryAttackAction   => InputService.Instance?.Gameplay?.PrimaryAttack;
         private InputAction SecondaryAttackAction => InputService.Instance?.Gameplay?.SecondaryAttack;
+        private InputAction MiddleClickAction     => InputService.Instance?.Gameplay?.MiddleClick;
         private InputAction DashAction            => InputService.Instance?.Gameplay?.Dash;
-
-        // Ad-hoc actions kept locally because the canonical asset doesn't model them.
-        // EnsureInputActionsLive() rebuilds these if a hot-recompile zombifies the fields.
-        private InputAction _middleClickAction;
-        private readonly List<(InputAction action, string spellKey)> _spellBindings =
-            new List<(InputAction, string)>();
 
         public Vector2 FacingDirection => _facingDirection;
         public Vector2 MoveInput => _moveInput;
@@ -83,118 +79,38 @@ namespace Valkur.Gameplay
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
-            // Ensure the canonical Gameplay map is live (InputService leaves it
-            // disabled by default — pause / menus rely on that). The player's
-            // existence implies gameplay is active.
             EnableGameplayMap();
-            CreateAdHocActions();
         }
 
         private void EnableGameplayMap()
         {
+            // InputService leaves the Gameplay map disabled by default —
+            // pause / menu flows toggle it, and the player's existence
+            // implies gameplay is active.
             var gp = InputService.Instance?.Gameplay?.Map;
             if (gp != null && !gp.enabled) gp.Enable();
         }
 
-        private void CreateAdHocActions()
-        {
-            _middleClickAction = new InputAction("MiddleClick", InputActionType.Button, "<Mouse>/middleButton");
-            _middleClickAction.Enable();
-
-            // Python parity: full spell key bindings.
-            // Number keys
-            AddSpellBinding("<Keyboard>/1", "darkball");
-            AddSpellBinding("<Keyboard>/2", "iceball");
-            AddSpellBinding("<Keyboard>/3", "lightball");
-            AddSpellBinding("<Keyboard>/4", "puddle_lava");
-            AddSpellBinding("<Keyboard>/5", "mine_basic");
-            AddSpellBinding("<Keyboard>/6", "boomerang");
-            AddSpellBinding("<Keyboard>/7", "chain_lightning");
-            AddSpellBinding("<Keyboard>/8", "vortex_pull");
-            AddSpellBinding("<Keyboard>/9", "vortex_push");
-            AddSpellBinding("<Keyboard>/0", "flame_breath");
-
-            // Letter keys
-            AddSpellBinding("<Keyboard>/q", "teleport");
-            AddSpellBinding("<Keyboard>/e", "slash");
-            AddSpellBinding("<Keyboard>/r", "lightning");
-            AddSpellBinding("<Keyboard>/t", "sphere_magic_shield");
-            AddSpellBinding("<Keyboard>/f", "smoke");
-            AddSpellBinding("<Keyboard>/g", "smoke_emitter");
-            AddSpellBinding("<Keyboard>/c", "arcane_flame");
-            AddSpellBinding("<Keyboard>/v", "firework_launch");
-            AddSpellBinding("<Keyboard>/x", "healing_aura");
-            AddSpellBinding("<Keyboard>/p", "meteor_shower");
-            AddSpellBinding("<Keyboard>/l", "healing_totem");
-            AddSpellBinding("<Keyboard>/u", "summon_barbol");
-            AddSpellBinding("<Keyboard>/m", "wall_ice");
-
-            Debug.Log($"[PlayerController] Ad-hoc actions: middleClick + {_spellBindings.Count} spell bindings. " +
-                      "Move/Look/PrimaryAttack/SecondaryAttack/Dash come from InputService.Gameplay.");
-        }
-
         /// <summary>
-        /// Detect post-hot-reload zombie state on the ad-hoc <see cref="InputAction"/>
-        /// fields and rebuild them. The InputService.Gameplay actions never go zombie
-        /// because they are resolved on every read (see the *Action properties above);
-        /// only the locally-owned MiddleClick + spell bindings need this guard.
+        /// Re-enables the canonical Gameplay map every frame. With Domain Reload
+        /// off the map state can drift if a pause / menu flow disables it and a
+        /// hot-recompile interleaves; touching it every Update is cheap and
+        /// guarantees the player's input never silently dies mid-Play. Replaces
+        /// the previous EnsureInputActionsLive zombie-revival logic — there are
+        /// no ad-hoc <see cref="InputAction"/> fields left to zombify.
         /// </summary>
         private void EnsureInputActionsLive()
         {
-            // Ensure the canonical map is enabled — pause / menu flows can disable it.
             EnableGameplayMap();
-
-            if (_middleClickAction != null && _middleClickAction.bindings.Count > 0) return;
-
-            // Dispose the zombies and rebuild from scratch.
-            DisposeIfNotNull(ref _middleClickAction);
-            for (int i = 0; i < _spellBindings.Count; i++)
-            {
-                var sb = _spellBindings[i];
-                try { sb.action?.Disable(); sb.action?.Dispose(); } catch { }
-            }
-            _spellBindings.Clear();
-
-            CreateAdHocActions();
-        }
-
-        private static void DisposeIfNotNull(ref InputAction action)
-        {
-            if (action == null) return;
-            try { action.Disable(); action.Dispose(); } catch { }
-            action = null;
-        }
-
-        private void AddSpellBinding(string binding, string spellKey)
-        {
-            var action = new InputAction($"Spell_{spellKey}", InputActionType.Button, binding);
-            action.Enable();
-            _spellBindings.Add((action, spellKey));
         }
 
         private void OnEnable()
         {
             EnableGameplayMap();
-            if (_middleClickAction != null) _middleClickAction.Enable();
-            foreach (var (action, _) in _spellBindings)
-                action?.Enable();
         }
 
-        private void OnDisable()
-        {
-            // Don't disable the canonical Gameplay map here — pause/menu flows own
-            // its on/off cycle. Only disable our locally-owned actions.
-            _middleClickAction?.Disable();
-            foreach (var (action, _) in _spellBindings)
-                action?.Disable();
-        }
-
-        private void OnDestroy()
-        {
-            _middleClickAction?.Dispose();
-            foreach (var (action, _) in _spellBindings)
-                action?.Dispose();
-            _spellBindings.Clear();
-        }
+        // OnDisable / OnDestroy intentionally do nothing: the Gameplay map is
+        // owned by InputService and the player no longer creates per-instance
+        // actions, so there's nothing to dispose.
     }
 }
