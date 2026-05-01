@@ -80,35 +80,18 @@ namespace Valkur.Gameplay.TileEditor
         {
             float scrollDelta = _input.PollZoom();
             if (Mathf.Abs(scrollDelta) < 0.1f) return;
-            
+
             var camSetup = Valkur.Gameplay.CameraSetup.Instance;
             if (camSetup == null) return;
 
-            // Get current size from CameraSetup
+            // Multiplicative zoom — same model as gameplay (CameraSetup.Update).
+            // No clamp by design: zoom is intentionally unbounded so we can find
+            // the rendering pipeline's breaking point.
             float currentSize = camSetup.GetCurrentOrthographicSize();
-            
-            // Normalize scroll delta to get consistent zoom behavior
-            // Most mice return 1 or -1 per click, but some return larger values
-            float normalizedScroll = Mathf.Sign(scrollDelta);
-            
-            // Zoom speed multiplier - can be adjusted for desired sensitivity
-            float zoomSpeed = 0.1f;
-            float zoomFactor = 1f - (normalizedScroll * zoomSpeed);
-            
-            // Apply zoom to orthographic size
+            float zoomFactor = 1f - Mathf.Sign(scrollDelta) * 0.25f;
             float newSize = currentSize * zoomFactor;
-            
-            // Set reasonable bounds to prevent extreme zoom levels
-            // Min: 0.5 units (very zoomed in)
-            // Max: 50 units (very zoomed out) - this provides "infinite" feel while preventing issues
-            newSize = Mathf.Clamp(newSize, 0.5f, 50f);
-            
-            // Only apply if size actually changed
-            if (Mathf.Abs(newSize - currentSize) > 0.01f)
-            {
-                camSetup.SetTileEditorZoom(newSize);
-                Debug.Log($"[TileEditor] Zoom: {scrollDelta:F2} -> size {newSize:F2}");
-            }
+
+            camSetup.SetTileEditorZoom(newSize);
         }
 
         private partial void HandleUndoRedo()

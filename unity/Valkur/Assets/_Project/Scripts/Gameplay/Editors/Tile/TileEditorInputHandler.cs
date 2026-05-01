@@ -95,24 +95,18 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public float PollZoom()
         {
-            // OR new + legacy. Legacy mouseScrollDelta is more reliable in Editor.
-            float newScroll = 0f;
-            var mouse = Mouse.current;
-            if (mouse != null) newScroll = mouse.scroll.ReadValue().y;
-            float legacyScroll = UnityEngine.Input.mouseScrollDelta.y * 120f; // legacy returns ticks; new system returns pixels — scale.
-            float scroll = Mathf.Abs(newScroll) >= 0.1f ? newScroll : legacyScroll;
+            // MouseInputManager.GetMouseWheelDelta() ORs new + legacy backends
+            // so the wheel keeps firing when the new InputSystem package drops
+            // OS events (Unity 2022.3 Editor bug).
+            float scroll = MouseInputManager.GetMouseWheelDelta();
+            if (Mathf.Abs(scroll) < 0.1f) return 0f;
 
-            if (Mathf.Abs(scroll) >= 0.1f)
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
-                if (UnityEngine.EventSystems.EventSystem.current != null &&
-                    UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
-                {
-                    return 0f;
-                }
-                return scroll;
+                return 0f;
             }
-
-            return 0f;
+            return scroll;
         }
 
         /// <summary>
