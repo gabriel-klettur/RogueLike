@@ -22,12 +22,22 @@ namespace Valkur.Data
     /// Maps to Python's InventoryPlayerSchema: {player_id, capacity, slots}.
     /// </summary>
     [Serializable]
-    public class InventoryData
+    public class InventoryData : IVersioned
     {
         public string playerId;
         public int capacity;
         public List<InventorySlotData> slots = new List<InventorySlotData>();
         public string schemaVersion;
+
+        // IVersioned: delegates to the existing JsonUtility-serialized field
+        // so adopting the interface does not change the on-disk shape and
+        // lets MigrationChain<InventoryData> drive any future inventory
+        // schema bump without re-reading the field by reflection.
+        string IVersioned.SchemaVersion
+        {
+            get => schemaVersion;
+            set => schemaVersion = value;
+        }
     }
 
     /// <summary>
