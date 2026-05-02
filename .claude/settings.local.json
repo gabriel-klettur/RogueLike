@@ -7,7 +7,13 @@
       "Bash(sed 's/\\\\.[^.]*$//')",
       "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -20 \"{}\"')",
       "Bash(sed 's/\\\\.[A-Z][a-zA-Z]*$//')",
-      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -15 \"{}\"')"
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\" && head -15 \"{}\"')",
+      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\\\\Gameplay\\\\Editors\\\\Tile\\\\\" -Filter \"*.cs\" | Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\\\\Gameplay\\\\Editors\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\\\\Gameplay\\\\Editors\\\\Buildings\" -Recurse -File)",
+      "Bash(Select-Object Name)",
+      "Bash(Sort-Object)"
     ]
   }
 }
