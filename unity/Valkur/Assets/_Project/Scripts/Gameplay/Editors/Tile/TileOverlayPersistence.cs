@@ -33,13 +33,21 @@ namespace Valkur.Gameplay.TileEditor
         private readonly HashSet<string> _dirtyZones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // Repository injection point. Tests pass an InMemoryTileOverrideRepository
-        // through the second constructor overload; production code keeps using
+        // through the third constructor overload; production code keeps using
         // the default-constructed instance, which falls back to the JSON-file
         // backend (byte-compatible with the legacy persistentDataPath/MapOverrides
         // layout). The static helpers in TileOverlayPersistence.Static.cs still
         // hit File.IO directly for back-compat with their many call-sites; those
         // will migrate when their consumers do.
         private readonly ITileOverrideRepository _repository;
+
+        // Phase 1 per-world routing. Defaults to WorldId.Base so the legacy
+        // single-world boot path is byte-compatible — overlays continue to
+        // land directly under persistentDataPath/MapOverrides/. Multi-world
+        // callers pass the active context's WorldId at construction time.
+        private readonly WorldId _worldId;
+
+        public WorldId WorldId => _worldId;
 
         public event Action OnDirtyChanged;
         public event Action<string> OnZoneSaved;
@@ -53,14 +61,20 @@ namespace Valkur.Gameplay.TileEditor
             Path.Combine(Application.persistentDataPath, OVERRIDE_DIR_NAME);
 
         public TileOverlayPersistence(ZoneManager zones, WorldGridBuilder grid)
-            : this(zones, grid, repository: null) { }
+            : this(zones, grid, repository: null, worldId: WorldId.Base) { }
 
         public TileOverlayPersistence(ZoneManager zones, WorldGridBuilder grid,
                                       ITileOverrideRepository repository)
+            : this(zones, grid, repository, worldId: WorldId.Base) { }
+
+        public TileOverlayPersistence(ZoneManager zones, WorldGridBuilder grid,
+                                      ITileOverrideRepository repository,
+                                      WorldId worldId)
         {
             _zones = zones;
             _grid = grid;
             _repository = repository ?? new JsonFileTileOverrideRepository();
+            _worldId = worldId;
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -141,7 +155,7 @@ namespace Valkur.Gameplay.TileEditor
             try
             {
                 string json = BuildOverlayJson(zone);
-                _repository.Write(WorldId.Base, zoneName, json);
+                _repository.Write(_worldId, zoneName, json);
                 OnZoneSaved?.Invoke(zoneName);
                 Debug.Log($"[TileOverlayPersistence] Saved zone '{zoneName}' via repository.");
                 return true;
