@@ -4,7 +4,9 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Core.Coordinates;
 using Valkur.Gameplay.World;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -30,6 +32,15 @@ namespace Valkur.Gameplay.TileEditor
         private readonly WorldGridBuilder _grid;
         private readonly HashSet<string> _dirtyZones = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // Repository injection point. Tests pass an InMemoryTileOverrideRepository
+        // through the second constructor overload; production code keeps using
+        // the default-constructed instance, which falls back to the JSON-file
+        // backend (byte-compatible with the legacy persistentDataPath/MapOverrides
+        // layout). The static helpers in TileOverlayPersistence.Static.cs still
+        // hit File.IO directly for back-compat with their many call-sites; those
+        // will migrate when their consumers do.
+        private readonly ITileOverrideRepository _repository;
+
         public event Action OnDirtyChanged;
         public event Action<string> OnZoneSaved;
         public event Action<string, Exception> OnSaveFailed;
@@ -42,9 +53,14 @@ namespace Valkur.Gameplay.TileEditor
             Path.Combine(Application.persistentDataPath, OVERRIDE_DIR_NAME);
 
         public TileOverlayPersistence(ZoneManager zones, WorldGridBuilder grid)
+            : this(zones, grid, repository: null) { }
+
+        public TileOverlayPersistence(ZoneManager zones, WorldGridBuilder grid,
+                                      ITileOverrideRepository repository)
         {
             _zones = zones;
             _grid = grid;
+            _repository = repository ?? new JsonFileTileOverrideRepository();
         }
 
         // ─────────────────────────────────────────────────────────────────
@@ -124,11 +140,10 @@ namespace Valkur.Gameplay.TileEditor
 
             try
             {
-                string path = OverridePathForZone(zoneName);
                 string json = BuildOverlayJson(zone);
-                File.WriteAllText(path, json);
+                _repository.Write(WorldId.Base, zoneName, json);
                 OnZoneSaved?.Invoke(zoneName);
-                Debug.Log($"[TileOverlayPersistence] Saved zone '{zoneName}' → {path}");
+                Debug.Log($"[TileOverlayPersistence] Saved zone '{zoneName}' via repository.");
                 return true;
             }
             catch (Exception ex)
