@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Save
@@ -68,19 +69,42 @@ namespace Valkur.Gameplay.Save
 
         /// <summary>Returns the per-run folder for <paramref name="runId"/>. Empty/null routes to the legacy folder.</summary>
         public static string GetRunDirectory(string runId)
+            => GetRunDirectory(runId, WorldId.Base);
+
+        /// <summary>
+        /// Phase 1 per-world overload. <see cref="WorldId.Base"/> preserves
+        /// the legacy flat layout (<c>Saves/&lt;runId&gt;/...</c>) so existing
+        /// saves remain readable byte-for-byte. Non-base worlds nest under
+        /// <c>Saves/&lt;runId&gt;/worlds/&lt;slug&gt;/...</c> from day one so a
+        /// session that visited multiple dimensions does not collapse them
+        /// into one save folder.
+        /// </summary>
+        public static string GetRunDirectory(string runId, WorldId worldId)
         {
             if (string.IsNullOrEmpty(runId)) return GetLegacyRunDirectory();
-            return Path.Combine(GetSaveDirectory(), SanitizeRunIdComponent(runId));
+            string runRoot = Path.Combine(GetSaveDirectory(), SanitizeRunIdComponent(runId));
+            if (worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug))
+                return runRoot;
+            return Path.Combine(runRoot, "worlds", SanitizeRunIdComponent(worldId.Slug));
         }
 
         public static string GetBackupsDirectory(string runId) =>
-            Path.Combine(GetRunDirectory(runId), BACKUPS_SUBDIR);
+            GetBackupsDirectory(runId, WorldId.Base);
+
+        public static string GetBackupsDirectory(string runId, WorldId worldId) =>
+            Path.Combine(GetRunDirectory(runId, worldId), BACKUPS_SUBDIR);
 
         public static string GetAutosavePath(string runId) =>
-            Path.Combine(GetRunDirectory(runId), AUTOSAVE_NAME + SAVE_EXTENSION);
+            GetAutosavePath(runId, WorldId.Base);
+
+        public static string GetAutosavePath(string runId, WorldId worldId) =>
+            Path.Combine(GetRunDirectory(runId, worldId), AUTOSAVE_NAME + SAVE_EXTENSION);
 
         public static string GetManualSavePath(string runId, string slotName) =>
-            Path.Combine(GetRunDirectory(runId), slotName + SAVE_EXTENSION);
+            GetManualSavePath(runId, slotName, WorldId.Base);
+
+        public static string GetManualSavePath(string runId, string slotName, WorldId worldId) =>
+            Path.Combine(GetRunDirectory(runId, worldId), slotName + SAVE_EXTENSION);
 
         public static bool IsReservedSaveName(string name) =>
             !string.IsNullOrEmpty(name) && ReservedSaveNames.Contains(name);
