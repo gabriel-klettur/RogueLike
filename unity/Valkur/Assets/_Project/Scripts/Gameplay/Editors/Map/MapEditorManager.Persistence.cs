@@ -19,8 +19,20 @@ namespace Valkur.Gameplay.MapEditor
         // MapEditorDataGuard relies on for recovery.
         private IMapEditorZonesRepository _zonesRepository;
 
+        // Phase 1 per-world routing. SetWorld() lets a future bootstrap
+        // pipeline scope this MapEditorManager instance to a specific
+        // dimension. Defaults to WorldId.Base so the legacy single-world
+        // boot path continues to read/write
+        // persistentDataPath/map_editor_zones.json byte-for-byte.
+        private WorldId _persistenceWorldId = WorldId.Base;
+
+        public WorldId PersistenceWorldId => _persistenceWorldId;
+
         public void SetZonesRepository(IMapEditorZonesRepository repository)
             => _zonesRepository = repository;
+
+        public void SetPersistenceWorld(WorldId worldId)
+            => _persistenceWorldId = worldId;
 
         private IMapEditorZonesRepository ResolveZonesRepository()
             => _zonesRepository ?? (_zonesRepository = new JsonFileMapEditorZonesRepository());
@@ -64,7 +76,7 @@ namespace Valkur.Gameplay.MapEditor
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
-                ResolveZonesRepository().WriteAtomic(WorldId.Base, json);
+                ResolveZonesRepository().WriteAtomic(_persistenceWorldId, json);
                 if (shelvedPreserved > 0)
                     Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) " +
                               $"({shelvedPreserved} shelved preserved) via repository.");
@@ -111,7 +123,7 @@ namespace Valkur.Gameplay.MapEditor
         private string TryReadPersistenceFile(out ZonePersistenceFile data)
         {
             data = null;
-            string json = ResolveZonesRepository().ReadWithSidecarFallback(WorldId.Base, out bool fromSidecar);
+            string json = ResolveZonesRepository().ReadWithSidecarFallback(_persistenceWorldId, out bool fromSidecar);
             if (json == null) return null;
             try
             {
