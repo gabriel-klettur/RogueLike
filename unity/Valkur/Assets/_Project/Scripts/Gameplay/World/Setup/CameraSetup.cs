@@ -149,7 +149,12 @@ namespace Valkur.Gameplay
             // player. Without this, the player can press F10 / F6 / etc., close the
             // editor, and find the world rendered as a blue void because the vcam
             // never got reattached.
-            bool noEditorActive = !GameEditorManager.HasInstance ||
+            //
+            // Only fires when a GameEditorManager exists — i.e. an actual runtime
+            // session that owns the editor lifecycle. Without that guard, isolated
+            // unit tests that exercise DetachFollow() in a stripped scene would
+            // see Update() immediately undo the detach and fail their contract.
+            bool noEditorActive = GameEditorManager.HasInstance &&
                                   !GameEditorManager.Instance.AnyEditorActive;
             if (_detached && noEditorActive)
             {
