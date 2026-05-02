@@ -71,13 +71,55 @@ namespace Valkur.Editor
                 Debug.LogWarning($"[MapEditorDataGuard] Restored '{FILE_NAME}' from project backup '{projBak}'.");
             }
 
-            // 4) If primary now exists with custom-zone content, keep the
+            // 4) Regression check: primary exists but is poorer than the
+            //    project backup. This is the test-induced loss vector — a
+            //    test ran PersistZonesToDisk on a manager seeded with one
+            //    zone, then LoadZonesFromDisk on next boot dropped it as a
+            //    DB collision and saved a DB-only file. The project backup
+            //    still has the user's full set; promote it back.
+            if (HasUsableContent(primary) && HasUsableContent(projBak) &&
+                IsPrimaryPoorerThanBackup(primary, projBak))
+            {
+                File.Copy(projBak, primary, overwrite: true);
+                Debug.LogWarning($"[MapEditorDataGuard] Primary persistence appears regressed " +
+                                 $"(fewer user zones than project backup) — restored from '{projBak}'.");
+            }
+
+            // 5) If primary now exists with custom-zone content, keep the
             //    project backup fresh so the next "open after closing Unity"
             //    has something to recover from.
             if (HasUsableContent(primary) && PersistenceContainsUserZones(primary))
             {
                 RefreshProjectBackup(primary, projBak);
             }
+        }
+
+        // Cheap zone-count-based regression detector: if the project backup
+        // has a strictly higher nextZoneIndex than the primary, the primary
+        // has lost user-created zones. nextZoneIndex monotonically grows on
+        // every ConfirmAddZone, so a drop is impossible under correct usage.
+        private static bool IsPrimaryPoorerThanBackup(string primary, string projBak)
+        {
+            int pIdx = ReadNextZoneIndex(primary);
+            int bIdx = ReadNextZoneIndex(projBak);
+            return bIdx > pIdx && bIdx > 1;
+        }
+
+        private static int ReadNextZoneIndex(string path)
+        {
+            try
+            {
+                string text = File.ReadAllText(path);
+                int idx = text.IndexOf("nextZoneIndex", StringComparison.Ordinal);
+                if (idx < 0) return 1;
+                int colon = text.IndexOf(':', idx);
+                if (colon < 0) return 1;
+                int end = text.IndexOfAny(new[] { ',', '\n', '\r', '}' }, colon);
+                if (end < 0) end = text.Length;
+                string val = text.Substring(colon + 1, end - colon - 1).Trim();
+                return int.TryParse(val, out int n) ? n : 1;
+            }
+            catch { return 1; }
         }
 
         // ── Orphan handling ──────────────────────────────────────────────────────────

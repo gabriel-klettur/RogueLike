@@ -21,28 +21,73 @@ namespace Valkur.Gameplay.MapEditor
                 nextZoneIndex = _state.NextZoneIndex
             };
 
-            var zones = zoneManager.GetZonesSnapshot();
-            for (int i = 0; i < zones.Length; i++)
+            var liveZones = zoneManager.GetZonesSnapshot();
+            var liveNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var liveOffsets = new HashSet<Vector2Int>();
+            for (int i = 0; i < liveZones.Length; i++)
             {
+                if (string.IsNullOrEmpty(liveZones[i].zoneName)) continue;
+                liveNames.Add(liveZones[i].zoneName);
+                liveOffsets.Add(liveZones[i].gridOffset);
                 data.zones.Add(new ZonePersistenceEntry
                 {
-                    zoneName         = zones[i].zoneName,
-                    gridOffsetX      = zones[i].gridOffset.x,
-                    gridOffsetY      = zones[i].gridOffset.y,
-                    editableInTileEditor = zones[i].editableInTileEditor
+                    zoneName             = liveZones[i].zoneName,
+                    gridOffsetX          = liveZones[i].gridOffset.x,
+                    gridOffsetY          = liveZones[i].gridOffset.y,
+                    editableInTileEditor = liveZones[i].editableInTileEditor
                 });
             }
+
+            // Preserve "shelved" entries: zones present in the on-disk file
+            // but not in the live ZoneManager because their offset collides
+            // with a database zone (a non-explicit eviction). If the next
+            // database load releases that offset, LoadZonesFromDisk can
+            // restore them. Without this merge, every PersistZonesToDisk call
+            // would silently delete shelved zones the moment the user makes
+            // any unrelated edit.
+            int shelvedPreserved = MergeShelvedZonesFromDisk(data, liveNames, liveOffsets);
 
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
                 AtomicWriteWithSidecarBackup(PersistencePath, json);
-                Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) to '{PersistencePath}'.");
+                if (shelvedPreserved > 0)
+                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) " +
+                              $"({shelvedPreserved} shelved preserved) to '{PersistencePath}'.");
+                else
+                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) to '{PersistencePath}'.");
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[MapEditor] Failed to persist zones to '{PersistencePath}': {ex.Message}");
             }
+        }
+
+        // Reads the current persistence file (if any) and appends to `data`
+        // every entry that meets ALL of:
+        //   1. Has a non-empty zone name not already in `liveNames`.
+        //   2. Has a grid offset that collides with a live zone (so it was
+        //      almost certainly shelved, not explicitly deleted).
+        // Returns the count of shelved entries that survived this round.
+        private int MergeShelvedZonesFromDisk(ZonePersistenceFile data,
+                                              HashSet<string> liveNames,
+                                              HashSet<Vector2Int> liveOffsets)
+        {
+            string source = TryReadPersistenceFile(out var existing);
+            if (source == null || existing == null || existing.zones == null) return 0;
+
+            int preserved = 0;
+            for (int i = 0; i < existing.zones.Count; i++)
+            {
+                var entry = existing.zones[i];
+                if (string.IsNullOrWhiteSpace(entry.zoneName)) continue;
+                if (liveNames.Contains(entry.zoneName)) continue;
+                var off = new Vector2Int(entry.gridOffsetX, entry.gridOffsetY);
+                if (!liveOffsets.Contains(off)) continue; // not shelved → user-deleted
+                data.zones.Add(entry);
+                preserved++;
+            }
+            return preserved;
         }
 
         // Atomic write + sidecar .bak. Path A: file exists → File.Replace
@@ -139,9 +184,11 @@ namespace Valkur.Gameplay.MapEditor
                     dbOffsets.Add(existingZones[i].gridOffset);
                 }
 
-                int duplicatesDropped = 0;
-                int newZonesAdded     = 0;
-                int flagsRestored     = 0;
+                int intraFileDuplicates = 0;  // same name appearing twice in the file
+                int userZonesShelved    = 0;  // user zones that didn't fit (offset clash with DB)
+                int newZonesAdded       = 0;
+                int flagsRestored       = 0;
+                int addZoneFailures     = 0;
                 var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var seenOffsets = new HashSet<Vector2Int>(dbOffsets);
 
@@ -150,14 +197,14 @@ namespace Valkur.Gameplay.MapEditor
                     var entry = data.zones[i];
                     if (string.IsNullOrWhiteSpace(entry.zoneName))
                     {
-                        duplicatesDropped++;
+                        intraFileDuplicates++;
                         continue;
                     }
 
                     if (!seenNames.Add(entry.zoneName))
                     {
                         Debug.LogWarning($"[MapEditor] Dropping duplicate persisted zone '{entry.zoneName}' (already seen).");
-                        duplicatesDropped++;
+                        intraFileDuplicates++;
                         continue;
                     }
 
@@ -166,6 +213,8 @@ namespace Valkur.Gameplay.MapEditor
                     {
                         if (zoneManager.SetZoneEditable(entry.zoneName, entry.editableInTileEditor))
                             flagsRestored++;
+                        else
+                            Debug.LogWarning($"[MapEditor] SetZoneEditable returned false for '{entry.zoneName}' — flag not restored.");
                         continue;
                     }
 
@@ -174,12 +223,27 @@ namespace Valkur.Gameplay.MapEditor
                     var offset = new Vector2Int(entry.gridOffsetX, entry.gridOffsetY);
                     if (!seenOffsets.Add(offset))
                     {
-                        Debug.LogWarning($"[MapEditor] Dropping persisted zone '{entry.zoneName}' — offset {offset} collides with an existing zone.");
-                        duplicatesDropped++;
+                        // The user's zone can't be re-registered at this offset because
+                        // a database zone already occupies it. We do NOT count this as
+                        // a duplicate-to-prune: the entry might become valid again if
+                        // the database changes (e.g. a zone is removed). Keep it in
+                        // the persistence file untouched — see the rewrite guard below.
+                        Debug.LogWarning($"[MapEditor] Persisted zone '{entry.zoneName}' offset {offset} " +
+                                         $"collides with an existing zone — kept in persistence file but " +
+                                         $"not registered this session.");
+                        userZonesShelved++;
                         continue;
                     }
                     if (zoneManager.AddZone(entry.zoneName, offset, entry.editableInTileEditor))
+                    {
                         newZonesAdded++;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[MapEditor] AddZone returned false for '{entry.zoneName}' at {offset} " +
+                                         $"despite passing the collision check — entry kept in persistence file.");
+                        addZoneFailures++;
+                    }
                 }
 
                 // Defensive sweep in case the database itself slipped duplicates through.
@@ -189,11 +253,17 @@ namespace Valkur.Gameplay.MapEditor
                 _state.NextZoneIndex = Mathf.Max(1, data.nextZoneIndex);
 
                 Debug.Log($"[MapEditor] Loaded persisted zones: +{newZonesAdded} new, " +
-                          $"{flagsRestored} flags restored, {duplicatesDropped} duplicates dropped, " +
+                          $"{flagsRestored} flags restored, {intraFileDuplicates} intra-file duplicates dropped, " +
+                          $"{userZonesShelved} user zones shelved (DB collision), " +
+                          $"{addZoneFailures} unexpected AddZone failures, " +
                           $"{dbDup} extra DB duplicates removed.");
 
-                // Rewrite the persistence file in clean form so duplicates don't accumulate.
-                if (duplicatesDropped > 0 || dbDup > 0)
+                // Rewrite ONLY when the file itself is dirty (intra-file duplicates,
+                // dbDup, or empty zoneName entries). Never rewrite when the only
+                // "loss" is user zones shelved by a DB collision — that would
+                // permanently delete a user zone whose offset might become free
+                // again later. Same for AddZone failures: keep the entry pending.
+                if (intraFileDuplicates > 0 || dbDup > 0)
                     PersistZonesToDisk();
 
                 // Re-apply tile overrides now that the ZoneManager is fully

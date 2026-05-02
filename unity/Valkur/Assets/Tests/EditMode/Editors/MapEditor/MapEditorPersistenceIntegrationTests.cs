@@ -41,7 +41,10 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
         private string _mapZonesJsonPath;
         private string _mapZonesBackupPath;
+        private string _mapZonesSidecarPath;        // production .bak
+        private string _mapZonesSidecarBackupPath;  // our parking spot
         private bool   _hadExistingMapZones;
+        private bool   _hadExistingSidecar;
 
         private GameObject _gridGo;
         private WorldGridBuilder _grid;
@@ -61,7 +64,20 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             // private property that returns Application.persistentDataPath/map_editor_zones.json).
             _mapZonesJsonPath = Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
             _mapZonesBackupPath = _mapZonesJsonPath + ".test_backup_" + System.Guid.NewGuid().ToString("N").Substring(0, 8);
+            _mapZonesSidecarPath       = _mapZonesJsonPath + ".bak";
+            _mapZonesSidecarBackupPath = _mapZonesBackupPath + ".sidecar";
             _hadExistingMapZones = File.Exists(_mapZonesJsonPath);
+            _hadExistingSidecar  = File.Exists(_mapZonesSidecarPath);
+
+            // Park the production sidecar before the test starts: PersistZonesToDisk
+            // writes via File.Replace which would otherwise overwrite it with the
+            // test's own seed and lose the user's recovery copy.
+            if (_hadExistingSidecar)
+            {
+                File.Copy(_mapZonesSidecarPath, _mapZonesSidecarBackupPath, overwrite: true);
+                File.Delete(_mapZonesSidecarPath);
+            }
+
             if (_hadExistingMapZones)
             {
                 // Use Copy + later Delete (instead of Move) so a crash between
@@ -120,9 +136,20 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 Debug.LogWarning($"[MapEditorPersistenceIntegrationTests] Restore failed " +
                                  $"(MapEditorDataGuard will recover on next Editor load): {ex.Message}");
             }
+            // Drop the test-poisoned sidecar (File.Replace produced it from
+            // the in-test primary, not from user data) and restore the
+            // production sidecar parked in SetUp.
+            try { if (File.Exists(_mapZonesSidecarPath)) File.Delete(_mapZonesSidecarPath); } catch { }
+            try
+            {
+                if (_hadExistingSidecar && File.Exists(_mapZonesSidecarBackupPath))
+                    File.Move(_mapZonesSidecarBackupPath, _mapZonesSidecarPath);
+            }
+            catch { }
             // If we bailed before deleting the orphan backup for any reason,
             // make sure it's gone now so it doesn't pile up in persistentDataPath.
             try { if (File.Exists(_mapZonesBackupPath)) File.Delete(_mapZonesBackupPath); } catch { }
+            try { if (File.Exists(_mapZonesSidecarBackupPath)) File.Delete(_mapZonesSidecarBackupPath); } catch { }
 
             try { TileOverlayPersistence.DeleteOverride(USER_ZONE_NAME); } catch { }
 

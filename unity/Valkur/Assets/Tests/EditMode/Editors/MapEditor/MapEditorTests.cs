@@ -31,6 +31,49 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         private readonly List<GameObject>     _sceneObjects = new List<GameObject>();
         private readonly List<ScriptableObject> _assets     = new List<ScriptableObject>();
 
+        // Backup of the user's real persistence file. Many ops tests call
+        // CreateManagerWithZones(("Alpha",...)) and then exercise rename/
+        // move/delete/duplicate/restrict — every one of those methods invokes
+        // PersistZonesToDisk(), which would otherwise overwrite the user's
+        // map_editor_zones.json with the test seed. SetUp moves it aside and
+        // TearDown restores it. The DataGuard sweeps any orphan if a test
+        // crashes between the two.
+        private string _userZonesPrimary;
+        private string _userZonesBackup;
+        private string _userZonesSidecar;        // path of the production .bak
+        private string _userZonesSidecarBackup;  // our parking spot for it
+        private bool   _hadUserZones;
+        private bool   _hadUserSidecar;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _userZonesPrimary = System.IO.Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
+            _userZonesBackup  = _userZonesPrimary + ".test_backup_" + System.Guid.NewGuid().ToString("N").Substring(0, 8);
+            _userZonesSidecar       = _userZonesPrimary + ".bak";
+            _userZonesSidecarBackup = _userZonesBackup  + ".sidecar";
+
+            _hadUserZones    = System.IO.File.Exists(_userZonesPrimary);
+            _hadUserSidecar  = System.IO.File.Exists(_userZonesSidecar);
+
+            // Park the production sidecar BEFORE running tests so they don't
+            // poison it via File.Replace (which writes the prior primary into
+            // the .bak slot).
+            if (_hadUserSidecar)
+            {
+                System.IO.File.Copy(_userZonesSidecar, _userZonesSidecarBackup, overwrite: true);
+                System.IO.File.Delete(_userZonesSidecar);
+            }
+
+            if (_hadUserZones)
+            {
+                // Copy + Delete (instead of Move) so a test crash leaves the
+                // primary intact and only the backup needs sweeping.
+                System.IO.File.Copy(_userZonesPrimary, _userZonesBackup, overwrite: true);
+                System.IO.File.Delete(_userZonesPrimary);
+            }
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────────
 
         private static void ClearSingletonInstance<T>() where T : MonoBehaviour
@@ -120,6 +163,36 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         [TearDown]
         public void TearDown()
         {
+            // First priority: get the user's persistence file back. Wrapped
+            // independently so a destroy-immediate failure later in TearDown
+            // can't strand the user without their zones.
+            try
+            {
+                // Test ops may have created the primary via PersistZonesToDisk;
+                // remove that test artifact before restoring the real backup.
+                if (System.IO.File.Exists(_userZonesPrimary))
+                    System.IO.File.Delete(_userZonesPrimary);
+                if (_hadUserZones && System.IO.File.Exists(_userZonesBackup))
+                    System.IO.File.Move(_userZonesBackup, _userZonesPrimary);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MapEditorTests] Could not restore user zones " +
+                                 $"(MapEditorDataGuard will recover on next Editor load): {ex.Message}");
+            }
+            // Drop the test-poisoned sidecar (File.Replace produced it from
+            // the in-test primary, not the user's data) and restore the
+            // production sidecar parked in SetUp.
+            try { if (System.IO.File.Exists(_userZonesSidecar)) System.IO.File.Delete(_userZonesSidecar); } catch { }
+            try
+            {
+                if (_hadUserSidecar && System.IO.File.Exists(_userZonesSidecarBackup))
+                    System.IO.File.Move(_userZonesSidecarBackup, _userZonesSidecar);
+            }
+            catch { }
+            try { if (System.IO.File.Exists(_userZonesBackup)) System.IO.File.Delete(_userZonesBackup); } catch { }
+            try { if (System.IO.File.Exists(_userZonesSidecarBackup)) System.IO.File.Delete(_userZonesSidecarBackup); } catch { }
+
             foreach (var go in _sceneObjects)
                 if (go != null) UnityEngine.Object.DestroyImmediate(go);
             _sceneObjects.Clear();
