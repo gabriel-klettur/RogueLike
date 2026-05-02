@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Core.Coordinates;
+using Valkur.Gameplay.World.Worlds;
 using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.World
@@ -92,10 +94,17 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            string json = ResolveRepository().ReadRawJson(WorldId.Base);
+            // Resolve the active world from the WorldManager service (registered
+            // by GameplaySceneSetup.EnsureWorldManager). Falls back to
+            // WorldId.Base when no manager exists yet so single-world boot
+            // and EditMode tests that bypass GameplaySceneSetup keep working.
+            var worldManager = ServiceLocator.Get<IWorldManager>();
+            var activeWorldId = worldManager?.Active?.WorldId ?? WorldId.Base;
+
+            string json = ResolveRepository().ReadRawJson(activeWorldId);
             if (json == null)
             {
-                Debug.LogError($"[ZoneDatabaseLoader] zones_database.json not found in repository for {WorldId.Base}.");
+                Debug.LogError($"[ZoneDatabaseLoader] zones_database.json not found in repository for {activeWorldId}.");
                 return;
             }
 

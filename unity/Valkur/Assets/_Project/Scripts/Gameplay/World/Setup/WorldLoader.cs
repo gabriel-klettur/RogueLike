@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Core;
+using Valkur.Core.Coordinates;
+using Valkur.Gameplay.World.Worlds;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.World
 {
@@ -89,6 +93,14 @@ namespace Valkur.Gameplay.World
             int zoneW = _databaseLoader.ZoneWidthTiles;
             int zoneH = _databaseLoader.ZoneHeightTiles;
 
+            // Resolve the active world so overlay/collision file paths nest under
+            // StreamingAssets/Worlds/<slug>/ for non-base worlds. WorldId.Base keeps
+            // the legacy flat layout (StreamingAssets/Maps, StreamingAssets/Collisions).
+            var worldManager = ServiceLocator.Get<IWorldManager>();
+            var activeWorldId = worldManager?.Active?.WorldId ?? WorldId.Base;
+            string mapsDir       = WorldStreamingPaths.DirectoryFor(activeWorldId, "Maps");
+            string collisionsDir = WorldStreamingPaths.DirectoryFor(activeWorldId, "Collisions");
+
             foreach (var entry in entries)
             {
                 // Load overlay at zone offset
@@ -97,8 +109,10 @@ namespace Valkur.Gameplay.World
                     var key = (entry.offsetX, entry.offsetY, entry.overlayFile);
                     if (paintedOverlays.Add(key))
                     {
-                        OverlayLoader.LoadOverlay(entry.overlayFile, _gridBuilder,
-                            entry.offsetX, entry.offsetY, zoneW, zoneH);
+                        string overlayPath = Path.Combine(mapsDir, entry.overlayFile);
+                        OverlayLoader.LoadOverlayFromPath(overlayPath, _gridBuilder,
+                            entry.offsetX, entry.offsetY,
+                            clearLayerRegion: false, regionWidth: zoneW, regionHeight: zoneH);
                         _overlaysLoaded++;
                     }
                     else
@@ -114,7 +128,8 @@ namespace Valkur.Gameplay.World
                     var key = (entry.offsetX, entry.offsetY, entry.collisionFile);
                     if (paintedCollisions.Add(key))
                     {
-                        LoadCollisionGrid(entry.collisionFile, entry.offsetX, entry.offsetY, zoneW, zoneH);
+                        LoadCollisionGrid(collisionsDir, entry.collisionFile,
+                            entry.offsetX, entry.offsetY, zoneW, zoneH);
                     }
                     else
                     {
@@ -141,11 +156,10 @@ namespace Valkur.Gameplay.World
         /// When <paramref name="maxWidth"/>/<paramref name="maxHeight"/> &gt; 0, any cell outside
         /// the zone footprint is skipped and a single warning is logged.
         /// </summary>
-        private void LoadCollisionGrid(string collisionFileName, int offsetX, int offsetY,
-            int maxWidth = 0, int maxHeight = 0)
+        private void LoadCollisionGrid(string collisionsDir, string collisionFileName,
+            int offsetX, int offsetY, int maxWidth = 0, int maxHeight = 0)
         {
-            string jsonPath = Path.Combine(
-                Application.streamingAssetsPath, "Collisions", collisionFileName);
+            string jsonPath = Path.Combine(collisionsDir, collisionFileName);
 
             if (!File.Exists(jsonPath))
             {
