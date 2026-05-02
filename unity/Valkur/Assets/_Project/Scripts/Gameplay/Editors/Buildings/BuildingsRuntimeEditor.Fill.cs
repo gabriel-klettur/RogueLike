@@ -327,7 +327,7 @@ namespace Valkur.Gameplay.Buildings
             int parsed = _fillSpacingTiles;
             if (_fillSpacingInput != null && int.TryParse(_fillSpacingInput.text, out int v))
                 parsed = v;
-            _fillSpacingTiles = Mathf.Clamp(parsed, 1, 20);
+            _fillSpacingTiles = BuildingsFillOptionsValidator.ClampSpacing(parsed);
 
             // ── Parse and clamp size variance ────────────────────────────────────
             int sizeMinParsed = _fillSizeMinPct;
@@ -336,14 +336,8 @@ namespace Valkur.Gameplay.Buildings
                 sizeMinParsed = vMin;
             if (_fillSizeMaxInput != null && int.TryParse(_fillSizeMaxInput.text, out int vMax))
                 sizeMaxParsed = vMax;
-            _fillSizeMinPct = Mathf.Clamp(sizeMinParsed, 20, 300);
-            _fillSizeMaxPct = Mathf.Clamp(sizeMaxParsed, 20, 300);
-            if (_fillSizeMinPct > _fillSizeMaxPct)
-            {
-                int tmp = _fillSizeMinPct;
-                _fillSizeMinPct = _fillSizeMaxPct;
-                _fillSizeMaxPct = tmp;
-            }
+            (_fillSizeMinPct, _fillSizeMaxPct) =
+                BuildingsFillOptionsValidator.ClampSizeRange(sizeMinParsed, sizeMaxParsed);
 
             // ── Parse and clamp grove params ─────────────────────────────────────
             int groveCountParsed  = _fillGroveCount;
@@ -352,8 +346,8 @@ namespace Valkur.Gameplay.Buildings
                 groveCountParsed = gc;
             if (_fillGroveSpreadInput != null && int.TryParse(_fillGroveSpreadInput.text, out int gs))
                 groveSpreadParsed = gs;
-            _fillGroveCount  = Mathf.Clamp(groveCountParsed,  1, 10);
-            _fillGroveSpread = Mathf.Clamp(groveSpreadParsed, 2, 20);
+            _fillGroveCount  = BuildingsFillOptionsValidator.ClampGroveCount(groveCountParsed);
+            _fillGroveSpread = BuildingsFillOptionsValidator.ClampGroveSpread(groveSpreadParsed);
 
             // ── Parse and clamp noise params ─────────────────────────────────────
             float noiseScaleParsed     = _fillNoiseScale;
@@ -368,8 +362,8 @@ namespace Valkur.Gameplay.Buildings
                     System.Globalization.NumberStyles.Float,
                     System.Globalization.CultureInfo.InvariantCulture, out float nt))
                 noiseThreshParsed = nt;
-            _fillNoiseScale     = Mathf.Clamp(noiseScaleParsed,  0.05f, 1.0f);
-            _fillNoiseThreshold = Mathf.Clamp(noiseThreshParsed, 0f,    1f);
+            _fillNoiseScale     = BuildingsFillOptionsValidator.ClampNoiseScale(noiseScaleParsed);
+            _fillNoiseThreshold = BuildingsFillOptionsValidator.ClampNoiseThreshold(noiseThreshParsed);
 
             // ── Generate session seed (stable for the rest of this Fill session) ──
             _fillSessionSeed = (int)(Time.realtimeSinceStartup * 1000) ^
@@ -674,27 +668,11 @@ namespace Valkur.Gameplay.Buildings
                         bObj.InstanceId = newId;
 
                         // Compute scale override if random size is enabled.
-                        Vector2Int scaleOverride = Vector2Int.zero;
-                        if (doRandomSize)
-                        {
-                            float minF = sizeMinPct / 100f;
-                            float maxF = sizeMaxPct / 100f;
-                            float s;
-                            if (sizeHints != null && sizeHints.TryGetValue(cells[i], out float hint))
-                            {
-                                // hint: 1.0 = at cluster center (large), 0.0 = at spread fringe (small).
-                                float baseS  = Mathf.Lerp(minF, maxF, hint);
-                                float jitter = (float)(rng.NextDouble() * 0.20 - 0.10) * (maxF - minF);
-                                s = Mathf.Clamp(baseS + jitter, minF, maxF);
-                            }
-                            else
-                            {
-                                s = Mathf.Lerp(minF, maxF, (float)rng.NextDouble());
-                            }
-                            int w = Mathf.Max(1, Mathf.RoundToInt(template.originalScale.x * s));
-                            int h = Mathf.Max(1, Mathf.RoundToInt(template.originalScale.y * s));
-                            scaleOverride = new Vector2Int(w, h);
-                        }
+                        float? hint = null;
+                        if (sizeHints != null && sizeHints.TryGetValue(cells[i], out float h0))
+                            hint = h0;
+                        Vector2Int scaleOverride = BuildingsFillSizeCalculator.ComputeScaleOverride(
+                            doRandomSize, sizeMinPct, sizeMaxPct, template.originalScale, hint, rng);
 
                         bObj.Apply(template, scaleOverride, -1f);
                         var newRenderers = bObj.GetComponentsInChildren<SpriteRenderer>(true);
