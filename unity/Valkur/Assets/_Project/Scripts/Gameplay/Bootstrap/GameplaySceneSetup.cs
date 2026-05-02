@@ -43,6 +43,13 @@ namespace Valkur.Gameplay
                  "instead of a single overlay file.")]
         [SerializeField] private bool loadFullWorld = true;
 
+        [Tooltip("Phase 1 multi-world: optional descriptor wired in the inspector. " +
+                 "When set, replaces the legacy in-code base descriptor at boot. " +
+                 "Leave null for single-world boot (byte-compatible with pre-Phase 1).")]
+        [SerializeField] private WorldDescriptor initialWorld;
+
+        public void SetInitialWorld(WorldDescriptor descriptor) => initialWorld = descriptor;
+
         [Header("Particles")]
         [SerializeField, Tooltip("Catalog of particle presets. Populate via 'Valkur > Particles > Import Presets from Python JSON'.")]
         private ParticlePresetCatalog _particlePresetCatalog;

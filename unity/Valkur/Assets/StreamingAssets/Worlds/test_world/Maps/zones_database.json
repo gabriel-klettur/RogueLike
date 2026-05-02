@@ -1,0 +1,15 @@
+{
+  "zone_width_tiles": 50,
+  "zone_height_tiles": 50,
+  "world_origin_x": 0,
+  "world_origin_y": 0,
+  "zones": [
+    {
+      "name": "test_zone",
+      "offset_x": 0,
+      "offset_y": 0,
+      "overlay": "test_zone.overlay.json",
+      "collision": null
+    }
+  ]
+}

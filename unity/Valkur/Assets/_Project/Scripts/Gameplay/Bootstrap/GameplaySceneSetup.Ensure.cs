@@ -46,11 +46,12 @@ namespace Valkur.Gameplay
             if (existing == null)
                 ServiceLocator.Register<IWorldManager>(manager);
 
-            // Phase 1 only ships the legacy "base" descriptor in code. When the
-            // designer wires a real WorldDescriptor asset to this scene this
-            // becomes the place that picks it up. Until then, the in-code
-            // fallback reproduces single-world behaviour exactly.
-            var descriptor = WorldDescriptor.CreateLegacyBase();
+            // Phase 1: prefer the designer-wired descriptor when one is set
+            // in the inspector. Falls back to the in-code legacy base so a
+            // scene without any wiring still boots single-world byte-for-byte.
+            var descriptor = initialWorld != null
+                ? initialWorld
+                : WorldDescriptor.CreateLegacyBase();
             try
             {
                 manager.LoadAndActivateAsync(descriptor).GetAwaiter().GetResult();
