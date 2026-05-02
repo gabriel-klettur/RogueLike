@@ -69,6 +69,18 @@ namespace Valkur.Gameplay
 #endif
         }
 
+        private void OnDestroy()
+        {
+            // Clear the static handle when the underlying GameObject goes
+            // away. Without this, an EditMode test that creates a
+            // CameraSetup and tears it down leaves Instance pointing at
+            // a destroyed-but-not-null component; the next test calling
+            // CameraSetup.Instance?.ReattachFollow() walks straight into
+            // a MissingReferenceException because Unity's null-overload
+            // returns true but the C# reference is alive.
+            if (Instance == this) Instance = null;
+        }
+
         private void Start()
         {
             var player = EntityRegistry.Player;
