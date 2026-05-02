@@ -35,6 +35,11 @@ namespace Valkur.Gameplay.World
         [SerializeField, Tooltip("ZoneManager for resolving zone offsets.")]
         private ZoneManager _zoneManager;
 
+        [SerializeField, Tooltip("Optional WorldConfig override. When set, its ChunkSize is the " +
+                                  "fallback for zone height when no ZoneManager is available. " +
+                                  "Phase 0 wiring; will become required once chunk streaming lands.")]
+        private WorldConfig _worldConfig;
+
         [Header("Settings")]
         [SerializeField, Tooltip("Parent transform for spawned lights. Null = this transform.")]
         private Transform _lightsRoot;
@@ -228,7 +233,12 @@ namespace Valkur.Gameplay.World
         private Vector2 ComputeWorldPosition(LightInstanceData data)
         {
             Vector2 zoneOffset = Vector2.zero;
-            float zoneHeight = 50f; // default tile count
+            // Fallback chain for chunk side length: live ZoneManager → injected
+            // WorldConfig → the documented legacy default. Avoids the magic
+            // literal 50 living in two places (here and the loader's defaults).
+            float zoneHeight = _worldConfig != null
+                ? _worldConfig.ChunkSize
+                : WorldConfig.LegacyChunkSize;
 
             if (_zoneManager != null && _zoneManager.TryGetZone(data.zone, out var zoneDef))
             {

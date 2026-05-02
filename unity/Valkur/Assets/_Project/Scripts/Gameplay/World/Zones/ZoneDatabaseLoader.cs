@@ -24,11 +24,11 @@ namespace Valkur.Gameplay.World
                  "Mirrors Python's ZonesService normalization. Disable only for debugging.")]
         [SerializeField] private bool _normalizeToOrigin = true;
 
-        /// <summary>Zone width in tiles (read from JSON). Default 50.</summary>
-        public int ZoneWidthTiles { get; private set; } = 50;
+        /// <summary>Zone width in tiles (read from JSON). Defaults to <see cref="Valkur.Data.WorldConfig.LegacyChunkSize"/>.</summary>
+        public int ZoneWidthTiles { get; private set; } = Valkur.Data.WorldConfig.LegacyChunkSize;
 
-        /// <summary>Zone height in tiles (read from JSON). Default 50.</summary>
-        public int ZoneHeightTiles { get; private set; } = 50;
+        /// <summary>Zone height in tiles (read from JSON). Defaults to <see cref="Valkur.Data.WorldConfig.LegacyChunkSize"/>.</summary>
+        public int ZoneHeightTiles { get; private set; } = Valkur.Data.WorldConfig.LegacyChunkSize;
 
         /// <summary>Minimum X offset found (for negative zone support). Read from <c>world_origin_x</c>.</summary>
         public int WorldOriginX { get; private set; }

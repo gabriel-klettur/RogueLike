@@ -23,8 +23,8 @@ namespace Valkur.Gameplay.World
 
         [Header("Zones")]
         [SerializeField] private List<ZoneDefinition> zones = new List<ZoneDefinition>();
-        [SerializeField] private int zoneWidthTiles = 50;
-        [SerializeField] private int zoneHeightTiles = 50;
+        [SerializeField] private int zoneWidthTiles = Valkur.Data.WorldConfig.LegacyChunkSize;
+        [SerializeField] private int zoneHeightTiles = Valkur.Data.WorldConfig.LegacyChunkSize;
         [SerializeField] private float tileSize = 1f;
 
         [Header("Runtime")]
