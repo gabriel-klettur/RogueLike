@@ -27,8 +27,14 @@ namespace Valkur.Gameplay.VFX
         private string _instancesFileName = "particles_instances.json";
 
         [Header("Coordinate Conversion")]
-        [SerializeField, Tooltip("Pixels per Unity world unit. Must match TILE_PPU in ValkurAssetPostprocessor (32).")]
+        // Inspector knob retained for designer reference / future manual rescaling;
+        // the live conversion uses _tileSize because PPU is already baked into the
+        // imported sprites via ValkurAssetPostprocessor. Kept serialized so prefab
+        // overrides survive across editor sessions.
+        #pragma warning disable CS0414
+        [SerializeField, Tooltip("Pixels per Unity world unit. Must match TILE_PPU in ValkurAssetPostprocessor (32). Reference value only — runtime conversion uses _tileSize.")]
         private float _pixelsPerUnit = 32f;
+        #pragma warning restore CS0414
 
         [SerializeField, Tooltip("World units per tile. Must match WorldGridBuilder cellSize.")]
         private float _tileSize = 1f;

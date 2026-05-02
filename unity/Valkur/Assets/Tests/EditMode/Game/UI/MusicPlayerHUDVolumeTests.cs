@@ -83,7 +83,11 @@ namespace Valkur.Tests.EditMode.Game.UI
             public string CurrentTrackKey      => "";
             public float  CurrentMusicTime     => 0f;
 
+            // Required by IAudioService — never fired by these tests, but
+            // must exist so the spy satisfies the interface contract.
+            #pragma warning disable CS0067
             public event System.Action<string, string, float, int> OnTrackChanged;
+            #pragma warning restore CS0067
 
             public void SetMusicVolume(float vol)
             {

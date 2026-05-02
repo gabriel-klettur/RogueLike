@@ -225,8 +225,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         public void DeleteAllInZone_NoInstances_SetsStatusMessage()
         {
             // No emitters → DeleteAllInZone must set a status message and return without crash.
-            string lastStatus = null;
-            // Intercept SetStatus by patching _ui.StatusText is complex; instead verify
+            // Intercepting SetStatus by patching _ui.StatusText is complex; instead verify
             // that after calling DeleteAllInZone the scene has 0 ParticleEmitters.
             Invoke(_editor, "DeleteAllInZone", "TestZone");
 
