@@ -97,7 +97,7 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         // exact path it has always used.
         private string WorldDirectory(WorldId worldId)
         {
-            if (worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug))
+            if (worldId.IsBase)
                 return PersistenceRoot;
             return Path.Combine(PersistenceRoot, "Worlds", worldId.Slug);
         }

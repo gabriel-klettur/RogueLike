@@ -137,7 +137,7 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         // their slug from day one — Phase 1 will migrate "base" to the same
         // layout on first multi-world boot.
         private string WorldDirectory(WorldId worldId)
-            => worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug)
+            => worldId.IsBase
                 ? _root
                 : Path.Combine(_root, worldId.Slug);
 

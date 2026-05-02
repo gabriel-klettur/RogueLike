@@ -83,7 +83,7 @@ namespace Valkur.Gameplay.Save
         {
             if (string.IsNullOrEmpty(runId)) return GetLegacyRunDirectory();
             string runRoot = Path.Combine(GetSaveDirectory(), SanitizeRunIdComponent(runId));
-            if (worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug))
+            if (worldId.IsBase)
                 return runRoot;
             return Path.Combine(runRoot, "worlds", SanitizeRunIdComponent(worldId.Slug));
         }

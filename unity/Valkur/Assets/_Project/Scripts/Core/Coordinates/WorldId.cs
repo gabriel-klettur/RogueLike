@@ -35,6 +35,21 @@ namespace Valkur.Core.Coordinates
 
         public bool IsEmpty => Value == Guid.Empty && string.IsNullOrEmpty(Slug);
 
+        /// <summary>
+        /// True iff this id refers to the legacy "base" world — either as
+        /// <see cref="Base"/> exactly (Guid.Empty + slug "base"), or as a
+        /// descriptor-derived id whose slug happens to be "base" (the
+        /// canonical legacy slug). Persistence repositories use this to
+        /// keep WorldId.Base on the byte-compatible flat StreamingAssets
+        /// layout regardless of how the id was constructed.
+        ///
+        /// Without this, a designer-authored "base" descriptor would
+        /// produce a deterministic Guid distinct from Guid.Empty, and
+        /// repos would silently start writing into Worlds/base/ instead
+        /// of the legacy root — breaking single-world byte-compat.
+        /// </summary>
+        public bool IsBase => string.Equals(Slug, "base", StringComparison.OrdinalIgnoreCase) || IsEmpty;
+
         public bool Equals(WorldId other) => Value.Equals(other.Value);
         public override bool Equals(object obj) => obj is WorldId w && Equals(w);
         public override int GetHashCode() => Value.GetHashCode();

@@ -28,7 +28,7 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         public static string DirectoryFor(WorldId worldId, string subdir)
         {
             string root = Application.streamingAssetsPath;
-            if (worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug))
+            if (worldId.IsBase)
                 return Path.Combine(root, subdir);
             return Path.Combine(root, "Worlds", worldId.Slug, subdir);
         }

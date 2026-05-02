@@ -73,7 +73,7 @@ namespace Valkur.Infrastructure.Persistence.Repositories
 
         private string WorldDirectory(WorldId worldId)
         {
-            if (worldId.Equals(WorldId.Base) || string.IsNullOrEmpty(worldId.Slug))
+            if (worldId.IsBase)
                 return Path.Combine(StreamingRoot, Subdir);
             return Path.Combine(StreamingRoot, "Worlds", worldId.Slug, Subdir);
         }
