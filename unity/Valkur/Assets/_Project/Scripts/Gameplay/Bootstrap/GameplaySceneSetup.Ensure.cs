@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.MapEditor;
@@ -6,6 +7,7 @@ using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
+using Valkur.Gameplay.World.Worlds;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -21,6 +23,43 @@ namespace Valkur.Gameplay
             zoneManagerGo.AddComponent<World.ZoneManager>();
             zoneManagerGo.transform.SetParent(GetSceneContainer("[Core]"), false);
             Debug.Log("[GameplaySceneSetup] ZoneManager created.");
+        }
+
+        // ── Phase 1: WorldManager wiring ──────────────────────────────────────────
+        // Creates the IWorldManager service, loads + activates the legacy "base"
+        // WorldDescriptor so Active is non-null from the moment any downstream
+        // step (TileOverlayPersistence, MapEditorManager, SaveService) runs.
+        // Existing scenes/prefabs do not have to wire anything: when no
+        // WorldDescriptor asset is supplied, the in-code legacy fallback is
+        // built so single-world boot stays byte-compatible. Multi-world builds
+        // wire the assets later via [SerializeField] on this script.
+        //
+        // Idempotent: repeated calls are safe — the manager lives in
+        // ServiceLocator and is reused across reentrancy paths (DevConsole's
+        // reset, SaveService rehydration, etc.).
+        private void EnsureWorldManager()
+        {
+            if (ServiceLocator.TryGet<IWorldManager>(out var existing) && existing.Active != null)
+                return;
+
+            var manager = existing ?? new WorldManager();
+            if (existing == null)
+                ServiceLocator.Register<IWorldManager>(manager);
+
+            // Phase 1 only ships the legacy "base" descriptor in code. When the
+            // designer wires a real WorldDescriptor asset to this scene this
+            // becomes the place that picks it up. Until then, the in-code
+            // fallback reproduces single-world behaviour exactly.
+            var descriptor = WorldDescriptor.CreateLegacyBase();
+            try
+            {
+                manager.LoadAndActivateAsync(descriptor).GetAwaiter().GetResult();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GameplaySceneSetup] WorldManager activation failed: {ex.Message}");
+            }
+            Debug.Log($"[GameplaySceneSetup] WorldManager active world: {manager.Active?.WorldId}");
         }
 
         private void BuildWorldGrid()

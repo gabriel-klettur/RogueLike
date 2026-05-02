@@ -83,7 +83,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 32;
+        private const int SetupStepTotal = 33;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -95,6 +95,9 @@ namespace Valkur.Gameplay
 
             EnsureZoneManager();
             Report("Inicializando zonas"); yield return null;
+
+            EnsureWorldManager();
+            Report("Inicializando WorldManager"); yield return null;
 
             LoadWorld();
             Report("Cargando mundo"); yield return null;
