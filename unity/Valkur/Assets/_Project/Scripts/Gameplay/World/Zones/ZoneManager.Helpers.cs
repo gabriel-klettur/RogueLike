@@ -54,9 +54,14 @@ namespace Valkur.Gameplay.World
 
         private int FindZoneIndex(string zoneName)
         {
+            // Case-insensitive to stay consistent with _zoneMap (built with
+            // StringComparer.OrdinalIgnoreCase). A case-sensitive miss here
+            // would let RenameZone/RemoveZone/MoveZone/SetZoneEditable
+            // silently no-op while the zone remained reachable through
+            // _zoneMap by a differently-cased lookup.
             for (int i = 0; i < zones.Count; i++)
             {
-                if (zones[i].zoneName == zoneName)
+                if (string.Equals(zones[i].zoneName, zoneName, StringComparison.OrdinalIgnoreCase))
                     return i;
             }
 

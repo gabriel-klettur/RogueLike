@@ -29,8 +29,21 @@ namespace Valkur.Gameplay.MapEditor
 
             // Rename also moves the per-zone tile-override file so painted
             // tiles follow the zone. Without this, renaming a zone with
-            // painted tiles loses every tile on the next world load.
-            Valkur.Gameplay.TileEditor.TileOverlayPersistence.RenameOverride(oldName, trimmed);
+            // painted tiles loses every tile on the next world load. If
+            // the move fails the zone is now mismatched with its overlay
+            // file, so revert the rename and tell the user — losing tiles
+            // silently is the worse failure mode.
+            if (!Valkur.Gameplay.TileEditor.TileOverlayPersistence.RenameOverride(oldName, trimmed))
+            {
+                if (!zoneManager.RenameZone(trimmed, oldName))
+                {
+                    Debug.LogError($"[MapEditor] Rollback of rename '{oldName}' → '{trimmed}' failed; " +
+                                   $"zone state may be inconsistent with its overlay file.");
+                }
+                _ui?.SetStatus($"Rename aborted: could not move overlay file for '{oldName}'.");
+                RefreshSelectionUIAndOverlay();
+                return;
+            }
 
             _state.SelectZone(trimmed);
             PersistZonesToDisk();

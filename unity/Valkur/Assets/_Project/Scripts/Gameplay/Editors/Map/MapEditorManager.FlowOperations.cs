@@ -142,7 +142,19 @@ namespace Valkur.Gameplay.MapEditor
 
             // Drop the orphan override file so it doesn't pile up on disk and
             // doesn't trigger "no matching zone" warnings on the next boot.
-            Valkur.Gameplay.TileEditor.TileOverlayPersistence.DeleteOverride(zoneName);
+            // DeleteOverride returns false when there was no file to delete
+            // (the zone never had any tile edits) — that's expected, not an
+            // error. A genuine I/O failure would throw; surface those.
+            try
+            {
+                Valkur.Gameplay.TileEditor.TileOverlayPersistence.DeleteOverride(zoneName);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Failed to delete overlay file for '{zoneName}': {ex.Message}. " +
+                                 $"Zone removed from ZoneManager; orphan file may remain at " +
+                                 $"{Valkur.Gameplay.TileEditor.TileOverlayPersistence.OverridePathForZone(zoneName)}.");
+            }
 
             if (_state.HasSelection && _state.SelectedZone == zoneName) _state.ClearSelection();
             _ui?.HideDeleteZoneDialog();
@@ -163,6 +175,11 @@ namespace Valkur.Gameplay.MapEditor
             }
 
             _state.SelectZone(duplicatedZoneName);
+            // Keep NextZoneIndex monotonic with every zone-creation path. Without
+            // this, repeated duplicates stale-out the auto-naming counter and the
+            // next user-created zone can collide with an already-taken default
+            // name, making AddZone silently fail in ConfirmAddZone.
+            _state.NextZoneIndex++;
             int dx = Mathf.Max(1, zoneManager.ZoneWidthTiles);
             zoneManager.MoveZone(duplicatedZoneName, new Vector2Int(dx, 0));
             PersistZonesToDisk();
