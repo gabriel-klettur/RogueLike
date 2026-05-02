@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Valkur.Core.Persistence;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -14,11 +15,24 @@ namespace Valkur.Gameplay.MapEditor
     /// round-trip bombproof across Unity versions.
     /// </summary>
     [Serializable]
-    internal class ZonePersistenceFile
+    internal class ZonePersistenceFile : IVersioned
     {
+        // schemaVersion is wired up so the file can flow through a generic
+        // MigrationChain&lt;ZonePersistenceFile&gt; the moment a v1.x->v2.x
+        // shape change is needed. Files written before this version was
+        // introduced lack the field; JsonUtility deserializes those as
+        // null/empty and the migration chain treats that as "lowest
+        // registered" by convention.
+        public string schemaVersion = MapZonesSchema.CurrentVersion;
         public bool restrictTileEditingToEditableZones;
         public int nextZoneIndex;
         public List<ZonePersistenceEntry> zones = new List<ZonePersistenceEntry>();
+
+        string IVersioned.SchemaVersion
+        {
+            get => schemaVersion;
+            set => schemaVersion = value;
+        }
     }
 
     [Serializable]
@@ -28,5 +42,18 @@ namespace Valkur.Gameplay.MapEditor
         public int gridOffsetX;
         public int gridOffsetY;
         public bool editableInTileEditor;
+    }
+
+    /// <summary>
+    /// Schema version constants for <c>map_editor_zones.json</c>. Bump
+    /// <see cref="CurrentVersion"/> any time the on-disk shape changes and
+    /// register a corresponding step in the migration chain.
+    /// </summary>
+    internal static class MapZonesSchema
+    {
+        /// <summary>Initial versioned schema. Pre-versioned files are
+        /// indistinguishable from this layout — they're tagged 1.0 on first
+        /// load and proceed normally.</summary>
+        public const string CurrentVersion = "1.0";
     }
 }

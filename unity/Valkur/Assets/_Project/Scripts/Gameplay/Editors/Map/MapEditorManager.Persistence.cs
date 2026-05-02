@@ -117,7 +117,10 @@ namespace Valkur.Gameplay.MapEditor
 
         // Reads the persistence file from the primary path; if missing or
         // corrupt, transparently retries the sidecar .bak. Returns the path
-        // it actually loaded from (or null if neither was usable).
+        // it actually loaded from (or null if neither was usable). Runs the
+        // shape-migration chain on the parsed document so a v1.x file from
+        // a previous build is upgraded to the current schema before any
+        // other code touches it.
         private string TryReadPersistenceFile(out ZonePersistenceFile data)
         {
             data = null;
@@ -136,6 +139,7 @@ namespace Valkur.Gameplay.MapEditor
                                          $"Head: {(json.Length > 200 ? json.Substring(0, 200) : json)}");
                         continue;
                     }
+                    MapZonesMigrations.Migrate(parsed);
                     data = parsed;
                     if (i > 0)
                         Debug.LogWarning($"[MapEditor] Primary persistence missing/corrupt — recovered zones from sidecar '{path}'.");

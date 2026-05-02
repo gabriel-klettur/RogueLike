@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Valkur.Core.Persistence;
 using Valkur.Infrastructure.Migrations;
 
 namespace Valkur.Tests.EditMode.Infrastructure.Migrations

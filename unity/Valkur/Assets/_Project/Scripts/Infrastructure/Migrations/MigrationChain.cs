@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core.Persistence;
 
 namespace Valkur.Infrastructure.Migrations
 {
@@ -69,10 +70,19 @@ namespace Valkur.Infrastructure.Migrations
         public int Migrate(T doc)
         {
             if (doc == null) return 0;
-            string from = string.IsNullOrEmpty(doc.SchemaVersion)
+            bool wasUntagged = string.IsNullOrEmpty(doc.SchemaVersion);
+            string from = wasUntagged
                 ? FindLowestFromVersion()
                 : doc.SchemaVersion;
-            if (from == CurrentVersion) return 0;
+            if (from == CurrentVersion)
+            {
+                // Already at current. If the doc was untagged (legacy file
+                // with no SchemaVersion field on disk), stamp the explicit
+                // tag so the next save writes it and future loads skip
+                // migration entirely.
+                if (wasUntagged) doc.SchemaVersion = CurrentVersion;
+                return 0;
+            }
 
             string cur = from;
             int applied = 0;

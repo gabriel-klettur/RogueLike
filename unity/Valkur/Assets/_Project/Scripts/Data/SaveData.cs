@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core.Persistence;
 
 namespace Valkur.Data
 {
@@ -98,13 +99,22 @@ namespace Valkur.Data
     /// Combines player state, NPC memory, and game metadata.
     /// </summary>
     [Serializable]
-    public class GameSaveData
+    public class GameSaveData : IVersioned
     {
         public string schemaVersion = "1.0";
         public string timestamp;
         public PlayerSaveData player;
         public List<NpcMemoryEntry> npcMemory = new List<NpcMemoryEntry>();
         public List<SerializableKeyValue> metadata = new List<SerializableKeyValue>();
+
+        // IVersioned: delegates to the existing JsonUtility-serialized field
+        // so adding the interface is a non-breaking change for save files
+        // already on disk.
+        string IVersioned.SchemaVersion
+        {
+            get => schemaVersion;
+            set => schemaVersion = value;
+        }
 
         public string GetMeta(string key, string defaultValue = "")
         {
