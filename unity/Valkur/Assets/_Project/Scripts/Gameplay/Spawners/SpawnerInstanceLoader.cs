@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Gameplay.World;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.Spawners
 {
@@ -18,8 +19,7 @@ namespace Valkur.Gameplay.Spawners
     public class SpawnerInstanceLoader : MonoBehaviour
     {
         private const float PPU = 32f;
-        private const string STREAMING_SUBFOLDER = "Spawners";
-        private const string INSTANCES_FILE = "spawners_instances.json";
+        // Subdir + filename now owned by JsonFileSpawnerInstanceRepository.
 
         [Header("References")]
         [Tooltip("Catalog of all SpawnerTemplateData SOs.")]
@@ -36,6 +36,16 @@ namespace Valkur.Gameplay.Spawners
 
         private readonly List<SpawnerInstance> _instances = new List<SpawnerInstance>();
         public IReadOnlyList<SpawnerInstance> Instances => _instances;
+
+        // Repository handle. Tests inject an InMemorySpawnerInstanceRepository
+        // through SetRepository(); production paths fall back to the JSON
+        // file backend on first use so existing scenes need no rewiring.
+        private ISpawnerInstanceRepository _repository;
+
+        public void SetRepository(ISpawnerInstanceRepository repository) => _repository = repository;
+
+        private ISpawnerInstanceRepository ResolveRepository()
+            => _repository ?? (_repository = new JsonFileSpawnerInstanceRepository());
 
         // ── Programmatic setup ──────────────────────────────────────────────────────
 
@@ -76,14 +86,13 @@ namespace Valkur.Gameplay.Spawners
                 }
             }
 
-            string jsonPath = Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILE);
-            if (!File.Exists(jsonPath))
+            string json = ResolveRepository().ReadRawJson(WorldId.Base);
+            if (json == null)
             {
-                Debug.LogWarning($"[SpawnerInstanceLoader] Instances file not found: {jsonPath}");
+                Debug.LogWarning($"[SpawnerInstanceLoader] No instances file in repository for {WorldId.Base}.");
                 return;
             }
 
-            string json = File.ReadAllText(jsonPath);
             var rawList = MiniJsonRuntime.Deserialize(json) as List<object>;
             if (rawList == null)
             {

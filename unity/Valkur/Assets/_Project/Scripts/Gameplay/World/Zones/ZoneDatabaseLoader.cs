@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
+using Valkur.Core.Coordinates;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.World
 {
@@ -12,7 +13,7 @@ namespace Valkur.Gameplay.World
     /// </summary>
     public class ZoneDatabaseLoader : MonoBehaviour
     {
-        private const string DATABASE_FILE = "Maps/zones_database.json";
+        // File path now owned by JsonFileZoneDatabaseRepository.
 
         [Tooltip("ZoneManager to populate. Found automatically if null.")]
         [SerializeField] private ZoneManager _zoneManager;
@@ -46,6 +47,16 @@ namespace Valkur.Gameplay.World
         public IReadOnlyList<ZoneEntry> Entries => _entries;
 
         private readonly List<ZoneEntry> _entries = new List<ZoneEntry>();
+
+        // Repository handle. Tests inject an InMemoryZoneDatabaseRepository
+        // through SetRepository(); production paths fall back to the JSON
+        // file backend on first use.
+        private IZoneDatabaseRepository _repository;
+
+        public void SetRepository(IZoneDatabaseRepository repository) => _repository = repository;
+
+        private IZoneDatabaseRepository ResolveRepository()
+            => _repository ?? (_repository = new JsonFileZoneDatabaseRepository());
 
         [Serializable]
         public struct ZoneEntry
@@ -81,14 +92,13 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            string jsonPath = Path.Combine(Application.streamingAssetsPath, DATABASE_FILE);
-            if (!File.Exists(jsonPath))
+            string json = ResolveRepository().ReadRawJson(WorldId.Base);
+            if (json == null)
             {
-                Debug.LogError($"[ZoneDatabaseLoader] Database not found: {jsonPath}");
+                Debug.LogError($"[ZoneDatabaseLoader] zones_database.json not found in repository for {WorldId.Base}.");
                 return;
             }
 
-            string json = File.ReadAllText(jsonPath);
             var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
             if (root == null)
             {

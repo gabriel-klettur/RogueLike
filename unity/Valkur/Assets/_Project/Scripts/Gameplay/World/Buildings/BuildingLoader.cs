@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 using Valkur.Data;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.World
 {
@@ -29,9 +30,8 @@ namespace Valkur.Gameplay.World
     /// </summary>
     public partial class BuildingLoader : MonoBehaviour
     {
-        private const string STREAMING_SUBFOLDER   = "Buildings";
-        private const string INSTANCES_FILENAME    = "buildings_instances.json";
-        private const float  PPU                   = 32f;
+        // Subdir + filename now owned by JsonFileBuildingInstanceRepository.
+        private const float PPU = 32f;
 
         [Header("References")]
         [Tooltip("Catalog of all BuildingTemplateData assets. Created by BuildingImporter.")]
@@ -56,6 +56,16 @@ namespace Valkur.Gameplay.World
 
         /// <summary>All currently spawned BuildingObjects managed by this loader.</summary>
         public IReadOnlyList<BuildingObject> SpawnedBuildings => _spawnedBuildings;
+
+        // Repository handle. Tests inject an InMemoryBuildingInstanceRepository
+        // through SetRepository(); production paths fall back to the JSON
+        // file backend on first use.
+        private IBuildingInstanceRepository _repository;
+
+        public void SetRepository(IBuildingInstanceRepository repository) => _repository = repository;
+
+        private IBuildingInstanceRepository ResolveRepository()
+            => _repository ?? (_repository = new JsonFileBuildingInstanceRepository());
 
         // ── Programmatic setup ──────────────────────────────────────────────────────
 
@@ -104,16 +114,13 @@ namespace Valkur.Gameplay.World
                 }
             }
 
-            string jsonPath = Path.Combine(
-                Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILENAME);
-
-            if (!File.Exists(jsonPath))
+            string json = ResolveRepository().ReadRawJson(WorldId.Base);
+            if (json == null)
             {
-                Debug.LogWarning($"[BuildingLoader] Instances file not found: {jsonPath}");
+                Debug.LogWarning($"[BuildingLoader] No instances file in repository for {WorldId.Base}.");
                 return;
             }
 
-            string json = File.ReadAllText(jsonPath);
             var instances = ParseInstances(json);
             if (instances.Count == 0)
             {

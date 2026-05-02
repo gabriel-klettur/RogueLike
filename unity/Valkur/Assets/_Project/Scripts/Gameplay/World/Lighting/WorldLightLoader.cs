@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 using Valkur.Data;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.World
 {
@@ -21,8 +22,8 @@ namespace Valkur.Gameplay.World
     /// </summary>
     public class WorldLightLoader : MonoBehaviour
     {
-        private const string STREAMING_SUBFOLDER = "Lights";
-        private const string INSTANCES_FILENAME = "light_instances.json";
+        // Subdir + filename now owned by JsonFileLightInstanceRepository; constants
+        // kept here as reference / search anchor only.
         private const float PX_TO_WORLD = 1f / 16f; // Python uses 16 px per world unit for lights
 
         [Header("References")]
@@ -150,18 +151,29 @@ namespace Valkur.Gameplay.World
             _reflectionResolved = true;
         }
 
+        // Repository handle. Tests inject an InMemoryLightInstanceRepository
+        // through SetRepository(); production paths fall back to the JSON
+        // file backend on first use so no scene wiring is required to
+        // preserve the existing boot flow.
+        private ILightInstanceRepository _repository;
+
+        public void SetRepository(ILightInstanceRepository repository) => _repository = repository;
+
+        private ILightInstanceRepository ResolveRepository()
+            => _repository ?? (_repository = new JsonFileLightInstanceRepository());
+
         private void LoadInstances()
         {
             if (_light2DType == null || _catalog == null) return;
 
-            string jsonPath = Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILENAME);
-            if (!File.Exists(jsonPath))
+            var repo = ResolveRepository();
+            string json = repo.ReadRawJson(WorldId.Base);
+            if (json == null)
             {
-                Debug.Log($"[WorldLightLoader] No light instances file at {jsonPath}.");
+                Debug.Log($"[WorldLightLoader] No light instances file in repository for {WorldId.Base}.");
                 return;
             }
 
-            string json = File.ReadAllText(jsonPath);
             var wrapper = JsonUtility.FromJson<LightInstanceArrayWrapper>("{\"items\":" + json + "}");
 
             if (wrapper?.items == null || wrapper.items.Length == 0)
