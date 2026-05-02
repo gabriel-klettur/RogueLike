@@ -70,7 +70,11 @@ namespace Valkur.Gameplay.Buildings
                 onCollBrushSizeStepDown:     () => OnCollBrushSizeChanged(_collBrushSize - 1),
                 onCollBrushSizeStepUp:       () => OnCollBrushSizeChanged(_collBrushSize + 1),
                 onToggleBuildingsVisible:    () => ToggleBuildingsVisible(),
-                onPerfToggle:                () => TogglePerfProbe());
+                onPerfToggle:                () => TogglePerfProbe(),
+                onFill:                      () => OnFillButtonClicked(),
+                onErase:                     () => OnEraseButtonClicked(),
+                onEraseTilesArea:            () => OnEraseScopeSelected(EraseScope.TilesArea),
+                onEraseZone:                 () => OnEraseScopeSelected(EraseScope.Zone));
 
             // Wire panel close callbacks to keep dropdown state in sync
             if (_uiRefs.ModesPanelDrag     != null)
@@ -101,6 +105,18 @@ namespace Valkur.Gameplay.Buildings
             _deleteBtnImg  = _uiRefs.DeleteBtnImg;
             _addBtnImg     = _uiRefs.AddBtnImg;
             _removeBtnImg  = _uiRefs.RemoveBtnImg;
+            _fillBtnImg    = _uiRefs.FillBtnImg;
+            _eraseBtnImg          = _uiRefs.EraseBtnImg;
+            _eraseSubPanel        = _uiRefs.EraseSubPanel;
+            _eraseTilesAreaBtnImg = _uiRefs.EraseTilesAreaBtnImg;
+            _eraseZoneBtnImg      = _uiRefs.EraseZoneBtnImg;
+            // Capture the Buildings panel's header Image for the picker blink coroutine.
+            // MakeDrop builds the panel with a child named "PanelHeader" (see BuildingsEditorUIBuilder.Widgets.cs).
+            if (_uiRefs.BuildingsDropdown != null)
+            {
+                var hdrTr = _uiRefs.BuildingsDropdown.transform.Find("PanelHeader");
+                if (hdrTr != null) _buildingsPanelHeaderImg = hdrTr.GetComponent<Image>();
+            }
 
             BuildFloatingHandles();
             BuildIdLabel();

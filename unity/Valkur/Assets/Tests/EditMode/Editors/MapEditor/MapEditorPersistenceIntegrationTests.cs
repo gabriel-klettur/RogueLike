@@ -63,7 +63,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _mapZonesBackupPath = _mapZonesJsonPath + ".test_backup_" + System.Guid.NewGuid().ToString("N").Substring(0, 8);
             _hadExistingMapZones = File.Exists(_mapZonesJsonPath);
             if (_hadExistingMapZones)
-                File.Move(_mapZonesJsonPath, _mapZonesBackupPath);
+            {
+                // Use Copy + later Delete (instead of Move) so a crash between
+                // SetUp and TearDown leaves the user's primary file intact —
+                // the orphaned copy can be cleaned up by MapEditorDataGuard at
+                // the next Editor load. The previous Move-based pattern was
+                // the documented cause of "zones reset after restart".
+                File.Copy(_mapZonesJsonPath, _mapZonesBackupPath, overwrite: true);
+                File.Delete(_mapZonesJsonPath);
+            }
 
             // Make sure no leftover override file from a prior run.
             TileOverlayPersistence.DeleteOverride(USER_ZONE_NAME);
@@ -98,12 +106,25 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         [TearDown]
         public void TearDown()
         {
-            // Restore original persistence file or clean up our test one.
-            if (File.Exists(_mapZonesJsonPath)) File.Delete(_mapZonesJsonPath);
-            if (_hadExistingMapZones && File.Exists(_mapZonesBackupPath))
-                File.Move(_mapZonesBackupPath, _mapZonesJsonPath);
+            // Each step is wrapped so a failure in one does not abort the
+            // others — the user's persistence file restoration is the most
+            // important guarantee here, so it runs first and independently.
+            try
+            {
+                if (File.Exists(_mapZonesJsonPath)) File.Delete(_mapZonesJsonPath);
+                if (_hadExistingMapZones && File.Exists(_mapZonesBackupPath))
+                    File.Move(_mapZonesBackupPath, _mapZonesJsonPath);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MapEditorPersistenceIntegrationTests] Restore failed " +
+                                 $"(MapEditorDataGuard will recover on next Editor load): {ex.Message}");
+            }
+            // If we bailed before deleting the orphan backup for any reason,
+            // make sure it's gone now so it doesn't pile up in persistentDataPath.
+            try { if (File.Exists(_mapZonesBackupPath)) File.Delete(_mapZonesBackupPath); } catch { }
 
-            TileOverlayPersistence.DeleteOverride(USER_ZONE_NAME);
+            try { TileOverlayPersistence.DeleteOverride(USER_ZONE_NAME); } catch { }
 
             if (_mgrGo != null) Object.DestroyImmediate(_mgrGo);
             if (_gridGo != null) Object.DestroyImmediate(_gridGo);

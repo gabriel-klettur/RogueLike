@@ -141,6 +141,45 @@ namespace Valkur.Gameplay
                 if (player != null) _vcam.Follow = player.transform;
             }
 
+            // Auto-recover from a stale "detached" state: if no runtime editor is
+            // currently active but the camera is still flagged detached (some path
+            // called DetachFollow without a matching ReattachFollow — e.g. an editor
+            // closed via an unusual exit path, scene reload, or play-mode hot-reload),
+            // restore the follow target so the camera doesn't drift away from the
+            // player. Without this, the player can press F10 / F6 / etc., close the
+            // editor, and find the world rendered as a blue void because the vcam
+            // never got reattached.
+            bool noEditorActive = !GameEditorManager.HasInstance ||
+                                  !GameEditorManager.Instance.AnyEditorActive;
+            if (_detached && noEditorActive)
+            {
+                ReattachFollow();
+                if (_vcam.Follow == null)
+                {
+                    var player = EntityRegistry.Player;
+                    if (player != null) _vcam.Follow = player.transform;
+                }
+            }
+
+            // Editor-compatibility vcam fix: in the Editor we add a duplicate
+            // CinemachineVirtualCamera to the Main Camera GameObject as a fallback
+            // for play-mode pipelines that don't pick up the dedicated vcam GameObject.
+            // Both vcams share Priority = 10 — Cinemachine breaks ties by recently-
+            // activated, which non-deterministically picks the Main-Camera vcam (which
+            // has Follow == null because it was constructed before the player spawned).
+            // The Brain then renders from (0,0,0) and the world appears as a blue void.
+            //
+            // Two-line fix: keep the compatibility vcam's Follow target in lock-step
+            // with the primary, and bump the primary's priority above 10 so it always
+            // wins the active-camera election.
+            if (_compatibilityVcam != null)
+            {
+                if (_compatibilityVcam.Follow != _vcam.Follow)
+                    _compatibilityVcam.Follow = _vcam.Follow;
+                if (_vcam.Priority <= _compatibilityVcam.Priority)
+                    _vcam.Priority = _compatibilityVcam.Priority + 1;
+            }
+
             // Tile editor drives the camera through SetTileEditorZoom() (it has
             // its own scroll handler that respects the active brush size).
             if (TileEditorManager.Instance != null && TileEditorManager.Instance.IsActive)

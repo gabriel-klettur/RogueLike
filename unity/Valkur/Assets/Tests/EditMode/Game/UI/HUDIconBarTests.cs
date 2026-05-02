@@ -17,7 +17,7 @@ namespace Valkur.Tests.EditMode.Game.UI
     ///   • Bar owns its own ScreenSpaceOverlay canvas (sortingOrder 250) so the
     ///     icons are ALWAYS visible regardless of which HUD window is open.
     ///   • Container is anchored bottom-right with NO background image.
-    ///   • Each button is a single Image whose sprite IS the button (36×36).
+    ///   • Each button is a single Image whose sprite IS the button (size = HUDIconBar.BUTTON_SIZE).
     ///   • Buttons are persistent — clicks invoke onClick (no auto-remove).
     ///   • Public API: Register, Unregister, IsRegistered, Count, SetEnabled, SetBadge.
     /// </summary>
@@ -180,12 +180,12 @@ namespace Valkur.Tests.EditMode.Game.UI
         // ─── Button visual contract ─────────────────────────────────────────
 
         [Test]
-        public void Button_Size_Is36x36()
+        public void Button_Size_MatchesPublicConstant()
         {
             _bar.Register("sz", null, null);
             var rt = (RectTransform)FindButton("sz").transform;
-            Assert.AreEqual(36f, rt.sizeDelta.x, 0.01f);
-            Assert.AreEqual(36f, rt.sizeDelta.y, 0.01f);
+            Assert.AreEqual(HUDIconBar.BUTTON_SIZE, rt.sizeDelta.x, 0.01f);
+            Assert.AreEqual(HUDIconBar.BUTTON_SIZE, rt.sizeDelta.y, 0.01f);
         }
 
         [Test]

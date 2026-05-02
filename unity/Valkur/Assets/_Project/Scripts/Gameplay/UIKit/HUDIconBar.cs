@@ -26,11 +26,11 @@ namespace Valkur.UIKit
     public class HUDIconBar : SingletonMonoBehaviour<HUDIconBar>
     {
         // ── Visual constants ────────────────────────────────────────────────
-        public  const float BUTTON_SIZE  = 36f;
+        public  const float BUTTON_SIZE  = 80f;
         private const float BUTTON_GAP   = 6f;
         private const float EDGE_INSET   = 16f;
         private const int   CANVAS_SORT  = 250;
-        private const float BADGE_SIZE   = 16f;
+        private const float BADGE_SIZE   = 20f;
 
         // ── Refs ────────────────────────────────────────────────────────────
         private Canvas        _canvas;
@@ -262,7 +262,7 @@ namespace Valkur.UIKit
                 lrt.offsetMin = lrt.offsetMax = Vector2.zero;
                 var tmp = lbl.AddComponent<TextMeshProUGUI>();
                 tmp.text          = (entry.Id ?? "?").Substring(0, 1).ToUpperInvariant();
-                tmp.fontSize      = 18f;
+                tmp.fontSize      = 24f;
                 tmp.fontStyle     = FontStyles.Bold;
                 tmp.alignment     = TextAlignmentOptions.Center;
                 tmp.color         = new Color(0.90f, 0.76f, 0.38f, 1f);
@@ -298,7 +298,7 @@ namespace Valkur.UIKit
 
             entry.BadgeText = txtGo.AddComponent<TextMeshProUGUI>();
             entry.BadgeText.text          = "0";
-            entry.BadgeText.fontSize      = 10f;
+            entry.BadgeText.fontSize      = 12f;
             entry.BadgeText.fontStyle     = FontStyles.Bold;
             entry.BadgeText.alignment     = TextAlignmentOptions.Center;
             entry.BadgeText.color         = Color.white;

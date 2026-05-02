@@ -1,0 +1,246 @@
+{
+    "restrictTileEditingToEditableZones": true,
+    "nextZoneIndex": 17,
+    "zones": [
+        {
+            "zoneName": "dungeon",
+            "gridOffsetX": 150,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "Lobby",
+            "gridOffsetX": 150,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "Forest",
+            "gridOffsetX": 100,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_100_50",
+            "gridOffsetX": 200,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_50_0",
+            "gridOffsetX": 150,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_0",
+            "gridOffsetX": 100,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_150_50",
+            "gridOffsetX": 250,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_200_50",
+            "gridOffsetX": 300,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_150_100",
+            "gridOffsetX": 250,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_200_100",
+            "gridOffsetX": 300,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_150_0",
+            "gridOffsetX": 250,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_200_0",
+            "gridOffsetX": 300,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_250_50",
+            "gridOffsetX": 350,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_250_0",
+            "gridOffsetX": 350,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_250_100",
+            "gridOffsetX": 350,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_100",
+            "gridOffsetX": 100,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_100_100",
+            "gridOffsetX": 200,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_100_0",
+            "gridOffsetX": 200,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-50_50",
+            "gridOffsetX": 50,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-100_50",
+            "gridOffsetX": 0,
+            "gridOffsetY": 50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-50_0",
+            "gridOffsetX": 50,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-100_0",
+            "gridOffsetX": 0,
+            "gridOffsetY": 100,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-50_100",
+            "gridOffsetX": 50,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-100_100",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_100_150",
+            "gridOffsetX": 100,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_150_150",
+            "gridOffsetX": 150,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_200_150",
+            "gridOffsetX": 200,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_100_-50",
+            "gridOffsetX": 100,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_150_-50",
+            "gridOffsetX": 150,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_200_-50",
+            "gridOffsetX": 200,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_50_150",
+            "gridOffsetX": 50,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_150",
+            "gridOffsetX": 0,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_250_150",
+            "gridOffsetX": 250,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_300_150",
+            "gridOffsetX": 300,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_350_150",
+            "gridOffsetX": 350,
+            "gridOffsetY": 150,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_50_-50",
+            "gridOffsetX": 50,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_-50",
+            "gridOffsetX": 0,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_250_-50",
+            "gridOffsetX": 250,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_300_-50",
+            "gridOffsetX": 300,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_350_-50",
+            "gridOffsetX": 350,
+            "gridOffsetY": -50,
+            "editableInTileEditor": true
+        }
+    ]
+}

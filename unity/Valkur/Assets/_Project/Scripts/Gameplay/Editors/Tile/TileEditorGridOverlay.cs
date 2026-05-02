@@ -60,9 +60,19 @@ namespace Valkur.Gameplay.TileEditor
         private TileEditorState.Tool _currentTool;
         private readonly HashSet<Vector2Int> _brushCells = new HashSet<Vector2Int>();
 
+        // Persistent selection (Select tool, all sub-modes) — drawn as GREEN outlines
+        // independent of the ephemeral _brushCells stroke preview.
+        private readonly HashSet<Vector2Int> _selectedCells = new HashSet<Vector2Int>();
+        // Live rectangle preview during a Rect-mode drag (anchors in cell space, inclusive).
+        private Vector2Int? _rectDragStart;
+        private Vector2Int? _rectDragCurrent;
+
         // Collider overlay state (Colliders panel).
         private Tilemap _collisionTilemap;
         private bool    _showColliderOverlay;
+
+        // View-panel toggles.
+        private bool _showGridLines = true;
 
         // Fill preview state
         private Tilemap _fillPreviewTilemap;
@@ -118,6 +128,29 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Replace the persistent selection drawn as GREEN borders by the Select tool.
+        /// Independent from <see cref="SetBrushStrokeCells"/> so the user can see the
+        /// committed selection while the Brush/Eraser stroke also draws yellow outlines.
+        /// </summary>
+        public void SetSelectedCells(IEnumerable<Vector3Int> cells)
+        {
+            _selectedCells.Clear();
+            if (cells == null) return;
+            foreach (var c in cells)
+                _selectedCells.Add(new Vector2Int(c.x, c.y));
+        }
+
+        /// <summary>
+        /// Configure the live rectangle preview shown during a <c>SelectMode.Rect</c>
+        /// drag. Pass <c>null, null</c> to hide. Anchors are inclusive cell coordinates.
+        /// </summary>
+        public void SetRectDragPreview(Vector3Int? start, Vector3Int? current)
+        {
+            _rectDragStart   = start.HasValue   ? new Vector2Int(start.Value.x,   start.Value.y)   : (Vector2Int?)null;
+            _rectDragCurrent = current.HasValue ? new Vector2Int(current.Value.x, current.Value.y) : (Vector2Int?)null;
+        }
+
+        /// <summary>
         /// Bind the Collision tilemap that the overlay should sample to draw the red
         /// collider visualization. Pass null to disable collider sampling entirely.
         /// </summary>
@@ -125,6 +158,9 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Enable or disable the red collider overlay.</summary>
         public void SetShowColliderOverlay(bool show) => _showColliderOverlay = show;
+
+        /// <summary>Enable or disable the white per-tile grid lines.</summary>
+        public void SetShowGridLines(bool show) => _showGridLines = show;
 
         /// <summary>Set the tilemap and new tile for Fill preview calculation.</summary>
         public void SetFillPreview(Tilemap tilemap, TileBase newTile)

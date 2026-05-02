@@ -84,51 +84,10 @@ namespace Valkur.Gameplay.TileEditor
             }
         }
 
+        // Select tool input is dispatched by sub-mode (Single / Rect / Multi) from
+        // TileEditorManager.SelectHandlers.cs — see HandleSelectInputDispatch there.
         private void HandleSelectInput(Tilemap tilemap, Vector3Int cellPos)
-        {
-            if (MouseInputManager.WasLeftMouseButtonPressedThisFrame())
-            {
-                _state.SelectedCellPos = cellPos;
-
-                // Multi-tile selection: gather every tile under the brush footprint
-                // (BrushSize x BrushSize, cursor = top-left, extends right + down).
-                int count = 0;
-                int empty = 0;
-                TileBase firstTile = null;
-                Vector3Int firstTilePos = cellPos;
-                _state.BrushStrokeCells.Clear();
-
-                for (int dy = 0; dy < _state.BrushSize; dy++)
-                for (int dx = 0; dx < _state.BrushSize; dx++)
-                {
-                    var p = new Vector3Int(cellPos.x + dx, cellPos.y - dy, cellPos.z);
-                    _state.BrushStrokeCells.Add(p);
-                    var tile = tilemap.GetTile(p);
-                    if (tile == null) { empty++; continue; }
-                    if (firstTile == null) { firstTile = tile; firstTilePos = p; }
-                    count++;
-                }
-
-                int total = _state.BrushSize * _state.BrushSize;
-                string info;
-                Sprite previewSprite = null;
-                if (total == 1)
-                {
-                    info = firstTile != null ? firstTile.name : "(empty)";
-                }
-                else if (count == 0)
-                {
-                    info = $"(empty x{total})";
-                }
-                else
-                {
-                    info = $"{firstTile.name} (+{count - 1} more, {empty} empty)";
-                }
-                if (firstTile is Tile t) previewSprite = t.sprite;
-
-                _ui.UpdateViewPanelSelected(previewSprite, info);
-            }
-        }
+            => HandleSelectInputDispatch(tilemap, cellPos);
 
         // Middle-mouse camera pan is handled by the shared EditorCameraPanController
         // (Scripts/Gameplay/Editors/EditorCameraPanController.cs). The previous

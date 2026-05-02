@@ -24,6 +24,14 @@ namespace Valkur.Gameplay.Buildings
         private void RefreshInspector()
         {
             if (_propsTmp == null) return;
+
+            // Dispatch to the appropriate mode.
+            if (_propertiesMode == PropertiesMode.Template && _selectedTemplateId >= 0)
+            {
+                RefreshInspectorForTemplate(_selectedTemplateId);
+                return;
+            }
+
             if (_activeBuilding == null || _activeBuilding.Template == null)
             {
                 _propsTmp.text = "Select a building to view properties.";
@@ -31,6 +39,9 @@ namespace Valkur.Gameplay.Buildings
                 RefreshCollidersPanel();
                 return;
             }
+
+            // Instance mode.
+            _propertiesMode = PropertiesMode.Instance;
             _inspectorRoot.SetActive(true);
 
             var t = _activeBuilding.Template;
@@ -56,6 +67,44 @@ namespace Valkur.Gameplay.Buildings
             string scope = _activeBuilding.EffectiveColliderScope;
             if (_scopeBtnLabel != null) _scopeBtnLabel.text = GetScopeButtonLabel(scope);
             if (_scopeBtnImg   != null) _scopeBtnImg.color = scope == "CU" ? EditorUIHelpers.ACCENT_BG : EditorUIHelpers.BTN_NORMAL;
+            RefreshCollidersPanel();
+        }
+
+        /// <summary>
+        /// Fills the Properties panel with read-only template metadata when the user
+        /// clicks a slot in the picker grid (Template mode). Instance-only controls
+        /// (split slider, Z offsets, grid resolution, scope toggle, Delete, Reset)
+        /// are hidden so the user cannot accidentally mutate unselected instances.
+        /// </summary>
+        private void RefreshInspectorForTemplate(int templateId)
+        {
+            var tmpl = _catalog?.GetById(templateId);
+
+            if (_inspectorRoot != null) _inspectorRoot.SetActive(false);
+
+            if (tmpl == null)
+            {
+                _propsTmp.text = $"Template #{templateId} not found in catalog.";
+                _propsTmp.richText = false;
+                RefreshCollidersPanel();
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"<b><color=#FFAA00>Template #{tmpl.templateId}</color></b>");
+            sb.AppendLine();
+            sb.AppendLine($"<b>Name:</b> {tmpl.name}");
+            sb.AppendLine($"<b>Asset path:</b> {tmpl.assetPath}");
+            sb.AppendLine($"<b>Original size:</b> {tmpl.originalScale.x}×{tmpl.originalScale.y} px");
+            sb.AppendLine($"<b>Default split:</b> {tmpl.splitRatio:F2}");
+            sb.AppendLine($"<b>Solid:</b> {tmpl.solid}");
+            sb.AppendLine($"<b>Collider scope:</b> {(string.IsNullOrEmpty(tmpl.colliderScope) ? "CG (shared)" : tmpl.colliderScope)}");
+            sb.AppendLine();
+            sb.AppendLine("<color=#888888><i>Drag this template onto the\nmap to place an instance.</i></color>");
+
+            _propsTmp.text     = sb.ToString();
+            _propsTmp.richText = true;
+
             RefreshCollidersPanel();
         }
 
@@ -183,7 +232,7 @@ namespace Valkur.Gameplay.Buildings
             Vector3 savedPos = go.transform.position;
             string  savedName = go.name;
             ExecutePersistedEdit($"Delete {savedName}",
-                () => { if (go) go.SetActive(false); InvalidateBuildingCache(); if (_activeBuilding == b) { _activeBuilding = null; RefreshInspector(); } },
+                () => { if (go) go.SetActive(false); InvalidateBuildingCache(); if (_activeBuilding == b) { _activeBuilding = null; _propertiesMode = PropertiesMode.None; RefreshInspector(); } },
                 () => { if (go) { go.transform.position = savedPos; go.name = savedName; go.SetActive(true); InvalidateBuildingCache(); } });
             if (_statusTmp != null) _statusTmp.text = $"Deleted: {savedName}";
         }

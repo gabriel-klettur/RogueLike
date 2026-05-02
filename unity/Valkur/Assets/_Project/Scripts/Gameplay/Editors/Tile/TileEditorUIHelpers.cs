@@ -102,13 +102,17 @@ namespace Valkur.Gameplay.TileEditor
         public const float INSPECTOR_BTN_W = 86f;
         public const float COLLIDERS_BTN_W = 84f;
         public const float SIZE_BTN_W = 64f;
+        public const float VIEW_BTN_W = 64f;
         public const float UX_BTN_W     = 50f;
         public const float PERF_BTN_W   = 60f;
         public const float PANELS_BTN_W = 68f;
 
         // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44 = BTN_H → perfect square buttons.
         public const float TOOLS_DROP_W = 60f;
-        public const float TOOLS_DROP_H = 460f + PANEL_HDR_H;   // 484
+        // 5 tool buttons + Undo/Redo + 1 separator + paddings ≈ 360. Save was removed
+        // since every edit auto-saves on mouse-up (see persistence flushes in the
+        // brush/eraser/fill/colliders/cut/paste handlers).
+        public const float TOOLS_DROP_H = 360f + PANEL_HDR_H;   // 384
         public const float TILES_DROP_W = 256f;
         public const float TILES_DROP_H = 540f + PANEL_HDR_H;   // 564
         public const int   TILES_GRID_COLS = 4;
@@ -126,8 +130,16 @@ namespace Valkur.Gameplay.TileEditor
         public const float COLLIDERS_DROP_H = 220f + PANEL_HDR_H;   // 244
         public const float SIZE_DROP_W = 200f;
         public const float SIZE_DROP_H = 150f + PANEL_HDR_H;        // 174
+        public const float VIEW_DROP_W = 230f;
+        public const float VIEW_DROP_H = 130f + PANEL_HDR_H;        // 154
         public const float UX_DROP_W   = 320f;
         public const float UX_DROP_H   = 520f + PANEL_HDR_H;        // 544
+
+        // SelectModes panel — appears immediately to the right of Tools whenever the
+        // Select tool is active. Mirrors the Colliders panel layout (3 toggle rows
+        // for Single/Rect/Multi + a clipboard action row + hint).
+        public const float SELECT_MODES_DROP_W = 200f;
+        public const float SELECT_MODES_DROP_H = 230f + PANEL_HDR_H; // 254
 
         // ── Factory methods ──
         // Generic primitives delegate to the kit; only the TileEditor-specific

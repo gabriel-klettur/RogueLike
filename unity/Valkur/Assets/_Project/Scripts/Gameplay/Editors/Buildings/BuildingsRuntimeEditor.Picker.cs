@@ -61,8 +61,37 @@ namespace Valkur.Gameplay.Buildings
 
         private void SelectTemplate(int id)
         {
+            // Fill flow intercept: if we are waiting for a template selection,
+            // route to OnFillTemplatePicked and return early so the normal
+            // Properties/picker path doesn't run.
+            if (_fillStep == FillStep.AwaitingTemplate)
+            {
+                OnFillTemplatePicked(id);
+                return;
+            }
+
             _selectedTemplateId = id;
+
+            // Entering Template mode: clear the placed-instance selection so the
+            // Properties panel shows template info instead of the last active building.
+            if (_activeBuilding != null)
+            {
+                _activeBuilding = null;
+                _activeColliderSession = null;
+                RebuildSameTemplateFx(null);
+                if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
+                // Hide world-space overlays that only make sense for an instance.
+                if (_handlesRoot   != null) _handlesRoot.SetActive(false);
+                if (_idLabelRt     != null) _idLabelRt.gameObject.SetActive(false);
+                if (_splitLineRt   != null) _splitLineRt.gameObject.SetActive(false);
+                if (_splitHandleRt != null) _splitHandleRt.gameObject.SetActive(false);
+                if (_collidersVisible) RefreshCollidersOverlay();
+            }
+
+            _propertiesMode = PropertiesMode.Template;
             RefreshPicker();
+            RefreshInspector();
+
             // Placement is drag-only: do NOT auto-switch to Place mode. The user
             // must drag the slot from the picker onto the map to actually place a
             // building. A simple click only highlights the slot for inspection.

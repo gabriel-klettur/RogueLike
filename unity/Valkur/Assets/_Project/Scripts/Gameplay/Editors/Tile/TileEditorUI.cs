@@ -26,13 +26,19 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action<TilemapLayerSetup.TilemapLayer, bool> _onLayerVisibilityChanged;
         private System.Action _onUndo;
         private System.Action _onRedo;
-        private System.Action _onSave;
         private System.Action _onShowCollidersClicked;
         private System.Action _onDrawCollidersClicked;
         private System.Action _onEraseCollidersClicked;
         private System.Action _onAutoGenerateCollidersClicked;
         private System.Action _onClearAllCollidersClicked;
         private System.Action _onPerfToggle;
+        private System.Action _onShowGridLinesClicked;
+        private System.Action _onShowZoneGridClicked;
+        private System.Action<TileEditorState.SelectMode> _onSelectModeChanged;
+        private System.Action _onCopyClicked;
+        private System.Action _onCutClicked;
+        private System.Action _onPasteClicked;
+        private System.Action _onClearSelectionClicked;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -59,13 +65,19 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TilemapLayerSetup.TilemapLayer, bool> onLayerVisibilityChanged = null,
             System.Action onUndo = null,
             System.Action onRedo = null,
-            System.Action onSave = null,
             System.Action onShowCollidersClicked = null,
             System.Action onDrawCollidersClicked = null,
             System.Action onEraseCollidersClicked = null,
             System.Action onAutoGenerateCollidersClicked = null,
             System.Action onClearAllCollidersClicked = null,
-            System.Action onPerfToggle = null)
+            System.Action onPerfToggle = null,
+            System.Action onShowGridLinesClicked = null,
+            System.Action onShowZoneGridClicked = null,
+            System.Action<TileEditorState.SelectMode> onSelectModeChanged = null,
+            System.Action onCopyClicked = null,
+            System.Action onCutClicked = null,
+            System.Action onPasteClicked = null,
+            System.Action onClearSelectionClicked = null)
         {
             _state = state;
             _catalog = catalog;
@@ -76,13 +88,19 @@ namespace Valkur.Gameplay.TileEditor
             _onLayerVisibilityChanged = onLayerVisibilityChanged;
             _onUndo = onUndo;
             _onRedo = onRedo;
-            _onSave = onSave;
             _onShowCollidersClicked = onShowCollidersClicked;
             _onDrawCollidersClicked = onDrawCollidersClicked;
             _onEraseCollidersClicked = onEraseCollidersClicked;
             _onAutoGenerateCollidersClicked = onAutoGenerateCollidersClicked;
             _onClearAllCollidersClicked = onClearAllCollidersClicked;
             _onPerfToggle = onPerfToggle;
+            _onShowGridLinesClicked = onShowGridLinesClicked;
+            _onShowZoneGridClicked = onShowZoneGridClicked;
+            _onSelectModeChanged   = onSelectModeChanged;
+            _onCopyClicked         = onCopyClicked;
+            _onCutClicked          = onCutClicked;
+            _onPasteClicked        = onPasteClicked;
+            _onClearSelectionClicked = onClearSelectionClicked;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -101,7 +119,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OpenAllDropdowns()
         {
-            foreach (var name in new[] { "tools", "tiles", "layers", "inspector", "colliders", "size" })
+            foreach (var name in new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view" })
             {
                 SetDropdownOpen(name, true);
                 _openDropdowns.Add(name);
@@ -135,7 +153,7 @@ namespace Valkur.Gameplay.TileEditor
 
         public void ToggleAllPanels()
         {
-            var mainPanels = new[] { "tools", "tiles", "layers", "inspector", "colliders", "size" };
+            var mainPanels = new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view" };
             bool allOpen = System.Array.TrueForAll(mainPanels, n => _openDropdowns.Contains(n));
             if (allOpen)
             {
@@ -178,6 +196,12 @@ namespace Valkur.Gameplay.TileEditor
                 case "size":
                     if (_refs.SizeDropdown != null) _refs.SizeDropdown.SetActive(open);
                     break;
+                case "view":
+                    if (_refs.ViewDropdown != null) _refs.ViewDropdown.SetActive(open);
+                    break;
+                case "selectmodes":
+                    if (_refs.SelectModesDropdown != null) _refs.SelectModesDropdown.SetActive(open);
+                    break;
                 case "ux":
                     if (_refs.UxDropdown != null) _refs.UxDropdown.SetActive(open);
                     break;
@@ -192,10 +216,12 @@ namespace Valkur.Gameplay.TileEditor
             ApplyMenuBtnStyle(_refs.InspectorMenuBtnImg, _refs.InspectorMenuBtnTmp, _openDropdowns.Contains("inspector"));
             ApplyMenuBtnStyle(_refs.CollidersMenuBtnImg, _refs.CollidersMenuBtnTmp, _openDropdowns.Contains("colliders"));
             ApplyMenuBtnStyle(_refs.SizeMenuBtnImg,      _refs.SizeMenuBtnTmp,      _openDropdowns.Contains("size"));
+            ApplyMenuBtnStyle(_refs.ViewMenuBtnImg,      _refs.ViewMenuBtnTmp,      _openDropdowns.Contains("view"));
             ApplyMenuBtnStyle(_refs.UxMenuBtnImg,        _refs.UxMenuBtnTmp,        _openDropdowns.Contains("ux"));
             bool allMainOpen = _openDropdowns.Contains("tools")     && _openDropdowns.Contains("tiles") &&
                                _openDropdowns.Contains("layers")    && _openDropdowns.Contains("inspector") &&
-                               _openDropdowns.Contains("colliders") && _openDropdowns.Contains("size");
+                               _openDropdowns.Contains("colliders") && _openDropdowns.Contains("size") &&
+                               _openDropdowns.Contains("view");
             ApplyMenuBtnStyle(_refs.PanelsToggleBtnImg, _refs.PanelsToggleBtnTmp, allMainOpen);
         }
 

@@ -29,10 +29,13 @@ namespace Valkur.Gameplay.TileEditor
 
             _refs = TileEditorUIBuilder.BuildAll(canvasGo.transform, _state,
                 _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown,
-                _onUndo, _onRedo, _onSave,
+                _onUndo, _onRedo,
                 _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked,
                 _onAutoGenerateCollidersClicked, _onClearAllCollidersClicked,
-                _onPerfToggle, ToggleAllPanels);
+                _onPerfToggle, ToggleAllPanels,
+                _onShowGridLinesClicked, _onShowZoneGridClicked,
+                _onSelectModeChanged, _onCopyClicked, _onCutClicked,
+                _onPasteClicked, _onClearSelectionClicked);
 
             // Wire close callbacks: clicking the ✕ on any panel header closes it cleanly
             // (updates menu-bar button highlights via ToggleDropdown).
@@ -42,7 +45,13 @@ namespace Valkur.Gameplay.TileEditor
             if (_refs.InspectorPanelDrag  != null) _refs.InspectorPanelDrag.OnClose  = () => ToggleDropdown("inspector");
             if (_refs.CollidersPanelDrag  != null) _refs.CollidersPanelDrag.OnClose  = () => ToggleDropdown("colliders");
             if (_refs.SizePanelDrag       != null) _refs.SizePanelDrag.OnClose       = () => ToggleDropdown("size");
+            if (_refs.ViewPanelDrag       != null) _refs.ViewPanelDrag.OnClose       = () => ToggleDropdown("view");
             if (_refs.UxPanelDrag         != null) _refs.UxPanelDrag.OnClose         = () => ToggleDropdown("ux");
+            // SelectModes panel closes silently on [x] — visibility resumes when the
+            // user picks Select again from the Tools panel (RefreshToolHighlights re-shows it).
+            if (_refs.SelectModesPanelDrag != null) _refs.SelectModesPanelDrag.OnClose =
+                () => { if (_refs.SelectModesDropdown != null) _refs.SelectModesDropdown.SetActive(false);
+                        _openDropdowns.Remove("selectmodes"); };
 
             WireLayerVisibilityButtons();
 

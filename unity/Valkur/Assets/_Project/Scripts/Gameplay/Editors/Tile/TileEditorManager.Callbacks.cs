@@ -29,12 +29,43 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OnToolChanged(TileEditorState.Tool tool)
         {
-            _undo.EndStroke();
+            // Re-clicking the SELECT button while Select is already active toggles
+            // the SelectModes panel open/closed. Lets the user hide the panel
+            // without leaving the tool (and without hunting for the [x] header
+            // button); preserves selection and clipboard.
+            if (tool == TileEditorState.Tool.Select && _state.CurrentTool == TileEditorState.Tool.Select)
+            {
+                _ui?.ToggleDropdown("selectmodes");
+                return;
+            }
+
+            _undo?.EndStroke();
+
+            // User decision: leaving Select clears the selection set and resets the
+            // sub-mode to Single. The clipboard is NOT cleared — it survives so the
+            // user can switch to Brush, edit, return to Select, and Ctrl+V.
+            bool leavingSelect = _state.CurrentTool == TileEditorState.Tool.Select &&
+                                 tool != TileEditorState.Tool.Select;
+            if (leavingSelect)
+            {
+                _state.SelectedCells.Clear();
+                _state.CurrentSelectMode = TileEditorState.SelectMode.Single;
+                _state.RectDragStart = null;
+                _state.RectDragCurrent = null;
+                // Mirror the cleared selection state to the overlay immediately so
+                // the green outlines vanish without waiting for the next on-canvas
+                // frame (the per-frame push in UpdateGridCursor early-returns over UI).
+                _gridOverlay?.SetSelectedCells(_state.SelectedCells);
+                _gridOverlay?.SetRectDragPreview(null, null);
+            }
+
             _state.CurrentTool = tool;
             _state.IsDragging = false;
             _state.BrushStrokeCells.Clear();
-            _ui.RefreshToolHighlights();
-            _ui.SetStatus($"Tool: {tool}");
+            _ui?.RefreshToolHighlights();
+            _ui?.RefreshSelectModeToggles();
+            _ui?.RefreshClipboardButtons();
+            _ui?.SetStatus($"Tool: {tool}");
             UpdateBorderToolLabel();
         }
 
@@ -48,8 +79,14 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OnLayerChanged(TilemapLayerSetup.TilemapLayer layer)
         {
+            // End any in-flight stroke before swapping layers. The batch is bound to
+            // a single TargetTilemap (the active layer's tilemap at StartStroke time),
+            // so letting a stroke span layers would record edits whose Position is
+            // valid on the new layer but get applied to the old layer's tilemap on
+            // Undo — silent corruption that's hard to spot.
+            _undo?.EndStroke();
             _state.CurrentLayer = layer;
-            _ui.RefreshLayerLabel();
+            _ui?.RefreshLayerLabel();
         }
 
         private void OnLayerVisibilityChanged(TilemapLayerSetup.TilemapLayer layer, bool visible)
@@ -71,33 +108,82 @@ namespace Valkur.Gameplay.TileEditor
         private void OnUndoClicked()
         {
             // End any active stroke first so the in-progress batch is committed before undoing.
-            _undo.EndStroke();
-            var batch = _undo.Undo();
+            _undo?.EndStroke();
+            var batch = _undo?.Undo();
             if (batch != null)
             {
                 _persistence?.MarkBatchDirty(batch.Edits);
-                _ui.SetStatus("Undo");
+                _ui?.SetStatus("Undo");
+                RegenerateColliderIfNeeded(batch);
             }
             else
-                _ui.SetStatus("Nothing to undo");
+                _ui?.SetStatus("Nothing to undo");
         }
 
         private void OnRedoClicked()
         {
-            _undo.EndStroke();
-            var batch = _undo.Redo();
+            _undo?.EndStroke();
+            var batch = _undo?.Redo();
             if (batch != null)
             {
                 _persistence?.MarkBatchDirty(batch.Edits);
-                _ui.SetStatus("Redo");
+                _ui?.SetStatus("Redo");
+                RegenerateColliderIfNeeded(batch);
             }
             else
-                _ui.SetStatus("Nothing to redo");
+                _ui?.SetStatus("Nothing to redo");
         }
 
-        private void OnSaveClicked()
+        /// <summary>
+        /// After Undo/Redo restores edits on the Collision layer, the painted tile data
+        /// changes but the <c>CompositeCollider2D</c> shape is cached — Physics2D queries
+        /// keep seeing the pre-undo geometry until we explicitly rebake it. Mirrors the
+        /// regen call done by <c>HandleColliderInput</c> after each draw/erase stroke.
+        /// </summary>
+        private void RegenerateColliderIfNeeded(TileEditBatch batch)
         {
-            SaveAllChanges();
+            if (batch == null || batch.TargetTilemap == null) return;
+            var collision = GetCollisionTilemap();
+            if (collision == null || batch.TargetTilemap != collision) return;
+            RegenerateCompositeCollider(collision);
+        }
+
+        // ── View panel handlers ──
+
+        private void OnShowGridLinesClicked()
+        {
+            _state.ShowGridLines = !_state.ShowGridLines;
+            ApplyViewOverlayVisibility();
+            _ui?.RefreshViewToggles();
+            _ui?.SetStatus(_state.ShowGridLines ? "Tiles grid visible" : "Tiles grid hidden");
+        }
+
+        private void OnShowZoneGridClicked()
+        {
+            _state.ShowZoneGrid = !_state.ShowZoneGrid;
+            ApplyViewOverlayVisibility();
+            _ui?.RefreshViewToggles();
+            _ui?.SetStatus(_state.ShowZoneGrid ? "Zone grid visible" : "Zone grid hidden");
+        }
+
+        /// <summary>
+        /// Push the View-panel flags to their respective renderers so toggles respond
+        /// instantly — without this, the overlay would only see the new value on the first
+        /// frame the cursor leaves the UI (the per-frame push in <c>UpdateGridCursor</c>
+        /// early-returns over UI).
+        ///
+        /// Tiles Grid drives the editor's own GL overlay; Zone Grid delegates to the
+        /// Map Editor's <c>SetExternalOverlayRequest</c> so the Tile Editor never draws
+        /// its own zone outlines — this avoids a duplicate cyan ring on top of the green
+        /// Map-Editor outlines (the cyan/green doubling was the original bug).
+        /// </summary>
+        private void ApplyViewOverlayVisibility()
+        {
+            _gridOverlay?.SetShowGridLines(_state.ShowGridLines);
+
+            if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)
+                Valkur.Gameplay.MapEditor.MapEditorManager.Instance
+                    .SetExternalOverlayRequest(_state.ShowZoneGrid);
         }
 
 

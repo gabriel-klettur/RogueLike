@@ -76,6 +76,8 @@ namespace Valkur.Gameplay.TileEditor
                 () => onDropdownToggle?.Invoke("colliders"), out refs.CollidersMenuBtnTmp);
             refs.SizeMenuBtnImg = BuildMenuButton(t, "Size v", SIZE_BTN_W,
                 () => onDropdownToggle?.Invoke("size"), out refs.SizeMenuBtnTmp);
+            refs.ViewMenuBtnImg = BuildMenuButton(t, "View v", VIEW_BTN_W,
+                () => onDropdownToggle?.Invoke("view"), out refs.ViewMenuBtnTmp);
 
             // ── Flexible spacer ──
             var spacer = CreateUI("Spacer", t);

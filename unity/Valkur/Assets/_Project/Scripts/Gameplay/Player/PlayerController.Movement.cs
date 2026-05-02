@@ -214,16 +214,18 @@ namespace Valkur.Gameplay
                 if (beam != null) beam.Stop();
             }
 
-            // Dash (Ctrl/RightShift) → dash spell through spell system
-            // Python parity: K_LCTRL / K_RCTRL → dash spell
-            // The canonical InputService.Gameplay.Dash action covers space; we OR
-            // with KeyboardInputManager (which folds new+legacy) for the legacy
-            // Ctrl / RightShift fallback the Python build supported.
+            // Dash (Space) → dash spell through spell system.
+            // The canonical InputService.Gameplay.Dash action covers Space; we OR
+            // with the legacy RightShift fallback for the Python control scheme.
+            //
+            // LeftCtrl / RightCtrl are intentionally NOT bound to dash any more:
+            // Ctrl is the universal "modifier for combos" (Ctrl+Z undo, Ctrl+S save,
+            // Ctrl+C copy, …). Mapping it to a movement spell makes every Ctrl-combo
+            // simultaneously fire a dash, teleporting the player and breaking gameplay
+            // the moment the user reaches for any standard shortcut.
             var dashAction = DashAction;
             bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
-            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl, KeyCode.LeftControl)
-                           || KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl)
-                           || KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
+            bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
             if (dashNew || dashLegacy)
             {
                 if (_spellCaster != null && !_spellCaster.TryCastByKey("dash", _facingDirection))

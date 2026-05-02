@@ -33,8 +33,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<TileEditorState.Tool> onToolChanged,
             System.Action<int> onBrushSizeChanged,
             System.Action onUndo = null,
-            System.Action onRedo = null,
-            System.Action onSave = null)
+            System.Action onRedo = null)
         {
             refs.ToolsDropdown = MakeDropdownPanel("ToolsDropdown", canvasT,
                 PanelDock.TopLeft, ToolsX, ToolsY, TOOLS_DROP_W, TOOLS_DROP_H,
@@ -55,66 +54,11 @@ namespace Valkur.Gameplay.TileEditor
             CreateActionBtn(t, "Undo", "Ctrl+Z",       BTN_H, onUndo);
             CreateActionBtn(t, "Redo", "Ctrl+Shift+Z", BTN_H, onRedo);
 
-            BuildSeparator(t);
-
-            // Save button (writes dirty zones to disk)
-            CreateSaveBtn(t, BTN_H, onSave, ref refs);
+            // No Save button: every edit path (brush/eraser/fill/colliders/cut/paste/
+            // auto-gen/clear-all) auto-flushes via _persistence.SaveAllDirty() on
+            // mouse-up. Manual save was redundant.
 
             refs.ToolsDropdown.SetActive(false);
-        }
-
-        /// <summary>Compact Save button + dirty-zone counter shown beneath it.</summary>
-        private static void CreateSaveBtn(Transform parent, float height, System.Action onClick, ref UIRefs refs)
-        {
-            var go = CreateUI("Action_Save", parent);
-            go.AddComponent<LayoutElement>().preferredHeight = height;
-            var img = go.AddComponent<Image>();
-            img.color = BTN_NORMAL;
-            refs.SaveButtonImg = img;
-
-            var btn = go.AddComponent<Button>();
-            var c = btn.colors;
-            c.normalColor = BTN_NORMAL;
-            c.highlightedColor = BTN_HOVER;
-            c.pressedColor = BTN_ACTIVE;
-            btn.colors = c;
-            btn.targetGraphic = img;
-            btn.onClick.AddListener(() => onClick?.Invoke());
-
-            var vl = go.AddComponent<VerticalLayoutGroup>();
-            vl.childAlignment = TextAnchor.MiddleCenter;
-            vl.childForceExpandWidth = true;
-            vl.childForceExpandHeight = false;
-            vl.childControlWidth = true;
-            vl.childControlHeight = true;
-            vl.spacing = 1f;
-            vl.padding = new RectOffset(2, 2, 4, 4);
-
-            var lblGo = CreateUI("Lbl", go.transform);
-            lblGo.AddComponent<LayoutElement>().preferredHeight = 16f;
-            refs.SaveButtonLabel = lblGo.AddComponent<TextMeshProUGUI>();
-            refs.SaveButtonLabel.text = "Save";
-            refs.SaveButtonLabel.fontSize = 9f;
-            refs.SaveButtonLabel.fontStyle = FontStyles.Bold;
-            refs.SaveButtonLabel.alignment = TextAlignmentOptions.Center;
-            refs.SaveButtonLabel.color = TEXT_SECONDARY;
-
-            var keyGo = CreateUI("Key", go.transform);
-            keyGo.AddComponent<LayoutElement>().preferredHeight = 11f;
-            var keyTmp = keyGo.AddComponent<TextMeshProUGUI>();
-            keyTmp.text = "Ctrl+S";
-            keyTmp.fontSize = 7f;
-            keyTmp.alignment = TextAlignmentOptions.Center;
-            keyTmp.color = TEXT_MUTED;
-
-            // Dirty zone counter beneath the button
-            var dirtyGo = CreateUI("DirtyIndicator", parent);
-            dirtyGo.AddComponent<LayoutElement>().preferredHeight = 12f;
-            refs.DirtyIndicatorText = dirtyGo.AddComponent<TextMeshProUGUI>();
-            refs.DirtyIndicatorText.text = string.Empty;
-            refs.DirtyIndicatorText.fontSize = 7f;
-            refs.DirtyIndicatorText.alignment = TextAlignmentOptions.Center;
-            refs.DirtyIndicatorText.color = TEXT_MUTED;
         }
 
         private static void CreateActionBtn(Transform parent, string label, string shortcut,

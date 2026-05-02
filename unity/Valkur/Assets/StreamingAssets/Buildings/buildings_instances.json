@@ -1,24 +1,5 @@
 [
-  {"id": 1, "template_id": 269, "zone": "Forest", "rel_x": 805, "rel_y": -197, "overrides": {"scale": [289, 368], "collider_scope": "CU", "collision_override": {
-  "width": 10,
-  "height": 12,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [289, 368]
-}}},
-  {"id": 2, "template_id": 8, "zone": "lobby", "rel_x": 542, "rel_y": 492, "overrides": {"scale": [201, 258], "collider_scope": "CU", "collision_override": {
+  {"id": 1, "template_id": 8, "zone": "lobby", "rel_x": 542, "rel_y": 492, "overrides": {"scale": [201, 258], "collider_scope": "CU", "collision_override": {
   "width": 7,
   "height": 9,
   "collision": [
@@ -34,7 +15,7 @@
   ],
   "grid_ref_size": [201, 258]
 }}},
-  {"id": 3, "template_id": 10, "zone": "lobby", "rel_x": 34, "rel_y": 371, "overrides": {"scale": [499, 499], "collider_scope": "CU", "collision_override": {
+  {"id": 2, "template_id": 10, "zone": "lobby", "rel_x": 34, "rel_y": 371, "overrides": {"scale": [499, 499], "collider_scope": "CU", "collision_override": {
   "width": 16,
   "height": 16,
   "collision": [
@@ -57,7 +38,7 @@
   ],
   "grid_ref_size": [499, 499]
 }}},
-  {"id": 4, "template_id": 11, "zone": "lobby", "rel_x": 141, "rel_y": -833, "overrides": {"scale": [1322, 879], "collider_scope": "CU", "collision_override": {
+  {"id": 3, "template_id": 11, "zone": "lobby", "rel_x": 141, "rel_y": -833, "overrides": {"scale": [1322, 879], "collider_scope": "CU", "collision_override": {
   "width": 42,
   "height": 28,
   "collision": [
@@ -92,7 +73,7 @@
   ],
   "grid_ref_size": [1322, 879]
 }}},
-  {"id": 5, "template_id": 12, "zone": "lobby", "rel_x": 935, "rel_y": -177, "overrides": {"scale": [414, 414], "collider_scope": "CU", "collision_override": {
+  {"id": 4, "template_id": 12, "zone": "lobby", "rel_x": 935, "rel_y": -177, "overrides": {"scale": [414, 414], "collider_scope": "CU", "collision_override": {
   "width": 13,
   "height": 13,
   "collision": [
@@ -112,7 +93,7 @@
   ],
   "grid_ref_size": [414, 414]
 }}},
-  {"id": 6, "template_id": 310, "zone": "lobby", "rel_x": 724, "rel_y": 143, "overrides": {"scale": [158, 158], "collider_scope": "CU", "collision_override": {
+  {"id": 5, "template_id": 310, "zone": "lobby", "rel_x": 724, "rel_y": 143, "overrides": {"scale": [158, 158], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 5,
   "collision": [
@@ -124,7 +105,7 @@
   ],
   "grid_ref_size": [158, 158]
 }}},
-  {"id": 7, "template_id": 14, "zone": "lobby", "rel_x": 136, "rel_y": 122, "overrides": {"scale": [316, 473], "collider_scope": "CU", "collision_override": {
+  {"id": 6, "template_id": 14, "zone": "lobby", "rel_x": 136, "rel_y": 122, "overrides": {"scale": [316, 473], "collider_scope": "CU", "collision_override": {
   "width": 10,
   "height": 15,
   "collision": [
@@ -146,7 +127,7 @@
   ],
   "grid_ref_size": [316, 473]
 }}},
-  {"id": 8, "template_id": 270, "zone": "lobby", "rel_x": 30, "rel_y": 939, "overrides": {"scale": [222, 222], "collider_scope": "CU", "collision_override": {
+  {"id": 7, "template_id": 270, "zone": "lobby", "rel_x": 30, "rel_y": 939, "overrides": {"scale": [222, 222], "collider_scope": "CU", "collision_override": {
   "width": 7,
   "height": 7,
   "collision": [
@@ -160,7 +141,7 @@
   ],
   "grid_ref_size": [222, 222]
 }}},
-  {"id": 9, "template_id": 18, "zone": "lobby", "rel_x": 211, "rel_y": -220, "overrides": {"scale": [505, 505], "collider_scope": "CU", "collision_override": {
+  {"id": 8, "template_id": 18, "zone": "lobby", "rel_x": 211, "rel_y": -220, "overrides": {"scale": [505, 505], "collider_scope": "CU", "collision_override": {
   "width": 16,
   "height": 16,
   "collision": [
@@ -183,7 +164,7 @@
   ],
   "grid_ref_size": [505, 505]
 }}},
-  {"id": 10, "template_id": 20, "zone": "lobby", "rel_x": 1179, "rel_y": 221, "overrides": {"scale": [389, 579], "collider_scope": "CU", "collision_override": {
+  {"id": 9, "template_id": 20, "zone": "lobby", "rel_x": 1179, "rel_y": 221, "overrides": {"scale": [389, 579], "collider_scope": "CU", "collision_override": {
   "width": 13,
   "height": 19,
   "collision": [
@@ -209,7 +190,7 @@
   ],
   "grid_ref_size": [389, 579]
 }}},
-  {"id": 11, "template_id": 21, "zone": "lobby", "rel_x": 631, "rel_y": 476, "overrides": {"scale": [73, 177], "collider_scope": "CU", "collision_override": {
+  {"id": 10, "template_id": 21, "zone": "lobby", "rel_x": 631, "rel_y": 476, "overrides": {"scale": [73, 177], "collider_scope": "CU", "collision_override": {
   "width": 3,
   "height": 6,
   "collision": [
@@ -222,7 +203,7 @@
   ],
   "grid_ref_size": [73, 177]
 }}},
-  {"id": 12, "template_id": 22, "zone": "lobby", "rel_x": 901, "rel_y": 491, "overrides": {"scale": [75, 182], "collider_scope": "CU", "collision_override": {
+  {"id": 11, "template_id": 22, "zone": "lobby", "rel_x": 901, "rel_y": 491, "overrides": {"scale": [75, 182], "collider_scope": "CU", "collision_override": {
   "width": 3,
   "height": 6,
   "collision": [
@@ -235,7 +216,7 @@
   ],
   "grid_ref_size": [75, 182]
 }}},
-  {"id": 13, "template_id": 22, "zone": "lobby", "rel_x": 920, "rel_y": 1061, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
+  {"id": 12, "template_id": 22, "zone": "lobby", "rel_x": 920, "rel_y": 1061, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
   "width": 2,
   "height": 4,
   "collision": [
@@ -246,7 +227,7 @@
   ],
   "grid_ref_size": [50, 121]
 }}},
-  {"id": 14, "template_id": 22, "zone": "lobby", "rel_x": 1441, "rel_y": 1234, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
+  {"id": 13, "template_id": 22, "zone": "lobby", "rel_x": 1441, "rel_y": 1234, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
   "width": 2,
   "height": 4,
   "collision": [
@@ -257,7 +238,7 @@
   ],
   "grid_ref_size": [50, 121]
 }}},
-  {"id": 15, "template_id": 22, "zone": "lobby", "rel_x": 1439, "rel_y": 1057, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
+  {"id": 14, "template_id": 22, "zone": "lobby", "rel_x": 1439, "rel_y": 1057, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
   "width": 2,
   "height": 4,
   "collision": [
@@ -268,7 +249,7 @@
   ],
   "grid_ref_size": [50, 121]
 }}},
-  {"id": 16, "template_id": 183, "zone": "lobby", "rel_x": 925, "rel_y": 1413, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
+  {"id": 15, "template_id": 183, "zone": "lobby", "rel_x": 925, "rel_y": 1413, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
   "width": 2,
   "height": 4,
   "collision": [
@@ -279,7 +260,7 @@
   ],
   "grid_ref_size": [50, 121]
 }}},
-  {"id": 17, "template_id": 22, "zone": "lobby", "rel_x": 1442, "rel_y": 1411, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
+  {"id": 16, "template_id": 22, "zone": "lobby", "rel_x": 1442, "rel_y": 1411, "overrides": {"scale": [50, 121], "collider_scope": "CU", "collision_override": {
   "width": 2,
   "height": 4,
   "collision": [
@@ -290,7 +271,7 @@
   ],
   "grid_ref_size": [50, 121]
 }}},
-  {"id": 18, "template_id": 25, "zone": "lobby", "rel_x": 56, "rel_y": 1513, "overrides": {"scale": [109, 51], "collider_scope": "CU", "collision_override": {
+  {"id": 17, "template_id": 25, "zone": "lobby", "rel_x": 56, "rel_y": 1513, "overrides": {"scale": [109, 51], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 2,
   "collision": [
@@ -299,7 +280,7 @@
   ],
   "grid_ref_size": [109, 51]
 }}},
-  {"id": 19, "template_id": 26, "zone": "lobby", "rel_x": 228, "rel_y": 1512, "overrides": {"scale": [133, 54], "collider_scope": "CU", "collision_override": {
+  {"id": 18, "template_id": 26, "zone": "lobby", "rel_x": 228, "rel_y": 1512, "overrides": {"scale": [133, 54], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 2,
   "collision": [
@@ -308,7 +289,7 @@
   ],
   "grid_ref_size": [133, 54]
 }}},
-  {"id": 20, "template_id": 26, "zone": "lobby", "rel_x": 422, "rel_y": 1513, "overrides": {"scale": [122, 50], "collider_scope": "CU", "collision_override": {
+  {"id": 19, "template_id": 26, "zone": "lobby", "rel_x": 422, "rel_y": 1513, "overrides": {"scale": [122, 50], "collider_scope": "CU", "collision_override": {
   "width": 4,
   "height": 2,
   "collision": [
@@ -317,7 +298,7 @@
   ],
   "grid_ref_size": [122, 50]
 }}},
-  {"id": 21, "template_id": 26, "zone": "lobby", "rel_x": 584, "rel_y": 1508, "overrides": {"scale": [137, 56], "collider_scope": "CU", "collision_override": {
+  {"id": 20, "template_id": 26, "zone": "lobby", "rel_x": 584, "rel_y": 1508, "overrides": {"scale": [137, 56], "collider_scope": "CU", "collision_override": {
   "width": 5,
   "height": 2,
   "collision": [
@@ -326,7 +307,7 @@
   ],
   "grid_ref_size": [137, 56]
 }}},
-  {"id": 22, "template_id": 27, "zone": "lobby", "rel_x": 75, "rel_y": 1341, "overrides": {"scale": [235, 235], "collider_scope": "CU", "collision_override": {
+  {"id": 21, "template_id": 27, "zone": "lobby", "rel_x": 75, "rel_y": 1341, "overrides": {"scale": [235, 235], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 8,
   "collision": [
@@ -341,7 +322,7 @@
   ],
   "grid_ref_size": [235, 235]
 }}},
-  {"id": 23, "template_id": 28, "zone": "lobby", "rel_x": 289, "rel_y": 1379, "overrides": {"scale": [188, 188], "collider_scope": "CU", "collision_override": {
+  {"id": 22, "template_id": 28, "zone": "lobby", "rel_x": 289, "rel_y": 1379, "overrides": {"scale": [188, 188], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 6,
   "collision": [
@@ -354,7 +335,7 @@
   ],
   "grid_ref_size": [188, 188]
 }}},
-  {"id": 24, "template_id": 29, "zone": "lobby", "rel_x": 469, "rel_y": 1370, "overrides": {"scale": [206, 206], "collider_scope": "CU", "collision_override": {
+  {"id": 23, "template_id": 29, "zone": "lobby", "rel_x": 469, "rel_y": 1370, "overrides": {"scale": [206, 206], "collider_scope": "CU", "collision_override": {
   "width": 7,
   "height": 7,
   "collision": [
@@ -368,23 +349,8 @@
   ],
   "grid_ref_size": [206, 206]
 }}},
-  {"id": 25, "template_id": 32, "zone": "lobby", "rel_x": 567, "rel_y": 207, "overrides": {"scale": [197, 269], "split_ratio": 0.6669, "collider_scope": "CG"}},
-  {"id": 26, "template_id": 34, "zone": "Forest", "rel_x": 844, "rel_y": -468, "overrides": {"scale": [176, 240], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [176, 240]
-}}},
-  {"id": 27, "template_id": 35, "zone": "Forest", "rel_x": 1102, "rel_y": -146, "overrides": {"scale": [166, 227], "collider_scope": "CU", "collision_override": {
+  {"id": 24, "template_id": 32, "zone": "lobby", "rel_x": 567, "rel_y": 207, "overrides": {"scale": [197, 269], "split_ratio": 0.6669, "collider_scope": "CG"}},
+  {"id": 25, "template_id": 37, "zone": "Forest", "rel_x": 1493, "rel_y": -107, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 8,
   "collision": [
@@ -399,34 +365,7 @@
   ],
   "grid_ref_size": [166, 227]
 }}},
-  {"id": 28, "template_id": 36, "zone": "Forest", "rel_x": 1073, "rel_y": -375, "overrides": {"scale": [177, 242], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [177, 242]
-}}},
-  {"id": 29, "template_id": 37, "zone": "Forest", "rel_x": 1493, "rel_y": -107, "overrides": {"scale": [114, 156], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
-  {"id": 30, "template_id": 38, "zone": "Forest", "rel_x": 93, "rel_y": -656, "overrides": {"scale": [164, 224], "collider_scope": "CU", "collision_override": {
+  {"id": 26, "template_id": 38, "zone": "Forest", "rel_x": 93, "rel_y": -656, "overrides": {"scale": [164, 224], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 7,
   "collision": [
@@ -440,7 +379,7 @@
   ],
   "grid_ref_size": [164, 224]
 }}},
-  {"id": 31, "template_id": 39, "zone": "Forest", "rel_x": 745, "rel_y": -706, "overrides": {"scale": [162, 221], "collider_scope": "CU", "collision_override": {
+  {"id": 27, "template_id": 39, "zone": "Forest", "rel_x": 745, "rel_y": -706, "overrides": {"scale": [162, 221], "collider_scope": "CU", "collision_override": {
   "width": 6,
   "height": 7,
   "collision": [
@@ -454,43 +393,7 @@
   ],
   "grid_ref_size": [162, 221]
 }}},
-  {"id": 32, "template_id": 40, "zone": "Forest", "rel_x": 620, "rel_y": -218, "overrides": {"scale": [195, 267], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
-  {"id": 33, "template_id": 40, "zone": "Forest", "rel_x": 193, "rel_y": -205, "overrides": {"scale": [163, 223], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
-  {"id": 34, "template_id": 40, "zone": "Forest", "rel_x": 354, "rel_y": -296, "overrides": {"scale": [189, 259], "collider_scope": "CU", "collision_override": {
-  "width": 4,
-  "height": 5,
-  "collision": [
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."],
-    [".", ".", ".", "."]
-  ],
-  "grid_ref_size": [114, 156]
-}}},
-  {"id": 35, "template_id": 42, "zone": "Forest", "rel_x": 326, "rel_y": -670, "overrides": {"scale": [203, 276], "collider_scope": "CU", "collision_override": {
+  {"id": 28, "template_id": 42, "zone": "Forest", "rel_x": 326, "rel_y": -670, "overrides": {"scale": [203, 276], "collider_scope": "CU", "collision_override": {
   "width": 7,
   "height": 9,
   "collision": [
@@ -506,1709 +409,123 @@
   ],
   "grid_ref_size": [203, 276]
 }}},
-  {"id": 36, "template_id": 43, "zone": "Forest", "rel_x": 1488, "rel_y": -247, "overrides": {"scale": [139, 190], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 6,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [139, 190]
-}}},
-  {"id": 37, "template_id": 44, "zone": "Forest", "rel_x": 688, "rel_y": -334, "overrides": {"scale": [129, 176], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 6,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [129, 176]
-}}},
-  {"id": 38, "template_id": 45, "zone": "Forest", "rel_x": 418, "rel_y": -454, "overrides": {"scale": [141, 192], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 6,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [141, 192]
-}}},
-  {"id": 39, "template_id": 46, "zone": "Forest", "rel_x": 542, "rel_y": -567, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 40, "template_id": 47, "zone": "Forest", "rel_x": 1152, "rel_y": 151, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 41, "template_id": 48, "zone": "Forest", "rel_x": 85, "rel_y": -476, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 42, "template_id": 49, "zone": "Forest", "rel_x": -145, "rel_y": -556, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 43, "template_id": 48, "zone": "Forest", "rel_x": -147, "rel_y": -298, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 44, "template_id": 49, "zone": "Forest", "rel_x": 1406, "rel_y": 518, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 45, "template_id": 50, "zone": "Forest", "rel_x": 12, "rel_y": -105, "overrides": {"scale": [194, 265], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [194, 265]
-}}},
-  {"id": 46, "template_id": 51, "zone": "Forest", "rel_x": 18, "rel_y": 94, "overrides": {"scale": [168, 229], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [168, 229]
-}}},
-  {"id": 47, "template_id": 52, "zone": "Forest", "rel_x": 38, "rel_y": 208, "overrides": {"scale": [172, 235], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [172, 235]
-}}},
-  {"id": 48, "template_id": 53, "zone": "Forest", "rel_x": 28, "rel_y": 236, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 49, "template_id": 163, "zone": "Forest", "rel_x": 385, "rel_y": 515, "overrides": {"scale": [184, 235], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [184, 235]
-}}},
-  {"id": 50, "template_id": 268, "zone": "Forest", "rel_x": 285, "rel_y": 350, "overrides": {"scale": [220, 297], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [220, 297]
-}}},
-  {"id": 51, "template_id": 266, "zone": "Forest", "rel_x": 1316, "rel_y": 656, "overrides": {"scale": [177, 242], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [177, 242]
-}}},
-  {"id": 52, "template_id": 59, "zone": "Forest", "rel_x": 1294, "rel_y": 239, "overrides": {"scale": [169, 231], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [169, 231]
-}}},
-  {"id": 53, "template_id": 60, "zone": "Forest", "rel_x": 1193, "rel_y": 294, "overrides": {"scale": [181, 247], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [181, 247]
-}}},
-  {"id": 54, "template_id": 61, "zone": "Forest", "rel_x": 1413, "rel_y": 396, "overrides": {"scale": [238, 302], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [238, 302]
-}}},
-  {"id": 55, "template_id": 305, "zone": "Forest", "rel_x": 747, "rel_y": 656, "overrides": {"scale": [246, 314], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [246, 314]
-}}},
-  {"id": 56, "template_id": 65, "zone": "Forest", "rel_x": 1284, "rel_y": 260, "overrides": {"scale": [251, 308], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 308]
-}}},
-  {"id": 57, "template_id": 66, "zone": "Forest", "rel_x": 1264, "rel_y": 346, "overrides": {"scale": [154, 208], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [154, 208]
-}}},
-  {"id": 58, "template_id": 258, "zone": "Forest", "rel_x": 36, "rel_y": 389, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 59, "template_id": 299, "zone": "Forest", "rel_x": 122, "rel_y": 1282, "overrides": {"scale": [216, 276], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [216, 276]
-}}},
-  {"id": 60, "template_id": 291, "zone": "Forest", "rel_x": 1355, "rel_y": 1149, "overrides": {"scale": [244, 311], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [244, 311]
-}}},
-  {"id": 61, "template_id": 293, "zone": "Forest", "rel_x": 783, "rel_y": 1329, "overrides": {"scale": [195, 247], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [195, 247]
-}}},
-  {"id": 62, "template_id": 74, "zone": "Forest", "rel_x": 677, "rel_y": 1229, "overrides": {"scale": [208, 265], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [208, 265]
-}}},
-  {"id": 63, "template_id": 297, "zone": "Forest", "rel_x": 7, "rel_y": 1061, "overrides": {"scale": [194, 248], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [194, 248]
-}}},
-  {"id": 64, "template_id": 296, "zone": "Forest", "rel_x": 303, "rel_y": 1280, "overrides": {"scale": [224, 286], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [224, 286]
-}}},
-  {"id": 65, "template_id": 300, "zone": "Forest", "rel_x": 31, "rel_y": 1365, "overrides": {"scale": [170, 217], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [170, 217]
-}}},
-  {"id": 66, "template_id": 298, "zone": "Forest", "rel_x": 53, "rel_y": 1213, "overrides": {"scale": [186, 237], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [186, 237]
-}}},
-  {"id": 67, "template_id": 294, "zone": "Forest", "rel_x": 888, "rel_y": 1213, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 68, "template_id": 292, "zone": "Forest", "rel_x": 471, "rel_y": 1180, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 69, "template_id": 48, "zone": "Forest", "rel_x": 1111, "rel_y": 1207, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 70, "template_id": 295, "zone": "Forest", "rel_x": 591, "rel_y": 1251, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 71, "template_id": 312, "zone": "Forest", "rel_x": 1276, "rel_y": 1248, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 72, "template_id": 80, "zone": "Forest", "rel_x": 15, "rel_y": 869, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 73, "template_id": 304, "zone": "Forest", "rel_x": 651, "rel_y": 842, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 74, "template_id": 82, "zone": "Forest", "rel_x": 187, "rel_y": 609, "overrides": {"scale": [88, 88], "collider_scope": "CU", "collision_override": {
-  "width": 3,
-  "height": 3,
-  "collision": [
-    [".", ".", "."],
-    [".", ".", "."],
-    [".", ".", "."]
-  ],
-  "grid_ref_size": [88, 88]
-}}},
-  {"id": 75, "template_id": 83, "zone": "Forest", "rel_x": 419, "rel_y": 739, "overrides": {"scale": [81, 81], "collider_scope": "CU", "collision_override": {
-  "width": 3,
-  "height": 3,
-  "collision": [
-    [".", ".", "."],
-    [".", ".", "."],
-    [".", ".", "."]
-  ],
-  "grid_ref_size": [81, 81]
-}}},
-  {"id": 76, "template_id": 84, "zone": "Forest", "rel_x": 896, "rel_y": 209, "overrides": {"scale": [71, 71], "collider_scope": "CU", "collision_override": {
-  "width": 3,
-  "height": 3,
-  "collision": [
-    [".", ".", "."],
-    [".", ".", "."],
-    [".", ".", "."]
-  ],
-  "grid_ref_size": [71, 71]
-}}},
-  {"id": 77, "template_id": 85, "zone": "Forest", "rel_x": 1265, "rel_y": 74, "overrides": {"scale": [53, 53], "collider_scope": "CU", "collision_override": {
-  "width": 2,
-  "height": 2,
-  "collision": [
-    [".", "."],
-    [".", "."]
-  ],
-  "grid_ref_size": [53, 53]
-}}},
-  {"id": 78, "template_id": 86, "zone": "Forest", "rel_x": 449, "rel_y": 58, "overrides": {"scale": [50, 50], "collider_scope": "CU", "collision_override": {
-  "width": 2,
-  "height": 2,
-  "collision": [
-    [".", "."],
-    [".", "."]
-  ],
-  "grid_ref_size": [50, 50]
-}}},
-  {"id": 79, "template_id": 87, "zone": "Forest", "rel_x": 124, "rel_y": 82, "overrides": {"scale": [58, 58], "collider_scope": "CU", "collision_override": {
-  "width": 2,
-  "height": 2,
-  "collision": [
-    [".", "."],
-    [".", "."]
-  ],
-  "grid_ref_size": [58, 58]
-}}},
-  {"id": 80, "template_id": 88, "zone": "Forest", "rel_x": 631, "rel_y": 148, "overrides": {"scale": [58, 58], "collider_scope": "CU", "collision_override": {
-  "width": 2,
-  "height": 2,
-  "collision": [
-    [".", "."],
-    [".", "."]
-  ],
-  "grid_ref_size": [58, 58]
-}}},
-  {"id": 81, "template_id": 89, "zone": "Forest", "rel_x": 52, "rel_y": 683, "overrides": {"scale": [64, 64], "collider_scope": "CU", "collision_override": {
-  "width": 2,
-  "height": 2,
-  "collision": [
-    [".", "."],
-    [".", "."]
-  ],
-  "grid_ref_size": [64, 64]
-}}},
-  {"id": 82, "template_id": 15, "zone": "lobby", "rel_x": 1335, "rel_y": -80, "overrides": {"scale": [227, 346], "split_ratio": 0.6344, "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", "#", "#", "#", "#", ".", "."],
-    [".", ".", "#", "#", "#", "#", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [227, 346]
-}}},
-  {"id": 83, "template_id": 30, "zone": "lobby", "rel_x": 578, "rel_y": 683, "overrides": {"scale": [172, 218], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [172, 218]
-}}},
-  {"id": 84, "template_id": 31, "zone": "lobby", "rel_x": 161, "rel_y": 884, "overrides": {"scale": [172, 221], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [172, 221]
-}}},
-  {"id": 85, "template_id": 40, "zone": "Forest", "rel_x": 305, "rel_y": 662, "overrides": {"scale": [198, 270], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [198, 270]
-}}},
-  {"id": 86, "template_id": 303, "zone": "Forest", "rel_x": 1005, "rel_y": 794, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 87, "template_id": 301, "zone": "Forest", "rel_x": 772, "rel_y": 917, "overrides": {"scale": [245, 335], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [245, 335]
-}}},
-  {"id": 88, "template_id": 302, "zone": "Forest", "rel_x": 959, "rel_y": 947, "overrides": {"scale": [209, 267], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [209, 267]
-}}},
-  {"id": 89, "template_id": 91, "zone": "Forest", "rel_x": 119, "rel_y": 649, "overrides": {"scale": [256, 256], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 90, "template_id": 149, "zone": "lobby", "rel_x": 215, "rel_y": 1148, "overrides": {"scale": [256, 256], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 91, "template_id": 309, "zone": "lobby", "rel_x": 980, "rel_y": 1059, "overrides": {"scale": [437, 437], "collider_scope": "CU", "collision_override": {
-  "width": 14,
-  "height": 14,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [437, 437]
-}}},
-  {"id": 92, "template_id": 288, "zone": "lobby", "rel_x": 971, "rel_y": 1322, "overrides": {"scale": [180, 230], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [180, 230]
-}}},
-  {"id": 93, "template_id": 287, "zone": "lobby", "rel_x": 1126, "rel_y": 1357, "overrides": {"scale": [162, 221], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [162, 221]
-}}},
-  {"id": 94, "template_id": 273, "zone": "lobby", "rel_x": 1266, "rel_y": 1311, "overrides": {"scale": [177, 226], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [177, 226]
-}}},
-  {"id": 95, "template_id": 284, "zone": "lobby", "rel_x": 1433, "rel_y": 958, "overrides": {"scale": [179, 228], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [179, 228]
-}}},
-  {"id": 96, "template_id": 187, "zone": "lobby", "rel_x": 1129, "rel_y": 856, "overrides": {"scale": [173, 235], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [173, 235]
-}}},
-  {"id": 97, "template_id": 289, "zone": "lobby", "rel_x": 1298, "rel_y": 907, "overrides": {"scale": [148, 202], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [148, 202]
-}}},
-  {"id": 98, "template_id": 290, "zone": "lobby", "rel_x": 969, "rel_y": 874, "overrides": {"scale": [175, 239], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [175, 239]
-}}},
-  {"id": 99, "template_id": 201, "zone": "Forest", "rel_x": 1176, "rel_y": 398, "overrides": {"scale": [331, 331], "collider_scope": "CU", "collision_override": {
-  "width": 11,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [331, 331]
-}}},
-  {"id": 100, "template_id": 272, "zone": "lobby", "rel_x": 417, "rel_y": 915, "overrides": {"scale": [333, 333], "collider_scope": "CU", "collision_override": {
-  "width": 11,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [333, 333]
-}}},
-  {"id": 101, "template_id": 238, "zone": "zone_100_50", "rel_x": 206, "rel_y": -114, "overrides": {"scale": [344, 344], "collider_scope": "CU", "collision_override": {
-  "width": 11,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [344, 344]
-}}},
-  {"id": 102, "template_id": 249, "zone": "lobby", "rel_x": 694, "rel_y": 844, "overrides": {"scale": [220, 220], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", "#", ".", "#", ".", "."],
-    [".", ".", "#", ".", "#", ".", "."],
-    [".", ".", "#", ".", "#", ".", "."],
-    [".", ".", "#", ".", "#", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [220, 220]
-}}},
-  {"id": 103, "template_id": 307, "zone": "zone_100_50", "rel_x": 1164, "rel_y": 1164, "overrides": {"scale": [426, 426], "collider_scope": "CU", "collision_override": {
-  "width": 14,
-  "height": 14,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [426, 426]
-}}},
-  {"id": 104, "template_id": 237, "zone": "zone_100_50", "rel_x": 301, "rel_y": 631, "overrides": {"scale": [447, 447], "collider_scope": "CU", "collision_override": {
-  "width": 14,
-  "height": 14,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [447, 447]
-}}},
-  {"id": 105, "template_id": 256, "zone": "zone_100_50", "rel_x": 484, "rel_y": -292, "overrides": {"scale": [1129, 1129], "collider_scope": "CU", "collision_override": {
-  "width": 36,
-  "height": 36,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [1129, 1129]
-}}},
-  {"id": 106, "template_id": 231, "zone": "zone_100_50", "rel_x": -2819, "rel_y": -1016, "overrides": {"scale": [160, 239], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [160, 239]
-}}},
-  {"id": 107, "template_id": 232, "zone": "zone_100_50", "rel_x": 1047, "rel_y": 773, "overrides": {"scale": [157, 235], "collider_scope": "CU", "collision_override": {
-  "width": 5,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."],
-    [".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [157, 235]
-}}},
-  {"id": 108, "template_id": 244, "zone": "zone_100_50", "rel_x": -2572, "rel_y": -1125, "overrides": {"scale": [256, 256], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 256]
-}}},
-  {"id": 109, "template_id": 234, "zone": "zone_100_50", "rel_x": 583, "rel_y": 1200, "overrides": {"scale": [277, 277], "collider_scope": "CU", "collision_override": {
-  "width": 9,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [277, 277]
-}}},
-  {"id": 110, "template_id": 262, "zone": "zone_100_50", "rel_x": -9, "rel_y": -207, "overrides": {"scale": [210, 268], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [210, 268]
-}}},
-  {"id": 111, "template_id": 241, "zone": "zone_100_50", "rel_x": -67, "rel_y": 222, "overrides": {"scale": [198, 255], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [198, 255]
-}}},
-  {"id": 112, "template_id": 275, "zone": "zone_100_50", "rel_x": -36, "rel_y": 385, "overrides": {"scale": [194, 248], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [194, 248]
-}}},
-  {"id": 113, "template_id": 242, "zone": "zone_100_50", "rel_x": 286, "rel_y": 761, "overrides": {"scale": [183, 250], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [183, 250]
-}}},
-  {"id": 114, "template_id": 306, "zone": "zone_100_50", "rel_x": 574, "rel_y": 736, "overrides": {"scale": [187, 255], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [187, 255]
-}}},
-  {"id": 115, "template_id": 48, "zone": "zone_100_50", "rel_x": 401, "rel_y": 606, "overrides": {"scale": [210, 271], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [210, 271]
-}}},
-  {"id": 116, "template_id": 282, "zone": "zone_100_50", "rel_x": 660, "rel_y": 1053, "overrides": {"scale": [215, 274], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [215, 274]
-}}},
-  {"id": 117, "template_id": 283, "zone": "zone_100_50", "rel_x": 263, "rel_y": 1050, "overrides": {"scale": [233, 333], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [233, 333]
-}}},
-  {"id": 118, "template_id": 286, "zone": "zone_100_50", "rel_x": -86, "rel_y": 1289, "overrides": {"scale": [221, 282], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [221, 282]
-}}},
-  {"id": 119, "template_id": 285, "zone": "lobby", "rel_x": 1490, "rel_y": 1121, "overrides": {"scale": [175, 238], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [175, 238]
-}}},
-  {"id": 120, "template_id": 280, "zone": "zone_100_50", "rel_x": 968, "rel_y": 1245, "overrides": {"scale": [202, 275], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [202, 275]
-}}},
-  {"id": 121, "template_id": 281, "zone": "zone_100_50", "rel_x": 1076, "rel_y": 1307, "overrides": {"scale": [203, 277], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [203, 277]
-}}},
-  {"id": 122, "template_id": 279, "zone": "zone_100_50", "rel_x": 1134, "rel_y": 981, "overrides": {"scale": [212, 290], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [212, 290]
-}}},
-  {"id": 123, "template_id": 277, "zone": "zone_100_50", "rel_x": 1248, "rel_y": 856, "overrides": {"scale": [205, 280], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [205, 280]
-}}},
-  {"id": 124, "template_id": 276, "zone": "zone_100_50", "rel_x": 1393, "rel_y": 740, "overrides": {"scale": [171, 233], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [171, 233]
-}}},
-  {"id": 125, "template_id": 278, "zone": "zone_100_50", "rel_x": 1361, "rel_y": 934, "overrides": {"scale": [215, 294], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [215, 294]
-}}},
-  {"id": 126, "template_id": 243, "zone": "zone_100_100", "rel_x": 273, "rel_y": -518, "overrides": {"scale": [364, 546], "collider_scope": "CU", "collision_override": {
-  "width": 12,
-  "height": 18,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [364, 546]
-}}},
-  {"id": 127, "template_id": 48, "zone": "lobby", "rel_x": 1084, "rel_y": 247, "overrides": {"scale": [213, 274], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [213, 274]
-}}},
-  {"id": 128, "template_id": 175, "zone": "lobby", "rel_x": 29, "rel_y": -14, "overrides": {"scale": [191, 260], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 9,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [191, 260]
-}}},
-  {"id": 129, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "split_ratio": 0.8142, "collider_scope": "CU", "collision_override": {
-  "width": 13,
-  "height": 19,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."],
-    [".", "#", "#", "#", "#", "#", "#", "#", "#", "#", ".", ".", "."],
-    [".", "#", "#", "#", "#", "#", "#", "#", "#", "#", ".", ".", "."],
-    [".", "#", "#", "#", "#", "#", "#", "#", "#", "#", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [405, 607]
-}}},
-  {"id": 130, "template_id": 48, "zone": "zone_100_50", "rel_x": -48, "rel_y": -90, "overrides": {"scale": [251, 324], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 11,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [251, 324]
-}}},
-  {"id": 131, "template_id": 311, "zone": "lobby", "rel_x": 821, "rel_y": -116, "overrides": {"scale": [201, 201], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [201, 201]
-}}},
-  {"id": 132, "template_id": 311, "zone": "lobby", "rel_x": 1286, "rel_y": -115, "overrides": {"scale": [191, 191], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 6,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [191, 191]
-}}},
-  {"id": 133, "template_id": 311, "zone": "lobby", "rel_x": 1415, "rel_y": -108, "overrides": {"scale": [181, 181], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 6,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [181, 181]
-}}},
-  {"id": 134, "template_id": 311, "zone": "lobby", "rel_x": 572, "rel_y": -117, "overrides": {"scale": [196, 196], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [196, 196]
-}}},
-  {"id": 135, "template_id": 311, "zone": "lobby", "rel_x": 99, "rel_y": -115, "overrides": {"scale": [198, 198], "collider_scope": "CU", "collision_override": {
-  "width": 7,
-  "height": 7,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [198, 198]
-}}},
-  {"id": 136, "template_id": 176, "zone": "lobby", "rel_x": 1473, "rel_y": 661, "overrides": {"scale": [184, 235], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [184, 235]
-}}},
-  {"id": 137, "template_id": 176, "zone": "zone_100_50", "rel_x": -37, "rel_y": 538, "overrides": {"scale": [191, 244], "collider_scope": "CU", "collision_override": {
-  "width": 6,
-  "height": 8,
-  "collision": [
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [191, 244]
-}}},
-  {"id": 138, "template_id": 313, "zone": "Forest", "rel_x": 1023, "rel_y": 1282, "overrides": {"scale": [236, 301], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 10,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [236, 301]
-}}},
-  {"id": 139, "template_id": 157, "zone": "Forest", "rel_x": 688, "rel_y": 397, "overrides": {"scale": [256, 384], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 12,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 384]
-}}},
-  {"id": 140, "template_id": 155, "zone": "Forest", "rel_x": 688, "rel_y": 398, "overrides": {"scale": [256, 384], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 12,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 384]
-}}},
-  {"id": 141, "template_id": 158, "zone": "Forest", "rel_x": 688, "rel_y": 395, "overrides": {"scale": [256, 384], "collider_scope": "CU", "collision_override": {
-  "width": 8,
-  "height": 12,
-  "collision": [
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", "."]
-  ],
-  "grid_ref_size": [256, 384]
-}}}
+  {"id": 29, "template_id": 43, "zone": "Forest", "rel_x": 1488, "rel_y": -247, "overrides": {"scale": [139, 190], "collider_scope": "CU"}},
+  {"id": 30, "template_id": 44, "zone": "Forest", "rel_x": 688, "rel_y": -334, "overrides": {"scale": [129, 176], "collider_scope": "CU"}},
+  {"id": 31, "template_id": 45, "zone": "Forest", "rel_x": 418, "rel_y": -454, "overrides": {"scale": [141, 192], "collider_scope": "CU"}},
+  {"id": 32, "template_id": 47, "zone": "Forest", "rel_x": 1152, "rel_y": 151, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 33, "template_id": 49, "zone": "Forest", "rel_x": -145, "rel_y": -556, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 34, "template_id": 49, "zone": "Forest", "rel_x": 1406, "rel_y": 518, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 35, "template_id": 50, "zone": "Forest", "rel_x": 12, "rel_y": -105, "overrides": {"scale": [194, 265], "collider_scope": "CU"}},
+  {"id": 36, "template_id": 51, "zone": "Forest", "rel_x": 18, "rel_y": 94, "overrides": {"scale": [168, 229], "collider_scope": "CU"}},
+  {"id": 37, "template_id": 52, "zone": "Forest", "rel_x": 38, "rel_y": 208, "overrides": {"scale": [172, 235], "collider_scope": "CU"}},
+  {"id": 38, "template_id": 53, "zone": "Forest", "rel_x": 28, "rel_y": 236, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 39, "template_id": 163, "zone": "Forest", "rel_x": 385, "rel_y": 515, "overrides": {"scale": [184, 235], "collider_scope": "CU"}},
+  {"id": 40, "template_id": 268, "zone": "Forest", "rel_x": 285, "rel_y": 350, "overrides": {"scale": [220, 297], "collider_scope": "CU"}},
+  {"id": 41, "template_id": 266, "zone": "Forest", "rel_x": 1316, "rel_y": 656, "overrides": {"scale": [177, 242], "collider_scope": "CU"}},
+  {"id": 42, "template_id": 59, "zone": "Forest", "rel_x": 1294, "rel_y": 239, "overrides": {"scale": [169, 231], "collider_scope": "CU"}},
+  {"id": 43, "template_id": 60, "zone": "Forest", "rel_x": 1193, "rel_y": 294, "overrides": {"scale": [181, 247], "collider_scope": "CU"}},
+  {"id": 44, "template_id": 61, "zone": "Forest", "rel_x": 1413, "rel_y": 396, "overrides": {"scale": [238, 302], "collider_scope": "CU"}},
+  {"id": 45, "template_id": 305, "zone": "Forest", "rel_x": 747, "rel_y": 656, "overrides": {"scale": [246, 314], "collider_scope": "CU"}},
+  {"id": 46, "template_id": 65, "zone": "Forest", "rel_x": 1284, "rel_y": 260, "overrides": {"scale": [251, 308], "collider_scope": "CU"}},
+  {"id": 47, "template_id": 66, "zone": "Forest", "rel_x": 1264, "rel_y": 346, "overrides": {"scale": [154, 208], "collider_scope": "CU"}},
+  {"id": 48, "template_id": 258, "zone": "Forest", "rel_x": 36, "rel_y": 389, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 49, "template_id": 299, "zone": "Forest", "rel_x": 122, "rel_y": 1282, "overrides": {"scale": [216, 276], "collider_scope": "CU"}},
+  {"id": 50, "template_id": 291, "zone": "Forest", "rel_x": 1355, "rel_y": 1149, "overrides": {"scale": [244, 311], "collider_scope": "CU"}},
+  {"id": 51, "template_id": 293, "zone": "Forest", "rel_x": 783, "rel_y": 1329, "overrides": {"scale": [195, 247], "collider_scope": "CU"}},
+  {"id": 52, "template_id": 74, "zone": "Forest", "rel_x": 677, "rel_y": 1229, "overrides": {"scale": [208, 265], "collider_scope": "CU"}},
+  {"id": 53, "template_id": 297, "zone": "Forest", "rel_x": 7, "rel_y": 1061, "overrides": {"scale": [194, 248], "collider_scope": "CU"}},
+  {"id": 54, "template_id": 296, "zone": "Forest", "rel_x": 303, "rel_y": 1280, "overrides": {"scale": [224, 286], "collider_scope": "CU"}},
+  {"id": 55, "template_id": 300, "zone": "Forest", "rel_x": 31, "rel_y": 1365, "overrides": {"scale": [170, 217], "collider_scope": "CU"}},
+  {"id": 56, "template_id": 298, "zone": "Forest", "rel_x": 53, "rel_y": 1213, "overrides": {"scale": [186, 237], "collider_scope": "CU"}},
+  {"id": 57, "template_id": 294, "zone": "Forest", "rel_x": 888, "rel_y": 1213, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 58, "template_id": 292, "zone": "Forest", "rel_x": 471, "rel_y": 1180, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 59, "template_id": 295, "zone": "Forest", "rel_x": 591, "rel_y": 1251, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 60, "template_id": 312, "zone": "Forest", "rel_x": 1276, "rel_y": 1248, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 61, "template_id": 80, "zone": "Forest", "rel_x": 15, "rel_y": 869, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 62, "template_id": 304, "zone": "Forest", "rel_x": 651, "rel_y": 842, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 63, "template_id": 82, "zone": "Forest", "rel_x": 187, "rel_y": 609, "overrides": {"scale": [88, 88], "collider_scope": "CU"}},
+  {"id": 64, "template_id": 83, "zone": "Forest", "rel_x": 419, "rel_y": 739, "overrides": {"scale": [81, 81], "collider_scope": "CU"}},
+  {"id": 65, "template_id": 84, "zone": "Forest", "rel_x": 896, "rel_y": 209, "overrides": {"scale": [71, 71], "collider_scope": "CU"}},
+  {"id": 66, "template_id": 85, "zone": "Forest", "rel_x": 1265, "rel_y": 74, "overrides": {"scale": [53, 53], "collider_scope": "CU"}},
+  {"id": 67, "template_id": 86, "zone": "Forest", "rel_x": 449, "rel_y": 58, "overrides": {"scale": [50, 50], "collider_scope": "CU"}},
+  {"id": 68, "template_id": 87, "zone": "Forest", "rel_x": 124, "rel_y": 82, "overrides": {"scale": [58, 58], "collider_scope": "CU"}},
+  {"id": 69, "template_id": 88, "zone": "Forest", "rel_x": 631, "rel_y": 148, "overrides": {"scale": [58, 58], "collider_scope": "CU"}},
+  {"id": 70, "template_id": 89, "zone": "Forest", "rel_x": 52, "rel_y": 683, "overrides": {"scale": [64, 64], "collider_scope": "CU"}},
+  {"id": 71, "template_id": 15, "zone": "lobby", "rel_x": 1335, "rel_y": -80, "overrides": {"scale": [227, 346], "split_ratio": 0.6344, "collider_scope": "CU"}},
+  {"id": 72, "template_id": 30, "zone": "lobby", "rel_x": 578, "rel_y": 683, "overrides": {"scale": [172, 218], "collider_scope": "CU"}},
+  {"id": 73, "template_id": 31, "zone": "lobby", "rel_x": 161, "rel_y": 884, "overrides": {"scale": [172, 221], "collider_scope": "CU"}},
+  {"id": 74, "template_id": 40, "zone": "Forest", "rel_x": 305, "rel_y": 662, "overrides": {"scale": [198, 270], "collider_scope": "CU"}},
+  {"id": 75, "template_id": 303, "zone": "Forest", "rel_x": 1005, "rel_y": 794, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 76, "template_id": 301, "zone": "Forest", "rel_x": 772, "rel_y": 917, "overrides": {"scale": [245, 335], "collider_scope": "CU"}},
+  {"id": 77, "template_id": 302, "zone": "Forest", "rel_x": 959, "rel_y": 947, "overrides": {"scale": [209, 267], "collider_scope": "CU"}},
+  {"id": 78, "template_id": 91, "zone": "Forest", "rel_x": 119, "rel_y": 649, "overrides": {"scale": [256, 256], "collider_scope": "CU"}},
+  {"id": 79, "template_id": 149, "zone": "lobby", "rel_x": 215, "rel_y": 1148, "overrides": {"scale": [256, 256], "collider_scope": "CU"}},
+  {"id": 80, "template_id": 309, "zone": "lobby", "rel_x": 980, "rel_y": 1059, "overrides": {"scale": [437, 437], "collider_scope": "CU"}},
+  {"id": 81, "template_id": 288, "zone": "lobby", "rel_x": 971, "rel_y": 1322, "overrides": {"scale": [180, 230], "collider_scope": "CU"}},
+  {"id": 82, "template_id": 287, "zone": "lobby", "rel_x": 1126, "rel_y": 1357, "overrides": {"scale": [162, 221], "collider_scope": "CU"}},
+  {"id": 83, "template_id": 273, "zone": "lobby", "rel_x": 1266, "rel_y": 1311, "overrides": {"scale": [177, 226], "collider_scope": "CU"}},
+  {"id": 84, "template_id": 284, "zone": "lobby", "rel_x": 1433, "rel_y": 958, "overrides": {"scale": [179, 228], "collider_scope": "CU"}},
+  {"id": 85, "template_id": 187, "zone": "lobby", "rel_x": 1129, "rel_y": 856, "overrides": {"scale": [173, 235], "collider_scope": "CU"}},
+  {"id": 86, "template_id": 289, "zone": "lobby", "rel_x": 1298, "rel_y": 907, "overrides": {"scale": [148, 202], "collider_scope": "CU"}},
+  {"id": 87, "template_id": 290, "zone": "lobby", "rel_x": 969, "rel_y": 874, "overrides": {"scale": [175, 239], "collider_scope": "CU"}},
+  {"id": 88, "template_id": 201, "zone": "Forest", "rel_x": 1176, "rel_y": 398, "overrides": {"scale": [331, 331], "collider_scope": "CU"}},
+  {"id": 89, "template_id": 272, "zone": "lobby", "rel_x": 417, "rel_y": 915, "overrides": {"scale": [333, 333], "collider_scope": "CU"}},
+  {"id": 90, "template_id": 238, "zone": "zone_100_50", "rel_x": 206, "rel_y": -114, "overrides": {"scale": [344, 344], "collider_scope": "CU"}},
+  {"id": 91, "template_id": 249, "zone": "lobby", "rel_x": 694, "rel_y": 844, "overrides": {"scale": [220, 220], "collider_scope": "CU"}},
+  {"id": 92, "template_id": 307, "zone": "zone_100_50", "rel_x": 1164, "rel_y": 1164, "overrides": {"scale": [426, 426], "collider_scope": "CU"}},
+  {"id": 93, "template_id": 237, "zone": "zone_100_50", "rel_x": 301, "rel_y": 631, "overrides": {"scale": [447, 447], "collider_scope": "CU"}},
+  {"id": 94, "template_id": 256, "zone": "zone_100_50", "rel_x": 484, "rel_y": -292, "overrides": {"scale": [1129, 1129], "collider_scope": "CU"}},
+  {"id": 95, "template_id": 231, "zone": "zone_100_50", "rel_x": -2819, "rel_y": -1016, "overrides": {"scale": [160, 239], "collider_scope": "CU"}},
+  {"id": 96, "template_id": 232, "zone": "zone_100_50", "rel_x": 1047, "rel_y": 773, "overrides": {"scale": [157, 235], "collider_scope": "CU"}},
+  {"id": 97, "template_id": 244, "zone": "zone_100_50", "rel_x": -2572, "rel_y": -1125, "overrides": {"scale": [256, 256], "collider_scope": "CU"}},
+  {"id": 98, "template_id": 234, "zone": "zone_100_50", "rel_x": 583, "rel_y": 1200, "overrides": {"scale": [277, 277], "collider_scope": "CU"}},
+  {"id": 99, "template_id": 262, "zone": "zone_100_50", "rel_x": -9, "rel_y": -207, "overrides": {"scale": [210, 268], "collider_scope": "CU"}},
+  {"id": 100, "template_id": 241, "zone": "zone_100_50", "rel_x": -67, "rel_y": 222, "overrides": {"scale": [198, 255], "collider_scope": "CU"}},
+  {"id": 101, "template_id": 275, "zone": "zone_100_50", "rel_x": -36, "rel_y": 385, "overrides": {"scale": [194, 248], "collider_scope": "CU"}},
+  {"id": 102, "template_id": 242, "zone": "zone_100_50", "rel_x": 286, "rel_y": 761, "overrides": {"scale": [183, 250], "collider_scope": "CU"}},
+  {"id": 103, "template_id": 306, "zone": "zone_100_50", "rel_x": 574, "rel_y": 736, "overrides": {"scale": [187, 255], "collider_scope": "CU"}},
+  {"id": 104, "template_id": 48, "zone": "zone_100_50", "rel_x": 401, "rel_y": 606, "overrides": {"scale": [210, 271], "collider_scope": "CU"}},
+  {"id": 105, "template_id": 282, "zone": "zone_100_50", "rel_x": 660, "rel_y": 1053, "overrides": {"scale": [215, 274], "collider_scope": "CU"}},
+  {"id": 106, "template_id": 283, "zone": "zone_100_50", "rel_x": 263, "rel_y": 1050, "overrides": {"scale": [233, 333], "collider_scope": "CU"}},
+  {"id": 107, "template_id": 286, "zone": "zone_100_50", "rel_x": -86, "rel_y": 1289, "overrides": {"scale": [221, 282], "collider_scope": "CU"}},
+  {"id": 108, "template_id": 285, "zone": "lobby", "rel_x": 1490, "rel_y": 1121, "overrides": {"scale": [175, 238], "collider_scope": "CU"}},
+  {"id": 109, "template_id": 280, "zone": "zone_100_50", "rel_x": 968, "rel_y": 1245, "overrides": {"scale": [202, 275], "collider_scope": "CU"}},
+  {"id": 110, "template_id": 281, "zone": "zone_100_50", "rel_x": 1116, "rel_y": 1401, "overrides": {"scale": [188, 257]}},
+  {"id": 111, "template_id": 279, "zone": "zone_100_50", "rel_x": 1134, "rel_y": 981, "overrides": {"scale": [212, 290], "collider_scope": "CU"}},
+  {"id": 112, "template_id": 277, "zone": "zone_100_50", "rel_x": 1248, "rel_y": 856, "overrides": {"scale": [205, 280], "collider_scope": "CU"}},
+  {"id": 113, "template_id": 276, "zone": "zone_100_50", "rel_x": 1393, "rel_y": 740, "overrides": {"scale": [171, 233], "collider_scope": "CU"}},
+  {"id": 114, "template_id": 278, "zone": "zone_100_50", "rel_x": 1361, "rel_y": 934, "overrides": {"scale": [215, 294], "collider_scope": "CU"}},
+  {"id": 115, "template_id": 243, "zone": "zone_100_100", "rel_x": 273, "rel_y": -518, "overrides": {"scale": [364, 546], "collider_scope": "CU"}},
+  {"id": 116, "template_id": 48, "zone": "lobby", "rel_x": 1084, "rel_y": 247, "overrides": {"scale": [213, 274], "collider_scope": "CU"}},
+  {"id": 117, "template_id": 175, "zone": "lobby", "rel_x": 40, "rel_y": -82, "overrides": {"scale": [191, 260], "collider_scope": "CU", "collision_override": {
+  "width": 4,
+  "height": 5,
+  "collision": [
+    [".", ".", ".", "."],
+    [".", ".", ".", "."],
+    [".", ".", ".", "."],
+    ["#", "#", "#", "#"],
+    ["#", "#", "#", "#"]
+  ],
+  "grid_ref_size": [114, 156]
+}}},
+  {"id": 118, "template_id": 308, "zone": "lobby", "rel_x": 939, "rel_y": 253, "overrides": {"scale": [405, 607], "split_ratio": 0.8142, "collider_scope": "CU"}},
+  {"id": 119, "template_id": 48, "zone": "zone_100_50", "rel_x": -48, "rel_y": -90, "overrides": {"scale": [251, 324], "collider_scope": "CU"}},
+  {"id": 120, "template_id": 311, "zone": "lobby", "rel_x": 821, "rel_y": -116, "overrides": {"scale": [201, 201], "collider_scope": "CU"}},
+  {"id": 121, "template_id": 311, "zone": "lobby", "rel_x": 1286, "rel_y": -115, "overrides": {"scale": [191, 191], "collider_scope": "CU"}},
+  {"id": 122, "template_id": 311, "zone": "lobby", "rel_x": 1415, "rel_y": -108, "overrides": {"scale": [181, 181], "collider_scope": "CU"}},
+  {"id": 123, "template_id": 311, "zone": "lobby", "rel_x": 572, "rel_y": -117, "overrides": {"scale": [196, 196], "collider_scope": "CU"}},
+  {"id": 124, "template_id": 311, "zone": "lobby", "rel_x": 99, "rel_y": -115, "overrides": {"scale": [198, 198], "collider_scope": "CU"}},
+  {"id": 125, "template_id": 176, "zone": "lobby", "rel_x": 1473, "rel_y": 661, "overrides": {"scale": [184, 235], "collider_scope": "CU"}},
+  {"id": 126, "template_id": 176, "zone": "zone_100_50", "rel_x": -37, "rel_y": 538, "overrides": {"scale": [191, 244], "collider_scope": "CU"}},
+  {"id": 127, "template_id": 313, "zone": "Forest", "rel_x": 1023, "rel_y": 1282, "overrides": {"scale": [236, 301], "collider_scope": "CU"}},
+  {"id": 128, "template_id": 157, "zone": "Forest", "rel_x": 688, "rel_y": 397, "overrides": {"scale": [256, 384], "collider_scope": "CU"}},
+  {"id": 129, "template_id": 155, "zone": "Forest", "rel_x": 688, "rel_y": 398, "overrides": {"scale": [256, 384], "collider_scope": "CU"}},
+  {"id": 130, "template_id": 158, "zone": "Forest", "rel_x": 688, "rel_y": 395, "overrides": {"scale": [256, 384], "collider_scope": "CU"}},
+  {"id": 131, "template_id": 2, "zone": "dungeon", "rel_x": 221, "rel_y": 1327},
+  {"id": 132, "template_id": 2, "zone": "dungeon", "rel_x": 381, "rel_y": 1327},
+  {"id": 133, "template_id": 2, "zone": "dungeon", "rel_x": 765, "rel_y": 1327},
+  {"id": 134, "template_id": 2, "zone": "dungeon", "rel_x": 1149, "rel_y": 1327},
+  {"id": 135, "template_id": 2, "zone": "dungeon", "rel_x": 1405, "rel_y": 1327},
+  {"id": 136, "template_id": 8, "zone": "zone_100_100", "rel_x": 1814, "rel_y": -165, "overrides": {"scale": [287, 370]}}
 ]

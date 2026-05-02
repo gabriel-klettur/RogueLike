@@ -126,9 +126,17 @@ namespace Valkur.Gameplay.TileEditor
             _ui = uiGo.AddComponent<TileEditorUI>();
             _ui.Initialize(_state, tileCatalog,
                 OnTileSelected, OnToolChanged, OnLayerChanged, OnBrushSizeChanged,
-                OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked, OnSaveClicked,
+                OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked,
                 OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked,
-                OnAutoGenerateCollidersClicked, OnClearAllCollidersClicked);
+                OnAutoGenerateCollidersClicked, OnClearAllCollidersClicked,
+                onPerfToggle: null,
+                onShowGridLinesClicked: OnShowGridLinesClicked,
+                onShowZoneGridClicked:  OnShowZoneGridClicked,
+                onSelectModeChanged:    OnSelectModeChanged,
+                onCopyClicked:          OnCopyClicked,
+                onCutClicked:           OnCutClicked,
+                onPasteClicked:         OnPasteClicked,
+                onClearSelectionClicked: ClearSelection);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
@@ -154,22 +162,23 @@ namespace Valkur.Gameplay.TileEditor
             var zoneManager = FindObjectOfType<ZoneManager>();
             if (zoneManager == null) return;
             _persistence = new TileOverlayPersistence(zoneManager, worldGridBuilder);
-            _persistence.OnDirtyChanged += HandleDirtyChanged;
+            // OnDirtyChanged is no longer wired to the UI — the manual Save button +
+            // dirty indicator were removed once every edit path became auto-flushing
+            // on mouse-up. The event is still raised by TileOverlayPersistence in
+            // case a future debug/diagnostic surface wants to subscribe.
             _persistence.OnZoneSaved   += zone => _ui?.SetStatus($"Saved zone '{zone}'");
             _persistence.OnSaveFailed  += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
-        }
-
-        private void HandleDirtyChanged()
-        {
-            if (_ui == null || _persistence == null) return;
-            _ui.SetDirtyState(_persistence.HasUnsavedChanges, _persistence.DirtyZoneCount);
         }
 
         /// <summary>Save every dirty zone to <c>persistentDataPath/MapOverrides</c>. Returns the count saved.</summary>
         public int SaveAllChanges()
         {
+            // Always close the active stroke first — even if persistence is unavailable
+            // (e.g. ZoneManager not yet resolved). The user invoked "save my work";
+            // committing the in-flight batch to the undo stack is the correct response
+            // regardless of whether the disk write can proceed.
+            _undo?.EndStroke();
             if (_persistence == null) { _ui?.SetStatus("Persistence not ready."); return 0; }
-            _undo.EndStroke();
             int n = _persistence.SaveAllDirty();
             _ui?.SetStatus(n == 0 ? "No unsaved changes" : $"Saved {n} zone(s) to disk");
             return n;

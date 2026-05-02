@@ -50,6 +50,7 @@ namespace Valkur.Gameplay.Buildings
             _mainCamera = Camera.main;
             if (Valkur.Gameplay.CameraSetup.Instance != null)
                 Valkur.Gameplay.CameraSetup.Instance.DetachFollow();
+            HideHUDs();
             Debug.Log("[BuildingsEditor] Activated (F10)");
         }
 
@@ -66,6 +67,7 @@ namespace Valkur.Gameplay.Buildings
             }
             HideOutlines();
             _selectedTemplateId = -1;
+            _propertiesMode = PropertiesMode.None;
             _activeBuilding = null;
             _hoveredBuilding = null;
             _hoverStack.Clear();
@@ -81,6 +83,15 @@ namespace Valkur.Gameplay.Buildings
             HideCollBrushCursor();
             CancelPickerDrag();
             HideConfirm();
+            ExitFillMode();
+            ExitEraseMode(setSelectMode: false);
+            // Drop any pending undo/redo entries — Ctrl+Z should be a strict no-op
+            // outside the editor. Without this clear, an undo stack populated during
+            // the previous editor session could be triggered by Unity's own Edit>Undo
+            // shortcut (Ctrl+Z) routed through the focused Game view, replaying our
+            // do/undo lambdas after the editor is already closed.
+            _undo.Clear();
+            RestoreHUDs();
             if (Valkur.Gameplay.CameraSetup.Instance != null)
                 Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
@@ -118,6 +129,20 @@ namespace Valkur.Gameplay.Buildings
             _splitHandleRt = null; _splitHandleImg = null;
             _dragGhostGo = null; _dragGhostRt = null; _dragGhostImg = null; _dragGhostOutline = null;
             _pickerDragging = false; _pickerDragTemplateId = -1;
+            _fillBtnImg = null;
+            _eraseBtnImg = null;
+            _eraseSubPanel = null;
+            _eraseTilesAreaBtnImg = null;
+            _eraseZoneBtnImg = null;
+            _eraseConfirmModal = null;
+            _eraseConfirmText = null;
+            _eraseConfirmYes = null;
+            _eraseMatches.Clear();
+            _eraseAreaCells.Clear();
+            _eraseStep = EraseStep.Idle;
+            _eraseMatchFxPool.Clear();
+            _fillSpacingModal = null; _fillSpacingInput = null;
+            _buildingsPanelHeaderImg = null; _fillBtnImg = null;
             _uiBuilt = false;
         }
 
@@ -330,6 +355,85 @@ namespace Valkur.Gameplay.Buildings
             }
             // Fallback: spawn under our own transform
             if (_buildingsRoot == null) _buildingsRoot = transform;
+        }
+
+        // ── HUD visibility management ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Captures the current active-state of Spell HUD, Inventory, and Music Player,
+        /// then hides each one while the Buildings Editor is open.
+        /// Called once from Activate() so state is always captured before anything is hidden.
+        /// </summary>
+        private void HideHUDs()
+        {
+            // Spell Bar HUD — SingletonMonoBehaviour in Valkur.Gameplay.UI
+            var spellBar = Valkur.Gameplay.UI.SpellBarHUD.HasInstance
+                ? Valkur.Gameplay.UI.SpellBarHUD.Instance
+                : null;
+            if (spellBar != null)
+            {
+                _hudSpellBarWasActive = spellBar.gameObject.activeSelf;
+                if (_hudSpellBarWasActive) spellBar.gameObject.SetActive(false);
+            }
+            else
+            {
+                _hudSpellBarWasActive = false;
+            }
+
+            // Inventory UI — SingletonMonoBehaviour in Valkur.Gameplay.Inventory
+            var inv = Valkur.Gameplay.Inventory.InventoryUI.HasInstance
+                ? Valkur.Gameplay.Inventory.InventoryUI.Instance
+                : null;
+            if (inv != null)
+            {
+                _hudInventoryWasActive = inv.gameObject.activeSelf;
+                if (_hudInventoryWasActive) inv.gameObject.SetActive(false);
+            }
+            else
+            {
+                _hudInventoryWasActive = false;
+            }
+
+            // Music Player HUD — lives in Valkur.UI (no compile-time reference allowed from Gameplay).
+            // Locate once by the fixed GameObject name assigned in HUDBootstrap, then cache.
+            // Re-search if the cached reference was destroyed (scene reload with Domain Reload OFF).
+            if (_hudMusicPlayerGo == null || !_hudMusicPlayerGo)
+                _hudMusicPlayerGo = GameObject.Find("MusicPlayerHUD");
+            if (_hudMusicPlayerGo != null)
+            {
+                _hudMusicPlayerWasActive = _hudMusicPlayerGo.activeSelf;
+                if (_hudMusicPlayerWasActive) _hudMusicPlayerGo.SetActive(false);
+            }
+            else
+            {
+                _hudMusicPlayerWasActive = false;
+            }
+        }
+
+        /// <summary>
+        /// Restores each HUD to the active-state it had when HideHUDs() was called.
+        /// Called once from Deactivate() to preserve the player's HUD layout.
+        /// </summary>
+        private void RestoreHUDs()
+        {
+            if (_hudSpellBarWasActive)
+            {
+                var spellBar = Valkur.Gameplay.UI.SpellBarHUD.HasInstance
+                    ? Valkur.Gameplay.UI.SpellBarHUD.Instance
+                    : null;
+                if (spellBar != null) spellBar.gameObject.SetActive(true);
+            }
+
+            if (_hudInventoryWasActive)
+            {
+                var inv = Valkur.Gameplay.Inventory.InventoryUI.HasInstance
+                    ? Valkur.Gameplay.Inventory.InventoryUI.Instance
+                    : null;
+                if (inv != null) inv.gameObject.SetActive(true);
+            }
+
+            if (_hudMusicPlayerWasActive && _hudMusicPlayerGo != null)
+                _hudMusicPlayerGo.SetActive(true);
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

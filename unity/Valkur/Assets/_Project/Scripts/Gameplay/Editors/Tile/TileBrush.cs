@@ -49,10 +49,34 @@ namespace Valkur.Gameplay.TileEditor
         public static List<TileEdit> FloodFill(Tilemap tilemap, Vector3Int startPos, TileBase newTile, int maxCells = 10000, Func<Vector3Int, bool> canEditCell = null)
         {
             var edits = new List<TileEdit>();
+            if (tilemap == null) return edits;
             if (canEditCell != null && !canEditCell(startPos)) return edits;
 
             var targetTile = tilemap.GetTile(startPos);
             if (targetTile == newTile) return edits;
+
+            var cells = ComputeFloodFillCells(tilemap, startPos, maxCells, canEditCell);
+            foreach (var pos in cells)
+            {
+                var current = tilemap.GetTile(pos);
+                edits.Add(new TileEdit(pos, current, newTile));
+                tilemap.SetTile(pos, newTile);
+            }
+            return edits;
+        }
+
+        /// <summary>
+        /// Compute the set of connected cells whose tile matches the tile at startPos,
+        /// without mutating the tilemap. 4-connected BFS, capped at maxCells.
+        /// Returns empty if tilemap is null or the start cell fails canEditCell.
+        /// </summary>
+        public static HashSet<Vector3Int> ComputeFloodFillCells(Tilemap tilemap, Vector3Int startPos, int maxCells = 10000, Func<Vector3Int, bool> canEditCell = null)
+        {
+            var result = new HashSet<Vector3Int>();
+            if (tilemap == null) return result;
+            if (canEditCell != null && !canEditCell(startPos)) return result;
+
+            var targetTile = tilemap.GetTile(startPos);
 
             var visited = new HashSet<Vector3Int>();
             var queue = new Queue<Vector3Int>();
@@ -64,8 +88,7 @@ namespace Valkur.Gameplay.TileEditor
                 Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right
             };
 
-            int count = 0;
-            while (queue.Count > 0 && count < maxCells)
+            while (queue.Count > 0 && result.Count < maxCells)
             {
                 var pos = queue.Dequeue();
                 if (canEditCell != null && !canEditCell(pos)) continue;
@@ -73,9 +96,7 @@ namespace Valkur.Gameplay.TileEditor
                 var current = tilemap.GetTile(pos);
                 if (current != targetTile) continue;
 
-                edits.Add(new TileEdit(pos, current, newTile));
-                tilemap.SetTile(pos, newTile);
-                count++;
+                result.Add(pos);
 
                 foreach (var dir in directions)
                 {
@@ -90,7 +111,7 @@ namespace Valkur.Gameplay.TileEditor
                     }
                 }
             }
-            return edits;
+            return result;
         }
 
         /// <summary>

@@ -15,6 +15,12 @@ namespace Valkur.Gameplay.TileEditor
 
         public void StartStroke(Tilemap tilemap)
         {
+            // Defensive: if a previous stroke was never explicitly ended (caller bug
+            // — e.g. ESC pressed mid-drag, scene reload, layer change without EndStroke),
+            // commit it first instead of silently overwriting the reference and losing
+            // every edit it contained. The new batch then starts with a clean slate.
+            if (_currentBatch != null && _currentBatch.Edits.Count > 0)
+                EndStroke();
             _currentBatch = new TileEditBatch { TargetTilemap = tilemap };
         }
 

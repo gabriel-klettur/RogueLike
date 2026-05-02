@@ -104,6 +104,11 @@ namespace Valkur.Gameplay.TileEditor
                 _gridOverlay.SetCurrentTool(_state.CurrentTool);
                 _gridOverlay.SetCollisionTilemap(GetCollisionTilemap());
                 _gridOverlay.SetShowColliderOverlay(_state.ShowColliderOverlay);
+                _gridOverlay.SetShowGridLines(_state.ShowGridLines);
+                // Persistent Select-tool selection (drawn green, independent from
+                // the brush stroke yellow preview) and the live rect-drag preview.
+                _gridOverlay.SetSelectedCells(_state.SelectedCells);
+                _gridOverlay.SetRectDragPreview(_state.RectDragStart, _state.RectDragCurrent);
                 
                 // Configure Fill preview when using Fill tool
                 if (_state.CurrentTool == TileEditorState.Tool.Fill)

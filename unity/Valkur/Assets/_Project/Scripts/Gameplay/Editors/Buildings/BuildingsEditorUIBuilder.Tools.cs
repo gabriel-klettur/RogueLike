@@ -53,16 +53,62 @@ namespace Valkur.Gameplay.Buildings
             Action onSelect, Action onPlace, Action onResize, Action onDelete,
             Action onAdd,    Action onRemove, Action onAddSystem,
             Action onUndo,   Action onRedo,
-            Action onSave,   Action onReload)
+            Action onSave,   Action onReload,
+            Action onFill = null, Action onErase = null)
         {
             refs.ModesDropdown = MakeDrop("ToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
-                MODES_W, MODES_H, "Tools", out var t, out refs.ModesPanelDrag, narrowPanel: true);
+                MODES_W, MODES_H, "Tools", out var t, out refs.ModesPanelDrag);
 
             AddActionBtn(t, "Undo", BTN_H, onUndo);
             AddActionBtn(t, "Redo", BTN_H, onRedo);
+            refs.FillBtnImg  = AddActionBtnWithRef(t, "Fill",  BTN_H, onFill);
+            refs.EraseBtnImg = AddActionBtnWithRef(t, "Erase", BTN_H, onErase);
 
             refs.ModesDropdown.SetActive(false);
+        }
+
+        // ── Erase scope sub-panel ─────────────────────────────────────────────────
+        // Floating draggable panel positioned just below the Tools panel. Two buttons:
+        // "Tiles Area" and "Zone". Hidden by default; shown by BuildingsRuntimeEditor
+        // while in EditorMode.Erase.
+        private static void BuildEraseSubPanel(Transform canvasT, ref UIRefs refs,
+            Action onEraseTilesArea, Action onEraseZone)
+        {
+            refs.EraseSubPanel = MakeDrop("EraseScopePanel", canvasT,
+                PanelDock.TopLeft,
+                PANEL_GAP,
+                PANEL_TOP_OFFSET + MODES_H + PANEL_GAP,
+                ERASE_SUB_W, ERASE_SUB_H, "Erase Scope",
+                out var t, out var _);
+
+            refs.EraseTilesAreaBtnImg = AddActionBtnWithRef(t, "Tiles Area", BTN_H, onEraseTilesArea);
+            refs.EraseZoneBtnImg      = AddActionBtnWithRef(t, "Zone",       BTN_H, onEraseZone);
+
+            refs.EraseSubPanel.SetActive(false);
+        }
+
+        /// <summary>Adds an action button and returns its Image for highlight control.</summary>
+        private static Image AddActionBtnWithRef(Transform parent, string label, float height, Action onClick)
+        {
+            var go = CreateUI($"Act_{label}", parent);
+            go.AddComponent<LayoutElement>().preferredHeight = height;
+
+            var img = go.AddComponent<Image>();
+            img.color = BTN_NORMAL;
+
+            var btn = go.AddComponent<Button>();
+            var c   = btn.colors;
+            c.normalColor      = BTN_NORMAL;
+            c.highlightedColor = BTN_HOVER;
+            c.pressedColor     = BTN_ACTIVE;
+            btn.colors         = c;
+            btn.targetGraphic  = img;
+            if (onClick != null) btn.onClick.AddListener(() => onClick.Invoke());
+
+            var tmp       = AddCenteredText(go.transform, label, 9f, FontStyles.Bold, TEXT_SECONDARY);
+            tmp.alignment = TextAlignmentOptions.Center;
+            return img;
         }
 
         // icon-style tool button (same pattern as TileEditor CreateToolBtn)

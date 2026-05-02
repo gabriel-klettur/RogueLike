@@ -29,6 +29,8 @@ namespace Valkur.Gameplay.TileEditor
             public GameObject InspectorDropdown;
             public GameObject CollidersDropdown;
             public GameObject SizeDropdown;
+            public GameObject ViewDropdown;
+            public GameObject SelectModesDropdown;
 
             // Tool buttons (inside ToolsDropdown)
             public Dictionary<TileEditorState.Tool, Image> ToolButtonImages;
@@ -73,12 +75,14 @@ namespace Valkur.Gameplay.TileEditor
             public Image InspectorMenuBtnImg;
             public Image CollidersMenuBtnImg;
             public Image SizeMenuBtnImg;
+            public Image ViewMenuBtnImg;
             public TextMeshProUGUI ToolsMenuBtnTmp;
             public TextMeshProUGUI TilesMenuBtnTmp;
             public TextMeshProUGUI LayersMenuBtnTmp;
             public TextMeshProUGUI InspectorMenuBtnTmp;
             public TextMeshProUGUI CollidersMenuBtnTmp;
             public TextMeshProUGUI SizeMenuBtnTmp;
+            public TextMeshProUGUI ViewMenuBtnTmp;
 
             // Colliders panel — visualize toggle, draw toggle, erase toggle, status hint
             public Image ShowCollidersToggleImg;
@@ -93,10 +97,7 @@ namespace Valkur.Gameplay.TileEditor
             public List<Image> BrushSizePresetImgs;
             public List<TextMeshProUGUI> BrushSizePresetLabels;
 
-            // Save button + dirty indicator (in Tools panel)
-            public Image SaveButtonImg;
-            public TextMeshProUGUI SaveButtonLabel;
-            public TextMeshProUGUI DirtyIndicatorText;
+            // (Save button + dirty indicator removed — auto-save covers this.)
 
             // Perf Probe toggle button (menu bar far-right)
             public Image PerfProbeMenuBtnImg;
@@ -109,6 +110,32 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel InspectorPanelDrag;
             public DraggablePanel CollidersPanelDrag;
             public DraggablePanel SizePanelDrag;
+            public DraggablePanel ViewPanelDrag;
+            public DraggablePanel SelectModesPanelDrag;
+
+            // SelectModes panel — three radio rows + clipboard action buttons.
+            public Image ModeSingleToggleImg;
+            public TextMeshProUGUI ModeSingleToggleLabel;
+            public Image ModeRectToggleImg;
+            public TextMeshProUGUI ModeRectToggleLabel;
+            public Image ModeMultiToggleImg;
+            public TextMeshProUGUI ModeMultiToggleLabel;
+            public Button CopyButton;
+            public Image  CopyButtonImg;
+            public Button CutButton;
+            public Image  CutButtonImg;
+            public Button PasteButton;
+            public Image  PasteButtonImg;
+            public Button ClearSelectionButton;
+            public Image  ClearSelectionButtonImg;
+
+            // View panel — three toggle rows mirroring the Colliders panel UI/UX.
+            public Image ShowGridLinesToggleImg;
+            public TextMeshProUGUI ShowGridLinesToggleLabel;
+            public Image ShowZoneGridToggleImg;
+            public TextMeshProUGUI ShowZoneGridToggleLabel;
+            public Image ViewShowCollidersToggleImg;
+            public TextMeshProUGUI ViewShowCollidersToggleLabel;
 
             // UX / Theme panel
             public GameObject       UxDropdown;
@@ -128,14 +155,20 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<string> onDropdownToggle,
             System.Action onUndo = null,
             System.Action onRedo = null,
-            System.Action onSave = null,
             System.Action onShowColliders = null,
             System.Action onDrawColliders = null,
             System.Action onEraseColliders = null,
             System.Action onAutoGenerateColliders = null,
             System.Action onClearAllColliders = null,
             System.Action onPerfToggle = null,
-            System.Action onAllPanelsToggle = null)
+            System.Action onAllPanelsToggle = null,
+            System.Action onShowGridLines = null,
+            System.Action onShowZoneGrid = null,
+            System.Action<TileEditorState.SelectMode> onSelectModeChanged = null,
+            System.Action onCopyClicked = null,
+            System.Action onCutClicked = null,
+            System.Action onPasteClicked = null,
+            System.Action onClearSelectionClicked = null)
         {
             var refs = new UIRefs
             {
@@ -149,7 +182,7 @@ namespace Valkur.Gameplay.TileEditor
             };
 
             BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle, onPerfToggle, onAllPanelsToggle);
-            BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo, onSave);
+            BuildToolsDropdown(canvasT, state, ref refs, onToolChanged, onBrushSizeChanged, onUndo, onRedo);
             BuildTilesDropdown(canvasT, ref refs);
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);
@@ -157,6 +190,10 @@ namespace Valkur.Gameplay.TileEditor
                 onShowColliders, onDrawColliders, onEraseColliders,
                 onAutoGenerateColliders, onClearAllColliders);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
+            BuildViewDropdown(canvasT, state, ref refs,
+                onShowGridLines, onShowZoneGrid, onShowColliders);
+            BuildSelectModesDropdown(canvasT, state, ref refs,
+                onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked);
             BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 

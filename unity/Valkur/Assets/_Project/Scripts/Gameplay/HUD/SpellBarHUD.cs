@@ -70,6 +70,10 @@ namespace Valkur.Gameplay.UI
             ResolvePlayer();
             Populate();
             RegisterTrayButton();
+            // Start minimized: the action bar is opt-in via the HUD tray icon.
+            // Authors who want it visible right away can click the spell-bar tray
+            // button — the registered toggle (RegisterTrayButton above) flips it back.
+            SetVisible(false);
         }
 
         private void RegisterTrayButton()

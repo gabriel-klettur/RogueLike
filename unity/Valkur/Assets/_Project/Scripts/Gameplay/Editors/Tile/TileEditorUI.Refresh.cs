@@ -17,6 +17,17 @@ namespace Valkur.Gameplay.TileEditor
                 kvp.Value.color = kvp.Key == _state.CurrentTool ? BTN_ACTIVE : BTN_NORMAL;
             foreach (var kvp in _refs.ToolButtonTexts)
                 kvp.Value.color = kvp.Key == _state.CurrentTool ? ACCENT : TEXT_SECONDARY;
+
+            // SelectModes panel is opt-in. Visibility = (Select active) AND (user opted in).
+            // The opt-in flag lives in <c>_openDropdowns</c> via the existing toggle path:
+            //   • ToggleDropdown("selectmodes") flips it.
+            //   • [x] header close removes it.
+            // Leaving it untouched when the tool changes keeps the user's choice sticky:
+            // Brush ↔ Select transitions don't reset their preference.
+            bool selectActive = _state.CurrentTool == TileEditorState.Tool.Select;
+            bool userWants    = _openDropdowns.Contains("selectmodes");
+            if (_refs.SelectModesDropdown != null)
+                _refs.SelectModesDropdown.SetActive(selectActive && userWants);
         }
 
         public void RefreshLayerLabel()
@@ -71,6 +82,63 @@ namespace Valkur.Gameplay.TileEditor
                 _state.CurrentColliderMode == TileEditorState.ColliderMode.Draw);
             ApplyColliderToggleVisual(_refs.EraseCollidersToggleImg, _refs.EraseCollidersToggleLabel,
                 _state.CurrentColliderMode == TileEditorState.ColliderMode.Erase);
+
+            // The View panel hosts a duplicate "Show Colliders" row that must stay in sync.
+            RefreshViewToggles();
+        }
+
+        /// <summary>
+        /// Repaints the three radio rows of the SelectModes panel to reflect the current
+        /// <see cref="TileEditorState.CurrentSelectMode"/>. Mode rows are mutually
+        /// exclusive — only one is ON at a time.
+        /// </summary>
+        public void RefreshSelectModeToggles()
+        {
+            if (_state == null) return;
+
+            ApplyColliderToggleVisual(_refs.ModeSingleToggleImg, _refs.ModeSingleToggleLabel,
+                _state.CurrentSelectMode == TileEditorState.SelectMode.Single);
+            ApplyColliderToggleVisual(_refs.ModeRectToggleImg, _refs.ModeRectToggleLabel,
+                _state.CurrentSelectMode == TileEditorState.SelectMode.Rect);
+            ApplyColliderToggleVisual(_refs.ModeMultiToggleImg, _refs.ModeMultiToggleLabel,
+                _state.CurrentSelectMode == TileEditorState.SelectMode.Multi);
+        }
+
+        /// <summary>
+        /// Refresh the enabled state of the Copy / Cut / Paste / Clear buttons.
+        /// Paste is the only one that depends on persistent state (clipboard); the rest
+        /// are always interactable while the editor is active — they just no-op without
+        /// a selection. Copy/Cut visually fade when there is nothing selected.
+        /// </summary>
+        public void RefreshClipboardButtons()
+        {
+            if (_state == null) return;
+
+            bool hasClipboard = _state.Clipboard != null && !_state.Clipboard.IsEmpty;
+            bool hasSelection = _state.SelectedCells.Count > 0;
+
+            if (_refs.PasteButton != null) _refs.PasteButton.interactable = hasClipboard;
+            if (_refs.CopyButton  != null) _refs.CopyButton.interactable  = hasSelection;
+            if (_refs.CutButton   != null) _refs.CutButton.interactable   = hasSelection;
+            if (_refs.ClearSelectionButton != null) _refs.ClearSelectionButton.interactable = hasSelection;
+        }
+
+        /// <summary>
+        /// Repaints the three rows of the View dropdown (Tiles Grid, Zone Grid, Show Colliders)
+        /// to match <see cref="TileEditorState"/>. Called whenever any of the three flags is
+        /// flipped from either the View panel or — in the case of Show Colliders — the
+        /// Colliders panel.
+        /// </summary>
+        public void RefreshViewToggles()
+        {
+            if (_state == null) return;
+
+            ApplyColliderToggleVisual(_refs.ShowGridLinesToggleImg, _refs.ShowGridLinesToggleLabel,
+                _state.ShowGridLines);
+            ApplyColliderToggleVisual(_refs.ShowZoneGridToggleImg, _refs.ShowZoneGridToggleLabel,
+                _state.ShowZoneGrid);
+            ApplyColliderToggleVisual(_refs.ViewShowCollidersToggleImg, _refs.ViewShowCollidersToggleLabel,
+                _state.ShowColliderOverlay);
         }
 
         private static void ApplyColliderToggleVisual(UnityEngine.UI.Image bg, TMPro.TextMeshProUGUI label, bool on)
@@ -118,22 +186,6 @@ namespace Valkur.Gameplay.TileEditor
                 _refs.PerfProbeMenuBtnImg.color = active ? MENU_BTN_OPEN : MENU_BTN_NORMAL;
             if (_refs.PerfProbeMenuBtnTmp != null)
                 _refs.PerfProbeMenuBtnTmp.color = active ? ACCENT : TEXT_PRIMARY;
-        }
-
-        /// <summary>
-        /// Reflect the persistence dirty-state in the Save button colour and the counter beneath it.
-        /// Bright accent + zone count when there are unsaved changes; muted when clean.
-        /// </summary>
-        public void SetDirtyState(bool isDirty, int dirtyZoneCount)
-        {
-            if (_refs.SaveButtonImg != null)
-                _refs.SaveButtonImg.color = isDirty ? ACCENT_BG : BTN_NORMAL;
-            if (_refs.SaveButtonLabel != null)
-                _refs.SaveButtonLabel.color = isDirty ? ACCENT : TEXT_SECONDARY;
-            if (_refs.DirtyIndicatorText != null)
-                _refs.DirtyIndicatorText.text = isDirty
-                    ? (dirtyZoneCount == 1 ? "1 zone *" : $"{dirtyZoneCount} zones *")
-                    : string.Empty;
         }
 
         public void RefreshTilePicker()

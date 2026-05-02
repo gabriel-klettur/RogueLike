@@ -25,6 +25,13 @@ namespace Valkur.Gameplay.Buildings
         {
             _mode = mode;
             if (_mode != EditorMode.Resize) _resizing = false;
+            // Leaving Fill mode via SetMode (e.g. switching to Select externally)
+            // must clean up Fill state without re-entering SetMode recursively.
+            if (_mode != EditorMode.Fill && _fillStep != FillStep.Idle)
+                ExitFillMode(setSelectMode: false);
+            // Same guard for Erase: any external mode switch must tear down Erase state.
+            if (_mode != EditorMode.Erase && _eraseStep != EraseStep.Idle)
+                ExitEraseMode(setSelectMode: false);
             RefreshModeButtons();
             if (_statusTmp == null) return;
             _statusTmp.text = _mode switch
@@ -33,6 +40,8 @@ namespace Valkur.Gameplay.Buildings
                 EditorMode.Place  => "Placement is drag-only: drag a thumbnail from the Buildings panel onto the map.",
                 EditorMode.Delete => "Click building to delete (with confirm).",
                 EditorMode.Resize => "LMB-drag the R handle (top-right) to resize proportionally.",
+                EditorMode.Fill   => "Fill: enter spacing, pick a template, then hover and click to flood-fill.",
+                EditorMode.Erase  => "Erase: pick scope (Tiles Area / Zone), then click a building to delete all of its type in that scope.",
                 _ => ""
             };
         }
@@ -45,6 +54,8 @@ namespace Valkur.Gameplay.Buildings
             if (_deleteBtnImg) _deleteBtnImg.color = _mode == EditorMode.Delete ? EditorUIHelpers.DANGER     : new Color(0.55f, 0.15f, 0.15f, 1f);
             if (_addBtnImg)    _addBtnImg.color    = _mode == EditorMode.Place  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
             if (_removeBtnImg) _removeBtnImg.color = _removeMode                ? EditorUIHelpers.DANGER     : new Color(0.55f, 0.15f, 0.15f, 1f);
+            if (_fillBtnImg)   _fillBtnImg.color   = _mode == EditorMode.Fill   ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
+            if (_eraseBtnImg)  _eraseBtnImg.color  = _mode == EditorMode.Erase  ? EditorUIHelpers.BTN_ACTIVE : EditorUIHelpers.BTN_NORMAL;
         }
 
         // ──────────────────────────────────────────────────────────────────────────
@@ -96,6 +107,11 @@ namespace Valkur.Gameplay.Buildings
 
         private void HandleKeyboardShortcuts()
         {
+            // Defense in depth: Update() already gates this with `if (!_active) return;`,
+            // but a second guard here makes Ctrl+Z / Ctrl+Y a strict no-op if the editor
+            // is closed (matches the user-facing rule "no editor open → Ctrl+Z does nothing").
+            if (!_active) return;
+
             // Routed through KeyboardInputManager so the legacy backend supplies
             // these reads when the new InputSystem package drops OS events
             // (recurring Unity 2022.3 Editor bug).
@@ -109,6 +125,10 @@ namespace Valkur.Gameplay.Buildings
             if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
             {
                 if (_confirmModal != null && _confirmModal.activeSelf) HideConfirm();
+                else if (_fillSpacingModal != null && _fillSpacingModal.activeSelf) ExitFillMode();
+                else if (_mode == EditorMode.Fill) ExitFillMode();
+                else if (_eraseConfirmModal != null && _eraseConfirmModal.activeSelf) ExitEraseMode();
+                else if (_mode == EditorMode.Erase) ExitEraseMode();
                 else if (_tutorialRoot != null && _tutorialRoot.activeSelf) _tutorialRoot.SetActive(false);
                 else { SaveInstancesToJson(); Deactivate(); }
             }

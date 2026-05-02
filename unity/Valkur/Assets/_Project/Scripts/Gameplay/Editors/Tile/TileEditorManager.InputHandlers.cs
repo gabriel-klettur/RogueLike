@@ -29,10 +29,10 @@ namespace Valkur.Gameplay.TileEditor
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(true);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(true);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(true);
-                // Show Map Editor's zone-border overlay so the user can see
-                // zone boundaries while painting (green = editable, red = locked).
-                if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)
-                    Valkur.Gameplay.MapEditor.MapEditorManager.Instance.SetExternalOverlayRequest(true);
+                // Sync the Map Editor's zone-border overlay with the View panel's
+                // "Zone Grid" toggle (default: hidden). Authors enable it explicitly
+                // from View → Zone Grid when they want to see zone boundaries.
+                ApplyViewOverlayVisibility();
                 UpdateBorderToolLabel();
                 // Camera stays attached so the player can walk and test tile colliders.
                 // Middle-mouse pan is still available via HandleCameraPan() → DetachFollow.
@@ -107,20 +107,38 @@ namespace Valkur.Gameplay.TileEditor
             int action = _input.PollUndoRedo();
             if (action == 1)
             {
-                var batch = _undo.Undo();
-                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui.SetStatus("Undo"); }
+                // BUG 1 fix: close any in-flight stroke first. Without this, pressing
+                // Ctrl+Z while still dragging the brush would (a) skip the open batch
+                // (it never gets pushed to the undo stack), and (b) leak it into the
+                // next stroke when EndStroke fires on mouse-up — producing phantom
+                // undo entries that don't match anything visible.
+                _undo?.EndStroke();
+                var batch = _undo?.Undo();
+                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui?.SetStatus("Undo"); RegenerateColliderIfNeeded(batch); }
             }
             else if (action == 2)
             {
-                var batch = _undo.Redo();
-                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui.SetStatus("Redo"); }
+                _undo?.EndStroke();
+                var batch = _undo?.Redo();
+                if (batch != null) { _persistence?.MarkBatchDirty(batch.Edits); _ui?.SetStatus("Redo"); RegenerateColliderIfNeeded(batch); }
             }
 
-            // Ctrl+S → save all dirty zones to disk
-            if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)
-                && Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld())
+            // (Ctrl+S removed — every edit path auto-flushes on mouse-up via
+            // _persistence.SaveAllDirty(). Manual save was redundant.)
+
+            // ── Select tool: clipboard hotkeys (Ctrl+C/X/V) and Esc to clear ──
+            // Gated on CurrentTool so they don't shadow other editors' shortcuts.
+            if (_state.CurrentTool == TileEditorState.Tool.Select)
             {
-                SaveAllChanges();
+                bool ctrl = Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld();
+                if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.C, KeyCode.C))
+                    OnCopyClicked();
+                else if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.X, KeyCode.X))
+                    OnCutClicked();
+                else if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.V, KeyCode.V))
+                    OnPasteClicked();
+                else if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
+                    ClearSelection();
             }
         }
 

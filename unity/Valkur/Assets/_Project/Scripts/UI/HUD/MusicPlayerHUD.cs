@@ -47,7 +47,7 @@ namespace Valkur.UI.HUD
         [SerializeField, Tooltip("Edge inset from screen border.")]
         private float edgeInset = 16f;
         [SerializeField, Tooltip("Vertical lift to leave room for minimized HUD buttons and toasts below.")]
-        private float bottomLift = 44f;
+        private float bottomLift = 88f;
         [SerializeField, Tooltip("Fade widget out when no track is playing. Default off so the player is always visible (mirrors HP/MP HUD on the bottom-left).")]
         private bool hideWhenIdle = false;
 
@@ -156,7 +156,10 @@ namespace Valkur.UI.HUD
         private const string PrefKeyExpanded   = "valkur.musichud.expanded";
         private const string PrefKeyHidden     = "valkur.musichud.hidden";
         private const string PrefKeyAmplitude  = "valkur.musichud.amplitude";
-        private const string PrefKeyVolume     = "valkur.musichud.volume";
+        // Volume is NOT stored in PlayerPrefs — it lives in GameSettings.musicVolume so
+        // the slider here, the PauseMenu sounds panel and the MainMenu sounds panel
+        // all read/write the same source. Changing volume from any of them persists
+        // globally across menu and gameplay.
 
         // ID used to register the music button in the persistent HUDIconBar.
         private const string BarButtonId = "music";
@@ -185,8 +188,11 @@ namespace Valkur.UI.HUD
             _expandedH = PlayerPrefs.GetFloat(PrefKeyHExpanded, 320f);
             if (PlayerPrefs.HasKey(PrefKeyAmplitude))
                 _waveformAmplitude = Mathf.Clamp(PlayerPrefs.GetFloat(PrefKeyAmplitude), 0.25f, 6f);
-            if (PlayerPrefs.HasKey(PrefKeyVolume))
-                _volumeBeforeMute = Mathf.Clamp(PlayerPrefs.GetFloat(PrefKeyVolume), 0f, 1f);
+            // Seed the pre-mute volume from the unified GameSettings so unmute
+            // restores whatever the user last had — even if it was set from the
+            // main-menu or pause-menu sounds panel.
+            _volumeBeforeMute = Mathf.Clamp01(GameSettings.Instance.musicVolume);
+            if (_volumeBeforeMute <= 0.001f) _volumeBeforeMute = 0.7f;
             // Adopt the size belonging to the current mode.
             widgetWidth  = _isExpanded ? _expandedW : _simpleW;
             widgetHeight = _isExpanded ? _expandedH : _simpleH;
@@ -201,11 +207,11 @@ namespace Valkur.UI.HUD
             if (_audio != null)
             {
                 _audio.OnTrackChanged += HandleTrackChanged;
-                // Restore persisted volume BEFORE syncing the slider so the AudioManager
-                // already plays at the saved level when the game starts.
-                float savedVol = PlayerPrefs.GetFloat(PrefKeyVolume, 0.7f);
-                _audio.SetMusicVolume(savedVol);
-                if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(savedVol);
+                // AudioManager already initialised its runtime volume from
+                // GameSettings.musicVolume in OnSingletonAwake, and PauseMenu's
+                // sound panel calls ApplySettings() whenever the user tweaks it.
+                // Just reflect that current value in the slider.
+                if (_volumeSlider != null) _volumeSlider.SetValueWithoutNotify(_audio.MusicVolume);
                 // Catch-up: a track may already be playing when the HUD enables for
                 // the first time (HUD spawned mid-song). Re-apply any saved tempo
                 // override for that track so the user's calibration sticks.
@@ -444,28 +450,33 @@ namespace Valkur.UI.HUD
             if (_audio.MusicVolume > 0.001f)
             {
                 _volumeBeforeMute = _audio.MusicVolume;
-                _audio.SetMusicVolume(0f);
+                ApplyAndPersistVolume(0f);
                 _volumeSlider.SetValueWithoutNotify(0f);
             }
             else
             {
                 float v = _volumeBeforeMute > 0.05f ? _volumeBeforeMute : 0.7f;
-                _audio.SetMusicVolume(v);
+                ApplyAndPersistVolume(v);
                 _volumeSlider.SetValueWithoutNotify(v);
-                PlayerPrefs.SetFloat(PrefKeyVolume, v);
-                PlayerPrefs.Save();
             }
         }
 
         private void OnVolumeChanged(float v)
         {
+            ApplyAndPersistVolume(v);
+        }
+
+        // Single point where the music volume is mutated. Writes to GameSettings
+        // (the unified source of truth shared with the menu sounds panels) and
+        // also pushes the value to the running AudioManager so it takes effect
+        // immediately. Save() is debounced via GameSettings' own JSON write — cheap.
+        private void ApplyAndPersistVolume(float v)
+        {
+            v = Mathf.Clamp01(v);
+            var gs = GameSettings.Instance;
+            gs.musicVolume = v;
             _audio?.SetMusicVolume(v);
-            // Persist non-zero volumes so the next session starts at the same level.
-            if (v > 0.001f)
-            {
-                PlayerPrefs.SetFloat(PrefKeyVolume, v);
-                PlayerPrefs.Save();
-            }
+            gs.Save();
         }
 
         // ── UI Build ────────────────────────────────────────────────────────

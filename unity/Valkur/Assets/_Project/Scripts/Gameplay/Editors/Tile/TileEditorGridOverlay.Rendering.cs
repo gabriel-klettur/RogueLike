@@ -66,20 +66,23 @@ namespace Valkur.Gameplay.TileEditor
             GL.modelview = cam.worldToCameraMatrix;
 
             // ── Regular grid (lines) ──────────────────────────────────────────
-            GL.Begin(GL.LINES);
-            GL.Color(GridColor);
+            if (_showGridLines)
+            {
+                GL.Begin(GL.LINES);
+                GL.Color(GridColor);
 
-            for (int x = xMin; x <= xMax; x++)
-            {
-                GL.Vertex3(x, yMin, 0f);
-                GL.Vertex3(x, yMax, 0f);
+                for (int x = xMin; x <= xMax; x++)
+                {
+                    GL.Vertex3(x, yMin, 0f);
+                    GL.Vertex3(x, yMax, 0f);
+                }
+                for (int y = yMin; y <= yMax; y++)
+                {
+                    GL.Vertex3(xMin, y, 0f);
+                    GL.Vertex3(xMax, y, 0f);
+                }
+                GL.End();
             }
-            for (int y = yMin; y <= yMax; y++)
-            {
-                GL.Vertex3(xMin, y, 0f);
-                GL.Vertex3(xMax, y, 0f);
-            }
-            GL.End();
 
             // ── Collider overlay: red fill + red border for every solid Collision cell ──
             // Drawn between the grid lines and the cell highlights so the hover/selection
@@ -97,6 +100,25 @@ namespace Valkur.Gameplay.TileEditor
             float t = pixelSize * HoverThicknessPx;
 
             GL.Begin(GL.QUADS);
+
+            // Persistent Select-tool selection: GREEN border per cell. Drawn first
+            // so the live brush stroke (yellow) and hover (cyan) overlay on top.
+            if (_selectedCells.Count > 0)
+            {
+                foreach (var c in _selectedCells)
+                    DrawBorderQuads(c.x, c.y, SelectedColor, t);
+            }
+
+            // Live Rect-drag preview: yellow border around the rectangle the user is
+            // dragging in SelectMode.Rect. The selection itself only commits on mouse-up.
+            if (_rectDragStart.HasValue && _rectDragCurrent.HasValue)
+            {
+                int rxMin = Mathf.Min(_rectDragStart.Value.x, _rectDragCurrent.Value.x);
+                int ryMin = Mathf.Min(_rectDragStart.Value.y, _rectDragCurrent.Value.y);
+                int rxMax = Mathf.Max(_rectDragStart.Value.x, _rectDragCurrent.Value.x);
+                int ryMax = Mathf.Max(_rectDragStart.Value.y, _rectDragCurrent.Value.y);
+                DrawBorderRect(rxMin, ryMin, (rxMax - rxMin) + 1, (ryMax - ryMin) + 1, BrushColor, t);
+            }
 
             // Yellow (Brush/Erase) or Green (Select) — all cells in the current stroke.
             Color strokeColor = _currentTool == TileEditorState.Tool.Select ? SelectedColor : BrushColor;

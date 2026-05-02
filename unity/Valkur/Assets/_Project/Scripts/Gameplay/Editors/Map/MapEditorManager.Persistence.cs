@@ -36,7 +36,7 @@ namespace Valkur.Gameplay.MapEditor
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
-                File.WriteAllText(PersistencePath, json);
+                AtomicWriteWithSidecarBackup(PersistencePath, json);
                 Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) to '{PersistencePath}'.");
             }
             catch (Exception ex)
@@ -45,31 +45,84 @@ namespace Valkur.Gameplay.MapEditor
             }
         }
 
+        // Atomic write + sidecar .bak. Path A: file exists → File.Replace
+        // promotes the temp file and bumps the previous content into .bak in
+        // a single OS-level atomic step. Path B: first save → simple rename.
+        // The .bak surviving alongside the primary is the runtime safety net
+        // for a crash mid-write or a test that File.Move's the primary away
+        // and never restores it (LoadZonesFromDisk falls back to the .bak).
+        private static void AtomicWriteWithSidecarBackup(string targetPath, string content)
+        {
+            string tmpPath = targetPath + ".tmp";
+            string bakPath = targetPath + ".bak";
+            File.WriteAllText(tmpPath, content);
+            if (File.Exists(targetPath))
+            {
+                // Replace bumps current target → .bak, promotes tmp → target.
+                File.Replace(tmpPath, targetPath, bakPath);
+            }
+            else
+            {
+                File.Move(tmpPath, targetPath);
+                // First save with no prior file: still seed a .bak so the
+                // very next write isn't unprotected.
+                try { File.Copy(targetPath, bakPath, overwrite: true); } catch { /* best-effort */ }
+            }
+        }
+
+        // Reads the persistence file from the primary path; if missing or
+        // corrupt, transparently retries the sidecar .bak. Returns the path
+        // it actually loaded from (or null if neither was usable).
+        private string TryReadPersistenceFile(out ZonePersistenceFile data)
+        {
+            data = null;
+            string[] candidates = { PersistencePath, PersistencePath + ".bak" };
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string path = candidates[i];
+                if (!File.Exists(path)) continue;
+                try
+                {
+                    string json = File.ReadAllText(path);
+                    var parsed = JsonUtility.FromJson<ZonePersistenceFile>(json);
+                    if (parsed == null)
+                    {
+                        Debug.LogWarning($"[MapEditor] '{path}' parsed as null — trying next candidate. " +
+                                         $"Head: {(json.Length > 200 ? json.Substring(0, 200) : json)}");
+                        continue;
+                    }
+                    data = parsed;
+                    if (i > 0)
+                        Debug.LogWarning($"[MapEditor] Primary persistence missing/corrupt — recovered zones from sidecar '{path}'.");
+                    return path;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[MapEditor] Failed to read '{path}': {ex.Message} — trying next candidate.");
+                }
+            }
+            return null;
+        }
+
         private void LoadZonesFromDisk()
         {
             if (zoneManager == null) { Debug.LogWarning("[MapEditor] LoadZonesFromDisk skipped — zoneManager is null."); return; }
-            if (!File.Exists(PersistencePath))
+
+            string source = TryReadPersistenceFile(out var data);
+            if (source == null)
             {
-                Debug.Log($"[MapEditor] No persisted zones file at '{PersistencePath}' (first run / file deleted).");
+                Debug.Log($"[MapEditor] No persisted zones file at '{PersistencePath}' (or sidecar) — first run / file deleted.");
                 return;
             }
 
             try
             {
-                string json = File.ReadAllText(PersistencePath);
-                var data = JsonUtility.FromJson<ZonePersistenceFile>(json);
-                if (data == null)
-                {
-                    Debug.LogError($"[MapEditor] Failed to parse persistence file '{PersistencePath}' — JsonUtility returned null. " +
-                                   $"File contents head: {(json.Length > 200 ? json.Substring(0, 200) : json)}");
-                    return;
-                }
                 if (data.zones == null || data.zones.Count == 0)
                 {
-                    Debug.Log($"[MapEditor] Persistence file '{PersistencePath}' has no zones to restore.");
+                    Debug.Log($"[MapEditor] Persistence file '{source}' has no zones to restore.");
                     return;
                 }
-                Debug.Log($"[MapEditor] Reading {data.zones.Count} persisted zone(s) from '{PersistencePath}'.");
+                Debug.Log($"[MapEditor] Reading {data.zones.Count} persisted zone(s) from '{source}'.");
 
                 // Existing zones come from ZoneDatabaseLoader (the source of truth, with
                 // correct Y-flipped offsets). Treat them as authoritative — don't override

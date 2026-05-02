@@ -63,9 +63,18 @@ namespace Valkur.Gameplay.Buildings
         private InputAction _toggleAction;
         private bool _ownsToggleAction;
 
-        private enum EditorMode { Select, Place, Delete, Resize }
+        private enum EditorMode { Select, Place, Delete, Resize, Fill, Erase }
         private EditorMode  _mode = EditorMode.Select;
         private int         _selectedTemplateId = -1;
+
+        /// <summary>
+        /// Tracks which kind of entity the Properties panel is currently displaying.
+        /// None      → no selection, shows idle hint text.
+        /// Instance  → a placed BuildingObject is active (_activeBuilding != null).
+        /// Template  → a picker slot was clicked; _activeBuilding is null/cleared.
+        /// </summary>
+        private enum PropertiesMode { None, Instance, Template }
+        private PropertiesMode _propertiesMode = PropertiesMode.None;
 
         private BuildingObject _activeBuilding;
         private BuildingObject _hoveredBuilding;
@@ -158,6 +167,8 @@ namespace Valkur.Gameplay.Buildings
 
         private Image _selectBtnImg, _placeBtnImg, _deleteBtnImg, _resizeBtnImg;
         private Image _addBtnImg, _removeBtnImg;
+        private Image _fillBtnImg;   // Fill button in the Tools panel
+        private Image _eraseBtnImg;  // Erase button in the Tools panel
 
         // Perf probe (PERF button in menu bar, Shift+PERF to toggle)
         private BuildingsPerfProbe _perfProbe;
@@ -216,6 +227,88 @@ namespace Valkur.Gameplay.Buildings
         // Cached BuildingLoader for spawn-root + ref counting
         private BuildingLoader _buildingLoader;
         private Transform      _buildingsRoot;
+
+        // ── Fill tool state ────────────────────────────────────────────────────────
+
+        /// <summary>Sub-steps of the Fill flow (Idle → AwaitingSpacing → AwaitingTemplate → AwaitingTile).</summary>
+        private enum FillStep { Idle, AwaitingSpacing, AwaitingTemplate, AwaitingTile }
+        private FillStep _fillStep = FillStep.Idle;
+        private int      _fillSpacingTiles = 2;
+        private int      _fillTemplateId   = -1;
+        private UnityEngine.Tilemaps.TileBase  _fillSampleTile;
+        private Vector3Int                     _fillSampleCell;
+        private readonly HashSet<Vector3Int>   _fillCandidateCells = new HashSet<Vector3Int>();
+        private BuildingsFillPreviewOverlay    _fillOverlay;
+        private Coroutine                      _fillPickerBlinkCoroutine;
+        private GameObject                     _fillSpacingModal;
+        private TMP_InputField                 _fillSpacingInput;
+        // Header Image of the Buildings panel — pulsed during AwaitingTemplate.
+        private Image                          _buildingsPanelHeaderImg;
+        // World tilemap for Ground-tile sampling.
+        private UnityEngine.Tilemaps.Tilemap   _worldGroundTilemap;
+
+        // New: placement mode + size variance + session seed
+        private enum FillPlacementMode { Uniform, Groves, Noise }
+        private FillPlacementMode _fillPlacementMode = FillPlacementMode.Uniform;
+
+        private bool  _fillRandomSize   = false;
+        private int   _fillSizeMinPct   = 80;
+        private int   _fillSizeMaxPct   = 120;
+
+        private int   _fillGroveCount   = 3;
+        private int   _fillGroveSpread  = 6;
+        private float _fillNoiseScale   = 0.20f;
+        private float _fillNoiseThreshold = 0.40f;
+
+        private int   _fillSessionSeed  = 0;
+        // Per-cell scale-factor hints from Groves mode (key = cell, value = 0..1, 1 = cluster center).
+        // Null when not using Groves+RandomSize correlation.
+        private System.Collections.Generic.Dictionary<Vector3Int, float> _fillSizeHintsByCell;
+
+        // New UI references for the expanded dialog
+        private TMP_InputField _fillSizeMinInput;
+        private TMP_InputField _fillSizeMaxInput;
+        private Image          _fillRandomSizeCheckImg;   // for the toggle visual
+        private TMPro.TextMeshProUGUI _fillRandomSizeCheckText;
+        private Image          _fillModeUniformBtnImg;
+        private Image          _fillModeGrovesBtnImg;
+        private Image          _fillModeNoiseBtnImg;
+        private TMP_InputField _fillGroveCountInput;
+        private TMP_InputField _fillGroveSpreadInput;
+        private TMP_InputField _fillNoiseScaleInput;
+        private TMP_InputField _fillNoiseThresholdInput;
+
+        // ── Erase tool state ───────────────────────────────────────────────────────
+
+        /// <summary>Sub-steps of the Erase flow.</summary>
+        private enum EraseStep { Idle, AwaitingScope, AwaitingTarget, AwaitingConfirm }
+        /// <summary>Scope chosen for Erase: by Tiles Area (flood-fill region) or by Zone.</summary>
+        private enum EraseScope { TilesArea, Zone }
+
+        private EraseStep  _eraseStep  = EraseStep.Idle;
+        private EraseScope _eraseScope = EraseScope.Zone;
+        private GameObject _eraseSubPanel;
+        private Image      _eraseTilesAreaBtnImg;
+        private Image      _eraseZoneBtnImg;
+        private readonly List<BuildingObject>      _eraseMatches      = new List<BuildingObject>();
+        private readonly HashSet<Vector3Int>       _eraseAreaCells    = new HashSet<Vector3Int>();
+        private int        _eraseTemplateId = -1;
+        private string     _eraseZoneId;
+        private GameObject _eraseConfirmModal;
+        private TextMeshProUGUI _eraseConfirmText;
+        private System.Action   _eraseConfirmYes;
+        // Pool of orange outlines highlighting the matches before confirmation.
+        // Kept separate from _sameTemplateFxPool so the two highlight states never collide.
+        private readonly List<BuildingOutlineRenderer> _eraseMatchFxPool = new List<BuildingOutlineRenderer>();
+
+        // ── HUD hide-on-open state ─────────────────────────────────────────────────
+        // Capture the active-state of each HUD when the editor opens so we can
+        // restore exactly what was visible before (and not forcibly show a HUD
+        // that was already hidden by the player).
+        private bool _hudSpellBarWasActive;
+        private bool _hudInventoryWasActive;
+        private bool _hudMusicPlayerWasActive;
+        private GameObject _hudMusicPlayerGo;
 
         // ── IGameEditor ────────────────────────────────────────────────────────────
 

@@ -37,6 +37,23 @@ namespace Valkur.Gameplay.Buildings
             Vector3 worldPos  = cam.ScreenToWorldPoint(screenPos);
             worldPos.z = 0f;
 
+            // ── Fill mode: hover computes preview, left-click commits ──────────────
+            if (_mode == EditorMode.Fill && _fillStep == FillStep.AwaitingTile)
+            {
+                if (!overUi) UpdateFillHover(worldPos);
+                if (!overUi && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+                    CommitFill();
+                return;
+            }
+
+            // ── Erase mode (after scope chosen): left-click picks the target building ─
+            if (_mode == EditorMode.Erase && _eraseStep == EraseStep.AwaitingTarget)
+            {
+                if (!overUi && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame())
+                    OnEraseTargetClicked(worldPos);
+                return;
+            }
+
             if (_colliderStroke.Active && Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
             {
                 EndColliderStroke();
@@ -318,6 +335,9 @@ namespace Valkur.Gameplay.Buildings
         {
             bool changed = _activeBuilding != b;
             _activeBuilding = b;
+            // Clicking a placed instance always switches back to Instance mode,
+            // regardless of whether the picker had previously entered Template mode.
+            _propertiesMode = b != null ? PropertiesMode.Instance : PropertiesMode.None;
             // Drop the cached session so the next paint refreshes it for the new
             // building, and refresh the overlay so the OLD active building reverts
             // to BoxCollider2D rendering and the NEW one (if any) gets authoring

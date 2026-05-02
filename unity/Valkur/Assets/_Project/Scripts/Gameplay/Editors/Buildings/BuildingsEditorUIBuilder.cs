@@ -51,6 +51,13 @@ namespace Valkur.Gameplay.Buildings
             // Modes panel refs
             public Image SelectBtnImg, PlaceBtnImg, ResizeBtnImg, DeleteBtnImg;
             public Image AddBtnImg, RemoveBtnImg;
+            public Image FillBtnImg;   // Fill tool button
+            public Image EraseBtnImg;  // Erase tool button
+
+            // Erase scope sub-panel (flyout below TOOLS)
+            public GameObject EraseSubPanel;
+            public Image      EraseTilesAreaBtnImg;
+            public Image      EraseZoneBtnImg;
 
             // Buildings panel refs
             public TMP_InputField  SearchBox;
@@ -84,7 +91,9 @@ namespace Valkur.Gameplay.Buildings
         // ── Panel sizes (mirrors TileEditor constants) ────────────────────────────
 
         private const float MODES_W     = TOOLS_DROP_W;          // 60 px
-        private const float MODES_H     = 88f + PANEL_HDR_H;     // 112 px (Tools: Undo+Redo)
+        private const float MODES_H     = 88f + BTN_H * 2 + PANEL_HDR_H;  // 200 px (Tools: Undo+Redo+Fill+Erase)
+        private const float ERASE_SUB_W = 130f;
+        private const float ERASE_SUB_H = PANEL_HDR_H + BTN_H * 2 + 12f;
         private const float BUILDINGS_W = TILES_DROP_W;          // 256 px
         private const float BUILDINGS_H = TILES_DROP_H;          // 564 px
         private const float COLLIDERS_W = 220f;                  // narrower than props
@@ -135,7 +144,11 @@ namespace Valkur.Gameplay.Buildings
             Action         onCollBrushSizeStepDown,
             Action         onCollBrushSizeStepUp,
             Action         onToggleBuildingsVisible,
-            Action         onPerfToggle = null)
+            Action         onPerfToggle = null,
+            Action         onFill       = null,
+            Action         onErase           = null,
+            Action         onEraseTilesArea  = null,
+            Action         onEraseZone       = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -148,7 +161,8 @@ namespace Valkur.Gameplay.Buildings
             BuildModesPanel(canvasT, ref refs,
                 onModeSelect, onModePlace, onModeResize, onModeDelete,
                 onAddBuilding, onRemoveBuilding, onAddOnSystem,
-                onUndo, onRedo, onSave, onReload);
+                onUndo, onRedo, onSave, onReload, onFill, onErase);
+            BuildEraseSubPanel(canvasT, ref refs, onEraseTilesArea, onEraseZone);
             BuildBuildingsPanel(canvasT, ref refs, onSearchChanged);
             BuildCollidersPanel(canvasT, ref refs,
                 onToggleCollidersVisible,
