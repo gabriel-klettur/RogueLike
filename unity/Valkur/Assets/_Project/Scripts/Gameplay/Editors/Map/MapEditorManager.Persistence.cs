@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 using Valkur.Gameplay.World;
+using Valkur.Infrastructure.Persistence.Repositories;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -11,6 +12,19 @@ namespace Valkur.Gameplay.MapEditor
     /// </summary>
     public partial class MapEditorManager
     {
+        // Repository handle. Tests inject an InMemoryMapEditorZonesRepository
+        // through SetZonesRepository(); production paths fall back to the
+        // JSON-file backend on first use, preserving the legacy
+        // persistentDataPath/map_editor_zones.json layout the
+        // MapEditorDataGuard relies on for recovery.
+        private IMapEditorZonesRepository _zonesRepository;
+
+        public void SetZonesRepository(IMapEditorZonesRepository repository)
+            => _zonesRepository = repository;
+
+        private IMapEditorZonesRepository ResolveZonesRepository()
+            => _zonesRepository ?? (_zonesRepository = new JsonFileMapEditorZonesRepository());
+
         private void PersistZonesToDisk()
         {
             if (zoneManager == null) return;
@@ -50,16 +64,16 @@ namespace Valkur.Gameplay.MapEditor
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
-                AtomicWriteWithSidecarBackup(PersistencePath, json);
+                ResolveZonesRepository().WriteAtomic(WorldId.Base, json);
                 if (shelvedPreserved > 0)
                     Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) " +
-                              $"({shelvedPreserved} shelved preserved) to '{PersistencePath}'.");
+                              $"({shelvedPreserved} shelved preserved) via repository.");
                 else
-                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) to '{PersistencePath}'.");
+                    Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) via repository.");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MapEditor] Failed to persist zones to '{PersistencePath}': {ex.Message}");
+                Debug.LogError($"[MapEditor] Failed to persist zones via repository: {ex.Message}");
             }
         }
 
@@ -90,67 +104,35 @@ namespace Valkur.Gameplay.MapEditor
             return preserved;
         }
 
-        // Atomic write + sidecar .bak. Path A: file exists → File.Replace
-        // promotes the temp file and bumps the previous content into .bak in
-        // a single OS-level atomic step. Path B: first save → simple rename.
-        // The .bak surviving alongside the primary is the runtime safety net
-        // for a crash mid-write or a test that File.Move's the primary away
-        // and never restores it (LoadZonesFromDisk falls back to the .bak).
-        private static void AtomicWriteWithSidecarBackup(string targetPath, string content)
-        {
-            string tmpPath = targetPath + ".tmp";
-            string bakPath = targetPath + ".bak";
-            File.WriteAllText(tmpPath, content);
-            if (File.Exists(targetPath))
-            {
-                // Replace bumps current target → .bak, promotes tmp → target.
-                File.Replace(tmpPath, targetPath, bakPath);
-            }
-            else
-            {
-                File.Move(tmpPath, targetPath);
-                // First save with no prior file: still seed a .bak so the
-                // very next write isn't unprotected.
-                try { File.Copy(targetPath, bakPath, overwrite: true); } catch { /* best-effort */ }
-            }
-        }
-
-        // Reads the persistence file from the primary path; if missing or
-        // corrupt, transparently retries the sidecar .bak. Returns the path
-        // it actually loaded from (or null if neither was usable). Runs the
-        // shape-migration chain on the parsed document so a v1.x file from
-        // a previous build is upgraded to the current schema before any
-        // other code touches it.
+        // Atomic-write + sidecar-fallback semantics now live in the
+        // IMapEditorZonesRepository contract; this method just adapts the
+        // raw JSON the repo returns into a parsed + migrated DTO. Returns
+        // a non-null source tag when read succeeded, null otherwise.
         private string TryReadPersistenceFile(out ZonePersistenceFile data)
         {
             data = null;
-            string[] candidates = { PersistencePath, PersistencePath + ".bak" };
-            for (int i = 0; i < candidates.Length; i++)
+            string json = ResolveZonesRepository().ReadWithSidecarFallback(WorldId.Base, out bool fromSidecar);
+            if (json == null) return null;
+            try
             {
-                string path = candidates[i];
-                if (!File.Exists(path)) continue;
-                try
+                var parsed = JsonUtility.FromJson<ZonePersistenceFile>(json);
+                if (parsed == null)
                 {
-                    string json = File.ReadAllText(path);
-                    var parsed = JsonUtility.FromJson<ZonePersistenceFile>(json);
-                    if (parsed == null)
-                    {
-                        Debug.LogWarning($"[MapEditor] '{path}' parsed as null — trying next candidate. " +
-                                         $"Head: {(json.Length > 200 ? json.Substring(0, 200) : json)}");
-                        continue;
-                    }
-                    MapZonesMigrations.Migrate(parsed);
-                    data = parsed;
-                    if (i > 0)
-                        Debug.LogWarning($"[MapEditor] Primary persistence missing/corrupt — recovered zones from sidecar '{path}'.");
-                    return path;
+                    Debug.LogWarning($"[MapEditor] persistence parsed as null — head: " +
+                                     $"{(json.Length > 200 ? json.Substring(0, 200) : json)}");
+                    return null;
                 }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"[MapEditor] Failed to read '{path}': {ex.Message} — trying next candidate.");
-                }
+                MapZonesMigrations.Migrate(parsed);
+                data = parsed;
+                if (fromSidecar)
+                    Debug.LogWarning($"[MapEditor] Primary persistence missing/corrupt — recovered zones from sidecar.");
+                return fromSidecar ? "sidecar" : "primary";
             }
-            return null;
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Failed to deserialize persistence: {ex.Message}");
+                return null;
+            }
         }
 
         private void LoadZonesFromDisk()
