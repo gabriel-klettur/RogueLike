@@ -2,7 +2,7 @@
 
 ## Project Context
 
-**Valkur** is a 2D roguelike action game being migrated from **Python (Pygame-CE)** to **Unity 2022.3.62f1 LTS (URP 2D / C#)**. Migration is **90% complete** (45/50 steps). See [roadmap](unity/docs/Migration_python_to_unity/01_execution/roadmap_50_steps.md) for details.
+**Valkur** is a 2D roguelike action game being migrated from **Python (Pygame-CE)** to **Unity 2022.3.62f1 LTS (URP 2D / C#)**. **Core gameplay migration is ~98% complete**; remaining work is asset-pipeline atlas consolidation plus a few low-priority Python sub-systems (`burn_system`, `item_factory`, three config JSONs). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them. See [`MIGRATION_GUIDE.md`](MIGRATION_GUIDE.md) (canonical) and [the roadmap](unity/docs/Migration_python_to_unity/01_execution/roadmap_50_steps.md) (historical) for details.
 
 ### Workspace Layout
 

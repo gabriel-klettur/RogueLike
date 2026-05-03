@@ -1,8 +1,8 @@
 # Valkur Migration Guide: Python (Pygame-CE) → Unity 2022.3 LTS
 
-**Version:** 3.0  
-**Date:** 2026-04-09  
-**Status:** 90% complete (45/50 steps)  
+**Version:** 4.0
+**Date:** 2026-05-03
+**Status:** Core gameplay 100% migrated · Asset Pipeline Phase 2 reimport complete · Pylos/Soluna permanently deprecated · Meta-progression layer (IProfileDb) shipped on top of original 50-step plan
 **Primary audience:** Developer, Copilot agents, future contributors
 
 ---
@@ -28,14 +28,18 @@
 
 **Valkur** is a 2D roguelike action game featuring:
 
-- Real-time combat (melee + spells + projectiles)
-- FSM-driven monster AI (9 states: Idle, Patrol, Chase, AlertChase, Attack, Damage, Death, Flee, Unconscious)
+- Real-time combat (melee + spells + projectiles, NPC casting via NPCAutoCast + NPCCastState)
+- FSM-driven monster AI (9 states + NPCCastState for boss phases)
 - Tilemap-based world with Y-sort depth rendering
-- Inventory system with pickups, drops, equipment
+- Inventory system with pickups, drops, equipment, weighted loot tables
 - Save/load with schema versioning and corruption recovery
-- In-game tile and map editors
-- Day/night lighting cycle
-- Minigames (Pylos, Soluna)
+- In-game tile, map, buildings, and entities editors (F6 / F11 / F10 / runtime)
+- Day/night lighting cycle (procedural Light2D ramp)
+- Quest system (IObjective + KillCountObjective + Quest aggregator + QuestManager + QuestLogHUD)
+- Skill tree progression (SkillNode + SkillTree + LearnedSkills + SkillEffectApplicator + AuraRegistry + SkillTreeHUD)
+- Boss encounters (BossPhaseController + BossDefinition + BossConfigurator + BossHealthBarHUD)
+- Procedural worlds (chunk streaming with 8 biomes incl. GraphRoom dungeons with doors / T-junctions / boss rooms)
+- Permadeath mode + meta-progression telemetry (IProfileDb / JsonProfileDb / StatisticsHUD)
 
 ### Source (Python)
 
@@ -99,9 +103,9 @@ main.py                              Bootstrap.unity scene
 | `roguelike_engine/db/` | ScriptableObjects | ✅ Done |
 | `roguelike_ui/` | `Valkur.UI` | ✅ Done |
 | `roguelike_editors/` | `Valkur.Gameplay/Editors/Tile/` + `Editors/Map/` | ✅ Done |
-| `roguelike_engine/rendering/day_night/` | — | ❌ Pending |
-| `roguelike_engine/audio/` | `Valkur.Infrastructure/AudioManager` | ❌ Empty |
-| `minigames/` | — | ❌ Not started |
+| `roguelike_engine/rendering/day_night/` | `Valkur.Gameplay/World/Lighting/DayNightCycle.cs` | ✅ Done |
+| `roguelike_engine/audio/` | `Valkur.Infrastructure/AudioManager` + `CombatAudioSystem` | ✅ Done |
+| `minigames/` | — | 🚫 Permanently deprecated (Pylos + Soluna out of scope) |
 
 ---
 
@@ -147,14 +151,15 @@ Invoke these as slash commands for specific workflows:
 
 | Phase | Description | Steps | Done | Status |
 | ------- | ------------- | ------- | ------ | -------- |
-| 0 | Preparation & baseline | 1-6 | 5/6 | 🟡 Step 4 pending |
+| 0 | Preparation & baseline | 1-6 | 5/6 | 🟡 Step 4 (video baseline capture) pending — documentation only |
 | 1 | Unity bootstrap | 7-12 | 6/6 | ✅ Complete |
-| 2 | Assets & import pipeline | 13-22 | 2/10 | 🔴 Deferred |
+| 2 | Assets & import pipeline | 13-22 | 6/10 | 🟡 Bulk reimport applied; sprite atlas consolidation + asset_map.csv finalisation pending |
 | 3 | Data contracts & migrators | 23-30 | 8/8 | ✅ Complete |
 | 4 | Vertical slice | 31-36 | 6/6 | ✅ Complete |
 | 5 | Full gameplay port | 37-44 | 8/8 | ✅ Complete |
 | 6 | Tools & editors | 45-47 | 3/3 | ✅ Complete |
 | 7 | Persistence & release | 48-50 | 3/3 | ✅ Complete |
+| 8 | Meta-progression layer (post-plan) | n/a | 5/5 | ✅ IProfileDb + telemetry + StatisticsHUD |
 
 ### What's Working in Unity
 
@@ -204,12 +209,13 @@ Invoke these as slash commands for specific workflows:
 
 | Item | Priority | Agent/Skill |
 | ------ | ---------- | ------------- |
-| Day/night cycle | Low | @python-analyst → @unity-architect |
-| NPC spell casting | Low | /combat-migration |
-| Minigames (Pylos deferred; Soluna empty) | Low | @python-analyst → @unity-architect |
-| Clean up legacy InputManager axes | Low | @unity-architect |
+| `burn_system.py` (status-effect DoT) | Low | /combat-migration |
+| `item_factory.py` (procedural item rolls) | Low | @data-migrator → @unity-architect |
+| `data/config/{lighting,audio,combo_rules}.json` configs (not in any SO yet) | Low | @data-migrator |
 
-> **Resolved** (2026-04 session): Physics2D Collision Matrix ✅, Material leaks ✅, Audio pipeline ✅, Patrol waypoints ✅, Vendor buy/sell UI ✅
+> **Resolved** during the 2026-05 sessions: NPC spell casting ✅ (NPCAutoCast + NPCCastState + BossPhaseController), Day/night cycle ✅, Asset pipeline platform compression overrides + bulk reimport ✅, Audio coverage (death / level-up / item-pickup) ✅, Item rarity palette + LootTable ✅, Quest system (IObjective + Quest + QuestManager + QuestLogHUD) ✅, Skill tree (SkillNode/Tree + LearnedSkills + SkillEffectApplicator + AuraRegistry + SkillTreeHUD) ✅, Boss framework (BossPhaseController + BossDefinition + BossConfigurator + BossHealthBarHUD + SampleBoss.asset) ✅, Procedural biomes (Checkerboard, Ring, RoomedChunk, GraphRoom with doors/T-junctions/boss rooms, ThemedGraphRoom) ✅, Permadeath flag + autosave cleanup ✅, Meta-progression layer (IProfileDb + ProfileTelemetrySystem + StatisticsHUD) ✅. Earlier (2026-04): Physics2D Collision Matrix ✅, Material leaks ✅, Audio pipeline ✅, Patrol waypoints ✅, Vendor buy/sell UI ✅.
+>
+> **Permanently deprecated** (out of scope, never to be revisited): Pylos minigame, Soluna placeholder.
 
 ---
 
@@ -244,11 +250,13 @@ All previously critical issues have been resolved:
 | --------------- | ------------- | -------- |
 | `spells_config.py` | `SpellDefinition.cs` (ScriptableObject) | ✅ |
 | Fireball (projectile) | `ProjectileExecutor.cs` + `Projectile.cs` | ✅ |
-| Laser beam | — | ❌ Not ported |
-| Teleport | — | ❌ Not ported |
+| Laser beam | `LaserBeamExecutor.cs` + `LaserBeamController.cs` | ✅ |
+| Teleport | `TeleportExecutor.cs` + `TeleportPortalFX.cs` | ✅ |
 | Slash | `SlashExecutor.cs` | ✅ |
 | Area | `AreaExecutor.cs` | ✅ |
 | Dash | `DashExecutor.cs` + `DashAbility.cs` | ✅ |
+| Boomerang / chain lightning / lightning / meteor / cone breath / arcane flame / aura / mine / puddle / wall / shield / smoke / vortex / totem / summon / firework launch | `*Executor.cs` + `*Controller.cs` (per spell) | ✅ |
+| `auto_cast_system.py` (NPC casting) | `NPCAutoCast.cs` + `NPCCastState.cs` + `BossPhaseController.cs` | ✅ |
 
 ### AI/FSM
 
@@ -256,11 +264,11 @@ All previously critical issues have been resolved:
 | ------------- | ------------ | -------- |
 | `idle_state.py` | FSMMonsterBrain Idle | ✅ |
 | `attack_state.py` | FSMMonsterBrain Attack | ✅ |
-| `cast_state.py` | FSMMonsterBrain (partial) | ⚠️ No NPC spells |
+| `cast_state.py` | `NPCCastState.cs` (FSM blocks movement) + `NPCAutoCast.cs` (rotation) + `BossPhaseController.cs` (HP-threshold phase rotations) | ✅ |
 | `damage_state.py` | FSMMonsterBrain Damage | ✅ |
 | `death_state.py` | FSMMonsterBrain Death | ✅ |
 | `unconscious_state.py` | FSMMonsterBrain Unconscious | ✅ |
-| Patrol state | FSMMonsterBrain Patrol | ⚠️ No waypoints |
+| Patrol state | FSMMonsterBrain Patrol + `PatrolWaypointGenerator.cs` | ✅ |
 | Chase state | FSMMonsterBrain Chase | ✅ |
 | Flee state | FSMMonsterBrain Flee | ✅ |
 
@@ -272,16 +280,17 @@ All previously critical issues have been resolved:
 | `chunked_map_view.py` | `WorldGridBuilder.cs` | ✅ |
 | `tile_model.py` | Unity Tile assets | ✅ |
 | `spatial_index.py` | `SpatialHash.cs` | ✅ |
-| `pathfinding.py` | — | ❌ Not ported |
-| `day_night.py` | — | ❌ Not ported |
-| `zone/` | `ZoneManager.cs` | ✅ |
+| `pathfinding.py` | `PathFinder.cs` (used by ChaseState) | ✅ |
+| `day_night.py` | `DayNightCycle.cs` | ✅ |
+| `zone/` | `ZoneManager.cs` + `WorldManager.cs` (multi-world) | ✅ |
+| Procedural worlds (Phase 2 chunks) | `ChunkStreamer` + 8 `IBiome` impls (Uniform, NoiseSplit, Checkerboard, Ring, RoomedChunk, GraphRoom, ThemedGraphRoom) | ✅ Phase 2.6 |
 
 ### Inventory
 
 | Python System | Unity Script | Parity |
 | --------------- | ------------- | -------- |
 | `inventory_ui_system.py` | `InventoryUI.cs` | ✅ |
-| `inventory_transfer_system.py` | — | ⚠️ No vendor UI |
+| `inventory_transfer_system.py` | `VendorShopUI.cs` (+ `.Builder` / `.Rows` partials) | ✅ |
 | `inventory_pickup_system.py` | `PickupSystem.cs` | ✅ |
 | `inventory_drop_system.py` | `DropSystem.cs` | ✅ |
 | `item_factory.py` | — | ❌ No procedural items |
@@ -292,8 +301,10 @@ All previously critical issues have been resolved:
 | --------------- | ------------- | -------- |
 | `shutdown_manager.py` | `SaveService.cs` | ✅ |
 | Save/load state | `GameStateCollector.cs` + `GameStateRestorer.cs` | ✅ |
-| Schema migration | `SaveSchemaMigrator.cs` | ✅ |
-| File I/O | `SaveFileManager.cs` | ✅ |
+| Schema migration | `SaveSchemaMigrator.cs` + `MigrationChain<T>` (per-loader) | ✅ |
+| File I/O | `SaveFileManager.cs` (atomic File.Replace + sidecar .bak) | ✅ |
+| Permadeath cleanup | `PermadeathSaveCleanupSystem.cs` (deletes autosave on death when `GameSettings.permadeath`) | ✅ |
+| Meta-progression DB (NEW — no Python equivalent) | `IProfileDb` + `JsonProfileDb` + `ProfileTelemetrySystem.cs` | ✅ Step 8 |
 
 ---
 

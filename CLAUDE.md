@@ -4,7 +4,7 @@
 
 ## What this project is
 
-**Valkur** is a 2D roguelike action game (real-time combat + spells, FSM monster AI, tilemap world with Y-sort, inventory, save/load, in-game tile and map editors). It is being **ported from Python (Pygame-CE) → Unity 2022.3.62f1 LTS (URP 2D / C#)**. Migration is ~90% complete.
+**Valkur** is a 2D roguelike action game (real-time combat + spells with NPC casting, FSM monster AI with boss phases, tilemap world with Y-sort, procedural chunk-streamed dungeons, weighted loot, quest system, skill tree, day/night cycle, in-game tile/map/buildings/entities editors). It is being **ported from Python (Pygame-CE) → Unity 2022.3.62f1 LTS (URP 2D / C#)**. Core gameplay migration is **~98% complete**; outstanding work is asset-pipeline atlas consolidation + a few low-priority Python sub-systems (`burn_system`, `item_factory` procedural rolls, three config JSONs). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them.
 
 Inspiration project (architecture only, do not copy code wholesale): `unity/Udemy_Inspiration/DungeonGunnerCourse/`.
 
@@ -62,7 +62,7 @@ The legacy axes in `ProjectSettings/InputManager.asset` (`Horizontal`, `Vertical
 |---|---|---|
 | `Valkur.Core` | `Scripts/Core/` | — |
 | `Valkur.Data` | `Scripts/Data/` | Core |
-| `Valkur.Infrastructure` | `Scripts/Infrastructure/` | Core, Data |
+| `Valkur.Infrastructure` | `Scripts/Infrastructure/` (incl. `Persistence/Profile/`: `IProfileDb`, `JsonProfileDb`, `InMemoryProfileDb`) | Core, Data |
 | `Valkur.Gameplay` | `Scripts/Gameplay/` | Core, Data, Infrastructure |
 | `Valkur.UI` | `Scripts/UI/` | Core, Data, Infrastructure |
 | `Valkur.Editor` | `Scripts/Editor/` | All above |
@@ -95,11 +95,12 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Editors/Particles/` | Particles runtime editor — partials + UIBuilder |
 | `Editors/Spells/` | Spells runtime editor — partials + UIBuilder + SpellPreviewGraphic |
 | `Editors/Tile/` | Tile runtime editor (F6, formerly `Gameplay/TileEditor/`) |
-| `Enemies/` | NPC AI, FSM behaviors |
-| `HUD/` | In-world HUD overlays (e.g. SpellBarHUD; formerly `Gameplay/UI/`) |
+| `Enemies/` | NPC AI, FSM behaviors, NPCAutoCast, NPCCastState, BossPhaseController, BossConfigurator |
+| `HUD/` | In-world HUD overlays + modal panels: SpellBarHUD, BossHealthBarHUD, QuestLogHUD, SkillTreeHUD, StatisticsHUD |
 | `Inventory/` | Inventory model + UI runtime |
-| `Player/` | PlayerController, PlayerStats |
-| `Save/` | Save/load systems |
+| `Player/` | PlayerController, LearnedSkills, SkillEffectApplicator, AuraRegistry, HpRegenAura, LevelUpSkillPointSystem |
+| `Quests/` | IObjective, KillCountObjective, Quest aggregator, QuestManager |
+| `Save/` | Save/load systems, PermadeathSaveCleanupSystem, ProfileTelemetrySystem |
 | `Spawners/` | Entity spawners |
 | `Spells/Core/` | ISpellExecutor, SpellCaster, SpellCaster.Execution |
 | `Spells/Executors/` | `*Executor.cs` (Projectile, Area, Slash, Dash, …) |
@@ -238,7 +239,8 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 
 ## Open work (high-level)
 
-- Asset pipeline Phase 2 (atlas consolidation, full `asset_map.csv`).
-- Day/night lighting cycle.
+- Asset pipeline Phase 2 — atlas consolidation + finalised `asset_map.csv` schema (bulk reimport already executed; `ValkurAssetPostprocessor` now writes Uncompressed platform overrides; what remains is the formal naming convention + `SpriteAtlas` group build for the 9 planned domain atlases).
+- Three Python config JSONs without Unity equivalents yet: `data/config/lighting.json`, `data/config/audio.json`, `data/config/combo_rules.json`. Low priority — runtime defaults cover the gameplay path.
+- `burn_system.py` (status-effect DoT) and `item_factory.py` (procedural item rolls with rarity prefix/suffix mods) — both can hook into the existing `RarityPalette` + `LootTable` once ported. Low priority.
 
-For full status, system-by-system parity tables, and the 50-step roadmap, read `.github/MIGRATION_GUIDE.md`.
+For full status, system-by-system parity tables, and the (now ~98% closed) 50-step roadmap, read `.github/MIGRATION_GUIDE.md`. The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) is post-roadmap and lives behind `IProfileDb` — see `.github/SQLITE_MIGRATION_AUDIT.md`.
