@@ -54,6 +54,8 @@ The **only legitimate exceptions** to the rule are:
 
 If you need a key the existing helpers don't expose (e.g. `KeyboardInputManager.WasF2PressedThisFrame()` for F2-rename), add the helper rather than a new direct read.
 
+The legacy axes in `ProjectSettings/InputManager.asset` (`Horizontal`, `Vertical`, `Fire1`, `Mouse X`, etc.) are kept as Unity defaults but are **inert** — no gameplay code reads them via `GetAxis`/`GetButton`. The remaining `UnityEngine.Input.*` calls inside the helper files (and the three callers `PlayerController.Movement.cs` / `InventoryUI.cs` / `TileEditorInputHandler.cs`) are deliberate OR-gates: they re-read the legacy backend whenever the new InputSystem may have dropped events. Don't "clean these up" — they exist to survive the recurring Unity 2022.3 Editor InputSystem event-drop bug.
+
 ## Unity assemblies & dependency rule
 
 | Assembly | Path | May reference |
@@ -238,8 +240,5 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 
 - Asset pipeline Phase 2 (atlas consolidation, full `asset_map.csv`).
 - Day/night lighting cycle.
-- NPC spell casting (cast state is partial).
-- Pylos minigame deferred; Soluna empty.
-- Legacy InputManager axes still wired alongside New Input System.
 
 For full status, system-by-system parity tables, and the 50-step roadmap, read `.github/MIGRATION_GUIDE.md`.
