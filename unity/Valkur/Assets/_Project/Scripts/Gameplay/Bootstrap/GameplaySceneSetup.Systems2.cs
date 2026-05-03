@@ -407,6 +407,34 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] LevelUpSkillPointSystem created.");
         }
 
+        // Boots the meta-progression telemetry layer: creates a
+        // JsonProfileDb at persistentDataPath/profile.json, registers
+        // it in ServiceLocator, hydrates from disk, and starts the
+        // first run row. Subsequent OnEntityDied / OnPlayerDied /
+        // OnLevelUp / OnXpGained events flow into the DB through
+        // ProfileTelemetrySystem.
+        private void EnsureProfileTelemetrySystem()
+        {
+            if (FindObjectOfType<Save.ProfileTelemetrySystem>() != null) return;
+
+            // Resolve or create the IProfileDb singleton.
+            if (!ServiceLocator.TryGet<Valkur.Infrastructure.Persistence.Profile.IProfileDb>(out var db))
+            {
+                var json = new Valkur.Infrastructure.Persistence.Profile.JsonProfileDb();
+                json.LoadAll();
+                ServiceLocator.Register<Valkur.Infrastructure.Persistence.Profile.IProfileDb>(json);
+                db = json;
+                Debug.Log($"[GameplaySceneSetup] ProfileDb hydrated from {json.FilePath}.");
+            }
+
+            var go = new GameObject("ProfileTelemetrySystem");
+            var sys = go.AddComponent<Save.ProfileTelemetrySystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            sys.BindDb(db);
+            sys.StartRun(permadeath: GameSettings.Instance.permadeath);
+            Debug.Log("[GameplaySceneSetup] ProfileTelemetrySystem created and run started.");
+        }
+
         private void EnsureNPCRespawnSystem()
         {
             if (FindObjectOfType<NPCRespawnSystem>() != null) return;

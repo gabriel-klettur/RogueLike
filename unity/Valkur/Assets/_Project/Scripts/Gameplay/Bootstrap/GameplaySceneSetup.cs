@@ -90,7 +90,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 38;
+        private const int SetupStepTotal = 39;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -192,6 +192,9 @@ namespace Valkur.Gameplay
 
             EnsureLevelUpSkillPointSystem();
             Report("Inicializando puntos de habilidad por nivel"); yield return null;
+
+            EnsureProfileTelemetrySystem();
+            Report("Inicializando telemetría de progresión"); yield return null;
 
             EnsureNPCRespawnSystem();
             Report("Inicializando respawn de NPCs"); yield return null;
