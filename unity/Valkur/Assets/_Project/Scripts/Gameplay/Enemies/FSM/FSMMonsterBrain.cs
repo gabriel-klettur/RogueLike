@@ -157,6 +157,7 @@ namespace Valkur.Gameplay.FSM
                 ChaseState => DirectionalAnimator.AnimState.Chase,
                 AlertChaseState => DirectionalAnimator.AnimState.Chase,
                 AttackState => DirectionalAnimator.AnimState.Attack,
+                NPCCastState => DirectionalAnimator.AnimState.Cast,
                 DamageState => DirectionalAnimator.AnimState.Damage,
                 UnconsciousState => DirectionalAnimator.AnimState.Death,
                 DeathState => DirectionalAnimator.AnimState.Death,

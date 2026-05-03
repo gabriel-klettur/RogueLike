@@ -95,6 +95,20 @@ namespace Valkur.Gameplay.FSM
                 {
                     float jitter = UnityEngine.Random.Range(-entries[i].periodJitter, entries[i].periodJitter);
                     _entryCooldowns[i] = Mathf.Max(0.5f, entries[i].periodSeconds + jitter);
+
+                    // Push the brain into NPCCastState so movement is blocked
+                    // for the full prepare/channel/cooldown chain. The state
+                    // polls SpellCaster.CurrentPhase and pops back to Chase /
+                    // Attack when the caster returns to Ready. Without this
+                    // hand-off the NPC would chase the player while casting.
+                    if (_brain != null && _brain.FSM != null)
+                        _brain.FSM.ChangeState(new NPCCastState());
+
+                    // Fire only one spell per Update — multiple slots ready in
+                    // the same frame would otherwise stack casts (mana / cooldown
+                    // suppress them on the caster, but the NPCCastState push
+                    // would still flicker).
+                    break;
                 }
             }
         }
@@ -104,11 +118,15 @@ namespace Valkur.Gameplay.FSM
             // Stun
             if (_statusEffects != null && _statusEffects.IsStunned) return true;
 
-            // FSM — don't cast while taking damage or already dead/unconscious
+            // FSM — don't cast while taking damage, dead, or already casting.
+            // The "NPCCast" suppression matters for prepare-heavy spells where
+            // SpellCaster.CurrentPhase != Ready blocks TryCast anyway, but
+            // skipping the whole loop avoids the per-frame allocation of
+            // direction vectors and player-distance checks.
             if (_brain != null)
             {
                 string state = _brain.CurrentStateName;
-                if (state == "Damage" || state == "Death" || state == "Unconscious")
+                if (state == "Damage" || state == "Death" || state == "Unconscious" || state == "NPCCast")
                     return true;
             }
 
