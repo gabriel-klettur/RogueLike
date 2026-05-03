@@ -112,6 +112,16 @@ namespace Valkur.Gameplay.World.Chunks
                         primaryTile:   d.PrimaryTile,
                         secondaryTile: d.SecondaryTile);
 
+                case ProceduralBiomeKind.RoomedChunk:
+                    // Same descriptor wiring: PrimaryTile = floor, SecondaryTile = wall.
+                    // Probabilities default to the biome's built-in 60% room / 25%
+                    // corridor / 15% void mix; designers wanting a denser dungeon
+                    // construct the biome directly.
+                    return new RoomedChunkBiome(
+                        id: d.Slug + ".roomed",
+                        floorTile: d.PrimaryTile,
+                        wallTile:  d.SecondaryTile);
+
                 default:
                     throw new InvalidOperationException(
                         $"ProceduralWorldFactory: unsupported BiomeKind '{d.BiomeKind}'. " +

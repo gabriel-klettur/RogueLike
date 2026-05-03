@@ -22,5 +22,7 @@ namespace Valkur.Data
         Checkerboard = 3,
         /// <summary>Two tiles laid out as concentric Chebyshev rings around the world origin.</summary>
         Ring = 4,
+        /// <summary>Room-based dungeon: each chunk independently rolls Room / Corridor / Void.</summary>
+        RoomedChunk = 5,
     }
 }
