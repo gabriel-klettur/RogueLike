@@ -99,6 +99,7 @@ namespace Valkur.Gameplay.Spells
 
         protected override void OnDestroy()
         {
+            ShutdownPreview();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
@@ -118,6 +119,13 @@ namespace Valkur.Gameplay.Spells
 
             // Middle-mouse camera pan — same UX as every other runtime editor.
             _cameraPan.Tick();
+
+            // Drive the live spell preview when the View panel is open.
+            if (_openDropdowns.Contains("view"))
+            {
+                _previewService?.Tick();
+                TickPreviewInput();
+            }
 
             // Esc: close tutorial first if open, otherwise close the editor.
             if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
@@ -162,6 +170,10 @@ namespace Valkur.Gameplay.Spells
         public void Deactivate()
         {
             _active = false;
+            // Tear down the live preview before hiding the canvas so the camera /
+            // RenderTexture / spawned spell objects are released and audio mute is
+            // restored. Safe to call even if the View panel was never opened.
+            ShutdownPreview();
             if (_root != null) _root.SetActive(false);
             // Reattach the camera follow target if MMB pan had detached it.
             _cameraPan.Reset();

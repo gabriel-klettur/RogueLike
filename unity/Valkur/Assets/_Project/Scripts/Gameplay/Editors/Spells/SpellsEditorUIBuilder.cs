@@ -35,6 +35,7 @@ namespace Valkur.Gameplay.Spells
             public Image            ModesMenuBtnImg;     public TextMeshProUGUI ModesMenuBtnTmp;
             public Image            SpellsMenuBtnImg;    public TextMeshProUGUI SpellsMenuBtnTmp;
             public Image            PropsMenuBtnImg;     public TextMeshProUGUI PropsMenuBtnTmp;
+            public Image            ViewMenuBtnImg;      public TextMeshProUGUI ViewMenuBtnTmp;
             public Image            TutorialMenuBtnImg;  public TextMeshProUGUI TutorialMenuBtnTmp;
             public Image            PerfProbeMenuBtnImg; public TextMeshProUGUI PerfProbeMenuBtnTmp;
 
@@ -42,6 +43,7 @@ namespace Valkur.Gameplay.Spells
             public GameObject       ModesDropdown;     public DraggablePanel ModesPanelDrag;
             public GameObject       SpellsDropdown;    public DraggablePanel SpellsPanelDrag;
             public GameObject       PropsDropdown;     public DraggablePanel PropsPanelDrag;
+            public GameObject       ViewDropdown;      public DraggablePanel ViewPanelDrag;
             public GameObject       TutorialDropdown;  public DraggablePanel TutorialPanelDrag;
 
             // Modes panel — action buttons
@@ -64,6 +66,18 @@ namespace Valkur.Gameplay.Spells
             public Image            AssetPreviewImage;
             public TextMeshProUGUI  AssetNameTmp;
 
+            // View panel — live preview surface
+            public RawImage         ViewRawImage;
+            public RectTransform    ViewPreviewArea;     // RawImage parent (used for hover detection)
+            public TextMeshProUGUI  ViewSpellNameTmp;
+            public TextMeshProUGUI  ViewStatusTmp;
+            public Button           ViewDirNBtn;
+            public Button           ViewDirSBtn;
+            public Button           ViewDirEBtn;
+            public Button           ViewDirWBtn;
+            public Button           ViewZoomInBtn;
+            public Button           ViewZoomOutBtn;
+
             // Tutorial panel
             public TextMeshProUGUI  TutorialStepLabel;
             public TextMeshProUGUI  TutorialBodyTmp;
@@ -84,6 +98,9 @@ namespace Valkur.Gameplay.Spells
         private const float PROPS_H    = 560f + PANEL_HDR_H;
         private const float TUT_W      = 360f;
         private const float TUT_H      = 300f + PANEL_HDR_H;
+        // View (live preview) panel — square preview surface + direction selector + zoom row + status.
+        private const float VIEW_W     = 420f;
+        private const float VIEW_H     = 520f + PANEL_HDR_H;
 
         // ── Menu button widths ────────────────────────────────────────────────────
 
@@ -91,6 +108,7 @@ namespace Valkur.Gameplay.Spells
         private const float MODES_BTN_W    = 70f;
         private const float SPELLS_BTN_W   = 70f;
         private const float PROPS_BTN_W    = 98f;
+        private const float VIEW_BTN_W     = 60f;
         private const float TUTORIAL_BTN_W = 84f;
         private const float HELP_BTN_W     = 40f;
         private const float PERF_BTN_W     = 46f;
@@ -121,6 +139,7 @@ namespace Valkur.Gameplay.Spells
             BuildModesPanel(canvasT, ref refs, onAdd, onRemove, onReload, onUndo, onRedo, onSave);
             BuildSpellsPanel(canvasT, ref refs, onSearchChanged);
             BuildPropertiesPanel(canvasT, ref refs);
+            BuildViewPanel(canvasT, ref refs);
             BuildTutorialPanel(canvasT, ref refs, onTutorialPrev, onTutorialNext, onTutorialClose);
             return refs;
         }
@@ -208,6 +227,8 @@ namespace Valkur.Gameplay.Spells
                 () => onToggle?.Invoke("spells"),   out refs.SpellsMenuBtnTmp);
             refs.PropsMenuBtnImg    = AddMenuBtn(t, "Properties v", PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),    out refs.PropsMenuBtnTmp);
+            refs.ViewMenuBtnImg     = AddMenuBtn(t, "View v",       VIEW_BTN_W,
+                () => onToggle?.Invoke("view"),     out refs.ViewMenuBtnTmp);
             refs.TutorialMenuBtnImg = AddMenuBtn(t, "Tutorial v",   TUTORIAL_BTN_W,
                 () => onToggle?.Invoke("tutorial"), out refs.TutorialMenuBtnTmp);
 
@@ -371,6 +392,121 @@ namespace Valkur.Gameplay.Spells
             refs.PropsTabStrip = tabs;
 
             refs.PropsDropdown.SetActive(false);
+        }
+
+        // ── View Panel (live preview) ─────────────────────────────────────────────
+        // Floating, draggable panel anchored at top-right initially but re-centered
+        // on first open by SpellsRuntimeEditor.Preview. Hosts a square RawImage that
+        // displays the off-screen RenderTexture rendered by SpellPreviewService, plus
+        // a 4-direction selector (N/W/E/S) and a status line.
+
+        private static void BuildViewPanel(Transform canvasT, ref UIRefs refs)
+        {
+            refs.ViewDropdown = MakeDrop("SpellsViewPanel", canvasT,
+                PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
+                VIEW_W, VIEW_H, "View",
+                out var t, out refs.ViewPanelDrag);
+
+            // Re-anchor to canvas center (the panel is a free-floating, draggable
+            // window per the editor design). DraggablePanel offsets in anchor-space
+            // so a center anchor is just as draggable as the original TopLeft one.
+            var rt = (RectTransform)refs.ViewDropdown.transform;
+            rt.anchorMin        = new Vector2(0.5f, 0.5f);
+            rt.anchorMax        = new Vector2(0.5f, 0.5f);
+            rt.pivot            = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = new Vector2(VIEW_W, VIEW_H);
+
+            // Spell name header (matches Properties Asset Name styling).
+            var nameGo = CreateUI("SpellName", t);
+            nameGo.AddComponent<LayoutElement>().preferredHeight = 22f;
+            var nameTmp = nameGo.AddComponent<TextMeshProUGUI>();
+            nameTmp.text      = "(no spell selected)";
+            nameTmp.fontSize  = 13f;
+            nameTmp.fontStyle = FontStyles.Bold;
+            nameTmp.alignment = TextAlignmentOptions.Center;
+            nameTmp.color     = ACCENT;
+            refs.ViewSpellNameTmp = nameTmp;
+
+            // Square preview surface — RawImage bound to the SpellPreviewService RT.
+            var previewWrap = CreateUI("PreviewWrap", t);
+            previewWrap.AddComponent<LayoutElement>().preferredHeight = 384f;
+            var previewLayout = previewWrap.AddComponent<HorizontalLayoutGroup>();
+            previewLayout.childAlignment        = TextAnchor.MiddleCenter;
+            previewLayout.childForceExpandWidth  = false;
+            previewLayout.childForceExpandHeight = false;
+            previewLayout.childControlWidth      = true;
+            previewLayout.childControlHeight     = true;
+
+            var previewGo = CreateUI("Preview", previewWrap.transform);
+            var previewLe = previewGo.AddComponent<LayoutElement>();
+            previewLe.preferredWidth  = 384f;
+            previewLe.preferredHeight = 384f;
+            refs.ViewPreviewArea = (RectTransform)previewGo.transform;
+
+            // Background + raycast target ON so the area receives pointer-enter / exit
+            // events (the runtime editor adds a hover-probe component to it that drives
+            // mouse-wheel zoom).
+            var bg           = previewGo.AddComponent<Image>();
+            bg.color         = EditorUIHelpers.BG_SURFACE;
+            bg.raycastTarget = true;
+
+            var rawGo = CreateUI("RT", previewGo.transform);
+            EditorUIHelpers.StretchFill(rawGo);
+            var raw           = rawGo.AddComponent<RawImage>();
+            raw.color         = Color.white;
+            raw.raycastTarget = false;
+            refs.ViewRawImage = raw;
+
+            // Direction selector — 4 buttons in a single row [N | W | E | S].
+            var dirRow = CreateUI("DirRow", t);
+            dirRow.AddComponent<LayoutElement>().preferredHeight = 32f;
+            var dirHlg = dirRow.AddComponent<HorizontalLayoutGroup>();
+            dirHlg.spacing                = 6f;
+            dirHlg.childForceExpandWidth  = true;
+            dirHlg.childForceExpandHeight = true;
+            dirHlg.childControlWidth      = true;
+            dirHlg.childControlHeight     = true;
+
+            refs.ViewDirNBtn = EditorUIHelpers.MakeButton(dirRow.transform, "N", null, 28f, 11f);
+            refs.ViewDirWBtn = EditorUIHelpers.MakeButton(dirRow.transform, "W", null, 28f, 11f);
+            refs.ViewDirEBtn = EditorUIHelpers.MakeButton(dirRow.transform, "E", null, 28f, 11f);
+            refs.ViewDirSBtn = EditorUIHelpers.MakeButton(dirRow.transform, "S", null, 28f, 11f);
+
+            // Zoom row — [-]  [+]  + tooltip-ish label between them.
+            var zoomRow = CreateUI("ZoomRow", t);
+            zoomRow.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var zoomHlg = zoomRow.AddComponent<HorizontalLayoutGroup>();
+            zoomHlg.spacing                = 6f;
+            zoomHlg.childForceExpandWidth  = true;
+            zoomHlg.childForceExpandHeight = true;
+            zoomHlg.childControlWidth      = true;
+            zoomHlg.childControlHeight     = true;
+
+            refs.ViewZoomOutBtn = EditorUIHelpers.MakeButton(zoomRow.transform, "-",   null, 26f, 14f);
+            // Inert "Zoom" label between the two buttons so the row reads as a control,
+            // not just two random glyphs.
+            var zoomLblGo = CreateUI("ZoomLbl", zoomRow.transform);
+            zoomLblGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var zoomLbl       = zoomLblGo.AddComponent<TextMeshProUGUI>();
+            zoomLbl.text      = "ZOOM  (mouse wheel over preview)";
+            zoomLbl.fontSize  = 10f;
+            zoomLbl.alignment = TextAlignmentOptions.Center;
+            zoomLbl.color     = TEXT_MUTED;
+            refs.ViewZoomInBtn  = EditorUIHelpers.MakeButton(zoomRow.transform, "+",   null, 26f, 14f);
+
+            // Status line.
+            var statusGo = CreateUI("ViewStatus", t);
+            statusGo.AddComponent<LayoutElement>().preferredHeight = 20f;
+            var statusTmp = statusGo.AddComponent<TextMeshProUGUI>();
+            statusTmp.text      = "idle";
+            statusTmp.fontSize  = 11f;
+            statusTmp.fontStyle = FontStyles.Italic;
+            statusTmp.alignment = TextAlignmentOptions.Center;
+            statusTmp.color     = TEXT_MUTED;
+            refs.ViewStatusTmp = statusTmp;
+
+            refs.ViewDropdown.SetActive(false);
         }
 
         // ── Tutorial Panel ────────────────────────────────────────────────────────

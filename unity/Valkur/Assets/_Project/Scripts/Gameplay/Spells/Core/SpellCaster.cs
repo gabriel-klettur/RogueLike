@@ -69,6 +69,17 @@ namespace Valkur.Gameplay.Spells
         public float PhaseTimer => _phaseTimer;
         public int SlotCount => spellSlots != null ? spellSlots.Length : 0;
 
+        /// <summary>Read-only access to the projectile prefab for editor-side preview tools.</summary>
+        public GameObject ProjectilePrefab => projectilePrefab;
+
+        /// <summary>
+        /// Look up the executor strategy for a SpellType. Used by the in-game Spells
+        /// editor's live-preview to fire a spell synthetically (bypassing mana cost,
+        /// cooldown FSM, and SFX dispatch). Returns null if no executor is registered.
+        /// </summary>
+        internal static ISpellExecutor GetExecutor(SpellType type)
+            => Executors.TryGetValue(type, out var e) ? e : null;
+
         public string GetSlotName(int slot)
         {
             if (spellSlots == null || slot < 0 || slot >= spellSlots.Length || spellSlots[slot] == null) return "-";

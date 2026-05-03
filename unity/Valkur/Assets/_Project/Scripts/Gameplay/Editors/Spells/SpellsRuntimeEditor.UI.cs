@@ -43,7 +43,11 @@ namespace Valkur.Gameplay.Spells
             WireOnClose(_uiRefs.ModesPanelDrag,    "modes");
             WireOnClose(_uiRefs.SpellsPanelDrag,   "spells");
             WireOnClose(_uiRefs.PropsPanelDrag,    "props");
+            WireOnClose(_uiRefs.ViewPanelDrag,     "view");
             WireOnClose(_uiRefs.TutorialPanelDrag, "tutorial");
+
+            // Wire the View panel's direction-selector callbacks.
+            WireViewPanel();
 
             RefreshMenuBtnHighlights();
         }
@@ -54,6 +58,7 @@ namespace Valkur.Gameplay.Spells
             drag.OnClose = () =>
             {
                 _openDropdowns.Remove(key);
+                if (key == "view") OnViewPanelClosed();
                 RefreshMenuBtnHighlights();
             };
         }
@@ -75,12 +80,14 @@ namespace Valkur.Gameplay.Spells
             {
                 SetDropdownOpen(name, false);
                 _openDropdowns.Remove(name);
+                if (name == "view") OnViewPanelClosed();
             }
             else
             {
                 SetDropdownOpen(name, true);
                 _openDropdowns.Add(name);
                 if (name == "tutorial") RefreshTutorial();
+                if (name == "view")     OnViewPanelOpened();
             }
             RefreshMenuBtnHighlights();
         }
@@ -98,9 +105,11 @@ namespace Valkur.Gameplay.Spells
 
         private void CloseAllPanels()
         {
-            foreach (var n in new[] { "modes", "spells", "props", "tutorial" })
+            bool viewWasOpen = _openDropdowns.Contains("view");
+            foreach (var n in new[] { "modes", "spells", "props", "view", "tutorial" })
                 SetDropdownOpen(n, false);
             _openDropdowns.Clear();
+            if (viewWasOpen) OnViewPanelClosed();
             RefreshMenuBtnHighlights();
         }
 
@@ -111,6 +120,7 @@ namespace Valkur.Gameplay.Spells
                 "modes"    => _uiRefs.ModesDropdown,
                 "spells"   => _uiRefs.SpellsDropdown,
                 "props"    => _uiRefs.PropsDropdown,
+                "view"     => _uiRefs.ViewDropdown,
                 "tutorial" => _uiRefs.TutorialDropdown,
                 _          => null
             };
@@ -125,6 +135,8 @@ namespace Valkur.Gameplay.Spells
                 _uiRefs.SpellsMenuBtnImg,   _uiRefs.SpellsMenuBtnTmp,   _openDropdowns.Contains("spells"));
             SpellsEditorUIBuilder.ApplyMenuBtnStyle(
                 _uiRefs.PropsMenuBtnImg,    _uiRefs.PropsMenuBtnTmp,    _openDropdowns.Contains("props"));
+            SpellsEditorUIBuilder.ApplyMenuBtnStyle(
+                _uiRefs.ViewMenuBtnImg,     _uiRefs.ViewMenuBtnTmp,     _openDropdowns.Contains("view"));
             SpellsEditorUIBuilder.ApplyMenuBtnStyle(
                 _uiRefs.TutorialMenuBtnImg, _uiRefs.TutorialMenuBtnTmp, _openDropdowns.Contains("tutorial"));
         }
