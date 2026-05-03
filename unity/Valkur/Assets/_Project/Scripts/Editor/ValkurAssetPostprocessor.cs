@@ -100,6 +100,37 @@ namespace Valkur.Editor
             {
                 importer.spritePixelsPerUnit = DEFAULT_PPU;
             }
+
+            // Per-platform overrides: Standalone / WebGL / iOS / Android default
+            // to compressed textures regardless of the Default platform setting.
+            // Pixel art with compression artefacts is the single highest-impact
+            // visual regression in 2D; 12k+ tile sprites on a Standalone build
+            // would otherwise ship compressed even though the postprocessor
+            // wrote Uncompressed to the Default platform. Forcing the platform
+            // settings keeps the policy durable across all build targets.
+            ApplyUncompressedPlatformOverride(importer, "Standalone");
+            ApplyUncompressedPlatformOverride(importer, "WebGL");
+            ApplyUncompressedPlatformOverride(importer, "Android");
+            ApplyUncompressedPlatformOverride(importer, "iPhone");
+        }
+
+        // Forces the per-platform texture import block to "Override = true" with
+        // Uncompressed format, mirroring the Default-platform setting. Idempotent:
+        // re-runs after a manual platform override are silent no-ops.
+        private static void ApplyUncompressedPlatformOverride(TextureImporter importer, string platform)
+        {
+            var ps = importer.GetPlatformTextureSettings(platform);
+            if (ps == null) return;
+
+            // Skip work if already in the desired state.
+            if (ps.overridden &&
+                ps.textureCompression == TextureImporterCompression.Uncompressed)
+                return;
+
+            ps.overridden          = true;
+            ps.textureCompression  = TextureImporterCompression.Uncompressed;
+            ps.format              = TextureImporterFormat.Automatic;
+            importer.SetPlatformTextureSettings(ps);
         }
 
         private static void SetPivot(TextureImporter importer, Vector2 pivot)

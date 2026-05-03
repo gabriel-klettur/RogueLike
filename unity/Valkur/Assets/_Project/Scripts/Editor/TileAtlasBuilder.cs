@@ -19,7 +19,13 @@ namespace Valkur.Editor
     public static class TileAtlasBuilder
     {
         private const string ATLAS_PATH = "Assets/_Project/Art/Tiles/Atlas_Tiles.spriteatlas";
-        private const string TILES_READY_FOLDER = "Assets/_Project/Art/Tiles/ready";
+        // The historic 'Art/Tiles/ready' folder was a Python-era staging area
+        // that no longer exists; the canonical runtime tiles live under
+        // Resources/Tiles (loaded by TileCatalog.BuildFromResources at boot).
+        // Pointing the atlas builder at Resources/Tiles lets the menu item
+        // produce a working atlas of the 389 runtime tiles instead of failing
+        // silently with "folder not found".
+        private const string TILES_READY_FOLDER = "Assets/_Project/Resources/Tiles";
 
         [MenuItem("Valkur/Tiles/Build Tile Atlas")]
         public static void BuildTileAtlas()
