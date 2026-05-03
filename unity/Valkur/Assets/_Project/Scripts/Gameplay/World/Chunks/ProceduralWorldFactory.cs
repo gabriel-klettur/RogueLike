@@ -122,6 +122,16 @@ namespace Valkur.Gameplay.World.Chunks
                         floorTile: d.PrimaryTile,
                         wallTile:  d.SecondaryTile);
 
+                case ProceduralBiomeKind.GraphRoom:
+                    // World-scale dungeon. Supercell size and room probability
+                    // use the biome's defaults (32-tile supercells, 60% room
+                    // density). Designers tuning a specific dungeon construct
+                    // the biome directly; the descriptor stays terse.
+                    return new GraphRoomBiome(
+                        id: d.Slug + ".graph_room",
+                        floorTile: d.PrimaryTile,
+                        wallTile:  d.SecondaryTile);
+
                 default:
                     throw new InvalidOperationException(
                         $"ProceduralWorldFactory: unsupported BiomeKind '{d.BiomeKind}'. " +

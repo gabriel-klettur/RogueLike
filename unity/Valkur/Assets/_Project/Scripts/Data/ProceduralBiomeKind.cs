@@ -24,5 +24,7 @@ namespace Valkur.Data
         Ring = 4,
         /// <summary>Room-based dungeon: each chunk independently rolls Room / Corridor / Void.</summary>
         RoomedChunk = 5,
+        /// <summary>World-graph dungeon: rooms placed on a supercell grid with carved corridors connecting neighbours.</summary>
+        GraphRoom = 6,
     }
 }
