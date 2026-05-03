@@ -45,10 +45,12 @@ namespace Valkur.Gameplay.FSM
         private SpellCaster _caster;
         private StatusEffectManager _statusEffects;
         private FSMMonsterBrain _brain;
-        private readonly float[] _cooldowns;
 
         // Maintain cooldown array sized per entries — backing array allocated in Awake
         private float[] _entryCooldowns;
+
+        /// <summary>Number of configured spell entries — used by tests and bootstrap.</summary>
+        public int EntryCount => entries != null ? entries.Count : 0;
 
         private void Awake()
         {
@@ -127,5 +129,19 @@ namespace Valkur.Gameplay.FSM
             Array.Resize(ref _entryCooldowns, entries.Count);
             _entryCooldowns[entries.Count - 1] = UnityEngine.Random.Range(0f, periodSeconds);
         }
+
+        /// <summary>
+        /// Wipe all entries (and their cooldowns). Used by EntitySetup to overwrite
+        /// any inspector-authored prefab defaults with the data-driven list from
+        /// <see cref="MonsterDefinition.autoCastList"/>.
+        /// </summary>
+        public void Clear()
+        {
+            entries.Clear();
+            _entryCooldowns = Array.Empty<float>();
+        }
+
+        /// <summary>Toggle casting on/off without losing the configured entries.</summary>
+        public void SetCastingEnabled(bool enabled) => castingEnabled = enabled;
     }
 }

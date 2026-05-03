@@ -40,7 +40,12 @@ namespace Valkur.Gameplay
                 _fireballPrefab.AddComponent<FireballVisual>();
                 _fireballPrefab.layer = ProjectileLayer;
 
-                Object.DontDestroyOnLoad(_fireballPrefab);
+                // DontDestroyOnLoad is play-mode only; in EditMode tests
+                // (e.g. MonsterAutoCastWiringTests.ConfigureMonsterAutoCast)
+                // the call throws InvalidOperationException — the prefab
+                // still survives the test scope, which is enough.
+                if (Application.isPlaying)
+                    Object.DontDestroyOnLoad(_fireballPrefab);
             }
 
             caster.SetProjectilePrefab(_fireballPrefab);

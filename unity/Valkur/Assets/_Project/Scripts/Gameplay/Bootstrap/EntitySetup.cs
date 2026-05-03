@@ -85,6 +85,8 @@ namespace Valkur.Gameplay
             if (go.GetComponent<StatusEffectManager>() == null)
                 go.AddComponent<StatusEffectManager>();
 
+            ConfigureMonsterAutoCast(go, def);
+
             // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency
             ConfigureMinimapDot(go, "Monster", new Color(0.9f, 0.2f, 0.2f, 1f));
 
@@ -200,6 +202,74 @@ namespace Valkur.Gameplay
                 caster.SetSpell(0, fireball);
 
             Debug.Log($"[EntitySetup] Registered {registered}/{allSpells.Length} spells in spell book.");
+        }
+
+        // ── Monster auto-cast wiring ────────────────────────────────────────────
+        // Reads MonsterDefinition.autoCast + autoCastList and:
+        //   1. Ensures a SpellCaster + NPCAutoCast on the monster GameObject.
+        //   2. Looks up each spell key in the SpellCatalog (set on the player path
+        //      via SetSpellCatalog) — silently skips unknown keys with a warning.
+        //   3. Drops the resolved SpellDefinitions into SpellCaster slots 0..N-1
+        //      (capped at SlotCount; everything above lands only in the spell book).
+        //   4. Wipes any inspector-authored NPCAutoCast entries and replaces them
+        //      with one entry per registered slot using the default period/jitter.
+        //
+        // Default period 3 s + jitter 0.5 s mirrors the Python AutoCastComponent
+        // legacy single-entry path (period_s = 2.0 with similar jitter); 3 s is
+        // slightly more conservative for first-port balancing and matches the
+        // pre-existing inspector default on NPCAutoCast.
+        //
+        // No-op for monsters where autoCast is false or autoCastList is empty,
+        // so existing melee-only NPCs are not affected.
+        internal static void ConfigureMonsterAutoCast(GameObject go, MonsterDefinition def)
+        {
+            if (def == null || !def.autoCast) return;
+            if (def.autoCastList == null || def.autoCastList.Length == 0) return;
+
+            if (_spellCatalog == null)
+            {
+                Debug.LogWarning($"[EntitySetup] Monster '{def.monsterKey}' has autoCast enabled " +
+                                 "but no SpellCatalog was injected via SetSpellCatalog. Skipping.");
+                return;
+            }
+
+            var caster = go.GetComponent<SpellCaster>();
+            if (caster == null) caster = go.AddComponent<SpellCaster>();
+            caster.SetTargetLayers(1 << PlayerLayer);
+            ProjectilePrefabFactory.EnsureFireballPrefab(caster);
+
+            var auto = go.GetComponent<NPCAutoCast>();
+            if (auto == null) auto = go.AddComponent<NPCAutoCast>();
+            auto.Clear();
+
+            int registered = 0;
+            int slotCount  = caster.SlotCount;
+            for (int i = 0; i < def.autoCastList.Length; i++)
+            {
+                string key = def.autoCastList[i];
+                if (string.IsNullOrWhiteSpace(key)) continue;
+
+                if (!_spellCatalog.TryGet(key, out var spell) || spell == null)
+                {
+                    Debug.LogWarning($"[EntitySetup] Monster '{def.monsterKey}' references unknown " +
+                                     $"spell '{key}' in autoCastList — skipping.");
+                    continue;
+                }
+
+                // Always register in the spell book so TryCastByKey works even when
+                // the spell falls outside the slot count.
+                caster.RegisterSpell(spell.spellKey, spell);
+
+                if (registered < slotCount)
+                {
+                    caster.SetSpell(registered, spell);
+                    auto.AddEntry(registered, periodSeconds: 3f, jitter: 0.5f);
+                    registered++;
+                }
+            }
+
+            Debug.Log($"[EntitySetup] Monster '{def.monsterKey}' auto-cast: " +
+                      $"{registered}/{def.autoCastList.Length} spell(s) wired.");
         }
 
     }
