@@ -64,9 +64,10 @@ namespace Valkur.Gameplay.HUD
             if (manager != null) BindManager(manager);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             UnbindManager();
+            base.OnDestroy();
         }
 
         // ── Internal ───────────────────────────────────────────────────────────

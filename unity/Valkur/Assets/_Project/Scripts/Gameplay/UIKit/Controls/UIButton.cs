@@ -27,7 +27,7 @@ namespace Valkur.UIKit
             c.pressedColor     = UITheme.BTN_ACTIVE;
             btn.colors = c;
             btn.targetGraphic = img;
-            btn.onClick.AddListener(onClick);
+            if (onClick != null) btn.onClick.AddListener(onClick);
             UILabel.AddCenteredText(go.transform, label, fontSize, FontStyles.Bold, UITheme.TEXT_PRIMARY);
             return btn;
         }

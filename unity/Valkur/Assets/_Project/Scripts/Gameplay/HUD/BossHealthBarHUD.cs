@@ -173,9 +173,10 @@ namespace Valkur.Gameplay.HUD
             EnsureBuilt();
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             UnbindCurrent();
+            base.OnDestroy();
         }
     }
 }
