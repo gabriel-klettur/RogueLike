@@ -147,6 +147,8 @@ namespace Valkur.Gameplay
                 case "spell":    CmdSpell(parts); break;
                 case "spells":   CmdSpellList(); break;
                 case "spellinfo":CmdSpellInfo(parts); break;
+                case "world":    CmdWorld(parts); break;
+                case "worlds":   CmdWorldList(); break;
                 default:
                     Log($"Unknown command: '{parts[0]}'. Type 'help' for a list.");
                     break;
@@ -166,6 +168,8 @@ namespace Valkur.Gameplay
             Log("  spell <spell_key>   - cast a spell");
             Log("  spells              - list all registered spells");
             Log("  spellinfo <key>     - show spell details");
+            Log("  world <slug>        - swap to a different world by descriptor slug");
+            Log("  worlds              - list available worlds");
             Log("  clear               - clear log");
         }
 

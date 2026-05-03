@@ -101,6 +101,70 @@ namespace Valkur.Gameplay
             Log($"Spawned {def.displayName} @ ({spawnPos.x:F1}, {spawnPos.y:F1}).");
         }
 
+        // ── World swap commands (Wave C.1) ──────────────────────────────────────
+        // The IWorldManager + WorldDescriptor + WorldPortal stack already
+        // shipped in Phase 1; these console commands let the player jump
+        // between worlds without needing a portal placed in the scene. Useful
+        // for testing the Phase 2 procedural pipeline (world proc_demo)
+        // without leaving the gameplay scene.
+
+        private void CmdWorld(string[] parts)
+        {
+            if (parts.Length < 2)
+            {
+                Log("Usage: world <slug>  (e.g. world proc_demo)");
+                return;
+            }
+
+            string slug = parts[1];
+            var manager = ServiceLocator.Get<World.Worlds.IWorldManager>();
+            if (manager == null) { Log("No IWorldManager registered."); return; }
+
+            var descriptor = FindWorldDescriptorBySlug(slug);
+            if (descriptor == null)
+            {
+                Log($"World '{slug}' not found. Run 'worlds' for the list.");
+                return;
+            }
+
+            Log($"Switching to world '{slug}'...");
+            try
+            {
+                manager.LoadAndActivateAsync(descriptor).GetAwaiter().GetResult();
+                Log($"Active world now: {manager.Active?.WorldId.Slug ?? "<null>"}");
+            }
+            catch (System.Exception ex)
+            {
+                Log($"World swap failed: {ex.Message}");
+            }
+        }
+
+        private void CmdWorldList()
+        {
+            var allDescriptors = Resources.FindObjectsOfTypeAll<WorldDescriptor>();
+            if (allDescriptors == null || allDescriptors.Length == 0)
+            {
+                Log("No WorldDescriptor assets loaded. Open at least one " +
+                    "scene/prefab that references the descriptors first.");
+                return;
+            }
+            Log($"Available worlds ({allDescriptors.Length}):");
+            foreach (var d in allDescriptors)
+                Log($"  - {d.Slug}: {d.DisplayName} " +
+                    $"(streaming={(d.UseChunkStreaming ? "yes" : "no")})");
+        }
+
+        private static WorldDescriptor FindWorldDescriptorBySlug(string slug)
+        {
+            var all = Resources.FindObjectsOfTypeAll<WorldDescriptor>();
+            foreach (var d in all)
+            {
+                if (string.Equals(d.Slug, slug, StringComparison.OrdinalIgnoreCase))
+                    return d;
+            }
+            return null;
+        }
+
         private void Log(string msg)
         {
             _log.Add(msg);
