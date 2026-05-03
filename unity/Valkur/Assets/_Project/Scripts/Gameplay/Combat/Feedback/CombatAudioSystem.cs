@@ -23,13 +23,21 @@ namespace Valkur.Gameplay.Combat
         private void OnEnable()
         {
             GameEvents.OnEntityDamaged += OnEntityDamaged;
-            GameEvents.OnHitDealt += OnHitDealt;
+            GameEvents.OnHitDealt      += OnHitDealt;
+            GameEvents.OnEntityDied    += OnEntityDied;
+            GameEvents.OnPlayerDied    += OnPlayerDied;
+            GameEvents.OnLevelUp       += OnLevelUp;
+            GameEvents.OnItemPickedUp  += OnItemPickedUp;
         }
 
         private void OnDisable()
         {
             GameEvents.OnEntityDamaged -= OnEntityDamaged;
-            GameEvents.OnHitDealt -= OnHitDealt;
+            GameEvents.OnHitDealt      -= OnHitDealt;
+            GameEvents.OnEntityDied    -= OnEntityDied;
+            GameEvents.OnPlayerDied    -= OnPlayerDied;
+            GameEvents.OnLevelUp       -= OnLevelUp;
+            GameEvents.OnItemPickedUp  -= OnItemPickedUp;
         }
 
         private IAudioService ResolveAudio()
@@ -93,6 +101,56 @@ namespace Valkur.Gameplay.Combat
                         audio.PlaySfxRandom(attackSfx);
                 }
             }
+        }
+
+        // Lifecycle audio added in Wave B. Each handler is defensive: missing
+        // config or empty SFX arrays silently skip rather than logging — the
+        // catalog populates these gradually, and the warning would spam during
+        // bring-up of new monster types.
+
+        private void OnEntityDied(GameObject victim, GameObject killer)
+        {
+            if (_config == null || victim == null) return;
+            // Player death is handled by OnPlayerDied (separate event with
+            // distinct sting), so skip the NPC pool when the victim is the
+            // player to avoid playing both sounds on the same frame.
+            if (victim.CompareTag("Player")) return;
+
+            var audio = ResolveAudio();
+            if (audio == null) return;
+
+            if (_config.NpcDeathSfxIds != null && _config.NpcDeathSfxIds.Length > 0)
+                audio.PlaySfxRandom(_config.NpcDeathSfxIds);
+        }
+
+        private void OnPlayerDied()
+        {
+            if (_config == null) return;
+            var audio = ResolveAudio();
+            if (audio == null) return;
+
+            if (_config.PlayerDeathSfxIds != null && _config.PlayerDeathSfxIds.Length > 0)
+                audio.PlaySfxRandom(_config.PlayerDeathSfxIds);
+        }
+
+        private void OnLevelUp(GameObject entity, int newLevel)
+        {
+            if (_config == null) return;
+            var audio = ResolveAudio();
+            if (audio == null) return;
+
+            if (!string.IsNullOrEmpty(_config.LevelUpSfxId))
+                audio.PlaySfxById(_config.LevelUpSfxId);
+        }
+
+        private void OnItemPickedUp(GameObject collector, string itemName, int quantity)
+        {
+            if (_config == null) return;
+            var audio = ResolveAudio();
+            if (audio == null) return;
+
+            if (!string.IsNullOrEmpty(_config.ItemPickupSfxId))
+                audio.PlaySfxById(_config.ItemPickupSfxId);
         }
     }
 }

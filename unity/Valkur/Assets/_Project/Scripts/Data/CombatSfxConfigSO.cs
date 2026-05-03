@@ -38,11 +38,28 @@ namespace Valkur.Data
         [Tooltip("SFX ID for fireball cast")]
         [SerializeField] private string fireballSfxId = "fireball";
 
+        [Header("Lifecycle SFX (Wave B audio coverage)")]
+        [Tooltip("SFX IDs played when an NPC dies. Random pick if multiple.")]
+        [SerializeField] private string[] npcDeathSfxIds = Array.Empty<string>();
+
+        [Tooltip("SFX IDs played when the player dies (e.g. game-over sting).")]
+        [SerializeField] private string[] playerDeathSfxIds = Array.Empty<string>();
+
+        [Tooltip("SFX ID played on level-up fanfare.")]
+        [SerializeField] private string levelUpSfxId = string.Empty;
+
+        [Tooltip("SFX ID played when the player picks up any item (coin, potion, gear).")]
+        [SerializeField] private string itemPickupSfxId = string.Empty;
+
         // ── Public API ───────────────────────────────────────────────────────
 
         public string[] PlayerDamageSfxIds => playerDamageSfxIds;
         public string[] SlashSfxIds        => slashSfxIds;
         public string FireballSfxId        => fireballSfxId;
+        public string[] NpcDeathSfxIds     => npcDeathSfxIds;
+        public string[] PlayerDeathSfxIds  => playerDeathSfxIds;
+        public string LevelUpSfxId         => levelUpSfxId;
+        public string ItemPickupSfxId      => itemPickupSfxId;
 
         public string[] GetNpcDamageSfx(string archetype)
         {
@@ -65,6 +82,10 @@ namespace Valkur.Data
         public void EditorSetNpcArchetypes(ArchetypeSfxMap[] maps) { npcArchetypes = maps; }
         public void EditorSetSlashSfx(string[] ids) { slashSfxIds = ids; }
         public void EditorSetFireballSfx(string id) { fireballSfxId = id; }
+        public void EditorSetNpcDeath(string[] ids) { npcDeathSfxIds = ids; }
+        public void EditorSetPlayerDeath(string[] ids) { playerDeathSfxIds = ids; }
+        public void EditorSetLevelUp(string id) { levelUpSfxId = id; }
+        public void EditorSetItemPickup(string id) { itemPickupSfxId = id; }
 #endif
     }
 }
