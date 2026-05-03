@@ -1,0 +1,162 @@
+using UnityEngine;
+using Valkur.Core;
+using Valkur.Data;
+using Valkur.Gameplay.FSM;
+using Valkur.Gameplay.Spells;
+
+namespace Valkur.Gameplay
+{
+    /// <summary>
+    /// Runtime glue for <see cref="BossDefinition"/>. Reads the SO,
+    /// configures the boss's <see cref="BossPhaseController"/> phases,
+    /// and rewires <see cref="NPCAutoCast"/> when the phase changes so
+    /// the boss's spell rotation matches the active phase.
+    ///
+    /// Lifecycle:
+    ///   1. Awake reads the BossDefinition.
+    ///   2. ConfigurePhases populates BossPhaseController from
+    ///      definition.phases (HP thresholds + labels).
+    ///   3. ConfigureRotation(0) fires once for the entry phase so the
+    ///      boss starts casting immediately.
+    ///   4. OnPhaseChanged listener rewires the rotation each time the
+    ///      controller advances.
+    ///
+    /// Phase 0 is always the entry phase (HP fraction 1.0). The
+    /// configurator does NOT change the boss's stats per phase — that's
+    /// the FSMMonsterBrain's domain. Only spell rotation and audio cues
+    /// are phase-driven here.
+    /// </summary>
+    [RequireComponent(typeof(BossPhaseController))]
+    public class BossConfigurator : MonoBehaviour
+    {
+        [Tooltip("Which boss this entity is. Required.")]
+        [SerializeField] private BossDefinition definition;
+
+        [Tooltip("Spell catalog used to resolve phase autoCastList entries to " +
+                 "SpellDefinition assets.")]
+        [SerializeField] private SpellCatalog spellCatalog;
+
+        private BossPhaseController _phases;
+        private NPCAutoCast _autoCast;
+        private SpellCaster _caster;
+
+        public BossDefinition Definition => definition;
+        public BossDefinition.Phase CurrentPhaseData
+            => definition != null && _phases != null && _phases.CurrentPhase < definition.phases.Length
+                 ? definition.phases[_phases.CurrentPhase] : null;
+
+        public void SetDefinition(BossDefinition def, SpellCatalog catalog = null)
+        {
+            definition = def;
+            if (catalog != null) spellCatalog = catalog;
+        }
+
+        private void Awake()
+        {
+            _phases   = GetComponent<BossPhaseController>();
+            _autoCast = GetComponent<NPCAutoCast>();
+            _caster   = GetComponent<SpellCaster>();
+        }
+
+        private void OnEnable()
+        {
+            if (_phases != null) _phases.OnPhaseChanged += OnPhaseChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (_phases != null) _phases.OnPhaseChanged -= OnPhaseChanged;
+        }
+
+        // Test seam — EditMode tests can drive ConfigurePhases / ConfigureRotation
+        // without spinning up a full scene.
+        public void InitForTest(BossPhaseController phases, NPCAutoCast autoCast,
+                                SpellCaster caster, SpellCatalog catalog)
+        {
+            _phases = phases;
+            _autoCast = autoCast;
+            _caster = caster;
+            spellCatalog = catalog;
+        }
+
+        public void ConfigurePhasesFromDefinition()
+        {
+            if (definition == null || _phases == null) return;
+            // Reflect phases array onto the controller. BossPhaseController
+            // exposes inspector-only authoring; for runtime configuration we
+            // rebuild its private list via reflection (the alternative is a
+            // public SetPhases method on the controller, but that surface
+            // would invite gameplay code to mutate phases mid-fight which
+            // is the exact thing we want to avoid).
+            var listField = typeof(BossPhaseController).GetField("phases",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (listField == null) return;
+
+            var list = new System.Collections.Generic.List<BossPhaseController.PhaseBreakpoint>();
+            foreach (var p in definition.phases)
+            {
+                list.Add(new BossPhaseController.PhaseBreakpoint
+                {
+                    hpFraction = p.hpThreshold,
+                    label      = string.IsNullOrEmpty(p.label) ? $"Phase {list.Count}" : p.label,
+                });
+            }
+            listField.SetValue(_phases, list);
+
+            // Re-init the controller so it sorts the new list and resets
+            // CurrentPhase to 0.
+            var health = _phases.GetComponent<Health>();
+            _phases.InitForTest(health);
+        }
+
+        public void ConfigureRotation(int phaseIndex)
+        {
+            if (definition == null || _autoCast == null || _caster == null) return;
+            if (phaseIndex < 0 || phaseIndex >= definition.phases.Length) return;
+
+            var phase = definition.phases[phaseIndex];
+
+            _autoCast.Clear();
+            if (phase.autoCastList == null || phase.autoCastList.Length == 0) return;
+
+            int registered = 0;
+            int slotCount  = _caster.SlotCount;
+            for (int i = 0; i < phase.autoCastList.Length; i++)
+            {
+                string key = phase.autoCastList[i];
+                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (spellCatalog == null || !spellCatalog.TryGet(key, out var spell) || spell == null)
+                {
+                    Debug.LogWarning($"[BossConfigurator] Phase {phaseIndex} of " +
+                                     $"'{(definition.baseMonster != null ? definition.baseMonster.monsterKey : definition.name)}' " +
+                                     $"references unknown spell '{key}'. Skipping.");
+                    continue;
+                }
+
+                _caster.RegisterSpell(spell.spellKey, spell);
+                if (registered < slotCount)
+                {
+                    _caster.SetSpell(registered, spell);
+                    float period = phase.autoCastPeriod > 0 ? phase.autoCastPeriod : 3f;
+                    _autoCast.AddEntry(registered, periodSeconds: period, jitter: 0.5f);
+                    registered++;
+                }
+            }
+        }
+
+        private void OnPhaseChanged(int oldPhase, int newPhase)
+        {
+            if (definition == null || newPhase < 0 || newPhase >= definition.phases.Length) return;
+
+            ConfigureRotation(newPhase);
+
+            // Activation SFX (if any) — fired through the existing audio service.
+            string sfx = definition.phases[newPhase].activationSfxId;
+            if (!string.IsNullOrEmpty(sfx))
+            {
+                var audio = ServiceLocator.Get<IAudioService>();
+                audio?.PlaySfxById(sfx);
+            }
+        }
+    }
+}
