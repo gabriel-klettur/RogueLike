@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Core.Input;
-using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
 
@@ -14,7 +13,11 @@ namespace Valkur.Gameplay
 
         private void Update()
         {
-            if (_health.IsDead) return;
+            // Spirit-form players still control movement and facing, but skip
+            // combat entirely. A truly-dead player (HP=0 outside the spirit
+            // flow — i.e. a future final-death state) early-exits as before.
+            bool isSpirit = IsSpirit;
+            if (_health.IsDead && !isSpirit) return;
 
             // Hot-reload guard: with Domain Reload off, Unity serialises private
             // InputAction fields and restores them as zombies (bindings.Count == 0,
@@ -39,12 +42,16 @@ namespace Valkur.Gameplay
 
             if (isStunned || inputSuspended) return;
 
+            // Spirits can move but cannot attack, dash, or cast.
+            if (isSpirit) return;
+
             PollCombatActions();
         }
 
         private void FixedUpdate()
         {
-            if (_health.IsDead)
+            bool isSpirit = IsSpirit;
+            if (_health.IsDead && !isSpirit)
             {
                 _rb.velocity = Vector2.zero;
                 return;
@@ -96,12 +103,23 @@ namespace Valkur.Gameplay
 
         private static bool IsGameplayInputSuspended()
         {
-            // Suspend movement and combat while any runtime editor is active,
-            // except tools that intentionally allow walking around to test colliders.
-            return GameEditorManager.HasInstance &&
-                   GameEditorManager.Instance.AnyEditorActive &&
-                   !(GameEditorManager.Instance.ActiveEditor is BuildingsRuntimeEditor) &&
-                   !(GameEditorManager.Instance.ActiveEditor is Valkur.Gameplay.TileEditor.TileEditorManager);
+            if (!GameEditorManager.HasInstance) return false;
+            return ShouldSuspendInputFor(GameEditorManager.Instance.ActiveEditor);
+        }
+
+        /// <summary>
+        /// Pure predicate: returns whether the given active editor should freeze
+        /// the player's gameplay input (movement + combat). Editors that need
+        /// the player to keep walking around (collider testing, spawner
+        /// placement, tilemap collisions) opt out by implementing
+        /// <see cref="IAllowsPlayerMovement"/>. Internal so EditMode tests can
+        /// drive the gate without bringing up a full <see cref="GameEditorManager"/>
+        /// in the scene.
+        /// </summary>
+        internal static bool ShouldSuspendInputFor(GameEditorManager.IGameEditor active)
+        {
+            if (active == null) return false;
+            return !(active is IAllowsPlayerMovement);
         }
 
         private void UpdateFacingDirection()

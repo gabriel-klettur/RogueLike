@@ -37,7 +37,7 @@ namespace Valkur.Gameplay.Buildings
     ///
     /// Mirrors Python buildings editor: building_editor_view.py + tools/* + panels/*.
     /// </summary>
-    public partial class BuildingsRuntimeEditor : SingletonMonoBehaviour<BuildingsRuntimeEditor>, GameEditorManager.IGameEditor
+    public partial class BuildingsRuntimeEditor : SingletonMonoBehaviour<BuildingsRuntimeEditor>, GameEditorManager.IGameEditor, IAllowsPlayerMovement
     {
         // ── Inspector ──────────────────────────────────────────────────────────────
 

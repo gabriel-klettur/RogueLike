@@ -21,7 +21,7 @@ namespace Valkur.Gameplay.Spawners
     /// (panels: tool_bar, picker, modes, properties, tutorial).
     /// </summary>
     public partial class SpawnerEditorManager
-        : SingletonMonoBehaviour<SpawnerEditorManager>, GameEditorManager.IGameEditor
+        : SingletonMonoBehaviour<SpawnerEditorManager>, GameEditorManager.IGameEditor, IAllowsPlayerMovement
     {
         [Header("References")]
         [Tooltip("Catalog of spawner templates for the picker grid.")]
