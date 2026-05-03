@@ -82,10 +82,12 @@ namespace Valkur.Gameplay
                     case SkillEffectKind.StatBoost:    ApplyStatBoost(node, eff);  break;
                     case SkillEffectKind.UnlockSpell:  ApplyUnlockSpell(eff);      break;
                     case SkillEffectKind.PassiveAura:
-                        // Aura registry not yet implemented — log so designers
-                        // can see the unlock fired but don't crash gameplay.
-                        Debug.Log($"[SkillEffectApplicator] PassiveAura '{eff.key}' " +
-                                  $"unlocked on '{node.skillId}'. Aura registry pending.");
+                        if (!AuraRegistry.TryApply(eff.key, gameObject, eff.value))
+                        {
+                            Debug.LogWarning($"[SkillEffectApplicator] PassiveAura '{eff.key}' on " +
+                                             $"skill '{node.skillId}' has no registered handler. " +
+                                             "Register one via AuraRegistry.Register at boot.");
+                        }
                         break;
                 }
             }

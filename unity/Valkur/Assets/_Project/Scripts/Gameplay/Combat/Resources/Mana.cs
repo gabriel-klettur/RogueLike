@@ -48,6 +48,19 @@ namespace Valkur.Gameplay
             OnManaChanged?.Invoke(_currentMana, maxMana);
         }
 
+        /// <summary>
+        /// Adds permanent mana-regeneration bonus on top of the current
+        /// rate. Stacks linearly across calls — wired by AuraRegistry's
+        /// "manaflow" aura so multiple skill nodes can compound.
+        /// </summary>
+        public void AddRegenBonus(float amountPerSec)
+        {
+            if (amountPerSec <= 0f) return;
+            regenPerSecond += amountPerSec;
+        }
+
+        public float RegenPerSecond => regenPerSecond;
+
         private void Awake()
         {
             _currentMana = maxMana;
