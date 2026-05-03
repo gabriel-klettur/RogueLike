@@ -35,7 +35,6 @@ namespace Valkur.Gameplay.Spawners
         private InputAction _toggleAction;
         private InputAction _ctrlModifier;
         private InputAction _clickAction;
-        private InputAction _rightClickAction;
         private InputAction _escapeAction;
         private bool _ownsToggleAction;
         private bool _ownsCtrlModifier;
@@ -49,6 +48,7 @@ namespace Valkur.Gameplay.Spawners
         private SpawnerInstance _selectedInstance;
         private bool _dragging;
         private Vector3 _dragOffset;
+        private Vector3 _dragStartWorldPos;
         private string _searchFilter = string.Empty;
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
@@ -112,9 +112,8 @@ namespace Valkur.Gameplay.Spawners
             _clickAction.AddBinding("<Mouse>/leftButton");
             _clickAction.Enable();
 
-            _rightClickAction = new InputAction("SpawnerEditorRightClick", InputActionType.Button);
-            _rightClickAction.AddBinding("<Mouse>/rightButton");
-            _rightClickAction.Enable();
+            // RMB is read directly through MouseInputManager (move-drag pickup +
+            // active-drag release) — no dedicated InputAction is required.
 
             _escapeAction = new InputAction("SpawnerEditorEscape", InputActionType.Button);
             _escapeAction.AddBinding("<Keyboard>/escape");
@@ -157,7 +156,6 @@ namespace Valkur.Gameplay.Spawners
             if (_ownsToggleAction) { _toggleAction?.Disable(); _toggleAction?.Dispose(); }
             if (_ownsCtrlModifier) { _ctrlModifier?.Disable(); _ctrlModifier?.Dispose(); }
             _clickAction?.Disable();      _clickAction?.Dispose();
-            _rightClickAction?.Disable(); _rightClickAction?.Dispose();
             _escapeAction?.Disable();     _escapeAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
@@ -195,7 +193,7 @@ namespace Valkur.Gameplay.Spawners
                 ("LMB",    "Select / Place / Delete (mode-aware)"),
                 ("Drag",   "Drag a template from the picker onto the map to place"),
                 ("Alt",    "Toggle on-map spawner outlines (visualize range)"),
-                ("RMB",    "Drag selected spawner on the map"),
+                ("RMB",    "Drag any spawner on the map (any mode)"),
                 ("Type",   "Filter picker by template id"),
                 ("Esc",    "Cancel current mode (or close)"),
                 ("Ctrl+Z", "Undo"),

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Valkur.Core.Input;
 using Valkur.Data;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spawners
 {
@@ -33,12 +34,23 @@ namespace Valkur.Gameplay.Spawners
                 if (_camera == null) return;
             }
 
-            // Don't react to clicks that land on UI panels.
-            if (IsPointerOverEditorUI()) return;
-
             Vector2 screen = MouseInputManager.GetScreenMousePosition();
             Vector3 world  = _camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, 0f));
             world.z = 0f;
+
+            // An active RMB drag must follow the cursor every frame even if it
+            // briefly travels over a panel — releasing RMB anywhere commits the
+            // move. Mirrors the Buildings / Entities pattern.
+            if (_dragging && _selectedInstance != null)
+            {
+                _selectedInstance.transform.position = world + _dragOffset;
+                if (MouseInputManager.WasRightMouseButtonReleasedThisFrame())
+                    FinalizeMoveDrag();
+                return;
+            }
+
+            // Don't react to clicks that land on UI panels.
+            if (IsPointerOverEditorUI()) return;
 
             // Quick-inspect shortcut: when outlines are visible, clicking on a
             // spawner's centre dot selects it regardless of the current mode and
@@ -46,23 +58,16 @@ namespace Valkur.Gameplay.Spawners
             // path in Delete mode so a click on the marker still deletes.
             if (TryHandleCenterClickInspect(world)) return;
 
+            // RMB-press anywhere on the map → start dragging the spawner under
+            // the cursor (Buildings / Entities parity). Works in any mode and
+            // selects the dragged instance as a side effect.
+            if (TryStartMoveDrag(world)) return;
+
             switch (_mode)
             {
                 case EditorMode.Place:  HandlePlaceMode(world);  break;
                 case EditorMode.Select: HandleSelectMode(world); break;
                 case EditorMode.Delete: HandleDeleteMode(world); break;
-            }
-
-            // Right-mouse drag of the currently selected instance.
-            if (_dragging && _selectedInstance != null)
-            {
-                _selectedInstance.transform.position = world + _dragOffset;
-                if (_rightClickAction != null && _rightClickAction.WasReleasedThisFrame())
-                {
-                    _dragging = false;
-                    SetStatus($"Moved '{_selectedInstance.InstanceId}'.");
-                    RefreshPropertiesPanel();
-                }
             }
         }
 
@@ -80,19 +85,11 @@ namespace Valkur.Gameplay.Spawners
 
         private void HandleSelectMode(Vector3 worldPos)
         {
-            if (_clickAction != null && _clickAction.WasPerformedThisFrame())
-            {
-                var hit = FindSpawnerAtPosition(worldPos);
-                SelectInstance(hit);
-                SetStatus(hit == null ? "Nothing under cursor." : $"Selected '{hit.InstanceId}'.");
-            }
+            if (_clickAction == null || !_clickAction.WasPerformedThisFrame()) return;
 
-            if (_rightClickAction != null && _rightClickAction.WasPerformedThisFrame() && _selectedInstance != null)
-            {
-                _dragging   = true;
-                _dragOffset = _selectedInstance.transform.position - worldPos;
-                SetStatus($"Dragging '{_selectedInstance.InstanceId}' (release RMB to drop).");
-            }
+            var hit = FindSpawnerAtPosition(worldPos);
+            SelectInstance(hit);
+            SetStatus(hit == null ? "Nothing under cursor." : $"Selected '{hit.InstanceId}'.");
         }
 
         private void HandleDeleteMode(Vector3 worldPos)
@@ -201,6 +198,74 @@ namespace Valkur.Gameplay.Spawners
             RefreshMenuBtnHighlights();
             SetStatus($"Inspecting '{hit.InstanceId}'.");
             return true;
+        }
+
+        // ── Move-drag (Buildings / Entities parity) ──────────────────────────────
+
+        /// <summary>
+        /// RMB-press → start dragging the spawner under the cursor. Works in
+        /// any mode (Select / Place / Delete). The drag follows the cursor in
+        /// <see cref="HandleMapInteraction"/> until RMB is released, at which
+        /// point <see cref="FinalizeMoveDrag"/> records the move on the undo
+        /// stack. Reads the mouse press through <see cref="MouseInputManager"/>
+        /// so the legacy backend kicks in if the new InputSystem package drops
+        /// events (Unity 2022.3 Editor bug).
+        /// </summary>
+        private bool TryStartMoveDrag(Vector3 worldPos)
+        {
+            if (!MouseInputManager.WasRightMouseButtonPressedThisFrame()) return false;
+            return BeginMoveDrag(worldPos) != null;
+        }
+
+        /// <summary>
+        /// Pure side-effecting kernel of the RMB drag-start: looks for a
+        /// spawner under <paramref name="worldPos"/> and arms the move state.
+        /// Returns the dragged instance, or <c>null</c> if nothing was hit.
+        /// Internal so EditMode tests can drive the drag lifecycle without
+        /// simulating mouse events.
+        /// </summary>
+        internal SpawnerInstance BeginMoveDrag(Vector3 worldPos)
+        {
+            var hit = FindSpawnerAtPosition(worldPos);
+            if (hit == null) return null;
+
+            SelectInstance(hit);
+            _dragging          = true;
+            _dragStartWorldPos = hit.transform.position;
+            _dragOffset        = hit.transform.position - worldPos;
+            SetStatus($"Move drag: '{hit.InstanceId}' — release RMB to commit.");
+            return hit;
+        }
+
+        /// <summary>
+        /// Closes an in-progress drag: clears the flag, records an undo entry
+        /// when the position actually changed, refreshes the Properties panel
+        /// so the new coordinates are visible, and writes a status. A no-op
+        /// drag (released without movement) is reported as cancelled — no
+        /// undo entry is recorded so the stack stays clean.
+        /// </summary>
+        internal void FinalizeMoveDrag()
+        {
+            _dragging = false;
+            if (_selectedInstance == null) return;
+
+            var instance = _selectedInstance;
+            Vector3 from = _dragStartWorldPos;
+            Vector3 to   = instance.transform.position;
+            if ((to - from).sqrMagnitude <= 0.0001f)
+            {
+                SetStatus("Move cancelled (no movement).");
+                return;
+            }
+
+            string id    = instance.InstanceId;
+            string label = $"Move {id} ({to.x:F1},{to.y:F1})";
+            _undo.Record(new UndoStack.LambdaCommand(label,
+                doAction:   () => { if (instance != null) instance.transform.position = to;   },
+                undoAction: () => { if (instance != null) instance.transform.position = from; }));
+
+            SetStatus($"Moved '{id}' → ({to.x:F1}, {to.y:F1}).");
+            RefreshPropertiesPanel();
         }
 
         private void SelectInstance(SpawnerInstance instance)
