@@ -90,6 +90,9 @@ namespace Valkur.Gameplay.Spawners
             _selectedTemplate = null;
             _selectedInstance = null;
             _dragging = false;
+            CancelPickerDrag();
+            _showAllOutlines = false;
+            HideAllOutlineFx();
             _cameraPan.Reset();
             CameraSetup.Instance?.ReattachFollow();
             if (GameEditorManager.HasInstance)
@@ -143,6 +146,8 @@ namespace Valkur.Gameplay.Spawners
             if (_escapeAction != null && _escapeAction.WasPerformedThisFrame())
                 CancelCurrentMode();
 
+            UpdatePickerDrag();
+            UpdateOutlineState();
             HandleMapInteraction();
             UpdateStatus();
         }
@@ -188,6 +193,8 @@ namespace Valkur.Gameplay.Spawners
             {
                 ("F3",     "Toggle Spawner Editor"),
                 ("LMB",    "Select / Place / Delete (mode-aware)"),
+                ("Drag",   "Drag a template from the picker onto the map to place"),
+                ("Alt",    "Toggle on-map spawner outlines (visualize range)"),
                 ("RMB",    "Drag selected spawner on the map"),
                 ("Type",   "Filter picker by template id"),
                 ("Esc",    "Cancel current mode (or close)"),
@@ -219,11 +226,15 @@ namespace Valkur.Gameplay.Spawners
 
         private void SetDropdownOpen(string name, bool open)
         {
-            var go = GetDropdown(name);
-            if (go == null) return;
+            // Update logical state first — _openDropdowns is the source of truth
+            // and stays coherent even if the UI isn't fully wired yet (e.g. when
+            // OpenDefaultDropdowns runs before BuildUI completes, or in EditMode
+            // tests that exercise selection without bringing up the canvas).
             if (open) _openDropdowns.Add(name);
             else      _openDropdowns.Remove(name);
-            go.SetActive(open);
+
+            var go = GetDropdown(name);
+            if (go != null) go.SetActive(open);
         }
 
         private GameObject GetDropdown(string name) => name switch

@@ -13,9 +13,15 @@ namespace Valkur.Gameplay.Spawners
     /// </summary>
     public partial class SpawnerEditorManager
     {
-        private const float SELECTION_RADIUS_WORLD = 1.5f;
-        private const string STREAMING_SUBFOLDER   = "Spawners";
-        private const string INSTANCES_FILENAME    = "spawners_instances.json";
+        private const float SELECTION_RADIUS_WORLD   = 1.5f;
+        // Hit radius used for the Alt-toggle hover and centre-click shortcut.
+        // Sized large enough that clicking near the visible centre marker is
+        // forgiving on any zoom level, but tight enough that Place mode still
+        // wins for clicks on empty tiles around the spawner. Kept in sync with
+        // <see cref="HoverHelpStatus"/> for the cursor affordance.
+        internal const float CENTER_HIT_RADIUS_WORLD = 0.55f;
+        private const string STREAMING_SUBFOLDER     = "Spawners";
+        private const string INSTANCES_FILENAME      = "spawners_instances.json";
 
         // ── Map interaction (called every Update while active) ───────────────────
 
@@ -33,6 +39,12 @@ namespace Valkur.Gameplay.Spawners
             Vector2 screen = MouseInputManager.GetScreenMousePosition();
             Vector3 world  = _camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, 0f));
             world.z = 0f;
+
+            // Quick-inspect shortcut: when outlines are visible, clicking on a
+            // spawner's centre dot selects it regardless of the current mode and
+            // ensures the Properties panel is open. We deliberately skip this
+            // path in Delete mode so a click on the marker still deletes.
+            if (TryHandleCenterClickInspect(world)) return;
 
             switch (_mode)
             {
@@ -122,15 +134,73 @@ namespace Valkur.Gameplay.Spawners
         }
 
         private SpawnerInstance FindSpawnerAtPosition(Vector3 worldPos)
+            => FindSpawnerAtPosition(worldPos, SELECTION_RADIUS_WORLD);
+
+        private SpawnerInstance FindSpawnerAtPosition(Vector3 worldPos, float maxDist)
         {
-            float bestDist  = SELECTION_RADIUS_WORLD;
-            SpawnerInstance best = null;
-            foreach (var si in FindObjectsOfType<SpawnerInstance>())
-            {
-                float d = Vector2.Distance(si.transform.position, worldPos);
-                if (d < bestDist) { bestDist = d; best = si; }
-            }
-            return best;
+            var all = FindObjectsOfType<SpawnerInstance>();
+            if (all == null || all.Length == 0) return null;
+
+            // Project to 2D for hit testing — z is irrelevant for top-down picking.
+            var positions = new Vector2[all.Length];
+            for (int i = 0; i < all.Length; i++)
+                positions[i] = all[i] != null ? (Vector2)all[i].transform.position : Vector2.positiveInfinity;
+
+            int idx = SpawnerHitTester.FindClosestWithinRadius(positions, worldPos, maxDist);
+            return idx >= 0 ? all[idx] : null;
+        }
+
+        /// <summary>
+        /// Quick-inspect shortcut wired into <see cref="HandleMapInteraction"/>.
+        /// Activates when the Alt-toggle outlines are visible: a press anywhere
+        /// inside <see cref="CENTER_HIT_RADIUS_WORLD"/> of a spawner centre selects
+        /// that spawner and opens the Properties panel, regardless of mode (except
+        /// Delete, where a click on the marker still deletes — that's the explicit
+        /// purpose of Delete mode).
+        ///
+        /// Reads the mouse press through <see cref="MouseInputManager"/> so the
+        /// legacy backend kicks in if the new InputSystem package drops events
+        /// (Unity 2022.3 Editor bug — see <c>MouseInputManager</c> XML).
+        ///
+        /// Decomposed into <see cref="CanCenterClickInspect"/> + the mouse guard
+        /// + <see cref="PerformCenterClickInspect"/> so the gating and the effect
+        /// can be unit-tested independently of the live mouse state.
+        /// </summary>
+        private bool TryHandleCenterClickInspect(Vector3 worldPos)
+        {
+            if (!CanCenterClickInspect())                                return false;
+            if (!MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return false;
+            return PerformCenterClickInspect(worldPos);
+        }
+
+        /// <summary>
+        /// Returns whether the centre-click inspect shortcut is currently armed —
+        /// outlines visible AND not in Delete mode. Internal so tests can probe
+        /// the gating without touching the live mouse state.
+        /// </summary>
+        internal bool CanCenterClickInspect()
+        {
+            if (!_showAllOutlines)            return false;
+            if (_mode == EditorMode.Delete)   return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Executes the inspect shortcut at a given world position: looks up the
+        /// nearest spawner centre within <see cref="CENTER_HIT_RADIUS_WORLD"/>,
+        /// selects it, opens Properties, and updates the status line. Returns
+        /// true when a spawner was selected.
+        /// </summary>
+        internal bool PerformCenterClickInspect(Vector3 worldPos)
+        {
+            var hit = FindSpawnerAtPosition(worldPos, CENTER_HIT_RADIUS_WORLD);
+            if (hit == null) return false;
+
+            SelectInstance(hit);
+            SetDropdownOpen("props", true);
+            RefreshMenuBtnHighlights();
+            SetStatus($"Inspecting '{hit.InstanceId}'.");
+            return true;
         }
 
         private void SelectInstance(SpawnerInstance instance)

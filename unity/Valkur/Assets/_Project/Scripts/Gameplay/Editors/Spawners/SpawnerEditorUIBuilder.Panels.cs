@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Spawners
             refs.ToolsDropdown = EditorUIHelpers.MakeDropPanel("SpawnerToolsPanel", canvasT,
                 PanelDock.TopLeft, PANEL_GAP, PANEL_TOP_OFFSET,
                 TOOLS_W, TOOLS_H, "Tools",
-                out var t, out refs.ToolsPanelDrag, narrowPanel: true);
+                out var t, out refs.ToolsPanelDrag);
 
             refs.UndoBtnImg   = EditorUIHelpers.AddActionBtn(t, "Undo",   44f, onUndo,   out _);
             refs.RedoBtnImg   = EditorUIHelpers.AddActionBtn(t, "Redo",   44f, onRedo,   out _);

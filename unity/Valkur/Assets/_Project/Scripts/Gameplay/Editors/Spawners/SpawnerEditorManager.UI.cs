@@ -1,5 +1,6 @@
 using System.Text;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Data;
@@ -70,6 +71,14 @@ namespace Valkur.Gameplay.Spawners
             btn.targetGraphic  = img;
             var captured = tmpl;
             btn.onClick.AddListener(() => OnPickTemplate(captured));
+
+            // Drag-from-picker (Entities/Buildings parity): LMB-press on the slot
+            // arms the drag; if the cursor moves past the threshold the row turns
+            // into a floating ghost and releasing over the map places the spawner.
+            var et  = go.AddComponent<EventTrigger>();
+            var pde = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+            pde.callback.AddListener(_ => OnPickerSlotPointerDown(captured));
+            et.triggers.Add(pde);
 
             var vlg = go.AddComponent<VerticalLayoutGroup>();
             vlg.padding                = new RectOffset(8, 8, 4, 4);
