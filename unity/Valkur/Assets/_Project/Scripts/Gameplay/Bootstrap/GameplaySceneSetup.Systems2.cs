@@ -381,6 +381,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] LevelUpRestoreSystem created.");
         }
 
+        // PermadeathSaveCleanupSystem deletes the active autosave when the
+        // player dies AND GameSettings.permadeath is on. The component
+        // itself reads the flag each death — adding it here is harmless
+        // when permadeath is off (it just listens and skips).
+        private void EnsurePermadeathSaveCleanupSystem()
+        {
+            if (FindObjectOfType<PermadeathSaveCleanupSystem>() != null) return;
+            var go = new GameObject("PermadeathSaveCleanupSystem");
+            go.AddComponent<PermadeathSaveCleanupSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] PermadeathSaveCleanupSystem created.");
+        }
+
         private void EnsureNPCRespawnSystem()
         {
             if (FindObjectOfType<NPCRespawnSystem>() != null) return;

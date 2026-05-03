@@ -13,6 +13,13 @@ namespace Valkur.Core
     [Serializable]
     public class GameSettings
     {
+        // ── Game mode ────────────────────────────────────────────────────────
+        // Permadeath: when true, the player's death deletes the active save
+        // and forces a return to the main menu. Off by default — opt-in
+        // hardcore mode. PermadeathSaveCleanupSystem listens to OnPlayerDied
+        // and respects this flag.
+        public bool permadeath = false;
+
         // ── Audio ────────────────────────────────────────────────────────────
         public float musicVolume    = 0.6f;   // Python default 0.6
         public float ambientVolume  = 0.6f;
@@ -96,6 +103,8 @@ namespace Valkur.Core
         public void ResetToDefaults()
         {
             var fresh = new GameSettings();
+            // Game mode
+            permadeath = fresh.permadeath;
             // Audio
             musicVolume = fresh.musicVolume;
             ambientVolume = fresh.ambientVolume;
