@@ -90,7 +90,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 34;
+        private const int SetupStepTotal = 35;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -114,6 +114,9 @@ namespace Valkur.Gameplay
 
             EnsureGlobalLight2D();
             Report("Inicializando iluminación global"); yield return null;
+
+            EnsureDayNightCycle();
+            Report("Iniciando ciclo día/noche"); yield return null;
 
             EnsureVFXManager();
             Report("Inicializando efectos visuales"); yield return null;

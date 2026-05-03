@@ -27,6 +27,21 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] ZoneManager created.");
         }
 
+        // Wires the DayNightCycle singleton into the scene if no inspector-
+        // authored instance is present. The component lazy-resolves the URP
+        // Global Light 2D on its first Update so it must exist before any
+        // gameplay frame runs — this step lives between EnsureZoneManager
+        // (early) and SpawnPlayer (late). Idempotent: noop if an inspector-
+        // wired DayNightCycle already lives in the scene.
+        private void EnsureDayNightCycle()
+        {
+            if (FindObjectOfType<World.DayNightCycle>() != null) return;
+            var go = new GameObject("DayNightCycle");
+            go.AddComponent<World.DayNightCycle>();
+            go.transform.SetParent(GetSceneContainer("[World]"), false);
+            Debug.Log("[GameplaySceneSetup] DayNightCycle created.");
+        }
+
         // ── Phase 1: WorldManager wiring ──────────────────────────────────────────
         // Creates the IWorldManager service, loads + activates the legacy "base"
         // WorldDescriptor so Active is non-null from the moment any downstream

@@ -145,54 +145,68 @@ namespace Valkur.Gameplay.World
 
         private void UpdateLighting()
         {
-            if (_globalLight == null) return;
+            // Compute phase + visuals from time alone — independent of the
+            // Light2D so EditMode tests (and any system observing CurrentPhase
+            // without rendering, e.g. spawners that key on day/night) get a
+            // consistent state machine even when no URP renderer is wired.
+            ComputePhaseAndColor(TimeNormalized,
+                out var newPhase, out var targetColor, out var targetIntensity);
 
-            float t = TimeNormalized;
-            Color targetColor;
-            float targetIntensity;
-            DayPhase newPhase;
-
-            if (t >= 0.20f && t < 0.30f)
+            // Apply the visual side-effect only when a Light2D is reachable.
+            if (_globalLight != null)
             {
-                float blend     = (t - 0.20f) / 0.10f;
-                targetColor     = Color.Lerp(dawnColor, dayColor, blend);
-                targetIntensity = Mathf.Lerp(dawnIntensity, dayIntensity, blend);
-                newPhase = blend < 0.5f ? DayPhase.Dawn : DayPhase.Day;
-            }
-            else if (t >= 0.30f && t < 0.70f)
-            {
-                targetColor     = dayColor;
-                targetIntensity = dayIntensity;
-                newPhase        = DayPhase.Day;
-            }
-            else if (t >= 0.70f && t < 0.80f)
-            {
-                float blend     = (t - 0.70f) / 0.10f;
-                targetColor     = Color.Lerp(duskColor, nightColor, blend);
-                targetIntensity = Mathf.Lerp(duskIntensity, nightIntensity, blend);
-                newPhase = blend < 0.5f ? DayPhase.Dusk : DayPhase.Night;
-            }
-            else
-            {
-                targetColor     = nightColor;
-                targetIntensity = nightIntensity;
-                newPhase        = DayPhase.Night;
-            }
-
-            try
-            {
-                _colorProp?.SetValue(_globalLight, targetColor);
-                _intensityProp?.SetValue(_globalLight, targetIntensity);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[DayNightCycle] Failed to set Light2D properties: {ex.Message}");
+                try
+                {
+                    _colorProp?.SetValue(_globalLight, targetColor);
+                    _intensityProp?.SetValue(_globalLight, targetIntensity);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[DayNightCycle] Failed to set Light2D properties: {ex.Message}");
+                }
             }
 
             if (newPhase != CurrentPhase)
             {
                 CurrentPhase = newPhase;
                 OnPhaseChanged?.Invoke(newPhase);
+            }
+        }
+
+        // Pure function: classify the normalized time t into a DayPhase and
+        // pick the matching color + intensity. No side-effects, no Light2D
+        // access — exposed via UpdateLighting and exercised directly by
+        // EditMode tests.
+        private void ComputePhaseAndColor(float t,
+                                          out DayPhase phase,
+                                          out Color color,
+                                          out float intensity)
+        {
+            if (t >= 0.20f && t < 0.30f)
+            {
+                float blend = (t - 0.20f) / 0.10f;
+                color     = Color.Lerp(dawnColor, dayColor, blend);
+                intensity = Mathf.Lerp(dawnIntensity, dayIntensity, blend);
+                phase     = blend < 0.5f ? DayPhase.Dawn : DayPhase.Day;
+            }
+            else if (t >= 0.30f && t < 0.70f)
+            {
+                color     = dayColor;
+                intensity = dayIntensity;
+                phase     = DayPhase.Day;
+            }
+            else if (t >= 0.70f && t < 0.80f)
+            {
+                float blend = (t - 0.70f) / 0.10f;
+                color     = Color.Lerp(duskColor, nightColor, blend);
+                intensity = Mathf.Lerp(duskIntensity, nightIntensity, blend);
+                phase     = blend < 0.5f ? DayPhase.Dusk : DayPhase.Night;
+            }
+            else
+            {
+                color     = nightColor;
+                intensity = nightIntensity;
+                phase     = DayPhase.Night;
             }
         }
     }
