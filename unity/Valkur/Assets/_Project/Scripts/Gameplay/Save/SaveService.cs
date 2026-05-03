@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Save;
@@ -42,6 +43,15 @@ namespace Valkur.Gameplay
         private int     _lastKnownPlayerHp   = -1;   // -1 = not yet sampled
         private bool    _hasKnownPlayerPos;
 
+        // Marks the run as worth autosaving. Stays false for sessions where the
+        // player did nothing meaningful (entered the world, walked around, quit) —
+        // those used to leak phantom Lv.0 autosaves into the Load Game panel.
+        // Set true on damage, XP, level-up, item pickup, zone change, manual save.
+        // Reset on BeginNewRun / Load (the loaded state already matches disk).
+        private bool _sessionDirty;
+
+        public bool IsSessionDirty => _sessionDirty;
+
         protected override bool Persist => true;
 
         public string CurrentSavePath => _currentSavePath;
@@ -51,7 +61,76 @@ namespace Valkur.Gameplay
         protected override void OnSingletonAwake()
         {
             SaveFileManager.EnsureSaveDirectory();
+            RebindGameEvents();
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
+
+        protected override void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            UnbindGameEvents();
+            base.OnDestroy();
+        }
+
+        // Both SceneTransitionManager.LoadScene and LoadingScreenController call
+        // GameEvents.Clear() to flush stale subscribers before swapping scenes.
+        // That nukes our subscriptions too, so re-bind on every scene load.
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => RebindGameEvents();
+
+        /// <summary>Marks the current session as worth autosaving on quit / on the periodic timer.</summary>
+        public void MarkDirty(string reason = null)
+        {
+            if (_sessionDirty) return;
+            _sessionDirty = true;
+            if (!string.IsNullOrEmpty(reason))
+                Debug.Log($"[SaveService] Session marked dirty: {reason}");
+        }
+
+        private void RebindGameEvents()
+        {
+            // Removing a non-subscribed handler is a safe no-op, so doing
+            // unbind+bind unconditionally keeps subscriptions exactly-once
+            // even when GameEvents.Clear() ran between calls.
+            UnbindGameEvents();
+            GameEvents.OnPlayerDamaged += HandlePlayerDamaged;
+            GameEvents.OnXpGained      += HandleXpGained;
+            GameEvents.OnLevelUp       += HandleLevelUp;
+            GameEvents.OnItemPickedUp  += HandleItemPickedUp;
+            GameEvents.OnZoneChanged   += HandleZoneChanged;
+        }
+
+        private void UnbindGameEvents()
+        {
+            GameEvents.OnPlayerDamaged -= HandlePlayerDamaged;
+            GameEvents.OnXpGained      -= HandleXpGained;
+            GameEvents.OnLevelUp       -= HandleLevelUp;
+            GameEvents.OnItemPickedUp  -= HandleItemPickedUp;
+            GameEvents.OnZoneChanged   -= HandleZoneChanged;
+        }
+
+        private void HandlePlayerDamaged(int amount, int currentHp, int maxHp) =>
+            MarkDirty($"player damaged ({amount} dmg)");
+
+        private void HandleXpGained(GameObject entity, int amount)
+        {
+            if (entity != null && entity.CompareTag("Player"))
+                MarkDirty($"player gained {amount} XP");
+        }
+
+        private void HandleLevelUp(GameObject entity, int newLevel)
+        {
+            if (entity != null && entity.CompareTag("Player"))
+                MarkDirty($"player leveled up to {newLevel}");
+        }
+
+        private void HandleItemPickedUp(GameObject collector, string itemName, int quantity)
+        {
+            if (collector != null && collector.CompareTag("Player"))
+                MarkDirty($"player picked up {itemName} x{quantity}");
+        }
+
+        private void HandleZoneChanged(string oldZone, string newZone) =>
+            MarkDirty($"zone {oldZone} → {newZone}");
 
         private void Update()
         {
@@ -94,6 +173,7 @@ namespace Valkur.Gameplay
         public void BeginNewRun()
         {
             _currentRunId = Guid.NewGuid().ToString("N");
+            _sessionDirty = false;
             Debug.Log($"[SaveService] New run started: {_currentRunId}");
         }
 
@@ -128,6 +208,7 @@ namespace Valkur.Gameplay
                 string path = SaveFileManager.GetManualSavePath(_currentRunId, fileName);
                 SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
                 _currentSavePath = path;
+                MarkDirty("manual save");
 
                 Debug.Log($"[SaveService] Game saved to: {path}");
                 return true;
@@ -140,20 +221,40 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// QuickSave is an alias of <see cref="Autosave"/> — both write to the
-        /// per-run "Auto-Save" entry.  Returns true on success.
+        /// Player-driven "save now" — always overwrites the per-run autosave,
+        /// regardless of whether the session is dirty. Used by the pause menu's
+        /// "Guardar partida" / "Salir" buttons where the user has explicitly
+        /// asked for their progress to be persisted.
         /// </summary>
         public bool QuickSave()
         {
-            return Autosave();
+            return WriteAutosaveToDisk(force: true);
         }
 
         /// <summary>
-        /// Writes/overwrites the per-run <c>autosave.json</c>, after rotating
-        /// the previous one into the hidden <c>.backups/</c> history.
+        /// Implicit autosave — used by the periodic timer, OnApplicationPause,
+        /// and OnApplicationQuit. Skips silently when the session is not dirty
+        /// (player has neither taken damage, gained XP, leveled up, picked up
+        /// an item, changed zones, nor saved manually since the run started or
+        /// was loaded). This prevents trivial "Lv.0 in Lobby" phantom saves
+        /// from piling up every time someone briefly opens the game.
         /// </summary>
         public bool Autosave()
         {
+            return WriteAutosaveToDisk(force: false);
+        }
+
+        /// <summary>
+        /// Shared autosave write path. <paramref name="force"/> bypasses the
+        /// dirty-flag short-circuit for player-driven saves.
+        /// </summary>
+        private bool WriteAutosaveToDisk(bool force)
+        {
+            if (!force && !_sessionDirty)
+            {
+                Debug.Log("[SaveService] Autosave skipped — session has no progression to save.");
+                return false;
+            }
             try
             {
                 var data = GameStateCollector.Collect();
@@ -168,12 +269,17 @@ namespace Valkur.Gameplay
                 SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
                 _currentSavePath = path;
 
-                Debug.Log($"[SaveService] Autosave completed: {path}");
+                // A forced save establishes a new on-disk baseline. Subsequent
+                // periodic autosaves only need to fire when something else
+                // changes after this point, so re-arm the dirty flag.
+                if (force) _sessionDirty = false;
+
+                Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} completed: {path}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[SaveService] Autosave failed: {ex.Message}");
+                Debug.LogError($"[SaveService] {(force ? "QuickSave" : "Autosave")} failed: {ex.Message}");
                 return false;
             }
         }
@@ -209,6 +315,10 @@ namespace Valkur.Gameplay
                 _currentRunId = Guid.NewGuid().ToString("N");
                 Debug.Log($"[SaveService] Loaded legacy save without run_id — assigned: {_currentRunId}");
             }
+
+            // Loaded state matches disk byte-for-byte — no autosave needed until
+            // the player actually does something.
+            _sessionDirty = false;
 
             Debug.Log($"[SaveService] Game loaded from: {path} (schema {data.schemaVersion}, run_id={_currentRunId})");
             return true;

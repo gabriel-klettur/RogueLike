@@ -15,7 +15,10 @@ namespace Valkur.Gameplay.World
             string old = currentZone;
             currentZone = zoneName;
             if (old != zoneName)
+            {
                 OnZoneChanged?.Invoke(old, currentZone);
+                GameEvents.FireZoneChanged(old, currentZone);
+            }
         }
 
         /// <summary>

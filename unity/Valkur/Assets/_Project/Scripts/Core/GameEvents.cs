@@ -45,6 +45,11 @@ namespace Valkur.Core
         /// <summary>Item consumed (used from inventory). Args: (consumer, itemId)</summary>
         public static event Action<GameObject, string> OnItemConsumed;
 
+        // ── World Events ──
+
+        /// <summary>The player crossed into a new zone. Args: (oldZone, newZone)</summary>
+        public static event Action<string, string> OnZoneChanged;
+
         // ── Fire Methods ──
 
         public static void FireEntityDamaged(GameObject victim, GameObject attacker, int amount)
@@ -92,6 +97,11 @@ namespace Valkur.Core
             OnItemConsumed?.Invoke(consumer, itemId);
         }
 
+        public static void FireZoneChanged(string oldZone, string newZone)
+        {
+            OnZoneChanged?.Invoke(oldZone, newZone);
+        }
+
         /// <summary>
         /// Clear all subscribers. Call on scene unload or domain reload to prevent leaks.
         /// </summary>
@@ -106,6 +116,7 @@ namespace Valkur.Core
             OnLevelUp = null;
             OnItemPickedUp = null;
             OnItemConsumed = null;
+            OnZoneChanged = null;
         }
     }
 }

@@ -32,6 +32,11 @@ namespace Valkur.Gameplay.World
 
         private readonly Dictionary<string, ZoneDefinition> _zoneMap = new Dictionary<string, ZoneDefinition>(StringComparer.OrdinalIgnoreCase);
         private Transform _playerTransform;
+        // First detection after the scene loads = spawn, not a real transition.
+        // Suppresses the static GameEvents.OnZoneChanged so SaveService doesn't
+        // mark the session dirty just because the player spawned away from the
+        // default "Lobby" value (e.g. when loading a save in zone_100_50).
+        private bool _hasDetectedInitialZone;
 
         public string CurrentZone => currentZone;
         public int ZoneWidthTiles => zoneWidthTiles;
@@ -55,11 +60,19 @@ namespace Valkur.Gameplay.World
             }
 
             string detected = DetectZone(_playerTransform.position);
-            if (!string.IsNullOrEmpty(detected) && detected != currentZone)
+            if (string.IsNullOrEmpty(detected)) return;
+
+            if (detected != currentZone)
             {
                 string oldZone = currentZone;
                 currentZone = detected;
                 OnZoneChanged?.Invoke(oldZone, currentZone);
+
+                // Only notify the static event bus on a *real* transition. The
+                // very first detection after scene load is just the spawn-zone
+                // catching up with the player's starting position — no progress.
+                if (_hasDetectedInitialZone)
+                    GameEvents.FireZoneChanged(oldZone, currentZone);
 
                 // Notify audio system of zone change for music/ambient resolution
                 var audio = ServiceLocator.Get<IAudioService>();
@@ -68,6 +81,7 @@ namespace Valkur.Gameplay.World
                     audio.OnZoneChanged(currentZone);
                 }
             }
+            _hasDetectedInitialZone = true;
         }
 
         /// <summary>
