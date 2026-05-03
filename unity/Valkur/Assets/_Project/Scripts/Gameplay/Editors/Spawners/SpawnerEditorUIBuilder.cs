@@ -35,13 +35,11 @@ namespace Valkur.Gameplay.Spawners
             public GameObject       MenuBar;
             public Image            ToolsMenuBtnImg;   public TextMeshProUGUI ToolsMenuBtnTmp;
             public Image            PickerMenuBtnImg;  public TextMeshProUGUI PickerMenuBtnTmp;
-            public Image            ModesMenuBtnImg;   public TextMeshProUGUI ModesMenuBtnTmp;
             public Image            PropsMenuBtnImg;   public TextMeshProUGUI PropsMenuBtnTmp;
 
             // Panels (roots + drag components)
             public GameObject       ToolsDropdown;     public DraggablePanel ToolsPanelDrag;
             public GameObject       PickerDropdown;    public DraggablePanel PickerPanelDrag;
-            public GameObject       ModesDropdown;     public DraggablePanel ModesPanelDrag;
             public GameObject       PropsDropdown;     public DraggablePanel PropsPanelDrag;
 
             // Tools panel
@@ -52,14 +50,11 @@ namespace Valkur.Gameplay.Spawners
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
 
-            // Modes panel
-            public Image            SelectBtnImg;     public TextMeshProUGUI SelectBtnTmp;
-            public Image            PlaceBtnImg;      public TextMeshProUGUI PlaceBtnTmp;
-            public Image            DeleteBtnImg;     public TextMeshProUGUI DeleteBtnTmp;
-            public TextMeshProUGUI  ModesHintText;
-
             // Properties panel
             public TextMeshProUGUI  PropsText;
+            public Image            DeleteFromPropsBtnImg;
+            public GameObject       DeleteFromPropsBtnGo;   // hidden when no spawner selected
+            public TextMeshProUGUI  DeleteFromPropsBtnTmp;
         }
 
         // ── Panel sizes (compatible visual budget with Entities / Particles) ────
@@ -70,9 +65,6 @@ namespace Valkur.Gameplay.Spawners
         private const float PICKER_W  = 256f;
         private const float PICKER_H  = 540f + PANEL_HDR_H;
 
-        private const float MODES_W   = 180f;
-        private const float MODES_H   = 200f + PANEL_HDR_H;
-
         private const float PROPS_W   = 320f;
         private const float PROPS_H   = 540f + PANEL_HDR_H;
 
@@ -81,7 +73,6 @@ namespace Valkur.Gameplay.Spawners
         private const float TITLE_BTN_W   = 130f;
         private const float TOOLS_BTN_W   = 60f;
         private const float PICKER_BTN_W  = 70f;
-        private const float MODES_BTN_W   = 76f;
         private const float PROPS_BTN_W   = 96f;
         private const float TUTORIAL_BTN_W = 40f;
 
@@ -92,7 +83,7 @@ namespace Valkur.Gameplay.Spawners
             Action<string> onDropdownToggle,
             Action onUndo, Action onRedo, Action onSave, Action onReload,
             Action<string> onSearchChanged,
-            Action onModeSelect, Action onModePlace, Action onModeDelete,
+            Action onDeleteSelected,
             Action onToggleTutorial)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
@@ -103,8 +94,7 @@ namespace Valkur.Gameplay.Spawners
             BuildMenuBar(canvasT, ref refs, onDropdownToggle, onToggleTutorial);
             BuildToolsPanel(canvasT, ref refs, onUndo, onRedo, onSave, onReload);
             BuildPickerPanel(canvasT, ref refs, onSearchChanged);
-            BuildModesPanel(canvasT, ref refs, onModeSelect, onModePlace, onModeDelete);
-            BuildPropertiesPanel(canvasT, ref refs);
+            BuildPropertiesPanel(canvasT, ref refs, onDeleteSelected);
 
             return refs;
         }
@@ -163,8 +153,6 @@ namespace Valkur.Gameplay.Spawners
                 () => onToggle?.Invoke("tools"),  out refs.ToolsMenuBtnTmp);
             refs.PickerMenuBtnImg = EditorUIHelpers.AddMenuBtn(t, "Picker v",     PICKER_BTN_W,
                 () => onToggle?.Invoke("picker"), out refs.PickerMenuBtnTmp);
-            refs.ModesMenuBtnImg  = EditorUIHelpers.AddMenuBtn(t, "Modes v",      MODES_BTN_W,
-                () => onToggle?.Invoke("modes"),  out refs.ModesMenuBtnTmp);
             refs.PropsMenuBtnImg  = EditorUIHelpers.AddMenuBtn(t, "Properties v", PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),  out refs.PropsMenuBtnTmp);
 

@@ -153,16 +153,6 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
                 "Place mode must still allow centre-click inspect — that's the whole UX win for users in Place.");
         }
 
-        [Test]
-        public void CanCenterClickInspect_OutlinesOn_DeleteMode_ReturnsFalse()
-        {
-            SetFieldValue(_mgr, "_showAllOutlines", true);
-            SetMode(_mgr, "Delete");
-
-            Assert.IsFalse(_mgr.CanCenterClickInspect(),
-                "Delete mode is destructive on purpose — the inspect shortcut must NOT override it.");
-        }
-
         // ── PerformCenterClickInspect — geometry + side effects ───────────────
 
         [Test]

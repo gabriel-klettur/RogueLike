@@ -56,38 +56,21 @@ namespace Valkur.Gameplay.Spawners
             refs.PickerDropdown.SetActive(false);
         }
 
-        // ── Modes Panel ─────────────────────────────────────────────────────────
-        // Mirrors Python spawner_add_remove_panel: Select / Place / Delete.
-
-        private static void BuildModesPanel(Transform canvasT, ref UIRefs refs,
-            Action onSelect, Action onPlace, Action onDelete)
-        {
-            refs.ModesDropdown = EditorUIHelpers.MakeDropPanel("SpawnerModesPanel", canvasT,
-                PanelDock.TopRight, PANEL_GAP + PROPS_W + PANEL_GAP, PANEL_TOP_OFFSET,
-                MODES_W, MODES_H, "Modes",
-                out var t, out refs.ModesPanelDrag);
-
-            refs.SelectBtnImg = EditorUIHelpers.AddModeBtn(t, "Select", "Pick a spawner",  44f, onSelect, out refs.SelectBtnTmp);
-            refs.PlaceBtnImg  = EditorUIHelpers.AddModeBtn(t, "Place",  "Stamp template",  44f, onPlace,  out refs.PlaceBtnTmp);
-            refs.DeleteBtnImg = EditorUIHelpers.AddModeBtn(t, "Delete", "Remove spawner",  44f, onDelete, out refs.DeleteBtnTmp);
-
-            var hintGo = EditorUIHelpers.CreateUI("ModesHint", t);
-            hintGo.AddComponent<LayoutElement>().preferredHeight = 32f;
-            refs.ModesHintText                    = hintGo.AddComponent<TextMeshProUGUI>();
-            refs.ModesHintText.text               = "Pick a mode then click on the map.";
-            refs.ModesHintText.fontSize           = 10f;
-            refs.ModesHintText.color              = UITheme.TEXT_SECONDARY;
-            refs.ModesHintText.enableWordWrapping = true;
-            refs.ModesHintText.alignment          = TextAlignmentOptions.Center;
-
-            refs.ModesDropdown.SetActive(false);
-        }
-
         // ── Properties Panel ────────────────────────────────────────────────────
         // Mirrors Python spawner_properties_panel: read-only form on the
-        // currently selected spawner instance.
+        // currently selected spawner instance, plus a context-sensitive Delete
+        // button that replaces the legacy Modes panel "Delete" mode. The button
+        // is hidden whenever <c>_selectedInstance == null</c> so the panel
+        // only exposes destructive actions when something is actually picked.
+        //
+        // Layout mirrors ParticlesEditorUIBuilder.Properties::DeleteInstance:
+        // a thin separator + a 28 px-tall danger button placed directly inside
+        // the panel content's VerticalLayoutGroup (no row wrapper). The
+        // button itself is the GameObject toggled — eliminates the "red blob
+        // floating in a fixed-height row" mismatch.
 
-        private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs)
+        private static void BuildPropertiesPanel(Transform canvasT, ref UIRefs refs,
+            Action onDeleteSelected)
         {
             refs.PropsDropdown = EditorUIHelpers.MakeDropPanel("SpawnerPropsPanel", canvasT,
                 PanelDock.TopRight, PANEL_GAP, PANEL_TOP_OFFSET,
@@ -98,7 +81,7 @@ namespace Valkur.Gameplay.Spawners
             var (scroll, content) = EditorUIHelpers.MakeScrollView(t, "PropsScroll");
             var le = scroll.gameObject.AddComponent<LayoutElement>();
             le.flexibleHeight = 1f;
-            le.minHeight      = 240f;
+            le.minHeight      = 200f;
             EditorUIHelpers.AddVerticalScrollbar(scroll);
 
             var textGo = EditorUIHelpers.CreateUI("PropsText", content);
@@ -118,6 +101,18 @@ namespace Valkur.Gameplay.Spawners
             refs.PropsText.enableWordWrapping  = true;
             refs.PropsText.richText            = true;
             refs.PropsText.margin              = new Vector4(8f, 4f, 12f, 4f);
+
+            // Visually divides the read-only properties from the destructive
+            // action below — same separator the Particles Properties panel
+            // uses before its "Delete Instance" button.
+            EditorUIHelpers.BuildSeparator(t);
+
+            refs.DeleteFromPropsBtnImg = EditorUIHelpers.AddDangerBtn(
+                t, "Delete spawner", 28f, onDeleteSelected, out refs.DeleteFromPropsBtnTmp);
+            refs.DeleteFromPropsBtnGo = refs.DeleteFromPropsBtnImg.gameObject;
+            // Start hidden — RefreshPropertiesPanel flips this when a spawner
+            // is selected.
+            refs.DeleteFromPropsBtnGo.SetActive(false);
 
             refs.PropsDropdown.SetActive(false);
         }

@@ -67,7 +67,6 @@ namespace Valkur.Gameplay.Spawners
             {
                 case EditorMode.Place:  HandlePlaceMode(world);  break;
                 case EditorMode.Select: HandleSelectMode(world); break;
-                case EditorMode.Delete: HandleDeleteMode(world); break;
             }
         }
 
@@ -90,24 +89,6 @@ namespace Valkur.Gameplay.Spawners
             var hit = FindSpawnerAtPosition(worldPos);
             SelectInstance(hit);
             SetStatus(hit == null ? "Nothing under cursor." : $"Selected '{hit.InstanceId}'.");
-        }
-
-        private void HandleDeleteMode(Vector3 worldPos)
-        {
-            if (_clickAction == null || !_clickAction.WasPerformedThisFrame()) return;
-
-            var hit = FindSpawnerAtPosition(worldPos);
-            if (hit == null)
-            {
-                SetStatus("Nothing under cursor.");
-                return;
-            }
-
-            string id = hit.InstanceId;
-            Destroy(hit.gameObject);
-            if (_selectedInstance == hit) _selectedInstance = null;
-            SetStatus($"Deleted '{id}'.");
-            RefreshPropertiesPanel();
         }
 
         // ── Spawner ops ─────────────────────────────────────────────────────────
@@ -172,14 +153,14 @@ namespace Valkur.Gameplay.Spawners
 
         /// <summary>
         /// Returns whether the centre-click inspect shortcut is currently armed —
-        /// outlines visible AND not in Delete mode. Internal so tests can probe
-        /// the gating without touching the live mouse state.
+        /// outlines visible. Delete mode is gone (replaced by the Properties
+        /// panel "Delete" button) so the only gate left is whether the user
+        /// has toggled the Alt-outlines on. Internal so tests can probe the
+        /// gating without touching the live mouse state.
         /// </summary>
         internal bool CanCenterClickInspect()
         {
-            if (!_showAllOutlines)            return false;
-            if (_mode == EditorMode.Delete)   return false;
-            return true;
+            return _showAllOutlines;
         }
 
         /// <summary>

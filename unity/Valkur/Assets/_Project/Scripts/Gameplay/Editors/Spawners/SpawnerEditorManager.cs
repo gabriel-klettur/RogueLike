@@ -78,7 +78,6 @@ namespace Valkur.Gameplay.Spawners
             _mode = EditorMode.Select;
             OpenDefaultDropdowns();
             RefreshPicker();
-            RefreshModeButtons();
             RefreshPropertiesPanel();
             SetStatus("Spawner Editor active. F3 to close.");
         }
@@ -182,18 +181,17 @@ namespace Valkur.Gameplay.Spawners
                 onSave:           SaveInstancesToJson,
                 onReload:         () => { RefreshPicker(); SetStatus("Reload: catalog refreshed"); },
                 onSearchChanged:  v => { _searchFilter = v ?? string.Empty; RefreshPicker(); },
-                onModeSelect:     () => SetMode(EditorMode.Select),
-                onModePlace:      () => SetMode(EditorMode.Place),
-                onModeDelete:     () => SetMode(EditorMode.Delete),
+                onDeleteSelected: DeleteSelectedInstance,
                 onToggleTutorial: ToggleTutorial);
 
             _tutorial = TutorialOverlay.Build(_root.transform, "SPAWNER HOTKEYS", new[]
             {
                 ("F3",     "Toggle Spawner Editor"),
-                ("LMB",    "Select / Place / Delete (mode-aware)"),
+                ("LMB",    "Select (or place when a template is picked)"),
                 ("Drag",   "Drag a template from the picker onto the map to place"),
-                ("Alt",    "Toggle on-map spawner outlines (visualize range)"),
+                ("Alt",    "Toggle on-map spawner outlines (click centre to inspect)"),
                 ("RMB",    "Drag any spawner on the map (any mode)"),
+                ("Del",    "Properties → Delete spawner (after selection)"),
                 ("Type",   "Filter picker by template id"),
                 ("Esc",    "Cancel current mode (or close)"),
                 ("Ctrl+Z", "Undo"),
@@ -210,7 +208,6 @@ namespace Valkur.Gameplay.Spawners
             _openDropdowns.Clear();
             SetDropdownOpen("tools",  true);
             SetDropdownOpen("picker", true);
-            SetDropdownOpen("modes",  true);
             SetDropdownOpen("props",  true);
             RefreshMenuBtnHighlights();
         }
@@ -239,7 +236,6 @@ namespace Valkur.Gameplay.Spawners
         {
             "tools"  => _ui.ToolsDropdown,
             "picker" => _ui.PickerDropdown,
-            "modes"  => _ui.ModesDropdown,
             "props"  => _ui.PropsDropdown,
             _        => null
         };
@@ -248,7 +244,6 @@ namespace Valkur.Gameplay.Spawners
         {
             EditorUIHelpers.ApplyMenuBtnStyle(_ui.ToolsMenuBtnImg,  _ui.ToolsMenuBtnTmp,  _openDropdowns.Contains("tools"));
             EditorUIHelpers.ApplyMenuBtnStyle(_ui.PickerMenuBtnImg, _ui.PickerMenuBtnTmp, _openDropdowns.Contains("picker"));
-            EditorUIHelpers.ApplyMenuBtnStyle(_ui.ModesMenuBtnImg,  _ui.ModesMenuBtnTmp,  _openDropdowns.Contains("modes"));
             EditorUIHelpers.ApplyMenuBtnStyle(_ui.PropsMenuBtnImg,  _ui.PropsMenuBtnTmp,  _openDropdowns.Contains("props"));
         }
 
@@ -263,16 +258,7 @@ namespace Valkur.Gameplay.Spawners
         private void SetMode(EditorMode mode)
         {
             _mode = mode;
-            RefreshModeButtons();
             UpdateStatus();
-        }
-
-        private void RefreshModeButtons()
-        {
-            if (_ui.SelectBtnImg == null) return;
-            _ui.SelectBtnImg.color = _mode == EditorMode.Select ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
-            _ui.PlaceBtnImg.color  = _mode == EditorMode.Place  ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
-            _ui.DeleteBtnImg.color = _mode == EditorMode.Delete ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
         }
 
         private void SetStatus(string msg)
@@ -292,8 +278,7 @@ namespace Valkur.Gameplay.Spawners
         private enum EditorMode
         {
             Select,
-            Place,
-            Delete
+            Place
         }
     }
 }

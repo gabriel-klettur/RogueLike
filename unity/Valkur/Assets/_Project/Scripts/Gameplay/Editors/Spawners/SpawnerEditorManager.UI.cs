@@ -119,7 +119,6 @@ namespace Valkur.Gameplay.Spawners
         {
             _selectedTemplate = tmpl;
             _mode = EditorMode.Place;
-            RefreshModeButtons();
             RefreshPicker(); // re-tint selected row
             SetStatus($"Place mode — click on map to place '{tmpl.templateId}'.");
         }
@@ -130,12 +129,17 @@ namespace Valkur.Gameplay.Spawners
         {
             if (_ui.PropsText == null) return;
 
+            // Show the Delete button only when a spawner is selected, so the
+            // panel only exposes destructive actions in a meaningful state.
+            if (_ui.DeleteFromPropsBtnGo != null)
+                _ui.DeleteFromPropsBtnGo.SetActive(_selectedInstance != null);
+
             if (_selectedInstance == null || _selectedInstance.Template == null)
             {
                 _ui.PropsText.text =
                     "<i>No spawner selected.</i>\n\n" +
-                    "Pick a template, click on the map to <b>Place</b>, " +
-                    "or switch to <b>Select</b> mode and click an existing spawner.";
+                    "Pick a template and click the map to place, drag a template " +
+                    "from the picker, or click on a spawner to inspect it.";
                 return;
             }
 
@@ -171,6 +175,36 @@ namespace Valkur.Gameplay.Spawners
             sb.AppendLine($"  Active:    {_selectedInstance.ActiveEntityCount}");
 
             _ui.PropsText.text = sb.ToString();
+        }
+
+        // ── Delete from Properties (replaces the legacy Delete mode) ────────────
+
+        /// <summary>
+        /// Destroys the currently selected spawner and refreshes the panel.
+        /// Wired to the Properties panel "Delete spawner" button (visible
+        /// only when a spawner is selected). Internal so EditMode tests can
+        /// drive it directly without simulating a Button.onClick event.
+        /// </summary>
+        internal void DeleteSelectedInstance()
+        {
+            if (_selectedInstance == null)
+            {
+                SetStatus("No spawner selected to delete.");
+                return;
+            }
+
+            string id  = _selectedInstance.InstanceId;
+            var    go  = _selectedInstance.gameObject;
+            // Editor-mode safe destruction — same pattern Particles uses for
+            // its delete-instance path so EditMode tests don't trip on
+            // "Destroy may not be called from edit mode" warnings.
+            if (Application.isPlaying) Destroy(go);
+            else                       DestroyImmediate(go);
+            _selectedInstance = null;
+            // Cancel any in-progress drag tied to the now-dead instance.
+            _dragging = false;
+            SetStatus($"Deleted '{id}'.");
+            RefreshPropertiesPanel();
         }
     }
 }
