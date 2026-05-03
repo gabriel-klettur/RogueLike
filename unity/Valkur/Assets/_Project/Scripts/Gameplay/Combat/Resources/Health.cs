@@ -66,6 +66,21 @@ namespace Valkur.Gameplay
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 
+        /// <summary>
+        /// Permanently increase the max HP cap and grant the matching amount
+        /// of current HP. Used by skill-tree stat boosts and item upgrades
+        /// that shouldn't simultaneously heal the entity to full (which is
+        /// what <see cref="Initialize"/> would do). Negative deltas are
+        /// rejected to keep this call site distinct from a debuff path.
+        /// </summary>
+        public void IncreaseMaxHp(int delta)
+        {
+            if (delta <= 0) return;
+            maxHp += delta;
+            currentHp += delta;
+            OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
         public void SetInvincible(bool invincible)
         {
             _invincible = invincible;

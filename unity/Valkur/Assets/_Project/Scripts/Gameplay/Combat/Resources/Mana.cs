@@ -34,6 +34,20 @@ namespace Valkur.Gameplay
             OnManaChanged?.Invoke(_currentMana, maxMana);
         }
 
+        /// <summary>
+        /// Permanently increase the max mana cap and grant the matching
+        /// amount of current mana. Used by skill-tree stat boosts; mirrors
+        /// <see cref="Health.IncreaseMaxHp"/>. Reset-and-refill is the job
+        /// of <see cref="Initialize"/>.
+        /// </summary>
+        public void IncreaseMaxMana(int delta)
+        {
+            if (delta <= 0) return;
+            maxMana += delta;
+            _currentMana += delta;
+            OnManaChanged?.Invoke(_currentMana, maxMana);
+        }
+
         private void Awake()
         {
             _currentMana = maxMana;
