@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.InputSystem;
 using TMPro;
 using Valkur.Core;
 
@@ -31,10 +30,12 @@ namespace Valkur.Gameplay.Chat
 
         private Canvas _canvas;
         private GameObject _panel;
+        private GameObject _backdrop;
         private ScrollRect _scrollRect;
         private RectTransform _contentRect;
         private TMP_InputField _inputField;
         private TextMeshProUGUI _titleText;
+        private TextMeshProUGUI _langButtonText;
         private readonly List<GameObject> _messageRows = new List<GameObject>();
 
         private bool _isBuilt;
@@ -43,6 +44,7 @@ namespace Valkur.Gameplay.Chat
         {
             BuildUI();
             _panel.SetActive(false);
+            if (_backdrop != null) _backdrop.SetActive(false);
 
             var chatSystem = ChatSystem.Instance;
             if (chatSystem != null)
@@ -67,21 +69,42 @@ namespace Valkur.Gameplay.Chat
 
         private void Update()
         {
-            if (!_panel.activeSelf) return;
+            // Enter key: open / send / close, depending on current state.
+            // Routed through KeyboardInputManager so the legacy backend keeps
+            // it working when the new InputSystem drops events (Unity 2022.3 bug).
+            bool enterPressed = Valkur.Core.Input.KeyboardInputManager.WasEnterPressedThisFrame();
+            if (!enterPressed) return;
 
-            // Enter submits message. Routed through KeyboardInputManager so the
-            // legacy backend keeps it working when the new InputSystem package
-            // drops OS events (recurring Unity 2022.3 Editor bug).
-            if (Valkur.Core.Input.KeyboardInputManager.WasEnterPressedThisFrame())
+            // If the DevConsole is open, let it consume Enter instead.
+            var console = Valkur.Gameplay.DevConsole.Instance;
+            if (console != null && console.IsOpen) return;
+
+            var chatSystem = ChatSystem.Instance;
+            if (chatSystem == null) return;
+
+            if (!chatSystem.IsChatOpen)
             {
-                SubmitInput();
+                // Chat not open — try to open with the nearest NPC, using the
+                // player's world position as the proximity anchor.
+                var player = EntityRegistry.PlayerTransform;
+                Vector2 anchor = player != null ? (Vector2)player.position : Vector2.zero;
+                chatSystem.TryOpenChat(anchor);
+                return;
             }
+
+            // Chat is open: send if the field has text, close if it is empty.
+            string text = _inputField != null ? (_inputField.text?.Trim() ?? "") : "";
+            if (string.IsNullOrEmpty(text))
+                chatSystem.CloseChat();
+            else
+                SubmitInput();
         }
 
         // ── Event Handlers ──
 
         private void OnChatOpened()
         {
+            if (_backdrop != null) _backdrop.SetActive(true);
             _panel.SetActive(true);
             ClearMessages();
 
@@ -90,6 +113,13 @@ namespace Valkur.Gameplay.Chat
                 ? chatSystem.ActivePersona.displayName
                 : "NPC";
             _titleText.text = $"Chat — {npcName}";
+
+            // Sync language button to the persisted preference.
+            if (_langButtonText != null)
+            {
+                string lang = chatSystem.ActiveMemory?.preferredLanguage ?? "es";
+                _langButtonText.text = lang.ToUpperInvariant();
+            }
 
             // Show existing history
             foreach (var msg in chatSystem.History)
@@ -102,6 +132,7 @@ namespace Valkur.Gameplay.Chat
         private void OnChatClosed()
         {
             _panel.SetActive(false);
+            if (_backdrop != null) _backdrop.SetActive(false);
         }
 
         private void OnMessageReceived(string sender, string text)
@@ -122,6 +153,26 @@ namespace Valkur.Gameplay.Chat
             ChatSystem.Instance?.SubmitPlayerMessage(text);
             _inputField.text = "";
             _inputField.ActivateInputField();
+        }
+
+        // ── Language toggle ──
+
+        /// <summary>
+        /// Cycles the preferred language between "es" and "en" and persists.
+        /// Called by the lang button built in ChatUI.Builder.cs.
+        /// </summary>
+        private void ToggleLang()
+        {
+            var chatSystem = ChatSystem.Instance;
+            if (chatSystem?.ActiveMemory == null) return;
+
+            NPCMemory mem = chatSystem.ActiveMemory;
+            mem.preferredLanguage = mem.preferredLanguage == "es" ? "en" : "es";
+
+            if (_langButtonText != null)
+                _langButtonText.text = mem.preferredLanguage.ToUpperInvariant();
+
+            NPCMemoryStore.Save(mem);
         }
 
         // ── UI Construction ──

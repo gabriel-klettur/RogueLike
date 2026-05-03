@@ -22,6 +22,27 @@ namespace Valkur.Gameplay.Chat
             canvasGo.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1600, 800);
             canvasGo.AddComponent<GraphicRaycaster>();
 
+            // Modal backdrop — invisible fullscreen image that captures clicks
+            // outside the panel and closes the chat. Must be the first child
+            // so the panel (created next) draws on top and absorbs clicks
+            // landing inside its rect. The backdrop is toggled together with
+            // the panel in OnChatOpened/Closed — leaving it always-on would
+            // make EventSystem.IsPointerOverGameObject() return true for the
+            // entire screen and break things like the camera zoom.
+            _backdrop = new GameObject("Backdrop");
+            _backdrop.transform.SetParent(canvasGo.transform, false);
+            var backdropRt = _backdrop.AddComponent<RectTransform>();
+            backdropRt.anchorMin = Vector2.zero;
+            backdropRt.anchorMax = Vector2.one;
+            backdropRt.offsetMin = Vector2.zero;
+            backdropRt.offsetMax = Vector2.zero;
+            var backdropImg = _backdrop.AddComponent<Image>();
+            backdropImg.color = new Color(0f, 0f, 0f, 0f); // alpha=0 → invisible but raycastable
+            backdropImg.raycastTarget = true;
+            var backdropBtn = _backdrop.AddComponent<Button>();
+            backdropBtn.transition = Selectable.Transition.None;
+            backdropBtn.onClick.AddListener(() => ChatSystem.Instance?.CloseChat());
+
             // Panel
             _panel = new GameObject("ChatPanel");
             _panel.transform.SetParent(canvasGo.transform, false);
@@ -190,6 +211,37 @@ namespace Valkur.Gameplay.Chat
 
             var closeBtn = closeGo.AddComponent<Button>();
             closeBtn.onClick.AddListener(() => ChatSystem.Instance?.CloseChat());
+
+            // ── Language toggle button (top-right corner of panel) ────────────
+            // Built outside the VerticalLayoutGroup so it floats as an overlay.
+            var langBtnGo = new GameObject("LangButton");
+            langBtnGo.transform.SetParent(_panel.transform, false);
+            var langRt = langBtnGo.AddComponent<RectTransform>();
+            langRt.anchorMin = new Vector2(1f, 1f);
+            langRt.anchorMax = new Vector2(1f, 1f);
+            langRt.pivot = new Vector2(1f, 1f);
+            langRt.anchoredPosition = new Vector2(-6f, -6f);
+            langRt.sizeDelta = new Vector2(42f, 22f);
+
+            var langImg = langBtnGo.AddComponent<Image>();
+            langImg.color = new Color(0.18f, 0.25f, 0.45f, 1f);
+
+            // Label child (Image + TMP on separate objects avoids NullRef gotcha)
+            var langLblGo = new GameObject("LangLabel");
+            langLblGo.transform.SetParent(langBtnGo.transform, false);
+            var langLblRt = langLblGo.AddComponent<RectTransform>();
+            langLblRt.anchorMin = Vector2.zero;
+            langLblRt.anchorMax = Vector2.one;
+            langLblRt.offsetMin = Vector2.zero;
+            langLblRt.offsetMax = Vector2.zero;
+            _langButtonText = langLblGo.AddComponent<TextMeshProUGUI>();
+            _langButtonText.text = "ES";
+            _langButtonText.fontSize = 12;
+            _langButtonText.color = Color.white;
+            _langButtonText.alignment = TextAlignmentOptions.Center;
+
+            var langBtn = langBtnGo.AddComponent<Button>();
+            langBtn.onClick.AddListener(ToggleLang);
         }
 
         private void AppendMessageRow(string sender, string text)

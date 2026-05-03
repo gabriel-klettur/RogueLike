@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Chat.Providers;
 using Valkur.Gameplay.NPC;
 
 namespace Valkur.Gameplay.Chat
@@ -52,7 +53,11 @@ namespace Valkur.Gameplay.Chat
         private readonly List<ChatMessage> _history = new List<ChatMessage>();
         private readonly Queue<ScheduledChunk> _pendingChunks = new Queue<ScheduledChunk>();
         private float _nextChunkTime;
-        private int _dialogueLineIndex;
+
+        // ── Provider + persistence ──
+        private IChatProvider _provider;
+        private CancellationTokenSource _replyCts;
+        private NPCMemory _activeMemory;
 
         // ── Events ──
         public event Action OnChatOpened;
@@ -66,7 +71,22 @@ namespace Valkur.Gameplay.Chat
         public NPCPersonaDefinition ActivePersona => _activePersona;
         public IReadOnlyList<ChatMessage> History => _history;
 
+        /// <summary>
+        /// The persistent memory record for the currently active NPC.
+        /// Null when no chat is open. The lang-toggle button writes here.
+        /// </summary>
+        public NPCMemory ActiveMemory => _activeMemory;
+
         protected override bool Persist => false;
+
+        // ── Lifecycle ──
+
+        protected override void OnSingletonAwake()
+        {
+            // Resolve provider via ServiceLocator; fall back to offline.
+            if (!ServiceLocator.TryGet<IChatProvider>(out _provider))
+                _provider = new OfflineDialogueProvider();
+        }
 
         /// <summary>
         /// Attempt to open chat with the nearest NPC in range.
@@ -144,7 +164,12 @@ namespace Valkur.Gameplay.Chat
             _chatOpen = true;
             _history.Clear();
             _pendingChunks.Clear();
-            _dialogueLineIndex = 0;
+
+            // ── Load / create persistent memory ──────────────────────────────
+            string npcKey = (_activePersona?.personaId ?? npcName) + "-" + npcName;
+            _activeMemory = NPCMemoryStore.LoadOrCreate(npcKey, _activePersona?.personaId);
+            _activeMemory.visitCount++;
+            ChatSessionLogger.OpenSession(npcKey, _activePersona?.role ?? "generic");
 
             // Ensure bubble on target
             _targetBubble = target.GetComponentInChildren<ChatBubble>();
@@ -158,15 +183,18 @@ namespace Valkur.Gameplay.Chat
 
             EnsurePlayerBubble();
 
-            // Show greeting if persona has one
-            if (_activePersona != null && !string.IsNullOrEmpty(_activePersona.greeting))
+            // Show greeting only on the first-ever visit (hasGreeted persisted).
+            if (_activePersona != null && !_activeMemory.hasGreeted && !string.IsNullOrEmpty(_activePersona.greeting))
             {
                 AddMessage(npcName, _activePersona.greeting);
                 _targetBubble.PushBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
+                _activeMemory.hasGreeted = true;
             }
 
+            NPCMemoryStore.Save(_activeMemory);
+
             OnChatOpened?.Invoke();
-            Debug.Log($"[ChatSystem] Chat opened with {npcName}");
+            Debug.Log($"[ChatSystem] Chat opened with {npcName} (visit #{_activeMemory.visitCount})");
         }
 
         /// <summary>Close current chat.</summary>

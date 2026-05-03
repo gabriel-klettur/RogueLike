@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Data;
-using Valkur.Gameplay.NPC;
 
 namespace Valkur.Gameplay.Chat
 {
@@ -18,6 +16,17 @@ namespace Valkur.Gameplay.Chat
             _chatTarget = null;
             _activePersona = null;
             _pendingChunks.Clear();
+
+            // Persist memory and close log session.
+            if (_activeMemory != null)
+                NPCMemoryStore.Save(_activeMemory);
+            ChatSessionLogger.CloseSession();
+
+            // Cancel any in-flight provider call.
+            _replyCts?.Cancel();
+            _replyCts = null;
+            _activeMemory = null;
+
             OnChatClosed?.Invoke();
         }
 
@@ -59,29 +68,44 @@ namespace Valkur.Gameplay.Chat
 
         // ── Reply Generation ──
 
-        private void GenerateReply(string playerText)
+        /// <summary>
+        /// Fire-and-forget async reply. The provider runs (possibly on a thread pool)
+        /// and delivers the result back to the main thread via ScheduleReplyChunks.
+        /// Uses async void deliberately — it is a top-level event handler with a
+        /// try/catch guard so no exception is silently lost.
+        /// Maps to Python's ChatRouterSystem._route_message() async path.
+        /// </summary>
+        private async void GenerateReply(string playerText)
         {
-            string npcName = _activePersona != null ? _activePersona.displayName : "NPC";
+            if (_provider == null || _activePersona == null) return;
 
-            // Offline mode: use pre-written dialogue lines from persona
-            string reply = GetNextDialogueLine();
-            if (string.IsNullOrEmpty(reply))
+            // Cancel any previous pending reply before starting a new one.
+            _replyCts?.Cancel();
+            _replyCts = new System.Threading.CancellationTokenSource();
+            var token = _replyCts.Token;
+
+            string npcName = _activePersona.displayName ?? "NPC";
+
+            try
             {
-                reply = "...";
+                string reply = await _provider.GenerateReplyAsync(
+                    _activePersona, _activeMemory, playerText, token);
+
+                if (string.IsNullOrEmpty(reply)) reply = "...";
+
+                // Schedule reply in chunks (maps to Python MessageScheduler.schedule_reply_chunks).
+                ScheduleReplyChunks(npcName, reply);
             }
-
-            // Schedule reply in chunks (maps to Python MessageScheduler.schedule_reply_chunks)
-            ScheduleReplyChunks(npcName, reply);
-        }
-
-        private string GetNextDialogueLine()
-        {
-            if (_activePersona == null || _activePersona.dialogueLines.Count == 0)
-                return null;
-
-            string line = _activePersona.dialogueLines[_dialogueLineIndex % _activePersona.dialogueLines.Count];
-            _dialogueLineIndex++;
-            return line;
+            catch (System.OperationCanceledException)
+            {
+                // Chat was closed while the provider was working — silently discard.
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[ChatSystem] Provider '{_provider?.ProviderName}' failed: {ex}");
+                // Deliver a fallback reply so the chat doesn't silently stall.
+                ScheduleReplyChunks(npcName, "...");
+            }
         }
 
         private void ScheduleReplyChunks(string sender, string fullReply)
@@ -105,6 +129,15 @@ namespace Valkur.Gameplay.Chat
             _history.Add(new ChatMessage { sender = sender, text = text, timestamp = Time.time });
             while (_history.Count > MAX_HISTORY)
                 _history.RemoveAt(0);
+
+            // Persist to ephemeral memory and session log.
+            if (_activeMemory != null)
+            {
+                string role = sender == "Player" ? "user" : "assistant";
+                NPCMemoryStore.AppendEphemeral(_activeMemory, role, text);
+            }
+            ChatSessionLogger.LogLine(sender, text);
+
             OnMessageReceived?.Invoke(sender, text);
         }
 
