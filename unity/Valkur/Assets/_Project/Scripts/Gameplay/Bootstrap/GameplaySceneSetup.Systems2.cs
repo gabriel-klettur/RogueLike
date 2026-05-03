@@ -368,6 +368,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] DeathDropSystem created.");
         }
 
+        // LevelUpRestoreSystem listens to GameEvents.OnLevelUp and refills
+        // HP/MP. Idempotent: bails if a designer already wired one in the
+        // scene. Created in [Systems] alongside DeathDropSystem so the
+        // gameplay-loop helpers cluster in one place.
+        private void EnsureLevelUpRestoreSystem()
+        {
+            if (FindObjectOfType<LevelUpRestoreSystem>() != null) return;
+            var go = new GameObject("LevelUpRestoreSystem");
+            go.AddComponent<LevelUpRestoreSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] LevelUpRestoreSystem created.");
+        }
+
         private void EnsureNPCRespawnSystem()
         {
             if (FindObjectOfType<NPCRespawnSystem>() != null) return;

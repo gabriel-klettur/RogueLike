@@ -90,7 +90,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 35;
+        private const int SetupStepTotal = 36;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -183,6 +183,9 @@ namespace Valkur.Gameplay
 
             EnsureDeathDropSystem();
             Report("Inicializando drops de muerte"); yield return null;
+
+            EnsureLevelUpRestoreSystem();
+            Report("Inicializando regeneración por nivel"); yield return null;
 
             EnsureNPCRespawnSystem();
             Report("Inicializando respawn de NPCs"); yield return null;
