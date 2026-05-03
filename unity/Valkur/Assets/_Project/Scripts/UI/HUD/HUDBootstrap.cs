@@ -75,16 +75,16 @@ namespace Valkur.UI.HUD
                 musicGo.AddComponent<MusicPlayerHUD>();
             }
 
-            // Create DeathScreen overlay
-            if (FindObjectOfType<DeathScreenUI>() == null)
+            // Create DeathBanner overlay (replacement for the old DeathScreenUI red modal).
+            if (FindObjectOfType<DeathBannerUI>() == null)
             {
-                var deathGo = new GameObject("DeathScreenUI");
-                deathGo.AddComponent<DeathScreenUI>();
+                var deathGo = new GameObject("DeathBannerUI");
+                deathGo.AddComponent<DeathBannerUI>();
                 if (uiContainer != null) deathGo.transform.SetParent(uiContainer.transform, false);
             }
 
             _initialized = true;
-            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death screen + mouse targeting).");
+            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death banner + mouse targeting).");
         }
     }
 }
