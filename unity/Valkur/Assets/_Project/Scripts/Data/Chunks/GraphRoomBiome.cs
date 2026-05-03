@@ -34,6 +34,7 @@ namespace Valkur.Data.Chunks
         private readonly string _wallTile;
         private readonly string _bossFloorTile;
         private readonly string _bossWallTile;
+        private readonly string _doorTile;
         private readonly int    _supercellTiles;
         private readonly int    _roomProbPerMille;
         private readonly int    _bossRoomProbPerMille;
@@ -48,7 +49,8 @@ namespace Valkur.Data.Chunks
             int wallThickness       = 1,
             string bossFloorTile    = null,
             string bossWallTile     = null,
-            int bossRoomProbabilityPerMille = 50)
+            int bossRoomProbabilityPerMille = 50,
+            string doorTile         = null)
         {
             _id              = id ?? "graph_room";
             _floorTile       = floorTile ?? string.Empty;
@@ -58,6 +60,9 @@ namespace Valkur.Data.Chunks
             // get sensible (if visually identical) output.
             _bossFloorTile   = string.IsNullOrEmpty(bossFloorTile) ? _floorTile : bossFloorTile;
             _bossWallTile    = string.IsNullOrEmpty(bossWallTile)  ? _wallTile  : bossWallTile;
+            // Door defaults to the floor tile (visually flush with the
+            // corridor) so undecorated worlds don't look broken.
+            _doorTile        = string.IsNullOrEmpty(doorTile) ? _floorTile : doorTile;
             // Supercell of 0 would divide-by-zero; clamp to 1 even though
             // single-tile supercells produce nonsense layouts.
             _supercellTiles  = supercellTiles > 0 ? supercellTiles : 32;
@@ -87,6 +92,7 @@ namespace Valkur.Data.Chunks
             ushort wall      = ctx.Tiles.GetId(_wallTile);
             ushort bossFloor = ctx.Tiles.GetId(_bossFloorTile);
             ushort bossWall  = ctx.Tiles.GetId(_bossWallTile);
+            ushort door      = ctx.Tiles.GetId(_doorTile);
 
             long baseX = (long)coord.Cx * size;
             long baseY = (long)coord.Cy * size;
@@ -105,6 +111,8 @@ namespace Valkur.Data.Chunks
                     case CellKind.BossFloor:    data.Set(0, x, y, bossFloor); break;
                     case CellKind.BossWall:     data.Set(0, x, y, bossWall);  break;
                     case CellKind.Corridor:     data.Set(0, x, y, floor);     break;
+                    case CellKind.TJunction:    data.Set(0, x, y, floor);     break;
+                    case CellKind.Door:         data.Set(0, x, y, door);      break;
                     case CellKind.Void:        /* leave 0 */                  break;
                 }
             }
@@ -113,7 +121,7 @@ namespace Valkur.Data.Chunks
 
         // ── Pure classification rules (also exercised by tests) ────────────────
 
-        public enum CellKind { Void, RoomFloor, RoomWall, Corridor, BossFloor, BossWall }
+        public enum CellKind { Void, RoomFloor, RoomWall, Corridor, BossFloor, BossWall, Door, TJunction }
 
         public CellKind ClassifyCell(long tx, long ty, long worldSeed)
         {
@@ -127,8 +135,28 @@ namespace Valkur.Data.Chunks
             // is a room. A corridor passes through this cell if it would
             // connect two adjacent rooms; carving it removes the wall that
             // would otherwise block the doorway.
-            if (IsCorridorCell(sx, sy, ox, oy, worldSeed))
-                return CellKind.Corridor;
+            bool corridorH = IsHorizontalCorridorCell(sx, sy, ox, oy, worldSeed);
+            bool corridorV = IsVerticalCorridorCell(sx, sy, ox, oy, worldSeed);
+            if (corridorH && corridorV)
+            {
+                // Both axes carve through this cell — it's a T-junction or
+                // 4-way intersection. Distinct CellKind so spawners / VFX
+                // can highlight crossings.
+                return CellKind.TJunction;
+            }
+            if (corridorH || corridorV)
+            {
+                // A corridor cell that lies ON the supercell border (i.e.
+                // it's the wall cell that got carved away to let the player
+                // through) is a door. Inside-the-room corridor cells stay
+                // Corridor.
+                int corridorMax = _supercellTiles - 1;
+                int corridorBorder = _wallThickness;
+                bool corridorOnBorder = ox < corridorBorder || oy < corridorBorder ||
+                                        ox > corridorMax - corridorBorder ||
+                                        oy > corridorMax - corridorBorder;
+                return corridorOnBorder ? CellKind.Door : CellKind.Corridor;
+            }
 
             if (!IsRoomSupercell(sx, sy, worldSeed))
                 return CellKind.Void;
@@ -177,37 +205,46 @@ namespace Valkur.Data.Chunks
             return roll < _bossRoomProbPerMille;
         }
 
-        // Corridor cells: a single-tile-wide horizontal/vertical strip at
-        // the centre of each supercell pair where both supercells are rooms.
-        // This guarantees adjacent rooms reach each other through their
-        // walls without scattering corridors at random.
-        private bool IsCorridorCell(long sx, long sy, int ox, int oy, long worldSeed)
+        // Corridor classification split into horizontal and vertical so the
+        // ClassifyCell dispatcher can distinguish T-junctions (both axes
+        // carve) from straight corridors (only one axis carves).
+
+        private bool IsHorizontalCorridorCell(long sx, long sy, int ox, int oy, long worldSeed)
         {
             int mid = _supercellTiles / 2;
+            if (oy != mid) return false;
 
-            // Horizontal corridor between (sx, sy) and (sx+1, sy): cells on
-            // row 'mid' that span the eastern edge of the left supercell or
-            // the western edge of the right supercell.
-            if (oy == mid)
+            bool selfIsRoom = IsRoomSupercell(sx, sy, worldSeed);
+            // Eastward corridor: self + east neighbour both rooms.
+            if (ox >= mid)
             {
-                bool leftIsRoom  = IsRoomSupercell(sx, sy, worldSeed);
-                bool rightIsRoom = IsRoomSupercell(sx + 1, sy, worldSeed);
-                if (leftIsRoom && rightIsRoom && ox >= mid) return true;
-
-                bool farLeftIsRoom = IsRoomSupercell(sx - 1, sy, worldSeed);
-                bool selfIsRoom    = leftIsRoom;
-                if (farLeftIsRoom && selfIsRoom && ox <= mid) return true;
+                bool eastIsRoom = IsRoomSupercell(sx + 1, sy, worldSeed);
+                if (selfIsRoom && eastIsRoom) return true;
             }
-
-            // Vertical corridor between (sx, sy) and (sx, sy+1).
-            if (ox == mid)
+            // Westward corridor: self + west neighbour both rooms.
+            if (ox <= mid)
             {
-                bool selfIsRoom = IsRoomSupercell(sx, sy, worldSeed);
-                bool aboveIsRoom = IsRoomSupercell(sx, sy + 1, worldSeed);
-                if (selfIsRoom && aboveIsRoom && oy >= mid) return true;
+                bool westIsRoom = IsRoomSupercell(sx - 1, sy, worldSeed);
+                if (selfIsRoom && westIsRoom) return true;
+            }
+            return false;
+        }
 
+        private bool IsVerticalCorridorCell(long sx, long sy, int ox, int oy, long worldSeed)
+        {
+            int mid = _supercellTiles / 2;
+            if (ox != mid) return false;
+
+            bool selfIsRoom = IsRoomSupercell(sx, sy, worldSeed);
+            if (oy >= mid)
+            {
+                bool aboveIsRoom = IsRoomSupercell(sx, sy + 1, worldSeed);
+                if (selfIsRoom && aboveIsRoom) return true;
+            }
+            if (oy <= mid)
+            {
                 bool belowIsRoom = IsRoomSupercell(sx, sy - 1, worldSeed);
-                if (belowIsRoom && selfIsRoom && oy <= mid) return true;
+                if (selfIsRoom && belowIsRoom) return true;
             }
             return false;
         }

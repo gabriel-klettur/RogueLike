@@ -121,13 +121,19 @@ namespace Valkur.Tests.EditMode.Data.Chunks
             // Both lie on a supercell border. With 1000-per-mille both are
             // walls; the test verifies the classification doesn't crash and
             // returns sane values for negative inputs.
+            // Door / TJunction were added when corridor classification was
+            // split; both are valid sane outputs for negative coords too.
             Assert.IsTrue(kindAtOriginEdge == GraphRoomBiome.CellKind.RoomWall ||
                           kindAtOriginEdge == GraphRoomBiome.CellKind.RoomFloor ||
-                          kindAtOriginEdge == GraphRoomBiome.CellKind.Corridor,
+                          kindAtOriginEdge == GraphRoomBiome.CellKind.Corridor ||
+                          kindAtOriginEdge == GraphRoomBiome.CellKind.Door ||
+                          kindAtOriginEdge == GraphRoomBiome.CellKind.TJunction,
                 "Negative-coord classification must produce a valid CellKind.");
             Assert.IsTrue(kindAtOrigin == GraphRoomBiome.CellKind.RoomWall ||
                           kindAtOrigin == GraphRoomBiome.CellKind.RoomFloor ||
-                          kindAtOrigin == GraphRoomBiome.CellKind.Corridor);
+                          kindAtOrigin == GraphRoomBiome.CellKind.Corridor ||
+                          kindAtOrigin == GraphRoomBiome.CellKind.Door ||
+                          kindAtOrigin == GraphRoomBiome.CellKind.TJunction);
         }
 
         [Test]
@@ -145,24 +151,29 @@ namespace Valkur.Tests.EditMode.Data.Chunks
         {
             // With 1000 per-mille every supercell is a room, so every
             // cell on the midline of a horizontal-or-vertical neighbour
-            // pair must be a corridor (replacing what would otherwise be
-            // a wall on the supercell border).
+            // pair must be carved through. Cells ON the supercell border
+            // become Door (the carved-out wall slot); cells inside a
+            // supercell on the midline are TJunction (both axes carve)
+            // since 1000 prob means every neighbour exists.
             var biome = Make(roomProb: 1000);
 
-            // mid = SupercellTiles / 2 = 8. A cell at (mid, mid) on a
-            // supercell border is a corridor.
-            var atMidVertical   = biome.ClassifyCell(SupercellTiles / 2, 0, Seed);
+            // (mid, 0): on the SUPERCELL BORDER (oy=0). With ox=mid this
+            // is also on the vertical-corridor axis → Door (not Corridor).
+            var atMidVertical = biome.ClassifyCell(SupercellTiles / 2, 0, Seed);
+            Assert.AreEqual(GraphRoomBiome.CellKind.Door, atMidVertical,
+                "A corridor cell on the supercell border is a Door — that's " +
+                "the carved-out wall slot the player walks through.");
+
+            // (0, mid): same logic on the horizontal axis.
             var atMidHorizontal = biome.ClassifyCell(0, SupercellTiles / 2, Seed);
-            // The exact answer depends on the corridor rule; both should
-            // be Corridor when sandwiched between two rooms on the relevant
-            // axis. With 1000 per-mille the neighbours are guaranteed rooms,
-            // so the rule must fire.
-            Assert.AreEqual(GraphRoomBiome.CellKind.Corridor, atMidVertical,
-                "Midline cell on a vertical supercell border must be a corridor " +
-                "when both supercells are rooms.");
-            Assert.AreEqual(GraphRoomBiome.CellKind.Corridor, atMidHorizontal,
-                "Midline cell on a horizontal supercell border must be a corridor " +
-                "when both supercells are rooms.");
+            Assert.AreEqual(GraphRoomBiome.CellKind.Door, atMidHorizontal);
+
+            // (mid, mid): supercell centre. Both axes carve here when every
+            // neighbour is a room → TJunction.
+            var atCentre = biome.ClassifyCell(SupercellTiles / 2, SupercellTiles / 2, Seed);
+            Assert.AreEqual(GraphRoomBiome.CellKind.TJunction, atCentre,
+                "Cell where horizontal and vertical corridor axes meet (and both " +
+                "fire) must be a TJunction so spawners can place crossroads decoration.");
         }
     }
 }
