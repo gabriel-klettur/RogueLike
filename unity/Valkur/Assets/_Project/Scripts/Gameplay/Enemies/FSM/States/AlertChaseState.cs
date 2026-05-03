@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.FSM
@@ -54,6 +55,14 @@ namespace Valkur.Gameplay.FSM
 
             var playerHealth = player.GetComponent<Health>();
             if (playerHealth != null && playerHealth.IsDead)
+            {
+                fsm.ChangeState(new PatrolState());
+                return;
+            }
+
+            // Spirit-form players are invisible to NPC perception.
+            var playerSpirit = player.GetComponent<PlayerSpiritState>();
+            if (playerSpirit != null && playerSpirit.IsSpirit)
             {
                 fsm.ChangeState(new PatrolState());
                 return;

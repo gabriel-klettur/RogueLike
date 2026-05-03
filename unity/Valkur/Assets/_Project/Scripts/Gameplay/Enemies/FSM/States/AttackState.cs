@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -34,6 +35,19 @@ namespace Valkur.Gameplay.FSM
             {
                 fsm.ChangeState(new UnconsciousState());
                 return;
+            }
+
+            // Spirit-form players are intangible — abandon the attack and
+            // fall back to Patrol so the NPC stops swinging at empty air.
+            var playerForSpiritCheck = EntityRegistry.Player;
+            if (playerForSpiritCheck != null)
+            {
+                var spirit = playerForSpiritCheck.GetComponent<PlayerSpiritState>();
+                if (spirit != null && spirit.IsSpirit)
+                {
+                    fsm.ChangeState(new PatrolState());
+                    return;
+                }
             }
 
             _timer += dt;

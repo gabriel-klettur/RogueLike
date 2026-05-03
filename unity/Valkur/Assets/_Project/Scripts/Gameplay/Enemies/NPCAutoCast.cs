@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.Gameplay.FSM
@@ -124,6 +125,15 @@ namespace Valkur.Gameplay.FSM
             // Find player
             var player = Valkur.Core.EntityRegistry.PlayerTransform;
             if (player == null) return;
+
+            // Spirit-form players are intangible: don't burn cooldowns on a target
+            // that can't be hit and won't aggro back.
+            var playerGo = Valkur.Core.EntityRegistry.Player;
+            if (playerGo != null)
+            {
+                var playerSpirit = playerGo.GetComponent<PlayerSpiritState>();
+                if (playerSpirit != null && playerSpirit.IsSpirit) return;
+            }
 
             float distSq = ((Vector2)transform.position - (Vector2)player.position).sqrMagnitude;
 

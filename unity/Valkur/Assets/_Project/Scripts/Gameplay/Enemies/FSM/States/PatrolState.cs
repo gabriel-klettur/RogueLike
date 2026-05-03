@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -40,7 +41,9 @@ namespace Valkur.Gameplay.FSM
             {
                 var playerHealth = player.GetComponent<Health>();
                 bool playerAlive = playerHealth == null || !playerHealth.IsDead;
-                if (playerAlive)
+                var playerSpirit = player.GetComponent<PlayerSpiritState>();
+                bool playerVisible = playerSpirit == null || !playerSpirit.IsSpirit;
+                if (playerAlive && playerVisible)
                 {
                     float dist = Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
                     if (dist <= aggroRange)

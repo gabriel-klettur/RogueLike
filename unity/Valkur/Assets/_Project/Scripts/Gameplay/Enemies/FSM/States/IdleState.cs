@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -29,6 +30,10 @@ namespace Valkur.Gameplay.FSM
             float aggroRange = fsm.GetContextFloat("aggro_range", 5f);
             var player = EntityRegistry.Player;
             if (player == null) return;
+
+            // Spirit-form players are invisible to NPC perception.
+            var spirit = player.GetComponent<PlayerSpiritState>();
+            if (spirit != null && spirit.IsSpirit) return;
 
             float dist = Vector2.Distance(fsm.Owner.transform.position, player.transform.position);
             if (dist <= aggroRange)
