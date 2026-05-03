@@ -313,6 +313,20 @@ All previously critical issues have been resolved:
 | `data/config/audio.json` | — | Not migrated |
 | `data/config/combo_rules.json` | — | Not migrated |
 
+### Python SQLite (`roguelike.sqlite3`) — NOT migrated, by design
+
+The Python project used SQLite as a queryable cache of the JSONs (re-imported on
+content-hash change via `import_log`). In Unity that role is filled directly by
+ScriptableObject catalogs + JSON instance files: every Python table has a 1:1
+Unity equivalent with no DB layer needed.
+
+Detailed table-by-table audit: see [`SQLITE_MIGRATION_AUDIT.md`](SQLITE_MIGRATION_AUDIT.md).
+
+A *new* SQLite layer (`Valkur.Infrastructure.Persistence.Profile`) is added on top
+for **meta-progression / telemetry data that did NOT exist in Python** — run
+history, kill stats, achievements, player profile. Orthogonal to the existing
+SO + JSON layer.
+
 ### Migration Commands
 
 - **Full migration:** Unity menu → `Valkur > Migration > Import All`
