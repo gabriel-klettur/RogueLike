@@ -394,6 +394,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] PermadeathSaveCleanupSystem created.");
         }
 
+        // LevelUpSkillPointSystem grants skill points to the levelled
+        // entity's LearnedSkills on each level-up. Sibling to
+        // LevelUpRestoreSystem; both can safely coexist on the same event.
+        // Skipped silently for NPCs without a LearnedSkills component.
+        private void EnsureLevelUpSkillPointSystem()
+        {
+            if (FindObjectOfType<LevelUpSkillPointSystem>() != null) return;
+            var go = new GameObject("LevelUpSkillPointSystem");
+            go.AddComponent<LevelUpSkillPointSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] LevelUpSkillPointSystem created.");
+        }
+
         private void EnsureNPCRespawnSystem()
         {
             if (FindObjectOfType<NPCRespawnSystem>() != null) return;
