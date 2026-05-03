@@ -96,6 +96,22 @@ namespace Valkur.Gameplay.World.Chunks
                         lowTile:  d.SecondaryTile,
                         threshold: d.NoiseThreshold);
 
+                case ProceduralBiomeKind.Checkerboard:
+                    return new CheckerboardBiome(
+                        id: d.Slug + ".checkerboard",
+                        primaryTile:   d.PrimaryTile,
+                        secondaryTile: d.SecondaryTile);
+
+                case ProceduralBiomeKind.Ring:
+                    // No dedicated ring-width field on WorldDescriptor (yet);
+                    // the biome's own default is enough for the demo asset.
+                    // Designers who want custom ring widths construct the
+                    // biome directly rather than going through the descriptor.
+                    return new RingBiome(
+                        id: d.Slug + ".ring",
+                        primaryTile:   d.PrimaryTile,
+                        secondaryTile: d.SecondaryTile);
+
                 default:
                     throw new InvalidOperationException(
                         $"ProceduralWorldFactory: unsupported BiomeKind '{d.BiomeKind}'. " +

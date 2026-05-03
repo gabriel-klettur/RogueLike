@@ -18,5 +18,9 @@ namespace Valkur.Data
         Uniform = 1,
         /// <summary>Two tiles split by a deterministic noise threshold.</summary>
         NoiseSplit = 2,
+        /// <summary>Two tiles in an alternating checkerboard pattern (no noise).</summary>
+        Checkerboard = 3,
+        /// <summary>Two tiles laid out as concentric Chebyshev rings around the world origin.</summary>
+        Ring = 4,
     }
 }
