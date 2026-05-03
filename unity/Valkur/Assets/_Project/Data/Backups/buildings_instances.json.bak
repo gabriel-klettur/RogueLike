@@ -38,7 +38,7 @@
   ],
   "grid_ref_size": [499, 499]
 }}},
-  {"id": 3, "template_id": 11, "zone": "lobby", "rel_x": 141, "rel_y": -833, "overrides": {"scale": [1322, 879], "collider_scope": "CU", "collision_override": {
+  {"id": 3, "template_id": 11, "zone": "lobby", "rel_x": 143, "rel_y": -867, "overrides": {"scale": [1322, 879], "collider_scope": "CU", "collision_override": {
   "width": 42,
   "height": 28,
   "collision": [
