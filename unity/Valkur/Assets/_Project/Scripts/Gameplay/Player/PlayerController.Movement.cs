@@ -27,7 +27,11 @@ namespace Valkur.Gameplay
             EnsureInputActionsLive();
 
             bool isStunned = _statusEffects != null && _statusEffects.IsStunned;
-            bool inputSuspended = IsGameplayInputSuspended();
+            // Spirit-mode trumps editor suspension: the player has to be able
+            // to walk to the altar even if a runtime editor (F3 spawner, F5
+            // entities, etc.) was left open at the moment of death. Treat
+            // spirit form as an implicit "allows player movement" flag.
+            bool inputSuspended = !isSpirit && IsGameplayInputSuspended();
 
             if (isStunned || inputSuspended)
             {

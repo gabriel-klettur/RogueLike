@@ -4,6 +4,7 @@ using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.Spells;
 
 namespace Valkur.Gameplay
@@ -44,6 +45,7 @@ namespace Valkur.Gameplay
         private DashAbility _dashAbility;
         private SpellCaster _spellCaster;
         private StatusEffectManager _statusEffects;
+        private PlayerSpiritState _spiritState;
         private Vector2 _moveInput;
         private Vector2 _facingDirection = Vector2.down;
         private Camera _mainCamera;
@@ -61,6 +63,22 @@ namespace Valkur.Gameplay
         public Vector2 MoveInput => _moveInput;
         public bool IsMoving => _moveInput.sqrMagnitude > 0.01f;
 
+        /// <summary>
+        /// True iff a <see cref="PlayerSpiritState"/> component is attached AND
+        /// reports IsSpirit. The lookup is lazy because EntitySetup adds the
+        /// state component AFTER PlayerController.Awake has already cached
+        /// references — caching only in Awake would leave _spiritState null
+        /// for the lifetime of the run and silently disable spirit movement.
+        /// </summary>
+        public bool IsSpirit
+        {
+            get
+            {
+                if (_spiritState == null) _spiritState = GetComponent<PlayerSpiritState>();
+                return _spiritState != null && _spiritState.IsSpirit;
+            }
+        }
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
@@ -70,6 +88,7 @@ namespace Valkur.Gameplay
             _dashAbility = GetComponent<DashAbility>();
             _spellCaster = GetComponent<SpellCaster>();
             _statusEffects = GetComponent<StatusEffectManager>();
+            _spiritState = GetComponent<PlayerSpiritState>();
             _mainCamera = Camera.main;
 
             if (spriteRenderer == null)

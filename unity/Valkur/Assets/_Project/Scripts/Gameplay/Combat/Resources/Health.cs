@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.Combat.Death;
 
 namespace Valkur.Gameplay
 {
@@ -13,6 +14,7 @@ namespace Valkur.Gameplay
         [SerializeField] private int maxHp = 100;
         [SerializeField] private int currentHp;
         private bool _invincible;
+        private PlayerSpiritState _spiritState;
 
         public int MaxHp => maxHp;
         public int MaxHealth => maxHp;
@@ -40,6 +42,11 @@ namespace Valkur.Gameplay
         public void TakeDamage(int amount)
         {
             if (IsDead || amount <= 0 || _invincible) return;
+
+            // Spirit-form players are intangible: they have IsDead==false because
+            // we don't actually keep them at HP=0 (we re-init HP on revive), but
+            // until then the controller sets a flag we honour here.
+            if (IsPlayerSpirit()) return;
 
             currentHp = Mathf.Max(0, currentHp - amount);
             OnDamaged?.Invoke(amount);
@@ -84,6 +91,17 @@ namespace Valkur.Gameplay
         public void SetInvincible(bool invincible)
         {
             _invincible = invincible;
+        }
+
+        private bool IsPlayerSpirit()
+        {
+            // Lazy lookup. We can't cache "checked-and-missing" because EntitySetup
+            // adds PlayerSpiritState AFTER Health.Awake on the player prefab, so a
+            // sticky-null cache would freeze the answer at false for the life of
+            // the run. Re-querying GetComponent until we find one is cheap (this
+            // only runs on damage events, never per-frame).
+            if (_spiritState == null) _spiritState = GetComponent<PlayerSpiritState>();
+            return _spiritState != null && _spiritState.IsSpirit;
         }
     }
 }

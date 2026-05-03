@@ -54,13 +54,23 @@ namespace Valkur.Core.Input
             if (svc != null)
             {
                 ownsAction = false;
-                return Get(svc.Editors, hotkey);
+                var action = Get(svc.Editors, hotkey);
+                // Self-heal: a prior test (or hot-reload teardown that called
+                // ResetForTests / disabled the canonical InputActionAsset
+                // directly) may have left the Editors action map disabled.
+                // The Editors map is documented as always-on — re-enable it
+                // defensively so callers always receive a usable action.
+                // Mirrors InputService.EnsureAlwaysOnMapsEnabled but applied
+                // at every resolve to dodge sticky disabled state.
+                if (action != null && action.actionMap != null && !action.actionMap.enabled)
+                    action.actionMap.Enable();
+                return action;
             }
 
             ownsAction = true;
-            var action = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
-            action.Enable();
-            return action;
+            var ad = new InputAction(hotkey.ToString(), InputActionType.Button, FallbackPath(hotkey));
+            ad.Enable();
+            return ad;
         }
 
         // ── Stateless query API (preferred for runtime) ─────────────────────────

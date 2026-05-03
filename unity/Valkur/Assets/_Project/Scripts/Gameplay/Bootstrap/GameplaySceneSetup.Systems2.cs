@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
 using Valkur.Core;
+using Valkur.Core.Rendering;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Spawners;
@@ -366,6 +368,34 @@ namespace Valkur.Gameplay
             go.AddComponent<DeathDropSystem>();
             go.transform.SetParent(GetSceneContainer("[Systems]"), false);
             Debug.Log("[GameplaySceneSetup] DeathDropSystem created.");
+        }
+
+        // Death-sequence orchestrator + URP grayscale volume + altar binder.
+        // All three must coexist for the spirit/altar revive flow to work, so
+        // they're wired in a single Ensure method.
+        private void EnsureDeathSequenceFlow()
+        {
+            if (FindObjectOfType<DeathSequenceController>() == null)
+            {
+                var grayscaleGo = new GameObject("DeathGrayscaleVolume");
+                grayscaleGo.transform.SetParent(GetSceneContainer("[Systems]"), false);
+                var grayscale = grayscaleGo.AddComponent<GrayscaleVolumeController>();
+
+                var seqGo = new GameObject("DeathSequenceController");
+                seqGo.transform.SetParent(GetSceneContainer("[Systems]"), false);
+                var controller = seqGo.AddComponent<DeathSequenceController>();
+                controller.BindGrayscaleController(grayscale);
+
+                Debug.Log("[GameplaySceneSetup] DeathSequenceController + GrayscaleVolumeController created.");
+            }
+
+            if (FindObjectOfType<ResurrectionZoneAutoBinder>() == null)
+            {
+                var binderGo = new GameObject("ResurrectionZoneAutoBinder");
+                binderGo.transform.SetParent(GetSceneContainer("[Systems]"), false);
+                binderGo.AddComponent<ResurrectionZoneAutoBinder>();
+                Debug.Log("[GameplaySceneSetup] ResurrectionZoneAutoBinder created.");
+            }
         }
 
         // LevelUpRestoreSystem listens to GameEvents.OnLevelUp and refills

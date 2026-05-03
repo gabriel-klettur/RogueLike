@@ -1,3 +1,4 @@
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -53,18 +54,28 @@ namespace Valkur.Tests.EditMode.Game.Input
             // Arrange — create a ChatInputGate and pre-block gameplay input to
             // simulate the state where a chat panel was open while the gate is live.
             _gateGo = new GameObject("[ChatInputGate_Test]");
-            _gateGo.AddComponent<ChatInputGate>();
+            var gate = _gateGo.AddComponent<ChatInputGate>();
 
             InputBlocker.SetBlocked(true);
             Assert.IsTrue(InputBlocker.IsGameplayBlocked,
                 "Pre-condition: blocker must be true before disabling the gate.");
 
-            // Act — disable the component (triggers OnDisable).
-            _gateGo.SetActive(false);
+            // Act — invoke OnDisable directly. SetActive(false) does not reliably
+            // fire MonoBehaviour.OnDisable in EditMode tests for components whose
+            // Start() coroutine has not yet ticked, so the test would otherwise
+            // observe a "fake stale" state. Direct reflection invocation is the
+            // canonical workaround used elsewhere in the suite (see
+            // ParticlesEditorLifecycleTests.InvokeMethod) and exercises the
+            // exact contract we care about: the OnDisable body runs.
+            var onDisable = typeof(ChatInputGate).GetMethod(
+                "OnDisable", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(onDisable,
+                "ChatInputGate.OnDisable must exist as a private instance method.");
+            onDisable.Invoke(gate, null);
 
             // Assert — OnDisable must call InputBlocker.SetBlocked(false).
             Assert.IsFalse(InputBlocker.IsGameplayBlocked,
-                "InputBlocker must be cleared when ChatInputGate is disabled.");
+                "InputBlocker must be cleared when ChatInputGate.OnDisable runs.");
         }
 
         // ── Runtime self-heal tests (require singleton graph) ───────────────

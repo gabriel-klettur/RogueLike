@@ -159,7 +159,7 @@ namespace Valkur.UIKit
         {
             if (string.IsNullOrEmpty(id)) return;
             if (!_entries.TryGetValue(id, out var entry)) return;
-            if (entry.Go != null) SafeDestroy(entry.Go);
+            if (entry.Go != null) SafeDestroy.Of(entry.Go);
             _entries.Remove(id);
             _order.Remove(entry);
         }
@@ -305,12 +305,5 @@ namespace Valkur.UIKit
             entry.BadgeText.raycastTarget = false;
         }
 
-        private static void SafeDestroy(UnityEngine.Object obj)
-        {
-#if UNITY_EDITOR
-            if (!Application.isPlaying) { DestroyImmediate(obj); return; }
-#endif
-            Destroy(obj);
-        }
     }
 }

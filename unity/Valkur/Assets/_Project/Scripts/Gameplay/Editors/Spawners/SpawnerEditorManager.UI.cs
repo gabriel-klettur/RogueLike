@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.UIKit;
 
@@ -193,13 +194,11 @@ namespace Valkur.Gameplay.Spawners
                 return;
             }
 
-            string id  = _selectedInstance.InstanceId;
-            var    go  = _selectedInstance.gameObject;
-            // Editor-mode safe destruction — same pattern Particles uses for
-            // its delete-instance path so EditMode tests don't trip on
-            // "Destroy may not be called from edit mode" warnings.
-            if (Application.isPlaying) Destroy(go);
-            else                       DestroyImmediate(go);
+            string id = _selectedInstance.InstanceId;
+            // Edit-mode-safe destruction — branches on Application.isPlaying
+            // internally so this code path works at runtime AND in EditMode tests
+            // without tripping "Destroy may not be called from edit mode".
+            SafeDestroy.Of(_selectedInstance.gameObject);
             _selectedInstance = null;
             // Cancel any in-progress drag tied to the now-dead instance.
             _dragging = false;

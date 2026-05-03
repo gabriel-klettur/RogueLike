@@ -2,6 +2,7 @@
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
+using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.World;
 using Valkur.Gameplay.Inventory;
@@ -45,6 +46,7 @@ namespace Valkur.Gameplay
             InitPlayerSpells(go);
             InitPlayerStats(go, def);
             InitSharedVisuals(go);
+            InitSpiritDeathFlow(go);
             ApplyPlayerClassInitialMarker(go, def.playerKey);
 
             EnsureInventoryUI();
@@ -110,6 +112,15 @@ namespace Valkur.Gameplay
         {
             var health = go.GetComponent<Health>();
             if (health != null) health.Initialize(maxHp);
+        }
+
+        // Adds the two components that drive the spirit/altar revive flow on
+        // the player. Idempotent — safe to call on prefabs that already carry
+        // them (the GetComponent guards skip in that case).
+        private static void InitSpiritDeathFlow(GameObject go)
+        {
+            if (go.GetComponent<PlayerSpiritState>()   == null) go.AddComponent<PlayerSpiritState>();
+            if (go.GetComponent<PlayerSpiritVisuals>() == null) go.AddComponent<PlayerSpiritVisuals>();
         }
 
         private static void InitPlayerMovement(GameObject go, float speed)

@@ -27,7 +27,7 @@ namespace Valkur.Gameplay.Spells
 
             // Clear existing slots.
             for (int i = content.childCount - 1; i >= 0; i--)
-                Destroy(content.GetChild(i).gameObject);
+                Valkur.Core.SafeDestroy.Of(content.GetChild(i).gameObject);
 
             var keys   = _catalog.GetAllKeys();
             string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
@@ -98,6 +98,8 @@ namespace Valkur.Gameplay.Spells
             _selectedKey = key;
             RefreshPicker();
             RefreshPropertiesForm();
+            // Live-preview: if the View panel is open, update the looped cast.
+            NotifyPreviewSelectionChanged();
         }
 
         private static string TruncateName(string name, int max)

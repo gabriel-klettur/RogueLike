@@ -184,6 +184,9 @@ namespace Valkur.Gameplay
             EnsureDeathDropSystem();
             Report("Inicializando drops de muerte"); yield return null;
 
+            EnsureDeathSequenceFlow();
+            Report("Inicializando ciclo de muerte y resurrección"); yield return null;
+
             EnsureLevelUpRestoreSystem();
             Report("Inicializando regeneración por nivel"); yield return null;
 

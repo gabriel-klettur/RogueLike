@@ -270,12 +270,17 @@ namespace Valkur.UI.HUD
 
         private void OnDisable()
         {
-            _toggleAction?.Disable();
+            // Only touch the action's enable state if we OWN it (ad-hoc EditMode
+            // fallback). When the action came from the canonical InputService.Editors
+            // map it is shared with every other F-key consumer — disabling it here
+            // would break their hotkeys (e.g. EntitiesRuntimeEditor F5) and trip
+            // EditMode test assertions that check action.enabled across siblings.
+            if (_ownsToggleAction) _toggleAction?.Disable();
         }
 
         private void OnEnable()
         {
-            _toggleAction?.Enable();
+            if (_ownsToggleAction) _toggleAction?.Enable();
         }
     }
 }

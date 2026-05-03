@@ -15,12 +15,24 @@ namespace Valkur.Gameplay
     [RequireComponent(typeof(CinemachineVirtualCamera))]
     public class CameraSetup : MonoBehaviour
     {
-        public static CameraSetup Instance { get; private set; }
+        // Unity-aware singleton accessor. The getter routes through Unity's
+        // overloaded == operator so callers that do `CameraSetup.Instance?.X()`
+        // see a real C# null when the underlying GameObject has been destroyed
+        // (e.g. between EditMode tests where Domain Reload is OFF and the
+        // static field would otherwise hold a "fake null" reference). Without
+        // this, the null-conditional (?.) bypasses the Unity null check and
+        // proceeds to dereference a dangling pointer.
+        private static CameraSetup _instance;
+        public static CameraSetup Instance
+        {
+            get => _instance != null ? _instance : null;
+            private set => _instance = value;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticsOnPlayModeEnter()
         {
-            Instance = null;
+            _instance = null;
         }
 
         [SerializeField] private float orthoSize = 5f;
@@ -237,6 +249,11 @@ namespace Valkur.Gameplay
         /// </summary>
         public void DetachFollow()
         {
+            // Defensive guard for stale references — between EditMode tests with
+            // Domain Reload off, callers may hold a "fake null" CameraSetup whose
+            // underlying GameObject was destroyed. The Unity == operator detects
+            // that, but C#'s ?. does not, so the guard belongs at method entry.
+            if (this == null) return;
             EnsureCompatibilityVcam();
             if (_vcam == null || _detached) return;
             _savedFollowTarget = _vcam.Follow;
@@ -251,6 +268,7 @@ namespace Valkur.Gameplay
         /// </summary>
         public void ReattachFollow()
         {
+            if (this == null) return;
             EnsureCompatibilityVcam();
             if (_vcam == null || !_detached) return;
             _vcam.Follow = _savedFollowTarget;
