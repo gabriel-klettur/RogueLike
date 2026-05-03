@@ -167,5 +167,25 @@ namespace Valkur.Gameplay.NPC
             wallet.Add(price);
             return true;
         }
+
+        /// <summary>
+        /// Add <paramref name="qty"/> units of stock for <paramref name="item"/>.
+        /// Used by the DevConsole 'restockvendorfood' command to replenish consumable inventory.
+        /// No-ops when the item is not in this vendor's shop list.
+        /// </summary>
+        public void RestockItem(ItemDefinition item, int qty)
+        {
+            if (item == null || qty <= 0) return;
+            for (int i = 0; i < shopInventory.Count; i++)
+            {
+                if (shopInventory[i].item == item)
+                {
+                    var entry = shopInventory[i];
+                    entry.stock += qty;
+                    shopInventory[i] = entry;
+                    return;
+                }
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Spells;
@@ -35,12 +35,74 @@ namespace Valkur.Gameplay
 
         private void CmdTeleport(string[] parts)
         {
-            if (parts.Length < 3 || !float.TryParse(parts[1], out float x) || !float.TryParse(parts[2], out float y))
-            { Log("Usage: tp <x> <y>"); return; }
             var player = EntityRegistry.PlayerTransform;
             if (player == null) { Log("No player found."); return; }
-            player.position = new Vector3(x, y, 0f);
-            Log($"Teleported to ({x}, {y}).");
+
+            // Signature 1: tp <x> <y>   (both numeric)
+            if (parts.Length >= 3 &&
+                float.TryParse(parts[1], NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float xa) &&
+                float.TryParse(parts[2], NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float ya))
+            {
+                player.position = new Vector3(xa, ya, 0f);
+                Log($"Teleported to ({xa}, {ya}).");
+                return;
+            }
+
+            // Signature 2: tp <world> <x> <y>   (world slug + coords)
+            if (parts.Length >= 4 &&
+                float.TryParse(parts[2], NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float xb) &&
+                float.TryParse(parts[3], NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float yb))
+            {
+                string slug = parts[1];
+                var manager = ServiceLocator.Get<World.Worlds.IWorldManager>();
+                if (manager != null)
+                {
+                    var descriptor = FindWorldDescriptorBySlug(slug);
+                    if (descriptor == null) { Log($"World '{slug}' not found."); return; }
+                    try { manager.LoadAndActivateAsync(descriptor).GetAwaiter().GetResult(); }
+                    catch (System.Exception ex) { Log($"World swap failed: {ex.Message}"); return; }
+                }
+                player.position = new Vector3(xb, yb, 0f);
+                Log($"Teleported to world '{slug}' at ({xb}, {yb}).");
+                return;
+            }
+
+            // Signature 3: tp <world>   (go to zone center)
+            if (parts.Length >= 2)
+            {
+                string slug = parts[1];
+                // Try to find the zone in ZoneManager first for a precise position.
+                var zm = FindObjectOfType<ZoneManager>();
+                if (zm != null && zm.TryGetZone(slug, out var zoneDef))
+                {
+                    var rect = zm.GetZoneRect(zoneDef);
+                    float cx = (rect.xMin + rect.xMax) * 0.5f * zm.TileSize;
+                    float cy = (rect.yMin + rect.yMax) * 0.5f * zm.TileSize;
+                    player.position = new Vector3(cx, cy, 0f);
+                    Log($"Teleported to zone '{slug}' center ({cx:F1}, {cy:F1}).");
+                    return;
+                }
+
+                // Fall back to world descriptor.
+                var manager = ServiceLocator.Get<World.Worlds.IWorldManager>();
+                if (manager != null)
+                {
+                    var descriptor = FindWorldDescriptorBySlug(slug);
+                    if (descriptor == null) { Log($"World/zone '{slug}' not found."); return; }
+                    try { manager.LoadAndActivateAsync(descriptor).GetAwaiter().GetResult(); }
+                    catch (System.Exception ex) { Log($"World swap failed: {ex.Message}"); return; }
+                    Log($"Switched to world '{slug}'.");
+                    return;
+                }
+                Log($"Zone '{slug}' not found and no IWorldManager registered.");
+                return;
+            }
+
+            Log("Usage: tp <x> <y>  |  tp <world> <x> <y>  |  tp <world>");
         }
 
         private void CmdSetTime(string[] parts)

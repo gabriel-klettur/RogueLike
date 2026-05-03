@@ -29,6 +29,27 @@ namespace Valkur.Core
         /// <summary>Player died.</summary>
         public static event Action OnPlayerDied;
 
+        /// <summary>Player was resurrected by the DevConsole or a game mechanic. Signals the death screen to close.</summary>
+        public static event Action OnPlayerResurrected;
+
+        /// <summary>
+        /// Canonical revive signal: fires after the death-sequence controller finishes the
+        /// REVIVING phase (post-build banner hide, post-grayscale fade-out). Distinct from
+        /// <see cref="OnPlayerResurrected"/>, which is the legacy signal used by the
+        /// DevConsole resurrect command and the old DeathScreenUI. New subscribers (XP loss
+        /// hook, audio, telemetry) should use this one.
+        /// </summary>
+        public static event Action OnPlayerRevived;
+
+        /// <summary>
+        /// The active run row in the profile DB has been closed (player exited to the
+        /// main menu or loaded a different save). Distinct from <see cref="OnPlayerDied"/>:
+        /// in the new spirit/altar flow, dying does NOT end the run — only an explicit
+        /// session boundary does. ProfileTelemetrySystem listens for this to flush the
+        /// run record.
+        /// </summary>
+        public static event Action OnRunEnded;
+
         // ── XP / Level Events ──
 
         /// <summary>XP gained by any entity. Args: (entity, amount)</summary>
@@ -77,6 +98,21 @@ namespace Valkur.Core
             OnPlayerDied?.Invoke();
         }
 
+        public static void FirePlayerResurrected()
+        {
+            OnPlayerResurrected?.Invoke();
+        }
+
+        public static void FirePlayerRevived()
+        {
+            OnPlayerRevived?.Invoke();
+        }
+
+        public static void FireRunEnded()
+        {
+            OnRunEnded?.Invoke();
+        }
+
         public static void FireXpGained(GameObject entity, int amount)
         {
             OnXpGained?.Invoke(entity, amount);
@@ -112,6 +148,9 @@ namespace Valkur.Core
             OnHitDealt = null;
             OnPlayerDamaged = null;
             OnPlayerDied = null;
+            OnPlayerResurrected = null;
+            OnPlayerRevived = null;
+            OnRunEnded = null;
             OnXpGained = null;
             OnLevelUp = null;
             OnItemPickedUp = null;

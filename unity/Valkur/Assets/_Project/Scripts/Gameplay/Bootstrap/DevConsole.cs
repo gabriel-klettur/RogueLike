@@ -5,31 +5,35 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Core.Input;
-using Valkur.Gameplay.Spells;
-using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay
 {
     /// <summary>
-    /// In-game developer console. Toggle open/close with backtick (~) or F4.
+    /// In-game developer console. Toggle open/close with backtick (~).
     /// Draws a compact IMGUI overlay at the bottom of the screen; no Canvas setup required.
-    /// 
-    /// Supported commands:
-    ///   help                  - list available commands
-    ///   godmode               - toggle player invincibility
-    ///   heal                  - restore player to full HP and MP
-    ///   tp  &lt;x&gt; &lt;y&gt;          - teleport player to world position
-    ///   time &lt;0..1&gt;           - set day/night cycle time
-    ///   killall               - kill all active enemies
-    ///   give &lt;item_id&gt; [qty]  - add item(s) to player inventory
-    ///   spawn &lt;monster_key&gt;   - spawn monster near player
-    ///   clear                 - clear the log
+    ///
+    /// Commands are registered via <see cref="ConsoleCommand"/> records in the internal
+    /// <see cref="RegisterCommand"/> registry (see DevConsole.Registry.cs). Use Tab for
+    /// autocomplete and Up/Down arrows to navigate command history.
     /// </summary>
     public partial class DevConsole : SingletonMonoBehaviour<DevConsole>
     {
+        // ── Public open/close events (consumed by ChatInputGate) ──────────────
+        /// <summary>Fired when the console transitions from closed to open.</summary>
+        public event Action OnOpened;
+        /// <summary>Fired when the console transitions from open to closed.</summary>
+        public event Action OnClosed;
+
+        /// <summary>Whether the dev console is currently visible.</summary>
+        public bool IsOpen => _open;
         private const float CONSOLE_WIDTH = 640f;
         private const float CONSOLE_HEIGHT = 280f;
         private const int LOG_MAX_LINES = 80;
+
+        // ── Command history ────────────────────────────────────────────────────
+        private readonly List<string> _commandHistory = new List<string>();
+        private int _historyCursor = -1;
+        private const int MAX_HISTORY = 50;
 
         private bool _open;
         private string _inputBuffer = "";
@@ -45,6 +49,10 @@ namespace Valkur.Gameplay
         private bool _stylesBuilt;
         private bool _godMode;
 
+        // ── Noclip state ───────────────────────────────────────────────────────
+        private bool _noclipActive;
+        private int _noclipOriginalLayer;
+
         // ------------------------------------------------------------------
         // Lifecycle
         // ------------------------------------------------------------------
@@ -53,6 +61,8 @@ namespace Valkur.Gameplay
         {
             _toggleAction = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.ToggleDevConsole, out _ownsToggleAction);
+
+            RegisterDefaults();
         }
 
         protected override void OnDestroy()
@@ -65,8 +75,53 @@ namespace Valkur.Gameplay
         {
             if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleDevConsole))
             {
+                bool wasOpen = _open;
                 _open = !_open;
-                if (_open) _focusInput = true;
+                if (_open)
+                {
+                    _focusInput = true;
+                    if (!wasOpen) OnOpened?.Invoke();
+                }
+                else
+                {
+                    OnClosed?.Invoke();
+                }
+            }
+
+            if (!_open) return;
+
+            // Arrow history navigation — handled in Update so IMGUI event timing
+            // does not steal the key from the text field on the wrong frame.
+            if (KeyboardInputManager.WasArrowUpPressedThisFrame())
+            {
+                if (_commandHistory.Count > 0)
+                {
+                    _historyCursor = Mathf.Min(_historyCursor + 1, _commandHistory.Count - 1);
+                    _inputBuffer = _commandHistory[_commandHistory.Count - 1 - _historyCursor];
+                    _focusInput = true;
+                }
+            }
+            else if (KeyboardInputManager.WasArrowDownPressedThisFrame())
+            {
+                if (_historyCursor > 0)
+                {
+                    _historyCursor--;
+                    _inputBuffer = _commandHistory[_commandHistory.Count - 1 - _historyCursor];
+                }
+                else
+                {
+                    _historyCursor = -1;
+                    _inputBuffer = "";
+                }
+                _focusInput = true;
+            }
+
+            // Tab autocomplete
+            if (KeyboardInputManager.WasTabPressedThisFrame() &&
+                !string.IsNullOrWhiteSpace(_inputBuffer))
+            {
+                _inputBuffer = TryAutocomplete(_inputBuffer);
+                _focusInput = true;
             }
         }
 
@@ -82,8 +137,21 @@ namespace Valkur.Gameplay
 
             float x = (Screen.width - CONSOLE_WIDTH) * 0.5f;
             float y = Screen.height - CONSOLE_HEIGHT - 8f;
+            var consoleRect = new Rect(x - 4f, y - 4f, CONSOLE_WIDTH + 8f, CONSOLE_HEIGHT + 8f);
 
-            GUI.Box(new Rect(x - 4f, y - 4f, CONSOLE_WIDTH + 8f, CONSOLE_HEIGHT + 8f), "", _boxStyle);
+            // Modal click-outside: if the user clicks outside the console box,
+            // close it. Must run BEFORE the GUI controls so it doesn't consume
+            // events the input field / submit button rely on.
+            if (Event.current.type == EventType.MouseDown &&
+                !consoleRect.Contains(Event.current.mousePosition))
+            {
+                _open = false;
+                OnClosed?.Invoke();
+                Event.current.Use();
+                return;
+            }
+
+            GUI.Box(consoleRect, "", _boxStyle);
 
             // Log area
             float logH = CONSOLE_HEIGHT - 32f;
@@ -130,47 +198,347 @@ namespace Valkur.Gameplay
         private void ExecuteCommand(string raw)
         {
             Log($"> {raw}");
+            PushHistory(raw);
+
             var parts = raw.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return;
 
-            switch (parts[0].ToLowerInvariant())
-            {
-                case "help":     CmdHelp(); break;
-                case "clear":    _log.Clear(); break;
-                case "godmode":  CmdGodMode(); break;
-                case "heal":     CmdHeal(); break;
-                case "tp":       CmdTeleport(parts); break;
-                case "time":     CmdSetTime(parts); break;
-                case "killall":  CmdKillAll(); break;
-                case "give":     CmdGive(parts); break;
-                case "spawn":    CmdSpawn(parts); break;
-                case "spell":    CmdSpell(parts); break;
-                case "spells":   CmdSpellList(); break;
-                case "spellinfo":CmdSpellInfo(parts); break;
-                case "world":    CmdWorld(parts); break;
-                case "worlds":   CmdWorldList(); break;
-                default:
-                    Log($"Unknown command: '{parts[0]}'. Type 'help' for a list.");
-                    break;
-            }
+            // Strip leading slash so "/godmode" and "godmode" both resolve.
+            string cmdName = parts[0].TrimStart('/');
+
+            if (TryResolve(cmdName, out var cmd))
+                cmd.Handler?.Invoke(parts);
+            else
+                Log($"Unknown command: '{parts[0]}'. Type 'help' for a list.");
         }
+
+        // ------------------------------------------------------------------
+        // History helpers
+        // ------------------------------------------------------------------
+
+        private void PushHistory(string cmd)
+        {
+            if (string.IsNullOrWhiteSpace(cmd)) return;
+            // Dedupe: remove if the last entry is identical.
+            if (_commandHistory.Count > 0 &&
+                string.Equals(_commandHistory[_commandHistory.Count - 1], cmd, StringComparison.Ordinal))
+            {
+                _historyCursor = -1;
+                return;
+            }
+            _commandHistory.Add(cmd);
+            while (_commandHistory.Count > MAX_HISTORY)
+                _commandHistory.RemoveAt(0);
+            _historyCursor = -1;
+        }
+
+        // ------------------------------------------------------------------
+        // Tab autocomplete
+        // ------------------------------------------------------------------
+
+        private string TryAutocomplete(string input)
+        {
+            var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length == 0) return input;
+
+            // Completing the command name itself (first token, no space after it yet).
+            bool completingCommand = tokens.Length == 1 && !input.EndsWith(" ");
+            if (completingCommand)
+            {
+                string prefix = tokens[0].TrimStart('/');
+                var matches = new List<string>();
+                foreach (var kv in _commands)
+                    if (kv.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        matches.Add(kv.Value.Name); // use canonical name
+                matches.Sort(StringComparer.OrdinalIgnoreCase);
+                // Deduplicate (aliases map to the same Name).
+                var deduped = new List<string>();
+                for (int i = 0; i < matches.Count; i++)
+                    if (deduped.Count == 0 || deduped[deduped.Count - 1] != matches[i])
+                        deduped.Add(matches[i]);
+
+                if (deduped.Count == 1) return deduped[0];
+                if (deduped.Count > 1)
+                {
+                    Log($"  Matches: {string.Join(", ", deduped)}");
+                    // Return the longest common prefix.
+                    return LongestCommonPrefix(deduped);
+                }
+                return input;
+            }
+
+            // Completing an argument — delegate to the resolved command's Completer.
+            string cmdName = tokens[0].TrimStart('/');
+            if (!TryResolve(cmdName, out var cmd) || cmd.Completer == null) return input;
+
+            var argMatches = cmd.Completer(tokens);
+            if (argMatches == null || argMatches.Length == 0) return input;
+            if (argMatches.Length == 1)
+            {
+                // Replace the last token with the match.
+                var rebuilt = new StringBuilder();
+                for (int i = 0; i < tokens.Length - 1; i++)
+                    rebuilt.Append(tokens[i]).Append(' ');
+                rebuilt.Append(argMatches[0]);
+                return rebuilt.ToString();
+            }
+            Log($"  Matches: {string.Join(", ", argMatches)}");
+            return input;
+        }
+
+        private static string LongestCommonPrefix(List<string> words)
+        {
+            if (words.Count == 0) return "";
+            string first = words[0];
+            int len = first.Length;
+            for (int i = 1; i < words.Count; i++)
+            {
+                len = Mathf.Min(len, words[i].Length);
+                for (int c = 0; c < len; c++)
+                    if (char.ToLower(first[c]) != char.ToLower(words[i][c]))
+                    { len = c; break; }
+            }
+            return first.Substring(0, len);
+        }
+
+        // ------------------------------------------------------------------
+        // Default registration (called from OnSingletonAwake)
+        // ------------------------------------------------------------------
+
+        private void RegisterDefaults()
+        {
+            // ── core ──────────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "help", Aliases = new[] { "?" },
+                Usage = "help [cmd]", Help = "list commands or show detail for one command",
+                Category = "core",
+                Handler = args => {
+                    if (args.Length >= 2)
+                    {
+                        string target = args[1].TrimStart('/');
+                        if (TryResolve(target, out var found))
+                        {
+                            Log($"  {found.Usage}");
+                            Log($"    {found.Help}");
+                            if (found.Aliases != null && found.Aliases.Length > 0)
+                                Log($"    aliases: {string.Join(", ", found.Aliases)}");
+                        }
+                        else
+                            Log($"No command '{args[1]}' found.");
+                    }
+                    else
+                        CmdHelp();
+                }
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "clear",
+                Usage = "clear", Help = "clear the console log",
+                Category = "core",
+                Handler = _ => _log.Clear()
+            });
+
+            // ── cheats ────────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "godmode", Aliases = new[] { "god" },
+                Usage = "godmode", Help = "toggle player invincibility",
+                Category = "cheats",
+                Handler = _ => CmdGodMode()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "heal",
+                Usage = "heal", Help = "restore player to full HP and MP",
+                Category = "cheats",
+                Handler = _ => CmdHeal()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "vida", Aliases = new[] { "/vida" },
+                Usage = "vida", Help = "restore player to full HP and MP (alias of heal)",
+                Category = "cheats",
+                Handler = _ => CmdHeal()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "mana", Aliases = new[] { "/mana" },
+                Usage = "mana", Help = "restore player to full mana",
+                Category = "cheats",
+                Handler = _ => CmdMana()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "resurrect", Aliases = new[] { "/resurrect" },
+                Usage = "resurrect", Help = "revive player at full HP (closes death screen if open)",
+                Category = "cheats",
+                Handler = _ => CmdResurrect()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "givememoney", Aliases = new[] { "/givememoney" },
+                Usage = "givememoney [amount]", Help = "add coins to player wallet (default 1000)",
+                Category = "cheats",
+                Handler = args => CmdGiveMeMoney(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "kill",
+                Usage = "kill [all]", Help = "kill player (no arg) or all enemies (arg=all)",
+                Category = "cheats",
+                Handler = args => CmdKill(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "killall",
+                Usage = "killall", Help = "kill all active enemies",
+                Category = "cheats",
+                Handler = _ => CmdKillAll()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "noclip", Aliases = new[] { "/noclip" },
+                Usage = "noclip [on|off]", Help = "toggle collision with the world layer",
+                Category = "cheats",
+                Handler = args => CmdNoclip(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "restockvendorfood", Aliases = new[] { "/restockvendorfood" },
+                Usage = "restockvendorfood <vendor_name|current> [qty]",
+                Help = "restock consumable food items of a vendor (default qty 100)",
+                Category = "cheats",
+                Handler = args => CmdRestockVendorFood(args)
+            });
+
+            // ── world ─────────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "tp", Aliases = new[] { "teleport", "/teleport" },
+                Usage = "tp <x> <y>  |  tp <world> <x> <y>  |  tp <world>",
+                Help = "teleport player to coordinates or to a world's spawn",
+                Category = "world",
+                Handler = args => CmdTeleport(args),
+                Completer = args => WorldSlugCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "time",
+                Usage = "time <0..1>", Help = "set day/night cycle time (0=midnight, 0.5=noon)",
+                Category = "world",
+                Handler = args => CmdSetTime(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "world",
+                Usage = "world <slug>", Help = "swap to a different world by descriptor slug",
+                Category = "world",
+                Handler = args => CmdWorld(args),
+                Completer = args => WorldSlugCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "worlds",
+                Usage = "worlds", Help = "list available world descriptors",
+                Category = "world",
+                Handler = _ => CmdWorldList()
+            });
+
+            // ── inventory ─────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "give",
+                Usage = "give <item_id> [qty]", Help = "add item(s) to player inventory",
+                Category = "inventory",
+                Handler = args => CmdGive(args),
+                Completer = args => ItemIdCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "add",
+                Usage = "add <item_id> [qty]", Help = "add item(s) to player inventory",
+                Category = "inventory",
+                Handler = args => CmdGive(args),
+                Completer = args => ItemIdCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "remove",
+                Usage = "remove <item_id> [qty]", Help = "remove item(s) from player inventory",
+                Category = "inventory",
+                Handler = args => CmdRemove(args),
+                Completer = args => ItemIdCompleter(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "edit",
+                Usage = "edit <item_id> <prop> <value>",
+                Help = "[stub] ItemDefinition SO fields are immutable at runtime — use override system in a future update",
+                Category = "inventory",
+                Handler = args => CmdEditItem(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "list", Aliases = new[] { "lsinv", "listitems" },
+                Usage = "list", Help = "list all items in player inventory",
+                Category = "inventory",
+                Handler = _ => CmdListInventory()
+            });
+
+            // ── spells ────────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "spell",
+                Usage = "spell <spell_key>", Help = "cast a spell from the player's spell book",
+                Category = "spells",
+                Handler = args => CmdSpell(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "spells",
+                Usage = "spells", Help = "list all spells registered to the player",
+                Category = "spells",
+                Handler = _ => CmdSpellList()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "spellinfo",
+                Usage = "spellinfo <key>", Help = "show full details for a spell",
+                Category = "spells",
+                Handler = args => CmdSpellInfo(args)
+            });
+
+            // ── spawning ──────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "spawn",
+                Usage = "spawn <monster_key> [qty]", Help = "spawn monster(s) near the player",
+                Category = "spawning",
+                Handler = args => CmdSpawn(args),
+                Completer = args => MonsterKeyCompleter(args)
+            });
+
+            // ── system ────────────────────────────────────────────────────────
+            RegisterCommand(new ConsoleCommand {
+                Name = "pause",
+                Usage = "pause", Help = "pause game time (Time.timeScale = 0)",
+                Category = "system",
+                Handler = _ => CmdPause()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "resume",
+                Usage = "resume", Help = "resume game time (Time.timeScale = 1)",
+                Category = "system",
+                Handler = _ => CmdResume()
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "save",
+                Usage = "save [name]", Help = "manual save to named slot (default: timestamp)",
+                Category = "system",
+                Handler = args => CmdSave(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "load",
+                Usage = "load [name]", Help = "[stub] load a named save — use the Load Game UI for full support",
+                Category = "system",
+                Handler = args => CmdLoad(args)
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Help command — grouped by Category
+        // ------------------------------------------------------------------
 
         private void CmdHelp()
         {
-            Log("Commands:");
-            Log("  godmode             - toggle invincibility");
-            Log("  heal                - restore HP/MP");
-            Log("  tp <x> <y>          - teleport");
-            Log("  time <0..1>         - set day/night time");
-            Log("  killall             - kill all enemies");
-            Log("  give <item_id> [n]  - add item to inventory");
-            Log("  spawn <monster_key> - spawn monster nearby");
-            Log("  spell <spell_key>   - cast a spell");
-            Log("  spells              - list all registered spells");
-            Log("  spellinfo <key>     - show spell details");
-            Log("  world <slug>        - swap to a different world by descriptor slug");
-            Log("  worlds              - list available worlds");
-            Log("  clear               - clear log");
+            Log("=== DevConsole Help ===  (Tab=autocomplete  Up/Down=history)");
+            string lastCat = null;
+            foreach (var cmd in AllCommands)
+            {
+                if (cmd.Category != lastCat)
+                {
+                    Log($"--- {cmd.Category} ---");
+                    lastCat = cmd.Category;
+                }
+                Log($"  {cmd.Usage,-36} {cmd.Help}");
+            }
+            Log("Type 'help <cmd>' for details on a single command.");
         }
 
     }
