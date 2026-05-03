@@ -67,9 +67,15 @@ namespace Valkur.Core.Input
         //
         // Resolves the live canonical action on every call so caller code never
         // holds a stale reference. Eliminates the zombie-action class of bug.
+        //
+        // While a modal panel (chat / dev console) holds focus all hotkeys
+        // are suppressed EXCEPT ToggleDevConsole — the ~ key must keep
+        // working so the user can dismiss the dev console.
 
         public static bool WasPerformedThisFrame(Hotkey hotkey)
         {
+            if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
+                return false;
             var a = ResolveLive(hotkey);
             bool newSystem = a != null && a.WasPerformedThisFrame();
             // Legacy fallback: under Unity 2022.3 in the Editor the new
@@ -81,6 +87,8 @@ namespace Valkur.Core.Input
 
         public static bool IsPressed(Hotkey hotkey)
         {
+            if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
+                return false;
             var a = ResolveLive(hotkey);
             bool newSystem = a != null && a.IsPressed();
             return newSystem || LegacyKeyHeld(hotkey);
@@ -88,6 +96,8 @@ namespace Valkur.Core.Input
 
         public static bool WasReleasedThisFrame(Hotkey hotkey)
         {
+            if (InputBlocker.IsGameplayBlocked && hotkey != Hotkey.ToggleDevConsole)
+                return false;
             var a = ResolveLive(hotkey);
             bool newSystem = a != null && a.WasReleasedThisFrame();
             return newSystem || LegacyKeyUp(hotkey);

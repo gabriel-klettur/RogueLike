@@ -30,9 +30,15 @@ namespace Valkur.Core.Input
         // ── Generic Key/KeyCode pair API ─────────────────────────────────────
 
         /// <summary>True iff <paramref name="newKey"/> is held this frame in
-        /// EITHER the new InputSystem or the legacy backend.</summary>
+        /// EITHER the new InputSystem or the legacy backend.
+        /// Returns false while a modal panel (chat / dev console) holds focus,
+        /// unless the key is on the always-allowed list (Esc, ~, Enter).</summary>
         public static bool IsKeyPressed(Key newKey, KeyCode legacyKey)
         {
+            if (InputBlocker.IsGameplayBlocked &&
+                !InputBlocker.IsAlwaysAllowedKey(newKey) &&
+                !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
             var kb = Keyboard.current;
             bool n = kb != null && kb[newKey].isPressed;
             return n || UnityEngine.Input.GetKey(legacyKey);
@@ -40,6 +46,10 @@ namespace Valkur.Core.Input
 
         public static bool WasKeyPressedThisFrame(Key newKey, KeyCode legacyKey)
         {
+            if (InputBlocker.IsGameplayBlocked &&
+                !InputBlocker.IsAlwaysAllowedKey(newKey) &&
+                !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
             var kb = Keyboard.current;
             bool n = kb != null && kb[newKey].wasPressedThisFrame;
             return n || UnityEngine.Input.GetKeyDown(legacyKey);
@@ -47,6 +57,10 @@ namespace Valkur.Core.Input
 
         public static bool WasKeyReleasedThisFrame(Key newKey, KeyCode legacyKey)
         {
+            if (InputBlocker.IsGameplayBlocked &&
+                !InputBlocker.IsAlwaysAllowedKey(newKey) &&
+                !InputBlocker.IsAlwaysAllowedKey(legacyKey))
+                return false;
             var kb = Keyboard.current;
             bool n = kb != null && kb[newKey].wasReleasedThisFrame;
             return n || UnityEngine.Input.GetKeyUp(legacyKey);
@@ -106,10 +120,25 @@ namespace Valkur.Core.Input
         public static bool IsAltHeld()
             => IsLeftAltPressed() || IsRightAltPressed();
 
+        // ── Navigation keys (console history / tab-complete) ────────────────
+
+        public static bool WasTabPressedThisFrame()
+            => WasKeyPressedThisFrame(Key.Tab, KeyCode.Tab);
+
+        public static bool WasArrowUpPressedThisFrame()
+            => WasKeyPressedThisFrame(Key.UpArrow, KeyCode.UpArrow);
+
+        public static bool WasArrowDownPressedThisFrame()
+            => WasKeyPressedThisFrame(Key.DownArrow, KeyCode.DownArrow);
+
         // ── Any-key (used by press-to-start / chat / any-input dismiss) ─────
 
         public static bool WasAnyKeyPressedThisFrame()
         {
+            // Always-allowed keys (Esc, ~, Enter) shouldn't trigger any-key
+            // listeners while a modal panel is up either — those listeners
+            // are gameplay-side (e.g. press-to-start screen). Block wholesale.
+            if (InputBlocker.IsGameplayBlocked) return false;
             var kb = Keyboard.current;
             bool n = kb != null && kb.anyKey.wasPressedThisFrame;
             return n || UnityEngine.Input.anyKeyDown;

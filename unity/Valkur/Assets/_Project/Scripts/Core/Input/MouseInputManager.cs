@@ -318,6 +318,7 @@ namespace Valkur.Core.Input
 
         public static bool IsLeftMouseButtonPressed()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.leftButton.isPressed;
             return newSystem || UnityEngine.Input.GetMouseButton(0);
@@ -325,6 +326,7 @@ namespace Valkur.Core.Input
 
         public static bool WasLeftMouseButtonPressedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.leftButton.wasPressedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonDown(0);
@@ -332,6 +334,7 @@ namespace Valkur.Core.Input
 
         public static bool WasLeftMouseButtonReleasedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.leftButton.wasReleasedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonUp(0);
@@ -339,6 +342,7 @@ namespace Valkur.Core.Input
 
         public static bool IsRightMouseButtonPressed()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.rightButton.isPressed;
             return newSystem || UnityEngine.Input.GetMouseButton(1);
@@ -346,6 +350,7 @@ namespace Valkur.Core.Input
 
         public static bool WasRightMouseButtonPressedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.rightButton.wasPressedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonDown(1);
@@ -353,6 +358,7 @@ namespace Valkur.Core.Input
 
         public static bool WasRightMouseButtonReleasedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.rightButton.wasReleasedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonUp(1);
@@ -360,6 +366,7 @@ namespace Valkur.Core.Input
 
         public static bool IsMiddleMouseButtonPressed()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.middleButton.isPressed;
             return newSystem || UnityEngine.Input.GetMouseButton(2);
@@ -367,6 +374,7 @@ namespace Valkur.Core.Input
 
         public static bool WasMiddleMouseButtonPressedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.middleButton.wasPressedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonDown(2);
@@ -374,6 +382,7 @@ namespace Valkur.Core.Input
 
         public static bool WasMiddleMouseButtonReleasedThisFrame()
         {
+            if (InputBlocker.IsGameplayBlocked) return false;
             var mouse = Mouse.current;
             bool newSystem = mouse != null && mouse.middleButton.wasReleasedThisFrame;
             return newSystem || UnityEngine.Input.GetMouseButtonUp(2);
@@ -386,9 +395,12 @@ namespace Valkur.Core.Input
         /// Editor bug). The new backend reports pixels (~±120 per detent) while
         /// the legacy backend reports ticks (~±1 per detent), so we scale the
         /// legacy value ×120 to keep callers' thresholds consistent.
+        /// Returns 0 while a modal panel (chat / dev console) holds focus so
+        /// the camera does not zoom while the user scrolls the panel.
         /// </summary>
         public static float GetMouseWheelDelta()
         {
+            if (InputBlocker.IsGameplayBlocked) return 0f;
             var mouse = Mouse.current;
             float newScroll = mouse != null ? mouse.scroll.ReadValue().y : 0f;
             if (Mathf.Abs(newScroll) >= 0.1f) return newScroll;
