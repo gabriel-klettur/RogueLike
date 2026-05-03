@@ -48,7 +48,7 @@ namespace Valkur.Gameplay.Spells
             // Attach the correct procedural visual for this element. Idempotent: if the
             // prefab already has the right component (e.g. fireball comes pre-configured)
             // we don't add another one.
-            AttachElementalVisual(go, ctx.Spell.spellKey);
+            AttachElementalVisual(go, ctx.Spell);
 
             var proj = go.GetComponent<Projectile>();
             if (proj != null)
@@ -151,22 +151,44 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
-        /// Attach the element-specific procedural visual based on spellKey. Each
-        /// element (dark/ice/light/lightning/arcane) gets its own palette-driven
-        /// <see cref="ElementalProjectileVisual"/>. Fireball keeps the bespoke
-        /// <see cref="FireballVisual"/> already configured on its prefab.
+        /// Attach the element-specific procedural visual for this spell.
+        /// Reads <see cref="SpellDefinition.element"/> first (data-driven path
+        /// that lets designers add new spells without recompiling), falls
+        /// back to the legacy spellKey switch for spells whose JSON imports
+        /// haven't been re-run with the element column populated. Fireball
+        /// keeps the bespoke <see cref="FireballVisual"/> already configured
+        /// on its prefab via the IProjectileVisual short-circuit below.
         /// </summary>
-        private static void AttachElementalVisual(GameObject go, string spellKey)
+        private static void AttachElementalVisual(GameObject go, SpellDefinition spell)
         {
             // If the prefab already carries any IProjectileVisual (e.g. FireballVisual),
             // respect it.
             if (go.GetComponent<IProjectileVisual>() != null) return;
 
-            SpellElement? element = MapSpellKeyToElement(spellKey);
+            SpellElement? element = ResolveElement(spell);
             if (!element.HasValue) return;
 
             var v = go.AddComponent<ElementalProjectileVisual>();
             v.SetElement(element.Value);
+        }
+
+        // Public + static so tests can pin the precedence: SO field wins,
+        // legacy spellKey switch is the fallback.
+        public static SpellElement? ResolveElement(SpellDefinition spell)
+        {
+            if (spell == null) return null;
+
+            // Prefer the SO's `element` field — data-driven, designer-editable.
+            if (!string.IsNullOrWhiteSpace(spell.element))
+            {
+                if (System.Enum.TryParse<SpellElement>(spell.element, ignoreCase: true, out var parsed))
+                    return parsed;
+            }
+
+            // Legacy fallback: per-key switch for spells whose data hasn't yet
+            // been migrated to the SO `element` field. New spell keys should
+            // populate `element` instead of growing this table.
+            return MapSpellKeyToElement(spell.spellKey);
         }
 
         private static SpellElement? MapSpellKeyToElement(string spellKey)
