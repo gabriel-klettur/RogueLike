@@ -13,8 +13,11 @@ namespace Valkur.Tests.EditMode.Game.Save
     /// <summary>
     /// Pins <see cref="ProfileTelemetrySystem"/>: StartRun creates an
     /// active row, OnEntityDied increments kill stats AND the active
-    /// run's totalKills, OnPlayerDied closes the run + updates global
-    /// counters + persists, OnXpGained / OnLevelUp accumulate run stats.
+    /// run's totalKills, OnPlayerDied bumps the lifetime <c>deaths_total</c>
+    /// counter WITHOUT ending the active run (the spirit/altar revive
+    /// flow keeps the run open), OnRunEnded closes the run + updates
+    /// global counters + persists, OnXpGained / OnLevelUp accumulate
+    /// run stats.
     /// </summary>
     [TestFixture]
     public class ProfileTelemetrySystemTests
@@ -108,17 +111,34 @@ namespace Valkur.Tests.EditMode.Game.Save
         }
 
         [Test]
-        public void OnPlayerDied_ClosesRunAndIncrementsGlobalCounters()
+        public void OnPlayerDied_KeepsRunOpenAndIncrementsDeathCounter()
+        {
+            _sys.StartRun();
+            int totalRunsBefore  = _db.Profile.GetInt("total_runs");
+            int deathsBefore     = _db.Profile.GetInt("deaths_total");
+
+            GameEvents.FirePlayerDied();
+
+            Assert.IsTrue(string.IsNullOrEmpty(_sys.ActiveRun.endedAtIso),
+                "Spirit/altar flow: the active run must stay open across deaths.");
+            Assert.AreEqual(totalRunsBefore, _db.Profile.GetInt("total_runs"),
+                "Global total_runs must NOT increment on a death (run isn't over).");
+            Assert.AreEqual(deathsBefore + 1, _db.Profile.GetInt("deaths_total"),
+                "Global deaths_total must bump once per OnPlayerDied.");
+        }
+
+        [Test]
+        public void OnRunEnded_ClosesRunAndIncrementsGlobalCounters()
         {
             _sys.StartRun();
             int totalRunsBefore = _db.Profile.GetInt("total_runs");
 
-            GameEvents.FirePlayerDied();
+            GameEvents.FireRunEnded();
 
             Assert.IsNotEmpty(_sys.ActiveRun.endedAtIso,
-                "Run must be marked ended after OnPlayerDied.");
+                "Run must be marked ended after OnRunEnded.");
             Assert.AreEqual(totalRunsBefore + 1, _db.Profile.GetInt("total_runs"),
-                "Global total_runs must increment on player death.");
+                "Global total_runs must increment when the run ends.");
             Assert.GreaterOrEqual(_db.Profile.GetFloat("total_playtime_sec"), 0f,
                 "total_playtime_sec must be persisted (cumulative).");
         }

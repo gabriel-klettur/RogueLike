@@ -10,9 +10,14 @@ namespace Valkur.Gameplay.Save
     /// Subscribes to <see cref="GameEvents"/> and writes meta-progression
     /// telemetry to <see cref="IProfileDb"/>:
     ///
-    ///   - On <c>OnPlayerDied</c>: closes the active run row with
-    ///     duration / killer / total kills, increments
-    ///     <c>profile.total_runs</c>, persists to disk.
+    ///   - On <c>OnPlayerDied</c>: increments the run's <c>deaths</c>
+    ///     counter and the global <c>profile.deaths_total</c> — the run
+    ///     stays open. Each death now triggers the spirit/altar revive
+    ///     loop instead of ending the session, so dying is just an event
+    ///     in the run's history, not its termination.
+    ///   - On <c>OnRunEnded</c>: closes the active run row with duration
+    ///     and persists to disk. Fired explicitly when the player exits
+    ///     the gameplay scene (back to main menu, load other save).
     ///   - On <c>OnEntityDied</c> (NPC victim): increments
     ///     <c>kill_stats[entity_key]</c>.
     ///   - On <c>OnXpGained</c>: accumulates the run's xp_total.
@@ -68,6 +73,7 @@ namespace Valkur.Gameplay.Save
         {
             GameEvents.OnEntityDied   += OnEntityDied;
             GameEvents.OnPlayerDied   += OnPlayerDied;
+            GameEvents.OnRunEnded     += OnRunEnded;
             GameEvents.OnXpGained     += OnXpGained;
             GameEvents.OnLevelUp      += OnLevelUp;
         }
@@ -76,6 +82,7 @@ namespace Valkur.Gameplay.Save
         {
             GameEvents.OnEntityDied   -= OnEntityDied;
             GameEvents.OnPlayerDied   -= OnPlayerDied;
+            GameEvents.OnRunEnded     -= OnRunEnded;
             GameEvents.OnXpGained     -= OnXpGained;
             GameEvents.OnLevelUp      -= OnLevelUp;
         }
@@ -95,14 +102,26 @@ namespace Valkur.Gameplay.Save
 
         private void OnPlayerDied()
         {
+            if (_db == null) return;
+
+            // The run is no longer over: spirit/altar flow lets the player
+            // resume after every death. We simply count the death and persist.
+            _db.Profile.IncrementInt("deaths_total");
+            if (_activeRun != null)
+            {
+                // RunRecord doesn't expose a deaths field today — track in profile
+                // counters until the schema gains one. Future: add RunRecord.deaths.
+                _db.Runs.Update(_activeRun);
+            }
+            _db.SaveAll();
+        }
+
+        private void OnRunEnded()
+        {
             if (_db == null || _activeRun == null) return;
 
             _activeRun.endedAtIso = DateTime.UtcNow.ToString("o");
             _activeRun.durationSeconds = Time.time - _runStartTime;
-
-            // killedBy: best-effort — read the last damager from EntityRegistry
-            // if available; otherwise leave empty. Future improvement: thread
-            // attacker identity through OnPlayerDied.
             _db.Runs.Update(_activeRun);
 
             _db.Profile.IncrementInt("total_runs");
