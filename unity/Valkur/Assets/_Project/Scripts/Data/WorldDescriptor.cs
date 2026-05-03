@@ -42,10 +42,44 @@ namespace Valkur.Data
                  "Vector2Int; Phase 2 chunk streaming swaps to long Tx/Ty WorldPos.")]
         [SerializeField] private Vector2Int defaultSpawnTile = new Vector2Int(75, 75);
 
+        [Header("Generation (Phase 2 chunk streaming)")]
+        [Tooltip("When true, GameplaySceneSetup wires a ChunkStreamerBehaviour for this " +
+                 "world instead of the legacy WorldLoader. The chunks are produced procedurally " +
+                 "from the biome below, gated by the player's active radius. Leave false for " +
+                 "hand-crafted worlds (the legacy single-world flow stays byte-compatible).")]
+        [SerializeField] private bool useChunkStreaming;
+
+        [Tooltip("Chunks within this Chebyshev distance of the player's chunk stay visible. " +
+                 "Higher values = wider view, more memory. 2 means a 5x5 = 25 chunks active.")]
+        [SerializeField] private int activeRadius = 2;
+
+        [Tooltip("Procedural-generation kind. 'Uniform' paints every cell of layer 0 with a " +
+                 "single tile (smoke-test biome). 'NoiseSplit' threshold-splits two tiles via " +
+                 "deterministic value noise. None = no procedural generation; the world is " +
+                 "expected to be hand-crafted.")]
+        [SerializeField] private ProceduralBiomeKind biomeKind = ProceduralBiomeKind.None;
+
+        [Tooltip("Primary tile name used by the biome (the only tile for Uniform; the 'high' " +
+                 "tile for NoiseSplit). Must be registered in the world's tile registry.")]
+        [SerializeField] private string primaryTile = "grass";
+
+        [Tooltip("Secondary tile name used by NoiseSplit's 'low' band. Ignored by other biomes.")]
+        [SerializeField] private string secondaryTile = "dirt";
+
+        [Tooltip("NoiseSplit threshold in [0, 1]. Cells whose noise sample is >= threshold use " +
+                 "the primary tile; otherwise the secondary. 0.5 gives a balanced 50/50 mix.")]
+        [SerializeField, Range(0f, 1f)] private float noiseThreshold = 0.5f;
+
         public string Slug                => string.IsNullOrEmpty(slug) ? "base" : slug;
         public string DisplayName         => string.IsNullOrEmpty(displayName) ? Slug : displayName;
         public WorldConfig Config         => config;
         public Vector2Int DefaultSpawnTile => defaultSpawnTile;
+        public bool UseChunkStreaming     => useChunkStreaming;
+        public int  ActiveRadius          => Mathf.Max(0, activeRadius);
+        public ProceduralBiomeKind BiomeKind => biomeKind;
+        public string PrimaryTile         => primaryTile ?? string.Empty;
+        public string SecondaryTile       => secondaryTile ?? string.Empty;
+        public float  NoiseThreshold      => Mathf.Clamp01(noiseThreshold);
 
         /// <summary>The <see cref="WorldId"/> this descriptor produces. Always
         /// derived from the descriptor's own <see cref="Slug"/> (not from
