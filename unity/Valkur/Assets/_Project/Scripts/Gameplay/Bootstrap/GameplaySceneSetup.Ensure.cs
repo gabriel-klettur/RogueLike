@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Chat;
@@ -7,6 +8,7 @@ using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
+using Valkur.Gameplay.World.Chunks;
 using Valkur.Gameplay.World.Worlds;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -74,9 +76,23 @@ namespace Valkur.Gameplay
         /// Load the world map. When loadFullWorld is true, uses ZoneDatabaseLoader + WorldLoader
         /// to paint all 24 zones at their correct offsets. Otherwise loads a single overlay.
         /// After world load, generates the procedural dungeon south of the lobby.
+        ///
+        /// Phase 2.6: when the active descriptor opts into chunk streaming
+        /// (<see cref="WorldDescriptor.UseChunkStreaming"/> = true) the legacy
+        /// load is skipped — chunks are produced procedurally and painted
+        /// on-demand by <see cref="EnsureProceduralChunkStreamer"/> after the
+        /// player has spawned.
         /// </summary>
         private void LoadWorld()
         {
+            if (initialWorld != null && initialWorld.UseChunkStreaming)
+            {
+                Debug.Log($"[GameplaySceneSetup] Procedural chunk streaming enabled for " +
+                          $"'{initialWorld.Slug}' — skipping legacy world/overlay load. " +
+                          $"Streamer will be wired after player spawn.");
+                return;
+            }
+
             if (loadFullWorld)
             {
                 // 1) Load zone database → populates ZoneManager with all zones
@@ -160,6 +176,74 @@ namespace Valkur.Gameplay
                 lobbyOffX, lobbyOffY,
                 zoneHeight,
                 _dungeonSeed);
+        }
+
+        /// <summary>
+        /// Phase 2.6 wiring: when the active world is procedural, build the
+        /// chunk-streaming pipeline (biome → provider → painter → streamer)
+        /// and follow the just-spawned player. No-op for hand-crafted worlds.
+        ///
+        /// This step lives after <see cref="SpawnPlayer"/> in the bootstrap
+        /// because the streamer needs a focus <see cref="Transform"/>, and
+        /// the player is the natural focus for single-player builds.
+        /// </summary>
+        private void EnsureProceduralChunkStreamer()
+        {
+            if (initialWorld == null || !initialWorld.UseChunkStreaming) return;
+            if (initialWorld.Config == null)
+            {
+                Debug.LogError($"[GameplaySceneSetup] Cannot wire chunk streamer: " +
+                               $"WorldDescriptor '{initialWorld.Slug}' has no WorldConfig.");
+                return;
+            }
+
+            Tilemap groundTilemap = _gridBuilder != null
+                ? _gridBuilder.GetTilemap(World.TilemapLayerSetup.TilemapLayer.Ground)
+                : null;
+            if (groundTilemap == null)
+            {
+                Debug.LogError("[GameplaySceneSetup] Cannot wire chunk streamer: " +
+                               "Ground tilemap not found on WorldGridBuilder.");
+                return;
+            }
+
+            var player = EntityRegistry.Player;
+            if (player == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] Procedural streaming enabled but no " +
+                                 "player exists yet — streamer will be created without a focus " +
+                                 "and will sit idle until configured manually.");
+            }
+
+            ProceduralWorldFactory.ProceduralWorld streamed;
+            try
+            {
+                streamed = ProceduralWorldFactory.Build(initialWorld);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GameplaySceneSetup] ProceduralWorldFactory failed for " +
+                               $"'{initialWorld.Slug}': {ex.Message}");
+                return;
+            }
+
+            var resolver = TileRegistryNameResolver.Build(streamed.Tiles);
+            var painter  = new TilemapChunkPainter(new Tilemap[] { groundTilemap }, resolver, streamed.ChunkSize);
+
+            var streamerGo = new GameObject("ChunkStreamer");
+            streamerGo.transform.SetParent(GetSceneContainer("[World]"), false);
+            var streamer = streamerGo.AddComponent<ChunkStreamerBehaviour>();
+            streamer.Configure(
+                streamed.Provider,
+                painter,
+                activeRadius: initialWorld.ActiveRadius,
+                chunkSize:    streamed.ChunkSize,
+                worldId:      initialWorld.Id,
+                focus:        player != null ? player.transform : null);
+
+            Debug.Log($"[GameplaySceneSetup] ChunkStreamer wired for world '{initialWorld.Slug}' " +
+                      $"(biome={initialWorld.BiomeKind}, radius={initialWorld.ActiveRadius}, " +
+                      $"chunkSize={streamed.ChunkSize}).");
         }
 
     }

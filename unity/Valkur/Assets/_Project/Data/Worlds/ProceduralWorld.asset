@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b35d96fb5762224abb05341f0947e12, type: 3}
+  m_Name: ProceduralWorld
+  m_EditorClassIdentifier: 
+  slug: proc_demo
+  displayName: Procedural Demo (chunk-streamed)
+  config: {fileID: 11400000, guid: 3a7136545214de74ab2ceeaf5b7ebd42, type: 2}
+  defaultSpawnTile: {x: 0, y: 0}
+  useChunkStreaming: 1
+  activeRadius: 2
+  biomeKind: 2
+  primaryTile: tileset3_32_96
+  secondaryTile: tileset3_64_64
+  noiseThreshold: 0.5

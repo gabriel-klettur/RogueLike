@@ -90,7 +90,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 33;
+        private const int SetupStepTotal = 34;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -195,6 +195,9 @@ namespace Valkur.Gameplay
 
             SpawnPlayer();
             Report("Spawneando jugador"); yield return null;
+
+            EnsureProceduralChunkStreamer();
+            Report("Inicializando streaming procedural"); yield return null;
 
             SpawnTestMonsters();
             Report("Spawneando monstruos de prueba"); yield return null;
