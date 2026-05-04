@@ -82,6 +82,28 @@ namespace Valkur.Gameplay.World
         [SerializeField, Range(0f, 1.5f)] private float blueHourIntensity      = 0.45f;
         [SerializeField, Range(0f, 1.5f)] private float nightIntensity         = 0.35f;
 
+        [Header("Per-phase warmth (-1 cooler / +1 warmer)")]
+        [Tooltip("Color-temperature shift on top of the base color. -1 pulls toward cool blue, +1 toward warm orange. " +
+                  "Lets a designer dial the same hue between morning-cold and evening-cold without rotating the base color.")]
+        [SerializeField, Range(-1f, 1f)] private float dayWarmth            = 0.05f;
+        [SerializeField, Range(-1f, 1f)] private float dawnWarmth           = -0.20f;
+        [SerializeField, Range(-1f, 1f)] private float goldenMorningWarmth  = 0.45f;
+        [SerializeField, Range(-1f, 1f)] private float goldenEveningWarmth  = 0.55f;
+        [SerializeField, Range(-1f, 1f)] private float duskWarmth           = 0.30f;
+        [SerializeField, Range(-1f, 1f)] private float blueHourWarmth       = -0.55f;
+        [SerializeField, Range(-1f, 1f)] private float nightWarmth          = -0.40f;
+
+        [Header("Per-phase vignette opacity (0..1)")]
+        [Tooltip("Per-phase strength of the screen-edge vignette overlay. 0 = no edge tint, 1 = full edge wash. " +
+                  "DayNightVignetteOverlay uses this to know how strong its border darkening should be at each phase.")]
+        [SerializeField, Range(0f, 1f)] private float dayVignetteAlpha            = 0.05f;
+        [SerializeField, Range(0f, 1f)] private float dawnVignetteAlpha           = 0.22f;
+        [SerializeField, Range(0f, 1f)] private float goldenMorningVignetteAlpha = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float goldenEveningVignetteAlpha = 0.40f;
+        [SerializeField, Range(0f, 1f)] private float duskVignetteAlpha           = 0.42f;
+        [SerializeField, Range(0f, 1f)] private float blueHourVignetteAlpha      = 0.36f;
+        [SerializeField, Range(0f, 1f)] private float nightVignetteAlpha         = 0.30f;
+
         [Header("Point-light disable window (Python parity)")]
         [Tooltip("When ON, point lights spawned by WorldLightLoader are deactivated during the lights-disable window (FPS optimisation while it is bright outside).")]
         [SerializeField] private bool lightsDisableWindowEnabled = true;
@@ -107,6 +129,16 @@ namespace Valkur.Gameplay.World
         /// <summary>Current phase.</summary>
         public DayPhase CurrentPhase { get; private set; } = DayPhase.Day;
 
+        /// <summary>The fully-blended Light2D color that <see cref="ComputePhaseAndColor"/>
+        /// produced for the current frame, including warmth shift and the
+        /// LightingEnabled override. Other systems (vignette, particles) read
+        /// this so they don't have to recompute the same lerp twice.</summary>
+        public Color CurrentColor { get; private set; } = Color.white;
+
+        /// <summary>Per-phase vignette overlay strength, blended between the two
+        /// active phase keyframes the same way <see cref="CurrentColor"/> is.</summary>
+        public float CurrentVignetteAlpha { get; private set; } = 0.05f;
+
         /// <summary>Approximate in-game hour 0-23.</summary>
         public int HourOfDay => Mathf.FloorToInt(TimeNormalized * 24f);
 
@@ -127,6 +159,96 @@ namespace Valkur.Gameplay.World
         public bool  LightsDisableWindowEnabled   { get => lightsDisableWindowEnabled; set { lightsDisableWindowEnabled = value; RecomputeLightsDisabled(); } }
         public float LightsDisableStartNormalized { get => lightsDisableStartNormalized; set { lightsDisableStartNormalized = Mathf.Clamp01(value); RecomputeLightsDisabled(); } }
         public float LightsDisableEndNormalized   { get => lightsDisableEndNormalized; set { lightsDisableEndNormalized = Mathf.Clamp01(value); RecomputeLightsDisabled(); } }
+
+        // ── Per-phase look (5 properties exposed to runtime editors / HUD) ──
+        //
+        // The HUD's "AJUSTES DE FASE" panel reads/writes these via
+        // GetPhaseLook / SetPhaseLook so a player can tweak the cinematic
+        // look at runtime. All properties land directly back into the
+        // SerializeField storage above so a designer's inspector edits and a
+        // player's runtime edits share the same source of truth.
+
+        /// <summary>Live-editable look definition for one phase. The HUD panel
+        /// exposes 5 sliders that drive these fields:
+        ///   • Color: hue + saturation (Value/Brightness lives in <see cref="intensity"/>).
+        ///   • intensity: Light2D output multiplier 0..1.5.
+        ///   • warmth: -1 cool / +1 warm color-temperature shift.
+        ///   • vignetteAlpha: per-phase screen-edge vignette strength 0..1.
+        /// </summary>
+        public struct PhaseLook
+        {
+            public Color color;
+            public float intensity;
+            public float warmth;
+            public float vignetteAlpha;
+        }
+
+        /// <summary>Snapshot the live look for <paramref name="phase"/>. Returns
+        /// the Day defaults for the catch-all branch so callers get a usable
+        /// value even if a brand-new enum entry is added without an update here.</summary>
+        public PhaseLook GetPhaseLook(DayPhase phase) => phase switch
+        {
+            DayPhase.Dawn          => new PhaseLook { color = dawnColor,           intensity = dawnIntensity,           warmth = dawnWarmth,           vignetteAlpha = dawnVignetteAlpha },
+            DayPhase.GoldenMorning => new PhaseLook { color = goldenMorningColor,  intensity = goldenMorningIntensity,  warmth = goldenMorningWarmth,  vignetteAlpha = goldenMorningVignetteAlpha },
+            DayPhase.GoldenEvening => new PhaseLook { color = goldenEveningColor,  intensity = goldenEveningIntensity,  warmth = goldenEveningWarmth,  vignetteAlpha = goldenEveningVignetteAlpha },
+            DayPhase.Dusk          => new PhaseLook { color = duskColor,           intensity = duskIntensity,           warmth = duskWarmth,           vignetteAlpha = duskVignetteAlpha },
+            DayPhase.BlueHour      => new PhaseLook { color = blueHourColor,       intensity = blueHourIntensity,       warmth = blueHourWarmth,       vignetteAlpha = blueHourVignetteAlpha },
+            DayPhase.Night         => new PhaseLook { color = nightColor,          intensity = nightIntensity,          warmth = nightWarmth,          vignetteAlpha = nightVignetteAlpha },
+            _                       => new PhaseLook { color = dayColor,            intensity = dayIntensity,            warmth = dayWarmth,            vignetteAlpha = dayVignetteAlpha },
+        };
+
+        /// <summary>Replace the live look for <paramref name="phase"/> and re-apply
+        /// the lighting immediately so the user sees the change without waiting
+        /// for the next phase boundary.</summary>
+        public void SetPhaseLook(DayPhase phase, PhaseLook look)
+        {
+            switch (phase)
+            {
+                case DayPhase.Day:
+                    dayColor          = look.color;
+                    dayIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    dayWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    dayVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.Dawn:
+                    dawnColor          = look.color;
+                    dawnIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    dawnWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    dawnVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.GoldenMorning:
+                    goldenMorningColor          = look.color;
+                    goldenMorningIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    goldenMorningWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    goldenMorningVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.GoldenEvening:
+                    goldenEveningColor          = look.color;
+                    goldenEveningIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    goldenEveningWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    goldenEveningVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.Dusk:
+                    duskColor          = look.color;
+                    duskIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    duskWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    duskVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.BlueHour:
+                    blueHourColor          = look.color;
+                    blueHourIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    blueHourWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    blueHourVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+                case DayPhase.Night:
+                    nightColor          = look.color;
+                    nightIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
+                    nightWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
+                    nightVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
+                    break;
+            }
+            UpdateLighting();
+        }
 
         // ── Events ────────────────────────────────────────────────────
         public static System.Action<DayPhase> OnPhaseChanged;
