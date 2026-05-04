@@ -70,13 +70,16 @@ namespace Valkur.Gameplay.Items
         private const float INSTANCE_REFRESH_INTERVAL = 0.5f;
         private WorldPickup _selectedInstance;
 
-        // ── Map hover / outline FX (Phase 3) ──
-        // Hover/select on world drops follows the Buildings Editor pattern: poll
-        // every frame in Update(), AABB-test the cursor against each WorldPickup's
-        // SpriteRenderer.bounds, and tint the SpriteRenderer.color to hint state.
-        // Original sprite colors are cached so we can restore them when the editor
-        // closes or the cursor moves away.
+        // ── Map hover / outline FX ──
+        // Two long-lived ItemOutlineRenderer children draw the cyan-hover and
+        // yellow-active rectangles around the SpriteRenderer.bounds of the
+        // pickup they Follow(). Mirrors how Buildings / Spawners / Particles
+        // editors render their highlights.
         private WorldPickup _hoveredInstance;
+        private Valkur.Gameplay.Editors.Items.ItemOutlineRenderer _hoverFx;
+        private Valkur.Gameplay.Editors.Items.ItemOutlineRenderer _activeFx;
+        // Legacy tint cache — kept temporarily while callers transition off the
+        // sprite-color tinting path. Outline FX is the canonical highlight now.
         private readonly Dictionary<SpriteRenderer, Color> _originalSpriteColors
             = new Dictionary<SpriteRenderer, Color>();
         private static readonly Color HOVER_CYAN    = new Color(0.30f, 0.85f, 1.00f, 1f);

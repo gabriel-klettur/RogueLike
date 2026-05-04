@@ -111,11 +111,13 @@ namespace Valkur.Gameplay.Items
                 return;
             }
 
-            // Track: while RMB held, pickup follows the cursor.
+            // Track: while RMB held, pickup follows the cursor. SetWorldPosition
+            // also re-anchors the bob baseline so the WorldPickup.Update() bob
+            // doesn't snap the Y back to the original spawn position mid-drag.
             if (rmbHeld && _movingInstance != null)
             {
-                _movingInstance.transform.position = new Vector3(worldPos.x, worldPos.y,
-                    _movingInstance.transform.position.z);
+                _movingInstance.SetWorldPosition(new Vector3(worldPos.x, worldPos.y,
+                    _movingInstance.transform.position.z));
                 return;
             }
 
@@ -131,6 +133,10 @@ namespace Valkur.Gameplay.Items
                 _movingInstance = null;
                 _moveDropId     = null;
 
+                // Lock the moved baseline immediately so the bob baseline reflects
+                // the landed Y without waiting for the next held-frame.
+                moved.SetWorldPosition(landed);
+
                 if (service != null && !string.IsNullOrEmpty(dropId))
                 {
                     service.UpdatePosition(dropId, new Vector2(landed.x, landed.y));
@@ -138,12 +144,12 @@ namespace Valkur.Gameplay.Items
                         $"Move {moved.Item?.itemId}",
                         doAction: () =>
                         {
-                            if (moved != null) moved.transform.position = landed;
+                            if (moved != null) moved.SetWorldPosition(landed);
                             service.UpdatePosition(dropId, new Vector2(landed.x, landed.y));
                         },
                         undoAction: () =>
                         {
-                            if (moved != null) moved.transform.position = startPos;
+                            if (moved != null) moved.SetWorldPosition(startPos);
                             service.UpdatePosition(dropId, new Vector2(startPos.x, startPos.y));
                         }));
                 }
@@ -158,7 +164,7 @@ namespace Valkur.Gameplay.Items
         private void CancelRmbMove()
         {
             if (_movingInstance == null) return;
-            _movingInstance.transform.position = _moveStartWorldPos;
+            _movingInstance.SetWorldPosition(_moveStartWorldPos);
             _movingInstance = null;
             _moveDropId     = null;
             SetStatus("Move cancelled.");
@@ -183,45 +189,78 @@ namespace Valkur.Gameplay.Items
             return best;
         }
 
-        // â”€â”€ Outline FX (sprite tinting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Outline FX (line-loop around the sprite bounds) ──────────────────
+        // Two child <see cref="ItemOutlineRenderer"/> live for the editor's
+        // lifetime (built lazily in EnsureOutlineFx). One follows the hovered
+        // pickup with the cyan / red color depending on Delete mode; the other
+        // follows the active selection in yellow. Both render on the VFX
+        // sorting layer so they sit above the drop sprite without altering its
+        // colour — Phase 1 used a tint, which discoloured the icon and didn't
+        // look like a "border" at all.
 
-        /// <summary>Paint hovered/active sprites with cyan/yellow tints; restore others.</summary>
+        private void EnsureOutlineFx()
+        {
+            if (_hoverFx == null)
+            {
+                var go = new GameObject("ItemHoverOutline");
+                go.transform.SetParent(transform, false);
+                _hoverFx = go.AddComponent<Valkur.Gameplay.Editors.Items.ItemOutlineRenderer>();
+                _hoverFx.Configure(HOVER_CYAN, thicknessWorld: 0.06f);
+                _hoverFx.SetVisible(false);
+            }
+            if (_activeFx == null)
+            {
+                var go = new GameObject("ItemActiveOutline");
+                go.transform.SetParent(transform, false);
+                _activeFx = go.AddComponent<Valkur.Gameplay.Editors.Items.ItemOutlineRenderer>();
+                _activeFx.Configure(ACTIVE_YELLOW, thicknessWorld: 0.10f, padding: 0.06f);
+                _activeFx.SetVisible(false);
+            }
+        }
+
+        /// <summary>Drive the two outline renderers from the hover/select state.
+        /// In Delete mode the hover outline switches to red so the user reads
+        /// the destructive intent.</summary>
         private void UpdateOutlineState()
         {
-            // Restore any sprite that is no longer hovered or active.
-            // Iterate over a copy of the keys to allow removal.
-            var keys = new List<SpriteRenderer>(_originalSpriteColors.Keys);
-            for (int i = 0; i < keys.Count; i++)
+            EnsureOutlineFx();
+
+            // Hover outline (cyan / red).
+            if (_hoveredInstance != null)
             {
-                var sr = keys[i];
-                if (sr == null) { _originalSpriteColors.Remove(sr); continue; }
-                bool isHovered = _hoveredInstance  != null && sr == _hoveredInstance.GetComponent<SpriteRenderer>();
-                bool isActive  = _selectedInstance != null && sr == _selectedInstance.GetComponent<SpriteRenderer>();
-                if (!isHovered && !isActive)
-                {
-                    sr.color = _originalSpriteColors[sr];
-                    _originalSpriteColors.Remove(sr);
-                }
+                var color = _mode == EditorMode.Delete ? DELETE_RED : HOVER_CYAN;
+                _hoverFx.Configure(color,
+                    thicknessWorld: _mode == EditorMode.Delete ? 0.10f : 0.06f);
+                _hoverFx.Follow(_hoveredInstance);
+                _hoverFx.SetVisible(true);
+            }
+            else
+            {
+                _hoverFx.Follow(null);
+                _hoverFx.SetVisible(false);
             }
 
-            ApplyTint(_hoveredInstance,  _mode == EditorMode.Delete ? DELETE_RED : HOVER_CYAN);
-            ApplyTint(_selectedInstance, ACTIVE_YELLOW);
+            // Active selection outline (yellow). Hidden when the same pickup is
+            // also hovered to avoid double-stacked outlines flickering.
+            if (_selectedInstance != null && _selectedInstance != _hoveredInstance)
+            {
+                _activeFx.Follow(_selectedInstance);
+                _activeFx.SetVisible(true);
+            }
+            else
+            {
+                _activeFx.Follow(null);
+                _activeFx.SetVisible(false);
+            }
         }
 
-        private void ApplyTint(WorldPickup pickup, Color tint)
-        {
-            if (pickup == null) return;
-            var sr = pickup.GetComponent<SpriteRenderer>();
-            if (sr == null) return;
-            if (!_originalSpriteColors.ContainsKey(sr))
-                _originalSpriteColors[sr] = sr.color;
-            sr.color = tint;
-        }
-
+        /// <summary>Hide both outlines on Deactivate so the FX don't linger in the world.</summary>
         private void ClearAllSpriteTints()
         {
-            foreach (var kv in _originalSpriteColors)
-                if (kv.Key != null) kv.Key.color = kv.Value;
+            if (_hoverFx  != null) { _hoverFx.Follow(null);  _hoverFx.SetVisible(false); }
+            if (_activeFx != null) { _activeFx.Follow(null); _activeFx.SetVisible(false); }
+            // Legacy tint cache — drained for callers that still reference it
+            // until the field is removed in a follow-up cleanup pass.
             _originalSpriteColors.Clear();
         }
 

@@ -136,6 +136,28 @@ namespace Valkur.Tests.EditMode.Game.WorldDrops
         }
 
         [Test]
+        public void SetWorldPosition_UpdatesTransformAndBobBaseline()
+        {
+            // The bob animation in WorldPickup.Update() recomputes Y from the
+            // private _baseY field every frame. Mutating only transform.position
+            // would let the next bob frame snap Y back to the spawn baseline —
+            // exactly what broke RMB drag-to-move before this method existed.
+            LogAssert.ignoreFailingMessages = true;
+            var def = CreateItem("rune");
+            var p = BuildPickup(def, Vector3.zero);
+            p.InitializePersistent(def, 1, Vector3.zero, "rune-1", 0f, 0L, "", ItemDropSource.Editor);
+
+            p.SetWorldPosition(new Vector3(7f, 9f, 0f));
+            Assert.AreEqual(new Vector3(7f, 9f, 0f), p.transform.position);
+
+            var baseY = typeof(WorldPickup).GetField("_baseY",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(baseY);
+            Assert.AreEqual(9f, (float)baseY.GetValue(p), 0.0001f,
+                "_baseY must follow the new world position so the bob doesn't fight the move.");
+        }
+
+        [Test]
         public void MarkManualDelete_StampsManualReason()
         {
             LogAssert.ignoreFailingMessages = true;

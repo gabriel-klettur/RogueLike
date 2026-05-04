@@ -192,48 +192,78 @@ namespace Valkur.Gameplay.Items
             var meta = AddLabel(_instanceActionsGo.transform, sb.ToString());
             meta.alignment = TextAlignmentOptions.TopLeft;
 
-            // ── Quantity row: − [N] + ────────────────────────────────────────
+            // ── Quantity row: Qty:  −  [N]  + ───────────────────────────────
+            // Uses the shared EditorUIHelpers buttons so the spacing, palette,
+            // and hover states match every other editor (Buildings, Tile,
+            // Spawners, …). Row height is the same 26 px the rest of the
+            // editors use for inline action rows.
+            const float ROW_HEIGHT = 26f;
+            const float QTY_BTN_W  = 28f;
             var qtyRow = new GameObject("QtyRow", typeof(RectTransform));
             qtyRow.transform.SetParent(_instanceActionsGo.transform, false);
             var hlg = qtyRow.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing                = 4f;
             hlg.childForceExpandWidth  = false;
-            hlg.childForceExpandHeight = true;
+            hlg.childForceExpandHeight = false;
             hlg.childControlWidth      = true;
             hlg.childControlHeight     = true;
             hlg.childAlignment         = TextAnchor.MiddleLeft;
             var qtyLE = qtyRow.AddComponent<LayoutElement>();
-            qtyLE.preferredHeight = 26f;
-            qtyLE.minHeight       = 26f;
+            qtyLE.preferredHeight = ROW_HEIGHT;
+            qtyLE.minHeight       = ROW_HEIGHT;
 
-            AddLabel(qtyRow.transform, "Qty:", 32f);
-            AddBtnFixed(qtyRow.transform, "−", 28f, 26f, () => AdjustSelectedQuantity(-1));
-            var qtyLabel = AddLabel(qtyRow.transform, _selectedInstance.Quantity.ToString(), 40f);
-            qtyLabel.alignment = TextAlignmentOptions.Center;
-            qtyLabel.fontStyle = FontStyles.Bold;
-            AddBtnFixed(qtyRow.transform, "+", 28f, 26f, () => AdjustSelectedQuantity(+1));
+            AddInlineLabel(qtyRow.transform, "Qty:", 32f);
+            AttachFixedSize(
+                EditorUIHelpers.MakeButton(qtyRow.transform, "−",
+                    () => AdjustSelectedQuantity(-1), height: ROW_HEIGHT, fontSize: 12f).gameObject,
+                QTY_BTN_W, ROW_HEIGHT);
+            var qtyLbl = AddInlineLabel(qtyRow.transform, _selectedInstance.Quantity.ToString(), 40f);
+            qtyLbl.alignment = TextAlignmentOptions.Center;
+            qtyLbl.fontStyle = FontStyles.Bold;
+            AttachFixedSize(
+                EditorUIHelpers.MakeButton(qtyRow.transform, "+",
+                    () => AdjustSelectedQuantity(+1), height: ROW_HEIGHT, fontSize: 12f).gameObject,
+                QTY_BTN_W, ROW_HEIGHT);
 
-            // ── Delete row (fills width, fixed height) ───────────────────────
-            var delRow = new GameObject("DelRow", typeof(RectTransform));
-            delRow.transform.SetParent(_instanceActionsGo.transform, false);
-            var delLE = delRow.AddComponent<LayoutElement>();
-            delLE.preferredHeight = 26f;
-            delLE.minHeight       = 26f;
-            AddBtn(delRow.transform, "Delete", 0f, DeleteSelectedInstance, danger: true);
+            // ── Delete row ─────────────────────────────────────────────────
+            // Same MakeDangerButton helper Buildings/Tile editors use for
+            // destructive actions. The button stretches to the panel width and
+            // stays at the canonical 28 px height so it doesn't dwarf the
+            // rest of the panel.
+            const float DELETE_HEIGHT = 28f;
+            var delBtn = EditorUIHelpers.MakeDangerButton(
+                _instanceActionsGo.transform, "Delete", DeleteSelectedInstance,
+                height: DELETE_HEIGHT);
+            // Stable name so existing tests that look for the "DelRow" child
+            // keep finding the button without coupling to the helper internals.
+            delBtn.gameObject.name = "DelRow";
+            // Force the row to its canonical height even if VLG would otherwise
+            // expand it; preferredHeight wins over flex.
+            var delLe = delBtn.GetComponent<LayoutElement>() ?? delBtn.gameObject.AddComponent<LayoutElement>();
+            delLe.preferredHeight = DELETE_HEIGHT;
+            delLe.minHeight       = DELETE_HEIGHT;
+            delLe.flexibleHeight  = 0f;
         }
 
-        /// <summary>Square button with explicit width and height so the layout
-        /// engine can't squeeze the glyph into a vertical strip.</summary>
-        private GameObject AddBtnFixed(Transform parent, string label, float width, float height,
-            System.Action onClick, bool danger = false)
+        private static void AttachFixedSize(GameObject go, float width, float height)
         {
-            var go = AddBtn(parent, label, width, onClick, danger);
             var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
             le.preferredWidth  = width;
             le.minWidth        = width;
             le.preferredHeight = height;
             le.minHeight       = height;
-            return go;
+            le.flexibleWidth   = 0f;
+            le.flexibleHeight  = 0f;
+        }
+
+        private TextMeshProUGUI AddInlineLabel(Transform parent, string text, float preferredWidth)
+        {
+            var tmp = AddLabel(parent, text);
+            var le  = tmp.gameObject.GetComponent<LayoutElement>() ?? tmp.gameObject.AddComponent<LayoutElement>();
+            le.preferredWidth = preferredWidth;
+            le.minWidth       = preferredWidth;
+            le.flexibleWidth  = 0f;
+            return tmp;
         }
 
         private TextMeshProUGUI AddLabel(Transform parent, string text, float preferredW = -1f)
@@ -250,37 +280,9 @@ namespace Valkur.Gameplay.Items
             return tmp;
         }
 
-        private GameObject AddBtn(Transform parent, string label, float width,
-            System.Action onClick, bool danger = false)
-        {
-            var go = new GameObject($"Btn_{label}", typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = danger
-                ? new Color(0.55f, 0.18f, 0.18f, 1f)
-                : EditorUIHelpers.BTN_NORMAL;
-            var btn = go.AddComponent<Button>();
-            btn.targetGraphic = img;
-            btn.onClick.AddListener(() => onClick?.Invoke());
-            if (width > 0f) go.AddComponent<LayoutElement>().preferredWidth = width;
-
-            var labelGo = new GameObject("Label", typeof(RectTransform));
-            labelGo.transform.SetParent(go.transform, false);
-            EditorUIHelpers.StretchFill(labelGo);
-            var tmp = labelGo.AddComponent<TextMeshProUGUI>();
-            tmp.text                = label;
-            tmp.fontSize            = 11f;
-            tmp.fontStyle           = FontStyles.Bold;
-            tmp.alignment           = TextAlignmentOptions.Center;
-            tmp.color               = danger ? Color.white : EditorUIHelpers.TEXT_PRIMARY;
-            // Buttons used to render their glyphs vertically when the parent
-            // squeezed them ("D / e / l / e / t / e"). Disabling word-wrap and
-            // turning on horizontal overflow keeps short labels on a single
-            // line regardless of the layout pressure.
-            tmp.enableWordWrapping  = false;
-            tmp.overflowMode        = TextOverflowModes.Overflow;
-            return go;
-        }
+        // Note: the legacy AddBtn / AddBtnFixed helpers were removed in favour
+        // of EditorUIHelpers.MakeButton / MakeDangerButton, which already
+        // share their style with every other runtime editor.
 
         // ── Instance edit actions ────────────────────────────────────────────
 

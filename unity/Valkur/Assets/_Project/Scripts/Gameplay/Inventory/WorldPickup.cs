@@ -188,6 +188,18 @@ namespace Valkur.Gameplay.Inventory
             _pendingReason = DestructionReason.Manual;
         }
 
+        /// <summary>
+        /// Move the pickup to a new world position and re-anchor the bob
+        /// baseline. The editor's RMB drag-to-move uses this so the bob
+        /// animation in <see cref="Update"/> doesn't keep snapping the Y back
+        /// to the original spawn baseline mid-drag.
+        /// </summary>
+        public void SetWorldPosition(Vector3 worldPos)
+        {
+            transform.position = worldPos;
+            _baseY = worldPos.y;
+        }
+
         // ── Frame loop ────────────────────────────────────────────────────────
 
         private void Update()
