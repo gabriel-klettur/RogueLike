@@ -289,11 +289,15 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Bootstrap the persistent-drop pipeline: build the file-backed
-        /// repository, create the orchestrating service, register it with the
-        /// ServiceLocator, then load any saved drops and rehydrate their
-        /// WorldPickups before the editor goes live. Idempotent — no-op when
-        /// the service is already registered.
+        /// Bootstrap the persistent-drop pipeline:
+        ///  • Authoring repo → <c>StreamingAssets/Items/item_drops.json</c>
+        ///    (lives with the world content; survives across runs).
+        ///  • Run repo → <c>{persistentDataPath}/Saves/{runId}/world_drops.json</c>
+        ///    (per-run gameplay drops; loot, player throws).
+        ///
+        /// Both repos are created up-front; the service merges them into a
+        /// single in-memory cache, but flushes each subset to its own file.
+        /// Idempotent — no-op when the service is already registered.
         /// </summary>
         private void EnsureItemDropService()
         {
@@ -304,14 +308,28 @@ namespace Valkur.Gameplay
                 return;
             }
 
-            var repo = new JsonFileItemDropRepository();
-            var service = new ItemDropService(repo, _itemCatalog, Valkur.Core.Coordinates.WorldId.Base);
+            var authoringRepo = new JsonFileItemDropRepository();
+            var runRepo       = BuildRunDropRepository();
+            var service       = new ItemDropService(
+                authoringRepo, runRepo, _itemCatalog,
+                Valkur.Core.Coordinates.WorldId.Base);
 
-            int loaded = service.LoadFromRepository();
+            int loaded  = service.LoadFromRepository();
             int spawned = service.Rehydrate();
-            Debug.Log($"[GameplaySceneSetup] ItemDropService ready — loaded {loaded} record(s), rehydrated {spawned} pickup(s).");
+            Debug.Log($"[GameplaySceneSetup] ItemDropService ready — loaded {loaded} record(s), rehydrated {spawned} pickup(s) (authoring + run).");
 
             ServiceLocator.Register<ItemDropService>(service);
+        }
+
+        /// <summary>
+        /// Resolve the run-scoped JSON repository. Today the run id is a single
+        /// "default" slot; once SaveService surfaces a real run identifier we'll
+        /// route it here so drops follow the right save folder.
+        /// </summary>
+        private static IItemDropRepository BuildRunDropRepository()
+        {
+            string saveRoot = System.IO.Path.Combine(Application.persistentDataPath, "Saves", "default");
+            return new JsonFileItemDropRepository(saveRoot, "WorldDrops", "world_drops.json");
         }
 
         private void EnsureSpellsRuntimeEditor()

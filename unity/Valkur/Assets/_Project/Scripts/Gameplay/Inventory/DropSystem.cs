@@ -1,5 +1,7 @@
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.WorldDrops;
 
 namespace Valkur.Gameplay.Inventory
 {
@@ -12,23 +14,41 @@ namespace Valkur.Gameplay.Inventory
     public static class DropSystem
     {
         /// <summary>
-        /// Spawn an ephemeral world pickup at the given position. Existing
-        /// callers (loot, player throw) keep using this API; the result lives
-        /// only for the current scene.
+        /// Spawn a world pickup at the given position. When an
+        /// <see cref="ItemDropService"/> is registered the drop is recorded in
+        /// the active run save (Source = <see cref="ItemDropSource.Loot"/>) so
+        /// it survives a save / load cycle. Without a service it falls back to
+        /// a fully-ephemeral pickup that lives only for the current scene —
+        /// keeping the legacy behaviour for unit tests / sandbox scenes.
         ///
-        /// For persistent drops (Items Editor F7) call
-        /// <c>ItemDropService.SpawnPersistent</c> instead, which uses
-        /// <see cref="BuildPickupShell"/> internally.
+        /// For F7 authoring drops call <c>ItemDropService.SpawnPersistent</c>
+        /// directly so the source flag is correct.
         /// </summary>
         public static WorldPickup SpawnDrop(ItemDefinition item, int quantity, Vector3 position)
         {
             if (item == null || quantity <= 0) return null;
 
+            // Persistence path: route through the service so loot drops survive
+            // a save / load cycle. The service uses BuildPickupShell internally.
+            if (ServiceLocator.TryGet<ItemDropService>(out var service))
+            {
+                float ttl = item.despawnTime;
+                var inst = service.SpawnGameplay(item, quantity, position, ttl,
+                    zoneId: "", source: ItemDropSource.Loot);
+                var live = inst != null ? service.GetLivePickup(inst.dropId) : null;
+                if (live != null)
+                {
+                    Debug.Log($"[DropSystem] Spawned {quantity}x {item.displayName} at {position} (run-persistent).");
+                    return live;
+                }
+            }
+
+            // Ephemeral fallback (no service registered).
             var pickup = BuildPickupShell(item, position);
             if (pickup == null) return null;
 
             pickup.Initialize(item, quantity, position);
-            Debug.Log($"[DropSystem] Spawned {quantity}x {item.displayName} at {position}");
+            Debug.Log($"[DropSystem] Spawned {quantity}x {item.displayName} at {position} (ephemeral).");
             return pickup;
         }
 

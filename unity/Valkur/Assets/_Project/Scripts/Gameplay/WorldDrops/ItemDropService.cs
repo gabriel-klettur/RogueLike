@@ -9,30 +9,33 @@ using Valkur.Infrastructure.Persistence.Repositories;
 namespace Valkur.Gameplay.WorldDrops
 {
     /// <summary>
-    /// Orchestrates the lifecycle of <i>persistent</i> world drops:
+    /// Orchestrates the lifecycle of <i>persistent</i> world drops across two
+    /// stores:
     ///
-    ///  1. Holds the in-memory list backed by an <see cref="IItemDropRepository"/>.
-    ///  2. Spawns <see cref="WorldPickup"/> GameObjects from <see cref="ItemDropInstance"/>
-    ///     records (rehydration on world load, fresh placements from the F7 editor).
-    ///  3. Subscribes to <see cref="WorldPickup.OnDestroyed"/> so pickups (player),
-    ///     TTL expirations, and manual deletes mirror back into the repo file.
+    ///  • <b>Authoring</b> — drops placed in the world by the Items Editor (F7)
+    ///    or scripted quests. Versioned with the world content under
+    ///    <c>StreamingAssets/Items/item_drops.json</c>; survives between runs.
+    ///  • <b>Run</b> — gameplay drops from loot tables, NPC death, or the
+    ///    player throwing items out. Belong to a single playthrough; saved into
+    ///    the per-run save folder so the run can be restored mid-session.
     ///
-    /// One instance is registered with <c>ServiceLocator&lt;ItemDropService&gt;</c>
-    /// per running gameplay scene. Tests build their own with an
-    /// <see cref="InMemoryItemDropRepository"/> and never touch StreamingAssets.
+    /// One service instance owns both. <see cref="ItemDropSource"/> on each
+    /// instance decides which repo it routes to, so callers don't need to know
+    /// the storage layout.
     ///
-    /// Phase A wires the authoring repository (StreamingAssets/Items/item_drops.json).
-    /// Phase B will add a parallel run-scoped repository for gameplay drops.
+    /// Subscribes to <see cref="WorldPickup.OnDestroyed"/> once. Pickups
+    /// (player), TTL expirations, and manual deletes mirror back into whichever
+    /// repo owns the drop.
     /// </summary>
     public class ItemDropService : IDisposable
     {
-        private readonly IItemDropRepository _repository;
-        private readonly ItemCatalog         _catalog;
-        private readonly WorldId             _worldId;
+        private readonly IItemDropRepository _authoringRepo;
+        private IItemDropRepository _runRepo;
+        private readonly ItemCatalog _catalog;
+        private readonly WorldId     _worldId;
+
         private readonly Dictionary<string, ItemDropInstance> _byId
             = new Dictionary<string, ItemDropInstance>(StringComparer.Ordinal);
-
-        // Keep a back-reference for picking up the right pickup on Undo / replays.
         private readonly Dictionary<string, WorldPickup> _liveByDropId
             = new Dictionary<string, WorldPickup>(StringComparer.Ordinal);
 
@@ -40,9 +43,9 @@ namespace Valkur.Gameplay.WorldDrops
         private bool _flushOnEveryChange = true;
 
         /// <summary>
-        /// When true (default), every mutation flushes the repository file
-        /// synchronously. Tests or batch importers can flip this off, mutate
-        /// freely, then call <see cref="Flush"/> once.
+        /// When true (default), every mutation flushes the relevant repository
+        /// file synchronously. Tests or batch importers can flip this off,
+        /// mutate freely, then call <see cref="Flush"/> once.
         /// </summary>
         public bool FlushOnEveryChange
         {
@@ -50,16 +53,26 @@ namespace Valkur.Gameplay.WorldDrops
             set => _flushOnEveryChange = value;
         }
 
-        public ItemCatalog Catalog => _catalog;
-        public WorldId    WorldId  => _worldId;
+        public ItemCatalog Catalog       => _catalog;
+        public WorldId     WorldId       => _worldId;
+        public IItemDropRepository AuthoringRepository => _authoringRepo;
+        public IItemDropRepository RunRepository       => _runRepo;
         public IReadOnlyCollection<ItemDropInstance> All => _byId.Values;
         public int Count => _byId.Count;
 
-        public ItemDropService(IItemDropRepository repository, ItemCatalog catalog, WorldId worldId)
+        public ItemDropService(IItemDropRepository authoringRepo, ItemCatalog catalog, WorldId worldId)
+            : this(authoringRepo, runRepo: null, catalog, worldId) { }
+
+        public ItemDropService(
+            IItemDropRepository authoringRepo,
+            IItemDropRepository runRepo,
+            ItemCatalog catalog,
+            WorldId worldId)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _catalog    = catalog;
-            _worldId    = worldId;
+            _authoringRepo = authoringRepo ?? throw new ArgumentNullException(nameof(authoringRepo));
+            _runRepo       = runRepo;
+            _catalog       = catalog;
+            _worldId       = worldId;
 
             WorldPickup.OnDestroyed += HandlePickupDestroyed;
             _subscribed = true;
@@ -76,16 +89,47 @@ namespace Valkur.Gameplay.WorldDrops
             _liveByDropId.Clear();
         }
 
-        // ── Loading / persistence ─────────────────────────────────────────────
+        /// <summary>
+        /// Swap the run-scoped repository (e.g. when the player starts a new run
+        /// with a different runId). Caller is responsible for clearing in-memory
+        /// run drops first via <see cref="ClearRunDropsInMemory"/> if needed.
+        /// </summary>
+        public void SetRunRepository(IItemDropRepository repo)
+        {
+            _runRepo = repo;
+        }
+
+        // ── Source / repo routing ─────────────────────────────────────────────
 
         /// <summary>
-        /// Read every drop record from the repository into the in-memory cache.
-        /// Does NOT spawn pickups — call <see cref="Rehydrate"/> for that.
+        /// Authoring sources persist with the world content (Editor, Quest,
+        /// Unknown). Run sources persist with the active save (Loot, PlayerDrop).
         /// </summary>
+        public static bool IsAuthoringSource(ItemDropSource source) =>
+            source == ItemDropSource.Editor ||
+            source == ItemDropSource.Quest ||
+            source == ItemDropSource.Unknown;
+
+        private IItemDropRepository RepoFor(ItemDropSource source) =>
+            IsAuthoringSource(source) ? _authoringRepo : _runRepo;
+
+        // ── Loading / persistence ─────────────────────────────────────────────
+
+        /// <summary>Load both authoring and run drops from their repos into the
+        /// shared cache. Returns the number of records loaded.</summary>
         public int LoadFromRepository()
         {
             _byId.Clear();
-            string json = _repository.ReadRawJson(_worldId);
+            int count = 0;
+            count += LoadFromOneRepo(_authoringRepo);
+            if (_runRepo != null) count += LoadFromOneRepo(_runRepo);
+            return count;
+        }
+
+        private int LoadFromOneRepo(IItemDropRepository repo)
+        {
+            if (repo == null) return 0;
+            string json = repo.ReadRawJson(_worldId);
             if (string.IsNullOrWhiteSpace(json)) return 0;
 
             ItemDropsFile file;
@@ -97,39 +141,96 @@ namespace Valkur.Gameplay.WorldDrops
             }
             if (file?.drops == null) return 0;
 
+            int loaded = 0;
             foreach (var d in file.drops)
             {
                 if (d == null || string.IsNullOrEmpty(d.dropId) || string.IsNullOrEmpty(d.itemId))
                     continue;
                 _byId[d.dropId] = d;
+                loaded++;
             }
-            return _byId.Count;
+            return loaded;
         }
 
-        /// <summary>Serialise the current cache and write it through the repo.</summary>
+        /// <summary>Serialise the cache, splitting authoring vs run drops, and
+        /// write each subset through the matching repository.</summary>
         public void Flush()
+        {
+            FlushAuthoring();
+            if (_runRepo != null) FlushRun();
+        }
+
+        private void FlushAuthoring()
+        {
+            var list = new List<ItemDropInstance>();
+            foreach (var d in _byId.Values)
+                if (IsAuthoringSource(d.Source)) list.Add(d);
+            WriteFile(_authoringRepo, list);
+        }
+
+        private void FlushRun()
+        {
+            var list = new List<ItemDropInstance>();
+            foreach (var d in _byId.Values)
+                if (!IsAuthoringSource(d.Source)) list.Add(d);
+            WriteFile(_runRepo, list);
+        }
+
+        private void WriteFile(IItemDropRepository repo, List<ItemDropInstance> drops)
         {
             var file = new ItemDropsFile
             {
                 schemaVersion = ItemDropsFile.CurrentSchemaVersion,
-                drops = new ItemDropInstance[_byId.Count],
+                drops         = drops.ToArray(),
             };
-            int i = 0;
-            foreach (var d in _byId.Values) file.drops[i++] = d;
-
             string json = JsonUtility.ToJson(file, prettyPrint: true);
-            _repository.WriteRawJson(_worldId, json);
+            repo.WriteRawJson(_worldId, json);
+        }
+
+        /// <summary>Drop only the run-scoped records from memory (used at the
+        /// start of a fresh run before <see cref="SetRunRepository"/> swaps in
+        /// the new save folder).</summary>
+        public void ClearRunDropsInMemory()
+        {
+            var toRemove = new List<string>();
+            foreach (var kv in _byId)
+                if (!IsAuthoringSource(kv.Value.Source)) toRemove.Add(kv.Key);
+            foreach (var id in toRemove)
+            {
+                if (_liveByDropId.TryGetValue(id, out var live) && live != null)
+                {
+                    live.MarkManualDelete();
+                    if (Application.isPlaying) UnityEngine.Object.Destroy(live.gameObject);
+                    else UnityEngine.Object.DestroyImmediate(live.gameObject);
+                }
+                _liveByDropId.Remove(id);
+                _byId.Remove(id);
+            }
         }
 
         // ── Spawning ──────────────────────────────────────────────────────────
 
-        /// <summary>
-        /// Place a brand-new persistent drop in the world. Generates a fresh
-        /// <see cref="ItemDropInstance.dropId"/>, stamps the createdAt timestamp,
-        /// inserts it into the cache, persists, and spawns the pickup. Returns
-        /// the instance metadata so callers can record it for Undo.
-        /// </summary>
+        /// <summary>Authoring spawn — drops survive across runs (Editor / Quest).</summary>
         public ItemDropInstance SpawnPersistent(
+            ItemDefinition def, int quantity, Vector3 worldPos,
+            float despawnTtlSeconds, string zoneId, ItemDropSource source)
+        {
+            return SpawnInternal(def, quantity, worldPos, despawnTtlSeconds, zoneId,
+                IsAuthoringSource(source) ? source : ItemDropSource.Editor);
+        }
+
+        /// <summary>Run-scoped spawn — drops are saved with the active run
+        /// (Loot / PlayerDrop). When no run repo is bound the call still spawns
+        /// a live pickup but the record won't survive a save / load.</summary>
+        public ItemDropInstance SpawnGameplay(
+            ItemDefinition def, int quantity, Vector3 worldPos,
+            float despawnTtlSeconds, string zoneId, ItemDropSource source)
+        {
+            return SpawnInternal(def, quantity, worldPos, despawnTtlSeconds, zoneId,
+                IsAuthoringSource(source) ? ItemDropSource.Loot : source);
+        }
+
+        private ItemDropInstance SpawnInternal(
             ItemDefinition def, int quantity, Vector3 worldPos,
             float despawnTtlSeconds, string zoneId, ItemDropSource source)
         {
@@ -148,17 +249,10 @@ namespace Valkur.Gameplay.WorldDrops
 
             _byId[instance.dropId] = instance;
             SpawnPickupFor(instance);
-            if (_flushOnEveryChange) Flush();
+            if (_flushOnEveryChange) FlushFor(instance);
             return instance;
         }
 
-        /// <summary>
-        /// Recreate a previously-known drop. Used by:
-        ///   • <see cref="ItemDropLoader"/> on world bootstrap (rehydrate from disk).
-        ///   • <see cref="ItemsRuntimeEditor"/> Undo (re-insert a deleted drop).
-        /// The dropId is taken straight from <paramref name="instance"/>; the
-        /// caller owns timestamp / TTL semantics.
-        /// </summary>
         public void RestorePersistent(ItemDropInstance instance)
         {
             if (instance == null || string.IsNullOrEmpty(instance.dropId)
@@ -167,14 +261,9 @@ namespace Valkur.Gameplay.WorldDrops
 
             _byId[instance.dropId] = instance;
             SpawnPickupFor(instance);
-            if (_flushOnEveryChange) Flush();
+            if (_flushOnEveryChange) FlushFor(instance);
         }
 
-        /// <summary>
-        /// Spawn a pickup for every cached instance. Called once after
-        /// <see cref="LoadFromRepository"/> at scene-bootstrap time. Pre-existing
-        /// live pickups for the same dropId are skipped so re-rehydration is safe.
-        /// </summary>
         public int Rehydrate()
         {
             int spawned = 0;
@@ -186,39 +275,31 @@ namespace Valkur.Gameplay.WorldDrops
             return spawned;
         }
 
-        /// <summary>
-        /// Mutate the quantity of an existing drop. Used by F7 Properties Qty±.
-        /// Returns false when the drop is unknown.
-        /// </summary>
         public bool UpdateQuantity(string dropId, int newQuantity)
         {
             if (string.IsNullOrEmpty(dropId)) return false;
             if (!_byId.TryGetValue(dropId, out var inst)) return false;
             inst.quantity = Mathf.Max(1, newQuantity);
-            if (_flushOnEveryChange) Flush();
+            if (_flushOnEveryChange) FlushFor(inst);
             return true;
         }
 
-        /// <summary>
-        /// Drop a record manually from script (editor delete, debug command).
-        /// Destroys the matching live pickup if one exists. Returns true on hit.
-        /// </summary>
         public bool RemoveByDropId(string dropId)
         {
             if (string.IsNullOrEmpty(dropId)) return false;
-            if (!_byId.Remove(dropId)) return false;
+            if (!_byId.TryGetValue(dropId, out var inst)) return false;
+
+            _byId.Remove(dropId);
 
             if (_liveByDropId.TryGetValue(dropId, out var live) && live != null)
             {
                 live.MarkManualDelete();
-                // Detach from cache before Destroy so the OnDestroyed callback
-                // — which would otherwise try to remove the same key — is a no-op.
                 _liveByDropId.Remove(dropId);
                 if (Application.isPlaying) UnityEngine.Object.Destroy(live.gameObject);
                 else UnityEngine.Object.DestroyImmediate(live.gameObject);
             }
 
-            if (_flushOnEveryChange) Flush();
+            if (_flushOnEveryChange) FlushFor(inst);
             return true;
         }
 
@@ -236,7 +317,7 @@ namespace Valkur.Gameplay.WorldDrops
             return live;
         }
 
-        /// <summary>Drop everything from cache and from the repo.</summary>
+        /// <summary>Drop everything from cache and from both repos.</summary>
         public void ClearAll()
         {
             foreach (var live in _liveByDropId.Values)
@@ -253,6 +334,12 @@ namespace Valkur.Gameplay.WorldDrops
 
         // ── Internals ─────────────────────────────────────────────────────────
 
+        private void FlushFor(ItemDropInstance inst)
+        {
+            if (IsAuthoringSource(inst.Source)) FlushAuthoring();
+            else if (_runRepo != null)          FlushRun();
+        }
+
         private WorldPickup SpawnPickupFor(ItemDropInstance instance)
         {
             ItemDefinition def = ResolveDefinition(instance.itemId);
@@ -262,9 +349,6 @@ namespace Valkur.Gameplay.WorldDrops
                 return null;
             }
 
-            // Reuse the canonical builder so material / scale / collider all match
-            // the Phase 1 visual rules. We then re-Initialize through the persistent
-            // overload to attach the dropId metadata.
             Vector3 pos = new Vector3(instance.position.x, instance.position.y, 0f);
             WorldPickup pickup = DropSystem.BuildPickupShell(def, pos);
             if (pickup == null) return null;
@@ -292,7 +376,6 @@ namespace Valkur.Gameplay.WorldDrops
         private void HandlePickupDestroyed(WorldPickup pickup, WorldPickup.DestructionReason reason)
         {
             if (pickup == null || string.IsNullOrEmpty(pickup.DropId)) return;
-            // Only react to drops we own — the static event is global.
             if (!_liveByDropId.TryGetValue(pickup.DropId, out var tracked) || tracked != pickup)
                 return;
 
@@ -303,12 +386,14 @@ namespace Valkur.Gameplay.WorldDrops
                 case WorldPickup.DestructionReason.PickedUp:
                 case WorldPickup.DestructionReason.Expired:
                 case WorldPickup.DestructionReason.Manual:
-                    _byId.Remove(pickup.DropId);
-                    if (_flushOnEveryChange) Flush();
+                    if (_byId.TryGetValue(pickup.DropId, out var inst))
+                    {
+                        _byId.Remove(pickup.DropId);
+                        if (_flushOnEveryChange) FlushFor(inst);
+                    }
                     break;
                 case WorldPickup.DestructionReason.SceneUnload:
                 default:
-                    // Keep the record so the next world load can re-spawn it.
                     break;
             }
         }
