@@ -114,14 +114,16 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         [Test]
         public void Integration_ZoomRange_WorksWithFullRange()
         {
-            // Act & Assert - Test zoom range
-            float[] testSizes = { 1f, 5f, 10f, 25f, 40f };
-            
+            // Editor zoom is clamped to [minZoomOrthoSize, maxEditorZoomOrthoSize]
+            // (defaults: 2 .. 60). Inputs inside that range round-trip exactly.
+            // The dedicated min/max clamp contract is covered by
+            // CameraZoomClampTests; here we just confirm the typical editor
+            // working range survives intact.
+            float[] testSizes = { 2f, 5f, 10f, 25f, 40f };
+
             foreach (float expectedSize in testSizes)
             {
                 _cameraSetup.SetTileEditorZoom(expectedSize);
-                // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-                
                 float actualSize = _cameraSetup.GetCurrentOrthographicSize();
                 Assert.AreEqual(expectedSize, actualSize, 0.01f, $"Zoom {expectedSize} should be applied correctly");
             }
@@ -244,20 +246,21 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         [Test]
         public void Integration_Limits_WorkCorrectly()
         {
-            // Zoom is UNBOUNDED by design — only invalid inputs (≤0, ±Inf, NaN)
-            // get sanitised to keep Cinemachine alive. Brush size is unbounded
-            // at the state level (UI clamps separately).
+            // Zoom is CLAMPED to [minZoomOrthoSize, maxEditorZoomOrthoSize]
+            // (defaults: 2 .. 60). Invalid inputs (≤0, ±Inf, NaN) collapse to
+            // the min. Brush size is unbounded at the state level (UI clamps
+            // separately).
             int minBrush = TileEditorConstants.MinBrushSize;
             int maxBrush = TileEditorConstants.MaxBrushSize;
 
-            // Act - Negative zoom MUST be sanitised to a positive value
+            // Act - Negative zoom collapses to the minimum
             _cameraSetup.SetTileEditorZoom(-1f);
             float sanitisedNegative = _cameraSetup.GetCurrentOrthographicSize();
 
-            // Act - A huge positive zoom MUST pass through unchanged (no clamp)
+            // Act - A huge positive zoom MUST clamp to the editor max
             float requestedHugeZoom = 1e9f;
             _cameraSetup.SetTileEditorZoom(requestedHugeZoom);
-            float passedThroughZoom = _cameraSetup.GetCurrentOrthographicSize();
+            float clampedHugeZoom = _cameraSetup.GetCurrentOrthographicSize();
 
             // Act - Test brush size limits (no clamp at state level)
             _state.BrushSize = minBrush - 1;
@@ -267,9 +270,11 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
             int aboveMaxBrush = _state.BrushSize;
 
             // Assert
-            Assert.Greater(sanitisedNegative, 0f, "Negative zoom should be sanitised to a strictly positive size");
-            Assert.AreEqual(requestedHugeZoom, passedThroughZoom, requestedHugeZoom * 0.01f,
-                "Huge positive zoom must pass through unchanged (zoom is unbounded)");
+            Assert.GreaterOrEqual(sanitisedNegative, 2f - 1e-3f,
+                "Negative zoom should collapse to the configured minimum (default 2)");
+            Assert.LessOrEqual(clampedHugeZoom, 60f + 1e-3f,
+                "Huge positive zoom must clamp to the editor max (default 60) — " +
+                "without this the editor can strand the camera at ortho 1e9.");
             Assert.AreEqual(minBrush - 1, belowMinBrush, "State allows brush size below minimum");
             Assert.AreEqual(maxBrush + 5, aboveMaxBrush, "State allows brush size above maximum");
         }

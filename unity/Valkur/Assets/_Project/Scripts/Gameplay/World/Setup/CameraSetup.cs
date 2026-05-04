@@ -39,12 +39,18 @@ namespace Valkur.Gameplay
         [SerializeField] private float cameraZOffset = -10f;
         // Multiplicative zoom: each scroll detent multiplies/divides ortho size by
         // (1 ± zoomSpeed). Same feel at every zoom level (small step when close,
-        // large step when far). NO clamp — zoom is intentionally unbounded so we
-        // can stress-test where Unity / Cinemachine break under floating-point
-        // pressure. Multiplicative model guarantees `size * (1 - 0.25)` stays
-        // strictly positive on the way in, so no floor is needed.
-        [SerializeField, Tooltip("Per-detent multiplicative zoom factor. 0.25 = 25% per click. Zoom range is unbounded — keep scrolling out to find the breaking point.")]
+        // large step when far). The zoom is clamped to playable bounds — without
+        // a clamp the multiplicative model lets a few scroll-out detents inflate
+        // ortho size to ~50+, which renders the player / NPCs / buildings as
+        // sub-pixel placeholders and looks like assets disappeared.
+        [SerializeField, Tooltip("Per-detent multiplicative zoom factor. 0.25 = 25% per click.")]
         private float zoomSpeed = 0.25f;
+        [SerializeField, Tooltip("Lowest ortho size the player can reach by zooming in. Below this, sprites alias and the SRP gives up.")]
+        private float minZoomOrthoSize = 2f;
+        [SerializeField, Tooltip("Highest ortho size the player can reach by zooming out during gameplay. Beyond this, entities become sub-pixel.")]
+        private float maxZoomOrthoSize = 25f;
+        [SerializeField, Tooltip("Highest ortho size any in-game editor (Tile/Map) can request. Editors zoom out further than gameplay for layout work.")]
+        private float maxEditorZoomOrthoSize = 60f;
 
         [Header("Pixel Perfect")]
         [Tooltip("Assets pixels-per-unit for PixelPerfectCamera (should match tile PPU)")]
@@ -214,6 +220,27 @@ namespace Valkur.Gameplay
             if (TileEditorManager.Instance != null && TileEditorManager.Instance.IsActive)
                 return;
 
+            // Continuous gameplay-zoom clamp. Runs every frame regardless of
+            // input. Three reasons we cannot rely on the scroll-handler clamp
+            // alone:
+            //   1. Hot-reload during Play does NOT call Awake/Start again, so
+            //      a lens left at ortho 50+ from before a script recompile
+            //      stays at 50 until the player scrolls.
+            //   2. The vcam's serialized OrthographicSize in the scene file
+            //      may already be out-of-bounds when the scene loads.
+            //   3. Other systems (legacy code, future editors) might assign
+            //      _vcam.m_Lens.OrthographicSize directly without going
+            //      through SetTileEditorZoom — without this safety net the
+            //      camera could strand the player as a sub-pixel dot.
+            // The clamp only narrows; it never expands a sane lens.
+            float liveSize = _vcam.m_Lens.OrthographicSize;
+            float liveClamped = Mathf.Clamp(liveSize, minZoomOrthoSize, maxZoomOrthoSize);
+            if (!Mathf.Approximately(liveSize, liveClamped))
+            {
+                _vcam.m_Lens.OrthographicSize = liveClamped;
+                ApplyCompatibilityLensSize(liveClamped);
+            }
+
             // Avoid zooming while scrolling focused UI widgets.
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
@@ -223,14 +250,17 @@ namespace Valkur.Gameplay
                 return;
 
             // Multiplicative zoom: same feel at every distance. Scroll up → zoom in
-            // (factor < 1, ortho asymptotes towards 0 but never reaches it), scroll
-            // down → zoom out (factor > 1, ortho grows exponentially towards
-            // float.MaxValue ≈ 3.4e38 before the rendering pipeline gives up).
-            // No clamp by design — keep scrolling to find the breaking point.
+            // (factor < 1), scroll down → zoom out (factor > 1). Clamped to
+            // [minZoomOrthoSize, maxZoomOrthoSize] so a stray scroll-burst can't
+            // push ortho size to a value where every entity becomes a sub-pixel
+            // dot (which previously looked like assets had disappeared from the
+            // scene).
             float currentSize = _vcam.m_Lens.OrthographicSize;
             float zoomFactor = 1f - Mathf.Sign(scrollY) * zoomSpeed;
-            _vcam.m_Lens.OrthographicSize = currentSize * zoomFactor;
-            ApplyCompatibilityLensSize(_vcam.m_Lens.OrthographicSize);
+            float nextSize = Mathf.Clamp(currentSize * zoomFactor,
+                                         minZoomOrthoSize, maxZoomOrthoSize);
+            _vcam.m_Lens.OrthographicSize = nextSize;
+            ApplyCompatibilityLensSize(nextSize);
         }
 
         public void SetTarget(Transform target)
@@ -294,14 +324,16 @@ namespace Valkur.Gameplay
         public void SetTileEditorZoom(float targetSize)
         {
             EnsureCompatibilityVcam();
-            // No clamp — zoom is unbounded. The only sanitisation is rejecting
-            // 0 / negative / NaN / +Inf because Cinemachine treats those as a
-            // malformed lens config and stops rendering altogether. Anything
-            // strictly positive (even 1e-30 or 1e30) is forwarded as-is so we
-            // can stress-test the rendering pipeline.
+            // Sanitise + clamp to editor bounds. NaN / 0 / negative / +Inf are
+            // rejected (Cinemachine stops rendering with malformed lens values).
+            // Anything else is clamped to [minZoomOrthoSize, maxEditorZoomOrthoSize]
+            // — the editor cap is wider than gameplay so layout work over a large
+            // chunk is still possible, but bounded so the editor can't strand the
+            // camera at ortho 1e30.
             float sanitisedSize = targetSize;
             if (!(sanitisedSize > 0f) || float.IsInfinity(sanitisedSize))
-                sanitisedSize = float.Epsilon; // smallest positive float — keeps Cinemachine alive
+                sanitisedSize = minZoomOrthoSize;
+            sanitisedSize = Mathf.Clamp(sanitisedSize, minZoomOrthoSize, maxEditorZoomOrthoSize);
             _tileEditorTargetSize = sanitisedSize;
             _tileEditorZoomRequested = true;
             if (_vcam != null)

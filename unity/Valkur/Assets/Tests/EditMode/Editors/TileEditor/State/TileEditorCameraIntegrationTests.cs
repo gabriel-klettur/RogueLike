@@ -105,37 +105,39 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         }
 
         [Test]
-        public void CameraSetup_SetTileEditorZoom_AcceptsExtremeValues()
+        public void CameraSetup_SetTileEditorZoom_ClampsExtremeValues()
         {
-            // Arrange — zoom is unbounded, so even absurd positive values
-            // should pass through unchanged. The user wants to explore where
-            // the rendering pipeline breaks.
-            float tinySize  = 1e-6f;     // 1 micron
-            float hugeSize  = 1e10f;     // 10 billion units
+            // Zoom is clamped to [minZoomOrthoSize, maxEditorZoomOrthoSize]
+            // (defaults: 2 .. 60). Extreme inputs collapse to those bounds —
+            // this is the regression-prevention contract from
+            // CameraZoomClampTests, mirrored here at the TileEditor integration
+            // level so the editor cannot strand the camera at sub-pixel or
+            // 1e10 ortho size.
+            float tinySize = 1e-6f;
+            float hugeSize = 1e10f;
 
-            // Act + Assert — tiny
             _cameraSetup.SetTileEditorZoom(tinySize);
-            Assert.AreEqual(tinySize, _cameraSetup.GetCurrentOrthographicSize(), tinySize * 0.01f,
-                "Extremely small positive zoom must pass through unchanged (no min clamp)");
+            Assert.GreaterOrEqual(_cameraSetup.GetCurrentOrthographicSize(), 2f - 1e-3f,
+                "Extremely small zoom must clamp to the configured min (default 2)");
 
-            // Act + Assert — huge
             _cameraSetup.SetTileEditorZoom(hugeSize);
-            Assert.AreEqual(hugeSize, _cameraSetup.GetCurrentOrthographicSize(), hugeSize * 0.01f,
-                "Extremely large positive zoom must pass through unchanged (no max clamp)");
+            Assert.LessOrEqual(_cameraSetup.GetCurrentOrthographicSize(), 60f + 1e-3f,
+                "Extremely large zoom must clamp to the editor max (default 60)");
         }
 
         [Test]
         public void CameraSetup_SetTileEditorZoom_MultipleRequests_WorkCorrectly()
         {
-            // Arrange
-            float[] testSizes = { 1f, 5f, 10f, 25f, 3f, 15f };
+            // All values inside the editor range [2, 60] must round-trip
+            // unchanged. A value below the min is documented to clamp up to
+            // minZoomOrthoSize (default 2) — see CameraZoomClampTests for the
+            // dedicated min/max contract. We pick 2 as the lower bound here so
+            // the request matches both the legacy expectation AND the new clamp.
+            float[] testSizes = { 2f, 5f, 10f, 25f, 3f, 15f };
 
-            // Act & Assert - Test multiple zoom requests
             foreach (float expectedSize in testSizes)
             {
                 _cameraSetup.SetTileEditorZoom(expectedSize);
-                // _cameraSetup.Invoke("Update", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null);
-                
                 float actualSize = _cameraSetup.GetCurrentOrthographicSize();
                 Assert.AreEqual(expectedSize, actualSize, 0.01f, $"Should apply zoom size {expectedSize} correctly");
             }
