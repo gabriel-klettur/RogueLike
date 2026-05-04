@@ -25,7 +25,9 @@
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\\\\\" -Recurse -Directory | Select-Object -ExpandProperty FullName | Head -30)",
       "mcp__unity__read_console",
       "mcp__unity__run_tests",
-      "mcp__unity__get_test_job"
+      "mcp__unity__get_test_job",
+      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\" -Recurse -Filter \"*Editor*\" -Directory)",
+      "Bash(sqlite3 \"d:/Python/RogueLike/python/data/roguelike.sqlite3\" \".tables\")"
     ]
   }
 }
