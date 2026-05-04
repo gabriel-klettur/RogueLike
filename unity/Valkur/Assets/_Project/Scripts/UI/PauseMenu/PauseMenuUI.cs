@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Services;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
 
@@ -19,7 +20,7 @@ namespace Valkur.UI.PauseMenu
     /// Opciones opens a submenu with Inputs (keybindings) and Sounds (audio settings).
     /// Visual style matches Python MenuRenderer exactly.
     /// </summary>
-    public partial class PauseMenuUI : MonoBehaviour
+    public partial class PauseMenuUI : MonoBehaviour, IPauseMenuService
     {
         // ── Singleton ────────────────────────────────────────────────────────
         public static PauseMenuUI Instance { get; private set; }
@@ -67,6 +68,16 @@ namespace Valkur.UI.PauseMenu
         // ── State ─────────────────────────────────────────────────────────────
         private enum PauseScreen { None, Pause, Options, Sounds, Inputs, LoadGame }
         private PauseScreen _screen = PauseScreen.None;
+
+        /// <summary>
+        /// True whenever any pause-menu sub-screen is visible. Read by the
+        /// General Editor launcher to suppress its ESC handler while the
+        /// pause menu is consuming Cancel for sub-screen navigation.
+        /// </summary>
+        public bool IsOpen => _screen != PauseScreen.None;
+
+        /// <summary>Convenience alias for callers that just need a static check.</summary>
+        public static bool IsAnyOpen => Instance != null && Instance.IsOpen;
 
         // ── UI roots ─────────────────────────────────────────────────────────
         private Canvas     _canvas;
@@ -141,6 +152,7 @@ namespace Valkur.UI.PauseMenu
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            ServiceLocator.Register<IPauseMenuService>(this);
         }
 
         private void Start()

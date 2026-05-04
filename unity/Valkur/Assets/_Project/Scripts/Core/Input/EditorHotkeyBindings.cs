@@ -46,6 +46,7 @@ namespace Valkur.Core.Input
             CtrlModifier,       // leftCtrl
             AltModifier,        // leftAlt
             ToggleDevConsole,   // backquote
+            OpenGeneralEditor,  // escape (top-level launcher panel)
         }
 
         public static InputAction Resolve(Hotkey hotkey, out bool ownsAction)
@@ -133,6 +134,7 @@ namespace Valkur.Core.Input
             Hotkey.CtrlModifier       => KeyCode.LeftControl,
             Hotkey.AltModifier        => KeyCode.LeftAlt,
             Hotkey.ToggleDevConsole   => KeyCode.BackQuote,
+            Hotkey.OpenGeneralEditor  => KeyCode.Escape,
             _ => KeyCode.None
         };
 
@@ -203,6 +205,7 @@ namespace Valkur.Core.Input
             Hotkey.CtrlModifier       => "<Keyboard>/leftCtrl",
             Hotkey.AltModifier        => "<Keyboard>/leftAlt",
             Hotkey.ToggleDevConsole   => "<Keyboard>/backquote",
+            Hotkey.OpenGeneralEditor  => "<Keyboard>/escape",
             _ => null
         };
 
@@ -226,6 +229,7 @@ namespace Valkur.Core.Input
             Hotkey.CtrlModifier       => e.CtrlModifier,
             Hotkey.AltModifier        => e.AltModifier,
             Hotkey.ToggleDevConsole   => e.ToggleDevConsole,
+            Hotkey.OpenGeneralEditor  => e.OpenGeneralEditor,
             _ => null
         };
     }

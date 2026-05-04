@@ -6,7 +6,10 @@ namespace Valkur.UI.PauseMenu
     {
         partial void SetupInputActions()
         {
-            _pauseAction = new InputAction("Pause",   binding: "<Keyboard>/escape");
+            // ESC is reserved for the General Editor launcher (F-key catalogue).
+            // Pause now opens with `P` from gameplay; ESC still navigates back from
+            // sub-screens once the menu is open via the separate _cancel action.
+            _pauseAction = new InputAction("Pause",   binding: "<Keyboard>/p");
             _navUp       = new InputAction("NavUp",   binding: "<Keyboard>/upArrow");
             _navDown     = new InputAction("NavDown", binding: "<Keyboard>/downArrow");
             _navLeft     = new InputAction("NavLeft",  binding: "<Keyboard>/leftArrow");

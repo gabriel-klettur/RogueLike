@@ -56,6 +56,11 @@ namespace Valkur.UI.PauseMenu
 
         private void OnDestroy()
         {
+            if (Instance == this)
+            {
+                Valkur.Core.ServiceLocator.Unregister<Valkur.Core.Services.IPauseMenuService>();
+                Instance = null;
+            }
             _pauseAction?.Disable(); _pauseAction?.Dispose();
             _navUp?.Disable();   _navUp?.Dispose();
             _navDown?.Disable(); _navDown?.Dispose();
@@ -89,6 +94,29 @@ namespace Valkur.UI.PauseMenu
         {
             ShowScreen(PauseScreen.None);
             if (GameDirector.Instance != null) GameDirector.Instance.SetPaused(false);
+        }
+
+        /// <summary>
+        /// Opens the pause overlay and jumps directly to the Load Game sub-screen.
+        /// Invoked by the General Editor launcher's "Cargar" button so the user
+        /// lands on the save list with one click instead of two.
+        /// </summary>
+        public void OpenLoadGame()
+        {
+            RebuildPauseOptions();
+            ShowScreen(PauseScreen.LoadGame);
+            if (GameDirector.Instance != null) GameDirector.Instance.SetPaused(true);
+        }
+
+        /// <summary>
+        /// Opens the pause overlay and jumps directly to the Options sub-screen
+        /// (Inputs / Sounds / Volver). Mirrors <see cref="OpenLoadGame"/>.
+        /// </summary>
+        public void OpenOptions()
+        {
+            RebuildPauseOptions();
+            ShowScreen(PauseScreen.Options);
+            if (GameDirector.Instance != null) GameDirector.Instance.SetPaused(true);
         }
 
         // ════════════════════════════════════════════════════════════════════

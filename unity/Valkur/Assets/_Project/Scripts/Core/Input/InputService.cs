@@ -295,6 +295,7 @@ namespace Valkur.Core.Input
             public InputAction CtrlModifier { get; }
             public InputAction AltModifier { get; }
             public InputAction ToggleDevConsole { get; }
+            public InputAction OpenGeneralEditor { get; }
 
             internal EditorsActions(InputActionMap map)
             {
@@ -317,6 +318,7 @@ namespace Valkur.Core.Input
                 CtrlModifier       = map.FindAction("CtrlModifier",       throwIfNotFound: true);
                 AltModifier        = map.FindAction("AltModifier",        throwIfNotFound: true);
                 ToggleDevConsole   = map.FindAction("ToggleDevConsole",   throwIfNotFound: true);
+                OpenGeneralEditor  = map.FindAction("OpenGeneralEditor",  throwIfNotFound: true);
             }
         }
     }

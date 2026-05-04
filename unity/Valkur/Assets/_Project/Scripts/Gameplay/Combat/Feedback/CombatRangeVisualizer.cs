@@ -57,9 +57,24 @@ namespace Valkur.Gameplay.Combat
             if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleCombatRanges) &&
                 EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.AltModifier))
             {
-                _visible = !_visible;
-                Debug.Log($"[CombatRangeVisualizer] Ranges {(_visible ? "ON" : "OFF")}");
+                ToggleVisible();
             }
+        }
+
+        /// <summary>
+        /// True when range overlays are currently being drawn. Read by the
+        /// General Editor launcher to render an active-state indicator.
+        /// </summary>
+        public bool IsVisible => _visible;
+
+        /// <summary>
+        /// Programmatic toggle for the General Editor launcher. Equivalent
+        /// to pressing Alt+F2.
+        /// </summary>
+        public void ToggleVisible()
+        {
+            _visible = !_visible;
+            Debug.Log($"[CombatRangeVisualizer] Ranges {(_visible ? "ON" : "OFF")}");
         }
 
         private void LateUpdate()

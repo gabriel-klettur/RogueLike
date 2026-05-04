@@ -235,7 +235,7 @@
                 { "name": "", "id": "b1000030-0001-0001-0001-000000000001", "path": "<Keyboard>/l",        "interactions": "", "processors": "", "groups": "", "action": "SpellHealingTotem",    "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "b1000031-0001-0001-0001-000000000001", "path": "<Keyboard>/u",        "interactions": "", "processors": "", "groups": "", "action": "SpellSummonBarbol",    "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "b1000032-0001-0001-0001-000000000001", "path": "<Keyboard>/m",        "interactions": "", "processors": "", "groups": "", "action": "SpellWallIce",         "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b100000c-0001-0001-0001-000000000001", "path": "<Keyboard>/escape",   "interactions": "", "processors": "", "groups": "", "action": "Pause",                "isComposite": false, "isPartOfComposite": false }
+                { "name": "", "id": "b100000c-0001-0001-0001-000000000001", "path": "<Keyboard>/p",        "interactions": "", "processors": "", "groups": "", "action": "Pause",                "isComposite": false, "isPartOfComposite": false }
             ]
         },
         {
@@ -540,7 +540,8 @@
                 { "name": "QuickLoad",          "type": "Button", "id": "a1b2c3d4-0004-000f-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
                 { "name": "CtrlModifier",       "type": "Button", "id": "a1b2c3d4-0004-0010-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
                 { "name": "AltModifier",        "type": "Button", "id": "a1b2c3d4-0004-0011-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
-                { "name": "ToggleDevConsole",   "type": "Button", "id": "a1b2c3d4-0004-0012-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" }
+                { "name": "ToggleDevConsole",   "type": "Button", "id": "a1b2c3d4-0004-0012-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" },
+                { "name": "OpenGeneralEditor",  "type": "Button", "id": "a1b2c3d4-0004-0013-0001-000000000001", "expectedControlType": "Button", "processors": "", "interactions": "" }
             ],
             "bindings": [
                 { "name": "", "id": "b3000001-0001-0001-0001-000000000001", "path": "<Keyboard>/f1",       "interactions": "", "processors": "", "groups": "", "action": "ToggleParticles",    "isComposite": false, "isPartOfComposite": false },
@@ -560,7 +561,8 @@
                 { "name": "", "id": "b300000f-0001-0001-0001-000000000001", "path": "<Keyboard>/f9",       "interactions": "", "processors": "", "groups": "", "action": "QuickLoad",          "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "b3000010-0001-0001-0001-000000000001", "path": "<Keyboard>/leftCtrl", "interactions": "", "processors": "", "groups": "", "action": "CtrlModifier",       "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "b3000011-0001-0001-0001-000000000001", "path": "<Keyboard>/leftAlt",  "interactions": "", "processors": "", "groups": "", "action": "AltModifier",        "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "b3000012-0001-0001-0001-000000000001", "path": "<Keyboard>/backquote","interactions": "", "processors": "", "groups": "", "action": "ToggleDevConsole",   "isComposite": false, "isPartOfComposite": false }
+                { "name": "", "id": "b3000012-0001-0001-0001-000000000001", "path": "<Keyboard>/backquote","interactions": "", "processors": "", "groups": "", "action": "ToggleDevConsole",   "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "b3000013-0001-0001-0001-000000000001", "path": "<Keyboard>/escape",  "interactions": "", "processors": "", "groups": "", "action": "OpenGeneralEditor",  "isComposite": false, "isPartOfComposite": false }
             ]
         }
     ],

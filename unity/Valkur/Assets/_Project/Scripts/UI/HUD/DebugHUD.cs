@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using Valkur.Core;
 using Valkur.Core.Input;
+using Valkur.Core.Services;
 using Valkur.Data;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Combat;
@@ -17,8 +18,21 @@ namespace Valkur.UI.HUD
     /// Toggle with F9. Professional layout with sectioned panels, color-coded
     /// indicators, and compact information density.
     /// </summary>
-    public partial class DebugHUD : MonoBehaviour
+    public partial class DebugHUD : MonoBehaviour, IDebugOverlayService
     {
+        /// <summary>
+        /// Active scene singleton (assigned in <see cref="Start"/>). Used by the
+        /// General Editor launcher so its F9 button can toggle this HUD without
+        /// needing a FindObjectOfType scan every click.
+        /// </summary>
+        public static DebugHUD Instance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            Instance = null;
+        }
+
         // --- Color Palette ---
         private static readonly Color COL_BG         = new Color(0.08f, 0.08f, 0.12f, 0.88f);
         private static readonly Color COL_HEADER     = new Color(0.65f, 0.78f, 1.0f, 1f);
@@ -68,6 +82,8 @@ namespace Valkur.UI.HUD
 
         private void Start()
         {
+            Instance = this;
+            ServiceLocator.Register<IDebugOverlayService>(this);
             _toggleAction = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.ToggleDebugHUD, out _ownsToggleAction);
             CreateOverlay();
@@ -75,6 +91,11 @@ namespace Valkur.UI.HUD
 
         private void OnDestroy()
         {
+            if (Instance == this)
+            {
+                ServiceLocator.Unregister<IDebugOverlayService>();
+                Instance = null;
+            }
             if (_ownsToggleAction)
             {
                 _toggleAction?.Disable();
@@ -82,13 +103,25 @@ namespace Valkur.UI.HUD
             }
         }
 
+        /// <summary>True when the HUD overlay canvas is being rendered.</summary>
+        public bool IsVisible => _visible;
+
+        /// <summary>
+        /// Programmatic toggle for the General Editor launcher. Equivalent
+        /// to pressing F9.
+        /// </summary>
+        public void ToggleVisible()
+        {
+            _visible = !_visible;
+            if (_canvas != null)
+                _canvas.gameObject.SetActive(_visible);
+        }
+
         private void Update()
         {
             if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleDebugHUD))
             {
-                _visible = !_visible;
-                if (_canvas != null)
-                    _canvas.gameObject.SetActive(_visible);
+                ToggleVisible();
             }
 
             if (!_visible) return;
