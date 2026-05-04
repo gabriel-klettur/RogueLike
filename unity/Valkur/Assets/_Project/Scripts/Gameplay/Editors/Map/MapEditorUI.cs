@@ -28,6 +28,8 @@ namespace Valkur.Gameplay.MapEditor
         private System.Action _onToggleSelectedZoneEditable;
         private System.Action<string> _onToggleZoneEditableByName;
         private System.Action<bool> _onRestrictEditChanged;
+        private System.Action<MapEditorUIBuilder.BiomeDialogResult> _onConfirmGenerateBiomes;
+        private MapEditorUIBuilder.MapSlotCallbacks _mapSlotCallbacks;
 
         // Runtime-only references set by BuildUI(). NOT [SerializeField] — ResolveCanvas()
         // handles domain-reload recovery via GetComponentInChildren fallback; keeping these
@@ -53,7 +55,9 @@ namespace Valkur.Gameplay.MapEditor
             EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null;
         public bool IsModalOpen =>
             (_refs.AddZoneDialog != null && _refs.AddZoneDialog.activeSelf) ||
-            (_refs.DeleteZoneDialog != null && _refs.DeleteZoneDialog.activeSelf);
+            (_refs.DeleteZoneDialog != null && _refs.DeleteZoneDialog.activeSelf) ||
+            (_refs.MapsDeleteDialog != null && _refs.MapsDeleteDialog.activeSelf) ||
+            (_refs.MapsNewDialog != null && _refs.MapsNewDialog.activeSelf);
 
         /// <summary>Toggles the named floating panel open/closed and updates menu button styles.</summary>
         public void OnDropdownToggle(string key)
@@ -66,6 +70,8 @@ namespace Valkur.Gameplay.MapEditor
             SetDropdownVisible("zones",    _refs.ZonesDropdown);
             SetDropdownVisible("actions",  _refs.ActionsDropdown);
             SetDropdownVisible("props",    _refs.PropsDropdown);
+            SetDropdownVisible("biomes",   _refs.BiomesDropdown);
+            SetDropdownVisible("maps",     _refs.MapsDropdown);
             UpdateMenuBtnStyles();
         }
 
@@ -83,6 +89,10 @@ namespace Valkur.Gameplay.MapEditor
                 _refs.ActionsMenuBtnImg,  _refs.ActionsMenuBtnTmp,  _openDropdowns.Contains("actions"));
             MapEditorUIBuilder.ApplyMenuBtnStyle(
                 _refs.PropsMenuBtnImg,    _refs.PropsMenuBtnTmp,    _openDropdowns.Contains("props"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.BiomesMenuBtnImg,   _refs.BiomesMenuBtnTmp,   _openDropdowns.Contains("biomes"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.MapsMenuBtnImg,     _refs.MapsMenuBtnTmp,     _openDropdowns.Contains("maps"));
         }
 
         public void Initialize(
@@ -98,7 +108,9 @@ namespace Valkur.Gameplay.MapEditor
             System.Action<string, string> onRenameZoneByName,
             System.Action onToggleSelectedZoneEditable,
             System.Action<string> onToggleZoneEditableByName,
-            System.Action<bool> onRestrictEditChanged)
+            System.Action<bool> onRestrictEditChanged,
+            System.Action<MapEditorUIBuilder.BiomeDialogResult> onConfirmGenerateBiomes,
+            MapEditorUIBuilder.MapSlotCallbacks mapSlotCallbacks)
         {
             _state = state;
             _onZoneSelected = onZoneSelected;
@@ -113,6 +125,8 @@ namespace Valkur.Gameplay.MapEditor
             _onToggleSelectedZoneEditable = onToggleSelectedZoneEditable;
             _onToggleZoneEditableByName = onToggleZoneEditableByName;
             _onRestrictEditChanged = onRestrictEditChanged;
+            _onConfirmGenerateBiomes = onConfirmGenerateBiomes;
+            _mapSlotCallbacks = mapSlotCallbacks;
 
             BuildUI();
             SetVisible(false);
@@ -162,6 +176,8 @@ namespace Valkur.Gameplay.MapEditor
                 UpdateMenuBtnStyles();
                 HideAddZoneDialog();
                 HideDeleteZoneDialog();
+                HideMapsDeleteDialog();
+                HideMapsNewDialog();
             }
         }
 

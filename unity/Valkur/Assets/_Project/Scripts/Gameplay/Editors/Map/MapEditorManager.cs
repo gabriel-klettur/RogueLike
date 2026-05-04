@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.MapEditor
 {
     /// <summary>
     /// Runtime map editor migrated from Python workflow.
-    /// Toggle with F7 to manage zones and define editable areas consumed by TileEditor.
+    /// Toggle with F11 to manage zones and define editable areas consumed by TileEditor.
     /// </summary>
     public partial class MapEditorManager : SingletonMonoBehaviour<MapEditorManager>, GameEditorManager.IGameEditor
     {
@@ -56,6 +56,10 @@ namespace Valkur.Gameplay.MapEditor
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+        // Mouse-wheel zoom — shared controller used by every runtime editor.
+        private readonly EditorCameraZoomController _cameraZoom = new EditorCameraZoomController();
+        // Double-click detector — frames the clicked zone on screen.
+        private readonly EditorDoubleClickDetector _doubleClick = new EditorDoubleClickDetector();
 
         public bool IsActive => _state != null && _state.Active;
 
@@ -126,7 +130,7 @@ namespace Valkur.Gameplay.MapEditor
             {
                 var zoneManagerGo = new GameObject("ZoneManager");
                 zoneManager = zoneManagerGo.AddComponent<ZoneManager>();
-                Debug.LogWarning("[MapEditor] ZoneManager not found. Created runtime ZoneManager so F7 map editor can start.");
+                Debug.LogWarning("[MapEditor] ZoneManager not found. Created runtime ZoneManager so F11 map editor can start.");
             }
 
             CreateOverlayRoot();
@@ -156,6 +160,7 @@ namespace Valkur.Gameplay.MapEditor
 
             UpdateOverlayLineWidths();
             HandleCameraPan();
+            _cameraZoom.Tick();
 
             if (_ui != null && _ui.IsTypingInput)
                 return;
@@ -175,6 +180,9 @@ namespace Valkur.Gameplay.MapEditor
 
             if (_input.WasSelectPressed() && !_input.IsPointerOverUI())
                 SelectZoneAtCursor();
+
+            if (_doubleClick.PollLeftDouble() && !_input.IsPointerOverUI())
+                FrameZoneAtCursor();
 
             if (_input.WasCreatePressed())
                 BeginAddZoneFlow();
@@ -203,17 +211,18 @@ namespace Valkur.Gameplay.MapEditor
             if (_state.Active)
             {
                 if (_ui != null)
-                    _ui.SetStatus("Map Editor active. F7 to close.");
-                Debug.Log("[MapEditor] Activated (F7).");
+                    _ui.SetStatus("Map Editor active. F11 to close.");
+                Debug.Log("[MapEditor] Activated (F11).");
             }
             else
             {
                 _cameraPan.Reset();
+                _doubleClick.Reset();
                 Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
                 CancelAddZoneFlow();
                 if (_ui != null)
                     _ui.SetStatus("Map Editor inactive.");
-                Debug.Log("[MapEditor] Deactivated (F7).");
+                Debug.Log("[MapEditor] Deactivated (F11).");
             }
         }
 
@@ -271,6 +280,18 @@ namespace Valkur.Gameplay.MapEditor
             var uiGo = new GameObject("MapEditorUI");
             uiGo.transform.SetParent(transform, false);
             _ui = uiGo.AddComponent<MapEditorUI>();
+
+            var slotCallbacks = new MapEditorUIBuilder.MapSlotCallbacks
+            {
+                OnSaveAs   = OnSlotSaveAs,
+                OnLoad     = OnSlotLoad,
+                OnDelete   = OnSlotDelete,
+                OnRename   = OnSlotRename,
+                OnNew      = OnSlotNew,
+                ListSlots  = ListMapSlots,
+                GetActive  = () => ActiveMapSlot,
+            };
+
             _ui.Initialize(
                 _state,
                 OnZoneSelected,
@@ -284,9 +305,85 @@ namespace Valkur.Gameplay.MapEditor
                 RenameZoneByName,
                 ToggleSelectedZoneEditable,
                 ToggleZoneEditableByName,
-                SetRestrictTileEditing);
+                SetRestrictTileEditing,
+                OnConfirmGenerateBiomes,
+                slotCallbacks);
             _ui.SetVisible(false);
             _ui.SetRestrictToggle(_state.RestrictTileEditingToEditableZones);
+
+            // Subscribe AFTER Initialize so the UI's _refs are populated.
+            OnMapSlotsChanged += RefreshMapsListInUI;
+            RefreshMapsListInUI();
+        }
+
+        private void RefreshMapsListInUI()
+        {
+            if (_ui == null) return;
+            _ui.RefreshMapsList(ListMapSlots(), ActiveMapSlot);
+        }
+
+        // ── Slot UI handlers ────────────────────────────────────────────────────
+
+        private void OnSlotSaveAs(string slotName)
+        {
+            if (string.IsNullOrWhiteSpace(slotName))
+            {
+                _ui?.SetStatus("Enter a map name in the Maps panel.");
+                return;
+            }
+            bool ok = SaveCurrentMapAs(slotName);
+            _ui?.SetStatus(ok ? $"Saved map '{slotName}'." : $"Save failed for '{slotName}'.");
+        }
+
+        private void OnSlotLoad(string slotName)
+        {
+            if (string.IsNullOrWhiteSpace(slotName))
+            {
+                _ui?.SetStatus("Pick a map from the list first.");
+                return;
+            }
+            bool ok = LoadMapSlot(slotName);
+            _ui?.SetStatus(ok ? $"Loaded map '{slotName}'." : $"Load failed for '{slotName}'.");
+        }
+
+        private void OnSlotDelete(string slotName)
+        {
+            bool ok = DeleteMapSlot(slotName);
+            _ui?.SetStatus(ok ? $"Deleted map '{slotName}'." : $"Delete failed for '{slotName}'.");
+        }
+
+        private void OnSlotRename(string oldName, string newName)
+        {
+            if (string.IsNullOrWhiteSpace(oldName) || string.IsNullOrWhiteSpace(newName))
+            {
+                _ui?.SetStatus("Pick a map and type the new name.");
+                return;
+            }
+            bool ok = RenameMapSlot(oldName, newName);
+            _ui?.SetStatus(ok ? $"Renamed '{oldName}' → '{newName}'." : $"Rename failed.");
+        }
+
+        private void OnSlotNew(string slotName)
+        {
+            string clean = string.IsNullOrWhiteSpace(slotName)
+                ? MapEditorMapSlots.DEFAULT_SLOT : slotName;
+            bool ok = BeginNewMap(clean);
+            _ui?.SetStatus(ok ? $"New blank map '{clean}'." : "New map failed.");
+        }
+
+        private void OnConfirmGenerateBiomes(MapEditorUIBuilder.BiomeDialogResult result)
+        {
+            var req = new BiomeGenerationRequest
+            {
+                biome             = result.biome,
+                randomPerZone     = result.randomPerZone,
+                selectedZoneOnly  = result.selectedZoneOnly,
+                selectedZoneName  = _state != null ? _state.SelectedZone : null,
+                seed              = result.seed,
+            };
+            string status = GenerateBiomes(req);
+            _ui?.SetStatus(status);
+            Debug.Log($"[MapEditor] {status}");
         }
 
         private void OnZoneSelected(string zoneName)
@@ -299,6 +396,8 @@ namespace Valkur.Gameplay.MapEditor
 
         protected override void OnDestroy()
         {
+            OnMapSlotsChanged -= RefreshMapsListInUI;
+
             if (zoneManager != null)
                 zoneManager.OnZonesChanged -= HandleZonesChanged;
 

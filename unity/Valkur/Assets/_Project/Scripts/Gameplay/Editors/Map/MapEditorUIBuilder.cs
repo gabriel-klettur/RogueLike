@@ -21,11 +21,11 @@ namespace Valkur.Gameplay.MapEditor
     ///   • AddZone dialog  (modal overlay)
     ///   • DeleteZone dialog (modal overlay)
     /// </summary>
-    public static class MapEditorUIBuilder
+    public static partial class MapEditorUIBuilder
     {
         // ── UIRefs ──────────────────────────────────────────────────────────────
 
-        public struct UIRefs
+        public partial struct UIRefs
         {
             // Menu bar
             public GameObject      MenuBar;
@@ -89,6 +89,8 @@ namespace Valkur.Gameplay.MapEditor
         private const float ZONES_BTN_W    = 74f;
         private const float ACTIONS_BTN_W  = 82f;
         private const float PROPS_BTN_W    = 68f;
+        private const float BIOMES_BTN_W   = 80f;
+        private const float MAPS_BTN_W     = 70f;
 
         // ── BuildAll ─────────────────────────────────────────────────────────────
 
@@ -104,7 +106,9 @@ namespace Valkur.Gameplay.MapEditor
             Action                 onCancelDeleteZone,
             Action<string>         onRenameSelectedZone,
             Action                 onToggleSelectedZoneEditable,
-            Action<bool>           onRestrictEditChanged)
+            Action<bool>           onRestrictEditChanged,
+            Action<BiomeDialogResult> onConfirmGenerateBiomes,
+            MapSlotCallbacks       mapSlotCallbacks)
         {
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
 
@@ -116,9 +120,24 @@ namespace Valkur.Gameplay.MapEditor
                 onRequestDeleteSelectedZone);
             BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone,
                 onToggleSelectedZoneEditable, onRestrictEditChanged);
+            BuildBiomesPanel(canvasT, ref refs, onConfirmGenerateBiomes);
+            BuildMapsPanel(canvasT, ref refs, mapSlotCallbacks);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
             BuildDeleteZoneDialog(canvasT, ref refs, onConfirmDeleteSelectedZone, onCancelDeleteZone);
             return refs;
+        }
+
+        /// <summary>
+        /// Snapshot of biome-dialog choices forwarded to the manager when the user
+        /// clicks Generate. Plain primitives so the UIBuilder doesn't need to
+        /// reference <see cref="MapEditorManager.BiomeGenerationRequest"/>.
+        /// </summary>
+        public struct BiomeDialogResult
+        {
+            public Valkur.Data.Biomes.BiomeKind biome;
+            public bool randomPerZone;
+            public bool selectedZoneOnly;
+            public int seed;
         }
 
         // ── Public helper: menu-button highlight ─────────────────────────────────
@@ -193,6 +212,10 @@ namespace Valkur.Gameplay.MapEditor
                 () => onToggle?.Invoke("actions"),  out refs.ActionsMenuBtnTmp);
             refs.PropsMenuBtnImg    = AddMenuBtn(t, "Props v",    PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),    out refs.PropsMenuBtnTmp);
+            refs.BiomesMenuBtnImg   = AddMenuBtn(t, "Biomes v",   BIOMES_BTN_W,
+                () => onToggle?.Invoke("biomes"),   out refs.BiomesMenuBtnTmp);
+            refs.MapsMenuBtnImg     = AddMenuBtn(t, "Maps v",     MAPS_BTN_W,
+                () => onToggle?.Invoke("maps"),     out refs.MapsMenuBtnTmp);
 
             // Flexible spacer pushes status text to the right
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;

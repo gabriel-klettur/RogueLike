@@ -29,6 +29,19 @@ namespace Valkur.Gameplay.MapEditor
             RefreshSelectionUIAndOverlay();
         }
 
+        private void FrameZoneAtCursor()
+        {
+            if (zoneManager == null) return;
+            if (!TryGetCursorTile(out var tilePos)) return;
+            if (!zoneManager.TryGetZoneAtTile(tilePos, out var zone)) return;
+
+            var rect = zoneManager.GetZoneRect(zone);
+            if (rect.width <= 0 || rect.height <= 0) return;
+
+            Valkur.Gameplay.CameraSetup.Instance?.FrameRect(rect);
+            _ui?.SetStatus($"Centered on zone '{zone.zoneName}'.");
+        }
+
         private void BeginAddZoneFlow()
         {
             _isAddZoneFlowActive   = true;
