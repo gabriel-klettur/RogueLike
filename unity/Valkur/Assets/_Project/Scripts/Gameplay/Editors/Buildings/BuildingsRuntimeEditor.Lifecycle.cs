@@ -80,6 +80,7 @@ namespace Valkur.Gameplay.Buildings
             _activeColliderSession = null;
             _colliderStroke.Active = false;
             _cameraPan.Reset();
+            _doubleClick.Reset();
             HideCollBrushCursor();
             CancelPickerDrag();
             HideConfirm();

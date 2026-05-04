@@ -63,6 +63,7 @@ namespace Valkur.Gameplay.TileEditor
                     Valkur.Gameplay.MapEditor.MapEditorManager.Instance.SetExternalOverlayRequest(false);
                 // Keep perf probe state — re-enabled on activate via CreatePerfProbe defaults
                 _cameraPan.Reset();
+                _doubleClick.Reset();
                 // Re-attach in case middle-mouse pan had detached the camera during editing.
                 if (Valkur.Gameplay.CameraSetup.Instance != null)
                     Valkur.Gameplay.CameraSetup.Instance.ReattachFollow();

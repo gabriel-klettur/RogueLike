@@ -50,6 +50,8 @@ namespace Valkur.Gameplay.TileEditor
 
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
+        // Double-click on a zone → centre + frame it on screen.
+        private readonly EditorDoubleClickDetector _doubleClick = new EditorDoubleClickDetector();
 
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
@@ -213,9 +215,24 @@ namespace Valkur.Gameplay.TileEditor
             HandleCameraZoom();
             HandleUndoRedo();
             HandleMouseInput();
+            HandleDoubleClickFrame();
             UpdateBrushPreview();
             UpdateGridCursor();
             UpdateViewPanelHover();
+        }
+
+        // Double-click on a zone → centre + frame it on screen. Coexists with
+        // the single-click handler (which still paints / picks tiles) — the
+        // first click registers normally, only the second click triggers the
+        // framing.
+        private void HandleDoubleClickFrame()
+        {
+            if (!_doubleClick.PollLeftDouble()) return;
+            var zoneManager = FindObjectOfType<ZoneManager>();
+            if (zoneManager == null) return;
+            string framed = EditorZoneFraming.TryFrameZoneAtCursor(zoneManager);
+            if (!string.IsNullOrEmpty(framed))
+                _ui?.SetStatus($"Centered on zone '{framed}'.");
         }
 
         // ------------------------------------------------------------------

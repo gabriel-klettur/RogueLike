@@ -116,6 +116,12 @@ namespace Valkur.Gameplay.Buildings
         // Middle-mouse camera pan — shared controller used by every runtime editor.
         private readonly Valkur.Gameplay.Editors.EditorCameraPanController _cameraPan
             = new Valkur.Gameplay.Editors.EditorCameraPanController();
+        // Mouse-wheel zoom shared with every runtime editor (effectively unbounded zoom-out).
+        private readonly Valkur.Gameplay.Editors.EditorCameraZoomController _cameraZoom
+            = new Valkur.Gameplay.Editors.EditorCameraZoomController();
+        // Double-click on a zone → centre + frame it on screen.
+        private readonly Valkur.Gameplay.Editors.EditorDoubleClickDetector _doubleClick
+            = new Valkur.Gameplay.Editors.EditorDoubleClickDetector();
         private Camera  _mainCamera;
 
         // Outline renderers (cyan hover + yellow active + red remove)
@@ -350,6 +356,8 @@ namespace Valkur.Gameplay.Buildings
 
             HandleKeyboardShortcuts();
             HandleCameraPan();
+            _cameraZoom.Tick();
+            HandleDoubleClickFrame();
             HandleMapInteraction();
             UpdateCollBrushCursor();
             UpdatePickerDrag();

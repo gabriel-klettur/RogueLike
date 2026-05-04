@@ -105,6 +105,20 @@ namespace Valkur.Gameplay.Buildings
         // and MapEditorManager.
         private void HandleCameraPan() => _cameraPan.Tick();
 
+        // Double-click on a zone → centre + frame it on screen. Coexists with
+        // single-click selection / placement; the second click also fires the
+        // single-click path but the framing is the user-visible effect.
+        private void HandleDoubleClickFrame()
+        {
+            if (!_doubleClick.PollLeftDouble()) return;
+            var zoneManager = FindObjectOfType<Valkur.Gameplay.World.ZoneManager>();
+            if (zoneManager == null) return;
+            string framed = Valkur.Gameplay.Editors.EditorZoneFraming
+                .TryFrameZoneAtCursor(zoneManager);
+            if (!string.IsNullOrEmpty(framed))
+                Toast($"Centered on zone '{framed}'.");
+        }
+
         private void HandleKeyboardShortcuts()
         {
             // Defense in depth: Update() already gates this with `if (!_active) return;`,
