@@ -106,7 +106,8 @@ namespace Valkur.Gameplay.Items
                 PROPS_W, PROPS_H, "Properties",
                 out var t, out refs.PropsPanelDrag);
 
-            // Title strip
+            // Title strip — bold, single line, fixed height. Shows the active item's
+            // displayName so the inspector body below stays free for the full table.
             var titleGo = CreateUI("PropsTitle", t);
             titleGo.AddComponent<LayoutElement>().preferredHeight = 22f;
             var titleTmp        = titleGo.AddComponent<TextMeshProUGUI>();
@@ -115,26 +116,33 @@ namespace Valkur.Gameplay.Items
             titleTmp.fontStyle  = FontStyles.Bold;
             titleTmp.alignment  = TextAlignmentOptions.Center;
             titleTmp.color      = ACCENT;
-            refs.PropsText      = titleTmp;
+            titleTmp.enableWordWrapping = false;
+            titleTmp.overflowMode = TextOverflowModes.Ellipsis;
+            refs.PropsTitle     = titleTmp;
 
             AddInlineSeparator(t);
 
-            // Scrollable content area for future fields (id / name / image / params / …)
+            // Scrollable content area for the full property table.
             var (scroll, content) = EditorUIHelpers.MakeScrollView(t, "PropsScroll");
             EnsureFlexibleHeight(scroll.gameObject);
             EditorUIHelpers.AddVerticalScrollbar(scroll);
             refs.PropsContent = content;
 
-            // Phase 1 hint placeholder
-            var hintGo = CreateUI("PropsHint", content);
-            hintGo.AddComponent<LayoutElement>().preferredHeight = 60f;
-            var hintTmp        = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTmp.text       = "Properties editor will be wired in Phase 2.\n\nFields planned:\n  • id\n  • display name\n  • icon / image\n  • params (price, count, …)";
-            hintTmp.fontSize   = 10f;
-            hintTmp.fontStyle  = FontStyles.Italic;
-            hintTmp.alignment  = TextAlignmentOptions.TopLeft;
-            hintTmp.color      = TEXT_SECONDARY;
-            hintTmp.enableWordWrapping = true;
+            // Body TMP — lives inside the scroll content so long inspectors scroll
+            // instead of overlapping the title strip.
+            var bodyGo = CreateUI("PropsBody", content);
+            var bodyLE = bodyGo.AddComponent<LayoutElement>();
+            bodyLE.flexibleHeight = 1f;
+            bodyLE.minHeight = 60f;
+            var bodyTmp        = bodyGo.AddComponent<TextMeshProUGUI>();
+            bodyTmp.text       = "Select an item from the grid to view its properties.";
+            bodyTmp.fontSize   = 11f;
+            bodyTmp.alignment  = TextAlignmentOptions.TopLeft;
+            bodyTmp.color      = TEXT_PRIMARY;
+            bodyTmp.enableWordWrapping = true;
+            bodyTmp.richText   = true;
+            bodyTmp.margin     = new Vector4(6f, 4f, 6f, 4f);
+            refs.PropsText     = bodyTmp;
 
             refs.PropsDropdown.SetActive(false);
         }

@@ -61,7 +61,8 @@ namespace Valkur.Gameplay.Items
             public TextMeshProUGUI  StatusText;
 
             // Properties panel
-            public TextMeshProUGUI  PropsText;
+            public TextMeshProUGUI  PropsTitle;   // 22px header — shows item name or "(no selection)"
+            public TextMeshProUGUI  PropsText;    // body inside the scroll content — shows the full inspector
             public RectTransform    PropsContent;
 
             // Instances panel

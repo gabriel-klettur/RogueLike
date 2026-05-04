@@ -22,6 +22,11 @@ namespace Valkur.Gameplay.Items
     {
         // Re-built each RefreshProperties() call so it reflects the live selection.
         private GameObject _instanceActionsGo;
+
+        private void SetPropsTitle(string text)
+        {
+            if (_uiRefs.PropsTitle != null) _uiRefs.PropsTitle.text = text ?? "";
+        }
         /// <summary>Refresh the Properties panel based on the currently selected item.</summary>
         private void RefreshProperties()
         {
@@ -29,22 +34,31 @@ namespace Valkur.Gameplay.Items
 
             if (string.IsNullOrEmpty(_selectedItemId))
             {
+                SetPropsTitle("(no item selected)");
                 _uiRefs.PropsText.text = "Select an item from the grid to view its properties.";
                 _uiRefs.PropsText.richText = true;
+                RebuildInstanceActions();
                 return;
             }
 
             var def = FindItemById(_selectedItemId);
             if (def == null)
             {
+                SetPropsTitle(_selectedItemId);
                 _uiRefs.PropsText.text = $"Item '{_selectedItemId}' not found in catalog.";
                 _uiRefs.PropsText.richText = true;
+                RebuildInstanceActions();
                 return;
             }
 
+            // The title strip shows the readable name; identity goes in the body
+            // alongside the inspector table so users can copy-paste it.
+            SetPropsTitle(string.IsNullOrEmpty(def.displayName) ? def.itemId : def.displayName);
+
             var sb = new StringBuilder(1024);
             sb.AppendLine($"<b>Id:</b> {def.itemId}");
-            sb.AppendLine($"<b>Name:</b> {def.displayName}");
+            if (!string.IsNullOrEmpty(def.itemType))
+                sb.AppendLine($"<b>Type:</b> {def.itemType}");
             if (!string.IsNullOrEmpty(def.description))
             {
                 sb.AppendLine();
@@ -145,8 +159,31 @@ namespace Valkur.Gameplay.Items
             _instanceActionsGo.AddComponent<LayoutElement>().preferredHeight = 110f;
 
             var pos = _selectedInstance.transform.position;
-            string title = $"<b>── Instance ──</b>\nPosition: ({pos.x:F2}, {pos.y:F2})";
-            AddLabel(_instanceActionsGo.transform, title);
+            var sb = new StringBuilder(256);
+            sb.Append("<b>── Instance ──</b>\n");
+            sb.Append($"Position: ({pos.x:F2}, {pos.y:F2})\n");
+            // Surface the per-instance data that the player should be able to
+            // tell apart from the catalog defaults: dropId, persistence flavor,
+            // remaining TTL. These belong to the WorldPickup, not the
+            // ItemDefinition — same item, two different runtime states.
+            if (_selectedInstance.IsPersistent && !string.IsNullOrEmpty(_selectedInstance.DropId))
+            {
+                sb.Append($"Drop id: <i>{_selectedInstance.DropId}</i>\n");
+                sb.Append("Persistence: <b>Persistent</b>\n");
+                if (_selectedInstance.IsInfiniteTtl)
+                {
+                    sb.Append("TTL: <b>infinite</b>");
+                }
+                else
+                {
+                    sb.Append($"TTL: {_selectedInstance.DespawnTtlSeconds:F0}s  •  remaining: {_selectedInstance.SecondsUntilExpiry:F0}s");
+                }
+            }
+            else
+            {
+                sb.Append("Persistence: <b>Ephemeral</b> (won't be saved)");
+            }
+            AddLabel(_instanceActionsGo.transform, sb.ToString());
 
             // Quantity row: − [N] +
             var qtyRow = new GameObject("QtyRow", typeof(RectTransform));
@@ -229,11 +266,28 @@ namespace Valkur.Gameplay.Items
                 BindingFlags.Instance | BindingFlags.NonPublic);
             if (f == null) { SetStatus("Cannot mutate quantity (field missing)."); return; }
 
+            // Mirror the live mutation into the persistence cache so the saved
+            // file stays in sync with what the player sees.
+            var service = ResolveDropService();
+            string persistDropId = pickup.IsPersistent ? pickup.DropId : null;
+
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Qty {pickup.Item?.itemId} {oldQty}→{newQty}",
-                doAction:   () => { if (pickup != null) f.SetValue(pickup, newQty); },
-                undoAction: () => { if (pickup != null) f.SetValue(pickup, oldQty); }));
+                doAction: () =>
+                {
+                    if (pickup != null) f.SetValue(pickup, newQty);
+                    if (service != null && persistDropId != null)
+                        service.UpdateQuantity(persistDropId, newQty);
+                },
+                undoAction: () =>
+                {
+                    if (pickup != null) f.SetValue(pickup, oldQty);
+                    if (service != null && persistDropId != null)
+                        service.UpdateQuantity(persistDropId, oldQty);
+                }));
             f.SetValue(pickup, newQty);
+            if (service != null && persistDropId != null)
+                service.UpdateQuantity(persistDropId, newQty);
             RefreshProperties();
             RebuildInstancesList();
             SetStatus($"Quantity {oldQty} → {newQty}.");

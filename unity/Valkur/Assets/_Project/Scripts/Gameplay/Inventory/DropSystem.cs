@@ -12,11 +12,36 @@ namespace Valkur.Gameplay.Inventory
     public static class DropSystem
     {
         /// <summary>
-        /// Spawn a world pickup at the given position.
+        /// Spawn an ephemeral world pickup at the given position. Existing
+        /// callers (loot, player throw) keep using this API; the result lives
+        /// only for the current scene.
+        ///
+        /// For persistent drops (Items Editor F7) call
+        /// <c>ItemDropService.SpawnPersistent</c> instead, which uses
+        /// <see cref="BuildPickupShell"/> internally.
         /// </summary>
         public static WorldPickup SpawnDrop(ItemDefinition item, int quantity, Vector3 position)
         {
             if (item == null || quantity <= 0) return null;
+
+            var pickup = BuildPickupShell(item, position);
+            if (pickup == null) return null;
+
+            pickup.Initialize(item, quantity, position);
+            Debug.Log($"[DropSystem] Spawned {quantity}x {item.displayName} at {position}");
+            return pickup;
+        }
+
+        /// <summary>
+        /// Build the GameObject + components for a pickup but leave
+        /// <c>WorldPickup.Initialize*</c> to the caller. Used by both the legacy
+        /// ephemeral <see cref="SpawnDrop"/> path and the persistent
+        /// <c>ItemDropService</c> rehydration path so they share one place to
+        /// configure layer / collider / rigidbody.
+        /// </summary>
+        public static WorldPickup BuildPickupShell(ItemDefinition item, Vector3 position)
+        {
+            if (item == null) return null;
 
             var go = new GameObject($"Drop_{item.itemId}");
             int pickupLayer = LayerMask.NameToLayer("Pickup");
@@ -32,11 +57,7 @@ namespace Valkur.Gameplay.Inventory
             var rb = go.AddComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Kinematic;
 
-            var pickup = go.AddComponent<WorldPickup>();
-            pickup.Initialize(item, quantity, position);
-
-            Debug.Log($"[DropSystem] Spawned {quantity}x {item.displayName} at {position}");
-            return pickup;
+            return go.AddComponent<WorldPickup>();
         }
 
         /// <summary>

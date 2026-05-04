@@ -2,9 +2,11 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.UIKit;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.WorldDrops;
 
 namespace Valkur.Gameplay.Items
 {
@@ -135,6 +137,22 @@ namespace Valkur.Gameplay.Items
 
         // â”€â”€ Spawn â”€â”€
 
+        /// <summary>Resolve the active <see cref="ItemDropService"/> from the
+        /// service locator. Returns null when persistence isn't wired (e.g. the
+        /// scene was loaded without GameplaySceneSetup); callers fall back to
+        /// the legacy ephemeral path so the editor stays functional in unit
+        /// tests / sandbox scenes.</summary>
+        private ItemDropService ResolveDropService()
+        {
+            return ServiceLocator.TryGet<ItemDropService>(out var svc) ? svc : null;
+        }
+
+        /// <summary>Default TTL for fresh editor placements: read from the
+        /// item's <c>despawnTime</c> field (Python parity). 0 ⇒ infinite,
+        /// i.e. authoring drops persist forever until a designer removes them.</summary>
+        private static float DefaultEditorTtlFor(ItemDefinition def)
+            => def != null ? Mathf.Max(0f, def.despawnTime) : 0f;
+
         /// <summary>Spawn the currently-selected item at <paramref name="worldPos"/>.</summary>
         private void SpawnAt(Vector3 worldPos)
         {
@@ -144,26 +162,56 @@ namespace Valkur.Gameplay.Items
                 SetStatus("Pick an item from the grid before spawning.");
                 return;
             }
-            var pickup = DropSystem.SpawnDrop(def, 1, worldPos);
-            if (pickup == null) return;
 
-            var captured = pickup;
+            float ttl = DefaultEditorTtlFor(def);
+            var service = ResolveDropService();
+
+            // Capture instance metadata so Undo / Redo can replay the same
+            // drop with the same dropId — keeps the persistent file stable.
+            ItemDropInstance pendingInstance = null;
+            WorldPickup pendingPickup = null;
+
+            if (service != null)
+            {
+                pendingInstance = service.SpawnPersistent(def, 1, worldPos, ttl, zoneId: "", source: ItemDropSource.Editor);
+                if (pendingInstance != null) pendingPickup = service.GetLivePickup(pendingInstance.dropId);
+            }
+            else
+            {
+                pendingPickup = DropSystem.SpawnDrop(def, 1, worldPos);
+            }
+
+            if (pendingPickup == null && pendingInstance == null) return;
+
+            string ttlLabel = ttl > 0f ? $"TTL {ttl:F0}s" : "infinite";
+
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Spawn {def.itemId}",
                 doAction: () =>
                 {
-                    // Re-execute (after Undo) â†’ respawn at same position.
-                    if (captured == null)
-                        captured = DropSystem.SpawnDrop(def, 1, worldPos);
+                    // Redo: re-insert the same record (preserves dropId) when
+                    // we have a service, fall back to a fresh ephemeral spawn.
+                    if (service != null && pendingInstance != null)
+                    {
+                        if (service.GetLivePickup(pendingInstance.dropId) == null)
+                            service.RestorePersistent(pendingInstance.Clone());
+                    }
+                    else if (pendingPickup == null)
+                    {
+                        pendingPickup = DropSystem.SpawnDrop(def, 1, worldPos);
+                    }
                 },
                 undoAction: () =>
                 {
-                    if (captured != null) Destroy(captured.gameObject);
-                    captured = null;
+                    if (service != null && pendingInstance != null)
+                        service.RemoveByDropId(pendingInstance.dropId);
+                    else if (pendingPickup != null)
+                        Destroy(pendingPickup.gameObject);
+                    pendingPickup = null;
                 }));
 
             ForceRefreshInstances();
-            SetStatus($"Spawned '{def.displayName ?? def.itemId}' at ({worldPos.x:F1},{worldPos.y:F1}).");
+            SetStatus($"Spawned '{def.displayName ?? def.itemId}' at ({worldPos.x:F1},{worldPos.y:F1}) [{ttlLabel}].");
         }
 
         /// <summary>Spawn one of <paramref name="itemId"/> at the current player position.</summary>
@@ -194,14 +242,43 @@ namespace Valkur.Gameplay.Items
             var pos = pickup.transform.position;
             string itemId = def != null ? def.itemId : "?";
 
+            var service = ResolveDropService();
+            // Snapshot for Undo: a persistent drop must round-trip its full
+            // record so re-inserting preserves dropId + ttl + createdAt.
+            ItemDropInstance snapshot = null;
+            if (service != null && pickup.IsPersistent && !string.IsNullOrEmpty(pickup.DropId))
+            {
+                snapshot = service.Get(pickup.DropId)?.Clone();
+            }
+
             _undo.Record(new UndoStack.LambdaCommand(
                 $"Delete {itemId}",
                 doAction:   () => { /* original deletion already executed below */ },
-                undoAction: () => { if (def != null) DropSystem.SpawnDrop(def, qty, pos); }));
+                undoAction: () =>
+                {
+                    if (snapshot != null && service != null)
+                    {
+                        service.RestorePersistent(snapshot.Clone());
+                    }
+                    else if (def != null)
+                    {
+                        DropSystem.SpawnDrop(def, qty, pos);
+                    }
+                }));
 
             if (_selectedInstance == pickup) _selectedInstance = null;
             if (_hoveredInstance  == pickup) _hoveredInstance  = null;
-            Destroy(pickup.gameObject);
+
+            if (service != null && pickup.IsPersistent && !string.IsNullOrEmpty(pickup.DropId))
+            {
+                // RemoveByDropId destroys the live pickup as part of the call.
+                service.RemoveByDropId(pickup.DropId);
+            }
+            else
+            {
+                Destroy(pickup.gameObject);
+            }
+
             ForceRefreshInstances();
             RefreshProperties();
             SetStatus($"Deleted '{itemId}'.");

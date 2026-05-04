@@ -170,11 +170,17 @@ namespace Valkur.Tests.EditMode.Editors.Items
 
             var refs = GetField(ed, "_uiRefs");
             var propsTmp = (TextMeshProUGUI)Field(refs, "PropsText").GetValue(refs);
+            var titleTmp = (TextMeshProUGUI)Field(refs, "PropsTitle").GetValue(refs);
             Assert.IsNotNull(propsTmp);
-            StringAssert.Contains("sword",       propsTmp.text);
-            StringAssert.Contains("Iron Sword",  propsTmp.text);
-            StringAssert.Contains("iron blade",  propsTmp.text);
-            StringAssert.Contains("12",          propsTmp.text);  // damage value
+            Assert.IsNotNull(titleTmp);
+
+            // displayName lives in the 22 px title strip; the rest of the inspector
+            // (id, description, stats) goes in the scrollable body so a long table
+            // can't overflow into other panel sections.
+            StringAssert.Contains("Iron Sword", titleTmp.text);
+            StringAssert.Contains("sword",      propsTmp.text);
+            StringAssert.Contains("iron blade", propsTmp.text);
+            StringAssert.Contains("12",         propsTmp.text);  // damage value
         }
 
         [Test]

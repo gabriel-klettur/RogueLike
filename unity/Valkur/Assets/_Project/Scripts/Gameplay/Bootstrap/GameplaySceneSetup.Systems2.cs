@@ -12,8 +12,10 @@ using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.Enemies.FSM;
 using Valkur.Gameplay.Items;
+using Valkur.Gameplay.WorldDrops;
 using Valkur.Gameplay.Entities;
 using Valkur.Infrastructure;
+using Valkur.Infrastructure.Persistence.Repositories;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -263,6 +265,20 @@ namespace Valkur.Gameplay
 
         private void EnsureItemsRuntimeEditor()
         {
+            // Surface the catalog before the editor's first activation so its
+            // ServiceLocator-first lookup hits a populated binding instead of
+            // falling back to AssetDatabase / Resources.
+            if (_itemCatalog != null)
+            {
+                ServiceLocator.Register<ItemCatalog>(_itemCatalog);
+            }
+            else
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog assigned — items editor will fall back to AssetDatabase/Resources.");
+            }
+
+            EnsureItemDropService();
+
             if (ItemsRuntimeEditor.Instance != null) return;
 
             var go = new GameObject("ItemsRuntimeEditor");
@@ -270,6 +286,32 @@ namespace Valkur.Gameplay
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
             Debug.Log("[GameplaySceneSetup] ItemsRuntimeEditor created. Press F7 to toggle.");
+        }
+
+        /// <summary>
+        /// Bootstrap the persistent-drop pipeline: build the file-backed
+        /// repository, create the orchestrating service, register it with the
+        /// ServiceLocator, then load any saved drops and rehydrate their
+        /// WorldPickups before the editor goes live. Idempotent — no-op when
+        /// the service is already registered.
+        /// </summary>
+        private void EnsureItemDropService()
+        {
+            if (ServiceLocator.TryGet<ItemDropService>(out _)) return;
+            if (_itemCatalog == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog — skipping item drop persistence wiring.");
+                return;
+            }
+
+            var repo = new JsonFileItemDropRepository();
+            var service = new ItemDropService(repo, _itemCatalog, Valkur.Core.Coordinates.WorldId.Base);
+
+            int loaded = service.LoadFromRepository();
+            int spawned = service.Rehydrate();
+            Debug.Log($"[GameplaySceneSetup] ItemDropService ready — loaded {loaded} record(s), rehydrated {spawned} pickup(s).");
+
+            ServiceLocator.Register<ItemDropService>(service);
         }
 
         private void EnsureSpellsRuntimeEditor()

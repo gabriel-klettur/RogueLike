@@ -9,10 +9,11 @@ namespace Valkur.Gameplay.Items
 {
     /// <summary>
     /// Items Editor — catalog loading & filtering.
-    /// Mirrors Python <c>roguelike_editors/items/services/item_catalog_service.py</c>:
-    /// the catalog is populated from <c>items.json</c> via <c>ItemsLoader</c>; here the
-    /// equivalent is loading every <see cref="ItemDefinition"/> ScriptableObject from
-    /// the project's <c>Resources/Items</c> folder (mirrors InventoryRuntimeEditor).
+    /// Mirrors Python <c>roguelike_editors/items/services/item_catalog_service.py</c>.
+    /// Source priority: <see cref="ItemCatalog"/> singleton (populated by the
+    /// PythonDataMigrator) -&gt; ServiceLocator-registered catalog -&gt;
+    /// <c>Resources/Items</c> fallback (legacy; only matters if the migrator
+    /// has never been run).
     /// </summary>
     public partial class ItemsRuntimeEditor
     {
@@ -23,10 +24,13 @@ namespace Valkur.Gameplay.Items
             ReloadCatalog();
         }
 
-        /// <summary>Force a refresh of the catalog from Resources.</summary>
+        /// <summary>Force a refresh of the catalog. Tries ItemCatalog first, then Resources.</summary>
         private void ReloadCatalog()
         {
-            _allItems = Resources.LoadAll<ItemDefinition>("Items") ?? System.Array.Empty<ItemDefinition>();
+            var fromCatalog = TryLoadFromItemCatalog();
+            _allItems = fromCatalog ?? Resources.LoadAll<ItemDefinition>("Items")
+                                    ?? System.Array.Empty<ItemDefinition>();
+
             // Sort by displayName then itemId for a stable picker order.
             System.Array.Sort(_allItems, (a, b) =>
             {
@@ -35,7 +39,40 @@ namespace Valkur.Gameplay.Items
                 int c = string.Compare(an, bn, System.StringComparison.OrdinalIgnoreCase);
                 return c != 0 ? c : string.Compare(a.itemId ?? "", b.itemId ?? "", System.StringComparison.OrdinalIgnoreCase);
             });
-            Debug.Log($"[ItemsEditor] Catalog loaded: {_allItems.Length} items from Resources/Items");
+
+            string source = fromCatalog != null ? "ItemCatalog" : "Resources/Items";
+            Debug.Log($"[ItemsEditor] Catalog loaded: {_allItems.Length} items from {source}");
+        }
+
+        /// <summary>Source the catalog in priority order:
+        ///   1. ServiceLocator binding registered by GameplaySceneSetup (build-friendly).
+        ///   2. Resources/Catalogs/ItemCatalog (legacy / future Addressables stub).
+        ///   3. AssetDatabase load of the canonical Data/Catalogs/Items/ItemCatalog.asset
+        ///      (Editor-only — keeps the in-game F7 editor working immediately after
+        ///      a fresh PythonDataMigrator run, before any scene wiring).
+        /// Returns null when nothing is available so the caller can fall through.</summary>
+        private static ItemDefinition[] TryLoadFromItemCatalog()
+        {
+            ItemCatalog catalog = null;
+            if (ServiceLocator.TryGet<ItemCatalog>(out var fromService))
+                catalog = fromService;
+
+            if (catalog == null)
+                catalog = Resources.Load<ItemCatalog>("Catalogs/ItemCatalog");
+
+#if UNITY_EDITOR
+            if (catalog == null)
+            {
+                catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemCatalog>(
+                    "Assets/_Project/Data/Catalogs/Items/ItemCatalog.asset");
+            }
+#endif
+
+            if (catalog == null || catalog.Count == 0) return null;
+
+            var arr = new ItemDefinition[catalog.Count];
+            for (int i = 0; i < catalog.Items.Count; i++) arr[i] = catalog.Items[i];
+            return arr;
         }
 
         /// <summary>Apply the search filter to <see cref="_allItems"/> into <see cref="_filtered"/>.</summary>

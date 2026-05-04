@@ -62,6 +62,11 @@ namespace Valkur.Data
         [TextArea(2, 4)]
         public string description;
 
+        // Free-form domain tag mirroring Python's `items.type` column
+        // (food / magic / blacksmith / null). Used by vendors and crafting
+        // surfaces to group items independently of `category` and `equipSlot`.
+        public string itemType;
+
         [Header("Stacking")]
         public bool stackable;
         public int maxStack = 1;

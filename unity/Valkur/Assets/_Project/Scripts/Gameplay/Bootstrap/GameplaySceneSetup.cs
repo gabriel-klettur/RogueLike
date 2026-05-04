@@ -81,6 +81,10 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Catalog of all spell definitions. Populate via 'Valkur > Spells > Import Spells from Python JSON'.")]
         private SpellCatalog _spellCatalog;
 
+        [Header("Items")]
+        [SerializeField, Tooltip("Catalog of all ItemDefinition assets. Populate via 'Valkur > Migration > Import Items from Python SQLite'.")]
+        private ItemCatalog _itemCatalog;
+
         [Header("Dungeon")]
         [SerializeField, Tooltip("Dungeon generator config. Create via 'Create > Valkur > Dungeon Generator Config'.")]
         private DungeonGeneratorConfig _dungeonConfig;
