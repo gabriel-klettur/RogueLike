@@ -37,7 +37,8 @@ namespace Valkur.Gameplay.Items
     /// PERF) are placeholders that emit a status toast — Phase 2 will wire them to
     /// the data layer (ItemDefinition, drops, persistence, …).
     /// </summary>
-    public partial class ItemsRuntimeEditor : SingletonMonoBehaviour<ItemsRuntimeEditor>, GameEditorManager.IGameEditor
+    public partial class ItemsRuntimeEditor : SingletonMonoBehaviour<ItemsRuntimeEditor>,
+        GameEditorManager.IGameEditor, Valkur.Core.IAllowsPlayerMovement
     {
         // ── State ──
         private bool _active;
@@ -185,6 +186,13 @@ namespace Valkur.Gameplay.Items
             RefreshPicker();
             RefreshProperties();
             ForceRefreshInstances();
+
+            // Detach the cinemachine follow so MMB pan can move the camera
+            // freely. ReattachFollow runs in Deactivate so closing the editor
+            // snaps back onto the player. Same pattern as Buildings/Tile.
+            _mainCamera = Camera.main;
+            Valkur.Gameplay.CameraSetup.Instance?.DetachFollow();
+
             SetStatus("Items Editor active. F7 to close.");
             Debug.Log("[ItemsEditor] Activated (F7)");
         }
