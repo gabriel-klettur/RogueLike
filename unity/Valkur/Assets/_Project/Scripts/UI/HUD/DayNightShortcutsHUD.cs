@@ -164,7 +164,9 @@ namespace Valkur.UI.HUD
             bg.color = BG_PANEL;
             bg.raycastTarget = true;     // catches stray clicks; doesn't propagate to gameplay
 
-            // Title
+            // Title (centered) + small AJUSTES gear button anchored top-right
+            // of the title row. The button toggles the floating phase-settings
+            // panel, which lets the player tune the 5 properties of any phase.
             var titleTmp                          = AddText(_root, "Title", "FASES", 9f, FontStyles.Bold | FontStyles.UpperCase);
             titleTmp.alignment                    = TextAlignmentOptions.Center;
             titleTmp.color                        = TITLE_COLOR;
@@ -175,6 +177,8 @@ namespace Valkur.UI.HUD
             titleRt.pivot                         = new Vector2(0.5f, 1f);
             titleRt.sizeDelta                     = new Vector2(0f, 18f);
             titleRt.anchoredPosition              = new Vector2(0f, -PANEL_PAD);
+
+            BuildSettingsButton(titleRt);
 
             // Rows
             _rowBgs    = new Image[SHORTCUTS.Length];
@@ -319,6 +323,53 @@ namespace Valkur.UI.HUD
         }
 
         // ── Interaction ──────────────────────────────────────────────────────
+
+        private void BuildSettingsButton(RectTransform titleRt)
+        {
+            // Small "AJUSTES" pill anchored to the right edge of the title row.
+            // The text intentionally reads as a verb so the player understands
+            // it opens a deeper settings UI rather than navigating somewhere.
+            var btnGo = NewUI("SettingsBtn", _root);
+            var btnRt = btnGo.GetComponent<RectTransform>();
+            btnRt.anchorMin        = new Vector2(1f, 1f);
+            btnRt.anchorMax        = new Vector2(1f, 1f);
+            btnRt.pivot            = new Vector2(1f, 1f);
+            btnRt.sizeDelta        = new Vector2(54f, 16f);
+            btnRt.anchoredPosition = new Vector2(-PANEL_PAD, -PANEL_PAD - 1f);
+
+            var img = btnGo.AddComponent<Image>();
+            img.color         = new Color(0.18f, 0.20f, 0.28f, 0.95f);
+            img.raycastTarget = true;
+
+            var btn = btnGo.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor      = new Color(0.18f, 0.20f, 0.28f, 0.95f);
+            c.highlightedColor = new Color(0.28f, 0.32f, 0.40f, 1f);
+            c.pressedColor     = OFF_ROW_ON;
+            c.selectedColor    = new Color(0.18f, 0.20f, 0.28f, 0.95f);
+            c.fadeDuration     = 0.05f;
+            btn.colors         = c;
+            btn.targetGraphic  = img;
+            btn.onClick.AddListener(OnSettingsClicked);
+
+            var lbl = AddText(btnGo.transform, "Lbl", "⚙ AJ", 9f, FontStyles.Bold);
+            lbl.alignment       = TextAlignmentOptions.Center;
+            lbl.color           = TITLE_COLOR;
+            lbl.characterSpacing = 1f;
+            lbl.raycastTarget   = false;
+            var lblRt           = lbl.rectTransform;
+            lblRt.anchorMin     = Vector2.zero;
+            lblRt.anchorMax     = Vector2.one;
+            lblRt.offsetMin     = Vector2.zero;
+            lblRt.offsetMax     = Vector2.zero;
+        }
+
+        private void OnSettingsClicked()
+        {
+            var settings = FindObjectOfType<DayNightPhaseSettingsHUD>();
+            if (settings == null) return;
+            settings.ToggleVisible();
+        }
 
         private void OnRowClicked(int idx)
         {

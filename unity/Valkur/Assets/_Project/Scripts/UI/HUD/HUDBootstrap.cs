@@ -106,6 +106,15 @@ namespace Valkur.UI.HUD
                 weatherHudGo.AddComponent<WeatherHUD>();
                 if (uiContainer != null) weatherHudGo.transform.SetParent(uiContainer.transform, false);
             }
+            if (FindObjectOfType<DayNightPhaseSettingsHUD>() == null)
+            {
+                // Hidden by default; the gear button on the FASES panel toggles
+                // it. Created up-front so the FindObjectOfType lookup in the
+                // shortcuts panel always resolves on first click.
+                var settingsHudGo = new GameObject("DayNightPhaseSettingsHUD");
+                settingsHudGo.AddComponent<DayNightPhaseSettingsHUD>();
+                if (uiContainer != null) settingsHudGo.transform.SetParent(uiContainer.transform, false);
+            }
             if (FindObjectOfType<DayNightVignetteOverlay>() == null)
             {
                 var vignetteGo = new GameObject("DayNightVignetteOverlay");
