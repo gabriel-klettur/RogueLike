@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
-using TMPro;
 using Valkur.Core;
 using Valkur.Core.Input;
 using Valkur.Data;
@@ -12,74 +10,91 @@ using Valkur.UIKit;
 namespace Valkur.Gameplay.World
 {
     /// <summary>
-    /// Runtime in-game Lighting Editor (Ctrl+F3).
-    /// Mirrors Python's lighting_editor: 3-panel layout with global toggles/quality,
-    /// day/night cycle controls and keyframe editing, and light preset tuning.
-    /// Place, move, and delete light instances on the map.
+    /// Runtime in-game Lighting Editor (Ctrl+F3) — full UI/UX redesign that mirrors
+    /// the menu-bar + draggable-panel architecture of the Tile (F8), Buildings (F10)
+    /// and Items (F7) editors. Lets a designer:
+    ///
+    ///  • Watch the live day/night cycle and scrub time freely.
+    ///  • Pause / resume the cycle, change its real-time length, edit the global
+    ///    minimum-intensity floor, and configure the Python-parity "lights off
+    ///    while it is bright outside" window.
+    ///  • Toggle the Global Light 2D and the entire point-light system on/off.
+    ///  • Pick a preset (Torch / Lamp / Magic …) from the catalog grid and drop
+    ///    fresh point lights anywhere on the map.
+    ///  • Drag-select existing lights to move them, click to focus, and delete
+    ///    them either from the world or from the instances list.
+    ///  • Save the resulting placement back to <c>StreamingAssets/Lights/light_instances.json</c>.
+    ///  • Undo / redo every authoring action (50-frame stack).
+    ///
+    /// Talks to <see cref="DayNightCycle"/> and <see cref="WorldLightLoader"/> for
+    /// every gameplay-side change — no duplicate state.
     /// </summary>
-    public partial class LightingRuntimeEditor : SingletonMonoBehaviour<LightingRuntimeEditor>, GameEditorManager.IGameEditor
+    public partial class LightingRuntimeEditor : SingletonMonoBehaviour<LightingRuntimeEditor>,
+        GameEditorManager.IGameEditor, IAllowsPlayerMovement
     {
-        [SerializeField, Tooltip("Light preset catalog")]
-        private LightPresetCatalog _catalog;
-
+        // ── State ────────────────────────────────────────────────────────────
         private bool _active;
-        private InputAction _toggleAction;
-        private InputAction _ctrlModifier;
-        private bool _ownsToggleAction;
-        private bool _ownsCtrlModifier;
+        private bool _uiBuilt;
 
-        // State
+        // Cached for FKeyBindingParityTests reflection — never read at runtime
+        // (the live binding is resolved on every frame by the stateless API).
+        private InputAction _toggleAction;
+        private bool        _ownsToggleAction;
+        private InputAction _ctrlModifier;
+        private bool        _ownsCtrlModifier;
+
         private enum EditorMode { Select, Spawn, Delete }
         private EditorMode _mode = EditorMode.Select;
-        private string _selectedPresetKey;
-        private bool _singleShot;
 
-        // Global lighting toggles
-        private bool _ambientEnabled = true;
+        // ── UI ───────────────────────────────────────────────────────────────
+        private Canvas       _canvas;
+        private GameObject   _root;
+        private LightingEditorUIBuilder.UIRefs _ui;
+        private GameObject   _tutorial;
+        private string       _searchFilter = "";
+
+        // Dropdown open/close state — mirrors BuildingsRuntimeEditor.UI.cs.
+        private readonly HashSet<string> _openDropdowns = new HashSet<string>();
+
+        // ── Data sources (resolved lazily) ───────────────────────────────────
+        private LightPresetCatalog _catalog;
+        private string             _selectedPresetKey;
+        private GameObject         _selectedLight;     // active map selection
+        private GameObject         _hoveredLight;      // mouse-hovered map light
+
+        // ── Runtime gates ────────────────────────────────────────────────────
+        private bool _ambientEnabled    = true;
         private bool _pointLightsEnabled = true;
-        private bool _shadowsEnabled;
-        private bool _overlayVisible;
-        private bool _labelsVisible;
+        private float _cachedDayLightIntensity;       // restored when ambient flips back on
 
-        // Quality params
-        private int _maxLights = 12;
-        private int _maxRadius = 192;
-        private int _shadowRays = 64;
+        // ── Drag-to-move ─────────────────────────────────────────────────────
+        private bool      _moving;
+        private GameObject _movingLight;
+        private Vector3   _moveStartWorldPos;
 
-        // Day/Night
-        private float _dayTimeMinutes = 720f; // noon
-        private float _timeScale = 0.4f;
-        private float _minIntensity;
+        // ── Cycle UI suppression (skip onChanged events while we sync the UI from the live cycle) ──
+        private bool _suppressCycleEvents;
+        private float _instancesRefreshNext;
+        private const float INSTANCES_REFRESH_INTERVAL = 0.5f;
 
-        // Drag
-        private bool _dragging;
-        private GameObject _dragTarget;
-        private Vector3 _dragOffset;
+        // ── Undo (50 ops, mirrors Tile / Items) ──────────────────────────────
+        private readonly UndoStack _undo = new UndoStack(50);
 
-        // UI
-        private Canvas _canvas;
-        private GameObject _root;
-        private TextMeshProUGUI _statusTmp;
-        private TextMeshProUGUI _propsTmp;
-        private TextMeshProUGUI _dayTimeTmp;
-        private Image _selectBtnImg, _spawnBtnImg, _deleteBtnImg;
-
-        // EditorKit extras
-        private string _searchFilter = "";
-        private TMP_InputField _searchBox;
-        private GameObject _tutorial;
-        private RectTransform _presetButtonsParent;
-        private readonly UndoStack _undo = new UndoStack(64);
-
-        // Middle-mouse camera pan — shared controller used by every runtime editor.
+        // ── Camera helpers ───────────────────────────────────────────────────
+        private Camera _mainCamera;
         private readonly EditorCameraPanController _cameraPan = new EditorCameraPanController();
 
-        // IGameEditor
+        // ── IGameEditor ──────────────────────────────────────────────────────
         public string EditorName => "Lighting Editor";
-        public bool IsActive => _active;
+        public bool   IsActive   => _active;
+
+        // ── Lifecycle ────────────────────────────────────────────────────────
 
         protected override void OnSingletonAwake()
         {
+            // Cached purely for FKeyBindingParityTests reflection. Live
+            // resolution still happens through the stateless EditorHotkeyBindings
+            // API in Update so the editor is immune to the zombie-action bug.
             _toggleAction = EditorHotkeyBindings.Resolve(
                 EditorHotkeyBindings.Hotkey.ToggleLighting, out _ownsToggleAction);
             _ctrlModifier = EditorHotkeyBindings.Resolve(
@@ -88,8 +103,9 @@ namespace Valkur.Gameplay.World
 
         private void Start()
         {
-            BuildUI();
-            _root.SetActive(false);
+            // Lazy UI build (mirrors Buildings / Items): nothing is created or
+            // visible until the user presses Ctrl+F3 the first time.
+            _active = false;
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
@@ -103,45 +119,65 @@ namespace Valkur.Gameplay.World
 
         private void Update()
         {
-            // Ctrl+F3 only
+            // Ctrl+F3 only — bare F3 belongs to the Spawner Editor.
             if (EditorHotkeyBindings.WasPerformedThisFrame(EditorHotkeyBindings.Hotkey.ToggleLighting) &&
                 EditorHotkeyBindings.IsPressed(EditorHotkeyBindings.Hotkey.CtrlModifier))
             {
-                if (GameEditorManager.HasInstance)
-                    GameEditorManager.Instance.ToggleExclusive(this);
-                else
-                    ToggleActive();
+                if (GameEditorManager.HasInstance) GameEditorManager.Instance.ToggleExclusive(this);
+                else                               ToggleActive();
             }
+
             if (!_active) return;
 
-            // Middle-mouse camera pan — same UX as every other runtime editor.
+            // Middle-mouse pan runs unconditionally so dragging the camera works
+            // even during light-drag interactions.
             _cameraPan.Tick();
 
-            UpdateDayTimeDisplay();
+            HandleKeyboardShortcuts();
+            SyncCycleFromLive();
             HandleMapInteraction();
+            MaybeRefreshInstances();
         }
 
         public void Activate()
         {
+            if (!_uiBuilt)
+            {
+                try { BuildUI(); _uiBuilt = true; }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[LightingEditor] BuildUI failed: {ex.GetType().Name} :: {ex.Message}");
+                    Debug.LogException(ex);
+                    return;
+                }
+            }
             _active = true;
             _root.SetActive(true);
             _mode = EditorMode.Select;
-            RefreshModeButtons();
-            _statusTmp.text = "Lighting Editor active. Ctrl+F3 to close.";
+            OpenAllPanels();
+            EnsureCatalog();
+            RefreshPresetList();
+            RefreshPresetProperties();
+            RebuildInstancesList();
+            ApplyMode();
+
+            _mainCamera = Camera.main;
+            CameraSetup.Instance?.DetachFollow();
+
+            SetStatus("Lighting Editor active. Ctrl+F3 to close.");
             Debug.Log("[LightingEditor] Activated (Ctrl+F3)");
         }
 
         public void Deactivate()
         {
             _active = false;
-            _root.SetActive(false);
-            _dragging = false;
-            _dragTarget = null;
-            // Reattach the camera follow target if MMB pan had detached it.
+            CancelMove();
+            if (_root != null) _root.SetActive(false);
+            _hoveredLight  = null;
+            _selectedLight = null;
             _cameraPan.Reset();
-            Valkur.Gameplay.CameraSetup.Instance?.ReattachFollow();
-            if (GameEditorManager.HasInstance)
-                GameEditorManager.Instance.NotifyDeactivated(this);
+            CameraSetup.Instance?.ReattachFollow();
+            if (GameEditorManager.HasInstance) GameEditorManager.Instance.NotifyDeactivated(this);
             Debug.Log("[LightingEditor] Deactivated (Ctrl+F3)");
         }
 
@@ -150,7 +186,7 @@ namespace Valkur.Gameplay.World
             if (_active) Deactivate(); else Activate();
         }
 
-        // ── UI ──
+        // ── UI build ─────────────────────────────────────────────────────────
 
         private void BuildUI()
         {
@@ -161,23 +197,153 @@ namespace Valkur.Gameplay.World
             _root.transform.SetParent(_canvas.transform, false);
             EditorUIHelpers.StretchFill(_root);
 
-            BuildMainPanel();
-            BuildDayTimePanel();
-            BuildPresetsPanel();
+            _ui = LightingEditorUIBuilder.BuildAll(
+                _root.transform,
+                onDropdownToggle:        ToggleDropdown,
+                onModeSelect:            () => SetMode(EditorMode.Select),
+                onModeSpawn:             () => SetMode(EditorMode.Spawn),
+                onModeDelete:            () => SetMode(EditorMode.Delete),
+                onToggleAmbient:         ToggleAmbient,
+                onTogglePointLights:     TogglePointLights,
+                onScrubTime:             OnScrubTime,
+                onPause:                 ToggleCyclePaused,
+                onDayLengthChanged:      OnDayLengthChanged,
+                onMinIntensityChanged:   OnMinIntensityChanged,
+                onToggleLightsWindow:    ToggleLightsWindow,
+                onLightsWindowStart:     OnLightsWindowStart,
+                onLightsWindowEnd:       OnLightsWindowEnd,
+                onJumpDawn:              () => JumpToTime(0.25f),
+                onJumpNoon:              () => JumpToTime(0.50f),
+                onJumpDusk:              () => JumpToTime(0.75f),
+                onJumpMidnight:          () => JumpToTime(0.00f),
+                onSearchChanged:         OnSearchChanged,
+                onSave:                  DoSave,
+                onUndo:                  DoUndo,
+                onRedo:                  DoRedo,
+                onToggleTutorial:        ToggleTutorial);
 
+            WireOnClose(_ui.ModesPanelDrag,     "modes");
+            WireOnClose(_ui.CyclePanelDrag,     "cycle");
+            WireOnClose(_ui.PresetsPanelDrag,   "presets");
+            WireOnClose(_ui.InstancesPanelDrag, "instances");
+
+            BuildTutorial();
+            RefreshMenuBtnHighlights();
+        }
+
+        private void WireOnClose(DraggablePanel drag, string key)
+        {
+            if (drag == null) return;
+            drag.OnClose = () =>
+            {
+                _openDropdowns.Remove(key);
+                RefreshMenuBtnHighlights();
+            };
+        }
+
+        // ── Tutorial overlay ─────────────────────────────────────────────────
+
+        private void BuildTutorial()
+        {
             _tutorial = TutorialOverlay.Build(_root.transform, "LIGHTING HOTKEYS", new[]
             {
-                ("Ctrl+F3","Toggle Lighting Editor"),
-                ("LMB",    "Select / place / delete"),
-                ("Type",   "Filter presets"),
-                ("Ctrl+Z", "Undo"),
-                ("Ctrl+Y", "Redo"),
-                ("Esc",    "Close all editors"),
+                ("Ctrl+F3",  "Toggle Lighting Editor"),
+                ("LMB click","Select / spawn / delete (per mode)"),
+                ("LMB drag", "Move a hovered light"),
+                ("MMB drag", "Pan the camera"),
+                ("WASD",     "Move the player"),
+                ("Type",     "Filter presets"),
+                ("Ctrl+S",   "Save light_instances.json"),
+                ("Ctrl+Z",   "Undo"),
+                ("Ctrl+Y",   "Redo"),
+                ("Esc",      "Cancel move / close editor"),
             });
             _tutorial.SetActive(false);
         }
 
-        // ── Panel 1: Main Lighting Settings (left) ──
+        private void ToggleTutorial()
+        {
+            if (_tutorial == null) return;
+            _tutorial.SetActive(!_tutorial.activeSelf);
+        }
 
+        // ── Dropdown management (mirrors Items / Buildings) ──────────────────
+
+        private void ToggleDropdown(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_openDropdowns.Contains(name))
+            {
+                SetDropdownOpen(name, false);
+                _openDropdowns.Remove(name);
+            }
+            else
+            {
+                SetDropdownOpen(name, true);
+                _openDropdowns.Add(name);
+            }
+            RefreshMenuBtnHighlights();
+        }
+
+        private void OpenAllPanels()
+        {
+            foreach (var n in new[] { "modes", "cycle", "presets", "instances" })
+            {
+                SetDropdownOpen(n, true);
+                _openDropdowns.Add(n);
+            }
+            RefreshMenuBtnHighlights();
+        }
+
+        private void SetDropdownOpen(string name, bool open)
+        {
+            var go = name switch
+            {
+                "modes"     => _ui.ModesDropdown,
+                "cycle"     => _ui.CycleDropdown,
+                "presets"   => _ui.PresetsDropdown,
+                "instances" => _ui.InstancesDropdown,
+                _           => null
+            };
+            if (go != null) go.SetActive(open);
+        }
+
+        private void RefreshMenuBtnHighlights()
+        {
+            LightingEditorUIBuilder.ApplyMenuBtnStyle(_ui.ModesMenuBtnImg,     _ui.ModesMenuBtnTmp,     _openDropdowns.Contains("modes"));
+            LightingEditorUIBuilder.ApplyMenuBtnStyle(_ui.CycleMenuBtnImg,     _ui.CycleMenuBtnTmp,     _openDropdowns.Contains("cycle"));
+            LightingEditorUIBuilder.ApplyMenuBtnStyle(_ui.PresetsMenuBtnImg,   _ui.PresetsMenuBtnTmp,   _openDropdowns.Contains("presets"));
+            LightingEditorUIBuilder.ApplyMenuBtnStyle(_ui.InstancesMenuBtnImg, _ui.InstancesMenuBtnTmp, _openDropdowns.Contains("instances"));
+        }
+
+        // ── Status helpers ───────────────────────────────────────────────────
+
+        private void SetStatus(string msg)
+        {
+            if (_ui.StatusText != null) _ui.StatusText.text = msg;
+        }
+
+        private void Toast(string msg)
+        {
+            SetStatus(msg);
+            Debug.Log($"[LightingEditor] {msg}");
+        }
+
+        // ── Keyboard shortcuts ───────────────────────────────────────────────
+
+        private void HandleKeyboardShortcuts()
+        {
+            bool ctrl = KeyboardInputManager.IsCtrlHeld();
+            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z)) DoUndo();
+            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
+            if (ctrl && KeyboardInputManager.WasKeyPressedThisFrame(Key.S, KeyCode.S)) DoSave();
+
+            if (KeyboardInputManager.WasEscapePressedThisFrame())
+            {
+                if (_moving)                                                CancelMove();
+                else if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);
+                else                                                        Deactivate();
+            }
+        }
     }
 }
