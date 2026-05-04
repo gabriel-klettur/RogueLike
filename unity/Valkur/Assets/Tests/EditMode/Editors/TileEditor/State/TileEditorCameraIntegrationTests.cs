@@ -108,11 +108,12 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         public void CameraSetup_SetTileEditorZoom_ClampsExtremeValues()
         {
             // Zoom is clamped to [minZoomOrthoSize, maxEditorZoomOrthoSize]
-            // (defaults: 2 .. 60). Extreme inputs collapse to those bounds —
-            // this is the regression-prevention contract from
-            // CameraZoomClampTests, mirrored here at the TileEditor integration
-            // level so the editor cannot strand the camera at sub-pixel or
-            // 1e10 ortho size.
+            // (defaults: 2 .. 4000). The editor max is intentionally far above
+            // any practical map size so designers get effectively-unbounded
+            // zoom-out; the cap only exists to reject ortho ∞ / NaN drift
+            // that would crash the SRP. The min-clamp contract is the same as
+            // before: sub-pixel ortho values must round up to the configured
+            // min so the editor cannot strand the camera as a sub-pixel dot.
             float tinySize = 1e-6f;
             float hugeSize = 1e10f;
 
@@ -121,8 +122,10 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
                 "Extremely small zoom must clamp to the configured min (default 2)");
 
             _cameraSetup.SetTileEditorZoom(hugeSize);
-            Assert.LessOrEqual(_cameraSetup.GetCurrentOrthographicSize(), 60f + 1e-3f,
-                "Extremely large zoom must clamp to the editor max (default 60)");
+            Assert.LessOrEqual(_cameraSetup.GetCurrentOrthographicSize(), 4000f + 1e-3f,
+                "Extremely large zoom must clamp to the editor max (default 4000)");
+            Assert.IsTrue(float.IsFinite(_cameraSetup.GetCurrentOrthographicSize()),
+                "+Inf-class inputs must collapse to a finite value");
         }
 
         [Test]

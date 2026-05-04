@@ -19,7 +19,11 @@ namespace Valkur.Tests.EditMode.Game.World
     ///   * SetTileEditorZoom()              → [minZoomOrthoSize, maxEditorZoomOrthoSize]
     ///
     /// These tests pin the contract so the clamp can never be silently removed
-    /// again. Inspector defaults: minZoom=2, maxZoom=25, maxEditorZoom=60.
+    /// again. Inspector defaults: minZoom=2, maxZoom=25, maxEditorZoom=4000.
+    /// The editor cap is intentionally extreme — designers want effectively-
+    /// unbounded zoom-out for layout work; the cap only exists to reject
+    /// ortho ∞ / NaN drift that would crash the SRP. The tests below read
+    /// the actual serialized field, so they are resilient to that value.
     /// </summary>
     [TestFixture]
     public class CameraZoomClampTests

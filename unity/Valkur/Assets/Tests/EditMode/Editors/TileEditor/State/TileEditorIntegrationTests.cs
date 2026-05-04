@@ -247,9 +247,12 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
         public void Integration_Limits_WorkCorrectly()
         {
             // Zoom is CLAMPED to [minZoomOrthoSize, maxEditorZoomOrthoSize]
-            // (defaults: 2 .. 60). Invalid inputs (≤0, ±Inf, NaN) collapse to
-            // the min. Brush size is unbounded at the state level (UI clamps
-            // separately).
+            // (defaults: 2 .. 4000). The editor max is intentionally far
+            // above any practical map size so designers get effectively-
+            // unbounded zoom-out; the cap only exists to reject ortho ∞ /
+            // NaN drift that would crash the SRP. Invalid inputs (≤0, ±Inf,
+            // NaN) still collapse to the min. Brush size is unbounded at
+            // the state level (UI clamps separately).
             int minBrush = TileEditorConstants.MinBrushSize;
             int maxBrush = TileEditorConstants.MaxBrushSize;
 
@@ -272,8 +275,8 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.State
             // Assert
             Assert.GreaterOrEqual(sanitisedNegative, 2f - 1e-3f,
                 "Negative zoom should collapse to the configured minimum (default 2)");
-            Assert.LessOrEqual(clampedHugeZoom, 60f + 1e-3f,
-                "Huge positive zoom must clamp to the editor max (default 60) — " +
+            Assert.LessOrEqual(clampedHugeZoom, 4000f + 1e-3f,
+                "Huge positive zoom must clamp to the editor max (default 4000) — " +
                 "without this the editor can strand the camera at ortho 1e9.");
             Assert.AreEqual(minBrush - 1, belowMinBrush, "State allows brush size below minimum");
             Assert.AreEqual(maxBrush + 5, aboveMaxBrush, "State allows brush size above maximum");

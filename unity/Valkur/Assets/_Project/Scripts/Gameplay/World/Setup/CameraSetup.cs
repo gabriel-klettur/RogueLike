@@ -3,7 +3,6 @@ using UnityEngine.U2D;
 using Cinemachine;
 using UnityEngine.EventSystems;
 using Valkur.Core;
-using Valkur.Gameplay.TileEditor;
 
 namespace Valkur.Gameplay
 {
@@ -49,8 +48,8 @@ namespace Valkur.Gameplay
         private float minZoomOrthoSize = 2f;
         [SerializeField, Tooltip("Highest ortho size the player can reach by zooming out during gameplay. Beyond this, entities become sub-pixel.")]
         private float maxZoomOrthoSize = 25f;
-        [SerializeField, Tooltip("Highest ortho size any in-game editor (Tile/Map) can request. Editors zoom out further than gameplay for layout work.")]
-        private float maxEditorZoomOrthoSize = 60f;
+        [SerializeField, Tooltip("Highest ortho size any in-game editor can request. Designers want effectively unbounded zoom-out for layout work, so this is set extremely high; the only purpose of the cap is to reject ortho ∞ / NaN drift that would crash the SRP.")]
+        private float maxEditorZoomOrthoSize = 4000f;
 
         [Header("Pixel Perfect")]
         [Tooltip("Assets pixels-per-unit for PixelPerfectCamera (should match tile PPU)")]
@@ -215,9 +214,14 @@ namespace Valkur.Gameplay
                     _vcam.Priority = _compatibilityVcam.Priority + 1;
             }
 
-            // Tile editor drives the camera through SetTileEditorZoom() (it has
-            // its own scroll handler that respects the active brush size).
-            if (TileEditorManager.Instance != null && TileEditorManager.Instance.IsActive)
+            // Any active runtime editor drives the camera through SetEditorZoom()
+            // (the shared EditorCameraZoomController owned by each editor handles
+            // wheel input). While an editor is active the gameplay zoom-clamp
+            // would otherwise drag the lens back into the [min, maxGameplay]
+            // range every frame and undo the editor's framing, capping zoom-out
+            // at gameplay's tighter limit even though the user explicitly asked
+            // for editor-wide unbounded zoom-out.
+            if (GameEditorManager.HasInstance && GameEditorManager.Instance.AnyEditorActive)
                 return;
 
             // Continuous gameplay-zoom clamp. Runs every frame regardless of
@@ -321,24 +325,62 @@ namespace Valkur.Gameplay
         /// Request a zoom change from the Tile Editor. This will be applied in the next Update frame.
         /// </summary>
         /// <param name="targetSize">The desired orthographic size</param>
-        public void SetTileEditorZoom(float targetSize)
+        public void SetTileEditorZoom(float targetSize) => SetEditorZoom(targetSize);
+
+        /// <summary>
+        /// Request a zoom change from any in-game runtime editor. Sanitises +
+        /// clamps to <c>[minZoomOrthoSize, maxEditorZoomOrthoSize]</c> (NaN/0/+Inf
+        /// rejected — Cinemachine stops rendering with malformed lens values),
+        /// then applies it on the next Update frame so the gameplay zoom clamp
+        /// can't claw it back. The maxEditor cap is set extremely high so for
+        /// any practical map this behaves as "unbounded zoom-out".
+        /// </summary>
+        public void SetEditorZoom(float targetSize)
         {
             EnsureCompatibilityVcam();
-            // Sanitise + clamp to editor bounds. NaN / 0 / negative / +Inf are
-            // rejected (Cinemachine stops rendering with malformed lens values).
-            // Anything else is clamped to [minZoomOrthoSize, maxEditorZoomOrthoSize]
-            // — the editor cap is wider than gameplay so layout work over a large
-            // chunk is still possible, but bounded so the editor can't strand the
-            // camera at ortho 1e30.
             float sanitisedSize = targetSize;
             if (!(sanitisedSize > 0f) || float.IsInfinity(sanitisedSize))
                 sanitisedSize = minZoomOrthoSize;
             sanitisedSize = Mathf.Clamp(sanitisedSize, minZoomOrthoSize, maxEditorZoomOrthoSize);
-            _tileEditorTargetSize = sanitisedSize;
+            _tileEditorTargetSize    = sanitisedSize;
             _tileEditorZoomRequested = true;
             if (_vcam != null)
                 _vcam.m_Lens.OrthographicSize = sanitisedSize;
             ApplyCompatibilityLensSize(sanitisedSize);
+        }
+
+        /// <summary>
+        /// Frame the camera on a world-space rectangle (in tiles, Y-up). Detaches
+        /// the follow target if attached, re-centres the vcam transform on
+        /// <paramref name="rect"/>'s centre, and resizes the lens so the rect
+        /// (plus <paramref name="paddingWu"/> world-unit padding) fits inside
+        /// the viewport on both axes. Used by editors for "double-click a zone
+        /// to centre and frame it".
+        /// </summary>
+        public void FrameRect(RectInt rect, float paddingWu = 2f)
+        {
+            if (this == null || _vcam == null) return;
+            if (rect.width <= 0 || rect.height <= 0) return;
+
+            DetachFollow();
+            var t = GetDetachedTransform();
+            if (t == null) return;
+
+            float centerX = rect.x + rect.width  * 0.5f;
+            float centerY = rect.y + rect.height * 0.5f;
+            t.position = new Vector3(centerX, centerY, t.position.z);
+
+            float aspect = 16f / 9f;
+            var cam = Camera.main;
+            if (cam != null && cam.aspect > 0f) aspect = cam.aspect;
+
+            float halfW = rect.width  * 0.5f + paddingWu;
+            float halfH = rect.height * 0.5f + paddingWu;
+            float orthoForHeight = halfH;
+            float orthoForWidth  = halfW / aspect;
+            float ortho = Mathf.Max(orthoForHeight, orthoForWidth);
+
+            SetEditorZoom(ortho);
         }
 
         /// <summary>
