@@ -107,6 +107,16 @@ namespace Valkur.Tests.EditMode.Game.WorldDrops
             Assert.AreEqual(0f, _interactor.InteractionRange);
         }
 
+        [Test]
+        public void InvalidatePickupCache_DoesNotThrow()
+        {
+            // Smoke test for the public cache-invalidation hook callers will
+            // use after spawning a fresh drop. The cache itself isn't directly
+            // observable in EditMode (FindObjectsOfType returns an array Unity
+            // owns), so we only assert the call is safe.
+            Assert.DoesNotThrow(() => _interactor.InvalidatePickupCache());
+        }
+
         // ── State helpers (selection / drag) ──────────────────────────────────
 
         [Test]

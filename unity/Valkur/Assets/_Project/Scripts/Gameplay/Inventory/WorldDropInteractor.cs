@@ -111,45 +111,72 @@ namespace Valkur.Gameplay.Inventory
 
         // ── Hover ─────────────────────────────────────────────────────────────
 
+        // Cache for the WorldPickup scan. Refreshed every CACHE_TTL seconds so a
+        // brand-new drop appears in the hover scan within at most that many
+        // frames, but the typical Update() doesn't pay the FindObjectsOfType
+        // cost.
+        private WorldPickup[] _pickupCache = System.Array.Empty<WorldPickup>();
+        private float _pickupCacheNextRefresh;
+        private const float PICKUP_CACHE_TTL_SECONDS = 0.25f;
+
         /// <summary>Pick the closest reachable drop under the cursor and tint
-        /// it cyan. Drops outside <see cref="interactionRange"/> never hover.</summary>
+        /// it cyan. Drops outside <see cref="interactionRange"/> never hover.
+        ///
+        /// Iterates a cached <c>FindObjectsOfType&lt;WorldPickup&gt;()</c> rather
+        /// than going through <c>Physics2D.OverlapCircleAll</c>: the pickup's
+        /// kinematic Rigidbody2D combined with its sub-unit localScale (~0.0156,
+        /// since a 256 px icon is normalised to 1 tile) leaves the collider
+        /// invisible to physics queries even though the GameObject is on the
+        /// right layer and renders fine. FindObjectsOfType is allocation-y but
+        /// only re-runs every PICKUP_CACHE_TTL_SECONDS, so the per-frame cost
+        /// stays in the low microseconds for typical drop counts.</summary>
         private void UpdateHover(Vector3 worldCursor, bool overUi)
         {
             if (overUi || _dragging != null) { SetHovered(_dragging); return; }
+
+            RefreshPickupCacheIfStale();
 
             WorldPickup best = null;
             float bestDistSq = float.PositiveInfinity;
             float rangeSq = interactionRange * interactionRange;
             Vector3 myPos = transform.position;
+            Vector3 cursorOnZ = new Vector3(worldCursor.x, worldCursor.y, 0f);
 
-            // Physics2D.OverlapCircleAll narrows the search to colliders inside
-            // the player's reach so a 1000-drop world doesn't pay an N² scan.
-            int pickupLayer = LayerMask.NameToLayer("Pickup");
-            int mask = pickupLayer != -1 ? (1 << pickupLayer) : ~0;
-            var hits = Physics2D.OverlapCircleAll(myPos, interactionRange, mask);
-            foreach (var hit in hits)
+            for (int i = 0; i < _pickupCache.Length; i++)
             {
-                if (hit == null) continue;
-                var pickup = hit.GetComponent<WorldPickup>();
-                if (pickup == null) continue;
+                var pickup = _pickupCache[i];
+                if (pickup == null || pickup.gameObject == null) continue;
+                if (!pickup.gameObject.activeInHierarchy) continue;
+
+                float distSq = ((Vector2)(pickup.transform.position - myPos)).sqrMagnitude;
+                if (distSq > rangeSq) continue;
 
                 var sr = pickup.GetComponent<SpriteRenderer>();
                 if (sr == null || sr.sprite == null) continue;
 
-                // Cursor must be inside the sprite footprint.
-                if (!sr.bounds.Contains(new Vector3(worldCursor.x, worldCursor.y, sr.bounds.center.z)))
-                    continue;
+                // Cursor must be inside the sprite footprint. Project both
+                // points onto the same plane (z = bounds.center.z) so the
+                // 2D contains check ignores camera depth.
+                cursorOnZ.z = sr.bounds.center.z;
+                if (!sr.bounds.Contains(cursorOnZ)) continue;
 
-                // Drop must also still be inside the player's reach (defensive
-                // duplicate of the OverlapCircle filter — protects against a
-                // tunnel collider or a tiny range value).
-                float distSq = ((Vector2)(pickup.transform.position - myPos)).sqrMagnitude;
-                if (distSq > rangeSq) continue;
                 if (distSq < bestDistSq) { bestDistSq = distSq; best = pickup; }
             }
 
             SetHovered(best);
         }
+
+        private void RefreshPickupCacheIfStale()
+        {
+            if (Time.unscaledTime < _pickupCacheNextRefresh && _pickupCache.Length > 0) return;
+            _pickupCache = FindObjectsOfType<WorldPickup>();
+            _pickupCacheNextRefresh = Time.unscaledTime + PICKUP_CACHE_TTL_SECONDS;
+        }
+
+        /// <summary>Force the next <see cref="UpdateHover"/> to re-scan the
+        /// scene. Call when something just spawned a pickup that needs to be
+        /// hoverable immediately (e.g. F7 SpawnAt while the player is nearby).</summary>
+        public void InvalidatePickupCache() { _pickupCacheNextRefresh = 0f; }
 
         // ── Selection (LMB) ───────────────────────────────────────────────────
 
