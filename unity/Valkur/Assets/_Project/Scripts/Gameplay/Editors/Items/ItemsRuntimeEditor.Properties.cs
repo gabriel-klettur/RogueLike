@@ -145,69 +145,95 @@ namespace Valkur.Gameplay.Items
             if (_uiRefs.PropsContent == null) return;
             if (_selectedInstance == null || _selectedInstance.Item == null) return;
 
-            // Container row block.
+            // ── Container ─────────────────────────────────────────────────────
+            // ContentSizeFitter + VerticalLayoutGroup so the panel grows to fit
+            // its actual children instead of clipping them at a fixed height.
+            // The previous fixed 110 px was the cause of the "Persist..." text
+            // overlapping the Qty row and the Delete button rendering vertically
+            // (each glyph forced onto its own line by an over-tight layout).
             _instanceActionsGo = new GameObject("InstanceActions", typeof(RectTransform));
             _instanceActionsGo.transform.SetParent(_uiRefs.PropsContent, false);
             var vlg = _instanceActionsGo.AddComponent<VerticalLayoutGroup>();
-            vlg.padding = new RectOffset(6, 6, 6, 6);
-            vlg.spacing = 4f;
-            vlg.childForceExpandWidth = true;
-            vlg.childControlWidth = true;
-            vlg.childControlHeight = true;
+            vlg.padding              = new RectOffset(6, 6, 6, 6);
+            vlg.spacing              = 4f;
+            vlg.childForceExpandWidth  = true;
+            vlg.childForceExpandHeight = false;
+            vlg.childControlWidth      = true;
+            vlg.childControlHeight     = true;
+            var fitter = _instanceActionsGo.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             var bgImg = _instanceActionsGo.AddComponent<Image>();
             bgImg.color = new Color(0.12f, 0.14f, 0.18f, 0.9f);
-            _instanceActionsGo.AddComponent<LayoutElement>().preferredHeight = 110f;
 
+            // ── Instance metadata block (multi-line, wraps cleanly) ──────────
             var pos = _selectedInstance.transform.position;
-            var sb = new StringBuilder(256);
+            var sb  = new StringBuilder(256);
             sb.Append("<b>── Instance ──</b>\n");
             sb.Append($"Position: ({pos.x:F2}, {pos.y:F2})\n");
-            // Surface the per-instance data that the player should be able to
-            // tell apart from the catalog defaults: dropId, persistence flavor,
-            // remaining TTL. These belong to the WorldPickup, not the
-            // ItemDefinition — same item, two different runtime states.
             if (_selectedInstance.IsPersistent && !string.IsNullOrEmpty(_selectedInstance.DropId))
             {
-                sb.Append($"Drop id: <i>{_selectedInstance.DropId}</i>\n");
+                // Truncate the dropId to a fingerprint so it fits on one line
+                // — the full UUID is on the WorldPickup if anyone needs it.
+                string shortId = _selectedInstance.DropId.Length > 10
+                    ? _selectedInstance.DropId.Substring(0, 10) + "…"
+                    : _selectedInstance.DropId;
+                sb.Append($"Drop id: <i>{shortId}</i>\n");
                 sb.Append("Persistence: <b>Persistent</b>\n");
                 if (_selectedInstance.IsInfiniteTtl)
-                {
                     sb.Append("TTL: <b>infinite</b>");
-                }
                 else
-                {
-                    sb.Append($"TTL: {_selectedInstance.DespawnTtlSeconds:F0}s  •  remaining: {_selectedInstance.SecondsUntilExpiry:F0}s");
-                }
+                    sb.Append($"TTL: {_selectedInstance.DespawnTtlSeconds:F0}s  •  rem {_selectedInstance.SecondsUntilExpiry:F0}s");
             }
             else
             {
-                sb.Append("Persistence: <b>Ephemeral</b> (won't be saved)");
+                sb.Append("Persistence: <b>Ephemeral</b>");
             }
-            AddLabel(_instanceActionsGo.transform, sb.ToString());
+            var meta = AddLabel(_instanceActionsGo.transform, sb.ToString());
+            meta.alignment = TextAlignmentOptions.TopLeft;
 
-            // Quantity row: − [N] +
+            // ── Quantity row: − [N] + ────────────────────────────────────────
             var qtyRow = new GameObject("QtyRow", typeof(RectTransform));
             qtyRow.transform.SetParent(_instanceActionsGo.transform, false);
             var hlg = qtyRow.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing = 4f;
-            hlg.childForceExpandWidth = false;
-            hlg.childControlWidth = true;
-            hlg.childControlHeight = true;
-            qtyRow.AddComponent<LayoutElement>().preferredHeight = 24f;
+            hlg.spacing                = 4f;
+            hlg.childForceExpandWidth  = false;
+            hlg.childForceExpandHeight = true;
+            hlg.childControlWidth      = true;
+            hlg.childControlHeight     = true;
+            hlg.childAlignment         = TextAnchor.MiddleLeft;
+            var qtyLE = qtyRow.AddComponent<LayoutElement>();
+            qtyLE.preferredHeight = 26f;
+            qtyLE.minHeight       = 26f;
 
-            AddLabel(qtyRow.transform, "Qty:", 30f);
-            AddBtn(qtyRow.transform, "−", 24f, () => AdjustSelectedQuantity(-1));
+            AddLabel(qtyRow.transform, "Qty:", 32f);
+            AddBtnFixed(qtyRow.transform, "−", 28f, 26f, () => AdjustSelectedQuantity(-1));
             var qtyLabel = AddLabel(qtyRow.transform, _selectedInstance.Quantity.ToString(), 40f);
             qtyLabel.alignment = TextAlignmentOptions.Center;
             qtyLabel.fontStyle = FontStyles.Bold;
-            AddBtn(qtyRow.transform, "+", 24f, () => AdjustSelectedQuantity(+1));
+            AddBtnFixed(qtyRow.transform, "+", 28f, 26f, () => AdjustSelectedQuantity(+1));
 
-            // Delete row
+            // ── Delete row (fills width, fixed height) ───────────────────────
             var delRow = new GameObject("DelRow", typeof(RectTransform));
             delRow.transform.SetParent(_instanceActionsGo.transform, false);
-            delRow.AddComponent<LayoutElement>().preferredHeight = 24f;
-            AddBtn(delRow.transform, "Delete", 0f, DeleteSelectedInstance, danger: true)
-                .GetComponent<RectTransform>().sizeDelta = new Vector2(0, 24);
+            var delLE = delRow.AddComponent<LayoutElement>();
+            delLE.preferredHeight = 26f;
+            delLE.minHeight       = 26f;
+            AddBtn(delRow.transform, "Delete", 0f, DeleteSelectedInstance, danger: true);
+        }
+
+        /// <summary>Square button with explicit width and height so the layout
+        /// engine can't squeeze the glyph into a vertical strip.</summary>
+        private GameObject AddBtnFixed(Transform parent, string label, float width, float height,
+            System.Action onClick, bool danger = false)
+        {
+            var go = AddBtn(parent, label, width, onClick, danger);
+            var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+            le.preferredWidth  = width;
+            le.minWidth        = width;
+            le.preferredHeight = height;
+            le.minHeight       = height;
+            return go;
         }
 
         private TextMeshProUGUI AddLabel(Transform parent, string text, float preferredW = -1f)
@@ -242,11 +268,17 @@ namespace Valkur.Gameplay.Items
             labelGo.transform.SetParent(go.transform, false);
             EditorUIHelpers.StretchFill(labelGo);
             var tmp = labelGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = label;
-            tmp.fontSize = 11f;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = danger ? Color.white : EditorUIHelpers.TEXT_PRIMARY;
+            tmp.text                = label;
+            tmp.fontSize            = 11f;
+            tmp.fontStyle           = FontStyles.Bold;
+            tmp.alignment           = TextAlignmentOptions.Center;
+            tmp.color               = danger ? Color.white : EditorUIHelpers.TEXT_PRIMARY;
+            // Buttons used to render their glyphs vertically when the parent
+            // squeezed them ("D / e / l / e / t / e"). Disabling word-wrap and
+            // turning on horizontal overflow keeps short labels on a single
+            // line regardless of the layout pressure.
+            tmp.enableWordWrapping  = false;
+            tmp.overflowMode        = TextOverflowModes.Overflow;
             return go;
         }
 

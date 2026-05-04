@@ -108,6 +108,14 @@ namespace Valkur.Gameplay.Items
         private bool _cameraDetachedByUs;
         private const float HOLD_THRESHOLD = 0.25f;  // seconds
 
+        // ── RMB drag-to-move (mirrors Buildings) ──
+        // While the right mouse button is held over a hovered drop the pickup
+        // follows the cursor; on release the new position is persisted through
+        // ItemDropService.UpdatePosition with full Undo support.
+        private WorldPickup _movingInstance;
+        private string      _moveDropId;
+        private Vector3     _moveStartWorldPos;
+
         // ── Undo (Phase 2) ──
         private readonly UndoStack _undo = new UndoStack(64);
 
@@ -203,6 +211,9 @@ namespace Valkur.Gameplay.Items
             if (_root != null) _root.SetActive(false);
             ReleaseCameraFocus();
             CancelPickerDrag();
+            // If a RMB drag was in progress, snap the pickup back so closing
+            // the editor never leaves a half-moved drop in the world.
+            if (_movingInstance != null) CancelRmbMove();
             ClearAllSpriteTints();
             _hoveredInstance  = null;
             _selectedInstance = null;
@@ -272,11 +283,14 @@ namespace Valkur.Gameplay.Items
             _tutorial = TutorialOverlay.Build(_root.transform, "ITEMS HOTKEYS", new[]
             {
                 ("F7",     "Toggle Items Editor"),
-                ("Click",  "Select / spawn / delete (per mode)"),
+                ("LMB",    "Select / spawn / delete (per mode)"),
+                ("RMB drag", "Move a world drop"),
+                ("MMB drag", "Pan the camera"),
+                ("WASD",   "Move the player"),
                 ("Type",   "Filter items by name"),
                 ("Ctrl+Z", "Undo"),
                 ("Ctrl+Y", "Redo"),
-                ("Esc",    "Close all editors"),
+                ("Esc",    "Cancel move / close editor"),
             });
             _tutorial.SetActive(false);
         }

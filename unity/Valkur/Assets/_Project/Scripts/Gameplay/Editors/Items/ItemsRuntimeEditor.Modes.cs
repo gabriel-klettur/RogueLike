@@ -28,16 +28,20 @@ namespace Valkur.Gameplay.Items
 
         /// <summary>
         /// Hover-test world drops every frame; on LMB pressed-this-frame outside UI:
-        ///  â€¢ Delete mode â†’ DeleteAtWorld.
-        ///  â€¢ Any other mode with a hovered drop â†’ SetActiveInstance (mirrors Buildings).
-        ///  â€¢ Spawn mode without hovered drop â†’ SpawnAt (legacy click-to-spawn path).
+        ///  • Delete mode → DeleteAtWorld.
+        ///  • Any other mode with a hovered drop → SetActiveInstance (mirrors Buildings).
+        ///  • Spawn mode without hovered drop → SpawnAt (legacy click-to-spawn path).
+        ///
+        /// RMB on a hovered drop starts a drag-to-move: the pickup follows the
+        /// cursor while the button is held, and the new world position is
+        /// committed to the persistence service on release.
         /// </summary>
         private void HandleMapInteraction()
         {
             var mouse = Mouse.current;
             if (mouse == null) return;
 
-            // Compute world cursor position (always â€” even without click â€” so we can hover).
+            // Compute world cursor position (always — even without click — so we can hover).
             if (_mainCamera == null) _mainCamera = Camera.main;
             if (_mainCamera == null) { _hoveredInstance = null; return; }
 
@@ -49,10 +53,15 @@ namespace Valkur.Gameplay.Items
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             _hoveredInstance = overUi ? null : FindHoveredPickup(worldPos);
 
+            // ── RMB drag-to-move: takes priority over LMB so RMB-on-hovered-drop
+            //    never accidentally falls through to the LMB switch below.
+            UpdateRmbDragMove(worldPos, overUi);
+            if (_movingInstance != null) return;
+
             if (!Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
             if (overUi) return;
 
-            // While a drag-from-picker is in progress, swallow this click â€” the drag
+            // While a drag-from-picker is in progress, swallow this click — the drag
             // ghost owns the LMB-release placement and the click should not also fire.
             if (_pickerDragging) return;
 
@@ -72,6 +81,87 @@ namespace Valkur.Gameplay.Items
                     else { _selectedInstance = null; RefreshProperties(); RebuildInstancesList(); }
                     break;
             }
+        }
+
+        // ── RMB drag-to-move ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Mirrors how the Buildings editor moves placed objects: while RMB is
+        /// held over a world drop, the pickup follows the cursor; on release the
+        /// new position is committed to <see cref="ItemDropService"/> so a save
+        /// cycle restores it. Uses an Undo command keyed on the dropId so
+        /// Ctrl+Z reverts the entire move atomically.
+        /// </summary>
+        private void UpdateRmbDragMove(Vector3 worldPos, bool overUi)
+        {
+            // Centralized input — direct Mouse.current reads are forbidden by the
+            // input-centralization guard test (see CLAUDE.md "Input pipeline").
+            bool rmbDown    = Valkur.Core.Input.MouseInputManager.WasRightMouseButtonPressedThisFrame();
+            bool rmbHeld    = Valkur.Core.Input.MouseInputManager.IsRightMouseButtonPressed();
+            bool rmbRelease = Valkur.Core.Input.MouseInputManager.WasRightMouseButtonReleasedThisFrame();
+
+            // Begin: RMB pressed over a hovered drop, outside UI.
+            if (rmbDown && !overUi && _movingInstance == null && _hoveredInstance != null)
+            {
+                _movingInstance        = _hoveredInstance;
+                _moveDropId            = _movingInstance.DropId;
+                _moveStartWorldPos     = _movingInstance.transform.position;
+                SetActiveInstance(_movingInstance);
+                SetStatus($"Moving '{_movingInstance.Item?.itemId}'… release RMB to drop, Esc to cancel.");
+                return;
+            }
+
+            // Track: while RMB held, pickup follows the cursor.
+            if (rmbHeld && _movingInstance != null)
+            {
+                _movingInstance.transform.position = new Vector3(worldPos.x, worldPos.y,
+                    _movingInstance.transform.position.z);
+                return;
+            }
+
+            // Commit: on release, persist via the service if available.
+            if (rmbRelease && _movingInstance != null)
+            {
+                var landed = _movingInstance.transform.position;
+                var startPos = _moveStartWorldPos;
+                var moved    = _movingInstance;
+                string dropId = _moveDropId;
+                var service  = ResolveDropService();
+
+                _movingInstance = null;
+                _moveDropId     = null;
+
+                if (service != null && !string.IsNullOrEmpty(dropId))
+                {
+                    service.UpdatePosition(dropId, new Vector2(landed.x, landed.y));
+                    _undo.Record(new UndoStack.LambdaCommand(
+                        $"Move {moved.Item?.itemId}",
+                        doAction: () =>
+                        {
+                            if (moved != null) moved.transform.position = landed;
+                            service.UpdatePosition(dropId, new Vector2(landed.x, landed.y));
+                        },
+                        undoAction: () =>
+                        {
+                            if (moved != null) moved.transform.position = startPos;
+                            service.UpdatePosition(dropId, new Vector2(startPos.x, startPos.y));
+                        }));
+                }
+                RefreshProperties();
+                RebuildInstancesList();
+                SetStatus($"Moved to ({landed.x:F1}, {landed.y:F1}).");
+            }
+        }
+
+        /// <summary>Cancel an in-flight RMB move and snap the pickup back to its
+        /// original position. Called from the Escape handler.</summary>
+        private void CancelRmbMove()
+        {
+            if (_movingInstance == null) return;
+            _movingInstance.transform.position = _moveStartWorldPos;
+            _movingInstance = null;
+            _moveDropId     = null;
+            SetStatus("Move cancelled.");
         }
 
         /// <summary>AABB-test cursor against every WorldPickup's SpriteRenderer.bounds.</summary>
@@ -353,8 +443,9 @@ namespace Valkur.Gameplay.Items
             if (ctrl && Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) DoRedo();
             if (Valkur.Core.Input.KeyboardInputManager.WasEscapePressedThisFrame())
             {
-                if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);
-                else Deactivate();
+                if (_movingInstance != null)            CancelRmbMove();
+                else if (_tutorial != null && _tutorial.activeSelf) _tutorial.SetActive(false);
+                else                                    Deactivate();
             }
         }
     }

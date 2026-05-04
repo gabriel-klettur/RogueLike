@@ -304,6 +304,22 @@ namespace Valkur.Gameplay.WorldDrops
             return true;
         }
 
+        /// <summary>
+        /// Persist a new world position for an existing drop. Used by the
+        /// F7 editor's RMB drag-to-move gesture; mirrors the live pickup's
+        /// transform so a save/load round-trip restores the moved location.
+        /// </summary>
+        public bool UpdatePosition(string dropId, Vector2 worldPos)
+        {
+            if (string.IsNullOrEmpty(dropId)) return false;
+            if (!_byId.TryGetValue(dropId, out var inst)) return false;
+            inst.position = worldPos;
+            // Live pickup already follows the cursor during the drag — we don't
+            // touch transform.position here so the visual stays smooth.
+            if (_flushOnEveryChange) FlushFor(inst);
+            return true;
+        }
+
         public bool RemoveByDropId(string dropId)
         {
             if (string.IsNullOrEmpty(dropId)) return false;

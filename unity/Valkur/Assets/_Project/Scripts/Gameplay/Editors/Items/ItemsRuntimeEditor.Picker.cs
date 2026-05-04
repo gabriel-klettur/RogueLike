@@ -79,12 +79,17 @@ namespace Valkur.Gameplay.Items
             SetStatus(status);
         }
 
-        /// <summary>Select an item from the picker (drives Properties panel).</summary>
+        /// <summary>Select an item from the picker (drives Properties panel).
+        /// Clears any previously-active world instance so the Properties panel
+        /// shows catalog data only — instance metadata only appears once the
+        /// user clicks an actual drop in the world or the instances list.</summary>
         private void SelectItem(string itemId)
         {
             _selectedItemId = itemId;
+            _selectedInstance = null;
             RefreshPicker();
             RefreshProperties();
+            RebuildInstancesList();
         }
 
         private static void AddRightClickHandler(GameObject go, System.Action onRightClick)

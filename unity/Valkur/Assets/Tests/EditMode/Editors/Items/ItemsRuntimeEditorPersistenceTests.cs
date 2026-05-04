@@ -222,6 +222,34 @@ namespace Valkur.Tests.EditMode.Editors.Items
         }
 
         [Test]
+        public void SelectItem_ClearsAnyPreviouslyActiveWorldInstance()
+        {
+            // Reproduces the bug where the Properties panel kept showing
+            // "Instance" actions after the user selected a different item from
+            // the catalog grid (because _selectedInstance was never cleared).
+            var ed = CreateActiveEditor();
+            var torch = AddItemToCatalog("torch", "Torch");
+            var coin  = AddItemToCatalog("coin",  "Coin");
+            InjectCatalog(ed, torch, coin);
+            Invoke(ed, "SelectItem", "torch");
+            Invoke(ed, "SpawnAt", new Vector3(1f, 1f, 0f));
+
+            // Grab the spawned pickup and route through SetActiveInstance, the
+            // same path a world click would take.
+            ItemDropInstance only = null;
+            foreach (var d in _service.All) { only = d; break; }
+            var live = _service.GetLivePickup(only.dropId);
+            ed.SetActiveInstance(live);
+            Assert.IsNotNull(Field(ed, "_selectedInstance").GetValue(ed),
+                "Sanity: clicking the world drop must select it.");
+
+            // Now select a different catalog entry — the world instance must clear.
+            Invoke(ed, "SelectItem", "coin");
+            Assert.IsNull(Field(ed, "_selectedInstance").GetValue(ed),
+                "Picking from the catalog grid must clear the previously selected world instance.");
+        }
+
+        [Test]
         public void Rehydrate_OnFreshSceneLoad_RecreatesPickupsFromRepo()
         {
             // Pre-populate the repo as if a previous session had saved drops.

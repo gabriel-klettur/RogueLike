@@ -158,6 +158,33 @@ namespace Valkur.Tests.EditMode.Game.WorldDrops
         }
 
         [Test]
+        public void UpdatePosition_PersistsNewWorldPosition()
+        {
+            var def = AddItemToCatalog("rune", "Rune");
+            var inst = _service.SpawnPersistent(def, 1, new Vector3(1f, 2f, 0f),
+                despawnTtlSeconds: 0f, zoneId: "", source: ItemDropSource.Editor);
+            _scene.Add(_service.GetLivePickup(inst.dropId).gameObject);
+
+            Assert.IsTrue(_service.UpdatePosition(inst.dropId, new Vector2(7f, 9f)));
+            Assert.AreEqual(new Vector2(7f, 9f), _service.Get(inst.dropId).position);
+
+            // Round-trip through the repo confirms the new position made it to disk.
+            var fresh = new ItemDropService(_repo, _catalog, WorldId.Base);
+            try
+            {
+                fresh.LoadFromRepository();
+                Assert.AreEqual(new Vector2(7f, 9f), fresh.Get(inst.dropId).position);
+            }
+            finally { fresh.Dispose(); }
+        }
+
+        [Test]
+        public void UpdatePosition_UnknownDropId_ReturnsFalse()
+        {
+            Assert.IsFalse(_service.UpdatePosition("nope", Vector2.zero));
+        }
+
+        [Test]
         public void Rehydrate_IsIdempotent()
         {
             var def = AddItemToCatalog("torch", "Torch");
