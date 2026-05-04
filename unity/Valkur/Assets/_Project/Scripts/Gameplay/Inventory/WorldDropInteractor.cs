@@ -30,8 +30,8 @@ namespace Valkur.Gameplay.Inventory
     public class WorldDropInteractor : MonoBehaviour
     {
         [Header("Range")]
-        [SerializeField, Tooltip("World-space radius around the player inside which drops can be hovered, selected, and moved. Defaults to 8 wu (= 128 px @ PPU 16) for parity with Python's drag_drop_range.")]
-        private float interactionRange = 8f;
+        [SerializeField, Tooltip("World-space radius around the player inside which drops can be hovered, selected, and moved while F7 is closed. Defaults to 4 wu — half of Python's 128 px (= 8 wu) drag_drop_range, so in-game interaction is intentionally tighter than the F7 authoring reach.")]
+        private float interactionRange = 4f;
 
         [Header("Outline visuals")]
         [SerializeField, Tooltip("Cyan applied while the cursor hovers a reachable drop.")]
