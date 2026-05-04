@@ -77,9 +77,18 @@ namespace Valkur.Editor
             }
             else if (assetPath.Contains("/Characters/"))
             {
+                // Keep the default Point filter from line 39 — Bilinear blurs pixels
+                // when the camera zooms in (zoom range 2..25 in CameraSetup), which
+                // ruins the pixel-art look the rest of the game uses. Tiles, NPCs,
+                // and items are all Point-filtered; characters must match.
                 importer.spritePixelsPerUnit = PLAYER_CHARACTER_PPU;
-                importer.filterMode = FilterMode.Bilinear;
                 SetPivot(importer, new Vector2(0.5f, 0f));
+                // Character spritesheets are wide (e.g. 5248×128 = 41 frames @ 128 px).
+                // Standalone's default 2048 max would downsample each 128×128 frame
+                // to ~50×50, making the wizard look heavily blocky after zoom even
+                // with Point filtering. Force max=8192 across all build targets so
+                // the source pixels survive into the SpriteAtlas.
+                importer.maxTextureSize = 8192;
             }
             else if (assetPath.Contains("/NPC/"))
             {
@@ -108,28 +117,38 @@ namespace Valkur.Editor
             // would otherwise ship compressed even though the postprocessor
             // wrote Uncompressed to the Default platform. Forcing the platform
             // settings keeps the policy durable across all build targets.
-            ApplyUncompressedPlatformOverride(importer, "Standalone");
-            ApplyUncompressedPlatformOverride(importer, "WebGL");
-            ApplyUncompressedPlatformOverride(importer, "Android");
-            ApplyUncompressedPlatformOverride(importer, "iPhone");
+            //
+            // Characters also need maxTextureSize lifted to 8192 — their wide
+            // spritesheets (5248×128) get crushed to 2048×50 by the per-platform
+            // default, killing per-frame detail before the atlas even runs.
+            int platformMaxSize = assetPath.Contains("/Characters/") ? 8192 : 0;
+            ApplyUncompressedPlatformOverride(importer, "Standalone", platformMaxSize);
+            ApplyUncompressedPlatformOverride(importer, "WebGL",      platformMaxSize);
+            ApplyUncompressedPlatformOverride(importer, "Android",    platformMaxSize);
+            ApplyUncompressedPlatformOverride(importer, "iPhone",     platformMaxSize);
         }
 
         // Forces the per-platform texture import block to "Override = true" with
         // Uncompressed format, mirroring the Default-platform setting. Idempotent:
         // re-runs after a manual platform override are silent no-ops.
-        private static void ApplyUncompressedPlatformOverride(TextureImporter importer, string platform)
+        // Pass maxTextureSize > 0 to also override the per-platform max size.
+        private static void ApplyUncompressedPlatformOverride(TextureImporter importer, string platform, int maxTextureSize = 0)
         {
             var ps = importer.GetPlatformTextureSettings(platform);
             if (ps == null) return;
 
+            bool needsMaxSizeChange = maxTextureSize > 0 && ps.maxTextureSize != maxTextureSize;
+
             // Skip work if already in the desired state.
             if (ps.overridden &&
-                ps.textureCompression == TextureImporterCompression.Uncompressed)
+                ps.textureCompression == TextureImporterCompression.Uncompressed &&
+                !needsMaxSizeChange)
                 return;
 
             ps.overridden          = true;
             ps.textureCompression  = TextureImporterCompression.Uncompressed;
             ps.format              = TextureImporterFormat.Automatic;
+            if (maxTextureSize > 0) ps.maxTextureSize = maxTextureSize;
             importer.SetPlatformTextureSettings(ps);
         }
 
