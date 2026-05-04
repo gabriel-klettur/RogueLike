@@ -15,14 +15,11 @@ namespace Valkur.UI.HUD
     /// </summary>
     public sealed class DayNightVignetteOverlay : MonoBehaviour
     {
-        // ── Tint palette ─────────────────────────────────────────────────────
-        // Alpha encodes intensity; the active phase's RGB is what's painted at
-        // the screen edge. Day stays nearly invisible; dusk is the strongest.
-        private static readonly Color V_DAY   = new Color(1.00f, 0.96f, 0.88f, 0.05f);
-        private static readonly Color V_DAWN  = new Color(1.00f, 0.65f, 0.45f, 0.32f);
-        private static readonly Color V_DUSK  = new Color(0.98f, 0.45f, 0.28f, 0.42f);
-        private static readonly Color V_NIGHT = new Color(0.20f, 0.28f, 0.55f, 0.30f);
-
+        // The vignette tint matches the live Light2D color and pulls its
+        // strength from the per-phase vignetteAlpha that DayNightCycle
+        // publishes through CurrentColor / CurrentVignetteAlpha. That keeps
+        // a single source of truth — designers and the runtime "AJUSTES DE
+        // FASE" panel only edit the cycle's phase look.
         private const float TINT_LERP_SPEED = 0.7f;  // Hz of color smoothing
 
         private Canvas _canvas;
@@ -36,7 +33,7 @@ namespace Valkur.UI.HUD
             // Snap to the current phase color on first frame so we don't fade in
             // from black when the editor enters Play.
             if (DayNightCycle.Instance != null)
-                _currentColor = TargetFor(DayNightCycle.Instance.CurrentPhase);
+                _currentColor = TargetFromCycle(DayNightCycle.Instance);
             if (_vignette != null) _vignette.color = _currentColor;
         }
 
@@ -48,10 +45,20 @@ namespace Valkur.UI.HUD
             // The "no filters" master switch — when the cycle's lighting is
             // disabled the vignette fades to fully transparent so the world
             // reads at native colors.
-            Color target = cycle.LightingEnabled ? TargetFor(cycle.CurrentPhase) : Color.clear;
+            Color target = cycle.LightingEnabled ? TargetFromCycle(cycle) : Color.clear;
             _currentColor = Color.Lerp(_currentColor, target,
                                        1f - Mathf.Exp(-TINT_LERP_SPEED * Time.deltaTime));
             _vignette.color = _currentColor;
+        }
+
+        // Convert the cycle's live phase look into a vignette color. The
+        // vignette uses the SAME RGB as the global Light2D tint so the world's
+        // edges read as a continuation of the global atmosphere; only the
+        // alpha varies per phase.
+        private static Color TargetFromCycle(DayNightCycle cycle)
+        {
+            var c = cycle.CurrentColor;
+            return new Color(c.r, c.g, c.b, cycle.CurrentVignetteAlpha);
         }
 
         private void OnDestroy()
@@ -126,13 +133,5 @@ namespace Valkur.UI.HUD
             tex.SetPixels32(px); tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f));
         }
-
-        private static Color TargetFor(DayNightCycle.DayPhase phase) => phase switch
-        {
-            DayNightCycle.DayPhase.Dawn  => V_DAWN,
-            DayNightCycle.DayPhase.Dusk  => V_DUSK,
-            DayNightCycle.DayPhase.Night => V_NIGHT,
-            _                             => V_DAY,
-        };
     }
 }
