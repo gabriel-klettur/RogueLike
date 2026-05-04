@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
@@ -59,6 +60,25 @@ namespace Valkur.Gameplay.WorldDrops
         public IItemDropRepository RunRepository       => _runRepo;
         public IReadOnlyCollection<ItemDropInstance> All => _byId.Values;
         public int Count => _byId.Count;
+
+        /// <summary>
+        /// Domain-Reload-OFF safety net. The previous Play's <see cref="ItemDropService"/>
+        /// stays registered with the <see cref="ServiceLocator"/> across Play
+        /// stop/start, holding a cache that was loaded *before* that Play wrote
+        /// any drops. Without this hook, a fresh Play would short-circuit
+        /// <c>GameplaySceneSetup.EnsureItemDropService</c> and read from the
+        /// stale cache instead of rehydrating from disk.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlayMode()
+        {
+            if (ServiceLocator.TryGet<ItemDropService>(out var stale) && stale != null)
+            {
+                try { stale.Dispose(); }
+                catch (Exception ex) { Debug.LogException(ex); }
+                ServiceLocator.Unregister<ItemDropService>();
+            }
+        }
 
         public ItemDropService(IItemDropRepository authoringRepo, ItemCatalog catalog, WorldId worldId)
             : this(authoringRepo, runRepo: null, catalog, worldId) { }

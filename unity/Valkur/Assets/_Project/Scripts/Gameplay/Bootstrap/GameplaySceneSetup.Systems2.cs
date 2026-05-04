@@ -302,23 +302,52 @@ namespace Valkur.Gameplay
         private void EnsureItemDropService()
         {
             if (ServiceLocator.TryGet<ItemDropService>(out _)) return;
-            if (_itemCatalog == null)
+
+            // Fall back to the canonical Catalogs/Items/ItemCatalog.asset when
+            // the inspector field is empty, so persistence works out-of-the-box
+            // after a fresh PythonDataMigrator run even before someone wires
+            // the GameplaySceneSetup field by hand. Without this fallback the
+            // service is never created, the F7 editor silently uses the legacy
+            // ephemeral DropSystem path, and drops never reach disk — which is
+            // exactly the "items don't persist" failure mode.
+            var catalog = _itemCatalog != null ? _itemCatalog : ResolveItemCatalogFallback();
+            if (catalog == null)
             {
-                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog — skipping item drop persistence wiring.");
+                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog (inspector + AssetDatabase + Resources fallbacks all empty) — skipping item drop persistence wiring.");
                 return;
             }
+            // Surface the catalog through ServiceLocator too so the F7 editor
+            // (which checks ServiceLocator before AssetDatabase) hits a single
+            // shared instance instead of a different copy per system.
+            ServiceLocator.Register<ItemCatalog>(catalog);
 
             var authoringRepo = new JsonFileItemDropRepository();
             var runRepo       = BuildRunDropRepository();
             var service       = new ItemDropService(
-                authoringRepo, runRepo, _itemCatalog,
+                authoringRepo, runRepo, catalog,
                 Valkur.Core.Coordinates.WorldId.Base);
 
             int loaded  = service.LoadFromRepository();
             int spawned = service.Rehydrate();
-            Debug.Log($"[GameplaySceneSetup] ItemDropService ready — loaded {loaded} record(s), rehydrated {spawned} pickup(s) (authoring + run).");
+            Debug.Log($"[GameplaySceneSetup] ItemDropService ready — loaded {loaded} record(s), rehydrated {spawned} pickup(s) (authoring + run). Catalog source: {(_itemCatalog != null ? "inspector" : "fallback")}.");
 
             ServiceLocator.Register<ItemDropService>(service);
+        }
+
+        private static ItemCatalog ResolveItemCatalogFallback()
+        {
+            // 1) Resources path (works in builds + editor).
+            var fromResources = Resources.Load<ItemCatalog>("Catalogs/ItemCatalog");
+            if (fromResources != null) return fromResources;
+
+#if UNITY_EDITOR
+            // 2) Editor-only direct asset load — covers freshly migrated
+            //    projects where Resources/ doesn't host the catalog yet.
+            var fromAssets = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemCatalog>(
+                "Assets/_Project/Data/Catalogs/Items/ItemCatalog.asset");
+            if (fromAssets != null) return fromAssets;
+#endif
+            return null;
         }
 
         /// <summary>
