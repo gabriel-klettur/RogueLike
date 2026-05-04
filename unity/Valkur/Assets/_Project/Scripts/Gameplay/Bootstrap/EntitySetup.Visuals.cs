@@ -29,6 +29,12 @@ namespace Valkur.Gameplay
             if (go.GetComponent<PickupSystem>() == null)
                 go.AddComponent<PickupSystem>();
 
+            // World-drop interactor: hover/select/drag items in the world
+            // outside the F7 editor, bounded by the player's interaction range.
+            // Mirrors Python's drop_drag_system (drag_drop_range = 128 px).
+            if (go.GetComponent<WorldDropInteractor>() == null)
+                go.AddComponent<WorldDropInteractor>();
+
             // Currency wallet (Python: gold field on player entity)
             if (go.GetComponent<CurrencyWallet>() == null)
                 go.AddComponent<CurrencyWallet>();

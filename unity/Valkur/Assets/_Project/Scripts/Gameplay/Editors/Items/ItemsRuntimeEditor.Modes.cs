@@ -204,7 +204,7 @@ namespace Valkur.Gameplay.Items
             {
                 var go = new GameObject("ItemHoverOutline");
                 go.transform.SetParent(transform, false);
-                _hoverFx = go.AddComponent<Valkur.Gameplay.Editors.Items.ItemOutlineRenderer>();
+                _hoverFx = go.AddComponent<Valkur.Gameplay.WorldDrops.ItemOutlineRenderer>();
                 _hoverFx.Configure(HOVER_CYAN, thicknessWorld: 0.06f);
                 _hoverFx.SetVisible(false);
             }
@@ -212,7 +212,7 @@ namespace Valkur.Gameplay.Items
             {
                 var go = new GameObject("ItemActiveOutline");
                 go.transform.SetParent(transform, false);
-                _activeFx = go.AddComponent<Valkur.Gameplay.Editors.Items.ItemOutlineRenderer>();
+                _activeFx = go.AddComponent<Valkur.Gameplay.WorldDrops.ItemOutlineRenderer>();
                 _activeFx.Configure(ACTIVE_YELLOW, thicknessWorld: 0.10f, padding: 0.06f);
                 _activeFx.SetVisible(false);
             }

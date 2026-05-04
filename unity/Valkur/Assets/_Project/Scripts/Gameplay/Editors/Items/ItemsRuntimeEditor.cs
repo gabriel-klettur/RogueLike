@@ -76,8 +76,8 @@ namespace Valkur.Gameplay.Items
         // pickup they Follow(). Mirrors how Buildings / Spawners / Particles
         // editors render their highlights.
         private WorldPickup _hoveredInstance;
-        private Valkur.Gameplay.Editors.Items.ItemOutlineRenderer _hoverFx;
-        private Valkur.Gameplay.Editors.Items.ItemOutlineRenderer _activeFx;
+        private Valkur.Gameplay.WorldDrops.ItemOutlineRenderer _hoverFx;
+        private Valkur.Gameplay.WorldDrops.ItemOutlineRenderer _activeFx;
         // Legacy tint cache — kept temporarily while callers transition off the
         // sprite-color tinting path. Outline FX is the canonical highlight now.
         private readonly Dictionary<SpriteRenderer, Color> _originalSpriteColors

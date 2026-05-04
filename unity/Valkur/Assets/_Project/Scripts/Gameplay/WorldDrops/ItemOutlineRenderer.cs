@@ -1,15 +1,16 @@
 using UnityEngine;
 using Valkur.Gameplay.Inventory;
 
-namespace Valkur.Gameplay.Editors.Items
+namespace Valkur.Gameplay.WorldDrops
 {
     /// <summary>
-    /// World-space rectangular outline used by the runtime Items Editor (F7) to
-    /// highlight hovered / active world drops. Mirrors the
-    /// <see cref="BuildingOutlineRenderer"/> approach but anchors the rect on
-    /// a <see cref="WorldPickup"/>'s active <see cref="SpriteRenderer"/> bounds
-    /// (which already include the editor's 1×1-tile scale normalisation), so
-    /// the highlight tracks whatever size the drop is rendered at.
+    /// World-space rectangular outline drawn around a <see cref="WorldPickup"/>.
+    /// Shared by the F7 Items Editor (authoring hover/select) and the in-game
+    /// <see cref="WorldDropInteractor"/> on the player (gameplay hover/select
+    /// /drag with range limit). Mirrors the <see cref="BuildingOutlineRenderer"/>
+    /// approach: a <see cref="LineRenderer"/> loop on the VFX sorting layer,
+    /// anchored to <see cref="SpriteRenderer"/>.bounds so the highlight tracks
+    /// the drop's render size.
     ///
     /// Visual contract:
     ///   • Hover (default mode) → cyan, thickness ~0.06 wu.
