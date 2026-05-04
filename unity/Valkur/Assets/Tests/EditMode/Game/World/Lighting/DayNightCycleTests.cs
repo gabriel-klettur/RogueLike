@@ -82,25 +82,62 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             _cycle.SetTimeNormalized(0f);
             InvokeUpdateLighting(_cycle);
             Assert.AreEqual(DayNightCycle.DayPhase.Night, _cycle.CurrentPhase,
-                "00:00 falls outside the [0.20, 0.80) ramp window — must be Night.");
+                "00:00 falls outside the [0.18, 0.84) lit window — must be Night.");
         }
 
         [Test]
         public void Phase_AtDawn_IsDawn()
         {
-            // Dawn band is [0.20, 0.30); within [0.20, 0.25) the blend
-            // from dawn -> day stays under 0.5 so the phase reads as Dawn.
-            _cycle.SetTimeNormalized(0.22f);
+            // Dawn band is [0.18, 0.23); within the first half (≈[0.18, 0.205))
+            // the blend from dawn → goldenMorning stays under 0.5 so the
+            // classification reads as Dawn rather than GoldenMorning.
+            _cycle.SetTimeNormalized(0.19f);
             InvokeUpdateLighting(_cycle);
             Assert.AreEqual(DayNightCycle.DayPhase.Dawn, _cycle.CurrentPhase);
         }
 
         [Test]
+        public void Phase_AtGoldenMorning_IsGoldenMorning()
+        {
+            // GoldenMorning band is [0.23, 0.30); pick the centre to stay
+            // safely on the GoldenMorning side of both blends (away from
+            // Dawn-side at 0.18 and Day-side at 0.30).
+            _cycle.SetTimeNormalized(0.26f);
+            InvokeUpdateLighting(_cycle);
+            Assert.AreEqual(DayNightCycle.DayPhase.GoldenMorning, _cycle.CurrentPhase);
+        }
+
+        [Test]
+        public void Phase_AtGoldenEvening_IsGoldenEvening()
+        {
+            // GoldenEvening band is [0.66, 0.74). Pick t where the smoothstep
+            // blend lands clearly above 0.5 — exactly at k=0.5 the float
+            // rounding of `(0.70-0.66)/0.08` can dip a hair under 0.5 and
+            // classify as Day instead. 0.71 → k_raw=0.625 → smoothstep≈0.71.
+            _cycle.SetTimeNormalized(0.71f);
+            InvokeUpdateLighting(_cycle);
+            Assert.AreEqual(DayNightCycle.DayPhase.GoldenEvening, _cycle.CurrentPhase);
+        }
+
+        [Test]
         public void Phase_AtDusk_IsDusk()
         {
-            _cycle.SetTimeNormalized(0.72f);
+            // Dusk band is [0.74, 0.79); the second half (≈[0.765, 0.79))
+            // is where the GoldenEvening → Dusk blend crosses k=0.5 and the
+            // phase classification flips to Dusk.
+            _cycle.SetTimeNormalized(0.77f);
             InvokeUpdateLighting(_cycle);
             Assert.AreEqual(DayNightCycle.DayPhase.Dusk, _cycle.CurrentPhase);
+        }
+
+        [Test]
+        public void Phase_AtBlueHour_IsBlueHour()
+        {
+            // BlueHour band is [0.79, 0.84); the second half is where the
+            // Dusk → BlueHour blend tips past k=0.5.
+            _cycle.SetTimeNormalized(0.82f);
+            InvokeUpdateLighting(_cycle);
+            Assert.AreEqual(DayNightCycle.DayPhase.BlueHour, _cycle.CurrentPhase);
         }
 
         [Test]
@@ -136,9 +173,9 @@ namespace Valkur.Tests.EditMode.Game.World.Lighting
             // Initial state is Day (default). Each SetTimeNormalized that
             // crosses into a new phase must produce one event.
             _cycle.SetTimeNormalized(0.0f);  InvokeUpdateLighting(_cycle); // Day → Night
-            _cycle.SetTimeNormalized(0.22f); InvokeUpdateLighting(_cycle); // Night → Dawn
+            _cycle.SetTimeNormalized(0.19f); InvokeUpdateLighting(_cycle); // Night → Dawn
             _cycle.SetTimeNormalized(0.5f);  InvokeUpdateLighting(_cycle); // Dawn → Day
-            _cycle.SetTimeNormalized(0.72f); InvokeUpdateLighting(_cycle); // Day → Dusk
+            _cycle.SetTimeNormalized(0.77f); InvokeUpdateLighting(_cycle); // Day → Dusk
 
             Assert.AreEqual(4, events,
                 "Four distinct phase transitions must fire four events. " +
