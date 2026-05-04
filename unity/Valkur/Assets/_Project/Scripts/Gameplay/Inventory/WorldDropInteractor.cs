@@ -105,8 +105,7 @@ namespace Valkur.Gameplay.Inventory
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
 
             UpdateHover(worldCursor, overUi);
-            UpdateSelection(overUi);
-            UpdateDrag(worldCursor, overUi);
+            UpdateLmbInteraction(worldCursor, overUi);
         }
 
         // ── Hover ─────────────────────────────────────────────────────────────
@@ -178,56 +177,89 @@ namespace Valkur.Gameplay.Inventory
         /// hoverable immediately (e.g. F7 SpawnAt while the player is nearby).</summary>
         public void InvalidatePickupCache() { _pickupCacheNextRefresh = 0f; }
 
-        // ── Selection (LMB) ───────────────────────────────────────────────────
+        // ── LMB selection + drag-to-move with threshold ───────────────────────
+        // A single LMB does two jobs:
+        //   • Press → release without significant cursor travel = "click"  → select.
+        //   • Press → cursor moves more than DRAG_THRESHOLD_PX = "drag-to-move".
+        // Same UX as every desktop file manager / map tool: short click selects,
+        // hold + drag moves. Threshold is checked in screen-space pixels so it
+        // feels identical at every zoom level.
 
-        private void UpdateSelection(bool overUi)
+        private const float DRAG_THRESHOLD_PX = 6f;
+
+        private WorldPickup _pendingDragTarget;
+        private Vector2     _pendingDragStartScreen;
+
+        private void UpdateLmbInteraction(Vector3 worldCursor, bool overUi)
         {
-            if (overUi) return;
-            if (_dragging != null) return;
-            if (!MouseInputManager.WasLeftMouseButtonPressedThisFrame()) return;
+            bool lmbDown    = MouseInputManager.WasLeftMouseButtonPressedThisFrame();
+            bool lmbHeld    = MouseInputManager.IsLeftMouseButtonPressed();
+            bool lmbRelease = MouseInputManager.WasLeftMouseButtonReleasedThisFrame();
 
-            // LMB on a hovered reachable drop = select. LMB on empty space =
-            // deselect. We intentionally don't grab pickup-on-LMB here so the
-            // player can still walk through the drop without auto-grabbing
-            // (E + PickupSystem owns the manual grab).
-            SetSelected(_hovered);
-        }
-
-        // ── RMB drag-to-move with radial clamp ────────────────────────────────
-
-        private void UpdateDrag(Vector3 worldCursor, bool overUi)
-        {
-            bool rmbDown    = MouseInputManager.WasRightMouseButtonPressedThisFrame();
-            bool rmbHeld    = MouseInputManager.IsRightMouseButtonPressed();
-            bool rmbRelease = MouseInputManager.WasRightMouseButtonReleasedThisFrame();
-
-            if (rmbDown && _dragging == null && _hovered != null && !overUi)
+            // ── Press: arm a potential drag if a hovered drop is under cursor.
+            //          We don't commit yet — the gesture only becomes a drag
+            //          once the cursor crosses DRAG_THRESHOLD_PX.
+            if (lmbDown && !overUi && _dragging == null)
             {
-                _dragging       = _hovered;
-                _draggingDropId = _hovered.DropId;
-                _dragStartPos   = _hovered.transform.position;
-                SetSelected(_hovered);
-                return;
-            }
-
-            if (rmbHeld && _dragging != null)
-            {
-                Vector3 clamped = ClampToReach(worldCursor);
-                _dragging.SetWorldPosition(new Vector3(clamped.x, clamped.y,
-                    _dragging.transform.position.z));
-                return;
-            }
-
-            if (rmbRelease && _dragging != null)
-            {
-                Vector3 landed = _dragging.transform.position;
-                if (ServiceLocator.TryGet<ItemDropService>(out var service)
-                    && !string.IsNullOrEmpty(_draggingDropId))
+                if (_hovered != null)
                 {
-                    service.UpdatePosition(_draggingDropId, new Vector2(landed.x, landed.y));
+                    _pendingDragTarget      = _hovered;
+                    _pendingDragStartScreen = MouseInputManager.GetScreenMousePosition();
+                    _dragStartPos           = _hovered.transform.position;
                 }
-                _dragging       = null;
-                _draggingDropId = null;
+                else
+                {
+                    // LMB on empty world → clear current selection.
+                    SetSelected(null);
+                }
+                return;
+            }
+
+            // ── Hold: promote the pending press to an active drag once the
+            //          cursor has moved past the screen-space threshold; then
+            //          keep the pickup glued to the cursor (clamped to reach).
+            if (lmbHeld)
+            {
+                if (_dragging == null && _pendingDragTarget != null)
+                {
+                    Vector2 cur = MouseInputManager.GetScreenMousePosition();
+                    if (Vector2.Distance(cur, _pendingDragStartScreen) > DRAG_THRESHOLD_PX)
+                    {
+                        _dragging       = _pendingDragTarget;
+                        _draggingDropId = _pendingDragTarget.DropId;
+                        SetSelected(_dragging);
+                    }
+                }
+                if (_dragging != null)
+                {
+                    Vector3 clamped = ClampToReach(worldCursor);
+                    _dragging.SetWorldPosition(new Vector3(clamped.x, clamped.y,
+                        _dragging.transform.position.z));
+                }
+                return;
+            }
+
+            // ── Release: a "click" (no drag fired) selects; a finished drag
+            //             commits the new position to the persistence service.
+            if (lmbRelease)
+            {
+                if (_dragging != null)
+                {
+                    Vector3 landed = _dragging.transform.position;
+                    if (ServiceLocator.TryGet<ItemDropService>(out var service)
+                        && !string.IsNullOrEmpty(_draggingDropId))
+                    {
+                        service.UpdatePosition(_draggingDropId, new Vector2(landed.x, landed.y));
+                    }
+                    _dragging       = null;
+                    _draggingDropId = null;
+                }
+                else if (_pendingDragTarget != null)
+                {
+                    // No drag fired → treat as a plain click on a hovered drop.
+                    SetSelected(_pendingDragTarget);
+                }
+                _pendingDragTarget = null;
             }
         }
 
@@ -288,7 +320,8 @@ namespace Valkur.Gameplay.Inventory
             _hovered  = null;
             _selected = null;
             _dragging = null;
-            _draggingDropId = null;
+            _draggingDropId    = null;
+            _pendingDragTarget = null;
             if (_hoverFx    != null) { _hoverFx.Follow(null);    _hoverFx.SetVisible(false); }
             if (_selectedFx != null) { _selectedFx.Follow(null); _selectedFx.SetVisible(false); }
         }

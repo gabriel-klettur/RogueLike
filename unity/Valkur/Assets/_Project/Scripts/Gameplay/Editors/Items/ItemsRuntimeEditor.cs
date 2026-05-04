@@ -285,15 +285,15 @@ namespace Valkur.Gameplay.Items
         {
             _tutorial = TutorialOverlay.Build(_root.transform, "ITEMS HOTKEYS", new[]
             {
-                ("F7",     "Toggle Items Editor"),
-                ("LMB",    "Select / spawn / delete (per mode)"),
-                ("RMB drag", "Move a world drop"),
-                ("MMB drag", "Pan the camera"),
-                ("WASD",   "Move the player"),
-                ("Type",   "Filter items by name"),
-                ("Ctrl+Z", "Undo"),
-                ("Ctrl+Y", "Redo"),
-                ("Esc",    "Cancel move / close editor"),
+                ("F7",      "Toggle Items Editor"),
+                ("LMB click", "Select / spawn / delete (per mode)"),
+                ("LMB drag",  "Move a world drop"),
+                ("MMB drag",  "Pan the camera"),
+                ("WASD",    "Move the player"),
+                ("Type",    "Filter items by name"),
+                ("Ctrl+Z",  "Undo"),
+                ("Ctrl+Y",  "Redo"),
+                ("Esc",     "Cancel move / close editor"),
             });
             _tutorial.SetActive(false);
         }
