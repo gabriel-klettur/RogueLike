@@ -45,24 +45,57 @@ namespace Valkur.Gameplay.World
             float worldX = zoneDef.gridOffset.x + (inst.RelX + effW * 0.5f) / PPU;
             float worldY = zoneDef.gridOffset.y + (zoneH - 1) - (inst.RelY + effH) / PPU;
 
-            // ── Spawn ────────────────────────────────────────────────────────────
+            return SpawnAtCore(inst.Id, inst.Zone, template, new Vector3(worldX, worldY, 0f),
+                inst.ScaleOverride, inst.SplitRatioOverride, inst.ColliderScopeOverride,
+                inst.ZBottomOffset, inst.ZTopOffset) != null;
+        }
+
+        /// <summary>
+        /// Public entry point for code paths that already know the desired bottom-center
+        /// world position (e.g. the Map Editor biome generator) and don't need the
+        /// pixel/Y-flip math used when loading from <c>buildings_instances.json</c>.
+        /// Returns the spawned <see cref="BuildingObject"/>, or <c>null</c> on failure.
+        /// </summary>
+        public BuildingObject SpawnAtWorldPosition(int templateId, string zoneName,
+            Vector3 worldPosition, int instanceId)
+        {
+            if (_catalog == null)
+            {
+                Debug.LogWarning("[BuildingLoader] Catalog not assigned; cannot spawn at world position.");
+                return null;
+            }
+            var template = _catalog.GetById(templateId);
+            if (template == null)
+            {
+                Debug.LogWarning($"[BuildingLoader] Template id={templateId} not found (programmatic spawn).");
+                return null;
+            }
+            return SpawnAtCore(instanceId, zoneName, template, worldPosition,
+                Vector2Int.zero, -1f, string.Empty, 0, 0);
+        }
+
+        private BuildingObject SpawnAtCore(int instanceId, string zoneName,
+            BuildingTemplateData template, Vector3 worldPos,
+            Vector2Int scaleOverride, float splitRatioOverride,
+            string colliderScopeOverride, int zBottomOffset, int zTopOffset)
+        {
             Transform root = _buildingsRoot != null ? _buildingsRoot : transform;
 
-            var go = new GameObject($"Building_{inst.Id}_{template.name}");
+            var go = new GameObject($"Building_{instanceId}_{template.name}");
             go.transform.SetParent(root, worldPositionStays: false);
-            go.transform.position = new Vector3(worldX, worldY, 0f);
+            go.transform.position = worldPos;
             go.layer = _buildingPhysicsLayer;
 
             var bObj = go.AddComponent<BuildingObject>();
-            bObj.ZoneName           = inst.Zone;
-            bObj.InstanceId         = inst.Id;
-            bObj.Apply(template, inst.ScaleOverride, inst.SplitRatioOverride);
-            bObj.ColliderScopeOverride = inst.ColliderScopeOverride;
-            if (inst.ZBottomOffset != 0) bObj.ZBottomOffset = inst.ZBottomOffset;
-            if (inst.ZTopOffset    != 0) bObj.ZTopOffset    = inst.ZTopOffset;
+            bObj.ZoneName             = zoneName;
+            bObj.InstanceId           = instanceId;
+            bObj.Apply(template, scaleOverride, splitRatioOverride);
+            bObj.ColliderScopeOverride = colliderScopeOverride;
+            if (zBottomOffset != 0) bObj.ZBottomOffset = zBottomOffset;
+            if (zTopOffset    != 0) bObj.ZTopOffset    = zTopOffset;
 
             _spawnedBuildings.Add(bObj);
-            return true;
+            return bObj;
         }
 
         // ── JSON parsing ────────────────────────────────────────────────────────────

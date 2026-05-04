@@ -57,6 +57,13 @@ namespace Valkur.Gameplay.World
         /// <summary>All currently spawned BuildingObjects managed by this loader.</summary>
         public IReadOnlyList<BuildingObject> SpawnedBuildings => _spawnedBuildings;
 
+        /// <summary>
+        /// Catalog of all building templates known to this loader. Exposed so
+        /// designer-driven systems (e.g. the Map Editor biome generator) can
+        /// filter and spawn templates without re-implementing catalog access.
+        /// </summary>
+        public BuildingCatalog Catalog => _catalog;
+
         // Repository handle. Tests inject an InMemoryBuildingInstanceRepository
         // through SetRepository(); production paths fall back to the JSON
         // file backend on first use.
@@ -162,6 +169,29 @@ namespace Valkur.Gameplay.World
                     Destroy(b.gameObject);
             }
             _spawnedBuildings.Clear();
+        }
+
+        /// <summary>
+        /// Remove every previously-spawned building whose <c>InstanceId</c> is
+        /// at or above <paramref name="instanceIdFloor"/>. The biome generator
+        /// uses this to wipe its own previous run before re-scattering, without
+        /// disturbing the data-driven instances loaded from JSON (whose IDs sit
+        /// well below the reserved biome range).
+        /// </summary>
+        public int ClearGeneratedAbove(int instanceIdFloor)
+        {
+            int removed = 0;
+            for (int i = _spawnedBuildings.Count - 1; i >= 0; i--)
+            {
+                var b = _spawnedBuildings[i];
+                if (b != null && b.InstanceId >= instanceIdFloor)
+                {
+                    Destroy(b.gameObject);
+                    _spawnedBuildings.RemoveAt(i);
+                    removed++;
+                }
+            }
+            return removed;
         }
 
     }
