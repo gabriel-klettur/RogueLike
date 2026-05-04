@@ -1,0 +1,19 @@
+{
+    "schemaVersion": 1,
+    "drops": [
+        {
+            "dropId": "1909e2ad8b974c59a290426cd1773b05",
+            "itemId": "borsh_01",
+            "quantity": 1,
+            "position": {
+                "x": 216.45913696289063,
+                "y": 81.86762237548828
+            },
+            "zoneId": "",
+            "zLayer": 0,
+            "createdAtUnixMs": 1777905670334,
+            "despawnTtlSeconds": 0.0,
+            "sourceRaw": 1
+        }
+    ]
+}
