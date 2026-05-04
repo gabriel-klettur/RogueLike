@@ -397,18 +397,25 @@ namespace Valkur.Gameplay.World
             // without rendering, e.g. spawners that key on day/night) get a
             // consistent state machine even when no URP renderer is wired.
             ComputePhaseAndColor(TimeNormalized,
-                out var newPhase, out var targetColor, out var targetIntensity);
+                out var newPhase, out var targetColor, out var targetIntensity,
+                out _, out var targetVignetteAlpha);
 
             // Master "tinting off" override: force the Light2D to neutral
             // white at intensity 1 so the world reads at native colors. The
             // computed phase / color values still flow through the OnPhaseChanged
             // event so the HUD clock and ambient atmosphere keep their state in
-            // sync — only the Light2D side-effect is suppressed.
+            // sync — only the Light2D side-effect (and the vignette) are silenced.
             if (!_lightingEnabled)
             {
-                targetColor     = Color.white;
-                targetIntensity = 1f;
+                targetColor          = Color.white;
+                targetIntensity      = 1f;
+                targetVignetteAlpha  = 0f;
             }
+
+            // Publish the live values so the vignette / ambient particles can
+            // read them without recomputing the same blend.
+            CurrentColor         = targetColor;
+            CurrentVignetteAlpha = targetVignetteAlpha;
 
             // Apply the visual side-effect only when a Light2D is reachable.
             if (_globalLight != null)
@@ -453,68 +460,99 @@ namespace Valkur.Gameplay.World
         private const float NIGHT_START  = 0.84f;
 
         // Pure function: classify the normalized time t into a DayPhase and
-        // pick the matching color + intensity. No side-effects, no Light2D
-        // access — exposed via UpdateLighting and exercised directly by
-        // EditMode tests. Uses Mathf.SmoothStep (t²·(3−2t)) between phase
-        // keyframes for parity with Python's smoothstep ramp.
+        // pick the matching color + intensity + warmth + vignetteAlpha. No
+        // side-effects, no Light2D access — exposed via UpdateLighting and
+        // exercised directly by EditMode tests. Uses Mathf.SmoothStep
+        // (t²·(3−2t)) between phase keyframes for parity with Python's
+        // smoothstep ramp.
         private void ComputePhaseAndColor(float t,
                                           out DayPhase phase,
                                           out Color color,
-                                          out float intensity)
+                                          out float intensity,
+                                          out float warmth,
+                                          out float vignetteAlpha)
         {
             if (t >= DAWN_START && t < GOLD_M_START)
             {
-                float k   = Mathf.SmoothStep(0f, 1f, (t - DAWN_START) / (GOLD_M_START - DAWN_START));
-                color     = Color.Lerp(dawnColor, goldenMorningColor, k);
-                intensity = Mathf.Lerp(dawnIntensity, goldenMorningIntensity, k);
-                phase     = k < 0.5f ? DayPhase.Dawn : DayPhase.GoldenMorning;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - DAWN_START) / (GOLD_M_START - DAWN_START));
+                color         = Color.Lerp(dawnColor, goldenMorningColor, k);
+                intensity     = Mathf.Lerp(dawnIntensity, goldenMorningIntensity, k);
+                warmth        = Mathf.Lerp(dawnWarmth, goldenMorningWarmth, k);
+                vignetteAlpha = Mathf.Lerp(dawnVignetteAlpha, goldenMorningVignetteAlpha, k);
+                phase         = k < 0.5f ? DayPhase.Dawn : DayPhase.GoldenMorning;
             }
             else if (t >= GOLD_M_START && t < DAY_START)
             {
-                float k   = Mathf.SmoothStep(0f, 1f, (t - GOLD_M_START) / (DAY_START - GOLD_M_START));
-                color     = Color.Lerp(goldenMorningColor, dayColor, k);
-                intensity = Mathf.Lerp(goldenMorningIntensity, dayIntensity, k);
-                phase     = k < 0.5f ? DayPhase.GoldenMorning : DayPhase.Day;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - GOLD_M_START) / (DAY_START - GOLD_M_START));
+                color         = Color.Lerp(goldenMorningColor, dayColor, k);
+                intensity     = Mathf.Lerp(goldenMorningIntensity, dayIntensity, k);
+                warmth        = Mathf.Lerp(goldenMorningWarmth, dayWarmth, k);
+                vignetteAlpha = Mathf.Lerp(goldenMorningVignetteAlpha, dayVignetteAlpha, k);
+                phase         = k < 0.5f ? DayPhase.GoldenMorning : DayPhase.Day;
             }
             else if (t >= DAY_START && t < GOLD_E_START)
             {
-                color     = dayColor;
-                intensity = dayIntensity;
-                phase     = DayPhase.Day;
+                color         = dayColor;
+                intensity     = dayIntensity;
+                warmth        = dayWarmth;
+                vignetteAlpha = dayVignetteAlpha;
+                phase         = DayPhase.Day;
             }
             else if (t >= GOLD_E_START && t < DUSK_START)
             {
-                float k   = Mathf.SmoothStep(0f, 1f, (t - GOLD_E_START) / (DUSK_START - GOLD_E_START));
-                color     = Color.Lerp(dayColor, goldenEveningColor, k);
-                intensity = Mathf.Lerp(dayIntensity, goldenEveningIntensity, k);
-                phase     = k < 0.5f ? DayPhase.Day : DayPhase.GoldenEvening;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - GOLD_E_START) / (DUSK_START - GOLD_E_START));
+                color         = Color.Lerp(dayColor, goldenEveningColor, k);
+                intensity     = Mathf.Lerp(dayIntensity, goldenEveningIntensity, k);
+                warmth        = Mathf.Lerp(dayWarmth, goldenEveningWarmth, k);
+                vignetteAlpha = Mathf.Lerp(dayVignetteAlpha, goldenEveningVignetteAlpha, k);
+                phase         = k < 0.5f ? DayPhase.Day : DayPhase.GoldenEvening;
             }
             else if (t >= DUSK_START && t < BLUE_START)
             {
-                float k   = Mathf.SmoothStep(0f, 1f, (t - DUSK_START) / (BLUE_START - DUSK_START));
-                color     = Color.Lerp(goldenEveningColor, duskColor, k);
-                intensity = Mathf.Lerp(goldenEveningIntensity, duskIntensity, k);
-                phase     = k < 0.5f ? DayPhase.GoldenEvening : DayPhase.Dusk;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - DUSK_START) / (BLUE_START - DUSK_START));
+                color         = Color.Lerp(goldenEveningColor, duskColor, k);
+                intensity     = Mathf.Lerp(goldenEveningIntensity, duskIntensity, k);
+                warmth        = Mathf.Lerp(goldenEveningWarmth, duskWarmth, k);
+                vignetteAlpha = Mathf.Lerp(goldenEveningVignetteAlpha, duskVignetteAlpha, k);
+                phase         = k < 0.5f ? DayPhase.GoldenEvening : DayPhase.Dusk;
             }
             else if (t >= BLUE_START && t < NIGHT_START)
             {
-                float k   = Mathf.SmoothStep(0f, 1f, (t - BLUE_START) / (NIGHT_START - BLUE_START));
-                color     = Color.Lerp(duskColor, blueHourColor, k);
-                intensity = Mathf.Lerp(duskIntensity, blueHourIntensity, k);
-                phase     = k < 0.5f ? DayPhase.Dusk : DayPhase.BlueHour;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - BLUE_START) / (NIGHT_START - BLUE_START));
+                color         = Color.Lerp(duskColor, blueHourColor, k);
+                intensity     = Mathf.Lerp(duskIntensity, blueHourIntensity, k);
+                warmth        = Mathf.Lerp(duskWarmth, blueHourWarmth, k);
+                vignetteAlpha = Mathf.Lerp(duskVignetteAlpha, blueHourVignetteAlpha, k);
+                phase         = k < 0.5f ? DayPhase.Dusk : DayPhase.BlueHour;
             }
             else
             {
                 // Night wraps midnight — covers [NIGHT_START, 1) ∪ [0, DAWN_START).
-                // Inside this window we ease from BlueHour → Night → BlueHour again
-                // so the wrap doesn't snap to a hard color edge.
-                color     = nightColor;
-                intensity = nightIntensity;
-                phase     = DayPhase.Night;
+                color         = nightColor;
+                intensity     = nightIntensity;
+                warmth        = nightWarmth;
+                vignetteAlpha = nightVignetteAlpha;
+                phase         = DayPhase.Night;
             }
+
+            // Apply the warmth temperature shift to the blended color: positive
+            // warmth pushes red up + blue down (toward orange), negative warmth
+            // does the inverse (toward blue). The 0.18 magnitude keeps the
+            // shift visible without overpowering the base hue.
+            color = ApplyWarmth(color, warmth);
 
             // Apply the Python-parity floor so we never go fully black.
             intensity = Mathf.Max(intensity, minIntensity);
+        }
+
+        private static Color ApplyWarmth(Color c, float warmth)
+        {
+            const float STRENGTH = 0.18f;
+            return new Color(
+                Mathf.Clamp01(c.r + warmth * STRENGTH),
+                c.g,
+                Mathf.Clamp01(c.b - warmth * STRENGTH),
+                c.a);
         }
 
         // Recompute LightsDisabledNow and fire the change event when it flips.
