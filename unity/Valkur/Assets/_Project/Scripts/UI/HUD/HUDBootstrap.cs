@@ -83,8 +83,38 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) deathGo.transform.SetParent(uiContainer.transform, false);
             }
 
+            // Day/Night HUD: sundial clock (top-right) + phase-shortcuts column +
+            // weather-toggles panel + screen-edge vignette tint. All independent
+            // of the player; they only depend on DayNightCycle / WeatherManager
+            // singletons, but we keep them inside HUDBootstrap so every
+            // screen-space HUD piece appears in a single readable file.
+            if (FindObjectOfType<DayNightClockHUD>() == null)
+            {
+                var clockGo = new GameObject("DayNightClockHUD");
+                clockGo.AddComponent<DayNightClockHUD>();
+                if (uiContainer != null) clockGo.transform.SetParent(uiContainer.transform, false);
+            }
+            if (FindObjectOfType<DayNightShortcutsHUD>() == null)
+            {
+                var shortcutsGo = new GameObject("DayNightShortcutsHUD");
+                shortcutsGo.AddComponent<DayNightShortcutsHUD>();
+                if (uiContainer != null) shortcutsGo.transform.SetParent(uiContainer.transform, false);
+            }
+            if (FindObjectOfType<WeatherHUD>() == null)
+            {
+                var weatherHudGo = new GameObject("WeatherHUD");
+                weatherHudGo.AddComponent<WeatherHUD>();
+                if (uiContainer != null) weatherHudGo.transform.SetParent(uiContainer.transform, false);
+            }
+            if (FindObjectOfType<DayNightVignetteOverlay>() == null)
+            {
+                var vignetteGo = new GameObject("DayNightVignetteOverlay");
+                vignetteGo.AddComponent<DayNightVignetteOverlay>();
+                if (uiContainer != null) vignetteGo.transform.SetParent(uiContainer.transform, false);
+            }
+
             _initialized = true;
-            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death banner + mouse targeting).");
+            Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death banner + day/night clock + vignette + mouse targeting).");
         }
     }
 }

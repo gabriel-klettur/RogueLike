@@ -94,7 +94,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 39;
+        private const int SetupStepTotal = 40;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -181,6 +181,18 @@ namespace Valkur.Gameplay
 
             EnsureParticlesRuntimeEditor();
             Report("Inicializando editor de partículas"); yield return null;
+
+            EnsureLightingRuntimeEditor();
+            Report("Inicializando editor de iluminación"); yield return null;
+
+            EnsureGeneralEditor();
+            Report("Inicializando editor general"); yield return null;
+
+            EnsureDayNightAtmosphere();
+            Report("Inicializando atmósfera día/noche"); yield return null;
+
+            EnsureWeatherManager();
+            Report("Inicializando sistema de clima"); yield return null;
 
             EnsureDevConsole();
             Report("Inicializando consola de desarrollo"); yield return null;

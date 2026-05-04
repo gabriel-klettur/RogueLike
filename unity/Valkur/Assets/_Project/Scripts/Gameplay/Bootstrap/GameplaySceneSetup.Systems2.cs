@@ -6,6 +6,7 @@ using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.Buildings;
+using Valkur.Gameplay.Editors.General;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
@@ -261,6 +262,72 @@ namespace Valkur.Gameplay
             go.transform.SetParent(GetSceneContainer("[Editors]"), false);
 
             Debug.Log("[GameplaySceneSetup] FSMRuntimeEditor created. Press F12 to toggle.");
+        }
+
+        // Top-level launcher panel toggled with ESC. Lists every other editor
+        // and session action as a clickable button. Spawned last among the
+        // editors so all sibling singletons exist when the registry's lambdas
+        // resolve them at click time. The panel keeps itself idle (canvas
+        // hidden) until the user activates it via the hotkey.
+        private void EnsureGeneralEditor()
+        {
+            if (GeneralEditorManager.Instance != null) return;
+
+            var go = new GameObject("GeneralEditorManager");
+            go.AddComponent<GeneralEditorManager>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] GeneralEditorManager created. Press ESC to open.");
+        }
+
+        // Lighting editor (Ctrl+F3). Pulls the LightPresetCatalog from the live
+        // WorldLightLoader (single source of truth for lights at runtime). When the
+        // loader is missing the editor still spawns — the picker shows an empty grid
+        // with a clear hint to populate the catalog. Mirrors the
+        // EnsureItemsRuntimeEditor + ItemDropService bootstrap pattern.
+        private void EnsureLightingRuntimeEditor()
+        {
+            if (Valkur.Gameplay.World.LightingRuntimeEditor.Instance != null) return;
+
+            var go = new GameObject("LightingRuntimeEditor");
+            go.AddComponent<Valkur.Gameplay.World.LightingRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] LightingRuntimeEditor created. Press Ctrl+F3 to toggle.");
+        }
+
+        // Atmospheric particles + ambient audio bed driven by DayNightCycle.
+        // Sit under [VFX] / [Systems] respectively so the existing scene
+        // hierarchy stays organised. Both are idempotent.
+        private void EnsureDayNightAtmosphere()
+        {
+            if (FindObjectOfType<Valkur.Gameplay.World.DayNightAtmosphericParticles>() == null)
+            {
+                var go  = new GameObject("DayNightAtmosphericParticles", typeof(ParticleSystem));
+                go.AddComponent<Valkur.Gameplay.World.DayNightAtmosphericParticles>();
+                go.transform.SetParent(GetSceneContainer("[VFX]"), false);
+                Debug.Log("[GameplaySceneSetup] DayNightAtmosphericParticles created.");
+            }
+
+            if (FindObjectOfType<Valkur.Gameplay.World.DayNightAmbientAudio>() == null)
+            {
+                var go = new GameObject("DayNightAmbientAudio");
+                go.AddComponent<Valkur.Gameplay.World.DayNightAmbientAudio>();
+                go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+                Debug.Log("[GameplaySceneSetup] DayNightAmbientAudio created (clips wired via inspector).");
+            }
+        }
+
+        // Weather orchestrator (Wind / Rain / Snow). The manager creates each
+        // effect lazily on first request — at boot we just ensure a single
+        // root GameObject exists so the WeatherHUD has somewhere to publish to.
+        private void EnsureWeatherManager()
+        {
+            if (Valkur.Gameplay.World.Weather.WeatherManager.Instance != null) return;
+            var go = new GameObject("WeatherManager");
+            go.AddComponent<Valkur.Gameplay.World.Weather.WeatherManager>();
+            go.transform.SetParent(GetSceneContainer("[VFX]"), false);
+            Debug.Log("[GameplaySceneSetup] WeatherManager created (effects spawn lazily on first toggle).");
         }
 
         private void EnsureItemsRuntimeEditor()
