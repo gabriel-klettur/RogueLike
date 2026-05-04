@@ -43,6 +43,28 @@ namespace Valkur.Gameplay.World.Weather
             _main.startColor             = new Color(0.78f, 0.86f, 1.00f, 0.55f);
             _main.startSize              = 0.18f;
 
+            // "Splash on contact" approximation: each drop fades to alpha 0
+            // over the last 18% of its life. Combined with the dynamic
+            // lifetime sized to viewport height in UpdateEmissionForViewport,
+            // every drop visibly dissipates as it nears ground level —
+            // cheap, no per-tile collision query needed.
+            var col = _ps.colorOverLifetime;
+            col.enabled = true;
+            var grad = new Gradient();
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0.0f),
+                    new GradientColorKey(Color.white, 1.0f),
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(1.0f, 0.82f),
+                    new GradientAlphaKey(0.0f, 1.0f),
+                });
+            col.color = new ParticleSystem.MinMaxGradient(grad);
+
             var emit = _emission;
             emit.rateOverTime = 220f;
 
@@ -79,10 +101,16 @@ namespace Valkur.Gameplay.World.Weather
             shape.scale    = new Vector3((halfW + _viewportMargin) * 2f, 0.5f, 0.1f);
             shape.position = new Vector3(0f, halfH + _viewportMargin, 0f);
 
-            // Lifetime sized so a drop spawned at the top edge survives long
-            // enough to fall past the bottom edge plus margin.
-            float travel = (halfH + _viewportMargin) * 2f;
-            _main.startLifetime = travel / AVG_FALL_SPEED;
+            // Randomise lifetime so different drops splash at different Y
+            // positions — some "hit the rooftops" early, some make it all the
+            // way to street level. Combined with the alpha-fade tail in
+            // ConfigureParticles this approximates a ground-collision splash
+            // without per-tile physics queries.
+            float fullTravel = (halfH + _viewportMargin) * 2f;
+            float baseLifetime = fullTravel / AVG_FALL_SPEED;
+            _main.startLifetime = new ParticleSystem.MinMaxCurve(
+                baseLifetime * 0.55f,
+                baseLifetime * 1.00f);
         }
 
         private static bool SortingLayerExists(string name)
