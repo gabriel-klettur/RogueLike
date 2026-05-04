@@ -54,6 +54,12 @@ namespace Valkur.Gameplay.Spells
             if (proj != null)
             {
                 proj.SetPoolKey(poolKey);
+                // Bind the caster BEFORE Initialize/FixedUpdate so the very first
+                // sweep can already filter caster-owned colliders. Without this,
+                // a caster with a child collider on the target layer (perception
+                // trigger, hurtbox) would self-damage on spawn frame ("fireball
+                // blew up in my face").
+                proj.SetCaster(ctx.Caster);
                 proj.Initialize(
                     ctx.Direction,
                     ctx.Spell.speed,

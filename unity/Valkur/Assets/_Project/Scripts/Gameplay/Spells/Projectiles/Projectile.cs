@@ -31,6 +31,12 @@ namespace Valkur.Gameplay.Spells
         private Color _vfxColor = new Color(1f, 0.6f, 0.2f, 0.8f);
         private string _poolKey;
         private string _impactPreset;
+        // Caster transform — projectiles MUST never damage their own caster, even
+        // when the caster has a child collider on a layer included in targetLayers
+        // (e.g. a hurtbox / perception trigger). Without this, GetComponentInParent
+        // <Health> would walk up from the child collider and find the caster's
+        // own Health, producing the "fireball blew up in my face" regression.
+        private Transform _caster;
 
         // Override impact position used for VFX (set when sweep produces a real hit point).
         // When unset (default), VFX spawns at transform.position.
@@ -71,6 +77,14 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>Enable AOE explosion on impact that damages all targets within radius.</summary>
         public void SetExplosion(float radius, float dmg) { _explosionRadius = radius; _explosionDamage = dmg; }
+
+        /// <summary>
+        /// Bind the caster so the projectile never damages it or any of its
+        /// children, even when a child collider lives on a layer inside
+        /// <see cref="targetLayers"/>. Required by every executor that spawns
+        /// a Projectile to keep self-damage impossible by construction.
+        /// </summary>
+        public void SetCaster(Transform caster) => _caster = caster;
 
         public void Initialize(Vector2 direction, float spd, float dmg, float life, float rng, LayerMask targets)
         {
@@ -137,6 +151,7 @@ namespace Valkur.Gameplay.Spells
                 var hit = _sweepHits[i];
                 if (hit.collider == null) continue;
                 if (hit.collider.transform.IsChildOf(transform)) continue; // ignore self
+                if (IsCasterCollider(hit.collider)) continue;              // ignore caster + caster-children
                 // Skip "start-inside" overlaps. Physics2D.queriesStartInColliders is enabled
                 // project-wide, so a sweep that begins overlapping a collider returns it with
                 // distance == 0. Without this guard, a fireball spawned at/near the caster's
@@ -202,6 +217,7 @@ namespace Valkur.Gameplay.Spells
             int hitMask = 1 << other.gameObject.layer;
             if (((hitMask & targetLayers) | (hitMask & ObstacleLayers)) == 0) return;
             if (other.transform.IsChildOf(transform)) return;
+            if (IsCasterCollider(other)) return;
 
             // Use the closest point on the obstacle to get a surface-accurate VFX position.
             _impactVfxPos = other.ClosestPoint(transform.position);
@@ -223,9 +239,11 @@ namespace Valkur.Gameplay.Spells
                 int count = Physics2D.OverlapCircleNonAlloc((Vector2)vfxPos, _explosionRadius, _explosionHits, targetLayers);
                 for (int i = 0; i < count; i++)
                 {
-                    if (_explosionHits[i] == null) continue;
-                    var h = _explosionHits[i].GetComponent<Health>()
-                         ?? _explosionHits[i].GetComponentInParent<Health>();
+                    var col = _explosionHits[i];
+                    if (col == null) continue;
+                    if (IsCasterCollider(col)) continue; // never AOE-damage the caster
+                    var h = col.GetComponent<Health>()
+                         ?? col.GetComponentInParent<Health>();
                     if (h != null && !h.IsDead)
                         h.TakeDamage(Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage));
                 }
@@ -272,7 +290,21 @@ namespace Valkur.Gameplay.Spells
             _acceleration = 0f;
             _explosionRadius = 0f;
             _explosionDamage = 0f;
+            _caster = null; // pool reuse: drop the previous caster so the next
+                            // shooter doesn't inherit a stale ignore-target.
             if (_rb != null) _rb.velocity = Vector2.zero;
+        }
+
+        /// <summary>
+        /// Returns true when <paramref name="other"/> belongs to the caster's
+        /// hierarchy (the caster itself or any descendant). Cheap — at most one
+        /// IsChildOf walk through Transform parents.
+        /// </summary>
+        private bool IsCasterCollider(Collider2D other)
+        {
+            if (_caster == null || other == null) return false;
+            var t = other.transform;
+            return t == _caster || t.IsChildOf(_caster);
         }
     }
 }
