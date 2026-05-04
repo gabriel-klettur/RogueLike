@@ -39,6 +39,44 @@ namespace Valkur.Gameplay.World.Weather
             _main.startSize              = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
             _main.startRotation          = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
 
+            // "Snow melts on contact" approximation, two layered effects so it
+            // reads as real precipitation rather than dots that just vanish:
+            //
+            // 1. ColorOverLifetime fades alpha to zero in the last 25% of life
+            //    so the flake dissolves rather than pops.
+            // 2. SizeOverLifetime shrinks the flake to ~30% of start size in
+            //    the same window — looks like it's literally melting.
+            //
+            // The dynamic lifetime in UpdateEmissionForViewport is *randomised*
+            // per particle (MinMaxCurve, not constant) so different flakes die
+            // at different Y positions — some "land on rooftops" sooner, some
+            // fall further before melting. That sells the effect without per-
+            // tile collision queries.
+            var col = _ps.colorOverLifetime;
+            col.enabled = true;
+            var grad = new Gradient();
+            grad.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0.0f),
+                    new GradientColorKey(Color.white, 1.0f),
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1.00f, 0.00f),
+                    new GradientAlphaKey(1.00f, 0.75f),
+                    new GradientAlphaKey(0.00f, 1.00f),
+                });
+            col.color = new ParticleSystem.MinMaxGradient(grad);
+
+            var size = _ps.sizeOverLifetime;
+            size.enabled = true;
+            var sizeCurve = new AnimationCurve(
+                new Keyframe(0.00f, 1.00f),
+                new Keyframe(0.75f, 1.00f),
+                new Keyframe(1.00f, 0.30f));
+            size.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+
             var emit = _emission;
             emit.rateOverTime = 70f;
 
@@ -79,8 +117,16 @@ namespace Valkur.Gameplay.World.Weather
             shape.scale    = new Vector3((halfW + _viewportMargin) * 2f, 0.2f, 0.1f);
             shape.position = new Vector3(0f, halfH + _viewportMargin, 0f);
 
+            // Randomise per-particle lifetime in a ±35% band around the
+            // viewport-traversal time. Some flakes melt early (as if landing
+            // on rooftops), some fall the entire visible column. Combined
+            // with the alpha + size fade this makes snow feel volumetric
+            // rather than uniform.
             float travel = (halfH + _viewportMargin) * 2f;
-            _main.startLifetime = travel / AVG_FALL_SPEED;
+            float baseLifetime = travel / AVG_FALL_SPEED;
+            _main.startLifetime = new ParticleSystem.MinMaxCurve(
+                baseLifetime * 0.65f,
+                baseLifetime * 1.05f);
         }
 
         private static bool SortingLayerExists(string name)
