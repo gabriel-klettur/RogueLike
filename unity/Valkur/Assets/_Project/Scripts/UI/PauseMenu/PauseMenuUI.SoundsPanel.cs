@@ -54,11 +54,17 @@ namespace Valkur.UI.PauseMenu
             for (int i = 0; i < rowDefs.Length; i++)
             {
                 var def = rowDefs[i];
-                float cy = -58f - i * (rowH + gap) - rowH * 0.5f;
+                float cy  = -58f - i * (rowH + gap) - rowH * 0.5f;
+                int   cap = i;
 
+                // Pill: sole hover hit-target for the row. Bar / label /
+                // value opt out of raycast so the pill catches PointerEnter
+                // everywhere except the slider's hit band.
                 var pillGo = CreateUIObject($"SPill_{i}", panel.transform);
                 SetRowRect(pillGo, cy, rowH, 0f);
-                _soundPills[i] = pillGo.AddComponent<Image>(); _soundPills[i].color = Color.clear;
+                _soundPills[i] = pillGo.AddComponent<Image>();
+                _soundPills[i].color = Color.clear;
+                AttachSoundRowHoverSelect(pillGo, cap);
 
                 var barGo = CreateUIObject($"SBar_{i}", panel.transform);
                 var barR  = barGo.GetComponent<RectTransform>();
@@ -66,7 +72,9 @@ namespace Valkur.UI.PauseMenu
                 barR.pivot = new Vector2(0f, 0.5f);
                 barR.anchoredPosition = new Vector2(0f, cy);
                 barR.sizeDelta = new Vector2(4f, rowH - 4f);
-                _soundBars[i] = barGo.AddComponent<Image>(); _soundBars[i].color = Color.clear;
+                _soundBars[i] = barGo.AddComponent<Image>();
+                _soundBars[i].color = Color.clear;
+                _soundBars[i].raycastTarget = false;
 
                 var lblGo = CreateUIObject($"SLabel_{i}", panel.transform);
                 var lblR  = lblGo.GetComponent<RectTransform>();
@@ -77,6 +85,7 @@ namespace Valkur.UI.PauseMenu
                 var lblTMP = lblGo.AddComponent<TextMeshProUGUI>();
                 lblTMP.text = def.label; lblTMP.fontSize = 18f;
                 lblTMP.alignment = TextAlignmentOptions.Left; lblTMP.color = TextNormal;
+                lblTMP.raycastTarget = false;
                 _soundRowLabels[i] = lblTMP;
 
                 var valGo = CreateUIObject($"SVal_{i}", panel.transform);
@@ -88,19 +97,15 @@ namespace Valkur.UI.PauseMenu
                 var valTMP = valGo.AddComponent<TextMeshProUGUI>();
                 valTMP.fontSize = 18f; valTMP.alignment = TextAlignmentOptions.Center;
                 valTMP.color = AccentGold;
+                valTMP.raycastTarget = false;
 
-                int cap = i;
-                var slider = AddSoundSlider(panel.transform, $"SSlider_{i}", cy,
-                    new Vector2(0.44f, 0.84f), def.min, def.max, def.step, def.get(),
+                // Slider last in row sibling order so its full-row-height
+                // hit area sits on top of the pill, capturing every
+                // click / drag inside the cyan band.
+                var slider = AddSoundSlider(panel.transform, $"SSlider_{i}", cy, rowH,
+                    new Vector2(0.44f, 0.84f), def.min, def.max, def.get(),
                     v => OnSoundSliderChanged(cap, v));
-
-                var hitGo = CreateUIObject($"SHit_{i}", panel.transform);
-                SetRowRect(hitGo, cy, rowH, 0f);
-                var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
-                var trig  = hitGo.AddComponent<EventTrigger>();
-                var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                enter.callback.AddListener(_ => { _soundSel = cap; UpdateSoundsPanel(); });
-                trig.triggers.Add(enter);
+                AttachSoundRowHoverSelect(slider.gameObject, cap);
 
                 var sr = new SoundRow
                 {
@@ -122,31 +127,40 @@ namespace Valkur.UI.PauseMenu
         private static readonly Color SoundSliderFill   = new Color(0.30f, 0.78f, 0.86f, 1f);
         private static readonly Color SoundSliderHandle = new Color(0.78f, 0.78f, 0.78f, 1f);
 
-        private Slider AddSoundSlider(Transform parent, string name, float cy,
-            Vector2 anchorX, float min, float max, float step, float initial,
+        // Slim visible track (14 px) inside a full-row-height hit area so
+        // clicks anywhere in the cyan band reach the Slider component.
+        private Slider AddSoundSlider(Transform parent, string name, float cy, float rowH,
+            Vector2 anchorX, float min, float max, float initial,
             System.Action<float> onChanged)
         {
-            const float trackH = 12f;
+            const float trackH = 14f;
             const float thumb  = 18f;
 
-            var go = CreateUIObject(name, parent);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(anchorX.x, 1f);
-            rt.anchorMax = new Vector2(anchorX.y, 1f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, cy);
-            rt.sizeDelta = new Vector2(0f, trackH);
-
-            var slider = UISlider.Make(go.transform,
+            var slider = UISlider.MakeSlimTrack(parent, name,
                 min: min, max: max, initial: Mathf.Clamp(initial, min, max),
-                onValueChanged: onChanged, height: trackH, thumbSize: thumb,
+                onValueChanged: onChanged,
+                hitHeight: rowH, trackHeight: trackH, thumbSize: thumb,
                 trackColor: SoundSliderTrack, fillColor: SoundSliderFill, handleColor: SoundSliderHandle);
 
-            // Stretch slider to fill our anchored container (no LayoutGroup here).
-            var sRt = (RectTransform)slider.transform;
-            sRt.anchorMin = Vector2.zero; sRt.anchorMax = Vector2.one;
-            sRt.offsetMin = Vector2.zero; sRt.offsetMax = Vector2.zero;
+            var rt = (RectTransform)slider.transform;
+            rt.anchorMin = new Vector2(anchorX.x, 1f);
+            rt.anchorMax = new Vector2(anchorX.y, 1f);
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, cy);
+            rt.sizeDelta = new Vector2(0f, rowH);
             return slider;
+        }
+
+        // PointerEnter listener used by Sound Options rows; both the pill
+        // (under the slider) and the slider's hit area attach this so any
+        // hover inside the row selects it. EventTrigger.PointerEnter does
+        // not conflict with Slider's IPointerDownHandler / IDragHandler.
+        private void AttachSoundRowHoverSelect(GameObject target, int rowIndex)
+        {
+            var trig  = target.GetComponent<EventTrigger>() ?? target.AddComponent<EventTrigger>();
+            var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            entry.callback.AddListener(_ => { _soundSel = rowIndex; UpdateSoundsPanel(); });
+            trig.triggers.Add(entry);
         }
 
         private void OnSoundSliderChanged(int i, float v)

@@ -145,11 +145,18 @@ namespace Valkur.UI.MainMenu
             for (int i = 0; i < rowDefs.Length; i++)
             {
                 var def = rowDefs[i];
-                float cy = -58f - i * (rowH + gap) - rowH * 0.5f;
+                float cy  = -58f - i * (rowH + gap) - rowH * 0.5f;
+                int   cap = i;
 
+                // Pill: row background + sole hover hit-target. Bar / label /
+                // value sit on top of it but opt out of raycast so the pill
+                // catches PointerEnter for everything except the slider's
+                // hit band (which is handled by the Slider itself).
                 var pillGo = CreateUIObject($"OSPill_{i}", _optSoundsPanel.transform);
                 SetOptRowRect(pillGo, cy, rowH);
-                _optSoundPills[i] = pillGo.AddComponent<Image>(); _optSoundPills[i].color = Color.clear;
+                _optSoundPills[i] = pillGo.AddComponent<Image>();
+                _optSoundPills[i].color = Color.clear;
+                AttachOptRowHoverSelect(pillGo, cap);
 
                 var barGo = CreateUIObject($"OSBar_{i}", _optSoundsPanel.transform);
                 var barR  = barGo.GetComponent<RectTransform>();
@@ -157,7 +164,9 @@ namespace Valkur.UI.MainMenu
                 barR.pivot = new Vector2(0f, 0.5f);
                 barR.anchoredPosition = new Vector2(0f, cy);
                 barR.sizeDelta = new Vector2(4f, rowH - 4f);
-                _optSoundBars[i] = barGo.AddComponent<Image>(); _optSoundBars[i].color = Color.clear;
+                _optSoundBars[i] = barGo.AddComponent<Image>();
+                _optSoundBars[i].color = Color.clear;
+                _optSoundBars[i].raycastTarget = false;
 
                 var lblGo = CreateUIObject($"OSLabel_{i}", _optSoundsPanel.transform);
                 var lblR  = lblGo.GetComponent<RectTransform>();
@@ -168,6 +177,7 @@ namespace Valkur.UI.MainMenu
                 var lblTMP = lblGo.AddComponent<TextMeshProUGUI>();
                 lblTMP.text = def.label; lblTMP.fontSize = 18f;
                 lblTMP.alignment = TextAlignmentOptions.Left; lblTMP.color = TextNormal;
+                lblTMP.raycastTarget = false;
                 _optSoundLabels[i] = lblTMP;
 
                 var valGo = CreateUIObject($"OSVal_{i}", _optSoundsPanel.transform);
@@ -179,19 +189,16 @@ namespace Valkur.UI.MainMenu
                 var valTMP = valGo.AddComponent<TextMeshProUGUI>();
                 valTMP.fontSize = 18f; valTMP.alignment = TextAlignmentOptions.Center;
                 valTMP.color = AccentGold;
+                valTMP.raycastTarget = false;
 
-                int cap = i;
+                // Slider created last so it's the topmost sibling in the
+                // row — its host raycasts the entire row-height band so
+                // clicks/drags anywhere in the cyan band reach the Slider
+                // component, never the pill underneath.
                 var slider = AddOptSoundSlider(_optSoundsPanel.transform, $"OSSlider_{i}",
-                    cy, new Vector2(0.44f, 0.84f), def.min, def.max, def.step, def.get(),
+                    cy, rowH, new Vector2(0.44f, 0.84f), def.min, def.max, def.get(),
                     v => OnOptSoundSliderChanged(cap, v));
-
-                var hitGo = CreateUIObject($"OSHit_{i}", _optSoundsPanel.transform);
-                SetOptRowRect(hitGo, cy, rowH);
-                var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
-                var trig  = hitGo.AddComponent<EventTrigger>();
-                var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
-                enter.callback.AddListener(_ => { _optSoundSel = cap; UpdateOptSoundsVisuals(); });
-                trig.triggers.Add(enter);
+                AttachOptRowHoverSelect(slider.gameObject, cap);
 
                 var sr = new SoundRow
                 {

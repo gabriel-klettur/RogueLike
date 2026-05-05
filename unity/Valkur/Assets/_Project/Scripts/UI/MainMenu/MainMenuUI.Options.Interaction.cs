@@ -139,40 +139,47 @@ namespace Valkur.UI.MainMenu
         }
 
         // Cyan-track / grey-handle slider skin for Sound Options rows.
-        // Reuses Valkur.UIKit.UISlider so the drag math, focus + raycast
-        // wiring stay consistent with the rest of the UI kit; the kit's
-        // gold defaults are overridden via the optional colour params.
         private static readonly Color OptSliderTrack  = new Color(0.20f, 0.22f, 0.27f, 1f);
         private static readonly Color OptSliderFill   = new Color(0.30f, 0.78f, 0.86f, 1f);
         private static readonly Color OptSliderHandle = new Color(0.78f, 0.78f, 0.78f, 1f);
 
-        private Slider AddOptSoundSlider(Transform parent, string name, float cy,
-            Vector2 anchorX, float min, float max, float step, float initial,
+        // Visible track stays slim (14 px) but the click / drag band spans
+        // the full row so users don't need pixel-perfect aim. UIKit's
+        // MakeSlimTrack handles the geometry: transparent raycast Image on
+        // the host, slim visible track + fill as children, larger handle
+        // on its own area.
+        private Slider AddOptSoundSlider(Transform parent, string name, float cy, float rowH,
+            Vector2 anchorX, float min, float max, float initial,
             System.Action<float> onChanged)
         {
-            const float trackH  = 12f;
-            const float thumb   = 18f;
+            const float trackH = 14f;
+            const float thumb  = 18f;
 
-            var go = CreateUIObject(name, parent);
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(anchorX.x, 1f);
-            rt.anchorMax = new Vector2(anchorX.y, 1f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, cy);
-            rt.sizeDelta = new Vector2(0f, trackH);
-
-            var slider = UISlider.Make(go.transform,
+            var slider = UISlider.MakeSlimTrack(parent, name,
                 min: min, max: max, initial: Mathf.Clamp(initial, min, max),
-                onValueChanged: onChanged, height: trackH, thumbSize: thumb,
+                onValueChanged: onChanged,
+                hitHeight: rowH, trackHeight: trackH, thumbSize: thumb,
                 trackColor: OptSliderTrack, fillColor: OptSliderFill, handleColor: OptSliderHandle);
 
-            // UISlider.Make creates its child rect with a LayoutElement, but here
-            // it lives outside a layout group; stretch the slider to fill the
-            // anchored container so its hit area matches the visible track.
-            var sRt = (RectTransform)slider.transform;
-            sRt.anchorMin = Vector2.zero; sRt.anchorMax = Vector2.one;
-            sRt.offsetMin = Vector2.zero; sRt.offsetMax = Vector2.zero;
+            var rt = (RectTransform)slider.transform;
+            rt.anchorMin = new Vector2(anchorX.x, 1f);
+            rt.anchorMax = new Vector2(anchorX.y, 1f);
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, cy);
+            rt.sizeDelta = new Vector2(0f, rowH);
             return slider;
+        }
+
+        // Single-event PointerEnter listener used by Sound Options rows so
+        // hovering any non-slider area (pill background, slider's hit band)
+        // selects that row. EventTrigger.PointerEnter doesn't conflict with
+        // the Slider component's IPointerDownHandler / IDragHandler.
+        private void AttachOptRowHoverSelect(GameObject target, int rowIndex)
+        {
+            var trig  = target.GetComponent<EventTrigger>() ?? target.AddComponent<EventTrigger>();
+            var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            entry.callback.AddListener(_ => { _optSoundSel = rowIndex; UpdateOptSoundsVisuals(); });
+            trig.triggers.Add(entry);
         }
 
         private void AddOptTableCell(Transform parent, string text, TextAlignmentOptions align,
