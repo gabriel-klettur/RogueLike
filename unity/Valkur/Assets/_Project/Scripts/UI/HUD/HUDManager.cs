@@ -37,6 +37,11 @@ namespace Valkur.UI.HUD
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
 
+            // XP bar — bottom-center, mirrors Python ExperienceRenderSystem.
+            // Resolves the Experience component from the same player as Health.
+            var xp = playerHealth != null ? playerHealth.GetComponent<Experience>() : null;
+            CreateXpBarHUD(xp);
+
             UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
 
             // Wire mana to PlayerHUD

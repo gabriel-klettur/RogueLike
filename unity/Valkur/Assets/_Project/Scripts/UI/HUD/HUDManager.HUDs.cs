@@ -197,6 +197,8 @@ namespace Valkur.UI.HUD
         {
             if (_playerHudPanel != null)
                 _playerHudPanel.SetActive(!editorActive);
+            if (_xpBarPanel != null)
+                _xpBarPanel.SetActive(!editorActive);
         }
     }
 }
