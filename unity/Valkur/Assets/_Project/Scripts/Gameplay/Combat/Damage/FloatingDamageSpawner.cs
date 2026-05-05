@@ -13,7 +13,13 @@ namespace Valkur.Gameplay.Combat
         [Header("Settings")]
         [SerializeField] private Color damageColor = new Color(1f, 0.3f, 0.3f, 1f);
         [SerializeField] private Color healColor = new Color(0.3f, 1f, 0.3f, 1f);
+        [SerializeField] private Color xpColor   = new Color(0.4f, 0.95f, 1f, 1f);
         [SerializeField] private Vector3 spawnOffset = new Vector3(0f, 0.8f, 0f);
+
+        /// <summary>Counts numbers spawned this lifetime — test seam.</summary>
+        public int SpawnedCount { get; private set; }
+        /// <summary>Last text passed to a floating number — test seam.</summary>
+        public string LastSpawnedText { get; private set; }
 
         private Health _health;
 
@@ -50,7 +56,22 @@ namespace Valkur.Gameplay.Combat
             SpawnNumber(amount, healColor);
         }
 
+        /// <summary>
+        /// Floating "+N XP" feedback above the entity. Used by
+        /// <see cref="XpFeedbackSystem"/> when XP is gained.
+        /// </summary>
+        public void ShowXp(int amount)
+        {
+            if (amount == 0) return;
+            SpawnText($"+{amount} XP", xpColor);
+        }
+
         private void SpawnNumber(int amount, Color color)
+        {
+            SpawnText(amount.ToString(), color, amount);
+        }
+
+        private void SpawnText(string text, Color color, int? numericFallback = null)
         {
             EnsurePool();
             var go = _pool.Get(transform.position + spawnOffset, Quaternion.identity);
@@ -61,7 +82,14 @@ namespace Valkur.Gameplay.Combat
 
             dmgNum.OnFinished -= ReturnToPool;
             dmgNum.OnFinished += ReturnToPool;
-            dmgNum.Initialize(amount, color);
+
+            if (numericFallback.HasValue)
+                dmgNum.Initialize(numericFallback.Value, color);
+            else
+                dmgNum.Initialize(text, color);
+
+            SpawnedCount++;
+            LastSpawnedText = text;
         }
 
         private static void ReturnToPool(FloatingDamageNumber num)

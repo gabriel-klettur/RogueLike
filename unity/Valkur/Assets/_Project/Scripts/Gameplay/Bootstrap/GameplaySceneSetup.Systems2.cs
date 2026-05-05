@@ -606,6 +606,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] LevelUpSkillPointSystem created.");
         }
 
+        // XpFeedbackSystem closes the visual juice loop: floating "+N XP"
+        // above the player and "LEVEL UP!" toast on level-up. Audio is
+        // already covered by CombatAudioSystem.OnLevelUp, so this only
+        // adds the visual layer. Idempotent.
+        private void EnsureXpFeedbackSystem()
+        {
+            if (FindObjectOfType<XpFeedbackSystem>() != null) return;
+            var go = new GameObject("XpFeedbackSystem");
+            go.AddComponent<XpFeedbackSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] XpFeedbackSystem created.");
+        }
+
         // Boots the meta-progression telemetry layer: creates a
         // JsonProfileDb at persistentDataPath/profile.json, registers
         // it in ServiceLocator, hydrates from disk, and starts the

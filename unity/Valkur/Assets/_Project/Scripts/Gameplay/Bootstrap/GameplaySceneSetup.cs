@@ -215,6 +215,9 @@ namespace Valkur.Gameplay
             EnsureLevelUpSkillPointSystem();
             Report("Initializing skill points per level"); yield return null;
 
+            EnsureXpFeedbackSystem();
+            Report("Initializing XP feedback"); yield return null;
+
             EnsureProfileTelemetrySystem();
             Report("Initializing progression telemetry"); yield return null;
 

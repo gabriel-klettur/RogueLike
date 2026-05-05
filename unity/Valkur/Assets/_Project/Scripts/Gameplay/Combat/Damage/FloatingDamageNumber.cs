@@ -36,6 +36,20 @@ namespace Valkur.Gameplay.Combat
 
         public void Initialize(int amount, Color color)
         {
+            InitializeInternal(amount.ToString(), color);
+        }
+
+        /// <summary>
+        /// Custom-string variant (e.g. "+15 XP") used by non-damage feedback paths.
+        /// Same animation as the integer variant — only the rendered text differs.
+        /// </summary>
+        public void Initialize(string text, Color color)
+        {
+            InitializeInternal(text, color);
+        }
+
+        private void InitializeInternal(string text, Color color)
+        {
             if (_tmp == null)
             {
                 _tmp = GetComponent<TextMeshPro>();
@@ -43,7 +57,7 @@ namespace Valkur.Gameplay.Combat
                     _tmp = gameObject.AddComponent<TextMeshPro>();
             }
 
-            _tmp.text = amount.ToString();
+            _tmp.text = text;
             _tmp.fontSize = 4f;
             _tmp.alignment = TextAlignmentOptions.Center;
             _tmp.sortingOrder = 100;
