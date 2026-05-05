@@ -99,19 +99,37 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Estimate XP based on monster stats (HP * power factor). 
-        /// Python uses item-based XP orbs; Unity uses stat-based estimate.
+        /// XP value granted by killing <paramref name="entity"/>. Reads the
+        /// explicit <see cref="MonsterDefinition.xpReward"/> when set,
+        /// otherwise falls back to the legacy heuristic.
         /// </summary>
         private int EstimateXpValue(GameObject entity)
         {
             var brain = entity.GetComponent<FSM.FSMMonsterBrain>();
-            if (brain != null && brain.Definition != null)
+            var def   = brain != null ? brain.Definition : null;
+            int maxHpFallback = 0;
+            if (def == null)
             {
-                var stats = brain.Definition.stats;
-                return Mathf.Max(1, stats.hp / 5 + stats.power);
+                var health = entity.GetComponent<Health>();
+                if (health != null) maxHpFallback = health.MaxHp;
             }
-            var health = entity.GetComponent<Health>();
-            if (health != null) return Mathf.Max(1, health.MaxHp / 5);
+            return ComputeXpReward(def, maxHpFallback);
+        }
+
+        /// <summary>
+        /// Pure computation seam — exposed for tests and for any other system
+        /// that wants to know the canonical XP reward of a monster definition
+        /// without spawning the entity. Order of precedence:
+        ///  1. Explicit <c>def.xpReward</c> when &gt; 0 (designer override).
+        ///  2. Legacy heuristic <c>hp/5 + power</c> when a definition exists.
+        ///  3. <c>maxHpFallback/5</c> when only a Health component is known.
+        ///  4. Constant default of 5 (last resort, mirrors prior behaviour).
+        /// </summary>
+        public static int ComputeXpReward(Valkur.Data.MonsterDefinition def, int maxHpFallback)
+        {
+            if (def != null && def.xpReward > 0) return def.xpReward;
+            if (def != null) return Mathf.Max(1, def.stats.hp / 5 + def.stats.power);
+            if (maxHpFallback > 0) return Mathf.Max(1, maxHpFallback / 5);
             return 5;
         }
     }
