@@ -248,7 +248,7 @@ namespace Valkur.Gameplay
             var inv = player.GetComponent<Inventory.Inventory>();
             if (inv == null) { Log("Player has no Inventory."); return; }
 
-            if (inv.Slots.Count == 0) { Log("Inventory is empty."); return; }
+            if (inv.UsedSlots == 0) { Log("Inventory is empty."); return; }
 
             Log($"Inventory ({inv.UsedSlots}/{inv.Capacity} slots):");
             foreach (var slot in inv.Slots)

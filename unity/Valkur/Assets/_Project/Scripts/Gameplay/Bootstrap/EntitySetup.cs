@@ -49,12 +49,17 @@ namespace Valkur.Gameplay
             InitSpiritDeathFlow(go);
             ApplyPlayerClassInitialMarker(go, def.playerKey);
 
+            // Register the player BEFORE building HUDs so any UI singleton's
+            // Start() (e.g. InventoryUI) sees a populated EntityRegistry.Player
+            // on its first ResolvePlayerRefs call. Otherwise the UI starts in
+            // an unwired state and only catches up once the user opens it.
+            EntityRegistry.RegisterPlayer(go);
+
             EnsureInventoryUI();
             EnsureSpellBarHUD();
             EnsureHUDIconBar();
             EnsureCombatRangeVisualizer();
 
-            EntityRegistry.RegisterPlayer(go);
             Debug.Log($"[EntitySetup] Player configured: key={def.playerKey}, HP={def.maxStrength}, MP={def.maxIntelligence}, ATK={def.basicAttack}, SPD={def.basicSpeed}");
         }
 

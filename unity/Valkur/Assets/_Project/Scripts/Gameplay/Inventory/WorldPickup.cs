@@ -258,22 +258,35 @@ namespace Valkur.Gameplay.Inventory
         /// Attempt to pick up this item into the given entity's inventory.
         /// Returns true if successful.
         /// </summary>
-        public bool TryPickup(GameObject collector)
+        public bool TryPickup(GameObject collector) => TryPickupIntoSlot(collector, -1);
+
+        /// <summary>
+        /// Pickup variant that first tries to deposit at an explicit visual
+        /// slot index (e.g. the cell the player is hovering with the cursor).
+        /// Any leftover from an unhandled / partial slot deposit falls through
+        /// to the standard auto-pick path so capacity still takes precedence
+        /// over user intent. Pass <c>-1</c> for slot to skip the explicit step.
+        /// </summary>
+        public bool TryPickupIntoSlot(GameObject collector, int slotIndex)
         {
             if (_pickedUp || itemDefinition == null) return false;
-
             if (!collector.CompareTag("Player")) return false;
 
             var inventory = collector.GetComponent<Inventory>();
             if (inventory == null) return false;
 
-            int overflow = inventory.AddItem(itemDefinition, quantity);
-            if (overflow >= quantity) return false;
+            int placedAtSlot = (slotIndex >= 0)
+                ? inventory.TryDepositInIndex(slotIndex, itemDefinition, quantity)
+                : 0;
 
-            int picked = quantity - overflow;
-            quantity = overflow;
+            int afterSlot = quantity - placedAtSlot;
+            int leftover  = afterSlot > 0 ? inventory.AddItem(itemDefinition, afterSlot) : 0;
+            int picked    = quantity - leftover;
+            if (picked <= 0) return false;
 
-            Debug.Log($"[WorldPickup] {collector.name} picked up {picked}x {itemDefinition.displayName}");
+            quantity = leftover;
+
+            Debug.Log($"[WorldPickup] {collector.name} picked up {picked}x {itemDefinition.displayName} (slot={slotIndex})");
             GameEvents.FireItemPickedUp(collector, itemDefinition.displayName, picked);
 
             if (quantity <= 0)

@@ -16,7 +16,7 @@ namespace Valkur.Gameplay
         private static void InitPlayerStats(GameObject go, PlayerDefinition def)
         {
             var inventory = go.GetComponent<Inventory.Inventory>();
-            if (inventory != null) inventory.Initialize(20);
+            if (inventory != null) inventory.Initialize(Inventory.Inventory.DefaultBagCapacity);
 
             var mana = go.GetComponent<Mana>();
             if (mana == null) mana = go.AddComponent<Mana>();

@@ -53,13 +53,10 @@ namespace Valkur.Gameplay.Inventory
         // ── Cached UI refs ──
         private GameObject[]      _slotObjects;
         private Image[]           _slotBackgrounds;
+        private Outline[]         _slotOutlines;
         private Image[]           _slotIcons;
         private TextMeshProUGUI[] _slotQuantities;
-        private TextMeshProUGUI   _titleText;
         private TextMeshProUGUI   _tooltipText;
-
-        // Equipment view scratch buffer
-        private readonly ItemDefinition[] _equipResolved = new ItemDefinition[EquipmentView.SLOT_COUNT];
 
         public bool IsVisible => _visible;
 
@@ -116,6 +113,11 @@ namespace Valkur.Gameplay.Inventory
             {
                 ResolvePlayerRefs();
                 RefreshAll();
+                int rendered = 0;
+                if (_playerInventory != null)
+                    for (int i = 0; i < _playerInventory.Slots.Count; i++)
+                        if (!_playerInventory.Slots[i].IsEmpty) rendered++;
+                Debug.Log($"[InventoryUI] SetVisible(true): refreshed UI, rendered {rendered} bag item(s)");
             }
         }
 
@@ -133,7 +135,11 @@ namespace Valkur.Gameplay.Inventory
         private void ResolvePlayerRefs()
         {
             var player = EntityRegistry.Player;
-            if (player == null) return;
+            if (player == null)
+            {
+                Debug.Log($"[InventoryUI] ResolvePlayerRefs: EntityRegistry.Player is NULL — skipping wire-up.");
+                return;
+            }
             if (player == _playerGo) return; // already wired
 
             UnsubscribePlayer();
@@ -145,6 +151,12 @@ namespace Valkur.Gameplay.Inventory
             _playerConsumer  = player.GetComponent<ItemConsumer>();
             _playerSprite    = player.GetComponentInChildren<SpriteRenderer>();
             _playerDef       = ResolvePlayerDefinition(PlayerSelectionState.SelectedPlayerKey);
+
+            int liveCount = 0;
+            if (_playerInventory != null)
+                for (int i = 0; i < _playerInventory.Slots.Count; i++)
+                    if (!_playerInventory.Slots[i].IsEmpty) liveCount++;
+            Debug.Log($"[InventoryUI] ResolvePlayerRefs wired player={player.name} inventoryFound={_playerInventory != null} liveBagItems={liveCount}");
 
             if (_playerInventory != null) _playerInventory.OnInventoryChanged += OnInventoryChangedExternal;
             if (_playerXp != null)

@@ -27,16 +27,22 @@ namespace Valkur.Gameplay.Inventory
         private const float PANEL_PAD_X  = 12f;
         private const float PANEL_PAD_Y  = 10f;
         private const float HDR_BAR_H    = 48f;                          // taller so 48-px portrait fits
-        private const float CHAR_BLOCK_H = SLOT_PX * 3 + SLOT_GAP * 2;   // matches 3×3 equipment grid
-        private const float TABS_H       = 28f;
-        private const float TITLE_H      = 22f;
+        private const float EQUIP_BLOCK_H = SLOT_PX * 3 + SLOT_GAP * 2;  // 3×3 grid for equipped items
         private const float TOOLTIP_H    = 38f;
         private const float FOOTER_H     = 32f;
         private const float PANEL_TOP_MARGIN   = 16f;
         private const float PANEL_RIGHT_MARGIN = 16f;
 
-        private static readonly string[] TAB_LABELS =
-            { "Equipo", "Materiales", "Consumibles", "Otros", "Quest" };
+        // Labels for the 9 equipment slots, row-major. Layout follows a
+        // humanoid paper-doll: hands on the sides, helmet centered up top,
+        // body in the middle, legs/jewelry at the bottom. Slots with no
+        // backing item render the label as placeholder text instead.
+        private static readonly string[] EQUIP_SLOT_LABELS =
+        {
+            "L. Hand", "Helmet", "R. Hand",
+            "Arms",    "Chest",  "Gloves",
+            "Pants",   "Boots",  "Jewelry",
+        };
 
         private static readonly string[] CURRENCY_ITEM_IDS =
             { "gold", "coins", "coin", "gold_coin" };
@@ -45,13 +51,12 @@ namespace Valkur.Gameplay.Inventory
         private TextMeshProUGUI _hdrNameText;
         private TextMeshProUGUI _hdrLevelText;
         private Image           _portraitImg;
-        private Image[]         _equipBgs;     // 9 slots (3×3)
-        private Image[]         _equipIcons;
-        private Image           _characterPreviewImg;
-        private Image[]         _tabBgs;
-        private TextMeshProUGUI[] _tabTexts;
         private TextMeshProUGUI _goldText;
-        private int             _activeTabIndex = 0;
+        private GameObject[]       _equipObjects;        // 9 cells (3×3 paper doll)
+        private Image[]            _equipIcons;
+        private TextMeshProUGUI[]  _equipQtyTexts;
+        private TextMeshProUGUI[]  _equipLabels;         // placeholder labels shown when slot empty
+        private Outline[]          _equipOutlines;       // recolored yellow when targeted by a deposit drag
 
         // Drag state
         private GameObject _dragGhost;
@@ -85,10 +90,7 @@ namespace Valkur.Gameplay.Inventory
             float panelHeight = PANEL_HDR_H
                               + PANEL_PAD_Y
                               + HDR_BAR_H + 6f
-                              + CHAR_BLOCK_H + 8f
-                              + TITLE_H + 4f
-                              + TABS_H + 6f
-                              + 1f + 6f
+                              + EQUIP_BLOCK_H + 8f
                               + gridH + 6f
                               + TOOLTIP_H + 6f
                               + FOOTER_H
@@ -162,28 +164,11 @@ namespace Valkur.Gameplay.Inventory
 
             float y = 0f;
             BuildHeaderRow(contentGo.transform, ref y);                 y += 6f;
-            BuildEquipmentAndCharacter(contentGo.transform, ref y);     y += 8f;
-
-            // "Inventory" title
-            var titleGo = CreateUIObject("InventoryTitle", contentGo.transform);
-            PlaceTopAnchored(titleGo, y, 0f, TITLE_H);
-            _titleText           = titleGo.AddComponent<TextMeshProUGUI>();
-            _titleText.text      = "Inventory";
-            _titleText.fontSize  = 14f;
-            _titleText.fontStyle = FontStyles.Bold;
-            _titleText.alignment = TextAlignmentOptions.Center;
-            _titleText.color     = TileEditorTheme.HeaderTitle;
-            y += TITLE_H + 4f;
-
-            BuildTabsRow(contentGo.transform, ref y); y += 6f;
-
-            var tabSepGo = CreateUIObject("TabsSep", contentGo.transform);
-            PlaceTopAnchored(tabSepGo, y, 0f, 1f);
-            tabSepGo.AddComponent<Image>().color = TileEditorTheme.Separator;
-            y += 1f + 6f;
+            BuildEquipmentGrid(contentGo.transform, ref y);             y += 8f;
 
             _slotObjects     = new GameObject[totalSlots];
             _slotBackgrounds = new Image[totalSlots];
+            _slotOutlines    = new Outline[totalSlots];
             _slotIcons       = new Image[totalSlots];
             _slotQuantities  = new TextMeshProUGUI[totalSlots];
             BuildMainGrid(contentGo.transform, ref y, totalSlots); y += 6f;
@@ -192,7 +177,7 @@ namespace Valkur.Gameplay.Inventory
             var tooltipGo = CreateUIObject("Tooltip", contentGo.transform);
             PlaceTopAnchored(tooltipGo, y, 0f, TOOLTIP_H);
             _tooltipText           = tooltipGo.AddComponent<TextMeshProUGUI>();
-            _tooltipText.text      = "Tab/I cerrar  |  Q soltar  |  doble-click usar  |  arrastrar mover";
+            _tooltipText.text      = "Tab/I close  |  Q drop  |  double-click use  |  drag to move";
             _tooltipText.fontSize  = 11f;
             _tooltipText.alignment = TextAlignmentOptions.Center;
             _tooltipText.color     = TEXT_MUTED;
@@ -200,8 +185,6 @@ namespace Valkur.Gameplay.Inventory
             y += TOOLTIP_H + 6f;
 
             BuildGoldFooter(contentGo.transform, y);
-
-            UpdateTabHighlights();
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -344,19 +327,31 @@ namespace Valkur.Gameplay.Inventory
             y += HDR_BAR_H;
         }
 
-        private void BuildEquipmentAndCharacter(Transform parent, ref float y)
+        private void BuildEquipmentGrid(Transform parent, ref float y)
         {
             const int EQ_COLS = 3;
-            const int EQ_ROWS = 3;
-            float eqW = EQ_COLS * SLOT_PX + (EQ_COLS - 1) * SLOT_GAP;
-            float eqH = EQ_ROWS * SLOT_PX + (EQ_ROWS - 1) * SLOT_GAP;
-            float blockH = Mathf.Max(eqH, CHAR_BLOCK_H);
+            float blockW = EQ_COLS * SLOT_PX + (EQ_COLS - 1) * SLOT_GAP;
 
-            var rowGo = CreateUIObject("EquipCharRow", parent);
-            PlaceTopAnchored(rowGo, y, 0f, blockH);
+            // Centered horizontally inside the panel content area.
+            var rowGo = CreateUIObject("EquipGrid", parent);
+            var rrt = rowGo.GetComponent<RectTransform>();
+            rrt.anchorMin = new Vector2(0.5f, 1f);
+            rrt.anchorMax = new Vector2(0.5f, 1f);
+            rrt.pivot     = new Vector2(0.5f, 1f);
+            rrt.anchoredPosition = new Vector2(0f, -y);
+            rrt.sizeDelta = new Vector2(blockW, EQUIP_BLOCK_H);
 
-            _equipBgs   = new Image[EquipmentView.SLOT_COUNT];
-            _equipIcons = new Image[EquipmentView.SLOT_COUNT];
+            _equipObjects  = new GameObject[EquipmentView.SLOT_COUNT];
+            _equipIcons    = new Image[EquipmentView.SLOT_COUNT];
+            _equipQtyTexts = new TextMeshProUGUI[EquipmentView.SLOT_COUNT];
+            _equipLabels   = new TextMeshProUGUI[EquipmentView.SLOT_COUNT];
+            _equipOutlines = new Outline[EquipmentView.SLOT_COUNT];
+
+            // Equipment slots use the unified index space so a single drag
+            // handler can route bag↔equipment swaps without an extra "kind"
+            // parameter. Bag = [0, DefaultBagCapacity), equipment = above.
+            int equipBase = Inventory.DefaultBagCapacity;
+
             for (int i = 0; i < EquipmentView.SLOT_COUNT; i++)
             {
                 int r = i / EQ_COLS;
@@ -372,93 +367,68 @@ namespace Valkur.Gameplay.Inventory
                 srt.anchoredPosition = new Vector2(sx, sy);
                 srt.sizeDelta = new Vector2(SLOT_PX, SLOT_PX);
 
-                var bg = slotGo.AddComponent<Image>();
-                bg.color = SLOT_BG;
+                slotGo.AddComponent<Image>().color = SLOT_BG;
                 var ol = slotGo.AddComponent<Outline>();
                 ol.effectColor    = TileEditorTheme.Border;
                 ol.effectDistance = new Vector2(1f, 1f);
-                _equipBgs[i] = bg;
+                _equipOutlines[i] = ol;
 
+                // Click / drag handler — bound to the unified index so the
+                // EndSlotDrag router knows this is an equipment cell.
+                var handler = slotGo.AddComponent<InventorySlotDragHandler>();
+                handler.Bind(this, equipBase + i);
+
+                // Placeholder label (shown only when the slot is empty).
+                var labelGo = CreateUIObject("Label", slotGo.transform);
+                var lrt = labelGo.GetComponent<RectTransform>();
+                lrt.anchorMin = Vector2.zero;
+                lrt.anchorMax = Vector2.one;
+                lrt.offsetMin = new Vector2(2f, 2f);
+                lrt.offsetMax = new Vector2(-2f, -2f);
+                var lbl = labelGo.AddComponent<TextMeshProUGUI>();
+                lbl.text          = EQUIP_SLOT_LABELS[i];
+                lbl.fontSize      = 9f;
+                lbl.alignment     = TextAlignmentOptions.Center;
+                lbl.color         = TEXT_MUTED;
+                lbl.raycastTarget = false;
+                lbl.enableWordWrapping = true;
+                _equipLabels[i] = lbl;
+
+                // Item icon (shown when this equipment slot holds an item).
                 var iconGo = CreateUIObject("Icon", slotGo.transform);
                 var irt = iconGo.GetComponent<RectTransform>();
                 irt.anchorMin = Vector2.zero;
                 irt.anchorMax = Vector2.one;
                 irt.offsetMin = new Vector2(4f, 4f);
                 irt.offsetMax = new Vector2(-4f, -4f);
-                var img = iconGo.AddComponent<Image>();
-                img.preserveAspect = true;
-                img.raycastTarget  = false;
-                img.enabled        = false;
-                _equipIcons[i] = img;
+                var iconImg = iconGo.AddComponent<Image>();
+                iconImg.preserveAspect = true;
+                iconImg.raycastTarget  = false;
+                iconImg.enabled        = false;
+                _equipIcons[i] = iconImg;
+
+                // Stack quantity text (only relevant if a stackable item ends
+                // up equipped, e.g. a stack of throwing knives in the off-hand).
+                var qtyGo = CreateUIObject("Qty", slotGo.transform);
+                var qrt = qtyGo.GetComponent<RectTransform>();
+                qrt.anchorMin = new Vector2(1f, 0f);
+                qrt.anchorMax = new Vector2(1f, 0f);
+                qrt.pivot     = new Vector2(1f, 0f);
+                qrt.anchoredPosition = new Vector2(-3f, 2f);
+                qrt.sizeDelta = new Vector2(40f, 16f);
+                var qtyText = qtyGo.AddComponent<TextMeshProUGUI>();
+                qtyText.text          = "";
+                qtyText.fontSize      = 11f;
+                qtyText.fontStyle     = FontStyles.Bold;
+                qtyText.alignment     = TextAlignmentOptions.BottomRight;
+                qtyText.color         = ACCENT;
+                qtyText.raycastTarget = false;
+                _equipQtyTexts[i] = qtyText;
+
+                _equipObjects[i] = slotGo;
             }
 
-            // Character preview
-            var charGo = CreateUIObject("CharacterPreview", rowGo.transform);
-            var crt = charGo.GetComponent<RectTransform>();
-            crt.anchorMin = new Vector2(0f, 0f);
-            crt.anchorMax = new Vector2(1f, 1f);
-            crt.pivot     = new Vector2(0f, 0.5f);
-            crt.offsetMin = new Vector2(eqW + 12f, 0f);
-            crt.offsetMax = new Vector2(0f, 0f);
-            charGo.AddComponent<Image>().color = BG_SURFACE;
-            var charOl = charGo.AddComponent<Outline>();
-            charOl.effectColor    = TileEditorTheme.Border;
-            charOl.effectDistance = new Vector2(1f, 1f);
-
-            var bodyGo = CreateUIObject("Body", charGo.transform);
-            var brt = bodyGo.GetComponent<RectTransform>();
-            brt.anchorMin = Vector2.zero;
-            brt.anchorMax = Vector2.one;
-            brt.offsetMin = new Vector2(6f, 6f);
-            brt.offsetMax = new Vector2(-6f, -6f);
-            _characterPreviewImg = bodyGo.AddComponent<Image>();
-            _characterPreviewImg.preserveAspect = true;
-            _characterPreviewImg.raycastTarget  = false;
-            _characterPreviewImg.enabled        = false;
-
-            y += blockH;
-        }
-
-        private void BuildTabsRow(Transform parent, ref float y)
-        {
-            var rowGo = CreateUIObject("TabsRow", parent);
-            PlaceTopAnchored(rowGo, y, 0f, TABS_H);
-
-            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
-            hlg.spacing                = 4f;
-            hlg.childForceExpandWidth  = true;
-            hlg.childForceExpandHeight = true;
-            hlg.childControlWidth      = true;
-            hlg.childControlHeight     = true;
-
-            int n = TAB_LABELS.Length;
-            _tabBgs   = new Image[n];
-            _tabTexts = new TextMeshProUGUI[n];
-
-            for (int i = 0; i < n; i++)
-            {
-                int idx = i;
-                var btnGo = CreateUIObject($"Tab_{TAB_LABELS[i]}", rowGo.transform);
-
-                var img = btnGo.AddComponent<Image>();
-                img.color = BTN_NORMAL;
-                _tabBgs[i] = img;
-
-                var btn = btnGo.AddComponent<Button>();
-                var c = btn.colors;
-                c.normalColor      = BTN_NORMAL;
-                c.highlightedColor = BTN_HOVER;
-                c.pressedColor     = BTN_ACTIVE;
-                c.selectedColor    = BTN_NORMAL;
-                btn.colors = c;
-                btn.targetGraphic = img;
-                btn.onClick.AddListener(() => SetActiveTab(idx));
-
-                _tabTexts[i] = AddCenteredText(btnGo.transform, TAB_LABELS[i],
-                    11f, FontStyles.Bold, TEXT_SECONDARY);
-            }
-
-            y += TABS_H;
+            y += EQUIP_BLOCK_H;
         }
 
         private void BuildMainGrid(Transform parent, ref float y, int totalSlots)
@@ -527,6 +497,7 @@ namespace Valkur.Gameplay.Inventory
 
                 _slotObjects[i]     = slotGo;
                 _slotBackgrounds[i] = bg;
+                _slotOutlines[i]    = ol;
                 _slotIcons[i]       = iconImg;
                 _slotQuantities[i]  = qtyText;
             }
@@ -598,29 +569,6 @@ namespace Valkur.Gameplay.Inventory
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        //  Tab handling
-        // ─────────────────────────────────────────────────────────────────────
-
-        private void SetActiveTab(int index)
-        {
-            if (_tabBgs == null || index < 0 || index >= _tabBgs.Length) return;
-            _activeTabIndex = index;
-            UpdateTabHighlights();
-            RefreshSlots();
-        }
-
-        private void UpdateTabHighlights()
-        {
-            if (_tabBgs == null) return;
-            for (int i = 0; i < _tabBgs.Length; i++)
-            {
-                bool active = i == _activeTabIndex;
-                _tabBgs[i].color   = active ? ACCENT_BG : BTN_NORMAL;
-                _tabTexts[i].color = active ? ACCENT    : TEXT_SECONDARY;
-            }
-        }
-
-        // ─────────────────────────────────────────────────────────────────────
         //  Refresh
         // ─────────────────────────────────────────────────────────────────────
 
@@ -634,54 +582,48 @@ namespace Valkur.Gameplay.Inventory
             UpdateTooltip();
         }
 
+        // Reads directly from the player's equipment storage (no auto-mirror
+        // from the bag). Empty cells keep their placeholder label visible so
+        // the user can see what each slot is for.
+        private void UpdateEquipmentView()
+        {
+            if (_equipIcons == null) return;
+
+            var slots = _playerInventory != null ? _playerInventory.EquipmentSlots : null;
+            for (int i = 0; i < EquipmentView.SLOT_COUNT && i < _equipIcons.Length; i++)
+            {
+                var slot = (slots != null && i < slots.Count) ? slots[i] : default;
+                bool hasItem = !slot.IsEmpty;
+                _equipIcons[i].enabled  = hasItem;
+                _equipIcons[i].sprite   = hasItem ? (slot.Item.icon ?? slot.Item.iconSmall) : null;
+                if (_equipQtyTexts[i] != null)
+                    _equipQtyTexts[i].text = (hasItem && slot.Quantity > 1) ? slot.Quantity.ToString() : "";
+                if (_equipLabels[i] != null)
+                    _equipLabels[i].enabled = !hasItem;
+            }
+        }
+
         private void RefreshSlots()
         {
             if (_slotObjects == null) return;
 
             int slotCount = _slotObjects.Length;
-            int playerSlotCount = (_playerInventory != null) ? _playerInventory.Slots.Count : 0;
             var slots = _playerInventory != null ? _playerInventory.Slots : null;
+            int playerSlotCount = slots != null ? slots.Count : 0;
 
             for (int i = 0; i < slotCount; i++)
             {
-                bool show = false;
                 if (slots != null && i < playerSlotCount && !slots[i].IsEmpty)
                 {
                     var slot = slots[i];
-                    if (slot.Item.MatchesTab(_activeTabIndex))
-                    {
-                        _slotIcons[i].enabled  = true;
-                        _slotIcons[i].sprite   = slot.Item.icon ?? slot.Item.iconSmall;
-                        _slotQuantities[i].text = slot.Quantity > 1 ? slot.Quantity.ToString() : "";
-                        show = true;
-                    }
-                }
-                if (!show)
-                {
-                    _slotIcons[i].enabled  = false;
-                    _slotQuantities[i].text = "";
-                }
-            }
-
-            if (_titleText != null && _playerInventory != null)
-                _titleText.text = $"Inventory ({_playerInventory.UsedSlots}/{_playerInventory.Capacity})";
-        }
-
-        private void UpdateEquipmentView()
-        {
-            EquipmentView.Resolve(_playerInventory, _equipResolved);
-            for (int i = 0; i < EquipmentView.SLOT_COUNT && i < _equipIcons.Length; i++)
-            {
-                var item = _equipResolved[i];
-                if (item != null)
-                {
-                    _equipIcons[i].enabled = true;
-                    _equipIcons[i].sprite  = item.icon ?? item.iconSmall;
+                    _slotIcons[i].enabled    = true;
+                    _slotIcons[i].sprite     = slot.Item.icon ?? slot.Item.iconSmall;
+                    _slotQuantities[i].text  = slot.Quantity > 1 ? slot.Quantity.ToString() : "";
                 }
                 else
                 {
-                    _equipIcons[i].enabled = false;
-                    _equipIcons[i].sprite  = null;
+                    _slotIcons[i].enabled   = false;
+                    _slotQuantities[i].text = "";
                 }
             }
         }
@@ -713,11 +655,6 @@ namespace Valkur.Gameplay.Inventory
             {
                 _portraitImg.sprite  = sp;
                 _portraitImg.enabled = sp != null;
-            }
-            if (_characterPreviewImg != null)
-            {
-                _characterPreviewImg.sprite  = sp;
-                _characterPreviewImg.enabled = sp != null;
             }
         }
 
@@ -775,7 +712,7 @@ namespace Valkur.Gameplay.Inventory
                 }
             }
 
-            _tooltipText.text  = "Tab/I cerrar  |  Q soltar  |  doble-click usar  |  arrastrar mover";
+            _tooltipText.text  = "Tab/I close  |  Q drop  |  double-click use  |  drag to move";
             _tooltipText.color = TEXT_MUTED;
         }
 
@@ -807,8 +744,7 @@ namespace Valkur.Gameplay.Inventory
         public void BeginSlotDrag(int srcIndex, PointerEventData ev)
         {
             if (_playerInventory == null) return;
-            if (srcIndex < 0 || srcIndex >= _playerInventory.Slots.Count) return;
-            var src = _playerInventory.Slots[srcIndex];
+            var src = _playerInventory.GetSlotByIndex(srcIndex);
             if (src.IsEmpty) return;
 
             _dragSourceIndex = srcIndex;
@@ -822,39 +758,67 @@ namespace Valkur.Gameplay.Inventory
             _dragGhostRt.position = ev.position;
         }
 
+        // Drag end-routing across the unified slot space:
+        //   • src ↔ dst within the bag           → existing merge / swap.
+        //   • bag ↔ equipment, or eq ↔ eq        → MoveSlotByIndex (swap or
+        //     stack-merge depending on item compatibility).
+        //   • dst outside any slot but inside    → no-op (cancels the drag).
+        //     the panel
+        //   • dst outside the panel altogether   → world drop at cursor.
         public void EndSlotDrag(int srcIndex, PointerEventData ev)
         {
             DestroyDragGhost();
             if (_dragSourceIndex < 0) return;
             int src = _dragSourceIndex;
             _dragSourceIndex = -1;
+            if (_playerInventory == null) return;
 
-            // 1) Dropped on another slot inside the panel?
             int dst = HitTestSlot(ev);
             if (dst >= 0 && dst != src)
             {
-                if (!_playerInventory.TryMergeStacks(src, dst))
+                if (_playerInventory.IsEquipmentIndex(src) || _playerInventory.IsEquipmentIndex(dst))
+                {
+                    _playerInventory.MoveSlotByIndex(src, dst);
+                }
+                else if (!_playerInventory.TryMergeStacks(src, dst))
+                {
                     _playerInventory.SwapSlots(src, dst);
+                }
                 SelectSlot(dst);
                 return;
             }
 
-            // 2) Dropped outside the panel → world drop.
             if (!IsPointerOverPanel(ev))
             {
-                DropSlotToWorld(src);
+                DropSlotToWorld(src, ResolveWorldDropPosition(ev));
             }
         }
 
+        // Tests both grids (bag first, then equipment) and returns the unified
+        // index — caller routes by Inventory.IsEquipmentIndex.
         private int HitTestSlot(PointerEventData ev)
         {
-            if (_slotObjects == null) return -1;
-            for (int i = 0; i < _slotObjects.Length; i++)
+            if (_slotObjects != null)
             {
-                var rt = _slotObjects[i].GetComponent<RectTransform>();
-                if (rt == null) continue;
-                if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
-                    return i;
+                for (int i = 0; i < _slotObjects.Length; i++)
+                {
+                    var rt = _slotObjects[i].GetComponent<RectTransform>();
+                    if (rt == null) continue;
+                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
+                        return i;
+                }
+            }
+            if (_equipObjects != null)
+            {
+                for (int i = 0; i < _equipObjects.Length; i++)
+                {
+                    var go = _equipObjects[i];
+                    if (go == null) continue;
+                    var rt = go.GetComponent<RectTransform>();
+                    if (rt == null) continue;
+                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, ev.position, ev.pressEventCamera))
+                        return Inventory.DefaultBagCapacity + i;
+                }
             }
             return -1;
         }
@@ -865,7 +829,103 @@ namespace Valkur.Gameplay.Inventory
             return RectTransformUtility.RectangleContainsScreenPoint(_panelRect, ev.position, ev.pressEventCamera);
         }
 
-        private void DropSlotToWorld(int srcIndex)
+        /// <summary>
+        /// True when the inventory window is open AND the given screen-space point
+        /// falls inside the panel. Used by world-drop drag systems to detect a
+        /// drop-into-inventory gesture without going through PointerEventData.
+        /// Canvas is ScreenSpaceOverlay so the camera arg is null.
+        /// </summary>
+        public bool IsScreenPointOverPanel(Vector2 screenPos)
+        {
+            if (!_visible || _panelRect == null) return false;
+            return RectTransformUtility.RectangleContainsScreenPoint(_panelRect, screenPos, null);
+        }
+
+        /// <summary>
+        /// Returns the index of the slot whose rect contains <paramref name="screenPos"/>,
+        /// or -1 if no slot is hit (or the panel isn't visible). Used by
+        /// <c>WorldDropInteractor</c> to honour "deposit in the cell I want".
+        /// </summary>
+        public int HitTestSlotByScreenPos(Vector2 screenPos)
+        {
+            if (!_visible) return -1;
+            if (_slotObjects != null)
+            {
+                for (int i = 0; i < _slotObjects.Length; i++)
+                {
+                    var go = _slotObjects[i];
+                    if (go == null) continue;
+                    var rt = go.GetComponent<RectTransform>();
+                    if (rt == null) continue;
+                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null))
+                        return i;
+                }
+            }
+            if (_equipObjects != null)
+            {
+                for (int i = 0; i < _equipObjects.Length; i++)
+                {
+                    var go = _equipObjects[i];
+                    if (go == null) continue;
+                    var rt = go.GetComponent<RectTransform>();
+                    if (rt == null) continue;
+                    if (RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null))
+                        return Inventory.DefaultBagCapacity + i;
+                }
+            }
+            return -1;
+        }
+
+        // Yellow border drawn on the slot that AddItem would deposit into,
+        // refreshed every frame by WorldDropInteractor while a world drag is
+        // active. Reuses each slot's existing Outline component to avoid extra
+        // GameObjects — only color/distance get swapped.
+        private int _depositTargetSlot = -1;
+        private static readonly Color s_depositTargetColor    = new Color(1.00f, 0.86f, 0.20f, 1f);
+        private static readonly Vector2 s_depositTargetOffset = new Vector2(3f, 3f);
+
+        /// <summary>
+        /// Tag a slot as the current deposit target so it stands out with a
+        /// yellow border. Pass -1 to clear. Slot indices outside the grid are
+        /// ignored. Idempotent and per-frame safe.
+        /// </summary>
+        public void SetDepositTargetSlot(int slotIndex)
+        {
+            if (slotIndex == _depositTargetSlot) return;
+
+            ResetSlotOutline(_depositTargetSlot);
+            _depositTargetSlot = slotIndex;
+            ApplyDepositOutline(_depositTargetSlot);
+        }
+
+        private Outline GetOutlineByIndex(int unifiedIndex)
+        {
+            if (unifiedIndex < 0) return null;
+            if (unifiedIndex < Inventory.DefaultBagCapacity)
+                return (_slotOutlines != null && unifiedIndex < _slotOutlines.Length)
+                    ? _slotOutlines[unifiedIndex] : null;
+            int eq = unifiedIndex - Inventory.DefaultBagCapacity;
+            return (_equipOutlines != null && eq >= 0 && eq < _equipOutlines.Length)
+                ? _equipOutlines[eq] : null;
+        }
+
+        private void ResetSlotOutline(int unifiedIndex)
+        {
+            var ol = GetOutlineByIndex(unifiedIndex);
+            if (ol == null) return;
+            ol.effectColor    = TileEditorTheme.Border;
+            ol.effectDistance = new Vector2(1f, 1f);
+        }
+
+        private void ApplyDepositOutline(int unifiedIndex)
+        {
+            var ol = GetOutlineByIndex(unifiedIndex);
+            if (ol == null) return;
+            ol.effectColor    = s_depositTargetColor;
+            ol.effectDistance = s_depositTargetOffset;
+        }
+
+        private void DropSlotToWorld(int srcIndex, Vector3? worldDropPos = null)
         {
             if (_playerInventory == null) return;
             if (srcIndex < 0 || srcIndex >= _playerInventory.Slots.Count) return;
@@ -880,14 +940,42 @@ namespace Valkur.Gameplay.Inventory
             var player = EntityRegistry.Player;
             if (player != null)
             {
-                Vector3 pos = player.transform.position +
-                              (Vector3)(Random.insideUnitCircle.normalized * 1.5f);
+                // Drag-from-inventory passes the (clamped) cursor world position;
+                // the Q-key path passes null and falls back to a small random
+                // offset around the player so the drop doesn't stack on the foot.
+                Vector3 pos = worldDropPos
+                              ?? player.transform.position
+                                 + (Vector3)(Random.insideUnitCircle.normalized * 1.5f);
                 DropSystem.SpawnDrop(item, removed, pos);
             }
 
             _selectedSlot = -1;
             UpdateSlotHighlights();
             UpdateTooltip();
+        }
+
+        // Convert the pointer release position to a clamped world-space drop
+        // location. Uses the player's WorldDropInteractor to enforce the same
+        // interaction range that bounds drag-from-ground, so the player can
+        // always reach back to whatever they just placed.
+        private Vector3 ResolveWorldDropPosition(PointerEventData ev)
+        {
+            var player = EntityRegistry.Player;
+            Vector3 playerPos = player != null ? player.transform.position : Vector3.zero;
+
+            var cam = ev.pressEventCamera != null ? ev.pressEventCamera : Camera.main;
+            if (cam == null) return playerPos;
+
+            Vector3 sp = new Vector3(ev.position.x, ev.position.y, -cam.transform.position.z);
+            Vector3 worldCursor = cam.ScreenToWorldPoint(sp);
+            worldCursor.z = 0f;
+
+            if (player != null)
+            {
+                var interactor = player.GetComponent<WorldDropInteractor>();
+                if (interactor != null) return interactor.ClampToReach(worldCursor);
+            }
+            return worldCursor;
         }
 
         private void CreateDragGhost(ItemDefinition item)

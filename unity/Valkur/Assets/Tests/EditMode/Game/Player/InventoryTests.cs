@@ -240,15 +240,20 @@ namespace Valkur.Tests.EditMode.Game.Player
         [Test]
         public void ToSaveData_ProducesCorrectStructure()
         {
+            // Schema 2.0: data.slots is a fixed-length list of capacity entries
+            // so visual slot positions are preserved across save/load. Empty
+            // cells serialise as itemId="" / quantity=0.
             var inv = CreateInventory(10);
             var item = CreateItem("potion", stackable: true, maxStack: 10);
             inv.AddItem(item, 7);
             var data = inv.ToSaveData("player1");
             Assert.AreEqual("player1", data.playerId);
             Assert.AreEqual(10, data.capacity);
-            Assert.AreEqual(1, data.slots.Count);
+            Assert.AreEqual(10, data.slots.Count);
             Assert.AreEqual("potion", data.slots[0].itemId);
             Assert.AreEqual(7, data.slots[0].quantity);
+            Assert.AreEqual("", data.slots[1].itemId);
+            Assert.AreEqual(0, data.slots[1].quantity);
             Cleanup(inv);
         }
 

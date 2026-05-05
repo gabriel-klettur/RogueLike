@@ -27,6 +27,9 @@ namespace Valkur.Data
         public string playerId;
         public int capacity;
         public List<InventorySlotData> slots = new List<InventorySlotData>();
+        // Paper-doll 3×3 equipment slots. Empty in saves from before the
+        // equipment storage refactor; restored by id 0..8 (row-major).
+        public List<InventorySlotData> equipmentSlots = new List<InventorySlotData>();
         public string schemaVersion;
 
         // IVersioned: delegates to the existing JsonUtility-serialized field

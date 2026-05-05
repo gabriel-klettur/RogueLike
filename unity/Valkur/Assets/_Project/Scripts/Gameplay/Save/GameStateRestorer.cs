@@ -79,14 +79,98 @@ namespace Valkur.Gameplay.Save
 
         private static void RestoreInventory(GameObject player, PlayerSaveData psd)
         {
+            Debug.Log($"[GameStateRestorer] RestoreInventory ENTER player={player?.name} psd.inventory={(psd.inventory == null ? "NULL" : "OK")}");
             if (psd.inventory == null) return;
 
             var inventory = player.GetComponent<Inventory.Inventory>();
-            if (inventory == null) return;
+            if (inventory == null)
+            {
+                Debug.LogWarning($"[GameStateRestorer] Player '{player.name}' has no Inventory component — abort.");
+                return;
+            }
 
-            inventory.Clear();
-            inventory.Initialize(psd.inventory.capacity);
-            Debug.Log($"[GameStateRestorer] Inventory structure restored. Slots: {psd.inventory.slots.Count}");
+            // Initialize already clears + resizes; no need for a separate Clear().
+            // Force capacity to at least the current default so the bag UI never
+            // shows dead cells when an old save reloads with a smaller capacity.
+            int restoredCapacity = Mathf.Max(psd.inventory.capacity,
+                                             Inventory.Inventory.DefaultBagCapacity);
+            inventory.Initialize(restoredCapacity);
+
+            var slots = psd.inventory.slots;
+            if (slots == null || slots.Count == 0)
+            {
+                Debug.Log("[GameStateRestorer] Inventory restored (empty).");
+                return;
+            }
+
+            // Re-hydrate items by resolving ids through the canonical ItemCatalog.
+            // Without it we have no way to map a saved string id back to the live
+            // ItemDefinition asset, so we fail loud rather than silently drop items.
+            if (!ServiceLocator.TryGet<ItemCatalog>(out var catalog) || catalog == null)
+            {
+                Debug.LogWarning("[GameStateRestorer] No ItemCatalog registered — inventory items cannot be resolved and will be lost on this load.");
+                return;
+            }
+
+            // Index-aligned restore: each saved entry's position in the list IS
+            // its visual slot. Old saves (schema 1.0, compact list shorter than
+            // capacity) still load correctly because the i-th compact entry
+            // becomes the i-th visual slot — same outcome as the previous
+            // AddItem-based restore for those payloads.
+            int restored = 0;
+            int missing  = 0;
+            int max = Mathf.Min(slots.Count, psd.inventory.capacity);
+            for (int i = 0; i < max; i++)
+            {
+                var slot = slots[i];
+                if (string.IsNullOrEmpty(slot.itemId) || slot.quantity <= 0) continue;
+
+                var def = catalog.GetById(slot.itemId);
+                if (def == null)
+                {
+                    Debug.LogWarning($"[GameStateRestorer] Saved itemId '{slot.itemId}' (slot {i}) not found in ItemCatalog — slot dropped.");
+                    missing++;
+                    continue;
+                }
+
+                inventory.SetSlot(i, def, slot.quantity);
+                Debug.Log($"[GameStateRestorer] SetSlot bag[{i}] = {slot.itemId} x{slot.quantity}");
+                restored++;
+            }
+
+            int equipRestored = 0;
+            var equipSlots = psd.inventory.equipmentSlots;
+            if (equipSlots != null)
+            {
+                int eqMax = Mathf.Min(equipSlots.Count, Inventory.Inventory.EquipmentCapacity);
+                for (int i = 0; i < eqMax; i++)
+                {
+                    var slot = equipSlots[i];
+                    if (string.IsNullOrEmpty(slot.itemId) || slot.quantity <= 0) continue;
+                    var def = catalog.GetById(slot.itemId);
+                    if (def == null)
+                    {
+                        Debug.LogWarning($"[GameStateRestorer] Saved equipment itemId '{slot.itemId}' (slot {i}) not found in ItemCatalog — slot dropped.");
+                        missing++;
+                        continue;
+                    }
+                    inventory.SetEquipmentSlot(i, def, slot.quantity);
+                    equipRestored++;
+                }
+            }
+
+            Debug.Log($"[GameStateRestorer] Inventory restored: {restored} bag stack(s), {equipRestored} equipment slot(s)" +
+                      (missing > 0 ? $", {missing} missing" : "") +
+                      $" (capacity={psd.inventory.capacity}).");
+
+            // Sanity probe: confirm what the live Inventory component actually
+            // holds *after* we finished writing. If this list is empty but the
+            // log above said "restored: N", a downstream system is wiping the
+            // inventory between Restore and the next UI refresh.
+            int live = 0;
+            for (int i = 0; i < inventory.Slots.Count; i++)
+                if (!inventory.Slots[i].IsEmpty) live++;
+            Debug.Log($"[GameStateRestorer] Live Inventory probe: {live} non-empty bag slot(s) on '{player.name}'.");
         }
     }
 }
