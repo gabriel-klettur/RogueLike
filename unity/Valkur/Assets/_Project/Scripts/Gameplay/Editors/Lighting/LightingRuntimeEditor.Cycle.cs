@@ -33,14 +33,11 @@ namespace Valkur.Gameplay.World
             {
                 _ui.PhaseHintText.text = cycle.CurrentPhase switch
                 {
-                    DayNightCycle.DayPhase.Dawn          => "Civil dawn — cool, pre-sunrise hue",
-                    DayNightCycle.DayPhase.GoldenMorning => "Golden Hour — warm honey morning light",
-                    DayNightCycle.DayPhase.Day           => "Bright daylight — point lights may be off",
-                    DayNightCycle.DayPhase.GoldenEvening => "Golden Hour — warm copper evening light",
-                    DayNightCycle.DayPhase.Dusk          => "Civil dusk — point lights coming on",
-                    DayNightCycle.DayPhase.BlueHour      => "Blue Hour — deep cool indigo",
-                    DayNightCycle.DayPhase.Night         => "Night — point lights at full effect",
-                    _                                     => string.Empty,
+                    DayNightCycle.DayPhase.Dawn  => "Sunrise transition — world brightening",
+                    DayNightCycle.DayPhase.Day   => "Day — no global tint, point lights are off",
+                    DayNightCycle.DayPhase.Dusk  => "Sunset transition — point lights coming on",
+                    DayNightCycle.DayPhase.Night => "Night — dark, point lights are the main illumination",
+                    _                             => string.Empty,
                 };
             }
 

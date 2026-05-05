@@ -48,61 +48,42 @@ namespace Valkur.Gameplay.World
         [Tooltip("Pause the cycle (useful in dungeons, etc.).")]
         [SerializeField] private bool paused;
 
-        [Tooltip("Minimum global intensity floor — the night phase never goes darker than this. Higher floor keeps gameplay readable; lower floor sells deeper nights. Default 0.30 keeps texture detail visible.")]
-        [SerializeField, Range(0f, 1f)] private float minIntensity = 0.30f;
+        [Tooltip("Minimum global intensity floor — the night never goes darker than this. " +
+                  "Default 0.08 keeps deep night nearly black so manually-placed point lights / torches are the dominant light source, matching how the Python original played.")]
+        [SerializeField, Range(0f, 1f)] private float minIntensity = 0.08f;
 
-        [Header("Phase palette (cinematic 6-phase model)")]
-        // Pro-game color theory: most of the day is **near-neutral white** so
-        // the world's actual colors read true. Saturated tints are reserved for
-        // *brief* transitions — Golden Hour (warm low sun) and Blue Hour (cool
-        // post-sunset). Civil Dawn / Dusk are mostly desaturated (the dramatic
-        // sky colors people imagine actually only happen for ~10 in-game min).
-        // This avoids the "uniform sepia wash" that screams amateur.
-        [Tooltip("Mid-day color. Should sit near pure white with only a hint of warmth so world textures read accurately.")]
-        [SerializeField] private Color dayColor            = new Color(0.97f, 0.97f, 0.95f, 1f);
-        [Tooltip("Civil-dawn color (cool pre-sunrise). Soft lavender / cool grey — NOT warm orange; orange belongs to Golden Hour.")]
-        [SerializeField] private Color dawnColor           = new Color(0.74f, 0.76f, 0.86f, 1f);
-        [Tooltip("Golden Hour Morning. Warm honey light when the sun is low above the horizon — the magic photographic light.")]
-        [SerializeField] private Color goldenMorningColor  = new Color(1.00f, 0.86f, 0.70f, 1f);
-        [Tooltip("Golden Hour Evening. Slightly cooler / coppier than morning — the world is warmer, sky is closer to sunset.")]
-        [SerializeField] private Color goldenEveningColor  = new Color(1.00f, 0.78f, 0.58f, 1f);
-        [Tooltip("Civil-dusk color. Subtle red-orange after the sun dips below the horizon. Briefer than dramatic skies suggest.")]
-        [SerializeField] private Color duskColor           = new Color(0.86f, 0.62f, 0.55f, 1f);
-        [Tooltip("Blue Hour. Deep cool indigo right after dusk — the post-sunset photographic 'blue moment'.")]
-        [SerializeField] private Color blueHourColor       = new Color(0.45f, 0.52f, 0.78f, 1f);
-        [Tooltip("Deep night color. Desaturated navy — keeps texture detail readable instead of the pure-black trap.")]
-        [SerializeField] private Color nightColor          = new Color(0.28f, 0.34f, 0.55f, 1f);
+        [Header("Day / Night keyframes (only two, like Python)")]
+        // Two real keyframes — Day and Night — that the cycle smoothly lerps
+        // between during the Dawn and Dusk windows. There are no separate
+        // keyframes for Dawn / Dusk: those windows are pure transitions.
+        //
+        // Day defaults to **literally white at intensity 1.0**, which is the
+        // identity tint for URP 2D Light2D — multiplying any pixel by white·1
+        // returns the original color. So during the Day band the world reads
+        // at its native texture colors, no filter, no wash.
+        //
+        // Night defaults to a **dark cool blue at intensity 0.15**, so the
+        // ambient is genuinely dim. Manually-placed point lights (torches /
+        // lamps via the Lighting Editor Ctrl+F3 / WorldLightLoader) are the
+        // dominant light source at night — that's the gameplay loop the
+        // Python original was built around.
+        [Tooltip("Day keyframe — colour. Pure white = identity (no tint applied to the world).")]
+        [SerializeField] private Color dayColor   = new Color(1.00f, 1.00f, 1.00f, 1f);
+        [Tooltip("Day keyframe — Light2D intensity. 1.0 = no darkening.")]
+        [SerializeField, Range(0f, 1.5f)] private float dayIntensity   = 1.00f;
+        [Tooltip("Day keyframe — color-temperature shift. 0 = neutral.")]
+        [SerializeField, Range(-1f, 1f)] private float dayWarmth       = 0.00f;
+        [Tooltip("Day keyframe — vignette opacity. 0 = no edge tint.")]
+        [SerializeField, Range(0f, 1f)] private float dayVignetteAlpha = 0.00f;
 
-        [Tooltip("Mid-day intensity. 1.0 = full Light2D output.")]
-        [SerializeField, Range(0f, 1.5f)] private float dayIntensity            = 1.00f;
-        [SerializeField, Range(0f, 1.5f)] private float dawnIntensity           = 0.55f;
-        [SerializeField, Range(0f, 1.5f)] private float goldenMorningIntensity = 0.85f;
-        [SerializeField, Range(0f, 1.5f)] private float goldenEveningIntensity = 0.85f;
-        [SerializeField, Range(0f, 1.5f)] private float duskIntensity           = 0.60f;
-        [SerializeField, Range(0f, 1.5f)] private float blueHourIntensity      = 0.45f;
-        [SerializeField, Range(0f, 1.5f)] private float nightIntensity         = 0.35f;
-
-        [Header("Per-phase warmth (-1 cooler / +1 warmer)")]
-        [Tooltip("Color-temperature shift on top of the base color. -1 pulls toward cool blue, +1 toward warm orange. " +
-                  "Lets a designer dial the same hue between morning-cold and evening-cold without rotating the base color.")]
-        [SerializeField, Range(-1f, 1f)] private float dayWarmth            = 0.05f;
-        [SerializeField, Range(-1f, 1f)] private float dawnWarmth           = -0.20f;
-        [SerializeField, Range(-1f, 1f)] private float goldenMorningWarmth  = 0.45f;
-        [SerializeField, Range(-1f, 1f)] private float goldenEveningWarmth  = 0.55f;
-        [SerializeField, Range(-1f, 1f)] private float duskWarmth           = 0.30f;
-        [SerializeField, Range(-1f, 1f)] private float blueHourWarmth       = -0.55f;
-        [SerializeField, Range(-1f, 1f)] private float nightWarmth          = -0.40f;
-
-        [Header("Per-phase vignette opacity (0..1)")]
-        [Tooltip("Per-phase strength of the screen-edge vignette overlay. 0 = no edge tint, 1 = full edge wash. " +
-                  "DayNightVignetteOverlay uses this to know how strong its border darkening should be at each phase.")]
-        [SerializeField, Range(0f, 1f)] private float dayVignetteAlpha            = 0.05f;
-        [SerializeField, Range(0f, 1f)] private float dawnVignetteAlpha           = 0.22f;
-        [SerializeField, Range(0f, 1f)] private float goldenMorningVignetteAlpha = 0.35f;
-        [SerializeField, Range(0f, 1f)] private float goldenEveningVignetteAlpha = 0.40f;
-        [SerializeField, Range(0f, 1f)] private float duskVignetteAlpha           = 0.42f;
-        [SerializeField, Range(0f, 1f)] private float blueHourVignetteAlpha      = 0.36f;
-        [SerializeField, Range(0f, 1f)] private float nightVignetteAlpha         = 0.30f;
+        [Tooltip("Night keyframe — colour. Dark cool blue: world reads as moonlit, point lights stand out.")]
+        [SerializeField] private Color nightColor   = new Color(0.20f, 0.25f, 0.45f, 1f);
+        [Tooltip("Night keyframe — Light2D intensity. Low (≈0.15) so the world is genuinely dim.")]
+        [SerializeField, Range(0f, 1.5f)] private float nightIntensity = 0.15f;
+        [Tooltip("Night keyframe — color-temperature shift. Slightly cooler.")]
+        [SerializeField, Range(-1f, 1f)] private float nightWarmth     = -0.10f;
+        [Tooltip("Night keyframe — vignette opacity. Stronger so the screen edges feel enclosed.")]
+        [SerializeField, Range(0f, 1f)] private float nightVignetteAlpha = 0.30f;
 
         [Header("Point-light disable window (Python parity)")]
         [Tooltip("When ON, point lights spawned by WorldLightLoader are deactivated during the lights-disable window (FPS optimisation while it is bright outside).")]
@@ -183,64 +164,55 @@ namespace Valkur.Gameplay.World
             public float vignetteAlpha;
         }
 
-        /// <summary>Snapshot the live look for <paramref name="phase"/>. Returns
-        /// the Day defaults for the catch-all branch so callers get a usable
-        /// value even if a brand-new enum entry is added without an update here.</summary>
+        /// <summary>Snapshot the live look for <paramref name="phase"/>. Only
+        /// Day and Night are real keyframes; Dawn/Dusk return the average of
+        /// the two (because the cycle's transition windows lerp between them
+        /// rather than reading a third keyframe). Legacy GoldenMorning /
+        /// GoldenEvening / BlueHour map to their nearest neighbour for
+        /// back-compat with old call sites.</summary>
         public PhaseLook GetPhaseLook(DayPhase phase) => phase switch
         {
-            DayPhase.Dawn          => new PhaseLook { color = dawnColor,           intensity = dawnIntensity,           warmth = dawnWarmth,           vignetteAlpha = dawnVignetteAlpha },
-            DayPhase.GoldenMorning => new PhaseLook { color = goldenMorningColor,  intensity = goldenMorningIntensity,  warmth = goldenMorningWarmth,  vignetteAlpha = goldenMorningVignetteAlpha },
-            DayPhase.GoldenEvening => new PhaseLook { color = goldenEveningColor,  intensity = goldenEveningIntensity,  warmth = goldenEveningWarmth,  vignetteAlpha = goldenEveningVignetteAlpha },
-            DayPhase.Dusk          => new PhaseLook { color = duskColor,           intensity = duskIntensity,           warmth = duskWarmth,           vignetteAlpha = duskVignetteAlpha },
-            DayPhase.BlueHour      => new PhaseLook { color = blueHourColor,       intensity = blueHourIntensity,       warmth = blueHourWarmth,       vignetteAlpha = blueHourVignetteAlpha },
-            DayPhase.Night         => new PhaseLook { color = nightColor,          intensity = nightIntensity,          warmth = nightWarmth,          vignetteAlpha = nightVignetteAlpha },
-            _                       => new PhaseLook { color = dayColor,            intensity = dayIntensity,            warmth = dayWarmth,            vignetteAlpha = dayVignetteAlpha },
+            DayPhase.Night         => new PhaseLook { color = nightColor, intensity = nightIntensity, warmth = nightWarmth, vignetteAlpha = nightVignetteAlpha },
+            DayPhase.Dawn          => AverageLook(),
+            DayPhase.Dusk          => AverageLook(),
+            DayPhase.GoldenMorning => new PhaseLook { color = dayColor,   intensity = dayIntensity,   warmth = dayWarmth,   vignetteAlpha = dayVignetteAlpha },
+            DayPhase.GoldenEvening => AverageLook(),
+            DayPhase.BlueHour      => new PhaseLook { color = nightColor, intensity = nightIntensity, warmth = nightWarmth, vignetteAlpha = nightVignetteAlpha },
+            _                       => new PhaseLook { color = dayColor,   intensity = dayIntensity,   warmth = dayWarmth,   vignetteAlpha = dayVignetteAlpha },
+        };
+
+        // Helper: midpoint between Day and Night, used when callers ask for
+        // the "look" of a transition phase. Avoids exposing a third stored
+        // keyframe that would only ever be a derived value.
+        private PhaseLook AverageLook() => new PhaseLook
+        {
+            color         = Color.Lerp(nightColor, dayColor, 0.5f),
+            intensity     = Mathf.Lerp(nightIntensity, dayIntensity, 0.5f),
+            warmth        = Mathf.Lerp(nightWarmth, dayWarmth, 0.5f),
+            vignetteAlpha = Mathf.Lerp(nightVignetteAlpha, dayVignetteAlpha, 0.5f),
         };
 
         /// <summary>Replace the live look for <paramref name="phase"/> and re-apply
-        /// the lighting immediately so the user sees the change without waiting
-        /// for the next phase boundary.</summary>
+        /// the lighting immediately. Only Day and Night are stored keyframes;
+        /// writes to Dawn/Dusk route to the nearest neighbour (so a UI that
+        /// still targets them produces a visible change). Legacy
+        /// GoldenMorning / GoldenEvening / BlueHour map similarly.</summary>
         public void SetPhaseLook(DayPhase phase, PhaseLook look)
         {
             switch (phase)
             {
                 case DayPhase.Day:
+                case DayPhase.Dawn:               // Dawn writes route to Day (the keyframe Dawn lerps toward)
+                case DayPhase.GoldenMorning:
                     dayColor          = look.color;
                     dayIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
                     dayWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
                     dayVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
                     break;
-                case DayPhase.Dawn:
-                    dawnColor          = look.color;
-                    dawnIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
-                    dawnWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
-                    dawnVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
-                    break;
-                case DayPhase.GoldenMorning:
-                    goldenMorningColor          = look.color;
-                    goldenMorningIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
-                    goldenMorningWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
-                    goldenMorningVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
-                    break;
-                case DayPhase.GoldenEvening:
-                    goldenEveningColor          = look.color;
-                    goldenEveningIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
-                    goldenEveningWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
-                    goldenEveningVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
-                    break;
-                case DayPhase.Dusk:
-                    duskColor          = look.color;
-                    duskIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
-                    duskWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
-                    duskVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
-                    break;
-                case DayPhase.BlueHour:
-                    blueHourColor          = look.color;
-                    blueHourIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
-                    blueHourWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
-                    blueHourVignetteAlpha  = Mathf.Clamp01(look.vignetteAlpha);
-                    break;
                 case DayPhase.Night:
+                case DayPhase.Dusk:               // Dusk writes route to Night (the keyframe Dusk lerps toward)
+                case DayPhase.GoldenEvening:
+                case DayPhase.BlueHour:
                     nightColor          = look.color;
                     nightIntensity      = Mathf.Clamp(look.intensity, 0f, 1.5f);
                     nightWarmth         = Mathf.Clamp(look.warmth, -1f, 1f);
@@ -441,23 +413,20 @@ namespace Valkur.Gameplay.World
         }
 
         // Phase boundaries (normalized 0..1, mapped from a 24h day):
-        //   Night:           0.84 → 0.18  (wraps midnight)
-        //   Dawn (civil):    0.18 → 0.23  ~  04:19 → 05:31
-        //   Golden Morning:  0.23 → 0.30  ~  05:31 → 07:12
-        //   Day:             0.30 → 0.66  ~  07:12 → 15:50
-        //   Golden Evening:  0.66 → 0.74  ~  15:50 → 17:46
-        //   Dusk (civil):    0.74 → 0.79  ~  17:46 → 18:58
-        //   Blue Hour:       0.79 → 0.84  ~  18:58 → 20:10
-        // The two "Golden" windows are intentionally short — that is the
-        // photographic reality and reading the warm tint as *transient* is
-        // what makes the world feel cinematic rather than uniformly tinted.
-        private const float DAWN_START   = 0.18f;
-        private const float GOLD_M_START = 0.23f;
-        private const float DAY_START    = 0.30f;
-        private const float GOLD_E_START = 0.66f;
-        private const float DUSK_START   = 0.74f;
-        private const float BLUE_START   = 0.79f;
-        private const float NIGHT_START  = 0.84f;
+        //   Night:  0.84 → 0.18  (wraps midnight)
+        //   Dawn:   0.18 → 0.30  ~  04:19 → 07:12   transition night→day
+        //   Day:    0.30 → 0.70  ~  07:12 → 16:48   pure white
+        //   Dusk:   0.70 → 0.84  ~  16:48 → 20:10   transition day→night
+        //
+        // Matches Python's effective 4-phase model (only Night and Day are
+        // real keyframes; Dawn/Dusk are smoothstep transitions between them).
+        // Long stable Night and Day bands keep the world's tint *constant*
+        // for most of the cycle, so the player isn't constantly perceiving
+        // color drift — that was the "cinematic 6-phase" model's main flaw.
+        private const float DAWN_START  = 0.18f;
+        private const float DAY_START   = 0.30f;
+        private const float DUSK_START  = 0.70f;
+        private const float NIGHT_START = 0.84f;
 
         // Pure function: classify the normalized time t into a DayPhase and
         // pick the matching color + intensity + warmth + vignetteAlpha. No
@@ -465,6 +434,16 @@ namespace Valkur.Gameplay.World
         // exercised directly by EditMode tests. Uses Mathf.SmoothStep
         // (t²·(3−2t)) between phase keyframes for parity with Python's
         // smoothstep ramp.
+        //
+        // Two-keyframe model (matches Python's lighting.json original):
+        //   • Day band: pure Day values, no transition
+        //   • Night band: pure Night values, no transition
+        //   • Dawn band: smooth Night → Day lerp
+        //   • Dusk band: smooth Day → Night lerp
+        // The DayPhase enum's Dawn / Dusk values are returned for HUD label
+        // purposes only — the colors are pure interpolations between the
+        // two real keyframes. Legacy GoldenMorning / GoldenEvening / BlueHour
+        // values are never produced.
         private void ComputePhaseAndColor(float t,
                                           out DayPhase phase,
                                           out Color color,
@@ -472,25 +451,16 @@ namespace Valkur.Gameplay.World
                                           out float warmth,
                                           out float vignetteAlpha)
         {
-            if (t >= DAWN_START && t < GOLD_M_START)
+            if (t >= DAWN_START && t < DAY_START)
             {
-                float k       = Mathf.SmoothStep(0f, 1f, (t - DAWN_START) / (GOLD_M_START - DAWN_START));
-                color         = Color.Lerp(dawnColor, goldenMorningColor, k);
-                intensity     = Mathf.Lerp(dawnIntensity, goldenMorningIntensity, k);
-                warmth        = Mathf.Lerp(dawnWarmth, goldenMorningWarmth, k);
-                vignetteAlpha = Mathf.Lerp(dawnVignetteAlpha, goldenMorningVignetteAlpha, k);
-                phase         = k < 0.5f ? DayPhase.Dawn : DayPhase.GoldenMorning;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - DAWN_START) / (DAY_START - DAWN_START));
+                color         = Color.Lerp(nightColor, dayColor, k);
+                intensity     = Mathf.Lerp(nightIntensity, dayIntensity, k);
+                warmth        = Mathf.Lerp(nightWarmth, dayWarmth, k);
+                vignetteAlpha = Mathf.Lerp(nightVignetteAlpha, dayVignetteAlpha, k);
+                phase         = DayPhase.Dawn;
             }
-            else if (t >= GOLD_M_START && t < DAY_START)
-            {
-                float k       = Mathf.SmoothStep(0f, 1f, (t - GOLD_M_START) / (DAY_START - GOLD_M_START));
-                color         = Color.Lerp(goldenMorningColor, dayColor, k);
-                intensity     = Mathf.Lerp(goldenMorningIntensity, dayIntensity, k);
-                warmth        = Mathf.Lerp(goldenMorningWarmth, dayWarmth, k);
-                vignetteAlpha = Mathf.Lerp(goldenMorningVignetteAlpha, dayVignetteAlpha, k);
-                phase         = k < 0.5f ? DayPhase.GoldenMorning : DayPhase.Day;
-            }
-            else if (t >= DAY_START && t < GOLD_E_START)
+            else if (t >= DAY_START && t < DUSK_START)
             {
                 color         = dayColor;
                 intensity     = dayIntensity;
@@ -498,32 +468,14 @@ namespace Valkur.Gameplay.World
                 vignetteAlpha = dayVignetteAlpha;
                 phase         = DayPhase.Day;
             }
-            else if (t >= GOLD_E_START && t < DUSK_START)
+            else if (t >= DUSK_START && t < NIGHT_START)
             {
-                float k       = Mathf.SmoothStep(0f, 1f, (t - GOLD_E_START) / (DUSK_START - GOLD_E_START));
-                color         = Color.Lerp(dayColor, goldenEveningColor, k);
-                intensity     = Mathf.Lerp(dayIntensity, goldenEveningIntensity, k);
-                warmth        = Mathf.Lerp(dayWarmth, goldenEveningWarmth, k);
-                vignetteAlpha = Mathf.Lerp(dayVignetteAlpha, goldenEveningVignetteAlpha, k);
-                phase         = k < 0.5f ? DayPhase.Day : DayPhase.GoldenEvening;
-            }
-            else if (t >= DUSK_START && t < BLUE_START)
-            {
-                float k       = Mathf.SmoothStep(0f, 1f, (t - DUSK_START) / (BLUE_START - DUSK_START));
-                color         = Color.Lerp(goldenEveningColor, duskColor, k);
-                intensity     = Mathf.Lerp(goldenEveningIntensity, duskIntensity, k);
-                warmth        = Mathf.Lerp(goldenEveningWarmth, duskWarmth, k);
-                vignetteAlpha = Mathf.Lerp(goldenEveningVignetteAlpha, duskVignetteAlpha, k);
-                phase         = k < 0.5f ? DayPhase.GoldenEvening : DayPhase.Dusk;
-            }
-            else if (t >= BLUE_START && t < NIGHT_START)
-            {
-                float k       = Mathf.SmoothStep(0f, 1f, (t - BLUE_START) / (NIGHT_START - BLUE_START));
-                color         = Color.Lerp(duskColor, blueHourColor, k);
-                intensity     = Mathf.Lerp(duskIntensity, blueHourIntensity, k);
-                warmth        = Mathf.Lerp(duskWarmth, blueHourWarmth, k);
-                vignetteAlpha = Mathf.Lerp(duskVignetteAlpha, blueHourVignetteAlpha, k);
-                phase         = k < 0.5f ? DayPhase.Dusk : DayPhase.BlueHour;
+                float k       = Mathf.SmoothStep(0f, 1f, (t - DUSK_START) / (NIGHT_START - DUSK_START));
+                color         = Color.Lerp(dayColor, nightColor, k);
+                intensity     = Mathf.Lerp(dayIntensity, nightIntensity, k);
+                warmth        = Mathf.Lerp(dayWarmth, nightWarmth, k);
+                vignetteAlpha = Mathf.Lerp(dayVignetteAlpha, nightVignetteAlpha, k);
+                phase         = DayPhase.Dusk;
             }
             else
             {
@@ -541,7 +493,7 @@ namespace Valkur.Gameplay.World
             // shift visible without overpowering the base hue.
             color = ApplyWarmth(color, warmth);
 
-            // Apply the Python-parity floor so we never go fully black.
+            // Apply the floor so we never go fully black even at deep night.
             intensity = Mathf.Max(intensity, minIntensity);
         }
 
