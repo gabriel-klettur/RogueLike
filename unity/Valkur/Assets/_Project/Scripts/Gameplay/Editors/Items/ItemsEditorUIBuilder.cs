@@ -59,6 +59,7 @@ namespace Valkur.Gameplay.Items
             public TMP_InputField   SearchBox;
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
+            public TextMeshProUGUI  GridEmptyState;   // shown when no items match filter
             // Table view (second tab)
             public ScrollRect       TableHeaderScroll;
             public RectTransform    TableHeaderContent;

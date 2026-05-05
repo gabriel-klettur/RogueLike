@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Data;
@@ -32,11 +33,18 @@ namespace Valkur.Gameplay.Items
     {
         // ── Table layout constants ────────────────────────────────────────────
 
-        private const float TABLE_ROW_H      = 26f;
-        private const float TABLE_HEADER_H   = 24f;
-        private const float TABLE_CELL_PAD_H =  4f;  // left+right padding inside each cell
-        private const float TABLE_SB_W       = 12f;  // scrollbar width
-        private const float TABLE_SPRITE_SZ  = 20f;  // thumbnail size (square)
+        private const float TABLE_ROW_H            = 26f;
+        private const float TABLE_HEADER_H         = 24f;
+        private const float TABLE_CELL_PAD_H       =  4f;  // left+right padding inside each cell
+        private const float TABLE_SB_W             = 12f;  // scrollbar width
+        private const float TABLE_SPRITE_SZ        = 20f;  // thumbnail size (square)
+        private const float TABLE_CATEGORY_BAND_H  =  3f;  // colored category strip atop each header cell
+
+        // Status-bar text restored when the cursor leaves a header cell. We
+        // capture the live text on first hover so any prior toast / hint is
+        // preserved across the hover gesture.
+        private string _statusBeforeHeaderHover;
+        private bool   _hoveringHeader;
 
         // Header scroll rect — horizontal only, tracks body's normalizedPosition.x
         private ScrollRect _headerScroll;
@@ -77,6 +85,12 @@ namespace Valkur.Gameplay.Items
         /// <summary>
         /// Rebuilds all data rows from _filtered. Call this whenever _filtered changes
         /// (same code path as RefreshPicker so both views stay in sync).
+        ///
+        /// Crucial side-effect: sets the body content's <c>sizeDelta.x</c> to the
+        /// total column width so the ScrollRect recognises horizontal overflow.
+        /// Without this the horizontal scrollbar's draggable range collapses to
+        /// zero and rows appear "stuck" — the rows are wide enough but the
+        /// content rect is 0 px wide.
         /// </summary>
         private void RefreshTable()
         {
@@ -98,6 +112,19 @@ namespace Valkur.Gameplay.Items
                 var row = BuildTableRow(def, i);
                 _tableRows.Add(row);
             }
+
+            // Tell the ScrollRect the real horizontal extent so the thumb sizes
+            // correctly and dragging actually moves the content. The vertical
+            // axis is still driven by the ContentSizeFitter on the content
+            // GameObject (verticalFit = PreferredSize).
+            float totalW = ComputeTotalWidth();
+            var bodySize = _tableBodyContent.sizeDelta;
+            _tableBodyContent.sizeDelta = new Vector2(totalW, bodySize.y);
+
+            // CSF runs after layout; force one pass so the body's measured
+            // height also reflects the freshly built rows on the very first
+            // frame the table becomes visible.
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_tableBodyContent);
         }
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -137,7 +164,9 @@ namespace Valkur.Gameplay.Items
 
                 if (c > 0)
                 {
-                    // Right-border divider (1 px wide, full height child).
+                    // Left-border divider (1 px wide, full height child) — drawn
+                    // on this cell's left edge so adjacent groups read as
+                    // separate columns even when their backgrounds match.
                     var div    = UIFactory.CreateUI("Div", cellGo.transform);
                     var divRt  = div.GetComponent<RectTransform>();
                     divRt.anchorMin        = new Vector2(0f, 0f);
@@ -148,13 +177,73 @@ namespace Valkur.Gameplay.Items
                     div.AddComponent<Image>().color = TileEditorTheme.Separator;
                 }
 
+                // Category band — 3 px coloured strip pinned to the top edge of
+                // the header cell. Lets the user spot which group each column
+                // belongs to (Identity, Equip, Economy, Consumable, …).
+                var bandGo = UIFactory.CreateUI("CategoryBand", cellGo.transform);
+                var bandRt = bandGo.GetComponent<RectTransform>();
+                bandRt.anchorMin        = new Vector2(0f, 1f);
+                bandRt.anchorMax        = new Vector2(1f, 1f);
+                bandRt.pivot            = new Vector2(0.5f, 1f);
+                bandRt.anchoredPosition = Vector2.zero;
+                bandRt.sizeDelta        = new Vector2(0f, TABLE_CATEGORY_BAND_H);
+                bandGo.AddComponent<Image>().color = ItemTableColumns.CategoryColor(col.Category);
+
                 var tmp = UILabel.AddCenteredText(cellGo.transform,
                     col.Header, 9f, FontStyles.Bold, TileEditorTheme.HeaderTitle);
                 tmp.enableWordWrapping = false;
                 tmp.overflowMode       = TextOverflowModes.Truncate;
+                tmp.margin             = new Vector4(TABLE_CELL_PAD_H, TABLE_CATEGORY_BAND_H,
+                                                     TABLE_CELL_PAD_H, 0f);
+
+                // Hover handler — exposes the column's tooltip text in the
+                // status bar (no popup widget needed; reuses existing chrome).
+                AttachHeaderHover(cellGo, col);
 
                 xCursor += col.Width;
             }
+        }
+
+        // ── Header tooltip (hover -> status text) ─────────────────────────────
+
+        /// <summary>
+        /// Wires <see cref="EventTrigger"/> Enter/Exit handlers onto a header
+        /// cell so the column's tooltip text shows in the panel's status bar
+        /// while the cursor sits on the cell. The previous status text is
+        /// captured on first enter and restored on exit so any prior toast or
+        /// hint is preserved across the hover gesture.
+        /// </summary>
+        private void AttachHeaderHover(GameObject cellGo, ItemTableColumn col)
+        {
+            if (cellGo == null) return;
+
+            var tip = !string.IsNullOrEmpty(col.Tooltip)
+                ? $"<b>{col.Header}</b> ({col.Category}) — {col.Tooltip}"
+                : $"<b>{col.Header}</b> ({col.Category})";
+
+            var trigger = cellGo.AddComponent<EventTrigger>();
+
+            var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ =>
+            {
+                if (!_hoveringHeader && _uiRefs.StatusText != null)
+                    _statusBeforeHeaderHover = _uiRefs.StatusText.text;
+                _hoveringHeader = true;
+                SetStatus(tip);
+            });
+            trigger.triggers.Add(enter);
+
+            var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exit.callback.AddListener(_ =>
+            {
+                _hoveringHeader = false;
+                if (_statusBeforeHeaderHover != null)
+                {
+                    SetStatus(_statusBeforeHeaderHover);
+                    _statusBeforeHeaderHover = null;
+                }
+            });
+            trigger.triggers.Add(exit);
         }
 
         // ── Row builder ───────────────────────────────────────────────────────
@@ -400,10 +489,19 @@ namespace Valkur.Gameplay.Items
 
         // ── Scroll sync ───────────────────────────────────────────────────────
 
-        private void OnTableScrolled(Vector2 normalizedPos)
+        /// <summary>
+        /// Mirror the body content's horizontal scroll position onto the header
+        /// content using <b>absolute pixel offset</b>, not normalized position.
+        /// Normalized sync would drift by 12 px (the vertical scrollbar gutter)
+        /// because the body and header viewport widths differ. Pixel-mirror is
+        /// exact regardless of viewport sizes.
+        /// </summary>
+        private void OnTableScrolled(Vector2 _normalizedPos)
         {
-            if (_headerScroll != null)
-                _headerScroll.horizontalNormalizedPosition = normalizedPos.x;
+            if (_tableHeaderContent == null || _tableBodyContent == null) return;
+            var hdr = _tableHeaderContent.anchoredPosition;
+            hdr.x = _tableBodyContent.anchoredPosition.x;
+            _tableHeaderContent.anchoredPosition = hdr;
         }
 
         // ── Utility ───────────────────────────────────────────────────────────

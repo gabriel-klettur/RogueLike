@@ -6,6 +6,7 @@ using TMPro;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Items
 {
@@ -21,6 +22,12 @@ namespace Valkur.Gameplay.Items
     {
         private static readonly Color PickerSlotNormal   = EditorUIHelpers.SLOT_BG;
         private static readonly Color PickerSlotSelected = EditorUIHelpers.SLOT_SELECTED;
+
+        // Status-bar text restored when the cursor leaves a slot. We capture
+        // the live text on first hover so any prior toast or hint is preserved
+        // across the hover gesture (mirrors the table header tooltip pattern).
+        private string _statusBeforeSlotHover;
+        private bool   _hoveringSlot;
 
         /// <summary>Rebuild the picker grid based on the current filter & selection.</summary>
         private void RefreshPicker()
@@ -50,16 +57,22 @@ namespace Valkur.Gameplay.Items
                 else if (def.iconSmall != null){ icon.sprite = def.iconSmall; icon.enabled = true; }
                 else if (def.iconLarge != null){ icon.sprite = def.iconLarge; icon.enabled = true; }
 
-                label.text = TruncateName(def.displayName ?? capId, 9);
+                // Use ellipsis overflow so the label adapts to the cell width
+                // chosen by GridAutoSize (cells grow / shrink with the panel).
+                label.text             = def.displayName ?? capId;
+                label.enableWordWrapping = false;
+                label.overflowMode       = TextOverflowModes.Ellipsis;
+
+                // Rarity stripe — 3 px coloured strip pinned just above the
+                // bottom label, tinted by item rarity so the user can spot
+                // Epic / Legendary drops at a glance.
+                AddRarityStripe(btn.transform, def.rarity);
 
                 if (capId == _selectedItemId)
-                {
-                    var img = btn.GetComponent<Image>();
-                    if (img != null) img.color = PickerSlotSelected;
-                }
+                    ApplySelectionVisual(btn);
 
-                // Right-click â†’ spawn at player. We attach a custom event trigger because
-                // UnityEngine.UI.Button does not natively distinguish LMB vs RMB.
+                // Right-click → spawn at player. UnityEngine.UI.Button does not
+                // natively distinguish LMB vs RMB so we add a PointerClick handler.
                 AddRightClickHandler(btn.gameObject, () => SpawnAtPlayer(capId));
 
                 // Drag-from-picker (LMB hold + move): mirror BuildingsRuntimeEditor.
@@ -70,6 +83,25 @@ namespace Valkur.Gameplay.Items
                 var pde = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
                 pde.callback.AddListener(_ => OnPickerSlotPointerDown(capId));
                 et.triggers.Add(pde);
+
+                // Hover → status text shows full identity for the slot. The
+                // slot itself is small and ellipsised, so the status bar is
+                // where the player reads the full id / level / rarity.
+                AttachSlotHover(btn.gameObject, def);
+            }
+
+            // Empty-state overlay (toggled by filter result).
+            if (_uiRefs.GridEmptyState != null)
+            {
+                bool empty = _filtered.Count == 0;
+                _uiRefs.GridEmptyState.gameObject.SetActive(empty);
+                if (empty)
+                {
+                    string filterText = (_searchFilter ?? "").Trim();
+                    _uiRefs.GridEmptyState.text = filterText.Length == 0
+                        ? "Catalog is empty."
+                        : $"No items match '{filterText}'.\nTry a different search.";
+                }
             }
 
             string filter = (_searchFilter ?? "").Trim();
@@ -77,6 +109,84 @@ namespace Valkur.Gameplay.Items
                 ? $"{_filtered.Count} item(s) in catalog"
                 : $"{_filtered.Count} match '{filter}'";
             SetStatus(status);
+        }
+
+        /// <summary>
+        /// Apply the selected-state visuals: tint background and add a yellow
+        /// 1 px outline. Replays cleanly because the slot is rebuilt each
+        /// RefreshPicker.
+        /// </summary>
+        private static void ApplySelectionVisual(Button btn)
+        {
+            if (btn == null) return;
+            var img = btn.GetComponent<Image>();
+            if (img != null) img.color = PickerSlotSelected;
+            var ol = btn.gameObject.GetComponent<UnityEngine.UI.Outline>()
+                     ?? btn.gameObject.AddComponent<UnityEngine.UI.Outline>();
+            ol.effectColor    = ACTIVE_YELLOW;
+            ol.effectDistance = new Vector2(1f, -1f);
+        }
+
+        /// <summary>Append a 3 px coloured rectangle just above the bottom
+        /// label, tinted by the item's rarity tier. Mirrors the table's
+        /// per-column category band so both views read with the same visual
+        /// language.</summary>
+        private static void AddRarityStripe(Transform slotT, ItemRarity rarity)
+        {
+            var stripeGo = EditorUIHelpers.CreateUI("RarityStripe", slotT);
+            var rt       = stripeGo.GetComponent<RectTransform>();
+            // Anchored at y = 0.25 (top edge of the bottom-label band) so the
+            // stripe never overlaps the icon nor the displayName.
+            rt.anchorMin        = new Vector2(0f,    0.24f);
+            rt.anchorMax        = new Vector2(1f,    0.24f);
+            rt.pivot            = new Vector2(0.5f,  0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = new Vector2(0f, 3f);
+            var img             = stripeGo.AddComponent<Image>();
+            img.color           = RarityPalette.Color(rarity);
+            img.raycastTarget   = false;
+        }
+
+        /// <summary>
+        /// Attach pointer-enter / pointer-exit handlers that surface the item's
+        /// full identity (displayName, itemId, rarity, level) in the panel's
+        /// status bar. Hover state is restored on exit so any prior toast or
+        /// hint is preserved.
+        /// </summary>
+        private void AttachSlotHover(GameObject slotGo, ItemDefinition def)
+        {
+            if (slotGo == null || def == null) return;
+
+            var trigger = slotGo.GetComponent<EventTrigger>()
+                       ?? slotGo.AddComponent<EventTrigger>();
+
+            string detail = $"<b>{def.displayName ?? def.itemId}</b>  " +
+                            $"<color=#9aa0a6>[{def.itemId}]</color>  " +
+                            $"<color=#{ColorUtility.ToHtmlStringRGB(RarityPalette.Color(def.rarity))}>" +
+                            $"{RarityPalette.DisplayName(def.rarity)}</color>  " +
+                            $"<color=#9aa0a6>lvl {def.levelRequirement}</color>";
+
+            var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ =>
+            {
+                if (!_hoveringSlot && _uiRefs.StatusText != null)
+                    _statusBeforeSlotHover = _uiRefs.StatusText.text;
+                _hoveringSlot = true;
+                SetStatus(detail);
+            });
+            trigger.triggers.Add(enter);
+
+            var exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exit.callback.AddListener(_ =>
+            {
+                _hoveringSlot = false;
+                if (_statusBeforeSlotHover != null)
+                {
+                    SetStatus(_statusBeforeSlotHover);
+                    _statusBeforeSlotHover = null;
+                }
+            });
+            trigger.triggers.Add(exit);
         }
 
         /// <summary>Select an item from the picker (drives Properties panel).

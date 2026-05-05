@@ -113,11 +113,37 @@ namespace Valkur.Gameplay.Items
             gridVlg.childControlWidth      = true;
             gridVlg.childControlHeight     = true;
 
-            var (gridScroll, gridContent) = EditorUIHelpers.MakeGridPicker(
-                gridContainerGo.transform, "ItemsGrid", columns: 3, cellSize: 64f, spacing: 4f);
+            // Responsive grid: cell size + column count adapt to the panel
+            // width as the user drags the resize handle. minCellSize=64
+            // matches the legacy slot footprint; maxCellSize=96 keeps cells
+            // usable when only a couple of items match a narrow filter.
+            var (gridScroll, gridContent, _) = EditorUIHelpers.MakeResponsiveGridPicker(
+                gridContainerGo.transform, "ItemsGrid",
+                minCellSize: 64f, maxCellSize: 96f, spacing: 4f);
             EnsureFlexibleHeight(gridScroll.gameObject);
             EditorUIHelpers.AddVerticalScrollbar(gridScroll);
             refs.PickerContent = gridContent;
+
+            // Empty-state hint sibling — overlays the scroll viewport when no
+            // items match the filter. Toggled on/off by the picker rebuild.
+            var gridEmptyGo = CreateUI("GridEmptyState", gridContainerGo.transform);
+            var gridEmptyRt = gridEmptyGo.GetComponent<RectTransform>();
+            // Pull it out of the VLG so it can overlay the scroll view.
+            gridEmptyGo.AddComponent<LayoutElement>().ignoreLayout = true;
+            gridEmptyRt.anchorMin = Vector2.zero;
+            gridEmptyRt.anchorMax = Vector2.one;
+            gridEmptyRt.offsetMin = Vector2.zero;
+            gridEmptyRt.offsetMax = Vector2.zero;
+            var gridEmptyTmp        = gridEmptyGo.AddComponent<TextMeshProUGUI>();
+            gridEmptyTmp.text       = "No items match the current filter.";
+            gridEmptyTmp.fontSize   = 11f;
+            gridEmptyTmp.fontStyle  = FontStyles.Italic;
+            gridEmptyTmp.alignment  = TextAlignmentOptions.Center;
+            gridEmptyTmp.color      = TEXT_MUTED;
+            gridEmptyTmp.enableWordWrapping = true;
+            gridEmptyTmp.raycastTarget      = false;
+            refs.GridEmptyState = gridEmptyTmp;
+            gridEmptyGo.SetActive(false);
 
             // ── 3b. Table container ───────────────────────────────────────────
             var tableContainerGo = CreateUI("TableContainer", t);
@@ -130,13 +156,23 @@ namespace Valkur.Gameplay.Items
             tableVlg.childControlHeight     = true;
 
             // Sticky header: horizontal-only ScrollRect (no scrollbar; body drives it).
+            // Holds the header strip; the body's scroll position is mirrored onto
+            // the header content via absolute pixel offset (see Table.cs).
             var hdrScrollGo = CreateUI("TableHeaderScroll", tableContainerGo.transform);
             hdrScrollGo.AddComponent<LayoutElement>().preferredHeight = TABLE_HEADER_H;
             hdrScrollGo.AddComponent<RectMask2D>();
             hdrScrollGo.AddComponent<Image>().color = TileEditorTheme.HeaderBg;
 
-            var hdrViewport = CreateUI("Viewport", hdrScrollGo.transform);
-            UIFactory.StretchFill(hdrViewport);
+            // Viewport's right edge is inset by TABLE_SB_W to mirror the body
+            // viewport (which leaves room for the vertical scrollbar). Without
+            // this inset the header would be 12 px wider than the body and
+            // columns would visually misalign by 12 px when scrolled.
+            var hdrViewport   = CreateUI("Viewport", hdrScrollGo.transform);
+            var hdrViewportRt = hdrViewport.GetComponent<RectTransform>();
+            hdrViewportRt.anchorMin = Vector2.zero;
+            hdrViewportRt.anchorMax = Vector2.one;
+            hdrViewportRt.offsetMin = new Vector2(0f, 0f);
+            hdrViewportRt.offsetMax = new Vector2(-TABLE_SB_W, 0f);
 
             var hdrContent   = CreateUI("Content", hdrViewport.transform);
             var hdrContentRt = hdrContent.GetComponent<RectTransform>();
@@ -146,12 +182,27 @@ namespace Valkur.Gameplay.Items
             hdrContentRt.anchoredPosition = Vector2.zero;
             hdrContentRt.sizeDelta        = Vector2.zero;   // sized by BuildTableHeader()
 
+            // Visual filler for the 12 px gutter where the body's vertical
+            // scrollbar lives. Same colour as the scrollbar track so the chrome
+            // looks continuous from header through body.
+            var hdrGutterGo = CreateUI("HeaderGutter", hdrScrollGo.transform);
+            var hdrGutterRt = hdrGutterGo.GetComponent<RectTransform>();
+            hdrGutterRt.anchorMin        = new Vector2(1f, 0f);
+            hdrGutterRt.anchorMax        = new Vector2(1f, 1f);
+            hdrGutterRt.pivot            = new Vector2(1f, 0.5f);
+            hdrGutterRt.anchoredPosition = Vector2.zero;
+            hdrGutterRt.sizeDelta        = new Vector2(TABLE_SB_W, 0f);
+            hdrGutterGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+
+            // ScrollRect on the header is configured purely for content clipping
+            // and programmatic positioning — horizontal=false locks out user
+            // drag so the header can't desync from the body.
             var hdrSR = hdrScrollGo.AddComponent<ScrollRect>();
             hdrSR.content           = hdrContentRt;
-            hdrSR.viewport          = hdrViewport.GetComponent<RectTransform>();
-            hdrSR.horizontal        = true;
+            hdrSR.viewport          = hdrViewportRt;
+            hdrSR.horizontal        = false;
             hdrSR.vertical          = false;
-            hdrSR.scrollSensitivity = 20f;
+            hdrSR.scrollSensitivity = 0f;
             hdrSR.movementType      = ScrollRect.MovementType.Clamped;
 
             refs.TableHeaderScroll  = hdrSR;
