@@ -36,8 +36,9 @@ namespace Valkur.UI.MainMenu
 
             _optPanel = CreateUIObject("OptPanel", parent);
             var pr    = _optPanel.GetComponent<RectTransform>();
-            pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
-            pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero;
+            // Anchored below the ROGUELIKE 1.0 logo (logo bottom = -260 from canvas top).
+            pr.anchorMin = new Vector2(0.5f, 1f); pr.anchorMax = new Vector2(0.5f, 1f);
+            pr.pivot = new Vector2(0.5f, 1f); pr.anchoredPosition = new Vector2(0f, -280f);
             pr.sizeDelta = new Vector2(panelW, panelH);
             _optPanel.AddComponent<Image>().color = PanelBg;
 
@@ -128,8 +129,9 @@ namespace Valkur.UI.MainMenu
 
             _optSoundsPanel = CreateUIObject("OptSoundsPanel", parent);
             var r = _optSoundsPanel.GetComponent<RectTransform>();
-            r.anchorMin = new Vector2(0.5f, 0.5f); r.anchorMax = new Vector2(0.5f, 0.5f);
-            r.pivot = new Vector2(0.5f, 0.5f); r.anchoredPosition = Vector2.zero;
+            // Anchored below the ROGUELIKE 1.0 logo (logo bottom = -260 from canvas top).
+            r.anchorMin = new Vector2(0.5f, 1f); r.anchorMax = new Vector2(0.5f, 1f);
+            r.pivot = new Vector2(0.5f, 1f); r.anchoredPosition = new Vector2(0f, -280f);
             r.sizeDelta = new Vector2(panelW, panelH);
             _optSoundsPanel.AddComponent<Image>().color = PanelBg;
 

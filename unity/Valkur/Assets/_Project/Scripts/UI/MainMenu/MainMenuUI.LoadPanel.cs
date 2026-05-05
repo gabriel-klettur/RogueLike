@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -87,35 +87,24 @@ namespace Valkur.UI.MainMenu
 
             var panel = CreateUIObject("LoadPanel", _mmLoadOverlay.transform);
             var pr = panel.GetComponent<RectTransform>();
-            pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
-            pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero;
+            // Anchored below the ROGUELIKE 1.0 logo (logo bottom = -260 from canvas top).
+            pr.anchorMin = new Vector2(0.5f, 1f); pr.anchorMax = new Vector2(0.5f, 1f);
+            pr.pivot = new Vector2(0.5f, 1f); pr.anchoredPosition = new Vector2(0f, -280f);
             pr.sizeDelta = new Vector2(panelW, panelH);
             panel.AddComponent<Image>().color = PanelBg;
 
-            // Title
+            // Title — anchored hard to the top of the panel; matches the
+            // column-header band below so they never collide visually.
             var titleGo = CreateUIObject("LoadTitle", panel.transform);
             var tR = titleGo.GetComponent<RectTransform>();
             tR.anchorMin = new Vector2(0f, 1f); tR.anchorMax = new Vector2(1f, 1f);
             tR.pivot = new Vector2(0.5f, 1f);
-            tR.anchoredPosition = new Vector2(0f, -12f);
-            tR.sizeDelta = new Vector2(0f, 44f);
+            tR.anchoredPosition = new Vector2(0f, -8f);
+            tR.sizeDelta = new Vector2(0f, 40f);
             var titleTMP = titleGo.AddComponent<TextMeshProUGUI>();
-            titleTMP.text = "Cargar Juego"; titleTMP.fontSize = 28f;
+            titleTMP.text = "Load Game"; titleTMP.fontSize = 28f;
             titleTMP.alignment = TextAlignmentOptions.Center;
             titleTMP.color = AccentGold; titleTMP.fontStyle = FontStyles.Bold;
-
-            // Hint
-            var hintGo = CreateUIObject("LoadHint", panel.transform);
-            var hR = hintGo.GetComponent<RectTransform>();
-            hR.anchorMin = new Vector2(0f, 0f); hR.anchorMax = new Vector2(1f, 0f);
-            hR.pivot = new Vector2(0.5f, 0f);
-            hR.anchoredPosition = new Vector2(0f, 8f);
-            hR.sizeDelta = new Vector2(0f, 28f);
-            var hintTMP = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTMP.text = "W/S Partida  |  A/D Save  |  Enter Cargar  |  F2 Renombrar  |  Supr Borrar  |  Esc Volver";
-            hintTMP.fontSize = 13f;
-            hintTMP.alignment = TextAlignmentOptions.Center;
-            hintTMP.color = VersionCol;
 
             // Column separator
             var sep = CreateUIObject("ColSep", panel.transform);
@@ -126,13 +115,13 @@ namespace Valkur.UI.MainMenu
             sep.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.08f);
 
             // Column headers
-            BuildMMColHeader("PARTIDAS", panel.transform, 0.01f, splitX);
+            BuildMMColHeader("RUNS", panel.transform, 0.01f, splitX);
             BuildMMColHeader("SAVES",    panel.transform, splitX + 0.02f, 0.98f);
 
             // â”€â”€ LEFT: run list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var runList = CreateUIObject("MMRunList", panel.transform);
             var rlR = runList.GetComponent<RectTransform>();
-            rlR.anchorMin = new Vector2(0.01f, 0.12f); rlR.anchorMax = new Vector2(splitX, 0.87f);
+            rlR.anchorMin = new Vector2(0.01f, 0.12f); rlR.anchorMax = new Vector2(splitX, 0.81f);
             rlR.pivot = new Vector2(0f, 1f); rlR.sizeDelta = Vector2.zero;
             rlR.anchoredPosition = Vector2.zero;
 
@@ -215,7 +204,7 @@ namespace Valkur.UI.MainMenu
             // â”€â”€ RIGHT TOP: save list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var saveList = CreateUIObject("MMSaveList", panel.transform);
             var svR = saveList.GetComponent<RectTransform>();
-            svR.anchorMin = new Vector2(splitX + 0.02f, 0.51f); svR.anchorMax = new Vector2(0.98f, 0.87f);
+            svR.anchorMin = new Vector2(splitX + 0.02f, 0.51f); svR.anchorMax = new Vector2(0.98f, 0.81f);
             svR.pivot = new Vector2(0f, 1f); svR.sizeDelta = Vector2.zero;
             svR.anchoredPosition = Vector2.zero;
 
@@ -299,7 +288,7 @@ namespace Valkur.UI.MainMenu
             _mmLoadDetailText.fontSize = 14f;
             _mmLoadDetailText.alignment = TextAlignmentOptions.TopLeft;
             _mmLoadDetailText.color = TextNormal;
-            _mmLoadDetailText.text = "Selecciona una partida.";
+            _mmLoadDetailText.text = "Select a save.";
 
             // Target label (just above action buttons)
             var targetGo = CreateUIObject("MMTargetLabel", panel.transform);
@@ -319,13 +308,13 @@ namespace Valkur.UI.MainMenu
             // Action buttons (bottom of right column)
             float bL = splitX + 0.02f;
             float bW = (0.96f - splitX) / 3f;
-            AddMMLoadButton(panel.transform, "Cargar",
+            AddMMLoadButton(panel.transform, "Load",
                 new Vector2(bL,              0f), new Vector2(bL + bW,          0f),
                 new Color(0.24f, 0.47f, 0.2f, 1f), MMLoadSelectedSave);
-            AddMMLoadButton(panel.transform, "Renombrar",
+            AddMMLoadButton(panel.transform, "Rename",
                 new Vector2(bL + bW + 0.01f, 0f), new Vector2(bL + bW * 2f + 0.01f, 0f),
                 new Color(0.30f, 0.40f, 0.55f, 1f), BeginRenameSelectedSave);
-            AddMMLoadButton(panel.transform, "Borrar",
+            AddMMLoadButton(panel.transform, "Delete",
                 new Vector2(bL + bW * 2f + 0.02f, 0f), new Vector2(0.97f, 0f),
                 new Color(0.47f, 0.2f, 0.2f, 1f), RequestDeleteSelectedSave);
 
@@ -339,7 +328,10 @@ namespace Valkur.UI.MainMenu
         {
             var go = CreateUIObject($"ColHdr_{label}", parent);
             var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(anchorL, 0.88f); rt.anchorMax = new Vector2(anchorR, 0.94f);
+            // Sits below the title band (which spans roughly y ∈ [0.92, 1.00]).
+            // Lowering the headers from [0.88, 0.94] to [0.82, 0.87] gives the
+            // title clear airspace at the top — they used to overlap visually.
+            rt.anchorMin = new Vector2(anchorL, 0.82f); rt.anchorMax = new Vector2(anchorR, 0.87f);
             rt.pivot = new Vector2(0f, 0.5f); rt.sizeDelta = Vector2.zero; rt.anchoredPosition = Vector2.zero;
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.text = label; tmp.fontSize = 12f; tmp.fontStyle = FontStyles.Bold;
@@ -531,7 +523,7 @@ namespace Valkur.UI.MainMenu
                     if (run.isLegacy)
                     {
                         if (_mmRunFaceImages?[i] != null) _mmRunFaceImages[i].color = Color.clear;
-                        _mmRunTexts[i].text = "<color=#808080>Antiguas</color>";
+                        _mmRunTexts[i].text = "<color=#808080>Legacy</color>";
                     }
                     else
                     {
@@ -572,7 +564,7 @@ namespace Valkur.UI.MainMenu
                         ? $"<b><color=#FFC800>{Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY}</color></b>"
                         : sv.fileName;
                     _mmSaveTexts[i].text = sv.isCorrupted
-                        ? $"<color=#FF6666>[Corrupta]</color> {display}"
+                        ? $"<color=#FF6666>[Corrupted]</color> {display}"
                         : $"{display}  <color=#808080><size=12>{sv.timestamp}</size></color>";
                 }
                 else _mmSaveTexts[i].text = "";
@@ -584,7 +576,7 @@ namespace Valkur.UI.MainMenu
                 if (TryGetSelectedSave(out var tsv))
                 {
                     string label = tsv.isAutoSave ? Valkur.Gameplay.Save.SaveFileManager.AUTOSAVE_DISPLAY : tsv.fileName;
-                    _mmLoadTargetLabel.text = $"OperarÃ¡ sobre: <b>{label}</b>";
+                    _mmLoadTargetLabel.text = $"Will operate on: <b>{label}</b>";
                 }
                 else
                     _mmLoadTargetLabel.text = "";
@@ -595,17 +587,17 @@ namespace Valkur.UI.MainMenu
             {
                 if (_mmLoadRuns.Count == 0)
                 {
-                    _mmLoadDetailText.text = "No hay partidas guardadas.";
+                    _mmLoadDetailText.text = "No saved games.";
                 }
                 else if (TryGetSelectedSave(out var info))
                 {
                     if (info.isCorrupted)
                     {
                         _mmLoadDetailText.text =
-                            "<color=#FF6666><b>Partida corrupta</b></color>\n\n" +
-                            $"<color=#FFC800>Archivo:</color> {info.fileName}\n\n" +
-                            "Esta partida no se puede cargar.\n" +
-                            "Puedes borrarla con <b>Supr</b>.";
+                            "<color=#FF6666><b>Corrupted save</b></color>\n\n" +
+                            $"<color=#FFC800>File:</color> {info.fileName}\n\n" +
+                            "This save cannot be loaded.\n" +
+                            "You can delete it with <b>Del</b>.";
                     }
                     else
                     {
@@ -613,18 +605,18 @@ namespace Valkur.UI.MainMenu
                         string zone = string.IsNullOrEmpty(info.currentZone) ? "â€”" : info.currentZone;
                         string hp   = info.maxHp > 0 ? $"{info.hp}/{info.maxHp}" : "â€”";
                         _mmLoadDetailText.text =
-                            $"<color=#FFC800>Clase:</color> {cls}\n" +
-                            $"<color=#FFC800>Zona:</color>  {zone}\n\n" +
-                            $"<color=#FFC800>Nivel:</color>  {info.level}     " +
+                            $"<color=#FFC800>Class:</color> {cls}\n" +
+                            $"<color=#FFC800>Zone:</color>  {zone}\n\n" +
+                            $"<color=#FFC800>Level:</color> {info.level}     " +
                             $"<color=#FFC800>XP:</color>  {info.experience}\n" +
                             $"<color=#FFC800>HP:</color>    {hp}\n\n" +
-                            $"<color=#FFC800>Guardado:</color> {info.timestamp}\n\n" +
+                            $"<color=#FFC800>Saved:</color> {info.timestamp}\n\n" +
                             $"<color=#808080><size=12>{info.fileName}</size></color>";
                     }
                 }
                 else
                 {
-                    _mmLoadDetailText.text = "Selecciona una partida.";
+                    _mmLoadDetailText.text = "Select a save.";
                 }
             }
 
@@ -783,7 +775,7 @@ namespace Valkur.UI.MainMenu
             string sanitized = SaveFileManager.SanitizeSaveName(newName);
             if (sanitized == null)
             {
-                if (_mmRenameError != null) _mmRenameError.text = "Nombre invÃ¡lido.";
+                if (_mmRenameError != null) _mmRenameError.text = "Invalid name.";
                 return;
             }
             if (string.Equals(sanitized, info.fileName, System.StringComparison.OrdinalIgnoreCase))
@@ -794,7 +786,7 @@ namespace Valkur.UI.MainMenu
             string newPath = SaveFileManager.RenameSave(info.path, sanitized);
             if (newPath == null)
             {
-                if (_mmRenameError != null) _mmRenameError.text = "No se pudo renombrar (Â¿nombre duplicado?).";
+                if (_mmRenameError != null) _mmRenameError.text = "Could not rename (duplicate name?).";
                 return;
             }
             // Re-list and try to keep the renamed slot selected
@@ -819,8 +811,8 @@ namespace Valkur.UI.MainMenu
         {
             if (!TryGetSelectedSave(out var info)) return;
             if (_mmConfirmText != null)
-                _mmConfirmText.text = $"Â¿Borrar la partida\n<b>{info.fileName}</b>?\nEsta acciÃ³n no se puede deshacer.";
-            _mmConfirmSel = 0; // default to Cancelar
+                _mmConfirmText.text = $"Delete the save\n<b>{info.fileName}</b>?\nThis action cannot be undone.";
+            _mmConfirmSel = 0; // default to Cancel
             UpdateConfirmVisuals();
             SetLoadMode(LoadPanelMode.ConfirmDelete);
         }
@@ -883,7 +875,7 @@ namespace Valkur.UI.MainMenu
             tr.pivot = new Vector2(0.5f, 1f); tr.anchoredPosition = new Vector2(0f, -14f);
             tr.sizeDelta = new Vector2(0f, 36f);
             var ttmp = titleGo.AddComponent<TextMeshProUGUI>();
-            ttmp.text = "Renombrar partida"; ttmp.fontSize = 22f;
+            ttmp.text = "Rename Save"; ttmp.fontSize = 22f;
             ttmp.alignment = TextAlignmentOptions.Center;
             ttmp.color = AccentGold; ttmp.fontStyle = FontStyles.Bold;
 
@@ -914,7 +906,7 @@ namespace Valkur.UI.MainMenu
             phR.anchorMin = Vector2.zero; phR.anchorMax = Vector2.one;
             phR.sizeDelta = Vector2.zero;
             var phTMP = phGo.AddComponent<TextMeshProUGUI>();
-            phTMP.text = "Nombre de la partida..."; phTMP.fontSize = 18f;
+            phTMP.text = "Save name..."; phTMP.fontSize = 18f;
             phTMP.color = new Color(1f, 1f, 1f, 0.35f); phTMP.fontStyle = FontStyles.Italic;
             phTMP.alignment = TextAlignmentOptions.Left;
 
@@ -938,11 +930,11 @@ namespace Valkur.UI.MainMenu
             _mmRenameError.color = new Color(1f, 0.45f, 0.45f, 1f);
             _mmRenameError.text = "";
 
-            // Mouse-clickable buttons (Cancelar / Aceptar) â€” keyboard parity: Esc / Enter
-            BuildOverlayButton(box.transform, "Cancelar", new Vector2(0.5f, 0f),
+            // Mouse-clickable buttons (Cancel / OK) — keyboard parity: Esc / Enter
+            BuildOverlayButton(box.transform, "Cancel", new Vector2(0.5f, 0f),
                 new Vector2(-110f, 60f), new Vector2(180f, 38f),
                 new Color(0.30f, 0.30f, 0.30f, 1f), CancelRename);
-            BuildOverlayButton(box.transform, "Aceptar",  new Vector2(0.5f, 0f),
+            BuildOverlayButton(box.transform, "OK",  new Vector2(0.5f, 0f),
                 new Vector2( 110f, 60f), new Vector2(180f, 38f),
                 new Color(0.24f, 0.47f, 0.20f, 1f), CommitRename);
 
@@ -952,7 +944,7 @@ namespace Valkur.UI.MainMenu
             hr.pivot = new Vector2(0.5f, 0f); hr.anchoredPosition = new Vector2(0f, 14f);
             hr.sizeDelta = new Vector2(0f, 22f);
             var htmp = hintGo.AddComponent<TextMeshProUGUI>();
-            htmp.text = "Enter Confirmar  |  Esc Cancelar";
+            htmp.text = "Enter Confirm  |  Esc Cancel";
             htmp.fontSize = 13f;
             htmp.alignment = TextAlignmentOptions.Center;
             htmp.color = VersionCol;
@@ -980,10 +972,10 @@ namespace Valkur.UI.MainMenu
             _mmConfirmText.alignment = TextAlignmentOptions.Center;
             _mmConfirmText.color = TextNormal;
 
-            // Two buttons: Cancelar (0) / Borrar (1)
+            // Two buttons: Cancel (0) / Delete (1)
             _mmConfirmPills = new Image[2];
             _mmConfirmTexts = new TextMeshProUGUI[2];
-            string[] labels = { "Cancelar", "Borrar" };
+            string[] labels = { "Cancel", "Delete" };
             float[]  xPos   = { 0.25f, 0.75f };
             for (int i = 0; i < 2; i++)
             {
@@ -1020,7 +1012,7 @@ namespace Valkur.UI.MainMenu
             hr.pivot = new Vector2(0.5f, 0f); hr.anchoredPosition = new Vector2(0f, 4f);
             hr.sizeDelta = new Vector2(0f, 20f);
             var htmp = hintGo.AddComponent<TextMeshProUGUI>();
-            htmp.text = "â† â†’ Elegir  |  Enter Confirmar  |  Esc Cancelar";
+            htmp.text = "<- -> Choose  |  Enter Confirm  |  Esc Cancel";
             htmp.fontSize = 13f;
             htmp.alignment = TextAlignmentOptions.Center;
             htmp.color = VersionCol;

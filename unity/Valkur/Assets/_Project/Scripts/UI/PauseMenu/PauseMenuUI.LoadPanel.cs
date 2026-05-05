@@ -25,8 +25,7 @@ namespace Valkur.UI.PauseMenu
             r.sizeDelta = new Vector2(panelW, panelH);
             panel.AddComponent<Image>().color = PanelBg;
 
-            AddPanelTitle(panel.transform, "Cargar Juego", panelH, 20f);
-            AddHint(panel.transform, "W/S Navegar  |  Enter Cargar  |  Supr Borrar  |  Esc Volver", panelH);
+            AddPanelTitle(panel.transform, "Load Game", panelH, 20f);
 
             // Left column: save list (scrollable)
             const float listW = 0.48f;
@@ -107,14 +106,14 @@ namespace Valkur.UI.PauseMenu
             _loadDetailText.fontSize = 16f;
             _loadDetailText.alignment = TextAlignmentOptions.TopLeft;
             _loadDetailText.color = TextNormal;
-            _loadDetailText.text = "Selecciona una partida.";
+            _loadDetailText.text = "Select a save.";
 
             // Action buttons
             float btnY = 0.02f; float btnH = 32f;
-            AddLoadActionButton(panel.transform, "Cargar", new Vector2(listW + 0.04f, btnY),
+            AddLoadActionButton(panel.transform, "Load", new Vector2(listW + 0.04f, btnY),
                 new Vector2(listW + 0.22f, btnY), btnH,
                 new Color(0.24f, 0.47f, 0.2f, 1f), LoadSelectedSave);
-            AddLoadActionButton(panel.transform, "Borrar", new Vector2(listW + 0.26f, btnY),
+            AddLoadActionButton(panel.transform, "Delete", new Vector2(listW + 0.26f, btnY),
                 new Vector2(listW + 0.44f, btnY), btnH,
                 new Color(0.47f, 0.2f, 0.2f, 1f), DeleteSelectedSave);
 
@@ -227,16 +226,16 @@ namespace Valkur.UI.PauseMenu
             {
                 if (_loadSaves.Count == 0)
                 {
-                    _loadDetailText.text = "No hay partidas guardadas.";
+                    _loadDetailText.text = "No saved games.";
                 }
                 else if (_loadSel >= 0 && _loadSel < _loadSaves.Count)
                 {
                     var info = _loadSaves[_loadSel];
                     _loadDetailText.text =
-                        $"<color=#FFC800>Archivo:</color> {info.fileName}\n\n" +
-                        $"<color=#FFC800>Fecha:</color> {info.timestamp}\n\n" +
+                        $"<color=#FFC800>File:</color> {info.fileName}\n\n" +
+                        $"<color=#FFC800>Date:</color> {info.timestamp}\n\n" +
                         $"<color=#FFC800>Schema:</color> {info.schemaVersion}\n\n" +
-                        $"<color=#FFC800>Ruta:</color>\n<size=13>{info.path}</size>";
+                        $"<color=#FFC800>Path:</color>\n<size=13>{info.path}</size>";
                 }
             }
         }
