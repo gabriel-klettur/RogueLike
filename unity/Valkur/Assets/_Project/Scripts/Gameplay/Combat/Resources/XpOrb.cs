@@ -20,30 +20,41 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("XP value of this orb.")]
         private int xpValue = 1;
 
-        [SerializeField, Tooltip("Attraction radius in world units (Python: 100px / 16 PPU).")]
-        private float attractRadius = 6.25f;
+        [SerializeField, Tooltip("Auto-pickup radius in world units. " +
+                                 "Tile is 1 wu (PPU=16, 16px tiles), so 1.5 = ~1–2 tiles. " +
+                                 "Until the player crosses inside this radius the orb sits idle on the ground.")]
+        private float attractRadius = 1.5f;
 
-        [SerializeField, Tooltip("Movement speed toward player in world units/sec (Python: 5px/frame * 60fps / 16 PPU).")]
+        [SerializeField, Tooltip("Movement speed toward player in world units/sec when within attract radius.")]
         private float attractSpeed = 18.75f;
 
-        [SerializeField, Tooltip("Distance at which the orb is absorbed.")]
+        [SerializeField, Tooltip("Distance at which the orb is absorbed (granted to the player).")]
         private float absorbDistance = 0.5f;
+
+        [SerializeField, Tooltip("Grace period in seconds after spawn during which the orb ignores the player. " +
+                                 "Prevents instant absorption when an NPC dies in melee range.")]
+        private float settleDuration = 0.4f;
 
         private Transform _playerTransform;
         private bool _absorbed;
+        private float _spawnTime;
 
         public int XpValue => xpValue;
+        /// <summary>True while the orb is in its post-spawn grace period.</summary>
+        public bool IsSettling => Time.time - _spawnTime < settleDuration;
 
         public void Initialize(int xp, Vector3 position)
         {
             xpValue = xp;
             transform.position = position;
             _absorbed = false;
+            _spawnTime = Time.time;
         }
 
         private void Update()
         {
             if (_absorbed) return;
+            if (IsSettling) return; // sit on the ground for the grace period
 
             if (_playerTransform == null)
             {
@@ -55,19 +66,19 @@ namespace Valkur.Gameplay
             Vector3 toPlayer = _playerTransform.position - transform.position;
             float dist = toPlayer.magnitude;
 
+            // Outside the auto-pickup radius the orb stays put — the player has to walk closer.
+            if (dist > attractRadius) return;
+
             if (dist <= absorbDistance)
             {
                 Absorb();
                 return;
             }
 
-            if (dist <= attractRadius)
-            {
-                Vector3 dir = toPlayer.normalized;
-                float step = attractSpeed * Time.deltaTime;
-                if (step >= dist) step = dist;
-                transform.position += dir * step;
-            }
+            Vector3 dir = toPlayer.normalized;
+            float step = attractSpeed * Time.deltaTime;
+            if (step >= dist) step = dist;
+            transform.position += dir * step;
         }
 
         private void Absorb()
