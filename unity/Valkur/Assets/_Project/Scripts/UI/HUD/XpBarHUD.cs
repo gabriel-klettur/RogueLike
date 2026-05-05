@@ -55,8 +55,12 @@ namespace Valkur.UI.HUD
             if (_xp == null) return;
 
             _boundEntity = _xp.gameObject;
-            _xp.OnXpGained += OnXpGained;
-            _xp.OnLevelUp  += OnLevelUp;
+            _xp.OnXpGained     += OnXpGained;
+            _xp.OnLevelUp      += OnLevelUp;
+            // Critical for save-load: Experience.Initialize() does not raise
+            // OnXpGained/OnLevelUp, so without OnStateChanged the HUD would
+            // stay at 0/0 even after a successful Restore.
+            _xp.OnStateChanged += OnStateChanged;
             GameEvents.OnLevelUp += OnGlobalLevelUp;
 
             RefreshAll();
@@ -66,8 +70,9 @@ namespace Valkur.UI.HUD
         {
             if (_xp != null)
             {
-                _xp.OnXpGained -= OnXpGained;
-                _xp.OnLevelUp  -= OnLevelUp;
+                _xp.OnXpGained     -= OnXpGained;
+                _xp.OnLevelUp      -= OnLevelUp;
+                _xp.OnStateChanged -= OnStateChanged;
             }
             GameEvents.OnLevelUp -= OnGlobalLevelUp;
             _xp = null;
@@ -78,6 +83,7 @@ namespace Valkur.UI.HUD
 
         private void OnXpGained(int _) => RefreshAll();
         private void OnLevelUp(int _)  { RefreshAll(); FlashLevelUp(); }
+        private void OnStateChanged()  => RefreshAll();
         private void OnGlobalLevelUp(GameObject entity, int _)
         {
             if (entity == _boundEntity) FlashLevelUp();

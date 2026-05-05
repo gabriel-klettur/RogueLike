@@ -55,6 +55,17 @@ namespace Valkur.Gameplay
         public event Action<int> OnLevelUp;
         public event Action<int> OnLevelLost;
 
+        /// <summary>
+        /// Fired whenever the XP or Level fields are written through any path
+        /// (gain, loss, save-load <see cref="Initialize"/>). Lets the HUD,
+        /// telemetry and FX layers re-read the current state on a single hook
+        /// regardless of which mutation triggered it. Crucial after
+        /// <see cref="Initialize"/> because that path does NOT fire
+        /// <see cref="OnXpGained"/> or <see cref="OnLevelUp"/>, and yet UI
+        /// bound before the Restore would otherwise stay at 0/0 visually.
+        /// </summary>
+        public event Action OnStateChanged;
+
         /// <summary>True iff the entity has reached the curve's level cap.</summary>
         public bool IsAtLevelCap => curve != null && curve.IsAtCap(_level);
 
@@ -65,6 +76,7 @@ namespace Valkur.Gameplay
         {
             _totalXp = xp;
             _level = level;
+            OnStateChanged?.Invoke();
         }
 
         /// <summary>
