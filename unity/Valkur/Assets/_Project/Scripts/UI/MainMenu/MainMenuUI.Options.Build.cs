@@ -142,8 +142,6 @@ namespace Valkur.UI.MainMenu
             _optSoundBars   = new Image[rowDefs.Length];
             _optSoundLabels = new TextMeshProUGUI[rowDefs.Length];
 
-            const float btnSize = 28f;
-
             for (int i = 0; i < rowDefs.Length; i++)
             {
                 var def = rowDefs[i];
@@ -163,7 +161,7 @@ namespace Valkur.UI.MainMenu
 
                 var lblGo = CreateUIObject($"OSLabel_{i}", _optSoundsPanel.transform);
                 var lblR  = lblGo.GetComponent<RectTransform>();
-                lblR.anchorMin = new Vector2(0f, 1f); lblR.anchorMax = new Vector2(0.55f, 1f);
+                lblR.anchorMin = new Vector2(0f, 1f); lblR.anchorMax = new Vector2(0.42f, 1f);
                 lblR.pivot = new Vector2(0f, 0.5f);
                 lblR.anchoredPosition = new Vector2(padX + 12f, cy);
                 lblR.sizeDelta = new Vector2(0f, rowH);
@@ -174,7 +172,7 @@ namespace Valkur.UI.MainMenu
 
                 var valGo = CreateUIObject($"OSVal_{i}", _optSoundsPanel.transform);
                 var valR  = valGo.GetComponent<RectTransform>();
-                valR.anchorMin = new Vector2(0.58f, 1f); valR.anchorMax = new Vector2(0.72f, 1f);
+                valR.anchorMin = new Vector2(0.86f, 1f); valR.anchorMax = new Vector2(0.97f, 1f);
                 valR.pivot = new Vector2(0.5f, 0.5f);
                 valR.anchoredPosition = new Vector2(0f, cy);
                 valR.sizeDelta = new Vector2(0f, rowH);
@@ -183,16 +181,13 @@ namespace Valkur.UI.MainMenu
                 valTMP.color = AccentGold;
 
                 int cap = i;
-                AddOptStepButton(_optSoundsPanel.transform, $"OSMin_{i}", "-",
-                    new Vector2(0.75f, 0.5f), cy, btnSize, () => ChangeOptSound(cap, -1));
-                AddOptStepButton(_optSoundsPanel.transform, $"OSPlus_{i}", "+",
-                    new Vector2(0.88f, 0.5f), cy, btnSize, () => ChangeOptSound(cap, +1));
+                var slider = AddOptSoundSlider(_optSoundsPanel.transform, $"OSSlider_{i}",
+                    cy, new Vector2(0.44f, 0.84f), def.min, def.max, def.step, def.get(),
+                    v => OnOptSoundSliderChanged(cap, v));
 
                 var hitGo = CreateUIObject($"OSHit_{i}", _optSoundsPanel.transform);
                 SetOptRowRect(hitGo, cy, rowH);
                 var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
-                var hitBtn = hitGo.AddComponent<Button>(); hitBtn.targetGraphic = hitImg;
-                hitBtn.onClick.AddListener(() => { _optSoundSel = cap; UpdateOptSoundsVisuals(); });
                 var trig  = hitGo.AddComponent<EventTrigger>();
                 var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
                 enter.callback.AddListener(_ => { _optSoundSel = cap; UpdateOptSoundsVisuals(); });
@@ -201,6 +196,7 @@ namespace Valkur.UI.MainMenu
                 var sr = new SoundRow
                 {
                     valueText = valTMP,
+                    slider    = slider,
                     min = def.min, max = def.max, step = def.step,
                     get = def.get, set = def.set
                 };
@@ -208,7 +204,7 @@ namespace Valkur.UI.MainMenu
                 RefreshOptSoundRowText(i);
             }
 
-            AddOptHint(_optSoundsPanel.transform, "<- -> Adjust  |  Enter Save  |  Esc Back", panelH);
+            AddOptHint(_optSoundsPanel.transform, "<- -> Adjust  |  Drag handle  |  Enter Save  |  Esc Back", panelH);
         }
 
         // ── Inputs panel ─────────────────────────────────────────────────────

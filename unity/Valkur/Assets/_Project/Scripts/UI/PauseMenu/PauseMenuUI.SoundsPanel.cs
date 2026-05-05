@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.UIKit;
 
 namespace Valkur.UI.PauseMenu
 {
@@ -50,8 +51,6 @@ namespace Valkur.UI.PauseMenu
             _soundBars      = new Image[rowDefs.Length];
             _soundRowLabels = new TextMeshProUGUI[rowDefs.Length];
 
-            const float btnSize = 28f;
-
             for (int i = 0; i < rowDefs.Length; i++)
             {
                 var def = rowDefs[i];
@@ -71,7 +70,7 @@ namespace Valkur.UI.PauseMenu
 
                 var lblGo = CreateUIObject($"SLabel_{i}", panel.transform);
                 var lblR  = lblGo.GetComponent<RectTransform>();
-                lblR.anchorMin = new Vector2(0f, 1f); lblR.anchorMax = new Vector2(0.55f, 1f);
+                lblR.anchorMin = new Vector2(0f, 1f); lblR.anchorMax = new Vector2(0.42f, 1f);
                 lblR.pivot = new Vector2(0f, 0.5f);
                 lblR.anchoredPosition = new Vector2(padX + 12f, cy);
                 lblR.sizeDelta = new Vector2(0f, rowH);
@@ -82,7 +81,7 @@ namespace Valkur.UI.PauseMenu
 
                 var valGo = CreateUIObject($"SVal_{i}", panel.transform);
                 var valR  = valGo.GetComponent<RectTransform>();
-                valR.anchorMin = new Vector2(0.58f, 1f); valR.anchorMax = new Vector2(0.72f, 1f);
+                valR.anchorMin = new Vector2(0.86f, 1f); valR.anchorMax = new Vector2(0.97f, 1f);
                 valR.pivot = new Vector2(0.5f, 0.5f);
                 valR.anchoredPosition = new Vector2(0f, cy);
                 valR.sizeDelta = new Vector2(0f, rowH);
@@ -91,16 +90,13 @@ namespace Valkur.UI.PauseMenu
                 valTMP.color = AccentGold;
 
                 int cap = i;
-                AddStepButton(panel.transform, $"SMin_{i}", "-", new Vector2(0.75f, 0.5f), cy,
-                    btnSize, () => ChangeSound(cap, -1));
-                AddStepButton(panel.transform, $"SPlus_{i}", "+", new Vector2(0.88f, 0.5f), cy,
-                    btnSize, () => ChangeSound(cap, +1));
+                var slider = AddSoundSlider(panel.transform, $"SSlider_{i}", cy,
+                    new Vector2(0.44f, 0.84f), def.min, def.max, def.step, def.get(),
+                    v => OnSoundSliderChanged(cap, v));
 
                 var hitGo = CreateUIObject($"SHit_{i}", panel.transform);
                 SetRowRect(hitGo, cy, rowH, 0f);
                 var hitImg = hitGo.AddComponent<Image>(); hitImg.color = Color.clear;
-                var hitBtn = hitGo.AddComponent<Button>(); hitBtn.targetGraphic = hitImg;
-                hitBtn.onClick.AddListener(() => { _soundSel = cap; UpdateSoundsPanel(); });
                 var trig  = hitGo.AddComponent<EventTrigger>();
                 var enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
                 enter.callback.AddListener(_ => { _soundSel = cap; UpdateSoundsPanel(); });
@@ -109,6 +105,7 @@ namespace Valkur.UI.PauseMenu
                 var sr = new SoundRow
                 {
                     valueText = valTMP,
+                    slider    = slider,
                     min = def.min, max = def.max, step = def.step,
                     get = def.get, set = def.set
                 };
@@ -116,8 +113,60 @@ namespace Valkur.UI.PauseMenu
                 RefreshSoundRowText(i);
             }
 
-            AddHint(panel.transform, "<- -> Adjust  |  R Reset  |  Esc Back", panelH);
+            AddHint(panel.transform, "<- -> Adjust  |  Drag handle  |  R Reset  |  Esc Back", panelH);
             return panel;
+        }
+
+        // Cyan-track / grey-handle skin shared with the main-menu Sound Options.
+        private static readonly Color SoundSliderTrack  = new Color(0.20f, 0.22f, 0.27f, 1f);
+        private static readonly Color SoundSliderFill   = new Color(0.30f, 0.78f, 0.86f, 1f);
+        private static readonly Color SoundSliderHandle = new Color(0.78f, 0.78f, 0.78f, 1f);
+
+        private Slider AddSoundSlider(Transform parent, string name, float cy,
+            Vector2 anchorX, float min, float max, float step, float initial,
+            System.Action<float> onChanged)
+        {
+            const float trackH = 12f;
+            const float thumb  = 18f;
+
+            var go = CreateUIObject(name, parent);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(anchorX.x, 1f);
+            rt.anchorMax = new Vector2(anchorX.y, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, cy);
+            rt.sizeDelta = new Vector2(0f, trackH);
+
+            var slider = UISlider.Make(go.transform,
+                min: min, max: max, initial: Mathf.Clamp(initial, min, max),
+                onValueChanged: onChanged, height: trackH, thumbSize: thumb,
+                trackColor: SoundSliderTrack, fillColor: SoundSliderFill, handleColor: SoundSliderHandle);
+
+            // Stretch slider to fill our anchored container (no LayoutGroup here).
+            var sRt = (RectTransform)slider.transform;
+            sRt.anchorMin = Vector2.zero; sRt.anchorMax = Vector2.one;
+            sRt.offsetMin = Vector2.zero; sRt.offsetMax = Vector2.zero;
+            return slider;
+        }
+
+        private void OnSoundSliderChanged(int i, float v)
+        {
+            if (i < 0 || i >= _soundRows.Count) return;
+            var row = _soundRows[i];
+            float snapped = v;
+            if (row.step > 0f)
+            {
+                snapped = Mathf.Round((v - row.min) / row.step) * row.step + row.min;
+                snapped = Mathf.Clamp(snapped, row.min, row.max);
+                if (!Mathf.Approximately(snapped, v) && row.slider != null)
+                    row.slider.SetValueWithoutNotify(snapped);
+            }
+            row.set(snapped);
+            _soundSel = i;
+            UpdateSoundsPanel();
+            RefreshSoundRowText(i);
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            Valkur.Core.GameSettings.Instance?.Save();
         }
 
         // ── Sounds panel input ───────────────────────────────────────────────
@@ -144,6 +193,7 @@ namespace Valkur.UI.PauseMenu
             var row = _soundRows[i];
             float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
             row.set(v);
+            if (row.slider != null) row.slider.SetValueWithoutNotify(v);
             RefreshSoundRowText(i);
             ServiceLocator.Get<IAudioService>()?.ApplySettings();
             Valkur.Core.GameSettings.Instance?.Save();

@@ -13,12 +13,13 @@ namespace Valkur.UIKit
     {
         public static Slider Make(Transform parent,
             float min = 0f, float max = 1f, float initial = 0.5f,
-            Action<float> onValueChanged = null, float height = 20f, float thumbSize = 14f)
+            Action<float> onValueChanged = null, float height = 20f, float thumbSize = 14f,
+            Color? trackColor = null, Color? fillColor = null, Color? handleColor = null)
         {
             var go = UIFactory.CreateUI("Slider", parent);
             go.AddComponent<LayoutElement>().preferredHeight = height;
             var bg = go.AddComponent<Image>();
-            bg.color = new Color(0.10f, 0.12f, 0.14f, 0.95f);
+            bg.color = trackColor ?? new Color(0.10f, 0.12f, 0.14f, 0.95f);
 
             var slider = go.AddComponent<Slider>();
             slider.direction = Slider.Direction.LeftToRight;
@@ -37,7 +38,7 @@ namespace Valkur.UIKit
             fillRt.anchorMin = Vector2.zero; fillRt.anchorMax = Vector2.one;
             fillRt.offsetMin = Vector2.zero; fillRt.offsetMax = Vector2.zero;
             var fillImg = fillGo.AddComponent<Image>();
-            fillImg.color = UITheme.ACCENT_DIM;
+            fillImg.color = fillColor ?? UITheme.ACCENT_DIM;
             slider.fillRect = fillRt;
 
             // Handle
@@ -54,7 +55,7 @@ namespace Valkur.UIKit
             hRt.pivot     = new Vector2(0.5f, 0.5f);
             hRt.sizeDelta = new Vector2(thumbSize, thumbSize);
             var hImg = handleGo.AddComponent<Image>();
-            hImg.color = UITheme.ACCENT;
+            hImg.color = handleColor ?? UITheme.ACCENT;
             slider.handleRect = hRt;
             slider.targetGraphic = hImg;
 

@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.UIKit;
 
 namespace Valkur.UI.MainMenu
 {
@@ -65,6 +66,31 @@ namespace Valkur.UI.MainMenu
             var row = _optSoundRows[i];
             float v = Mathf.Clamp(row.get() + dir * row.step, row.min, row.max);
             row.set(v);
+            if (row.slider != null) row.slider.SetValueWithoutNotify(v);
+            RefreshOptSoundRowText(i);
+            ServiceLocator.Get<IAudioService>()?.ApplySettings();
+            GameSettings.Instance?.Save();
+        }
+
+        // Routed through OnOptSoundSliderChanged so drag-from-handle and
+        // arrow-key nudge share the exact same persistence pipeline. The
+        // step snap keeps fractional drags landing on tunable boundaries
+        // (e.g. ducking-hold lands on whole 25 ms increments).
+        private void OnOptSoundSliderChanged(int i, float v)
+        {
+            if (i < 0 || i >= _optSoundRows.Count) return;
+            var row = _optSoundRows[i];
+            float snapped = v;
+            if (row.step > 0f)
+            {
+                snapped = Mathf.Round((v - row.min) / row.step) * row.step + row.min;
+                snapped = Mathf.Clamp(snapped, row.min, row.max);
+                if (!Mathf.Approximately(snapped, v) && row.slider != null)
+                    row.slider.SetValueWithoutNotify(snapped);
+            }
+            row.set(snapped);
+            _optSoundSel = i;
+            UpdateOptSoundsVisuals();
             RefreshOptSoundRowText(i);
             ServiceLocator.Get<IAudioService>()?.ApplySettings();
             GameSettings.Instance?.Save();
@@ -112,29 +138,41 @@ namespace Valkur.UI.MainMenu
             tmp.color = VersionCol;
         }
 
-        private void AddOptStepButton(Transform parent, string name, string label,
-            Vector2 anchor, float cy, float size, UnityEngine.Events.UnityAction action)
+        // Cyan-track / grey-handle slider skin for Sound Options rows.
+        // Reuses Valkur.UIKit.UISlider so the drag math, focus + raycast
+        // wiring stay consistent with the rest of the UI kit; the kit's
+        // gold defaults are overridden via the optional colour params.
+        private static readonly Color OptSliderTrack  = new Color(0.20f, 0.22f, 0.27f, 1f);
+        private static readonly Color OptSliderFill   = new Color(0.30f, 0.78f, 0.86f, 1f);
+        private static readonly Color OptSliderHandle = new Color(0.78f, 0.78f, 0.78f, 1f);
+
+        private Slider AddOptSoundSlider(Transform parent, string name, float cy,
+            Vector2 anchorX, float min, float max, float step, float initial,
+            System.Action<float> onChanged)
         {
+            const float trackH  = 12f;
+            const float thumb   = 18f;
+
             var go = CreateUIObject(name, parent);
             var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(anchor.x, 1f); rt.anchorMax = new Vector2(anchor.x, 1f);
+            rt.anchorMin = new Vector2(anchorX.x, 1f);
+            rt.anchorMax = new Vector2(anchorX.y, 1f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, cy);
-            rt.sizeDelta = new Vector2(size, size);
-            var img = go.AddComponent<Image>();
-            img.color = new Color(0.22f, 0.22f, 0.28f, 1f);
-            var btn = go.AddComponent<Button>(); btn.targetGraphic = img;
-            btn.onClick.AddListener(action);
-            // Text as child
-            var txtGo = CreateUIObject("Label", go.transform);
-            var txtR  = txtGo.GetComponent<RectTransform>();
-            txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
-            txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
-            var tmp = txtGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 20f;
-            tmp.alignment = TextAlignmentOptions.Center; tmp.color = AccentGold;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.raycastTarget = false;
+            rt.sizeDelta = new Vector2(0f, trackH);
+
+            var slider = UISlider.Make(go.transform,
+                min: min, max: max, initial: Mathf.Clamp(initial, min, max),
+                onValueChanged: onChanged, height: trackH, thumbSize: thumb,
+                trackColor: OptSliderTrack, fillColor: OptSliderFill, handleColor: OptSliderHandle);
+
+            // UISlider.Make creates its child rect with a LayoutElement, but here
+            // it lives outside a layout group; stretch the slider to fill the
+            // anchored container so its hit area matches the visible track.
+            var sRt = (RectTransform)slider.transform;
+            sRt.anchorMin = Vector2.zero; sRt.anchorMax = Vector2.one;
+            sRt.offsetMin = Vector2.zero; sRt.offsetMax = Vector2.zero;
+            return slider;
         }
 
         private void AddOptTableCell(Transform parent, string text, TextAlignmentOptions align,

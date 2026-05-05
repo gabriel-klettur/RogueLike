@@ -35,6 +35,7 @@ namespace Valkur.UI.MainMenu
         private struct SoundRow
         {
             public TextMeshProUGUI valueText;
+            public UnityEngine.UI.Slider slider;
             public float min, max, step;
             public System.Func<float> get;
             public System.Action<float> set;

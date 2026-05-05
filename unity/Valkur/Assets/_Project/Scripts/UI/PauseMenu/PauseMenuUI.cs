@@ -103,10 +103,11 @@ namespace Valkur.UI.PauseMenu
         private TextMeshProUGUI[] _optTexts;
 
         // ── Sounds panel ─────────────────────────────────────────────────────
-        // Each row: label | value display | - btn | + btn
+        // Each row: label | cyan-track slider | numeric value
         private struct SoundRow
         {
             public TextMeshProUGUI valueText;
+            public UnityEngine.UI.Slider slider;
             public float min, max, step;
             public System.Func<float> get;
             public System.Action<float> set;

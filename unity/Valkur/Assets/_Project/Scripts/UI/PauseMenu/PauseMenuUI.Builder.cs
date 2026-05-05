@@ -230,30 +230,6 @@ namespace Valkur.UI.PauseMenu
             tmp.alignment = TextAlignmentOptions.Center; tmp.color = VersionCol;
         }
 
-        private void AddStepButton(Transform parent, string name, string label,
-            Vector2 anchor, float cy, float size, UnityEngine.Events.UnityAction action)
-        {
-            var go = CreateUIObject(name, parent);
-            var r  = go.GetComponent<RectTransform>();
-            r.anchorMin = new Vector2(anchor.x, 1f); r.anchorMax = new Vector2(anchor.x, 1f);
-            r.pivot = new Vector2(0.5f, 0.5f);
-            r.anchoredPosition = new Vector2(0f, cy);
-            r.sizeDelta = new Vector2(size, size);
-            var img = go.AddComponent<Image>();
-            img.color = new Color(0.22f, 0.22f, 0.28f, 1f);
-            var btn = go.AddComponent<Button>(); btn.targetGraphic = img;
-            btn.onClick.AddListener(action);
-            var txtGo = CreateUIObject("Label", go.transform);
-            var txtR  = txtGo.GetComponent<RectTransform>();
-            txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
-            txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
-            var tmp = txtGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = label; tmp.fontSize = 20f;
-            tmp.alignment = TextAlignmentOptions.Center; tmp.color = AccentGold;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.raycastTarget = false;
-        }
-
         private void AddTableCell(Transform parent, string text, TextAlignmentOptions align,
             float anchorX, float anchorW)
         {
