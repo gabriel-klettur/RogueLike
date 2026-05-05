@@ -96,13 +96,13 @@ namespace Valkur.Gameplay
             Vector3 orbPos = position + new Vector3(offset.x, offset.y, 0f);
 
             var go = new GameObject("XP_Orb");
+            go.transform.position = orbPos;
             go.layer = LayerMask.NameToLayer("Pickup") != -1
                 ? LayerMask.NameToLayer("Pickup") : 0;
 
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.color = new Color(0.3f, 1f, 0.5f, 0.9f);
-            sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            sr.sprite = XpOrb.GetOrbSprite();
+            // Canonical visual: blue gradient sprite + sparkle particles + scale pulse.
+            // Kept in XpOrb.BuildVisuals so future spawn paths share the look.
+            XpOrb.BuildVisuals(go);
 
             var collider = go.AddComponent<CircleCollider2D>();
             collider.isTrigger = true;
