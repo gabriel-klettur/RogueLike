@@ -59,6 +59,11 @@ namespace Valkur.Gameplay.Items
             public TMP_InputField   SearchBox;
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
+            // Table view (second tab)
+            public ScrollRect       TableHeaderScroll;
+            public RectTransform    TableHeaderContent;
+            public ScrollRect       TableBodyScroll;
+            public RectTransform    TableBodyContent;
 
             // Properties panel
             public TextMeshProUGUI  PropsTitle;   // 22px header — shows item name or "(no selection)"

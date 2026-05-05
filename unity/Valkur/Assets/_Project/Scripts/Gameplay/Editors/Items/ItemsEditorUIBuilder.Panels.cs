@@ -10,12 +10,12 @@ using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 namespace Valkur.Gameplay.Items
 {
     /// <summary>
-    /// Items Editor panel builders — PHASE 1 UI/UX scaffolding.
+    /// Items Editor panel builders.
     /// Each panel mirrors a Python items_editor sub-panel:
-    ///   • Modes      ← Toolbar + AddRemove panels (combined into one narrow column)
-    ///   • Items      ← Picker panel (search + grid)
-    ///   • Properties ← Properties panel (selected item inspector)
-    ///   • Instances  ← InstancesPanel + ParamsPanel (combined, drops list + params editor)
+    ///   - Modes      <- Toolbar + AddRemove panels (combined into one narrow column)
+    ///   - Items      <- Picker panel (search + Grid/Table tab)
+    ///   - Properties <- Properties panel (selected item inspector)
+    ///   - Instances  <- InstancesPanel + ParamsPanel (drops list + params editor)
     /// </summary>
     public static partial class ItemsEditorUIBuilder
     {
@@ -70,8 +70,20 @@ namespace Valkur.Gameplay.Items
             refs.ModesDropdown.SetActive(false);
         }
 
-        // ── Items Panel (256 px, picker, top-left after Modes) ────────────────────
-        // Search box + 3-column grid catalog of ItemDefinitions.
+        // ── Items Panel ───────────────────────────────────────────────────────────
+        // Layout top-to-bottom inside the panel content VLG:
+        //   1. Tab strip (26 px) -- "Grid" | "Table"
+        //   2. Search box (26 px)
+        //   3a. Grid container (flex) -- 3-col icon grid (Grid tab, default)
+        //   3b. Table container (flex) -- sticky header + scrollable rows (Table tab)
+        //   4. Status label (20 px)
+        //
+        // The panel uses ITEMS_W (256 px) in both modes; the table view adds
+        // horizontal scrolling so all columns are accessible within that width.
+        // The tab strip is what hides/shows containers 3a and 3b.
+
+        private const float TABLE_HEADER_H = 24f;    // sticky header strip height
+        private const float TABLE_SB_W     = 12f;    // scrollbar width (both axes)
 
         private static void BuildItemsPanel(Transform canvasT, ref UIRefs refs,
             Action<string> onSearchChanged)
@@ -82,18 +94,216 @@ namespace Valkur.Gameplay.Items
                 ITEMS_W, ITEMS_H, "Items",
                 out var t, out refs.ItemsPanelDrag);
 
-            refs.SearchBox = SearchBox.Create(t, "Search items…", onSearchChanged);
+            // ── 1. Tab strip ──────────────────────────────────────────────────
+            // TabStrip.Create adds to end of 't'; we move it to sibling index 0
+            // below after all children exist so the VLG order is correct.
+            var tabStrip = TabStrip.Create(t, "ViewTabStrip", height: 26f);
 
-            var (scroll, gridContent) = EditorUIHelpers.MakeGridPicker(
-                t, "ItemsGrid", columns: 3, cellSize: 64f, spacing: 4f);
-            EnsureFlexibleHeight(scroll.gameObject);
-            EditorUIHelpers.AddVerticalScrollbar(scroll);
+            // ── 2. Search box ─────────────────────────────────────────────────
+            refs.SearchBox = SearchBox.Create(t, "Search items...", onSearchChanged);
+
+            // ── 3a. Grid container ────────────────────────────────────────────
+            var gridContainerGo = CreateUI("GridContainer", t);
+            EnsureFlexibleHeight(gridContainerGo);
+            // VLG so the grid scroll view fills it vertically.
+            var gridVlg = gridContainerGo.AddComponent<VerticalLayoutGroup>();
+            gridVlg.spacing                = 0f;
+            gridVlg.childForceExpandWidth  = true;
+            gridVlg.childForceExpandHeight = false;
+            gridVlg.childControlWidth      = true;
+            gridVlg.childControlHeight     = true;
+
+            var (gridScroll, gridContent) = EditorUIHelpers.MakeGridPicker(
+                gridContainerGo.transform, "ItemsGrid", columns: 3, cellSize: 64f, spacing: 4f);
+            EnsureFlexibleHeight(gridScroll.gameObject);
+            EditorUIHelpers.AddVerticalScrollbar(gridScroll);
             refs.PickerContent = gridContent;
 
-            refs.StatusText = EditorUIHelpers.MakeStatusText(t);
-            refs.StatusText.text = "Phase 1 — UI scaffolding (catalog grid Phase 2)";
+            // ── 3b. Table container ───────────────────────────────────────────
+            var tableContainerGo = CreateUI("TableContainer", t);
+            EnsureFlexibleHeight(tableContainerGo);
+            var tableVlg = tableContainerGo.AddComponent<VerticalLayoutGroup>();
+            tableVlg.spacing                = 0f;
+            tableVlg.childForceExpandWidth  = true;
+            tableVlg.childForceExpandHeight = false;
+            tableVlg.childControlWidth      = true;
+            tableVlg.childControlHeight     = true;
+
+            // Sticky header: horizontal-only ScrollRect (no scrollbar; body drives it).
+            var hdrScrollGo = CreateUI("TableHeaderScroll", tableContainerGo.transform);
+            hdrScrollGo.AddComponent<LayoutElement>().preferredHeight = TABLE_HEADER_H;
+            hdrScrollGo.AddComponent<RectMask2D>();
+            hdrScrollGo.AddComponent<Image>().color = TileEditorTheme.HeaderBg;
+
+            var hdrViewport = CreateUI("Viewport", hdrScrollGo.transform);
+            UIFactory.StretchFill(hdrViewport);
+
+            var hdrContent   = CreateUI("Content", hdrViewport.transform);
+            var hdrContentRt = hdrContent.GetComponent<RectTransform>();
+            hdrContentRt.anchorMin        = new Vector2(0f, 0f);
+            hdrContentRt.anchorMax        = new Vector2(0f, 1f);
+            hdrContentRt.pivot            = new Vector2(0f, 0.5f);
+            hdrContentRt.anchoredPosition = Vector2.zero;
+            hdrContentRt.sizeDelta        = Vector2.zero;   // sized by BuildTableHeader()
+
+            var hdrSR = hdrScrollGo.AddComponent<ScrollRect>();
+            hdrSR.content           = hdrContentRt;
+            hdrSR.viewport          = hdrViewport.GetComponent<RectTransform>();
+            hdrSR.horizontal        = true;
+            hdrSR.vertical          = false;
+            hdrSR.scrollSensitivity = 20f;
+            hdrSR.movementType      = ScrollRect.MovementType.Clamped;
+
+            refs.TableHeaderScroll  = hdrSR;
+            refs.TableHeaderContent = hdrContentRt;
+
+            // Body: horizontal + vertical ScrollRect.
+            var bodyScrollGo = CreateUI("TableBodyScroll", tableContainerGo.transform);
+            EnsureFlexibleHeight(bodyScrollGo);
+            bodyScrollGo.AddComponent<RectMask2D>();
+            bodyScrollGo.AddComponent<Image>().color = UITheme.BG_SURFACE;
+
+            const float hSbH = TABLE_SB_W;
+            var bodyViewport   = CreateUI("Viewport", bodyScrollGo.transform);
+            UIFactory.StretchFill(bodyViewport);
+            var bodyViewportRt = bodyViewport.GetComponent<RectTransform>();
+            // Leave room for both scrollbars.
+            bodyViewportRt.offsetMin = new Vector2(0f,          hSbH);
+            bodyViewportRt.offsetMax = new Vector2(-TABLE_SB_W, 0f);
+
+            var bodyContent   = CreateUI("Content", bodyViewport.transform);
+            var bodyContentRt = bodyContent.GetComponent<RectTransform>();
+            bodyContentRt.anchorMin        = new Vector2(0f, 1f);
+            bodyContentRt.anchorMax        = new Vector2(0f, 1f);
+            bodyContentRt.pivot            = new Vector2(0f, 1f);
+            bodyContentRt.anchoredPosition = Vector2.zero;
+            bodyContentRt.sizeDelta        = Vector2.zero;
+
+            // Rows are stacked by a VLG; they set their own explicit width via sizeDelta.
+            var bodyVlg = bodyContent.AddComponent<VerticalLayoutGroup>();
+            bodyVlg.spacing                = 0f;
+            bodyVlg.padding                = new RectOffset(0, 0, 0, 0);
+            bodyVlg.childForceExpandWidth  = false;
+            bodyVlg.childForceExpandHeight = false;
+            bodyVlg.childControlWidth      = false;
+            bodyVlg.childControlHeight     = false;
+            bodyContent.AddComponent<ContentSizeFitter>().verticalFit =
+                ContentSizeFitter.FitMode.PreferredSize;
+
+            var bodySR = bodyScrollGo.AddComponent<ScrollRect>();
+            bodySR.content          = bodyContentRt;
+            bodySR.viewport         = bodyViewportRt;
+            bodySR.horizontal       = true;
+            bodySR.vertical         = true;
+            bodySR.scrollSensitivity = 20f;
+            bodySR.movementType     = ScrollRect.MovementType.Clamped;
+
+            // Vertical scrollbar (right edge).
+            var vSbGo = CreateUI("VScrollbar", bodyScrollGo.transform);
+            var vSbRt = vSbGo.GetComponent<RectTransform>();
+            vSbRt.anchorMin        = new Vector2(1f, 0f);
+            vSbRt.anchorMax        = new Vector2(1f, 1f);
+            vSbRt.pivot            = new Vector2(1f, 1f);
+            vSbRt.anchoredPosition = new Vector2(0f, hSbH);
+            vSbRt.sizeDelta        = new Vector2(TABLE_SB_W, -hSbH);
+            vSbGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            var vSb = BuildScrollbarHandle(vSbGo.transform, Scrollbar.Direction.BottomToTop);
+            bodySR.verticalScrollbar = vSb;
+            bodySR.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+            // Horizontal scrollbar (bottom edge).
+            var hSbGo = CreateUI("HScrollbar", bodyScrollGo.transform);
+            var hSbRt = hSbGo.GetComponent<RectTransform>();
+            hSbRt.anchorMin        = new Vector2(0f, 0f);
+            hSbRt.anchorMax        = new Vector2(1f, 0f);
+            hSbRt.pivot            = new Vector2(0f, 0f);
+            hSbRt.anchoredPosition = Vector2.zero;
+            hSbRt.sizeDelta        = new Vector2(-TABLE_SB_W, hSbH);
+            hSbGo.AddComponent<Image>().color = new Color(0.08f, 0.08f, 0.10f, 0.85f);
+            var hSb = BuildScrollbarHandle(hSbGo.transform, Scrollbar.Direction.LeftToRight);
+            bodySR.horizontalScrollbar = hSb;
+            bodySR.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+            refs.TableBodyScroll  = bodySR;
+            refs.TableBodyContent = bodyContentRt;
+
+            // ── 4. Status label ───────────────────────────────────────────────
+            refs.StatusText      = EditorUIHelpers.MakeStatusText(t);
+            refs.StatusText.text = "0 items";
+
+            // ── Wire TabStrip tabs ────────────────────────────────────────────
+            // TabStrip.AddTab activates the first registered tab and deactivates
+            // all content GameObjects, so the initial state is Grid visible.
+            tabStrip.AddTab("grid",  "Grid",  gridContainerGo);
+            tabStrip.AddTab("table", "Table", tableContainerGo);
+
+            // Move tab strip to sibling index 0 (above search box) so the
+            // VLG renders it at the top of the panel.
+            tabStrip.transform.SetSiblingIndex(0);
+
+            // ── Resize handle (bottom-right triangle) ─────────────────────────
+            BuildResizeHandle(refs.ItemsDropdown);
 
             refs.ItemsDropdown.SetActive(false);
+        }
+
+        // Triangle resize handle anchored to the panel's bottom-right corner.
+        // Sibling of header / content (not inside the VLG) so layout never
+        // pushes it around. Drag it to grow / shrink the panel bidirectionally.
+        private const float RESIZE_HANDLE_PX = 16f;
+
+        private static void BuildResizeHandle(GameObject panelRoot)
+        {
+            var panelRt = panelRoot.GetComponent<RectTransform>();
+            if (panelRt == null) return;
+
+            var go  = CreateUI("ResizeHandle", panelRoot.transform);
+            var rt  = go.GetComponent<RectTransform>();
+            rt.anchorMin        = new Vector2(1f, 0f);
+            rt.anchorMax        = new Vector2(1f, 0f);
+            rt.pivot            = new Vector2(1f, 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = new Vector2(RESIZE_HANDLE_PX, RESIZE_HANDLE_PX);
+
+            var tri    = go.AddComponent<TriangleHandleGraphic>();
+            tri.color  = TileEditorTheme.Border;
+            tri.raycastTarget = true;
+
+            var handle    = go.AddComponent<PanelResizeHandle>();
+            handle.Target = panelRt;
+        }
+
+        /// <summary>
+        /// Builds a styled Scrollbar's sliding area + handle as children of
+        /// <paramref name="parent"/> and returns the <see cref="Scrollbar"/>
+        /// component already attached to <paramref name="parent"/>'s GameObject.
+        /// </summary>
+        private static Scrollbar BuildScrollbarHandle(Transform parent, Scrollbar.Direction dir)
+        {
+            var sb       = parent.gameObject.AddComponent<Scrollbar>();
+            sb.direction = dir;
+
+            var sliding = CreateUI("SlidingArea", parent);
+            var sRt     = sliding.GetComponent<RectTransform>();
+            sRt.anchorMin = Vector2.zero; sRt.anchorMax = Vector2.one;
+            sRt.offsetMin = new Vector2(2f, 2f); sRt.offsetMax = new Vector2(-2f, -2f);
+
+            var handle = CreateUI("Handle", sliding.transform);
+            var hRt    = handle.GetComponent<RectTransform>();
+            hRt.anchorMin = Vector2.zero; hRt.anchorMax = Vector2.one;
+            hRt.offsetMin = Vector2.zero; hRt.offsetMax = Vector2.zero;
+            var hImg   = handle.AddComponent<Image>();
+            hImg.color = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+
+            sb.targetGraphic = hImg;
+            sb.handleRect    = hRt;
+
+            var cols = sb.colors;
+            cols.normalColor      = new Color(0.55f, 0.45f, 0.22f, 0.85f);
+            cols.highlightedColor = new Color(0.75f, 0.62f, 0.30f, 0.95f);
+            cols.pressedColor     = new Color(0.90f, 0.76f, 0.38f, 1f);
+            sb.colors = cols;
+            return sb;
         }
 
         // ── Properties Panel (250 px, top-right) ──────────────────────────────────
@@ -106,7 +316,7 @@ namespace Valkur.Gameplay.Items
                 PROPS_W, PROPS_H, "Properties",
                 out var t, out refs.PropsPanelDrag);
 
-            // Title strip — bold, single line, fixed height. Shows the active item's
+            // Title strip -- bold, single line, fixed height. Shows the active item's
             // displayName so the inspector body below stays free for the full table.
             var titleGo = CreateUI("PropsTitle", t);
             titleGo.AddComponent<LayoutElement>().preferredHeight = 22f;
@@ -128,7 +338,7 @@ namespace Valkur.Gameplay.Items
             EditorUIHelpers.AddVerticalScrollbar(scroll);
             refs.PropsContent = content;
 
-            // Body TMP — lives inside the scroll content so long inspectors scroll
+            // Body TMP -- lives inside the scroll content so long inspectors scroll
             // instead of overlapping the title strip.
             var bodyGo = CreateUI("PropsBody", content);
             var bodyLE = bodyGo.AddComponent<LayoutElement>();
@@ -148,7 +358,7 @@ namespace Valkur.Gameplay.Items
         }
 
         // ── Instances Panel (280 px, bottom-right) ────────────────────────────────
-        // Lists items currently dropped on the map + per-instance params (Phase 2).
+        // Lists items currently dropped on the map + per-instance params.
 
         private static void BuildInstancesPanel(Transform canvasT, ref UIRefs refs)
         {

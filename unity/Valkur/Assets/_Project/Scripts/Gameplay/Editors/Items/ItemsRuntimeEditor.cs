@@ -195,6 +195,7 @@ namespace Valkur.Gameplay.Items
             OpenAllPanels();
             EnsureCatalog();
             RefreshPicker();
+            RefreshTable();
             RefreshProperties();
             ForceRefreshInstances();
 
@@ -258,6 +259,13 @@ namespace Valkur.Gameplay.Items
                 onToggleTutorial: ToggleTutorial,
                 onSearchChanged:  OnSearchChanged,
                 onPerfToggle:     () => Toast("PERF overlay — not yet wired."));
+
+            // Hand off the table ScrollRects so the Table partial can build and refresh.
+            SetTableScrollRects(
+                _uiRefs.TableHeaderScroll,
+                _uiRefs.TableBodyScroll,
+                _uiRefs.TableHeaderContent,
+                _uiRefs.TableBodyContent);
 
             // Wire panel close (X button on the header) → keep dropdown state in sync
             WireOnClose(_uiRefs.ModesPanelDrag,     "modes");

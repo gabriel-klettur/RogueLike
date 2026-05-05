@@ -109,11 +109,12 @@ namespace Valkur.Gameplay.Items
             return null;
         }
 
-        /// <summary>Search-box callback: update filter and refresh the picker.</summary>
+        /// <summary>Search-box callback: update filter and refresh both views.</summary>
         private void OnSearchChanged(string value)
         {
             _searchFilter = value ?? "";
             RefreshPicker();
+            RefreshTable();
         }
     }
 }
