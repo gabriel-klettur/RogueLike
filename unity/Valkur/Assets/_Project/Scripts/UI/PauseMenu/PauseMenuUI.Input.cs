@@ -44,7 +44,14 @@ namespace Valkur.UI.PauseMenu
         /// </summary>
         private void HandlePauseListInput()
         {
-            if (_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+            // Both `P` (the configured pause toggle) and `Esc` close the menu
+            // from the top-level list — Esc mirrors clicking "Continue". We
+            // dual-read via _cancel.InputAction AND InputCompat (device-level)
+            // because the InputAction state can desync when the EventSystem
+            // holds a Selectable focus from a previous mouse click.
+            if ((_pauseAction != null && _pauseAction.WasPerformedThisFrame())
+             || (_cancel != null && _cancel.WasPerformedThisFrame())
+             || Valkur.Core.Input.InputCompat.CancelPressed())
             { ClosePause(); return; }
             if (_navUp != null && _navUp.WasPerformedThisFrame())
             { _pauseSel = (_pauseSel - 1 + _pauseOptions.Length) % _pauseOptions.Length; UpdateListVisuals(_pauseSel, _pausePills, _pauseBars, _pauseTexts); }
@@ -126,6 +133,14 @@ namespace Valkur.UI.PauseMenu
         private void ShowScreen(PauseScreen s)
         {
             _screen = s;
+
+            // Clear EventSystem focus so a Selectable left over from the
+            // previous screen (e.g. a slider clicked in Sound Options) can't
+            // intercept keyboard navigation in the new screen via OnMove /
+            // OnCancel dispatch.
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null) es.SetSelectedGameObject(null);
+
             _overlayRoot?.SetActive(s != PauseScreen.None);
             _pausePanel?.SetActive(s == PauseScreen.Pause);
             _optionsPanel?.SetActive(s == PauseScreen.Options);
@@ -174,7 +189,8 @@ namespace Valkur.UI.PauseMenu
             { sel = (sel + 1) % count; UpdateListVisuals(sel, pills, bars, texts); }
             else if (_confirm != null && _confirm.WasPerformedThisFrame())
             { execute(sel); }
-            else if (_cancel != null && _cancel.WasPerformedThisFrame())
+            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
+                  || Valkur.Core.Input.InputCompat.CancelPressed())
             { GoBack(); }
         }
 

@@ -197,7 +197,8 @@ namespace Valkur.UI.PauseMenu
             { ChangeSound(_soundSel, +1); }
             else if (_confirm != null && _confirm.WasPerformedThisFrame())
             { SaveAndBack(); }
-            else if (_cancel != null && _cancel.WasPerformedThisFrame())
+            else if ((_cancel != null && _cancel.WasPerformedThisFrame())
+                  || Valkur.Core.Input.InputCompat.CancelPressed())
             { GoBack(); }
         }
 

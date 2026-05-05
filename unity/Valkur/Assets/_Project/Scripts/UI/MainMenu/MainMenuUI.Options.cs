@@ -72,6 +72,14 @@ namespace Valkur.UI.MainMenu
         private void ShowMenuScreen(MenuScreen screen)
         {
             _menuScreen = screen;
+
+            // Clear EventSystem focus so a Selectable left over from the
+            // previous screen (e.g. a slider clicked in Sound Options) can't
+            // intercept keyboard navigation in the new screen via OnMove /
+            // OnCancel dispatch.
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null) es.SetSelectedGameObject(null);
+
             bool showMain  = screen == MenuScreen.Main;
             bool showOpt   = screen == MenuScreen.Options || screen == MenuScreen.Sounds || screen == MenuScreen.Inputs;
             bool showLoad  = screen == MenuScreen.LoadGame;

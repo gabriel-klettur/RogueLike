@@ -119,6 +119,31 @@ namespace Valkur.UI.MainMenu
         {
             if (HandlePressToStart()) return;
             if (_showingClassSelector) { HandleClassSelectorInput(); return; }
+
+            // Universal ESC fallback for sub-screens. The per-screen handlers
+            // also check Cancel, but reading it here at the top guarantees ESC
+            // always returns the user to the parent screen even if the
+            // EventSystem is holding a Selectable focus (e.g. a slider in
+            // Sound Options that captured keyboard input on its last click).
+            // Skipped while the Inputs panel is mid-rebind so ESC still
+            // cancels the rebind dialog instead of leaving the Inputs panel.
+            // LoadGame has its own modal ESC semantics (Rename / ConfirmDelete)
+            // and is left alone here.
+            if (Valkur.Core.Input.InputCompat.CancelPressed())
+            {
+                switch (_menuScreen)
+                {
+                    case MenuScreen.Options:
+                    case MenuScreen.Sounds:
+                        OptionsGoBack();
+                        return;
+                    case MenuScreen.Inputs:
+                        if (_optRebinder == null || !_optRebinder.IsActive)
+                        { OptionsGoBack(); return; }
+                        break;
+                }
+            }
+
             switch (_menuScreen)
             {
                 case MenuScreen.Main:     HandleKeyboardNavigation(); break;
