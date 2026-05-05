@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: tortilla_spain_01
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: tortilla_spain_01
-  displayName: tortilla_spain_01.png
-  description: 
+  displayName: "Tortilla Espanola"
+  description: "Tortilla de patatas y huevo. Plato espanol clasico, sustancioso y nutritivo."
   itemType: food
   stackable: 1
-  maxStack: 1
+  maxStack: 5
   icon: {fileID: 21300000, guid: 78ae3b714d3748f479825f907e32acd8, type: 3}
   iconSmall: {fileID: 21300000, guid: 78ae3b714d3748f479825f907e32acd8, type: 3}
   iconLarge: {fileID: 0}
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 20
+  buyPrice: 20
+  sellPrice: 10
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 0.5
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
-  zLayer: 0
-  despawnTime: 0
-  healing: 0
+  zLayer: 1
+  despawnTime: 60
+  healing: 8
   mana: 0
   energy: 0
-  hunger: 0
-  buffStat: 
+  hunger: 45
+  buffStat:
   buffValue: 0
   duration: 0

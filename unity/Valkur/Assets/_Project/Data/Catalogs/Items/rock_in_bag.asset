@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: rock_in_bag
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: rock_in_bag
-  displayName: rock_in_bag.png
-  description: 
-  itemType: 
-  stackable: 0
-  maxStack: 1
+  displayName: "Saco de Piedras"
+  description: "Bolsa con piedras de cantera. Material basico de construccion."
+  itemType: lumberjack
+  stackable: 1
+  maxStack: 30
   icon: {fileID: 21300000, guid: 3c4704cd8b6b23148af5b00eb3ec64eb, type: 3}
   iconSmall: {fileID: 21300000, guid: 3c4704cd8b6b23148af5b00eb3ec64eb, type: 3}
   iconLarge: {fileID: 0}
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 5
+  buyPrice: 5
+  sellPrice: 2
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 1.5
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
-  scaleMap: 1
-  scaleInventory: 1
-  zLayer: 0
-  despawnTime: 0
+  scaleMap: 0.04
+  scaleInventory: 0.05
+  zLayer: 1
+  despawnTime: 60
   healing: 0
   mana: 0
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

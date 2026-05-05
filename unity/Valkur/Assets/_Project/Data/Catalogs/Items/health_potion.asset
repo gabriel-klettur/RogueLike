@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: health_potion
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: health_potion
-  displayName: "Poci\xF3n de Salud"
-  description: Restaura salud al consumirse.
-  itemType: 
+  displayName: "Pocion de Vida"
+  description: "Restaura 50 puntos de vida al consumirse. Util en combate prolongado."
+  itemType: alchemy
   stackable: 1
-  maxStack: 5
+  maxStack: 10
   icon: {fileID: 21300000, guid: cd71872fe5f1d8947a50398453a15c40, type: 3}
   iconSmall: {fileID: 21300000, guid: cd71872fe5f1d8947a50398453a15c40, type: 3}
   iconLarge: {fileID: 0}
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
+  value: 25
   buyPrice: 25
-  sellPrice: 25
+  sellPrice: 12
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 0.3
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
   zLayer: 1
   despawnTime: 60
-  healing: 0
+  healing: 50
   mana: 0
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

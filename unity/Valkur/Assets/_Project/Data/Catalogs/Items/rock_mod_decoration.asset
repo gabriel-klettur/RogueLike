@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: rock_mod_decoration
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: rock_mod_decoration
-  displayName: rock_mod_decoration.png
-  description: 
-  itemType: 
-  stackable: 0
-  maxStack: 1
+  displayName: "Roca Esculpida"
+  description: "Roca decorativa con tallados. Material premium de construccion."
+  itemType: lumberjack
+  stackable: 1
+  maxStack: 20
   icon: {fileID: 0}
   iconSmall: {fileID: 0}
   iconLarge: {fileID: 0}
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 6
+  buyPrice: 6
+  sellPrice: 3
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 2
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
-  scaleMap: 1
-  scaleInventory: 1
-  zLayer: 0
-  despawnTime: 0
+  scaleMap: 0.04
+  scaleInventory: 0.05
+  zLayer: 1
+  despawnTime: 60
   healing: 0
   mana: 0
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
-  m_Name: shovel_decoration_1
-  m_EditorClassIdentifier: 
-  itemId: shovel_decoration_1
-  displayName: shovel_decoration.png
-  description: 
-  itemType: 
-  stackable: 0
-  maxStack: 1
-  icon: {fileID: 21300000, guid: 7a6ed36ad40fb284fb0a4616ab0ebfd7, type: 3}
-  iconSmall: {fileID: 21300000, guid: 7a6ed36ad40fb284fb0a4616ab0ebfd7, type: 3}
+  m_Name: mushrooms_decoration
+  m_EditorClassIdentifier:
+  itemId: mushrooms_decoration
+  displayName: "Hongos Silvestres"
+  description: "Setas comestibles del bosque. Sacian un poco el hambre o se usan como ingrediente alquimico."
+  itemType: food
+  stackable: 1
+  maxStack: 20
+  icon: {fileID: 0}
+  iconSmall: {fileID: 0}
   iconLarge: {fileID: 0}
   equipSlot: 0
   damage: 0
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 4
+  buyPrice: 4
+  sellPrice: 2
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 0.2
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
-  scaleMap: 1
-  scaleInventory: 1
-  zLayer: 0
-  despawnTime: 0
-  healing: 0
+  scaleMap: 0.04
+  scaleInventory: 0.05
+  zLayer: 1
+  despawnTime: 60
+  healing: 2
   mana: 0
   energy: 0
-  hunger: 0
-  buffStat: 
+  hunger: 10
+  buffStat:
   buffValue: 0
   duration: 0

@@ -11,11 +11,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: iron_ingot
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: iron_ingot
-  displayName: Lingote de Hierro
-  description: Material para forjar armas y armaduras.
-  itemType: 
+  displayName: "Lingote de Hierro"
+  description: "Material refinado para forjar armas y armaduras de hierro."
+  itemType: blacksmith
   stackable: 1
   maxStack: 50
   icon: {fileID: 21300000, guid: de28a2b512e4d8d4b94bcbbf841996ce, type: 3}
@@ -28,16 +28,16 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 15
+  buyPrice: 15
+  sellPrice: 7
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 1
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
@@ -47,6 +47,6 @@ MonoBehaviour:
   mana: 0
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

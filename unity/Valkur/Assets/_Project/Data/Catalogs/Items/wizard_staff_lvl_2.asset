@@ -11,10 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: wizard_staff_lvl_2
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: wizard_staff_lvl_2
-  displayName: "Bast\xF3n de Mago II"
-  description: "Bast\xF3n intermedio para magos."
+  displayName: "Baston de Mago II"
+  description: "Baston intermedio para magos. Canaliza hechizos elementales con mayor potencia."
   itemType: magic
   stackable: 0
   maxStack: 1
@@ -24,20 +24,20 @@ MonoBehaviour:
   equipSlot: 3
   damage: 12
   attackSpeed: 1.2
-  range: 3
-  critChance: 0
-  critMultiplier: 1
+  range: 5
+  critChance: 0.1
+  critMultiplier: 1.5
   durability: 500
   value: 300
   buyPrice: 300
-  sellPrice: 300
+  sellPrice: 150
   rarity: 2
   levelRequirement: 5
   weight: 2.7
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
@@ -47,6 +47,6 @@ MonoBehaviour:
   mana: 0
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

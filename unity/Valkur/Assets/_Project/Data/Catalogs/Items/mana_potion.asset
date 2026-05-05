@@ -11,13 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: mana_potion
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: mana_potion
-  displayName: "Poci\xF3n de Man\xE1"
-  description: "Restaura man\xE1 al consumirse."
-  itemType: 
+  displayName: "Pocion de Mana"
+  description: "Restaura 40 puntos de mana al consumirse. Esencial para magos."
+  itemType: alchemy
   stackable: 1
-  maxStack: 6
+  maxStack: 10
   icon: {fileID: 21300000, guid: 72a987000dda7be479393ad5e2f239e2, type: 3}
   iconSmall: {fileID: 21300000, guid: 72a987000dda7be479393ad5e2f239e2, type: 3}
   iconLarge: {fileID: 0}
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
-  buyPrice: 1
-  sellPrice: 1
+  value: 25
+  buyPrice: 25
+  sellPrice: 12
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 0.3
   threshold: 0
   experience: 0
-  effect: 
-  questId: 
+  effect:
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
   zLayer: 1
   despawnTime: 60
   healing: 0
-  mana: 0
+  mana: 40
   energy: 0
   hunger: 0
-  buffStat: 
+  buffStat:
   buffValue: 0
   duration: 0

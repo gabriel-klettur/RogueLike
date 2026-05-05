@@ -11,15 +11,15 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f7abf3dd53ab354eb1de6a1c670f0d2, type: 3}
   m_Name: bucket_water
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   itemId: bucket_water
-  displayName: Cubo de Agua sagrado
-  description: Cubo lleno de agua fresca.
-  itemType: 
-  stackable: 0
-  maxStack: 1
-  icon: {fileID: 0}
-  iconSmall: {fileID: 0}
+  displayName: "Cubo de Agua"
+  description: "Cubo lleno de agua fresca. Sacia la sed y restaura energia al beber."
+  itemType: alchemy
+  stackable: 1
+  maxStack: 3
+  icon: {fileID: 21300000, guid: 6cbc012f4f7c27f448340215d669dd64, type: 3}
+  iconSmall: {fileID: 21300000, guid: 6cbc012f4f7c27f448340215d669dd64, type: 3}
   iconLarge: {fileID: 0}
   equipSlot: 0
   damage: 0
@@ -28,25 +28,25 @@ MonoBehaviour:
   critChance: 0
   critMultiplier: 1
   durability: 0
-  value: 0
+  value: 10
   buyPrice: 10
-  sellPrice: 10
+  sellPrice: 5
   rarity: 0
   levelRequirement: 1
-  weight: 0
+  weight: 2.5
   threshold: 0
   experience: 0
   effect: water_source
-  questId: 
+  questId:
   scaleEditor: 1
   scaleMap: 0.04
   scaleInventory: 0.05
   zLayer: 1
   despawnTime: 60
-  healing: 0
+  healing: 3
   mana: 0
-  energy: 0
-  hunger: 0
-  buffStat: 
+  energy: 10
+  hunger: 5
+  buffStat:
   buffValue: 0
   duration: 0
