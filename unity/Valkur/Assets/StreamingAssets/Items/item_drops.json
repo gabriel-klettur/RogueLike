@@ -1,47 +1,4 @@
 {
     "schemaVersion": 1,
-    "drops": [
-        {
-            "dropId": "1909e2ad8b974c59a290426cd1773b05",
-            "itemId": "borsh_01",
-            "quantity": 1,
-            "position": {
-                "x": 211.5833282470703,
-                "y": 88.27671813964844
-            },
-            "zoneId": "",
-            "zLayer": 0,
-            "createdAtUnixMs": 1777905670334,
-            "despawnTtlSeconds": 0.0,
-            "sourceRaw": 1
-        },
-        {
-            "dropId": "0b18231ac79943bcb893c4551fc52060",
-            "itemId": "chestbox",
-            "quantity": 1,
-            "position": {
-                "x": 208.81289672851563,
-                "y": 87.8276596069336
-            },
-            "zoneId": "",
-            "zLayer": 0,
-            "createdAtUnixMs": 1777912316334,
-            "despawnTtlSeconds": 0.0,
-            "sourceRaw": 1
-        },
-        {
-            "dropId": "cac759877cf9411a9118631acf61ed0e",
-            "itemId": "iron_sword_1",
-            "quantity": 1,
-            "position": {
-                "x": 211.71978759765626,
-                "y": 89.46308135986328
-            },
-            "zoneId": "",
-            "zLayer": 0,
-            "createdAtUnixMs": 1777914706670,
-            "despawnTtlSeconds": 0.0,
-            "sourceRaw": 1
-        }
-    ]
+    "drops": []
 }
