@@ -19,6 +19,15 @@ namespace Valkur.Gameplay.Editors
             Transform parent, string name, int columns = 5, float cellSize = 64f, float spacing = 4f)
             => UIGridPicker.Make(parent, name, columns, cellSize, spacing);
 
+        /// <summary>
+        /// Responsive grid picker — cell size and column count reflow as the
+        /// host panel is resized. See <see cref="UIGridPicker.MakeResponsive"/>.
+        /// </summary>
+        public static (ScrollRect scroll, RectTransform content, GridAutoSize autoSize) MakeResponsiveGridPicker(
+            Transform parent, string name,
+            float minCellSize = 56f, float maxCellSize = 96f, float spacing = 4f)
+            => UIGridPicker.MakeResponsive(parent, name, minCellSize, maxCellSize, spacing);
+
         public static VerticalLayoutGroup AddVLG(GameObject panel, int pad = 8, float spacing = 6f)
             => UIPanel.AddVLG(panel, pad, spacing);
 
