@@ -38,12 +38,39 @@ namespace Valkur.Gameplay
             if (victim == null) return;
             if (victim.CompareTag("Player")) return; // Players don't drop loot
 
-            var inventory = victim.GetComponent<Inventory.Inventory>();
-            if (inventory == null || inventory.UsedSlots == 0) return;
-
             Vector3 deathPos = victim.transform.position;
 
-            // Drop all inventory items
+            // Inventory drops are optional — most NPCs (including barbols) have no
+            // inventory at all, but they should still grant XP. Treat the two
+            // sources independently so a missing / empty inventory never
+            // silences the XP orb spawn.
+            int itemsDropped = TryDropInventory(victim, deathPos);
+
+            int xpValue = EstimateXpValue(victim);
+            bool xpSpawned = false;
+            if (xpValue > 0)
+            {
+                SpawnXpOrb(deathPos, xpValue);
+                xpSpawned = true;
+            }
+
+            if (itemsDropped > 0 || xpSpawned)
+                Debug.Log($"[DeathDropSystem] {victim.name} died: dropped {itemsDropped} item(s)" +
+                          $"{(xpSpawned ? $" and {xpValue} XP orb" : "")} at {deathPos}");
+        }
+
+        /// <summary>
+        /// Spawns one ground pickup per non-empty inventory slot. Returns the
+        /// number of items dropped — zero when the entity has no
+        /// <see cref="Inventory.Inventory"/> component or every slot is empty.
+        /// Pure helper so the caller's XP-orb path can ignore inventory state.
+        /// </summary>
+        private int TryDropInventory(GameObject victim, Vector3 deathPos)
+        {
+            var inventory = victim.GetComponent<Inventory.Inventory>();
+            if (inventory == null || inventory.UsedSlots == 0) return 0;
+
+            int dropped = 0;
             for (int i = 0; i < inventory.Slots.Count; i++)
             {
                 var slot = inventory.Slots[i];
@@ -58,16 +85,9 @@ namespace Valkur.Gameplay
                     var despawn = pickup.gameObject.AddComponent<TimedDespawn>();
                     despawn.TTL = dropDespawnTime;
                 }
+                dropped++;
             }
-
-            // Also spawn XP orb
-            int xpValue = EstimateXpValue(victim);
-            if (xpValue > 0)
-            {
-                SpawnXpOrb(deathPos, xpValue);
-            }
-
-            Debug.Log($"[DeathDropSystem] Dropped loot from {victim.name} at {deathPos}");
+            return dropped;
         }
 
         private void SpawnXpOrb(Vector3 position, int xpAmount)
