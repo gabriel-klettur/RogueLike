@@ -42,6 +42,7 @@ MonoBehaviour:
   phaseIndex: 0
   autoCast: 0
   autoCastList: []
+  xpReward: 0
   assetConfig:
     idle:
       south: {fileID: 21300000, guid: 7323c9cf9d927da46840abf302b94488, type: 3}
