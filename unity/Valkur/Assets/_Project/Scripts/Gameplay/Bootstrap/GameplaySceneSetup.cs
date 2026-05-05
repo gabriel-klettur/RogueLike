@@ -102,124 +102,127 @@ namespace Valkur.Gameplay
             _setupStep = 0;
 
             BuildWorldGrid();
-            Report("Construyendo cuadrícula"); yield return null;
+            Report("Building grid"); yield return null;
 
             EnsureZoneManager();
-            Report("Inicializando zonas"); yield return null;
+            Report("Initializing zones"); yield return null;
 
             EnsureWorldManager();
-            Report("Inicializando WorldManager"); yield return null;
+            Report("Initializing WorldManager"); yield return null;
 
             LoadWorld();
-            Report("Cargando mundo"); yield return null;
+            Report("Loading world"); yield return null;
 
             RebakeTilemapColliders();
-            Report("Recalculando colisiones de tiles"); yield return null;
+            Report("Rebaking tile colliders"); yield return null;
 
             EnsureGlobalLight2D();
-            Report("Inicializando iluminación global"); yield return null;
+            Report("Initializing global lighting"); yield return null;
 
             EnsureDayNightCycle();
-            Report("Iniciando ciclo día/noche"); yield return null;
+            Report("Starting day/night cycle"); yield return null;
 
             EnsureVFXManager();
-            Report("Inicializando efectos visuales"); yield return null;
+            Report("Initializing visual effects"); yield return null;
 
             EnsureParticleInstancesLoader();
-            Report("Cargando partículas"); yield return null;
+            Report("Loading particles"); yield return null;
 
             EnsureTileEditor();
-            Report("Inicializando editor de tiles"); yield return null;
+            Report("Initializing tile editor"); yield return null;
 
             EnsureMapEditor();
-            Report("Inicializando editor de mapa"); yield return null;
+            Report("Initializing map editor"); yield return null;
 
             EnsureSaveService();
-            Report("Inicializando guardado"); yield return null;
+            Report("Initializing save system"); yield return null;
 
             EnsureSaveLoadInput();
-            Report("Inicializando input de guardado"); yield return null;
+            Report("Initializing save input"); yield return null;
 
             EnsureNPCSeparation();
-            Report("Inicializando separación de NPCs"); yield return null;
+            Report("Initializing NPC separation"); yield return null;
 
             EnsureVendorShopUI();
-            Report("Inicializando tiendas"); yield return null;
+            Report("Initializing shops"); yield return null;
 
             EnsureVendorEconomyService();
-            Report("Inicializando economía"); yield return null;
+            Report("Initializing economy"); yield return null;
 
             EnsureChatSystem();
-            Report("Inicializando chat"); yield return null;
+            Report("Initializing chat"); yield return null;
 
             EnsureWorldLightLoader();
-            Report("Cargando luces del mundo"); yield return null;
+            Report("Loading world lights"); yield return null;
 
             EnsureBuildingCollisionLoader();
-            Report("Cargando colisiones de edificios"); yield return null;
+            Report("Loading building collisions"); yield return null;
 
             EnsureSpawnerEditor();
-            Report("Inicializando editor de spawners"); yield return null;
+            Report("Initializing spawner editor"); yield return null;
 
             EnsureBuildingsRuntimeEditor();
-            Report("Inicializando editor de edificios"); yield return null;
+            Report("Initializing buildings editor"); yield return null;
 
             EnsureFSMRuntimeEditor();
-            Report("Inicializando editor de FSM"); yield return null;
+            Report("Initializing FSM editor"); yield return null;
 
             EnsureItemsRuntimeEditor();
-            Report("Inicializando editor de items"); yield return null;
+            Report("Initializing items editor"); yield return null;
 
             EnsureSpellsRuntimeEditor();
-            Report("Inicializando editor de hechizos"); yield return null;
+            Report("Initializing spells editor"); yield return null;
 
             EnsureEntitiesRuntimeEditor();
-            Report("Inicializando editor de entidades"); yield return null;
+            Report("Initializing entities editor"); yield return null;
 
             EnsureInventoryRuntimeEditor();
-            Report("Inicializando editor de inventario"); yield return null;
+            Report("Initializing inventory editor"); yield return null;
 
             EnsureParticlesRuntimeEditor();
-            Report("Inicializando editor de partículas"); yield return null;
+            Report("Initializing particles editor"); yield return null;
 
             EnsureLightingRuntimeEditor();
-            Report("Inicializando editor de iluminación"); yield return null;
+            Report("Initializing lighting editor"); yield return null;
 
             EnsureGeneralEditor();
-            Report("Inicializando editor general"); yield return null;
+            Report("Initializing general editor"); yield return null;
 
             EnsureDayNightAtmosphere();
-            Report("Inicializando atmósfera día/noche"); yield return null;
+            Report("Initializing day/night atmosphere"); yield return null;
 
             EnsureWeatherManager();
-            Report("Inicializando sistema de clima"); yield return null;
+            Report("Initializing weather system"); yield return null;
+
+            EnsureTimeWeatherEditor();
+            Report("Initializing time & weather editor"); yield return null;
 
             EnsureDevConsole();
-            Report("Inicializando consola de desarrollo"); yield return null;
+            Report("Initializing dev console"); yield return null;
 
             EnsureDeathDropSystem();
-            Report("Inicializando drops de muerte"); yield return null;
+            Report("Initializing death drops"); yield return null;
 
             EnsureDeathSequenceFlow();
-            Report("Inicializando ciclo de muerte y resurrección"); yield return null;
+            Report("Initializing death & revival cycle"); yield return null;
 
             EnsureLevelUpRestoreSystem();
-            Report("Inicializando regeneración por nivel"); yield return null;
+            Report("Initializing level-up restore"); yield return null;
 
             EnsurePermadeathSaveCleanupSystem();
-            Report("Inicializando permadeath"); yield return null;
+            Report("Initializing permadeath"); yield return null;
 
             EnsureLevelUpSkillPointSystem();
-            Report("Inicializando puntos de habilidad por nivel"); yield return null;
+            Report("Initializing skill points per level"); yield return null;
 
             EnsureProfileTelemetrySystem();
-            Report("Inicializando telemetría de progresión"); yield return null;
+            Report("Initializing progression telemetry"); yield return null;
 
             EnsureNPCRespawnSystem();
-            Report("Inicializando respawn de NPCs"); yield return null;
+            Report("Initializing NPC respawn"); yield return null;
 
             EnsureToastSystem();
-            Report("Inicializando notificaciones"); yield return null;
+            Report("Initializing notifications"); yield return null;
 
             // Pre-apply player class from pending save so SpawnPlayer() uses the correct
             // class for visuals and stats. The full restore (position, HP, etc.) happens
@@ -228,36 +231,36 @@ namespace Valkur.Gameplay
                 PlayerSelectionState.SetSelectedPlayer(Save.PendingSaveLoad.PlayerClass);
 
             SpawnPlayer();
-            Report("Spawneando jugador"); yield return null;
+            Report("Spawning player"); yield return null;
 
             EnsureProceduralChunkStreamer();
-            Report("Inicializando streaming procedural"); yield return null;
+            Report("Initializing procedural streaming"); yield return null;
 
             SpawnTestMonsters();
-            Report("Spawneando monstruos de prueba"); yield return null;
+            Report("Spawning test monsters"); yield return null;
 
             try { EnsureMonsterSpawner(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
-            Report("Inicializando spawner de monstruos"); yield return null;
+            Report("Initializing monster spawner"); yield return null;
 
             try { EnsureBuildingLoader(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] BuildingLoader failed: {ex.Message}"); }
-            Report("Cargando edificios"); yield return null;
+            Report("Loading buildings"); yield return null;
 
             try { EnsureSpawnerInstanceLoader(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
-            Report("Cargando instancias de spawners"); yield return null;
+            Report("Loading spawner instances"); yield return null;
 
             try { EnsureAudioManager(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] AudioManager failed: {ex.Message}"); }
-            Report("Inicializando audio"); yield return null;
+            Report("Initializing audio"); yield return null;
 
             try { EnsureCombatAudioSystem(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] CombatAudioSystem failed: {ex.Message}"); }
-            Report("Inicializando audio de combate"); yield return null;
+            Report("Initializing combat audio"); yield return null;
 
             EnterGameAudio();
-            Report("Iniciando música del juego"); yield return null;
+            Report("Starting game music"); yield return null;
 
             // Apply saved state / checkpoint
             if (Save.PendingSaveLoad.HasPending)
@@ -278,7 +281,7 @@ namespace Valkur.Gameplay
                 ApplyPositionCheckpointIfNewer(null);
             }
             Save.SaveFileManager.DeletePositionCheckpoint();
-            Report("Restaurando sesión"); yield return null;
+            Report("Restoring session"); yield return null;
 
             // All systems ready — signal the loading screen to fade out
             LoadingReporter.ReportGameplayReady();

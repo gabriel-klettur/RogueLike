@@ -58,7 +58,7 @@ namespace Valkur.UI.Loading
         // Animated dots
         private float  _dotsTimer;
         private int    _dotsCount;
-        private string _baseMessage = "Cargando";
+        private string _baseMessage = "Loading";
 
         // UI references
         private Image           _barFill;
@@ -135,7 +135,7 @@ namespace Valkur.UI.Loading
 
             var asyncOp = SceneManager.LoadSceneAsync(_targetScene);
             asyncOp.allowSceneActivation = false;
-            _baseMessage = "Cargando recursos";
+            _baseMessage = "Loading resources";
 
             while (asyncOp.progress < 0.9f)
             {
@@ -144,7 +144,7 @@ namespace Valkur.UI.Loading
             }
 
             _targetProgress = 0.4f;
-            _baseMessage    = "Inicializando mundo";
+            _baseMessage    = "Initializing world";
             yield return new WaitForSecondsRealtime(0.5f); // allow bar to animate toward 40%
 
             asyncOp.allowSceneActivation = true;
@@ -169,7 +169,7 @@ namespace Valkur.UI.Loading
             _fadingOut         = true;
             _displayedProgress = 1f;
             ApplyProgress(1f);
-            if (_statusText != null) _statusText.text = "Listo!";
+            if (_statusText != null) _statusText.text = "Ready!";
 
             if (_cg != null)
             {
@@ -235,19 +235,40 @@ namespace Valkur.UI.Loading
             canvasGo.AddComponent<GraphicRaycaster>();
             _cg = canvasGo.AddComponent<CanvasGroup>();
 
-            // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Background ────────────────────────────────────────────────
+            // Mirrors the main-menu carousel: outer container uses RectMask2D
+            // so anything that overflows past the canvas gets clipped, then
+            // the inner Image uses AspectRatioFitter.EnvelopeParent ("cover"
+            // mode) to fill the canvas while preserving the source aspect.
+            // Result: art is never stretched / squashed — wider windows crop
+            // the top/bottom margins, taller windows crop the left/right.
+            var bgContainer = new GameObject("Background_Container");
+            bgContainer.transform.SetParent(canvasGo.transform, false);
+            var bgContainerRt = bgContainer.AddComponent<RectTransform>();
+            bgContainerRt.anchorMin = Vector2.zero; bgContainerRt.anchorMax = Vector2.one;
+            bgContainerRt.offsetMin = Vector2.zero; bgContainerRt.offsetMax = Vector2.zero;
+            bgContainer.AddComponent<RectMask2D>();
+
             var bgGo  = new GameObject("Background");
-            bgGo.transform.SetParent(canvasGo.transform, false);
+            bgGo.transform.SetParent(bgContainer.transform, false);
             var bgImg = bgGo.AddComponent<Image>();
             var bgRt  = bgGo.GetComponent<RectTransform>();
-            bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
-            bgRt.offsetMin = Vector2.zero; bgRt.offsetMax = Vector2.zero;
+            bgRt.anchorMin        = new Vector2(0.5f, 0.5f);
+            bgRt.anchorMax        = new Vector2(0.5f, 0.5f);
+            bgRt.pivot            = new Vector2(0.5f, 0.5f);
+            bgRt.anchoredPosition = Vector2.zero;
+            bgImg.preserveAspect  = true;
+
+            var fitter = bgGo.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
 
             var bgSprite = Resources.Load<Sprite>("UI/Loading/background_ini");
             if (bgSprite != null)
             {
                 bgImg.sprite = bgSprite;
-                bgImg.preserveAspect = false;
+                fitter.aspectRatio = bgSprite.texture != null
+                    ? (float)bgSprite.texture.width / Mathf.Max(1, bgSprite.texture.height)
+                    : (float)bgSprite.rect.width / Mathf.Max(1f, bgSprite.rect.height);
             }
             else
             {
@@ -256,11 +277,17 @@ namespace Valkur.UI.Loading
                 {
                     bgImg.sprite = Sprite.Create(bgTex,
                         new Rect(0, 0, bgTex.width, bgTex.height), new Vector2(0.5f, 0.5f));
-                    bgImg.preserveAspect = false;
+                    fitter.aspectRatio = (float)bgTex.width / Mathf.Max(1, bgTex.height);
                 }
                 else
                 {
+                    // Fallback: solid black, no aspect fitter needed (drop the
+                    // component so an aspectRatio of 0 doesn't NaN the layout).
                     bgImg.color = FallbackBg;
+                    bgImg.preserveAspect = false;
+                    Destroy(fitter);
+                    bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
+                    bgRt.offsetMin = Vector2.zero; bgRt.offsetMax = Vector2.zero;
                     Debug.LogWarning("[LoadingScreen] background_ini not found in Resources/UI/Loading/.");
                 }
             }
@@ -337,7 +364,7 @@ namespace Valkur.UI.Loading
             _statusText.fontSize  = 18f;
             _statusText.color     = TextColor;
             _statusText.alignment = TextAlignmentOptions.Center;
-            _statusText.text      = "Cargando...";
+            _statusText.text      = "Loading...";
             var textRt = textGo.GetComponent<RectTransform>();
             textRt.anchorMin        = new Vector2(0.5f, 0f);
             textRt.anchorMax        = new Vector2(0.5f, 0f);

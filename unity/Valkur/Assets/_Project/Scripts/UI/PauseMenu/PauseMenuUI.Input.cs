@@ -149,10 +149,10 @@ namespace Valkur.UI.PauseMenu
         private void RebuildPauseOptions()
         {
             bool hasSaves = SaveFileManager.ListSaves().Count > 0;
-            var opts = new List<string> { "Continuar", "Nueva Partida", "Guardar partida" };
-            if (hasSaves) opts.Add("Cargar juego");
-            opts.Add("Opciones");
-            opts.Add("Salir");
+            var opts = new List<string> { "Continue", "New Game", "Save Game" };
+            if (hasSaves) opts.Add("Load Game");
+            opts.Add("Options");
+            opts.Add("Exit");
             _pauseOptions = opts.ToArray();
             // Rebuild panel rows to match new count
             RebuildPausePanelRows();

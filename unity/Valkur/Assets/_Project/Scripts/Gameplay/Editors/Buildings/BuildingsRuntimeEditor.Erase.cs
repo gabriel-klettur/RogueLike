@@ -159,11 +159,11 @@ namespace Valkur.Gameplay.Buildings
             BuildEraseConfirmModal();
             string templateName = clicked.Template.name;
             string scopeText = _eraseScope == EraseScope.Zone
-                ? $"en {(_eraseZoneId ?? "<sin zona>")}"
-                : $"en el área seleccionada ({_eraseAreaCells.Count} tiles)";
+                ? $"in {(_eraseZoneId ?? "<no zone>")}"
+                : $"in the selected area ({_eraseAreaCells.Count} tiles)";
             if (_eraseConfirmText != null)
                 _eraseConfirmText.text =
-                    $"Eliminar {_eraseMatches.Count} buildings\n" +
+                    $"Delete {_eraseMatches.Count} buildings\n" +
                     $"Template: #{_eraseTemplateId} ({templateName})\n" +
                     $"Scope: {scopeText}?";
             _eraseConfirmYes = CommitErase;
@@ -242,9 +242,9 @@ namespace Valkur.Gameplay.Buildings
             btnRow.AddComponent<LayoutElement>().preferredHeight = 36f;
             var hlg = btnRow.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 12f; hlg.childForceExpandWidth = true;
-            EditorUIHelpers.MakeDangerButton(btnRow.transform, "Eliminar",
+            EditorUIHelpers.MakeDangerButton(btnRow.transform, "Delete",
                 () => { _eraseConfirmYes?.Invoke(); }, 32f);
-            EditorUIHelpers.MakeButton(btnRow.transform, "Cancelar",
+            EditorUIHelpers.MakeButton(btnRow.transform, "Cancel",
                 () => ExitEraseMode(), 32f, 12f);
 
             _eraseConfirmModal.SetActive(false);

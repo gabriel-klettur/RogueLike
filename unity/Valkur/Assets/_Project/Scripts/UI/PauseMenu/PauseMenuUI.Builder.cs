@@ -27,7 +27,7 @@ namespace Valkur.UI.PauseMenu
             _overlayRoot.AddComponent<Image>().color = OverlayBg;
 
             // Options, Sounds, Inputs panels
-            _optionsPanel = BuildListPanel(_overlayRoot.transform, "Opciones",
+            _optionsPanel = BuildListPanel(_overlayRoot.transform, "Options",
                 _optOptions, out _optPills, out _optBars, out _optTexts,
                 onHover:   i => { _optSel = i; UpdateListVisuals(_optSel, _optPills, _optBars, _optTexts); },
                 onExecute: ExecuteOption);
@@ -36,13 +36,13 @@ namespace Valkur.UI.PauseMenu
             _loadGamePanel = BuildLoadGamePanel(_overlayRoot.transform);
 
             // Pause panel: shell only – rows are rebuilt dynamically via RebuildPausePanelRows
-            _pausePanel = CreateUIObject("PausadoPanel", _overlayRoot.transform);
+            _pausePanel = CreateUIObject("PausePanel", _overlayRoot.transform);
             var pr = _pausePanel.GetComponent<RectTransform>();
             pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
             pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero;
             pr.sizeDelta = new Vector2(380f, 52f);
             _pausePanel.AddComponent<Image>().color = PanelBg;
-            AddPanelTitle(_pausePanel.transform, "Pausado", 52f, 0f);
+            AddPanelTitle(_pausePanel.transform, "Paused", 52f, 0f);
 
             UILayerHelper.SetUILayerRecursive(cGo);
         }

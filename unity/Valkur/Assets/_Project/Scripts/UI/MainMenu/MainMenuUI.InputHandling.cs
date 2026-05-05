@@ -59,10 +59,10 @@ namespace Valkur.UI.MainMenu
             if (index < 0 || _menuOptions == null || index >= _menuOptions.Length) return;
             switch (_menuOptions[index])
             {
-                case "Continuar":    ShowMenuScreen(MenuScreen.LoadGame); break;
-                case "Nuevo juego":  OpenClassSelector();  break;
-                case "Opciones":     ShowMenuScreen(MenuScreen.Options); break;
-                case "Salir":        QuitGame();           break;
+                case "Continue":    ShowMenuScreen(MenuScreen.LoadGame); break;
+                case "New Game":    OpenClassSelector();  break;
+                case "Options":     ShowMenuScreen(MenuScreen.Options); break;
+                case "Exit":        QuitGame();           break;
             }
         }
 

@@ -19,12 +19,12 @@ namespace Valkur.UI.PauseMenu
             var rowDefs = new (string label, float min, float max, float step,
                 System.Func<float> get, System.Action<float> set)[]
             {
-                ("Música",                      0f,    1f,   0.02f, () => gs.musicVolume,        v => gs.musicVolume        = v),
-                ("Ambiente",                    0f,    1f,   0.02f, () => gs.ambientVolume,       v => gs.ambientVolume       = v),
+                ("Music",                       0f,    1f,   0.02f, () => gs.musicVolume,        v => gs.musicVolume        = v),
+                ("Ambient",                     0f,    1f,   0.02f, () => gs.ambientVolume,       v => gs.ambientVolume       = v),
                 ("SFX",                         0f,    1f,   0.02f, () => gs.sfxVolume,            v => gs.sfxVolume            = v),
-                ("Ambiente: mín intervalo (s)", 0f,   60f,   0.5f, () => gs.ambientMinInterval,  v => gs.ambientMinInterval  = v),
-                ("Ambiente: máx intervalo (s)", 0f,  120f,   0.5f, () => gs.ambientMaxInterval,  v => gs.ambientMaxInterval  = v),
-                ("Ducking: atenuación (dB)",  -24f,    0f,   1f,   () => gs.duckingAttenuation,  v => gs.duckingAttenuation  = v),
+                ("Ambient: min interval (s)",   0f,   60f,   0.5f, () => gs.ambientMinInterval,  v => gs.ambientMinInterval  = v),
+                ("Ambient: max interval (s)",   0f,  120f,   0.5f, () => gs.ambientMaxInterval,  v => gs.ambientMaxInterval  = v),
+                ("Ducking: attenuation (dB)", -24f,    0f,   1f,   () => gs.duckingAttenuation,  v => gs.duckingAttenuation  = v),
                 ("Ducking: hold (ms)",          0f, 2000f,  25f,   () => gs.duckingHoldMs,       v => gs.duckingHoldMs       = v),
                 ("Ducking: release (ms)",       0f, 2000f,  25f,   () => gs.duckingReleaseMs,    v => gs.duckingReleaseMs    = v),
             };
@@ -43,7 +43,7 @@ namespace Valkur.UI.PauseMenu
             r.sizeDelta = new Vector2(panelW, panelH);
             panel.AddComponent<Image>().color = PanelBg;
 
-            AddPanelTitle(panel.transform, "Opciones de Sonido", panelH, padX);
+            AddPanelTitle(panel.transform, "Sound Options", panelH, padX);
 
             _soundRows.Clear();
             _soundPills     = new Image[rowDefs.Length];
@@ -116,7 +116,7 @@ namespace Valkur.UI.PauseMenu
                 RefreshSoundRowText(i);
             }
 
-            AddHint(panel.transform, "<- -> Ajustar  |  R Resetear  |  Esc Volver", panelH);
+            AddHint(panel.transform, "<- -> Adjust  |  R Reset  |  Esc Back", panelH);
             return panel;
         }
 

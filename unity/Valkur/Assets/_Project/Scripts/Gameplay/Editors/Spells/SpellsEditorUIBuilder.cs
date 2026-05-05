@@ -551,7 +551,7 @@ namespace Valkur.Gameplay.Spells
 
             refs.TutorialPrevBtn  = EditorUIHelpers.MakeButton(nav.transform, "<= Prev", () => onPrev?.Invoke(), 28f, 11f);
             refs.TutorialNextBtn  = EditorUIHelpers.MakeButton(nav.transform, "Next =>", () => onNext?.Invoke(), 28f, 11f);
-            refs.TutorialCloseBtn = EditorUIHelpers.MakeButton(nav.transform, "Cerrar",  () => onClose?.Invoke(), 28f, 11f);
+            refs.TutorialCloseBtn = EditorUIHelpers.MakeButton(nav.transform, "Close",  () => onClose?.Invoke(), 28f, 11f);
 
             refs.TutorialDropdown.SetActive(false);
         }

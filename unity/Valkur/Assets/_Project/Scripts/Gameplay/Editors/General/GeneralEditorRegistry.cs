@@ -14,6 +14,7 @@ using Valkur.Gameplay.Save;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.TimeWeather;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
 
@@ -39,49 +40,50 @@ namespace Valkur.Gameplay.Editors.General
         {
             var list = new List<GeneralEditorEntry>(17);
 
-            // ── Editores ────────────────────────────────────────────────────
-            list.Add(MakeEditor("Tile",      () => TileEditorManager.Instance));
-            list.Add(MakeEditor("Edificios", () => BuildingsRuntimeEditor.Instance));
-            list.Add(MakeEditor("Items",     () => ItemsRuntimeEditor.Instance));
-            list.Add(MakeEditor("Hechizos",  () => SpellsRuntimeEditor.Instance));
-            list.Add(MakeEditor("Entidades", () => EntitiesRuntimeEditor.Instance));
-            list.Add(MakeEditor("FSM",       () => FSMRuntimeEditor.Instance));
-            list.Add(MakeEditor("Mapa",      () => MapEditorManager.Instance));
-            list.Add(MakeEditor("Inventario",() => InventoryRuntimeEditor.Instance));
-            list.Add(MakeEditor("Partículas",() => ParticlesRuntimeEditor.Instance));
-            list.Add(MakeEditor("Spawners",  () => SpawnerEditorManager.Instance));
-            list.Add(MakeEditor("Iluminación", () => LightingRuntimeEditor.Instance));
+            // ── Editors ─────────────────────────────────────────────────────
+            list.Add(MakeEditor("Tile",          () => TileEditorManager.Instance));
+            list.Add(MakeEditor("Buildings",     () => BuildingsRuntimeEditor.Instance));
+            list.Add(MakeEditor("Items",         () => ItemsRuntimeEditor.Instance));
+            list.Add(MakeEditor("Spells",        () => SpellsRuntimeEditor.Instance));
+            list.Add(MakeEditor("Entities",      () => EntitiesRuntimeEditor.Instance));
+            list.Add(MakeEditor("FSM",           () => FSMRuntimeEditor.Instance));
+            list.Add(MakeEditor("Map",           () => MapEditorManager.Instance));
+            list.Add(MakeEditor("Inventory",     () => InventoryRuntimeEditor.Instance));
+            list.Add(MakeEditor("Particles",     () => ParticlesRuntimeEditor.Instance));
+            list.Add(MakeEditor("Spawners",      () => SpawnerEditorManager.Instance));
+            list.Add(MakeEditor("Lighting",      () => LightingRuntimeEditor.Instance));
+            list.Add(MakeEditor("Time & Weather",() => TimeWeatherEditor.Instance));
 
-            // ── Diagnóstico (toggles, no exclusive activation) ──────────────
+            // ── Diagnostics (toggles, no exclusive activation) ──────────────
             list.Add(new GeneralEditorEntry(
-                "Rangos combate", GeneralEditorSection.Diagnostics,
+                "Combat Ranges", GeneralEditorSection.Diagnostics,
                 onClick:  () => CombatRangeVisualizer.Instance?.ToggleVisible(),
                 isActive: () => CombatRangeVisualizer.Instance != null
                                 && CombatRangeVisualizer.Instance.IsVisible));
 
             list.Add(new GeneralEditorEntry(
-                "HUD debug", GeneralEditorSection.Diagnostics,
+                "Debug HUD", GeneralEditorSection.Diagnostics,
                 onClick:  () => ServiceLocator.Get<IDebugOverlayService>()?.ToggleVisible(),
                 isActive: () => ServiceLocator.Get<IDebugOverlayService>()?.IsVisible == true));
 
-            // ── Partida ─────────────────────────────────────────────────────
+            // ── Game ────────────────────────────────────────────────────────
             list.Add(new GeneralEditorEntry(
-                "Guardar", GeneralEditorSection.Game,
+                "Save", GeneralEditorSection.Game,
                 onClick: TryQuickSave,
                 closesLauncher: true));
 
             list.Add(new GeneralEditorEntry(
-                "Cargar", GeneralEditorSection.Game,
+                "Load", GeneralEditorSection.Game,
                 onClick: () => ServiceLocator.Get<IPauseMenuService>()?.OpenLoadGame(),
                 closesLauncher: true));
 
             list.Add(new GeneralEditorEntry(
-                "Opciones", GeneralEditorSection.Game,
+                "Options", GeneralEditorSection.Game,
                 onClick: () => ServiceLocator.Get<IPauseMenuService>()?.OpenOptions(),
                 closesLauncher: true));
 
             list.Add(new GeneralEditorEntry(
-                "Salir al menú", GeneralEditorSection.Game,
+                "Exit to Menu", GeneralEditorSection.Game,
                 onClick: QuitToMainMenu,
                 closesLauncher: true));
 

@@ -198,10 +198,10 @@ namespace Valkur.UI.MainMenu
         {
             bool hasSaves = SaveFileManager.ListSaves().Count > 0;
             var opts = new List<string>();
-            if (hasSaves) opts.Add("Continuar");
-            opts.Add("Nuevo juego");
-            opts.Add("Opciones");
-            opts.Add("Salir");
+            if (hasSaves) opts.Add("Continue");
+            opts.Add("New Game");
+            opts.Add("Options");
+            opts.Add("Exit");
             _menuOptions = opts.ToArray();
         }
 

@@ -96,7 +96,7 @@ namespace Valkur.UI.PauseMenu
         private TextMeshProUGUI[] _pauseTexts;
 
         // ── Options panel ─────────────────────────────────────────────────────
-        private readonly string[] _optOptions = { "Inputs", "Sonido", "Volver" };
+        private readonly string[] _optOptions = { "Inputs", "Sound", "Back" };
         private int      _optSel;
         private Image[]  _optPills;
         private Image[]  _optBars;
@@ -123,6 +123,9 @@ namespace Valkur.UI.PauseMenu
         private int _inputsRowSel;
 #pragma warning restore CS0414
         private TextMeshProUGUI[] _tabLabels;
+        // Selected editor sub-tab when the "Editors" main tab is active (0–11).
+        private int _editorSubTabSel;
+        private TextMeshProUGUI[] _editorSubTabLabels;
 
         // ── Load game panel ──────────────────────────────────────────────────
         private List<SaveSlotInfo> _loadSaves = new List<SaveSlotInfo>();

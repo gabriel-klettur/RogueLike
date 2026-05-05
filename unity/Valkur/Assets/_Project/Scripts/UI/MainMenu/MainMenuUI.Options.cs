@@ -25,7 +25,7 @@ namespace Valkur.UI.MainMenu
         private GameObject _optInputsPanel;
 
         // ── Options list ─────────────────────────────────────────────────────
-        private readonly string[] _optMenuOptions = { "Inputs", "Sonido", "Volver" };
+        private readonly string[] _optMenuOptions = { "Inputs", "Sound", "Back" };
         private int      _optMenuSel;
         private Image[]  _optMenuPills;
         private Image[]  _optMenuBars;
@@ -48,6 +48,9 @@ namespace Valkur.UI.MainMenu
         // ── Inputs panel ─────────────────────────────────────────────────────
         private int _optInputsTabSel;
         private TextMeshProUGUI[] _optTabLabels;
+        // Selected editor sub-tab when the "Editors" main tab is active (0–11).
+        private int _optEditorSubTabSel;
+        private TextMeshProUGUI[] _optEditorSubTabLabels;
 
         // ════════════════════════════════════════════════════════════════════
         // Screen management
@@ -174,8 +177,8 @@ namespace Valkur.UI.MainMenu
             switch (_optMenuOptions[idx])
             {
                 case "Inputs": ShowMenuScreen(MenuScreen.Inputs); break;
-                case "Sonido": ShowMenuScreen(MenuScreen.Sounds); break;
-                case "Volver": ShowMenuScreen(MenuScreen.Main);   break;
+                case "Sound":  ShowMenuScreen(MenuScreen.Sounds); break;
+                case "Back":   ShowMenuScreen(MenuScreen.Main);   break;
             }
         }
 

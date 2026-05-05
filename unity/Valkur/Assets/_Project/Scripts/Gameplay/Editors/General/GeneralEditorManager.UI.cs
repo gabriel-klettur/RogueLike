@@ -42,15 +42,15 @@ namespace Valkur.Gameplay.Editors.General
                 dock: TileEditorUIHelpers.PanelDock.TopLeft,
                 xOff: PANEL_X_OFFSET, yOff: PANEL_Y_OFFSET,
                 width: PANEL_WIDTH, height: PANEL_HEIGHT,
-                title: "Editor General",
+                title: "General Editor",
                 contentOut: out var contentRoot,
                 dragOut: out _);
 
             AddCloseButtonToHeader(_panelRoot);
 
-            BuildSection(contentRoot, "EDITORES",     GeneralEditorSection.Editors);
-            BuildSection(contentRoot, "DIAGNÓSTICO",  GeneralEditorSection.Diagnostics);
-            BuildSection(contentRoot, "PARTIDA",      GeneralEditorSection.Game);
+            BuildSection(contentRoot, "EDITORS",     GeneralEditorSection.Editors);
+            BuildSection(contentRoot, "DIAGNOSTICS", GeneralEditorSection.Diagnostics);
+            BuildSection(contentRoot, "GAME",        GeneralEditorSection.Game);
         }
 
         partial void SetPanelVisible(bool visible)

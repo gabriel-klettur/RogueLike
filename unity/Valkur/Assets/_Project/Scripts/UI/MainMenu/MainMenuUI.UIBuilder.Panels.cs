@@ -134,7 +134,7 @@ namespace Valkur.UI.MainMenu
             hintR.anchoredPosition = new Vector2(15f, 10f);
             hintR.sizeDelta        = new Vector2(500f, 30f);
             var hintTMP = hintGo.AddComponent<TextMeshProUGUI>();
-            hintTMP.text      = "Mouse o W/S Navegar  |  Click o Enter Seleccionar";
+            hintTMP.text      = "Mouse or W/S Navigate  |  Click or Enter Select";
             hintTMP.fontSize  = 14f;
             hintTMP.alignment = TextAlignmentOptions.Left;
             hintTMP.color     = VersionCol;

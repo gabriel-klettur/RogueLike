@@ -211,9 +211,9 @@ namespace Valkur.Gameplay.Buildings
             btnRow.AddComponent<LayoutElement>().preferredHeight = 36f;
             var hlg = btnRow.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 12f; hlg.childForceExpandWidth = true;
-            EditorUIHelpers.MakeDangerButton(btnRow.transform, "Eliminar",
+            EditorUIHelpers.MakeDangerButton(btnRow.transform, "Delete",
                 () => { var cb = _pendingConfirmYes; HideConfirm(); cb?.Invoke(); }, 32f);
-            EditorUIHelpers.MakeButton(btnRow.transform, "Cancelar", () => HideConfirm(), 32f, 12f);
+            EditorUIHelpers.MakeButton(btnRow.transform, "Cancel", () => HideConfirm(), 32f, 12f);
 
             _confirmModal.SetActive(false);
         }

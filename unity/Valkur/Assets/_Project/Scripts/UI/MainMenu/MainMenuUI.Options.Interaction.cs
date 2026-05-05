@@ -45,6 +45,14 @@ namespace Valkur.UI.MainMenu
                 var container = _optInputsPanel.transform.Find($"OTabContent_{i}");
                 if (container != null) container.gameObject.SetActive(i == _optInputsTabSel);
             }
+
+            // When switching to the Editors tab, refresh editor sub-tab visuals.
+            if (_optInputsTabSel == 3)
+            {
+                var editorsContainer = _optInputsPanel.transform.Find("OTabContent_3");
+                if (editorsContainer != null)
+                    RefreshOptEditorSubTabVisuals(editorsContainer, "OESubContent");
+            }
         }
 
         // ════════════════════════════════════════════════════════════════════

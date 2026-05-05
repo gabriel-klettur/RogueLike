@@ -235,17 +235,17 @@ namespace Valkur.Tests.EditMode.Editors.General
         public void Registry_ReturnsExpectedTotalEntryCount()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
-            Assert.AreEqual(17, entries.Count,
-                "Registry must list 11 F-key editors + 2 diagnostics + 4 game actions = 17 buttons total.");
+            Assert.AreEqual(18, entries.Count,
+                "Registry must list 12 runtime editors + 2 diagnostics + 4 game actions = 18 buttons total.");
         }
 
         [Test]
-        public void Registry_HasElevenEditorEntries()
+        public void Registry_HasTwelveEditorEntries()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
             int editors = entries.Count(e => e.Section == GeneralEditorSection.Editors);
-            Assert.AreEqual(11, editors,
-                "Editors section must enumerate the 11 F-key editors (Tile, Buildings, Items, Spells, Entities, FSM, Map, Inventory, Particles, Spawners, Lighting).");
+            Assert.AreEqual(12, editors,
+                "Editors section must enumerate the 12 runtime editors (Tile, Buildings, Items, Spells, Entities, FSM, Map, Inventory, Particles, Spawners, Lighting, Time & Weather).");
         }
 
         [Test]

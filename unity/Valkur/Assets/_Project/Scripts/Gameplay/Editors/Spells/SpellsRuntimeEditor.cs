@@ -63,18 +63,18 @@ namespace Valkur.Gameplay.Spells
         private int _tutorialStep;
         private static readonly (string title, string body)[] TUTORIAL_STEPS =
         {
-            ("1. Bienvenido",
-             "Este tutorial te guiará por las funciones clave: abrir el picker, seleccionar un hechizo, duplicar/eliminar con Add/Remove y panel de propiedades."),
-            ("2. Mostrar el Picker",
-             "Usa el botón Spells del menú superior para mostrar el grid de hechizos."),
-            ("3. Seleccionar un hechizo",
-             "Haz clic sobre un hechizo del picker para seleccionarlo."),
+            ("1. Welcome",
+             "This tutorial walks you through the key features: opening the picker, selecting a spell, duplicate/delete via Add/Remove, and the properties panel."),
+            ("2. Show the Picker",
+             "Use the Spells button in the top menu to show the spell grid."),
+            ("3. Select a spell",
+             "Click a spell in the picker to select it."),
             ("4. Add / Remove",
-             "Usa Add para duplicar el hechizo seleccionado, Remove para eliminarlo."),
-            ("5. Panel de Propiedades",
-             "Con un hechizo seleccionado, edita valores en la pestaña Properties; cambia sprite/vfx en Assets/Particles."),
-            ("6. Finalizar",
-             "Pulsa F4 o ESC para cerrar el editor."),
+             "Use Add to duplicate the selected spell, Remove to delete it."),
+            ("5. Properties Panel",
+             "With a spell selected, edit values in the Properties tab; change sprite/vfx in Assets/Particles."),
+            ("6. Finish",
+             "Press F4 or ESC to close the editor."),
         };
 
         // ── IGameEditor ──

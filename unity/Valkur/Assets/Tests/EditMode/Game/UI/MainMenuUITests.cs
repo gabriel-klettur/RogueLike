@@ -138,27 +138,27 @@ namespace Valkur.Tests.EditMode.Game.UI
         // ── Menu options (dynamic) ───────────────────────────────────────────
 
         [Test]
-        public void MenuOptions_AlwaysContains_NuevoJuego()
+        public void MenuOptions_AlwaysContains_NewGame()
         {
             var options = GetPrivateField<string[]>("_menuOptions");
             Assert.IsNotNull(options);
-            Assert.Contains("Nuevo juego", options);
+            Assert.Contains("New Game", options);
         }
 
         [Test]
-        public void MenuOptions_AlwaysContains_Opciones()
+        public void MenuOptions_AlwaysContains_Options()
         {
             var options = GetPrivateField<string[]>("_menuOptions");
             Assert.IsNotNull(options);
-            Assert.Contains("Opciones", options);
+            Assert.Contains("Options", options);
         }
 
         [Test]
-        public void MenuOptions_AlwaysContains_Salir()
+        public void MenuOptions_AlwaysContains_Exit()
         {
             var options = GetPrivateField<string[]>("_menuOptions");
             Assert.IsNotNull(options);
-            Assert.Contains("Salir", options);
+            Assert.Contains("Exit", options);
         }
 
         // ── Class selector ───────────────────────────────────────────────────

@@ -15,7 +15,7 @@ namespace Valkur.UI.MainMenu
         private float _blinkTimer;
         private bool _blinkVisible = true;
         private const float BLINK_INTERVAL = 0.85f;
-        private const string PRESS_TEXT = "Pulsa para comenzar";
+        private const string PRESS_TEXT = "Press to start";
 
         // ── Build ────────────────────────────────────────────────────────────
 

@@ -14,26 +14,26 @@ namespace Valkur.UI.PauseMenu
             if (_pauseOptions == null || idx >= _pauseOptions.Length) return;
             switch (_pauseOptions[idx])
             {
-                case "Continuar":
+                case "Continue":
                     ClosePause();
                     break;
-                case "Nueva Partida":
+                case "New Game":
                     ClosePause();
                     SceneTransitionManager.LoadScene("MainGameplay");
                     break;
-                case "Guardar partida":
+                case "Save Game":
                     if (SaveService.Instance != null) SaveService.Instance.QuickSave();
                     ClosePause();
                     break;
-                case "Cargar juego":
+                case "Load Game":
                     ShowScreen(PauseScreen.LoadGame);
                     break;
-                case "Opciones":
+                case "Options":
                     ShowScreen(PauseScreen.Options);
                     break;
-                case "Salir":
+                case "Exit":
                     // Quicksave before returning to the main menu so the player can
-                    // pick "Continuar" on next launch (otherwise their progress is
+                    // pick "Continue" on next launch (otherwise their progress is
                     // silently lost when they exit through the pause menu).
                     if (SaveService.Instance != null)
                     {
@@ -52,8 +52,8 @@ namespace Valkur.UI.PauseMenu
             switch (_optOptions[idx])
             {
                 case "Inputs": ShowScreen(PauseScreen.Inputs); break;
-                case "Sonido": ShowScreen(PauseScreen.Sounds); break;
-                case "Volver": ShowScreen(PauseScreen.Pause);  break;
+                case "Sound":  ShowScreen(PauseScreen.Sounds); break;
+                case "Back":   ShowScreen(PauseScreen.Pause);  break;
             }
         }
     }

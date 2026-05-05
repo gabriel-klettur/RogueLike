@@ -41,7 +41,7 @@ namespace Valkur.UI.MainMenu
             pr.sizeDelta = new Vector2(panelW, panelH);
             _optPanel.AddComponent<Image>().color = PanelBg;
 
-            AddOptPanelTitle(_optPanel.transform, "Opciones");
+            AddOptPanelTitle(_optPanel.transform, "Options");
 
             _optMenuPills = new Image[_optMenuOptions.Length];
             _optMenuBars  = new Image[_optMenuOptions.Length];
@@ -109,12 +109,12 @@ namespace Valkur.UI.MainMenu
             var rowDefs = new (string label, float min, float max, float step,
                 System.Func<float> get, System.Action<float> set)[]
             {
-                ("Música",                      0f,    1f,   0.02f, () => gs.musicVolume,        v => gs.musicVolume        = v),
-                ("Ambiente",                    0f,    1f,   0.02f, () => gs.ambientVolume,       v => gs.ambientVolume       = v),
+                ("Music",                       0f,    1f,   0.02f, () => gs.musicVolume,        v => gs.musicVolume        = v),
+                ("Ambient",                     0f,    1f,   0.02f, () => gs.ambientVolume,       v => gs.ambientVolume       = v),
                 ("SFX",                         0f,    1f,   0.02f, () => gs.sfxVolume,            v => gs.sfxVolume            = v),
-                ("Ambiente: mín intervalo (s)", 0f,   60f,   0.5f, () => gs.ambientMinInterval,  v => gs.ambientMinInterval  = v),
-                ("Ambiente: máx intervalo (s)", 0f,  120f,   0.5f, () => gs.ambientMaxInterval,  v => gs.ambientMaxInterval  = v),
-                ("Ducking: atenuación (dB)",  -24f,    0f,   1f,   () => gs.duckingAttenuation,  v => gs.duckingAttenuation  = v),
+                ("Ambient: min interval (s)",   0f,   60f,   0.5f, () => gs.ambientMinInterval,  v => gs.ambientMinInterval  = v),
+                ("Ambient: max interval (s)",   0f,  120f,   0.5f, () => gs.ambientMaxInterval,  v => gs.ambientMaxInterval  = v),
+                ("Ducking: attenuation (dB)", -24f,    0f,   1f,   () => gs.duckingAttenuation,  v => gs.duckingAttenuation  = v),
                 ("Ducking: hold (ms)",          0f, 2000f,  25f,   () => gs.duckingHoldMs,       v => gs.duckingHoldMs       = v),
                 ("Ducking: release (ms)",       0f, 2000f,  25f,   () => gs.duckingReleaseMs,    v => gs.duckingReleaseMs    = v),
             };
@@ -133,7 +133,7 @@ namespace Valkur.UI.MainMenu
             r.sizeDelta = new Vector2(panelW, panelH);
             _optSoundsPanel.AddComponent<Image>().color = PanelBg;
 
-            AddOptPanelTitle(_optSoundsPanel.transform, "Opciones de Sonido");
+            AddOptPanelTitle(_optSoundsPanel.transform, "Sound Options");
 
             _optSoundRows.Clear();
             _optSoundPills  = new Image[rowDefs.Length];
@@ -206,7 +206,7 @@ namespace Valkur.UI.MainMenu
                 RefreshOptSoundRowText(i);
             }
 
-            AddOptHint(_optSoundsPanel.transform, "<- -> Ajustar  |  Enter Guardar  |  Esc Volver", panelH);
+            AddOptHint(_optSoundsPanel.transform, "<- -> Adjust  |  Enter Save  |  Esc Back", panelH);
         }
 
         // ── Inputs panel ─────────────────────────────────────────────────────

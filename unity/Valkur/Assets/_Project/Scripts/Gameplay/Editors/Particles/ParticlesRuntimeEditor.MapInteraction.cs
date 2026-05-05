@@ -131,7 +131,7 @@ namespace Valkur.Gameplay.VFX
             // Reject finite (one-shot) presets — they cannot be placed as persistent decorations.
             if (preset.vfx != null && !preset.vfx.loops)
             {
-                SetStatus($"'{presetId}' es one-shot (loops=false); no se puede colocar como decoración persistente.");
+                SetStatus($"'{presetId}' is one-shot (loops=false); cannot be placed as persistent decoration.");
                 return;
             }
             var go = SpawnEmitterAt(preset, worldPos);
@@ -234,12 +234,12 @@ namespace Valkur.Gameplay.VFX
 
             // First confirmation modal.
             ShowConfirm(
-                $"Borrar <b>{count}</b> instancias de partículas en zona <b>{zone}</b>?\n\nEsta acción puede deshacerse con Undo.",
+                $"Delete <b>{count}</b> particle instances in zone <b>{zone}</b>?\n\nThis action can be undone with Undo.",
                 () =>
                 {
                     // Second confirmation modal (final).
                     ShowConfirm(
-                        $"CONFIRMAR BORRADO: <b>{count}</b> instancias en <b>{zone}</b>.\n¿Continuar?",
+                        $"CONFIRM DELETE: <b>{count}</b> instances in <b>{zone}</b>.\nContinue?",
                         () => DeleteAllInZone(zone));
                 });
         }
