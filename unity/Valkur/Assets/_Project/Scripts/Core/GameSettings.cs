@@ -47,9 +47,21 @@ namespace Valkur.Core
         public string spell4KeyA = "4";
         public string primaryAttackMouse  = "LeftButton";
         public string secondaryAttackMouse = "RightButton";
-        // Editors
-        public string toggleTileEditorKeyA = "F8";
-        public string toggleMapEditorKeyA  = "F11";
+        // Editors — toggle bindings (one per editor).
+        // The Lighting editor uses a Ctrl+F3 combination; only the bare key is stored
+        // here because the Ctrl guard is hardcoded in LightingRuntimeEditor.cs.
+        public string toggleTileEditorKeyA        = "F8";
+        public string toggleMapEditorKeyA         = "F11";
+        public string toggleParticlesEditorKeyA   = "F1";
+        public string toggleTimeWeatherEditorKeyA = "F2";
+        public string toggleSpawnerEditorKeyA     = "F3";
+        public string toggleLightingEditorKeyA    = "F3";
+        public string toggleSpellsEditorKeyA      = "F4";
+        public string toggleEntitiesEditorKeyA    = "F5";
+        public string toggleInventoryEditorKeyA   = "F6";
+        public string toggleItemsEditorKeyA       = "F7";
+        public string toggleBuildingsEditorKeyA   = "F10";
+        public string toggleFsmEditorKeyA         = "F12";
 
         // ── Statics ──────────────────────────────────────────────────────────
         private static GameSettings _instance;
@@ -128,8 +140,18 @@ namespace Valkur.Core
             spell4KeyA    = fresh.spell4KeyA;
             primaryAttackMouse   = fresh.primaryAttackMouse;
             secondaryAttackMouse = fresh.secondaryAttackMouse;
-            toggleTileEditorKeyA = fresh.toggleTileEditorKeyA;
-            toggleMapEditorKeyA  = fresh.toggleMapEditorKeyA;
+            toggleTileEditorKeyA        = fresh.toggleTileEditorKeyA;
+            toggleMapEditorKeyA         = fresh.toggleMapEditorKeyA;
+            toggleParticlesEditorKeyA   = fresh.toggleParticlesEditorKeyA;
+            toggleTimeWeatherEditorKeyA = fresh.toggleTimeWeatherEditorKeyA;
+            toggleSpawnerEditorKeyA     = fresh.toggleSpawnerEditorKeyA;
+            toggleLightingEditorKeyA    = fresh.toggleLightingEditorKeyA;
+            toggleSpellsEditorKeyA      = fresh.toggleSpellsEditorKeyA;
+            toggleEntitiesEditorKeyA    = fresh.toggleEntitiesEditorKeyA;
+            toggleInventoryEditorKeyA   = fresh.toggleInventoryEditorKeyA;
+            toggleItemsEditorKeyA       = fresh.toggleItemsEditorKeyA;
+            toggleBuildingsEditorKeyA   = fresh.toggleBuildingsEditorKeyA;
+            toggleFsmEditorKeyA         = fresh.toggleFsmEditorKeyA;
         }
     }
 }

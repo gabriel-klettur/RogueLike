@@ -3,6 +3,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
+using Valkur.Core.Input;
+using Valkur.UI;
 
 namespace Valkur.UI.PauseMenu
 {
@@ -22,9 +24,9 @@ namespace Valkur.UI.PauseMenu
             r.sizeDelta = new Vector2(panelW, panelH);
             panel.AddComponent<Image>().color = PanelBg;
 
-            AddPanelTitle(panel.transform, "Configurar Controles", panelH, 20f);
+            AddPanelTitle(panel.transform, "Controls Settings", panelH, 20f);
 
-            var tabs = new[] { "General", "Movimientos", "Hechizos", "Editores" };
+            var tabs = new[] { "General", "Movement", "Spells", "Editors" };
             _tabLabels = new TextMeshProUGUI[tabs.Length];
             for (int t = 0; t < tabs.Length; t++)
             {
@@ -53,61 +55,277 @@ namespace Valkur.UI.PauseMenu
                 _tabLabels[t] = tmp;
             }
 
-            var gs = GameSettings.Instance;
-            // Tab rows: each row lists the display label and the underlying action keys used by GameSettingsBindings.
-            // Action "-" means no binding slot for that column.
-            var tabData = new (string label, string actionA, string actionB, string actionMouse)[][]
+            // ── Tab 0: General ───────────────────────────────────────────────
             {
-                new[] {
-                    ("Pausa",       "pause",               "-", "-"),
-                    ("Inventario",  "toggle_inventory",    "-", "-"),
-                },
-                new[] {
-                    ("Arriba",      "move_up",    "move_up",    "-"),
-                    ("Abajo",       "move_down",  "move_down",  "-"),
-                    ("Izquierda",   "move_left",  "move_left",  "-"),
-                    ("Derecha",     "move_right", "move_right", "-"),
-                    ("Dash",        "dash",       "dash",       "-"),
-                },
-                new[] {
-                    ("Hechizo 1",   "spell_1", "-", "attack_primary_mouse"),
-                    ("Hechizo 2",   "spell_2", "-", "attack_secondary_mouse"),
-                    ("Hechizo 3",   "spell_3", "-", "-"),
-                    ("Hechizo 4",   "spell_4", "-", "-"),
-                },
-                new[] {
-                    ("Editor Tiles", "toggle_tile_editor", "-", "-"),
-                    ("Editor Mapa",  "toggle_map_editor",  "-", "-"),
-                },
-            };
+                var container = CreateUIObject("TabContent_0", panel.transform);
+                StretchFull(container);
+                var rows = new (string label, string actionA, string actionB, string actionMouse)[]
+                {
+                    ("Pause",     "pause",            "-", "-"),
+                    ("Inventory", "toggle_inventory", "-", "-"),
+                };
+                BuildStandardRows(container.transform, rows);
+            }
 
+            // ── Tab 1: Movement ──────────────────────────────────────────────
+            {
+                var container = CreateUIObject("TabContent_1", panel.transform);
+                StretchFull(container);
+                var rows = new (string label, string actionA, string actionB, string actionMouse)[]
+                {
+                    ("Up",    "move_up",    "move_up",    "-"),
+                    ("Down",  "move_down",  "move_down",  "-"),
+                    ("Left",  "move_left",  "move_left",  "-"),
+                    ("Right", "move_right", "move_right", "-"),
+                    ("Dash",  "dash",       "dash",       "-"),
+                };
+                BuildStandardRows(container.transform, rows);
+            }
+
+            // ── Tab 2: Spells ────────────────────────────────────────────────
+            {
+                var container = CreateUIObject("TabContent_2", panel.transform);
+                StretchFull(container);
+                var rows = new (string label, string actionA, string actionB, string actionMouse)[]
+                {
+                    ("Spell 1", "spell_1", "-", "attack_primary_mouse"),
+                    ("Spell 2", "spell_2", "-", "attack_secondary_mouse"),
+                    ("Spell 3", "spell_3", "-", "-"),
+                    ("Spell 4", "spell_4", "-", "-"),
+                };
+                BuildStandardRows(container.transform, rows);
+            }
+
+            // ── Tab 3: Editors (sub-tabs) ────────────────────────────────────
+            {
+                var container = CreateUIObject("TabContent_3", panel.transform);
+                StretchFull(container);
+                // Secondary tab strip with one sub-tab per editor.
+                // _editorSubTabSel and _editorSubTabLabels are partial-class fields
+                // on PauseMenuUI (defined in PauseMenuUI.cs).
+                BuildEditorSubTabs(container.transform, "ESubTab", "ESubContent");
+            }
+
+            AddHint(panel.transform, "Click on a key to rebind  |  Esc to cancel  |  Q / E Change tab", panelH);
+            return panel;
+        }
+
+        /// <summary>
+        /// Builds a standard row group (label + Key A + Key B + Mouse columns).
+        /// Shared by General, Movement and Spells tabs.
+        /// </summary>
+        private void BuildStandardRows(Transform container,
+            (string label, string actionA, string actionB, string actionMouse)[] rows)
+        {
             const float rowH = 36f; const float gap = 6f; const float startY = -100f;
             const float col0 = 16f, col1 = 0.38f, col2 = 0.58f, col3 = 0.78f;
 
-            for (int t = 0; t < tabData.Length; t++)
+            for (int i = 0; i < rows.Length; i++)
             {
-                var container = CreateUIObject($"TabContent_{t}", panel.transform);
-                StretchFull(container);
-                var rows = tabData[t];
-                for (int i = 0; i < rows.Length; i++)
-                {
-                    float cy  = startY - i * (rowH + gap);
-                    var row   = CreateUIObject($"Row_{t}_{i}", container.transform);
-                    var rowR  = row.GetComponent<RectTransform>();
-                    rowR.anchorMin = Vector2.up; rowR.anchorMax = new Vector2(1f, 1f);
-                    rowR.pivot = new Vector2(0f, 0.5f);
-                    rowR.anchoredPosition = new Vector2(col0, cy);
-                    rowR.sizeDelta = new Vector2(-col0 * 2, rowH);
+                float cy  = startY - i * (rowH + gap);
+                var row   = CreateUIObject($"Row_{i}", container);
+                var rowR  = row.GetComponent<RectTransform>();
+                rowR.anchorMin = Vector2.up; rowR.anchorMax = new Vector2(1f, 1f);
+                rowR.pivot = new Vector2(0f, 0.5f);
+                rowR.anchoredPosition = new Vector2(col0, cy);
+                rowR.sizeDelta = new Vector2(-col0 * 2, rowH);
 
-                    AddTableCell(row.transform, rows[i].label, TextAlignmentOptions.Left, 0f, 0.35f);
-                    AddRebindCell(row.transform, rows[i].actionA,     0, col1, 0.18f, "Tecla A");
-                    AddRebindCell(row.transform, rows[i].actionB,     1, col2, 0.18f, "Tecla B");
-                    AddRebindCell(row.transform, rows[i].actionMouse, 0, col3, 0.22f, "Raton");
-                }
+                AddTableCell(row.transform, rows[i].label, TextAlignmentOptions.Left, 0f, 0.35f);
+                AddRebindCell(row.transform, rows[i].actionA,     0, col1, 0.18f, "Key A");
+                AddRebindCell(row.transform, rows[i].actionB,     1, col2, 0.18f, "Key B");
+                AddRebindCell(row.transform, rows[i].actionMouse, 0, col3, 0.22f, "Mouse");
+            }
+        }
+
+        /// <summary>
+        /// Builds the 12-editor secondary tab strip inside the "Editors" main tab.
+        /// Each sub-tab shows:
+        ///   • one rebindable toggle-key row (or a read-only fixed row for Lighting Ctrl+F3).
+        ///   • read-only rows for the editor's in-editor shortcuts (Ctrl+Z/Y/S, Esc).
+        ///
+        /// NOTE: The in-editor shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+S, Esc) are displayed
+        ///       as read-only because they are hardcoded in each editor's
+        ///       KeyboardInputManager calls.  Making them rebindable would require
+        ///       migrating every editor to InputAction-backed lookups — deferred.
+        /// </summary>
+        private void BuildEditorSubTabs(Transform container,
+            string subTabPrefix, string contentPrefix)
+        {
+            var editors = EditorSubTabData.All;
+
+            // ── Sub-tab strip (2 rows × 6) ───────────────────────────────────
+            // Row A: Particles, Time&Weather, Spawners, Lighting, Spells, Entities
+            // Row B: Inventory, Items, Tile, Buildings, Map, FSM
+            const float stripY0 = -92f;
+            const float stripY1 = -124f;
+            const float subTabH = 28f;
+            _editorSubTabLabels = new TextMeshProUGUI[editors.Length];
+
+            for (int i = 0; i < editors.Length; i++)
+            {
+                int col = i % 6;
+                int row = i / 6;
+                float stripY = row == 0 ? stripY0 : stripY1;
+
+                var tabGo = CreateUIObject($"{subTabPrefix}_{i}", container);
+                var tabR  = tabGo.GetComponent<RectTransform>();
+                tabR.anchorMin = new Vector2(col / 6f, 1f);
+                tabR.anchorMax = new Vector2((col + 1) / 6f, 1f);
+                tabR.pivot = new Vector2(0.5f, 1f);
+                tabR.anchoredPosition = new Vector2(0f, stripY);
+                tabR.sizeDelta = new Vector2(-2f, subTabH);
+                var tabImg = tabGo.AddComponent<Image>();
+                tabImg.color = new Color(0.10f, 0.10f, 0.14f, 1f);
+
+                int cap = i;
+                var tabBtn = tabGo.AddComponent<Button>(); tabBtn.targetGraphic = tabImg;
+                tabBtn.onClick.AddListener(() =>
+                {
+                    _editorSubTabSel = cap;
+                    RefreshEditorSubTabVisuals(container, contentPrefix);
+                });
+
+                var txtGo = CreateUIObject($"{subTabPrefix}Label_{i}", tabGo.transform);
+                var txtR  = txtGo.GetComponent<RectTransform>();
+                txtR.anchorMin = Vector2.zero; txtR.anchorMax = Vector2.one;
+                txtR.sizeDelta = Vector2.zero; txtR.anchoredPosition = Vector2.zero;
+                var tmp = txtGo.AddComponent<TextMeshProUGUI>();
+                tmp.text = editors[i].ShortLabel;
+                tmp.fontSize = 11f;
+                tmp.alignment = TextAlignmentOptions.Center; tmp.color = TextNormal;
+                tmp.raycastTarget = false;
+                tmp.enableWordWrapping = false;
+                _editorSubTabLabels[i] = tmp;
             }
 
-            AddHint(panel.transform, "Click en una tecla para reasignar  |  Esc para cancelar  |  Q / E Cambiar pestana", panelH);
-            return panel;
+            // ── Per-editor content areas ─────────────────────────────────────
+            const float contentStartY = -160f;
+            const float rowH = 34f; const float rowGap = 4f;
+            const float padX = 16f;
+
+            for (int i = 0; i < editors.Length; i++)
+            {
+                var ed = editors[i];
+                var content = CreateUIObject($"{contentPrefix}_{i}", container);
+                StretchFull(content);
+
+                int rowIdx = 0;
+
+                // Toggle key row
+                float cy = contentStartY - rowIdx * (rowH + rowGap);
+                var toggleRow = CreateUIObject("ToggleRow", content.transform);
+                SetInputRowRect(toggleRow, cy, rowH, padX);
+
+                AddTableCell(toggleRow.transform, ed.ToggleLabel, TextAlignmentOptions.Left, 0f, 0.55f);
+                if (ed.IsFixedBinding)
+                {
+                    // Lighting Ctrl+F3: render as read-only — the Ctrl modifier is hardcoded
+                    // in LightingRuntimeEditor.cs and is not managed by EditorBindingsApplier.
+                    AddReadOnlyCell(toggleRow.transform, "Ctrl + F3 (fixed)", 0.58f, 0.42f);
+                }
+                else
+                {
+                    AddRebindCell(toggleRow.transform, ed.ActionName, 0, 0.58f, 0.22f, "Key A");
+                }
+                rowIdx++;
+
+                if (ed.HasUndo)
+                {
+                    cy = contentStartY - rowIdx * (rowH + rowGap);
+                    AddReadOnlyShortcutRow(content.transform, "Undo", "Ctrl + Z  (shared)", cy, rowH, padX);
+                    rowIdx++;
+                    cy = contentStartY - rowIdx * (rowH + rowGap);
+                    AddReadOnlyShortcutRow(content.transform, "Redo", "Ctrl + Y  (shared)", cy, rowH, padX);
+                    rowIdx++;
+                }
+
+                if (ed.HasSave)
+                {
+                    cy = contentStartY - rowIdx * (rowH + rowGap);
+                    AddReadOnlyShortcutRow(content.transform, "Save", "Ctrl + S  (shared)", cy, rowH, padX);
+                    rowIdx++;
+                }
+
+                if (ed.HasEsc)
+                {
+                    cy = contentStartY - rowIdx * (rowH + rowGap);
+                    AddReadOnlyShortcutRow(content.transform, "Close / Cancel", "Esc  (shared)", cy, rowH, padX);
+                    rowIdx++;
+                }
+
+                cy = contentStartY - rowIdx * (rowH + rowGap);
+                AddReadOnlyShortcutRow(content.transform, "Pan Camera", "MMB drag  (shared)", cy, rowH, padX);
+            }
+
+            RefreshEditorSubTabVisuals(container, contentPrefix);
+        }
+
+        // ── Editor sub-tab visual refresh ─────────────────────────────────────
+
+        private void RefreshEditorSubTabVisuals(Transform container, string contentPrefix)
+        {
+            if (_editorSubTabLabels == null) return;
+            for (int i = 0; i < _editorSubTabLabels.Length; i++)
+            {
+                if (_editorSubTabLabels[i] != null)
+                    _editorSubTabLabels[i].color = i == _editorSubTabSel ? TextSelected : TextNormal;
+
+                var c = container.Find($"{contentPrefix}_{i}");
+                if (c != null) c.gameObject.SetActive(i == _editorSubTabSel);
+            }
+        }
+
+        // ── Read-only cell helpers ────────────────────────────────────────────
+
+        /// <summary>
+        /// Adds a dimmed read-only cell (no button, no rebind handler).
+        /// Used for the Lighting fixed binding and in-editor shortcut display rows.
+        /// </summary>
+        private void AddReadOnlyCell(Transform parent, string value,
+            float anchorLeft, float width)
+        {
+            var go = CreateUIObject("ReadOnly_" + value.Replace(" ", "_").Replace("+", "Plus"), parent);
+            var r = go.GetComponent<RectTransform>();
+            r.anchorMin = new Vector2(anchorLeft, 0f);
+            r.anchorMax = new Vector2(anchorLeft + width, 1f);
+            r.pivot = new Vector2(0.5f, 0.5f);
+            r.offsetMin = new Vector2(4f, 6f); r.offsetMax = new Vector2(-4f, -6f);
+
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.09f, 0.09f, 0.12f, 1f);   // dimmer than interactive cells
+
+            var textGo = CreateUIObject("Label", go.transform);
+            var tr = textGo.GetComponent<RectTransform>();
+            tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
+            tr.sizeDelta = Vector2.zero;
+            var tmp = textGo.AddComponent<TextMeshProUGUI>();
+            tmp.text = value;
+            tmp.fontSize = 13f;
+            tmp.color = new Color(0.55f, 0.55f, 0.60f, 1f);    // dim text — not interactive
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// Adds a full-width read-only shortcut row inside an editor content area.
+        /// </summary>
+        private void AddReadOnlyShortcutRow(Transform container, string label, string shortcut,
+            float cy, float rowH, float padX)
+        {
+            var row = CreateUIObject($"Shortcut_{label.Replace(" ", "_").Replace("/", "_")}", container);
+            SetInputRowRect(row, cy, rowH, padX);
+
+            AddTableCell(row.transform, label, TextAlignmentOptions.Left, 0f, 0.55f);
+            AddReadOnlyCell(row.transform, shortcut, 0.58f, 0.42f);
+        }
+
+        private void SetInputRowRect(GameObject go, float cy, float rowH, float padX)
+        {
+            var r = go.GetComponent<RectTransform>();
+            r.anchorMin = Vector2.up; r.anchorMax = new Vector2(1f, 1f);
+            r.pivot = new Vector2(0f, 0.5f);
+            r.anchoredPosition = new Vector2(padX, cy);
+            r.sizeDelta = new Vector2(-padX * 2, rowH);
         }
 
         /// <summary>
@@ -177,6 +395,8 @@ namespace Valkur.UI.PauseMenu
                 {
                     GameSettingsBindings.Set(gs, action, slotIndex, captured);
                     gs.Save();
+                    // Re-apply editor toggle overrides so the new key is live immediately.
+                    EditorBindingsApplier.ReapplyAll();
                 }
                 label.text = $"{prefix}: {captured}";
                 cellBg.color = origColor;
@@ -227,6 +447,14 @@ namespace Valkur.UI.PauseMenu
 
                 var container = _inputsPanel.transform.Find($"TabContent_{i}");
                 if (container != null) container.gameObject.SetActive(i == _inputsTabSel);
+            }
+
+            // When switching to the Editors tab, refresh editor sub-tab visuals.
+            if (_inputsTabSel == 3)
+            {
+                var editorsContainer = _inputsPanel.transform.Find("TabContent_3");
+                if (editorsContainer != null)
+                    RefreshEditorSubTabVisuals(editorsContainer, "ESubContent");
             }
         }
     }

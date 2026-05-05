@@ -33,8 +33,18 @@ namespace Valkur.Core
             { "spell_4",             new List<(string,string)> { ("spell4KeyA","primary") } },
             { "attack_primary_mouse",   new List<(string,string)> { ("primaryAttackMouse","primary") } },
             { "attack_secondary_mouse", new List<(string,string)> { ("secondaryAttackMouse","primary") } },
-            { "toggle_tile_editor",  new List<(string,string)> { ("toggleTileEditorKeyA","primary") } },
-            { "toggle_map_editor",   new List<(string,string)> { ("toggleMapEditorKeyA","primary") } },
+            { "toggle_tile_editor",         new List<(string,string)> { ("toggleTileEditorKeyA","primary") } },
+            { "toggle_map_editor",          new List<(string,string)> { ("toggleMapEditorKeyA","primary") } },
+            { "toggle_particles_editor",    new List<(string,string)> { ("toggleParticlesEditorKeyA","primary") } },
+            { "toggle_time_weather_editor", new List<(string,string)> { ("toggleTimeWeatherEditorKeyA","primary") } },
+            { "toggle_spawner_editor",      new List<(string,string)> { ("toggleSpawnerEditorKeyA","primary") } },
+            { "toggle_lighting_editor",     new List<(string,string)> { ("toggleLightingEditorKeyA","primary") } },
+            { "toggle_spells_editor",       new List<(string,string)> { ("toggleSpellsEditorKeyA","primary") } },
+            { "toggle_entities_editor",     new List<(string,string)> { ("toggleEntitiesEditorKeyA","primary") } },
+            { "toggle_inventory_editor",    new List<(string,string)> { ("toggleInventoryEditorKeyA","primary") } },
+            { "toggle_items_editor",        new List<(string,string)> { ("toggleItemsEditorKeyA","primary") } },
+            { "toggle_buildings_editor",    new List<(string,string)> { ("toggleBuildingsEditorKeyA","primary") } },
+            { "toggle_fsm_editor",          new List<(string,string)> { ("toggleFsmEditorKeyA","primary") } },
         };
 
         public static IReadOnlyList<string> AllActions

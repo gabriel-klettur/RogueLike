@@ -45,6 +45,9 @@ namespace Valkur.Core.Input
             // m_HasFocus=true. See InputSystemConfigurator XML doc.
             InputSystemConfigurator.Apply();
             InputService.Initialize();
+            // Apply user's saved editor-toggle key overrides so the bindings
+            // visible in Controls Settings actually take effect at runtime.
+            EditorBindingsApplier.ReapplyAll();
             var es = PersistentEventSystem.Ensure();
             // Pin m_HasFocus=true on every frame so Editor focus changes
             // (Console / Inspector / MCP / OS) cannot mute OS event delivery
