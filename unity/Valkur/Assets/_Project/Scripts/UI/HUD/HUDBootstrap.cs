@@ -83,37 +83,16 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) deathGo.transform.SetParent(uiContainer.transform, false);
             }
 
-            // Day/Night HUD: sundial clock (top-right) + phase-shortcuts column +
-            // weather-toggles panel + screen-edge vignette tint. All independent
-            // of the player; they only depend on DayNightCycle / WeatherManager
-            // singletons, but we keep them inside HUDBootstrap so every
-            // screen-space HUD piece appears in a single readable file.
+            // Always-visible day/night HUD pieces: just the sundial clock and
+            // the screen-edge vignette tint. Every modifying control (phase
+            // shortcuts, weather toggles, speed slider, phase-tuning sliders)
+            // moved into the F2 TimeWeatherEditor, so the gameplay HUD stays
+            // clean and only shows information, never controls.
             if (FindObjectOfType<DayNightClockHUD>() == null)
             {
                 var clockGo = new GameObject("DayNightClockHUD");
                 clockGo.AddComponent<DayNightClockHUD>();
                 if (uiContainer != null) clockGo.transform.SetParent(uiContainer.transform, false);
-            }
-            if (FindObjectOfType<DayNightShortcutsHUD>() == null)
-            {
-                var shortcutsGo = new GameObject("DayNightShortcutsHUD");
-                shortcutsGo.AddComponent<DayNightShortcutsHUD>();
-                if (uiContainer != null) shortcutsGo.transform.SetParent(uiContainer.transform, false);
-            }
-            if (FindObjectOfType<WeatherHUD>() == null)
-            {
-                var weatherHudGo = new GameObject("WeatherHUD");
-                weatherHudGo.AddComponent<WeatherHUD>();
-                if (uiContainer != null) weatherHudGo.transform.SetParent(uiContainer.transform, false);
-            }
-            if (FindObjectOfType<DayNightPhaseSettingsHUD>() == null)
-            {
-                // Hidden by default; the gear button on the FASES panel toggles
-                // it. Created up-front so the FindObjectOfType lookup in the
-                // shortcuts panel always resolves on first click.
-                var settingsHudGo = new GameObject("DayNightPhaseSettingsHUD");
-                settingsHudGo.AddComponent<DayNightPhaseSettingsHUD>();
-                if (uiContainer != null) settingsHudGo.transform.SetParent(uiContainer.transform, false);
             }
             if (FindObjectOfType<DayNightVignetteOverlay>() == null)
             {

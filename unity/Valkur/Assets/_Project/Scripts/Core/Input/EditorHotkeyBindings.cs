@@ -29,7 +29,8 @@ namespace Valkur.Core.Input
         public enum Hotkey
         {
             ToggleParticles,    // F1
-            ToggleCombatRanges, // F2
+            ToggleCombatRanges, // F2 (Alt)
+            ToggleTimeWeather,  // F2 (bare)
             ToggleSpawner,      // F3
             ToggleLighting,     // F3 (Ctrl)
             ToggleSpells,       // F4
@@ -118,6 +119,7 @@ namespace Valkur.Core.Input
         {
             Hotkey.ToggleParticles    => KeyCode.F1,
             Hotkey.ToggleCombatRanges => KeyCode.F2,
+            Hotkey.ToggleTimeWeather  => KeyCode.F2,
             Hotkey.ToggleSpawner      => KeyCode.F3,
             Hotkey.ToggleLighting     => KeyCode.F3,
             Hotkey.ToggleSpells       => KeyCode.F4,
@@ -189,6 +191,7 @@ namespace Valkur.Core.Input
         {
             Hotkey.ToggleParticles    => "<Keyboard>/f1",
             Hotkey.ToggleCombatRanges => "<Keyboard>/f2",
+            Hotkey.ToggleTimeWeather  => "<Keyboard>/f2",
             Hotkey.ToggleSpawner      => "<Keyboard>/f3",
             Hotkey.ToggleLighting     => "<Keyboard>/f3",
             Hotkey.ToggleSpells       => "<Keyboard>/f4",
@@ -213,6 +216,7 @@ namespace Valkur.Core.Input
         {
             Hotkey.ToggleParticles    => e.ToggleParticles,
             Hotkey.ToggleCombatRanges => e.ToggleCombatRanges,
+            Hotkey.ToggleTimeWeather  => e.ToggleTimeWeather,
             Hotkey.ToggleSpawner      => e.ToggleSpawner,
             Hotkey.ToggleLighting     => e.ToggleLighting,
             Hotkey.ToggleSpells       => e.ToggleSpells,

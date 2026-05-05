@@ -279,6 +279,7 @@ namespace Valkur.Core.Input
             public InputActionMap Map { get; }
             public InputAction ToggleParticles { get; }
             public InputAction ToggleCombatRanges { get; }
+            public InputAction ToggleTimeWeather { get; }
             public InputAction ToggleSpawner { get; }
             public InputAction ToggleLighting { get; }
             public InputAction ToggleSpells { get; }
@@ -302,6 +303,7 @@ namespace Valkur.Core.Input
                 Map                = map;
                 ToggleParticles    = map.FindAction("ToggleParticles",    throwIfNotFound: true);
                 ToggleCombatRanges = map.FindAction("ToggleCombatRanges", throwIfNotFound: true);
+                ToggleTimeWeather  = map.FindAction("ToggleTimeWeather",  throwIfNotFound: true);
                 ToggleSpawner      = map.FindAction("ToggleSpawner",      throwIfNotFound: true);
                 ToggleLighting     = map.FindAction("ToggleLighting",     throwIfNotFound: true);
                 ToggleSpells       = map.FindAction("ToggleSpells",       throwIfNotFound: true);

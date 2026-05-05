@@ -330,6 +330,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] WeatherManager created (effects spawn lazily on first toggle).");
         }
 
+        // Time & Weather editor (F2). Hosts every modifying control for the
+        // time-of-day + weather subsystems (speed slider, phase shortcuts,
+        // weather toggles, phase-tuning sliders) so the gameplay HUD only
+        // shows the read-only sundial. Idempotent.
+        private void EnsureTimeWeatherEditor()
+        {
+            if (Valkur.Gameplay.TimeWeather.TimeWeatherEditor.Instance != null) return;
+            var go = new GameObject("TimeWeatherEditor");
+            go.AddComponent<Valkur.Gameplay.TimeWeather.TimeWeatherEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] TimeWeatherEditor created. Press F2 to toggle.");
+        }
+
         private void EnsureItemsRuntimeEditor()
         {
             // Surface the catalog before the editor's first activation so its
