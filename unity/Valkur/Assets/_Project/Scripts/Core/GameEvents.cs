@@ -55,6 +55,12 @@ namespace Valkur.Core
         /// <summary>XP gained by any entity. Args: (entity, amount)</summary>
         public static event Action<GameObject, int> OnXpGained;
 
+        /// <summary>
+        /// XP lost by any entity (e.g. death penalty). Args: (entity, amount).
+        /// Always positive — the amount is the XP that was removed.
+        /// </summary>
+        public static event Action<GameObject, int> OnXpLost;
+
         /// <summary>Entity leveled up. Args: (entity, newLevel)</summary>
         public static event Action<GameObject, int> OnLevelUp;
 
@@ -118,6 +124,11 @@ namespace Valkur.Core
             OnXpGained?.Invoke(entity, amount);
         }
 
+        public static void FireXpLost(GameObject entity, int amount)
+        {
+            OnXpLost?.Invoke(entity, amount);
+        }
+
         public static void FireLevelUp(GameObject entity, int newLevel)
         {
             OnLevelUp?.Invoke(entity, newLevel);
@@ -152,6 +163,7 @@ namespace Valkur.Core
             OnPlayerRevived = null;
             OnRunEnded = null;
             OnXpGained = null;
+            OnXpLost = null;
             OnLevelUp = null;
             OnItemPickedUp = null;
             OnItemConsumed = null;

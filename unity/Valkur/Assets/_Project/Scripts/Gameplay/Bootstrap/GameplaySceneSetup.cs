@@ -221,6 +221,9 @@ namespace Valkur.Gameplay
             EnsureXpFeedbackSystem();
             Report("Initializing XP feedback"); yield return null;
 
+            EnsureXpLossOnDeathSystem();
+            Report("Initializing death XP penalty"); yield return null;
+
             EnsureProfileTelemetrySystem();
             Report("Initializing progression telemetry"); yield return null;
 

@@ -51,7 +51,9 @@ namespace Valkur.Gameplay
         }
 
         public event Action<int> OnXpGained;
+        public event Action<int> OnXpLost;
         public event Action<int> OnLevelUp;
+        public event Action<int> OnLevelLost;
 
         /// <summary>True iff the entity has reached the curve's level cap.</summary>
         public bool IsAtLevelCap => curve != null && curve.IsAtCap(_level);
@@ -88,6 +90,42 @@ namespace Valkur.Gameplay
                 GameEvents.FireLevelUp(gameObject, _level);
                 Debug.Log($"[Experience] {gameObject.name} leveled up to {_level}!");
             }
+        }
+
+        /// <summary>
+        /// Subtract XP — used by the death-penalty system. Positive amounts
+        /// only; zero / negative are no-ops. When
+        /// <paramref name="clampToCurrentLevel"/> is true the floor is the
+        /// XP required to be at the current level (the player never
+        /// de-levels from the penalty); otherwise the floor is 0 and the
+        /// entity may de-level, in which case <see cref="OnLevelLost"/> +
+        /// <see cref="GameEvents.OnLevelUp"/> are NOT fired (de-level is a
+        /// distinct concept from level-up regression). Fires
+        /// <see cref="OnXpLost"/> + <see cref="GameEvents.OnXpLost"/> with
+        /// the actual amount removed so HUD / telemetry can react.
+        /// </summary>
+        public int RemoveXp(int amount, bool clampToCurrentLevel = true)
+        {
+            if (amount <= 0) return 0;
+
+            int floor = clampToCurrentLevel ? XpRequiredForLevel(_level) : 0;
+            int newTotal = Mathf.Max(floor, _totalXp - amount);
+            int actualLoss = _totalXp - newTotal;
+            if (actualLoss <= 0) return 0;
+
+            _totalXp = newTotal;
+            OnXpLost?.Invoke(actualLoss);
+            GameEvents.FireXpLost(gameObject, actualLoss);
+
+            if (!clampToCurrentLevel)
+            {
+                while (_level > 0 && _totalXp < XpRequiredForLevel(_level))
+                {
+                    _level--;
+                    OnLevelLost?.Invoke(_level);
+                }
+            }
+            return actualLoss;
         }
 
         /// <summary>

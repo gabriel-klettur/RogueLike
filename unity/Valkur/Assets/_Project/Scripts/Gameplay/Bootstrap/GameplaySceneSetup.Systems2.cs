@@ -632,6 +632,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] LevelUpStatScalingSystem created (no curve assigned — system idle until set).");
         }
 
+        // XpLossOnDeathSystem applies an XP penalty when the player revives
+        // post-spirit. Uses the default 10% / no-delevel policy on
+        // creation; designers can adjust on the spawned component or via
+        // the runtime tuning HUDs. Idempotent.
+        private void EnsureXpLossOnDeathSystem()
+        {
+            if (FindObjectOfType<XpLossOnDeathSystem>() != null) return;
+            var go = new GameObject("XpLossOnDeathSystem");
+            go.AddComponent<XpLossOnDeathSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] XpLossOnDeathSystem created (default 10% in-level penalty, no de-level).");
+        }
+
         // Boots the meta-progression telemetry layer: creates a
         // JsonProfileDb at persistentDataPath/profile.json, registers
         // it in ServiceLocator, hydrates from disk, and starts the
