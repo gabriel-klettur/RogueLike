@@ -144,8 +144,12 @@ namespace Valkur.Gameplay.MapEditor
             {
                 if (string.IsNullOrEmpty(state.SelectedSlot)) return;
                 state.DeleteTargetSlot = state.SelectedSlot;
+                bool isDefault = string.Equals(state.SelectedSlot,
+                    MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
                 if (localDeletePrompt != null)
-                    localDeletePrompt.text = $"Delete map '{state.SelectedSlot}'?";
+                    localDeletePrompt.text = isDefault
+                        ? "The 'default' map is the implicit baseline and cannot be deleted."
+                        : $"Delete map '{state.SelectedSlot}'?";
                 if (localDeleteDialog != null)
                     localDeleteDialog.SetActive(true);
             }, danger: true);
@@ -193,7 +197,11 @@ namespace Valkur.Gameplay.MapEditor
             var btnRow = MakeRow("MapsDelDialogBtns", t, BTN_H);
             AddActionBtn(btnRow.transform, "Delete", BTN_H, () =>
             {
-                if (localState != null && !string.IsNullOrEmpty(localState.DeleteTargetSlot))
+                bool isDefault = localState != null
+                    && string.Equals(localState.DeleteTargetSlot,
+                        MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+                if (!isDefault && localState != null
+                    && !string.IsNullOrEmpty(localState.DeleteTargetSlot))
                     callbacks.OnDelete?.Invoke(localState.DeleteTargetSlot);
                 if (localState != null) localState.DeleteTargetSlot = null;
                 localGo.SetActive(false);

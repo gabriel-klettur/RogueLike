@@ -348,6 +348,11 @@ namespace Valkur.Gameplay.MapEditor
 
         private void OnSlotDelete(string slotName)
         {
+            if (IsDefaultSlot(slotName))
+            {
+                _ui?.SetStatus("Cannot delete the 'default' map (it's the implicit baseline).");
+                return;
+            }
             bool ok = DeleteMapSlot(slotName);
             _ui?.SetStatus(ok ? $"Deleted map '{slotName}'." : $"Delete failed for '{slotName}'.");
         }
@@ -359,8 +364,25 @@ namespace Valkur.Gameplay.MapEditor
                 _ui?.SetStatus("Pick a map and type the new name.");
                 return;
             }
+            if (IsDefaultSlot(oldName))
+            {
+                _ui?.SetStatus("Cannot rename the 'default' map (it's the implicit baseline).");
+                return;
+            }
+            if (IsDefaultSlot(newName))
+            {
+                _ui?.SetStatus("Cannot rename a map to 'default' (reserved name).");
+                return;
+            }
             bool ok = RenameMapSlot(oldName, newName);
             _ui?.SetStatus(ok ? $"Renamed '{oldName}' → '{newName}'." : $"Rename failed.");
+        }
+
+        private static bool IsDefaultSlot(string name)
+        {
+            string clean = MapEditorMapSlots.Sanitize(name);
+            return string.Equals(clean, MapEditorMapSlots.DEFAULT_SLOT,
+                                 StringComparison.OrdinalIgnoreCase);
         }
 
         private void OnSlotNew(string slotName)

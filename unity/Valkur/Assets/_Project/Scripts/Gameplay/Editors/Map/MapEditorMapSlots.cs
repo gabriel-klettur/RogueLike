@@ -42,15 +42,27 @@ namespace Valkur.Gameplay.MapEditor
             var list = new List<string>();
             try
             {
-                if (!System.IO.Directory.Exists(Directory))
-                    return list;
-
-                foreach (var path in System.IO.Directory.GetFiles(Directory, "*" + SLOT_EXT))
+                if (System.IO.Directory.Exists(Directory))
                 {
-                    var name = Path.GetFileName(path);
-                    if (name.EndsWith(SLOT_EXT, StringComparison.OrdinalIgnoreCase))
-                        list.Add(name.Substring(0, name.Length - SLOT_EXT.Length));
+                    foreach (var path in System.IO.Directory.GetFiles(Directory, "*" + SLOT_EXT))
+                    {
+                        var name = Path.GetFileName(path);
+                        if (name.EndsWith(SLOT_EXT, StringComparison.OrdinalIgnoreCase))
+                            list.Add(name.Substring(0, name.Length - SLOT_EXT.Length));
+                    }
                 }
+
+                // The "default" slot is the implicit blank baseline. Surface it in
+                // the explorer even when no file exists yet, so the user can always
+                // pick it after creating or loading another map.
+                bool hasDefault = false;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (string.Equals(list[i], DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase))
+                    { hasDefault = true; break; }
+                }
+                if (!hasDefault) list.Add(DEFAULT_SLOT);
+
                 list.Sort(StringComparer.OrdinalIgnoreCase);
             }
             catch (Exception ex)

@@ -63,22 +63,47 @@ namespace Valkur.Gameplay.MapEditor
 
             var store = ResolveSlotStore();
             string json = store.ReadSlot(clean);
-            if (json == null) return false;
+
+            // The "default" slot is the implicit blank baseline; if no file
+            // exists for it yet, treat the load as "revert to factory blank"
+            // rather than failing — that way the synthetic entry surfaced in
+            // ListSlots() is actually selectable.
+            bool isDefault = string.Equals(clean,
+                MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+            bool isDefaultBlankLoad = json == null && isDefault;
+            if (json == null && !isDefaultBlankLoad) return false;
 
             // Snapshot the current state into its existing slot first so the
-            // user doesn't silently lose unsaved edits.
-            BackupCurrentToActiveSlot();
+            // user doesn't silently lose unsaved edits — except when reloading
+            // 'default' onto itself, which would otherwise freeze the very
+            // edits we're about to discard into a brand-new default.zones.json.
+            bool skipBackup = isDefaultBlankLoad
+                && string.Equals(store.ActiveSlot,
+                    MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+            if (!skipBackup) BackupCurrentToActiveSlot();
 
-            ZonePersistenceFile data;
-            try { data = JsonUtility.FromJson<ZonePersistenceFile>(json); }
-            catch (Exception ex)
+            if (isDefaultBlankLoad)
             {
-                Debug.LogError($"[MapEditor] Slot '{clean}' parse failed: {ex.Message}");
-                return false;
+                zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
+                if (_state != null)
+                {
+                    _state.RestrictTileEditingToEditableZones = false;
+                    _state.NextZoneIndex = 1;
+                }
             }
-            if (data == null) return false;
+            else
+            {
+                ZonePersistenceFile data;
+                try { data = JsonUtility.FromJson<ZonePersistenceFile>(json); }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[MapEditor] Slot '{clean}' parse failed: {ex.Message}");
+                    return false;
+                }
+                if (data == null) return false;
+                ApplySlotToZoneManager(data);
+            }
 
-            ApplySlotToZoneManager(data);
             store.SetActive(clean);
             PersistZonesToDisk();
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
@@ -115,6 +140,10 @@ namespace Valkur.Gameplay.MapEditor
         {
             string clean = MapEditorMapSlots.Sanitize(slotName);
             if (string.IsNullOrEmpty(clean)) return false;
+            // The "default" slot is the implicit baseline — never deletable.
+            if (string.Equals(clean, MapEditorMapSlots.DEFAULT_SLOT,
+                              StringComparison.OrdinalIgnoreCase))
+                return false;
             bool ok = ResolveSlotStore().DeleteSlot(clean);
             if (ok) OnMapSlotsChanged?.Invoke();
             return ok;
@@ -125,6 +154,14 @@ namespace Valkur.Gameplay.MapEditor
             string oldClean = MapEditorMapSlots.Sanitize(oldName);
             string newClean = MapEditorMapSlots.Sanitize(newName);
             if (string.IsNullOrEmpty(oldClean) || string.IsNullOrEmpty(newClean)) return false;
+            // The "default" slot is the implicit baseline — never renamable.
+            if (string.Equals(oldClean, MapEditorMapSlots.DEFAULT_SLOT,
+                              StringComparison.OrdinalIgnoreCase))
+                return false;
+            // Renaming TO "default" would also collide with the protected slot.
+            if (string.Equals(newClean, MapEditorMapSlots.DEFAULT_SLOT,
+                              StringComparison.OrdinalIgnoreCase))
+                return false;
             bool ok = ResolveSlotStore().RenameSlot(oldClean, newClean);
             if (ok) OnMapSlotsChanged?.Invoke();
             return ok;
