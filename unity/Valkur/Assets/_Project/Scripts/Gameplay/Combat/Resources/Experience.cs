@@ -1,19 +1,28 @@
 using System;
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 
 namespace Valkur.Gameplay
 {
     /// <summary>
     /// Experience and leveling component.
     /// Maps to Python's ExperienceComponent (xp, level fields persisted in save metadata).
-    /// 
+    ///
     /// Tracks XP, computes level from a configurable curve, and fires events on level-up.
+    /// When <see cref="curve"/> is assigned the SO's formula / lookup table /
+    /// level cap take precedence over the inline <see cref="baseXpPerLevel"/> +
+    /// <see cref="exponent"/> defaults — so existing prefabs without a curve
+    /// asset keep their pre-curve behaviour unchanged.
     /// </summary>
     public class Experience : MonoBehaviour
     {
         [Header("XP Curve")]
-        [Tooltip("XP required for level N = baseXP * N^exponent")]
+        [Tooltip("Optional ScriptableObject curve. When assigned, replaces the " +
+                 "inline baseXp/exponent fields below.")]
+        [SerializeField] private XpCurveDefinition curve;
+
+        [Tooltip("XP required for level N = baseXP * N^exponent (used when curve is null)")]
         [SerializeField] private int baseXpPerLevel = 100;
         [SerializeField] private float exponent = 1.5f;
 
@@ -44,6 +53,12 @@ namespace Valkur.Gameplay
         public event Action<int> OnXpGained;
         public event Action<int> OnLevelUp;
 
+        /// <summary>True iff the entity has reached the curve's level cap.</summary>
+        public bool IsAtLevelCap => curve != null && curve.IsAtCap(_level);
+
+        /// <summary>Test seam — assign a curve at runtime.</summary>
+        public void SetCurve(XpCurveDefinition newCurve) => curve = newCurve;
+
         public void Initialize(int xp, int level)
         {
             _totalXp = xp;
@@ -51,11 +66,15 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Add XP and check for level-ups.
+        /// Add XP and check for level-ups. Honours the curve's level cap when
+        /// one is configured: at the cap, further XP is ignored and the
+        /// <see cref="OnXpGained"/> event is suppressed (no UI / telemetry
+        /// noise once the player has plateaued).
         /// </summary>
         public void AddXp(int amount)
         {
             if (amount <= 0) return;
+            if (IsAtLevelCap) return;
 
             _totalXp += amount;
             OnXpGained?.Invoke(amount);
@@ -63,6 +82,7 @@ namespace Valkur.Gameplay
 
             while (_totalXp >= XpRequiredForLevel(_level + 1))
             {
+                if (IsAtLevelCap) break; // never cross the cap mid-loop
                 _level++;
                 OnLevelUp?.Invoke(_level);
                 GameEvents.FireLevelUp(gameObject, _level);
@@ -71,11 +91,13 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
-        /// Total XP required to reach a given level.
+        /// Total XP required to reach a given level. Delegates to the curve
+        /// SO when one is assigned; otherwise uses the inline formula.
         /// </summary>
         public int XpRequiredForLevel(int level)
         {
             if (level <= 0) return 0;
+            if (curve != null) return curve.XpRequiredForLevel(level);
             return Mathf.RoundToInt(baseXpPerLevel * Mathf.Pow(level, exponent));
         }
     }

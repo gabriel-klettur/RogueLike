@@ -619,6 +619,19 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] XpFeedbackSystem created.");
         }
 
+        // LevelUpStatScalingSystem permanently grows MaxHp/MaxMana on each
+        // level-up via a LevelStatCurve. Spawned without a curve assigned
+        // = silent no-op, so adding the bootstrap call is safe even before
+        // designers wire the SO. Idempotent.
+        private void EnsureLevelUpStatScalingSystem()
+        {
+            if (FindObjectOfType<LevelUpStatScalingSystem>() != null) return;
+            var go = new GameObject("LevelUpStatScalingSystem");
+            go.AddComponent<LevelUpStatScalingSystem>();
+            go.transform.SetParent(GetSceneContainer("[Systems]"), false);
+            Debug.Log("[GameplaySceneSetup] LevelUpStatScalingSystem created (no curve assigned — system idle until set).");
+        }
+
         // Boots the meta-progression telemetry layer: creates a
         // JsonProfileDb at persistentDataPath/profile.json, registers
         // it in ServiceLocator, hydrates from disk, and starts the
