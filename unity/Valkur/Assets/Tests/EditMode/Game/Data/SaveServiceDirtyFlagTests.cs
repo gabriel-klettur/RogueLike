@@ -1,7 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
@@ -44,13 +47,20 @@ namespace Valkur.Tests.EditMode.Game.Data
         private GameObject _saveServiceGo;
         private SaveService _saveService;
 
+        // Captured Unity log messages — populated by Application.logMessageReceived
+        // for the duration of each test so milestone-handler tests can detect
+        // the [SaveService] SaveImmediately: ... line that signals the trigger
+        // fired (independent of whether the actual disk write succeeded).
+        private readonly List<string> _capturedLogs = new List<string>();
+        private Application.LogCallback _logHandler;
+
         [SetUp]
         public void SetUp()
         {
             // Tear down any leftover singleton from prior tests so we own the
             // SaveService.Instance for the duration of this fixture.
             if (SaveService.HasInstance)
-                Object.DestroyImmediate(SaveService.Instance.gameObject);
+                UnityEngine.Object.DestroyImmediate(SaveService.Instance.gameObject);
 
             _saveServiceGo = new GameObject("TestSaveService");
             _saveService   = _saveServiceGo.AddComponent<SaveService>();
@@ -61,6 +71,17 @@ namespace Valkur.Tests.EditMode.Game.Data
             // via reflection: assign the singleton instance and run the
             // SaveService-specific OnSingletonAwake (which binds GameEvents).
             ForceSingletonInit(_saveService);
+
+            // Hook log capture for milestone tests. Use an instance handler
+            // (not a static one) so each fixture instance captures only its
+            // own logs and unsubscribes cleanly in TearDown.
+            _capturedLogs.Clear();
+            _logHandler = (string condition, string stackTrace, LogType type) =>
+            {
+                if (type == LogType.Log || type == LogType.Warning)
+                    _capturedLogs.Add(condition ?? string.Empty);
+            };
+            Application.logMessageReceived += _logHandler;
         }
 
         private static void ForceSingletonInit(SaveService svc)
@@ -82,12 +103,39 @@ namespace Valkur.Tests.EditMode.Game.Data
         [TearDown]
         public void TearDown()
         {
+            if (_logHandler != null)
+            {
+                Application.logMessageReceived -= _logHandler;
+                _logHandler = null;
+            }
+
             if (_saveServiceGo != null)
-                Object.DestroyImmediate(_saveServiceGo);
+                UnityEngine.Object.DestroyImmediate(_saveServiceGo);
 
             // Also flush the static GameEvents subscriptions our handler may
             // have left behind so other test fixtures see a clean bus.
             GameEvents.Clear();
+        }
+
+        /// <summary>
+        /// True iff the captured log buffer contains an
+        /// <c>[SaveService] SaveImmediately:</c> line whose reason matches
+        /// <paramref name="reasonSubstring"/>. Use this to verify that a
+        /// milestone handler dispatched an immediate save without depending
+        /// on the disk write actually succeeding (which it can't in EditMode
+        /// because <see cref="GameStateCollector"/> requires a live
+        /// EntityRegistry.Player + Health component).
+        /// </summary>
+        private bool LogContainsSaveImmediately(string reasonSubstring)
+        {
+            for (int i = 0; i < _capturedLogs.Count; i++)
+            {
+                var msg = _capturedLogs[i] ?? string.Empty;
+                if (msg.IndexOf("SaveImmediately", StringComparison.Ordinal) < 0) continue;
+                if (string.IsNullOrEmpty(reasonSubstring)) return true;
+                if (msg.IndexOf(reasonSubstring, StringComparison.Ordinal) >= 0) return true;
+            }
+            return false;
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
@@ -134,7 +182,7 @@ namespace Valkur.Tests.EditMode.Game.Data
                 Assert.IsTrue(_saveService.IsSessionDirty,
                     "Gaining XP on the player must arm the autosave.");
             }
-            finally { Object.DestroyImmediate(player); }
+            finally { UnityEngine.Object.DestroyImmediate(player); }
         }
 
         [Test]
@@ -150,21 +198,45 @@ namespace Valkur.Tests.EditMode.Game.Data
                 Assert.IsFalse(_saveService.IsSessionDirty,
                     "Untagged entities gaining XP must NOT mark the session dirty.");
             }
-            finally { Object.DestroyImmediate(npc); }
+            finally { UnityEngine.Object.DestroyImmediate(npc); }
         }
 
         [Test]
-        public void PlayerLevelUpEvent_MarksSessionDirty()
+        public void PlayerLevelUpEvent_TriggersImmediateSaveAndArmsDirtyFallback()
         {
+            // Contract since the milestone-save upgrade (commits Phase 1–4):
+            //   • Level-up is a critical milestone → SaveImmediately is invoked
+            //     so a crash before the next periodic save can't lose the new
+            //     level + skill points.
+            //   • MarkDirty is also fired BEFORE SaveImmediately so the
+            //     autosave timer / debounce still picks the event up if the
+            //     immediate save fails (e.g. GameStateCollector.Collect() is
+            //     unable to snapshot the player). On a successful immediate
+            //     write, WriteAutosaveToDisk re-clears the flag.
             _saveService.BeginNewRun();
+            Assert.IsFalse(_saveService.IsSessionDirty,
+                "Pre-condition: BeginNewRun leaves the session non-dirty.");
+
             var player = BuildPlayerGameObject();
             try
             {
+                _capturedLogs.Clear();
                 GameEvents.FireLevelUp(player, newLevel: 2);
+
+                Assert.IsTrue(LogContainsSaveImmediately("leveled up to 2"),
+                    "Leveling up must dispatch SaveImmediately (look for the " +
+                    "'[SaveService] SaveImmediately: player leveled up to 2' log).");
+
+                // EditMode-only: GameStateCollector returns null (no Player
+                // registered in EntityRegistry), so WriteAutosaveToDisk bails
+                // before clearing _sessionDirty. The MarkDirty fallback we
+                // injected before SaveImmediately is what keeps the autosave
+                // timer armed in this failure mode.
                 Assert.IsTrue(_saveService.IsSessionDirty,
-                    "Leveling up the player must arm the autosave.");
+                    "MarkDirty fallback must keep the dirty flag armed when " +
+                    "the immediate save fails (here: no player registered in EditMode).");
             }
-            finally { Object.DestroyImmediate(player); }
+            finally { UnityEngine.Object.DestroyImmediate(player); }
         }
 
         [Test]
@@ -178,17 +250,30 @@ namespace Valkur.Tests.EditMode.Game.Data
                 Assert.IsTrue(_saveService.IsSessionDirty,
                     "Picking up an item must arm the autosave.");
             }
-            finally { Object.DestroyImmediate(player); }
+            finally { UnityEngine.Object.DestroyImmediate(player); }
         }
 
         [Test]
-        public void ZoneChangedEvent_MarksSessionDirty()
+        public void ZoneChangedEvent_TriggersImmediateSaveAndArmsDirtyFallback()
         {
+            // Same contract as PlayerLevelUpEvent: zone transitions are
+            // canonical checkpoints, so SaveImmediately is dispatched +
+            // MarkDirty is set as a fallback so the autosave timer catches
+            // the event if the immediate save can't actually write (e.g. no
+            // player registered in EntityRegistry, like here in EditMode).
             _saveService.BeginNewRun();
+            Assert.IsFalse(_saveService.IsSessionDirty);
+
+            _capturedLogs.Clear();
             GameEvents.FireZoneChanged(oldZone: "Lobby", newZone: "Forest");
+
+            Assert.IsTrue(LogContainsSaveImmediately("zone Lobby"),
+                "Crossing into a new zone must dispatch SaveImmediately " +
+                "(look for the '[SaveService] SaveImmediately: zone Lobby → Forest' log).");
+
             Assert.IsTrue(_saveService.IsSessionDirty,
-                "Crossing into a new zone counts as exploration progress and " +
-                "must arm the autosave.");
+                "MarkDirty fallback must keep the dirty flag armed when the " +
+                "immediate zone-change save fails in the test environment.");
         }
 
         [Test]

@@ -196,6 +196,14 @@ namespace Valkur.Gameplay
             // Level-up is a milestone — force the save now instead of waiting
             // for the timer. A crash between level-up and next periodic save
             // would otherwise lose the new level + skill points.
+            //
+            // MarkDirty FIRST so that if SaveImmediately fails (e.g.
+            // GameStateCollector returns null because the player got destroyed
+            // mid-frame, or disk write throws) the autosave timer / debounce
+            // still picks up the event on its next pass. On success
+            // WriteAutosaveToDisk re-clears the flag, so production keeps the
+            // exact same end state.
+            MarkDirty($"player leveled up to {newLevel}");
             SaveImmediately($"player leveled up to {newLevel}");
         }
 
@@ -211,11 +219,18 @@ namespace Valkur.Gameplay
                 MarkDirty($"player consumed {itemName}");
         }
 
-        private void HandleZoneChanged(string oldZone, string newZone) =>
+        private void HandleZoneChanged(string oldZone, string newZone)
+        {
             // Zone transitions are the canonical "checkpoint" in sandbox
             // games. Force-save so a crash on the new zone never sends the
             // player back to the old one.
-            SaveImmediately($"zone {oldZone} → {newZone}");
+            // See HandleLevelUp for rationale on the MarkDirty + SaveImmediately
+            // ordering (defence-in-depth: if the immediate save fails, the
+            // timer still picks the event up).
+            string reason = $"zone {oldZone} → {newZone}";
+            MarkDirty(reason);
+            SaveImmediately(reason);
+        }
 
         private void HandlePlayerDied()
         {
@@ -224,6 +239,9 @@ namespace Valkur.Gameplay
             // still gate on _hasKnownPlayerPos because OnApplicationQuit's
             // alive-only guard does not apply to death itself (we WANT the
             // dead state recorded so the run-end UI can read it).
+            // MarkDirty + SaveImmediately: same defence-in-depth pattern as
+            // HandleLevelUp / HandleZoneChanged.
+            MarkDirty("player died");
             SaveImmediately("player died");
         }
 
@@ -236,7 +254,11 @@ namespace Valkur.Gameplay
             if (victim == null) return;
             var boss = victim.GetComponent<BossPhaseController>();
             if (boss != null)
-                SaveImmediately($"boss '{victim.name}' defeated");
+            {
+                string reason = $"boss '{victim.name}' defeated";
+                MarkDirty(reason);
+                SaveImmediately(reason);
+            }
         }
 
         private void Update()
