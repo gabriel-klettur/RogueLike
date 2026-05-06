@@ -322,6 +322,23 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// Tells the virtual camera that the follow target was instantly warped
+        /// by <paramref name="positionDelta"/> world units, so its internal
+        /// damping / pixel-perfect state is updated without a smooth-lerp catch-up.
+        /// No-op when the vcam has no follow target. Used by editors that
+        /// teleport the player (e.g. "create new blank map" → spawn at origin).
+        /// </summary>
+        public void SnapToFollowTarget(Vector3 positionDelta)
+        {
+            if (this == null || _vcam == null) return;
+            var followed = _vcam.Follow;
+            if (followed != null)
+                _vcam.OnTargetObjectWarped(followed, positionDelta);
+            if (_compatibilityVcam != null && _compatibilityVcam.Follow != null)
+                _compatibilityVcam.OnTargetObjectWarped(_compatibilityVcam.Follow, positionDelta);
+        }
+
+        /// <summary>
         /// Request a zoom change from the Tile Editor. This will be applied in the next Update frame.
         /// </summary>
         /// <param name="targetSize">The desired orthographic size</param>
