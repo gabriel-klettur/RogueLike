@@ -202,5 +202,63 @@ namespace Valkur.Tests.EditMode.Data
                 Assert.IsFalse(string.IsNullOrWhiteSpace(item.description),
                     $"Item '{item.itemId}' has empty description");
         }
+
+        // ── Folder organisation ───────────────────────────────────────────
+
+        /// <summary>
+        /// Items are organised on disk in subfolders that mirror their
+        /// derived <see cref="ItemCategory"/>. This keeps the Project window
+        /// browseable as the catalog grows past a few dozen entries.
+        /// </summary>
+        [Test]
+        public void Item_LivesInSubfolderMatchingItsCategory()
+        {
+            const string CatalogsRoot = "Assets/_Project/Data/Catalogs/Items/";
+
+            foreach (var item in _catalog.Items)
+            {
+                string assetPath = AssetDatabase.GetAssetPath(item);
+                Assert.IsTrue(assetPath.StartsWith(CatalogsRoot,
+                    System.StringComparison.OrdinalIgnoreCase),
+                    $"Item '{item.itemId}' lives outside the canonical Catalogs/Items root: {assetPath}");
+
+                string relative = assetPath.Substring(CatalogsRoot.Length);
+                int slash = relative.IndexOf('/');
+                Assert.Greater(slash, 0,
+                    $"Item '{item.itemId}' must live in a category subfolder, not directly under Catalogs/Items: {assetPath}");
+
+                string folder   = relative.Substring(0, slash);
+                string expected = ExpectedFolderFor(item.GetCategory());
+
+                Assert.AreEqual(expected, folder,
+                    $"Item '{item.itemId}' is in '{folder}/' but its derived category is " +
+                    $"{item.GetCategory()} (expected '{expected}/'). " +
+                    "Move the asset to match its category, or fix the data so the category recomputes correctly.");
+            }
+        }
+
+        [Test]
+        public void EveryCategoryFolder_Exists()
+        {
+            const string CatalogsRoot = "Assets/_Project/Data/Catalogs/Items";
+            foreach (var cat in System.Enum.GetValues(typeof(ItemCategory)))
+            {
+                string folder = $"{CatalogsRoot}/{ExpectedFolderFor((ItemCategory)cat)}";
+                Assert.IsTrue(AssetDatabase.IsValidFolder(folder),
+                    $"Expected category folder '{folder}' to exist for ItemCategory.{cat}");
+            }
+        }
+
+        private static string ExpectedFolderFor(ItemCategory category)
+        {
+            switch (category)
+            {
+                case ItemCategory.Equipment:  return "Equipment";
+                case ItemCategory.Consumable: return "Consumable";
+                case ItemCategory.Material:   return "Material";
+                case ItemCategory.Quest:      return "Quest";
+                default:                      return "Other";
+            }
+        }
     }
 }

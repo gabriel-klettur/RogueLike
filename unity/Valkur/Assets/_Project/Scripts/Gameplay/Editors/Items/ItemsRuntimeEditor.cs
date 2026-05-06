@@ -63,6 +63,10 @@ namespace Valkur.Gameplay.Items
         private ItemDefinition[] _allItems;          // populated lazily on first use
         private readonly List<ItemDefinition> _filtered = new List<ItemDefinition>();
         private string _selectedItemId;              // null => no selection
+        // null = show every category (the "All" tab); otherwise one of the
+        // ItemCategoryUtil.TAB_* constants. Drives ApplyFilter() in tandem
+        // with _searchFilter — both must match for an item to be visible.
+        private int? _categoryFilter;
 
         // ── Instances (Phase 2) ──
         private readonly List<WorldPickup> _instances = new List<WorldPickup>();
@@ -266,6 +270,10 @@ namespace Valkur.Gameplay.Items
                 _uiRefs.TableBodyScroll,
                 _uiRefs.TableHeaderContent,
                 _uiRefs.TableBodyContent);
+
+            // Wire the Grid's category tab strip → filter state.
+            if (_uiRefs.GridCategoryTabs != null)
+                _uiRefs.GridCategoryTabs.TabChanged += OnGridCategoryTabChanged;
 
             // Wire panel close (X button on the header) → keep dropdown state in sync
             WireOnClose(_uiRefs.ModesPanelDrag,     "modes");

@@ -102,8 +102,11 @@ namespace Valkur.Editor
                     continue;
                 }
 
-                string assetPath = $"{ITEMS_OUTPUT_DIR}/{id}.asset";
-                var existing = AssetDatabase.LoadAssetAtPath<ItemDefinition>(assetPath);
+                // Items are now organized in category subfolders (Equipment,
+                // Consumable, Material, Quest, Other). Recursive lookup avoids
+                // creating duplicates when an existing asset has been moved
+                // into one of those subfolders.
+                var existing = FindExistingItemAsset(id);
                 var so = existing != null
                     ? existing
                     : ScriptableObject.CreateInstance<ItemDefinition>();
@@ -112,6 +115,11 @@ namespace Valkur.Editor
 
                 if (existing == null)
                 {
+                    // New asset: place it in the subfolder matching its
+                    // derived category so the on-disk layout stays organised.
+                    string subDir = SubfolderForCategory(so.GetCategory());
+                    EnsureFolder(subDir);
+                    string assetPath = $"{subDir}/{id}.asset";
                     AssetDatabase.CreateAsset(so, assetPath);
                     created++;
                 }
@@ -324,6 +332,50 @@ namespace Valkur.Editor
             catalog = ScriptableObject.CreateInstance<ItemCatalog>();
             AssetDatabase.CreateAsset(catalog, ITEMS_CATALOG_PATH);
             return catalog;
+        }
+
+        /// <summary>
+        /// Recursively look up an existing <see cref="ItemDefinition"/> asset
+        /// whose filename matches <paramref name="id"/>, scanning every
+        /// category subfolder under <see cref="ITEMS_OUTPUT_DIR"/>. Used by
+        /// the importer so re-runs upsert in place instead of creating a
+        /// duplicate at the legacy flat path.
+        /// </summary>
+        private static ItemDefinition FindExistingItemAsset(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+
+            string[] guids = AssetDatabase.FindAssets(
+                $"{id} t:ItemDefinition", new[] { ITEMS_OUTPUT_DIR });
+            if (guids == null || guids.Length == 0) return null;
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                string fileName = Path.GetFileNameWithoutExtension(path);
+                // FindAssets does substring matching, so 'iron_sword' would also
+                // hit a hypothetical 'iron_sword_legendary'. Filter to exact id.
+                if (string.Equals(fileName, id, StringComparison.OrdinalIgnoreCase))
+                    return AssetDatabase.LoadAssetAtPath<ItemDefinition>(path);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Map a derived <see cref="ItemCategory"/> onto its on-disk subfolder.
+        /// Keeps the importer's "create new asset" path consistent with how
+        /// existing assets are organised (see <see cref="ItemCategoryUtil"/>).
+        /// </summary>
+        private static string SubfolderForCategory(ItemCategory category)
+        {
+            switch (category)
+            {
+                case ItemCategory.Equipment:  return ITEMS_OUTPUT_DIR + "/Equipment";
+                case ItemCategory.Consumable: return ITEMS_OUTPUT_DIR + "/Consumable";
+                case ItemCategory.Material:   return ITEMS_OUTPUT_DIR + "/Material";
+                case ItemCategory.Quest:      return ITEMS_OUTPUT_DIR + "/Quest";
+                default:                      return ITEMS_OUTPUT_DIR + "/Other";
+            }
         }
     }
 }

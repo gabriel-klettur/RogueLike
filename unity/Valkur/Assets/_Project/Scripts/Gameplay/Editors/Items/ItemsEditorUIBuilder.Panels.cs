@@ -107,11 +107,26 @@ namespace Valkur.Gameplay.Items
             EnsureFlexibleHeight(gridContainerGo);
             // VLG so the grid scroll view fills it vertically.
             var gridVlg = gridContainerGo.AddComponent<VerticalLayoutGroup>();
-            gridVlg.spacing                = 0f;
+            gridVlg.spacing                = 2f;
             gridVlg.childForceExpandWidth  = true;
             gridVlg.childForceExpandHeight = false;
             gridVlg.childControlWidth      = true;
             gridVlg.childControlHeight     = true;
+
+            // Category filter tabs — one tab per ItemCategory + "All". Lets
+            // the user narrow the picker to Equipment / Consumable / Material
+            // / Quest / Other (mirrors the inventory tab layout). Tabs reuse
+            // TabStrip with content = null so we listen to TabChanged for the
+            // filter event instead of letting it toggle hidden GameObjects.
+            var catTabs = TabStrip.Create(gridContainerGo.transform,
+                "GridCategoryTabs", height: 22f);
+            catTabs.AddTab("all",        "All",    null);
+            catTabs.AddTab("equipment",  "Equip",  null);
+            catTabs.AddTab("consumable", "Consum", null);
+            catTabs.AddTab("material",   "Mat",    null);
+            catTabs.AddTab("quest",      "Quest",  null);
+            catTabs.AddTab("other",      "Other",  null);
+            refs.GridCategoryTabs = catTabs;
 
             // Responsive grid: cell size + column count adapt to the panel
             // width as the user drags the resize handle. minCellSize=64

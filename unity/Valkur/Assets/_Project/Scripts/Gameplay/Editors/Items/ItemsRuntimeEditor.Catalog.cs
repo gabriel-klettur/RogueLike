@@ -75,7 +75,9 @@ namespace Valkur.Gameplay.Items
             return arr;
         }
 
-        /// <summary>Apply the search filter to <see cref="_allItems"/> into <see cref="_filtered"/>.</summary>
+        /// <summary>Apply the search + category filters to <see cref="_allItems"/>
+        /// into <see cref="_filtered"/>. Both filters AND together — an item must
+        /// match the search substring AND the active category tab to be shown.</summary>
         private void ApplyFilter()
         {
             _filtered.Clear();
@@ -86,6 +88,12 @@ namespace Valkur.Gameplay.Items
             {
                 var it = _allItems[i];
                 if (it == null) continue;
+
+                // Category gate (null = "All" tab, accepts everything).
+                if (_categoryFilter.HasValue && !it.MatchesTab(_categoryFilter.Value))
+                    continue;
+
+                // Search gate.
                 if (filter.Length == 0)
                 {
                     _filtered.Add(it);
@@ -96,6 +104,26 @@ namespace Valkur.Gameplay.Items
                 if (id.Contains(filter) || nm.Contains(filter))
                     _filtered.Add(it);
             }
+        }
+
+        /// <summary>
+        /// TabStrip callback wired in <c>BuildUI</c>. Maps the tab key to the
+        /// canonical <see cref="ItemCategoryUtil"/> tab index and refreshes
+        /// both Grid and Table views so the filter is consistent across them.
+        /// </summary>
+        private void OnGridCategoryTabChanged(int _index, string key)
+        {
+            switch (key)
+            {
+                case "equipment":  _categoryFilter = ItemCategoryUtil.TAB_EQUIPMENT;  break;
+                case "consumable": _categoryFilter = ItemCategoryUtil.TAB_CONSUMABLE; break;
+                case "material":   _categoryFilter = ItemCategoryUtil.TAB_MATERIAL;   break;
+                case "quest":      _categoryFilter = ItemCategoryUtil.TAB_QUEST;      break;
+                case "other":      _categoryFilter = ItemCategoryUtil.TAB_OTHER;      break;
+                default:           _categoryFilter = null;                            break; // "all"
+            }
+            RefreshPicker();
+            RefreshTable();
         }
 
         /// <summary>Find an item by its <c>itemId</c> in the catalog (or null).</summary>

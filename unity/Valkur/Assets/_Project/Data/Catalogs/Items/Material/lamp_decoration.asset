@@ -36,7 +36,7 @@ MonoBehaviour:
   weight: 1
   threshold: 0
   experience: 0
-  effect: light_source
+  effect:
   questId:
   scaleEditor: 1
   scaleMap: 0.04
