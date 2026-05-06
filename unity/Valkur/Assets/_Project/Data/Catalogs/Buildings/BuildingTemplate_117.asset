@@ -18,5 +18,5 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
-  originalScale: {x: 0, y: 0}
+  originalScale: {x: 904, y: 904}
   sourceImagePath: assets/buildings/gardens/flowers_6.png

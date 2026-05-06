@@ -18,5 +18,5 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.691
   colliderScope: CG
-  originalScale: {x: 238, y: 302}
+  originalScale: {x: 251, y: 324}
   sourceImagePath: assets/buildings/vegetation/tree_10.png

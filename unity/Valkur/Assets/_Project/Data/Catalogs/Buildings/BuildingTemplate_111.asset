@@ -18,5 +18,5 @@ MonoBehaviour:
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
-  originalScale: {x: 0, y: 0}
+  originalScale: {x: 1024, y: 1024}
   sourceImagePath: assets/buildings/forest_decoration/natural/petalos_rosados_1.png
