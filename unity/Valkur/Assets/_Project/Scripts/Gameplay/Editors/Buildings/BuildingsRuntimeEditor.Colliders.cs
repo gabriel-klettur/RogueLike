@@ -26,9 +26,19 @@ namespace Valkur.Gameplay.Buildings
             _collidersVisible = !_collidersVisible;
             if (_collidersVisible)
             {
-                ReapplyAllColliderStates();
-                Physics2D.SyncTransforms();
-                LogColliderDiagnostics();
+                // The overlay is a purely VISUAL layer. The physical BoxCollider2D
+                // children are already in their authoritative state from
+                //   • BuildingCollisionLoader.TryApplyGrid (scene boot)
+                //   • HandleColliderPaint / ApplyGridSnapshot (live edits + undo)
+                //   • RefreshCollisionFor (Picker / MapInteraction structural changes)
+                // so toggling visibility must NEVER walk every building and rebuild
+                // its colliders again — that turned the toggle into a multi-second
+                // freeze in scenes with many buildings (~142 × ~5 cells = thousands
+                // of transform.Find + AddComponent ops). We only ensure the
+                // authoring stores are loaded (cheap one-shot JSON read) so the
+                // overlay can resolve cells, then refresh the visuals.
+                EnsureColliderDataLoaded();
+                if (_logDiagOnShow) LogColliderDiagnostics();
             }
             SetTilemapCollidersVisible(_collidersVisible);
             int total = RefreshCollidersOverlay();
@@ -150,8 +160,10 @@ namespace Valkur.Gameplay.Buildings
                 _collidersVisible = true;
                 if (_uiRefs.CollVisibilityBtnLabel != null)
                     _uiRefs.CollVisibilityBtnLabel.text = "Hide Colliders";
-                ReapplyAllColliderStates();
-                Physics2D.SyncTransforms();
+                // Visual-only path: load authoring data if needed, then refresh
+                // overlays. Physical colliders are NOT rebuilt — same reasoning
+                // as ToggleCollidersVisible above.
+                EnsureColliderDataLoaded();
                 SetTilemapCollidersVisible(true);
                 RefreshCollidersOverlay();
             }

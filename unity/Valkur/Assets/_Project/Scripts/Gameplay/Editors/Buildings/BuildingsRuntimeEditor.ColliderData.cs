@@ -212,16 +212,6 @@ namespace Valkur.Gameplay.Buildings
             return TryComputeAuthoringCellsFor(_activeBuilding);
         }
 
-        private void ReapplyAllColliderStates()
-        {
-            var all = FindObjectsOfType<BuildingObject>();
-            for (int i = 0; i < all.Length; i++)
-            {
-                if (all[i] == null) continue;
-                ApplyCollisionStateForBuilding(all[i]);
-            }
-        }
-
         private void BeginColliderStroke()
         {
             if (_colliderStroke.Active) return;

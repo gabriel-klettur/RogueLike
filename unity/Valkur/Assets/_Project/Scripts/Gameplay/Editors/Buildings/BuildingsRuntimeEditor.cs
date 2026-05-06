@@ -44,6 +44,13 @@ namespace Valkur.Gameplay.Buildings
         [SerializeField, Tooltip("Building catalog asset (BuildingCatalog).")]
         private BuildingCatalog _catalog;
 
+        [SerializeField, Tooltip(
+            "Log a one-shot collider diagnostic snapshot every time the user toggles " +
+            "Show Colliders ON. OFF by default — building the snapshot is O(buildings × " +
+            "child colliders) and Debug.Log captures a stack trace per call, which costs " +
+            "real ms in big scenes. Flip ON only when debugging a missing/wrong collider.")]
+        private bool _logDiagOnShow = false;
+
         // ── Constants matching Python (building_editor_view.py) ────────────────────
 
         private static readonly Color HOVER_CYAN           = new Color(0f, 1f, 1f, 1f);
