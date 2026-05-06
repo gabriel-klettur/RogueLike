@@ -1,21 +1,17 @@
-# Valkur – Python-to-Unity Migration Workspace
+# Valkur — 2D Roguelike (Unity)
 
 ## Project Context
 
-**Valkur** is a 2D roguelike action game being migrated from **Python (Pygame-CE)** to **Unity 2022.3.62f1 LTS (URP 2D / C#)**. **Core gameplay migration is ~98% complete**; remaining work is asset-pipeline atlas consolidation plus a few low-priority Python sub-systems (`burn_system`, `item_factory`, three config JSONs). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them. See [`MIGRATION_GUIDE.md`](MIGRATION_GUIDE.md) (canonical) and [the roadmap](unity/docs/Migration_python_to_unity/01_execution/roadmap_50_steps.md) (historical) for details.
+**Valkur** is a 2D roguelike action game built on **Unity 2022.3.62f1 LTS (URP 2D / C#)**. It was originally prototyped in Python (Pygame-CE); the Unity port is **complete** and the original Python implementation has been archived (see the `archive/python-legacy-*` git tag for historical reference). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them.
 
 ### Workspace Layout
 
 | Path | Purpose |
 |------|---------|
-| `python/src/` | **READ-ONLY** reference: `roguelike_engine/`, `roguelike_game/`, `roguelike_ui/`, `roguelike_editors/` |
-| `python/data/` | JSON game data (entities, spells, items, maps) — consumed by Unity importers |
-| `python/assets/` | Source sprites, audio, VFX |
-| `python/tests/` | Pytest suite (behavior reference) |
 | `unity/Valkur/Assets/_Project/` | Primary Unity code & assets |
-| `unity/docs/Migration_python_to_unity/` | Migration docs, audits, roadmap |
-
-Detailed architecture and system-by-system mapping: [MIGRATION_GUIDE.md](.github/MIGRATION_GUIDE.md)
+| `unity/Valkur/Assets/Tests/` | EditMode + PlayMode test suites |
+| `unity/Udemy_Inspiration/DungeonGunnerCourse/` | Architectural reference (read-only) |
+| `tools/` | Standalone Python utilities (audio analysis, atlas audits, overlay generation) |
 
 ### Unity Assemblies
 
@@ -23,73 +19,68 @@ Detailed architecture and system-by-system mapping: [MIGRATION_GUIDE.md](.github
 |----------|------|---------|
 | `Valkur.Core` | `Scripts/Core/` | Services, bootstrap, `ServiceLocator` |
 | `Valkur.Data` | `Scripts/Data/` | ScriptableObjects, DTOs |
+| `Valkur.Infrastructure` | `Scripts/Infrastructure/` | Audio, persistence, profile DB |
 | `Valkur.Gameplay` | `Scripts/Gameplay/` | Combat, spells, AI, entities, world |
-| `Valkur.Infrastructure` | `Scripts/Infrastructure/` | Audio, persistence |
 | `Valkur.UI` | `Scripts/UI/` | Menus, HUD |
-| `Valkur.Editor` | `Scripts/Editor/` | Migration importers, editor tools |
+| `Valkur.Editor` | `Scripts/Editor/` | Editor tools (atlas builders, postprocessor, validators) |
 
-**Dependency rule:** `Valkur.Gameplay` cannot reference `Valkur.UI` (circular dependency). Both can reference `Core`, `Data`, `Infrastructure`.
+**Dependency rule:** `Valkur.Gameplay` cannot reference `Valkur.UI` (would create a cycle). Both can reference `Core`, `Data`, `Infrastructure`. Cross-system signaling goes through `ServiceLocator` or `GameEvents`.
 
 ## Build & Test
 
 ```bash
-# Python tests
-cd python && python -m pytest tests/ -v
-
-# Unity tests (CLI)
+# Unity tests via CLI
 "C:/Program Files/Unity/Hub/Editor/2022.3.62f1/Editor/Unity.exe" -runTests -testPlatform EditMode -projectPath unity/Valkur
 
-# Data validation (in Unity Editor)
-# Menu: Valkur > Migration > Dry-Run All
+# Or via MCP (preferred):
+#   mcp_unity_run_tests(mode="EditMode", include_failed_tests=true)
+#   poll: mcp_unity_get_test_job(job_id=...)
 ```
 
-## Coding Conventions
+## Coding Conventions (C#)
 
-### C# (Unity)
+- `[SerializeField] private` + `[Tooltip("...")]` for inspector fields; **never** public fields
+- `ServiceLocator.Get<T>()` for cross-system access; **no raw singletons** (only `SingletonMonoBehaviour<T>` for true scene-wide managers)
+- ScriptableObjects for all designer-tunable data — no hardcoded tuning
+- Object pooling via `Scripts/Core/ObjectPool.cs` for projectiles, VFX, hit numbers
+- Static mutable state needs `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]` reset (Domain Reload is OFF)
+- One class per file; filename = class name
 
-- `[SerializeField]` + `[Tooltip("...")]` for inspector fields; no public fields
-- `ServiceLocator` for dependency access — no raw singletons
-- ScriptableObjects for all data catalogs (monsters, spells, items, players, audio)
-- Object pooling via `ObjectPool.cs` for frequently spawned objects
-- Physics layers: Player(8), NPC(9), Projectile(10), World(11), Pickup(12), UIBlocker(13), Building(14), Spawner(15)
-- 15 sorting layers: Background → Ground → FloorDecals → ObjectsLow → WallsBottom → Entities → Decorations → WallsTop → ObjectsHigh → Projectiles → VFX → Overhead → UI_World → Overlay
+## Layers
 
-### Python (Reference)
+**Physics:** Player(8), NPC(9), Projectile(10), World(11), Pickup(12), UIBlocker(13), Building(14), Spawner(15)
 
-- **DO NOT modify** unless explicitly asked — it is the migration source of truth
-- Pygame-CE + custom dict-based ECS (45+ components)
-- JSON data under `python/data/`; Pydantic for validation
+**Sorting (depth):** Background → Ground → FloorDecals → ObjectsLow → WallsBottom → Entities → Decorations → WallsTop → ObjectsHigh → Projectiles → VFX → Overhead → UI_World → Overlay
 
-## Migration Rules
+## Pixel-art Conventions
 
-1. **Never modify Python source** unless explicitly asked.
-2. **Always check existing Unity scripts** before creating new ones; avoid duplicates.
-3. **Preserve game feel**: timing, speed, damage formulas must match Python values exactly.
-4. **Data-driven**: game tuning lives in ScriptableObjects/JSON, not hardcoded in C#.
-5. **Reference the roadmap**: `unity/docs/Migration_python_to_unity/01_execution/roadmap_50_steps.md`
+| Concept | Value | Notes |
+|---|---|---|
+| World PPU (most assets) | 16 | 1 world unit = 16 px |
+| Buildings PPU | 32 | Higher PPU for finer detail |
+| Tiles PPU | 32 | Audited via `tools/atlas/audit_tile_sizes.py` |
 
-## Unit Conversions (Python → Unity)
+## Where Data Lives
 
-| Python | Unity | Formula |
-|--------|-------|---------|
-| Pixels | World units | `px / 16` (PPU = 16) |
-| px/tick speed | world units/s | `px_per_tick × 60 / 16` or `× 3.75` |
-| px/tick² accel | world units/s² | `px_per_tick² × 3600 / 16` |
-| Ticks duration | Seconds | `ticks / 60` |
+| Data | Source of truth |
+|---|---|
+| Audio (music + SFX + scopes + ducking) | `Resources/AudioCatalog.asset` |
+| Items / Monsters / Spells / Buildings / Particles / Spawners / Lighting / Vendors / Players | `Data/Catalogs/*/*.asset` |
+| World state (placed buildings, lights, spawners, particles, tile overlays) | `StreamingAssets/{Buildings,Lights,Spawners,Particles,Maps}/*.json` (written by F1/F3/F8/F10/F11/Ctrl+F3) |
+| Player saves + run history | `Application.persistentDataPath/{Saves,profile.json}` (atomic-write + checksum + 5 rotating backups) |
 
 ## Key Gotchas
 
 - **Image + TMP on same GameObject**: Causes `NullReferenceException`. Use parent (Image+Button) + child (TMP) pattern.
 - **InventorySlot is a struct**: Cannot compare to `null`; use `.IsEmpty` instead.
-- **EditMode tests + renderer.material**: Causes leak warnings. Use `LogAssert.ignoreFailingMessages = true`.
+- **EditMode tests + renderer.material**: Causes leak warnings. Use `renderer.sharedMaterial` or `LogAssert.ignoreFailingMessages = true`.
 - **SpellDefinition API**: Use `cooldownDuration` (not `cooldown`), `Health.CurrentHp` (not `Current`).
 - **DashAbility namespace**: Lives in `Valkur.Gameplay.Combat` (not Player).
 - **Zone name case**: `ZoneManager` uses `StringComparer.OrdinalIgnoreCase` — always use consistent casing.
+- **Cinemachine**: Overrides `Camera.main.transform` every LateUpdate. Use `CameraSetup.DetachFollow()` to pan freely.
+- **Custom GL drawing in URP**: Use `RenderPipelineManager.endCameraRendering`, not `OnRenderObject` (`Camera.current` is null in URP).
 
 ## Open Work
 
-- **Paso 4**: Record Python baseline evidence (video + captures) — manual execution required
-- **Pasos 15, 20–22**: Formal naming convention + batch asset migration with visual validation
-- **Asset Phase 2**: sprite atlas consolidation, `asset_map.csv` full population
-- **Input System**: Legacy InputManager axes still wired alongside New Input System
-- **Minigames**: Pylos (~2000 lines) deferred as separate game; Soluna is empty placeholder
+- **Asset pipeline Phase 2** — atlas consolidation + finalised `asset_map.csv` (formal naming + `SpriteAtlas` group build for the 9 planned domain atlases)
+- **Boss music wiring** — `BossPhaseController.OnPhaseChanged` not yet wired to `AudioManager.PlayMusic`

@@ -36,10 +36,9 @@ Also read the `unity-development` skill for general conventions: [.github/skills
 ## Approach
 
 1. **Read first** — locate the existing class before writing anything.
-2. **Mirror Python** — for behavioral questions, read the matching `python/src/roguelike_editors/buildings/...` file.
-3. **Preserve exact values** — timing, pixel offsets, split ratios.
-4. **Stay in-subsystem** — cross-system needs go through `ServiceLocator` / `GameEvents`.
-5. **Verify** — `mcp_unity_refresh_unity` (force, scripts) + `mcp_unity_read_console`. Hand off to `unity-mcp-guardian` for final cleanup if needed.
+2. **Stay in-subsystem** — cross-system needs go through `ServiceLocator` / `GameEvents`.
+3. **Preserve exact values** — timing, pixel offsets, split ratios live in `BuildingTemplateData`. Tune via Inspector, not hardcoded.
+4. **Verify** — `mcp_unity_refresh_unity` (force, scripts) + `mcp_unity_read_console`. Hand off to `unity-mcp-guardian` for final cleanup if needed.
 
 ## Hard constraints
 

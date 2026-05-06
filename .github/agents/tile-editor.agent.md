@@ -31,10 +31,6 @@ Location: `unity/Valkur/Assets/_Project/Scripts/Gameplay/Editors/Tile/`
 | `PanelChrome.cs`, `DraggablePanel.cs`, `MenuBarChrome.cs` | Shared UI chrome (also used by other editors) |
 | `TileEditorConstants.cs` | All pixel sizes, colors, magic numbers |
 
-## Python reference
-
-`python/src/roguelike_editors/tiles/` — the original Pygame implementation. Mirror its panel layout, tool semantics, and 9-layer model. The Unity version is a port, not a redesign.
-
 ## Subsystem rules
 
 - 9 logical layers (Ground, FloorDecals, Walls, etc.). Each layer = one Tilemap.

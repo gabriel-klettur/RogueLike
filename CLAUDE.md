@@ -1,10 +1,12 @@
-# Valkur — 2D Roguelike (Python → Unity Migration)
+# Valkur — 2D Roguelike (Unity)
 
 > **Single source of truth for Claude when working in this repo.** Read this before any other file.
 
 ## What this project is
 
-**Valkur** is a 2D roguelike action game (real-time combat + spells with NPC casting, FSM monster AI with boss phases, tilemap world with Y-sort, procedural chunk-streamed dungeons, weighted loot, quest system, skill tree, day/night cycle, in-game tile/map/buildings/entities editors). It is being **ported from Python (Pygame-CE) → Unity 2022.3.62f1 LTS (URP 2D / C#)**. Core gameplay migration is **~98% complete**; outstanding work is asset-pipeline atlas consolidation + a few low-priority Python sub-systems (`burn_system`, `item_factory` procedural rolls, three config JSONs). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them.
+**Valkur** is a 2D roguelike action game (real-time combat + spells with NPC casting, FSM monster AI with boss phases, tilemap world with Y-sort, procedural chunk-streamed dungeons, weighted loot, quest system, skill tree, day/night cycle, in-game tile/map/buildings/entities editors). It runs on **Unity 2022.3.62f1 LTS (URP 2D / C#)**.
+
+Valkur was originally prototyped in Python (Pygame-CE). The Unity port is **complete**; the Python implementation has been archived and removed from `main` (see the `archive/python-legacy-*` git tag if you need to reference the original implementation). Pylos and Soluna minigames are **permanently deprecated** — never propose, plan, or list them.
 
 Inspiration project (architecture only, do not copy code wholesale): `unity/Udemy_Inspiration/DungeonGunnerCourse/`.
 
@@ -15,11 +17,7 @@ Inspiration project (architecture only, do not copy code wholesale): `unity/Udem
 | `unity/Valkur/Assets/_Project/` | Primary Unity code & assets | ✅ Yes |
 | `unity/Valkur/Assets/Tests/` | EditMode + PlayMode test suites | ✅ Yes |
 | `unity/Udemy_Inspiration/DungeonGunnerCourse/` | Architectural inspiration only | 🔒 Read-only |
-| `python/src/roguelike_engine/` | Engine reference (map, tile, rendering, input, db) | 🔒 Read-only |
-| `python/src/roguelike_game/` | Gameplay reference (ECS, systems, managers) | 🔒 Read-only |
-| `python/src/roguelike_editors/` | In-game editors reference (tile, map, buildings) | 🔒 Read-only |
-| `python/data/` | Source JSON catalogs (entities, spells, items, maps) | 🔒 Read-only |
-| `python/tests/` | Pytest behavior reference | 🔒 Read-only |
+| `tools/` | Standalone Python utilities (audio analysis, atlas audits, overlay generation) | ✅ Yes |
 | `.github/skills/` | Detailed skill knowledge bases (shared with Copilot) | ✅ Yes |
 | `.github/agents/` | Copilot agent specs (parallel to `.claude/agents/`) | ✅ Yes |
 | `.claude/agents/` | Claude Code agent specs | ✅ Yes |
@@ -28,11 +26,10 @@ Inspiration project (architecture only, do not copy code wholesale): `unity/Udem
 ## Cardinal rules (must follow always)
 
 1. **The Unity MCP console MUST be clean before declaring any task done.** After every C# change run `mcp_unity_refresh_unity` (compile=request, mode=force, scope=scripts, wait_for_ready=true) followed by `mcp_unity_read_console` (types=["error","warning"], format=detailed). Fix every error and every actionable warning. The terminal output of the test runner / Unity batch must also be clean. If the console can't be read because Unity isn't running, say so — don't pretend it's clean.
-2. **Never modify `python/src/`** — it is the migration source-of-truth. Read freely; do not edit.
-3. **Never modify `unity/Udemy_Inspiration/`** — reference only.
-4. **Check existing scripts before creating new ones.** Many systems are partially migrated; duplicates are the #1 source of regression.
-5. **Preserve numerical parity with Python** — damage, speed, cooldowns, AoE radii, projectile speed, AI timings. Use the conversion table below.
-6. **Never read `Mouse.current` / `Keyboard.current` / `UnityEngine.Input.*` directly outside the Input core helpers.** Use the centralized fachadas — see "Input pipeline" below.
+2. **Never modify `unity/Udemy_Inspiration/`** — reference only.
+3. **Check existing scripts before creating new ones.** Many systems have multiple partial files; duplicates are the #1 source of regression.
+4. **Edit ScriptableObjects, not external JSON.** Catalog data lives in `.asset` files and is edited via the Inspector (or via in-game runtime editors F1/F3/F4/F5/F6/F7/F8/F10/F11/F12/Ctrl+F3). World-state JSON under `StreamingAssets/` is written by the runtime editors via the `IRepository` pattern — don't hand-edit it.
+5. **Never read `Mouse.current` / `Keyboard.current` / `UnityEngine.Input.*` directly outside the Input core helpers.** Use the centralized fachadas — see "Input pipeline" below.
 
 ## Input pipeline (single source of truth)
 
@@ -71,7 +68,7 @@ The legacy axes in `ProjectSettings/InputManager.asset` (`Horizontal`, `Vertical
 
 ## `Scripts/Gameplay/` folder layout
 
-The Gameplay assembly is subdivided by feature so any single folder stays under ~20 files. When porting or extending, place files in the matching subfolder (or create one rather than dumping into a flat root).
+The Gameplay assembly is subdivided by feature so any single folder stays under ~20 files. When extending, place files in the matching subfolder (or create one rather than dumping into a flat root).
 
 | Folder | Contents |
 |---|---|
@@ -83,7 +80,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Combat/Feedback/` | CastOutline, CombatFeedback, CombatAudioSystem, ToastSystem, ExplosionEffect, CombatRangeVisualizer |
 | `Combat/WorldUI/` | WorldHealthBar, WorldManaBar, WorldDashBar, FacingIndicator |
 | `Combat/Lifecycle/` | TimedDespawn, SpawnStabilizer |
-| `Combat/StatusEffects/` | Status effect implementations |
+| `Combat/StatusEffects/` | Status effect implementations (Burn, Poison, Stun, Freeze, Slow) |
 | `Editors/_Shared/` | EditorCameraPanController, EditorUIHelpers (cross-editor) |
 | `Editors/Buildings/` | Buildings runtime editor (F10) — partials + UIBuilder + Outline + PerfProbe |
 | `Editors/Entities/` | Entities runtime editor — partials + UIBuilder + Outline |
@@ -91,10 +88,10 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Editors/Inventory/` | Inventory runtime editor — partials + UIBuilder |
 | `Editors/Items/` | Items runtime editor — partials + UIBuilder |
 | `Editors/Lighting/` | Lighting runtime editor — partials |
-| `Editors/Map/` | Map runtime editor (F11, formerly `Gameplay/MapEditor/`) |
+| `Editors/Map/` | Map runtime editor (F11) |
 | `Editors/Particles/` | Particles runtime editor — partials + UIBuilder |
 | `Editors/Spells/` | Spells runtime editor — partials + UIBuilder + SpellPreviewGraphic |
-| `Editors/Tile/` | Tile runtime editor (F6, formerly `Gameplay/TileEditor/`) |
+| `Editors/Tile/` | Tile runtime editor (F6) |
 | `Enemies/` | NPC AI, FSM behaviors, NPCAutoCast, NPCCastState, BossPhaseController, BossConfigurator |
 | `HUD/` | In-world HUD overlays + modal panels: SpellBarHUD, BossHealthBarHUD, QuestLogHUD, SkillTreeHUD, StatisticsHUD |
 | `Inventory/` | Inventory model + UI runtime |
@@ -136,14 +133,33 @@ Namespaces are independent of folder paths — `using Valkur.Gameplay.Buildings;
 
 **Sorting layers (depth):** Background → Ground → FloorDecals → ObjectsLow → WallsBottom → Entities → Decorations → WallsTop → ObjectsHigh → Projectiles → VFX → Overhead → UI_World → Overlay.
 
-## Python → Unity unit conversions
+## Pixel-art conventions
 
-| Python | Unity | Formula |
+| Concept | Value | Notes |
 |---|---|---|
-| px | world units | `÷ 16` (PPU=16; Buildings uses PPU=32) |
-| px/tick (60Hz) | world units/s | `× 3.75` |
-| px/tick² | world units/s² | `× 225` |
-| ticks | seconds | `÷ 60` |
+| World PPU (most assets) | 16 | 1 world unit = 16 px |
+| Buildings PPU | 32 | Buildings have a higher PPU for finer detail |
+| Tiles PPU | 32 | Audited via `tools/atlas/audit_tile_sizes.py` |
+
+## Where data lives
+
+| Data | Source of truth |
+|---|---|
+| Audio (music + SFX + scopes + ducking) | `Resources/AudioCatalog.asset` (edit via Inspector or `Valkur > Audio > Music Scanner`) |
+| Music BPM / beat metadata | Same asset (per-track fields), or `tools/audio/{analyze_music,patch_audio_catalog_bpm}.py` |
+| Items | `Data/Catalogs/Items/ItemCatalog.asset` |
+| Monsters | `Data/Catalogs/Monsters/*.asset` (catalog at `MonsterCatalog.asset`) |
+| Spells | `Data/Catalogs/Spells/SpellCatalog.asset` (edit via Inspector or F4 in-game) |
+| Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) |
+| Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F3) |
+| Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F1) |
+| Lighting Presets | `Data/LightPresetCatalog.asset` (edit via Ctrl+F3) |
+| Chat Personas / Assignments | `Data/ChatPersonas/*.asset` + `ChatAssignmentCatalog.asset` |
+| Vendors | `Data/Vendor/{EconomyGroups,Configs}/*.asset` |
+| Players | `Data/Catalogs/Players/*.asset` |
+| World state (placed buildings, lights, spawners, particles, tile overlays) | `StreamingAssets/{Buildings,Lights,Spawners,Particles,Maps}/*.json` (written by F1/F3/F8/F10/F11/Ctrl+F3) |
+| FSM (states, assignments, animation map) | `StreamingAssets/FSM/*.json` (written by F12) |
+| Player saves + run history | `Application.persistentDataPath/{Saves,profile.json}` (atomic-write + checksum + 5 rotating backups) |
 
 ## Unity MCP setup (Claude Code)
 
@@ -160,9 +176,6 @@ The Unity ↔ Claude Code bridge runs in HTTP transport. Config lives in `.mcp.j
 ## Build & test
 
 ```bash
-# Python tests (behavior reference)
-cd python && python -m pytest tests/ -v
-
 # Unity tests via MCP (preferred)
 #   mcp_unity_run_tests(mode="EditMode", include_failed_tests=true)
 #   poll: mcp_unity_get_test_job(job_id=...)
@@ -173,9 +186,6 @@ cd python && python -m pytest tests/ -v
   -projectPath unity/Valkur \
   -runTests -testPlatform EditMode \
   -testResults TestResults.xml -logFile -
-
-# Data dry-run (in Editor)
-#   Menu: Valkur > Migration > Dry-Run All (Validate Only)
 ```
 
 ## Specialized agents (`.claude/agents/`)
@@ -187,18 +197,13 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `unity-architect` | New gameplay feature, system refactor, general C# work |
 | `unity-mcp-guardian` | Verify console clean after a batch of edits; fix lingering errors/warnings |
 | `unity-tester` | Create/fix/run tests; enforce namespaces; audit coverage |
-| `python-analyst` | Read & analyze Python source before porting |
-| `data-migrator` | JSON → ScriptableObject conversion; dry-run validation |
 | `asset-pipeline` | Sprite/audio/atlas migration; PPU/pivot policies |
 | `buildings-editor` | Anything involving the Buildings Editor (window or runtime F10) |
 | `tile-editor` | Anything involving the Tile Editor (F6) |
-| `migration-qa` | Parity checks Python vs Unity; regression testing |
+| `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
+| `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
+| `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
 | `udemy-inspiration` | Pull architectural patterns from DungeonGunnerCourse |
-
-Recommended workflow for porting a system:
-```
-python-analyst → data-migrator (if data) → unity-architect → unity-tester → unity-mcp-guardian
-```
 
 ## Slash commands (`.claude/commands/`)
 
@@ -206,9 +211,8 @@ python-analyst → data-migrator (if data) → unity-architect → unity-tester 
 |---|---|
 | `/unity-clean` | Refresh Unity, read console, report (and fix if asked) |
 | `/unity-tests` | Run EditMode (or both) test suite via MCP, poll, report |
-| `/unity-port <python-path>` | Walk the porting workflow for a Python file |
 | `/unity-test-new <System>` | Scaffold a test in correct folder/namespace |
-| `/unity-status` | Migration progress + console + last test summary |
+| `/unity-status` | Console + last test summary at a glance |
 
 ## Skills (`.claude/skills/` and `.github/skills/`)
 
@@ -218,11 +222,9 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 |---|---|
 | unity-development | `.github/skills/unity-development/SKILL.md` |
 | unity-testing | `.github/skills/unity-testing/SKILL.md` |
-| python-to-csharp | `.github/skills/python-to-csharp/SKILL.md` |
 | asset-pipeline | `.github/skills/asset-pipeline/SKILL.md` |
-| combat-migration | `.github/skills/combat-migration/SKILL.md` |
-| migration-testing | `.github/skills/migration-testing/SKILL.md` |
 | markdown-docs | `.github/skills/markdown-docs/SKILL.md` |
+| valkur-conventions | `.github/skills/valkur-conventions/SKILL.md` |
 
 ## Key gotchas (the pit traps)
 
@@ -237,10 +239,9 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 - **Static mutable fields without reset** → MissingReferenceException after second Play (Domain Reload is OFF).
 - **Sprite-Lit-Default with no Light2D** → black tiles. Use `Sprite-Unlit-Default` fallback (already wired in `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`).
 
-## Open work (high-level)
+## Open work
 
-- Asset pipeline Phase 2 — atlas consolidation + finalised `asset_map.csv` schema (bulk reimport already executed; `ValkurAssetPostprocessor` now writes Uncompressed platform overrides; what remains is the formal naming convention + `SpriteAtlas` group build for the 9 planned domain atlases).
-- Three Python config JSONs without Unity equivalents yet: `data/config/lighting.json`, `data/config/audio.json`, `data/config/combo_rules.json`. Low priority — runtime defaults cover the gameplay path.
-- `burn_system.py` (status-effect DoT) and `item_factory.py` (procedural item rolls with rarity prefix/suffix mods) — both can hook into the existing `RarityPalette` + `LootTable` once ported. Low priority.
+- **Asset pipeline Phase 2** — atlas consolidation + finalised `asset_map.csv` schema. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides; what remains is the formal naming convention + `SpriteAtlas` group build for the 9 planned domain atlases.
+- **Boss music wiring** — `BossPhaseController.OnPhaseChanged` is not yet wired to `AudioManager.PlayMusic`. Audio side is ready (catalog supports per-scope track resolution); needs the wiring.
 
-For full status, system-by-system parity tables, and the (now ~98% closed) 50-step roadmap, read `.github/MIGRATION_GUIDE.md`. The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) is post-roadmap and lives behind `IProfileDb` — see `.github/SQLITE_MIGRATION_AUDIT.md`.
+The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.

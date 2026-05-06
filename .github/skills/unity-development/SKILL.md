@@ -16,7 +16,7 @@ argument-hint: "Describe the Unity feature, bug, or system you are working on"
 - Setting up editor tools, inspectors, gizmos, or property drawers
 - Performance tuning (allocations, draw calls, physics queries)
 
-> **NOT for:** Python source edits (read-only), pure data migration (use `data-migrator` agent), asset import policies (see `asset-pipeline` skill), or combat porting (see `combat-migration` skill).
+> **NOT for:** asset import policies (see `asset-pipeline` skill) or test conventions (see `unity-testing` skill).
 
 ---
 
@@ -176,7 +176,7 @@ public class SpellDefinition : ScriptableObject
     public int Damage => _damage;
 }
 ```
-- `_id` matches the JSON key from `python/data/`.
+- `_id` is a stable string identifier used for serialization and lookups.
 - All fields exposed via read-only properties.
 - Catalog `ScriptableObject` holds a `List<T>` of definitions.
 
@@ -395,9 +395,6 @@ Profile with:
   -testResults TestResults.xml -logFile -
 ```
 
-### Parity Tests vs Python
-For combat/spell formulas, write tests that load both the JSON (`python/data/`) and the corresponding `ScriptableObject`, then assert numerical equality. See `migration-testing` skill.
-
 ---
 
 ## 14. Editor Extensions
@@ -484,18 +481,16 @@ The project is configured for fast iteration:
 
 ---
 
-## 19. Migration-Specific Rules
+## 19. Pixel-art conventions
 
-1. **Never modify `python/src/`** unless the user explicitly asks.
-2. **Preserve numerical exactness** from Python: damage, speed, cooldowns, durations. Use the conversion table:
-   | Python | Unity | Formula |
-   |--------|-------|---------|
-   | px | world units | `÷ 16` |
-   | px/tick (60Hz) | world units/s | `× 3.75` |
-   | px/tick² | world units/s² | `× 225` |
-   | ticks | seconds | `÷ 60` |
-3. **Check existing scripts first** before creating new ones — many systems are partially migrated.
-4. **Reference the roadmap** at `unity/docs/Migration_python_to_unity/01_execution/roadmap_50_steps.md`.
+| Concept | Value | Notes |
+|---|---|---|
+| World PPU (most assets) | 16 | 1 world unit = 16 px |
+| Buildings PPU | 32 | Higher PPU for finer detail |
+| Tiles PPU | 32 | Audited via `tools/atlas/audit_tile_sizes.py` |
+| Tick rate | 60 Hz | Used by `MusicBeatClock` and status-effect ticks |
+
+**Check existing scripts first** before creating new ones — duplication is the #1 source of regression in this codebase.
 
 ---
 
@@ -524,7 +519,7 @@ mcp_unity_read_console(types=["error","warning"], page_size=50, format="detailed
 
 ### Run a menu item
 ```
-mcp_unity_execute_menu_item(menu_path="Valkur/Migration/Dry-Run All")
+mcp_unity_execute_menu_item(menu_path="Valkur/Audio/Validate Catalog")
 ```
 
 ### Search assets
@@ -540,4 +535,4 @@ mcp_unity_manage_asset(action="search", filter_type="ScriptableObject", search_p
 - **Check existing code before creating new code.** Duplication is the #1 source of regression here.
 - **Game tuning lives in data, not code.** ScriptableObjects > hardcoded constants.
 - **Static state needs a reset method.** Domain reload is OFF.
-- **Preserve Python game-feel exactly.** Apply unit conversions, don't eyeball.
+- **Game tuning belongs in data**, never hardcoded — touch ScriptableObjects, not numbers in `if` statements.

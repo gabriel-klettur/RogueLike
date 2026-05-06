@@ -1,6 +1,6 @@
 ---
 name: valkur-conventions
-description: One-stop quick reference for Valkur conventions — assemblies, layers, sorting, code style, the cardinal "console must be clean" rule, key gotchas, Python→Unity unit conversions. Load this skill at the start of any non-trivial task to keep the rules close to hand.
+description: One-stop quick reference for Valkur conventions — assemblies, layers, sorting, code style, the cardinal "console must be clean" rule, key gotchas. Load this skill at the start of any non-trivial task to keep the rules close to hand.
 ---
 
 # Valkur Conventions — Quick Reference
@@ -10,9 +10,9 @@ description: One-stop quick reference for Valkur conventions — assemblies, lay
 ## Cardinal rules
 
 1. **Unity MCP console must be clean** (zero errors, zero actionable warnings) before declaring any task complete. Run `mcp_unity_refresh_unity` (compile=request, mode=force, scope=scripts, wait_for_ready=true) then `mcp_unity_read_console` (types=["error","warning"], format=detailed) after every C# change. Also check the terminal log if Unity batch / test runner just ran.
-2. **Never modify** `python/src/` or `unity/Udemy_Inspiration/`.
+2. **Never modify** `unity/Udemy_Inspiration/`.
 3. **Check existing scripts** before creating new ones (`Grep` first).
-4. **Preserve numerical parity** with Python (damage, speed, cooldowns, AoE radii, AI timings).
+4. **Edit ScriptableObjects, not external JSON.** Catalog data lives in `.asset` files; world state lives in `StreamingAssets/` written by runtime editors via the `IRepository` pattern.
 
 ## Assembly rules
 
@@ -42,14 +42,14 @@ description: One-stop quick reference for Valkur conventions — assemblies, lay
 
 **Sorting (depth):** Background → Ground → FloorDecals → ObjectsLow → WallsBottom → Entities → Decorations → WallsTop → ObjectsHigh → Projectiles → VFX → Overhead → UI_World → Overlay.
 
-## Python → Unity conversions
+## Pixel-art units
 
-| Python | Unity | Formula |
+| Concept | Value | Notes |
 |---|---|---|
-| px | world units | `÷ 16` (PPU=16; Buildings PPU=32) |
-| px/tick (60Hz) | world units/s | `× 3.75` |
-| px/tick² | world units/s² | `× 225` |
-| ticks | seconds | `÷ 60` |
+| World PPU (most assets) | 16 | 1 world unit = 16 px |
+| Buildings PPU | 32 | Higher PPU for finer detail |
+| Tiles PPU | 32 | Audited via `tools/atlas/audit_tile_sizes.py` |
+| Tick rate | 60 Hz | Used by `MusicBeatClock`, status-effect ticks |
 
 ## The pit traps
 
