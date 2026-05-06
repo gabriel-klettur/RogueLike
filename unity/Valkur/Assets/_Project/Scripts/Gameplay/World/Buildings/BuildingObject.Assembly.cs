@@ -24,16 +24,6 @@ namespace Valkur.Gameplay.World
 
             int origW = template.originalScale.x;
             int origH = template.originalScale.y;
-            if (origW <= 0 || origH <= 0)
-            {
-                Debug.LogWarning($"[BuildingObject] Template {template.templateId} has zero originalScale.", this);
-                return;
-            }
-
-            // Effective pixel dimensions = instance override or template default.
-            // This is the DESIRED on-screen pixel size (matches Python's pygame.transform.scale).
-            int effW = (scaleOverride.x > 0) ? scaleOverride.x : origW;
-            int effH = (scaleOverride.y > 0) ? scaleOverride.y : origH;
 
             // Always ensure collider exists (even if sprite is missing) so other systems
             // that reference GetComponent<BoxCollider2D>() don't hit MissingComponentException.
@@ -62,6 +52,53 @@ namespace Valkur.Gameplay.World
             int spriteH = Mathf.RoundToInt(spriteRect.height);
             int spriteOriginX = Mathf.RoundToInt(spriteRect.x);
             int spriteOriginY = Mathf.RoundToInt(spriteRect.y);
+
+            // Authoring data drift: ~200 migrated templates have originalScale=(0,0)
+            // because the field was missing from the source Python data and never
+            // recomputed during migration. Fall back to the sprite's own dimensions
+            // so those buildings still render at their native PNG size — without
+            // this fallback ~200 templates (gardens, portals, forest_decoration,
+            // etc.) silently rendered as 0×0 quads.
+            if (origW <= 0) origW = spriteW;
+            if (origH <= 0) origH = spriteH;
+            if (origW <= 0 || origH <= 0)
+            {
+                Debug.LogWarning(
+                    $"[BuildingObject] Template {template.templateId} '{template.name}' " +
+                    "has zero originalScale AND zero sprite size — cannot render.", this);
+                return;
+            }
+
+            // Effective pixel dimensions: per-instance override wins as-is (it's
+            // designer-authored stretching, e.g. tile-perfect placement). When no
+            // override is set we need to handle a second data-drift case: a few
+            // templates have originalScale whose aspect ratio does NOT match the
+            // PNG (e.g. castle_2 says 3072×2048 but the PNG is square 1024×1024
+            // because the asset got re-exported smaller post-migration). Naively
+            // applying that origScale stretches square art into a wide rectangle
+            // ("achatado"). When the override is absent, fit the PNG inside the
+            // origScale "size budget" while preserving the PNG's native aspect.
+            int effW, effH;
+            if (scaleOverride.x > 0 && scaleOverride.y > 0)
+            {
+                effW = scaleOverride.x;
+                effH = scaleOverride.y;
+            }
+            else if (Mathf.Abs((float)origW / origH - (float)spriteW / spriteH) < 0.01f)
+            {
+                // Aspect ratios already match — render at the authored size verbatim.
+                effW = origW;
+                effH = origH;
+            }
+            else
+            {
+                // Aspect drift between authored origScale and actual PNG. Fit the
+                // PNG into the authored bounds without squishing. Smaller scale
+                // factor wins so the result stays within the origScale budget.
+                float fit = Mathf.Min((float)origW / spriteW, (float)origH / spriteH);
+                effW = Mathf.Max(1, Mathf.RoundToInt(spriteW * fit));
+                effH = Mathf.Max(1, Mathf.RoundToInt(spriteH * fit));
+            }
 
             // ── 3. Compute crop rects in TEXTURE-space (Unity Y=0 is BOTTOM of texture) ──
             // The split ratio divides the sprite visually. Use the sprite's own
