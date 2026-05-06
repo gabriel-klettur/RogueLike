@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay;
 
 namespace Valkur.Gameplay.Quests
 {
@@ -254,6 +255,10 @@ namespace Valkur.Gameplay.Quests
             }
 
             OnQuestCompleted?.Invoke(def.questId);
+
+            // Quest completion is a sandbox-game milestone — never lose it
+            // to a crash, even if the autosave timer was nowhere near firing.
+            SaveService.Instance?.SaveImmediately($"quest '{def.questId}' completed");
         }
 
         private static void GrantItemRewards(Inventory.Inventory inv, string[] itemIds)

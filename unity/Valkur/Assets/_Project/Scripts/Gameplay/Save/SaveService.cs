@@ -21,7 +21,13 @@ namespace Valkur.Gameplay
 
         [Header("Autosave")]
         [SerializeField] private bool autosaveEnabled = true;
-        [SerializeField] private float autosaveIntervalSeconds = 300f;
+        // 45 seconds is the production default for sandbox-style worlds:
+        // long enough that combat ticks don't thrash the disk, short enough
+        // that an unexpected crash never costs more than ~45 s of progression.
+        // Critical milestones (boss kill, quest completed, zone change, level
+        // up, player death) ALSO call SaveImmediately so this timer is the
+        // safety floor, not the primary save trigger.
+        [SerializeField] private float autosaveIntervalSeconds = 45f;
 
         [Header("Position Checkpoint")]
         [Tooltip("Write a lightweight position-only file this often. Protects position against crashes.")]
@@ -33,6 +39,14 @@ namespace Valkur.Gameplay
         private string _currentSavePath;
         private string _lastLoadedTimestamp;
         private string _currentRunId = "";
+
+        // Debounce window after a MarkDirty so a rapid burst of dirty events
+        // (combat sequence, mass loot pickup) coalesces into a single save
+        // instead of spamming the disk. The autosave timer remains the long-
+        // term safety net; this window is the short-term coalescer.
+        [SerializeField] private float dirtyDebounceSeconds = 2f;
+        private float _dirtyDebounceTimer = -1f;
+        private bool  _dirtyDebouncePending;
 
         public string RunId => _currentRunId;
 
@@ -77,13 +91,37 @@ namespace Valkur.Gameplay
         // That nukes our subscriptions too, so re-bind on every scene load.
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => RebindGameEvents();
 
-        /// <summary>Marks the current session as worth autosaving on quit / on the periodic timer.</summary>
+        /// <summary>
+        /// Marks the current session as worth autosaving on quit / on the
+        /// periodic timer. Also (re)starts the debounce window: if no further
+        /// MarkDirty arrives within <see cref="dirtyDebounceSeconds"/> the
+        /// session will be persisted automatically — covers the gap between
+        /// the player doing something meaningful and the long autosave timer.
+        /// </summary>
         public void MarkDirty(string reason = null)
         {
-            if (_sessionDirty) return;
+            bool firstTime = !_sessionDirty;
             _sessionDirty = true;
-            if (!string.IsNullOrEmpty(reason))
+            _dirtyDebouncePending = true;
+            _dirtyDebounceTimer   = 0f;
+            if (firstTime && !string.IsNullOrEmpty(reason))
                 Debug.Log($"[SaveService] Session marked dirty: {reason}");
+        }
+
+        /// <summary>
+        /// Force a save right now, bypassing the periodic timer and the
+        /// debounce window. Used by gameplay-critical events (boss kill,
+        /// quest completed, zone change, level up, player death) where the
+        /// progression must NEVER be lost to a crash.
+        /// </summary>
+        public bool SaveImmediately(string reason)
+        {
+            if (!string.IsNullOrEmpty(reason))
+                Debug.Log($"[SaveService] SaveImmediately: {reason}");
+            // Clear debounce so the timer doesn't double-fire after this.
+            _dirtyDebouncePending = false;
+            _dirtyDebounceTimer   = -1f;
+            return WriteAutosaveToDisk(force: true);
         }
 
         private void RebindGameEvents()
@@ -92,20 +130,29 @@ namespace Valkur.Gameplay
             // unbind+bind unconditionally keeps subscriptions exactly-once
             // even when GameEvents.Clear() ran between calls.
             UnbindGameEvents();
+            // Tier 2 dirty triggers — flip the flag, the timer / debounce
+            // takes care of the actual write.
             GameEvents.OnPlayerDamaged += HandlePlayerDamaged;
             GameEvents.OnXpGained      += HandleXpGained;
-            GameEvents.OnLevelUp       += HandleLevelUp;
             GameEvents.OnItemPickedUp  += HandleItemPickedUp;
+            GameEvents.OnItemConsumed  += HandleItemConsumed;
+            // Critical milestones — force an immediate save.
+            GameEvents.OnLevelUp       += HandleLevelUp;
             GameEvents.OnZoneChanged   += HandleZoneChanged;
+            GameEvents.OnPlayerDied    += HandlePlayerDied;
+            GameEvents.OnEntityDied    += HandleEntityDied;
         }
 
         private void UnbindGameEvents()
         {
             GameEvents.OnPlayerDamaged -= HandlePlayerDamaged;
             GameEvents.OnXpGained      -= HandleXpGained;
-            GameEvents.OnLevelUp       -= HandleLevelUp;
             GameEvents.OnItemPickedUp  -= HandleItemPickedUp;
+            GameEvents.OnItemConsumed  -= HandleItemConsumed;
+            GameEvents.OnLevelUp       -= HandleLevelUp;
             GameEvents.OnZoneChanged   -= HandleZoneChanged;
+            GameEvents.OnPlayerDied    -= HandlePlayerDied;
+            GameEvents.OnEntityDied    -= HandleEntityDied;
         }
 
         private void HandlePlayerDamaged(int amount, int currentHp, int maxHp) =>
@@ -119,8 +166,11 @@ namespace Valkur.Gameplay
 
         private void HandleLevelUp(GameObject entity, int newLevel)
         {
-            if (entity != null && entity.CompareTag("Player"))
-                MarkDirty($"player leveled up to {newLevel}");
+            if (entity == null || !entity.CompareTag("Player")) return;
+            // Level-up is a milestone — force the save now instead of waiting
+            // for the timer. A crash between level-up and next periodic save
+            // would otherwise lose the new level + skill points.
+            SaveImmediately($"player leveled up to {newLevel}");
         }
 
         private void HandleItemPickedUp(GameObject collector, string itemName, int quantity)
@@ -129,8 +179,39 @@ namespace Valkur.Gameplay
                 MarkDirty($"player picked up {itemName} x{quantity}");
         }
 
+        private void HandleItemConsumed(GameObject consumer, string itemName)
+        {
+            if (consumer != null && consumer.CompareTag("Player"))
+                MarkDirty($"player consumed {itemName}");
+        }
+
         private void HandleZoneChanged(string oldZone, string newZone) =>
-            MarkDirty($"zone {oldZone} → {newZone}");
+            // Zone transitions are the canonical "checkpoint" in sandbox
+            // games. Force-save so a crash on the new zone never sends the
+            // player back to the old one.
+            SaveImmediately($"zone {oldZone} → {newZone}");
+
+        private void HandlePlayerDied()
+        {
+            // Player death is the most expensive thing to lose — restart-from-
+            // checkpoint UX depends on the on-disk state being current. We
+            // still gate on _hasKnownPlayerPos because OnApplicationQuit's
+            // alive-only guard does not apply to death itself (we WANT the
+            // dead state recorded so the run-end UI can read it).
+            SaveImmediately("player died");
+        }
+
+        private void HandleEntityDied(GameObject victim, GameObject killer)
+        {
+            // GameEvents.FireEntityDied passes (victim, killer) in that order;
+            // the same convention as OnEntityDamaged. Keep parameter names in
+            // sync with the source signature so the boss-detection branch
+            // inspects the actual victim.
+            if (victim == null) return;
+            var boss = victim.GetComponent<BossPhaseController>();
+            if (boss != null)
+                SaveImmediately($"boss '{victim.name}' defeated");
+        }
 
         private void Update()
         {
@@ -155,6 +236,25 @@ namespace Valkur.Gameplay
                 {
                     _autosaveTimer = 0f;
                     Autosave();
+                }
+            }
+
+            // Debounce: when MarkDirty has been firing recently, wait until
+            // the burst settles (no MarkDirty for dirtyDebounceSeconds) and
+            // then write. Resets _dirtyDebouncePending so the next MarkDirty
+            // re-arms it. The long autosave timer above is unaffected.
+            if (_dirtyDebouncePending && _sessionDirty)
+            {
+                _dirtyDebounceTimer += dt;
+                if (_dirtyDebounceTimer >= dirtyDebounceSeconds)
+                {
+                    _dirtyDebouncePending = false;
+                    _dirtyDebounceTimer   = -1f;
+                    Autosave();
+                    // The post-debounce save resets the long autosave timer
+                    // too — no point firing again 1 s later just because the
+                    // periodic timer happened to be near its threshold.
+                    _autosaveTimer = 0f;
                 }
             }
 
