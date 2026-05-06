@@ -8,12 +8,14 @@ using Valkur.Gameplay.World;
 namespace Valkur.Tests.EditMode.Game.World
 {
     /// <summary>
-    /// Regression tests for the collider startup bugs fixed in GameplaySceneSetup:
+    /// Regression tests for the collider startup bugs fixed in GameplaySceneSetup,
+    /// plus the *current* "no default collider" contract for buildings.
     ///
-    /// Bug 1 — Buildings: All buildings had BoxCollider2D.enabled=false at game start.
-    ///   Root cause: BuildingLoader._autoLoad=false in scene; EnsureBuildingLoader()
-    ///   found the existing loader and returned early WITHOUT calling LoadBuildings().
-    ///   Fix: EnsureBuildingLoader() now calls LoadBuildings() when SpawnedBuildings.Count==0.
+    /// Tilemap regressions (Bug 2 below) still apply. The original "Bug 1" — that
+    /// solid buildings shipped with disabled colliders at game start — has been
+    /// REINTERPRETED: that *is* now the desired state. Buildings only get colliders
+    /// when the designer explicitly paints a per-cell grid via the F10 editor;
+    /// every other building (solid or not) has no collision until then.
     ///
     /// Bug 2 — Tilemap: Collision tilemap CompositeCollider2D had pathCount=0 at runtime.
     ///   Root cause: WorldLoader.SetTile() invalidates composite geometry at runtime, but
@@ -22,8 +24,10 @@ namespace Valkur.Tests.EditMode.Game.World
     ///   CompositeCollider2Ds immediately after LoadWorld() completes.
     ///
     /// Test groups:
-    ///   1. Building collider invariant — solid buildings MUST have enabled BoxCollider2D
-    ///      after ApplyCollisionGrids() when no authored collision grid exists.
+    ///   1. Building "no default collider" contract — solid AND non-solid buildings
+    ///      must have a DISABLED root BoxCollider2D after ApplyCollisionGrids() when
+    ///      no authored grid exists. Only painted per-cell tile children produce
+    ///      collisions.
     ///   2. BuildingLoader startup state — SpawnedBuildings.Count is 0 for a fresh
     ///      (no autoLoad) loader, which is the condition that triggers LoadBuildings().
     ///   3. Tilemap composite bake — GenerateGeometry() must be callable without error
@@ -59,16 +63,17 @@ namespace Valkur.Tests.EditMode.Game.World
             return null;
         }
 
-        // ── Group 1: Building collider invariant ─────────────────────────────────
+        // ── Group 1: Building "no default collider" contract ─────────────────────
 
         /// <summary>
-        /// Regression for Bug 1.
-        /// ApplyCollisionGrids() on multiple solid buildings with no authored grid
-        /// must enable ALL their BoxCollider2Ds (sets enabled = template.solid = true).
-        /// If this fails, the player walks through all buildings.
+        /// Regression sentinel for the "no default footprint collider" rule.
+        /// ApplyCollisionGrids() on multiple SOLID buildings with no authored grid
+        /// must DISABLE every root BoxCollider2D — colliders only exist when the
+        /// designer paints a per-cell grid in the F10 editor. If this fails, every
+        /// solid building gets the legacy footprint rectangle back automatically.
         /// </summary>
         [Test]
-        public void ApplyCollisionGrids_MultipleSolidBuildings_NoAuthoredGrid_AllCollidersEnabled()
+        public void ApplyCollisionGrids_MultipleSolidBuildings_NoAuthoredGrid_AllCollidersDisabled()
         {
             const int buildingCount = 5;
 
@@ -92,7 +97,7 @@ namespace Valkur.Tests.EditMode.Game.World
                 var go       = new GameObject($"Building_{i}");
                 var bObj     = go.AddComponent<BuildingObject>();
                 var mainColl = go.AddComponent<BoxCollider2D>();
-                mainColl.enabled = false; // start disabled — simulates the broken state
+                mainColl.enabled = true; // start enabled — should be DISABLED after restore
                 SetPrivateField(bObj, "_template", tmpl);
                 buildingGos[i] = go;
             }
@@ -102,9 +107,9 @@ namespace Valkur.Tests.EditMode.Game.World
             for (int i = 0; i < buildingCount; i++)
             {
                 var coll = buildingGos[i].GetComponent<BoxCollider2D>();
-                Assert.IsTrue(coll.enabled,
-                    $"Building_{i}: BoxCollider2D must be enabled after ApplyCollisionGrids() " +
-                    "when template.solid=true and no authored grid exists.");
+                Assert.IsFalse(coll.enabled,
+                    $"Building_{i}: root BoxCollider2D must be DISABLED after ApplyCollisionGrids() " +
+                    "even when template.solid=true. Colliders only come from painted per-cell grids.");
             }
 
             foreach (var go in buildingGos) Object.DestroyImmediate(go);
@@ -113,8 +118,9 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         /// <summary>
-        /// Regression for Bug 1 — non-solid building must remain disabled.
-        /// Ensures the fix doesn't accidentally enable walk-through buildings.
+        /// Same contract for non-solid buildings — must remain disabled. This was
+        /// already the rule; kept to ensure the new behavior didn't accidentally
+        /// regress in the other direction.
         /// </summary>
         [Test]
         public void ApplyCollisionGrids_NonSolidBuilding_NoAuthoredGrid_ColliderStaysDisabled()

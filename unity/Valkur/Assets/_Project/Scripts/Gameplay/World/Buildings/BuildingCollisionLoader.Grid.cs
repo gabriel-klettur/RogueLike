@@ -131,13 +131,16 @@ namespace Valkur.Gameplay.World
             }
         }
 
+        // Buildings have no default footprint collider — only painted per-cell
+        // grids produce colliders. This helper guarantees the root BoxCollider2D
+        // stays disabled when the user clears a grid (so we never silently
+        // resurrect the legacy footprint), regardless of template.solid.
         private static void RestoreDefaultColliderState(BuildingObject bObj)
         {
-            if (bObj == null || bObj.Template == null) return;
-
+            if (bObj == null) return;
             var mainCollider = bObj.GetComponent<BoxCollider2D>();
             if (mainCollider != null)
-                mainCollider.enabled = bObj.Template.solid;
+                mainCollider.enabled = false;
         }
 
         private static Vector2 GetBuildingLocalSpriteSize(BuildingObject bObj)

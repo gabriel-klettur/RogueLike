@@ -59,7 +59,7 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         [Test]
-        public void TryApplyGrid_WhenNoGridExists_RestoresDefaultMainCollider()
+        public void TryApplyGrid_WhenNoGridExists_LeavesRootColliderDisabled()
         {
             var loaderGo = new GameObject("CollisionLoader");
             var loader = loaderGo.AddComponent<BuildingCollisionLoader>();
@@ -76,7 +76,7 @@ namespace Valkur.Tests.EditMode.Game.World
             var buildingGo = new GameObject("Building");
             var building = buildingGo.AddComponent<BuildingObject>();
             var mainCollider = buildingGo.AddComponent<BoxCollider2D>();
-            mainCollider.enabled = false;
+            mainCollider.enabled = true; // start enabled — must end disabled
             building.ColliderScopeOverride = "CG";
 
             SetPrivateField(building, "_template", tmpl);
@@ -84,8 +84,9 @@ namespace Valkur.Tests.EditMode.Game.World
             bool applied = loader.TryApplyGrid(building);
 
             Assert.IsFalse(applied, "No collision data should return false.");
-            Assert.IsTrue(mainCollider.enabled,
-                "When no grid exists, the default footprint collider must be restored.");
+            Assert.IsFalse(mainCollider.enabled,
+                "Buildings have no default footprint collider — the root BoxCollider2D " +
+                "must stay disabled when no per-cell grid was painted.");
 
             Object.DestroyImmediate(buildingGo);
             Object.DestroyImmediate(tmpl);
@@ -126,13 +127,13 @@ namespace Valkur.Tests.EditMode.Game.World
 
                 Assert.IsTrue(applied,
                     "An explicit empty grid should still count as an applied override.");
-                // An all-walkable authored grid (no '#' cells) is treated as "no active override":
-                // the root collider stays enabled so that buildings with placeholder JSON entries
-                // (not yet painted) still block movement. Disabling the root here would silently
-                // make 'solid' buildings walk-throughable.
-                Assert.IsTrue(mainCollider.enabled,
-                    "An all-walkable authored grid must NOT disable the default footprint collider " +
-                    "(placeholder protection: unpainted grids should not break blocking).");
+                // No default footprint collider — an all-walkable authored grid means
+                // every cell is walkable, which (correctly) leaves no colliders. The
+                // root collider stays disabled because there is no longer any
+                // "default footprint" to fall back to.
+                Assert.IsFalse(mainCollider.enabled,
+                    "All-walkable authored grid → no painted '#' cells → no colliders. " +
+                    "The root BoxCollider2D must stay disabled (no default footprint).");
             }
             finally
             {
@@ -279,15 +280,15 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         /// <summary>
-        /// A per-image (CG) all-walkable grid is treated as an unintentional placeholder —
-        /// NOT an explicit walkable reset. The root BoxCollider2D must stay enabled so
-        /// buildings with unpainted CG JSON entries still physically block movement.
-        ///
-        /// This is the original guard that prevented 140/142 buildings from being
-        /// walk-throughable due to placeholder entries in buildings_collisions_by_image.json.
+        /// Buildings have no default footprint collider — an all-walkable per-image
+        /// (CG) grid produces zero painted cells and therefore zero colliders. The
+        /// root BoxCollider2D stays disabled. The legacy "placeholder protection"
+        /// (where CG all-walkable was treated as an unintentional placeholder so
+        /// the default footprint stayed enabled) has been retired now that there
+        /// is no default footprint to resurrect.
         /// </summary>
         [Test]
-        public void TryApplyGrid_CGScopeAllWalkableGrid_KeepsRootColliderEnabled()
+        public void TryApplyGrid_CGScopeAllWalkableGrid_LeavesRootColliderDisabled()
         {
             string dir         = Path.Combine(Application.streamingAssetsPath, "Buildings");
             string byImagePath = Path.Combine(dir, "buildings_collisions_by_image.json");
@@ -322,9 +323,10 @@ namespace Valkur.Tests.EditMode.Game.World
 
                 Assert.IsTrue(applied,
                     "TryApplyGrid should return true even for all-walkable CG grids.");
-                Assert.IsTrue(mainCollider.enabled,
-                    "CG all-walkable grid = placeholder: root BoxCollider2D must stay ENABLED " +
-                    "so buildings with unpainted image-level JSON entries still block movement.");
+                Assert.IsFalse(mainCollider.enabled,
+                    "CG all-walkable grid → no painted '#' cells → no colliders. The root " +
+                    "BoxCollider2D must stay disabled (the legacy 'default footprint' fallback " +
+                    "has been removed; only painted cells produce collisions).");
             }
             finally
             {
@@ -338,12 +340,14 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         /// <summary>
-        /// Both CU all-walkable tests together assert the full behavioral contract:
-        /// CU scope → root disabled (Fix A2); CG scope → root enabled (original guard preserved).
-        /// This naming-pairs test documents WHY both branches exist in <c>TryApplyGrid()</c>.
+        /// Locks in the post-"no default footprint" contract: BOTH CU and CG
+        /// all-walkable grids leave the root BoxCollider2D disabled. Previously
+        /// the two scopes diverged here (CU disabled, CG kept enabled as
+        /// placeholder protection); since the default footprint is gone, both
+        /// scopes converge on "no painted cell → no collider".
         /// </summary>
         [Test]
-        public void TryApplyGrid_CUScopeVsCGScope_AllWalkable_BehaviourDiffers()
+        public void TryApplyGrid_CUScopeAndCGScope_AllWalkable_BothLeaveRootDisabled()
         {
             // CU side
             string dir           = Path.Combine(Application.streamingAssetsPath, "Buildings");
@@ -404,9 +408,11 @@ namespace Valkur.Tests.EditMode.Game.World
             try
             {
                 Assert.IsFalse(collCU.enabled,
-                    "CU all-walkable → root DISABLED (intentional walkable reset, Fix A2).");
-                Assert.IsTrue(collCG.enabled,
-                    "CG all-walkable → root ENABLED (placeholder protection, original guard).");
+                    "CU all-walkable → root DISABLED (no painted cells, no colliders).");
+                Assert.IsFalse(collCG.enabled,
+                    "CG all-walkable → root DISABLED. The legacy 'placeholder protection' " +
+                    "that kept this enabled has been retired now that the default footprint " +
+                    "no longer exists.");
             }
             finally
             {

@@ -152,20 +152,23 @@ namespace Valkur.Gameplay.World
             _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset;
             _topRenderer.sortingOrder    = ySortOrder + _zTopOffset;
 
-            // ── 5. Collider (footprint only = below the split line) ─────────────────
-            // Matching Python collision_rect: only the footprint (below the visual
-            // split line) blocks movement. The canopy (above the split) is rendered
-            // over entities but is physically passable — entities walk "behind"
-            // tall buildings as in the Python reference. When a custom per-cell
-            // collision grid is applied (BuildingCollisionLoader / BuildingsRuntimeEditor)
-            // this root collider is disabled and per-cell child BoxCollider2Ds are
-            // used instead, positioned via TryGetWorldCellRect().
-            _collider.enabled = template.solid;
-            if (template.solid)
-            {
-                _collider.size   = new Vector2(spriteW / PPU, bottomH);
-                _collider.offset = new Vector2(0f, bottomH * 0.5f);
-            }
+            // ── 5. Collider ─────────────────────────────────────────────────────────
+            // No default footprint collider. Buildings only block movement once the
+            // user explicitly paints a per-cell collision grid in the F10 editor;
+            // BuildingCollisionLoader spawns child BoxCollider2D tiles for each
+            // painted cell. The root BoxCollider2D component is kept (and left
+            // disabled) so other systems that do GetComponent<BoxCollider2D>() on
+            // a BuildingObject don't hit MissingComponentException.
+            //
+            // The previous default — a single rectangle covering the footprint
+            // half of the sprite — was a Python-port carryover that doesn't match
+            // the new authoring model: every solid building was forced into a
+            // boxy collision shape that didn't follow its actual silhouette, and
+            // disabling it required either tagging template.solid=false (global
+            // for that template) or painting a fully-walkable grid. Removing it
+            // means every collider in the world is one the designer authored on
+            // purpose.
+            _collider.enabled = false;
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────────
