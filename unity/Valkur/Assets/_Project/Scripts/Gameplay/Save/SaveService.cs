@@ -483,21 +483,34 @@ namespace Valkur.Gameplay
             SaveTelemetryEntry.SaveKind telemetryKind, string telemetryReason,
             System.Diagnostics.Stopwatch stopwatch)
         {
+            // Resolve every Unity-API-bound value here on the main thread.
+            // JsonUtility.ToJson and Application.persistentDataPath (used
+            // transitively by GetAutosavePath / GetBackupsDirectory) are
+            // documented main-thread-only; the previous implementation
+            // invoked WriteAutosaveAsync inside a ContinueWith on the
+            // thread pool, which raised "get_persistentDataPath can only
+            // be called from the main thread" once per autosave tick.
+            data.schemaVersion = SaveSchemaMigrator.CURRENT_SCHEMA;
+            string json       = JsonUtility.ToJson(data, true);
+            string targetPath = SaveFileManager.GetAutosavePath(runId);
+            string backupsDir = SaveFileManager.GetBackupsDirectory(runId);
+            string reason     = telemetryReason ?? telemetryKind.ToString();
+
             Task previous;
             lock (_pendingWriteLock) { previous = _pendingWrite; }
 
-            string targetPath = SaveFileManager.GetAutosavePath(runId);
-            string reason     = telemetryReason ?? telemetryKind.ToString();
-
-            // Serialize the JSON now (main thread, JsonUtility-safe). The
-            // returned Task only does pure file IO and is safe to chain.
+            // Chain the rotate+write off whatever previous write may still
+            // be pending so disk operations are strictly ordered (no thread
+            // races to write/rotate the same files). The continuation only
+            // touches plain strings and System.IO — never a Unity API.
             Task next = previous.ContinueWith(prev =>
             {
                 if (prev.IsFaulted)
                     Debug.LogError($"[SaveService] Previous async write faulted: " +
                                    $"{prev.Exception?.GetBaseException().Message}");
-                return SaveFileManager.WriteAutosaveAsync(runId, data, SaveSchemaMigrator.CURRENT_SCHEMA);
-            }, TaskScheduler.Default).Unwrap();
+                SaveFileManager.RotateAutosaveBackupsByPath(targetPath, backupsDir);
+                SaveFileManager.WriteSerializedJsonAtomic(targetPath, json);
+            }, TaskScheduler.Default);
 
             // Attach final telemetry + error logger. ContinueWith runs on a
             // thread-pool thread so the SaveTelemetry buffer must be thread-
