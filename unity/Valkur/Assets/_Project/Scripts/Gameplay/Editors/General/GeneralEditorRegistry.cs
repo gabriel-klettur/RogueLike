@@ -67,6 +67,11 @@ namespace Valkur.Gameplay.Editors.General
                 onClick:  () => ServiceLocator.Get<IDebugOverlayService>()?.ToggleVisible(),
                 isActive: () => ServiceLocator.Get<IDebugOverlayService>()?.IsVisible == true));
 
+            list.Add(new GeneralEditorEntry(
+                "Save Log", GeneralEditorSection.Diagnostics,
+                onClick:  Valkur.Gameplay.Save.SaveTelemetryHUD.Toggle,
+                isActive: () => Valkur.Gameplay.Save.SaveTelemetryHUD.Instance != null));
+
             // ── Game ────────────────────────────────────────────────────────
             list.Add(new GeneralEditorEntry(
                 "Pause Menu", GeneralEditorSection.Game,

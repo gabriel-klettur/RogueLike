@@ -145,7 +145,9 @@ namespace Valkur.Gameplay
             // Clear debounce so the timer doesn't double-fire after this.
             _dirtyDebouncePending = false;
             _dirtyDebounceTimer   = -1f;
-            return WriteAutosaveToDisk(force: true);
+            return WriteAutosaveToDisk(force: true,
+                telemetryKind: SaveTelemetryEntry.SaveKind.Immediate,
+                telemetryReason: reason);
         }
 
         private void RebindGameEvents()
@@ -274,7 +276,9 @@ namespace Valkur.Gameplay
                 {
                     _dirtyDebouncePending = false;
                     _dirtyDebounceTimer   = -1f;
-                    Autosave();
+                    WriteAutosaveToDisk(force: false,
+                        telemetryKind: SaveTelemetryEntry.SaveKind.DebounceFlush,
+                        telemetryReason: "dirty-debounce settled");
                     // The post-debounce save resets the long autosave timer
                     // too — no point firing again 1 s later just because the
                     // periodic timer happened to be near its threshold.
@@ -352,7 +356,9 @@ namespace Valkur.Gameplay
         /// </summary>
         public bool QuickSave()
         {
-            return WriteAutosaveToDisk(force: true);
+            return WriteAutosaveToDisk(force: true,
+                telemetryKind: SaveTelemetryEntry.SaveKind.QuickSave,
+                telemetryReason: "user-driven QuickSave");
         }
 
         /// <summary>
@@ -372,13 +378,15 @@ namespace Valkur.Gameplay
         /// Shared autosave write path. <paramref name="force"/> bypasses the
         /// dirty-flag short-circuit for player-driven saves.
         /// </summary>
-        private bool WriteAutosaveToDisk(bool force)
+        private bool WriteAutosaveToDisk(bool force, SaveTelemetryEntry.SaveKind telemetryKind = SaveTelemetryEntry.SaveKind.Autosave, string telemetryReason = null)
         {
             if (!force && !_sessionDirty)
             {
                 Debug.Log("[SaveService] Autosave skipped — session has no progression to save.");
                 return false;
             }
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            string targetPath = null;
             try
             {
                 var data = GameStateCollector.Collect();
@@ -387,17 +395,26 @@ namespace Valkur.Gameplay
                 EnsureRunId();
                 data.SetMeta("run_id", _currentRunId);
 
-                string path = SaveFileManager.GetAutosavePath(_currentRunId);
-                _currentSavePath = path;
+                targetPath = SaveFileManager.GetAutosavePath(_currentRunId);
+                _currentSavePath = targetPath;
 
                 if (useAsyncDiskIO)
                 {
-                    EnqueueAsyncAutosave(_currentRunId, data);
+                    EnqueueAsyncAutosave(_currentRunId, data, telemetryKind, telemetryReason, stopwatch);
                 }
                 else
                 {
                     SaveFileManager.RotateAutosaveBackups(_currentRunId);
-                    SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
+                    SaveFileManager.WriteSaveFile(targetPath, data, SaveSchemaMigrator.CURRENT_SCHEMA);
+                    stopwatch.Stop();
+                    SaveTelemetry.Record(new SaveTelemetryEntry(
+                        telemetryKind,
+                        telemetryReason ?? (force ? "QuickSave" : "Autosave"),
+                        success: true,
+                        sizeBytes: SafeFileSize(targetPath),
+                        durationMs: stopwatch.Elapsed.TotalMilliseconds,
+                        path: targetPath,
+                        wasAsync: false));
                 }
 
                 // A forced save establishes a new on-disk baseline. Subsequent
@@ -405,24 +422,50 @@ namespace Valkur.Gameplay
                 // changes after this point, so re-arm the dirty flag.
                 if (force) _sessionDirty = false;
 
-                Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} {(useAsyncDiskIO ? "queued" : "completed")}: {path}");
+                Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} {(useAsyncDiskIO ? "queued" : "completed")}: {targetPath}");
                 return true;
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
+                SaveTelemetry.Record(new SaveTelemetryEntry(
+                    telemetryKind,
+                    telemetryReason ?? (force ? "QuickSave" : "Autosave"),
+                    success: false,
+                    sizeBytes: 0,
+                    durationMs: stopwatch.Elapsed.TotalMilliseconds,
+                    path: targetPath ?? string.Empty,
+                    wasAsync: useAsyncDiskIO));
                 Debug.LogError($"[SaveService] {(force ? "QuickSave" : "Autosave")} failed: {ex.Message}");
                 return false;
             }
+        }
+
+        private static long SafeFileSize(string path)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return 0;
+                return new System.IO.FileInfo(path).Length;
+            }
+            catch { return 0; }
         }
 
         // Chains a new autosave task off whatever previous write may still
         // be pending so that disk writes are strictly ordered (no thread
         // ever races to write/rotate the same files). Faulted tasks are
         // logged but never rethrown — the next save attempt is independent.
-        private void EnqueueAsyncAutosave(string runId, GameSaveData data)
+        // Records a SaveTelemetry entry for the HUD / diagnostics panel
+        // when the task completes.
+        private void EnqueueAsyncAutosave(string runId, GameSaveData data,
+            SaveTelemetryEntry.SaveKind telemetryKind, string telemetryReason,
+            System.Diagnostics.Stopwatch stopwatch)
         {
             Task previous;
             lock (_pendingWriteLock) { previous = _pendingWrite; }
+
+            string targetPath = SaveFileManager.GetAutosavePath(runId);
+            string reason     = telemetryReason ?? telemetryKind.ToString();
 
             // Serialize the JSON now (main thread, JsonUtility-safe). The
             // returned Task only does pure file IO and is safe to chain.
@@ -434,12 +477,24 @@ namespace Valkur.Gameplay
                 return SaveFileManager.WriteAutosaveAsync(runId, data, SaveSchemaMigrator.CURRENT_SCHEMA);
             }, TaskScheduler.Default).Unwrap();
 
-            // Attach a final logger so a faulted I/O leg doesn't go silent.
+            // Attach final telemetry + error logger. ContinueWith runs on a
+            // thread-pool thread so the SaveTelemetry buffer must be thread-
+            // safe (it is — internal lock).
             next.ContinueWith(t =>
             {
-                if (t.IsFaulted)
+                stopwatch.Stop();
+                bool success = !t.IsFaulted;
+                if (!success)
                     Debug.LogError($"[SaveService] Async autosave failed: " +
                                    $"{t.Exception?.GetBaseException().Message}");
+                SaveTelemetry.Record(new SaveTelemetryEntry(
+                    telemetryKind,
+                    reason,
+                    success: success,
+                    sizeBytes: success ? SafeFileSize(targetPath) : 0,
+                    durationMs: stopwatch.Elapsed.TotalMilliseconds,
+                    path: targetPath,
+                    wasAsync: true));
             }, TaskScheduler.Default);
 
             lock (_pendingWriteLock) { _pendingWrite = next; }
