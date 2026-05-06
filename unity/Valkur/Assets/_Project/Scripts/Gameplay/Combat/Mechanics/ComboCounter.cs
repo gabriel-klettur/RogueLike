@@ -33,12 +33,35 @@ namespace Valkur.Gameplay
         [Tooltip("Duration the break-flash UI plays (Python: 0.3).")]
         [SerializeField] private float breakFlashDuration = 0.3f;
 
+        [Header("Rules (mirror Python combo_rules.json)")]
+        [Tooltip("Source tags whose hits count toward the combo. " +
+                 "Hits with a source NOT in this list are ignored (Python allowed_sources). " +
+                 "Empty array disables the filter.")]
+        [SerializeField] private string[] allowedSources = { "combat", "melee", "hitbox", "fireball" };
+
+        [Tooltip("Minimum damage for a hit to count (Python min_damage). Hits below the threshold " +
+                 "refresh the active window but do not increment the combo.")]
+        [SerializeField] private float minDamage = 1f;
+
+        [Tooltip("If true, only hits where the victim is on an enemy layer count " +
+                 "(Python require_enemy). Default: NPC layer.")]
+        [SerializeField] private bool requireEnemy = true;
+
+        [Tooltip("Layer(s) treated as enemies when require_enemy is on.")]
+        [SerializeField] private LayerMask enemyLayers = 1 << 9; // NPC
+
+        [Tooltip("If true, two consecutive hits on the same target do not count " +
+                 "(Python require_unique_target). The same-target cooldown is a complementary " +
+                 "time-based filter.")]
+        [SerializeField] private bool requireUniqueTarget = true;
+
         // ── Runtime state ──────────────────────────────────────────────────
         private int _current;
         private int _best;
         private float _windowEndTime;
         private float _breakFlashEndTime;
         private readonly Dictionary<int, float> _lastHitTimeByTarget = new Dictionary<int, float>();
+        private int _lastTargetInstanceId = 0;
         private int _totalCompleted;
         private int _lastCompletedCount;
 
@@ -90,35 +113,63 @@ namespace Valkur.Gameplay
         /// <param name="target">The entity that was hit.</param>
         /// <param name="damage">Damage dealt (must be > 0).</param>
         /// <param name="source">Source tag: "slash", "projectile", etc.</param>
-        public void RegisterHit(GameObject target, float damage, string source = "unknown")
+        public void RegisterHit(GameObject target, float damage, string source = "combat")
         {
-            if (damage <= 0f) return;
             if (target == null) return;
 
             float now = Time.time;
             int tid = target.GetInstanceID();
 
-            // Same-target cooldown
-            if (_lastHitTimeByTarget.TryGetValue(tid, out float lastT) &&
-                (now - lastT) < sameTargetCooldown)
+            // Rule: min damage threshold (Python min_damage)
+            if (damage < minDamage) { RefreshWindowIfActive(now); return; }
+
+            // Rule: allowed_sources filter (Python allowed_sources)
+            if (allowedSources != null && allowedSources.Length > 0 &&
+                Array.IndexOf(allowedSources, source) < 0)
             {
-                // Still refresh window if active
-                if (IsActive)
-                {
-                    float eff = EffectiveWindow(_current > 0 ? _current : 1);
-                    _windowEndTime = now + eff;
-                }
+                RefreshWindowIfActive(now);
                 return;
             }
 
+            // Rule: require_enemy — reject if target isn't on an enemy layer
+            if (requireEnemy && (enemyLayers.value & (1 << target.layer)) == 0)
+            {
+                RefreshWindowIfActive(now);
+                return;
+            }
+
+            // Rule: require_unique_target — reject consecutive hits on same target while in combo
+            if (requireUniqueTarget && _current > 0 && _lastTargetInstanceId == tid)
+            {
+                RefreshWindowIfActive(now);
+                return;
+            }
+
+            // Anti-spam: same-target cooldown (time-based, complements require_unique_target)
+            if (_lastHitTimeByTarget.TryGetValue(tid, out float lastT) &&
+                (now - lastT) < sameTargetCooldown)
+            {
+                RefreshWindowIfActive(now);
+                return;
+            }
+
+            // Valid hit — increment and refresh window
             _current++;
             if (_current > _best) _best = _current;
 
             float window = EffectiveWindow(_current);
             _windowEndTime = now + window;
             _lastHitTimeByTarget[tid] = now;
+            _lastTargetInstanceId = tid;
 
             OnComboChanged?.Invoke(_current);
+        }
+
+        private void RefreshWindowIfActive(float now)
+        {
+            if (!IsActive) return;
+            float eff = EffectiveWindow(_current > 0 ? _current : 1);
+            _windowEndTime = now + eff;
         }
 
         /// <summary>
@@ -141,6 +192,7 @@ namespace Valkur.Gameplay
             _current = 0;
             _windowEndTime = 0f;
             _lastHitTimeByTarget.Clear();
+            _lastTargetInstanceId = 0;
             _breakFlashEndTime = Time.time + breakFlashDuration;
 
             OnComboReset?.Invoke(final);
