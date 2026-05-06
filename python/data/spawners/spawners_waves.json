@@ -1,7 +1,0 @@
-{
-  "waves_survival_10": [
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 2, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 5, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] },
-    { "spawns": [ { "kind": "monster", "id": "barbol", "count": 7, "spread_radius": 3, "spread_fallback_max": 12, "min_px_distance": 24 } ] }    
-  ]
-}

@@ -1,2 +1,0 @@
-from .collider_scope_tool import ColliderScopeTool
-from .collider_scope_tool_view import ColliderScopeToolView

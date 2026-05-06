@@ -1,9 +1,0 @@
-{
-  "slots": [
-    { "item": "food_apple", "quantity": 20 },
-    { "item": "food_bread", "quantity": 12 },
-    { "item": "food_borscht", "quantity": 8 },
-    { "item": "food_varenyky", "quantity": 10 }
-  ],
-  "schema_version": "1.0.0"
-}

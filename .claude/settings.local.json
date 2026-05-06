@@ -17,7 +17,6 @@
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\" -Recurse -Filter \"*Console*.cs\")",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(cd /d \"d:\\\\Python\\\\RogueLike\")",
-      "Bash(Get-ChildItem -Path \"python\\\\src\" -Recurse -Name)",
       "Bash(findstr /i \"console\\\\|command\\\\|cmd\\\\|debug\\\\|cheat\\\\|repl\")",
       "Bash(xargs basename *)",
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Scripts\\\\Gameplay\\\\Chat\\\\\" -Recurse -Filter \"*.cs\" | Select-Object FullName)",
@@ -27,7 +26,7 @@
       "mcp__unity__run_tests",
       "mcp__unity__get_test_job",
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\" -Recurse -Filter \"*Editor*\" -Directory)",
-      "Bash(sqlite3 \"d:/Python/RogueLike/python/data/roguelike.sqlite3\" \".tables\")"
+      "Bash(sed 's/.cs$//')"
     ]
   }
 }

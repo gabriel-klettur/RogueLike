@@ -1,1 +1,0 @@
-# Lighting ECS systems package
