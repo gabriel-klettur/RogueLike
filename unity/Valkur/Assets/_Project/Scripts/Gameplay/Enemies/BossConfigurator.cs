@@ -1,6 +1,7 @@
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Enemies;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Spells;
 
@@ -36,9 +37,14 @@ namespace Valkur.Gameplay
                  "SpellDefinition assets.")]
         [SerializeField] private SpellCatalog spellCatalog;
 
-        private BossPhaseController _phases;
-        private NPCAutoCast _autoCast;
-        private SpellCaster _caster;
+        [Tooltip("Optional: monster catalog used by SpawnAdd chart cues.")]
+        [SerializeField] private MonsterCatalog monsterCatalog;
+
+        private BossPhaseController   _phases;
+        private NPCAutoCast           _autoCast;
+        private SpellCaster           _caster;
+        private BossBeatChoreographer _choreographer;
+        private BossCueDispatcher     _cueDispatcher;
 
         public BossDefinition Definition => definition;
         public BossDefinition.Phase CurrentPhaseData
@@ -53,9 +59,11 @@ namespace Valkur.Gameplay
 
         private void Awake()
         {
-            _phases   = GetComponent<BossPhaseController>();
-            _autoCast = GetComponent<NPCAutoCast>();
-            _caster   = GetComponent<SpellCaster>();
+            _phases        = GetComponent<BossPhaseController>();
+            _autoCast      = GetComponent<NPCAutoCast>();
+            _caster        = GetComponent<SpellCaster>();
+            _choreographer = GetComponent<BossBeatChoreographer>();
+            _cueDispatcher = GetComponent<BossCueDispatcher>();
         }
 
         private void OnEnable()
@@ -66,6 +74,17 @@ namespace Valkur.Gameplay
         private void OnDisable()
         {
             if (_phases != null) _phases.OnPhaseChanged -= OnPhaseChanged;
+        }
+
+        // Bind the entry-phase chart once the scene is fully built. Phase 0
+        // never goes through OnPhaseChanged (it is the initial state, not a
+        // transition target), so the chart binding has to be primed here.
+        // ConfigureRotation is left untouched — that path was already wired
+        // by the existing inspector authoring of the boss prefab.
+        private void Start()
+        {
+            if (definition == null || definition.phases == null || definition.phases.Length == 0) return;
+            ConfigureChart(definition.phases[0]);
         }
 
         // Test seam — EditMode tests can drive ConfigurePhases / ConfigureRotation
@@ -148,15 +167,58 @@ namespace Valkur.Gameplay
         {
             if (definition == null || newPhase < 0 || newPhase >= definition.phases.Length) return;
 
+            var phase = definition.phases[newPhase];
+
             ConfigureRotation(newPhase);
+            ConfigureChart(phase);
 
             // Activation SFX (if any) — fired through the existing audio service.
-            string sfx = definition.phases[newPhase].activationSfxId;
-            if (!string.IsNullOrEmpty(sfx))
+            if (!string.IsNullOrEmpty(phase.activationSfxId))
             {
                 var audio = ServiceLocator.Get<IAudioService>();
-                audio?.PlaySfxById(sfx);
+                audio?.PlaySfxById(phase.activationSfxId);
             }
+        }
+
+        /// <summary>
+        /// Picks the chart whose <c>musicTrackId</c> matches the active song
+        /// (or the first one as fallback) and binds it to the choreographer.
+        /// Suspends NPCAutoCast if the phase asks for it.
+        /// </summary>
+        public void ConfigureChart(BossDefinition.Phase phase)
+        {
+            if (_choreographer == null) return;
+
+            BossChart picked = ResolveChart(phase);
+            _choreographer.Chart = picked;
+
+            if (_cueDispatcher != null)
+            {
+                _cueDispatcher.Catalog        = spellCatalog;
+                _cueDispatcher.MonsterCatalog = monsterCatalog;
+                if (picked != null && phase.suppressAutoCastWhenChartActive)
+                    _cueDispatcher.SuspendAutoCast();
+                else
+                    _cueDispatcher.ResumeAutoCastIfSuspended();
+            }
+        }
+
+        private BossChart ResolveChart(BossDefinition.Phase phase)
+        {
+            if (phase.charts == null || phase.charts.Length == 0) return null;
+            var audio = ServiceLocator.Get<IAudioService>();
+            string current = audio != null ? audio.CurrentTrackId : string.Empty;
+
+            // Prefer chart matching the active track id; otherwise null (no chart for this song).
+            for (int i = 0; i < phase.charts.Length; i++)
+            {
+                var c = phase.charts[i];
+                if (c == null) continue;
+                if (string.IsNullOrEmpty(c.musicTrackId)) return c; // unbound chart wins as fallback
+                if (string.Equals(c.musicTrackId, current, System.StringComparison.OrdinalIgnoreCase))
+                    return c;
+            }
+            return null;
         }
     }
 }

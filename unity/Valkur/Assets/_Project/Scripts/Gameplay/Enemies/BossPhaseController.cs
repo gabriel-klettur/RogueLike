@@ -127,5 +127,30 @@ namespace Valkur.Gameplay
             }
             return phase;
         }
+
+        /// <summary>
+        /// Forces an immediate phase transition to the breakpoint whose label
+        /// matches <paramref name="label"/> (case-insensitive). Idempotent — if
+        /// the requested phase equals the current one nothing happens. Honors
+        /// the one-way escalation rule: cannot move to a lower index.
+        /// Returns true on a successful change. Used by chart cues with
+        /// <c>BossCueType.SwitchPhase</c>.
+        /// </summary>
+        public bool ForcePhase(string label)
+        {
+            if (string.IsNullOrEmpty(label) || phases == null) return false;
+            for (int i = 0; i < phases.Count; i++)
+            {
+                if (string.Equals(phases[i].label, label, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i <= CurrentPhase) return false;
+                    int old = CurrentPhase;
+                    CurrentPhase = i;
+                    OnPhaseChanged?.Invoke(old, i);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

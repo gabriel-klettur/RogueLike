@@ -67,6 +67,18 @@ namespace Valkur.Data
             [Tooltip("Optional one-shot SFX id played when this phase activates " +
                      "(typically an enrage roar).")]
             public string activationSfxId;
+
+            [Header("Rhythmic charts (optional)")]
+            [Tooltip("Beat-anchored attack charts for this phase. One chart " +
+                     "per song (matched on MusicTrackEntry.id). When the active " +
+                     "music matches a chart, the boss casts in lock-step with " +
+                     "the song; otherwise it falls back to the auto-cast rotation.")]
+            public BossChart[] charts = Array.Empty<BossChart>();
+
+            [Tooltip("If true, the cooldown-based NPCAutoCast rotation is paused " +
+                     "while a chart is actively driving casts. Prevents the boss " +
+                     "from double-casting when a chart already covers the phase.")]
+            public bool suppressAutoCastWhenChartActive = true;
         }
     }
 }

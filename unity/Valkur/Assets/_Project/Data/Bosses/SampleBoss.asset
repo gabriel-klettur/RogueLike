@@ -20,6 +20,8 @@ MonoBehaviour:
     - fireball
     autoCastPeriod: 4
     activationSfxId: 
+    charts: []
+    suppressAutoCastWhenChartActive: 1
   - hpThreshold: 0.5
     label: Frenzy
     autoCastList:
@@ -27,6 +29,8 @@ MonoBehaviour:
     - iceball
     autoCastPeriod: 2.5
     activationSfxId: spell_firework_launch
+    charts: []
+    suppressAutoCastWhenChartActive: 1
   - hpThreshold: 0.2
     label: Final Stand
     autoCastList:
@@ -35,4 +39,7 @@ MonoBehaviour:
     - meteor
     autoCastPeriod: 1.8
     activationSfxId: spell_smoke_emitter
+    charts:
+    - {fileID: 11400000, guid: 3cdb1101c3e65ed4ebe3c3f4b23fb980, type: 2}
+    suppressAutoCastWhenChartActive: 1
   bossLoot: {fileID: 0}
