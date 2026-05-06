@@ -123,6 +123,15 @@ namespace Valkur.Tests.EditMode.Game.AI
             public float[] CurrentTrackBeatTimes => null;
             public string CurrentTrackKey => string.Empty;
             public float CurrentMusicTime => 0f;
+            public void SeekMusic(float seconds) {}
+            public bool GetMusicSpectrumData(float[] buffer, int channel = 0, FFTWindow window = FFTWindow.BlackmanHarris) => false;
+            public bool GetMusicOutputData(float[] buffer, int channel = 0) => false;
+            public event System.Action<string, string, float, int> OnTrackChanged { add {} remove {} }
+            public void OnZoneChanged(string zoneName, string levelName = null, string biomeName = null) {}
+            public void EnterGameAudio() {}
+            public void PlayMenuMusic() {}
+            public void TransitionMenuToGame() {}
+            public void ApplySettings() {}
         }
     }
 }

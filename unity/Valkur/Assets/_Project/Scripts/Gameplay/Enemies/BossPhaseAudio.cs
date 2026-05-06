@@ -52,15 +52,34 @@ namespace Valkur.Gameplay
         }
 
         // Test seam — lets EditMode tests drive transitions without a live
-        // Health/Awake sequence. Mirrors BossPhaseController.InitForTest.
+        // Health/Awake/OnEnable sequence. EditMode's AddComponent does not
+        // call OnEnable so we subscribe explicitly here. OnDisable still
+        // fires on enabled=false / DestroyImmediate, which keeps the
+        // subscription state consistent.
         public void InitForTest(BossPhaseController phases, string[] trackIds)
         {
+            if (_subscribed && _phases != null)
+            {
+                _phases.OnPhaseChanged -= HandlePhaseChanged;
+                _subscribed = false;
+            }
             _phases = phases;
             phaseMusicTrackIds = trackIds ?? System.Array.Empty<string>();
+            if (_phases != null)
+            {
+                _phases.OnPhaseChanged += HandlePhaseChanged;
+                _subscribed = true;
+            }
         }
 
         private void HandlePhaseChanged(int oldPhase, int newPhase)
         {
+            // Belt-and-suspenders: OnEnable/OnDisable own the subscription
+            // lifecycle, but a disabled component should never push audio
+            // changes. This also keeps EditMode tests deterministic — they
+            // can flip `enabled` directly without depending on Unity's
+            // lifecycle hooks firing.
+            if (!isActiveAndEnabled) return;
             if (phaseMusicTrackIds == null) return;
             if (newPhase < 0 || newPhase >= phaseMusicTrackIds.Length) return;
             string trackId = phaseMusicTrackIds[newPhase];
