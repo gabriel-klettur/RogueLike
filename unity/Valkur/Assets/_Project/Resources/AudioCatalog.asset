@@ -16,137 +16,218 @@ MonoBehaviour:
   - id: menu_intro
     title: Menu Intro
     clip: {fileID: 8300000, guid: cc8147b6b224a8e4797eafb00ad43f87, type: 3}
-    bpm: 117.45
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 1.068
-    key: A minor
-    keyConfidence: 0.055
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: main_theme
     title: Pepitoria Main Theme
     clip: {fileID: 8300000, guid: 7c822a4e568746f42baceb340de845ab, type: 3}
-    bpm: 117.45
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.557
-    key: C major
-    keyConfidence: 0.028
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_2
     title: Pepitoria Theme 2
     clip: {fileID: 8300000, guid: bc47e7bb1510d9d4a9286c9498210026, type: 3}
-    bpm: 99.38
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 1.207
-    key: D minor
-    keyConfidence: 0.024
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_3
     title: Pepitoria Theme 3
     clip: {fileID: 8300000, guid: 1d0847f4f98932a48bd54519c1bfd9d2, type: 3}
-    bpm: 117.45
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.557
-    key: A minor
-    keyConfidence: 0.11
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_4
     title: Pepitoria Theme 4
     clip: {fileID: 8300000, guid: 0313d25aa7c72d64fbc0a1ac09f10ad9, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 2.415
-    key: E minor
-    keyConfidence: 0.278
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_5
     title: Pepitoria Theme 5
     clip: {fileID: 8300000, guid: 516aac323602655478f76d42b8ef41d7, type: 3}
-    bpm: 86.13
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.975
-    key: D minor
-    keyConfidence: 0.133
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_6
     title: Pepitoria Theme 6
     clip: {fileID: 8300000, guid: 98009d95e1d1bf84d98d50e602a2100a, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.743
-    key: F# minor
-    keyConfidence: 0.14
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_7
     title: Pepitoria Theme 7
     clip: {fileID: 8300000, guid: ba4eea861738b8e45b43bc820f2b9094, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.488
-    key: E minor
-    keyConfidence: 0.039
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_8
     title: Pepitoria Theme 8
     clip: {fileID: 8300000, guid: 53be1d16b9009954c85838e99bb583f5, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.697
-    key: D minor
-    keyConfidence: 0.226
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_9
     title: Pepitoria Theme 9
     clip: {fileID: 8300000, guid: 6861cdd8a49dc1e4e8b0b122a346299a, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 2.206
-    key: A minor
-    keyConfidence: 0.127
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_10
     title: Pepitoria Theme 10
     clip: {fileID: 8300000, guid: 3491e0e95f84faf418b20bc6c6fae1c9, type: 3}
-    bpm: 103.36
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 1.741
-    key: G minor
-    keyConfidence: 0.138
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_11
     title: Pepitoria Theme 11
     clip: {fileID: 8300000, guid: d4d29a149d1130d4eb69ff18de0c7cab, type: 3}
-    bpm: 89.1
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 0.58
-    key: A minor
-    keyConfidence: 0.251
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_12
     title: Pepitoria Theme 12
     clip: {fileID: 8300000, guid: 1f052e4108f2d584ebacdc76ae1655e1, type: 3}
-    bpm: 86.13
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 2.09
-    key: G major
-    keyConfidence: 0.049
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: pepitoria_theme_13
     title: Pepitoria Theme 13
     clip: {fileID: 8300000, guid: 8b7aed386bed88b4e8ea320f81ead54b, type: 3}
-    bpm: 172.27
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 1.602
-    key: E major
-    keyConfidence: 0.239
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   - id: forest_main_theme
     title: Forest Main Theme
     clip: {fileID: 8300000, guid: cb6d8248295c3e947b80595668dd4aed, type: 3}
-    bpm: 78.3
+    bpm: 0
     beatsPerBar: 4
-    firstBeatOffsetSec: 22.059
-    key: D major
-    keyConfidence: 0.007
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: desert_main_theme
+    title: Desert Main Theme
+    clip: {fileID: 8300000, guid: 676a556540a64554884bb199d9d6f2d8, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: desert_theme_2
+    title: Desert Theme 2
+    clip: {fileID: 8300000, guid: 3b258e18b28863f4b844b0804fea6e52, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: desert_theme_3
+    title: Desert Theme 3
+    clip: {fileID: 8300000, guid: 9fc1d626cf33791418f209aff144cda2, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: desert_theme_4
+    title: Desert Theme 4
+    clip: {fileID: 8300000, guid: 9df33393c36cba34a867e5d6f8e1fa5f, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: covetus_main_theme
+    title: Covetus Main Theme
+    clip: {fileID: 8300000, guid: 6ef1a5705e1953f4eb20d6abfb5cf278, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: covetus_theme_2
+    title: Covetus Theme 2
+    clip: {fileID: 8300000, guid: 51ece9e75d8aa964392737877d71a0a3, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: covetus_theme_3
+    title: Covetus Theme 3
+    clip: {fileID: 8300000, guid: 9fbcf26fe56dfa84688a897abca95063, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: covetus_theme_4
+    title: Covetus Theme 4
+    clip: {fileID: 8300000, guid: 55ffab4d806f18d47a92e3a7974c2b01, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
+    beatTimes: []
+  - id: covetus_theme_5
+    title: Covetus Theme 5
+    clip: {fileID: 8300000, guid: 1926c1f56975df74880cb2521a6060ca, type: 3}
+    bpm: 0
+    beatsPerBar: 4
+    firstBeatOffsetSec: 0
+    key: 
+    keyConfidence: 0
     beatTimes: []
   sfxEntries:
   - id: inv_open

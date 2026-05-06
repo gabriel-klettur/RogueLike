@@ -73,8 +73,9 @@ namespace Valkur.Core
         /// <summary>
         /// Per-beat onset timestamps (seconds from clip start) for the current track,
         /// or <c>null</c> if no beat-map was imported. Populated by
-        /// <c>analyze_music.py</c> via <c>MusicAnalysisImporter</c> and consumed by
-        /// <see cref="Valkur.Infrastructure.MusicBeatClock"/> for sample-accurate sync.
+        /// <c>tools/audio/analyze_music.py</c> + <c>tools/audio/patch_audio_catalog_bpm.py</c>
+        /// and consumed by <see cref="Valkur.Infrastructure.MusicBeatClock"/> for
+        /// sample-accurate sync.
         /// </summary>
         float[] CurrentTrackBeatTimes { get; }
         /// <summary>Estimated musical key (e.g. "C major"). Empty if unknown.</summary>
