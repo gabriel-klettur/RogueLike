@@ -30,6 +30,30 @@ namespace Valkur.Gameplay
 
         public static void ConfigurePlayer(GameObject go, PlayerDefinition def)
         {
+            // Backwards-compatible all-at-once entry point. Tests call this
+            // directly; the runtime spawn path in GameplaySceneSetup steps
+            // through the same work via the ConfigurePlayer* helpers below
+            // so each chunk can yield to the loading screen between calls.
+            ConfigurePlayerVisuals(go, def);
+            ConfigurePlayerCombat(go, def);
+            ConfigurePlayerSpells(go);
+            ConfigurePlayerStats(go, def);
+            ConfigurePlayerHUD();
+
+            Debug.Log($"[EntitySetup] Player configured: key={def.playerKey}, HP={def.maxStrength}, MP={def.maxIntelligence}, ATK={def.basicAttack}, SPD={def.basicSpeed}");
+        }
+
+        // ── Stepwise player configuration ───────────────────────────────────────
+        // Each helper handles one self-contained chunk of player setup so the
+        // bootstrap can yield between them and feed sub-stage labels to the
+        // loading screen. The split deliberately separates the heavy steps —
+        // animation rebinding, spell catalog scan, HUD creation — into their
+        // own reports so the user sees the bar advance instead of a single
+        // "Spawning player" hang.
+
+        /// <summary>Tags + layer + sprite/material wiring + animator rebind.</summary>
+        internal static void ConfigurePlayerVisuals(GameObject go, PlayerDefinition def)
+        {
             go.layer = PlayerLayer;
             go.tag = "Player";
 
@@ -38,12 +62,26 @@ namespace Valkur.Gameplay
             if (!appliedDataDrivenVisuals)
                 EntitySpriteHelper.EnsurePlayerSprite(spriteRenderer);
             EntitySpriteHelper.EnsureUnlitMaterial(spriteRenderer);
+        }
 
+        /// <summary>Health, movement speed, melee combat, dash ability.</summary>
+        internal static void ConfigurePlayerCombat(GameObject go, PlayerDefinition def)
+        {
             // Python parity: selected class defines player max HP from max_strength.
             InitHealth(go, def.maxStrength);
             InitPlayerMovement(go, def.basicSpeed);
             InitPlayerCombat(go, def);
+        }
+
+        /// <summary>Spell catalog scan + per-spell registration in the spell book.</summary>
+        internal static void ConfigurePlayerSpells(GameObject go)
+        {
             InitPlayerSpells(go);
+        }
+
+        /// <summary>Mana/XP/inventory + death/spirit flow + class marker + register.</summary>
+        internal static void ConfigurePlayerStats(GameObject go, PlayerDefinition def)
+        {
             InitPlayerStats(go, def);
             InitSharedVisuals(go);
             InitSpiritDeathFlow(go);
@@ -54,13 +92,15 @@ namespace Valkur.Gameplay
             // on its first ResolvePlayerRefs call. Otherwise the UI starts in
             // an unwired state and only catches up once the user opens it.
             EntityRegistry.RegisterPlayer(go);
+        }
 
+        /// <summary>InventoryUI + SpellBarHUD + HUDIconBar + CombatRangeVisualizer.</summary>
+        internal static void ConfigurePlayerHUD()
+        {
             EnsureInventoryUI();
             EnsureSpellBarHUD();
             EnsureHUDIconBar();
             EnsureCombatRangeVisualizer();
-
-            Debug.Log($"[EntitySetup] Player configured: key={def.playerKey}, HP={def.maxStrength}, MP={def.maxIntelligence}, ATK={def.basicAttack}, SPD={def.basicSpeed}");
         }
 
         public static void ConfigureMonster(GameObject go, MonsterDefinition def)

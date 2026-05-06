@@ -94,7 +94,11 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 41;
+        // 41 stages total, +7 progressive sub-stages from SpawnPlayerProgressively
+        // (Loading player class → Spawning player entity → Building player visuals →
+        //  Wiring player combat → Loading spell book → Initializing player stats →
+        //  Building HUD), -1 for the removed "Spawning player" placeholder.
+        private const int SetupStepTotal = 47;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -242,8 +246,11 @@ namespace Valkur.Gameplay
             if (Save.PendingSaveLoad.HasPending && !string.IsNullOrWhiteSpace(Save.PendingSaveLoad.PlayerClass))
                 PlayerSelectionState.SetSelectedPlayer(Save.PendingSaveLoad.PlayerClass);
 
-            SpawnPlayer();
-            Report("Spawning player"); yield return null;
+            // Progressive spawn — 7 sub-stages, each yielding so the
+            // loading screen repaints between them. Replaces the previous
+            // synchronous SpawnPlayer() block that froze on "Spawning player"
+            // for ~8 seconds with no visible progress feedback.
+            yield return SpawnPlayerProgressively();
 
             EnsureProceduralChunkStreamer();
             Report("Initializing procedural streaming"); yield return null;

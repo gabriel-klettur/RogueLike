@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using Valkur.Data;
 #if UNITY_EDITOR
@@ -8,15 +9,19 @@ namespace Valkur.Gameplay
 {
     public partial class GameplaySceneSetup
     {
-        private void SpawnPlayer()
+        // Progressive player spawn — each step yields a frame so the loading
+        // screen repaints and reports a sub-stage label. The previous
+        // synchronous SpawnPlayer() did all of this in one ~8 s blocking call,
+        // which surfaced as a frozen "Spawning player" stage with no progress
+        // feedback. The work itself is identical; only the scheduling changed.
+        private IEnumerator SpawnPlayerProgressively()
         {
             if (playerPrefab == null)
             {
                 Debug.LogWarning("[GameplaySceneSetup] No player prefab assigned.");
-                return;
+                yield break;
             }
 
-            // Inject spell catalog before ConfigurePlayer so all spells are available
             if (_spellCatalog != null)
                 EntitySetup.SetSpellCatalog(_spellCatalog);
 
@@ -25,29 +30,48 @@ namespace Valkur.Gameplay
             Vector3 spawnPos = new Vector3(25f, 25f, 0f);
             var zm = FindObjectOfType<World.ZoneManager>();
             if (zm != null && zm.TryGetZone("Lobby", out var lobbyDef))
-            {
                 spawnPos = new Vector3(lobbyDef.gridOffset.x + 25f, lobbyDef.gridOffset.y + 25f, 0f);
-            }
 
+            // ── 1. Resolve player class (Resources.LoadAll scan) ────────────
+            Report("Loading player class"); yield return null;
+            var resolvedDef = ResolveSelectedPlayerDefinition() ?? defaultPlayerDef;
+            if (resolvedDef == null)
+            {
+                Debug.LogWarning("[GameplaySceneSetup] No player definition available for spawned player.");
+                yield break;
+            }
+            if (!string.IsNullOrWhiteSpace(resolvedDef.playerKey))
+                PlayerSelectionState.SetSelectedPlayer(resolvedDef.playerKey);
+
+            // ── 2. Instantiate prefab ───────────────────────────────────────
+            Report("Spawning player entity"); yield return null;
             var playerGo = Instantiate(playerPrefab, spawnPos, Quaternion.identity);
             playerGo.tag = "Player";
             playerGo.transform.SetParent(GetSceneContainer("[Entities]"), true);
 
-            var selectedDef = ResolveSelectedPlayerDefinition();
-            if (selectedDef != null)
-            {
-                if (!string.IsNullOrWhiteSpace(selectedDef.playerKey))
-                    PlayerSelectionState.SetSelectedPlayer(selectedDef.playerKey);
-                EntitySetup.ConfigurePlayer(playerGo, selectedDef);
-            }
-            else if (defaultPlayerDef != null)
-            {
-                EntitySetup.ConfigurePlayer(playerGo, defaultPlayerDef);
-            }
-            else
-            {
-                Debug.LogWarning("[GameplaySceneSetup] No player definition available for spawned player.");
-            }
+            // ── 3. Animation rebind (heaviest single chunk: 7 directional sets) ──
+            Report("Building player visuals"); yield return null;
+            EntitySetup.ConfigurePlayerVisuals(playerGo, resolvedDef);
+
+            // ── 4. Health / movement / combat / dash ────────────────────────
+            Report("Wiring player combat"); yield return null;
+            EntitySetup.ConfigurePlayerCombat(playerGo, resolvedDef);
+
+            // ── 5. Spell catalog scan + per-spell registration ──────────────
+            Report("Loading spell book"); yield return null;
+            EntitySetup.ConfigurePlayerSpells(playerGo);
+
+            // ── 6. Mana, XP, inventory, currency, death flow, class marker ──
+            Report("Initializing player stats"); yield return null;
+            EntitySetup.ConfigurePlayerStats(playerGo, resolvedDef);
+
+            // ── 7. HUD singletons (inventory, spell bar, icons, range) ──────
+            Report("Building HUD"); yield return null;
+            EntitySetup.ConfigurePlayerHUD();
+
+            Debug.Log($"[GameplaySceneSetup] Player ready: key={resolvedDef.playerKey}, " +
+                      $"HP={resolvedDef.maxStrength}, MP={resolvedDef.maxIntelligence}, " +
+                      $"ATK={resolvedDef.basicAttack}, SPD={resolvedDef.basicSpeed}");
         }
 
         private PlayerDefinition ResolveSelectedPlayerDefinition()
