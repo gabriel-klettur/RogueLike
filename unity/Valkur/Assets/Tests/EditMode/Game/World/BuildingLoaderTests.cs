@@ -421,9 +421,8 @@ namespace Valkur.Tests.EditMode.Game.World
             Assert.GreaterOrEqual(items.Count, 141,
                 $"Expected at least 141 buildings but found {items.Count}.\n" +
                 "Possible causes:\n" +
-                "  • WorldZoneImporter overwrote the Unity file with an older Python version.\n" +
-                "  • BuildingImporter.CopyInstances ran without the safety guard.\n" +
                 "  • The file was restored from a stale backup.\n" +
+                "  • The Buildings runtime editor (F10) deleted instances without saving.\n" +
                 "Restore with:  git checkout 4a562b26a -- " +
                 "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json");
         }
