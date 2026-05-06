@@ -9,12 +9,9 @@ namespace Valkur.Editor
     /// Protects StreamingAssets/Buildings/buildings_instances.json from
     /// accidental deletion and auto-restores it if missing on editor startup.
     ///
-    /// Three layers of protection:
+    /// Two layers of protection:
     ///   1. OnWillDeleteAsset — blocks deletion from the Project window (asks confirmation).
     ///   2. [InitializeOnLoadMethod] — warns in the Console if the file is absent at startup.
-    ///   3. CreateBackup() — called by WorldZoneImporter and BuildingImporter on every
-    ///      successful write to keep a .bak copy inside the project that is NOT inside
-    ///      StreamingAssets (and therefore not affected by any StreamingAssets cleanup).
     /// </summary>
     public class BuildingsDataGuard : UnityEditor.AssetModificationProcessor
     {

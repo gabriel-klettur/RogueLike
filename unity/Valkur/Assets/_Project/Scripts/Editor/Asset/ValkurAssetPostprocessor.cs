@@ -60,7 +60,7 @@ namespace Valkur.Editor
                 // Anything larger is REJECTED with an error: oversized tiles cause
                 // catastrophic visual bleeding (one cell rendering as N×N units),
                 // which historically produced the "sand patch" overlap bug.
-                // Run `Valkur > Tiles > Audit Sizes` (or `python python/scripts/
+                // Run `Valkur > Tiles > Audit Sizes` (or `python tools/atlas/
                 // audit_tile_sizes.py --fix`) to downscale offenders to 32x32.
                 Vector2Int srcSize = GetSourceTextureSize(importer);
                 int tileMax = Mathf.Max(srcSize.x, srcSize.y);

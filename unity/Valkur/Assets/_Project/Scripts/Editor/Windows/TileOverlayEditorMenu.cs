@@ -12,7 +12,6 @@ namespace Valkur.Editor
     /// </summary>
     public static class TileOverlayEditorMenu
     {
-        private const string OVERLAY_SOURCE_DIR = "../../../python/data/worlds/base/zones/overlays";
         private const string STREAMING_MAPS_DIR = "StreamingAssets/Maps";
 
         [MenuItem("Valkur/Tiles/Overrides/Open Override Folder")]
