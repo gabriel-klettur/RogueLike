@@ -117,6 +117,71 @@ namespace Valkur.Tests.EditMode.Game.Combat
         }
 
         [Test]
+        public void OrbSprite_MidRingPixel_IsBlueDominant()
+        {
+            // Sample roughly halfway out from the centre — that's the gem
+            // body, the slice that should read unmistakably blue rather
+            // than the white hot-spot core.
+            var sprite = XpOrb.GetOrbSprite();
+            var tex = sprite.texture;
+            int cx = tex.width / 2;
+            int cy = tex.height / 2;
+            int dx = tex.width / 4; // 12 px out at 48 px size
+
+            Color px = tex.GetPixel(cx + dx, cy);
+            Assert.That(px.b, Is.GreaterThan(px.r + 0.15f),
+                $"Mid-ring pixel must be blue-dominant. Sampled (r={px.r:F2}, g={px.g:F2}, b={px.b:F2}).");
+            Assert.That(px.b, Is.GreaterThan(0.85f),
+                "Mid-ring blue channel must be saturated.");
+        }
+
+        [Test]
+        public void BuildVisuals_AssignsUnlitMaterial_ToSpriteRenderer()
+        {
+            XpOrb.BuildVisuals(_go);
+            var sr = _go.GetComponent<SpriteRenderer>();
+            Assert.IsNotNull(sr.sharedMaterial,
+                "SpriteRenderer must have an explicit material so URP doesn't render it black without a Light2D.");
+
+            string shaderName = sr.sharedMaterial.shader != null
+                ? sr.sharedMaterial.shader.name
+                : "";
+            // Accept any of the known unlit / sprites shaders. Reject the
+            // default Sprite-Lit-Default which would go black under URP 2D
+            // without a scene Light2D.
+            Assert.That(shaderName, Does.Match(@"Sprites/Default|Sprite-Unlit-Default|Unlit/Transparent"),
+                $"Unexpected sprite shader '{shaderName}'. Want unlit / sprites variant.");
+        }
+
+        [Test]
+        public void Sparkles_UseUrpCompatibleMaterial()
+        {
+            XpOrb.BuildVisuals(_go);
+            var sparkles = _go.transform.Find("Sparkles");
+            var renderer = sparkles.GetComponent<ParticleSystemRenderer>();
+            Assert.IsNotNull(renderer.sharedMaterial,
+                "ParticleSystemRenderer must have an explicit material — the default 'Default-Particle' shader renders magenta in URP.");
+
+            string shaderName = renderer.sharedMaterial.shader != null
+                ? renderer.sharedMaterial.shader.name
+                : "";
+            Assert.That(shaderName, Does.Match(@"Sprites/Default|Sprite-Unlit-Default|Unlit/Transparent"),
+                $"Unexpected sparkle shader '{shaderName}'. Want unlit / sprites variant.");
+        }
+
+        [Test]
+        public void Sparkles_StartColor_IsWhite()
+        {
+            XpOrb.BuildVisuals(_go);
+            var ps = _go.transform.Find("Sparkles").GetComponent<ParticleSystem>();
+            var main = ps.main;
+            Color start = main.startColor.color;
+            Assert.That(start.r, Is.GreaterThan(0.95f), "Particle red channel should be near white.");
+            Assert.That(start.g, Is.GreaterThan(0.95f), "Particle green channel should be near white.");
+            Assert.That(start.b, Is.GreaterThan(0.95f), "Particle blue channel should be near white.");
+        }
+
+        [Test]
         public void Pulse_TickAdvancesScaleAroundBase()
         {
             XpOrb.BuildVisuals(_go);
