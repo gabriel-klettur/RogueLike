@@ -50,28 +50,42 @@ namespace Valkur.Gameplay.World
             }
 
             Texture2D tex = sourceSprite.texture;
-            int texW = tex.width;
-            int texH = tex.height;
+            // ATLAS-SAFE: sourceSprite.texture is the atlas page when the sprite
+            // lives inside a SpriteAtlas; Reading tex.width/height directly would
+            // give us the atlas dimensions (e.g. 4096×4096), and Rect(0,0,…) on
+            // the atlas slices whatever sprite happens to sit at the atlas
+            // origin — that was the "every building shows the same wrong art"
+            // regression after Atlas Phase 2. Always intersect with the sprite's
+            // own rect on its texture.
+            Rect spriteRect = sourceSprite.textureRect;
+            int spriteW = Mathf.RoundToInt(spriteRect.width);
+            int spriteH = Mathf.RoundToInt(spriteRect.height);
+            int spriteOriginX = Mathf.RoundToInt(spriteRect.x);
+            int spriteOriginY = Mathf.RoundToInt(spriteRect.y);
 
             // ── 3. Compute crop rects in TEXTURE-space (Unity Y=0 is BOTTOM of texture) ──
-            // The split ratio divides the sprite visually. Use actual texture dimensions
-            // for the Rect — NOT template.originalScale, which may differ from the PNG size.
-            // Python resizes the image to effW×effH via pygame.transform.scale before splitting;
-            // in Unity we use localScale instead, so Sprite.Create uses the raw texture size.
-            int bottomTexH = Mathf.RoundToInt(texH * (1f - effectiveSplitRatio));
-            bottomTexH = Mathf.Clamp(bottomTexH, 1, texH - 1);
-            int topTexH = texH - bottomTexH;
+            // The split ratio divides the sprite visually. Use the sprite's own
+            // pixel size (NOT template.originalScale, which may differ; NOT the
+            // atlas page size, which would be massively wrong). Python resizes
+            // the image to effW×effH via pygame.transform.scale before splitting;
+            // in Unity we use localScale instead, so Sprite.Create uses the raw
+            // sprite size from the source texture.
+            int bottomTexH = Mathf.RoundToInt(spriteH * (1f - effectiveSplitRatio));
+            bottomTexH = Mathf.Clamp(bottomTexH, 1, spriteH - 1);
+            int topTexH = spriteH - bottomTexH;
 
-            // Sprites with pivot at bottom-center so local Y=0 = the bottom of each portion.
+            // Sprites with pivot at bottom-center so local Y=0 = the bottom of
+            // each portion. Rects are anchored at the sprite's own (x,y) within
+            // the (possibly atlased) texture, NOT at (0,0).
             Sprite bottomSprite = Sprite.Create(
                 tex,
-                new Rect(0, 0, texW, bottomTexH),
+                new Rect(spriteOriginX, spriteOriginY, spriteW, bottomTexH),
                 new Vector2(0.5f, 0f),
                 PPU);
 
             Sprite topSprite = Sprite.Create(
                 tex,
-                new Rect(0, bottomTexH, texW, topTexH),
+                new Rect(spriteOriginX, spriteOriginY + bottomTexH, spriteW, topTexH),
                 new Vector2(0.5f, 0f),
                 PPU);
 
@@ -80,8 +94,10 @@ namespace Valkur.Gameplay.World
             float topH    = topTexH    / PPU;
 
             // Scale transform so the building renders at effW×effH pixels in the world.
-            // localScale maps from the raw texture world-size to the desired display size.
-            transform.localScale = new Vector3((float)effW / texW, (float)effH / texH, 1f);
+            // localScale maps from the raw sprite world-size to the desired display
+            // size. Uses spriteW/spriteH (the sprite's own pixel size) — NOT the
+            // backing texture, which can be the entire atlas page.
+            transform.localScale = new Vector3((float)effW / spriteW, (float)effH / spriteH, 1f);
 
             // ── 4. Create / reuse child renderers ──────────────────────────────────
             // Parent transform sits at BOTTOM-CENTER of the full sprite.
@@ -110,7 +126,7 @@ namespace Valkur.Gameplay.World
             _collider.enabled = template.solid;
             if (template.solid)
             {
-                _collider.size   = new Vector2(texW / PPU, bottomH);
+                _collider.size   = new Vector2(spriteW / PPU, bottomH);
                 _collider.offset = new Vector2(0f, bottomH * 0.5f);
             }
         }

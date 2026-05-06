@@ -304,13 +304,17 @@ namespace Valkur.Tests.EditMode.Game.World
         public void DungeonFloorSprite_Size_Is32x32()
         {
             // Python downscales 1024→32 at runtime. Unity uses pre-scaled 32×32.
+            // ATLAS-SAFE: assert against sprite.rect (the sprite's own pixel size)
+            // rather than sprite.texture.{width,height} — when the sprite is packed
+            // into a SpriteAtlas (env-tiles atlas covers Resources/Tiles/), texture
+            // returns the atlas page (e.g. 1024×1024), not the original 32×32 PNG.
             var sprite = Resources.Load<Sprite>("Tiles/dungeon_floor");
             if (sprite == null) { Assert.Inconclusive("Sprite not found"); return; }
 
-            Assert.AreEqual(32, sprite.texture.width,
-                "dungeon_floor texture should be 32px wide (matching Python TILE_SIZE)");
-            Assert.AreEqual(32, sprite.texture.height,
-                "dungeon_floor texture should be 32px tall (matching Python TILE_SIZE)");
+            Assert.AreEqual(32, Mathf.RoundToInt(sprite.rect.width),
+                "dungeon_floor sprite should be 32px wide (matching Python TILE_SIZE)");
+            Assert.AreEqual(32, Mathf.RoundToInt(sprite.rect.height),
+                "dungeon_floor sprite should be 32px tall (matching Python TILE_SIZE)");
         }
 
         [Test]
@@ -319,10 +323,10 @@ namespace Valkur.Tests.EditMode.Game.World
             var sprite = Resources.Load<Sprite>("Tiles/dungeon_tunnel");
             if (sprite == null) { Assert.Inconclusive("Sprite not found"); return; }
 
-            Assert.AreEqual(32, sprite.texture.width,
-                "dungeon_tunnel texture should be 32px wide");
-            Assert.AreEqual(32, sprite.texture.height,
-                "dungeon_tunnel texture should be 32px tall");
+            Assert.AreEqual(32, Mathf.RoundToInt(sprite.rect.width),
+                "dungeon_tunnel sprite should be 32px wide");
+            Assert.AreEqual(32, Mathf.RoundToInt(sprite.rect.height),
+                "dungeon_tunnel sprite should be 32px tall");
         }
 
         // ── Y-flip within dungeon zone ─────────────────────────────────
