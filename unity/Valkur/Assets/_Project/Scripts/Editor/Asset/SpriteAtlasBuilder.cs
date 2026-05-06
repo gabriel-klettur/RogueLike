@@ -50,7 +50,7 @@ namespace Valkur.Editor
 
             foreach (var group in AtlasGroups)
             {
-                string atlasPath = $"{ATLAS_OUTPUT_DIR}/{group.name}.spriteatlasv2";
+                string atlasPath = $"{ATLAS_OUTPUT_DIR}/{group.name}.spriteatlas";
                 bool exists = File.Exists(Path.Combine(Application.dataPath, "..",
                     atlasPath.Replace('/', Path.DirectorySeparatorChar)));
 

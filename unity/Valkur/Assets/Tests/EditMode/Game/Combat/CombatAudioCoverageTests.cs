@@ -32,6 +32,7 @@ namespace Valkur.Tests.EditMode.Game.Combat
             public void PlayMusic(AudioClip clip) {}
             public void PlayMusic(AudioClip clip, float fadeInSec) {}
             public void CrossfadeTo(AudioClip clip, float durationSec = 0.6f) {}
+            public void PlayMusicByTrackId(string trackId, float fadeSec = -1f) {}
             public void StopMusic() {}
             public void StopMusic(float fadeOutSec) {}
             public void SetMusicVolume(float vol) {}

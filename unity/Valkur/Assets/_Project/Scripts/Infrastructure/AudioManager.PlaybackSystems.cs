@@ -50,6 +50,23 @@ namespace Valkur.Infrastructure
             _crossfadeCoroutine = StartCoroutine(CrossfadeRoutine(from, to, durationSec));
         }
 
+        /// <summary>
+        /// Resolve a track id via the catalog and crossfade to it. No-op when
+        /// the id is empty, the catalog is missing, or the track has no clip.
+        /// Use this when the caller knows the catalog id (e.g. boss phase
+        /// audio, scripted music switches) instead of holding the AudioClip
+        /// directly.
+        /// </summary>
+        public void PlayMusicByTrackId(string trackId, float fadeSec = -1f)
+        {
+            if (string.IsNullOrEmpty(trackId)) return;
+            if (catalog == null) return;
+            var clip = catalog.GetTrackClip(trackId);
+            if (clip == null) return;
+            float dur = fadeSec >= 0f ? fadeSec : catalog.CrossfadeSec;
+            CrossfadeTo(clip, dur);
+        }
+
         public void StopMusic()
         {
             StopMusic(catalog != null ? catalog.MenuFadeOutSec : 0.5f);

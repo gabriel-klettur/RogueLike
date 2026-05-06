@@ -13,6 +13,15 @@ namespace Valkur.Core
         void PlayMusic(AudioClip clip);
         void PlayMusic(AudioClip clip, float fadeInSec);
         void CrossfadeTo(AudioClip clip, float durationSec = 0.6f);
+
+        /// <summary>
+        /// Resolve a track by its catalog id and crossfade to it. Pass
+        /// <paramref name="fadeSec"/> = -1 (default) to use the catalog's
+        /// configured crossfade duration. No-op when the id, catalog, or
+        /// resolved clip is missing.
+        /// </summary>
+        void PlayMusicByTrackId(string trackId, float fadeSec = -1f);
+
         void StopMusic();
         void StopMusic(float fadeOutSec);
         void SetMusicVolume(float vol);

@@ -103,6 +103,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             public void PlayMusic(AudioClip c)              { }
             public void PlayMusic(AudioClip c, float f)     { }
             public void CrossfadeTo(AudioClip c, float d)   { }
+            public void PlayMusicByTrackId(string id, float f = -1f) { }
             public void StopMusic()                         { }
             public void StopMusic(float f)                  { }
             public void PauseMusic()                        { }
