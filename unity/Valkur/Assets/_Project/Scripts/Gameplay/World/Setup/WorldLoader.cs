@@ -44,10 +44,31 @@ namespace Valkur.Gameplay.World
 
         /// <summary>
         /// Load all zone overlays and collision grids from the zone database.
-        /// Each overlay is painted at its zone's grid offset so the full world
-        /// appears as a contiguous tilemap.
+        /// Synchronous wrapper that drains the progressive coroutine in one
+        /// shot — used by autoLoad and tests that don't need stage reporting.
         /// </summary>
         public void LoadFullWorld()
+        {
+            // The progressive iterator only yields plain `null` between work
+            // chunks, so MoveNext() drives the entire pipeline to completion
+            // without any frame waiting. Same end state as the previous
+            // monolithic implementation.
+            var iter = LoadFullWorldProgressively(null);
+            while (iter.MoveNext()) { }
+        }
+
+        /// <summary>
+        /// Coroutine variant of <see cref="LoadFullWorld"/> that yields between
+        /// each sub-stage and reports a label via <paramref name="reportStage"/>
+        /// (typically wired to <c>LoadingReporter.ReportStage</c>) so the loading
+        /// screen can show "Painting zone overlays" / "Linking world colliders"
+        /// / "Applying tile overrides" with the bar advancing between them.
+        ///
+        /// Without yields the entire world-load (24+ zone overlays + collisions
+        /// + tile-editor overrides) ran on one frame and surfaced as a single
+        /// "Loading world" stage that froze the loading screen.
+        /// </summary>
+        public System.Collections.IEnumerator LoadFullWorldProgressively(System.Action<string> reportStage)
         {
             if (_databaseLoader == null)
             {
@@ -55,7 +76,7 @@ namespace Valkur.Gameplay.World
                 if (_databaseLoader == null)
                 {
                     Debug.LogError("[WorldLoader] ZoneDatabaseLoader not found.", this);
-                    return;
+                    yield break;
                 }
             }
 
@@ -65,7 +86,7 @@ namespace Valkur.Gameplay.World
                 if (_gridBuilder == null)
                 {
                     Debug.LogError("[WorldLoader] WorldGridBuilder not found.", this);
-                    return;
+                    yield break;
                 }
             }
 
@@ -76,7 +97,7 @@ namespace Valkur.Gameplay.World
             if (entries == null || entries.Count == 0)
             {
                 Debug.LogWarning("[WorldLoader] No zone entries in database.");
-                return;
+                yield break;
             }
 
             // Defensive dedup: avoid painting the same overlay/collision into the same
@@ -101,9 +122,16 @@ namespace Valkur.Gameplay.World
             string mapsDir       = WorldStreamingPaths.DirectoryFor(activeWorldId, "Maps");
             string collisionsDir = WorldStreamingPaths.DirectoryFor(activeWorldId, "Collisions");
 
+            // ── Pass 1: overlays ────────────────────────────────────────────
+            // Mid-pass yields keep the loading screen responsive when the
+            // world has many zones. ~6 yields total across 24 zones gives
+            // smooth bar advancement without measurable per-pass overhead.
+            reportStage?.Invoke("Painting zone overlays");
+            yield return null;
+            int batchSize = Mathf.Max(1, entries.Count / 6);
+            int processed = 0;
             foreach (var entry in entries)
             {
-                // Load overlay at zone offset
                 if (!string.IsNullOrEmpty(entry.overlayFile))
                 {
                     var key = (entry.offsetX, entry.offsetY, entry.overlayFile);
@@ -121,8 +149,16 @@ namespace Valkur.Gameplay.World
                         skippedOverlays++;
                     }
                 }
+                processed++;
+                if (processed % batchSize == 0) yield return null;
+            }
 
-                // Load collision grid at zone offset
+            // ── Pass 2: collisions ──────────────────────────────────────────
+            reportStage?.Invoke("Linking world colliders");
+            yield return null;
+            processed = 0;
+            foreach (var entry in entries)
+            {
                 if (!string.IsNullOrEmpty(entry.collisionFile))
                 {
                     var key = (entry.offsetX, entry.offsetY, entry.collisionFile);
@@ -136,17 +172,22 @@ namespace Valkur.Gameplay.World
                         skippedCollisions++;
                     }
                 }
+                processed++;
+                if (processed % batchSize == 0) yield return null;
             }
+
+            // ── Pass 3: persisted tile-editor overrides ─────────────────────
+            // Restores edits the user made in previous play sessions
+            // (one JSON per zone in persistentDataPath/MapOverrides).
+            reportStage?.Invoke("Applying tile overrides");
+            yield return null;
+            var zoneManager = FindObjectOfType<ZoneManager>();
+            if (zoneManager != null)
+                Valkur.Gameplay.TileEditor.TileOverlayPersistence.ApplyAllOverrides(_gridBuilder, zoneManager);
 
             Debug.Log($"[WorldLoader] Full world loaded: {_overlaysLoaded} overlays, " +
                       $"{_collisionsLoaded} collision grids across {entries.Count} zones " +
                       $"(skipped duplicates: {skippedOverlays} overlays, {skippedCollisions} collisions).");
-
-            // Apply persisted tile-editor overrides (one JSON per zone in persistentDataPath/MapOverrides).
-            // This restores user edits made in previous play sessions.
-            var zoneManager = FindObjectOfType<ZoneManager>();
-            if (zoneManager != null)
-                Valkur.Gameplay.TileEditor.TileOverlayPersistence.ApplyAllOverrides(_gridBuilder, zoneManager);
         }
 
         /// <summary>

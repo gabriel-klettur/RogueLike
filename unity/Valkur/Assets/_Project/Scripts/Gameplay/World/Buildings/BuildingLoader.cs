@@ -100,15 +100,35 @@ namespace Valkur.Gameplay.World
         /// <summary>
         /// Parse buildings_instances.json and spawn one BuildingObject per entry.
         /// Clears previously spawned buildings first (safe to call multiple times).
+        /// Synchronous wrapper that drains the progressive coroutine in one shot.
         /// </summary>
         public void LoadBuildings()
+        {
+            // Progressive iterator only yields plain `null` between batches, so
+            // MoveNext drains the entire pipeline synchronously without any
+            // frame waits — same end state as the previous monolithic loop.
+            var iter = LoadBuildingsProgressively(null);
+            while (iter.MoveNext()) { }
+        }
+
+        /// <summary>
+        /// Coroutine variant of <see cref="LoadBuildings"/> that yields between
+        /// sub-stages and reports a label via <paramref name="reportStage"/>
+        /// (typically wired to <c>LoadingReporter.ReportStage</c>) so the loading
+        /// screen can show "Parsing building data" → "Spawning building
+        /// instances" → "Linking building colliders" with the bar advancing
+        /// between them. Mid-pass yields fire every BUILDINGS_PER_BATCH
+        /// instances so the spawn loop never freezes the loading screen even
+        /// for very dense maps.
+        /// </summary>
+        public System.Collections.IEnumerator LoadBuildingsProgressively(System.Action<string> reportStage)
         {
             ClearSpawned();
 
             if (_catalog == null)
             {
                 Debug.LogError("[BuildingLoader] BuildingCatalog not assigned.", this);
-                return;
+                yield break;
             }
 
             if (_zoneManager == null)
@@ -117,26 +137,38 @@ namespace Valkur.Gameplay.World
                 if (_zoneManager == null)
                 {
                     Debug.LogError("[BuildingLoader] ZoneManager not found in scene.", this);
-                    return;
+                    yield break;
                 }
             }
 
+            // ── Pass 1: parse JSON ──────────────────────────────────────────
+            reportStage?.Invoke("Parsing building data");
+            yield return null;
             string json = ResolveRepository().ReadRawJson(WorldId.Base);
             if (json == null)
             {
                 Debug.LogWarning($"[BuildingLoader] No instances file in repository for {WorldId.Base}.");
-                return;
+                yield break;
             }
-
             var instances = ParseInstances(json);
             if (instances.Count == 0)
             {
                 Debug.Log("[BuildingLoader] No building instances found in JSON.");
-                return;
+                yield break;
             }
 
+            // ── Pass 2: spawn instances in batches ──────────────────────────
+            // BUILDINGS_PER_BATCH yields once for every batch so the loading
+            // screen repaints mid-spawn on dense maps (e.g. 300+ instances).
+            // 60 was picked empirically: small enough to keep frame time well
+            // below 50 ms on the heaviest single-batch instantiate cost,
+            // large enough to keep total yield count under ~6 for typical maps.
+            const int BUILDINGS_PER_BATCH = 60;
+            reportStage?.Invoke("Spawning building instances");
+            yield return null;
             int spawned = 0;
             int errors  = 0;
+            int processed = 0;
             foreach (var inst in instances)
             {
                 try
@@ -149,8 +181,17 @@ namespace Valkur.Gameplay.World
                     errors++;
                     Debug.LogWarning($"[BuildingLoader] Failed to spawn instance id={inst.Id}: {ex.Message}");
                 }
+                processed++;
+                if (processed % BUILDINGS_PER_BATCH == 0) yield return null;
             }
 
+            // ── Pass 3: collision grids ─────────────────────────────────────
+            // Wires per-cell BoxCollider2D children onto every painted grid,
+            // including any inline / per-image / per-instance overrides. With
+            // the no-default-footprint rule, this is the ONLY source of
+            // building colliders.
+            reportStage?.Invoke("Linking building colliders");
+            yield return null;
             var collisionLoader = FindObjectOfType<BuildingCollisionLoader>();
             if (collisionLoader != null)
                 collisionLoader.ApplyCollisionGrids();

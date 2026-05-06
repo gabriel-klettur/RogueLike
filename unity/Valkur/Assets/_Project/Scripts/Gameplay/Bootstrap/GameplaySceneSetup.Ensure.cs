@@ -100,37 +100,60 @@ namespace Valkur.Gameplay
         /// </summary>
         private void LoadWorld()
         {
+            // Synchronous wrapper — drains LoadWorldProgressively in one shot
+            // for code paths that don't have access to a coroutine context.
+            // The progressive coroutine only yields plain `null`, so MoveNext
+            // pumps the entire pipeline to completion synchronously.
+            var iter = LoadWorldProgressively();
+            while (iter.MoveNext()) { }
+        }
+
+        /// <summary>
+        /// Progressive world load — yields between sub-stages so the loading
+        /// screen can advance ("Loading zone database" → "Painting zone
+        /// overlays" → "Linking world colliders" → "Applying tile overrides"
+        /// → "Generating procedural dungeon") instead of freezing on a single
+        /// monolithic "Loading world" stage.
+        /// </summary>
+        private System.Collections.IEnumerator LoadWorldProgressively()
+        {
             if (initialWorld != null && initialWorld.UseChunkStreaming)
             {
                 Debug.Log($"[GameplaySceneSetup] Procedural chunk streaming enabled for " +
                           $"'{initialWorld.Slug}' — skipping legacy world/overlay load. " +
                           $"Streamer will be wired after player spawn.");
-                return;
+                yield break;
             }
 
             if (loadFullWorld)
             {
-                // 1) Load zone database → populates ZoneManager with all zones
+                // 1) Zone database — populates ZoneManager with all zones.
+                Report("Loading zone database"); yield return null;
                 var dbLoaderGo = new GameObject("ZoneDatabaseLoader");
                 var dbLoader = dbLoaderGo.AddComponent<World.ZoneDatabaseLoader>();
                 dbLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
-                // Call manually (Start() won't fire until next frame)
                 dbLoader.LoadDatabase();
 
-                // 2) Load full world overlays + collision grids at zone offsets
+                // 2) Overlays + collisions — driven progressively. Sub-stages
+                //    "Painting zone overlays" / "Linking world colliders" /
+                //    "Applying tile overrides" are reported by WorldLoader.
                 var worldLoaderGo = new GameObject("WorldLoader");
                 var worldLoader = worldLoaderGo.AddComponent<World.WorldLoader>();
                 worldLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
-                worldLoader.LoadFullWorld();
+                yield return worldLoader.LoadFullWorldProgressively(stage =>
+                {
+                    Report(stage);
+                });
 
-                // 3) Generate procedural dungeon at runtime
+                // 3) Procedural dungeon generation south of the lobby.
+                Report("Generating procedural dungeon"); yield return null;
                 GenerateDungeon(dbLoader);
 
                 Debug.Log("[GameplaySceneSetup] Full multi-zone world loaded.");
             }
             else
             {
-                // Legacy single-overlay mode
+                // Legacy single-overlay mode.
                 if (!string.IsNullOrEmpty(overlayFile) && _gridBuilder != null)
                 {
                     World.OverlayLoader.LoadOverlay(overlayFile, _gridBuilder);

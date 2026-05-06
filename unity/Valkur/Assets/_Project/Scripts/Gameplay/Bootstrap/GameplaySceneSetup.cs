@@ -94,11 +94,18 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        // 41 stages total, +7 progressive sub-stages from SpawnPlayerProgressively
-        // (Loading player class → Spawning player entity → Building player visuals →
-        //  Wiring player combat → Loading spell book → Initializing player stats →
-        //  Building HUD), -1 for the removed "Spawning player" placeholder.
-        private const int SetupStepTotal = 47;
+        // Stage budget: 41 base + decompositions.
+        //   • SpawnPlayer:     -1 + 7 (Loading player class / Spawning player entity /
+        //                       Building player visuals / Wiring player combat /
+        //                       Loading spell book / Initializing player stats /
+        //                       Building HUD)
+        //   • LoadWorld:       -1 + 5 (Loading zone database / Painting zone overlays /
+        //                       Linking world colliders / Applying tile overrides /
+        //                       Generating procedural dungeon)
+        //   • LoadBuildings:   -1 + 3 (Parsing building data / Spawning building
+        //                       instances / Linking building colliders)
+        // Net: 41 + 6 + 4 + 2 = 53.
+        private const int SetupStepTotal = 53;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -114,8 +121,11 @@ namespace Valkur.Gameplay
             EnsureWorldManager();
             Report("Initializing WorldManager"); yield return null;
 
-            LoadWorld();
-            Report("Loading world"); yield return null;
+            // Progressive world load — sub-stages "Loading zone database",
+            // "Painting zone overlays", "Linking world colliders", "Applying
+            // tile overrides", "Generating procedural dungeon" all report
+            // themselves. Replaces the single "Loading world" freeze.
+            yield return LoadWorldProgressively();
 
             RebakeTilemapColliders();
             Report("Rebaking tile colliders"); yield return null;
@@ -262,9 +272,11 @@ namespace Valkur.Gameplay
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] MonsterSpawner failed: {ex.Message}"); }
             Report("Initializing monster spawner"); yield return null;
 
-            try { EnsureBuildingLoader(); }
-            catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] BuildingLoader failed: {ex.Message}"); }
-            Report("Loading buildings"); yield return null;
+            // Progressive building load — sub-stages "Parsing building data",
+            // "Spawning building instances", "Linking building colliders" all
+            // report themselves. RunSafely preserves the original try/catch
+            // exception-safety semantics around the loader.
+            yield return RunSafely(EnsureBuildingLoaderProgressively(), "BuildingLoader");
 
             try { EnsureSpawnerInstanceLoader(); }
             catch (System.Exception ex) { Debug.LogError($"[GameplaySceneSetup] SpawnerInstanceLoader failed: {ex.Message}"); }
@@ -311,6 +323,34 @@ namespace Valkur.Gameplay
         {
             _setupStep++;
             LoadingReporter.ReportStage(message, (float)_setupStep / SetupStepTotal);
+        }
+
+        /// <summary>
+        /// Pumps a progressive sub-coroutine and forwards its yields, but
+        /// converts any exception thrown during MoveNext into a single Console
+        /// error so the wider bootstrap sequence keeps running. Mirrors the
+        /// try/catch + Debug.LogError pattern used around the synchronous
+        /// Ensure* calls — yield return cannot live inside a try/catch in C#,
+        /// so this helper inverts the structure to give equivalent safety.
+        /// </summary>
+        private System.Collections.IEnumerator RunSafely(System.Collections.IEnumerator iter, string label)
+        {
+            if (iter == null) yield break;
+            while (true)
+            {
+                bool hasMore;
+                try
+                {
+                    hasMore = iter.MoveNext();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[GameplaySceneSetup] {label} failed: {ex.Message}");
+                    yield break;
+                }
+                if (!hasMore) yield break;
+                yield return iter.Current;
+            }
         }
 
         /// <summary>

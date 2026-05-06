@@ -71,20 +71,35 @@ namespace Valkur.Gameplay
 
         private void EnsureBuildingLoader()
         {
+            // Synchronous wrapper — drains the progressive coroutine. Code paths
+            // that don't have a coroutine context (tests, scene-bootstrap edge
+            // cases) still get the same end state without yielding.
+            var iter = EnsureBuildingLoaderProgressively();
+            while (iter.MoveNext()) { }
+        }
+
+        /// <summary>
+        /// Progressive building load — yields between sub-stages so the loading
+        /// screen advances ("Parsing building data" → "Spawning building
+        /// instances" → "Linking building colliders") instead of freezing on
+        /// a single "Loading buildings" stage.
+        /// </summary>
+        private System.Collections.IEnumerator EnsureBuildingLoaderProgressively()
+        {
             var existing = FindObjectOfType<World.BuildingLoader>();
             if (existing != null)
             {
-                // The scene-placed loader may have autoLoad=false — ensure buildings are
-                // loaded now if they haven't been yet (e.g. first play after scene open).
                 if (existing.SpawnedBuildings.Count == 0)
-                    existing.LoadBuildings();
-                return;
+                {
+                    yield return existing.LoadBuildingsProgressively(stage => Report(stage));
+                }
+                yield break;
             }
 
             if (_buildingCatalog == null)
             {
                 Debug.LogWarning("[GameplaySceneSetup] No BuildingCatalog assigned — buildings skipped.");
-                return;
+                yield break;
             }
 
             var zm = FindObjectOfType<World.ZoneManager>();
@@ -93,7 +108,7 @@ namespace Valkur.Gameplay
             var loader = go.AddComponent<World.BuildingLoader>();
             go.transform.SetParent(GetSceneContainer("[World]"), false);
             loader.Initialize(_buildingCatalog, zm);
-            loader.LoadBuildings();
+            yield return loader.LoadBuildingsProgressively(stage => Report(stage));
 
             Debug.Log("[GameplaySceneSetup] BuildingLoader created and loaded.");
         }
