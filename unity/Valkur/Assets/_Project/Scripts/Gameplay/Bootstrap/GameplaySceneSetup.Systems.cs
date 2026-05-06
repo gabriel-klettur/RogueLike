@@ -33,7 +33,7 @@ namespace Valkur.Gameplay
             var editorGo = new GameObject("MapEditorManager");
             editorGo.AddComponent<MapEditorManager>();
             editorGo.transform.SetParent(GetSceneContainer("[Editors]"), false);
-            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F7 to toggle.");
+            Debug.Log("[GameplaySceneSetup] MapEditorManager created. Press F11 to toggle.");
         }
 
         /// <summary>
