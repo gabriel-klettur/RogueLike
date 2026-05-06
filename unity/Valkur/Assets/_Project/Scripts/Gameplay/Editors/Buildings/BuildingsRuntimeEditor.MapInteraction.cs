@@ -134,11 +134,25 @@ namespace Valkur.Gameplay.Buildings
                 _pendingResizeStart = false;
                 _resizing         = true;
                 _resizeStartMouse = worldPos;
-                _resizeStartScale = (_activeBuilding.ScaleOverride.x > 0)
-                    ? _activeBuilding.ScaleOverride
-                    : (_activeBuilding.Template != null
-                        ? _activeBuilding.Template.originalScale
-                        : Vector2Int.one * 64);
+
+                // Lock aspect against the building's CURRENT visible bounds, not
+                // Template.originalScale. The Unity SpriteAtlas trims transparent
+                // borders even with rectangular packing, so a logical 1024×1024
+                // PNG can land in the atlas at 552×961. If we used originalScale
+                // here (aspect = 1.0), every resize would force the new override
+                // to match logical-square — but Apply() scales the trimmed atlas
+                // sprite by effW/atlasW vs effH/atlasH, which becomes non-uniform
+                // and squishes the visible art horizontally on every drag. The
+                // visible world rect already reflects the actual rendered size,
+                // so deriving aspect from it locks the resize to whatever the
+                // user is seeing on screen.
+                _resizeStartScale = TryGetVisibleBoundsAsPixelSize(_activeBuilding, out var visibleSize)
+                    ? visibleSize
+                    : (_activeBuilding.ScaleOverride.x > 0
+                        ? _activeBuilding.ScaleOverride
+                        : (_activeBuilding.Template != null
+                            ? _activeBuilding.Template.originalScale
+                            : Vector2Int.one * 64));
                 if (_statusTmp != null) _statusTmp.text = "Resize: drag to scale (proportional).";
             }
 
@@ -266,6 +280,21 @@ namespace Valkur.Gameplay.Buildings
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move reverted â†’ ({startPos.x:F2}, {startPos.y:F2})";
                 });
+        }
+
+        // Returns the building's current visible bounds in PIXEL units (world units * PPU).
+        // Falls back to false when the renderers haven't materialised yet (e.g. the
+        // sprite failed to load), so the caller can use a sensible default.
+        private static bool TryGetVisibleBoundsAsPixelSize(BuildingObject b, out Vector2Int sizeInPixels)
+        {
+            sizeInPixels = default;
+            if (b == null) return false;
+            if (!b.TryGetWorldRect(out var rect)) return false;
+            const float BUILDING_PPU = 32f;
+            int w = Mathf.Max(1, Mathf.RoundToInt(rect.width  * BUILDING_PPU));
+            int h = Mathf.Max(1, Mathf.RoundToInt(rect.height * BUILDING_PPU));
+            sizeInPixels = new Vector2Int(w, h);
+            return true;
         }
 
         private void FinalizeResizeDrag()
