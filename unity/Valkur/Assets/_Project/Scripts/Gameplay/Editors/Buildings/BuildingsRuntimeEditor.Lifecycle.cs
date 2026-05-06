@@ -83,6 +83,9 @@ namespace Valkur.Gameplay.Buildings
             // running on a hidden editor and SetActive(true) overlays after
             // we've already torn the editor down.
             StopProgressiveShowOverlay();
+            // Reset the culling cache so the NEXT activation always recomputes
+            // visibilities even if the camera ended up at the same position.
+            InvalidateOverlayCullingCache();
             _cameraPan.Reset();
             _doubleClick.Reset();
             HideCollBrushCursor();

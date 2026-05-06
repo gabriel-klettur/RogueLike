@@ -384,6 +384,14 @@ namespace Valkur.Gameplay.Buildings
             // brush stroke end, on undo/redo, and on any structural change.
             if (_collidersVisible && _openDropdowns.Contains("colliders"))
                 RefreshActiveBuildingOverlayCells();
+
+            // Per-frame frustum-culling pass for overlays: cheap when the
+            // camera hasn't moved (one float compare); when it has, it walks
+            // the cached buildings list and lazily activates / deactivates
+            // overlays based on the current view rect. This keeps the toggle
+            // cost O(visibles) instead of O(scene).
+            if (_collidersVisible)
+                UpdateOverlayCulling();
         }
 
     }

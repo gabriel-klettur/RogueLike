@@ -27,6 +27,10 @@ namespace Valkur.Gameplay.Buildings
         internal void InvalidateBuildingCache()
         {
             _buildingsCacheValid = false;
+            // Force the next UpdateOverlayCulling pass to re-evaluate every
+            // building — placements / removals can change membership of the
+            // visible set even when the camera itself hasn't moved.
+            InvalidateOverlayCullingCache();
         }
 
         private BuildingObject[] GetCachedBuildings()
@@ -60,45 +64,64 @@ namespace Valkur.Gameplay.Buildings
 
         private int RefreshCollidersOverlay()
         {
-            // Compute authoring cells (the editor's working grid in world space)
-            // for EVERY building in the scene — not only the currently active
-            // one. This guarantees that when the user toggles "Show Colliders"
-            // ON, every building's authored collision rectangles light up at
-            // exactly the position where the BoxCollider2D children sit. For
-            // buildings with no authored data (no editor-stored grid AND no
-            // JSON grid) the overlay falls back to enumerating its own
-            // BoxCollider2D children (root footprint, etc.) so the user always
-            // sees SOMETHING when a building has any physical collider at all.
+            // Builds (or tears down) the visual overlay set for every building
+            // in the scene. Heavy path — invoked from toggle, SetActiveBuilding,
+            // brush stroke end, undo/redo, and other structural changes. Per-
+            // frame movement updates use the lighter RefreshActiveBuildingOverlayCells.
             //
-            // Heavy path — invoked only on toggle, SetActiveBuilding, brush
-            // stroke end, undo/redo, and other structural changes. Per-frame
-            // updates use the lighter RefreshActiveBuildingOverlayCells.
+            // Culling: when colliders are visible AND a camera is available,
+            // we only materialise overlays for buildings that overlap the
+            // camera view rect (with margin). Off-screen buildings keep their
+            // existing overlay component (if any) but get SetVisible(false),
+            // and the next time the camera pans toward them UpdateOverlayCulling
+            // will re-activate them. This keeps the toggle's cost O(visibles)
+            // instead of O(scene) on big maps.
             int total = 0;
             var all = GetCachedBuildings();
+
+            bool useCulling = false;
+            Rect viewRect   = default;
+            if (_collidersVisible)
+            {
+                var cam = _mainCamera != null ? _mainCamera : Camera.main;
+                if (cam != null)
+                {
+                    useCulling = true;
+                    viewRect   = ComputeCameraViewRect(cam);
+                    _lastCullCamPos          = cam.transform.position;
+                    _lastCullCamSize         = cam.orthographicSize;
+                    _cullCheckedAtLeastOnce  = true;
+                }
+            }
+
             for (int i = 0; i < all.Length; i++)
             {
                 var b = all[i];
                 if (b == null) continue;
                 var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
-                if (overlay == null)
-                    overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
 
-                if (_collidersVisible)
+                // Hide path: clear cells + hide on every existing overlay; do
+                // NOT lazy-create overlays for buildings that don't have one.
+                if (!_collidersVisible)
                 {
-                    int filled = ComputeAuthoringCellsInto(b, _authoringCellsScratch);
-                    if (filled > 0)
-                        overlay.SetAuthoringCells(_authoringCellsScratch);
-                    else
+                    if (overlay != null)
+                    {
                         overlay.ClearAuthoringCells();
-                }
-                else
-                {
-                    overlay.ClearAuthoringCells();
+                        overlay.SetVisible(false);
+                    }
+                    continue;
                 }
 
-                overlay.SetVisible(_collidersVisible);
-                if (_collidersVisible)
-                    total += overlay.CurrentVisualCount;
+                // Show + culled-out: keep the overlay around (so the next
+                // UpdateOverlayCulling can re-show it cheaply) but hide it.
+                if (useCulling && !IsBuildingInRect(b, viewRect))
+                {
+                    if (overlay != null) overlay.SetVisible(false);
+                    continue;
+                }
+
+                // Show + in-view: materialise + activate.
+                total += EnsureOverlayForBuildingVisible(b);
             }
 
             return total;

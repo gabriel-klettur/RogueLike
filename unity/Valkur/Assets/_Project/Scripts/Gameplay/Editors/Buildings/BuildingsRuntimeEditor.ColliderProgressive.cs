@@ -87,12 +87,29 @@ namespace Valkur.Gameplay.Buildings
             }
 
             // 2. Building overlays. Heaviest by far: each building produces one
-            //    visual GameObject per authored solid cell. We yield every
-            //    OVERLAY_BUILDING_BUDGET_PER_FRAME items so a 150-building scene
-            //    spreads cleanly over ~19 frames (~0.3s @ 60fps).
+            //    visual GameObject per authored solid cell. We:
+            //      • only materialise overlays for buildings inside the camera
+            //        view rect (culling) — UpdateOverlayCulling brings them in
+            //        as the user pans;
+            //      • yield every OVERLAY_BUILDING_BUDGET_PER_FRAME items so a
+            //        150-building scene spreads cleanly over ~19 frames
+            //        (~0.3s @ 60fps) even before culling kicks in.
             int total = 0;
             int done  = 0;
             var all   = GetCachedBuildings();
+
+            // Compute the view rect ONCE per coroutine; the per-frame
+            // UpdateOverlayCulling pass keeps it fresh as the camera moves.
+            var cam = _mainCamera != null ? _mainCamera : Camera.main;
+            bool useCulling = cam != null;
+            Rect viewRect = useCulling ? ComputeCameraViewRect(cam) : default;
+            if (useCulling)
+            {
+                _lastCullCamPos          = cam.transform.position;
+                _lastCullCamSize         = cam.orthographicSize;
+                _cullCheckedAtLeastOnce  = true;
+            }
+
             for (int i = 0; i < all.Length; i++)
             {
                 if (!_collidersVisible) { _overlayShowCoroutine = null; yield break; }
@@ -100,15 +117,17 @@ namespace Valkur.Gameplay.Buildings
                 var b = all[i];
                 if (b == null) continue;
 
-                var overlay = b.GetComponent<BuildingColliderDebugOverlay>();
-                if (overlay == null)
-                    overlay = b.gameObject.AddComponent<BuildingColliderDebugOverlay>();
+                if (useCulling && !IsBuildingInRect(b, viewRect))
+                {
+                    // Off-screen: skip materialisation entirely. The overlay
+                    // (if any from a prior session) gets hidden by the
+                    // synchronous Hide path or by UpdateOverlayCulling.
+                    if (++done % OVERLAY_BUILDING_BUDGET_PER_FRAME == 0)
+                        yield return null;
+                    continue;
+                }
 
-                int filled = ComputeAuthoringCellsInto(b, _authoringCellsScratch);
-                if (filled > 0) overlay.SetAuthoringCells(_authoringCellsScratch);
-                else            overlay.ClearAuthoringCells();
-                overlay.SetVisible(true);
-                total += overlay.CurrentVisualCount;
+                total += EnsureOverlayForBuildingVisible(b);
 
                 if (++done % OVERLAY_BUILDING_BUDGET_PER_FRAME == 0)
                     yield return null;

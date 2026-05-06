@@ -447,6 +447,25 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             return list;
         }
 
+        /// <summary>
+        /// Inject a test camera big enough to see every building this fixture
+        /// creates, so the frustum-culling pass (introduced for D) doesn't
+        /// reject them. Returns the camera so callers can move / shrink it
+        /// when a test specifically wants to exercise culling.
+        /// </summary>
+        private Camera InjectWideTestCamera(BuildingsRuntimeEditor ed)
+        {
+            var camGo = new GameObject("TestCam");
+            _scene.Add(camGo);
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic     = true;
+            cam.orthographicSize = 200f; // huge — covers the whole spawn line
+            cam.transform.position = new Vector3(50f, 0f, -10f);
+            // Force the editor to pick this camera up rather than Camera.main.
+            Field(ed, "_mainCamera")?.SetValue(ed, cam);
+            return cam;
+        }
+
         private static int CountActiveOverlays(IEnumerable<BuildingObject> buildings)
         {
             int n = 0;
@@ -525,6 +544,9 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             // without StartCoroutine returning a non-null handle.
             SpawnBuildings(24);
             Field(ed, "_collidersVisible")?.SetValue(ed, true);
+            // Wide camera so all 24 buildings pass the culling gate and the
+            // batching cadence is what dictates yields.
+            InjectWideTestCamera(ed);
 
             var startMethod = Method(typeof(BuildingsRuntimeEditor),
                 "StartProgressiveShowOverlay", Type.EmptyTypes);
@@ -555,6 +577,9 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             var ed = CreateEditor();
             var buildings = SpawnBuildings(total);
             Field(ed, "_collidersVisible")?.SetValue(ed, true);
+            // Wide camera so frustum-culling doesn't reject any of them — this
+            // test is only about batching cadence, not culling.
+            InjectWideTestCamera(ed);
 
             var co = GetProgressiveCoroutine(ed);
             // First MoveNext processes the first batch then yields.
@@ -574,6 +599,7 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             var ed = CreateEditor();
             var buildings = SpawnBuildings(total);
             Field(ed, "_collidersVisible")?.SetValue(ed, true);
+            InjectWideTestCamera(ed);
 
             _capturedLogs.Clear();
             var co = GetProgressiveCoroutine(ed);
@@ -609,6 +635,7 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             var ed = CreateEditor();
             var buildings = SpawnBuildings(total);
             Field(ed, "_collidersVisible")?.SetValue(ed, true);
+            InjectWideTestCamera(ed);
 
             var co = GetProgressiveCoroutine(ed);
             Assert.IsTrue(co.MoveNext(), "Coroutine must yield at least once before mid-run cancel.");
@@ -625,6 +652,200 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             int countAfterCancel = CountActiveOverlays(buildings);
             Assert.AreEqual(countAtCancel, countAfterCancel,
                 "After mid-run cancel, no further overlays should have been activated.");
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        //  CONTRACT 5 — Frustum culling (the "O(visibles) instead of O(scene)" win)
+        // ═══════════════════════════════════════════════════════════════════════
+        //
+        // Even with the progressive coroutine, every building still pays for an
+        // overlay GameObject + cells once Show is on. Culling restricts that
+        // cost to buildings actually inside the camera's view rect (with
+        // margin). UpdateOverlayCulling brings buildings in / out as the user
+        // pans. These tests pin the contract.
+
+        private static void InvokeUpdateCulling(BuildingsRuntimeEditor ed)
+        {
+            var m = Method(typeof(BuildingsRuntimeEditor), "UpdateOverlayCulling", Type.EmptyTypes);
+            Assert.IsNotNull(m, "UpdateOverlayCulling must exist as a private method.");
+            m.Invoke(ed, null);
+        }
+
+        private static void InvalidateCullingCache(BuildingsRuntimeEditor ed)
+        {
+            // The culling pass early-returns when the camera hasn't moved since
+            // the last call. Tests that mutate the camera between checks must
+            // either move it OR manually invalidate the cache.
+            var m = Method(typeof(BuildingsRuntimeEditor), "InvalidateOverlayCullingCache", Type.EmptyTypes);
+            Assert.IsNotNull(m);
+            m.Invoke(ed, null);
+        }
+
+        [Test]
+        public void ProgressiveCoroutine_SkipsOffScreenBuildings()
+        {
+            // 24 buildings spread across x=[0..92]; place a tight camera that
+            // only sees a thin slice around x=0. The coroutine must materialise
+            // overlays only for the visible subset (NOT all 24).
+            const int total = 24;
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(total);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            // Tight camera at origin, orthographicSize 4 → sees roughly
+            // x=[-aspect*4 .. aspect*4] (≈ [-7..7] at 16:9). With margin 4,
+            // visible band is ~x ∈ [-11..11], capturing buildings at i={0..2}.
+            var camGo = new GameObject("TightCam");
+            _scene.Add(camGo);
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic     = true;
+            cam.orthographicSize = 4f;
+            cam.aspect           = 16f / 9f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            Field(ed, "_mainCamera")?.SetValue(ed, cam);
+
+            var co = GetProgressiveCoroutine(ed);
+            int safety = 1000;
+            while (co.MoveNext() && --safety > 0) { }
+            Assert.Greater(safety, 0, "Coroutine drove past safety cap.");
+
+            int active = CountActiveOverlays(buildings);
+            Assert.Less(active, total,
+                $"Frustum culling must reject some buildings — found ALL {total} active.");
+            Assert.Greater(active, 0,
+                "At least the buildings near the camera must have active overlays.");
+        }
+
+        [Test]
+        public void UpdateOverlayCulling_PanningTowardOffscreenBuilding_ActivatesItsOverlay()
+        {
+            // Spawn a building far off to the right; camera starts at origin
+            // (building off-screen). After we pan the camera over the building
+            // and call UpdateOverlayCulling, an overlay must appear and be
+            // visible.
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(1);
+            // SpawnBuildings places building 0 at x=0. Move it far right so
+            // it starts outside the camera view.
+            buildings[0].transform.position = new Vector3(100f, 0f, 0f);
+
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var camGo = new GameObject("PanCam");
+            _scene.Add(camGo);
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic     = true;
+            cam.orthographicSize = 4f;
+            cam.aspect           = 16f / 9f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            Field(ed, "_mainCamera")?.SetValue(ed, cam);
+
+            // First culling pass: building is off-screen → no overlay created.
+            InvokeUpdateCulling(ed);
+            var overlay = buildings[0].GetComponent<BuildingColliderDebugOverlay>();
+            Assert.IsTrue(overlay == null || !overlay.Visible,
+                "Off-screen building must NOT have an active overlay before panning.");
+
+            // Pan camera to the building.
+            cam.transform.position = new Vector3(100f, 0f, -10f);
+            InvalidateCullingCache(ed); // movement-equality caches may be too coarse
+
+            InvokeUpdateCulling(ed);
+            overlay = buildings[0].GetComponent<BuildingColliderDebugOverlay>();
+            Assert.IsNotNull(overlay,
+                "After panning to the building, UpdateOverlayCulling must lazy-create its overlay.");
+            Assert.IsTrue(overlay.Visible,
+                "After panning to the building, its overlay must be visible.");
+        }
+
+        [Test]
+        public void UpdateOverlayCulling_PanningAway_HidesOverlay()
+        {
+            // Inverse: a building visible at the start, then we pan away. The
+            // overlay must SetVisible(false) but remain attached for cheap
+            // re-show next time.
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(1);
+            buildings[0].transform.position = Vector3.zero;
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var camGo = new GameObject("PanCam");
+            _scene.Add(camGo);
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic     = true;
+            cam.orthographicSize = 4f;
+            cam.aspect           = 16f / 9f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            Field(ed, "_mainCamera")?.SetValue(ed, cam);
+
+            // Initial: building visible → overlay should be active after culling.
+            InvokeUpdateCulling(ed);
+            var overlay = buildings[0].GetComponent<BuildingColliderDebugOverlay>();
+            Assert.IsNotNull(overlay, "Visible building must have an overlay after the first culling pass.");
+            Assert.IsTrue(overlay.Visible, "Visible building's overlay must be visible after the first pass.");
+
+            // Pan far away.
+            cam.transform.position = new Vector3(500f, 0f, -10f);
+            InvalidateCullingCache(ed);
+            InvokeUpdateCulling(ed);
+
+            Assert.IsFalse(overlay.Visible,
+                "After panning far from the building, its overlay must be hidden by culling.");
+            Assert.IsNotNull(buildings[0].GetComponent<BuildingColliderDebugOverlay>(),
+                "Hide-via-culling must KEEP the overlay component (only flip Visible) so re-show is cheap.");
+        }
+
+        [Test]
+        public void UpdateOverlayCulling_EarlyReturns_WhenCameraHasNotMoved()
+        {
+            // Performance contract: calling UpdateOverlayCulling twice in a
+            // row when the camera hasn't moved must NOT touch any overlay.
+            // We exercise this by comparing the visual count before/after a
+            // no-op second call.
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(3);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+            InjectWideTestCamera(ed); // sees all three
+
+            InvokeUpdateCulling(ed); // first pass populates
+            int countAfterFirst = CountActiveOverlays(buildings);
+            Assert.AreEqual(3, countAfterFirst, "First pass should have activated all three overlays.");
+
+            // Second pass with NO camera movement and NO cache invalidation:
+            // must early-return → counts unchanged.
+            InvokeUpdateCulling(ed);
+            Assert.AreEqual(countAfterFirst, CountActiveOverlays(buildings),
+                "Second UpdateOverlayCulling without camera movement must be a no-op.");
+        }
+
+        [Test]
+        public void RefreshCollidersOverlay_Synchronous_RespectsCulling()
+        {
+            // The synchronous RefreshCollidersOverlay path (called from
+            // ApplyCollisionTargetsFor / RefreshCollisionFor / SetActiveBuilding)
+            // must also honour culling — otherwise the structural-change paths
+            // would re-introduce the freeze.
+            const int total = 24;
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(total);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var camGo = new GameObject("TightCam");
+            _scene.Add(camGo);
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic     = true;
+            cam.orthographicSize = 4f;
+            cam.aspect           = 16f / 9f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            Field(ed, "_mainCamera")?.SetValue(ed, cam);
+
+            var refreshMethod = Method(typeof(BuildingsRuntimeEditor),
+                "RefreshCollidersOverlay", Type.EmptyTypes);
+            refreshMethod.Invoke(ed, null);
+
+            int active = CountActiveOverlays(buildings);
+            Assert.Less(active, total,
+                "Synchronous RefreshCollidersOverlay must also reject off-screen buildings.");
         }
 
         [Test]
