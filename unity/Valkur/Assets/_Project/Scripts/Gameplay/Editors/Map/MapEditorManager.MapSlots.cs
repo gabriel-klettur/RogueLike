@@ -62,6 +62,9 @@ namespace Valkur.Gameplay.MapEditor
                 && string.Equals(store.ActiveSlot,
                     MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
             if (!skipBackup) BackupCurrentToActiveSlot();
+            // Persist Buildings-Editor edits to the OUTGOING slot before any
+            // wipe / flip. See BeginNewMap for the rationale.
+            NotifyBuildingsEditorOfSlotChange();
 
             // Position to teleport the player to once the new slot is active.
             // Defaults to world origin; replaced by the slot file's last-known
@@ -144,6 +147,13 @@ namespace Valkur.Gameplay.MapEditor
                             MapBackupSchema.KindAutoBeforeNew);
 
             BackupCurrentToActiveSlot();
+            // Persist any pending Buildings-Editor edits (placed/deleted/moved
+            // buildings, painted colliders) to the OUTGOING slot's files BEFORE
+            // we flip the active-slot pointer. Without this, ClearAllSpawnedWorldContent
+            // would wipe the scene, the next save would serialise an empty scene,
+            // and the outgoing slot's data would be silently destroyed (the
+            // canonical "buildings disappeared from default after creating a new map" bug).
+            NotifyBuildingsEditorOfSlotChange();
 
             zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
             if (_state != null)
@@ -240,6 +250,38 @@ namespace Valkur.Gameplay.MapEditor
 
         private void TeleportPlayerToBlankMapOrigin()
             => TeleportPlayerToWorldPosition(Vector2.zero);
+
+        /// <summary>
+        /// Tell the Buildings runtime editor (F10) that the active map slot is
+        /// about to change so it can flush pending edits to the OUTGOING slot's
+        /// files and drop its cached collider stores. Must be called BEFORE
+        /// <see cref="MapEditorMapSlots.SetActive"/> flips the slot pointer
+        /// and BEFORE <see cref="ClearAllSpawnedWorldContent"/> wipes the
+        /// scene — otherwise pending edits would be lost (empty scene
+        /// serialised) or written to the wrong slot.
+        ///
+        /// Calls into the Buildings editor only when its singleton already
+        /// exists; missing instance is a no-op so headless / pre-activation
+        /// cases stay safe. Wrapped in try/catch so a failure inside the
+        /// editor never blocks the slot transition itself.
+        /// </summary>
+        private static void NotifyBuildingsEditorOfSlotChange()
+        {
+            try
+            {
+                var instance = Valkur.Gameplay.Buildings.BuildingsRuntimeEditor.HasInstance
+                    ? Valkur.Gameplay.Buildings.BuildingsRuntimeEditor.Instance
+                    : null;
+                instance?.NotifyActiveMapSlotChanged();
+            }
+            catch (Exception ex)
+            {
+                // Never let this throw — slot switching must keep working
+                // even if the buildings editor fails to flush.
+                Debug.LogWarning(
+                    $"[MapEditor] BuildingsRuntimeEditor.NotifyActiveMapSlotChanged failed: {ex.Message}");
+            }
+        }
 
         private void TeleportPlayerToWorldPosition(Vector2 targetWorldPos)
         {

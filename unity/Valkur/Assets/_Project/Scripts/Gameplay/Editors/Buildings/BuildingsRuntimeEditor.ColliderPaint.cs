@@ -185,5 +185,32 @@ namespace Valkur.Gameplay.Buildings
             _colliderStroke.Changed = false;
         }
 
+        /// <summary>
+        /// Called by <see cref="Valkur.Gameplay.MapEditor.MapEditorManager"/>
+        /// whenever the user switches map slots (BeginNewMap / LoadMapSlot).
+        /// We must drop the cached collider stores: they were loaded from the
+        /// OUTGOING slot's files and would otherwise be written back over the
+        /// incoming slot on the next save. Dropping any in-flight stroke /
+        /// session prevents a paint that started in slot A from persisting
+        /// into slot B.
+        ///
+        /// Also flushes any pending unsaved instance edits so they reach the
+        /// outgoing slot's file BEFORE the slot pointer flips. The order is
+        /// critical: persist → reset cache → next load resolves the new slot.
+        /// </summary>
+        public void NotifyActiveMapSlotChanged()
+        {
+            // Persist still-pending edits to the OUTGOING slot. Skip when the
+            // editor has never been activated (no UI, no edits to flush).
+            if (_uiBuilt && _hasUnsavedInstanceChanges)
+                PersistDirtyInstanceChanges("Active map slot changed");
+
+            ResetColliderAuthoringState();
+            _activeBuilding = null;
+            _hoveredBuilding = null;
+            _hoverStack.Clear();
+            InvalidateBuildingCache();
+        }
+
     }
 }

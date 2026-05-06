@@ -30,9 +30,28 @@ namespace Valkur.Gameplay.Buildings
             _colliderInstanceStore.Clear();
             _savedColliderInstanceStore.Clear();
 
-            LoadCollisionImageStore(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_collisions_by_image.json"), _colliderImageStore);
-            LoadCollisionInstanceStore(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_collisions_by_building_instance_id.json"), _colliderInstanceStore);
-            LoadInlineInstanceColliders(Path.Combine(Application.streamingAssetsPath, "Buildings", "buildings_instances.json"), _colliderInstanceStore);
+            // Map-slot aware load: default slot pulls the baseline collider
+            // grids that ship with the build (StreamingAssets), custom slots
+            // pull their own per-slot files from persistentDataPath. The CG
+            // image store FALLS BACK to the default-slot file when the slot's
+            // own file is missing — image-keyed collider grids are designed
+            // to be shared across maps (every instance of "stone_wall.png"
+            // gets the same collision pattern), so a brand-new slot inherits
+            // the global library until the user authors something different.
+            string activeSlot = Valkur.Core.MapEditorActiveSlot.Read();
+            string slotDir    = Valkur.Core.MapEditorActiveSlot.BuildingsDir(activeSlot);
+            string defaultDir = Valkur.Core.MapEditorActiveSlot.BuildingsDir(
+                                    Valkur.Core.MapEditorActiveSlot.DEFAULT_SLOT);
+
+            string imageJsonPath    = Path.Combine(slotDir, "buildings_collisions_by_image.json");
+            if (!File.Exists(imageJsonPath))
+                imageJsonPath = Path.Combine(defaultDir, "buildings_collisions_by_image.json");
+            string instanceJsonPath = Path.Combine(slotDir, "buildings_collisions_by_building_instance_id.json");
+            string inlineJsonPath   = Path.Combine(slotDir, "buildings_instances.json");
+
+            LoadCollisionImageStore(imageJsonPath, _colliderImageStore);
+            LoadCollisionInstanceStore(instanceJsonPath, _colliderInstanceStore);
+            LoadInlineInstanceColliders(inlineJsonPath, _colliderInstanceStore);
 
             CopyStore(_colliderImageStore, _savedColliderImageStore);
             CopyStore(_colliderInstanceStore, _savedColliderInstanceStore);

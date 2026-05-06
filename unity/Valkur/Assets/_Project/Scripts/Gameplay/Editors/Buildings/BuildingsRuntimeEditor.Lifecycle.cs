@@ -360,9 +360,58 @@ namespace Valkur.Gameplay.Buildings
                 var f = typeof(BuildingLoader).GetField("_buildingsRoot",
                     BindingFlags.NonPublic | BindingFlags.Instance);
                 _buildingsRoot = f?.GetValue(_buildingLoader) as Transform;
+
+                // On a brand-new map slot the loader's `_buildingsRoot` may
+                // still be null (LoadBuildings never ran because there are no
+                // instances on disk yet). Materialise a stable scene-level
+                // "BuildingsRoot" GameObject so PlaceBuilding has a real
+                // parent to attach to. We do NOT mutate the BuildingLoader's
+                // serialised reference — keeps the loader observable to tests
+                // that probe its private state, and the next LoadBuildings()
+                // call will Find("BuildingsRoot") via the same helper if
+                // needed.
+                if (_buildingsRoot == null)
+                    _buildingsRoot = EnsureBuildingsRootInScene();
             }
-            // Fallback: spawn under our own transform
+            else
+            {
+                // No BuildingLoader in the scene at all (rare — usually only
+                // in EditMode tests or partially-initialised scenes). Use the
+                // scene-level root directly so behaviour stays consistent.
+                _buildingsRoot = EnsureBuildingsRootInScene();
+            }
+
+            // Last-resort fallback: own transform. Reached only when even
+            // EnsureBuildingsRootInScene returned null (e.g. headless tests
+            // where no scene exists). Buildings spawned here will follow the
+            // editor singleton's lifetime, which is acceptable for tests.
             if (_buildingsRoot == null) _buildingsRoot = transform;
+        }
+
+        /// <summary>
+        /// Find or create a top-level "BuildingsRoot" GameObject in the active
+        /// scene to serve as the parent for spawned BuildingObjects. Living in
+        /// the scene (not under the editor singleton) means buildings unload
+        /// cleanly on scene change and BuildingLoader's next pass sees them
+        /// in the place it expects.
+        /// </summary>
+        private static Transform EnsureBuildingsRootInScene()
+        {
+            var existing = GameObject.Find("BuildingsRoot");
+            if (existing != null) return existing.transform;
+
+            try
+            {
+                var go = new GameObject("BuildingsRoot");
+                return go.transform;
+            }
+            catch
+            {
+                // Creating a GameObject can fail inside certain EditMode test
+                // contexts (e.g. headless prefab loaders). Return null so the
+                // caller falls back to its own transform.
+                return null;
+            }
         }
 
         // ── HUD visibility management ────────────────────────────────────────────────

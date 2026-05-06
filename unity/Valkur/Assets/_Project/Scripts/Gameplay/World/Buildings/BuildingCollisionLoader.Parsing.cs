@@ -129,6 +129,20 @@ namespace Valkur.Gameplay.World
 
         private static IEnumerable<string> GetCollisionFileCandidates(string fileName, bool isGlobalData)
         {
+            // Map-slot aware: try the active slot's per-map directory FIRST so a
+            // user-edited slot wins, then fall back to the StreamingAssets
+            // baseline (for the default slot itself or for new slots that
+            // haven't authored their own collider files yet — image-keyed CG
+            // grids in particular are designed to be inherited from the
+            // baseline so the same wall sprite gets the same collision pattern
+            // across maps).
+            string activeSlot = Valkur.Core.MapEditorActiveSlot.Read();
+            if (!Valkur.Core.MapEditorActiveSlot.IsDefault(activeSlot))
+            {
+                yield return Path.Combine(
+                    Valkur.Core.MapEditorActiveSlot.BuildingsDir(activeSlot), fileName);
+            }
+
             yield return Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, fileName);
 
             string repoRoot = TryGetRepoRootPath();
@@ -142,6 +156,16 @@ namespace Valkur.Gameplay.World
 
         private static IEnumerable<string> GetInstanceFileCandidates()
         {
+            // Same slot-aware ordering as GetCollisionFileCandidates: per-slot
+            // file (when authored) wins over the StreamingAssets baseline, with
+            // the Python source as the final development-only fallback.
+            string activeSlot = Valkur.Core.MapEditorActiveSlot.Read();
+            if (!Valkur.Core.MapEditorActiveSlot.IsDefault(activeSlot))
+            {
+                yield return Path.Combine(
+                    Valkur.Core.MapEditorActiveSlot.BuildingsDir(activeSlot), INSTANCES_FILE);
+            }
+
             yield return Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILE);
 
             string repoRoot = TryGetRepoRootPath();

@@ -54,7 +54,13 @@ namespace Valkur.Gameplay.Buildings
         {
             if (_isPersistingInstanceChanges) return;
 
-            string dir  = Path.Combine(Application.streamingAssetsPath, "Buildings");
+            // Map-slot aware path resolution. The default slot keeps the legacy
+            // StreamingAssets/Buildings/ location so existing builds + the
+            // BuildingsDataGuard backup pipeline continue to work; custom slots
+            // route to persistentDataPath/Maps/<slot>/Buildings/ so editing one
+            // map can never silently overwrite another. See MapEditorActiveSlot.
+            string activeSlot = Valkur.Core.MapEditorActiveSlot.Read();
+            string dir  = Valkur.Core.MapEditorActiveSlot.BuildingsDir(activeSlot);
             string path = Path.Combine(dir, "buildings_instances.json");
             _isPersistingInstanceChanges = true;
             try
@@ -158,8 +164,12 @@ namespace Valkur.Gameplay.Buildings
 #if UNITY_EDITOR
                 // Refresh the backup copy via reflection so we don't create a
                 // runtime→editor assembly dependency. BuildingsDataGuard.RefreshBackup()
-                // lives in Valkur.Editor (Editor-only assembly).
-                if (Application.isPlaying)
+                // lives in Valkur.Editor (Editor-only assembly). Only meaningful
+                // for the default slot — its target file IS the StreamingAssets
+                // baseline that BuildingsDataGuard protects. Custom slots live
+                // under persistentDataPath and aren't part of the guarded asset
+                // graph.
+                if (Application.isPlaying && Valkur.Core.MapEditorActiveSlot.IsDefault(activeSlot))
                 {
                     UnityEditor.EditorApplication.delayCall += () =>
                     {
@@ -172,8 +182,11 @@ namespace Valkur.Gameplay.Buildings
                     };
                 }
 #endif
-                if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {INSTANCES_REL_PATH}";
-                Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path}");
+                string slotLabel = Valkur.Core.MapEditorActiveSlot.IsDefault(activeSlot)
+                    ? INSTANCES_REL_PATH
+                    : $"slot '{activeSlot}' ({path})";
+                if (_statusTmp != null) _statusTmp.text = $"Saved {all.Count} buildings → {slotLabel}";
+                Debug.Log($"[BuildingsEditor] Saved {all.Count} buildings to {path} (slot={activeSlot})");
                 _hasUnsavedInstanceChanges = false;
                 RefreshCollidersPanel();
             }
