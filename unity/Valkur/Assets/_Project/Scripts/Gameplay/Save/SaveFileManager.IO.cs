@@ -139,29 +139,39 @@ namespace Valkur.Gameplay.Save
         /// (<c>autosave_1..N.json</c>) if the requested file was an autosave.
         /// </summary>
         public static GameSaveData TryLoadWithRecovery(string path)
+            => TryLoadWithRecoveryDetailed(path).Data;
+
+        /// <summary>
+        /// Detailed variant of <see cref="TryLoadWithRecovery"/> that reports
+        /// whether the primary file was used or a backup slot kicked in. The
+        /// boot pipeline / load UI uses this to surface a user-visible toast
+        /// when the player's main save was corrupted.
+        /// </summary>
+        public static SaveLoadResult TryLoadWithRecoveryDetailed(string path)
         {
-            var data = TryLoadSingle(path);
-            if (data != null) return data;
+            var primary = TryLoadSingle(path);
+            if (primary != null)
+                return new SaveLoadResult(primary, recoveredFromBackup: false, -1, path);
 
             Debug.LogWarning($"[SaveFileManager] Primary save corrupted or missing: {path}. Trying backups…");
 
-            string runDir = Path.GetDirectoryName(path) ?? "";
+            string runDir     = Path.GetDirectoryName(path) ?? "";
             string backupsDir = Path.Combine(runDir, BACKUPS_SUBDIR);
             if (Directory.Exists(backupsDir))
             {
                 for (int i = 1; i <= MAX_BACKUPS; i++)
                 {
                     string bp = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_{i}" + SAVE_EXTENSION);
-                    data = TryLoadSingle(bp);
+                    var data = TryLoadSingle(bp);
                     if (data != null)
                     {
                         Debug.Log($"[SaveFileManager] Recovered from backup: {bp}");
-                        return data;
+                        return new SaveLoadResult(data, recoveredFromBackup: true, i, bp);
                     }
                 }
             }
 
-            return null;
+            return SaveLoadResult.Empty;
         }
 
         // ── Backup rotation ──────────────────────────────────────────────────

@@ -81,6 +81,15 @@ namespace Valkur.Gameplay
 
         public bool IsSessionDirty => _sessionDirty;
 
+        /// <summary>
+        /// Fires whenever <see cref="Load"/> falls back to a backup slot
+        /// because the primary save file was corrupt or missing. The HUD
+        /// subscribes to this and shows a "Recovered from backup" toast
+        /// — silent corruption recovery is a footgun in a sandbox game,
+        /// the player must know their main save was repaired.
+        /// </summary>
+        public static event System.Action<SaveLoadResult> OnSaveRecovered;
+
         protected override bool Persist => true;
 
         public string CurrentSavePath => _currentSavePath;
@@ -474,14 +483,27 @@ namespace Valkur.Gameplay
             // we'd risk loading an in-progress (renamed-out) file or stale
             // checksum. Worst case this blocks for the duration of one write.
             FlushPendingWrites(quitWaitSeconds);
-            var data = SaveFileManager.TryLoadWithRecovery(path);
-            if (data == null)
+            var loadResult = SaveFileManager.TryLoadWithRecoveryDetailed(path);
+            if (!loadResult.IsSuccess)
             {
                 Debug.LogWarning($"[SaveService] Load skipped - no valid save found for: {path}");
                 return false;
             }
 
-            data = SaveSchemaMigrator.Migrate(data);
+            // Surface a backup-recovery to listeners (HUD toast, telemetry,
+            // run-end summary) BEFORE applying state. Subscribers can decide
+            // whether to expose the corruption event to the player.
+            if (loadResult.RecoveredFromBackup)
+            {
+                Debug.LogWarning($"[SaveService] Loaded RECOVERED save from backup slot " +
+                                 $"#{loadResult.BackupSlotIndex} ({loadResult.SourcePath}) — " +
+                                 $"primary save at '{path}' was corrupt or missing.");
+                try { OnSaveRecovered?.Invoke(loadResult); }
+                catch (Exception ex)
+                { Debug.LogError($"[SaveService] OnSaveRecovered subscriber threw: {ex.Message}"); }
+            }
+
+            var data = SaveSchemaMigrator.Migrate(loadResult.Data);
             GameStateRestorer.Restore(data);
             _currentSavePath     = path;
             _lastLoadedTimestamp = data.timestamp;
