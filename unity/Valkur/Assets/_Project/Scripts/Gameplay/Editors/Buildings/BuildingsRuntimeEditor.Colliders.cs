@@ -32,20 +32,29 @@ namespace Valkur.Gameplay.Buildings
                 //   • HandleColliderPaint / ApplyGridSnapshot (live edits + undo)
                 //   • RefreshCollisionFor (Picker / MapInteraction structural changes)
                 // so toggling visibility must NEVER walk every building and rebuild
-                // its colliders again — that turned the toggle into a multi-second
-                // freeze in scenes with many buildings (~142 × ~5 cells = thousands
-                // of transform.Find + AddComponent ops). We only ensure the
-                // authoring stores are loaded (cheap one-shot JSON read) so the
-                // overlay can resolve cells, then refresh the visuals.
+                // its colliders again. We only ensure the authoring stores are
+                // loaded (cheap one-shot JSON read) so the overlay can resolve
+                // cells, then start the progressive build coroutine — which
+                // spreads the GameObject creation over multiple frames so the
+                // editor stays responsive even with ~150 buildings on screen.
                 EnsureColliderDataLoaded();
                 if (_logDiagOnShow) LogColliderDiagnostics();
+                StartProgressiveShowOverlay();
             }
-            SetTilemapCollidersVisible(_collidersVisible);
-            int total = RefreshCollidersOverlay();
+            else
+            {
+                // Hide is cheap: just set visibility false on every existing
+                // overlay. No GameObject creation, no per-cell math.
+                StopProgressiveShowOverlay();
+                SetTilemapCollidersVisible(false);
+                RefreshCollidersOverlay();
+            }
             if (_uiRefs.CollVisibilityBtnLabel != null)
                 _uiRefs.CollVisibilityBtnLabel.text = _collidersVisible ? "Hide Colliders" : "Show Colliders";
             RefreshCollidersPanel();
-            Toast(_collidersVisible ? $"Colliders visible ({total} shapes)." : "Colliders hidden.");
+            // The "Colliders visible (N shapes)." toast is emitted by the
+            // progressive coroutine when it finishes; here we only handle Hide.
+            if (!_collidersVisible) Toast("Colliders hidden.");
         }
 
         /// <summary>
@@ -160,12 +169,11 @@ namespace Valkur.Gameplay.Buildings
                 _collidersVisible = true;
                 if (_uiRefs.CollVisibilityBtnLabel != null)
                     _uiRefs.CollVisibilityBtnLabel.text = "Hide Colliders";
-                // Visual-only path: load authoring data if needed, then refresh
-                // overlays. Physical colliders are NOT rebuilt — same reasoning
-                // as ToggleCollidersVisible above.
+                // Visual-only path: load authoring data if needed, then start
+                // the progressive overlay build. Physical colliders are NOT
+                // rebuilt — same reasoning as ToggleCollidersVisible above.
                 EnsureColliderDataLoaded();
-                SetTilemapCollidersVisible(true);
-                RefreshCollidersOverlay();
+                StartProgressiveShowOverlay();
             }
             if (_uiRefs.CollBrushToggleLabel != null)
                 _uiRefs.CollBrushToggleLabel.text = BrushOn

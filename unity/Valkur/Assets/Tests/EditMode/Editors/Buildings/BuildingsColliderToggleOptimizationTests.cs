@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
@@ -6,6 +7,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Tests.EditMode.Editors.Buildings
 {
@@ -387,6 +389,268 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
 
             Assert.AreEqual(0, CountDiagnosticLogs(_capturedLogs),
                 "Hide branch must never emit the diagnostic, even if _logDiagOnShow is true.");
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        //  CONTRACT 4 — Progressive overlay coroutine (the "no freeze" contract)
+        // ═══════════════════════════════════════════════════════════════════════
+        //
+        // The progressive build is what actually fixes the user-visible freeze.
+        // We verify:
+        //   • The Show branch starts the coroutine (non-null _overlayShowCoroutine).
+        //   • Calling Start back-to-back is idempotent (cancels + restarts).
+        //   • The coroutine yields between batches so the FIRST frame returns
+        //     before all overlays exist (no freeze).
+        //   • Driving the coroutine to completion populates every building's
+        //     overlay and emits the final "Colliders visible (N shapes)." toast.
+        //   • If _collidersVisible flips OFF mid-run, the coroutine bails out
+        //     cleanly without touching the rest of the buildings.
+
+        private static MethodInfo CoroutineMethod() =>
+            Method(typeof(BuildingsRuntimeEditor), "ProgressiveShowOverlayCoroutine", Type.EmptyTypes);
+
+        private static IEnumerator GetProgressiveCoroutine(BuildingsRuntimeEditor ed)
+        {
+            var m = CoroutineMethod();
+            Assert.IsNotNull(m, "ProgressiveShowOverlayCoroutine must exist as a private method.");
+            return (IEnumerator)m.Invoke(ed, null);
+        }
+
+        /// <summary>
+        /// Spawns <paramref name="count"/> additional buildings so we can verify
+        /// the coroutine yields between batches (the per-frame budget is 8 by
+        /// default; with > 8 buildings the first frame must NOT have processed
+        /// every overlay).
+        /// </summary>
+        private List<BuildingObject> SpawnBuildings(int count)
+        {
+            var list = new List<BuildingObject>();
+            for (int i = 0; i < count; i++)
+            {
+                var template = ScriptableObject.CreateInstance<BuildingTemplateData>();
+                template.templateId      = 100 + i;
+                template.originalScale   = new Vector2Int(64, 64);
+                template.solid           = true;
+                template.colliderScope   = "CG";
+                template.sourceImagePath = $"assets/buildings/test_{i}.png";
+                _assets.Add(template);
+
+                var go = new GameObject($"Building_{i}");
+                go.transform.position = new Vector3(i * 4f, 0f, 0f);
+                go.AddComponent<BoxCollider2D>().enabled = true;
+                var b = go.AddComponent<BuildingObject>();
+                Field(b, "_template")?.SetValue(b, template);
+                Field(b, "_instanceId")?.SetValue(b, 100 + i);
+                _scene.Add(go);
+                list.Add(b);
+            }
+            return list;
+        }
+
+        private static int CountActiveOverlays(IEnumerable<BuildingObject> buildings)
+        {
+            int n = 0;
+            foreach (var b in buildings)
+            {
+                if (b == null) continue;
+                var ov = b.GetComponent<BuildingColliderDebugOverlay>();
+                if (ov != null && ov.Visible) n++;
+            }
+            return n;
+        }
+
+        [Test]
+        public void ToggleCollidersVisible_Show_DispatchesProgressiveBuild()
+        {
+            // EditMode-friendly assertion: Show must reach the progressive
+            // pipeline (observable via the "Loading colliders…" toast emitted
+            // synchronously inside StartProgressiveShowOverlay). We can't probe
+            // _overlayShowCoroutine directly because StartCoroutine returns
+            // null when no play loop is running.
+            var ed = CreateEditor();
+            CreateBuildingWithSeededCollTiles();
+
+            _capturedLogs.Clear();
+            InvokeToggle(ed); // show
+
+            bool sawLoading = false;
+            foreach (var msg in _capturedLogs)
+            {
+                if ((msg ?? string.Empty).IndexOf("Loading colliders", StringComparison.Ordinal) >= 0)
+                {
+                    sawLoading = true;
+                    break;
+                }
+            }
+            Assert.IsTrue(sawLoading,
+                "Toggling Show must dispatch the progressive pipeline (signalled by 'Loading colliders…' toast).");
+        }
+
+        [Test]
+        public void ToggleCollidersVisible_Hide_EmitsHiddenToast()
+        {
+            // Hide branch is synchronous and must emit the "Colliders hidden."
+            // toast directly (no progressive build, no "Loading colliders…").
+            var ed = CreateEditor();
+            CreateBuildingWithSeededCollTiles();
+
+            InvokeToggle(ed); // show
+            _capturedLogs.Clear();
+            InvokeToggle(ed); // hide
+
+            bool sawHidden = false;
+            bool sawLoading = false;
+            foreach (var msg in _capturedLogs)
+            {
+                var m = msg ?? string.Empty;
+                if (m.IndexOf("Colliders hidden", StringComparison.Ordinal) >= 0) sawHidden = true;
+                if (m.IndexOf("Loading colliders", StringComparison.Ordinal) >= 0) sawLoading = true;
+            }
+            Assert.IsTrue(sawHidden, "Hide branch must emit the 'Colliders hidden.' toast.");
+            Assert.IsFalse(sawLoading, "Hide branch must NOT dispatch the progressive build.");
+        }
+
+        [Test]
+        public void StartProgressiveShowOverlay_TwiceInARow_EmitsTwoLoadingToasts()
+        {
+            // Each Start call must (a) emit its own "Loading colliders…" toast
+            // and (b) cancel any prior in-flight coroutine before kicking off
+            // a new one. In EditMode StartCoroutine actually runs the coroutine
+            // synchronously up to the first yield, so we use enough buildings
+            // (> per-frame budget) that the yield is hit and the coroutine
+            // does NOT complete inside the Start call.
+            var ed = CreateEditor();
+            // > OVERLAY_BUILDING_BUDGET_PER_FRAME (8) so the first run yields
+            // before completing; that lets us observe Start() being idempotent
+            // without StartCoroutine returning a non-null handle.
+            SpawnBuildings(24);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var startMethod = Method(typeof(BuildingsRuntimeEditor),
+                "StartProgressiveShowOverlay", Type.EmptyTypes);
+            Assert.IsNotNull(startMethod, "StartProgressiveShowOverlay must exist as a private method.");
+
+            _capturedLogs.Clear();
+            startMethod.Invoke(ed, null);
+            startMethod.Invoke(ed, null);
+
+            int loadingCount = 0;
+            foreach (var msg in _capturedLogs)
+            {
+                if ((msg ?? string.Empty).IndexOf("Loading colliders", StringComparison.Ordinal) >= 0)
+                    loadingCount++;
+            }
+            Assert.AreEqual(2, loadingCount,
+                "Two back-to-back Start calls must each emit one 'Loading colliders…' toast.");
+        }
+
+        [Test]
+        public void ProgressiveCoroutine_YieldsBetweenBatches_NotAllInFirstFrame()
+        {
+            // With 24 buildings (> 3 × per-frame budget of 8), the coroutine must
+            // yield at least once before processing them all. We drive it
+            // manually until the first yield and assert FEWER than 24 overlays
+            // are ready.
+            const int total = 24;
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(total);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var co = GetProgressiveCoroutine(ed);
+            // First MoveNext processes the first batch then yields.
+            Assert.IsTrue(co.MoveNext(), "Coroutine must yield at least once for >budget items.");
+
+            int afterFirstYield = CountActiveOverlays(buildings);
+            Assert.Less(afterFirstYield, total,
+                $"Progressive build must NOT process all {total} overlays in the first frame — found {afterFirstYield}.");
+            Assert.Greater(afterFirstYield, 0,
+                "First batch must process at least one overlay before yielding.");
+        }
+
+        [Test]
+        public void ProgressiveCoroutine_DriveToCompletion_ActivatesEveryOverlay()
+        {
+            const int total = 24;
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(total);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            _capturedLogs.Clear();
+            var co = GetProgressiveCoroutine(ed);
+            // Hard cap on iterations so a buggy infinite loop fails fast.
+            int safety = 1000;
+            while (co.MoveNext() && --safety > 0) { }
+            Assert.Greater(safety, 0, "Coroutine drove past the safety cap — infinite loop?");
+
+            Assert.AreEqual(total, CountActiveOverlays(buildings),
+                "After completion, every building's overlay must be visible.");
+
+            bool sawFinalToast = false;
+            foreach (var msg in _capturedLogs)
+            {
+                if ((msg ?? string.Empty).IndexOf("Colliders visible (", StringComparison.Ordinal) >= 0)
+                {
+                    sawFinalToast = true;
+                    break;
+                }
+            }
+            Assert.IsTrue(sawFinalToast,
+                "Coroutine must emit a final 'Colliders visible (N shapes).' toast on completion.");
+        }
+
+        [Test]
+        public void ProgressiveCoroutine_BailsOutCleanlyIfHiddenMidRun()
+        {
+            // If the user toggles Hide while the coroutine is still building
+            // overlays, _collidersVisible flips to false and the coroutine must
+            // exit on its very next batch — without crashing or processing the
+            // remaining buildings.
+            const int total = 24;
+            var ed = CreateEditor();
+            var buildings = SpawnBuildings(total);
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            var co = GetProgressiveCoroutine(ed);
+            Assert.IsTrue(co.MoveNext(), "Coroutine must yield at least once before mid-run cancel.");
+            int countAtCancel = CountActiveOverlays(buildings);
+
+            // Simulate the user toggling Hide.
+            Field(ed, "_collidersVisible")?.SetValue(ed, false);
+
+            // Drive to completion — the coroutine must yield-break almost immediately.
+            int safety = 100;
+            while (co.MoveNext() && --safety > 0) { }
+            Assert.Greater(safety, 0, "Coroutine did not bail out after _collidersVisible flipped to false.");
+
+            int countAfterCancel = CountActiveOverlays(buildings);
+            Assert.AreEqual(countAtCancel, countAfterCancel,
+                "After mid-run cancel, no further overlays should have been activated.");
+        }
+
+        [Test]
+        public void ProgressiveCoroutine_LoadingToastEmittedOnStart()
+        {
+            // Sanity: the user-visible feedback "Loading colliders…" is emitted
+            // by StartProgressiveShowOverlay so the toggle never feels frozen.
+            var ed = CreateEditor();
+            CreateBuildingWithSeededCollTiles();
+            Field(ed, "_collidersVisible")?.SetValue(ed, true);
+
+            _capturedLogs.Clear();
+            Method(typeof(BuildingsRuntimeEditor), "StartProgressiveShowOverlay", Type.EmptyTypes)
+                .Invoke(ed, null);
+
+            bool sawLoading = false;
+            foreach (var msg in _capturedLogs)
+            {
+                if ((msg ?? string.Empty).IndexOf("Loading colliders", StringComparison.Ordinal) >= 0)
+                {
+                    sawLoading = true;
+                    break;
+                }
+            }
+            Assert.IsTrue(sawLoading,
+                "StartProgressiveShowOverlay must emit a 'Loading colliders…' toast for immediate user feedback.");
         }
     }
 }

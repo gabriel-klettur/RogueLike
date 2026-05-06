@@ -79,6 +79,10 @@ namespace Valkur.Gameplay.Buildings
             _collBrushMode = CollBrushMode.Off;
             _activeColliderSession = null;
             _colliderStroke.Active = false;
+            // Stop any in-flight progressive overlay build so it doesn't keep
+            // running on a hidden editor and SetActive(true) overlays after
+            // we've already torn the editor down.
+            StopProgressiveShowOverlay();
             _cameraPan.Reset();
             _doubleClick.Reset();
             HideCollBrushCursor();
