@@ -63,6 +63,10 @@ namespace Valkur.Tests.EditMode.Game.Combat
         [TearDown]
         public void TearDown()
         {
+            // Always release the test-mouse override so other fixtures
+            // (notably MouseInputManagerLegacyFallbackTests) see fresh state.
+            Valkur.Core.Input.MouseInputManager.SetTestMousePosition(null);
+
             if (_detectorGo != null) Object.DestroyImmediate(_detectorGo);
             if (_targetGo != null) Object.DestroyImmediate(_targetGo);
             if (_cameraGo != null) Object.DestroyImmediate(_cameraGo);
@@ -367,6 +371,9 @@ namespace Valkur.Tests.EditMode.Game.Combat
             var screenPosition = (Vector2)camera.WorldToScreenPoint(worldPosition);
             InputSystem.QueueStateEvent(Mouse.current, new MouseState { position = screenPosition });
             InputSystem.Update();
+            // Bypass the Editor focus / viewport-rect dependency in the
+            // production OR-gate. See MouseInputManager.SetTestMousePosition.
+            Valkur.Core.Input.MouseInputManager.SetTestMousePosition(screenPosition);
         }
     }
 }

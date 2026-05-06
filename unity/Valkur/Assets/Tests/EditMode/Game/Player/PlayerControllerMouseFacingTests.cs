@@ -70,6 +70,11 @@ namespace Valkur.Tests.EditMode.Game.Player
         [TearDown]
         public void TearDown()
         {
+            // Always release the test-mouse override so subsequent fixtures
+            // (and especially MouseInputManagerLegacyFallbackTests, which
+            // exercise the production fallback) don't pick up leaked state.
+            Valkur.Core.Input.MouseInputManager.SetTestMousePosition(null);
+
             for (int i = _createdObjects.Count - 1; i >= 0; i--)
             {
                 if (_createdObjects[i] != null)
@@ -203,8 +208,14 @@ namespace Valkur.Tests.EditMode.Game.Player
 
         private static void MoveMouseToScreen(Vector2 screenPosition)
         {
+            // Drive both the InputSystem synthetic device (so any callers
+            // reading Mouse.current see the new position) AND the
+            // MouseInputManager test override (so PlayerController et al.
+            // get a deterministic value without depending on the Editor's
+            // focus/viewport state, which is what made these tests flaky).
             InputSystem.QueueStateEvent(Mouse.current, new MouseState { position = screenPosition });
             InputSystem.Update();
+            Valkur.Core.Input.MouseInputManager.SetTestMousePosition(screenPosition);
         }
 
         private DirectionalAnimator.DirectionalSpriteSet CreateUniqueSet(string prefix, int framesPerDirection)

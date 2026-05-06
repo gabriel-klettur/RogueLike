@@ -151,6 +151,28 @@ namespace Valkur.Core.Input
             return TryGetWorldMousePosition(out Vector2 position) ? position : Vector2.zero;
         }
 
+        // ── Test override ────────────────────────────────────────────────────
+        // EditMode tests inject a synthetic Mouse via InputSystem.QueueStateEvent
+        // and expect PlayerController / MouseTargetDetector / friends to read
+        // exactly that position. The production OR-gate (InputSystem ∨ legacy
+        // UnityEngine.Input.mousePosition) is great for surviving the recurring
+        // Unity 2022.3 InputSystem-drops-events bug but is fragile in tests:
+        //   • The Editor's Game view Camera.pixelRect can be invalid when the
+        //     window is unfocused, so requireInView gates fail.
+        //   • UnityEngine.Input.mousePosition reports the OS cursor (anywhere),
+        //     not the synthetic queue state, which can override or clash.
+        // Tests set _testOverridePosition to bypass both fallbacks deterministically.
+        private static Vector2? _testOverridePosition;
+
+        /// <summary>Editor/test seam: force a deterministic screen-space mouse
+        /// position. Pass null to clear (production behaviour). Always pair a
+        /// SetTestMousePosition(...) call with a SetTestMousePosition(null) in
+        /// [TearDown] so subsequent fixtures don't see leaked state.</summary>
+        public static void SetTestMousePosition(Vector2? screenPosition)
+        {
+            _testOverridePosition = screenPosition;
+        }
+
         /// <summary>
         /// Try to get current mouse position in screen space.
         /// </summary>
@@ -165,6 +187,24 @@ namespace Valkur.Core.Input
         /// </summary>
         public static bool TryGetScreenMousePosition(out Vector2 position, bool requireInView, Camera camera)
         {
+            if (_testOverridePosition.HasValue)
+            {
+                position = _testOverridePosition.Value;
+                if (!IsFinite(position)) return false;
+                // Honour requireInView even on the test path: tests like
+                // MovingPlayer_MouseOutsideViewport_FallsBackToMovementWalkSprite
+                // intentionally place the override outside the camera rect to
+                // verify the production fallback to movement direction. If we
+                // unconditionally returned true here that fallback would never
+                // trigger.
+                if (requireInView)
+                {
+                    Rect overrideViewRect = ResolveViewRect(camera);
+                    if (!IsInsideView(position, overrideViewRect)) return false;
+                }
+                return true;
+            }
+
             bool hasInputSystem = TryGetInputSystemScreenMousePosition(out Vector2 inputSystemPos);
             bool hasLegacy = TryGetLegacyScreenMousePosition(out Vector2 legacyPos);
             Rect viewRect = ResolveViewRect(camera);
