@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Valkur.Core;
@@ -47,6 +48,20 @@ namespace Valkur.Gameplay
         [SerializeField] private float dirtyDebounceSeconds = 2f;
         private float _dirtyDebounceTimer = -1f;
         private bool  _dirtyDebouncePending;
+
+        // Phase 2 — async I/O. The autosave write is serialized to JSON on
+        // the main thread (JsonUtility is not thread-safe) and the actual
+        // disk I/O runs on the .NET thread pool. _pendingWrite chains every
+        // new write off the previous one so writes never interleave on disk
+        // even under rapid SaveImmediately bursts. OnApplicationQuit /
+        // OnApplicationPause / Load wait on this task to guarantee the last
+        // bytes reach the disk before Unity tears the service down.
+        [Tooltip("Disable to fall back to synchronous disk writes (e.g. for tests).")]
+        [SerializeField] private bool useAsyncDiskIO = true;
+        [Tooltip("Hard cap on how long OnApplicationQuit waits for a pending write.")]
+        [SerializeField] private float quitWaitSeconds = 5f;
+        private Task _pendingWrite = Task.CompletedTask;
+        private readonly object _pendingWriteLock = new object();
 
         public string RunId => _currentRunId;
 
@@ -363,23 +378,83 @@ namespace Valkur.Gameplay
                 EnsureRunId();
                 data.SetMeta("run_id", _currentRunId);
 
-                SaveFileManager.RotateAutosaveBackups(_currentRunId);
-
                 string path = SaveFileManager.GetAutosavePath(_currentRunId);
-                SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
                 _currentSavePath = path;
+
+                if (useAsyncDiskIO)
+                {
+                    EnqueueAsyncAutosave(_currentRunId, data);
+                }
+                else
+                {
+                    SaveFileManager.RotateAutosaveBackups(_currentRunId);
+                    SaveFileManager.WriteSaveFile(path, data, SaveSchemaMigrator.CURRENT_SCHEMA);
+                }
 
                 // A forced save establishes a new on-disk baseline. Subsequent
                 // periodic autosaves only need to fire when something else
                 // changes after this point, so re-arm the dirty flag.
                 if (force) _sessionDirty = false;
 
-                Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} completed: {path}");
+                Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} {(useAsyncDiskIO ? "queued" : "completed")}: {path}");
                 return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[SaveService] {(force ? "QuickSave" : "Autosave")} failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Chains a new autosave task off whatever previous write may still
+        // be pending so that disk writes are strictly ordered (no thread
+        // ever races to write/rotate the same files). Faulted tasks are
+        // logged but never rethrown — the next save attempt is independent.
+        private void EnqueueAsyncAutosave(string runId, GameSaveData data)
+        {
+            Task previous;
+            lock (_pendingWriteLock) { previous = _pendingWrite; }
+
+            // Serialize the JSON now (main thread, JsonUtility-safe). The
+            // returned Task only does pure file IO and is safe to chain.
+            Task next = previous.ContinueWith(prev =>
+            {
+                if (prev.IsFaulted)
+                    Debug.LogError($"[SaveService] Previous async write faulted: " +
+                                   $"{prev.Exception?.GetBaseException().Message}");
+                return SaveFileManager.WriteAutosaveAsync(runId, data, SaveSchemaMigrator.CURRENT_SCHEMA);
+            }, TaskScheduler.Default).Unwrap();
+
+            // Attach a final logger so a faulted I/O leg doesn't go silent.
+            next.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Debug.LogError($"[SaveService] Async autosave failed: " +
+                                   $"{t.Exception?.GetBaseException().Message}");
+            }, TaskScheduler.Default);
+
+            lock (_pendingWriteLock) { _pendingWrite = next; }
+        }
+
+        /// <summary>
+        /// Block until any pending async autosave has flushed to disk.
+        /// Used by Load (we must not read while a stale write is mid-flight),
+        /// OnApplicationQuit, and tests. Waits at most
+        /// <paramref name="timeoutSeconds"/> seconds (-1 = unbounded).
+        /// </summary>
+        public bool FlushPendingWrites(float timeoutSeconds = 5f)
+        {
+            Task pending;
+            lock (_pendingWriteLock) { pending = _pendingWrite; }
+            if (pending.IsCompleted) return true;
+            try
+            {
+                if (timeoutSeconds < 0f) { pending.Wait(); return true; }
+                return pending.Wait(System.TimeSpan.FromSeconds(timeoutSeconds));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SaveService] FlushPendingWrites errored: {ex.Message}");
                 return false;
             }
         }
@@ -395,6 +470,10 @@ namespace Valkur.Gameplay
 
         public bool Load(string path)
         {
+            // Don't read while a previous async autosave is still mid-flight —
+            // we'd risk loading an in-progress (renamed-out) file or stale
+            // checksum. Worst case this blocks for the duration of one write.
+            FlushPendingWrites(quitWaitSeconds);
             var data = SaveFileManager.TryLoadWithRecovery(path);
             if (data == null)
             {
@@ -490,6 +569,10 @@ namespace Valkur.Gameplay
                 Debug.Log("[SaveService] Application paused — triggering autosave + position checkpoint.");
                 SavePositionCheckpoint();
                 Autosave();
+                // On mobile this is the user backgrounding the app; the OS
+                // can kill us at any moment after the autosave queue spawned
+                // its task. Block until disk durability is guaranteed.
+                FlushPendingWrites(quitWaitSeconds);
             }
         }
 
@@ -501,6 +584,9 @@ namespace Valkur.Gameplay
             // save would restore the player with 0 HP on next "Continue".
             if (_hasKnownPlayerPos && _lastKnownPlayerHp > 0)
                 Autosave();
+            // Wait for the queue to drain before Unity tears the service
+            // down — otherwise Process exit can land mid-rename / mid-write.
+            FlushPendingWrites(quitWaitSeconds);
         }
     }
 

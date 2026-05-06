@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 using Valkur.Data;
 
@@ -16,7 +17,79 @@ namespace Valkur.Gameplay.Save
         {
             data.schemaVersion = schemaVersion;
             string json = JsonUtility.ToJson(data, true);
+            WriteSerializedJsonAtomic(path, json);
+        }
 
+        /// <summary>
+        /// Async variant of <see cref="WriteSaveFile"/>. Serializes to JSON
+        /// on the calling (main) thread — Unity's <c>JsonUtility</c> is not
+        /// thread-safe — and pushes the actual disk I/O (atomic temp+rename
+        /// + checksum sidecar) onto the .NET thread pool. Caller awaits the
+        /// returned <see cref="Task"/> when ordering / durability matters
+        /// (OnApplicationQuit, Load, …).
+        /// </summary>
+        public static Task WriteSaveFileAsync(string path, GameSaveData data, string schemaVersion)
+        {
+            data.schemaVersion = schemaVersion;
+            string json = JsonUtility.ToJson(data, true);
+            return Task.Run(() => WriteSerializedJsonAtomic(path, json));
+        }
+
+        /// <summary>
+        /// Async write that ALSO rotates the per-run backup chain before
+        /// writing the new autosave, all inside a single background task so
+        /// the rotation and the new write cannot interleave with each other.
+        /// Returns a <see cref="Task"/> that completes when the new file has
+        /// reached the disk and its checksum sidecar is in place.
+        ///
+        /// Important: <see cref="UnityEngine.Application.persistentDataPath"/>
+        /// is documented as MAIN-THREAD-ONLY, so every path that depends on
+        /// it (autosave path + backups directory) is resolved here before
+        /// the task starts. The continuation only sees plain strings.
+        /// </summary>
+        public static Task WriteAutosaveAsync(string runId, GameSaveData data, string schemaVersion)
+        {
+            data.schemaVersion = schemaVersion;
+            string json       = JsonUtility.ToJson(data, true);
+            string target     = GetAutosavePath(runId);
+            string backupsDir = GetBackupsDirectory(runId);
+            return Task.Run(() =>
+            {
+                RotateAutosaveBackupsByPath(target, backupsDir);
+                WriteSerializedJsonAtomic(target, json);
+            });
+        }
+
+        /// <summary>
+        /// Thread-safe variant of <see cref="RotateAutosaveBackups"/>: takes
+        /// the already-resolved autosave path and backups directory so it
+        /// never touches Unity APIs (which are not safe off the main thread).
+        /// </summary>
+        internal static void RotateAutosaveBackupsByPath(string srcAutosavePath, string backupsDir)
+        {
+            if (!File.Exists(srcAutosavePath)) return;
+            Directory.CreateDirectory(backupsDir);
+
+            // Shift N-1 → N, N-2 → N-1, …, 1 → 2 (drop the oldest)
+            for (int i = MAX_BACKUPS; i >= 2; i--)
+            {
+                string from = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_{i - 1}" + SAVE_EXTENSION);
+                string to   = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_{i}"     + SAVE_EXTENSION);
+                if (!File.Exists(from)) continue;
+                if (File.Exists(to)) File.Delete(to);
+                File.Move(from, to);
+            }
+
+            // Copy current autosave → autosave_1
+            string firstBackup = Path.Combine(backupsDir, $"{AUTOSAVE_NAME}_1" + SAVE_EXTENSION);
+            if (File.Exists(firstBackup)) File.Delete(firstBackup);
+            File.Copy(srcAutosavePath, firstBackup, overwrite: true);
+        }
+
+        // Atomic temp-write + rename + checksum. Pure file IO, safe to call
+        // from any thread.
+        internal static void WriteSerializedJsonAtomic(string path, string json)
+        {
             string dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
