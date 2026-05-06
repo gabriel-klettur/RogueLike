@@ -100,5 +100,14 @@ namespace Valkur.Gameplay.Save
                 TotalRecorded = 0;
             }
         }
+
+        /// <summary>
+        /// Clears all subscribers from <see cref="OnEntryRecorded"/>. Called
+        /// from <see cref="SaveTelemetryHUD"/> via
+        /// <c>[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]</c> so
+        /// that stale HUD delegates from a previous Play session (Domain Reload
+        /// OFF) don't accumulate and fire against destroyed objects.
+        /// </summary>
+        internal static void ClearEntryRecordedListeners() => OnEntryRecorded = null;
     }
 }

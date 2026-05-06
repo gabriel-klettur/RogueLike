@@ -3,6 +3,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Valkur.Core.Input;
 
 namespace Valkur.Gameplay.Save
 {
@@ -16,6 +17,14 @@ namespace Valkur.Gameplay.Save
     public class SaveTelemetryHUD : MonoBehaviour
     {
         public static SaveTelemetryHUD Instance { get; private set; }
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+            // Clear stale delegates that survived a domain-reload-OFF second Play.
+            SaveTelemetry.ClearEntryRecordedListeners();
+        }
 
         // Match the General Editor's Diagnostics palette.
         private static readonly Color PanelBg     = new Color(22f/255f, 24f/255f, 28f/255f, 235f/255f);
@@ -82,7 +91,7 @@ namespace Valkur.Gameplay.Save
         {
             if (_root == null || !_root.activeInHierarchy) return;
             // ESC closes — sits on top of the General Editor so it owns input.
-            if (Input.GetKeyDown(KeyCode.Escape)) Close();
+            if (KeyboardInputManager.WasEscapePressedThisFrame()) Close();
         }
 
         // ── Refresh ──────────────────────────────────────────────────────────────
