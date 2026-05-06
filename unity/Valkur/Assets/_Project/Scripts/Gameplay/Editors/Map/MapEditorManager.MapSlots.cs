@@ -32,27 +32,6 @@ namespace Valkur.Gameplay.MapEditor
             return _slotStore;
         }
 
-        // ── Save current zones as a named slot ───────────────────────────────────
-
-        public bool SaveCurrentMapAs(string slotName)
-        {
-            if (string.IsNullOrWhiteSpace(slotName)) return false;
-            string clean = MapEditorMapSlots.Sanitize(slotName);
-            if (string.IsNullOrEmpty(clean)) return false;
-
-            // Make sure the working copy reflects the current ZoneManager.
-            PersistZonesToDisk();
-
-            string json = ReadWorkingCopyJson();
-            if (json == null) return false;
-
-            var store = ResolveSlotStore();
-            if (!store.WriteSlot(clean, json)) return false;
-            store.SetActive(clean);
-            OnMapSlotsChanged?.Invoke();
-            return true;
-        }
-
         // ── Load a named slot into the live ZoneManager ──────────────────────────
 
         public bool LoadMapSlot(string slotName)
@@ -126,12 +105,36 @@ namespace Valkur.Gameplay.MapEditor
                 _state.RestrictTileEditingToEditableZones = false;
                 _state.NextZoneIndex = 1;
             }
+            // SetActive BEFORE PersistZonesToDisk so the auto-save mirror in
+            // PersistZonesToDisk writes the empty state to the *new* slot file
+            // (not the one we just backed up).
+            ResolveSlotStore().SetActive(clean);
             PersistZonesToDisk();
 
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
-            ResolveSlotStore().SetActive(clean);
+            // Teleport the player to world origin so the editor centres on a
+            // blank canvas instead of leaving them stranded inside whatever
+            // (now-deleted) zone they were standing on.
+            TeleportPlayerToBlankMapOrigin();
             OnMapSlotsChanged?.Invoke();
             return true;
+        }
+
+        private void TeleportPlayerToBlankMapOrigin()
+        {
+            var playerT = Valkur.Core.EntityRegistry.PlayerTransform;
+            if (playerT == null) return;
+            Vector3 oldPos = playerT.position;
+            Vector3 newPos = new Vector3(0f, 0f, oldPos.z);
+            playerT.position = newPos;
+
+            _cameraPan.Reset();
+            var camSetup = Valkur.Gameplay.CameraSetup.Instance;
+            if (camSetup != null)
+            {
+                camSetup.ReattachFollow();
+                camSetup.SnapToFollowTarget(newPos - oldPos);
+            }
         }
 
         // ── Delete + Rename ──────────────────────────────────────────────────────

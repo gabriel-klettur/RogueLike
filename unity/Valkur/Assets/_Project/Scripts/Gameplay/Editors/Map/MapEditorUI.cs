@@ -57,7 +57,8 @@ namespace Valkur.Gameplay.MapEditor
             (_refs.AddZoneDialog != null && _refs.AddZoneDialog.activeSelf) ||
             (_refs.DeleteZoneDialog != null && _refs.DeleteZoneDialog.activeSelf) ||
             (_refs.MapsDeleteDialog != null && _refs.MapsDeleteDialog.activeSelf) ||
-            (_refs.MapsNewDialog != null && _refs.MapsNewDialog.activeSelf);
+            (_refs.MapsNewDialog != null && _refs.MapsNewDialog.activeSelf) ||
+            (_refs.MapsRenameDialog != null && _refs.MapsRenameDialog.activeSelf);
 
         /// <summary>Toggles the named floating panel open/closed and updates menu button styles.</summary>
         public void OnDropdownToggle(string key)
@@ -178,6 +179,7 @@ namespace Valkur.Gameplay.MapEditor
                 HideDeleteZoneDialog();
                 HideMapsDeleteDialog();
                 HideMapsNewDialog();
+                HideMapsRenameDialog();
             }
         }
 

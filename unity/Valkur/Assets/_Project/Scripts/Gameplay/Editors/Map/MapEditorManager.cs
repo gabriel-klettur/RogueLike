@@ -283,7 +283,6 @@ namespace Valkur.Gameplay.MapEditor
 
             var slotCallbacks = new MapEditorUIBuilder.MapSlotCallbacks
             {
-                OnSaveAs   = OnSlotSaveAs,
                 OnLoad     = OnSlotLoad,
                 OnDelete   = OnSlotDelete,
                 OnRename   = OnSlotRename,
@@ -323,17 +322,6 @@ namespace Valkur.Gameplay.MapEditor
         }
 
         // ── Slot UI handlers ────────────────────────────────────────────────────
-
-        private void OnSlotSaveAs(string slotName)
-        {
-            if (string.IsNullOrWhiteSpace(slotName))
-            {
-                _ui?.SetStatus("Enter a map name in the Maps panel.");
-                return;
-            }
-            bool ok = SaveCurrentMapAs(slotName);
-            _ui?.SetStatus(ok ? $"Saved map '{slotName}'." : $"Save failed for '{slotName}'.");
-        }
 
         private void OnSlotLoad(string slotName)
         {

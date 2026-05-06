@@ -30,13 +30,15 @@ namespace Valkur.Gameplay.MapEditor
             public TextMeshProUGUI MapsActiveLabel;
             public ScrollRect      MapsListScroll;
             public RectTransform   MapsListContent;
-            public TMP_InputField  MapsNameInput;
 
             // Modal dialogs
             public GameObject      MapsDeleteDialog;
             public TextMeshProUGUI MapsDeletePrompt;
             public GameObject      MapsNewDialog;
             public TMP_InputField  MapsNewNameInput;
+            public GameObject      MapsRenameDialog;
+            public TextMeshProUGUI MapsRenamePrompt;
+            public TMP_InputField  MapsRenameNameInput;
 
             // Mutable state shared across click handlers
             public MapSlotsDialogState MapsState;
@@ -49,7 +51,6 @@ namespace Valkur.Gameplay.MapEditor
         /// </summary>
         public struct MapSlotCallbacks
         {
-            public Action<string>          OnSaveAs;
             public Action<string>          OnLoad;
             public Action<string>          OnDelete;
             public Action<string, string>  OnRename;
@@ -62,18 +63,21 @@ namespace Valkur.Gameplay.MapEditor
         {
             public string SelectedSlot;
             public string DeleteTargetSlot;
+            public string RenameTargetSlot;
         }
 
         // ── Sizes ────────────────────────────────────────────────────────────────
 
-        private const float MAPS_PANEL_W      = 280f;
-        private const float MAPS_PANEL_H      = 470f + PANEL_HDR_H;
-        private const float MAPS_LIST_MIN_H   = 200f;
-        private const float MAPS_LIST_SCROLLBAR_W = 12f;
-        private const float MAPS_DELETE_DIALOG_W  = 430f;
-        private const float MAPS_DELETE_DIALOG_H  = 130f + PANEL_HDR_H;
-        private const float MAPS_NEW_DIALOG_W     = 430f;
-        private const float MAPS_NEW_DIALOG_H     = 200f + PANEL_HDR_H;
+        private const float MAPS_PANEL_W            = 280f;
+        private const float MAPS_PANEL_H            = 380f + PANEL_HDR_H;
+        private const float MAPS_LIST_MIN_H         = 200f;
+        private const float MAPS_LIST_SCROLLBAR_W   = 12f;
+        private const float MAPS_DELETE_DIALOG_W    = 430f;
+        private const float MAPS_DELETE_DIALOG_H    = 130f + PANEL_HDR_H;
+        private const float MAPS_NEW_DIALOG_W       = 430f;
+        private const float MAPS_NEW_DIALOG_H       = 150f + PANEL_HDR_H;
+        private const float MAPS_RENAME_DIALOG_W    = 430f;
+        private const float MAPS_RENAME_DIALOG_H    = 200f + PANEL_HDR_H;
 
         // ── Build entry ──────────────────────────────────────────────────────────
 
@@ -113,30 +117,34 @@ namespace Valkur.Gameplay.MapEditor
             refs.MapsListContent = content;
 
             BuildSeparator(t);
-            BuildSectionLabel(t, "Map name");
 
-            var nameHost = CreateUI("MapsNameHost", t);
-            nameHost.AddComponent<LayoutElement>().preferredHeight = 30f;
-            refs.MapsNameInput = MakeTmpInput(nameHost, "new_map_name");
-
-            BuildSeparator(t);
-
-            var nameInput = refs.MapsNameInput;
-            AddActionBtn(t, "Save As", BTN_H, () =>
-            {
-                callbacks.OnSaveAs?.Invoke(nameInput != null ? nameInput.text : string.Empty);
-            });
-            AddActionBtn(t, "Load",    BTN_H, () =>
+            // Load uses the row selection directly — no name field needed.
+            AddActionBtn(t, "Load", BTN_H, () =>
             {
                 callbacks.OnLoad?.Invoke(state.SelectedSlot);
             });
-            AddActionBtn(t, "Rename",  BTN_H, () =>
+
+            // Rename, Delete and New all go through dedicated confirm dialogs.
+            BuildMapsRenameDialog(canvasT, ref refs, callbacks);
+            var localRenameDialog    = refs.MapsRenameDialog;
+            var localRenamePrompt    = refs.MapsRenamePrompt;
+            var localRenameNameInput = refs.MapsRenameNameInput;
+            AddActionBtn(t, "Rename", BTN_H, () =>
             {
-                callbacks.OnRename?.Invoke(state.SelectedSlot,
-                    nameInput != null ? nameInput.text : string.Empty);
+                if (string.IsNullOrEmpty(state.SelectedSlot)) return;
+                state.RenameTargetSlot = state.SelectedSlot;
+                bool isDefault = string.Equals(state.SelectedSlot,
+                    MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+                if (localRenamePrompt != null)
+                    localRenamePrompt.text = isDefault
+                        ? "The 'default' map is the implicit baseline and cannot be renamed."
+                        : $"Rename map '{state.SelectedSlot}' to:";
+                if (localRenameNameInput != null)
+                    localRenameNameInput.text = isDefault ? string.Empty : state.SelectedSlot;
+                if (localRenameDialog != null)
+                    localRenameDialog.SetActive(true);
             });
 
-            // Delete + New flows go through small confirm dialogs.
             BuildMapsDeleteDialog(canvasT, ref refs, callbacks);
             var localDeleteDialog = refs.MapsDeleteDialog;
             var localDeletePrompt = refs.MapsDeletePrompt;
@@ -218,20 +226,10 @@ namespace Valkur.Gameplay.MapEditor
                 PanelDock.TopLeft,
                 /*x*/ 80f, /*y*/ PANEL_TOP_OFFSET + 80f,
                 MAPS_NEW_DIALOG_W, MAPS_NEW_DIALOG_H,
-                "NEW MAP (CLEAR)",
+                "NEW MAP",
                 out var t, out _);
             refs.MapsNewDialog = go;
 
-            var promptGo = CreateUI("Prompt", t);
-            promptGo.AddComponent<LayoutElement>().preferredHeight = 22f;
-            var prompt = promptGo.AddComponent<TextMeshProUGUI>();
-            prompt.text      = "Discard current zones and start a blank map?";
-            prompt.fontSize  = 12f;
-            prompt.color     = TEXT_PRIMARY;
-            prompt.alignment = TextAlignmentOptions.Left;
-            prompt.enableWordWrapping = true;
-
-            BuildSeparator(t);
             BuildSectionLabel(t, "New map name");
 
             var nameHost = CreateUI("MapsNewNameHost", t);
@@ -249,6 +247,61 @@ namespace Valkur.Gameplay.MapEditor
                 localGo.SetActive(false);
             });
             AddActionBtn(btnRow.transform, "Cancel", BTN_H, () => { localGo.SetActive(false); });
+
+            go.SetActive(false);
+        }
+
+        private static void BuildMapsRenameDialog(Transform canvasT, ref UIRefs refs,
+            MapSlotCallbacks callbacks)
+        {
+            var go = MakeDrop("MapsRenameDialog", canvasT,
+                PanelDock.TopLeft,
+                /*x*/ 80f, /*y*/ PANEL_TOP_OFFSET + 80f,
+                MAPS_RENAME_DIALOG_W, MAPS_RENAME_DIALOG_H,
+                "RENAME MAP",
+                out var t, out _);
+            refs.MapsRenameDialog = go;
+
+            var promptGo = CreateUI("Prompt", t);
+            promptGo.AddComponent<LayoutElement>().preferredHeight = 22f;
+            refs.MapsRenamePrompt = promptGo.AddComponent<TextMeshProUGUI>();
+            refs.MapsRenamePrompt.text      = "Rename map to:";
+            refs.MapsRenamePrompt.fontSize  = 12f;
+            refs.MapsRenamePrompt.color     = TEXT_PRIMARY;
+            refs.MapsRenamePrompt.alignment = TextAlignmentOptions.Left;
+            refs.MapsRenamePrompt.enableWordWrapping = true;
+
+            BuildSeparator(t);
+            BuildSectionLabel(t, "New name");
+
+            var nameHost = CreateUI("MapsRenameNameHost", t);
+            nameHost.AddComponent<LayoutElement>().preferredHeight = 30f;
+            refs.MapsRenameNameInput = MakeTmpInput(nameHost, "renamed_map");
+
+            BuildSeparator(t);
+
+            var localGo        = go;
+            var localState     = refs.MapsState;
+            var localRenameIn  = refs.MapsRenameNameInput;
+            var btnRow = MakeRow("MapsRenameDialogBtns", t, BTN_H);
+            AddActionBtn(btnRow.transform, "Confirm", BTN_H, () =>
+            {
+                if (localState != null && !string.IsNullOrEmpty(localState.RenameTargetSlot))
+                {
+                    string newName = localRenameIn != null ? localRenameIn.text : string.Empty;
+                    bool isDefault = string.Equals(localState.RenameTargetSlot,
+                        MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
+                    if (!isDefault)
+                        callbacks.OnRename?.Invoke(localState.RenameTargetSlot, newName);
+                }
+                if (localState != null) localState.RenameTargetSlot = null;
+                localGo.SetActive(false);
+            });
+            AddActionBtn(btnRow.transform, "Cancel", BTN_H, () =>
+            {
+                if (localState != null) localState.RenameTargetSlot = null;
+                localGo.SetActive(false);
+            });
 
             go.SetActive(false);
         }

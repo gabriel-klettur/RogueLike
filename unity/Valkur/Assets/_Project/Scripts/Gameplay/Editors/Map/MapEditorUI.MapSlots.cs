@@ -18,8 +18,6 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_refs.MapsState == null) return;
             _refs.MapsState.SelectedSlot = slot;
-            if (_refs.MapsNameInput != null)
-                _refs.MapsNameInput.text = slot ?? string.Empty;
         }
 
         public void HideMapsDeleteDialog()
@@ -32,6 +30,12 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_refs.MapsNewDialog != null)
                 _refs.MapsNewDialog.SetActive(false);
+        }
+
+        public void HideMapsRenameDialog()
+        {
+            if (_refs.MapsRenameDialog != null)
+                _refs.MapsRenameDialog.SetActive(false);
         }
     }
 }

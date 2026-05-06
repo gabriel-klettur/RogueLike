@@ -77,6 +77,11 @@ namespace Valkur.Gameplay.MapEditor
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
                 ResolveZonesRepository().WriteAtomic(_persistenceWorldId, json);
+                // Auto-save mirror: the slot file for the currently-active map
+                // tracks the working copy on every persist, so zone Add /
+                // Delete / Rename / ToggleEditable / Biome generation are all
+                // saved instantly with no explicit "Save As" step required.
+                MirrorWorkingCopyToActiveSlot(json);
                 if (shelvedPreserved > 0)
                     Debug.Log($"[MapEditor] Persisted {data.zones.Count} zone(s) " +
                               $"({shelvedPreserved} shelved preserved) via repository.");
@@ -87,6 +92,19 @@ namespace Valkur.Gameplay.MapEditor
             {
                 Debug.LogError($"[MapEditor] Failed to persist zones via repository: {ex.Message}");
             }
+        }
+
+        // Mirrors the just-written working-copy JSON to the slot file of the
+        // currently-active map. Silent no-op when no active slot is set yet
+        // (e.g. very early boot, before the slot store is constructed).
+        private void MirrorWorkingCopyToActiveSlot(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return;
+            var store = ResolveSlotStore();
+            if (store == null) return;
+            string active = store.ActiveSlot;
+            if (string.IsNullOrEmpty(active)) return;
+            store.WriteSlot(active, json);
         }
 
         // Reads the current persistence file (if any) and appends to `data`
