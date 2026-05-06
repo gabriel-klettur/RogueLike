@@ -138,6 +138,7 @@ namespace Valkur.Gameplay.Entities
             _active = false;
             _root.SetActive(false);
             _selectedKey = null;
+            _bossDefByKey = null; // invalidate cache so next activation rescans
             CancelPickerDrag();
             // Drop world-side selection + outlines so the next Activate starts clean.
             _entityDragging = false;

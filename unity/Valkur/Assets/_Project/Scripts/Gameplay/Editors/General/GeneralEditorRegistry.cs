@@ -15,6 +15,7 @@ using Valkur.Gameplay.Save;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.Editors.Boss;
 using Valkur.Gameplay.TimeWeather;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
@@ -47,6 +48,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Items",         () => ItemsRuntimeEditor.Instance));
             list.Add(MakeEditor("Spells",        () => SpellsRuntimeEditor.Instance));
             list.Add(MakeEditor("Entities",      () => EntitiesRuntimeEditor.Instance));
+            list.Add(MakeEditor("Boss",          () => BossEditorManager.Instance));
             list.Add(MakeEditor("FSM",           () => FSMRuntimeEditor.Instance));
             list.Add(MakeEditor("Map",           () => MapEditorManager.Instance));
             list.Add(MakeEditor("Inventory",     () => InventoryRuntimeEditor.Instance));

@@ -78,6 +78,9 @@ namespace Valkur.Gameplay.Entities
             public RectTransform    PropsSpawnSection;
             public RectTransform    PropsAutoCastSection;
             public RectTransform    PropsAssetsSection;
+
+            // Boss Editor handoff button (shown only when selected entity is a boss).
+            public GameObject       BossHandoffBtnGo;
         }
 
         // ── Panel sizes ───────────────────────────────────────────────────────────

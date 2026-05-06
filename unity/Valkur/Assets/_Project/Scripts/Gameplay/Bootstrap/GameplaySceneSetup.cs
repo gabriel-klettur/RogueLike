@@ -94,7 +94,7 @@ namespace Valkur.Gameplay
 
         private WorldGridBuilder _gridBuilder;
 
-        private const int SetupStepTotal = 40;
+        private const int SetupStepTotal = 41;
         private int _setupStep;
 
         private IEnumerator Start()
@@ -175,6 +175,9 @@ namespace Valkur.Gameplay
 
             EnsureEntitiesRuntimeEditor();
             Report("Initializing entities editor"); yield return null;
+
+            EnsureBossEditor();
+            Report("Initializing boss editor"); yield return null;
 
             EnsureInventoryRuntimeEditor();
             Report("Initializing inventory editor"); yield return null;
@@ -342,7 +345,13 @@ namespace Valkur.Gameplay
 
         /// <summary>
         /// Returns the Transform of a scene container GameObject (e.g. "[World]").
-        /// Cached on first access. Returns null (root level) if the container is not found.
+        /// Cached on first access. Bracketed names ("[X]") follow our scene
+        /// organisational convention and are auto-created when missing so a
+        /// fresh scene that doesn't pre-author every container still groups
+        /// spawned objects under the correct root instead of polluting the
+        /// scene root with hundreds of loose nodes. Non-bracketed names
+        /// (callers that want a strict lookup) fall back to root with a
+        /// single warning.
         /// </summary>
         private Transform GetSceneContainer(string name)
         {
@@ -351,7 +360,14 @@ namespace Valkur.Gameplay
 
             var go = GameObject.Find(name);
             if (go == null)
-                Debug.LogWarning($"[GameplaySceneSetup] Scene container '{name}' not found — object will spawn at root.");
+            {
+                bool isConventionContainer =
+                    !string.IsNullOrEmpty(name) && name.StartsWith("[") && name.EndsWith("]");
+                if (isConventionContainer)
+                    go = new GameObject(name);
+                else
+                    Debug.LogWarning($"[GameplaySceneSetup] Scene container '{name}' not found — object will spawn at root.");
+            }
 
             var t = go != null ? go.transform : null;
             _containerCache[name] = t;

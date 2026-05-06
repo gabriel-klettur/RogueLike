@@ -49,6 +49,17 @@ namespace Valkur.Gameplay.Entities
             refs.PropsAutoCastSection = MakeFormSection(content, "Auto-Cast");
             refs.PropsAssetsSection   = MakeFormSection(content, "Assets");
 
+            // Boss Editor handoff button — hidden until the selected entity is a boss.
+            var bossBtn = CreateUI("BossHandoffBtn", t);
+            bossBtn.AddComponent<LayoutElement>().preferredHeight = 30f;
+            var bossBtnImg = bossBtn.AddComponent<Image>();
+            bossBtnImg.color = new Color(0.20f, 0.30f, 0.55f, 1f);
+            var bossBtnComponent = bossBtn.AddComponent<Button>();
+            bossBtnComponent.targetGraphic = bossBtnImg;
+            AddCenteredText(bossBtn.transform, "Open Boss Editor →", 11f, FontStyles.Bold, TEXT_PRIMARY);
+            refs.BossHandoffBtnGo = bossBtn;
+            bossBtn.SetActive(false);
+
             refs.PropsDropdown.SetActive(false);
         }
 

@@ -344,6 +344,9 @@ namespace Valkur.Gameplay.Entities
                 ? def.assetConfig.idle.south.name : "â€”";
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsAssetsSection, "Idle Sprite", idle);
 
+            // Show "Open Boss Editor →" button when the monster has a BossDefinition.
+            UpdateBossHandoffButton(key);
+
             SetStatus($"Selected: {def.displayName ?? key}");
         }
 
@@ -367,6 +370,7 @@ namespace Valkur.Gameplay.Entities
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Speed",        p.BasicSpeed.ToString());
             EntitiesEditorUIBuilder.AddPropertyRow(_ui.PropsStatsSection, "Mana Regen",   $"{p.ManaRegenPerSecond}/s");
 
+            if (_ui.BossHandoffBtnGo != null) _ui.BossHandoffBtnGo.SetActive(false);
             SetStatus($"Selected: {p.DisplayName ?? key}");
         }
 

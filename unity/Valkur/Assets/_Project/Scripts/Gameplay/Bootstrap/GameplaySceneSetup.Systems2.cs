@@ -6,6 +6,7 @@ using Valkur.Gameplay.Chat;
 using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.Buildings;
+using Valkur.Gameplay.Editors.Boss;
 using Valkur.Gameplay.Editors.General;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.TileEditor;
@@ -341,14 +342,21 @@ namespace Valkur.Gameplay
         {
             // Surface the catalog before the editor's first activation so its
             // ServiceLocator-first lookup hits a populated binding instead of
-            // falling back to AssetDatabase / Resources.
-            if (_itemCatalog != null)
+            // falling back to AssetDatabase / Resources. Try the inspector
+            // field first, then the canonical Resources/AssetDatabase
+            // fallback, and only warn if BOTH paths are empty — otherwise
+            // the warning fires on every cold boot of a freshly-migrated
+            // project even though the catalog is correctly discovered.
+            var catalog = _itemCatalog != null ? _itemCatalog : ResolveItemCatalogFallback();
+            if (catalog != null)
             {
-                ServiceLocator.Register<ItemCatalog>(_itemCatalog);
+                ServiceLocator.Register<ItemCatalog>(catalog);
+                if (_itemCatalog == null)
+                    Debug.Log("[GameplaySceneSetup] ItemCatalog inspector field empty — resolved via Resources/AssetDatabase fallback.");
             }
             else
             {
-                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog assigned — items editor will fall back to AssetDatabase/Resources.");
+                Debug.LogWarning("[GameplaySceneSetup] No ItemCatalog assigned and no fallback found — items editor will be empty.");
             }
 
             EnsureItemDropService();
@@ -379,11 +387,10 @@ namespace Valkur.Gameplay
 
             // Fall back to the canonical Catalogs/Items/ItemCatalog.asset when
             // the inspector field is empty, so persistence works out-of-the-box
-            // after a fresh PythonDataMigrator run even before someone wires
-            // the GameplaySceneSetup field by hand. Without this fallback the
-            // service is never created, the F7 editor silently uses the legacy
-            // ephemeral DropSystem path, and drops never reach disk — which is
-            // exactly the "items don't persist" failure mode.
+            // before someone wires the GameplaySceneSetup field by hand. Without
+            // this fallback the service is never created, the F7 editor silently
+            // uses the legacy ephemeral DropSystem path, and drops never reach
+            // disk — which is exactly the "items don't persist" failure mode.
             var catalog = _itemCatalog != null ? _itemCatalog : ResolveItemCatalogFallback();
             if (catalog == null)
             {
@@ -459,6 +466,17 @@ namespace Valkur.Gameplay
 #endif
 
             Debug.Log("[GameplaySceneSetup] SpellsRuntimeEditor created. Press F4 to toggle.");
+        }
+
+        private void EnsureBossEditor()
+        {
+            if (BossEditorManager.Instance != null) return;
+
+            var go = new GameObject("BossEditorManager");
+            go.AddComponent<BossEditorManager>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+
+            Debug.Log("[GameplaySceneSetup] BossEditorManager created (accessible via General Editor).");
         }
 
         private void EnsureEntitiesRuntimeEditor()
