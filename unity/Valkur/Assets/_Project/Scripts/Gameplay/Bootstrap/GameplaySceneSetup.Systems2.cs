@@ -296,19 +296,13 @@ namespace Valkur.Gameplay
             Debug.Log("[GameplaySceneSetup] LightingRuntimeEditor created. Press Ctrl+F3 to toggle.");
         }
 
-        // Atmospheric particles + ambient audio bed driven by DayNightCycle.
-        // Sit under [VFX] / [Systems] respectively so the existing scene
-        // hierarchy stays organised. Both are idempotent.
+        // Ambient audio bed driven by DayNightCycle.
+        // Phase-driven *particles* were intentionally removed — particles are
+        // a Weather concern (Rain / Snow / Dust storm). Phases only modulate
+        // colour palette + ambient audio, never the particle layer.
+        // Audio component is idempotent so repeated bootstraps are safe.
         private void EnsureDayNightAtmosphere()
         {
-            if (FindObjectOfType<Valkur.Gameplay.World.DayNightAtmosphericParticles>() == null)
-            {
-                var go  = new GameObject("DayNightAtmosphericParticles", typeof(ParticleSystem));
-                go.AddComponent<Valkur.Gameplay.World.DayNightAtmosphericParticles>();
-                go.transform.SetParent(GetSceneContainer("[VFX]"), false);
-                Debug.Log("[GameplaySceneSetup] DayNightAtmosphericParticles created.");
-            }
-
             if (FindObjectOfType<Valkur.Gameplay.World.DayNightAmbientAudio>() == null)
             {
                 var go = new GameObject("DayNightAmbientAudio");
