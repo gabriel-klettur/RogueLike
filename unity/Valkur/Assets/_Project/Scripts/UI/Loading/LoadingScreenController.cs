@@ -38,6 +38,8 @@ namespace Valkur.UI.Loading
         private const float MIN_DISPLAY_TIME = 1.5f;
         private const float FADE_DURATION    = 0.45f;
         private const float DOTS_INTERVAL    = 0.4f;
+        private const float TIP_INTERVAL     = 4.5f;
+        private const int   FEED_CAPACITY    = 3;
 
         // â”€â”€ Colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private static readonly Color BarBorderColor = Color.white;
@@ -60,11 +62,39 @@ namespace Valkur.UI.Loading
         private int    _dotsCount;
         private string _baseMessage = "Loading";
 
+        // Stage history (FIFO of last N completed stages for the activity feed)
+        private readonly System.Collections.Generic.Queue<string> _stageHistory =
+            new System.Collections.Generic.Queue<string>(FEED_CAPACITY);
+
+        // Rotating tips
+        private float _tipTimer;
+        private int   _tipIndex = -1;
+
         // UI references
         private Image           _barFill;
         private TextMeshProUGUI _statusText;
         private TextMeshProUGUI _pctText;
+        private TextMeshProUGUI _feedText;
+        private TextMeshProUGUI _tipText;
         private CanvasGroup     _cg;
+
+        // ── Loading tips (rotate every TIP_INTERVAL while the screen is up) ──
+        // Short, gameplay-relevant lines that give the user something to read
+        // while the bar fills. Order doesn't matter — the index advances
+        // forward on a timer.
+        private static readonly string[] LoadingTips = new[]
+        {
+            "Tip: Hold the left mouse button to keep attacking.",
+            "Tip: Press F1–F12 to open the in-game editors at any time.",
+            "Tip: F10 opens the Buildings editor — paint per-cell collisions there.",
+            "Tip: F8 is the Tile editor; Ctrl + click to flood-fill a region.",
+            "Tip: Mouse-wheel over stacked buildings to cycle the active selection.",
+            "Tip: F12 lets you author boss FSMs without recompiling.",
+            "Tip: Saves rotate 5 deep — a corruption can be rolled back.",
+            "Tip: Permadeath is on; your soul drops on death.",
+            "Tip: Spells can be remapped from the F4 in-game editor.",
+            "Tip: The day/night cycle changes monster spawn behaviour.",
+        };
 
         // â”€â”€ Entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         public static void Show(string targetScene)
@@ -115,13 +145,61 @@ namespace Valkur.UI.Loading
                 if (_statusText != null)
                     _statusText.text = _baseMessage + new string('.', _dotsCount);
             }
+
+            // Rotating tips — give the user something to read on long stages.
+            _tipTimer += Time.unscaledDeltaTime;
+            if (_tipTimer >= TIP_INTERVAL)
+            {
+                _tipTimer = 0f;
+                AdvanceTip();
+            }
+        }
+
+        private void AdvanceTip()
+        {
+            if (LoadingTips == null || LoadingTips.Length == 0 || _tipText == null) return;
+            _tipIndex = (_tipIndex + 1) % LoadingTips.Length;
+            _tipText.text = LoadingTips[_tipIndex];
         }
 
         // â”€â”€ Stage reporting (Phase 2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private void OnStageReport(string message, float gamePhaseProgress)
         {
+            // Promote the OUTGOING stage to the activity feed before swapping
+            // the message in. The current message represents work that just
+            // finished; the new one is what's about to run.
+            if (!string.IsNullOrEmpty(_baseMessage) && _baseMessage != "Initializing world" &&
+                _baseMessage != "Loading resources" && _baseMessage != "Loading")
+            {
+                if (_stageHistory.Count >= FEED_CAPACITY) _stageHistory.Dequeue();
+                _stageHistory.Enqueue(_baseMessage);
+                RefreshFeed();
+            }
+
             _baseMessage    = message;
             _targetProgress = 0.4f + Mathf.Clamp01(gamePhaseProgress) * 0.6f;
+        }
+
+        private void RefreshFeed()
+        {
+            if (_feedText == null) return;
+            // Render newest stage at the bottom (closest to the active label),
+            // older stages above with progressively lower alpha so the feed
+            // visually fades upward.
+            var sb = new System.Text.StringBuilder();
+            int idx = 0;
+            int count = _stageHistory.Count;
+            foreach (var stage in _stageHistory)
+            {
+                // alpha 0.30 → 0.60 → 0.90 from oldest to newest (3-line cap).
+                float a = Mathf.Lerp(0.30f, 0.90f, count <= 1 ? 1f : idx / (float)(count - 1));
+                int alphaHex = Mathf.Clamp(Mathf.RoundToInt(a * 255f), 0, 255);
+                sb.Append("<color=#FFFFFF").Append(alphaHex.ToString("X2")).Append('>')
+                  .Append("✓ ").Append(stage).Append("</color>");
+                if (idx < count - 1) sb.Append('\n');
+                idx++;
+            }
+            _feedText.text = sb.ToString();
         }
 
         // â”€â”€ Scene loading coroutine (Phase 1: 0%â†’40%) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -371,6 +449,48 @@ namespace Valkur.UI.Loading
             textRt.pivot            = new Vector2(0.5f, 0f);
             textRt.anchoredPosition = new Vector2(0f, barY + BAR_HEIGHT_PX + TEXT_OFFSET_Y);
             textRt.sizeDelta        = new Vector2(barW, 30f);
+
+            // ── Activity feed (above the status line, right-aligned, faded) ──
+            // Shows the last FEED_CAPACITY completed stages so the user has
+            // visible momentum even when an individual stage label sits for
+            // a moment. Right-aligned to leave the centre uncluttered.
+            var feedGo = new GameObject("ActivityFeed");
+            feedGo.transform.SetParent(canvasGo.transform, false);
+            _feedText = feedGo.AddComponent<TextMeshProUGUI>();
+            _feedText.fontSize             = 12f;
+            _feedText.color                = TextColor; // alpha is per-line via rich text
+            _feedText.alignment            = TextAlignmentOptions.MidlineRight;
+            _feedText.richText             = true;
+            _feedText.text                 = string.Empty;
+            _feedText.enableWordWrapping   = false;
+            _feedText.overflowMode         = TextOverflowModes.Ellipsis;
+            var feedRt = feedGo.GetComponent<RectTransform>();
+            feedRt.anchorMin               = new Vector2(0.5f, 0f);
+            feedRt.anchorMax               = new Vector2(0.5f, 0f);
+            feedRt.pivot                   = new Vector2(1f,   0f);
+            feedRt.anchoredPosition        = new Vector2(barW * 0.5f, barY + BAR_HEIGHT_PX + TEXT_OFFSET_Y + 28f);
+            feedRt.sizeDelta               = new Vector2(barW * 0.5f, 60f);
+
+            // ── Rotating tips (below the bar, centered, dim) ────────────────
+            // A single line that cycles through gameplay tips every TIP_INTERVAL
+            // seconds. Sits well below the bar so it doesn't crowd the live
+            // status. Shown immediately so the user sees the first tip on
+            // frame 1 instead of waiting TIP_INTERVAL for the first rotation.
+            var tipGo = new GameObject("LoadingTip");
+            tipGo.transform.SetParent(canvasGo.transform, false);
+            _tipText = tipGo.AddComponent<TextMeshProUGUI>();
+            _tipText.fontSize  = 14f;
+            _tipText.color     = new Color(1f, 1f, 1f, 0.65f);
+            _tipText.alignment = TextAlignmentOptions.Center;
+            _tipText.fontStyle = FontStyles.Italic;
+            _tipText.text      = string.Empty;
+            var tipRt = tipGo.GetComponent<RectTransform>();
+            tipRt.anchorMin        = new Vector2(0.5f, 0f);
+            tipRt.anchorMax        = new Vector2(0.5f, 0f);
+            tipRt.pivot            = new Vector2(0.5f, 1f);
+            tipRt.anchoredPosition = new Vector2(0f, barY - 16f);
+            tipRt.sizeDelta        = new Vector2(barW, 26f);
+            AdvanceTip();
 
             UILayerHelper.SetUILayerRecursive(canvasGo);
 
