@@ -174,12 +174,15 @@ namespace Valkur.Gameplay.MapEditor
                 SetDropdownVisible("zones",    _refs.ZonesDropdown);
                 SetDropdownVisible("actions",  _refs.ActionsDropdown);
                 SetDropdownVisible("props",    _refs.PropsDropdown);
+                SetDropdownVisible("biomes",   _refs.BiomesDropdown);
+                SetDropdownVisible("maps",     _refs.MapsDropdown);
                 UpdateMenuBtnStyles();
                 HideAddZoneDialog();
                 HideDeleteZoneDialog();
                 HideMapsDeleteDialog();
                 HideMapsNewDialog();
                 HideMapsRenameDialog();
+                HideMapsLoadingOverlay();
             }
         }
 

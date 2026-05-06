@@ -28,6 +28,15 @@ namespace Valkur.Gameplay.MapEditor
         public int nextZoneIndex;
         public List<ZonePersistenceEntry> zones = new List<ZonePersistenceEntry>();
 
+        // Last known player world-position on this map. Captured every time
+        // PersistZonesToDisk runs (which is on every zone op) so the slot
+        // file always reflects the freshest position. When the user switches
+        // back to this slot, the player teleports here instead of always
+        // landing at (0,0). False → "never visited" → fall back to (0,0).
+        public bool hasLastPlayerPosition;
+        public float lastPlayerWorldX;
+        public float lastPlayerWorldY;
+
         string IVersioned.SchemaVersion
         {
             get => schemaVersion;

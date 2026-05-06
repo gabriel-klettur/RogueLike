@@ -10,6 +10,7 @@ using Valkur.Gameplay.Enemies.FSM;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.Items;
 using Valkur.Gameplay.MapEditor;
+using Valkur.Gameplay.MapEditor.Backups;
 using Valkur.Gameplay.Save;
 using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.Spells;
@@ -68,7 +69,12 @@ namespace Valkur.Gameplay.Editors.General
 
             // ── Game ────────────────────────────────────────────────────────
             list.Add(new GeneralEditorEntry(
-                "Save", GeneralEditorSection.Game,
+                "Pause Menu", GeneralEditorSection.Game,
+                onClick: () => ServiceLocator.Get<IPauseMenuService>()?.OpenPause(),
+                closesLauncher: true));
+
+            list.Add(new GeneralEditorEntry(
+                "Save Game", GeneralEditorSection.Game,
                 onClick: TryQuickSave,
                 closesLauncher: true));
 
@@ -80,6 +86,11 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(new GeneralEditorEntry(
                 "Options", GeneralEditorSection.Game,
                 onClick: () => ServiceLocator.Get<IPauseMenuService>()?.OpenOptions(),
+                closesLauncher: true));
+
+            list.Add(new GeneralEditorEntry(
+                "Map Backups", GeneralEditorSection.Game,
+                onClick: OpenMapBackupBrowser,
                 closesLauncher: true));
 
             list.Add(new GeneralEditorEntry(
@@ -128,6 +139,21 @@ namespace Valkur.Gameplay.Editors.General
                 return;
             }
             SaveService.Instance.QuickSave();
+        }
+
+        // Spawns the backup browser and wires its close hook to reopen the
+        // General Editor — the user expects ESC inside the browser to take
+        // them back to the launcher, not straight to gameplay.
+        private static void OpenMapBackupBrowser()
+        {
+            var browser = MapBackupBrowserUI.Open();
+            if (browser == null) return;
+            browser.SetOnClose(() =>
+            {
+                var ge  = GeneralEditorManager.Instance;
+                var mgr = GameEditorManager.Instance;
+                if (ge != null && mgr != null) mgr.OpenExclusive(ge);
+            });
         }
 
         private static void QuitToMainMenu()

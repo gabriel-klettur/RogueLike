@@ -330,7 +330,22 @@ namespace Valkur.Gameplay.MapEditor
                 _ui?.SetStatus("Pick a map from the list first.");
                 return;
             }
+            // Run the load through a coroutine so the loading overlay has at
+            // least one frame to render before the synchronous LoadMapSlot
+            // call begins clearing/respawning content.
+            StartCoroutine(LoadSlotWithOverlay(slotName));
+        }
+
+        private System.Collections.IEnumerator LoadSlotWithOverlay(string slotName)
+        {
+            _ui?.ShowMapsLoadingOverlay(slotName);
+            // Two yields: the first lets the overlay reach the screen, the
+            // second lets layout/cinemachine settle before we hide it.
+            yield return null;
+            yield return null;
             bool ok = LoadMapSlot(slotName);
+            yield return null;
+            _ui?.HideMapsLoadingOverlay();
             _ui?.SetStatus(ok ? $"Loaded map '{slotName}'." : $"Load failed for '{slotName}'.");
         }
 
@@ -341,8 +356,27 @@ namespace Valkur.Gameplay.MapEditor
                 _ui?.SetStatus("Cannot delete the 'default' map (it's the implicit baseline).");
                 return;
             }
+            bool wasActive = string.Equals(slotName, ActiveMapSlot,
+                StringComparison.OrdinalIgnoreCase);
             bool ok = DeleteMapSlot(slotName);
-            _ui?.SetStatus(ok ? $"Deleted map '{slotName}'." : $"Delete failed for '{slotName}'.");
+            if (!ok)
+            {
+                _ui?.SetStatus($"Delete failed for '{slotName}'.");
+                return;
+            }
+            // Deleting the slot the user is standing on would leave them
+            // stranded inside ZoneManager state for a slot that no longer
+            // has a backing file. Send them home to 'default' (also via the
+            // loading overlay so the swap feels intentional).
+            if (wasActive)
+            {
+                StartCoroutine(LoadSlotWithOverlay(MapEditorMapSlots.DEFAULT_SLOT));
+                _ui?.SetStatus($"Deleted '{slotName}' — switched to 'default'.");
+            }
+            else
+            {
+                _ui?.SetStatus($"Deleted map '{slotName}'.");
+            }
         }
 
         private void OnSlotRename(string oldName, string newName)

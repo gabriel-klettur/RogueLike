@@ -47,6 +47,20 @@ namespace Valkur.Gameplay.MapEditor
                 nextZoneIndex = _state.NextZoneIndex
             };
 
+            // Capture the player's current world position so the active slot
+            // file always remembers where the player was last seen on this map.
+            // Reading back happens in LoadMapSlot via ApplySlotToZoneManager →
+            // TeleportPlayerToWorldPosition. Captured every persist (zone op,
+            // slot save, slot load completion) so the value is never stale.
+            var playerT = Valkur.Core.EntityRegistry.PlayerTransform;
+            if (playerT != null)
+            {
+                var p = playerT.position;
+                data.hasLastPlayerPosition = true;
+                data.lastPlayerWorldX = p.x;
+                data.lastPlayerWorldY = p.y;
+            }
+
             var liveZones = zoneManager.GetZonesSnapshot();
             var liveNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var liveOffsets = new HashSet<Vector2Int>();

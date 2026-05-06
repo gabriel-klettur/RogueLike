@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "preset_id": "Torch",
+    "zone": "zone_100_50",
+    "rel_x": 1323,
+    "rel_y": 457,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "preset_id": "Torch",
+    "zone": "zone_100_50",
+    "rel_x": 789,
+    "rel_y": 458,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "preset_id": "Torch",
+    "zone": "zone_100_50",
+    "rel_x": 365,
+    "rel_y": 93,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "preset_id": "Torch",
+    "zone": "lobby",
+    "rel_x": 1139,
+    "rel_y": 690,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 7,
+    "preset_id": "Torch",
+    "zone": "lobby",
+    "rel_x": 170,
+    "rel_y": 1099,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 9,
+    "preset_id": "Magic",
+    "zone": "lobby",
+    "rel_x": 358,
+    "rel_y": 598,
+    "overrides": {
+      "color": [
+        120,
+        200,
+        255
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "preset_id": "Torch",
+    "zone": "lobby",
+    "rel_x": 507,
+    "rel_y": 106,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "preset_id": "Torch",
+    "zone": "lobby",
+    "rel_x": 1141,
+    "rel_y": 127,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "preset_id": "Torch",
+    "zone": "lobby",
+    "rel_x": 585,
+    "rel_y": 1144,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "preset_id": "Torch",
+    "zone": "zone_100_50",
+    "rel_x": 510,
+    "rel_y": 1393,
+    "overrides": {
+      "color": [
+        255,
+        200,
+        140
+      ]
+    }
+  }
+]

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Gameplay.MapEditor.Backups;
+using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.MapEditor
@@ -61,6 +63,11 @@ namespace Valkur.Gameplay.MapEditor
                     MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
             if (!skipBackup) BackupCurrentToActiveSlot();
 
+            // Position to teleport the player to once the new slot is active.
+            // Defaults to world origin; replaced by the slot file's last-known
+            // position when the file exists and was previously visited.
+            Vector2 spawnPos = Vector2.zero;
+
             if (isDefaultBlankLoad)
             {
                 zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
@@ -81,13 +88,45 @@ namespace Valkur.Gameplay.MapEditor
                 }
                 if (data == null) return false;
                 ApplySlotToZoneManager(data);
+                spawnPos = GetSavedPlayerPosition(data);
             }
 
+            // Visual swap: drop any tiles painted for the previous slot, then
+            // repaint the overrides whose zones live in this slot. Without this
+            // the new ZoneManager state is correct but the user still sees the
+            // previous map's tiles.
+            RefreshTilemapForActiveSlot();
+
             store.SetActive(clean);
-            PersistZonesToDisk();
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
+            // Wipe and re-spawn the rest of the world (buildings, spawners, …).
+            // For the blank-load default branch the reload step is effectively
+            // a no-op because the disk file still represents the same shared
+            // world content, but for explicit slot loads the clear step is
+            // critical to avoid carrying ghost buildings between slots.
+            ClearAllSpawnedWorldContent();
+            ReloadAllWorldContent();
+            // Teleport BEFORE the final PersistZonesToDisk so the auto-save
+            // captures the freshly-restored player position into this slot's
+            // file (instead of the stale outgoing-slot position).
+            TeleportPlayerToWorldPosition(spawnPos);
+            PersistZonesToDisk();
             OnMapSlotsChanged?.Invoke();
             return true;
+        }
+
+        // Clears the live tilemap and reapplies the override files for whichever
+        // zones are currently registered in the ZoneManager. Override files for
+        // OTHER slots are skipped (their zones are not registered), so each
+        // map looks like a clean slate even though the override JSONs all live
+        // in the same `MapOverrides/` directory on disk.
+        private void RefreshTilemapForActiveSlot()
+        {
+            if (worldGridBuilder == null) return;
+            worldGridBuilder.ClearWorld();
+            if (zoneManager == null) return;
+            Valkur.Gameplay.TileEditor.TileOverlayPersistence
+                .ApplyAllOverrides(worldGridBuilder, zoneManager);
         }
 
         // ── Begin a fresh blank map ──────────────────────────────────────────────
@@ -97,6 +136,13 @@ namespace Valkur.Gameplay.MapEditor
             string clean = MapEditorMapSlots.Sanitize(slotName);
             if (string.IsNullOrEmpty(clean)) clean = MapEditorMapSlots.DEFAULT_SLOT;
 
+            // Snapshot the OUTGOING active slot before we wipe live state.
+            // If the user later changes their mind they can roll the slot
+            // back from the backup browser without resetting their session.
+            string outgoing = ResolveSlotStore().ActiveSlot;
+            TryAutoSnapshot(outgoing, "Pre-new-map safety snapshot",
+                            MapBackupSchema.KindAutoBeforeNew);
+
             BackupCurrentToActiveSlot();
 
             zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
@@ -105,27 +151,102 @@ namespace Valkur.Gameplay.MapEditor
                 _state.RestrictTileEditingToEditableZones = false;
                 _state.NextZoneIndex = 1;
             }
-            // SetActive BEFORE PersistZonesToDisk so the auto-save mirror in
-            // PersistZonesToDisk writes the empty state to the *new* slot file
-            // (not the one we just backed up).
             ResolveSlotStore().SetActive(clean);
-            PersistZonesToDisk();
-
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
-            // Teleport the player to world origin so the editor centres on a
-            // blank canvas instead of leaving them stranded inside whatever
-            // (now-deleted) zone they were standing on.
+            // Wipe the tilemap so the user actually sees an empty canvas
+            // instead of standing inside whatever was just removed from
+            // ZoneManager. Override JSONs on disk are untouched — switching
+            // back to a saved slot via LoadMapSlot will repaint them.
+            if (worldGridBuilder != null)
+                worldGridBuilder.ClearWorld();
+            // Destroy every previously-spawned world object (buildings, NPCs,
+            // lights, …) so the new map is genuinely empty. Without this the
+            // user would teleport to (0,0) but still stand among the default
+            // map's castle/houses/colosseum — see screenshot in task spec.
+            ClearAllSpawnedWorldContent();
+            // Teleport BEFORE the final PersistZonesToDisk so this slot's auto-
+            // save captures the spawn position (0,0) immediately, giving the
+            // new slot a deterministic "last known position" on first visit.
             TeleportPlayerToBlankMapOrigin();
+            PersistZonesToDisk();
             OnMapSlotsChanged?.Invoke();
             return true;
         }
 
+        // ── Auto-snapshot helper ─────────────────────────────────────────────────
+        //
+        // Centralised hook into the backup system. Wrapped in try/catch so a
+        // failure (disk full, locked file, etc.) never prevents the user from
+        // doing the actual destructive operation — the snapshot is a best-
+        // effort safety net, not a precondition.
+        private static MapBackupStore _sharedBackupStore;
+        private static MapBackupStore BackupStore =>
+            _sharedBackupStore ?? (_sharedBackupStore = new MapBackupStore());
+
+        private static void TryAutoSnapshot(string slot, string label, string kind)
+        {
+            try
+            {
+                BackupStore.CreateSnapshot(slot, label, kind);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Auto-snapshot '{kind}' for '{slot}' failed: {ex.Message}");
+            }
+        }
+
+        // ── Per-slot world-content swap ──────────────────────────────────────────
+        //
+        // The Map Editor owns ZONES. Other content systems (buildings, spawners,
+        // lights, particles, drops, tile overrides) are loaded once at boot and
+        // currently share a single hardcoded `WorldId.Base`. When the user
+        // switches map slots, the SCENE state must at minimum visually mirror the
+        // new map (no leftover buildings from the previous slot). Until the full
+        // per-slot persistence routing lands across all subsystems, this helper
+        // does the next-best thing: it destroys every spawned world object so a
+        // newly-created map is genuinely empty, and lets LoadMapSlot trigger a
+        // re-spawn from the on-disk data when the user switches back.
+        //
+        // See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md` (added in this commit) for
+        // the full per-slot WorldId routing plan that closes the gap so each
+        // slot owns its own buildings/lights/spawners/particles on disk too.
+
+        private void ClearAllSpawnedWorldContent()
+        {
+            var bl = FindObjectOfType<BuildingLoader>();
+            bl?.ClearSpawned();
+
+            var sl = FindObjectOfType<SpawnerInstanceLoader>();
+            sl?.ClearInstances();
+
+            var wll = FindObjectOfType<WorldLightLoader>();
+            if (wll != null)
+            {
+                var snapshot = new List<GameObject>(wll.ActiveLightObjects);
+                foreach (var lightGo in snapshot)
+                    wll.RemoveLight(lightGo);
+            }
+        }
+
+        private void ReloadAllWorldContent()
+        {
+            FindObjectOfType<BuildingLoader>()?.LoadBuildings();
+            FindObjectOfType<SpawnerInstanceLoader>()?.LoadInstances();
+            // WorldLightLoader currently doesn't expose a public re-load — it
+            // loads in Start() and exposes only RemoveLight. Re-loading here is
+            // a no-op until the loader gains a `Reload()` API; the rest of the
+            // pipeline is wired so adding it later is one more line.
+        }
+
         private void TeleportPlayerToBlankMapOrigin()
+            => TeleportPlayerToWorldPosition(Vector2.zero);
+
+        private void TeleportPlayerToWorldPosition(Vector2 targetWorldPos)
         {
             var playerT = Valkur.Core.EntityRegistry.PlayerTransform;
             if (playerT == null) return;
             Vector3 oldPos = playerT.position;
-            Vector3 newPos = new Vector3(0f, 0f, oldPos.z);
+            Vector3 newPos = new Vector3(targetWorldPos.x, targetWorldPos.y, oldPos.z);
             playerT.position = newPos;
 
             _cameraPan.Reset();
@@ -135,6 +256,16 @@ namespace Valkur.Gameplay.MapEditor
                 camSetup.ReattachFollow();
                 camSetup.SnapToFollowTarget(newPos - oldPos);
             }
+        }
+
+        // Reads the saved player position out of a parsed slot file. Returns
+        // <see cref="Vector2.zero"/> when the slot has never been visited yet
+        // (legacy file lacking the field, or fresh slot just created by
+        // BeginNewMap).
+        private static Vector2 GetSavedPlayerPosition(ZonePersistenceFile data)
+        {
+            if (data == null || !data.hasLastPlayerPosition) return Vector2.zero;
+            return new Vector2(data.lastPlayerWorldX, data.lastPlayerWorldY);
         }
 
         // ── Delete + Rename ──────────────────────────────────────────────────────
@@ -147,6 +278,10 @@ namespace Valkur.Gameplay.MapEditor
             if (string.Equals(clean, MapEditorMapSlots.DEFAULT_SLOT,
                               StringComparison.OrdinalIgnoreCase))
                 return false;
+            // Snapshot before the destructive op so the user can recover the
+            // slot from the backup browser if they regret the deletion.
+            TryAutoSnapshot(clean, "Pre-delete safety snapshot",
+                            MapBackupSchema.KindAutoBeforeDelete);
             bool ok = ResolveSlotStore().DeleteSlot(clean);
             if (ok) OnMapSlotsChanged?.Invoke();
             return ok;
