@@ -60,6 +60,26 @@ namespace Valkur.Editor
                     continue;
                 }
 
+                // If a SpriteAtlas is already living inside the source folder
+                // (typically a hand-curated one like Atlas_Characters_Players),
+                // skip this group: producing a second atlas covering the same
+                // sprites makes Unity log a "matches more than one built-in
+                // atlases" warning per sprite per LoadAssetAtPath, which can
+                // cascade into editor freezes once the player spawn pipeline
+                // touches dozens of walking frames.
+                var existingInFolder = AssetDatabase.FindAssets("t:SpriteAtlas",
+                    new[] { group.sourceFolder });
+                if (existingInFolder != null && existingInFolder.Length > 0)
+                {
+                    string existingName = AssetDatabase.GUIDToAssetPath(existingInFolder[0]);
+                    Debug.LogWarning(
+                        $"[SpriteAtlasBuilder] '{group.sourceFolder}' already contains " +
+                        $"a SpriteAtlas ({existingName}). Skipping '{group.name}' to avoid " +
+                        "duplicate-packing conflicts. Delete the in-folder atlas if you want " +
+                        "the convention-named one at SpriteAtlases/ to take over.");
+                    continue;
+                }
+
                 var atlas = exists
                     ? AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath)
                     : new SpriteAtlas();
