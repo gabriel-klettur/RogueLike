@@ -170,6 +170,42 @@ namespace Valkur.Gameplay.Items
             tableVlg.childControlWidth      = true;
             tableVlg.childControlHeight     = true;
 
+            // ── Table config bar (above the header) ──────────────────────────
+            // Hosts the "⚙ Columns" button that opens the visibility popup,
+            // plus a live "Columns: N/M" indicator. Layout is a HLG so the
+            // counter can flex while the button stays a fixed width.
+            var configBarGo = CreateUI("TableConfigBar", tableContainerGo.transform);
+            configBarGo.AddComponent<LayoutElement>().preferredHeight = 22f;
+            configBarGo.AddComponent<Image>().color = TileEditorTheme.HeaderBg;
+
+            var configHlg = configBarGo.AddComponent<HorizontalLayoutGroup>();
+            configHlg.spacing                = 6f;
+            configHlg.padding                = new RectOffset(6, 6, 0, 0);
+            configHlg.childForceExpandWidth  = false;
+            configHlg.childForceExpandHeight = true;
+            configHlg.childControlWidth      = true;
+            configHlg.childControlHeight     = true;
+            configHlg.childAlignment         = TextAnchor.MiddleLeft;
+
+            var counterGo = CreateUI("Counter", configBarGo.transform);
+            counterGo.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            var counterTmp        = counterGo.AddComponent<TextMeshProUGUI>();
+            counterTmp.fontSize   = 10f;
+            counterTmp.fontStyle  = FontStyles.Bold;
+            counterTmp.alignment  = TextAlignmentOptions.MidlineLeft;
+            counterTmp.color      = TEXT_SECONDARY;
+            counterTmp.text       = ""; // populated by RefreshColumnsCountLabel
+            refs.TableColumnsCountLabel = counterTmp;
+
+            // Button click is wired in ItemsRuntimeEditor.cs after BuildAll
+            // returns (the editor instance owns the popup state).
+            var colsBtn = UIButton.Make(configBarGo.transform, "Columns",
+                onClick: null, height: 18f, fontSize: 10f);
+            var colsBtnLE = colsBtn.GetComponent<LayoutElement>();
+            colsBtnLE.preferredWidth = 80f;
+            colsBtnLE.flexibleWidth  = 0f;
+            refs.TableColumnsButton = colsBtn;
+
             // Sticky header: horizontal-only ScrollRect (no scrollbar; body drives it).
             // Holds the header strip; the body's scroll position is mirrored onto
             // the header content via absolute pixel offset (see Table.cs).

@@ -59,8 +59,10 @@ namespace Valkur.Gameplay.Items
             public TMP_InputField   SearchBox;
             public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
-            public TextMeshProUGUI  GridEmptyState;   // shown when no items match filter
-            public TabStrip         GridCategoryTabs; // category filter atop the grid
+            public TextMeshProUGUI  GridEmptyState;       // shown when no items match filter
+            public TabStrip         GridCategoryTabs;     // category filter atop the grid
+            public Button           TableColumnsButton;   // "⚙ Columns" — opens the visibility popup
+            public TextMeshProUGUI  TableColumnsCountLabel; // "Columns: N/M" indicator on the bar
             // Table view (second tab)
             public ScrollRect       TableHeaderScroll;
             public RectTransform    TableHeaderContent;

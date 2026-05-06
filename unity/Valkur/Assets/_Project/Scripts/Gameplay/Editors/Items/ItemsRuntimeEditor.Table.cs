@@ -46,6 +46,18 @@ namespace Valkur.Gameplay.Items
         private string _statusBeforeHeaderHover;
         private bool   _hoveringHeader;
 
+        // Set of column headers (matching ItemTableColumn.Header verbatim) that
+        // the user has hidden via the columns config popup. Persisted to
+        // PlayerPrefs as a comma-separated string so the choice survives across
+        // sessions — see ItemsRuntimeEditor.TableColumnsConfig.cs for the popup
+        // builder + persistence helpers.
+        private readonly HashSet<string> _hiddenColumns
+            = new HashSet<string>(System.StringComparer.Ordinal);
+
+        /// <summary>True when the column should be drawn in the table view.</summary>
+        internal bool IsColumnVisible(ItemTableColumn col)
+            => col != null && !_hiddenColumns.Contains(col.Header);
+
         // Header scroll rect — horizontal only, tracks body's normalizedPosition.x
         private ScrollRect _headerScroll;
         // Body scroll rect — horizontal + vertical
@@ -148,9 +160,11 @@ namespace Valkur.Gameplay.Items
 
             var cols = ItemTableColumns.All;
             float xCursor = 0f;
+            int   placed  = 0;   // counts only visible columns; drives "first cell" border-skip
             for (int c = 0; c < cols.Count; c++)
             {
                 var col = cols[c];
+                if (!IsColumnVisible(col)) continue;
                 var cellGo = UIFactory.CreateUI("Hdr_" + col.Header, _tableHeaderContent);
                 var cellRt = cellGo.GetComponent<RectTransform>();
                 cellRt.anchorMin        = new Vector2(0f, 0f);
@@ -162,7 +176,7 @@ namespace Valkur.Gameplay.Items
                 var bg = cellGo.AddComponent<Image>();
                 bg.color = TileEditorTheme.HeaderBg;
 
-                if (c > 0)
+                if (placed > 0)
                 {
                     // Left-border divider (1 px wide, full height child) — drawn
                     // on this cell's left edge so adjacent groups read as
@@ -201,6 +215,7 @@ namespace Valkur.Gameplay.Items
                 AttachHeaderHover(cellGo, col);
 
                 xCursor += col.Width;
+                placed++;
             }
         }
 
@@ -275,6 +290,7 @@ namespace Valkur.Gameplay.Items
             for (int c = 0; c < cols.Count; c++)
             {
                 var col    = cols[c];
+                if (!IsColumnVisible(col)) continue;
                 var cellGo = UIFactory.CreateUI("Cell_" + col.Header, rowGo.transform);
                 var cellRt = cellGo.GetComponent<RectTransform>();
                 cellRt.anchorMin        = new Vector2(0f, 0f);
@@ -506,11 +522,15 @@ namespace Valkur.Gameplay.Items
 
         // ── Utility ───────────────────────────────────────────────────────────
 
-        private static float ComputeTotalWidth()
+        private float ComputeTotalWidth()
         {
             float w = 0f;
             var cols = ItemTableColumns.All;
-            for (int i = 0; i < cols.Count; i++) w += cols[i].Width;
+            for (int i = 0; i < cols.Count; i++)
+            {
+                if (!IsColumnVisible(cols[i])) continue;
+                w += cols[i].Width;
+            }
             return w;
         }
     }

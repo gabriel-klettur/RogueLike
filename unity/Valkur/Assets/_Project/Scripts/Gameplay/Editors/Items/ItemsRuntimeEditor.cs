@@ -264,6 +264,12 @@ namespace Valkur.Gameplay.Items
                 onSearchChanged:  OnSearchChanged,
                 onPerfToggle:     () => Toast("PERF overlay — not yet wired."));
 
+            // Load the user's saved column-visibility set BEFORE handing off
+            // the ScrollRects — SetTableScrollRects calls BuildTableHeader
+            // internally, and that pass needs to honour the hidden-columns
+            // set so the first frame already matches the user's choice.
+            LoadColumnPrefs();
+
             // Hand off the table ScrollRects so the Table partial can build and refresh.
             SetTableScrollRects(
                 _uiRefs.TableHeaderScroll,
@@ -274,6 +280,11 @@ namespace Valkur.Gameplay.Items
             // Wire the Grid's category tab strip → filter state.
             if (_uiRefs.GridCategoryTabs != null)
                 _uiRefs.GridCategoryTabs.TabChanged += OnGridCategoryTabChanged;
+
+            // Wire the Table's "Columns" button → visibility popup.
+            if (_uiRefs.TableColumnsButton != null)
+                _uiRefs.TableColumnsButton.onClick.AddListener(OpenColumnsConfigPopup);
+            RefreshColumnsCountLabel();
 
             // Wire panel close (X button on the header) → keep dropdown state in sync
             WireOnClose(_uiRefs.ModesPanelDrag,     "modes");
