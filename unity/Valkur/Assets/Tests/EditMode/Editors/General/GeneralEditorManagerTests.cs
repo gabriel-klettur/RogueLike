@@ -235,35 +235,35 @@ namespace Valkur.Tests.EditMode.Editors.General
         public void Registry_ReturnsExpectedTotalEntryCount()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
-            Assert.AreEqual(18, entries.Count,
-                "Registry must list 12 runtime editors + 2 diagnostics + 4 game actions = 18 buttons total.");
+            Assert.AreEqual(22, entries.Count,
+                "Registry must list 13 runtime editors + 3 diagnostics + 6 game actions = 22 buttons total.");
         }
 
         [Test]
-        public void Registry_HasTwelveEditorEntries()
+        public void Registry_HasThirteenEditorEntries()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
             int editors = entries.Count(e => e.Section == GeneralEditorSection.Editors);
-            Assert.AreEqual(12, editors,
-                "Editors section must enumerate the 12 runtime editors (Tile, Buildings, Items, Spells, Entities, FSM, Map, Inventory, Particles, Spawners, Lighting, Time & Weather).");
+            Assert.AreEqual(13, editors,
+                "Editors section must enumerate the 13 runtime editors (Tile, Buildings, Items, Spells, Entities, FSM, Map, Inventory, Particles, Spawners, Lighting, Time & Weather, Boss).");
         }
 
         [Test]
-        public void Registry_HasTwoDiagnosticsEntries()
+        public void Registry_HasThreeDiagnosticsEntries()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
             int diags = entries.Count(e => e.Section == GeneralEditorSection.Diagnostics);
-            Assert.AreEqual(2, diags,
-                "Diagnostics section must list Combat Ranges + Debug HUD.");
+            Assert.AreEqual(3, diags,
+                "Diagnostics section must list Combat Ranges + Debug HUD + Save Log.");
         }
 
         [Test]
-        public void Registry_HasFourGameEntries()
+        public void Registry_HasSixGameEntries()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
             int game = entries.Count(e => e.Section == GeneralEditorSection.Game);
-            Assert.AreEqual(4, game,
-                "Game section must list Save / Load / Options / Quit.");
+            Assert.AreEqual(6, game,
+                "Game section must list Pause Menu + Save Game + Load + Options + Map Backups + Exit to Menu.");
         }
 
         [Test]
