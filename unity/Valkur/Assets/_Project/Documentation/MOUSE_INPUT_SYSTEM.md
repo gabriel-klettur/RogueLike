@@ -282,6 +282,5 @@ MouseInputManager (Singleton)
 
 ## 📚 Referencias
 
-- Python Reference: `python/src/roguelike_input/mouse.py`
 - Input System Docs: https://docs.unity3d.com/Packages/com.unity.inputsystem@latest/
 - EventSystem: https://docs.unity3d.com/Manual/EventSystem.html

@@ -14,7 +14,7 @@ namespace Valkur.Gameplay.Spells
     {
         public void Execute(SpellContext ctx)
         {
-            // Values are already in world units (converted by SpellDataImporter)
+            // Values are in Unity world units (set in SpellDefinition Inspector)
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 17.5f;
             float force = ctx.Spell.force > 0 ? ctx.Spell.force : 87.5f;
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 2f;

@@ -51,7 +51,6 @@ namespace Valkur.Data
 
         /// <summary>
         /// Add a template if no entry with the same templateId already exists.
-        /// Called by BuildingImporter during migration.
         /// </summary>
         public bool AddTemplate(BuildingTemplateData template)
         {
@@ -64,7 +63,6 @@ namespace Valkur.Data
 
         /// <summary>
         /// Replace an existing entry (same templateId) or add if new.
-        /// Called by BuildingImporter on re-import to refresh data.
         /// </summary>
         public void UpsertTemplate(BuildingTemplateData template)
         {

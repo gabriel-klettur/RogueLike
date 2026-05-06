@@ -9,11 +9,8 @@ namespace Valkur.Gameplay.Items
 {
     /// <summary>
     /// Items Editor — catalog loading & filtering.
-    /// Mirrors Python <c>roguelike_editors/items/services/item_catalog_service.py</c>.
-    /// Source priority: <see cref="ItemCatalog"/> singleton (populated by the
-    /// PythonDataMigrator) -&gt; ServiceLocator-registered catalog -&gt;
-    /// <c>Resources/Items</c> fallback (legacy; only matters if the migrator
-    /// has never been run).
+    /// Source priority: ServiceLocator binding -&gt; <see cref="ItemCatalog"/>
+    /// singleton -&gt; <c>Resources/Items</c> fallback.
     /// </summary>
     public partial class ItemsRuntimeEditor
     {
@@ -48,8 +45,7 @@ namespace Valkur.Gameplay.Items
         ///   1. ServiceLocator binding registered by GameplaySceneSetup (build-friendly).
         ///   2. Resources/Catalogs/ItemCatalog (legacy / future Addressables stub).
         ///   3. AssetDatabase load of the canonical Data/Catalogs/Items/ItemCatalog.asset
-        ///      (Editor-only — keeps the in-game F7 editor working immediately after
-        ///      a fresh PythonDataMigrator run, before any scene wiring).
+        ///      (Editor-only — keeps the in-game F7 editor working before scene wiring).
         /// Returns null when nothing is available so the caller can fall through.</summary>
         private static ItemDefinition[] TryLoadFromItemCatalog()
         {

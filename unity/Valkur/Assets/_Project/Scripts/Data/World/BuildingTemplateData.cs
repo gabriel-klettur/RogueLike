@@ -19,37 +19,31 @@ namespace Valkur.Data
 
         [Header("Asset")]
         [Tooltip("Resources-relative path used at runtime, e.g. 'Buildings/vegetation/tree_1'. " +
-                 "No extension. Maps to Python buildings_templates.json 'assets.idle'.")]
+                 "No extension.")]
         public string assetPath;
 
-        [Tooltip("Preview sprite shown in the Buildings Editor palette. " +
-                 "Assigned automatically by BuildingImporter.")]
+        [Tooltip("Preview sprite shown in the Buildings Editor palette.")]
         public Sprite previewSprite;
 
         [Header("Properties")]
-        [Tooltip("If true, this building blocks movement (a BoxCollider2D covers its footprint). " +
-                 "Maps to Python 'solid'.")]
+        [Tooltip("If true, this building blocks movement (a BoxCollider2D covers its footprint).")]
         public bool solid = true;
 
         [Tooltip("Fraction [0,1] of the original sprite height above which the image renders OVER the player. " +
                  "Below (1-splitRatio) = footprint on WallsBottom layer + collision. " +
-                 "Above = canopy on WallsTop layer. " +
-                 "Maps to Python 'split_ratio'.")]
+                 "Above = canopy on WallsTop layer.")]
         [Range(0f, 1f)]
         public float splitRatio = 0.5f;
 
         [Tooltip("Collider scope: 'CG' = collision map shared across all instances with the same sprite. " +
-                 "'CU' = per-instance collision map. " +
-                 "Maps to Python 'collider_scope'. Detailed grid colliders are Phase 2.")]
+                 "'CU' = per-instance collision map.")]
         public string colliderScope = "CG";
 
-        [Tooltip("Source image dimensions in pixels. Used to compute world size and split in Unity units. " +
-                 "Maps to Python 'original_scale'.")]
+        [Tooltip("Source image dimensions in pixels. Used to compute world size and split in Unity units.")]
         public Vector2Int originalScale;
 
-        [Tooltip("Original Python asset path (e.g. 'assets/buildings/vegetation/tree_7.png'). " +
-                 "Used to key into buildings_collisions_by_image.json. " +
-                 "Populated by BuildingImporter.")]
+        [Tooltip("Source image path (e.g. 'buildings/vegetation/tree_7.png'). " +
+                 "Used to key into buildings_collisions_by_image.json.")]
         public string sourceImagePath;
     }
 }

@@ -5,16 +5,7 @@ namespace Valkur.Data
 {
     /// <summary>
     /// VFX configuration block for a particle preset.
-    /// Maps to the "vfx.particles" block in Python's particles.json.
-    ///
     /// All numeric values are stored in Unity-native units (world units, seconds).
-    /// The ParticlePresetImporter converts Python pixel/tick units during import.
-    ///   Python px → Unity units:  value / 32
-    ///   Python px/tick → Unity units/s:  value * 60 / 32
-    ///   Python px/tick² → Unity units/s²:  value * 3600 / 32
-    ///   Python ticks → seconds:  value / 60
-    ///   Python emit_rate (particles/tick) → particles/s:  value * 60
-    ///   Python RGB [0..255] → Unity Color:  component / 255
     /// </summary>
     [Serializable]
     public class ParticleVfxParams

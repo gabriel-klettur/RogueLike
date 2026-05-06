@@ -17,9 +17,7 @@ namespace Valkur.Gameplay.Enemies.FSM
     ///   • ID generator (parity with <c>fsm_id.new_id</c>)
     ///   • single-call <see cref="SaveSets"/> = normalize + write + reload notification.
     ///
-    /// Lookup order for the JSON folder:
-    ///   1. <c>Application.streamingAssetsPath/FSM/</c>
-    ///   2. <c>{project root}/python/data/fsm/</c> (development convenience)
+    /// JSON folder: <c>Application.streamingAssetsPath/FSM/</c> (created on first save).
     /// </summary>
     public partial class FSMRuntimeEditor : SingletonMonoBehaviour<FSMRuntimeEditor>, GameEditorManager.IGameEditor
     {
@@ -31,25 +29,8 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             get
             {
-                // Production: StreamingAssets/FSM
                 string sa = Path.Combine(Application.streamingAssetsPath, "FSM");
-                if (Directory.Exists(sa)) return sa;
-
-                // Dev: walk up to the repo root (contains both 'unity' and 'python')
-                try
-                {
-                    var dir = new DirectoryInfo(Application.dataPath);
-                    while (dir != null)
-                    {
-                        var py = Path.Combine(dir.FullName, "python", "data", "fsm");
-                        if (Directory.Exists(py)) return py;
-                        dir = dir.Parent;
-                    }
-                }
-                catch { /* fall through */ }
-
-                // Fallback: ensure StreamingAssets/FSM exists for first-time saves.
-                Directory.CreateDirectory(sa);
+                if (!Directory.Exists(sa)) Directory.CreateDirectory(sa);
                 return sa;
             }
         }

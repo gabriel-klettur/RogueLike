@@ -5,7 +5,7 @@ namespace Valkur.Data
 {
     /// <summary>
     /// Catalog of MonsterDefinition assets for runtime lookup by monsterKey.
-    /// Populated by PythonDataMigrator.Monsters (Import Monsters / Import Neutrals).
+    /// Edit via the Inspector or via the Entities runtime editor (F5).
     /// </summary>
     [CreateAssetMenu(fileName = "MonsterCatalog", menuName = "Valkur/Monster Catalog")]
     public class MonsterCatalog : ScriptableObject

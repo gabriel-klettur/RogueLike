@@ -21,6 +21,8 @@ namespace Valkur.Gameplay.TileEditor
             if (files.Length == 0) return 0;
 
             int applied = 0;
+            int orphaned = 0;
+            string firstOrphan = null;
             int w = zoneManager.ZoneWidthTiles;
             int h = zoneManager.ZoneHeightTiles;
 
@@ -32,7 +34,12 @@ namespace Valkur.Gameplay.TileEditor
 
                 if (!zoneManager.TryGetZone(zoneName, out var zone))
                 {
-                    Debug.LogWarning($"[TileOverlayPersistence] Override '{zoneName}' has no matching zone — skipped.");
+                    // A zone deleted via the Map Editor leaves its overlay
+                    // file behind — that is fully expected, not a bug.
+                    // Spamming one warning per orphan floods the console;
+                    // collapse them into a single aggregate notice.
+                    if (orphaned == 0) firstOrphan = zoneName;
+                    orphaned++;
                     continue;
                 }
 
@@ -44,6 +51,10 @@ namespace Valkur.Gameplay.TileEditor
 
             if (applied > 0)
                 Debug.Log($"[TileOverlayPersistence] Applied {applied} zone override(s) from {dir}");
+            if (orphaned > 0)
+                Debug.Log($"[TileOverlayPersistence] Skipped {orphaned} orphaned override " +
+                          $"file(s) (no matching zone, e.g. '{firstOrphan}'). Safe to ignore — " +
+                          $"these belong to zones deleted via the Map Editor.");
             return applied;
         }
 

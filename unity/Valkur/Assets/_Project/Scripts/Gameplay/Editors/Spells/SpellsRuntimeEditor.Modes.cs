@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
@@ -179,26 +178,13 @@ namespace Valkur.Gameplay.Spells
 #if UNITY_EDITOR
             try
             {
-                var t = System.Type.GetType("Valkur.Editor.SpellDataImporter, Valkur.Editor");
-                if (t == null)
-                {
-                    Toast("Reload: SpellDataImporter not found.");
-                    return;
-                }
-                var m = t.GetMethod("ImportAll",
-                    BindingFlags.Public | BindingFlags.Static);
-                if (m == null)
-                {
-                    Toast("Reload: ImportAll() not found.");
-                    return;
-                }
-                m.Invoke(null, null);
+                UnityEditor.AssetDatabase.Refresh();
                 if (_catalog != null) _catalog.SetSpellsRuntime(_catalog.AllSpells);
                 _selectedKey = null;
                 _undo.Clear();
                 RefreshPicker();
                 RefreshPropertiesForm();
-                Toast("Reloaded from JSON");
+                Toast("Reloaded catalog from disk");
             }
             catch (System.Exception ex)
             {

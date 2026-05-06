@@ -7,14 +7,10 @@ namespace Valkur.Gameplay.VFX
     /// <summary>
     /// Configures and drives a Unity ParticleSystem based on a ParticlePresetDefinition.
     ///
-    /// Maps to Python's individual emitter systems:
-    ///   HealingAuraEmitterSystem, DashEmitterSystem, ArcaneFlameEmitterSystem,
-    ///   SlashEmitterSystem, LightningEmitterSystem, LaserBeamEmitterSystem, etc.
-    ///
     /// Place on any GameObject.  A child ParticleSystem is created automatically.
     /// For lightning kind, a LineRenderer is created instead of a ParticleSystem.
     ///
-    /// Coordinate conventions (inherited from ParticlePresetImporter):
+    /// Coordinate conventions:
     ///   All numeric fields in ParticleVfxParams are in Unity world-units / seconds.
     /// </summary>
     public partial class ParticleEmitter : MonoBehaviour
@@ -25,7 +21,7 @@ namespace Valkur.Gameplay.VFX
         [SerializeField, Tooltip("Particle preset to apply. Drives kind, speed, colors, shapes, etc.")]
         private ParticlePresetDefinition _preset;
 
-        [SerializeField, Tooltip("Scale multiplier for sizes and radii. Python: scale_multiplier.")]
+        [SerializeField, Tooltip("Scale multiplier for sizes and radii.")]
         [Range(0.01f, 10f)]
         private float _scaleMultiplier = 1f;
 

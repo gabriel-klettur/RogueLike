@@ -5,7 +5,7 @@ namespace Valkur.Data
 {
     /// <summary>
     /// Catalog of SpawnerTemplateData assets for runtime lookup by template ID.
-    /// Populated by SpawnerDataImporter.
+    /// Edit via the Inspector.
     /// </summary>
     [CreateAssetMenu(fileName = "SpawnerTemplateCatalog", menuName = "Valkur/Spawner/Template Catalog")]
     public class SpawnerTemplateCatalog : ScriptableObject

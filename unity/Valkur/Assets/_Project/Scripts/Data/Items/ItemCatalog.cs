@@ -7,9 +7,7 @@ namespace Valkur.Data
     /// Indexed catalog of every <see cref="ItemDefinition"/> in the project.
     /// Singleton asset at <c>Assets/_Project/Data/Catalogs/Items/ItemCatalog.asset</c>.
     ///
-    /// Mirrors Python's <c>items_loader</c> + <c>ItemRegistry</c>: a single point of
-    /// truth populated once (by <c>PythonDataMigrator.Items</c>) and queried at
-    /// runtime by O(1) id lookup.
+    /// Single source of truth for items, queried at runtime by O(1) id lookup.
     ///
     /// Used by:
     ///   • <see cref="Valkur.Gameplay.Items.ItemsRuntimeEditor"/> — picker grid &amp; instance lookup.

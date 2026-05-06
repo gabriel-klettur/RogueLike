@@ -146,7 +146,7 @@ namespace Valkur.Gameplay.Editors.General
             if (_isActive) RefreshActiveStates();
         }
 
-        // ── Header close button (small "✕" appended after the title) ──────────
+        // ── Header close button (small "X" appended after the title) ──────────
 
         private void AddCloseButtonToHeader(GameObject panelRoot)
         {
@@ -170,7 +170,10 @@ namespace Valkur.Gameplay.Editors.General
             btn.targetGraphic  = img;
             btn.onClick.AddListener(Deactivate);
 
-            var tmp           = UILabel.AddCenteredText(btnGo.transform, "✕", 12f, FontStyles.Bold, UITheme.TEXT_PRIMARY);
+            // ASCII "X" (U+0058) ships with LiberationSans SDF; the Unicode
+            // multiplication-X (U+2715) does not, which spammed a TMP
+            // fallback warning every time a panel was opened.
+            var tmp           = UILabel.AddCenteredText(btnGo.transform, "X", 12f, FontStyles.Bold, UITheme.TEXT_PRIMARY);
             tmp.alignment     = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
         }

@@ -55,3 +55,7 @@ MonoBehaviour:
   - sword_clash_9
   - sword_clash_10
   fireballSfxId: fireball
+  npcDeathSfxIds: []
+  playerDeathSfxIds: []
+  levelUpSfxId: 
+  itemPickupSfxId: 

@@ -13,9 +13,8 @@ namespace Valkur.Gameplay.TileEditor
     /// <summary>
     /// Persists tile-editor edits to disk on a per-zone basis and re-applies them on game load.
     /// <para>
-    /// Mirrors the Python tile→zone→map model: each zone owns one overlay JSON file with the
-    /// same schema as <c>python/data/worlds/base/zones/overlays/{zone}.overlay.json</c>
-    /// (a <c>{ "layers": { "Ground": [[...]], ... } }</c> matrix per layer).
+    /// Each zone owns one overlay JSON file with the schema
+    /// <c>{ "layers": { "Ground": [[...]], ... } }</c> (a matrix per layer).
     /// </para>
     /// <para>
     /// Storage is non-destructive: edits go to <c>Application.persistentDataPath/MapOverrides/</c>,
