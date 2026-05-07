@@ -98,6 +98,18 @@ namespace Valkur.Gameplay
         public AnimState CurrentState => _currentState;
         public Direction CurrentDirection => _currentDirection;
 
+        // Read-only accessors — used by the Spells Editor View panel to clone the
+        // player's sprite sets onto the synthetic preview character so the user
+        // sees the actual cast pose for the selected direction.
+        public DirectionalSpriteSet IdleSprites   => idleSprites;
+        public DirectionalSpriteSet WalkSprites   => walkSprites;
+        public DirectionalSpriteSet ChaseSprites  => chaseSprites;
+        public DirectionalSpriteSet CastSprites   => castSprites;
+        public DirectionalSpriteSet AttackSprites => attackSprites;
+        public DirectionalSpriteSet DamageSprites => damageSprites;
+        public DirectionalSpriteSet DeathSprites  => deathSprites;
+        public bool PrefersCardinalDirectionSampling => _preferCardinalDirectionSampling;
+
         /// <summary>
         /// Runtime assignment API for data-driven character definitions.
         /// </summary>
@@ -190,8 +202,16 @@ namespace Valkur.Gameplay
 
             if (frames == null || frames.Length == 0)
             {
-                frames = idleSprites.GetFrames(_currentDirection);
-                if (frames == null || frames.Length == 0) return;
+                // Mirror AdvanceFrame's death fallback so a direction-only change while
+                // dead renders the corpse pose, not the idle pose.
+                if (_currentState == AnimState.Death)
+                    frames = FindFirstNonEmptyDirection(spriteSet);
+
+                if (frames == null || frames.Length == 0)
+                {
+                    frames = idleSprites.GetFrames(_currentDirection);
+                    if (frames == null || frames.Length == 0) return;
+                }
             }
 
             if (frames.Length == 1)

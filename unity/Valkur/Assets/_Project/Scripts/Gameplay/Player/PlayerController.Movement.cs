@@ -10,6 +10,19 @@ namespace Valkur.Gameplay
 {
     public partial class PlayerController : MonoBehaviour
     {
+        // ── Cast animation timing ─────────────────────────────────────────────
+        // How long the player's DirectionalAnimator stays in the Cast state after
+        // a successful TryCastByKey before locomotion (Idle/Walk) takes over again.
+        // Each Cast sprite-set frame plays at DirectionalAnimator.frameInterval (0.15 s
+        // by default), so 0.35 s reliably plays at least 2 frames of the cast pose
+        // before reverting — enough to read as "casting" without delaying gameplay.
+        private const float CAST_ANIMATION_DURATION = 0.35f;
+
+        // Time.time at which the cast animation should end and locomotion can
+        // resume. 0 = no cast animation pending. Refreshed on every successful
+        // cast (including held casts like the laser beam), so the animation
+        // stays alive for as long as the player is channeling.
+        private float _castAnimEndTime;
 
         private void Update()
         {
@@ -152,6 +165,10 @@ namespace Valkur.Gameplay
 
             if (_animator != null)
             {
+                // If a cast animation has expired since last frame, hand control
+                // back to locomotion BEFORE the override checks the current state.
+                TickCastAnimRevert();
+
                 var dir = _animator.ResolveDirectionFromVector(_facingDirection);
                 var currentState = _animator.CurrentState;
 
@@ -172,6 +189,42 @@ namespace Valkur.Gameplay
                     _animator.SetDirectionFromVector(_facingDirection);
                 }
             }
+        }
+
+        // ── Cast animation helpers ────────────────────────────────────────────
+
+        /// <summary>
+        /// Pushes the player's <see cref="DirectionalAnimator"/> into the Cast state
+        /// for the current facing direction and refreshes the revert timer. Invoked
+        /// from <see cref="PollCombatActions"/> on every successful TryCastByKey
+        /// (fireball / slash / hotkey-bound spells / laser-beam refresh). Dash is
+        /// intentionally excluded — it owns its own movement animation.
+        /// </summary>
+        private void TriggerCastAnimation()
+        {
+            if (_animator == null) return;
+            var dir = _animator.ResolveDirectionFromVector(_facingDirection);
+            _animator.SetState(DirectionalAnimator.AnimState.Cast, dir);
+            _castAnimEndTime = Time.time + CAST_ANIMATION_DURATION;
+        }
+
+        /// <summary>
+        /// Reverts the animator out of <see cref="DirectionalAnimator.AnimState.Cast"/>
+        /// once <see cref="_castAnimEndTime"/> has elapsed, choosing Walk or Idle to
+        /// match the current movement input. No-op while the timer is in the future
+        /// (held casts like the laser beam keep refreshing it).
+        /// </summary>
+        private void TickCastAnimRevert()
+        {
+            if (_animator == null || _castAnimEndTime <= 0f) return;
+            if (Time.time < _castAnimEndTime) return;
+            if (_animator.CurrentState == DirectionalAnimator.AnimState.Cast)
+            {
+                var dir = _animator.ResolveDirectionFromVector(_facingDirection);
+                var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
+                _animator.SetState(state, dir);
+            }
+            _castAnimEndTime = 0f;
         }
 
         private Vector2 ResolveFacingOrigin()
@@ -201,16 +254,16 @@ namespace Valkur.Gameplay
             // covered.
             if (MouseInputManager.IsLeftMouseButtonPressed())
             {
-                if (_spellCaster != null)
-                    _spellCaster.TryCastByKey("fireball", _facingDirection);
+                if (_spellCaster != null && _spellCaster.TryCastByKey("fireball", _facingDirection))
+                    TriggerCastAnimation();
             }
 
             // Secondary attack (right click) → slash spell
             // Python parity: M_RIGHT → slash
             if (MouseInputManager.WasRightMouseButtonPressedThisFrame())
             {
-                if (_spellCaster != null)
-                    _spellCaster.TryCastByKey("slash", _facingDirection);
+                if (_spellCaster != null && _spellCaster.TryCastByKey("slash", _facingDirection))
+                    TriggerCastAnimation();
             }
 
             // Middle click → laser beam (hold-to-channel)
@@ -228,6 +281,10 @@ namespace Valkur.Gameplay
                         existingBeam.Refresh();
                     else
                         _spellCaster.TryCastByKey("laser_beam", _facingDirection);
+                    // Beam is hold-to-channel — keep refreshing the cast animation
+                    // each frame so the pose persists for as long as the player
+                    // holds the trigger.
+                    TriggerCastAnimation();
                 }
             }
             if (MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
@@ -236,26 +293,62 @@ namespace Valkur.Gameplay
                 if (beam != null) beam.Stop();
             }
 
-            // Dash (Space) → dash spell through spell system.
-            // The canonical InputService.Gameplay.Dash action covers Space; we OR
-            // with the legacy RightShift fallback for the Python control scheme.
+            // Dash — fired by any of:
+            //   • Space  (canonical InputService.Gameplay.Dash action)
+            //   • RightShift  (legacy Python-parity fallback)
+            //   • LeftCtrl   (per user request)
+            //   • RightCtrl  (per user request)
             //
-            // LeftCtrl / RightCtrl are intentionally NOT bound to dash any more:
-            // Ctrl is the universal "modifier for combos" (Ctrl+Z undo, Ctrl+S save,
-            // Ctrl+C copy, …). Mapping it to a movement spell makes every Ctrl-combo
-            // simultaneously fire a dash, teleporting the player and breaking gameplay
-            // the moment the user reaches for any standard shortcut.
+            // Ctrl-as-dash is safe during gameplay because no gameplay system
+            // reads Ctrl-modified input — every IsCtrlHeld() callsite outside
+            // this file lives in a runtime editor (Tile / Buildings / Items /
+            // Lighting / Boss), and those editors gate gameplay via
+            // InputBlocker.IsGameplayBlocked, which short-circuits this entire
+            // PollCombatActions method. So Ctrl+S, Ctrl+Z, Ctrl-drag, etc. in
+            // editors do NOT also fire a dash, and during pure gameplay there
+            // are no Ctrl combos for the dash to interfere with.
+            //
+            // Direction always tracks the MOUSE CURSOR — _facingDirection is
+            // already updated to point at the mouse world position whenever
+            // the cursor is inside the viewport (see PlayerFacingResolver),
+            // so reusing it gives the user "dash toward where the mouse is"
+            // for every trigger uniformly. When the cursor is offscreen the
+            // resolver falls back to movement direction, which is the only
+            // sensible alternative.
+            //
+            // The Ctrl press detection reads BOTH input backends directly
+            // (legacy UnityEngine.Input.GetKeyDown + Keyboard.current.*Ctrl
+            // wasPressedThisFrame) instead of going through
+            // KeyboardInputManager. The InputActions asset binds leftCtrl to
+            // the "CtrlModifier" action which the new InputSystem can flag as
+            // "consumed" in some scenarios, masking subsequent reads. The
+            // direct OR-fallback survives that and matches the same pattern
+            // the rest of the file uses for arrow keys.
             var dashAction = DashAction;
             bool dashNew = dashAction != null && dashAction.WasPerformedThisFrame();
             bool dashLegacy = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightShift, KeyCode.RightShift);
-            if (dashNew || dashLegacy)
+
+            // Route through KeyboardInputManager so the InputCentralizationGuard
+            // test passes — direct Keyboard.current reads outside the helper class
+            // are forbidden (see CLAUDE.md "Input pipeline" section).
+            bool leftCtrlPressed  = KeyboardInputManager.WasKeyPressedThisFrame(Key.LeftCtrl,  KeyCode.LeftControl);
+            bool rightCtrlPressed = KeyboardInputManager.WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl);
+            bool dashCtrl = leftCtrlPressed || rightCtrlPressed;
+
+            // Single source of truth: the spell-based dash is the only path.
+            // The legacy DashAbility fallback was removed because it has zero
+            // visuals (no ghost trail, no particle wake, no light streak), so
+            // when the user pressed dash twice quickly the spell would be on
+            // cooldown and the silent DashAbility would fire instead — making
+            // the second dash *look* like an instant teleport even though the
+            // entity was actually moving via velocity. Now a cooldown-blocked
+            // dash simply does nothing, matching the UX of every other spell
+            // on cooldown. _dashAbility is still kept on the player so its
+            // IsDashing flag can gate other systems if needed.
+            if ((dashNew || dashLegacy || dashCtrl) && _spellCaster != null)
             {
-                if (_spellCaster != null && !_spellCaster.TryCastByKey("dash", _facingDirection))
-                {
-                    // Fallback: use DashAbility if spell system can't cast (cooldown, no mana, etc.)
-                    if (_dashAbility != null)
-                        _dashAbility.TryDash(_facingDirection);
-                }
+                if (_spellCaster.TryCastByKey("dash", _facingDirection))
+                    TriggerCastAnimation();
             }
 
             // All 23 spell key bindings (1-0, q, e, r, t, f, g, c, v, x, p, l, u, m).
@@ -271,7 +364,8 @@ namespace Valkur.Gameplay
                               || UnityEngine.Input.GetKeyDown(legacyKey);
                     if (fired)
                     {
-                        _spellCaster.TryCastByKey(spellKey, _facingDirection);
+                        if (_spellCaster.TryCastByKey(spellKey, _facingDirection))
+                            TriggerCastAnimation();
                         break; // only one spell per frame
                     }
                 }

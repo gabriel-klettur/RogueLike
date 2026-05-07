@@ -44,9 +44,18 @@ namespace Valkur.Gameplay
 
             if (frames == null || frames.Length == 0)
             {
-                // Fallback: try idle set for this direction
-                frames = idleSprites.GetFrames(_currentDirection);
-                if (frames == null || frames.Length == 0) return;
+                // For Death, prefer ANY non-empty death direction (the corpse pose)
+                // before falling back to idle. Many monsters wire only `death.south`
+                // for an omnidirectional corpse sprite — without this, an entity that
+                // dies facing N/E/W would render the idle pose and look alive.
+                if (_currentState == AnimState.Death)
+                    frames = FindFirstNonEmptyDirection(spriteSet);
+
+                if (frames == null || frames.Length == 0)
+                {
+                    frames = idleSprites.GetFrames(_currentDirection);
+                    if (frames == null || frames.Length == 0) return;
+                }
             }
 
             // Single frame — no animation needed
@@ -89,10 +98,47 @@ namespace Valkur.Gameplay
                 return;
             }
 
+            // Death: play once, then hold the final corpse frame.
+            if (_currentState == AnimState.Death)
+            {
+                int idx = Mathf.Min(_frameIndex, frames.Length - 1);
+                ApplyFrame(frames[idx]);
+                if (_frameIndex < frames.Length - 1)
+                    _frameIndex++;
+                return;
+            }
+
             // Default: loop all frames
             _frameIndex %= frames.Length;
             ApplyFrame(frames[_frameIndex]);
             _frameIndex = (_frameIndex + 1) % frames.Length;
+        }
+
+        /// <summary>
+        /// Finds the first non-empty direction within a sprite set. Used to render
+        /// the canonical corpse pose when the current direction's death frames are
+        /// missing (e.g. monsters that only wire `death.south`).
+        /// </summary>
+        private static Sprite[] FindFirstNonEmptyDirection(DirectionalSpriteSet set)
+        {
+            // Probe in order of design likelihood for a single-direction corpse sprite.
+            Sprite[] frames = set.south;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.east;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.west;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.north;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.southEast;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.southWest;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.northEast;
+            if (frames != null && frames.Length > 0) return frames;
+            frames = set.northWest;
+            if (frames != null && frames.Length > 0) return frames;
+            return null;
         }
 
         private DirectionalSpriteSet GetSpriteSet(AnimState state)

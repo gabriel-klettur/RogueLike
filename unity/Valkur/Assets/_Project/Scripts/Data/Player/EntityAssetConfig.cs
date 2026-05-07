@@ -35,7 +35,11 @@ namespace Valkur.Data
         public float scaleAttack;
         public float scaleDamage;
         public float scaleDeath;
-        [ColorUsage(true, false)]
+        // HDR enabled so designers can push channel values above 1.0 to overcome
+        // the multiplicative nature of SpriteRenderer.color. Multiplying a brown
+        // sprite by (1, 0.84, 0) flattens to "dark yellow-brown"; multiplying by
+        // (2.5, 2.1, 0) clips back to (1, ~0.63, 0) which reads as vibrant yellow.
+        [ColorUsage(true, true)]
         public Color tint;
     }
 
