@@ -117,6 +117,19 @@ namespace Valkur.Gameplay
 
             // Enforce 2:1 aspect ratio (matching Python 1600×800)
             SetupAspectRatioEnforcer();
+
+            // Snap camera to the screen-pixel grid each frame to avoid 1-pixel
+            // tilemap-chunk seams when 1 world unit doesn't map to an integer
+            // number of screen pixels (the default Free-Aspect case).
+            SetupCameraPixelSnap();
+        }
+
+        private void SetupCameraPixelSnap()
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            if (cam.GetComponent<CameraPixelSnap>() == null)
+                cam.gameObject.AddComponent<CameraPixelSnap>();
         }
 
         private void SetupPixelPerfectCamera()
