@@ -311,6 +311,13 @@ namespace Valkur.Gameplay
                 SaveService.Instance?.BeginNewRun();
                 ApplyPositionCheckpointIfNewer(null);
             }
+            // Telemetry run start: now that SaveService.RunId / RunOrdinal are
+            // settled (loaded from disk or freshly minted), wire the
+            // ProfileTelemetrySystem to the same identity. Doing this here
+            // rather than inside EnsureProfileTelemetrySystem prevents the
+            // scene-load-time phantom RunRecord that used to appear on every
+            // boot regardless of whether the player was resuming or starting.
+            StartTelemetryRunForCurrentSession();
             Save.SaveFileManager.DeletePositionCheckpoint();
             Report("Restoring session"); yield return null;
 

@@ -123,6 +123,28 @@ namespace Valkur.Gameplay
                 _inputBuffer = TryAutocomplete(_inputBuffer);
                 _focusInput = true;
             }
+
+            // Enter submits — executed directly here in Update() because IMGUI's
+            // TextField was eating the Return event in OnGUI even with the
+            // pending-flag indirection (Repaint pass never fired the consumer
+            // when the user expected). Same pattern Up/Down/Tab use above:
+            // detect via KeyboardInputManager (which polls both InputSystem
+            // backends) and mutate state immediately, before OnGUI runs.
+            if (KeyboardInputManager.WasEnterPressedThisFrame())
+            {
+                SubmitInputBuffer();
+            }
+        }
+
+        private void SubmitInputBuffer()
+        {
+            if (!string.IsNullOrWhiteSpace(_inputBuffer))
+            {
+                ExecuteCommand(_inputBuffer.Trim());
+            }
+            _inputBuffer = "";
+            _logScroll.y = float.MaxValue;
+            _focusInput = true;
         }
 
         // ------------------------------------------------------------------
@@ -169,25 +191,29 @@ namespace Valkur.Gameplay
 
             // Input field
             float inputY = y + logH + 4f;
-            if (_focusInput)
-            {
-                GUI.FocusControl("ConsoleInput");
-                _focusInput = false;
-            }
             GUI.SetNextControlName("ConsoleInput");
             _inputBuffer = GUI.TextField(new Rect(x, inputY, CONSOLE_WIDTH - 60f, 24f), _inputBuffer, _inputStyle);
 
-            if (GUI.Button(new Rect(x + CONSOLE_WIDTH - 56f, inputY, 56f, 24f), "Submit") ||
-                (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return &&
-                 GUI.GetNameOfFocusedControl() == "ConsoleInput"))
+            // IMGUI focus must be requested AFTER the named control is laid out —
+            // calling GUI.FocusControl before the TextField is registered is a
+            // no-op. Keep the flag set until focus actually lands so the first
+            // OnGUI pass after open (which runs through Layout/Repaint events)
+            // is guaranteed to land focus by the next pass at the latest.
+            if (_focusInput)
             {
-                if (!string.IsNullOrWhiteSpace(_inputBuffer))
+                GUI.FocusControl("ConsoleInput");
+                if (Event.current.type == EventType.Repaint &&
+                    GUI.GetNameOfFocusedControl() == "ConsoleInput")
                 {
-                    ExecuteCommand(_inputBuffer.Trim());
-                    _inputBuffer = "";
-                    _logScroll.y = float.MaxValue;
-                    _focusInput = true;
+                    _focusInput = false;
                 }
+            }
+
+            // Submit button — Enter-key submission is handled in Update() above
+            // (see SubmitInputBuffer). This branch only covers a mouse click.
+            if (GUI.Button(new Rect(x + CONSOLE_WIDTH - 56f, inputY, 56f, 24f), "Submit"))
+            {
+                SubmitInputBuffer();
             }
         }
 
@@ -375,10 +401,16 @@ namespace Valkur.Gameplay
                 Handler = args => CmdGiveMeMoney(args)
             });
             RegisterCommand(new ConsoleCommand {
-                Name = "kill",
+                Name = "kill", Aliases = new[] { "/kill" },
                 Usage = "kill [all]", Help = "kill player (no arg) or all enemies (arg=all)",
                 Category = "cheats",
                 Handler = args => CmdKill(args)
+            });
+            RegisterCommand(new ConsoleCommand {
+                Name = "suicide", Aliases = new[] { "/suicide" },
+                Usage = "suicide", Help = "kill player (alias of 'kill' with no args)",
+                Category = "cheats",
+                Handler = _ => CmdKill(new[] { "suicide" })
             });
             RegisterCommand(new ConsoleCommand {
                 Name = "killall",

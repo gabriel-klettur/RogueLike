@@ -132,6 +132,12 @@ namespace Valkur.Gameplay
             if (go.GetComponent<StatusEffectManager>() == null)
                 go.AddComponent<StatusEffectManager>();
 
+            // Tints the sprite gray as the monster dies (Python's death_tint_system).
+            // Auto-subscribes to Health.OnDeath in its own OnEnable; just adding the
+            // component is enough — InitHealth above ran first so Health is present.
+            if (go.GetComponent<GrayscaleDeath>() == null)
+                go.AddComponent<GrayscaleDeath>();
+
             ConfigureMonsterAutoCast(go, def);
 
             // Minimap dot (monster = red) — uses reflection to avoid Gameplay→UI circular dependency

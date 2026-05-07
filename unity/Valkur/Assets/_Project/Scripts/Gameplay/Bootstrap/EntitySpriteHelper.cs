@@ -36,10 +36,18 @@ namespace Valkur.Gameplay
         {
             if (sr == null) return;
             if (_unlitSpriteMaterial == null)
-                _unlitSpriteMaterial = new Material(
-                    Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"));
-            sr.material = _unlitSpriteMaterial;
+            {
+                // Prefer Valkur's HDR-tint sprite shader so EntityAnimationBinder can
+                // push >1 channel values via MaterialPropertyBlock without the vertex
+                // color clamping that flattens monster variant tints. Fall back to
+                // URP 2D unlit (or legacy Sprites/Default) when the HDR shader is
+                // missing — shader stripping in builds, or before first asset import.
+                var shader = Shader.Find("Valkur/SpriteHDRTint")
+                          ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                          ?? Shader.Find("Sprites/Default");
+                _unlitSpriteMaterial = new Material(shader);
+            }
+            sr.sharedMaterial = _unlitSpriteMaterial;
         }
 
         private static Sprite CreatePlaceholderSprite(Color color)

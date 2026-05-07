@@ -77,9 +77,29 @@ namespace Valkur.Gameplay
             Color tint = assetConfig.scaleConfig.tint;
             if (tint.a <= 0f && tint.r == 0f && tint.g == 0f && tint.b == 0f)
                 tint = Color.white;
-            renderer.color = new Color(tint.r, tint.g, tint.b, 1f);
 
+            ApplyHdrTint(renderer, tint);
             return true;
+        }
+
+        // SpriteRenderer.color flows through vertex color, which Unity packs as
+        // Color32 (clamped to 0-1 per channel). That's fine for white/dimming tints
+        // but it crushes HDR boosts: a yellow tint of (2.5, 2.1, 0) becomes (1, 1, 0)
+        // before reaching the fragment, so a brown barbol×yellow ends up olive
+        // instead of vibrant yellow. Route the saturated tint through the material's
+        // HDR _Color uniform (via MaterialPropertyBlock so we don't allocate per-
+        // entity materials) and keep SpriteRenderer.color as pure white so the
+        // GrayscaleDeath dim/fade still has a clean lerp target.
+        private static readonly int HdrColorPropertyId = Shader.PropertyToID("_Color");
+
+        private static void ApplyHdrTint(SpriteRenderer renderer, Color tint)
+        {
+            renderer.color = Color.white;
+
+            var mpb = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(mpb);
+            mpb.SetColor(HdrColorPropertyId, tint);
+            renderer.SetPropertyBlock(mpb);
         }
 
         private static DirectionalAnimator.DirectionalSpriteSet BuildSet(DirectionalSprites directional, List<Sprite> sheetFrames, out bool usesFourDirectionalLayout)
