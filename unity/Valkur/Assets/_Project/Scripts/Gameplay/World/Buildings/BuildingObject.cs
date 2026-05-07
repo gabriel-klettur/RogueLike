@@ -177,15 +177,49 @@ namespace Valkur.Gameplay.World
         {
             // Z offsets act as a HARD TIER on top of the Y-sort: a +1 in
             // Z always wins against any Y-sort difference, a +N always
-            // beats +(N-1). Without the SortingConfig.Z_TIER_SCALE
-            // multiplier, an authored Z of +8 lost against a Y diff of
-            // 0.1 world units (because YToSortingOrder contributes ±100
-            // per world unit and the raw zOffset only contributed ±8).
+            // beats +(N-1). Without SortingConfig.Z_TIER_SCALE the raw
+            // zOffset (±8) lost against a Y diff of 0.1 world units
+            // (since YToSortingOrder contributes ±100 per world unit).
+            //
+            // Crucially, ALSO promote/demote the SORTING LAYER when the
+            // Z is non-zero. Unity sorts by sortingLayer FIRST and
+            // sortingOrder SECOND, so a Z+8 footprint sitting on
+            // WallsBottom would still render BEHIND a Z=0 canopy on
+            // WallsTop no matter how large its sortingOrder is. To make
+            // a higher-Z building render entirely above a lower-Z one,
+            // each renderer's effective layer follows its own Z sign:
+            //
+            //   ZBottomOffset > 0 → footprint promoted from WallsBottom
+            //                       up to WallsTop, escaping the layer
+            //                       hierarchy. Side-effect: the player
+            //                       no longer walks "over" this footprint;
+            //                       that's a deliberate trade-off the
+            //                       designer opted in to by setting Z>0.
+            //   ZTopOffset    < 0 → canopy demoted from WallsTop down
+            //                       to WallsBottom (no longer occludes
+            //                       entities). Designer-opt-in for
+            //                       decorative / floor-level canopies.
+            //
+            // For ZTopOffset >= ZBottomOffset, a +1 nudge on the canopy
+            // ensures it still wins against its OWN footprint when both
+            // share a sorting layer (e.g. when both Z's are positive).
             int baseY = SortingConfig.YToSortingOrder(transform.position.y);
             if (_bottomRenderer != null)
+            {
+                _bottomRenderer.sortingLayerName = (_zBottomOffset > 0)
+                    ? SortingConfig.LAYER_WALLS_TOP
+                    : SortingConfig.LAYER_WALLS_BOTTOM;
                 _bottomRenderer.sortingOrder = baseY + _zBottomOffset * SortingConfig.Z_TIER_SCALE;
+            }
             if (_topRenderer != null)
-                _topRenderer.sortingOrder    = baseY + _zTopOffset    * SortingConfig.Z_TIER_SCALE;
+            {
+                _topRenderer.sortingLayerName = (_zTopOffset < 0)
+                    ? SortingConfig.LAYER_WALLS_BOTTOM
+                    : SortingConfig.LAYER_WALLS_TOP;
+                int topOrder = baseY + _zTopOffset * SortingConfig.Z_TIER_SCALE;
+                if (_zTopOffset >= _zBottomOffset) topOrder += 1;
+                _topRenderer.sortingOrder = topOrder;
+            }
         }
 
         // ── Unity lifecycle ────────────────────────────────────────────────────────

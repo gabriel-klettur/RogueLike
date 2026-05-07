@@ -591,8 +591,8 @@ namespace Valkur.Tests.EditMode.Game.World
             // The original bug: a building at y=10 with Z=8 rendered BEHIND a
             // building at y=15 with Z=0, because the raw zOffset addition
             // (-100*y + zOffset) lost to the Y-sort (Δ500) by an order of
-            // magnitude. Z_TIER_SCALE (=100_000) makes a single Z tier
-            // dominate any practical Y diff.
+            // magnitude. Z_TIER_SCALE (=2000) makes a single Z tier
+            // dominate any Y diff inside the short-range budget.
             LogAssert.ignoreFailingMessages = true;
 
             var hi   = new GameObject("HighZ");
@@ -611,8 +611,8 @@ namespace Valkur.Tests.EditMode.Game.World
             hi.transform.position = new Vector3(0f, 100f, 0f); // baseY = -10000
             lo.transform.position = new Vector3(0f, 0f,   0f); // baseY = 0
 
-            hiB.ZBottomOffset = 8; // expected: -10000 + 800_000 = 790_000
-            loB.ZBottomOffset = 0; // expected: 0      + 0       = 0
+            hiB.ZBottomOffset = 8;
+            loB.ZBottomOffset = 0;
 
             hiB.RefreshSorting();
             loB.RefreshSorting();
@@ -624,6 +624,127 @@ namespace Valkur.Tests.EditMode.Game.World
 
             Object.DestroyImmediate(hi);
             Object.DestroyImmediate(lo);
+        }
+
+        // ── Cross-layer Z-tier promotion ────────────────────────────────────
+        // Unity sorts by sortingLayerName FIRST and sortingOrder SECOND, so
+        // a Z+8 footprint on WallsBottom would still render BEHIND a Z=0
+        // canopy on WallsTop no matter how high its sortingOrder is. The
+        // fix promotes the renderer's sortingLayer when its Z is non-zero
+        // so the user-authored Z dominates the cross-layer comparison too.
+
+        [Test]
+        public void RefreshSorting_PositiveZBottom_PromotesFootprintToWallsTopLayer()
+        {
+            // Reproducer for the user-reported bug: ID 5 (Z+8) stayed visually
+            // BEHIND ID 2 (Z=0) because ID 5's footprint sat on WallsBottom
+            // while ID 2's canopy sat on WallsTop, and the layer comparison
+            // outranked the sortingOrder. Promoting the Z+8 footprint to
+            // WallsTop makes it cross-layer-comparable with everyone else's
+            // canopies.
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("PromotedBuilding");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            bObj.ZBottomOffset = 8;
+            bObj.ZTopOffset    = 8;
+            bObj.RefreshSorting();
+
+            Assert.AreEqual("WallsTop", bottom.sortingLayerName,
+                "ZBottomOffset > 0 must promote the footprint from WallsBottom to " +
+                "WallsTop so it can win the cross-layer comparison against Z=0 canopies.");
+            Assert.AreEqual("WallsTop", top.sortingLayerName,
+                "ZTopOffset > 0 keeps the canopy on WallsTop (its default layer).");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RefreshSorting_NegativeZTop_DemotesCanopyToWallsBottomLayer()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("DemotedBuilding");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            bObj.ZTopOffset = -3;
+            bObj.RefreshSorting();
+
+            Assert.AreEqual("WallsBottom", top.sortingLayerName,
+                "ZTopOffset < 0 must demote the canopy from WallsTop down to " +
+                "WallsBottom (the designer opted into a non-occluding canopy by " +
+                "setting Z<0).");
+            Assert.AreEqual("WallsBottom", bottom.sortingLayerName,
+                "ZBottomOffset = 0 leaves the footprint on its default WallsBottom layer.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RefreshSorting_DefaultZ_KeepsFootprintAndCanopyOnDefaultLayers()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("DefaultBuilding");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            // Z=0 on both — keep the WallsBottom/WallsTop split that gives
+            // the player walks-in-front-of-footprint / walks-behind-canopy
+            // semantic for the standard non-tiered building case.
+            bObj.RefreshSorting();
+
+            Assert.AreEqual("WallsBottom", bottom.sortingLayerName,
+                "Default Z must keep footprint on WallsBottom (player walks over it).");
+            Assert.AreEqual("WallsTop", top.sortingLayerName,
+                "Default Z must keep canopy on WallsTop (canopy occludes player).");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RefreshSorting_PositiveZ_CanopyStaysAboveOwnFootprint_OnSameLayer()
+        {
+            // When both parts get promoted to the same layer (positive Z on
+            // both), the +1 nudge on the canopy ensures it still draws over
+            // its OWN footprint within the building. Without it, footprint
+            // and canopy would have identical sortingOrder and Unity's
+            // tie-breaker (scene-graph order) is undefined.
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("EqualPositiveZ");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            bObj.ZBottomOffset = 5;
+            bObj.ZTopOffset    = 5;
+            bObj.RefreshSorting();
+
+            Assert.AreEqual("WallsTop", bottom.sortingLayerName,
+                "Both Z's positive → both promoted to WallsTop.");
+            Assert.AreEqual("WallsTop", top.sortingLayerName,
+                "Both Z's positive → canopy stays on WallsTop.");
+            Assert.Greater(top.sortingOrder, bottom.sortingOrder,
+                "Within the same layer the canopy must still draw above its own " +
+                "footprint (visual top half of the sprite). The +1 nudge on the canopy " +
+                "guarantees this when both Z values are equal.");
+
+            Object.DestroyImmediate(go);
         }
 
         [Test]

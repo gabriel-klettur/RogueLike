@@ -146,15 +146,12 @@ namespace Valkur.Gameplay.World
             EnsureRenderer(ref _topRenderer, "Canopy",
                 SortingConfig.LAYER_WALLS_TOP, topSprite, new Vector3(0f, bottomH, 0f));
 
-            // Y-sort within layer: buildings farther down on screen (lower worldY)
-            // rank in front. SortingConfig.YToSortingOrder returns -(int)(y*100).
-            // Per-instance Z offsets are HARD TIERS on top of that: a building
-            // with ZBottomOffset = +N always renders above a building with
-            // ZBottomOffset = N-1, regardless of their Y diff. See
-            // SortingConfig.Z_TIER_SCALE for the multiplier rationale.
-            int ySortOrder = SortingConfig.YToSortingOrder(transform.position.y);
-            _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset * SortingConfig.Z_TIER_SCALE;
-            _topRenderer.sortingOrder    = ySortOrder + _zTopOffset    * SortingConfig.Z_TIER_SCALE;
+            // Delegate sortingLayer + sortingOrder assignment to ApplyZOffsets()
+            // so the Z-tier layer-promotion logic lives in exactly one place.
+            // Both Apply() (initial setup) and the ZBottomOffset / ZTopOffset
+            // setters need this — keeping it private+single-source guarantees
+            // they can never drift apart.
+            ApplyZOffsets();
 
             // ── 5. Collider ─────────────────────────────────────────────────────────
             // No default footprint collider. Buildings only block movement once the
