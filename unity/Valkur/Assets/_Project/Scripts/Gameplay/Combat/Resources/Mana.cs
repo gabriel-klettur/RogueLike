@@ -23,6 +23,16 @@ namespace Valkur.Gameplay
         public int MaxMana => maxMana;
         public float NormalizedMana => maxMana > 0 ? (float)_currentMana / maxMana : 0f;
 
+        /// <summary>
+        /// True while passive regen is actively ticking — i.e. the pool is below
+        /// max AND we've waited out the post-cast <see cref="regenDelay"/> grace
+        /// window. Drives visual feedback (e.g. <see cref="ManaRegenAura"/>) so
+        /// effects only show during real recovery, not during the brief lull
+        /// right after a spell consumes mana.
+        /// </summary>
+        public bool IsRegenerating
+            => _currentMana < maxMana && Time.time - _lastConsumeTime >= regenDelay;
+
         public event Action<int, int> OnManaChanged;
         public event Action<int> OnManaConsumed;
 

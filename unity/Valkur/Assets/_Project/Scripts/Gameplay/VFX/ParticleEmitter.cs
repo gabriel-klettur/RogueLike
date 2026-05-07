@@ -96,5 +96,61 @@ namespace Valkur.Gameplay.VFX
                 _ps.Play();
             }
         }
+
+        /// <summary>
+        /// Stops new particle emission while letting already-alive particles finish
+        /// their natural lifespan (no clear). Used by short-lived "trail" emitters
+        /// — e.g. the dash trail emitter that travels from origin to destination
+        /// and must stop spawning new dust the instant it arrives, instead of
+        /// pooling particles at the endpoint until VFXManager destroys the GO.
+        /// Also halts the repeating-burst coroutine if one is running.
+        /// </summary>
+        public void StopEmitting()
+        {
+            if (_burstLoopCoroutine != null)
+            {
+                StopCoroutine(_burstLoopCoroutine);
+                _burstLoopCoroutine = null;
+            }
+            if (_ps != null)
+                _ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+
+        /// <summary>
+        /// Inverse of <see cref="StopEmitting"/>: resume emitting using the preset
+        /// already applied. Idempotent — calling on a system that's already playing
+        /// is a no-op. For burst-with-interval presets the repeating coroutine is
+        /// re-started so the cadence resumes; for plain continuous emitters this
+        /// just re-plays the underlying ParticleSystem. Used by long-lived togglers
+        /// like <see cref="Valkur.Gameplay.ManaRegenAura"/> that switch the effect
+        /// on and off without rebuilding the emitter.
+        /// </summary>
+        public void StartEmitting()
+        {
+            if (_ps == null) return;
+            if (_preset != null
+                && IsBurstWithInterval(_preset.vfx.kind ?? "")
+                && _preset.vfx.burstIntervalSeconds > 0f
+                && _burstLoopCoroutine == null)
+            {
+                _burstLoopCoroutine = StartCoroutine(BurstLoop(_preset.vfx.burstIntervalSeconds));
+            }
+            _ps.Play();
+        }
+
+        /// <summary>
+        /// Override the underlying ParticleSystem's continuous emission rate.
+        /// Used when a preset's authored rate is too low for a short-lived
+        /// motion-driven emitter (e.g. the dash trail, which travels start→end
+        /// in ~0.18 s — at the preset's stock 10/s only 1-2 particles drop along
+        /// the path; bumping the rate while moving gives a continuous wake).
+        /// No-op if the ParticleSystem has not been built yet.
+        /// </summary>
+        public void SetEmissionRate(float ratePerSecond)
+        {
+            if (_ps == null) return;
+            var emission = _ps.emission;
+            emission.rateOverTime = Mathf.Max(0f, ratePerSecond);
+        }
     }
 }

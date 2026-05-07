@@ -23,6 +23,12 @@ namespace Valkur.Gameplay
             // Python parity: max mana from max_intelligence.
             mana.Initialize(def.maxIntelligence, def.manaRegenPerSecond);
 
+            // Visual feedback for active mana regeneration. The component
+            // resolves its preset lazily from VFXManager so we don't need
+            // to coordinate bootstrap order with EnsureVFXManager.
+            if (go.GetComponent<ManaRegenAura>() == null)
+                go.AddComponent<ManaRegenAura>();
+
             var xp = go.GetComponent<Experience>();
             if (xp == null) go.AddComponent<Experience>();
 
@@ -81,6 +87,12 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<FacingIndicator>() == null)
                 go.AddComponent<FacingIndicator>();
+
+            // Mana-regen silhouette halo: blue rim around the player's body
+            // sprite that fades in only while Mana.IsRegenerating is true,
+            // matching the trigger used by ManaRegenAura's particles.
+            if (go.CompareTag("Player") && go.GetComponent<ManaRegenSilhouette>() == null)
+                go.AddComponent<ManaRegenSilhouette>();
         }
 
         private static void ApplyPlayerClassInitialMarker(GameObject go, string playerKey)

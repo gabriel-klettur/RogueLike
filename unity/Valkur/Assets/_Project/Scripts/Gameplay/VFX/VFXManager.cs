@@ -49,25 +49,46 @@ namespace Valkur.Gameplay.VFX
         /// </summary>
         public void SetParticleCatalog(ParticlePresetCatalog catalog) => _particleCatalog = catalog;
 
+        /// <summary>True once <see cref="SetParticleCatalog"/> has been called with a non-null asset.</summary>
+        public bool HasParticleCatalog => _particleCatalog != null;
+
+        /// <summary>
+        /// Look up a particle preset by id without spawning. Used by long-lived
+        /// emitter components (e.g. ManaRegenAura) that build their own child
+        /// ParticleEmitter and toggle emission instead of going through the
+        /// one-shot spawn path. Returns null if the catalog hasn't been set yet
+        /// or the id isn't present — callers should be tolerant of both.
+        /// </summary>
+        public ParticlePresetDefinition GetParticlePreset(string presetId)
+        {
+            if (_particleCatalog == null || string.IsNullOrEmpty(presetId)) return null;
+            return _particleCatalog.GetById(presetId);
+        }
+
         /// <summary>
         /// Spawn a one-shot particle effect from a preset at world position.
         /// duration &lt; 0  → auto-destroy after preset lifespan + 1 s.
+        /// Returns the spawned GameObject (or null on failure) so callers that
+        /// need to drive the emitter — e.g. animate its position so it leaves a
+        /// trail, parent it to a moving entity, or call StopEmitting early —
+        /// can do so without re-finding it in the scene. Existing callers that
+        /// ignore the return value are unaffected.
         /// Maps to Python's gameplay emitter systems (dash, fireball trail, healing aura, etc.)
         /// called from combat/spell MonoBehaviours.
         /// </summary>
-        public void SpawnParticlePreset(string presetId, Vector3 position, float duration = -1f, float scale = 1f)
+        public GameObject SpawnParticlePreset(string presetId, Vector3 position, float duration = -1f, float scale = 1f)
         {
             if (_particleCatalog == null)
             {
                 Debug.LogWarning("[VFXManager] No particle catalog set — call SetParticleCatalog() first.");
-                return;
+                return null;
             }
 
             var preset = _particleCatalog.GetById(presetId);
             if (preset == null)
             {
                 Debug.LogWarning($"[VFXManager] Particle preset '{presetId}' not found in catalog.");
-                return;
+                return null;
             }
 
             var go = new GameObject($"ParticleEffect_{presetId}");
@@ -80,7 +101,14 @@ namespace Valkur.Gameplay.VFX
             float destroyAfter = duration > 0f
                 ? duration
                 : (preset.vfx.lifespan > 0f ? preset.vfx.lifespan + 1f : 5f);
-            Destroy(go, destroyAfter);
+            // Use TimedDespawn instead of Object.Destroy(go, delay) so the spawn
+            // path is safe in EditMode tests (Object.Destroy with a delay throws
+            // "Destroy may not be called from edit mode!"). TimedDespawn's Update
+            // is dormant in EditMode so the GO simply lives until the test's
+            // TearDown disposes the manager — which destroys it as a child.
+            var td = go.AddComponent<Valkur.Gameplay.TimedDespawn>();
+            td.TTL = destroyAfter;
+            return go;
         }
 
         /// <summary>
