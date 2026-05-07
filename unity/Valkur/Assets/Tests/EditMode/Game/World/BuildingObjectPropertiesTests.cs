@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.World;
 
@@ -532,7 +533,7 @@ namespace Valkur.Tests.EditMode.Game.World
         }
 
         [Test]
-        public void RefreshSorting_PreservesPerInstanceZOffsets()
+        public void RefreshSorting_PreservesPerInstanceZOffsets_ScaledByTier()
         {
             LogAssert.ignoreFailingMessages = true;
 
@@ -549,14 +550,80 @@ namespace Valkur.Tests.EditMode.Game.World
             go.transform.position = new Vector3(0f, 2f, 0f);
             bObj.RefreshSorting();
 
-            // -(2 * 100) + 3   for bottom
-            // -(2 * 100) + (-7) for top
-            Assert.AreEqual(-200 + 3, bottom.sortingOrder,
-                "RefreshSorting() must keep the per-instance ZBottomOffset.");
-            Assert.AreEqual(-200 - 7, top.sortingOrder,
-                "RefreshSorting() must keep the per-instance ZTopOffset.");
+            // sortingOrder = baseY + zOffset * Z_TIER_SCALE, where
+            //   baseY = -(y*100) = -200 at y=2
+            //   bottom = -200 + 3 * 2000 = 5800
+            //   top    = -200 + (-7) * 2000 = -14200
+            // Both stay safely inside Unity's 16-bit short sort window.
+            int expectedBottom = -200 + 3 * SortingConfig.Z_TIER_SCALE;
+            int expectedTop    = -200 - 7 * SortingConfig.Z_TIER_SCALE;
+            Assert.AreEqual(expectedBottom, bottom.sortingOrder,
+                "RefreshSorting() must apply ZBottomOffset scaled by Z_TIER_SCALE.");
+            Assert.AreEqual(expectedTop, top.sortingOrder,
+                "RefreshSorting() must apply ZTopOffset scaled by Z_TIER_SCALE.");
 
             Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void Z_TierScale_KeepsTypicalAuthoredValues_InsideShortRange()
+        {
+            // Locks the budget: Unity's SpriteRenderer.sortingOrder is
+            // internally truncated to 16-bit short (±32767). Any combination
+            // of typical Z tier (±10) and typical world Y (±50) MUST fit
+            // inside that range or the values silently wrap to garbage —
+            // exactly what produced "Z+8 stuck behind Z=0" before this
+            // commit (300_000 wrapped to -27880).
+            int worstCasePositive =  10 * SortingConfig.Z_TIER_SCALE + (-(int)(-50f * 100f));
+            int worstCaseNegative = -10 * SortingConfig.Z_TIER_SCALE + (-(int)( 50f * 100f));
+
+            Assert.LessOrEqual(worstCasePositive,  short.MaxValue,
+                "Z=+10 with Y=-50 must fit in short.MaxValue (32767). " +
+                "If this fails, Z_TIER_SCALE has been raised past its safe budget.");
+            Assert.GreaterOrEqual(worstCaseNegative, short.MinValue,
+                "Z=-10 with Y=+50 must fit in short.MinValue (-32768). " +
+                "If this fails, Z_TIER_SCALE has been raised past its safe budget.");
+        }
+
+        [Test]
+        public void RefreshSorting_HigherZ_OutranksLowerZ_RegardlessOfYDifference()
+        {
+            // The original bug: a building at y=10 with Z=8 rendered BEHIND a
+            // building at y=15 with Z=0, because the raw zOffset addition
+            // (-100*y + zOffset) lost to the Y-sort (Δ500) by an order of
+            // magnitude. Z_TIER_SCALE (=100_000) makes a single Z tier
+            // dominate any practical Y diff.
+            LogAssert.ignoreFailingMessages = true;
+
+            var hi   = new GameObject("HighZ");
+            var hiB  = hi.AddComponent<BuildingObject>();
+            var hiSr = MakeChildRenderer(hi, "Footprint", 64, 64);
+            SetPrivateField(hiB, "_bottomRenderer", hiSr);
+
+            var lo   = new GameObject("LowZ");
+            var loB  = lo.AddComponent<BuildingObject>();
+            var loSr = MakeChildRenderer(lo, "Footprint", 64, 64);
+            SetPrivateField(loB, "_bottomRenderer", loSr);
+
+            // High-Z building sits FAR BACK (high y → strong negative Y-sort).
+            // Low-Z sits in front (low y → near-zero Y-sort). Without the
+            // tier scale, the Y diff would put low-Z on top of high-Z.
+            hi.transform.position = new Vector3(0f, 100f, 0f); // baseY = -10000
+            lo.transform.position = new Vector3(0f, 0f,   0f); // baseY = 0
+
+            hiB.ZBottomOffset = 8; // expected: -10000 + 800_000 = 790_000
+            loB.ZBottomOffset = 0; // expected: 0      + 0       = 0
+
+            hiB.RefreshSorting();
+            loB.RefreshSorting();
+
+            Assert.Greater(hiSr.sortingOrder, loSr.sortingOrder,
+                "Z+8 must always render above Z=0, even when its Y position would " +
+                "otherwise put it 100 world units further back. This is the regression " +
+                "we are guarding: higher Z = always more in front, period.");
+
+            Object.DestroyImmediate(hi);
+            Object.DestroyImmediate(lo);
         }
 
         [Test]

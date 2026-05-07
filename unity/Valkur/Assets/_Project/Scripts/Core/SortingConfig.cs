@@ -39,9 +39,36 @@ namespace Valkur.Core
         public const int Z_UI = 1000;
 
         /// <summary>
+        /// Multiplier applied to user-authored Z tier offsets (BuildingObject's
+        /// <c>ZBottomOffset</c> / <c>ZTopOffset</c>). The Y-sort formula
+        /// <c>YToSortingOrder</c> contributes ±100 of sortingOrder per world
+        /// unit of vertical distance, so a naive <c>zOffset + ySortOrder</c>
+        /// addition lets even a 0.1-unit Y diff outrank a +8 Z tier — the
+        /// authored value was effectively ignored.
+        ///
+        /// **Why 2000 specifically:** Unity's <c>SpriteRenderer.sortingOrder</c>
+        /// is internally truncated to a 16-bit short (range ±32767) for the
+        /// sort comparison. With Z_TIER_SCALE = 2000:
+        ///   • Max practical Z (±10 typical, ±15 extreme) stays in
+        ///     [−30000, +30000] — fits inside the short window.
+        ///   • A single Z tier dominates any Y diff &lt; 20 world units; +10 Z
+        ///     dominates Y diff &lt; 200 units. Both far exceed the typical
+        ///     "two adjacent buildings in the same zone" use case.
+        ///   • Headroom for Y-sort within a zone: ±127 world units before the
+        ///     packed value overflows short — far above the 50-unit zone span.
+        ///
+        /// A larger constant (we tried 100000 first) overflowed and wrapped
+        /// to garbage values like -27880, surfacing as Z+8 buildings rendering
+        /// BEHIND Z=0 buildings even after the fix.
+        /// </summary>
+        public const int Z_TIER_SCALE = 2000;
+
+        /// <summary>
         /// Convert a world Y position to a sortingOrder offset.
-        /// Lower Y (further up on screen) gets lower order (drawn first / behind).
-        /// Multiplied by -100 to give enough granularity between entities.
+        /// Higher worldY (further up on screen / "deeper" in 2D top-down)
+        /// gets a more-negative order so it draws BEHIND entities at lower
+        /// worldY. Multiplied by -100 to give enough granularity between
+        /// entities.
         /// </summary>
         public static int YToSortingOrder(float worldY)
         {

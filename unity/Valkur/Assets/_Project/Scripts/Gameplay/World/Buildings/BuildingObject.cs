@@ -175,9 +175,17 @@ namespace Valkur.Gameplay.World
 
         private void ApplyZOffsets()
         {
+            // Z offsets act as a HARD TIER on top of the Y-sort: a +1 in
+            // Z always wins against any Y-sort difference, a +N always
+            // beats +(N-1). Without the SortingConfig.Z_TIER_SCALE
+            // multiplier, an authored Z of +8 lost against a Y diff of
+            // 0.1 world units (because YToSortingOrder contributes ±100
+            // per world unit and the raw zOffset only contributed ±8).
             int baseY = SortingConfig.YToSortingOrder(transform.position.y);
-            if (_bottomRenderer != null) _bottomRenderer.sortingOrder = baseY + _zBottomOffset;
-            if (_topRenderer    != null) _topRenderer.sortingOrder    = baseY + _zTopOffset;
+            if (_bottomRenderer != null)
+                _bottomRenderer.sortingOrder = baseY + _zBottomOffset * SortingConfig.Z_TIER_SCALE;
+            if (_topRenderer != null)
+                _topRenderer.sortingOrder    = baseY + _zTopOffset    * SortingConfig.Z_TIER_SCALE;
         }
 
         // ── Unity lifecycle ────────────────────────────────────────────────────────

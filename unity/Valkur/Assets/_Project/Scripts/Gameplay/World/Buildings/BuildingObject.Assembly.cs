@@ -148,9 +148,13 @@ namespace Valkur.Gameplay.World
 
             // Y-sort within layer: buildings farther down on screen (lower worldY)
             // rank in front. SortingConfig.YToSortingOrder returns -(int)(y*100).
+            // Per-instance Z offsets are HARD TIERS on top of that: a building
+            // with ZBottomOffset = +N always renders above a building with
+            // ZBottomOffset = N-1, regardless of their Y diff. See
+            // SortingConfig.Z_TIER_SCALE for the multiplier rationale.
             int ySortOrder = SortingConfig.YToSortingOrder(transform.position.y);
-            _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset;
-            _topRenderer.sortingOrder    = ySortOrder + _zTopOffset;
+            _bottomRenderer.sortingOrder = ySortOrder + _zBottomOffset * SortingConfig.Z_TIER_SCALE;
+            _topRenderer.sortingOrder    = ySortOrder + _zTopOffset    * SortingConfig.Z_TIER_SCALE;
 
             // ── 5. Collider ─────────────────────────────────────────────────────────
             // No default footprint collider. Buildings only block movement once the
