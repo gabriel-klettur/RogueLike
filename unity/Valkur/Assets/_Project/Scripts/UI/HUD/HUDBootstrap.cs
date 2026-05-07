@@ -101,6 +101,12 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) vignetteGo.transform.SetParent(uiContainer.transform, false);
             }
 
+            // Hide the HUD whenever any runtime editor opens, restore on close.
+            // Hosted on this same GameObject ([Systems]/HUDBootstrap) so it lives
+            // outside [UI] and survives the SetActive(false) it applies.
+            if (GetComponent<HUDVisibilityController>() == null)
+                gameObject.AddComponent<HUDVisibilityController>();
+
             _initialized = true;
             Debug.Log("[HUDBootstrap] HUD system initialized (main + debug + death banner + day/night clock + vignette + mouse targeting).");
         }

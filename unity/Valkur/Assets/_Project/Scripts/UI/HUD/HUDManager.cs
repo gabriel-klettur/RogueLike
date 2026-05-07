@@ -42,6 +42,10 @@ namespace Valkur.UI.HUD
             var xp = playerHealth != null ? playerHealth.GetComponent<Experience>() : null;
             CreateXpBarHUD(xp);
 
+            // Spell cooldown countdown stack — bottom-center, sits above the XP
+            // bar. One row per active cooldown; subscribes to GameEvents.OnSpellCast.
+            CreateSpellCooldownHUD(playerHealth != null ? playerHealth.gameObject : null);
+
             UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
 
             // Wire mana to PlayerHUD

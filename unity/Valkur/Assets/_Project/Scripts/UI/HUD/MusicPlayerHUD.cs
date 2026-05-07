@@ -144,6 +144,10 @@ namespace Valkur.UI.HUD
         private MusicBeatClock _clock;
         private float _flashTimer;
         private float _volumeBeforeMute = 0.7f;
+        // Tracks whether the bar button has been successfully registered.
+        // Update() retries until true, so the icon survives a transient null
+        // HUDIconBar singleton (e.g. after a mid-play domain reload).
+        private bool _barButtonRegistered;
 
         // ── Lifecycle ───────────────────────────────────────────────────────
         // Sizes are stored separately for simple vs expanded mode so each layout
@@ -235,16 +239,29 @@ namespace Valkur.UI.HUD
 
             // Tray button is owned by the HUDIconBar singleton; remove on disable
             // so the icon doesn't dangle if this widget is destroyed.
-            var bar = HUDIconBar.Instance;
+            var bar = ResolveIconBar();
             if (bar != null) bar.Unregister(BarButtonId);
+            _barButtonRegistered = false;
         }
 
         private void RegisterBarButton()
         {
-            var bar = HUDIconBar.Instance;
+            var bar = ResolveIconBar();
             if (bar == null) return;
             // order=2 keeps inventory(0) → spells(1) → music(2) left-to-right.
             bar.Register(BarButtonId, GetBarIconSprite(), TogglePanel, order: 2);
+            _barButtonRegistered = true;
+        }
+
+        // Why: SingletonMonoBehaviour.Instance can become null while the
+        // GameObject is still alive (mid-play domain reload clears the static
+        // without firing OnDestroy). Falling back to FindObjectOfType lets the
+        // music button re-anchor itself to the live bar component.
+        private static HUDIconBar ResolveIconBar()
+        {
+            var bar = HUDIconBar.Instance;
+            if (bar != null) return bar;
+            return FindObjectOfType<HUDIconBar>();
         }
 
         private void TogglePanel()
@@ -301,6 +318,11 @@ namespace Valkur.UI.HUD
                 }
             }
             if (_clock == null) _clock = MusicBeatClock.Instance;
+
+            // Self-heal the bar button if the first OnEnable lost the race
+            // against HUDIconBar's singleton initialisation, or if the static
+            // _instance was nulled by a mid-play domain reload.
+            if (!_barButtonRegistered) RegisterBarButton();
 
             // Re-clamp size when the screen resolution changes so the widget always fits.
             if (Screen.width != _lastScreenW || Screen.height != _lastScreenH)

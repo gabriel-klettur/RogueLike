@@ -11,7 +11,7 @@ namespace Valkur.Gameplay.HUD
     /// <see cref="SkillTree"/> renders as one row:
     ///   [icon] Display Name (cost)  — status — [Learn] button
     /// Status reflects gating logic from <see cref="LearnedSkills.CanLearn"/>:
-    /// "Learned ✓", "Locked: Requires X", "Cost: 2 / Have 1", "Available".
+    /// "Learned", "Locked: Requires X", "Cost: 2 / Have 1", "Available".
     /// Clicking Learn invokes <see cref="LearnedSkills.TryLearn"/>; the
     /// row repaints from the OnSkillLearned event.
     ///
@@ -120,7 +120,7 @@ namespace Valkur.Gameplay.HUD
         private string StatusFor(SkillNode node)
         {
             if (node == null) return "?";
-            if (skills.IsLearned(node.skillId)) return "Learned ✓";
+            if (skills.IsLearned(node.skillId)) return "Learned";
             if (skills.CanLearn(node, playerLevel, out string reason)) return "Available";
             return "Locked: " + reason;
         }

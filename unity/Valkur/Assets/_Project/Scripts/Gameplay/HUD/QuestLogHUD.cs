@@ -147,7 +147,7 @@ namespace Valkur.Gameplay.HUD
                     sb.Append('/');
                     sb.Append(obj.Target);
                     sb.Append(')');
-                    if (obj.IsComplete) sb.Append(" ✓");
+                    if (obj.IsComplete) sb.Append(" (done)");
                     sb.Append('\n');
                 }
             }
