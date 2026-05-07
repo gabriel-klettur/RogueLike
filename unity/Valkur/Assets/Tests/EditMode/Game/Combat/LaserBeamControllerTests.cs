@@ -417,33 +417,35 @@ namespace Valkur.Tests.EditMode.Game.Combat
             Assert.GreaterOrEqual(LaserBeamController.FADE_DURATION, 0.04f, "Fade must last more than 2 frames");
         }
 
-        // ── Visual back-offset (beam emerges from behind the player) ───
+        // ── Visual forward-offset (beam emerges in front of the caster) ───
 
         [Test]
-        public void Constants_VisualBackOffset_IsPositive()
+        public void Constants_VisualForwardOffset_IsPositive()
         {
-            // Must be positive — a zero or negative offset would make the beam start
-            // at or in front of the caster center, defeating the "behind player" effect.
-            Assert.Greater(LaserBeamController.VISUAL_BACK_OFFSET, 0f,
-                "Back offset must be positive so the beam visually starts behind the caster");
+            // Must be positive — the beam emerges in FRONT of the caster (1+ tile
+            // ahead of body centre), matching the slash spawn convention.
+            Assert.Greater(LaserBeamController.VISUAL_FORWARD_OFFSET, 0f,
+                "Forward offset must be positive so the beam visually starts in front of the caster");
         }
 
         [Test]
-        public void Constants_VisualBackOffset_IsModest()
+        public void Constants_VisualForwardOffset_IsAroundOneTile()
         {
-            // Too large an offset would have the beam start visibly far behind the
-            // player, looking weird. Cap at 1.5wu (~ one full character height).
-            Assert.LessOrEqual(LaserBeamController.VISUAL_BACK_OFFSET, 1.5f,
-                "Back offset should be modest (≤ 1.5 world units) to read naturally");
+            // Convention is "1.25 tiles in front of body centre" so the laser spawn
+            // point matches the slash spawn point. Tolerate ±0.5wu for tuning.
+            Assert.GreaterOrEqual(LaserBeamController.VISUAL_FORWARD_OFFSET, 0.75f,
+                "Forward offset should be at least 0.75 wu so the beam clears the caster sprite");
+            Assert.LessOrEqual(LaserBeamController.VISUAL_FORWARD_OFFSET, 2f,
+                "Forward offset should be at most 2 wu so the beam doesn't visibly detach from the hand");
         }
 
         [Test]
-        public void BuildVisual_LineRenderersUseLayerBelowEntities()
+        public void BuildVisual_LineRenderersUseVfxLayer()
         {
-            // The "behind the player" effect requires the beam line to render BELOW
-            // the player sprite. Player sprites live on the "Entities" sorting layer.
-            // We check the sortingLayerName explicitly so the contract is enforced
-            // even if Unity's sorting-layer ordering changes in the future.
+            // The beam now emerges in FRONT of the caster, so it must render ON TOP
+            // of world geometry / entities — the VFX sorting layer (above Entities).
+            // Pin the contract explicitly so a future sorting-config refactor can't
+            // silently demote the beam back beneath the world.
             var c = CreateController();
             InvokeBuildVisual(c, new SpellContext {
                 Spell = MakeBeamSpell(range: 12f), Caster = c.transform, Direction = Vector2.right });
@@ -451,17 +453,14 @@ namespace Valkur.Tests.EditMode.Game.Combat
             var glow = c.transform.Find("LaserBeam_Glow").GetComponent<LineRenderer>();
             var core = c.transform.Find("LaserBeam_Core").GetComponent<LineRenderer>();
 
-            Assert.AreNotEqual("Entities", glow.sortingLayerName,
-                "Glow line must NOT render on the Entities layer (player would be hidden behind it)");
-            Assert.AreNotEqual("Entities", core.sortingLayerName,
-                "Core line must NOT render on the Entities layer");
-            // The chosen layer is "WallsBottom" — just below Entities. Pin the contract.
-            Assert.AreEqual("WallsBottom", glow.sortingLayerName);
-            Assert.AreEqual("WallsBottom", core.sortingLayerName);
+            Assert.AreEqual(Valkur.Core.SortingConfig.LAYER_VFX, glow.sortingLayerName,
+                "Glow line must render on the VFX layer so it sits above entities");
+            Assert.AreEqual(Valkur.Core.SortingConfig.LAYER_VFX, core.sortingLayerName,
+                "Core line must render on the VFX layer so it sits above entities");
         }
 
         [Test]
-        public void BuildVisual_TrailUsesLayerBelowEntities()
+        public void BuildVisual_TrailUsesVfxLayer()
         {
             var c = CreateController();
             InvokeBuildVisual(c, new SpellContext {
@@ -469,8 +468,8 @@ namespace Valkur.Tests.EditMode.Game.Combat
 
             var trail = c.transform.Find("LaserBeam_Trail").GetComponent<ParticleSystem>();
             var renderer = trail.GetComponent<ParticleSystemRenderer>();
-            Assert.AreEqual("WallsBottom", renderer.sortingLayerName,
-                "Trail particles must render below the player sprite for the behind-effect");
+            Assert.AreEqual(Valkur.Core.SortingConfig.LAYER_VFX, renderer.sortingLayerName,
+                "Trail particles must render on the VFX layer to match the beam line");
         }
 
         // ── Color / fallback ───────────────────────────────────────────

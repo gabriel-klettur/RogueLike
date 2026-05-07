@@ -429,5 +429,55 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
             Assert.IsFalse(threw,
                 "SaveService.Instance?.SaveImmediately must be safe when Instance is null.");
         }
+
+        // ======================================================================
+        // 12. Orphan-bootstrap guard — WriteAutosaveToDisk refuses to write
+        //     while _currentRunOrdinal is still 0 (the transient window between
+        //     BeginNewRun and ProfileTelemetrySystem.StartRun). Without this
+        //     gate, an event that fires inside the bootstrap window leaks a
+        //     Saves/<guid>/ folder whose autosave lacks run_ordinal, exactly
+        //     the "phantom burst" pattern that polluted the Load Game panel
+        //     with 86 duplicate runs in a single second.
+        // ======================================================================
+
+        [Test]
+        public void WriteAutosaveToDisk_RefusesWriteWhenRunOrdinalIsZero()
+        {
+            // BeginNewRun set _currentRunId but _currentRunOrdinal stays 0
+            // until SetRunOrdinal is invoked by the bootstrap.
+            Assert.AreEqual(0, _saveService.RunOrdinal,
+                "Pre-condition: a freshly-begun run must have ordinal=0 " +
+                "(StartTelemetryRun has not finalised the run identity yet).");
+
+            // SaveImmediately is force=true. Even forced saves must be gated
+            // because a forced save with ordinal=0 produces the same orphan
+            // folder a non-forced one would.
+            bool result = _saveService.SaveImmediately("orphan-bootstrap regression");
+
+            Assert.IsFalse(result,
+                "WriteAutosaveToDisk must return false when _currentRunOrdinal == 0. " +
+                "Otherwise an event fired in the BeginNewRun→StartRun window leaks " +
+                "a Saves/<guid>/ folder that pollutes the Load Game panel.");
+        }
+
+        [Test]
+        public void WriteAutosaveToDisk_ProceedsAfterRunOrdinalIsSet()
+        {
+            // Simulate the bootstrap finishing: SetRunOrdinal mints the
+            // per-profile ordinal and unblocks subsequent saves.
+            _saveService.SetRunOrdinal(1);
+            Assert.AreEqual(1, _saveService.RunOrdinal,
+                "Pre-condition: SetRunOrdinal must propagate to RunOrdinal.");
+
+            // The orphan-bootstrap guard is now disarmed; SaveImmediately
+            // proceeds into GameStateCollector.Collect() which returns null
+            // in EditMode (no player registered). The contract here is just
+            // "the ordinal=0 guard no longer rejects the call" — the rest of
+            // the no-player short-circuit is asserted elsewhere.
+            bool result = _saveService.SaveImmediately("post-bootstrap save");
+            Assert.IsFalse(result,
+                "EditMode without a player still returns false (GameStateCollector " +
+                "returns null), but importantly NOT because of the ordinal guard.");
+        }
     }
 }

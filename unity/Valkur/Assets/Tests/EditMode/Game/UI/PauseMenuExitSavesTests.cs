@@ -70,6 +70,22 @@ namespace Valkur.Tests.EditMode.Game.UI
             Assert.Greater(loadIdx, saveIdx,
                 "QuickSave() must be invoked BEFORE SceneTransitionManager.LoadScene " +
                 "so the player's run data is persisted while the scene is still loaded.");
+
+            // The QuickSave MUST be gated on IsSessionDirty. Otherwise every
+            // Exit press from a player who did literally nothing creates a
+            // phantom Lv.0/Lobby autosave that pollutes the Load Game panel
+            // (the original "phantom runs" bug). The dirty flag enforces a
+            // "save iff progress was made" rule consistent with the autosave
+            // timer, which has the same gate for the same reason.
+            Assert.IsTrue(window.Contains("IsSessionDirty"),
+                "The 'Exit' branch must check SaveService.IsSessionDirty before " +
+                "calling QuickSave. Without this gate, every Exit creates a phantom " +
+                "Lv.0/Lobby autosave folder under Saves/<runId>/ — that is the " +
+                "regression that introduced 36+ junk runs to the Load Game panel.");
+            int dirtyIdx = window.IndexOf("IsSessionDirty", System.StringComparison.Ordinal);
+            Assert.Less(dirtyIdx, saveIdx,
+                "IsSessionDirty must be evaluated BEFORE QuickSave, not after — " +
+                "otherwise the gate has no effect on the save path.");
         }
 
         // ── Behavioural guarantee ───────────────────────────────────────────

@@ -208,5 +208,68 @@ namespace Valkur.Tests.EditMode.Game.Save
             }
             finally { Object.DestroyImmediate(go2); }
         }
+
+        // ── Run ordinal — per-profile monotonic identifier ──────────────────
+
+        [Test]
+        public void StartRun_FirstRun_AssignsOrdinalOne()
+        {
+            _sys.StartRun();
+            Assert.AreEqual(1, _sys.ActiveRun.runOrdinal,
+                "The first run on a fresh profile must have ordinal #1.");
+            Assert.AreEqual(1, _sys.ActiveRunOrdinal,
+                "ActiveRunOrdinal property must mirror ActiveRun.runOrdinal.");
+        }
+
+        [Test]
+        public void StartRun_SequentialRuns_OrdinalIsMonotonic()
+        {
+            _sys.StartRun(); int o1 = _sys.ActiveRunOrdinal;
+            _sys.StartRun(); int o2 = _sys.ActiveRunOrdinal;
+            _sys.StartRun(); int o3 = _sys.ActiveRunOrdinal;
+            Assert.AreEqual(1, o1);
+            Assert.AreEqual(2, o2);
+            Assert.AreEqual(3, o3);
+            Assert.AreEqual(3, _db.Runs.Count(),
+                "Each StartRun must insert one new row, never collide on the previous ordinal.");
+        }
+
+        [Test]
+        public void StartRun_DistinctOrdinals_NeverCollideAcrossRuns()
+        {
+            // Mint 50 runs and verify every ordinal is unique. Catches any
+            // future regression where the counter accidentally gets reset
+            // between runs (e.g. SaveAll wiping it, or the increment not
+            // persisting).
+            var seen = new System.Collections.Generic.HashSet<int>();
+            for (int i = 0; i < 50; i++)
+            {
+                _sys.StartRun();
+                int ord = _sys.ActiveRunOrdinal;
+                Assert.IsTrue(seen.Add(ord),
+                    $"Ordinal #{ord} was minted twice — uniqueness invariant broken at iteration {i}.");
+            }
+        }
+
+        [Test]
+        public void StartRun_ReuseOrdinal_PreservesProvidedValue()
+        {
+            // Loading a save must adopt the saved ordinal verbatim instead of
+            // bumping the counter — otherwise resuming "Run #3" would suddenly
+            // become "Run #4" on next launch and the human-facing identity
+            // would silently break.
+            _sys.StartRun(reuseRunId: "abc", reuseOrdinal: 7);
+            Assert.AreEqual(7, _sys.ActiveRunOrdinal,
+                "When reuseOrdinal is supplied, StartRun must adopt it without consulting the counter.");
+            Assert.AreEqual("abc", _sys.ActiveRun.runId,
+                "When reuseRunId is supplied, StartRun must adopt it without minting a fresh GUID.");
+
+            // The counter must NOT have been incremented — a subsequent
+            // fresh-mint StartRun should produce the next free ordinal,
+            // not "8" (which would imply the resume call leaked an increment).
+            _sys.StartRun();
+            Assert.AreEqual(1, _sys.ActiveRunOrdinal,
+                "Fresh StartRun after a reuseOrdinal call must mint #1 (the counter was untouched).");
+        }
     }
 }
