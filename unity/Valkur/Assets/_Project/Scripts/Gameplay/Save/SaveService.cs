@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Valkur.Core;
@@ -14,7 +13,7 @@ namespace Valkur.Gameplay
     /// Delegates IO to SaveFileManager, state collection to GameStateCollector,
     /// state restoration to GameStateRestorer, and migration to SaveSchemaMigrator.
     /// </summary>
-    public class SaveService : SingletonMonoBehaviour<SaveService>
+    public partial class SaveService : SingletonMonoBehaviour<SaveService>
     {
         // All auto-save semantics (timer autosave, shutdown save, quicksave-on-exit)
         // collapse to the same per-run autosave file via SaveFileManager.GetAutosavePath.
@@ -40,6 +39,12 @@ namespace Valkur.Gameplay
         private string _currentSavePath;
         private string _lastLoadedTimestamp;
         private string _currentRunId = "";
+        // Monotonic per-profile run ordinal (1, 2, 3, …) — minted by
+        // ProfileTelemetrySystem at run start and propagated here via
+        // SetRunOrdinal so every save written by this service carries it
+        // in meta.run_ordinal. Zero = "not assigned yet" (e.g. between
+        // BeginNewRun and the bootstrap's StartTelemetryRun call).
+        private int _currentRunOrdinal;
 
         // Debounce window after a MarkDirty so a rapid burst of dirty events
         // (combat sequence, mass loot pickup) coalesces into a single save
@@ -60,10 +65,28 @@ namespace Valkur.Gameplay
         [SerializeField] private bool useAsyncDiskIO = true;
         [Tooltip("Hard cap on how long OnApplicationQuit waits for a pending write.")]
         [SerializeField] private float quitWaitSeconds = 5f;
-        private Task _pendingWrite = Task.CompletedTask;
-        private readonly object _pendingWriteLock = new object();
 
         public string RunId => _currentRunId;
+        /// <summary>
+        /// Per-profile monotonic run number (1, 2, 3, …). Equals 0 between
+        /// BeginNewRun and the telemetry-side StartRun call that mints the
+        /// next ordinal — see <see cref="SetRunOrdinal"/>.
+        /// </summary>
+        public int RunOrdinal => _currentRunOrdinal;
+
+        /// <summary>
+        /// Wires the run ordinal into the save layer. Called by
+        /// <c>ProfileTelemetrySystem.StartRun</c> immediately after the
+        /// per-profile counter is bumped (or after a save load adopts an
+        /// existing ordinal). Once set, every save written by this service
+        /// embeds <c>run_ordinal</c> in its meta block so the Load Game panel
+        /// can render "Run #N" without consulting profile.json at list time.
+        /// </summary>
+        public void SetRunOrdinal(int ordinal)
+        {
+            if (ordinal < 0) ordinal = 0;
+            _currentRunOrdinal = ordinal;
+        }
 
         // Cached as plain C# values so OnApplicationQuit can read them
         // without touching any Unity Object reference during teardown.
@@ -150,117 +173,6 @@ namespace Valkur.Gameplay
                 telemetryReason: reason);
         }
 
-        private void RebindGameEvents()
-        {
-            // Removing a non-subscribed handler is a safe no-op, so doing
-            // unbind+bind unconditionally keeps subscriptions exactly-once
-            // even when GameEvents.Clear() ran between calls.
-            UnbindGameEvents();
-            // Tier 2 dirty triggers — flip the flag, the timer / debounce
-            // takes care of the actual write.
-            GameEvents.OnPlayerDamaged += HandlePlayerDamaged;
-            GameEvents.OnXpGained      += HandleXpGained;
-            GameEvents.OnItemPickedUp  += HandleItemPickedUp;
-            GameEvents.OnItemConsumed  += HandleItemConsumed;
-            // Critical milestones — force an immediate save.
-            GameEvents.OnLevelUp       += HandleLevelUp;
-            GameEvents.OnZoneChanged   += HandleZoneChanged;
-            GameEvents.OnPlayerDied    += HandlePlayerDied;
-            GameEvents.OnEntityDied    += HandleEntityDied;
-        }
-
-        private void UnbindGameEvents()
-        {
-            GameEvents.OnPlayerDamaged -= HandlePlayerDamaged;
-            GameEvents.OnXpGained      -= HandleXpGained;
-            GameEvents.OnItemPickedUp  -= HandleItemPickedUp;
-            GameEvents.OnItemConsumed  -= HandleItemConsumed;
-            GameEvents.OnLevelUp       -= HandleLevelUp;
-            GameEvents.OnZoneChanged   -= HandleZoneChanged;
-            GameEvents.OnPlayerDied    -= HandlePlayerDied;
-            GameEvents.OnEntityDied    -= HandleEntityDied;
-        }
-
-        private void HandlePlayerDamaged(int amount, int currentHp, int maxHp) =>
-            MarkDirty($"player damaged ({amount} dmg)");
-
-        private void HandleXpGained(GameObject entity, int amount)
-        {
-            if (entity != null && entity.CompareTag("Player"))
-                MarkDirty($"player gained {amount} XP");
-        }
-
-        private void HandleLevelUp(GameObject entity, int newLevel)
-        {
-            if (entity == null || !entity.CompareTag("Player")) return;
-            // Level-up is a milestone — force the save now instead of waiting
-            // for the timer. A crash between level-up and next periodic save
-            // would otherwise lose the new level + skill points.
-            //
-            // MarkDirty FIRST so that if SaveImmediately fails (e.g.
-            // GameStateCollector returns null because the player got destroyed
-            // mid-frame, or disk write throws) the autosave timer / debounce
-            // still picks up the event on its next pass. On success
-            // WriteAutosaveToDisk re-clears the flag, so production keeps the
-            // exact same end state.
-            MarkDirty($"player leveled up to {newLevel}");
-            SaveImmediately($"player leveled up to {newLevel}");
-        }
-
-        private void HandleItemPickedUp(GameObject collector, string itemName, int quantity)
-        {
-            if (collector != null && collector.CompareTag("Player"))
-                MarkDirty($"player picked up {itemName} x{quantity}");
-        }
-
-        private void HandleItemConsumed(GameObject consumer, string itemName)
-        {
-            if (consumer != null && consumer.CompareTag("Player"))
-                MarkDirty($"player consumed {itemName}");
-        }
-
-        private void HandleZoneChanged(string oldZone, string newZone)
-        {
-            // Zone transitions are the canonical "checkpoint" in sandbox
-            // games. Force-save so a crash on the new zone never sends the
-            // player back to the old one.
-            // See HandleLevelUp for rationale on the MarkDirty + SaveImmediately
-            // ordering (defence-in-depth: if the immediate save fails, the
-            // timer still picks the event up).
-            string reason = $"zone {oldZone} → {newZone}";
-            MarkDirty(reason);
-            SaveImmediately(reason);
-        }
-
-        private void HandlePlayerDied()
-        {
-            // Player death is the most expensive thing to lose — restart-from-
-            // checkpoint UX depends on the on-disk state being current. We
-            // still gate on _hasKnownPlayerPos because OnApplicationQuit's
-            // alive-only guard does not apply to death itself (we WANT the
-            // dead state recorded so the run-end UI can read it).
-            // MarkDirty + SaveImmediately: same defence-in-depth pattern as
-            // HandleLevelUp / HandleZoneChanged.
-            MarkDirty("player died");
-            SaveImmediately("player died");
-        }
-
-        private void HandleEntityDied(GameObject victim, GameObject killer)
-        {
-            // GameEvents.FireEntityDied passes (victim, killer) in that order;
-            // the same convention as OnEntityDamaged. Keep parameter names in
-            // sync with the source signature so the boss-detection branch
-            // inspects the actual victim.
-            if (victim == null) return;
-            var boss = victim.GetComponent<BossPhaseController>();
-            if (boss != null)
-            {
-                string reason = $"boss '{victim.name}' defeated";
-                MarkDirty(reason);
-                SaveImmediately(reason);
-            }
-        }
-
         private void Update()
         {
             float dt = Time.unscaledDeltaTime;
@@ -323,6 +235,13 @@ namespace Valkur.Gameplay
         public void BeginNewRun()
         {
             _currentRunId = Guid.NewGuid().ToString("N");
+            // Clear the previous run's ordinal — the bootstrap's
+            // StartTelemetryRun call will mint the next one and feed it back
+            // here via SetRunOrdinal. Saves written between BeginNewRun and
+            // StartTelemetryRun won't include a run_ordinal (it's 0), but
+            // those would only happen from a deliberate Save call before the
+            // telemetry system is online, which the bootstrap order rules out.
+            _currentRunOrdinal = 0;
             _sessionDirty = false;
             Debug.Log($"[SaveService] New run started: {_currentRunId}");
         }
@@ -350,6 +269,8 @@ namespace Valkur.Gameplay
 
                 EnsureRunId();
                 data.SetMeta("run_id", _currentRunId);
+                if (_currentRunOrdinal > 0)
+                    data.SetMeta("run_ordinal", _currentRunOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
                 string fileName = SaveFileManager.SanitizeSaveName(slotName);
                 if (string.IsNullOrEmpty(fileName) || SaveFileManager.IsReservedSaveName(fileName))
@@ -407,6 +328,23 @@ namespace Valkur.Gameplay
                 Debug.Log("[SaveService] Autosave skipped — session has no progression to save.");
                 return false;
             }
+
+            // Refuse to write while the run identity is in its transient
+            // bootstrap window (BeginNewRun has minted a fresh runId but
+            // StartTelemetryRun has not yet set the per-profile ordinal).
+            // Any save written in this window lacks `run_ordinal` and produces
+            // an orphan Saves/<guid>/ folder — exactly the "phantom run"
+            // pattern that pollutes the Load Game panel. The autosave timer /
+            // debounce will retry once the ordinal lands, so we lose nothing
+            // by skipping. Player-loaded saves bypass this gate because Load
+            // restores `_currentRunOrdinal` from disk before any event can fire.
+            if (_currentRunOrdinal == 0)
+            {
+                Debug.LogWarning("[SaveService] Save skipped — run ordinal not yet assigned (still inside bootstrap). " +
+                                 "This prevents phantom Saves/<guid>/ folders from being written before " +
+                                 "ProfileTelemetrySystem.StartRun finalises the run identity.");
+                return false;
+            }
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             string targetPath = null;
             try
@@ -416,6 +354,8 @@ namespace Valkur.Gameplay
 
                 EnsureRunId();
                 data.SetMeta("run_id", _currentRunId);
+                if (_currentRunOrdinal > 0)
+                    data.SetMeta("run_ordinal", _currentRunOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
                 targetPath = SaveFileManager.GetAutosavePath(_currentRunId);
                 _currentSavePath = targetPath;
@@ -459,101 +399,6 @@ namespace Valkur.Gameplay
                     path: targetPath ?? string.Empty,
                     wasAsync: useAsyncDiskIO));
                 Debug.LogError($"[SaveService] {(force ? "QuickSave" : "Autosave")} failed: {ex.Message}");
-                return false;
-            }
-        }
-
-        private static long SafeFileSize(string path)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return 0;
-                return new System.IO.FileInfo(path).Length;
-            }
-            catch { return 0; }
-        }
-
-        // Chains a new autosave task off whatever previous write may still
-        // be pending so that disk writes are strictly ordered (no thread
-        // ever races to write/rotate the same files). Faulted tasks are
-        // logged but never rethrown — the next save attempt is independent.
-        // Records a SaveTelemetry entry for the HUD / diagnostics panel
-        // when the task completes.
-        private void EnqueueAsyncAutosave(string runId, GameSaveData data,
-            SaveTelemetryEntry.SaveKind telemetryKind, string telemetryReason,
-            System.Diagnostics.Stopwatch stopwatch)
-        {
-            // Resolve every Unity-API-bound value here on the main thread.
-            // JsonUtility.ToJson and Application.persistentDataPath (used
-            // transitively by GetAutosavePath / GetBackupsDirectory) are
-            // documented main-thread-only; the previous implementation
-            // invoked WriteAutosaveAsync inside a ContinueWith on the
-            // thread pool, which raised "get_persistentDataPath can only
-            // be called from the main thread" once per autosave tick.
-            data.schemaVersion = SaveSchemaMigrator.CURRENT_SCHEMA;
-            string json       = JsonUtility.ToJson(data, true);
-            string targetPath = SaveFileManager.GetAutosavePath(runId);
-            string backupsDir = SaveFileManager.GetBackupsDirectory(runId);
-            string reason     = telemetryReason ?? telemetryKind.ToString();
-
-            Task previous;
-            lock (_pendingWriteLock) { previous = _pendingWrite; }
-
-            // Chain the rotate+write off whatever previous write may still
-            // be pending so disk operations are strictly ordered (no thread
-            // races to write/rotate the same files). The continuation only
-            // touches plain strings and System.IO — never a Unity API.
-            Task next = previous.ContinueWith(prev =>
-            {
-                if (prev.IsFaulted)
-                    Debug.LogError($"[SaveService] Previous async write faulted: " +
-                                   $"{prev.Exception?.GetBaseException().Message}");
-                SaveFileManager.RotateAutosaveBackupsByPath(targetPath, backupsDir);
-                SaveFileManager.WriteSerializedJsonAtomic(targetPath, json);
-            }, TaskScheduler.Default);
-
-            // Attach final telemetry + error logger. ContinueWith runs on a
-            // thread-pool thread so the SaveTelemetry buffer must be thread-
-            // safe (it is — internal lock).
-            next.ContinueWith(t =>
-            {
-                stopwatch.Stop();
-                bool success = !t.IsFaulted;
-                if (!success)
-                    Debug.LogError($"[SaveService] Async autosave failed: " +
-                                   $"{t.Exception?.GetBaseException().Message}");
-                SaveTelemetry.Record(new SaveTelemetryEntry(
-                    telemetryKind,
-                    reason,
-                    success: success,
-                    sizeBytes: success ? SafeFileSize(targetPath) : 0,
-                    durationMs: stopwatch.Elapsed.TotalMilliseconds,
-                    path: targetPath,
-                    wasAsync: true));
-            }, TaskScheduler.Default);
-
-            lock (_pendingWriteLock) { _pendingWrite = next; }
-        }
-
-        /// <summary>
-        /// Block until any pending async autosave has flushed to disk.
-        /// Used by Load (we must not read while a stale write is mid-flight),
-        /// OnApplicationQuit, and tests. Waits at most
-        /// <paramref name="timeoutSeconds"/> seconds (-1 = unbounded).
-        /// </summary>
-        public bool FlushPendingWrites(float timeoutSeconds = 5f)
-        {
-            Task pending;
-            lock (_pendingWriteLock) { pending = _pendingWrite; }
-            if (pending.IsCompleted) return true;
-            try
-            {
-                if (timeoutSeconds < 0f) { pending.Wait(); return true; }
-                return pending.Wait(System.TimeSpan.FromSeconds(timeoutSeconds));
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[SaveService] FlushPendingWrites errored: {ex.Message}");
                 return false;
             }
         }
@@ -606,6 +451,15 @@ namespace Valkur.Gameplay
                 _currentRunId = Guid.NewGuid().ToString("N");
                 Debug.Log($"[SaveService] Loaded legacy save without run_id — assigned: {_currentRunId}");
             }
+
+            // Adopt the run ordinal stored alongside run_id so the resumed
+            // session keeps its "Run #N" identity. Pre-ordinal saves return
+            // 0 (the missing-meta fallback), and the bootstrap will mint a
+            // fresh ordinal via ProfileTelemetrySystem.StartRun in that case.
+            string ordinalStr = data.GetMeta("run_ordinal", "");
+            if (!int.TryParse(ordinalStr, System.Globalization.NumberStyles.Integer,
+                              System.Globalization.CultureInfo.InvariantCulture, out _currentRunOrdinal))
+                _currentRunOrdinal = 0;
 
             // Loaded state matches disk byte-for-byte — no autosave needed until
             // the player actually does something.
@@ -716,6 +570,7 @@ namespace Valkur.Gameplay
         public bool   isCorrupted;
         public bool   isAutoSave;     // true = the per-run autosave.json ("Auto-Save")
         public string runId;          // empty = legacy save (no run_id in file)
+        public int    runOrdinal;     // 0 = pre-ordinal save (legacy or load failure)
 
         // ── Gameplay metadata ────────────────────────────────────────────────
         public string playerClass;
@@ -733,6 +588,7 @@ namespace Valkur.Gameplay
     public class RunGroupInfo
     {
         public string           runId;            // empty = legacy group
+        public int              runOrdinal;       // 0 = pre-ordinal or legacy group
         public string           displayName;
         public string           playerClass;
         public int              maxLevel;

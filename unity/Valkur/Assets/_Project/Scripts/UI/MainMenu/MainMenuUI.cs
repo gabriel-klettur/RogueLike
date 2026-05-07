@@ -110,6 +110,14 @@ namespace Valkur.UI.MainMenu
         {
             EnsureCamera();
             EnsureAudioManager();
+            // Drop phantom Lv.0/Lobby run folders that accumulated from earlier
+            // sessions where the player exited without doing anything worth
+            // saving. The PauseMenu Exit gate now prevents new ones, but legacy
+            // junk on disk would still pollute the Load Game panel until pruned.
+            // Runs at MainMenu Start (no active SaveService run to protect).
+            try { SaveFileManager.PrunePhantomRuns(); }
+            catch (System.Exception ex)
+            { Debug.LogWarning($"[MainMenu] PrunePhantomRuns failed: {ex.Message}"); }
             BuildMenuOptions();
             BuildUI();
             PlayMenuMusic();

@@ -31,6 +31,11 @@ namespace Valkur.Gameplay.Save
     /// </summary>
     public sealed class ProfileTelemetrySystem : MonoBehaviour
     {
+        // Profile-wide counter key used to mint the next per-profile run ordinal.
+        // Stored under IProfileRepository so JsonProfileDb.SaveAll persists it
+        // alongside the rest of the meta-progression data.
+        private const string RUN_COUNTER_KEY = "run_counter";
+
         private IProfileDb _db;
         private RunRecord _activeRun;
         private float _runStartTime;
@@ -38,12 +43,28 @@ namespace Valkur.Gameplay.Save
         public RunRecord ActiveRun => _activeRun;
         public IProfileDb Db => _db;
 
+        /// <summary>
+        /// Ordinal of the currently active run (1-based). Returns 0 when no
+        /// run has been started yet — callers (e.g. GameStateCollector) treat
+        /// 0 as "no ordinal known", same convention as missing metadata.
+        /// </summary>
+        public int ActiveRunOrdinal => _activeRun?.runOrdinal ?? 0;
+
         public void BindDb(IProfileDb db)
         {
             _db = db;
         }
 
-        public void StartRun(bool permadeath = false)
+        /// <summary>
+        /// Begins a new run row. When <paramref name="reuseRunId"/> /
+        /// <paramref name="reuseOrdinal"/> are non-empty, the existing values
+        /// are adopted instead of generating fresh ones — used when loading
+        /// a save so the resumed run keeps its original identity (matching
+        /// what's stored in the autosave's meta block).
+        /// </summary>
+        public void StartRun(bool permadeath = false,
+                             string reuseRunId = null,
+                             int    reuseOrdinal = 0)
         {
             if (_db == null)
             {
@@ -51,9 +72,15 @@ namespace Valkur.Gameplay.Save
                 return;
             }
 
+            string runId   = string.IsNullOrEmpty(reuseRunId) ? Guid.NewGuid().ToString("N") : reuseRunId;
+            int    ordinal = reuseOrdinal > 0
+                ? reuseOrdinal
+                : _db.Profile.IncrementInt(RUN_COUNTER_KEY);
+
             _activeRun = new RunRecord
             {
-                runId           = Guid.NewGuid().ToString("N"),
+                runId           = runId,
+                runOrdinal      = ordinal,
                 startedAtIso    = DateTime.UtcNow.ToString("o"),
                 endedAtIso      = string.Empty,
                 durationSeconds = 0f,
@@ -65,6 +92,13 @@ namespace Valkur.Gameplay.Save
             };
             _runStartTime = Time.time;
             _db.Runs.Insert(_activeRun);
+
+            // Persist the bumped counter immediately. If the process dies
+            // before the next save, the next launch must NOT mint the same
+            // ordinal — duplicates would defeat the point of having one.
+            // SaveAll is cheap (single small JSON file) so the cost of
+            // flushing here is negligible compared to the safety it buys.
+            if (reuseOrdinal <= 0) _db.SaveAll();
         }
 
         // ── Events ─────────────────────────────────────────────────────────────

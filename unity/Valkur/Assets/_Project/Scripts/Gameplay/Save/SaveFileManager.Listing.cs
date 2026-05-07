@@ -71,6 +71,12 @@ namespace Valkur.Gameplay.Save
                 string runId = data?.GetMeta("run_id", "") ?? "";
                 if (string.IsNullOrEmpty(runId)) runId = runIdHint ?? "";
 
+                int runOrdinal = 0;
+                string ordinalStr = data?.GetMeta("run_ordinal", "");
+                if (!string.IsNullOrEmpty(ordinalStr))
+                    int.TryParse(ordinalStr, System.Globalization.NumberStyles.Integer,
+                                 System.Globalization.CultureInfo.InvariantCulture, out runOrdinal);
+
                 return new SaveSlotInfo
                 {
                     path          = file,
@@ -80,6 +86,7 @@ namespace Valkur.Gameplay.Save
                     isCorrupted   = false,
                     isAutoSave    = isAutoSave,
                     runId         = runId,
+                    runOrdinal    = runOrdinal,
                     playerClass   = data?.player?.playerClass ?? "",
                     level         = data?.player?.level       ?? 0,
                     experience    = data?.player?.experience  ?? 0,
@@ -151,8 +158,17 @@ namespace Valkur.Gameplay.Save
                 group.playerClass     = newest.playerClass;
                 group.latestTimestamp = newest.timestamp;
                 group.maxLevel        = 0;
+                group.runOrdinal      = 0;
                 foreach (var s in group.saves)
+                {
                     if (s.level > group.maxLevel) group.maxLevel = s.level;
+                    // The ordinal is per-run, so every save in the group should
+                    // carry the same value. Take the first non-zero we find;
+                    // pre-ordinal saves contribute 0 and the group falls back
+                    // to "Run #?" — which the UI distinguishes from a real run.
+                    if (group.runOrdinal == 0 && s.runOrdinal > 0)
+                        group.runOrdinal = s.runOrdinal;
+                }
 
                 if (group.isLegacy)
                 {
@@ -162,7 +178,8 @@ namespace Valkur.Gameplay.Save
                 {
                     string cls  = string.IsNullOrEmpty(newest.playerClass) ? "?" : newest.playerClass;
                     string zone = string.IsNullOrEmpty(newest.currentZone) ? "—" : newest.currentZone;
-                    group.displayName = $"{cls} · {zone} · Lv.{group.maxLevel}";
+                    string runTag = group.runOrdinal > 0 ? $"Run #{group.runOrdinal} · " : "";
+                    group.displayName = $"{runTag}{cls} · {zone} · Lv.{group.maxLevel}";
                 }
             }
 

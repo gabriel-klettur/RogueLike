@@ -35,7 +35,13 @@ namespace Valkur.UI.PauseMenu
                     // Quicksave before returning to the main menu so the player can
                     // pick "Continue" on next launch (otherwise their progress is
                     // silently lost when they exit through the pause menu).
-                    if (SaveService.Instance != null)
+                    //
+                    // Gated on IsSessionDirty: if the player did literally nothing
+                    // worth saving (no damage, XP, item, level-up, zone change or
+                    // manual save) we skip the QuickSave so we don't pollute the
+                    // Load Game panel with a fresh Lv.0/Lobby phantom run folder.
+                    // The autosave timer enforces the same guard for the same reason.
+                    if (SaveService.Instance != null && SaveService.Instance.IsSessionDirty)
                     {
                         try { SaveService.Instance.QuickSave(); }
                         catch (System.Exception ex)

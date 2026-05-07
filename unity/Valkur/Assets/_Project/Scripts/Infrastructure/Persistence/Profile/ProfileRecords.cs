@@ -14,7 +14,14 @@ namespace Valkur.Infrastructure.Persistence.Profile
     [Serializable]
     public class RunRecord
     {
-        public string runId;                 // GUID; primary key
+        public string runId;                 // GUID; filesystem-unique key
+        public int    runOrdinal;            // Monotonic per-profile sequence #N — the
+                                             // human-facing identifier shown in the Load
+                                             // Game panel ("Run #1", "Run #2", …). Generated
+                                             // at StartRun via IProfileRepository.IncrementInt
+                                             // ("run_counter"), so two runs can never share an
+                                             // ordinal even across crashes/restarts (the
+                                             // counter is persisted before the run starts).
         public string startedAtIso;          // ISO-8601 UTC
         public string endedAtIso;            // ISO-8601 UTC, empty when in-progress
         public float  durationSeconds;
