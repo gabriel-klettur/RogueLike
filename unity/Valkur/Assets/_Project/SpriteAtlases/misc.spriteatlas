@@ -49,10 +49,25 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - 2b15ccf283befdb4db5323376ee33ea4: 21300000
+    - 4aa953b41cc31af4aa421cf794c578d8: 21300000
+    - 7860cfa567c714a48898d521493f4d19: 21300000
+    - 2843056922f421448bb0ecdae3c5a10d: 21300000
+    - da637ca9c3ff85142859287891d47125: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 2b15ccf283befdb4db5323376ee33ea4, type: 3}
+  - {fileID: 21300000, guid: 4aa953b41cc31af4aa421cf794c578d8, type: 3}
+  - {fileID: 21300000, guid: 7860cfa567c714a48898d521493f4d19, type: 3}
+  - {fileID: 21300000, guid: 2843056922f421448bb0ecdae3c5a10d, type: 3}
+  - {fileID: 21300000, guid: da637ca9c3ff85142859287891d47125, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - horizonte_1
+  - arrow_left
+  - folder_win
+  - rock
+  - Top_Landscape
   m_RenderDataMap: {}
   m_Tag: misc
   m_IsVariant: 0

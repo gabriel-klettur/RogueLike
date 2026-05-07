@@ -49,10 +49,64 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - da5e5000dc2f9344287a50c15d543de0: 21300000
+    - 2fca0d1040492dc45b3766ce10a36ebe: 21300000
+    - c1224e312d0e33b438bcbc2b0c8ad917: 21300000
+    - baa4eaf1614c61a40b8a64914d2588d2: 21300000
+    - 69e3f0c3a74a51f499667379e9886b68: 21300000
+    - 012b18c31f90cb2439ebb65e78853223: 21300000
+    - b6e0e6f3a020d4c418b9f3dfe7d32f0d: 21300000
+    - a1a1cc34911b39c468b7fd7d2ac8c5e6: 21300000
+    - 2c29fb7451441f34cb297f7177922c15: 21300000
+    - 03e137e8565d0dc4e88c6adb85ee2a95: 21300000
+    - 4258f18b6e37c444eba5bd972f8b7096: 21300000
+    - 614f80fb99e9a6f489aba402604daf80: 21300000
+    - a0545ffb775e36143b66bd9ebbb0591a: 21300000
+    - d17a67ec618207446b3f9ade424bc7b2: 21300000
+    - fac75d3db87909443bf13743d1cbe0e2: 21300000
+    - 6e2e6b6d8b8b42748aec793b648d33cd: 21300000
+    - 25a6080e0f015ae4682274b7116e93cd: 21300000
+    - 804bc8ffcccf3944d8f1dc1eabc0fb7a: 21300000
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: 21300000, guid: da5e5000dc2f9344287a50c15d543de0, type: 3}
+  - {fileID: 21300000, guid: 2fca0d1040492dc45b3766ce10a36ebe, type: 3}
+  - {fileID: 21300000, guid: c1224e312d0e33b438bcbc2b0c8ad917, type: 3}
+  - {fileID: 21300000, guid: baa4eaf1614c61a40b8a64914d2588d2, type: 3}
+  - {fileID: 21300000, guid: 69e3f0c3a74a51f499667379e9886b68, type: 3}
+  - {fileID: 21300000, guid: 012b18c31f90cb2439ebb65e78853223, type: 3}
+  - {fileID: 21300000, guid: b6e0e6f3a020d4c418b9f3dfe7d32f0d, type: 3}
+  - {fileID: 21300000, guid: a1a1cc34911b39c468b7fd7d2ac8c5e6, type: 3}
+  - {fileID: 21300000, guid: 2c29fb7451441f34cb297f7177922c15, type: 3}
+  - {fileID: 21300000, guid: 03e137e8565d0dc4e88c6adb85ee2a95, type: 3}
+  - {fileID: 21300000, guid: 4258f18b6e37c444eba5bd972f8b7096, type: 3}
+  - {fileID: 21300000, guid: 614f80fb99e9a6f489aba402604daf80, type: 3}
+  - {fileID: 21300000, guid: a0545ffb775e36143b66bd9ebbb0591a, type: 3}
+  - {fileID: 21300000, guid: d17a67ec618207446b3f9ade424bc7b2, type: 3}
+  - {fileID: 21300000, guid: fac75d3db87909443bf13743d1cbe0e2, type: 3}
+  - {fileID: 21300000, guid: 6e2e6b6d8b8b42748aec793b648d33cd, type: 3}
+  - {fileID: 21300000, guid: 25a6080e0f015ae4682274b7116e93cd, type: 3}
+  - {fileID: 21300000, guid: 804bc8ffcccf3944d8f1dc1eabc0fb7a, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - iron_axe
+  - darkball
+  - meteor
+  - medium_ice_wall
+  - iron_boomerang
+  - iceball
+  - root_whip_2
+  - lightball
+  - root_whip_3
+  - large_ice_wall
+  - meteor_impact
+  - shield
+  - root_whip_1
+  - regular_trap
+  - rockball
+  - fireball
+  - waterball
+  - small_ice_wall
   m_RenderDataMap: {}
   m_Tag: spells
   m_IsVariant: 0
