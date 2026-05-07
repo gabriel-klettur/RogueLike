@@ -491,6 +491,90 @@ namespace Valkur.Tests.EditMode.Game.World
             Object.DestroyImmediate(go);
         }
 
+        // ── RefreshSorting (Z-sort drift after position change) ────────────
+        // Regression for the drag-move bug: BuildingsRuntimeEditor mutates
+        // transform.position each frame during a right-mouse drag. Without
+        // a manual RefreshSorting() call the bottom + top renderers keep
+        // the sortingOrder they got at Apply()-time, so the building stops
+        // Y-sorting against entities once it moves. These tests lock the
+        // contract: RefreshSorting() must rewrite both children's
+        // sortingOrders from the CURRENT transform.position.y.
+
+        [Test]
+        public void RefreshSorting_AfterPositionChange_RewritesBothRendererSortingOrders()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("TestBuilding");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            // Initial position + first sort.
+            go.transform.position = new Vector3(0f, 0f, 0f);
+            bObj.RefreshSorting();
+            int initialBottom = bottom.sortingOrder;
+            int initialTop    = top.sortingOrder;
+
+            // Move 5 world units up.
+            go.transform.position = new Vector3(0f, 5f, 0f);
+            bObj.RefreshSorting();
+
+            // YToSortingOrder = -(y * 100), so a +5 Y move must subtract 500.
+            Assert.AreEqual(initialBottom - 500, bottom.sortingOrder,
+                "Bottom renderer sortingOrder must reflect the new transform.position.y after RefreshSorting().");
+            Assert.AreEqual(initialTop - 500, top.sortingOrder,
+                "Top renderer sortingOrder must reflect the new transform.position.y after RefreshSorting().");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RefreshSorting_PreservesPerInstanceZOffsets()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go    = new GameObject("TestBuilding");
+            var bObj  = go.AddComponent<BuildingObject>();
+            var bottom = MakeChildRenderer(go, "Footprint", 64, 64);
+            var top    = MakeChildRenderer(go, "Canopy",    64, 32);
+            SetPrivateField(bObj, "_bottomRenderer", bottom);
+            SetPrivateField(bObj, "_topRenderer",    top);
+
+            bObj.ZBottomOffset = 3;
+            bObj.ZTopOffset    = -7;
+
+            go.transform.position = new Vector3(0f, 2f, 0f);
+            bObj.RefreshSorting();
+
+            // -(2 * 100) + 3   for bottom
+            // -(2 * 100) + (-7) for top
+            Assert.AreEqual(-200 + 3, bottom.sortingOrder,
+                "RefreshSorting() must keep the per-instance ZBottomOffset.");
+            Assert.AreEqual(-200 - 7, top.sortingOrder,
+                "RefreshSorting() must keep the per-instance ZTopOffset.");
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void RefreshSorting_NoRenderers_DoesNotThrow()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var go   = new GameObject("TestBuilding");
+            var bObj = go.AddComponent<BuildingObject>();
+            // No bottom/top renderers wired — simulates a building whose
+            // Apply() failed before reaching the renderer-creation step.
+
+            Assert.DoesNotThrow(() => bObj.RefreshSorting(),
+                "RefreshSorting() must be safe to call even when renderers haven't been built yet.");
+
+            Object.DestroyImmediate(go);
+        }
+
         // ── Small helper to keep the new tests compact ─────────────────────
         private static SpriteRenderer MakeChildRenderer(GameObject parent, string name, int texW, int texH)
         {

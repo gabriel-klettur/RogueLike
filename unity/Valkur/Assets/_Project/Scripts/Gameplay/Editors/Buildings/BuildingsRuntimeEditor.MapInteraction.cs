@@ -184,6 +184,12 @@ namespace Valkur.Gameplay.Buildings
             if (_dragging && _activeBuilding != null)
             {
                 _activeBuilding.transform.position = worldPos + _dragOffset;
+                // Y changes during the drag → re-sort the bottom + top
+                // renderers against their new world Y, otherwise the
+                // building keeps the sortingOrder it had when the drag
+                // started and visibly clips on top of (or behind) entities
+                // it has moved past.
+                _activeBuilding.RefreshSorting();
                 MarkInstanceDataDirty();
                 if (Valkur.Core.Input.MouseInputManager.WasRightMouseButtonReleasedThisFrame()) FinalizeMoveDrag();
                 return;
@@ -270,6 +276,7 @@ namespace Valkur.Gameplay.Buildings
                 {
                     if (building == null) return;
                     building.transform.position = finalPos;
+                    building.RefreshSorting();
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move saved â†’ ({finalPos.x:F2}, {finalPos.y:F2})";
                 },
@@ -277,6 +284,7 @@ namespace Valkur.Gameplay.Buildings
                 {
                     if (building == null) return;
                     building.transform.position = startPos;
+                    building.RefreshSorting();
                     RefreshInspector();
                     if (_statusTmp != null) _statusTmp.text = $"Move reverted â†’ ({startPos.x:F2}, {startPos.y:F2})";
                 });

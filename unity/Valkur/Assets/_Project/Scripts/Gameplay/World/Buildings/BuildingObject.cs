@@ -159,6 +159,20 @@ namespace Valkur.Gameplay.World
             return true;
         }
 
+        /// <summary>
+        /// Recompute the bottom + top renderer sortingOrders from the current
+        /// transform.position.y plus the per-instance Z offsets.
+        ///
+        /// Must be called after any code path that mutates the building's
+        /// world position outside of the Apply/place pipeline — chiefly the
+        /// drag-move flow in BuildingsRuntimeEditor, which writes
+        /// <c>transform.position</c> directly each frame. Without this call
+        /// the building keeps its initial Y-sort and renders behind/in-front
+        /// of entities at its OLD scene Y, which surfaces as visible ordering
+        /// glitches when a building is dragged across other entities.
+        /// </summary>
+        public void RefreshSorting() => ApplyZOffsets();
+
         private void ApplyZOffsets()
         {
             int baseY = SortingConfig.YToSortingOrder(transform.position.y);
