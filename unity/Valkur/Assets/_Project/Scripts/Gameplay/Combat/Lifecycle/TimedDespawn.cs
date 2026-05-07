@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -28,7 +29,11 @@ namespace Valkur.Gameplay
             if (ttl <= 0f) return;
             if (Time.time - _spawnTime >= ttl)
             {
-                Destroy(gameObject);
+                // SafeDestroy picks Destroy in PlayMode and DestroyImmediate in
+                // EditMode — same shape as the rest of the codebase, and lets
+                // EditMode tests that drive Update() manually still tear down
+                // cleanly without "Destroy may not be called from edit mode".
+                SafeDestroy.Of(gameObject);
             }
         }
     }

@@ -122,4 +122,4 @@ MonoBehaviour:
       scaleAttack: 0.15
       scaleDamage: 0.15
       scaleDeath: 0.175
-      tint: {r: 0.5019608, g: 0, b: 0.5019608, a: 1}
+      tint: {r: 2.2, g: 0, b: 2.2, a: 1}

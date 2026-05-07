@@ -17,6 +17,15 @@ namespace Valkur.Gameplay
         [SerializeField, Tooltip("Max concurrent respawn entries tracked.")]
         private int maxTracked = 64;
 
+        [SerializeField, Tooltip("Monster prefab used as the template for respawned NPCs. " +
+                                 "Without it, SpawnNPC would have to fall back to building " +
+                                 "an entity from a bare GameObject, which leaves an invincible " +
+                                 "half-configured corpse (no Health, no FSM, but with an " +
+                                 "active body collider and a stuck red health bar).")]
+        private GameObject monsterPrefab;
+
+        public void SetMonsterPrefab(GameObject prefab) => monsterPrefab = prefab;
+
         private struct RespawnEntry
         {
             public Data.MonsterDefinition definition;
@@ -89,9 +98,21 @@ namespace Valkur.Gameplay
 
         private void SpawnNPC(Data.MonsterDefinition def, Vector3 position)
         {
-            var go = new GameObject($"NPC_{def.monsterKey}");
-            go.transform.position = position;
+            // ConfigureMonster expects the prefab's components (Health, FSMMonsterBrain,
+            // MeleeCombat, Rigidbody2D, DirectionalAnimator, ...) to already exist on the
+            // GameObject — it only initializes them. Spawning from a bare new GameObject
+            // skips every GetComponent<...>() and leaves a half-baked entity behind: no
+            // Health, no AI, no rigidbody, but a fresh BoxCollider2D and a WorldHealthBar
+            // that ticks Update with red color and blocks movement / projectiles.
+            // Always instantiate from the prefab; without it, drop the request entirely.
+            if (monsterPrefab == null)
+            {
+                Debug.LogWarning($"[NPCRespawnSystem] No monsterPrefab wired — skipping respawn of '{def.monsterKey}'.");
+                return;
+            }
 
+            var go = Instantiate(monsterPrefab, position, Quaternion.identity);
+            go.name = $"NPC_{def.monsterKey}";
             EntitySetup.ConfigureMonster(go, def);
             Debug.Log($"[NPCRespawnSystem] Respawned {def.monsterKey} at {position}");
         }

@@ -41,5 +41,6 @@ MonoBehaviour:
     activationSfxId: spell_smoke_emitter
     charts:
     - {fileID: 11400000, guid: 3cdb1101c3e65ed4ebe3c3f4b23fb980, type: 2}
+    - {fileID: 11400000, guid: ac9e22fb161cfad42b065ca69c0ababd, type: 2}
     suppressAutoCastWhenChartActive: 1
   bossLoot: {fileID: 0}

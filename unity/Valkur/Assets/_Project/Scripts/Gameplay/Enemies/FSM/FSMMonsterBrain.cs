@@ -20,6 +20,8 @@ namespace Valkur.Gameplay.FSM
         private Health _health;
         private DirectionalAnimator _animator;
         private EntityCulling _culling;
+        private SpriteRenderer _sr;
+        private bool _lastDamageFromLeft;
 
         public StateMachine FSM => _fsm;
         public MonsterDefinition Definition => definition;
@@ -32,6 +34,8 @@ namespace Valkur.Gameplay.FSM
             _culling = GetComponent<EntityCulling>();
             if (_culling == null)
                 _culling = gameObject.AddComponent<EntityCulling>();
+            _sr = GetComponent<SpriteRenderer>();
+            if (_sr == null) _sr = GetComponentInChildren<SpriteRenderer>();
 
             var rb = GetComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
@@ -127,6 +131,15 @@ namespace Valkur.Gameplay.FSM
         private void OnDeath()
         {
             _culling?.ForceActiveNextFrame();
+
+            // Flip the sprite horizontally so the corpse "falls" away from the
+            // attacker. _lastDamageFromLeft tracks the direction of the most
+            // recent OnDamaged event — which is the killing blow because Health
+            // fires OnDamaged immediately before OnDeath in TakeDamage.
+            //   fromLeft=false (struck from right)  → original orientation
+            //   fromLeft=true  (struck from left)   → mirrored
+            if (_sr != null) _sr.flipX = _lastDamageFromLeft;
+
             _fsm?.QueueEvent(new FSMEvent { Type = FSMEventType.OnDeath });
         }
 
@@ -136,6 +149,7 @@ namespace Valkur.Gameplay.FSM
             bool fromLeft = false;
             if (player != null)
                 fromLeft = player.transform.position.x < transform.position.x;
+            _lastDamageFromLeft = fromLeft;
 
             _culling?.ForceActiveNextFrame();
             _fsm?.QueueEvent(new FSMEvent

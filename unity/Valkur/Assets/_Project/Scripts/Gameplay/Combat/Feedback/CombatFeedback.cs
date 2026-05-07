@@ -91,16 +91,51 @@ namespace Valkur.Gameplay.Combat
             Debug.Log($"[Combat] {gameObject.name} died!");
 
             // Unregister from EntityRegistry immediately to prevent stale references
+            // (player targeting, spell auto-aim, etc.).
             EntityRegistry.UnregisterMonster(gameObject);
 
-            // Disable AI/movement
+            // If the entity has an FSM brain, the FSM owns the death sequence:
+            // it transitions to UnconsciousState (corpse pose for deathDisappearTime
+            // seconds) and then to DeathState which destroys the GameObject. Stopping
+            // the brain here would prevent that transition entirely — the entity
+            // would freeze on its idle pose and the sprite fade below would mask it
+            // before any death animation could play. So leave the brain alone and
+            // skip the alpha-fade routine; GrayscaleDeath handles the corpse tint.
+            var brain = GetComponent<FSM.FSMMonsterBrain>();
+            if (brain != null)
+            {
+                CancelHitFlash();
+                return;
+            }
+
+            // The player has its own death-and-revive flow: DeathSequenceController
+            // spawns a corpse marker, fades grayscale, and transitions the player
+            // into spirit form so it can walk to the altar. Disabling
+            // PlayerController or alpha-fading the sprite here would freeze the
+            // spirit in place / hide the ghost the moment the routine tries to
+            // make it visible. Yield to that controller exactly like we do for
+            // FSM monsters.
+            var spiritState = GetComponent<Death.PlayerSpiritState>();
+            if (spiritState != null)
+            {
+                CancelHitFlash();
+                return;
+            }
+
+            // No FSM brain and no spirit flow (e.g. simple test dummies, prototype
+            // entities) — keep the legacy fade-out + destroy fallback so basic
+            // Health-only entities still disappear cleanly on death.
             var controller = GetComponent<PlayerController>();
             if (controller != null) controller.enabled = false;
 
-            var brain = GetComponent<FSM.FSMMonsterBrain>();
-            if (brain != null) brain.enabled = false;
-
             StartCoroutine(DeathRoutine());
+        }
+
+        private void CancelHitFlash()
+        {
+            if (_flashCoroutine == null) return;
+            StopCoroutine(_flashCoroutine);
+            _flashCoroutine = null;
         }
 
         private IEnumerator HitFlashRoutine()
