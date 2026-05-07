@@ -113,14 +113,14 @@ namespace Valkur.Core
         {
             foreach (var obj in _active)
             {
-                if (obj != null) UnityEngine.Object.Destroy(obj);
+                if (obj != null) SafeDestroy.Of(obj);
             }
             _active.Clear();
 
             while (_available.Count > 0)
             {
                 var obj = _available.Pop();
-                if (obj != null) UnityEngine.Object.Destroy(obj);
+                if (obj != null) SafeDestroy.Of(obj);
             }
         }
 

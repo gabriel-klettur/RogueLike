@@ -111,6 +111,15 @@ namespace Valkur.Core.Input
         public static bool IsCtrlHeld()
             => IsLeftCtrlPressed() || IsRightCtrlPressed();
 
+        public static bool WasLeftCtrlPressedThisFrame()
+            => WasKeyPressedThisFrame(Key.LeftCtrl, KeyCode.LeftControl);
+
+        public static bool WasRightCtrlPressedThisFrame()
+            => WasKeyPressedThisFrame(Key.RightCtrl, KeyCode.RightControl);
+
+        public static bool WasCtrlPressedThisFrame()
+            => WasLeftCtrlPressedThisFrame() || WasRightCtrlPressedThisFrame();
+
         public static bool IsLeftAltPressed()
             => IsKeyPressed(Key.LeftAlt, KeyCode.LeftAlt);
 

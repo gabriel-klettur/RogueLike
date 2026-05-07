@@ -72,6 +72,21 @@ namespace Valkur.Core
         /// <summary>Item consumed (used from inventory). Args: (consumer, itemId)</summary>
         public static event Action<GameObject, string> OnItemConsumed;
 
+        // ── Spell Events ──
+
+        /// <summary>
+        /// A spell finished executing (after its <c>ISpellExecutor</c> ran and the
+        /// cooldown timer was set on the caster's <c>SpellCaster</c>). Args:
+        /// (caster, spellKey, displayName, cooldownDuration). Fired exactly once
+        /// per cast attempt — Prepare → Channel transitions do not re-fire it.
+        /// Primitive payload (no <c>SpellDefinition</c> reference) keeps the
+        /// <c>Valkur.Core</c> assembly free of <c>Valkur.Data</c> dependencies.
+        /// Subscribed by the player-only <c>SpellCooldownHUD</c> which filters
+        /// on <c>caster</c> identity to stack a per-spell countdown row above
+        /// the XP bar.
+        /// </summary>
+        public static event Action<GameObject, string, string, float> OnSpellCast;
+
         // ── World Events ──
 
         /// <summary>The player crossed into a new zone. Args: (oldZone, newZone)</summary>
@@ -149,6 +164,11 @@ namespace Valkur.Core
             OnZoneChanged?.Invoke(oldZone, newZone);
         }
 
+        public static void FireSpellCast(GameObject caster, string spellKey, string displayName, float cooldownDuration)
+        {
+            OnSpellCast?.Invoke(caster, spellKey, displayName, cooldownDuration);
+        }
+
         /// <summary>
         /// Clear all subscribers. Call on scene unload or domain reload to prevent leaks.
         /// </summary>
@@ -168,6 +188,7 @@ namespace Valkur.Core
             OnItemPickedUp = null;
             OnItemConsumed = null;
             OnZoneChanged = null;
+            OnSpellCast = null;
         }
     }
 }

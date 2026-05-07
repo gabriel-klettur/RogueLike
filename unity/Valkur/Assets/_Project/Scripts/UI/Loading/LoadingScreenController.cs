@@ -195,7 +195,7 @@ namespace Valkur.UI.Loading
                 float a = Mathf.Lerp(0.30f, 0.90f, count <= 1 ? 1f : idx / (float)(count - 1));
                 int alphaHex = Mathf.Clamp(Mathf.RoundToInt(a * 255f), 0, 255);
                 sb.Append("<color=#FFFFFF").Append(alphaHex.ToString("X2")).Append('>')
-                  .Append("✓ ").Append(stage).Append("</color>");
+                  .Append("» ").Append(stage).Append("</color>");
                 if (idx < count - 1) sb.Append('\n');
                 idx++;
             }
@@ -224,6 +224,14 @@ namespace Valkur.UI.Loading
             _targetProgress = 0.4f;
             _baseMessage    = "Initializing world";
             yield return new WaitForSecondsRealtime(0.5f); // allow bar to animate toward 40%
+
+            // Disable the DontDestroyOnLoad EventSystem so its OnDisable removes it
+            // from EventSystem.m_EventSystems BEFORE the new scene's EventSystem
+            // OnEnable runs. Without this, both components are briefly enabled and
+            // Unity logs "There can be only one active Event System." even though
+            // RuntimeInputBootstrap.OnSceneLoaded destroys the duplicate one frame
+            // later. PersistentEventSystem.Ensure() re-enables ours after cleanup.
+            Valkur.Core.Input.PersistentEventSystem.Pause();
 
             asyncOp.allowSceneActivation = true;
             StartCoroutine(FadeWatchdog(15f)); // safety net if Phase 2 never completes

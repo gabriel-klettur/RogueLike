@@ -95,8 +95,26 @@ namespace Valkur.Core.Input
             }
             newModule.enabled = false;
 
-            eventSystem.enabled = true;
+            // Order matters: drop scene-shipped EventSystems FIRST so their OnDisable
+            // removes them from EventSystem.m_EventSystems before we (re)enable the
+            // persistent one. Re-enabling first would briefly leave both in the list
+            // and Unity would log "There can be only one active Event System." even
+            // though we destroy the duplicate one frame later.
             RemoveDuplicates(eventSystem);
+            eventSystem.enabled = true;
+        }
+
+        /// <summary>
+        /// Disable the persistent EventSystem so its <c>OnDisable</c> removes it
+        /// from <c>EventSystem.m_EventSystems</c>. Call this BEFORE activating a
+        /// scene that ships its own EventSystem to avoid the "There can be only one
+        /// active Event System." LogError that fires when both components are alive
+        /// simultaneously. <see cref="Ensure"/> re-enables the persistent one after
+        /// destroying scene duplicates.
+        /// </summary>
+        public static void Pause()
+        {
+            if (_instance != null) _instance.enabled = false;
         }
 
         private static void RemoveDuplicates(EventSystem keep)
