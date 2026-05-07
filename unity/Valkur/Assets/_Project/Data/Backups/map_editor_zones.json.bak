@@ -242,9 +242,15 @@
             "gridOffsetX": 350,
             "gridOffsetY": -50,
             "editableInTileEditor": true
+        },
+        {
+            "zoneName": "Alpha",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
         }
     ],
     "hasLastPlayerPosition": true,
-    "lastPlayerWorldX": 85.1159439086914,
-    "lastPlayerWorldY": 47.92087173461914
+    "lastPlayerWorldX": 175.19126892089845,
+    "lastPlayerWorldY": 76.16505432128906
 }
