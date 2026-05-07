@@ -57,7 +57,6 @@ namespace Valkur.Gameplay.Spells
                 vfxService.SpawnParticlePreset(preset, spawnPos, duration);
             }
 
-            Debug.Log($"[SpellDebug] VortexField ({(isPull ? "pull" : "push")}) at {spawnPos}, r={radius:F1}, force={force:F0}, dur={duration:F1}s, follow={followCaster}");
         }
 
         private static Sprite CreateVortexSprite()

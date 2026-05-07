@@ -93,7 +93,6 @@ namespace Valkur.Gameplay.Spells
             {
                 if (_lightGo != null) Destroy(_lightGo);
                 ElementalImpactFX.Spawn(transform.position, SpellElement.Arcane);
-                Debug.Log($"[SpellDebug] Summon expired: {gameObject.name}");
                 Destroy(gameObject);
                 return;
             }

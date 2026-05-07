@@ -161,7 +161,7 @@ namespace Valkur.Gameplay.Spells
             _active = true;
             _root.SetActive(true);
             OpenAllPanels();
-            RefreshPicker();
+            RefreshActivePicker();
             RefreshPropertiesForm();
             SetStatus("Spells Editor active. F4 to close.");
             Debug.Log("[SpellsEditor] Activated (F4)");

@@ -25,7 +25,6 @@ namespace Valkur.Gameplay.Spells
                 SpawnSummon(spawnPos + offset, duration, ctx);
             }
 
-            Debug.Log($"[SpellDebug] Summon x{count} ({ctx.Spell.summonTemplate}) at {spawnPos}, dur={duration:F0}s");
         }
 
         private void SpawnSummon(Vector2 pos, float duration, SpellContext ctx)

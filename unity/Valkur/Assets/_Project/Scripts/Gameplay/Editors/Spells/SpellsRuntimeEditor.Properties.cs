@@ -278,7 +278,7 @@ namespace Valkur.Gameplay.Spells
             else if (key == "displayName")
             {
                 _catalog.SetSpellsRuntime(_catalog.AllSpells);
-                RefreshPicker();
+                RefreshActivePicker();
             }
             else
             {
@@ -291,7 +291,7 @@ namespace Valkur.Gameplay.Spells
         internal void RefreshAfterMutation()
         {
             if (_catalog != null) _catalog.SetSpellsRuntime(_catalog.AllSpells);
-            RefreshPicker();
+            RefreshActivePicker();
             RefreshPropertiesForm();
         }
 

@@ -35,7 +35,6 @@ namespace Valkur.Gameplay.Spells
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio != null) audio.PlaySfxById("spell_firework_launch");
 
-            Debug.Log($"[SpellDebug] FireworkLaunch from {ctx.Caster.position} dir={ctx.Direction}");
         }
 
         private static void SpawnLaunchBurst(Vector3 pos)

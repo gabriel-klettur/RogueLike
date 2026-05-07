@@ -29,7 +29,6 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ctx.Caster.position, duration);
 
-            Debug.Log($"[SpellDebug] ConeBreath at {ctx.Caster.position}, arc={arc}°, len={length:F1}, dur={duration:F1}s, dmg={damagePerTick}/tick");
         }
     }
 }

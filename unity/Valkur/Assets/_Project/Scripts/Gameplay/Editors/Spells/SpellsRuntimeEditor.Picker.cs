@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Valkur.Core;
@@ -9,12 +10,59 @@ using Valkur.Gameplay.Spells.UI;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Spells Editor — picker grid (search + 4-col thumbnail catalog).
+    /// Spells Editor — picker grid (search + 4-col thumbnail catalog) and
+    /// filtered list shared with the Table view.
     /// Phase 1 functionality: select-only. Mutate operations are stubs in
     /// <see cref="SpellsRuntimeEditor"/>.Modes.cs.
     /// </summary>
     public partial class SpellsRuntimeEditor : SingletonMonoBehaviour<SpellsRuntimeEditor>, GameEditorManager.IGameEditor
     {
+        // ── Filtered list (shared by Grid and Table views) ────────────────────
+
+        /// <summary>
+        /// The current filter result — populated by <see cref="ApplySpellFilter"/>.
+        /// Both the Grid and the Table view read from this list so the filter
+        /// is always applied consistently regardless of which view is active.
+        /// </summary>
+        private readonly List<SpellDefinition> _filtered = new List<SpellDefinition>();
+
+        /// <summary>
+        /// Populate <see cref="_filtered"/> from the catalog, applying
+        /// <see cref="_searchFilter"/> (case-insensitive substring on key and displayName).
+        /// </summary>
+        private void ApplySpellFilter()
+        {
+            _filtered.Clear();
+            if (_catalog == null) return;
+
+            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
+            foreach (var key in _catalog.GetAllKeys())
+            {
+                if (!_catalog.TryGet(key, out var spell) || spell == null) continue;
+                if (filter.Length > 0)
+                {
+                    string name = (spell.displayName ?? key).ToLowerInvariant();
+                    if (!name.Contains(filter) && !key.ToLowerInvariant().Contains(filter))
+                        continue;
+                }
+                _filtered.Add(spell);
+            }
+        }
+
+        /// <summary>
+        /// Dispatch to the active view (Grid or Table). Call this from any
+        /// code path that wants to refresh the picker without caring about
+        /// which view is currently shown — search, add/remove, activate.
+        /// </summary>
+        private void RefreshActivePicker()
+        {
+            ApplySpellFilter();
+            RefreshPicker();
+            RefreshTable();
+        }
+
+        // ── Grid view ─────────────────────────────────────────────────────────
+
         private void RefreshPicker()
         {
             var content = _uiRefs.PickerContent;
@@ -25,22 +73,20 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
+            // Recompute filter so _filtered is always up-to-date before building
+            // slots. (RefreshActivePicker calls ApplySpellFilter first, but direct
+            // callers like SelectSpell skip that so we re-apply here as a safety net.)
+            ApplySpellFilter();
+
             // Clear existing slots.
             for (int i = content.childCount - 1; i >= 0; i--)
                 Valkur.Core.SafeDestroy.Of(content.GetChild(i).gameObject);
 
-            var keys   = _catalog.GetAllKeys();
-            string filter = _searchFilter?.Trim().ToLowerInvariant() ?? "";
-            int shown  = 0;
-            foreach (var key in keys)
+            int shown = 0;
+            foreach (var spell in _filtered)
             {
-                if (!_catalog.TryGet(key, out var spell)) continue;
-                if (filter.Length > 0)
-                {
-                    string name = (spell.displayName ?? key).ToLowerInvariant();
-                    if (!name.Contains(filter) && !key.ToLowerInvariant().Contains(filter))
-                        continue;
-                }
+                var key = spell.spellKey;
+                if (string.IsNullOrEmpty(key)) continue;
 
                 var capturedKey = key;
                 var (btn, icon, label) = EditorUIHelpers.MakeSlotButton(
@@ -88,7 +134,8 @@ namespace Valkur.Gameplay.Spells
                 shown++;
             }
 
-            SetStatus(filter.Length == 0
+            string filterTrim = (_searchFilter ?? "").Trim();
+            SetStatus(filterTrim.Length == 0
                 ? $"{shown} spells"
                 : $"{shown} match '{_searchFilter}'");
         }

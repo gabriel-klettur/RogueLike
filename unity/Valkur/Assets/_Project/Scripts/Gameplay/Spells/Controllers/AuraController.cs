@@ -119,7 +119,6 @@ namespace Valkur.Gameplay.Spells
             EmitSparkleBurst(12);
             if (actual > 0 && _floating != null) _floating.ShowHeal(actual);
 
-            Debug.Log($"[SpellDebug] Aura healed {_caster.name} for {actual} HP");
         }
 
         // --------------------------------------------------------------------

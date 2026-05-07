@@ -11,6 +11,10 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     public class PuddleExecutor : ISpellExecutor
     {
+        // vfxPreset marker that swaps the default puddle visual for the
+        // RootWhipFX tendril particle system (vines rising from the ground).
+        private const string ROOT_WHIP_PRESET = "root_whip";
+
         public void Execute(SpellContext ctx)
         {
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius / 16f : 4f;
@@ -23,31 +27,47 @@ namespace Valkur.Gameplay.Spells
                 ? (Vector2)ctx.Caster.position + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
                 : (Vector2)ctx.Caster.position + ctx.Direction * dist;
 
+            bool rootWhip = ctx.Spell.vfxPreset == ROOT_WHIP_PRESET;
+
             var puddleGo = new GameObject("SpellPuddle");
             puddleGo.transform.position = (Vector3)spawnPos;
 
-            var sr = puddleGo.AddComponent<SpriteRenderer>();
-            if (ctx.Spell.sprite != null)
+            if (!rootWhip)
             {
-                sr.sprite = ctx.Spell.sprite;
+                // Default puddle visual: round splat decal + orange area indicator.
+                var sr = puddleGo.AddComponent<SpriteRenderer>();
+                if (ctx.Spell.sprite != null)
+                {
+                    sr.sprite = ctx.Spell.sprite;
+                }
+                else
+                {
+                    sr.sprite = CreatePuddleSprite();
+                    Color puddleColor = !string.IsNullOrEmpty(ctx.Spell.element) && ctx.Spell.element == "lava"
+                        ? new Color(1f, 0.47f, 0.24f, 0.6f)
+                        : new Color(0.4f, 0.8f, 0.3f, 0.6f);
+                    sr.color = puddleColor;
+                }
+                sr.sortingLayerName = "FloorDecals";
+                sr.sortingOrder = 5;
+                puddleGo.transform.localScale = Vector3.one * (radius * 0.5f);
             }
             else
             {
-                sr.sprite = CreatePuddleSprite();
-                Color puddleColor = !string.IsNullOrEmpty(ctx.Spell.element) && ctx.Spell.element == "lava"
-                    ? new Color(1f, 0.47f, 0.24f, 0.6f)
-                    : new Color(0.4f, 0.8f, 0.3f, 0.6f);
-                sr.color = puddleColor;
+                // Root Whip — tendrils rising from the ground in a circular area.
+                Color tendrilColor = ctx.Spell.particleColor != Color.clear
+                    ? ctx.Spell.particleColor
+                    : new Color(0.30f, 0.55f, 0.20f, 1f);
+                RootWhipFX.AttachTo(puddleGo, radius, tendrilColor);
             }
-            sr.sortingLayerName = "FloorDecals";
-            sr.sortingOrder = 5;
-            puddleGo.transform.localScale = Vector3.one * (radius * 0.5f);
 
             var controller = puddleGo.AddComponent<PuddleController>();
             controller.Initialize(duration, radius, Mathf.RoundToInt(damagePerTick), tickPeriod,
                 ctx.TargetLayers, ctx.Spell.element);
 
-            if (VFXManager.Instance != null)
+            // Default puddle gets an orange ground halo for visibility; root whip
+            // is already busy enough with rising tendrils — skip the halo there.
+            if (!rootWhip && VFXManager.Instance != null)
             {
                 Color col = ctx.Spell.particleColor != Color.clear
                     ? ctx.Spell.particleColor
@@ -55,7 +75,6 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col, radius, 0.4f);
             }
 
-            Debug.Log($"[SpellDebug] Puddle at {spawnPos}, r={radius:F1}, dur={duration:F1}s, dmg={damagePerTick}/tick, element={ctx.Spell.element}");
         }
 
         private static Sprite CreatePuddleSprite()
@@ -76,6 +95,113 @@ namespace Valkur.Gameplay.Spells
             tex.SetPixels(pixels);
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 16f);
+        }
+    }
+
+    /// <summary>
+    /// Particle-based "roots whipping out of the ground" visual for spells that
+    /// flag <c>vfxPreset == "root_whip"</c>. Attaches a single ParticleSystem to
+    /// the puddle GO that emits short-lived vertical tendrils inside a circle of
+    /// the given radius. Tendrils grow fast, sway, then fade — looks like a
+    /// patch of writhing roots when emitted continuously.
+    /// </summary>
+    internal static class RootWhipFX
+    {
+        public static void AttachTo(GameObject host, float radius, Color color)
+        {
+            ElementalSprites.EnsureAll();
+            var ps = host.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.loop = true;
+            main.duration = 1f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.55f, 0.95f);
+            // Particles don't translate via main.startSpeed — sizeOverLifetime grows
+            // them upward via an axis-stretched billboard so they read as rooting.
+            main.startSpeed = 0f;
+            // X-size is tendril thickness; Y is overridden via a 3D start scale.
+            main.startSize = new ParticleSystem.MinMaxCurve(radius * 0.18f, radius * 0.30f);
+            main.startSize3D = false;
+            main.startColor = color;
+            // Slight side-tilt so each tendril leans differently.
+            main.startRotation = new ParticleSystem.MinMaxCurve(-0.4f, 0.4f);
+            main.gravityModifier = 0f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 80;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 16f;     // continuous, dense enough for a "field"
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = Mathf.Max(0.05f, radius * 0.85f);
+            shape.radiusThickness = 1f;
+            shape.randomDirectionAmount = 0f;
+
+            // Size grows fast (root bursting up), holds, then collapses back.
+            var size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                new AnimationCurve(
+                    new Keyframe(0f,    0.10f),
+                    new Keyframe(0.20f, 1.20f),
+                    new Keyframe(0.65f, 1.00f),
+                    new Keyframe(1f,    0.20f)));
+
+            // Rotate slightly during life — the tendril visibly sways.
+            var rot = ps.rotationOverLifetime;
+            rot.enabled = true;
+            rot.z = new ParticleSystem.MinMaxCurve(-1.2f, 1.2f);
+
+            // Fade alpha at the start (sprout) and end (retract).
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var grad = new Gradient();
+            // Earthy colour ramp: dark soil → spell colour → fade out.
+            var dark = new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.30f, 1f);
+            grad.SetKeys(
+                new[] {
+                    new GradientColorKey(dark,   0f),
+                    new GradientColorKey(color,  0.40f),
+                    new GradientColorKey(color,  0.85f)
+                },
+                new[] {
+                    new GradientAlphaKey(0f,   0f),
+                    new GradientAlphaKey(1f,   0.20f),
+                    new GradientAlphaKey(1f,   0.75f),
+                    new GradientAlphaKey(0f,   1f)
+                });
+            col.color = new ParticleSystem.MinMaxGradient(grad);
+
+            var renderer = host.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.sortingLayerName = Valkur.Core.SortingConfig.LAYER_VFX;
+                renderer.sortingOrder = 8;
+                // Stretch billboard so each particle is taller than wide — sells the
+                // vertical tendril shape regardless of camera angle.
+                renderer.renderMode = ParticleSystemRenderMode.Stretch;
+                renderer.lengthScale = 3.5f;     // taller
+                renderer.velocityScale = 0f;     // no velocity-based stretch
+                var sprite = ElementalSprites.Wisp != null
+                    ? ElementalSprites.Wisp
+                    : ElementalSprites.Glow;
+                if (sprite != null)
+                {
+                    var mat = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
+                              ?? Shader.Find("Sprites/Default"))
+                    {
+                        hideFlags = HideFlags.HideAndDontSave,
+                        mainTexture = sprite.texture
+                    };
+                    renderer.material = mat;
+                }
+            }
+
+            ps.Play();
         }
     }
 }

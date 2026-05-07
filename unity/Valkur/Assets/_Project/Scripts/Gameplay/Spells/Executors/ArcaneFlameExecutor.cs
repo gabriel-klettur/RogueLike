@@ -36,7 +36,6 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, (Vector3)pos, duration);
 
-            Debug.Log($"[SpellDebug] ArcaneFlame at {pos}, dur={duration:F1}s, r={radius:F1}, dmg={damagePerTick}/tick");
         }
 
         private static Sprite CreateFlameSprite()

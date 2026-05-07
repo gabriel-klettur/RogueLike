@@ -6,7 +6,7 @@ using Valkur.Gameplay.VFX;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Spawns a blocking wall perpendicular to the caster→mouse direction.
+    /// Spawns a blocking wall perpendicular to the casterâ†’mouse direction.
     /// Mirrors Python's WallResolver: wall_ice with HP, blocks projectiles/units.
     /// </summary>
     public class WallExecutor : ISpellExecutor
@@ -64,7 +64,6 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col2, width * 0.5f, 0.3f);
             }
 
-            Debug.Log($"[SpellDebug] Wall spawned at {spawnPos}, size=({width:F1}x{height:F1}), HP={hp}, dur={duration:F1}s");
         }
 
         private static Sprite CreateWallSprite()

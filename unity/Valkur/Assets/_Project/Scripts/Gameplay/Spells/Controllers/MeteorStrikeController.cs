@@ -59,7 +59,6 @@ namespace Valkur.Gameplay.Spells
             // Falling missile resolves damage + extra preset on landing
             MeteorMissileFX.Spawn(impactPos, OnMeteorLanded);
 
-            Debug.Log($"[SpellDebug] Meteor launched (#{_remaining}) → {impactPos}");
         }
 
         private void OnMeteorLanded(Vector3 worldImpact)

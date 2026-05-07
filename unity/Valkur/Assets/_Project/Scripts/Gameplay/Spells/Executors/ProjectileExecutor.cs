@@ -85,7 +85,7 @@ namespace Valkur.Gameplay.Spells
                 if (sr != null)
                 {
                     sr.sprite = ctx.Spell.sprite;
-                    // Apply visual scale to the sprite child only — never to the root GO.
+                    // Apply visual scale to the sprite child only â€” never to the root GO.
                     // Python's spell.scale is a sprite pixel-scale factor (e.g. 0.05 for fireball),
                     // not a world-unit scale. Applying it to the root GO would shrink physics
                     // colliders and make procedural visuals (FireballVisual) invisible.
@@ -111,13 +111,12 @@ namespace Valkur.Gameplay.Spells
                 vfxService.SpawnImpact(spawnPos, flashColor, 0.15f, 0.5f);
             }
 
-            Debug.Log($"[SpellDebug] Projectile '{ctx.Spell.spellKey}' spawned at {spawnPos}, speed={ctx.Spell.speed}, dmg={ctx.Spell.damage}, lifetime={ctx.Spell.lifetime}");
         }
 
         /// <summary>
         /// Resolves the world-space "center" of a caster for projectile spawning.
-        /// Priority: SpriteRenderer.bounds.center (visual center) → any Collider2D
-        /// bounds.center → transform.position. A guaranteed minimum upward lift of
+        /// Priority: SpriteRenderer.bounds.center (visual center) â†’ any Collider2D
+        /// bounds.center â†’ transform.position. A guaranteed minimum upward lift of
         /// <see cref="MIN_LIFT_ABOVE_PIVOT"/> world units is applied so the spawn
         /// never sits at the feet of a 2D character (handles sprites with
         /// center pivot, null sprite frames, and centered colliders).
@@ -161,21 +160,63 @@ namespace Valkur.Gameplay.Spells
         /// Reads <see cref="SpellDefinition.element"/> first (data-driven path
         /// that lets designers add new spells without recompiling), falls
         /// back to the legacy spellKey switch for spells whose JSON imports
-        /// haven't been re-run with the element column populated. Fireball
-        /// keeps the bespoke <see cref="FireballVisual"/> already configured
-        /// on its prefab via the IProjectileVisual short-circuit below.
+        /// haven't been re-run with the element column populated.
+        ///
+        /// The shared projectile prefab is pre-stamped with
+        /// <see cref="FireballVisual"/> (orange/red flame) by
+        /// <c>ProjectilePrefabFactory</c>. That bespoke visual is correct for
+        /// fireball but WRONG for iceball / lightball / darkball / arcane —
+        /// without an explicit swap they all render as orange flame in-game
+        /// AND in the F4 Spells Editor preview. So when the resolved element
+        /// disagrees with the existing visual we tear the wrong rig down and
+        /// build the matching <see cref="ElementalProjectileVisual"/> palette.
+        /// Idempotent across pool re-spawns.
         /// </summary>
         private static void AttachElementalVisual(GameObject go, SpellDefinition spell)
         {
-            // If the prefab already carries any IProjectileVisual (e.g. FireballVisual),
-            // respect it.
-            if (go.GetComponent<IProjectileVisual>() != null) return;
-
             SpellElement? element = ResolveElement(spell);
+            var existing = go.GetComponent<IProjectileVisual>();
+
+            // Already running ElementalProjectileVisual — just retune the palette.
+            // Cheap when the element already matches (SetElement early-outs).
+            if (existing is ElementalProjectileVisual epv)
+            {
+                if (element.HasValue) epv.SetElement(element.Value);
+                return;
+            }
+
+            // FireballVisual is the right rig for Fire (and the safe default when
+            // the spell has no element hint at all).
+            if (existing is FireballVisual)
+            {
+                if (!element.HasValue || element.Value == SpellElement.Fire) return;
+                // Wrong element — strip the fire rig (component + its child layers)
+                // so the new visual builds against an empty projectile root.
+                ClearProjectileVisualChildren(go);
+                Object.Destroy((Component)existing);
+            }
+
             if (!element.HasValue) return;
 
             var v = go.AddComponent<ElementalProjectileVisual>();
             v.SetElement(element.Value);
+        }
+
+        /// <summary>
+        /// Removes every child GameObject under <paramref name="go"/>'s root —
+        /// covers Halo / Glow / Core / HotCore / Ghost0..N / FireballLight that
+        /// <see cref="FireballVisual.BuildVisual"/> creates as direct children.
+        /// The projectile root itself (Rigidbody2D / collider / Projectile) stays
+        /// intact; only visual scaffolding is wiped.
+        /// </summary>
+        private static void ClearProjectileVisualChildren(GameObject go)
+        {
+            var t = go.transform;
+            for (int i = t.childCount - 1; i >= 0; i--)
+            {
+                var ch = t.GetChild(i);
+                if (ch != null) Object.Destroy(ch.gameObject);
+            }
         }
 
         // Public + static so tests can pin the precedence: SO field wins,
@@ -184,7 +225,7 @@ namespace Valkur.Gameplay.Spells
         {
             if (spell == null) return null;
 
-            // Prefer the SO's `element` field — data-driven, designer-editable.
+            // Prefer the SO's `element` field â€” data-driven, designer-editable.
             if (!string.IsNullOrWhiteSpace(spell.element))
             {
                 if (System.Enum.TryParse<SpellElement>(spell.element, ignoreCase: true, out var parsed))

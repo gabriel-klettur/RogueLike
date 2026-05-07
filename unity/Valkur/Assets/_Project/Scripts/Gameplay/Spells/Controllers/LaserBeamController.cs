@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Spells
     /// - The beam also auto-stops if the caster runs out of mana or
     ///   <see cref="SpellDefinition.channelDuration"/> is reached (when > 0).
     /// </summary>
-    public class LaserBeamController : MonoBehaviour
+    public partial class LaserBeamController : MonoBehaviour
     {
         private const float TICK_INTERVAL = 0.25f;
 
@@ -48,14 +48,14 @@ namespace Valkur.Gameplay.Spells
         public const float FADE_DURATION = 0.12f;
 
         /// <summary>
-        /// Visual-only backward offset (world units) applied to the beam's rendered
-        /// start point along the OPPOSITE of the firing direction. This makes the
-        /// beam appear to emerge from BEHIND the caster (the sprite covers the
-        /// origin), matching the silhouette in the reference screenshot.
-        /// Damage / raycast still use the true caster center; only the rendered line,
-        /// trail particles and impact-tip are anchored at the offset start.
+        /// Visual-only forward offset (world units, ≈ tiles) applied to the beam's
+        /// rendered start point along the firing direction. Mirrors the slash spawn
+        /// convention (1.25 tiles in front of the body centre) so every spell except
+        /// Dash visually originates from the same point. Damage / raycast still use
+        /// the true caster centre; only the rendered line, trail particles and
+        /// impact-tip are anchored at the forward offset.
         /// </summary>
-        public const float VISUAL_BACK_OFFSET = 0.45f;
+        public const float VISUAL_FORWARD_OFFSET = 1.25f;
 
         private LineRenderer _coreLine;
         private LineRenderer _glowLine;
@@ -65,7 +65,22 @@ namespace Valkur.Gameplay.Spells
         private GameObject _impactGo;
         private ParticleSystem _trailPS;
         private GameObject _trailGo;
+        // Muzzle: continuous emitter at the beam's visual origin. Mirrors the
+        // fireball spawn flash but stays alive for the full channel — only stops
+        // emitting when the fade-out begins (Stop / mana-out / channelDuration end).
+        private ParticleSystem _muzzlePS;
+        private GameObject _muzzleGo;
+        private float _muzzleBeamWidth;   // cached for per-frame position jitter
         private Color _beamColor;
+
+        // Lightning beam mode — when the spell's vfxPreset is "lightning_emitter"
+        // we skip the LineRenderer beam entirely and instead emit zig-zag bolt
+        // particles along the beam path. Same gameplay as a regular laser; only
+        // the visual swaps. Null in regular laser mode.
+        private ParticleSystem _lightningPS;
+        private GameObject _lightningGo;
+        // Spell asset's vfxPreset string used to decide the visual mode.
+        private const string LIGHTNING_BEAM_PRESET = "lightning_emitter";
         private SpellContext _ctx;
         private float _lastRefreshTime;
         private bool _stopRequested;
@@ -116,198 +131,6 @@ namespace Valkur.Gameplay.Spells
             return spell.channelDuration;
         }
 
-        private void BuildVisual(SpellContext ctx)
-        {
-            float width = DEFAULT_BEAM_WIDTH * (ctx.Spell.scale > 0 ? ctx.Spell.scale : 1f);
-
-            _beamColor = ctx.Spell.particleColor != Color.clear && ctx.Spell.particleColor.a > 0
-                ? ctx.Spell.particleColor
-                : new Color(0f, 0.9f, 1f, 1f);
-
-            // Outer glow line (wider, soft alpha).
-            _glowLine = BuildLine("LaserBeam_Glow", width * GLOW_WIDTH_MULT,
-                new Color(_beamColor.r, _beamColor.g, _beamColor.b, GLOW_ALPHA),
-                sortingOrder: 4, out _glowMaterial);
-
-            // Inner bright core line (narrower, full alpha, slightly washed-out toward white).
-            Color coreCol = Color.Lerp(_beamColor, Color.white, 0.35f);
-            coreCol.a = CORE_ALPHA;
-            _coreLine = BuildLine("LaserBeam_Core", width * CORE_WIDTH_MULT,
-                coreCol, sortingOrder: 5, out _coreMaterial);
-
-            // Impact burst at the laser tip — continuous particles in laser color.
-            _impactGo = new GameObject("LaserBeam_Impact");
-            _impactGo.transform.SetParent(transform, false);
-            _impactBurst = BuildImpactBurst(_impactGo, _beamColor, width);
-
-            // Trail particles along the beam path — emit perpendicular drift to
-            // sell the energy travelling through the line.
-            _trailGo = new GameObject("LaserBeam_Trail");
-            _trailGo.transform.SetParent(transform, false);
-            _trailPS = BuildTrailParticles(_trailGo, _beamColor, width);
-        }
-
-        /// <summary>
-        /// Builds an Edge-shape ParticleSystem that emits along the beam line.
-        /// Each frame the controller orients/scales it to span origin → end.
-        /// </summary>
-        private static ParticleSystem BuildTrailParticles(GameObject host, Color color, float beamWidth)
-        {
-            var ps = host.AddComponent<ParticleSystem>();
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            var main = ps.main;
-            main.playOnAwake = false;
-            main.loop = true;
-            main.duration = 1f;
-            main.startLifetime = 0.35f;
-            main.startSpeed = 0.6f;        // slow perpendicular drift
-            main.startSize = beamWidth * 0.9f;
-            main.startColor = color;
-            main.gravityModifier = 0f;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 400;
-
-            var emission = ps.emission;
-            emission.rateOverTime = 60f;   // density along the beam
-
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.SingleSidedEdge;
-            shape.radius = 0.5f;           // overwritten each frame to half-length
-            shape.randomDirectionAmount = 1f; // random perpendicular spread
-
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var grad = new Gradient();
-            grad.SetKeys(
-                new[] { new GradientColorKey(color, 0f), new GradientColorKey(Color.Lerp(color, Color.white, 0.3f), 1f) },
-                new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0f, 1f) }
-            );
-            col.color = new ParticleSystem.MinMaxGradient(grad);
-
-            var size = ps.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f,
-                new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0.1f)));
-
-            var renderer = host.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
-            {
-                // Trail also renders behind the player so the start of the beam is
-                // visually covered by the caster sprite.
-                renderer.sortingLayerName = "WallsBottom";
-                renderer.sortingOrder = 5;
-                renderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"))
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
-            }
-
-            ps.Play();
-            return ps;
-        }
-
-        /// <summary>Builds a uniform-width LineRenderer (start/end widths equal) for the beam.</summary>
-        private LineRenderer BuildLine(string name, float width, Color color, int sortingOrder, out Material material)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(transform, false);
-
-            var lr = go.AddComponent<LineRenderer>();
-            lr.useWorldSpace = true;
-            lr.positionCount = 2;
-            lr.numCapVertices = 6;       // rounded ends -> more "laser" look
-            lr.numCornerVertices = 0;
-            lr.alignment = LineAlignment.View;
-            lr.textureMode = LineTextureMode.Stretch;
-
-            // Uniform thickness from origin to impact (no taper).
-            lr.startWidth = width;
-            lr.endWidth = width;
-            lr.startColor = color;
-            lr.endColor = color;
-
-            material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                ?? Shader.Find("Sprites/Default"));
-            material.hideFlags = HideFlags.HideAndDontSave;
-            lr.sharedMaterial = material;
-
-            // Render BELOW the player sprite (which lives on "Entities"). This is
-            // half of the "beam emerges from behind the caster" effect; the other
-            // half is the VISUAL_BACK_OFFSET applied each frame in RunBeam.
-            lr.sortingLayerName = "WallsBottom";
-            lr.sortingOrder = sortingOrder;
-            return lr;
-        }
-
-        /// <summary>
-        /// Builds a small ParticleSystem that simulates the explosion happening at
-        /// the laser's impact point. Particles spray outward in the laser's color.
-        /// </summary>
-        private static ParticleSystem BuildImpactBurst(GameObject host, Color color, float beamWidth)
-        {
-            var ps = host.AddComponent<ParticleSystem>();
-            // A freshly-added ParticleSystem auto-plays (playOnAwake defaults to true).
-            // Mutating `main.duration` while it's playing logs an error, so we stop and
-            // clear it before configuring the main module, then Play() at the end.
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-            var main = ps.main;
-            main.playOnAwake = false;
-            main.loop = true;
-            main.duration = 1f;
-            main.startLifetime = 0.25f;
-            main.startSpeed = 2.5f;
-            main.startSize = beamWidth * 1.4f;
-            main.startColor = color;
-            main.gravityModifier = 0f;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 200;
-
-            var emission = ps.emission;
-            emission.rateOverTime = 80f;
-
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = beamWidth * 0.5f;
-            shape.radiusThickness = 1f;
-
-            // Fade-out via color over lifetime.
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var grad = new Gradient();
-            grad.SetKeys(
-                new[] { new GradientColorKey(color, 0f), new GradientColorKey(Color.Lerp(color, Color.white, 0.5f), 1f) },
-                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) }
-            );
-            col.color = new ParticleSystem.MinMaxGradient(grad);
-
-            var size = ps.sizeOverLifetime;
-            size.enabled = true;
-            var sizeCurve = new AnimationCurve(
-                new Keyframe(0f, 1f),
-                new Keyframe(1f, 0.2f)
-            );
-            size.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
-
-            // Renderer: additive-ish unlit material with same shader as beam.
-            var renderer = host.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
-            {
-                renderer.sortingLayerName = "VFX";
-                renderer.sortingOrder = 6;
-                renderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"))
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
-            }
-
-            ps.Play();
-            return ps;
-        }
-
         private IEnumerator RunBeam()
         {
             // channelDuration <= 0 means "unbounded; lifecycle controlled by Stop()/Refresh()".
@@ -341,9 +164,13 @@ namespace Valkur.Gameplay.Spells
                 {
                     _fading = true;
                     _fadeT = 1f;
-                    // Stop spawning new trail/impact particles (existing ones still die naturally).
-                    if (_trailPS != null)   _trailPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                    // Stop spawning new trail/impact/muzzle/lightning particles
+                    // (existing ones still die naturally over their startLifetime
+                    // so the visual fades out smoothly rather than popping off).
+                    if (_trailPS != null)     _trailPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                     if (_impactBurst != null) _impactBurst.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                    if (_muzzlePS != null)    _muzzlePS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                    if (_lightningPS != null) _lightningPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 }
 
                 // Advance grow / fade envelopes.
@@ -356,16 +183,27 @@ namespace Valkur.Gameplay.Spells
                 Vector2 dir = ResolveDirection();
                 Vector2 origin = (Vector2)ProjectileExecutor.ResolveCasterCenter(transform);
 
-                // Find beam endpoint, stopping at solid obstacles. Raycast always
-                // uses the TRUE caster center so the visual back-offset doesn't
-                // change what the beam can hit.
-                var wallHit = Physics2D.Raycast(origin, dir, range, blockMask);
-                Vector2 fullEnd = wallHit.collider != null ? wallHit.point : origin + dir * range;
+                // Player-only: clamp the effective range to the cursor's distance
+                // from the caster centre. If the mouse is BEFORE the spell's max
+                // range, the beam stops at the cursor; otherwise the full range
+                // applies. NPCs use the full range as before.
+                float effectiveRange = ResolveEffectiveRange(origin, range);
 
-                // VISUAL origin: pushed backwards along -dir so the rendered beam
-                // appears to emerge from behind the caster sprite (which is also
-                // rendered above the line via sortingLayer "WallsBottom").
-                Vector2 visualOrigin = origin - dir * VISUAL_BACK_OFFSET;
+                // Find beam endpoint, stopping at solid obstacles. Raycast uses the
+                // true caster centre + the (possibly mouse-clamped) effective range.
+                var wallHit = Physics2D.Raycast(origin, dir, effectiveRange, blockMask);
+                Vector2 fullEnd = wallHit.collider != null ? wallHit.point : origin + dir * effectiveRange;
+
+                // VISUAL origin: pushed FORWARD along dir so the rendered beam
+                // emerges from ~1 tile in front of the caster — same convention as
+                // the slash spawn point. Always at least 1.25 tiles ahead of body
+                // centre regardless of mouse distance.
+                Vector2 visualOrigin = origin + dir * VISUAL_FORWARD_OFFSET;
+                // If the mouse is closer than the forward offset, fullEnd would land
+                // BEHIND visualOrigin and the line renderer would draw backwards.
+                // Collapse the beam visually in that case (mouse on top of caster).
+                if (Vector2.Dot(fullEnd - visualOrigin, dir) < 0f)
+                    fullEnd = visualOrigin;
 
                 // Apply grow envelope: beam visually extends from visualOrigin to fullEnd over GROW_DURATION.
                 Vector2 visibleEnd = Vector2.Lerp(visualOrigin, fullEnd, _growT);
@@ -413,6 +251,32 @@ namespace Valkur.Gameplay.Spells
                     if (_trailPS != null)
                     {
                         var shape = _trailPS.shape;
+                        shape.radius = Mathf.Max(0.001f, visibleLength * 0.5f);
+                    }
+                }
+
+                // Anchor the muzzle emitter at the beam's visual origin with a tiny
+                // random jitter so the whole emitter visibly vibrates each frame.
+                // Combined with the ParticleSystem.noise module this sells the
+                // "energy crackling at the staff tip" feel.
+                if (_muzzleGo != null)
+                {
+                    Vector2 jitter = Random.insideUnitCircle * (_muzzleBeamWidth * 0.7f);
+                    _muzzleGo.transform.position = (Vector3)(visualOrigin + jitter);
+                }
+
+                // Anchor + size the lightning emitter to span visualOrigin → visibleEnd.
+                // Edge shape emits along local +X with total length 2 * radius, so set
+                // midpoint position, rotate so right-axis matches dir, radius = halfLength.
+                if (_lightningGo != null)
+                {
+                    Vector2 mid = (visualOrigin + visibleEnd) * 0.5f;
+                    _lightningGo.transform.position = mid;
+                    float deg = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+                    _lightningGo.transform.rotation = Quaternion.Euler(0f, 0f, deg);
+                    if (_lightningPS != null)
+                    {
+                        var shape = _lightningPS.shape;
                         shape.radius = Mathf.Max(0.001f, visibleLength * 0.5f);
                     }
                 }
@@ -497,6 +361,16 @@ namespace Valkur.Gameplay.Spells
                 if (_trailPS != null) _trailPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
                 Destroy(_trailGo, 0.5f);
             }
+            if (_muzzleGo != null)
+            {
+                if (_muzzlePS != null) _muzzlePS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                Destroy(_muzzleGo, 0.5f);
+            }
+            if (_lightningGo != null)
+            {
+                if (_lightningPS != null) _lightningPS.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                Destroy(_lightningGo, 0.5f);
+            }
             Destroy(this);
         }
 
@@ -506,6 +380,35 @@ namespace Valkur.Gameplay.Spells
             if (pc != null)
                 return pc.FacingDirection;
             return _ctx.Direction;
+        }
+
+        /// <summary>
+        /// Returns the beam's effective max travel distance for this frame.
+        /// For the player, clamps to the cursor's world-space distance from the
+        /// caster centre so the beam stops at the cursor when the cursor is closer
+        /// than the spell's nominal range. NPCs always get the full range.
+        /// </summary>
+        private float ResolveEffectiveRange(Vector2 origin, float maxRange)
+        {
+            // Only the player controls the laser via mouse — NPCs cast in a fixed
+            // direction at full range.
+            var pc = GetComponent<PlayerController>();
+            if (pc == null) return maxRange;
+
+            var cam = Camera.main;
+            if (cam == null) return maxRange;
+
+            if (!Valkur.Core.Input.MouseInputManager.TryGetWorldMousePosition(
+                    out Vector2 mouseWorld,
+                    cam,
+                    requireInView: true,
+                    requireApplicationFocus: false))
+            {
+                return maxRange;
+            }
+
+            float mouseDist = Vector2.Distance(origin, mouseWorld);
+            return Mathf.Min(maxRange, mouseDist);
         }
 
         private void OnDestroy()

@@ -51,7 +51,6 @@ namespace Valkur.Gameplay.Spells
             if (_remaining <= 0f)
             {
                 _rig?.Destroy();
-                Debug.Log($"[SpellDebug] Totem expired at {transform.position}");
                 Destroy(gameObject);
                 return;
             }
@@ -100,7 +99,6 @@ namespace Valkur.Gameplay.Spells
                     health.Heal(_healPerTick);
                     var audio = ServiceLocator.Get<IAudioService>();
                     if (audio != null) audio.PlaySfxById("spell_totem_heal_tick");
-                    Debug.Log($"[SpellDebug] Totem healed {_owner.name} for {_healPerTick} HP (dist={dist:F1})");
                 }
             }
         }

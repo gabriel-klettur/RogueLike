@@ -6,7 +6,7 @@ namespace Valkur.Gameplay.Spells
 {
     /// <summary>
     /// Smoke burst at caster: short-lived volumetric cloud (gray particles + halo)
-    /// via shared <see cref="AreaFXRig"/>. Visual/utility only — no damage.
+    /// via shared <see cref="AreaFXRig"/>. Visual/utility only â€” no damage.
     /// Mirrors Python's SmokeResolver.
     /// </summary>
     public class SmokeExecutor : ISpellExecutor
@@ -29,7 +29,6 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, pos);
 
-            Debug.Log($"[SpellDebug] Smoke cast at {pos}, duration={duration:F2}s");
         }
     }
 

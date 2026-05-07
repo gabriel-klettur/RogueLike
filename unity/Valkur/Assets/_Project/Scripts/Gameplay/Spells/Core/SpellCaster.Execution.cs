@@ -69,6 +69,10 @@ namespace Valkur.Gameplay.Spells
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio != null && !string.IsNullOrEmpty(spell.spellKey))
                 audio.PlaySfxById(spell.spellKey);
+
+            // Broadcast cast for HUD overlays (cooldown countdown stack, etc.).
+            // Primitive payload keeps Valkur.Core free of Valkur.Data references.
+            GameEvents.FireSpellCast(gameObject, spell.spellKey, spell.displayName, spell.cooldownDuration);
         }
 
         private void StartCooldown(SpellDefinition spell, int slotIndex)

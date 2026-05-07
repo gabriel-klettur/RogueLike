@@ -92,7 +92,6 @@ namespace Valkur.Gameplay.Spells
             {
                 if (_casterHealth != null) _casterHealth.SetInvincible(false);
                 if (_lightGo != null) Destroy(_lightGo);
-                Debug.Log($"[SpellDebug] Shield expired on {(_caster != null ? _caster.name : "?")}");
                 Destroy(gameObject);
                 return;
             }

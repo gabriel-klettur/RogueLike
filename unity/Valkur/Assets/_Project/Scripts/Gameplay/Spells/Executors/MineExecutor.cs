@@ -7,7 +7,7 @@ namespace Valkur.Gameplay.Spells
 {
     /// <summary>
     /// Places an armed mine that detonates on enemy proximity.
-    /// Mirrors Python's MineResolver: arming time → proximity trigger → explosion.
+    /// Mirrors Python's MineResolver: arming time â†’ proximity trigger â†’ explosion.
     /// </summary>
     public class MineExecutor : ISpellExecutor
     {
@@ -42,7 +42,6 @@ namespace Valkur.Gameplay.Spells
                 Mathf.RoundToInt(explosionDamage), ttl, ctx.TargetLayers,
                 ctx.Spell.impactPreset);
 
-            Debug.Log($"[SpellDebug] Mine placed at {pos}, arm={armingTime:F1}s, trigR={triggerRadius:F1}, expR={explosionRadius:F1}, dmg={explosionDamage}, ttl={ttl:F0}s");
         }
 
         private static Sprite CreateMineSprite()

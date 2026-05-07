@@ -28,7 +28,6 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, pos, duration);
 
-            Debug.Log($"[SpellDebug] SmokeEmitter cast at {pos}, duration={duration:F2}s");
         }
     }
 }

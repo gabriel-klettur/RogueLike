@@ -83,5 +83,5 @@ MonoBehaviour:
   - 8
   - 18
   emitRate: 0
-  vfxPreset: 
-  impactPreset: 
+  vfxPreset: dash_trail_emitter
+  impactPreset:

@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.Spells
                             var arr = _catalog.AllSpells.Concat(new[] { s }).ToArray();
                             _catalog.SetSpellsRuntime(arr);
                             _selectedKey = key;
-                            RefreshPicker();
+                            RefreshActivePicker();
                             RefreshPropertiesForm();
                         },
                         undoAction: () =>
@@ -82,12 +82,12 @@ namespace Valkur.Gameplay.Spells
                             var arr = _catalog.AllSpells.Where(x => x != s).ToArray();
                             _catalog.SetSpellsRuntime(arr);
                             if (_selectedKey == key) _selectedKey = null;
-                            RefreshPicker();
+                            RefreshActivePicker();
                             RefreshPropertiesForm();
                         }));
 
                     _selectedKey = key;
-                    RefreshPicker();
+                    RefreshActivePicker();
                     RefreshPropertiesForm();
                     Toast($"Added '{key}'");
                 });
@@ -131,7 +131,7 @@ namespace Valkur.Gameplay.Spells
                             var arr = _catalog.AllSpells.Where(x => x != removed).ToArray();
                             _catalog.SetSpellsRuntime(arr);
                             if (_selectedKey == key) _selectedKey = null;
-                            RefreshPicker();
+                            RefreshActivePicker();
                             RefreshPropertiesForm();
                         },
                         undoAction: () =>
@@ -141,12 +141,12 @@ namespace Valkur.Gameplay.Spells
                             list.Insert(idx, removed);
                             _catalog.SetSpellsRuntime(list.ToArray());
                             _selectedKey = key;
-                            RefreshPicker();
+                            RefreshActivePicker();
                             RefreshPropertiesForm();
                         }));
 
                     _selectedKey = null;
-                    RefreshPicker();
+                    RefreshActivePicker();
                     RefreshPropertiesForm();
                     Toast($"Removed '{key}'");
                 });
@@ -182,7 +182,7 @@ namespace Valkur.Gameplay.Spells
                 if (_catalog != null) _catalog.SetSpellsRuntime(_catalog.AllSpells);
                 _selectedKey = null;
                 _undo.Clear();
-                RefreshPicker();
+                RefreshActivePicker();
                 RefreshPropertiesForm();
                 Toast("Reloaded catalog from disk");
             }

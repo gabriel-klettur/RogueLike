@@ -6,12 +6,12 @@ using Valkur.Gameplay.VFX;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Placed mine: arming phase (pulsing yellow rune) → armed (steady red glow + warning ring) →
+    /// Placed mine: arming phase (pulsing yellow rune) â†’ armed (steady red glow + warning ring) â†’
     /// proximity detonate (massive ElementalImpactFX with Fire palette + camera shake + light flash).
     /// </summary>
     public class MineController : MonoBehaviour
     {
-        // ── Tuning ────────────────────────────────────────────────────
+        // â”€â”€ Tuning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private const float ArmingPulseHz = 4f;
         private const float ArmedRingSpinSpeed = 90f;
         private const float CoreScale = 0.35f;
@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Spells
         private const float RingScale = 1.20f;
         private const float HaloScale = 1.55f;
 
-        // ── State ─────────────────────────────────────────────────────
+        // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private float _armingTimer;
         private float _triggerRadius;
         private float _explosionRadius;
@@ -29,12 +29,12 @@ namespace Valkur.Gameplay.Spells
         private string _impactPreset;
         private bool _armed;
 
-        // ── Visual rig ────────────────────────────────────────────────
+        // â”€â”€ Visual rig â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private SpriteRenderer _core, _glow, _ring, _halo;
         private GameObject _lightGo;
         private Component _light;
 
-        // ── Palette ───────────────────────────────────────────────────
+        // â”€â”€ Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         private static readonly Color ArmingColor   = new Color(1.00f, 0.85f, 0.20f, 1f);
         private static readonly Color ArmedCore     = new Color(1.00f, 0.30f, 0.10f, 1f);
         private static readonly Color ArmedGlow     = new Color(1.00f, 0.15f, 0.05f, 0.70f);
@@ -97,7 +97,7 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
-        // ── Build ─────────────────────────────────────────────────────
+        // â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void BuildVisual()
         {
@@ -172,7 +172,7 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
-        // ── Animate ───────────────────────────────────────────────────
+        // â”€â”€ Animate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void AnimateArming()
         {
@@ -213,11 +213,10 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
-        // ── Detonate ──────────────────────────────────────────────────
+        // â”€â”€ Detonate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private void Detonate()
         {
-            Debug.Log($"[SpellDebug] Mine detonated at {transform.position}, dmg={_explosionDamage}, radius={_explosionRadius:F1}");
 
             var hits = Physics2D.OverlapCircleAll(transform.position, _explosionRadius, _targetLayers);
             foreach (var hit in hits)

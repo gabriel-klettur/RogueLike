@@ -47,7 +47,6 @@ namespace Valkur.Gameplay.Spells
                     new Color(1f, 0.9f, 0.3f, 0.4f), radius, 0.5f);
             }
 
-            Debug.Log($"[SpellDebug] Totem placed at {spawnPos}, dur={duration:F1}s, r={radius:F1}, heal={healPerTick}/tick");
         }
 
         private static Sprite CreateTotemSprite()

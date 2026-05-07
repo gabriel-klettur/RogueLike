@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -17,63 +19,217 @@ namespace Valkur.Gameplay.Spells
     ///   • A synthetic caster <see cref="Transform"/> sits at the centre of the stage.
     ///     Spells are fired by invoking the appropriate <see cref="ISpellExecutor"/>
     ///     directly — bypassing <see cref="SpellCaster.TryCast"/> so mana cost,
-    ///     cooldown FSM, and SFX dispatch are all skipped. Audio mute on the caller
-    ///     side handles any executor-internal SFX.
+    ///     cooldown FSM, and SFX dispatch are all skipped.
     ///   • A simple time-based loop fires one cast, waits a cycle, clears the stage,
-    ///     waits a small idle gap, and repeats. The cycle length is derived from the
-    ///     spell's own duration fields so persistent spells (Aura, Wall, Puddle, …)
-    ///     get their full lifetime visible while one-shots (Projectile, Slash, …)
-    ///     don't sit idle for long.
+    ///     waits a small idle gap, and repeats.
     ///
-    /// All Unity-layer assignments use the user layer "SpellPreview" (separate from
-    /// "ParticlePreview" so Spells and Particles previews never bleed into each
-    /// other's cameras).
+    /// Frame capture / transport:
+    ///   • During Active loop state each rendered frame is copied into a Texture2D
+    ///     and appended to <c>_frames</c> (capped at MAX_CAPTURED_FRAMES = 240).
+    ///   • Three transport modes govern Tick behaviour:
+    ///       Live  — existing spell-fire loop + capture (default).
+    ///       Slow  — no spell firing; replay captured frames at a reduced rate.
+    ///       Paused — no advancement; expose a single chosen frame.
     /// </summary>
-    public sealed class SpellPreviewService
+    public sealed partial class SpellPreviewService
     {
         // ── Constants ────────────────────────────────────────────────────────────
 
-        private const int   RT_SIZE          = 384;
-        private const float OFFSCREEN_Y      = -20000f;   // far from ParticlePreview (-10000)
-        private const float CAMERA_Z         = -50f;
-        private const float ORTHO_SIZE_MIN   = 2f;
-        private const float ORTHO_SIZE_MAX   = 12f;
-        private const float ORTHO_SIZE_DEFAULT = 6f;
-        private const float BOUNDS_PADDING   = 0.5f;
-        private const float IDLE_GAP_SECONDS = 0.25f;
-        private const float MIN_CYCLE_SECONDS = 1.5f;
-        private const float MIN_PERSISTENT_SECONDS = 2.0f;
-        private const float CYCLE_TAIL_SECONDS = 0.2f;
-        // User zoom: applied AFTER auto-fit so zooming doesn't fight bounds-tracking.
-        // Values >1 zoom in (smaller ortho size), <1 zoom out.
-        private const float USER_ZOOM_MIN  = 0.25f;
-        private const float USER_ZOOM_MAX  = 6f;
-        private const float USER_ZOOM_STEP = 1.2f;
+        internal const int   RT_SIZE            = 384;
+        internal const float OFFSCREEN_Y        = -20000f;   // far from ParticlePreview (-10000)
+        internal const float CAMERA_Z           = -50f;
+        // ORTHO_SIZE_MIN: lower-bound for the camera ortho so tiny radial spells
+        // (Aura radius=0.6, Slash hitRadius=1.25, …) don't crush the view onto
+        // the spell — the player sprite needs ~3 wu of vertical space.
+        internal const float ORTHO_SIZE_MIN     = 4f;
+        // ORTHO_SIZE_MAX is intentionally unused as a clamp: the auto-fit must
+        // grow to cover the FULL spell reach AND the caster so the user can always
+        // see "both spell and player". Long-range spells use a wider ortho.
+        internal const float ORTHO_SIZE_MAX     = 200f;
+        internal const float ORTHO_SIZE_DEFAULT = 6f;
+        internal const float BOUNDS_PADDING     = 0.5f;
+        internal const float IDLE_GAP_SECONDS   = 0.25f;
+        internal const float MIN_CYCLE_SECONDS  = 1.5f;
+        internal const float MIN_PERSISTENT_SECONDS = 2.0f;
+        internal const float CYCLE_TAIL_SECONDS = 0.2f;
+        // User zoom: applied AFTER auto-fit. Values >1 zoom in (smaller ortho size), <1 zoom out.
+        internal const float USER_ZOOM_MIN  = 0.25f;
+        internal const float USER_ZOOM_MAX  = 6f;
+        internal const float USER_ZOOM_STEP = 1.2f;
 
-        // ── State ────────────────────────────────────────────────────────────────
+        // Frame capture: cap prevents unbounded Texture2D allocations for long spells.
+        // 240 frames covers ~4 s at 60 fps — more than enough for any spell VFX cycle.
+        internal const int   MAX_CAPTURED_FRAMES   = 240;
+        internal const float NOMINAL_FRAME_DURATION = 1f / 60f;
 
-        private bool             _initialized;
-        private bool             _open;
-        private Camera           _camera;
-        private RenderTexture    _rt;
-        private GameObject       _stageRoot;
-        private GameObject       _casterGo;
-        private Transform        _casterTransform;
-        private Vector2          _direction = Vector2.right;
-        private SpellDefinition  _spell;
-        private GameObject       _projectilePrefab;
-        private bool             _projectilePrefabResolved;
-        private float            _userZoom = 1f;
+        // Degenerate-bounds threshold: if the encapsulated size is bigger than this,
+        // something stale or pooled is corrupting the framing calculation.
+        internal const float BOUNDS_SANITY_RADIUS = 100f;
+
+        // ── Transport state ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Controls what the preview loop does each Tick.
+        /// Live  = live spell fires and captures frames (default).
+        /// Slow  = replay captured frames at a reduced rate; spell is not fired.
+        /// Paused = frozen on a single chosen frame; nothing advances.
+        /// </summary>
+        public enum TransportMode { Live, Slow, Paused }
+
+        internal TransportMode _transport = TransportMode.Live;
+
+        // Captured frame buffer — one Texture2D per rendered frame during Active.
+        internal readonly List<Texture2D> _frames = new List<Texture2D>();
+
+        // Index of the frame currently shown in Slow/Paused mode.
+        internal int _displayedFrame;
+
+        // Fractional accumulator used to pace slow-motion playback between ticks.
+        internal float _slowPlaybackAccum;
+
+        // Playback speed for Slow mode (0.25 or 0.5).
+        internal float _playbackSpeed = 1f;
+
+        // ── Core state ───────────────────────────────────────────────────────────
+
+        internal bool             _initialized;
+        internal bool             _open;
+        internal Camera           _camera;
+        internal RenderTexture    _rt;
+        internal GameObject       _stageRoot;
+        internal GameObject       _casterGo;
+        internal Transform        _casterTransform;
+        internal Vector2          _direction = Vector2.right;
+        internal SpellDefinition  _spell;
+        internal GameObject       _projectilePrefab;
+        internal bool             _projectilePrefabResolved;
+        internal float            _userZoom = 1f;
+
+        // Character overlay — child of _casterGo carrying the player SpriteRenderer.
+        internal bool             _showCharacter;
+        internal GameObject       _characterGo;
+        internal Valkur.Gameplay.DirectionalAnimator _characterAnimator;
 
         // Loop timing.
-        private enum LoopState { Idle, Active, Cooldown }
-        private LoopState _loopState = LoopState.Idle;
-        private float     _loopTimer;
+        internal enum LoopState { Idle, Active, Cooldown }
+        internal LoopState _loopState = LoopState.Idle;
+        internal float     _loopTimer;
 
         // Tracking world-rooted spawns (e.g. Projectile) so they get cleaned per cycle.
-        private readonly List<GameObject> _trackedWorldSpawns = new List<GameObject>();
+        internal readonly List<GameObject> _trackedWorldSpawns = new List<GameObject>();
 
-        public bool HasProjectilePrefab => ResolveProjectilePrefab() != null;
+        // Baseline of pre-existing world VFX captured on Open() so newly spawned
+        // ParticleSystems / impact-preset emitters created any time during a cycle
+        // can be absorbed onto the SpellPreview layer and tracked for cleanup.
+        internal readonly HashSet<GameObject> _baselineWorldVfx = new HashSet<GameObject>();
+        internal readonly HashSet<GameObject> _absorbedWorldVfx = new HashSet<GameObject>();
+
+        // Snapshot of every scene-root GO that existed at FireOnce time. Used by
+        // AbsorbNewSceneRoots() each Active-state Tick to detect async spawns.
+        internal HashSet<GameObject> _baselineSceneRoots = new HashSet<GameObject>();
+
+        // One-shot error logging — avoids per-cycle console spam on misconfigured spells.
+        internal bool _warnedNoExecutor;
+
+        // Locked-bounds framing: seeded from the spell's metadata on SetSelectedSpell
+        // so the camera ortho stays stable across the spell's full cycle. Never shrinks.
+        internal Bounds _lockedBounds;
+        internal bool   _lockedBoundsInitialized;
+
+        // Range ruler — red line below the caster with a tiles label at the midpoint.
+        internal GameObject     _rangeRulerGo;
+        internal LineRenderer   _rangeRulerLine;
+        internal TextMeshPro    _rangeRulerLabel;
+        internal Material       _rangeRulerMaterial;
+        internal const float    RULER_Y_OFFSET       = 1.5f;
+        internal const float    RULER_LINE_WIDTH      = 0.10f;
+        internal const float    RULER_LABEL_Y_OFFSET  = 0.6f;
+        internal static readonly Color RULER_COLOR    = new Color(0.95f, 0.20f, 0.20f, 1f);
+
+        // ── Character overlay public API ─────────────────────────────────────────
+
+        /// <summary>Whether the character sprite overlay is currently shown on the preview stage.</summary>
+        public bool ShowCharacter => _showCharacter;
+
+        /// <summary>Attach or detach the active player's sprite on the synthetic caster.</summary>
+        public void SetShowCharacter(bool show)
+        {
+            _showCharacter = show;
+            ApplyCharacterState();
+        }
+
+        // ── Transport public API ─────────────────────────────────────────────────
+
+        /// <summary>Number of Texture2Ds currently held in the capture buffer.</summary>
+        public int CapturedFrameCount => _frames.Count;
+
+        /// <summary>Current transport mode (Live / Slow / Paused).</summary>
+        public TransportMode CurrentTransport => _transport;
+
+        /// <summary>Current playback speed (0.25 / 0.5 / 1.0).</summary>
+        public float PlaybackSpeed => _playbackSpeed;
+
+        /// <summary>
+        /// Index of the frame that GetDisplayTexture() currently returns in
+        /// Slow or Paused mode.  In Live mode this is meaningless (returns _rt).
+        /// </summary>
+        public int DisplayedFrame => _displayedFrame;
+
+        /// <summary>
+        /// Returns the texture that should be shown in the RawImage each frame.
+        /// Live → the live RenderTexture.
+        /// Slow / Paused → the captured Texture2D at _displayedFrame (or _rt as fallback).
+        /// </summary>
+        public Texture GetDisplayTexture()
+        {
+            if (_transport == TransportMode.Live) return _rt;
+            if (_frames.Count == 0)               return _rt;
+            int idx = Mathf.Clamp(_displayedFrame, 0, _frames.Count - 1);
+            return _frames[idx];
+        }
+
+        /// <summary>
+        /// Switch transport mode.  Transitioning TO Live clears the capture buffer
+        /// so the next Active cycle starts a fresh recording.
+        /// </summary>
+        public void SetTransport(TransportMode mode, float speed = 1f)
+        {
+            if (_transport == mode && Mathf.Approximately(_playbackSpeed, speed)) return;
+
+            bool towardLive = mode == TransportMode.Live;
+            _transport = mode;
+            _playbackSpeed = Mathf.Clamp(speed, 0.0001f, 1f);
+            _slowPlaybackAccum = 0f;
+
+            if (towardLive)
+            {
+                DisposeAllFrames();
+                ClearStage();
+                _loopState = LoopState.Idle;
+                _loopTimer = 0f;
+            }
+            else if (mode == TransportMode.Paused)
+            {
+                _displayedFrame = Mathf.Max(0, _frames.Count - 1);
+            }
+            // Slow: keep _displayedFrame as-is so switching from Paused or
+            // changing speed doesn't jump the scrubber position unexpectedly.
+        }
+
+        /// <summary>Step the displayed frame by delta (positive = forward). Only meaningful in Slow or Paused mode.</summary>
+        public void StepFrame(int delta)
+        {
+            if (_frames.Count == 0) return;
+            _displayedFrame = Mathf.Clamp(_displayedFrame + delta, 0, _frames.Count - 1);
+        }
+
+        /// <summary>Seek to a normalised position in the capture buffer (0 = first frame, 1 = last).</summary>
+        public void SeekToFraction(float t01)
+        {
+            if (_frames.Count == 0) return;
+            _displayedFrame = Mathf.RoundToInt(t01 * (_frames.Count - 1));
+            _displayedFrame = Mathf.Clamp(_displayedFrame, 0, _frames.Count - 1);
+        }
 
         // ── Public API ───────────────────────────────────────────────────────────
 
@@ -83,7 +239,6 @@ namespace Valkur.Gameplay.Spells
 
             int layer = ResolvePreviewLayer();
 
-            // Stage root + synthetic caster.
             _stageRoot = new GameObject("SpellPreviewStage_Internal");
             _stageRoot.transform.SetParent(parent, false);
             _stageRoot.transform.position = new Vector3(0f, OFFSCREEN_Y, 0f);
@@ -94,7 +249,6 @@ namespace Valkur.Gameplay.Spells
             _casterGo.layer = layer;
             _casterTransform = _casterGo.transform;
 
-            // Camera.
             var camGo = new GameObject("SpellPreviewCamera");
             camGo.transform.SetParent(parent, false);
             camGo.transform.position = new Vector3(0f, OFFSCREEN_Y, CAMERA_Z);
@@ -106,7 +260,7 @@ namespace Valkur.Gameplay.Spells
             _camera.backgroundColor  = new Color(0.06f, 0.06f, 0.08f, 1f);
             _camera.nearClipPlane    = 0.1f;
             _camera.farClipPlane     = 200f;
-            _camera.enabled          = false; // enabled while panel is open
+            _camera.enabled          = false;
 
             var urpData = camGo.GetComponent<UniversalAdditionalCameraData>()
                        ?? camGo.AddComponent<UniversalAdditionalCameraData>();
@@ -119,6 +273,8 @@ namespace Valkur.Gameplay.Spells
             _rt.Create();
             _camera.targetTexture = _rt;
 
+            BuildRangeRuler(layer);
+
             _initialized = true;
         }
 
@@ -129,16 +285,24 @@ namespace Valkur.Gameplay.Spells
             if (!_initialized) return;
             if (_spell == spell) return;
             _spell = spell;
-            // Force a fresh cycle on the next Tick so the new spell appears immediately.
+            // Rebuild the caster GO so any components the previous executor attached
+            // (e.g. LaserBeamController, AuraController) are fully stripped before the
+            // next executor runs.
+            RebuildCasterGo();
             ClearStage();
             _loopState = LoopState.Idle;
             _loopTimer = 0f;
+            DisposeAllFrames();
+            _transport         = TransportMode.Live;
+            _slowPlaybackAccum = 0f;
+            SeedLockedBoundsForSpell(spell);
         }
 
         public void SetDirection(Vector2 dir)
         {
             if (dir.sqrMagnitude < 0.0001f) return;
             _direction = dir.normalized;
+            ApplyCharacterDirection();
         }
 
         /// <summary>Multiply the current user zoom (clamped). 1.0 = auto-fit baseline.</summary>
@@ -147,8 +311,7 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>
         /// Apply a continuous zoom delta (e.g. mouse-wheel ticks). Each unit of
-        /// <paramref name="delta"/> applies one full step; fractional deltas are
-        /// applied via Pow so wheel sensitivity stays smooth.
+        /// delta applies one full step; fractional deltas are applied via Pow.
         /// </summary>
         public void ZoomBy(float delta)
         {
@@ -163,14 +326,22 @@ namespace Valkur.Gameplay.Spells
 
         public float CurrentZoom => _userZoom;
 
+        public bool HasProjectilePrefab => ResolveProjectilePrefab() != null;
+
         public void Open()
         {
             if (!_initialized) return;
             _open = true;
             if (_camera != null) _camera.enabled = true;
-            // Start a cycle immediately when opened.
+            CaptureWorldVfxBaseline();
             _loopState = LoopState.Idle;
             _loopTimer = 0f;
+            DisposeAllFrames();
+            _transport         = TransportMode.Live;
+            _slowPlaybackAccum = 0f;
+            // Always start with character overlay OFF so the panel is in a clean default state.
+            _showCharacter = false;
+            DestroyCharacterGo();
         }
 
         public void Close()
@@ -179,26 +350,51 @@ namespace Valkur.Gameplay.Spells
             _open = false;
             if (_camera != null) _camera.enabled = false;
             ClearStage();
+            _baselineWorldVfx.Clear();
             _loopState = LoopState.Idle;
             _loopTimer = 0f;
+            DisposeAllFrames();
         }
 
-        /// <summary>
-        /// Drive the preview loop. Call from MonoBehaviour.Update while the panel is open.
-        /// </summary>
+        /// <summary>Drive the preview loop. Call from MonoBehaviour.Update while the panel is open.</summary>
         public void Tick()
         {
             if (!_initialized || !_open) return;
 
             float dt = Time.deltaTime;
 
+            if (_transport == TransportMode.Paused)
+            {
+                UpdateCameraFraming();
+                UpdateRangeRuler();
+                return;
+            }
+
+            if (_transport == TransportMode.Slow)
+            {
+                if (_frames.Count > 1)
+                {
+                    float framesPerSecond = _playbackSpeed / NOMINAL_FRAME_DURATION;
+                    _slowPlaybackAccum += framesPerSecond * dt;
+                    int steps = Mathf.FloorToInt(_slowPlaybackAccum);
+                    if (steps > 0)
+                    {
+                        _slowPlaybackAccum -= steps;
+                        _displayedFrame = (_displayedFrame + steps) % _frames.Count;
+                    }
+                }
+                UpdateCameraFraming();
+                UpdateRangeRuler();
+                return;
+            }
+
+            // Live transport — run the spell-fire loop.
             switch (_loopState)
             {
                 case LoopState.Idle:
-                    // Fire on the next frame after entering Idle. This gives any prior
-                    // spawns a frame to be destroyed before re-firing.
                     if (_spell != null)
                     {
+                        DisposeAllFrames();
                         FireOnce();
                         _loopTimer = ComputeCycleTime(_spell);
                         _loopState = LoopState.Active;
@@ -206,6 +402,9 @@ namespace Valkur.Gameplay.Spells
                     break;
 
                 case LoopState.Active:
+                    AbsorbNewWorldVfx();
+                    AbsorbNewSceneRoots();
+                    CaptureCurrentFrame();
                     _loopTimer -= dt;
                     if (_loopTimer <= 0f)
                     {
@@ -223,12 +422,18 @@ namespace Valkur.Gameplay.Spells
             }
 
             UpdateCameraFraming();
+            UpdateRangeRuler();
         }
 
         public void Shutdown()
         {
             if (!_initialized) return;
             ClearStage();
+            DisposeAllFrames();
+            if (_rangeRulerMaterial != null) { SafeDestroy.Of(_rangeRulerMaterial); _rangeRulerMaterial = null; }
+            _rangeRulerGo    = null;
+            _rangeRulerLine  = null;
+            _rangeRulerLabel = null;
             if (_rt != null) { _rt.Release(); SafeDestroy.Of(_rt); _rt = null; }
             if (_camera != null) { SafeDestroy.Of(_camera.gameObject); _camera = null; }
             if (_stageRoot != null) { SafeDestroy.Of(_stageRoot); _stageRoot = null; }
@@ -239,174 +444,9 @@ namespace Valkur.Gameplay.Spells
             _initialized     = false;
         }
 
-        // ── Internal — firing & cleanup ──────────────────────────────────────────
-
-        private void FireOnce()
-        {
-            if (_spell == null || _casterTransform == null) return;
-            int layer = ResolvePreviewLayer();
-
-            var executor = SpellCaster.GetExecutor(_spell.type);
-            if (executor == null)
-            {
-                Debug.LogWarning($"[SpellPreview] No executor registered for SpellType {_spell.type}");
-                return;
-            }
-
-            var ctx = new SpellContext
-            {
-                Spell            = _spell,
-                Caster           = _casterTransform,
-                Direction        = _direction,
-                TargetLayers     = 0,                          // hit nothing — empty stage
-                ProjectilePrefab = ResolveProjectilePrefab(),
-            };
-
-            // Snapshot world projectiles before/after firing so projectile-style
-            // executors that spawn at world root (not under ctx.Caster) are tracked
-            // for cleanup.
-            var beforeProjectiles = SnapshotWorldProjectiles();
-
-            try { executor.Execute(ctx); }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[SpellPreview] Executor '{executor.GetType().Name}' threw for spell '{_spell.spellKey}': {ex.Message}");
-            }
-
-            // Force the SpellPreview Unity layer onto every newly spawned descendant
-            // of the caster so the dedicated camera can see them.
-            SetLayerRecursive(_stageRoot, layer);
-
-            // Track new world-rooted projectiles for cycle cleanup.
-            var afterProjectiles = SnapshotWorldProjectiles();
-            foreach (var p in afterProjectiles)
-            {
-                if (p == null) continue;
-                if (!beforeProjectiles.Contains(p))
-                {
-                    SetLayerRecursive(p.gameObject, layer);
-                    _trackedWorldSpawns.Add(p.gameObject);
-                }
-            }
-        }
-
-        private void ClearStage()
-        {
-            // Children of the synthetic caster (Aura/Puddle/Wall/Totem/Shield parent here).
-            if (_casterTransform != null)
-            {
-                for (int i = _casterTransform.childCount - 1; i >= 0; i--)
-                {
-                    var c = _casterTransform.GetChild(i);
-                    if (c != null) SafeDestroy.Of(c.gameObject);
-                }
-            }
-
-            // World-rooted spawns (projectiles, etc.) tracked from FireOnce.
-            for (int i = 0; i < _trackedWorldSpawns.Count; i++)
-            {
-                var go = _trackedWorldSpawns[i];
-                if (go != null) SafeDestroy.Of(go);
-            }
-            _trackedWorldSpawns.Clear();
-        }
-
-        private static HashSet<Projectile> SnapshotWorldProjectiles()
-        {
-            var set = new HashSet<Projectile>();
-            foreach (var p in Object.FindObjectsOfType<Projectile>())
-                if (p != null) set.Add(p);
-            return set;
-        }
-
-        // ── Internal — projectile prefab resolution ──────────────────────────────
-
-        private GameObject ResolveProjectilePrefab()
-        {
-            if (_projectilePrefabResolved) return _projectilePrefab;
-            _projectilePrefabResolved = true;
-
-            // Pick the first SpellCaster instance found in the loaded scene; its
-            // serialized ProjectilePrefab is the canonical fireball/iceball/... shell.
-            var caster = Object.FindObjectOfType<SpellCaster>();
-            _projectilePrefab = caster != null ? caster.ProjectilePrefab : null;
-            return _projectilePrefab;
-        }
-
-        // ── Internal — camera framing ────────────────────────────────────────────
-
-        private void UpdateCameraFraming()
-        {
-            if (_camera == null || _casterTransform == null) return;
-
-            // Auto-fit ortho size to the bounds of every renderer under the stage.
-            bool hasBounds = false;
-            var combined = new Bounds(_casterTransform.position, Vector3.zero);
-
-            foreach (var sr in _stageRoot.GetComponentsInChildren<Renderer>())
-            {
-                if (sr == null) continue;
-                var b = sr.bounds;
-                if (b.size.sqrMagnitude < 0.0001f) continue;
-                if (!hasBounds) { combined = b; hasBounds = true; }
-                else combined.Encapsulate(b);
-            }
-
-            // Include tracked world spawns (their renderers are not children of _stageRoot).
-            for (int i = 0; i < _trackedWorldSpawns.Count; i++)
-            {
-                var go = _trackedWorldSpawns[i];
-                if (go == null) continue;
-                foreach (var r in go.GetComponentsInChildren<Renderer>())
-                {
-                    if (r == null) continue;
-                    var b = r.bounds;
-                    if (b.size.sqrMagnitude < 0.0001f) continue;
-                    if (!hasBounds) { combined = b; hasBounds = true; }
-                    else combined.Encapsulate(b);
-                }
-            }
-
-            float orthoSize;
-            Vector3 focalPoint;
-            if (hasBounds)
-            {
-                float halfX = combined.extents.x + BOUNDS_PADDING;
-                float halfY = combined.extents.y + BOUNDS_PADDING;
-                orthoSize  = Mathf.Clamp(Mathf.Max(halfX, halfY), ORTHO_SIZE_MIN, ORTHO_SIZE_MAX);
-                focalPoint = combined.center;
-            }
-            else
-            {
-                orthoSize  = ORTHO_SIZE_DEFAULT;
-                focalPoint = _casterTransform.position;
-            }
-
-            // Apply user zoom on top of auto-fit. Higher zoom = smaller ortho size.
-            // Re-clamp to keep extreme user values from breaking the camera.
-            float zoomed = orthoSize / Mathf.Max(_userZoom, 0.0001f);
-            _camera.orthographicSize   = Mathf.Clamp(zoomed, ORTHO_SIZE_MIN * 0.25f, ORTHO_SIZE_MAX * 4f);
-            _camera.transform.position = new Vector3(focalPoint.x, focalPoint.y, CAMERA_Z);
-        }
-
-        private static float ComputeCycleTime(SpellDefinition s)
-        {
-            bool persistent = s.type == SpellType.Aura
-                           || s.type == SpellType.Puddle
-                           || s.type == SpellType.VortexField
-                           || s.type == SpellType.Wall
-                           || s.type == SpellType.Totem
-                           || s.type == SpellType.SphereMagicShield;
-
-            float t = persistent
-                ? Mathf.Max(s.duration, MIN_PERSISTENT_SECONDS)
-                : Mathf.Max(s.prepareDuration + s.channelDuration + s.lifetime, MIN_CYCLE_SECONDS);
-            return t + CYCLE_TAIL_SECONDS;
-        }
-
         // ── Internal — utils ─────────────────────────────────────────────────────
 
-        private static int ResolvePreviewLayer()
+        internal static int ResolvePreviewLayer()
         {
             int idx = LayerMask.NameToLayer("SpellPreview");
             if (idx < 0)
@@ -418,7 +458,7 @@ namespace Valkur.Gameplay.Spells
             return idx;
         }
 
-        private static void SetLayerRecursive(GameObject root, int layer)
+        internal static void SetLayerRecursive(GameObject root, int layer)
         {
             if (root == null) return;
             root.layer = layer;

@@ -46,6 +46,24 @@ namespace Valkur.Gameplay.Spells
             WireOnClose(_uiRefs.ViewPanelDrag,     "view");
             WireOnClose(_uiRefs.TutorialPanelDrag, "tutorial");
 
+            // ── Table view wiring ────────────────────────────────────────────
+            // Load hidden columns from PlayerPrefs so the user's previous choice
+            // is restored immediately (before the table is built the first time).
+            LoadColumnPrefs();
+
+            // Hand off the two table ScrollRects so the Table partial can build
+            // and refresh without needing access to the UIRefs struct directly.
+            SetTableScrollRects(
+                _uiRefs.SpellsTableHeaderScroll,
+                _uiRefs.SpellsTableBodyScroll,
+                _uiRefs.SpellsTableHeaderContent,
+                _uiRefs.SpellsTableBodyContent);
+
+            // Wire the "Columns" button → column-visibility popup.
+            if (_uiRefs.SpellsColumnsCfgBtn != null)
+                _uiRefs.SpellsColumnsCfgBtn.onClick.AddListener(OpenColumnsConfigPopup);
+            RefreshColumnsCountLabel();
+
             // Wire the View panel's direction-selector callbacks.
             WireViewPanel();
 
@@ -68,7 +86,7 @@ namespace Valkur.Gameplay.Spells
         private void OnSearchChanged(string v)
         {
             _searchFilter = v ?? "";
-            RefreshPicker();
+            RefreshActivePicker();
         }
 
         // ── Dropdown management ──

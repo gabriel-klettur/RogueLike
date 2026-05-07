@@ -38,7 +38,6 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ctx.Caster.position, duration);
 
-            Debug.Log($"[SpellDebug] HealingAura on {ctx.Caster.name}, dur={duration:F1}s, r={radius:F2}, heal={healPerTick}/tick");
         }
     }
 }

@@ -39,7 +39,6 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator(ctx.Caster.position, col, radius * 0.5f, 0.4f);
             }
 
-            Debug.Log($"[SpellDebug] Shield activated on {ctx.Caster.name}, dur={duration:F1}s, radius={radius:F1}");
         }
 
         private static Sprite CreateShieldSprite()
