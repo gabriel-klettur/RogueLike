@@ -120,10 +120,12 @@ namespace Valkur.Core.Rendering
             _profile.name = "DeathGrayscaleProfile";
             _profile.hideFlags = HideFlags.DontSave;
 
-            // ColorAdjustments: full desaturation, slightly darker, modest contrast bump.
+            // ColorAdjustments: slight darkening + contrast for the death mood.
+            // Saturation drop lives in SpiritWorldGrayscale (per-sprite) so altar
+            // buildings + path markers can keep their full colors despite the
+            // post-process pass; a global saturation -100 here would crush them
+            // along with everything else.
             var color = _profile.Add<ColorAdjustments>(overrides: true);
-            color.saturation.overrideState = true;
-            color.saturation.value = -100f;
             color.postExposure.overrideState = true;
             color.postExposure.value = -0.6f;
             color.contrast.overrideState = true;
