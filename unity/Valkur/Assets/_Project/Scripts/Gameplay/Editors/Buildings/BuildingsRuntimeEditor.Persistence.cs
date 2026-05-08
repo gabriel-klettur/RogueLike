@@ -79,6 +79,19 @@ namespace Valkur.Gameplay.Buildings
                     .Where(b => b != null && b.gameObject.activeInHierarchy && b.Template != null)
                     .OrderBy(b => b.InstanceId).ToList();
 
+                // Pre-pass: compute every building's (zone, rel_x, rel_y) and
+                // run a sanity guard BEFORE we touch the JSON. Background: a
+                // catastrophic data-loss incident produced a save where 200+
+                // buildings inside the same zone collapsed onto a handful of
+                // identical (rel_x, rel_y) cells — irreversibly destroying the
+                // map. Whatever the upstream cause was (still under
+                // investigation), a save must NEVER persist a state where
+                // most buildings within a zone share the same coordinates.
+                // We refuse to write disk in that case so the user can recover
+                // by restarting Play Mode and re-loading the on-disk version.
+                var serializedRelX = new int[all.Count];
+                var serializedRelY = new int[all.Count];
+                var positionCounts = new System.Collections.Generic.Dictionary<(string, int, int), int>();
                 int nextId = 1;
                 for (int i = 0; i < all.Count; i++)
                 {
@@ -98,6 +111,27 @@ namespace Valkur.Gameplay.Buildings
                         relX = Mathf.RoundToInt((wx - zd.gridOffset.x) * PPU - effW * 0.5f);
                         relY = Mathf.RoundToInt((zd.gridOffset.y + (zH - 1) - wy) * PPU - effH);
                     }
+                    serializedRelX[i] = relX;
+                    serializedRelY[i] = relY;
+                    var key = (zone, relX, relY);
+                    positionCounts.TryGetValue(key, out int prevCount);
+                    positionCounts[key] = prevCount + 1;
+                }
+
+                if (!ValidatePositionUniqueness(all.Count, positionCounts, out string abortReason))
+                {
+                    Debug.LogError($"[BuildingsEditor] ABORTING save — {abortReason} File NOT written. " +
+                                   "Restart Play Mode to reload the last good on-disk state.");
+                    if (_statusTmp != null) _statusTmp.text = "Save ABORTED — see console.";
+                    return;
+                }
+
+                for (int i = 0; i < all.Count; i++)
+                {
+                    var b = all[i];
+                    int relX = serializedRelX[i];
+                    int relY = serializedRelY[i];
+                    string zone = b.ZoneName ?? "Lobby";
 
                     sb.Append("  {");
                     sb.Append($"\"id\": {b.InstanceId}, ");
@@ -158,7 +192,27 @@ namespace Valkur.Gameplay.Buildings
                 }
                 sb.AppendLine("]");
 
-                File.WriteAllText(path, sb.ToString());
+                // Disk-comparison guard: parse the existing on-disk file (if
+                // any) and refuse to overwrite when the new save would shrink
+                // its unique-position count by more than half WHILE keeping a
+                // similar total entry count. Catches the catastrophic
+                // signature (e.g. 337 buildings → 16 unique positions) without
+                // false-positiving on legitimate "replace map" or fresh test
+                // fixtures where the total entry count drops dramatically.
+                if (!ValidateAgainstOnDisk(path, all.Count, positionCounts.Count, out string deltaReason))
+                {
+                    Debug.LogError($"[BuildingsEditor] ABORTING save — {deltaReason} File NOT written. " +
+                                   "Restart Play Mode to reload the last good on-disk state.");
+                    if (_statusTmp != null) _statusTmp.text = "Save ABORTED — see console.";
+                    return;
+                }
+
+                // Atomic write: serialize to a sibling tmp file first so a
+                // crash or process kill mid-write can never leave the real
+                // file half-written. Use File.Replace where possible — it's
+                // atomic on NTFS and rotates the previous content into a
+                // .prev sidecar we keep as an extra recovery breadcrumb.
+                AtomicWriteJson(path, sb.ToString());
                 PruneColliderInstanceStore(all);
                 WriteColliderStoresToDisk(dir);
 #if UNITY_EDITOR
@@ -202,6 +256,134 @@ namespace Valkur.Gameplay.Buildings
             }
         }
         private const string INSTANCES_REL_PATH = "StreamingAssets/Buildings/buildings_instances.json";
+
+        // Catastrophic-collapse threshold: the highest number of buildings we
+        // ever expect to see legitimately stacked on the same (zone, rel_x,
+        // rel_y) tuple. Real maps have at most 1 — overlapping decorations
+        // might push it to 2-3. Anything at or above this is corruption.
+        private const int MAX_BUILDINGS_PER_POSITION = 5;
+
+        // Disk-state regression detector. Reads the existing on-disk file
+        // (if any) and counts both its total entries AND its unique
+        // (zone, rel_x, rel_y) tuples. If we're about to write a similar
+        // total but with dramatically fewer unique positions, that's the
+        // catastrophic-collapse signature and we refuse the write.
+        // Skips when totals diverge significantly (legitimate "replace map"
+        // operations or test fixtures using a different starting count).
+        private static bool ValidateAgainstOnDisk(string path, int newTotalEntries, int newUniquePositionCount, out string reason)
+        {
+            reason = null;
+            if (!File.Exists(path)) return true;
+            int onDiskTotal, onDiskUnique;
+            try
+            {
+                CountOnDiskStats(path, out onDiskTotal, out onDiskUnique);
+            }
+            catch
+            {
+                // Don't block a save just because the on-disk file is
+                // unparseable — that scenario is exactly when a fresh save
+                // is most needed. The other guards still protect the write.
+                return true;
+            }
+            // Skip the comparison on tiny on-disk fixtures (early development,
+            // empty maps) where ratio-based thresholds have no meaning.
+            if (onDiskUnique < 20) return true;
+            // Skip when the new save shrinks the entry count by more than half:
+            // that's a legitimate "replace map" or test scenario, not the
+            // collapse signature (which preserves the total).
+            if (newTotalEntries * 2 < onDiskTotal) return true;
+            if (newUniquePositionCount * 2 < onDiskUnique)
+            {
+                reason = $"about to write {newUniquePositionCount} unique positions for {newTotalEntries} buildings, but on-disk file has {onDiskUnique} unique for {onDiskTotal}. Save shrinks the map by >50% with similar total — collapse signature.";
+                return false;
+            }
+            return true;
+        }
+
+        private static void CountOnDiskStats(string path, out int total, out int uniquePositions)
+        {
+            total = 0;
+            uniquePositions = 0;
+            string json = File.ReadAllText(path);
+            var raw = Valkur.Gameplay.World.MiniJsonRuntime.Deserialize(json) as System.Collections.Generic.List<object>;
+            if (raw == null) return;
+            var seen = new System.Collections.Generic.HashSet<(string, long, long)>();
+            foreach (var item in raw)
+            {
+                var dict = item as System.Collections.Generic.Dictionary<string, object>;
+                if (dict == null) continue;
+                total++;
+                string zone = dict.TryGetValue("zone", out var zo) ? (zo as string ?? "") : "";
+                long relX = dict.TryGetValue("rel_x", out var rx) && rx is long lx ? lx : 0;
+                long relY = dict.TryGetValue("rel_y", out var ry) && ry is long ly ? ly : 0;
+                seen.Add((zone, relX, relY));
+            }
+            uniquePositions = seen.Count;
+        }
+
+        // Atomic write helper. Strategy:
+        //   1. Write the new content to <path>.tmp.
+        //   2. If <path> exists, use File.Replace to swap the two atomically
+        //      (NTFS-atomic on Windows) and divert the previous content to
+        //      <path>.prev as a quick-recovery sidecar.
+        //   3. If <path> doesn't exist, just rename .tmp → path.
+        // Falls back to a non-atomic delete+move if File.Replace fails — the
+        // failure mode there is identical to the previous (already-shipped)
+        // direct-WriteAllText behaviour, so we never regress.
+        private static void AtomicWriteJson(string path, string content)
+        {
+            string tmpPath  = path + ".tmp";
+            string prevPath = path + ".prev";
+            File.WriteAllText(tmpPath, content);
+            try
+            {
+                if (File.Exists(path))
+                    File.Replace(tmpPath, path, prevPath, ignoreMetadataErrors: true);
+                else
+                    File.Move(tmpPath, path);
+            }
+            catch
+            {
+                // Defensive fallback for filesystems where File.Replace isn't
+                // supported (some non-NTFS network mounts). Two-step swap is
+                // still safer than overwriting in place because the .tmp file
+                // contains the full new content before we touch the original.
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmpPath, path);
+            }
+        }
+
+        // Internal — pure function so it's exercised cleanly by the regression
+        // test in BuildingsSaveFormatTests. Returns false (and a human-readable
+        // reason) when the save state shows catastrophic position collapse.
+        internal static bool ValidatePositionUniqueness(
+            int totalBuildings,
+            System.Collections.Generic.Dictionary<(string zone, int relX, int relY), int> positionCounts,
+            out string reason)
+        {
+            // Absolute guard: any single (zone, position) tuple with too many
+            // buildings is almost certainly the corruption signature.
+            foreach (var kv in positionCounts)
+            {
+                if (kv.Value >= MAX_BUILDINGS_PER_POSITION)
+                {
+                    reason = $"{kv.Value} buildings collapsed onto zone='{kv.Key.zone}' rel=({kv.Key.relX},{kv.Key.relY}).";
+                    return false;
+                }
+            }
+            // Relative guard: catches lower-multiplicity but global collapse
+            // (e.g. 4× per position across 16 zones from a 200-building map).
+            // Skip on tiny fixtures where a 50% threshold has no statistical
+            // meaning.
+            if (totalBuildings >= 20 && positionCounts.Count * 2 < totalBuildings)
+            {
+                reason = $"only {positionCounts.Count} unique positions for {totalBuildings} buildings (<50%).";
+                return false;
+            }
+            reason = null;
+            return true;
+        }
 
         private void ReloadFromJson()
         {

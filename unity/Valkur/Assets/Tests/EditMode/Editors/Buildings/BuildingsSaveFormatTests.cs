@@ -5,6 +5,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.World;
@@ -36,6 +37,13 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         public void TearDown()
         {
             LogAssert.ignoreFailingMessages = false;
+
+            // Ensure any MapEditorActiveSlot overrides left by this or a prior
+            // test fixture are cleared so they cannot pollute subsequent test runs
+            // or manual Play mode sessions (Domain Reload is OFF in this project).
+            Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(null);
+            Valkur.Core.MapEditorActiveSlot.SetStreamingRootOverrideForTests(null);
+            Valkur.Core.MapEditorActiveSlot.SetPersistentRootOverrideForTests(null);
 
             foreach (var kvp in _fileBackups)
             {
@@ -622,6 +630,190 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
             Object.DestroyImmediate(zm.gameObject);
             Object.DestroyImmediate(editor.gameObject);
             Object.DestroyImmediate(tmpl);
+        }
+
+        // ── Regression: each building must retain its own position after save ─────
+        //
+        // Corruption pattern observed empirically (May 2026): after moving 2
+        // buildings and saving, every building inside a given zone received the
+        // SAME rel_x/rel_y — collapsing 337 distinct positions to 16 (one per
+        // zone). The bug would be caused by the save loop reading position from a
+        // shared/cached value (e.g. _activeBuilding.transform.position) instead
+        // of from the per-iteration BuildingObject `b`.
+        //
+        // This test deliberately places N buildings with DIFFERENT world positions
+        // in the SAME zone and asserts that each serialises to a DIFFERENT rel_x.
+        // It must FAIL if the save loop accidentally uses a shared position, and
+        // PASS only when every building's individual transform is read.
+
+        [Test]
+        public void SaveJson_MultipleBuildingsInSameZone_EachHasDistinctRelPosition()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var editor = CreateSingleton<BuildingsRuntimeEditor>("TestEditor");
+            var zm     = MakeZoneManager(); // Lobby at gridOffset=(0,0)
+
+            // Three templates with DIFFERENT widths so effW varies per building.
+            var tmpl32  = MakeTemplate(id: 1, origW: 32, origH: 32);
+            var tmpl64  = MakeTemplate(id: 2, origW: 64, origH: 64);
+            var tmpl128 = MakeTemplate(id: 3, origW: 128, origH: 128);
+
+            // Place buildings at clearly distinct world X positions.
+            //   B1 at x=2 → relX = (2-0)*32 - 32/2  = 64 - 16 = 48
+            //   B2 at x=5 → relX = (5-0)*32 - 64/2  = 160 - 32 = 128
+            //   B3 at x=9 → relX = (9-0)*32 - 128/2 = 288 - 64 = 224
+            var bObj1 = MakeBuildingInScene("B1", tmpl32,  instanceId: 1, zone: "Lobby");
+            var bObj2 = MakeBuildingInScene("B2", tmpl64,  instanceId: 2, zone: "Lobby");
+            var bObj3 = MakeBuildingInScene("B3", tmpl128, instanceId: 3, zone: "Lobby");
+
+            bObj1.transform.position = new Vector3(2f, 3f, 0f);
+            bObj2.transform.position = new Vector3(5f, 3f, 0f);
+            bObj3.transform.position = new Vector3(9f, 3f, 0f);
+
+            // Simulate having dragged bObj2 (the "active" building) to its current
+            // position — exactly the scenario that triggered the empirical corruption.
+            SetField(editor, "_activeBuilding", bObj2);
+
+            string json = InvokeAndReadJson(editor);
+
+            Assert.IsNotNull(json, "SaveInstancesToJson must write a file.");
+
+            // Parse all rel_x values and verify they are distinct.
+            // A collapse bug would produce the same rel_x for all three entries.
+            // The JSON format is compact (all fields on one line), so we find the
+            // "rel_x": token and then read digits until the next non-digit character.
+            var relXValues = new System.Collections.Generic.List<int>();
+            const string RelXToken = "\"rel_x\": ";
+            int searchFrom = 0;
+            while (true)
+            {
+                int idx = json.IndexOf(RelXToken, searchFrom, System.StringComparison.Ordinal);
+                if (idx < 0) break;
+                int numStart = idx + RelXToken.Length;
+                // Handle optional leading minus sign.
+                int numEnd = numStart;
+                if (numEnd < json.Length && json[numEnd] == '-') numEnd++;
+                while (numEnd < json.Length && char.IsDigit(json[numEnd])) numEnd++;
+                if (int.TryParse(json.Substring(numStart, numEnd - numStart), out int rx))
+                    relXValues.Add(rx);
+                searchFrom = numEnd;
+            }
+
+            Assert.AreEqual(3, relXValues.Count,
+                "Exactly 3 rel_x values expected (one per building).");
+
+            // Verify the EXPECTED per-building values — guards against any
+            // formula regression as well as the shared-position collapse bug.
+            Assert.AreEqual(48,  relXValues[0], "B1 (w=32) at x=2 must produce rel_x=48.");
+            Assert.AreEqual(128, relXValues[1], "B2 (w=64) at x=5 must produce rel_x=128.");
+            Assert.AreEqual(224, relXValues[2], "B3 (w=128) at x=9 must produce rel_x=224.");
+
+            // Explicit uniqueness assertion — the regression guard.
+            Assert.AreEqual(3, new System.Collections.Generic.HashSet<int>(relXValues).Count,
+                "All three buildings in the same zone must have DISTINCT rel_x values. " +
+                "A shared-position collapse bug (reading _activeBuilding instead of b) " +
+                "would cause all three to share the same value.");
+
+            Object.DestroyImmediate(zm.gameObject);
+            Object.DestroyImmediate(editor.gameObject);
+            Object.DestroyImmediate(tmpl32);
+            Object.DestroyImmediate(tmpl64);
+            Object.DestroyImmediate(tmpl128);
+        }
+
+        // ── ValidatePositionUniqueness — defensive sanity guard ─────────────
+        //
+        // These tests pin down the disk-protection guard added after a
+        // catastrophic data-loss incident: 200+ buildings inside a single
+        // zone collapsed onto 16 unique (rel_x, rel_y) tuples, irreversibly
+        // corrupting buildings_instances.json. The Save now runs this check
+        // BEFORE the disk write and refuses to persist a collapsed state.
+
+        private static bool InvokeValidatePositionUniqueness(
+            int totalBuildings,
+            Dictionary<(string zone, int relX, int relY), int> positionCounts,
+            out string reason)
+        {
+            var method = typeof(BuildingsRuntimeEditor).GetMethod(
+                "ValidatePositionUniqueness",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method, "ValidatePositionUniqueness method not found on BuildingsRuntimeEditor.");
+            var args = new object[] { totalBuildings, positionCounts, null };
+            bool result = (bool)method.Invoke(null, args);
+            reason = (string)args[2];
+            return result;
+        }
+
+        [Test]
+        public void ValidatePositionUniqueness_AcceptsHealthyState()
+        {
+            // 337 buildings spread across 337 unique tuples — the on-disk
+            // shape that survived the user's actual bug session.
+            var counts = new Dictionary<(string, int, int), int>();
+            for (int i = 0; i < 337; i++)
+                counts[("Lobby", i, i)] = 1;
+
+            bool ok = InvokeValidatePositionUniqueness(337, counts, out string reason);
+
+            Assert.IsTrue(ok, $"Healthy state should validate, got reason: {reason}");
+            Assert.IsNull(reason);
+        }
+
+        [Test]
+        public void ValidatePositionUniqueness_RejectsCorruptionSignature()
+        {
+            // The exact corruption pattern observed: 337 buildings collapsed
+            // onto 16 unique positions, with 67 stacked at one of them.
+            var counts = new Dictionary<(string, int, int), int>
+            {
+                {("Lobby",       0, 0), 47},
+                {("Forest",      0, 0), 67},
+                {("zone_100_50", 0, 0), 29},
+                {("zone_100_100",0, 0), 47},
+                {("dungeon",     0, 0), 10},
+            };
+            for (int i = 5; i < 16; i++) counts[($"zone_{i}", 0, 0)] = 12; // fill to 16 zones
+
+            bool ok = InvokeValidatePositionUniqueness(337, counts, out string reason);
+
+            Assert.IsFalse(ok, "Corrupt state must be rejected.");
+            StringAssert.Contains("buildings collapsed", reason ?? "",
+                "Reason should mention the building collapse.");
+        }
+
+        [Test]
+        public void ValidatePositionUniqueness_RejectsAbsoluteThreshold()
+        {
+            // Small map but a single position has 5 buildings stacked —
+            // crosses the absolute threshold even though uniqueness is fine.
+            var counts = new Dictionary<(string, int, int), int>
+            {
+                {("Lobby", 100, 200), 5},
+                {("Lobby", 300, 400), 1},
+                {("Lobby", 500, 600), 1},
+            };
+
+            bool ok = InvokeValidatePositionUniqueness(7, counts, out string reason);
+
+            Assert.IsFalse(ok, "5 stacked at one position must trigger absolute guard.");
+            StringAssert.Contains("rel=(100,200)", reason ?? "");
+        }
+
+        [Test]
+        public void ValidatePositionUniqueness_AllowsSmallFixturesWithoutFalsePositive()
+        {
+            // 4 buildings, 2 unique positions (50% — below the 50% relative
+            // threshold) but total < 20, so the relative guard must skip
+            // and allow the save. EditMode test fixtures often have <20.
+            var counts = new Dictionary<(string, int, int), int>
+            {
+                {("Lobby", 0, 0), 2},
+                {("Lobby", 1, 1), 2},
+            };
+
+            bool ok = InvokeValidatePositionUniqueness(4, counts, out string reason);
+
+            Assert.IsTrue(ok, $"Small fixtures must skip the relative guard, got: {reason}");
         }
     }
 }
