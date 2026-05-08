@@ -37,7 +37,12 @@ namespace Valkur.Gameplay
                 sr.sortingOrder = SortingConfig.Z_SKY;
 
                 _fireballPrefab.AddComponent<Projectile>();
-                _fireballPrefab.AddComponent<FireballVisual>();
+                // No procedural SpriteRenderer-based visual is attached: ball
+                // projectiles (fireball / iceball / lightball / darkball) render
+                // exclusively through ParticleProjectileVisual, which spawns
+                // the spell's vfxPreset particle system as a parented trail.
+                // ProjectileExecutor.AttachVisual installs that component
+                // per-spawn so the prefab stays element-agnostic.
                 _fireballPrefab.layer = ProjectileLayer;
 
                 // DontDestroyOnLoad is play-mode only; in EditMode tests

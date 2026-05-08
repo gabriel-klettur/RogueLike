@@ -1,27 +1,31 @@
-using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Epic procedural fireball visual.
-    /// Renders a multi-layer flame (white-hot center + hot core + glow + outer halo)
-    /// with flicker, motion stretch, ghost trail, ember emission, and a dynamic
-    /// URP 2D point light. On impact, spawns a shockwave + flash + radial ember burst
-    /// + light pulse + camera shake (handled by FireballImpactFX).
+    /// Epic procedural fireball visual — orchestrator partial.
     ///
-    /// All visuals are procedural (no sprite assets required) so it works without art
-    /// dependencies. URP/Light2D usage is via reflection so the assembly stays decoupled
-    /// from the URP runtime (same pattern as DayNightCycle / WorldLightLoader).
+    /// Renders a multi-layer flame (white-hot center + hot core + glow + outer halo)
+    /// with flicker, motion stretch, ghost/trail, ember emission, dynamic URP 2D
+    /// point light, a continuous "ball of particles" core PS, orbiting sparks PS,
+    /// and a TrailRenderer fire trail. On impact, spawns FireballImpactFX.
+    ///
+    /// All visuals are procedural (no sprite assets required). URP/Light2D usage is
+    /// via reflection so the assembly stays decoupled from the URP runtime.
+    ///
+    /// Pooling contract (Domain Reload OFF):
+    ///   • Awake  — create all child GameObjects / Components once per pool slot.
+    ///   • OnEnable  — reset state, clear PS / trail for the new shot.
+    ///   • OnDisable — stop PS, clear trail, destroy transient light.
     /// </summary>
-    public class FireballVisual : MonoBehaviour, IProjectileVisual
+    public partial class FireballVisual : MonoBehaviour, IProjectileVisual
     {
         // ── Tuning ────────────────────────────────────────────────────
-        private const float CoreScale       = 0.40f;
+        private const float CoreScale       = 0.55f;   // bumped from 0.40 — orb must dominate
         private const float GlowScale       = 0.95f;
         private const float HaloScale       = 1.70f;
-        private const float HotCoreScale    = 0.20f;
+        private const float HotCoreScale    = 0.32f;   // bumped from 0.20 — white-hot center more prominent
         private const int   GhostCount      = 5;
         private const float GhostSpacing    = 0.10f;
         private const float EmberInterval   = 0.018f;
@@ -29,6 +33,31 @@ namespace Valkur.Gameplay.Spells
         private const float LightOuterRadius = 2.6f;
         private const float LightInnerRadius = 0.4f;
         private const float LightIntensity   = 2.4f;
+
+        // Core particle shimmer (now Local-space, packed inside the orb — gives texture
+        // to the ball without spraying particles outward).
+        private const float CoreParticleEmitRate    = 80f;
+        private const float CoreParticleLifetimeMin = 0.10f;
+        private const float CoreParticleLifetimeMax = 0.20f;
+
+        // Orbiting sparks (clearly separate from core, fast tangential rotation).
+        private const float SparkOrbitEmitRate      = 8f;
+        private const float SparkOrbitRadiusMul     = 1.2f;   // × core radius
+        private const float SparkOrbitalSpeedMin    = 3.0f;   // rad/s — was 1.5
+        private const float SparkOrbitalSpeedMax    = 5.0f;   // rad/s — was 3.0
+
+        // Trail — narrower so it doesn't eclipse the orb.
+        private const float TrailTime               = 0.30f;
+        private const float TrailStartWidthMul      = 0.25f;  // × GlowScale — was 0.5
+
+        // ── Inspector toggles ─────────────────────────────────────────
+        [SerializeField]
+        [Tooltip("When true the legacy ghost-sprite trail runs instead of TrailRenderer. Disable to use the new fire trail.")]
+        private bool _useLegacyGhostTrail = false;
+
+        [SerializeField]
+        [Tooltip("When true the TrailRenderer fire trail is active (ignored if useLegacyGhostTrail is true).")]
+        private bool _useNewTrail = true;
 
         // ── Layer renderers ───────────────────────────────────────────
         private SpriteRenderer _hotCoreSr;
@@ -49,25 +78,6 @@ namespace Valkur.Gameplay.Spells
         private GameObject _light2DGo;
         private Component _light2DComponent;
 
-        // ── Shared procedural assets ──────────────────────────────────
-        private static Sprite _coreSprite;
-        private static Sprite _glowSprite;
-        private static Sprite _haloSprite;
-        private static Sprite _hotCoreSprite;
-        private static Sprite _emberSprite;
-        private static Sprite _ringSprite;
-        private static Material _unlitMaterial;
-
-        // ── URP Light2D reflection (shared) ───────────────────────────
-        private static System.Type _light2DType;
-        private static PropertyInfo _l2dLightType;
-        private static PropertyInfo _l2dColor;
-        private static PropertyInfo _l2dIntensity;
-        private static PropertyInfo _l2dOuter;
-        private static PropertyInfo _l2dInner;
-        private static PropertyInfo _l2dFalloff;
-        private static bool _l2dResolved;
-
         // ── Public API ────────────────────────────────────────────────
 
         /// <summary>Spawn the epic impact FX at the given world position.</summary>
@@ -85,14 +95,18 @@ namespace Valkur.Gameplay.Spells
             EnsureSharedAssets();
             ResolveLight2D();
             BuildVisual();
+            BuildCoreParticles();
+            BuildOrbitingSparks();
+            BuildTrail();
             _seed = Random.Range(0f, 100f);
         }
 
         private void OnEnable()
         {
-            _impacted = false;
+            _impacted   = false;
             _emberTimer = 0f;
-            _lastPos = transform.position;
+            _lastPos    = transform.position;
+            ResetParticlesOnEnable();
         }
 
         private void Update()
@@ -106,7 +120,6 @@ namespace Valkur.Gameplay.Spells
             float flickerHalo = 1f + 0.30f * Mathf.Sin(t *  9f + 1.1f);
 
             // Motion stretch: scale flame along travel axis when projectile moves.
-            // Projectile rotates the root so +X (transform.right) is travel direction.
             Vector3 pos = transform.position;
             Vector3 delta = pos - _lastPos;
             float speed = delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
@@ -130,8 +143,8 @@ namespace Valkur.Gameplay.Spells
             if (_hotCoreSr != null)
                 _hotCoreSr.transform.localScale = Vector3.one * HotCoreScale * flickerHot;
 
-            // Ghost trail behind the core (local -X axis = behind, since rotation aligns +X to direction)
-            if (_ghostSrs != null && _ghostSrs.Length > 0)
+            // Ghost trail (legacy path — disabled by default; kept for designer fallback)
+            if (_useLegacyGhostTrail && _ghostSrs != null && _ghostSrs.Length > 0)
             {
                 for (int i = 0; i < _ghostSrs.Length; i++)
                 {
@@ -155,21 +168,18 @@ namespace Valkur.Gameplay.Spells
             }
 
             // Light2D flicker
-            if (_light2DComponent != null && _l2dIntensity != null)
-            {
-                try
-                {
-                    float intensity = LightIntensity * (0.85f + 0.15f * Mathf.Sin(t * 24f) + 0.10f * Mathf.Sin(t * 13f));
-                    _l2dIntensity.SetValue(_light2DComponent, intensity);
-                }
-                catch { /* reflection safety */ }
-            }
+            TickLightFlicker(t);
+
+            // Core-particle inherit-velocity hook
+            TickCoreParticleVelocity(delta);
 
             _lastPos = pos;
         }
 
         private void OnDisable()
         {
+            StopParticlesOnDisable();
+
             // Pool-safe cleanup of the dynamic light when projectile is despawned.
             if (_light2DGo != null)
             {
@@ -179,20 +189,24 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
-        // ── Build ─────────────────────────────────────────────────────
+        // ── Build (sprites + light) ───────────────────────────────────
 
         private void BuildVisual()
         {
             int order = SortingConfig.Z_SKY;
 
-            _haloSr   = CreateChild("Halo",    _haloSprite,    _haloColor,  HaloScale,    order + 2);
-            _glowSr   = CreateChild("Glow",    _glowSprite,    _glowColor,  GlowScale,    order + 3);
-            _coreSr   = CreateChild("Core",    _coreSprite,    _coreColor,  CoreScale,    order + 5);
-            _hotCoreSr = CreateChild("HotCore", _hotCoreSprite, _hotColor,  HotCoreScale, order + 6);
+            _haloSr    = CreateChild("Halo",    SharedHaloSprite,    _haloColor,  HaloScale,    order + 2);
+            _glowSr    = CreateChild("Glow",    SharedGlowSprite,    _glowColor,  GlowScale,    order + 3);
+            _coreSr    = CreateChild("Core",    SharedCoreSprite,    _coreColor,  CoreScale,    order + 5);
+            _hotCoreSr = CreateChild("HotCore", SharedHotCoreSprite, _hotColor,   HotCoreScale, order + 6);
 
             _ghostSrs = new SpriteRenderer[GhostCount];
             for (int i = 0; i < GhostCount; i++)
-                _ghostSrs[i] = CreateChild($"Ghost{i}", _glowSprite, _glowColor, GlowScale, order + 1);
+            {
+                _ghostSrs[i] = CreateChild($"Ghost{i}", SharedGlowSprite, _glowColor, GlowScale, order + 1);
+                // Hidden by default; designer can re-enable via _useLegacyGhostTrail
+                _ghostSrs[i].enabled = _useLegacyGhostTrail;
+            }
 
             // Hide the placeholder root SpriteRenderer (added by ProjectilePrefabFactory).
             var rootSr = GetComponent<SpriteRenderer>();
@@ -206,44 +220,14 @@ namespace Valkur.Gameplay.Spells
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.localPosition = Vector3.zero;
-            go.transform.localScale = Vector3.one * scale;
+            go.transform.localScale    = Vector3.one * scale;
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.color = color;
+            sr.sprite           = sprite;
+            sr.color            = color;
             sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            sr.sortingOrder = order;
-            sr.material = _unlitMaterial;
+            sr.sortingOrder     = order;
+            sr.material         = SharedUnlitMaterial;
             return sr;
-        }
-
-        private void CreateDynamicLight()
-        {
-            if (_light2DType == null) return;
-
-            _light2DGo = new GameObject("FireballLight");
-            _light2DGo.transform.SetParent(transform, false);
-            _light2DGo.transform.localPosition = Vector3.zero;
-
-            try
-            {
-                _light2DComponent = _light2DGo.AddComponent(_light2DType);
-                if (_l2dLightType != null)
-                {
-                    var enumType = _l2dLightType.PropertyType;
-                    _l2dLightType.SetValue(_light2DComponent, System.Enum.ToObject(enumType, 2)); // 2 = Point
-                }
-                if (_l2dColor != null)     _l2dColor.SetValue(_light2DComponent, new Color(1f, 0.55f, 0.15f, 1f));
-                if (_l2dIntensity != null) _l2dIntensity.SetValue(_light2DComponent, LightIntensity);
-                if (_l2dOuter != null)     _l2dOuter.SetValue(_light2DComponent, LightOuterRadius);
-                if (_l2dInner != null)     _l2dInner.SetValue(_light2DComponent, LightInnerRadius);
-                if (_l2dFalloff != null)   _l2dFalloff.SetValue(_light2DComponent, 0.9f);
-            }
-            catch
-            {
-                if (_light2DGo != null) Destroy(_light2DGo);
-                _light2DGo = null;
-                _light2DComponent = null;
-            }
         }
 
         private void SpawnEmber()
@@ -251,146 +235,20 @@ namespace Valkur.Gameplay.Spells
             var go = new GameObject("Ember");
             go.transform.position = transform.position;
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = _emberSprite;
+            sr.sprite           = SharedEmberSprite;
             sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            sr.sortingOrder = SortingConfig.Z_SKY + 4;
-            sr.material = _unlitMaterial;
+            sr.sortingOrder     = SortingConfig.Z_SKY + 4;
+            sr.material         = SharedUnlitMaterial;
 
             float h = Random.value;
             sr.color = Color.Lerp(new Color(1f, 0.95f, 0.55f, 1f),
                                   new Color(1f, 0.40f, 0.10f, 1f), h);
 
-            // Velocity: backward (-X local) plus jitter
-            Vector2 back = -(Vector2)transform.right;
+            Vector2 back   = -(Vector2)transform.right;
             Vector2 jitter = Random.insideUnitCircle * 1.2f;
-            Vector2 vel = back * Random.Range(0.5f, 1.6f) + jitter;
+            Vector2 vel    = back * Random.Range(0.5f, 1.6f) + jitter;
             go.AddComponent<FireballEmber>().Init(vel, EmberLifetime, Random.Range(0.06f, 0.14f));
         }
-
-        // ── Procedural sprite generation ──────────────────────────────
-
-        private static void EnsureSharedAssets()
-        {
-            if (_coreSprite == null)    _coreSprite    = MakeRadial(48, CorePixel);
-            if (_glowSprite == null)    _glowSprite    = MakeRadial(96, GlowPixel);
-            if (_haloSprite == null)    _haloSprite    = MakeRadial(128, HaloPixel);
-            if (_hotCoreSprite == null) _hotCoreSprite = MakeRadial(32, HotCorePixel);
-            if (_emberSprite == null)   _emberSprite   = MakeRadial(16, EmberPixel);
-            if (_ringSprite == null)    _ringSprite    = MakeRadial(128, RingPixel);
-
-            if (_unlitMaterial == null)
-            {
-                var sh = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                         ?? Shader.Find("Sprites/Default");
-                _unlitMaterial = new Material(sh);
-            }
-        }
-
-        internal static Material SharedUnlitMaterial { get { EnsureSharedAssets(); return _unlitMaterial; } }
-        internal static Sprite SharedGlowSprite     { get { EnsureSharedAssets(); return _glowSprite; } }
-        internal static Sprite SharedRingSprite     { get { EnsureSharedAssets(); return _ringSprite; } }
-        internal static Sprite SharedEmberSprite    { get { EnsureSharedAssets(); return _emberSprite; } }
-        internal static Sprite SharedHotCoreSprite  { get { EnsureSharedAssets(); return _hotCoreSprite; } }
-
-        private static Sprite MakeRadial(int size, System.Func<float, Color> fn)
-        {
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            var px = new Color[size * size];
-            float c = size * 0.5f;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = (x - c + 0.5f) / c;
-                    float dy = (y - c + 0.5f) / c;
-                    float d = Mathf.Sqrt(dx * dx + dy * dy);
-                    px[y * size + x] = fn(d);
-                }
-            }
-            tex.SetPixels(px);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-        }
-
-        private static Color CorePixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float a = Mathf.Pow(1f - d, 1.6f);
-            float white = Mathf.Pow(1f - d, 0.6f);
-            return new Color(1f, Mathf.Lerp(0.55f, 1f, white), Mathf.Lerp(0.10f, 0.85f, white), a);
-        }
-
-        private static Color GlowPixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float a = Mathf.Pow(1f - d, 2.4f) * 0.85f;
-            return new Color(1f, 0.42f, 0.06f, a);
-        }
-
-        private static Color HaloPixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float a = Mathf.Pow(1f - d, 3.2f) * 0.55f;
-            return new Color(1f, 0.22f, 0.03f, a);
-        }
-
-        private static Color HotCorePixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float a = Mathf.Pow(1f - d, 1.1f);
-            float white = Mathf.Pow(1f - d, 0.4f);
-            return new Color(1f, Mathf.Lerp(0.85f, 1f, white), Mathf.Lerp(0.55f, 1f, white), a);
-        }
-
-        private static Color EmberPixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float a = Mathf.Pow(1f - d, 1.8f);
-            return new Color(1f, 0.7f, 0.25f, a);
-        }
-
-        private static Color RingPixel(float d)
-        {
-            if (d > 1f) return Color.clear;
-            float ringPos = 0.78f;
-            float thickness = 0.18f;
-            float diff = Mathf.Abs(d - ringPos);
-            float a = Mathf.Clamp01(1f - diff / thickness);
-            a = Mathf.Pow(a, 1.6f);
-            return new Color(1f, 0.55f, 0.15f, a);
-        }
-
-        // ── Light2D reflection ────────────────────────────────────────
-
-        private static void ResolveLight2D()
-        {
-            if (_l2dResolved) return;
-            _l2dResolved = true;
-            _light2DType = System.Type.GetType(
-                "UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            if (_light2DType == null) return;
-
-            var flags = BindingFlags.Public | BindingFlags.Instance;
-            _l2dLightType = _light2DType.GetProperty("lightType", flags);
-            _l2dColor     = _light2DType.GetProperty("color", flags);
-            _l2dIntensity = _light2DType.GetProperty("intensity", flags);
-            _l2dOuter     = _light2DType.GetProperty("pointLightOuterRadius", flags);
-            _l2dInner     = _light2DType.GetProperty("pointLightInnerRadius", flags);
-            _l2dFalloff   = _light2DType.GetProperty("falloffIntensity", flags);
-        }
-
-        // Expose Light2D reflection to FireballImpactFX without duplicating the lookup.
-        internal static System.Type GetLight2DType()                  { ResolveLight2D(); return _light2DType; }
-        internal static PropertyInfo GetLight2DLightTypeProp()        { ResolveLight2D(); return _l2dLightType; }
-        internal static PropertyInfo GetLight2DColorProp()            { ResolveLight2D(); return _l2dColor; }
-        internal static PropertyInfo GetLight2DIntensityProp()        { ResolveLight2D(); return _l2dIntensity; }
-        internal static PropertyInfo GetLight2DOuterProp()            { ResolveLight2D(); return _l2dOuter; }
-        internal static PropertyInfo GetLight2DInnerProp()            { ResolveLight2D(); return _l2dInner; }
-        internal static PropertyInfo GetLight2DFalloffProp()          { ResolveLight2D(); return _l2dFalloff; }
     }
 
     /// <summary>
@@ -407,8 +265,8 @@ namespace Valkur.Gameplay.Spells
 
         public void Init(Vector2 velocity, float lifetime, float scale)
         {
-            _vel = velocity;
-            _life = Mathf.Max(0.05f, lifetime);
+            _vel   = velocity;
+            _life  = Mathf.Max(0.05f, lifetime);
             _scale = scale;
             transform.localScale = Vector3.one * _scale;
             _sr = GetComponent<SpriteRenderer>();
@@ -421,7 +279,7 @@ namespace Valkur.Gameplay.Spells
             float t = _age / _life;
             if (t >= 1f) { Destroy(gameObject); return; }
 
-            _vel *= 1f - 2.5f * dt;
+            _vel   *= 1f - 2.5f * dt;
             _vel.y += 1.6f * dt; // heat rises
             transform.position += (Vector3)(_vel * dt);
 
@@ -430,7 +288,7 @@ namespace Valkur.Gameplay.Spells
             if (_sr != null)
             {
                 var c = _sr.color;
-                c.a = (1f - t) * (1f - t);
+                c.a    = (1f - t) * (1f - t);
                 _sr.color = c;
             }
         }

@@ -45,10 +45,13 @@ namespace Valkur.Gameplay.Spells
                 go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
             go.SetActive(true);
 
-            // Attach the correct procedural visual for this element. Idempotent: if the
-            // prefab already has the right component (e.g. fireball comes pre-configured)
-            // we don't add another one.
-            AttachElementalVisual(go, ctx.Spell);
+            // Ball projectiles (fireball / iceball / lightball / darkball — the
+            // only SpellType.Projectile entries in the catalog) render exclusively
+            // through the spell's vfxPreset particle trail. AttachVisual installs
+            // ParticleProjectileVisual on the pooled projectile and stripps any
+            // legacy SpriteRenderer-based rig left over from earlier prefab
+            // configurations.
+            AttachVisual(go, ctx.Spell);
 
             var proj = go.GetComponent<Projectile>();
             if (proj != null)
@@ -94,16 +97,19 @@ namespace Valkur.Gameplay.Spells
                 }
             }
 
-            // Apply particle color tint to sprite
+            // Apply particle color tint to sprite (only meaningful for legacy
+            // sprite-driven projectiles; ParticleProjectileVisual hides the
+            // root SpriteRenderer so this is a no-op for ball projectiles).
             if (ctx.Spell.particleColor != Color.white)
             {
                 var sr = go.GetComponentInChildren<SpriteRenderer>();
                 if (sr != null) sr.color = ctx.Spell.particleColor;
             }
 
-            // VFX: spawn muzzle flash at caster
-            // NOTE: vfxPreset (trail) is handled by FireballVisual on the projectile itself.
-            // impactPreset is applied at impact position via Projectile.Expire().
+            // VFX: spawn muzzle flash at caster.
+            // NOTE: vfxPreset (trail) is handled by ParticleProjectileVisual,
+            // which spawns the preset and parents it to the projectile.
+            // impactPreset is applied at impact position via Projectile.OnExpire().
             var vfxService = ServiceLocator.Get<IVFXService>();
             if (vfxService != null)
             {
@@ -156,71 +162,66 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
-        /// Attach the element-specific procedural visual for this spell.
-        /// Reads <see cref="SpellDefinition.element"/> first (data-driven path
-        /// that lets designers add new spells without recompiling), falls
-        /// back to the legacy spellKey switch for spells whose JSON imports
-        /// haven't been re-run with the element column populated.
+        /// Install <see cref="ParticleProjectileVisual"/> on a freshly spawned
+        /// (or pool-recycled) ball projectile and re-arm it with the current
+        /// spell's <c>vfxPreset</c>. The visual is particles-only — the trail
+        /// is the preset's particle system parented to the projectile, the
+        /// impact is whatever <c>Projectile.OnExpire</c> spawns from
+        /// <c>impactPreset</c>.
         ///
-        /// The shared projectile prefab is pre-stamped with
-        /// <see cref="FireballVisual"/> (orange/red flame) by
-        /// <c>ProjectilePrefabFactory</c>. That bespoke visual is correct for
-        /// fireball but WRONG for iceball / lightball / darkball / arcane —
-        /// without an explicit swap they all render as orange flame in-game
-        /// AND in the F4 Spells Editor preview. So when the resolved element
-        /// disagrees with the existing visual we tear the wrong rig down and
-        /// build the matching <see cref="ElementalProjectileVisual"/> palette.
+        /// Strips legacy SpriteRenderer-based rigs (<see cref="FireballVisual"/>,
+        /// <see cref="ElementalProjectileVisual"/>) plus any leftover child
+        /// scaffolding (Halo / Glow / Core / HotCore / Ghost*/ FireballLight /
+        /// Accent) from earlier prefab configurations or pool reuses.
         /// Idempotent across pool re-spawns.
         /// </summary>
-        private static void AttachElementalVisual(GameObject go, SpellDefinition spell)
+        private static void AttachVisual(GameObject go, SpellDefinition spell)
         {
-            SpellElement? element = ResolveElement(spell);
-            var existing = go.GetComponent<IProjectileVisual>();
+            StripLegacyVisualRigs(go);
 
-            // Already running ElementalProjectileVisual — just retune the palette.
-            // Cheap when the element already matches (SetElement early-outs).
-            if (existing is ElementalProjectileVisual epv)
-            {
-                if (element.HasValue) epv.SetElement(element.Value);
-                return;
-            }
-
-            // FireballVisual is the right rig for Fire (and the safe default when
-            // the spell has no element hint at all).
-            if (existing is FireballVisual)
-            {
-                if (!element.HasValue || element.Value == SpellElement.Fire) return;
-                // Wrong element — strip the fire rig (component + its child layers)
-                // so the new visual builds against an empty projectile root.
-                ClearProjectileVisualChildren(go);
-                Object.Destroy((Component)existing);
-            }
-
-            if (!element.HasValue) return;
-
-            var v = go.AddComponent<ElementalProjectileVisual>();
-            v.SetElement(element.Value);
+            var pv = go.GetComponent<ParticleProjectileVisual>();
+            if (pv == null) pv = go.AddComponent<ParticleProjectileVisual>();
+            pv.SetSpell(spell);
         }
 
-        /// <summary>
-        /// Removes every child GameObject under <paramref name="go"/>'s root —
-        /// covers Halo / Glow / Core / HotCore / Ghost0..N / FireballLight that
-        /// <see cref="FireballVisual.BuildVisual"/> creates as direct children.
-        /// The projectile root itself (Rigidbody2D / collider / Projectile) stays
-        /// intact; only visual scaffolding is wiped.
-        /// </summary>
-        private static void ClearProjectileVisualChildren(GameObject go)
+        private static void StripLegacyVisualRigs(GameObject go)
         {
+            var fireball = go.GetComponent<FireballVisual>();
+            if (fireball != null) Object.Destroy(fireball);
+
+            var elemental = go.GetComponent<ElementalProjectileVisual>();
+            if (elemental != null) Object.Destroy(elemental);
+
+            // Tear down the SpriteRenderer scaffolding both rigs build as
+            // direct children. We can't blindly destroy every child because
+            // ParticleProjectileVisual will parent its own trail GO under us;
+            // gate by name so only legacy layers are removed.
             var t = go.transform;
             for (int i = t.childCount - 1; i >= 0; i--)
             {
                 var ch = t.GetChild(i);
-                if (ch != null) Object.Destroy(ch.gameObject);
+                if (ch == null) continue;
+                if (IsLegacyVisualChild(ch.name))
+                    Object.Destroy(ch.gameObject);
             }
         }
 
-        // Public + static so tests can pin the precedence: SO field wins,
-        // legacy spellKey switch is the fallback.
+        private static bool IsLegacyVisualChild(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            return name == "Halo"
+                || name == "Glow"
+                || name == "Core"
+                || name == "HotCore"
+                || name == "Accent"
+                || name == "FireballLight"
+                || name.StartsWith("Ghost", System.StringComparison.Ordinal);
+        }
+
+        // Public + static so tests / UI / tooling can resolve a spell's element
+        // independently of the executor (the executor itself no longer needs
+        // it: ParticleProjectileVisual is element-agnostic and just plays
+        // whatever vfxPreset the SpellDefinition declares).
         public static SpellElement? ResolveElement(SpellDefinition spell)
         {
             if (spell == null) return null;
