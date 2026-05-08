@@ -51,9 +51,11 @@ SpriteAtlas:
     cachedData: {fileID: 0}
     packedSpriteRenderDataKeys:
     - 7bad9100034bed843af03deae2a2ca8b: 21300000
+    - 69ef1f2003d592d4a873c59c31527395: 21300000
     - 16baf56049cc8914b8d4ce0182d7e29f: 21300000
     - ab3e7080eaba9b6469c0e434ace9a3fc: 21300000
     - 4599c4909c808d843ab89d62bb9d4e5d: 21300000
+    - b7321a90f6533d34bbd0b8992601f8c1: 21300000
     - c0f781b080c7aae4f96400bc9665aa26: 21300000
     - 8c2912d01a9fa474bb9fd74b60123967: 21300000
     - 052eb5d0ae49cc34daf3967aefa11b84: 21300000
@@ -62,14 +64,18 @@ SpriteAtlas:
     - 2cf8c6511209a0940812727dce85ebc0: 21300000
     - 1b3c7ab19daa8644b976c4cb56b828df: 21300000
     - c3afacd1972977842886d10123f49f3c: 21300000
+    - 241372023393f084eac9b7d2cfa64dfa: 21300000
     - 0bb96c02c086a464fa69f7db2f92d6a5: 21300000
     - 803b3512d9da35e41b114e49469edfcf: 21300000
     - fc8d6912334631b4eac87670b6b26982: 21300000
     - f8da29225e667674583382c15437c1a3: 21300000
     - ba3ebc22e8e47e7439541e6b554fc476: 21300000
     - 4396423264eba444d9ea0fe285d55fac: 21300000
+    - 12efa8427edfdf74ab06133d2d94e480: 21300000
     - ffb98c42476ea60448f70c1a99391b0f: 21300000
     - 23934f729914a944b8a529c501a96d6d: 21300000
+    - 75b13182e532ae24aa0cc027779ed152: 21300000
+    - 97bc63a25181b0f4a93a7a56619cd488: 21300000
     - ffb234a290a71184493943eb9aac727a: 21300000
     - 94fa6ba2c0c488148825d0986a01bbd3: 21300000
     - 9ea853c2818981545bb7ffd08925fc21: 21300000
@@ -82,6 +88,9 @@ SpriteAtlas:
     - e6cd0e43039633c4abfce563863a1082: 21300000
     - 9c3685737016a9744afdf72fa4b50fe3: 21300000
     - 765eb873facb94247a21da3aa479045a: 21300000
+    - 1fbacb73b63f1cd40bfe80b4049aef18: 21300000
+    - 7f083683779a4ee478afc01007a3f26e: 21300000
+    - 3042a193b7459154884d8e2f38ac642e: 21300000
     - f6ca03936219c7c418ef12c0cd60ad12: 21300000
     - e1037ea398c30544983bef1547cf6ec9: 21300000
     - 1d4368d3fc6a92542a2f6e31e3e1a3c7: 21300000
@@ -91,6 +100,7 @@ SpriteAtlas:
     - 47ee2304576fd824b83255832ad591d0: 21300000
     - 77c60414135b98c4ba09362731ce2301: 21300000
     - a215f614b224d694dabd68d4aa1d5d37: 21300000
+    - 0cdaaa1488c3f994e8b1f2adbe21a563: 21300000
     - 85f8e8548cda4e84db7bf492bdde609b: 21300000
     - ba08f994e8037f845b73e3e171c0a8d2: 21300000
     - ff909c9489670c34bb7be0e8c9de676d: 21300000
@@ -105,10 +115,13 @@ SpriteAtlas:
     - 2202ee45a588dfd478a2511f39134400: 21300000
     - 377d4f45e4ef1874a8c0de5f83f28cbd: 21300000
     - 4868d955177d1544c933c4b366b5849d: 21300000
+    - 16aa6165c9d75cd4384877b8a4718958: 21300000
     - 6f5ae365e276af244be4b8fafd9409d0: 21300000
     - dfffd285d14112545891d93cf8b64534: 21300000
     - b7548b85f0bc31446b9a71c26f4d8677: 21300000
+    - 8de001956bb41d641bec873244f9f522: 21300000
     - 0decc0c53801b43478b13a9bf3fa0113: 21300000
+    - f1f056c5c6317aa4bb4caf83ae21607e: 21300000
     - 44defce55ec48e4408fac35a958ea107: 21300000
     - 645677f59fbcd9f478e613ca7f97a425: 21300000
     - a6b75936828f07e45818e5d2444196ba: 21300000
@@ -123,17 +136,24 @@ SpriteAtlas:
     - 8275b5c7105268e468f6f2279c4d9835: 21300000
     - d4c43fc71ae04eb4697d97e2142f1383: 21300000
     - 539ea1d781206e8428f60572378e2789: 21300000
+    - 619a0ad701cbfaf41b3b4ba80d787702: 21300000
     - 18d0d0e791bb67847970a6ad83f52ba3: 21300000
     - f6a5d1e75134c454e9827ff284ab1d2b: 21300000
     - f9365ce770bf33e4ab3f93ef581049d9: 21300000
     - 31dae1f7fbe257e4db4773a99ce0e102: 21300000
+    - c16867f79bb5d0c479d200864f14a8ea: 21300000
+    - e9843e484986d7d44aa44459e91b9b68: 21300000
     - db8a3358caef7724a93c36b439e475cf: 21300000
     - 8b243a5884489a946aa1c88a43136cec: 21300000
     - ce950568ea34ec54b9256d875dfc5229: 21300000
+    - 010397787214fcb4d81fbf0c7706fe92: 21300000
     - 05af93c84678120439a690da78a4743d: 21300000
     - 6234f2e8b3680514ab9addc096804982: 21300000
     - 686664491ebf1b44fa5d8f16ad910f94: 21300000
+    - adf6aaa9f93f3da4b96863527a90e704: 21300000
+    - e66506c9d779cd9478ee8e43df2d5d9d: 21300000
     - c36530d93b76ef74b98ad1eb46d19682: 21300000
+    - 86da982ac5208b04fbd40e3da27e225e: 21300000
     - f22d8d3a34e6c2f47b64cf8eb25f77ba: 21300000
     - bbed514a086a7da4a96025b7355dc20e: 21300000
     - 52674f4ad68bd0f4d9fd70a9a5b13553: 21300000
@@ -142,6 +162,7 @@ SpriteAtlas:
     - 701bc3ca713e08242a1863e20ae346a4: 21300000
     - 348e07ca506a9934aa38f62d12a73fe6: 21300000
     - 53aa74dab5c350a48b1b3666e0c71f6b: 21300000
+    - a08ebfdaf804c8e4081e54cb81fb2647: 21300000
     - f402390b92300364592ad86912f483bb: 21300000
     - 52faec0bb5e68554085804124242b02d: 21300000
     - 23bdbf2b842dd4a448211da3efd3bd56: 21300000
@@ -149,6 +170,8 @@ SpriteAtlas:
     - 83d1839bd20849448838991afe880dd3: 21300000
     - 494120bbd5c04524dbfd3a6d58f44ac5: 21300000
     - 4155c3bb379c67a4ba2a7712bceb1aa4: 21300000
+    - 47d4a4cbf6c9a6043ba596349d6d3c1c: 21300000
+    - 8f66a5cbb248c2849885b88fdf31a6e6: 21300000
     - ed77fbcb3cfdcc04fa4b0678ca6f7472: 21300000
     - c5dc413c42f26e34fb98bcf5505530ae: 21300000
     - 9cecec3c59e8e8242b5a8c7e1d13b6b1: 21300000
@@ -156,15 +179,20 @@ SpriteAtlas:
     - 3d2b137cd504b674cb783d6b12bba08c: 21300000
     - ee09b37c8ede924498b20c533c8fa766: 21300000
     - 2750ac7c10d07b54e9ba0df949031305: 21300000
+    - 160ef79cf9a5fa041adbd0ef6fc0f686: 21300000
+    - de9448accfe7a424187fa21ef8048780: 21300000
     - 663fa5dce72f2954698883bea318cfa5: 21300000
     - b73c50ec1b6e80f47b2070682be82b2c: 21300000
     - d729a3ec6b3a46e409f4cd325f87a39f: 21300000
+    - 99fcb5fc2102a144e990df4af7f33c1d: 21300000
     - 745f3cfc091fe9e4ba81c8a0eec95cba: 21300000
+    - d664331da7f04f0449bd9a8dff61b233: 21300000
     - ab57e82d6a995c045aeb230e5f9cd9b1: 21300000
     - e491313dd11474946a01326be392bd6c: 21300000
     - 52648a4dde180444dbc3cb3d6de53e1a: 21300000
     - dc7e186dd898e1549aad09ccaf15cd66: 21300000
     - a38c6e8d038658941b149a3b81898c6e: 21300000
+    - 373da0bdac7428943a3dcf2a81751909: 21300000
     - df6cdbbdc84105f499c7483fe8e2f909: 21300000
     - b829f2cdcdef4e641a6717b2d20e8a39: 21300000
     - a1f927dd103ed32458e90f6d5cfdbbac: 21300000
@@ -172,12 +200,14 @@ SpriteAtlas:
     - 2b819dedac4a61841a2c5408426f6665: 21300000
     - d2ece22e710b6244aa45281a45bbaac6: 21300000
     - d451983efa347b8478c512c53bed70bb: 21300000
+    - b3458b3ef390cc6428c920305965c908: 21300000
     - fe84924e8a889714183e96465c3ce900: 21300000
     - 8cf9849e1b335d142839746bc1bf896c: 21300000
     - 676783ceda982cb458ef5950d55df1fd: 21300000
     - ec8430deb716eea47960fee43d434cd7: 21300000
     - d8e3790f744ec534fb0167f9ca3c939a: 21300000
     - c986791f111c0e44cb197b50675ac2c8: 21300000
+    - 094f034f2c837b74b9e22e6ccedd841f: 21300000
     - 5abd406fefaffdc4dab864b2846e05d5: 21300000
     - e469fc8f9771b144a9f651bf58091391: 21300000
     - 6a2543afcc4f83f42911c267aacc84b5: 21300000
@@ -185,9 +215,11 @@ SpriteAtlas:
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
   - {fileID: 21300000, guid: 7bad9100034bed843af03deae2a2ca8b, type: 3}
+  - {fileID: 21300000, guid: 69ef1f2003d592d4a873c59c31527395, type: 3}
   - {fileID: 21300000, guid: 16baf56049cc8914b8d4ce0182d7e29f, type: 3}
   - {fileID: 21300000, guid: ab3e7080eaba9b6469c0e434ace9a3fc, type: 3}
   - {fileID: 21300000, guid: 4599c4909c808d843ab89d62bb9d4e5d, type: 3}
+  - {fileID: 21300000, guid: b7321a90f6533d34bbd0b8992601f8c1, type: 3}
   - {fileID: 21300000, guid: c0f781b080c7aae4f96400bc9665aa26, type: 3}
   - {fileID: 21300000, guid: 8c2912d01a9fa474bb9fd74b60123967, type: 3}
   - {fileID: 21300000, guid: 052eb5d0ae49cc34daf3967aefa11b84, type: 3}
@@ -196,14 +228,18 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 2cf8c6511209a0940812727dce85ebc0, type: 3}
   - {fileID: 21300000, guid: 1b3c7ab19daa8644b976c4cb56b828df, type: 3}
   - {fileID: 21300000, guid: c3afacd1972977842886d10123f49f3c, type: 3}
+  - {fileID: 21300000, guid: 241372023393f084eac9b7d2cfa64dfa, type: 3}
   - {fileID: 21300000, guid: 0bb96c02c086a464fa69f7db2f92d6a5, type: 3}
   - {fileID: 21300000, guid: 803b3512d9da35e41b114e49469edfcf, type: 3}
   - {fileID: 21300000, guid: fc8d6912334631b4eac87670b6b26982, type: 3}
   - {fileID: 21300000, guid: f8da29225e667674583382c15437c1a3, type: 3}
   - {fileID: 21300000, guid: ba3ebc22e8e47e7439541e6b554fc476, type: 3}
   - {fileID: 21300000, guid: 4396423264eba444d9ea0fe285d55fac, type: 3}
+  - {fileID: 21300000, guid: 12efa8427edfdf74ab06133d2d94e480, type: 3}
   - {fileID: 21300000, guid: ffb98c42476ea60448f70c1a99391b0f, type: 3}
   - {fileID: 21300000, guid: 23934f729914a944b8a529c501a96d6d, type: 3}
+  - {fileID: 21300000, guid: 75b13182e532ae24aa0cc027779ed152, type: 3}
+  - {fileID: 21300000, guid: 97bc63a25181b0f4a93a7a56619cd488, type: 3}
   - {fileID: 21300000, guid: ffb234a290a71184493943eb9aac727a, type: 3}
   - {fileID: 21300000, guid: 94fa6ba2c0c488148825d0986a01bbd3, type: 3}
   - {fileID: 21300000, guid: 9ea853c2818981545bb7ffd08925fc21, type: 3}
@@ -216,6 +252,9 @@ SpriteAtlas:
   - {fileID: 21300000, guid: e6cd0e43039633c4abfce563863a1082, type: 3}
   - {fileID: 21300000, guid: 9c3685737016a9744afdf72fa4b50fe3, type: 3}
   - {fileID: 21300000, guid: 765eb873facb94247a21da3aa479045a, type: 3}
+  - {fileID: 21300000, guid: 1fbacb73b63f1cd40bfe80b4049aef18, type: 3}
+  - {fileID: 21300000, guid: 7f083683779a4ee478afc01007a3f26e, type: 3}
+  - {fileID: 21300000, guid: 3042a193b7459154884d8e2f38ac642e, type: 3}
   - {fileID: 21300000, guid: f6ca03936219c7c418ef12c0cd60ad12, type: 3}
   - {fileID: 21300000, guid: e1037ea398c30544983bef1547cf6ec9, type: 3}
   - {fileID: 21300000, guid: 1d4368d3fc6a92542a2f6e31e3e1a3c7, type: 3}
@@ -225,6 +264,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 47ee2304576fd824b83255832ad591d0, type: 3}
   - {fileID: 21300000, guid: 77c60414135b98c4ba09362731ce2301, type: 3}
   - {fileID: 21300000, guid: a215f614b224d694dabd68d4aa1d5d37, type: 3}
+  - {fileID: 21300000, guid: 0cdaaa1488c3f994e8b1f2adbe21a563, type: 3}
   - {fileID: 21300000, guid: 85f8e8548cda4e84db7bf492bdde609b, type: 3}
   - {fileID: 21300000, guid: ba08f994e8037f845b73e3e171c0a8d2, type: 3}
   - {fileID: 21300000, guid: ff909c9489670c34bb7be0e8c9de676d, type: 3}
@@ -239,10 +279,13 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 2202ee45a588dfd478a2511f39134400, type: 3}
   - {fileID: 21300000, guid: 377d4f45e4ef1874a8c0de5f83f28cbd, type: 3}
   - {fileID: 21300000, guid: 4868d955177d1544c933c4b366b5849d, type: 3}
+  - {fileID: 21300000, guid: 16aa6165c9d75cd4384877b8a4718958, type: 3}
   - {fileID: 21300000, guid: 6f5ae365e276af244be4b8fafd9409d0, type: 3}
   - {fileID: 21300000, guid: dfffd285d14112545891d93cf8b64534, type: 3}
   - {fileID: 21300000, guid: b7548b85f0bc31446b9a71c26f4d8677, type: 3}
+  - {fileID: 21300000, guid: 8de001956bb41d641bec873244f9f522, type: 3}
   - {fileID: 21300000, guid: 0decc0c53801b43478b13a9bf3fa0113, type: 3}
+  - {fileID: 21300000, guid: f1f056c5c6317aa4bb4caf83ae21607e, type: 3}
   - {fileID: 21300000, guid: 44defce55ec48e4408fac35a958ea107, type: 3}
   - {fileID: 21300000, guid: 645677f59fbcd9f478e613ca7f97a425, type: 3}
   - {fileID: 21300000, guid: a6b75936828f07e45818e5d2444196ba, type: 3}
@@ -257,17 +300,24 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 8275b5c7105268e468f6f2279c4d9835, type: 3}
   - {fileID: 21300000, guid: d4c43fc71ae04eb4697d97e2142f1383, type: 3}
   - {fileID: 21300000, guid: 539ea1d781206e8428f60572378e2789, type: 3}
+  - {fileID: 21300000, guid: 619a0ad701cbfaf41b3b4ba80d787702, type: 3}
   - {fileID: 21300000, guid: 18d0d0e791bb67847970a6ad83f52ba3, type: 3}
   - {fileID: 21300000, guid: f6a5d1e75134c454e9827ff284ab1d2b, type: 3}
   - {fileID: 21300000, guid: f9365ce770bf33e4ab3f93ef581049d9, type: 3}
   - {fileID: 21300000, guid: 31dae1f7fbe257e4db4773a99ce0e102, type: 3}
+  - {fileID: 21300000, guid: c16867f79bb5d0c479d200864f14a8ea, type: 3}
+  - {fileID: 21300000, guid: e9843e484986d7d44aa44459e91b9b68, type: 3}
   - {fileID: 21300000, guid: db8a3358caef7724a93c36b439e475cf, type: 3}
   - {fileID: 21300000, guid: 8b243a5884489a946aa1c88a43136cec, type: 3}
   - {fileID: 21300000, guid: ce950568ea34ec54b9256d875dfc5229, type: 3}
+  - {fileID: 21300000, guid: 010397787214fcb4d81fbf0c7706fe92, type: 3}
   - {fileID: 21300000, guid: 05af93c84678120439a690da78a4743d, type: 3}
   - {fileID: 21300000, guid: 6234f2e8b3680514ab9addc096804982, type: 3}
   - {fileID: 21300000, guid: 686664491ebf1b44fa5d8f16ad910f94, type: 3}
+  - {fileID: 21300000, guid: adf6aaa9f93f3da4b96863527a90e704, type: 3}
+  - {fileID: 21300000, guid: e66506c9d779cd9478ee8e43df2d5d9d, type: 3}
   - {fileID: 21300000, guid: c36530d93b76ef74b98ad1eb46d19682, type: 3}
+  - {fileID: 21300000, guid: 86da982ac5208b04fbd40e3da27e225e, type: 3}
   - {fileID: 21300000, guid: f22d8d3a34e6c2f47b64cf8eb25f77ba, type: 3}
   - {fileID: 21300000, guid: bbed514a086a7da4a96025b7355dc20e, type: 3}
   - {fileID: 21300000, guid: 52674f4ad68bd0f4d9fd70a9a5b13553, type: 3}
@@ -276,6 +326,7 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 701bc3ca713e08242a1863e20ae346a4, type: 3}
   - {fileID: 21300000, guid: 348e07ca506a9934aa38f62d12a73fe6, type: 3}
   - {fileID: 21300000, guid: 53aa74dab5c350a48b1b3666e0c71f6b, type: 3}
+  - {fileID: 21300000, guid: a08ebfdaf804c8e4081e54cb81fb2647, type: 3}
   - {fileID: 21300000, guid: f402390b92300364592ad86912f483bb, type: 3}
   - {fileID: 21300000, guid: 52faec0bb5e68554085804124242b02d, type: 3}
   - {fileID: 21300000, guid: 23bdbf2b842dd4a448211da3efd3bd56, type: 3}
@@ -283,6 +334,8 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 83d1839bd20849448838991afe880dd3, type: 3}
   - {fileID: 21300000, guid: 494120bbd5c04524dbfd3a6d58f44ac5, type: 3}
   - {fileID: 21300000, guid: 4155c3bb379c67a4ba2a7712bceb1aa4, type: 3}
+  - {fileID: 21300000, guid: 47d4a4cbf6c9a6043ba596349d6d3c1c, type: 3}
+  - {fileID: 21300000, guid: 8f66a5cbb248c2849885b88fdf31a6e6, type: 3}
   - {fileID: 21300000, guid: ed77fbcb3cfdcc04fa4b0678ca6f7472, type: 3}
   - {fileID: 21300000, guid: c5dc413c42f26e34fb98bcf5505530ae, type: 3}
   - {fileID: 21300000, guid: 9cecec3c59e8e8242b5a8c7e1d13b6b1, type: 3}
@@ -290,15 +343,20 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 3d2b137cd504b674cb783d6b12bba08c, type: 3}
   - {fileID: 21300000, guid: ee09b37c8ede924498b20c533c8fa766, type: 3}
   - {fileID: 21300000, guid: 2750ac7c10d07b54e9ba0df949031305, type: 3}
+  - {fileID: 21300000, guid: 160ef79cf9a5fa041adbd0ef6fc0f686, type: 3}
+  - {fileID: 21300000, guid: de9448accfe7a424187fa21ef8048780, type: 3}
   - {fileID: 21300000, guid: 663fa5dce72f2954698883bea318cfa5, type: 3}
   - {fileID: 21300000, guid: b73c50ec1b6e80f47b2070682be82b2c, type: 3}
   - {fileID: 21300000, guid: d729a3ec6b3a46e409f4cd325f87a39f, type: 3}
+  - {fileID: 21300000, guid: 99fcb5fc2102a144e990df4af7f33c1d, type: 3}
   - {fileID: 21300000, guid: 745f3cfc091fe9e4ba81c8a0eec95cba, type: 3}
+  - {fileID: 21300000, guid: d664331da7f04f0449bd9a8dff61b233, type: 3}
   - {fileID: 21300000, guid: ab57e82d6a995c045aeb230e5f9cd9b1, type: 3}
   - {fileID: 21300000, guid: e491313dd11474946a01326be392bd6c, type: 3}
   - {fileID: 21300000, guid: 52648a4dde180444dbc3cb3d6de53e1a, type: 3}
   - {fileID: 21300000, guid: dc7e186dd898e1549aad09ccaf15cd66, type: 3}
   - {fileID: 21300000, guid: a38c6e8d038658941b149a3b81898c6e, type: 3}
+  - {fileID: 21300000, guid: 373da0bdac7428943a3dcf2a81751909, type: 3}
   - {fileID: 21300000, guid: df6cdbbdc84105f499c7483fe8e2f909, type: 3}
   - {fileID: 21300000, guid: b829f2cdcdef4e641a6717b2d20e8a39, type: 3}
   - {fileID: 21300000, guid: a1f927dd103ed32458e90f6d5cfdbbac, type: 3}
@@ -306,21 +364,25 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 2b819dedac4a61841a2c5408426f6665, type: 3}
   - {fileID: 21300000, guid: d2ece22e710b6244aa45281a45bbaac6, type: 3}
   - {fileID: 21300000, guid: d451983efa347b8478c512c53bed70bb, type: 3}
+  - {fileID: 21300000, guid: b3458b3ef390cc6428c920305965c908, type: 3}
   - {fileID: 21300000, guid: fe84924e8a889714183e96465c3ce900, type: 3}
   - {fileID: 21300000, guid: 8cf9849e1b335d142839746bc1bf896c, type: 3}
   - {fileID: 21300000, guid: 676783ceda982cb458ef5950d55df1fd, type: 3}
   - {fileID: 21300000, guid: ec8430deb716eea47960fee43d434cd7, type: 3}
   - {fileID: 21300000, guid: d8e3790f744ec534fb0167f9ca3c939a, type: 3}
   - {fileID: 21300000, guid: c986791f111c0e44cb197b50675ac2c8, type: 3}
+  - {fileID: 21300000, guid: 094f034f2c837b74b9e22e6ccedd841f, type: 3}
   - {fileID: 21300000, guid: 5abd406fefaffdc4dab864b2846e05d5, type: 3}
   - {fileID: 21300000, guid: e469fc8f9771b144a9f651bf58091391, type: 3}
   - {fileID: 21300000, guid: 6a2543afcc4f83f42911c267aacc84b5, type: 3}
   - {fileID: 21300000, guid: 0ef4ebcf46777414180cf55a003d85b3, type: 3}
   m_PackedSpriteNamesToIndex:
   - restore_icon
+  - teleport
   - building_manager_icon
   - add_building_on_system
   - particles_reset
+  - healing_aura
   - delete_zone
   - pintar_colliders_zone
   - character_selection_drwaft
@@ -329,14 +391,18 @@ SpriteAtlas:
   - connect_node
   - particles_add
   - valkyrie_dragon
+  - vortex_push
   - remove_entitie
   - characters_tabern_4
   - characters_tabern_stop
   - firework_icon
   - smoke_icon
   - characters_dungeon_stop
+  - dash
   - redo
   - character_selection_elve
+  - smoke
+  - vortex_pull
   - characters_tabern_2
   - elven_play_guitar_concert
   - collision_tool
@@ -349,6 +415,9 @@ SpriteAtlas:
   - background_ini_old
   - end_node
   - mague_vs_dragon_3
+  - healing_totem
+  - slash
+  - firework_launch
   - set_assigment_entities
   - view_tool
   - barbarian_vs_dragon
@@ -358,6 +427,7 @@ SpriteAtlas:
   - delete_icon
   - entities_on_map_icon
   - vaciar_tiles_zone
+  - slash_combo
   - valkyrie_dragon_2
   - spells_on_map_icon
   - inputs_hud_button
@@ -372,10 +442,13 @@ SpriteAtlas:
   - remove_spell
   - mague_orden_chaos
   - characters_tabern_6
+  - meteor_shower
   - icon
   - select_node
   - mague_vs_dragon_2
+  - slash_stab
   - music_player_button
+  - puddle_lava
   - characters_tabern
   - set_assigment_animations
   - teleport_icon
@@ -390,17 +463,24 @@ SpriteAtlas:
   - taberna
   - spawner_view
   - Intro_barbarian
+  - laser_beam
   - sets_list
   - character_selection_barbrian
   - remove_building
   - respawn
+  - slash_cleave
+  - fireball
   - lightning_icon
   - slash_icon
   - remove_item
+  - wall_ice
   - spawner_list
   - mague_vs_dragon
   - vaciar_colliders_zone
+  - iceball
+  - smoke_emitter
   - Intro_valkyrie
+  - lightball
   - base_hud_hp_mp_2
   - spawner_no_view
   - add_node
@@ -409,6 +489,7 @@ SpriteAtlas:
   - hp_mana_hud_button
   - add_item
   - add_item_on_system
+  - arcane_flame
   - shield_icon
   - game_name
   - arrow_left
@@ -416,6 +497,8 @@ SpriteAtlas:
   - add_spell
   - character_selection_mague
   - characters_tabern_5
+  - darkball
+  - lightning_beam
   - Intro_elven
   - intro_castle_morning_2
   - elven_vs_dragon
@@ -423,15 +506,20 @@ SpriteAtlas:
   - elven_play_guitar
   - pintar_tiles_zone
   - select_tool
+  - lightning
+  - boomerang
   - particles_view
   - zoom_out
   - particles_configuration
+  - chain_lightning
   - add_building
+  - root_whip
   - dwraft_vs_dragon
   - brush_tool
   - intro_castle_afternoon
   - folder_win
   - add_zone
+  - sphere_magic_shield
   - start_node
   - pixel_fire_icon
   - spawner_manager
@@ -439,12 +527,14 @@ SpriteAtlas:
   - character_selection_valkyrie
   - items_on_map_icon
   - tutorials_button
+  - mine_basic
   - particles_no_view
   - elven_vs_dragon_2
   - mague_orden_chaos_2
   - background_ini_2
   - set_properties
   - dash_icon
+  - flame_breath
   - buildings_colliders
   - spawner_add
   - layers_view_tool

@@ -130,14 +130,25 @@ namespace Valkur.Gameplay
             // when the user expected). Same pattern Up/Down/Tab use above:
             // detect via KeyboardInputManager (which polls both InputSystem
             // backends) and mutate state immediately, before OnGUI runs.
+            // Enter submits — primary path, runs before any IMGUI control sees
+            // the key. OnGUI has a fallback path (intercept on KeyDown event)
+            // for cases where the InputSystem helper missed the press.
             if (KeyboardInputManager.WasEnterPressedThisFrame())
             {
                 SubmitInputBuffer();
             }
         }
 
+        // Frame-guard to keep SubmitInputBuffer idempotent within a frame —
+        // both Update() and OnGUI's KeyDown intercept can call it on the same
+        // press; without this guard we'd execute the command twice.
+        private int _lastSubmitFrame = -1;
+
         private void SubmitInputBuffer()
         {
+            if (_lastSubmitFrame == Time.frameCount) return;
+            _lastSubmitFrame = Time.frameCount;
+
             if (!string.IsNullOrWhiteSpace(_inputBuffer))
             {
                 ExecuteCommand(_inputBuffer.Trim());
@@ -191,8 +202,25 @@ namespace Valkur.Gameplay
 
             // Input field
             float inputY = y + logH + 4f;
+
+            // Fallback Enter intercept: if the InputSystem helper in Update()
+            // missed the press (Editor InputSystem hiccup, focus race, etc.),
+            // the IMGUI KeyDown event is still delivered here. Consume it
+            // BEFORE the TextField is drawn so the TextField doesn't process
+            // it first and swallow the event. SubmitInputBuffer is idempotent
+            // per frame, so calling it from both paths is safe.
+            bool enterFromImgui = false;
+            if (Event.current.type == EventType.KeyDown &&
+                (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter))
+            {
+                enterFromImgui = true;
+                Event.current.Use();
+            }
+
             GUI.SetNextControlName("ConsoleInput");
             _inputBuffer = GUI.TextField(new Rect(x, inputY, CONSOLE_WIDTH - 60f, 24f), _inputBuffer, _inputStyle);
+
+            if (enterFromImgui) SubmitInputBuffer();
 
             // IMGUI focus must be requested AFTER the named control is laid out —
             // calling GUI.FocusControl before the TextField is registered is a
