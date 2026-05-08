@@ -151,8 +151,8 @@ Namespaces are independent of folder paths — `using Valkur.Gameplay.Buildings;
 | Monsters | `Data/Catalogs/Monsters/*.asset` (catalog at `MonsterCatalog.asset`) |
 | Spells | `Data/Catalogs/Spells/SpellCatalog.asset` (edit via Inspector or F4 in-game) |
 | Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) |
-| Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F3) |
-| Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F1) |
+| Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F1) |
+| Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F3) |
 | Lighting Presets | `Data/LightPresetCatalog.asset` (edit via Ctrl+F3) |
 | Chat Personas / Assignments | `Data/ChatPersonas/*.asset` + `ChatAssignmentCatalog.asset` |
 | Vendors | `Data/Vendor/{EconomyGroups,Configs}/*.asset` |
@@ -238,6 +238,17 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 - **Custom GL drawing in URP** — use `RenderPipelineManager.endCameraRendering`, not `OnRenderObject` (`Camera.current` is null in URP).
 - **Static mutable fields without reset** → MissingReferenceException after second Play (Domain Reload is OFF).
 - **Sprite-Lit-Default with no Light2D** → black tiles. Use `Sprite-Unlit-Default` fallback (already wired in `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`).
+- **F10 Buildings save position-collapse bug** — root cause unknown but mitigated by 3 guards in `BuildingsRuntimeEditor.Persistence.cs`. If the F10 save ever logs `ABORTING save — ...`, that's this bug firing. Read `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` for the recovery procedure and the next-step investigation checklist.
+
+## Incident reports
+
+Past incidents that left investigation hooks behind. Read these first when a
+related symptom reappears.
+
+| Incident | When | Doc |
+|---|---|---|
+| F10 Buildings save collapses `rel_x`/`rel_y` to one position per zone | 2026-05-08 (mitigated, root cause TBD) | `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` |
+| Run "twin-save" — duplicate `Saves/<runId>/` folders with byte-identical body but distinct `meta.run_id` | 2026-05-08 (mitigated — root cause: EditMode test pollution; fixed by `RefuseWriteOutsidePlayMode` guard) | `.github/incidents/RUN_TWIN_SAVE.md` |
 
 ## Open work
 
