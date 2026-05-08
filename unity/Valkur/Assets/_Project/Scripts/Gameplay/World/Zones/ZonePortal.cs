@@ -49,6 +49,16 @@ namespace Valkur.Gameplay.World
             // Cache scene references once instead of FindObjectOfType per activation
             _cachedGridBuilder = Object.FindObjectOfType<WorldGridBuilder>();
             _cachedZoneManager = Object.FindObjectOfType<ZoneManager>();
+
+            // Auto-register on the minimap so the player can see portals from across
+            // the room. Cyan diamond, no pulse — calm, unmissable, never urgent.
+            EntitySetup.ConfigureMinimapMarker(
+                gameObject,
+                color: new Color(0.4f, 0.7f, 1.0f, 1f),
+                shape: EntitySetup.MinimapMarkerShape.Diamond,
+                pixelSize: 5,
+                pulse: false,
+                pulsePeriod: 1f);
         }
 
         private void OnTriggerEnter2D(Collider2D other)

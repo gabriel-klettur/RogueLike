@@ -39,6 +39,64 @@ namespace Valkur.Gameplay.NPC
         private void Awake()
         {
             _interactable = GetComponent<NPCInteractable>();
+
+            // Auto-register on the minimap. Gold square with a slow pulse —
+            // calls the player to "there's a vendor here" without the visual
+            // urgency of a quest objective. The caption is the role initials
+            // (e.g. "Lumber Jack" → "LJ") so the player can distinguish a
+            // black smith from a chef at a glance, without reading a name.
+            EntitySetup.ConfigureMinimapMarker(
+                gameObject,
+                color: new Color(1.0f, 0.85f, 0.3f, 1f),
+                shape: EntitySetup.MinimapMarkerShape.Square,
+                pixelSize: 4,
+                pulse: true,
+                pulsePeriod: 1.4f,
+                label: DeriveRoleInitials(vendorConfig));
+        }
+
+        /// <summary>
+        /// Derive the 1–2-letter role initials shown next to the vendor's
+        /// minimap dot. Reads <c>persona.displayName</c> first ("Lumber Jack"
+        /// → "LJ"); falls back to <c>vendorConfig.vendorKey</c>; finally to
+        /// the GameObject name. Returns empty when nothing usable is set.
+        /// </summary>
+        private static string DeriveRoleInitials(VendorConfigDefinition cfg)
+        {
+            string source = null;
+            if (cfg != null)
+            {
+                if (cfg.persona != null && !string.IsNullOrWhiteSpace(cfg.persona.displayName))
+                    source = cfg.persona.displayName;
+                else if (!string.IsNullOrWhiteSpace(cfg.vendorKey))
+                    source = cfg.vendorKey;
+            }
+            return InitialsFromName(source);
+        }
+
+        private static string InitialsFromName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+            // Split on whitespace, underscore, or hyphen so "vendor_blacksmith"
+            // and "Black-Smith" both yield "BS". Empty fragments are dropped.
+            var parts = name.Split(new[] { ' ', '_', '-' }, System.StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return string.Empty;
+
+            // Single token: take the first two letters ("Gatita" → "GA"). Avoids
+            // a one-letter caption that's hard to read at minimap scale.
+            if (parts.Length == 1)
+            {
+                var w = parts[0];
+                return w.Length >= 2
+                    ? string.Concat(char.ToUpperInvariant(w[0]), char.ToUpperInvariant(w[1]))
+                    : char.ToUpperInvariant(w[0]).ToString();
+            }
+
+            // Multi-token: first letter of the first two tokens
+            // ("Lumber Jack" → "LJ", "vendor_chef_gatita" → "VC"; tweak prefix
+            // filtering downstream if the "vendor" stem is unwanted).
+            return string.Concat(char.ToUpperInvariant(parts[0][0]), char.ToUpperInvariant(parts[1][0]));
         }
 
         private void OnEnable()

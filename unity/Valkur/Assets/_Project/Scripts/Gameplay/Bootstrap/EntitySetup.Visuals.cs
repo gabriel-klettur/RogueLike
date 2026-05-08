@@ -202,5 +202,71 @@ namespace Valkur.Gameplay
                 _configureMethod.Invoke(dot, new object[] { enumVal, color });
             }
         }
+
+        // ── Minimap marker helper (same reflection trick as ConfigureMinimapDot) ──
+        // Public so gameplay-side components like ZonePortal and VendorNPC can
+        // register themselves on the minimap without their assembly referencing
+        // Valkur.UI directly (forbidden by the assembly graph).
+
+        private static System.Type _minimapMarkerType;
+        private static System.Type _minimapMarkerShapeType;
+        private static System.Reflection.MethodInfo _configureMarkerMethod;
+        private static bool _minimapMarkerReflectionFailed;
+
+        public enum MinimapMarkerShape { Square = 0, Diamond = 1, Plus = 2 }
+
+        public static void ConfigureMinimapMarker(GameObject go, Color color, MinimapMarkerShape shape, int pixelSize, bool pulse, float pulsePeriod)
+        {
+            ConfigureMinimapMarker(go, color, shape, pixelSize, pulse, pulsePeriod, label: null);
+        }
+
+        /// <summary>
+        /// Same as the no-label overload, but attaches a short caption (e.g.
+        /// vendor role initials "BS", "LJ") rendered as a small TMP label next
+        /// to the marker on the minimap. <paramref name="label"/> = null/empty
+        /// disables the caption.
+        /// </summary>
+        public static void ConfigureMinimapMarker(GameObject go, Color color, MinimapMarkerShape shape, int pixelSize, bool pulse, float pulsePeriod, string label)
+        {
+            if (_minimapMarkerReflectionFailed || go == null) return;
+
+            if (_minimapMarkerType == null)
+            {
+                _minimapMarkerType = System.Type.GetType("Valkur.UI.HUD.MinimapMarker, Valkur.UI");
+                _minimapMarkerShapeType = System.Type.GetType("Valkur.UI.HUD.MinimapMarker+MarkerShape, Valkur.UI");
+                if (_minimapMarkerType == null || _minimapMarkerShapeType == null)
+                {
+                    _minimapMarkerReflectionFailed = true;
+                    Debug.LogWarning("[EntitySetup] MinimapMarker type not found — auto-markers skipped.");
+                    return;
+                }
+                // Resolve the 6-arg Configure overload (with caption). Falls
+                // back to the 5-arg one if Valkur.UI is older than this caller.
+                _configureMarkerMethod = _minimapMarkerType.GetMethod("Configure",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance,
+                    binder: null,
+                    types: new[]
+                    {
+                        typeof(Color), _minimapMarkerShapeType,
+                        typeof(int),   typeof(bool), typeof(float), typeof(string),
+                    },
+                    modifiers: null);
+                if (_configureMarkerMethod == null)
+                    _configureMarkerMethod = _minimapMarkerType.GetMethod("Configure",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            }
+
+            var marker = go.GetComponent(_minimapMarkerType);
+            if (marker == null) marker = go.AddComponent(_minimapMarkerType);
+
+            if (_configureMarkerMethod != null)
+            {
+                var shapeVal = System.Enum.ToObject(_minimapMarkerShapeType, (int)shape);
+                var args = _configureMarkerMethod.GetParameters().Length == 6
+                    ? new object[] { color, shapeVal, pixelSize, pulse, pulsePeriod, label ?? string.Empty }
+                    : new object[] { color, shapeVal, pixelSize, pulse, pulsePeriod };
+                _configureMarkerMethod.Invoke(marker, args);
+            }
+        }
     }
 }
