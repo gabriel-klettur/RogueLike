@@ -41,19 +41,36 @@ namespace Valkur.Core
         // real persistentDataPath (which would leak into other fixtures and the
         // editor itself). Setting this to non-null short-circuits the file read.
         // Production code never touches it.
+        //
+        // Domain-reload safety: Enter Play Mode Options has Disable Domain Reload
+        // ON for fast iteration. Without the SubsystemRegistration reset below,
+        // a test crash (before TearDown clears the overrides) would leave these
+        // statics non-null and cause the production save to route to a temp
+        // directory, silently dropping saves into the wrong slot.
 
         private static string s_overrideForTests;
+        private static string s_persistentRootOverrideForTests;
+        private static string s_streamingRootOverrideForTests;
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            // Production runtime never sets these; only tests do. Clearing them on
+            // every Play mode entry ensures a crashed test fixture cannot leak its
+            // override into a subsequent manual session (Domain Reload OFF).
+            s_overrideForTests            = null;
+            s_persistentRootOverrideForTests = null;
+            s_streamingRootOverrideForTests  = null;
+        }
 
         /// <summary>For test fixtures only. Pass null to revert to the file-backed value.</summary>
         public static void SetOverrideForTests(string slotOrNull) => s_overrideForTests = slotOrNull;
 
         /// <summary>For test fixtures only. Pin the persistent-data root used by <see cref="BuildingsDir"/>.</summary>
         public static void SetPersistentRootOverrideForTests(string rootOrNull) => s_persistentRootOverrideForTests = rootOrNull;
-        private static string s_persistentRootOverrideForTests;
 
         /// <summary>For test fixtures only. Pin the streaming-assets root used by <see cref="BuildingsDir"/>.</summary>
         public static void SetStreamingRootOverrideForTests(string rootOrNull) => s_streamingRootOverrideForTests = rootOrNull;
-        private static string s_streamingRootOverrideForTests;
 
         // ── Public API ────────────────────────────────────────────────────────
 

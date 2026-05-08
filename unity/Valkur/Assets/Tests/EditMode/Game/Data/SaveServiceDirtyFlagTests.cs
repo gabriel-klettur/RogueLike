@@ -160,27 +160,41 @@ namespace Valkur.Tests.EditMode.Game.Data
         // ── Dirty-trigger events ─────────────────────────────────────────────
 
         [Test]
-        public void PlayerDamageEvent_MarksSessionDirty()
+        public void PlayerDamageEvent_MarksSessionDirty_AndFiresImmediateSave()
         {
+            // Contract since the position-lag fix: every gameplay trigger
+            // (damage, XP, item, zone change, level up, death, boss kill)
+            // captures the FULL live player state via SaveImmediately at the
+            // moment of the event — no longer the "MarkDirty + 2 s debounce"
+            // path that lost the player's position when they walked away
+            // during the debounce window.
             _saveService.BeginNewRun();
             Assert.IsFalse(_saveService.IsSessionDirty);
 
+            _capturedLogs.Clear();
             GameEvents.FirePlayerDamaged(amount: 10, currentHp: 90, maxHp: 100);
 
             Assert.IsTrue(_saveService.IsSessionDirty,
                 "Taking damage is meaningful progress and must arm the autosave.");
+            Assert.IsTrue(LogContainsSaveImmediately("player damaged"),
+                "Damage must also dispatch SaveImmediately so the live position " +
+                "is captured at the moment of the hit, not 2 s later.");
         }
 
         [Test]
-        public void PlayerXpGainedEvent_MarksSessionDirty()
+        public void PlayerXpGainedEvent_MarksSessionDirty_AndFiresImmediateSave()
         {
             _saveService.BeginNewRun();
             var player = BuildPlayerGameObject();
             try
             {
+                _capturedLogs.Clear();
                 GameEvents.FireXpGained(player, amount: 25);
                 Assert.IsTrue(_saveService.IsSessionDirty,
                     "Gaining XP on the player must arm the autosave.");
+                Assert.IsTrue(LogContainsSaveImmediately("gained 25 XP"),
+                    "XP gain must also dispatch SaveImmediately so the kill " +
+                    "location and post-pickup position both land on disk.");
             }
             finally { UnityEngine.Object.DestroyImmediate(player); }
         }
@@ -240,15 +254,19 @@ namespace Valkur.Tests.EditMode.Game.Data
         }
 
         [Test]
-        public void PlayerItemPickupEvent_MarksSessionDirty()
+        public void PlayerItemPickupEvent_MarksSessionDirty_AndFiresImmediateSave()
         {
             _saveService.BeginNewRun();
             var player = BuildPlayerGameObject();
             try
             {
+                _capturedLogs.Clear();
                 GameEvents.FireItemPickedUp(player, "Health Potion", 1);
                 Assert.IsTrue(_saveService.IsSessionDirty,
                     "Picking up an item must arm the autosave.");
+                Assert.IsTrue(LogContainsSaveImmediately("picked up Health Potion"),
+                    "Item pickup must also dispatch SaveImmediately so the " +
+                    "exact pickup location is captured immediately.");
             }
             finally { UnityEngine.Object.DestroyImmediate(player); }
         }

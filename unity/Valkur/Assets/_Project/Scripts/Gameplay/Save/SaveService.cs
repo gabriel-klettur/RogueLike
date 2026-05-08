@@ -15,6 +15,16 @@ namespace Valkur.Gameplay
     /// </summary>
     public partial class SaveService : SingletonMonoBehaviour<SaveService>
     {
+        // [RunTwinSave-Diag] When true, every mutation of _currentRunId /
+        // _currentRunOrdinal logs an entry tagged "[RunTwinSave-Diag]". Intent:
+        // capture the call chain that produces a duplicate Saves/<runId>/ folder
+        // with identical body but different meta.run_id (incident
+        // .github/incidents/RUN_TWIN_SAVE.md). Root cause was identified as
+        // EditMode test pollution; the production guard `RefuseWriteOutsidePlayMode`
+        // now blocks recurrence so the diag is dormant. Flip back to true if a
+        // recurrence ever shows up in a real player profile.
+        private const bool DIAG_RUN_TWIN_SAVE = false;
+
         // All auto-save semantics (timer autosave, shutdown save, quicksave-on-exit)
         // collapse to the same per-run autosave file via SaveFileManager.GetAutosavePath.
         // Manual saves use SaveFileManager.GetManualSavePath inside the same run folder.
@@ -85,7 +95,10 @@ namespace Valkur.Gameplay
         public void SetRunOrdinal(int ordinal)
         {
             if (ordinal < 0) ordinal = 0;
+            int prev = _currentRunOrdinal;
             _currentRunOrdinal = ordinal;
+            if (DIAG_RUN_TWIN_SAVE && prev != ordinal)
+                LogRunTwinSaveDiag($"SetRunOrdinal {prev} -> {ordinal} (runId={_currentRunId})");
         }
 
         // Cached as plain C# values so OnApplicationQuit can read them
@@ -124,6 +137,13 @@ namespace Valkur.Gameplay
             SaveFileManager.EnsureSaveDirectory();
             RebindGameEvents();
             SceneManager.sceneLoaded += OnSceneLoaded;
+            if (DIAG_RUN_TWIN_SAVE)
+                LogRunTwinSaveDiag(
+                    $"OnSingletonAwake: instance born with runId='{_currentRunId}', " +
+                    $"ordinal={_currentRunOrdinal}, sessionDirty={_sessionDirty}. " +
+                    "If this fires more than once per Play session, the singleton " +
+                    "was destroyed and recreated mid-session — the prime mechanism " +
+                    "for the twin-save incident.");
         }
 
         protected override void OnDestroy()
@@ -234,6 +254,8 @@ namespace Valkur.Gameplay
         /// <summary>Starts a new run by generating a fresh run ID. Call before the first autosave of a new game.</summary>
         public void BeginNewRun()
         {
+            string prevId = _currentRunId;
+            int    prevOrd = _currentRunOrdinal;
             _currentRunId = Guid.NewGuid().ToString("N");
             // Clear the previous run's ordinal — the bootstrap's
             // StartTelemetryRun call will mint the next one and feed it back
@@ -244,6 +266,9 @@ namespace Valkur.Gameplay
             _currentRunOrdinal = 0;
             _sessionDirty = false;
             Debug.Log($"[SaveService] New run started: {_currentRunId}");
+            if (DIAG_RUN_TWIN_SAVE)
+                LogRunTwinSaveDiag(
+                    $"BeginNewRun: runId {prevId} -> {_currentRunId}; ordinal {prevOrd} -> 0; sessionDirty -> false");
         }
 
         public List<RunGroupInfo> ListSavesByRun()
@@ -258,6 +283,7 @@ namespace Valkur.Gameplay
         /// </summary>
         public bool Save(string slotName = null)
         {
+            if (RefuseWriteOutsidePlayMode("Save")) return false;
             try
             {
                 var data = GameStateCollector.Collect();
@@ -323,6 +349,8 @@ namespace Valkur.Gameplay
         /// </summary>
         private bool WriteAutosaveToDisk(bool force, SaveTelemetryEntry.SaveKind telemetryKind = SaveTelemetryEntry.SaveKind.Autosave, string telemetryReason = null)
         {
+            if (RefuseWriteOutsidePlayMode("WriteAutosaveToDisk")) return false;
+
             if (!force && !_sessionDirty)
             {
                 Debug.Log("[SaveService] Autosave skipped — session has no progression to save.");
@@ -358,6 +386,11 @@ namespace Valkur.Gameplay
                     data.SetMeta("run_ordinal", _currentRunOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
                 targetPath = SaveFileManager.GetAutosavePath(_currentRunId);
+                if (DIAG_RUN_TWIN_SAVE)
+                    LogRunTwinSaveDiag(
+                        $"WriteAutosaveToDisk: target={targetPath}, " +
+                        $"runId={_currentRunId}, ordinal={_currentRunOrdinal}, " +
+                        $"force={force}, sessionDirty={_sessionDirty}");
                 _currentSavePath = targetPath;
 
                 if (useAsyncDiskIO)
@@ -403,12 +436,38 @@ namespace Valkur.Gameplay
             }
         }
 
+        // ── Test-pollution guard ────────────────────────────────────────────
+        // EditMode tests can `AddComponent<SaveService>` and exercise event
+        // handlers that ultimately call WriteAutosaveToDisk / Save / position-
+        // checkpoint, which derive paths from Application.persistentDataPath
+        // and silently leak real Saves/<guid>/ folders into the user's profile
+        // directory. This guard refuses every disk write that derives a path
+        // from persistentDataPath when we are NOT in Play Mode (i.e. we are
+        // running inside the EditMode test runner). Tests that legitimately
+        // need to verify disk I/O call SaveFileManager directly with explicit
+        // temp paths; that path is not affected.
+        // See incident: .github/incidents/RUN_TWIN_SAVE.md
+        private static bool RefuseWriteOutsidePlayMode(string callerName)
+        {
+            if (!Application.isEditor || Application.isPlaying) return false;
+            Debug.LogWarning(
+                $"[SaveService] {callerName} refused — Play Mode is not active. " +
+                "EditMode test pollution prevention; production code is unaffected.");
+            return true;
+        }
+
         private void EnsureRunId()
         {
             if (string.IsNullOrEmpty(_currentRunId))
             {
                 _currentRunId = Guid.NewGuid().ToString("N");
                 Debug.Log($"[SaveService] No active run — generated new run id: {_currentRunId}");
+                if (DIAG_RUN_TWIN_SAVE)
+                    LogRunTwinSaveDiagWithStack(
+                        $"EnsureRunId minted GUID {_currentRunId} mid-session " +
+                        $"(ordinal={_currentRunOrdinal}, sessionDirty={_sessionDirty}). " +
+                        "This is the prime suspect for the twin-save incident — " +
+                        "stacktrace identifies the caller chain.");
             }
         }
 
@@ -442,6 +501,8 @@ namespace Valkur.Gameplay
             GameStateRestorer.Restore(data);
             _currentSavePath     = path;
             _lastLoadedTimestamp = data.timestamp;
+            string prevRunId = _currentRunId;
+            int    prevOrd   = _currentRunOrdinal;
             _currentRunId        = data.GetMeta("run_id", "");
 
             // Legacy save without a run id — adopt a fresh one so all subsequent
@@ -450,6 +511,17 @@ namespace Valkur.Gameplay
             {
                 _currentRunId = Guid.NewGuid().ToString("N");
                 Debug.Log($"[SaveService] Loaded legacy save without run_id — assigned: {_currentRunId}");
+                if (DIAG_RUN_TWIN_SAVE)
+                    LogRunTwinSaveDiagWithStack(
+                        $"Load: legacy save lacked meta.run_id; minted {_currentRunId} " +
+                        $"(prevRunId={prevRunId}). Could explain a twin-save if this " +
+                        "fires after a successful Load already set the runId.");
+            }
+            else if (DIAG_RUN_TWIN_SAVE)
+            {
+                LogRunTwinSaveDiag(
+                    $"Load: runId {prevRunId} -> {_currentRunId} from meta " +
+                    $"(prevOrd={prevOrd}; new ordinal will be read below).");
             }
 
             // Adopt the run ordinal stored alongside run_id so the resumed
@@ -508,6 +580,7 @@ namespace Valkur.Gameplay
         /// </summary>
         public void SavePositionCheckpoint()
         {
+            if (RefuseWriteOutsidePlayMode("SavePositionCheckpoint")) return;
             if (!_hasKnownPlayerPos) return;
             // Never persist a dead player's position — it would become the crash-recovery location.
             if (_lastKnownPlayerHp <= 0) return;
@@ -534,7 +607,13 @@ namespace Valkur.Gameplay
             {
                 Debug.Log("[SaveService] Application paused — triggering autosave + position checkpoint.");
                 SavePositionCheckpoint();
-                Autosave();
+                // Force-save so the LATEST player position lands on disk even
+                // when an earlier SaveImmediately (level up / zone change /
+                // damage / XP / pickup) already cleared `_sessionDirty`.
+                // Without `force=true`, a non-dirty session at pause time
+                // would no-op and the player's post-trigger movement would
+                // be lost on next launch.
+                SaveImmediately("application pause");
                 // On mobile this is the user backgrounding the app; the OS
                 // can kill us at any moment after the autosave queue spawned
                 // its task. Block until disk durability is guaranteed.
@@ -549,10 +628,34 @@ namespace Valkur.Gameplay
             // Only write the per-run autosave when the player is alive.  A dead-state
             // save would restore the player with 0 HP on next "Continue".
             if (_hasKnownPlayerPos && _lastKnownPlayerHp > 0)
-                Autosave();
+            {
+                // Same rationale as OnApplicationPause: force-save so the
+                // latest position is on disk even when no MarkDirty has fired
+                // since the last forced save.
+                SaveImmediately("application quit");
+            }
             // Wait for the queue to drain before Unity tears the service
             // down — otherwise Process exit can land mid-rename / mid-write.
             FlushPendingWrites(quitWaitSeconds);
+        }
+
+        // ── [RunTwinSave-Diag] ───────────────────────────────────────────────
+        // Temporary instrumentation for incident
+        // .github/incidents/RUN_TWIN_SAVE.md. Delete this region (and the
+        // DIAG_RUN_TWIN_SAVE constant + its callsites above) once the root
+        // cause is pinned down and the regression test lands.
+
+        private static void LogRunTwinSaveDiag(string message)
+        {
+            Debug.Log($"[RunTwinSave-Diag] {message}");
+        }
+
+        private static void LogRunTwinSaveDiagWithStack(string message)
+        {
+            // Use LogWarning so Unity attaches the managed stack trace
+            // automatically in builds where Log stack traces are stripped.
+            Debug.LogWarning($"[RunTwinSave-Diag] {message}\n" +
+                             $"Stack:\n{System.Environment.StackTrace}");
         }
     }
 

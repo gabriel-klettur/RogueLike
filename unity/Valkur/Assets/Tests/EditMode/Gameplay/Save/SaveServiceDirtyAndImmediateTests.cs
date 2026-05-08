@@ -469,15 +469,298 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
             Assert.AreEqual(1, _saveService.RunOrdinal,
                 "Pre-condition: SetRunOrdinal must propagate to RunOrdinal.");
 
-            // The orphan-bootstrap guard is now disarmed; SaveImmediately
-            // proceeds into GameStateCollector.Collect() which returns null
-            // in EditMode (no player registered). The contract here is just
-            // "the ordinal=0 guard no longer rejects the call" — the rest of
-            // the no-player short-circuit is asserted elsewhere.
+            // The orphan-bootstrap (ordinal=0) guard is now disarmed. In EditMode
+            // the next layer — RefuseWriteOutsidePlayMode — rejects the write so
+            // tests cannot leak Saves/<guid>/ folders into persistentDataPath.
+            // The end state ("returns false, no disk pollution") is unchanged.
             bool result = _saveService.SaveImmediately("post-bootstrap save");
             Assert.IsFalse(result,
-                "EditMode without a player still returns false (GameStateCollector " +
-                "returns null), but importantly NOT because of the ordinal guard.");
+                "EditMode write must be refused — either by the no-player short-" +
+                "circuit or by the Play-Mode-only guard added for incident RUN_TWIN_SAVE.");
+        }
+
+        // ======================================================================
+        // 12. Test-pollution guard — incident RUN_TWIN_SAVE.md
+        //     EditMode tests must not be able to write to persistentDataPath/Saves/
+        //     even when both the dirty flag AND the run ordinal allow it.
+        // ======================================================================
+
+        [Test]
+        public void SaveImmediately_RefusesDiskWrite_OutsidePlayMode()
+        {
+            _saveService.SetRunOrdinal(1);
+            _saveService.MarkDirty("regression: ensure both gates would otherwise allow the write");
+
+            string persistentRoot = System.IO.Path.Combine(
+                UnityEngine.Application.persistentDataPath, "Saves");
+            string runFolder = System.IO.Path.Combine(persistentRoot, _saveService.RunId);
+
+            bool existedBefore = System.IO.Directory.Exists(runFolder);
+
+            bool result = _saveService.SaveImmediately("regression: outside-play-mode guard");
+
+            Assert.IsFalse(result,
+                "SaveImmediately must return false in EditMode (Application.isPlaying == false).");
+
+            // Hard contract: the run folder must NOT have been created by this call.
+            // (If it pre-existed for unrelated reasons we don't fail the test, but
+            // the absence-after-call is the regression we care about.)
+            if (!existedBefore)
+            {
+                Assert.IsFalse(System.IO.Directory.Exists(runFolder),
+                    $"EditMode test must not leak a Saves/<runId>/ folder. Path: {runFolder}");
+            }
+        }
+
+        [Test]
+        public void Save_RefusesDiskWrite_OutsidePlayMode()
+        {
+            _saveService.SetRunOrdinal(1);
+
+            string persistentRoot = System.IO.Path.Combine(
+                UnityEngine.Application.persistentDataPath, "Saves");
+            string runFolder = System.IO.Path.Combine(persistentRoot, _saveService.RunId);
+            bool existedBefore = System.IO.Directory.Exists(runFolder);
+
+            bool result = _saveService.Save("regression_slot");
+
+            Assert.IsFalse(result,
+                "Manual Save must return false in EditMode (Play Mode guard).");
+
+            if (!existedBefore)
+            {
+                Assert.IsFalse(System.IO.Directory.Exists(runFolder),
+                    $"EditMode manual Save must not leak a Saves/<runId>/ folder. Path: {runFolder}");
+            }
+        }
+
+        // ======================================================================
+        // 13. Full-state-on-every-trigger contract — position-lag fix.
+        //     Every gameplay trigger (damage, XP, item pickup, item consume,
+        //     level up, zone change, player death, boss death) must dispatch
+        //     SaveImmediately so the live player state — INCLUDING THE
+        //     CURRENT POSITION — is captured at the moment of the event,
+        //     not 2 seconds later through the debounce path.
+        //     User-reported regression: "killed an NPC, picked up orbs,
+        //     gained XP — XP saved but position did not."
+        // ======================================================================
+
+        private System.Collections.Generic.List<string> _capturedLogs;
+        private UnityEngine.Application.LogCallback _logCapture;
+
+        private void StartLogCapture()
+        {
+            _capturedLogs = new System.Collections.Generic.List<string>();
+            _logCapture = (msg, _, type) =>
+            {
+                if (type == LogType.Log || type == LogType.Warning)
+                    _capturedLogs.Add(msg ?? string.Empty);
+            };
+            UnityEngine.Application.logMessageReceived += _logCapture;
+        }
+
+        private void StopLogCapture()
+        {
+            if (_logCapture != null)
+            {
+                UnityEngine.Application.logMessageReceived -= _logCapture;
+                _logCapture = null;
+            }
+        }
+
+        private bool LogContainsSaveImmediately(string reasonSubstring)
+        {
+            if (_capturedLogs == null) return false;
+            for (int i = 0; i < _capturedLogs.Count; i++)
+            {
+                var msg = _capturedLogs[i] ?? string.Empty;
+                if (msg.IndexOf("SaveImmediately", System.StringComparison.Ordinal) < 0) continue;
+                if (string.IsNullOrEmpty(reasonSubstring)) return true;
+                if (msg.IndexOf(reasonSubstring, System.StringComparison.Ordinal) >= 0) return true;
+            }
+            return false;
+        }
+
+        [Test]
+        public void OnPlayerDamaged_DispatchesSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            StartLogCapture();
+            try
+            {
+                GameEvents.FirePlayerDamaged(amount: 7, currentHp: 93, maxHp: 100);
+                Assert.IsTrue(LogContainsSaveImmediately("player damaged"),
+                    "Damage handler must call SaveImmediately so the player's " +
+                    "current position is captured at the moment of the hit, " +
+                    "not 2 s later through the debounce path.");
+            }
+            finally { StopLogCapture(); }
+        }
+
+        [Test]
+        public void OnXpGained_ByPlayer_DispatchesSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var player = MakePlayer();
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireXpGained(player, amount: 17);
+                Assert.IsTrue(LogContainsSaveImmediately("gained 17 XP"),
+                    "XP gain on the player must call SaveImmediately — this is " +
+                    "the canonical 'killed an NPC + picked up orbs' regression.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(player); }
+        }
+
+        [Test]
+        public void OnXpGained_ByNonPlayer_DoesNotDispatchSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var npc = new GameObject("TestNpc"); // tag = Untagged
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireXpGained(npc, amount: 17);
+                Assert.IsFalse(LogContainsSaveImmediately("gained"),
+                    "Untagged entities gaining XP must NOT trigger a save — " +
+                    "only the player's progression matters for autosave decisions.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(npc); }
+        }
+
+        [Test]
+        public void OnItemPickedUp_ByPlayer_DispatchesSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var player = MakePlayer();
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireItemPickedUp(player, "XpOrb", 1);
+                Assert.IsTrue(LogContainsSaveImmediately("picked up XpOrb"),
+                    "Item pickup must call SaveImmediately so the exact pickup " +
+                    "location lands on disk before the player walks away.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(player); }
+        }
+
+        [Test]
+        public void OnItemPickedUp_ByNonPlayer_DoesNotDispatchSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var npc = new GameObject("TestNpc");
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireItemPickedUp(npc, "AnyItem", 1);
+                Assert.IsFalse(LogContainsSaveImmediately("picked up"),
+                    "Non-player entities picking up items must NOT trigger a save.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(npc); }
+        }
+
+        [Test]
+        public void OnItemConsumed_ByPlayer_DispatchesSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var player = MakePlayer();
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireItemConsumed(player, "HealthPotion");
+                Assert.IsTrue(LogContainsSaveImmediately("consumed HealthPotion"),
+                    "Item consume must call SaveImmediately so the post-consume " +
+                    "stats (HP, mana, inventory) and current position both land on disk.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(player); }
+        }
+
+        [Test]
+        public void OnItemConsumed_ByNonPlayer_DoesNotDispatchSaveImmediately()
+        {
+            _saveService.SetRunOrdinal(1);
+            var npc = new GameObject("TestNpc");
+            StartLogCapture();
+            try
+            {
+                GameEvents.FireItemConsumed(npc, "AnyItem");
+                Assert.IsFalse(LogContainsSaveImmediately("consumed"),
+                    "Non-player entities consuming items must NOT trigger a save.");
+            }
+            finally { StopLogCapture(); Object.DestroyImmediate(npc); }
+        }
+
+        // ======================================================================
+        // 14. GameStateCollector captures the LIVE position — proves that
+        //     when SaveImmediately fires, the position reaching disk is the
+        //     position at the moment of the call, not a stale cached value.
+        // ======================================================================
+
+        [Test]
+        public void GameStateCollector_CapturesLivePlayerPosition_AtMomentOfCall()
+        {
+            // Build a real player with Health, register it, place it at pos A.
+            var player = new GameObject("TestPlayer_PositionCapture") { tag = "Player" };
+            var health = player.AddComponent<Valkur.Gameplay.Health>();
+            health.Initialize(100);
+
+            var posA = new Vector3(123.5f, 67.25f, 0f);
+            var posB = new Vector3(456.75f, 12.5f, 0f);
+            player.transform.position = posA;
+
+            EntityRegistry.Clear();
+            EntityRegistry.RegisterPlayer(player);
+
+            try
+            {
+                var snapshotA = GameStateCollector.Collect();
+                Assert.IsNotNull(snapshotA,
+                    "Collect must succeed when a Player with valid Health is registered.");
+                Assert.AreEqual(posA.x, snapshotA.player.position.x, 0.001f,
+                    "Snapshot A must capture x at posA.");
+                Assert.AreEqual(posA.y, snapshotA.player.position.y, 0.001f,
+                    "Snapshot A must capture y at posA.");
+
+                // Move the player. A second Collect must reflect the new position
+                // — this is the core of the position-lag fix: every save call
+                // re-reads transform.position right then.
+                player.transform.position = posB;
+
+                var snapshotB = GameStateCollector.Collect();
+                Assert.IsNotNull(snapshotB);
+                Assert.AreEqual(posB.x, snapshotB.player.position.x, 0.001f,
+                    "Snapshot B must capture x at posB (live read, not stale).");
+                Assert.AreEqual(posB.y, snapshotB.player.position.y, 0.001f,
+                    "Snapshot B must capture y at posB (live read, not stale).");
+
+                Assert.AreNotEqual(snapshotA.player.position.x, snapshotB.player.position.x,
+                    "Two snapshots taken at different positions must differ — " +
+                    "proves the capture is live, not cached.");
+            }
+            finally
+            {
+                EntityRegistry.UnregisterPlayer(player);
+                Object.DestroyImmediate(player);
+            }
+        }
+
+        // ======================================================================
+        // 15. Defensive null-checks — handlers must not throw when the player
+        //     reference is null. Regression target: any Fire* call that races
+        //     scene transitions or runs before EntitySetup completes.
+        // ======================================================================
+
+        [Test]
+        public void TriggerHandlers_DoNotThrow_WhenNullEntityPassed()
+        {
+            _saveService.SetRunOrdinal(1);
+            Assert.DoesNotThrow(() => GameEvents.FireXpGained(null, 5),
+                "FireXpGained(null, ...) must not crash the handler.");
+            Assert.DoesNotThrow(() => GameEvents.FireItemPickedUp(null, "x", 1),
+                "FireItemPickedUp(null, ...) must not crash the handler.");
+            Assert.DoesNotThrow(() => GameEvents.FireItemConsumed(null, "x"),
+                "FireItemConsumed(null, ...) must not crash the handler.");
         }
     }
 }

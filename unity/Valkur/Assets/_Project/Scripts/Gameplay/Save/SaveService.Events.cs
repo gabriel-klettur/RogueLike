@@ -11,13 +11,20 @@ namespace Valkur.Gameplay
             // unbind+bind unconditionally keeps subscriptions exactly-once
             // even when GameEvents.Clear() ran between calls.
             UnbindGameEvents();
-            // Tier 2 dirty triggers — flip the flag, the timer / debounce
-            // takes care of the actual write.
+            // Every meaningful gameplay trigger force-saves the FULL state
+            // (including the player's current position). Earlier this was a
+            // tiered model — Tier 2 triggers only flipped the dirty flag and
+            // relied on the 2-second debounce to flush — but that produced
+            // user-observable position lag: the debounced write read
+            // `transform.position` 2 s after the trigger, by which time the
+            // player had already walked away from the kill / pickup spot.
+            // Now every handler captures the live state at the moment of the
+            // trigger via SaveImmediately, and the debounce timer is just
+            // an extra safety net for any future MarkDirty-only callers.
             GameEvents.OnPlayerDamaged += HandlePlayerDamaged;
             GameEvents.OnXpGained      += HandleXpGained;
             GameEvents.OnItemPickedUp  += HandleItemPickedUp;
             GameEvents.OnItemConsumed  += HandleItemConsumed;
-            // Critical milestones — force an immediate save.
             GameEvents.OnLevelUp       += HandleLevelUp;
             GameEvents.OnZoneChanged   += HandleZoneChanged;
             GameEvents.OnPlayerDied    += HandlePlayerDied;
@@ -36,13 +43,29 @@ namespace Valkur.Gameplay
             GameEvents.OnEntityDied    -= HandleEntityDied;
         }
 
-        private void HandlePlayerDamaged(int amount, int currentHp, int maxHp) =>
-            MarkDirty($"player damaged ({amount} dmg)");
+        private void HandlePlayerDamaged(int amount, int currentHp, int maxHp)
+        {
+            // Every damage tick captures the FULL live player state — position,
+            // HP, mana, inventory, NPC memory — at the moment of the hit. The
+            // earlier MarkDirty-only path lost the position when the player
+            // walked away during the 2-second debounce window. See the
+            // RebindGameEvents comment for the design rationale.
+            string reason = $"player damaged ({amount} dmg)";
+            MarkDirty(reason);
+            SaveImmediately(reason);
+        }
 
         private void HandleXpGained(GameObject entity, int amount)
         {
-            if (entity != null && entity.CompareTag("Player"))
-                MarkDirty($"player gained {amount} XP");
+            if (entity == null || !entity.CompareTag("Player")) return;
+            // XP gain is the canonical "I just killed a monster, the orbs
+            // dropped, I picked them up" trigger. Save the full state right
+            // now so the kill location AND the post-pickup position both
+            // land on disk — same defence-in-depth pattern as the milestone
+            // handlers below.
+            string reason = $"player gained {amount} XP";
+            MarkDirty(reason);
+            SaveImmediately(reason);
         }
 
         private void HandleLevelUp(GameObject entity, int newLevel)
@@ -64,14 +87,18 @@ namespace Valkur.Gameplay
 
         private void HandleItemPickedUp(GameObject collector, string itemName, int quantity)
         {
-            if (collector != null && collector.CompareTag("Player"))
-                MarkDirty($"player picked up {itemName} x{quantity}");
+            if (collector == null || !collector.CompareTag("Player")) return;
+            string reason = $"player picked up {itemName} x{quantity}";
+            MarkDirty(reason);
+            SaveImmediately(reason);
         }
 
         private void HandleItemConsumed(GameObject consumer, string itemName)
         {
-            if (consumer != null && consumer.CompareTag("Player"))
-                MarkDirty($"player consumed {itemName}");
+            if (consumer == null || !consumer.CompareTag("Player")) return;
+            string reason = $"player consumed {itemName}";
+            MarkDirty(reason);
+            SaveImmediately(reason);
         }
 
         private void HandleZoneChanged(string oldZone, string newZone)
