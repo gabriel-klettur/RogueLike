@@ -71,15 +71,16 @@ MonoBehaviour:
   scale: 1
   speedMultiplier: 1
   offset: 0
+  iconSprite: {fileID: 21300000, guid: d664331da7f04f0449bd9a8dff61b233, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 0
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 0.30, g: 0.55, b: 0.20, a: 1}
+  particleColor: {r: 0.3, g: 0.55, b: 0.2, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
   vfxPreset: root_whip
-  impactPreset:
+  impactPreset: 

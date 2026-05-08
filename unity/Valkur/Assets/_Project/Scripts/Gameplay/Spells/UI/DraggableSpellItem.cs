@@ -51,9 +51,13 @@ namespace Valkur.Gameplay.Spells.UI
                 _canvasGroup.blocksRaycasts = false;
             }
 
+            // Prefer the live preview Image > the dedicated HUD icon > the in-world sprite (legacy).
+            Sprite preview = _previewImage != null ? _previewImage.sprite : null;
+            if (preview == null) preview = _spellDefinition.iconSprite;
+            if (preview == null) preview = _spellDefinition.sprite;
             SpellDragContext.Begin(
                 _spellDefinition,
-                _previewImage != null ? _previewImage.sprite : _spellDefinition.sprite,
+                preview,
                 _origin,
                 _sourceSlotIndex,
                 _rootCanvas,

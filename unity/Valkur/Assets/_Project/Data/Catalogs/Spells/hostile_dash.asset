@@ -71,6 +71,7 @@ MonoBehaviour:
   scale: 1
   speedMultiplier: 1
   offset: 0
+  iconSprite: {fileID: 21300000, guid: 12efa8427edfdf74ab06133d2d94e480, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 22
@@ -87,4 +88,4 @@ MonoBehaviour:
   - 18
   emitRate: 0
   vfxPreset: dash_trail_emitter
-  impactPreset:
+  impactPreset: 

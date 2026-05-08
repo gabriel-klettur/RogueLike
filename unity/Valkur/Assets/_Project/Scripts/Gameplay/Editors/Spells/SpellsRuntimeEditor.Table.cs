@@ -415,9 +415,24 @@ namespace Valkur.Gameplay.Spells
 
         private void BuildSpellSpriteCell(Transform cellT, SpellTableColumn col, SpellDefinition def)
         {
-            // SpellDefinition only has one Sprite field (sprite), identified by header.
+            // The "sprite" column shows the HUD icon (transparent PNG) preferentially,
+            // falling back to the legacy in-world sprite for unmigrated spells.
             Sprite sprite = null;
-            if (col.Header == "sprite") sprite = def.sprite;
+            if (col.Header == "sprite")
+                sprite = def.iconSprite != null ? def.iconSprite : def.sprite;
+
+            // Solid black backdrop so the alpha-transparent HUD icons read
+            // against the row's striped background.
+            var bgGo = UIFactory.CreateUI("SpriteBg", cellT);
+            var bgRt = bgGo.GetComponent<RectTransform>();
+            bgRt.anchorMin        = new Vector2(0.5f, 0.5f);
+            bgRt.anchorMax        = new Vector2(0.5f, 0.5f);
+            bgRt.pivot            = new Vector2(0.5f, 0.5f);
+            bgRt.anchoredPosition = Vector2.zero;
+            bgRt.sizeDelta        = new Vector2(SPELL_TABLE_SPRITE_SZ, SPELL_TABLE_SPRITE_SZ);
+            var bg = bgGo.AddComponent<Image>();
+            bg.color = sprite != null ? Color.black : new Color(0.25f, 0.25f, 0.30f, 0.60f);
+            bg.raycastTarget = false;
 
             var imgGo = UIFactory.CreateUI("SpriteImg", cellT);
             var imgRt = imgGo.GetComponent<RectTransform>();
@@ -436,7 +451,7 @@ namespace Valkur.Gameplay.Spells
             }
             else
             {
-                img.color = new Color(0.25f, 0.25f, 0.30f, 0.60f);
+                img.enabled = false;
             }
         }
 

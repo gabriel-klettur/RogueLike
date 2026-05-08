@@ -71,6 +71,7 @@ MonoBehaviour:
   scale: 0.1
   speedMultiplier: 1
   offset: 0
+  iconSprite: {fileID: 21300000, guid: adf6aaa9f93f3da4b96863527a90e704, type: 3}
   telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
   telegraphAlpha: 80
   particleCount: 0

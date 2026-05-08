@@ -46,7 +46,11 @@ namespace Valkur.Gameplay.Spells.UI
             SourceSlotIndex = sourceSlotIndex;
 
             _ghostRoot.SetActive(true);
-            _ghostImage.sprite = previewSprite != null ? previewSprite : spell.sprite;
+            // Prefer the explicit preview > the dedicated HUD icon > the in-world sprite (legacy).
+            Sprite ghost = previewSprite;
+            if (ghost == null) ghost = spell.iconSprite;
+            if (ghost == null) ghost = spell.sprite;
+            _ghostImage.sprite = ghost;
             _ghostImage.enabled = _ghostImage.sprite != null;
             UpdatePosition(screenPosition, canvas);
         }

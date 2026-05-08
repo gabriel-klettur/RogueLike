@@ -155,10 +155,15 @@ namespace Valkur.Data
         public float coneLength;
 
         [Header("Visual")]
+        [Tooltip("Sprite shown on the in-world projectile / area / mine / boomerang / summon / wall. " +
+                 "Leave null to let the procedural visual (FireballVisual, ElementalProjectileVisual, …) drive the look.")]
         public Sprite sprite;
         public float scale = 1f;
         public float speedMultiplier = 1f;
         public float offset;
+        [Tooltip("Square HUD icon shown in the spell bar, drag-preview and skill-tree. " +
+                 "Independent of the in-world sprite above. Auto-assigned by Valkur > Spells > Assign Icons.")]
+        public Sprite iconSprite;
 
         [Header("Telegraph")]
         public Color telegraphColor = new Color(0.5f, 0.5f, 0.5f, 0.3f);

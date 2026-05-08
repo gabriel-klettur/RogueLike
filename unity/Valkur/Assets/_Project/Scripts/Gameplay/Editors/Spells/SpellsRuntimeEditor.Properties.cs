@@ -140,6 +140,7 @@ namespace Valkur.Gameplay.Spells
             {
                 _uiRefs.AssetPreviewImage.sprite  = null;
                 _uiRefs.AssetPreviewImage.enabled = false;
+                EditorUIHelpers.HideIconBackdrop(_uiRefs.AssetPreviewImage);
             }
             if (_uiRefs.AssetNameTmp != null)
                 _uiRefs.AssetNameTmp.text = "(no spell selected)";
@@ -158,10 +159,15 @@ namespace Valkur.Gameplay.Spells
             if (_uiRefs.AssetNameTmp != null)
                 _uiRefs.AssetNameTmp.text = string.IsNullOrEmpty(s.displayName) ? s.spellKey : s.displayName;
 
-            if (_uiRefs.AssetPreviewImage != null && s.sprite != null)
+            // Prefer the HUD icon (transparent PNG) over the legacy in-world
+            // sprite. With a transparent PNG selected, paint a solid black
+            // backdrop behind the preview so it reads against the panel.
+            Sprite previewSprite = s.iconSprite != null ? s.iconSprite : s.sprite;
+            if (_uiRefs.AssetPreviewImage != null && previewSprite != null)
             {
-                _uiRefs.AssetPreviewImage.sprite  = s.sprite;
+                _uiRefs.AssetPreviewImage.sprite  = previewSprite;
                 _uiRefs.AssetPreviewImage.enabled = true;
+                EditorUIHelpers.EnsureIconBackdrop(_uiRefs.AssetPreviewImage);
             }
         }
 

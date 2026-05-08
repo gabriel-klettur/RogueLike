@@ -95,18 +95,28 @@ namespace Valkur.Gameplay.Spells
 
                 Color preview = ResolvePreviewColor(spell);
                 Color secondary = ResolveSecondaryColor(spell, preview);
-                if (spell.sprite != null)
+
+                // HUD-grade icon first (transparent PNG under Art/UI/spells/),
+                // fall back to the legacy in-world sprite if the spell hasn't
+                // been migrated yet.
+                Sprite hudIcon = spell.iconSprite != null ? spell.iconSprite : spell.sprite;
+                if (hudIcon != null)
                 {
-                    icon.sprite  = spell.sprite;
+                    icon.sprite  = hudIcon;
                     icon.color   = Color.white;
                     icon.enabled = true;
+                    // The HUD PNGs are alpha-transparent; paint a solid black
+                    // backdrop behind the icon so it reads against the tinted
+                    // slot bg (which only shows around the icon's safe margin).
+                    EditorUIHelpers.EnsureIconBackdrop(icon);
                 }
                 else
                 {
-                    // No sprite — paint a procedural "particle preview" using the
+                    // No icon — paint a procedural "particle preview" using the
                     // preset kind / spell type. Mirrors Python's ParticlePreviewManager
                     // intent (live preview per spell) but rendered statically.
                     icon.enabled = false;
+                    EditorUIHelpers.HideIconBackdrop(icon);
                     string kind = ResolvePreviewKind(spell);
                     AddProceduralPreview(icon.transform.parent, kind, preview, secondary);
                 }
