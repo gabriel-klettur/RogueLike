@@ -263,9 +263,11 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         // ── Tutorial smoke test ──────────────────────────────────────────────────
 
         [Test]
-        public void TutorialSteps_Has_Eight_Entries()
+        public void TutorialSteps_Has_Seven_Entries()
         {
-            // Access the static readonly array via reflection.
+            // Access the static readonly array via reflection. The Sort:Order/Kind
+            // step was removed when the Sort toolbar was retired from the Presets
+            // panel, so the count dropped from 8 to 7.
             var field = typeof(ParticlesRuntimeEditor).GetField(
                 "TUTORIAL_STEPS",
                 BindingFlags.NonPublic | BindingFlags.Static);
@@ -274,7 +276,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             var steps = field.GetValue(null) as Array;
             Assert.IsNotNull(steps, "TUTORIAL_STEPS must be a non-null array.");
-            Assert.AreEqual(8, steps.Length, "TUTORIAL_STEPS must have exactly 8 entries (Python parity).");
+            Assert.AreEqual(7, steps.Length, "TUTORIAL_STEPS must have exactly 7 entries (after Sort step removal).");
         }
 
         [Test]

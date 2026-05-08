@@ -30,12 +30,14 @@ namespace Valkur.Gameplay.VFX
             public Image            ToolsMenuBtnImg;    public TextMeshProUGUI ToolsMenuBtnTmp;
             public Image            PresetsMenuBtnImg;  public TextMeshProUGUI PresetsMenuBtnTmp;
             public Image            PropsMenuBtnImg;    public TextMeshProUGUI PropsMenuBtnTmp;
+            public Image            ViewMenuBtnImg;     public TextMeshProUGUI ViewMenuBtnTmp;
             public Image            SpellsMenuBtnImg;   public TextMeshProUGUI SpellsMenuBtnTmp;
 
             // Panel roots + drag components
             public GameObject       ToolsDropdown;     public DraggablePanel ToolsPanelDrag;
             public GameObject       PresetsDropdown;   public DraggablePanel PresetsPanelDrag;
             public GameObject       PropsDropdown;     public DraggablePanel PropsPanelDrag;
+            public GameObject       ViewDropdown;      public DraggablePanel ViewPanelDrag;
             public GameObject       SpellsDropdown;    public DraggablePanel SpellsPanelDrag;
 
             // Tools panel
@@ -44,13 +46,21 @@ namespace Valkur.Gameplay.VFX
             public Image UndoBtnImg, RedoBtnImg, SaveBtnImg, ReloadBtnImg;
             public TextMeshProUGUI UndoBtnLabel, RedoBtnLabel;
 
-            // Presets panel
+            // Presets panel — shared
             public TMP_InputField   SearchBox;
-            public RawImage         LargePreviewImage;   // 256×256 selected-preset live preview
-            public RectTransform    PickerContent;
             public TextMeshProUGUI  StatusText;
-            public Image            GroupToggleImg;
-            public TextMeshProUGUI  GroupToggleLabel;
+            public TabStrip         PresetsTabStrip;
+
+            // Presets panel — Grid view
+            public RectTransform    PickerContent;
+
+            // Presets panel — Table view
+            public ScrollRect       PresetsTableHeaderScroll;
+            public RectTransform    PresetsTableHeaderContent;
+            public ScrollRect       PresetsTableBodyScroll;
+            public RectTransform    PresetsTableBodyContent;
+            public Button           PresetsColumnsCfgBtn;
+            public TextMeshProUGUI  PresetsColumnsCfgLabel;
 
             // Properties panel
             public TextMeshProUGUI  PresetPropsText;
@@ -61,6 +71,21 @@ namespace Valkur.Gameplay.VFX
 
             // Tools panel — danger zone
             public Image            DeleteInZoneBtnImg;
+
+            // View panel — live preview
+            public RawImage         ViewRawImage;
+            public TextMeshProUGUI  ViewPresetNameTmp;
+            public TextMeshProUGUI  ViewStatusTmp;
+            public Button           ViewPlayPauseBtn;
+            public TextMeshProUGUI  ViewPlayPauseBtnLabel;
+            public Button           ViewSpeed025Btn;
+            public Image            ViewSpeed025BtnImg;
+            public Button           ViewSpeed05Btn;
+            public Image            ViewSpeed05BtnImg;
+            public Button           ViewSpeed1Btn;
+            public Image            ViewSpeed1BtnImg;
+            public Button           ViewZoomInBtn;
+            public Button           ViewZoomOutBtn;
 
             // Spells panel
             public TextMeshProUGUI  SpellsHeaderTmp;
@@ -87,8 +112,12 @@ namespace Valkur.Gameplay.VFX
         private const float TOOLS_BTN_W    = 70f;
         private const float PRESETS_BTN_W  = 80f;
         private const float PROPS_BTN_W    = 92f;
+        private const float VIEW_BTN_W     = 60f;
         private const float SPELLS_BTN_W   = 76f;
         private const float TUTORIAL_BTN_W = 40f;
+
+        private const float VIEW_W         = 420f;
+        private const float VIEW_H         = 500f + PANEL_HDR_H;
 
         // ── BuildAll ──────────────────────────────────────────────────────────────
 
@@ -100,7 +129,6 @@ namespace Valkur.Gameplay.VFX
             Action         onModeSelect,        Action onModePlace, Action onModeDelete,
             Action         onAddSystem,         Action onRemoveSystem,
             Action<string> onSearchChanged,
-            Action         onToggleGroup,
             Action         onToggleSpells,
             Action         onToggleTutorial,
             Action         onDeleteInZone    = null,
@@ -118,8 +146,9 @@ namespace Valkur.Gameplay.VFX
                 onAddSystem, onRemoveSystem,
                 onUndo, onRedo, onSave, onReload,
                 onDeleteInZone);
-            BuildPresetsPanel(canvasT, ref refs, onSearchChanged, onToggleGroup);
+            BuildPresetsPanel(canvasT, ref refs, onSearchChanged);
             BuildPropertiesPanel(canvasT, ref refs, onDeleteInstance, onLoopsToggled);
+            BuildViewPanel(canvasT, ref refs);
             BuildSpellsPanel(canvasT, ref refs, onToggleSpells);
 
             return refs;
@@ -193,6 +222,8 @@ namespace Valkur.Gameplay.VFX
                 () => onToggle?.Invoke("presets"), out refs.PresetsMenuBtnTmp);
             refs.PropsMenuBtnImg   = AddMenuBtn(t, "Properties v", PROPS_BTN_W,
                 () => onToggle?.Invoke("props"),   out refs.PropsMenuBtnTmp);
+            refs.ViewMenuBtnImg    = AddMenuBtn(t, "View v",       VIEW_BTN_W,
+                () => onToggle?.Invoke("view"),    out refs.ViewMenuBtnTmp);
             refs.SpellsMenuBtnImg  = AddMenuBtn(t, "Spells v",     SPELLS_BTN_W,
                 () => onToggle?.Invoke("spells"),  out refs.SpellsMenuBtnTmp);
 

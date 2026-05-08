@@ -175,48 +175,5 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 "Non-matching filter must produce an empty picker grid.");
         }
 
-        // ── GroupToggle tests ─────────────────────────────────────────────────────
-
-        [Test]
-        public void ToggleGroupByKind_FlipsLabel_Order_to_Kind()
-        {
-            // Start state: _groupByKind is false → label should be "Order".
-            SetVal(_editor, "_searchFilter", "");
-            Invoke(_editor, "RefreshPicker");  // ensure UI is in sync
-
-            var ui = GetVal(_editor, "_ui");
-            var labelField = ui.GetType().GetField("GroupToggleLabel");
-            var label = labelField.GetValue(ui) as TMPro.TextMeshProUGUI;
-            Assert.IsNotNull(label, "GroupToggleLabel must be populated.");
-
-            // Initial state — before any toggle _groupByKind is false.
-            bool initialGroupByKind = (bool) GetVal(_editor, "_groupByKind");
-            Assert.IsFalse(initialGroupByKind, "_groupByKind must start false (Order mode).");
-
-            // First toggle → Kind.
-            Invoke(_editor, "ToggleGroupByKind");
-            Assert.AreEqual("Kind", label.text,
-                "After first toggle, GroupToggleLabel must read 'Kind'.");
-
-            // Second toggle → Order.
-            Invoke(_editor, "ToggleGroupByKind");
-            Assert.AreEqual("Order", label.text,
-                "After second toggle, GroupToggleLabel must read 'Order'.");
-        }
-
-        [Test]
-        public void RefreshPicker_GroupByKind_True_StillShowsAllPresets()
-        {
-            // Grouping only reorders, not filters.
-            SetVal(_editor, "_groupByKind", true);
-            SetVal(_editor, "_searchFilter", "");
-            Invoke(_editor, "RefreshPicker");
-
-            var ui = GetVal(_editor, "_ui");
-            var content = ui.GetType().GetField("PickerContent").GetValue(ui) as RectTransform;
-
-            Assert.AreEqual(5, content.childCount,
-                "GROUP mode must still display all 5 presets (only order changes).");
-        }
     }
 }

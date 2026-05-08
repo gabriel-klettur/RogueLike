@@ -77,65 +77,6 @@ namespace Valkur.Gameplay.VFX
             refs.ToolsDropdown.SetActive(false);
         }
 
-        // ── Presets Panel ─────────────────────────────────────────────────────────
-        // Mirrors Python particles_picker_panel: search + ALL/GROUP toggle + grid + status.
-
-        private static void BuildPresetsPanel(Transform canvasT, ref UIRefs refs,
-            Action<string> onSearchChanged, Action onToggleGroup)
-        {
-            float x = PANEL_GAP + TOOLS_W + PANEL_GAP;
-            refs.PresetsDropdown = MakeDrop("ParticlesPresetsPanel", canvasT,
-                PanelDock.TopLeft, x, PANEL_TOP_OFFSET,
-                PRESETS_W, PRESETS_H, "Presets",
-                out var t, out refs.PresetsPanelDrag);
-
-            refs.SearchBox = SearchBox.Create(t, "Search presets…",
-                v => onSearchChanged?.Invoke(v ?? ""));
-
-            // ALL / GROUP toggle row
-            var groupRow = CreateUI("GroupRow", t);
-            groupRow.AddComponent<LayoutElement>().preferredHeight = 26f;
-            var gh = groupRow.AddComponent<HorizontalLayoutGroup>();
-            gh.spacing = 4f;
-            gh.childForceExpandWidth = true;  gh.childForceExpandHeight = true;
-            gh.childControlWidth = true;      gh.childControlHeight = true;
-
-            var lblGo = CreateUI("DispLbl", groupRow.transform);
-            lblGo.AddComponent<LayoutElement>().preferredWidth = 48f;
-            var dispLbl       = lblGo.AddComponent<TextMeshProUGUI>();
-            dispLbl.text      = "Sort:";
-            dispLbl.fontSize  = 10f;
-            dispLbl.alignment = TextAlignmentOptions.MidlineLeft;
-            dispLbl.color     = TEXT_MUTED;
-
-            // Toggle between "Order" (catalog order, default) and "Kind" (grouped by VFX kind).
-            // "Order" = natural catalog order. "Kind" = alphabetical within each vfx.kind group.
-            refs.GroupToggleImg = AddActionBtn(groupRow.transform, "Order", 26f, onToggleGroup,
-                out refs.GroupToggleLabel);
-
-            // Large preview box: 256×256 RenderTexture display for the selected preset.
-            // Mirrors the "ALL" preview area visible in the Python picker panel.
-            // RawImage used (not Image) so a RenderTexture can be assigned as the texture.
-            var largePreviewGo = CreateUI("LargePreview", t);
-            largePreviewGo.AddComponent<LayoutElement>().preferredHeight = 128f;
-            var largeRaw = largePreviewGo.AddComponent<RawImage>();
-            largeRaw.color   = new Color(0.08f, 0.08f, 0.10f, 1f); // dark bg until RT is assigned
-            largeRaw.enabled = false;                                // hidden until a preset is selected
-            refs.LargePreviewImage = largeRaw;
-
-            // Grid picker
-            var (scroll, content) = EditorUIHelpers.MakeGridPicker(t, "PresetGrid", 4, 64f, 4f);
-            var le = scroll.gameObject.AddComponent<LayoutElement>();
-            le.flexibleHeight = 1f;
-            le.minHeight      = 240f;
-            EditorUIHelpers.AddVerticalScrollbar(scroll);
-            refs.PickerContent = content;
-
-            refs.StatusText = EditorUIHelpers.MakeStatusText(t);
-
-            refs.PresetsDropdown.SetActive(false);
-        }
-
         // ── Spells Panel ──────────────────────────────────────────────────────────
         // Collapsible "SPELLS USING THIS PRESET" — Python particles_spells_list_panel.
 

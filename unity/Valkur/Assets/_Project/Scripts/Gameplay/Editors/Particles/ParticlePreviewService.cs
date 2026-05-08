@@ -73,7 +73,54 @@ namespace Valkur.Gameplay.VFX
         // Per-slot definition cache so we can restart burst emitters.
         private readonly ParticlePresetDefinition[] _slotDef = new ParticlePresetDefinition[POOL_SIZE];
 
-        private bool _initialized;
+        private bool  _initialized;
+        private float _speedAccumulator; // fractional frame accumulator for sub-1x speed
+
+        // ── Playback controls ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// When true the per-emitter simulation is frozen. The camera still runs
+        /// so the last rendered frame is visible in the RT.
+        /// NOTE: Only the preview simulation is paused — map emitters are unaffected.
+        /// </summary>
+        public bool IsPaused { get; private set; }
+
+        /// <summary>
+        /// Multiplier applied to the preview simulation delta time each Tick().
+        /// 0.25, 0.5, or 1.0 are the exposed values.
+        /// </summary>
+        public float SpeedMultiplier { get; private set; } = 1f;
+
+        /// <summary>Pause the preview simulation.</summary>
+        public void Pause()  { IsPaused = true;  }
+        /// <summary>Resume the preview simulation.</summary>
+        public void Resume() { IsPaused = false; }
+        /// <summary>Toggle pause state; returns the new IsPaused value.</summary>
+        public bool TogglePause() { IsPaused = !IsPaused; return IsPaused; }
+        /// <summary>Set the simulation speed multiplier (0.25, 0.5, 1.0, …).</summary>
+        public void SetSpeedMultiplier(float m) { SpeedMultiplier = Mathf.Max(0.01f, m); }
+
+        // ── Zoom controls ─────────────────────────────────────────────────────────
+
+        private const float ZOOM_MIN  = 0.25f;
+        private const float ZOOM_MAX  = 4.0f;
+        private const float ZOOM_STEP = 1.25f;
+
+        /// <summary>
+        /// User-controlled zoom for the large preview camera.
+        /// 1.0 = auto-fit baseline; &gt;1 zooms in (smaller ortho); &lt;1 zooms out.
+        /// Clamped to [0.25, 4.0].
+        /// </summary>
+        public float LargeOrthoZoom { get; private set; } = 1f;
+
+        /// <summary>Zoom in by one step (multiply by 1.25, clamp).</summary>
+        public void ZoomIn()  => SetZoom(LargeOrthoZoom * ZOOM_STEP);
+        /// <summary>Zoom out by one step (multiply by 0.8, clamp).</summary>
+        public void ZoomOut() => SetZoom(LargeOrthoZoom / ZOOM_STEP);
+        /// <summary>Set an absolute zoom value (clamped to [0.25, 4.0]).</summary>
+        public void SetZoom(float zoom)  { LargeOrthoZoom = Mathf.Clamp(zoom, ZOOM_MIN, ZOOM_MAX); }
+        /// <summary>Reset zoom back to the auto-fit baseline (1.0).</summary>
+        public void ResetZoom()          { LargeOrthoZoom = 1f; }
 
         // ── Inner type ───────────────────────────────────────────────────────────
 
@@ -227,6 +274,21 @@ namespace Valkur.Gameplay.VFX
         {
             if (!_initialized || _activeSlotCount == 0) return;
 
+            // When paused, still point the camera (so the last frame stays visible)
+            // but skip the restart-if-dead simulation advancement.
+            if (IsPaused)
+            {
+                PointCameraAtThumb(_thumbFrameCounter);
+                return;
+            }
+
+            // SpeedMultiplier: at <1x we skip frames proportionally.
+            // At 0.5x we only advance every 2nd tick, etc.
+            // Simple frame-skip strategy: accumulate a counter and skip when below threshold.
+            _speedAccumulator += SpeedMultiplier;
+            if (_speedAccumulator < 1f) return;  // not enough time accumulated
+            _speedAccumulator -= 1f;
+
             _largeFrameCounter++;
             bool renderLarge = _largeFrameCounter >= LARGE_REFRESH_FRAMES
                             && !string.IsNullOrEmpty(_selectedPresetId);
@@ -274,6 +336,10 @@ namespace Valkur.Gameplay.VFX
             _selectedPresetId = null;
             _largePresetDef   = null;
             _activeSlotCount  = 0;
+            _speedAccumulator = 0f;
+            IsPaused          = false;
+            SpeedMultiplier   = 1f;
+            LargeOrthoZoom    = 1f;
             _initialized      = false;
         }
 
@@ -343,7 +409,9 @@ namespace Valkur.Gameplay.VFX
 
             Vector3 ep = _largeEmitterGo.transform.position;
             _camera.transform.position = new Vector3(ep.x, ep.y, CAMERA_Z);
-            _camera.orthographicSize   = ComputeOrthoSize(_largeEmitterGo, ORTHO_SIZE_LARGE_MIN, ORTHO_SIZE_LARGE_MAX);
+            // Apply user zoom: LargeOrthoZoom > 1 → smaller ortho → zoomed in.
+            float autoFit = ComputeOrthoSize(_largeEmitterGo, ORTHO_SIZE_LARGE_MIN, ORTHO_SIZE_LARGE_MAX);
+            _camera.orthographicSize   = autoFit / Mathf.Max(LargeOrthoZoom, 0.0001f);
             _camera.targetTexture      = _largeRT;
         }
 

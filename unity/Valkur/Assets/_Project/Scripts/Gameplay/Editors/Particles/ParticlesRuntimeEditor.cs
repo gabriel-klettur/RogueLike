@@ -47,9 +47,8 @@ namespace Valkur.Gameplay.VFX
         private Vector3 _dragOffset;
         private Vector3 _dragStartWorldPos;
 
-        // Picker filtering / grouping (Python parity).
+        // Picker filtering — search-box driven, no grouping.
         private string _searchFilter = "";
-        private bool _groupByKind;
 
         // Spells-using-this-preset collapsible (Python parity).
         private bool _spellsExpanded = true;
@@ -83,12 +82,11 @@ namespace Valkur.Gameplay.VFX
         {
             ("1. Open editor",        "Press F1 anywhere in-game to toggle the Particles Editor."),
             ("2. Pick a preset",      "In the Presets panel, click a thumbnail to select it. Type in the search box to filter by id or display name."),
-            ("3. Sort: Order / Kind",  "Toggle the picker sort between Order (catalog order) and Kind (grouped by VFX kind: aura, explosion, smoke…)."),
-            ("4. Place an instance",  "Drag a preset from the Presets panel onto the map to spawn an emitter, or click \"Add System\" then click on the map."),
-            ("5. Move an instance",   "Right-click + drag a particle instance on the map to move it. Release to commit."),
-            ("6. Delete an instance", "Click \"Remove\" or press the Delete tool, then click an instance. A confirmation modal will ask before destroying."),
-            ("7. Undo / Redo",        "Use the Tools panel Undo / Redo buttons (or Ctrl+Z / Ctrl+Y). Capacity is 64."),
-            ("8. Save",               "Click Save in the Tools panel to write StreamingAssets/Particles/particles_instances.json. Press F1 again to close."),
+            ("3. Place an instance",  "Drag a preset from the Presets panel onto the map to spawn an emitter, or click \"Add System\" then click on the map."),
+            ("4. Move an instance",   "Right-click + drag a particle instance on the map to move it. Release to commit."),
+            ("5. Delete an instance", "Click \"Remove\" or press the Delete tool, then click an instance. A confirmation modal will ask before destroying."),
+            ("6. Undo / Redo",        "Use the Tools panel Undo / Redo buttons (or Ctrl+Z / Ctrl+Y). Capacity is 64."),
+            ("7. Save",               "Click Save in the Tools panel to write StreamingAssets/Particles/particles_instances.json. Press F1 again to close."),
         };
 
         // Confirm-delete modal.
@@ -128,6 +126,7 @@ namespace Valkur.Gameplay.VFX
             // Middle-mouse pan runs unconditionally.
             _cameraPan.Tick();
             _previewService.Tick();
+            TickViewPanelInput();
 
             UpdatePickerDrag();
             UpdateOutlineState();
@@ -146,16 +145,14 @@ namespace Valkur.Gameplay.VFX
             _mode = EditorMode.Select;
             EnsureOutlineFx();
             _previewService.Initialize(transform);
-            // Sync Sort toggle label to current state in case the editor was re-activated.
-            if (_ui.GroupToggleLabel != null)
-                _ui.GroupToggleLabel.text = _groupByKind ? "Kind" : "Order";
-            if (_ui.GroupToggleImg != null)
-                _ui.GroupToggleImg.color = _groupByKind ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
             OpenDefaultDropdowns();
             RefreshPicker();
+            RefreshTable();
+            RefreshViewPanel();
             RefreshModeButtons();
             RefreshSpellsPanel();
             RefreshUndoRedoLabels();
+            UpdateParticleColumnsBtnLabel();
             SetStatus("Particles Editor active. F1 to close.");
             Debug.Log("[ParticlesEditor] Activated (F1)");
         }

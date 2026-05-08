@@ -51,7 +51,6 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 onAddSystem:       () => { },
                 onRemoveSystem:    () => { },
                 onSearchChanged:   _ => { },
-                onToggleGroup:     () => { },
                 onToggleSpells:    () => { },
                 onToggleTutorial:  () => { });
         }
@@ -74,7 +73,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         }
 
         [Test]
-        public void BuildAll_MenuBar_HasAllFourButtonImagesAndTmps()
+        public void BuildAll_MenuBar_HasAllFiveButtonImagesAndTmps()
         {
             Assert.IsTrue(_ui.ToolsMenuBtnImg   != null, "ToolsMenuBtnImg must be populated.");
             Assert.IsTrue(_ui.ToolsMenuBtnTmp   != null, "ToolsMenuBtnTmp must be populated.");
@@ -82,6 +81,8 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.IsTrue(_ui.PresetsMenuBtnTmp  != null, "PresetsMenuBtnTmp must be populated.");
             Assert.IsTrue(_ui.PropsMenuBtnImg    != null, "PropsMenuBtnImg must be populated.");
             Assert.IsTrue(_ui.PropsMenuBtnTmp    != null, "PropsMenuBtnTmp must be populated.");
+            Assert.IsTrue(_ui.ViewMenuBtnImg     != null, "ViewMenuBtnImg must be populated.");
+            Assert.IsTrue(_ui.ViewMenuBtnTmp     != null, "ViewMenuBtnTmp must be populated.");
             Assert.IsTrue(_ui.SpellsMenuBtnImg   != null, "SpellsMenuBtnImg must be populated.");
             Assert.IsTrue(_ui.SpellsMenuBtnTmp   != null, "SpellsMenuBtnTmp must be populated.");
         }
@@ -89,13 +90,14 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         // ── Panels ──────────────────────────────────────────────────────────────
 
         [Test]
-        public void BuildAll_AllFourDropdownPanels_NonNull_With_DraggablePanel_And_PanelChrome()
+        public void BuildAll_AllFivePanels_NonNull_With_DraggablePanel_And_PanelChrome()
         {
             var panels = new[]
             {
                 (_ui.ToolsDropdown,   _ui.ToolsPanelDrag,   "Tools"),
                 (_ui.PresetsDropdown, _ui.PresetsPanelDrag, "Presets"),
                 (_ui.PropsDropdown,   _ui.PropsPanelDrag,   "Properties"),
+                (_ui.ViewDropdown,    _ui.ViewPanelDrag,    "View"),
                 (_ui.SpellsDropdown,  _ui.SpellsPanelDrag,  "Spells"),
             };
 
@@ -116,6 +118,7 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.IsFalse(_ui.ToolsDropdown.activeSelf,   "ToolsDropdown must start hidden.");
             Assert.IsFalse(_ui.PresetsDropdown.activeSelf, "PresetsDropdown must start hidden.");
             Assert.IsFalse(_ui.PropsDropdown.activeSelf,   "PropsDropdown must start hidden.");
+            Assert.IsFalse(_ui.ViewDropdown.activeSelf,    "ViewDropdown must start hidden.");
             Assert.IsFalse(_ui.SpellsDropdown.activeSelf,  "SpellsDropdown must start hidden.");
         }
 
@@ -127,19 +130,23 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.IsTrue(_ui.PickerContent       != null, "PickerContent must be populated.");
             Assert.IsTrue(_ui.StatusText          != null, "StatusText must be populated.");
             Assert.IsTrue(_ui.SearchBox           != null, "SearchBox must be populated.");
-            Assert.IsTrue(_ui.GroupToggleImg      != null, "GroupToggleImg must be populated.");
-            Assert.IsTrue(_ui.GroupToggleLabel    != null, "GroupToggleLabel must be populated.");
-            Assert.IsTrue(_ui.LargePreviewImage   != null, "LargePreviewImage (RawImage) must be populated.");
+            Assert.IsTrue(_ui.PresetsTabStrip     != null, "PresetsTabStrip must be populated.");
+            // Table view refs
+            Assert.IsTrue(_ui.PresetsTableHeaderScroll  != null, "PresetsTableHeaderScroll must be populated.");
+            Assert.IsTrue(_ui.PresetsTableHeaderContent != null, "PresetsTableHeaderContent must be populated.");
+            Assert.IsTrue(_ui.PresetsTableBodyScroll    != null, "PresetsTableBodyScroll must be populated.");
+            Assert.IsTrue(_ui.PresetsTableBodyContent   != null, "PresetsTableBodyContent must be populated.");
         }
 
         [Test]
-        public void BuildAll_LargePreviewImage_StartsDisabled_WithDarkBackground()
+        public void BuildAll_View_Panel_Refs_AllPopulated()
         {
-            Assert.IsTrue(_ui.LargePreviewImage != null, "LargePreviewImage must exist.");
-            Assert.IsFalse(_ui.LargePreviewImage.enabled,
-                "LargePreviewImage must start disabled (hidden until a preset is selected).");
-            Assert.IsNull(_ui.LargePreviewImage.texture,
-                "LargePreviewImage texture must be null until a preset is selected.");
+            // LargePreviewImage was removed from the Presets panel and is now ViewRawImage.
+            Assert.IsTrue(_ui.ViewRawImage          != null, "ViewRawImage must be populated.");
+            Assert.IsTrue(_ui.ViewPresetNameTmp     != null, "ViewPresetNameTmp must be populated.");
+            Assert.IsTrue(_ui.ViewStatusTmp         != null, "ViewStatusTmp must be populated.");
+            Assert.IsTrue(_ui.ViewPlayPauseBtn      != null, "ViewPlayPauseBtn must be populated.");
+            Assert.IsTrue(_ui.ViewSpeed1Btn         != null, "ViewSpeed1Btn must be populated.");
         }
 
         // ── Properties panel refs ────────────────────────────────────────────────

@@ -45,34 +45,19 @@ namespace Valkur.Gameplay.VFX
                 visible.Add(preset);
             }
 
-            // GROUP-by-kind sorts by VFX kind (Python parity); ALL keeps catalog order.
-            if (_groupByKind)
-            {
-                visible.Sort((a, b) =>
-                {
-                    string ka = a.vfx?.kind ?? "";
-                    string kb = b.vfx?.kind ?? "";
-                    int c = string.CompareOrdinal(ka, kb);
-                    return c != 0 ? c : string.CompareOrdinal(
-                        a.displayName ?? a.id ?? "",
-                        b.displayName ?? b.id ?? "");
-                });
-            }
-
             // Feed the visible list to the preview service so it configures emitters.
             _previewService.SetVisiblePresets(visible);
 
             foreach (var preset in visible)
                 AddPickerSlot(preset);
 
-            // Sync the large preview box with the currently selected preset.
-            if (_ui.LargePreviewImage != null)
+            // Sync the View panel RawImage with the currently selected preset.
+            if (_ui.ViewRawImage != null)
             {
                 var largeTex  = _previewService.GetLargePreviewTexture();
                 bool hasLarge = largeTex != null && !string.IsNullOrEmpty(_selectedPresetId);
-                _ui.LargePreviewImage.texture = hasLarge ? largeTex : null;
-                _ui.LargePreviewImage.color   = hasLarge ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
-                _ui.LargePreviewImage.enabled = true;
+                _ui.ViewRawImage.texture = hasLarge ? largeTex : null;
+                _ui.ViewRawImage.color   = hasLarge ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
             }
 
             SetStatus(filter.Length == 0
@@ -134,21 +119,19 @@ namespace Valkur.Gameplay.VFX
         {
             _selectedPresetId = pid;
 
+            // Reset zoom whenever the user picks a different preset so they don't end up
+            // at 4x on a newly selected effect.
+            _previewService.ResetZoom();
+
             // Notify preview service so the large preview RT starts rendering.
             var def = _catalog?.GetById(pid);
             _previewService.SetSelectedPreset(pid, def);
 
-            // Update large preview image immediately.
-            if (_ui.LargePreviewImage != null)
-            {
-                var largeTex = _previewService.GetLargePreviewTexture();
-                bool hasPreview = largeTex != null && !string.IsNullOrEmpty(pid);
-                _ui.LargePreviewImage.texture = hasPreview ? largeTex : null;
-                _ui.LargePreviewImage.color   = hasPreview ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
-                _ui.LargePreviewImage.enabled = true; // always show the box; dark bg when no preset
-            }
+            // Update View panel RT and name label immediately.
+            RefreshViewPanel();
 
             RefreshPicker();
+            RefreshTable();
             ShowPresetProperties(pid);
             RefreshSpellsPanel();
             RebuildSamePresetFx();
@@ -245,19 +228,6 @@ namespace Valkur.Gameplay.VFX
             int last = name.LastIndexOf('_');
             if (last <= 3) return null;
             return name.Substring(3, last - 3);
-        }
-
-        // ── ALL / GROUP toggle (Python picker_view parity) ─────────────────────
-
-        private void ToggleGroupByKind()
-        {
-            _groupByKind = !_groupByKind;
-            if (_ui.GroupToggleLabel != null)
-                // "Order" = natural catalog order (default). "Kind" = sorted by vfx.kind group.
-                _ui.GroupToggleLabel.text = _groupByKind ? "Kind" : "Order";
-            if (_ui.GroupToggleImg != null)
-                _ui.GroupToggleImg.color = _groupByKind ? UITheme.BTN_ACTIVE : UITheme.BTN_NORMAL;
-            RefreshPicker();
         }
 
         private static string TruncateName(string name, int max)

@@ -51,7 +51,6 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 onAddSystem:       () => { },
                 onRemoveSystem:    () => { },
                 onSearchChanged:   _ => { },
-                onToggleGroup:     () => { },
                 onToggleSpells:    () => { },
                 onToggleTutorial:  () => { },
                 onDeleteInZone:    () => { },
