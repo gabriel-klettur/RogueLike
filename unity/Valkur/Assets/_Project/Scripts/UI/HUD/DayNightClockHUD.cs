@@ -8,7 +8,7 @@ namespace Valkur.UI.HUD
 {
     /// <summary>
     /// Sundial-style HUD widget that surfaces the live <see cref="DayNightCycle"/>
-    /// to the player. Anchored top-right of the screen, always visible during
+    /// to the player. Anchored top-left of the screen, always visible during
     /// gameplay. Shows:
     ///   • A 24-hour ring whose colored arc grows clockwise from 00:00 → current time.
     ///   • A central icon (sun during 06:00–18:00, moon otherwise) tinted by phase.
@@ -26,7 +26,7 @@ namespace Valkur.UI.HUD
     {
         // ── Layout constants ─────────────────────────────────────────────────
         private const float WIDGET_SIZE   = 110f;
-        private const float MARGIN_RIGHT  = 24f;
+        private const float MARGIN_LEFT   = 24f;
         private const float MARGIN_TOP    = 24f;
         private const float DIAL_SIZE     = 92f;
         private const float ICON_SIZE     = 44f;
@@ -111,10 +111,10 @@ namespace Valkur.UI.HUD
             // gameplay clicks. Modifying controls live in the F2 editor.
 
             _root = NewUI("Root", canvasGo.transform).GetComponent<RectTransform>();
-            _root.anchorMin        = new Vector2(1f, 1f);
-            _root.anchorMax        = new Vector2(1f, 1f);
-            _root.pivot            = new Vector2(1f, 1f);
-            _root.anchoredPosition = new Vector2(-MARGIN_RIGHT, -MARGIN_TOP);
+            _root.anchorMin        = new Vector2(0f, 1f);
+            _root.anchorMax        = new Vector2(0f, 1f);
+            _root.pivot            = new Vector2(0f, 1f);
+            _root.anchoredPosition = new Vector2(MARGIN_LEFT, -MARGIN_TOP);
             _root.sizeDelta        = new Vector2(WIDGET_SIZE, WIDGET_TOTAL_H);
 
             BuildDial();

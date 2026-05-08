@@ -13,55 +13,39 @@ namespace Valkur.UI.HUD
 
         public XpBarHUD XpBar => _xpBarHUD;
 
+        // Yellow XP fill — matches the user's reference HUD (per request).
+        private static readonly Color XpFillColor = new Color(1.0f, 0.82f, 0.20f, 1f);
+
         /// <summary>
-        /// Build the bottom-center XP bar (Python parity: 50% screen width,
-        /// 10 px tall, level + xp/next label centered above the bar).
+        /// Build the XP bar inline inside the unified player HUD panel
+        /// (parent supplied by <c>CreatePlayerHUD</c>). The bar grows with
+        /// the parent's HorizontalLayoutGroup width and uses a yellow fill;
+        /// a tiny "Lvl N  xp/next" label is overlaid on top.
         /// </summary>
-        private void CreateXpBarHUD(Experience playerXp)
+        private void CreateXpBarHUD(Experience playerXp, Transform parent)
         {
-            if (_canvas == null) return;
+            const float panelHeight = 18f;
 
-            const float panelHeight = 28f;
-            const float barHeight   = 10f;
-
-            var panel = CreateUIObject("XpBarPanel", _canvas.transform);
+            var panel = CreateUIObject("XpBar", parent);
             var rect  = panel.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
             rect.pivot     = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0f, 14f);
-            // Width is 50% of canvas reference width (Python: screen_w * 0.5).
-            rect.sizeDelta = new Vector2(800f, panelHeight);
+            var le = panel.AddComponent<LayoutElement>();
+            le.preferredHeight = panelHeight;
+            le.flexibleWidth   = 1f;
 
-            // Label (Lvl N    xp/next) above the bar.
-            var labelGo = CreateUIObject("Label", panel.transform);
-            var labelRect = labelGo.GetComponent<RectTransform>();
-            labelRect.anchorMin = new Vector2(0f, 1f);
-            labelRect.anchorMax = new Vector2(1f, 1f);
-            labelRect.pivot     = new Vector2(0.5f, 1f);
-            labelRect.anchoredPosition = new Vector2(0f, 0f);
-            labelRect.sizeDelta = new Vector2(0f, panelHeight - barHeight - 2f);
-            var label = labelGo.AddComponent<TextMeshProUGUI>();
-            label.text = "Lvl 1   0/0";
-            label.fontSize = 14f;
-            label.alignment = TextAlignmentOptions.Center;
-            label.color = new Color(0.92f, 0.92f, 0.92f, 1f);
-
-            // Bar background.
-            var barBg = CreateUIObject("BarBG", panel.transform);
-            var barBgRect = barBg.GetComponent<RectTransform>();
-            barBgRect.anchorMin = new Vector2(0f, 0f);
-            barBgRect.anchorMax = new Vector2(1f, 0f);
-            barBgRect.pivot = new Vector2(0.5f, 0f);
-            barBgRect.anchoredPosition = new Vector2(0f, 0f);
-            barBgRect.sizeDelta = new Vector2(0f, barHeight);
-            var bg = barBg.AddComponent<Image>();
+            // Bar background (fills the panel).
+            var bg = panel.AddComponent<Image>();
             bg.sprite = GetWhitePixelSprite();
-            bg.type = Image.Type.Sliced;
-            bg.color = new Color(0.16f, 0.16f, 0.16f, 0.85f);
+            bg.type   = Image.Type.Sliced;
+            bg.color  = new Color(0.12f, 0.12f, 0.14f, 0.85f);
+            bg.raycastTarget = false;
 
-            // Bar fill.
-            var fillGo = CreateUIObject("BarFill", barBg.transform);
+            // Bar fill (anchored stretch). The XP bar carries no overlay text
+            // by design — the player's level number lives in its own HUD widget
+            // in the bottom-right corner of the screen.
+            var fillGo = CreateUIObject("BarFill", panel.transform);
             var fillRect = fillGo.GetComponent<RectTransform>();
             fillRect.anchorMin = Vector2.zero;
             fillRect.anchorMax = Vector2.one;
@@ -70,12 +54,13 @@ namespace Valkur.UI.HUD
             fill.sprite = GetWhitePixelSprite();
             fill.type   = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Horizontal;
-            fill.color  = new Color(0.31f, 0.55f, 1f, 1f);
+            fill.color  = XpFillColor;
             fill.fillAmount = 0f;
+            fill.raycastTarget = false;
 
             _xpBarPanel = panel;
             _xpBarHUD = panel.AddComponent<XpBarHUD>();
-            _xpBarHUD.SetUIReferences(fill, bg, label);
+            _xpBarHUD.SetUIReferences(fill, bg, null);
             _xpBarHUD.Bind(playerXp);
         }
     }

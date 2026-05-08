@@ -37,13 +37,8 @@ namespace Valkur.UI.HUD
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
 
-            // XP bar — bottom-center, mirrors Python ExperienceRenderSystem.
-            // Resolves the Experience component from the same player as Health.
-            var xp = playerHealth != null ? playerHealth.GetComponent<Experience>() : null;
-            CreateXpBarHUD(xp);
-
-            // Spell cooldown countdown stack — bottom-center, sits above the XP
-            // bar. One row per active cooldown; subscribes to GameEvents.OnSpellCast.
+            // Spell cooldown countdown stack — top-left, below the day/night
+            // clock. One row per active cooldown; subscribes to GameEvents.OnSpellCast.
             CreateSpellCooldownHUD(playerHealth != null ? playerHealth.gameObject : null);
 
             UILayerHelper.SetUILayerRecursive(_canvas.gameObject);
@@ -82,6 +77,19 @@ namespace Valkur.UI.HUD
             canvasGo.AddComponent<GraphicRaycaster>();
         }
 
+        // ── Layout constants for the unified bottom-left HUD panel ─────────
+        // Outer panel holds the portrait (left) + a vertical stack (right) of
+        // HP / MP / 3 ability slots / XP bar — mirrors the reference layout.
+        private const float HudPanelMargin     = 16f;
+        private const float HudPanelPadding    = 8f;
+        private const float HudPanelInnerSpacing = 8f;
+        private const float HudPortraitSize    = 108f;
+        private const float HudStackWidth      = 220f;
+        private const float HudBarHeight       = 22f;
+        private const float HudAbilityRowHeight = 38f;
+        private const float HudXpRowHeight     = 18f;
+        private const float HudStackSpacing    = 4f;
+
         private void CreatePlayerHUD(Health playerHealth)
         {
             // --- Container panel (bottom-left) ---
@@ -90,34 +98,69 @@ namespace Valkur.UI.HUD
             panelRect.anchorMin = new Vector2(0f, 0f);
             panelRect.anchorMax = new Vector2(0f, 0f);
             panelRect.pivot = new Vector2(0f, 0f);
-            panelRect.anchoredPosition = new Vector2(20f, 20f);
-            panelRect.sizeDelta = new Vector2(260f, 80f);
+            panelRect.anchoredPosition = new Vector2(HudPanelMargin, HudPanelMargin);
+
+            float stackHeight = HudBarHeight * 2f + HudAbilityRowHeight + HudXpRowHeight + HudStackSpacing * 3f;
+            float panelHeight = Mathf.Max(HudPortraitSize, stackHeight) + HudPanelPadding * 2f;
+            float panelWidth  = HudPortraitSize + HudStackWidth + HudPanelInnerSpacing + HudPanelPadding * 2f;
+            panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
 
             // Semi-transparent background
             var panelImg = panel.AddComponent<Image>();
             panelImg.color = new Color(0f, 0f, 0f, 0.55f);
 
-            // Vertical layout
-            var layout = panel.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(10, 10, 8, 8);
-            layout.spacing = 6f;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
+            // Horizontal layout: portrait | stack
+            var hLayout = panel.AddComponent<HorizontalLayoutGroup>();
+            hLayout.padding = new RectOffset(
+                (int)HudPanelPadding, (int)HudPanelPadding,
+                (int)HudPanelPadding, (int)HudPanelPadding);
+            hLayout.spacing = HudPanelInnerSpacing;
+            hLayout.childForceExpandWidth  = false;
+            hLayout.childForceExpandHeight = true;
+            hLayout.childControlWidth      = true;
+            hLayout.childControlHeight     = true;
+            hLayout.childAlignment         = TextAnchor.MiddleLeft;
 
-            // HP Row
-            var hpRow = CreateBarRow(panel.transform, "HP", out var hpFill, out var hpBg, out var hpText,
-                new Color(0.2f, 0.85f, 0.2f, 1f));
+            // --- Portrait (left) ---
+            CreatePortrait(panel.transform, playerHealth);
 
-            // MP Row
-            var mpRow = CreateBarRow(panel.transform, "MP", out var mpFill, out var mpBg, out var mpText,
-                new Color(0.31f, 0.47f, 1f, 1f));
+            // --- Stat stack (right) ---
+            var stack = CreateUIObject("StatStack", panel.transform);
+            var stackLe = stack.AddComponent<LayoutElement>();
+            stackLe.preferredWidth  = HudStackWidth;
+            stackLe.preferredHeight = stackHeight;
+            stackLe.flexibleWidth   = 0f;
+            stackLe.flexibleHeight  = 0f;
 
-            // Attach PlayerHUD component
+            var vLayout = stack.AddComponent<VerticalLayoutGroup>();
+            vLayout.padding = new RectOffset(0, 0, 0, 0);
+            vLayout.spacing = HudStackSpacing;
+            vLayout.childForceExpandWidth  = true;
+            vLayout.childForceExpandHeight = false;
+            vLayout.childControlWidth      = true;
+            vLayout.childControlHeight     = true;
+            vLayout.childAlignment         = TextAnchor.MiddleLeft;
+
+            // HP bar (green, value overlaid)
+            var hpRow = CreateOverlayBar(stack.transform, "HpBar", HudBarHeight,
+                new Color(0.20f, 0.85f, 0.20f, 1f),
+                out var hpFill, out var hpBg, out var hpText);
+
+            // MP bar (blue, value overlaid)
+            var mpRow = CreateOverlayBar(stack.transform, "MpBar", HudBarHeight,
+                new Color(0.31f, 0.47f, 1.0f, 1f),
+                out var mpFill, out var mpBg, out var mpText);
+
+            // 3 ability slots (icons + radial cooldown) — reads SpellCaster.
+            CreateAbilityRow(stack.transform, playerHealth != null ? playerHealth.gameObject : null);
+
+            // XP bar (yellow) — last in the stack.
+            var xp = playerHealth != null ? playerHealth.GetComponent<Experience>() : null;
+            CreateXpBarHUD(xp, stack.transform);
+
+            // Attach PlayerHUD component (drives HP+MP fills).
             _playerHudPanel = panel;
             _playerHUD = panel.AddComponent<PlayerHUD>();
-
             _playerHUD.SetUIReferences(hpFill, hpBg, hpText, mpFill, mpBg, mpText);
             _playerHUD.Initialize(playerHealth);
         }

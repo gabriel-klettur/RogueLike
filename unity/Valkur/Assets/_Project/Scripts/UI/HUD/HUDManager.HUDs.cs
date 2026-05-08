@@ -99,62 +99,6 @@ namespace Valkur.UI.HUD
             _targetHUD.SetUIReferences(canvasGroup, nameText, stateText, barFillImg, hpText);
         }
 
-        private GameObject CreateBarRow(Transform parent, string label,
-            out Image fill, out Image bg, out TextMeshProUGUI text, Color fillColor)
-        {
-            var row = CreateUIObject($"{label}Row", parent);
-            var rowLayout = row.AddComponent<LayoutElement>();
-            rowLayout.preferredHeight = 26f;
-
-            // Horizontal layout: label + bar
-            var hLayout = row.AddComponent<HorizontalLayoutGroup>();
-            hLayout.spacing = 8f;
-            hLayout.childForceExpandWidth = false;
-            hLayout.childForceExpandHeight = true;
-            hLayout.childControlWidth = true;
-            hLayout.childControlHeight = true;
-
-            // Label text
-            var labelGo = CreateUIObject($"{label}Label", row.transform);
-            text = labelGo.AddComponent<TextMeshProUGUI>();
-            text.text = $"{label}: 0/0";
-            text.fontSize = 16f;
-            text.alignment = TextAlignmentOptions.Left;
-            text.color = Color.white;
-            var labelLayout = labelGo.AddComponent<LayoutElement>();
-            labelLayout.preferredWidth = 110f;
-
-            // Bar container
-            var barContainer = CreateUIObject($"{label}Bar", row.transform);
-            var barContainerLayout = barContainer.AddComponent<LayoutElement>();
-            barContainerLayout.flexibleWidth = 1f;
-
-            // Bar background
-            var bgGo = CreateUIObject("BG", barContainer.transform);
-            var bgRect = bgGo.GetComponent<RectTransform>();
-            bgRect.anchorMin = Vector2.zero;
-            bgRect.anchorMax = Vector2.one;
-            bgRect.sizeDelta = Vector2.zero;
-            bg = bgGo.AddComponent<Image>();
-            bg.sprite = GetWhitePixelSprite();
-            bg.type = Image.Type.Sliced;
-            bg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-            // Bar fill
-            var fillGo = CreateUIObject("Fill", barContainer.transform);
-            var fillRect = fillGo.GetComponent<RectTransform>();
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = Vector2.one;
-            fillRect.sizeDelta = Vector2.zero;
-            fill = fillGo.AddComponent<Image>();
-            fill.sprite = GetWhitePixelSprite();
-            fill.color = fillColor;
-            fill.type = Image.Type.Filled;
-            fill.fillMethod = Image.FillMethod.Horizontal;
-
-            return row;
-        }
-
         private static GameObject CreateUIObject(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));

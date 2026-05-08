@@ -17,9 +17,9 @@ namespace Valkur.UI.HUD
     /// chains spells.
     ///
     /// Visual contract (per user request):
-    ///   • White text, anchored bottom-center directly above the XP bar
-    ///     (which itself sits at <c>anchoredPosition.y = 14</c> with height 28).
-    ///   • Rows stack vertically — newest at the top — driven by a
+    ///   • White text on a semi-transparent dark background for legibility,
+    ///     anchored top-left just below the DayNightClockHUD.
+    ///   • Rows stack vertically — newest at the bottom — driven by a
     ///     <see cref="VerticalLayoutGroup"/> + <see cref="ContentSizeFitter"/>.
     ///   • Format: "<displayName>  <remaining:F1>s"
     ///
@@ -33,8 +33,13 @@ namespace Valkur.UI.HUD
         // Visual constants — kept here (not on the panel builder) so the row
         // factory is self-contained and unit-testable.
         private const float RowFontSize    = 16f;
-        private const float RowHeight      = 22f;
+        private const float RowHeight      = 24f;
+        private const float RowPaddingX    = 8f;   // left/right inset for the TMP child
         private const float MinDisplayTime = 0.05f; // hide rows whose CD ≤ this
+
+        // Semi-transparent dark background per row so the text stays readable
+        // against any world tint (matches the DayNightClockHUD bottom panel).
+        private static readonly Color RowBgColor = new Color(0.04f, 0.05f, 0.08f, 0.65f);
 
         private GameObject _player;
         private RectTransform _stackRoot;
@@ -129,17 +134,32 @@ namespace Valkur.UI.HUD
 
             public static CooldownRow Create(RectTransform parent, string displayName, float total, float fontSize, float height)
             {
+                // Row root: holds the semi-transparent background + LayoutElement.
+                // TMP lives on a *child* GameObject because Image+TMP on the same
+                // GameObject triggers an NRE in TMP's MaskableGraphic init path.
                 var go = new GameObject($"CD_{displayName}", typeof(RectTransform));
                 go.transform.SetParent(parent, false);
 
-                var label = go.AddComponent<TextMeshProUGUI>();
+                var bg = go.AddComponent<Image>();
+                bg.color = RowBgColor;
+                bg.raycastTarget = false;
+
+                var le = go.AddComponent<LayoutElement>();
+                le.preferredHeight = height;
+
+                var labelGo = new GameObject("Label", typeof(RectTransform));
+                labelGo.transform.SetParent(go.transform, false);
+                var labelRt = labelGo.GetComponent<RectTransform>();
+                labelRt.anchorMin = Vector2.zero;
+                labelRt.anchorMax = Vector2.one;
+                labelRt.offsetMin = new Vector2(RowPaddingX, 0f);
+                labelRt.offsetMax = new Vector2(-RowPaddingX, 0f);
+
+                var label = labelGo.AddComponent<TextMeshProUGUI>();
                 label.fontSize = fontSize;
                 label.alignment = TextAlignmentOptions.Center;
                 label.color = Color.white;
                 label.raycastTarget = false;
-
-                var le = go.AddComponent<LayoutElement>();
-                le.preferredHeight = height;
 
                 return new CooldownRow(go, label, displayName, total);
             }

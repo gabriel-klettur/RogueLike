@@ -29,6 +29,9 @@ namespace Valkur.UI.HUD
         [Tooltip("Pulse period in seconds.")]
         public float pulsePeriod = 1.0f;
 
+        [Tooltip("Optional short caption rendered next to the marker on the minimap (e.g. vendor role initials \"BS\", \"LJ\"). Empty disables the label.")]
+        public string label = string.Empty;
+
         /// <summary>Effective color at the current time (honors pulse).</summary>
         public Color EffectiveColor
         {
@@ -56,5 +59,30 @@ namespace Valkur.UI.HUD
 
         private void OnEnable()  => MinimapManager.RegisterMarker(this);
         private void OnDisable() => MinimapManager.UnregisterMarker(this);
+
+        /// <summary>
+        /// Configure marker appearance at runtime. Used by reflection-based wiring from
+        /// gameplay-side components (ZonePortal, VendorNPC) so they can register
+        /// themselves on the minimap without the Gameplay assembly referencing UI.
+        /// </summary>
+        public void Configure(Color markerColor, MarkerShape markerShape, int sizePixels, bool pulseEnabled, float periodSeconds)
+        {
+            color       = markerColor;
+            shape       = markerShape;
+            pixelSize   = Mathf.Clamp(sizePixels, 1, 9);
+            pulse       = pulseEnabled;
+            pulsePeriod = Mathf.Max(0.05f, periodSeconds);
+        }
+
+        /// <summary>
+        /// Configure marker + add a short text caption (e.g. vendor role initials).
+        /// Captions longer than 3 chars are truncated so they don't crowd the dial.
+        /// </summary>
+        public void Configure(Color markerColor, MarkerShape markerShape, int sizePixels, bool pulseEnabled, float periodSeconds, string caption)
+        {
+            Configure(markerColor, markerShape, sizePixels, pulseEnabled, periodSeconds);
+            if (string.IsNullOrEmpty(caption)) { label = string.Empty; return; }
+            label = caption.Length > 3 ? caption.Substring(0, 3) : caption;
+        }
     }
 }

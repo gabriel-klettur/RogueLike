@@ -101,6 +101,16 @@ namespace Valkur.UI.HUD
                 if (uiContainer != null) vignetteGo.transform.SetParent(uiContainer.transform, false);
             }
 
+            // Top-right minimap. Instantiates MinimapManager on the same
+            // GameObject and wraps it in a runtime-built panel + heading arrow
+            // + zone-name banner consistent with the other HUD widgets.
+            if (FindObjectOfType<MinimapHUD>() == null)
+            {
+                var minimapGo = new GameObject("MinimapHUD");
+                minimapGo.AddComponent<MinimapHUD>();
+                if (uiContainer != null) minimapGo.transform.SetParent(uiContainer.transform, false);
+            }
+
             // Hide the HUD whenever any runtime editor opens, restore on close.
             // Hosted on this same GameObject ([Systems]/HUDBootstrap) so it lives
             // outside [UI] and survives the SetActive(false) it applies.

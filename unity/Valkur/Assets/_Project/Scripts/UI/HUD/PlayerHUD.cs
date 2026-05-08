@@ -94,7 +94,7 @@ namespace Valkur.UI.HUD
             _targetHpFill = max > 0 ? (float)current / max : 0f;
 
             if (hpText != null)
-                hpText.text = $"HP: {current}/{max}";
+                hpText.text = $"{current}/{max}";
         }
 
         public void SetMana(int current, int max)
@@ -108,7 +108,7 @@ namespace Valkur.UI.HUD
         private void UpdateMpDisplay()
         {
             if (mpText != null)
-                mpText.text = $"MP: {_currentMp}/{_maxMp}";
+                mpText.text = $"{_currentMp}/{_maxMp}";
         }
     }
 }

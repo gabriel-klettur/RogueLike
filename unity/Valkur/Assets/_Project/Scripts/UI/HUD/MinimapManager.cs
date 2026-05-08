@@ -26,8 +26,17 @@ namespace Valkur.UI.HUD
         [SerializeField] private int texHeight = 160;
 
         [Header("World")]
-        [Tooltip("World-space radius visible on the minimap (zoom control).")]
-        [SerializeField] private float viewRadius = 24f;
+        [Tooltip("World-space radius visible on the minimap (zoom control). Persisted between sessions via PlayerPrefs.")]
+        [SerializeField] private float viewRadius = DEFAULT_VIEW_RADIUS;
+
+        // Zoom range: too small (<6) makes a single tile fill the dial, too
+        // large (>72) flattens the world. Geometric step keeps each wheel
+        // detent feeling proportional regardless of current zoom.
+        public  const float MIN_VIEW_RADIUS     = 8f;
+        public  const float MAX_VIEW_RADIUS     = 64f;
+        public  const float DEFAULT_VIEW_RADIUS = 24f;
+        private const float ZOOM_STEP_FACTOR    = 1.18f;
+        private const string ZOOM_PREF_KEY      = "valkur.minimap.viewRadius";
 
         [Header("Rate Limits")]
         [Tooltip("How often (seconds) the background tile layer redraws.")]
@@ -65,6 +74,60 @@ namespace Valkur.UI.HUD
         public static void RegisterMarker(MinimapMarker m)   { if (m != null && !_markers.Contains(m)) _markers.Add(m); }
         public static void UnregisterMarker(MinimapMarker m) { _markers.Remove(m); }
 
+        /// <summary>
+        /// Read-only view of every registered marker. Lets MinimapHUD project
+        /// markers to disc-local UI coordinates without exposing the static
+        /// list for mutation.
+        /// </summary>
+        public static IReadOnlyList<MinimapMarker> Markers => _markers;
+
+        /// <summary>
+        /// Wire the host RawImage at runtime. Lets MinimapHUD build the chrome
+        /// programmatically and then plug the freshly-created RawImage into the
+        /// already-Awake() manager — no scene-side serialization required.
+        /// </summary>
+        public void BindRawImage(UnityEngine.UI.RawImage img)
+        {
+            rawImage = img;
+            if (img != null && _tex != null) img.texture = _tex;
+        }
+
+        /// <summary>Current visible world radius (zoom level). See <see cref="SetViewRadius"/>.</summary>
+        public float ViewRadius => viewRadius;
+
+        /// <summary>
+        /// Apply a new zoom level. Clamped to [MIN_VIEW_RADIUS, MAX_VIEW_RADIUS]
+        /// and persisted to PlayerPrefs so the player keeps their preferred zoom
+        /// across sessions (same convention as MusicPlayerHUD's size persistence).
+        /// </summary>
+        public void SetViewRadius(float radius)
+        {
+            float clamped = Mathf.Clamp(radius, MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
+            if (Mathf.Approximately(clamped, viewRadius)) return;
+
+            viewRadius = clamped;
+            PlayerPrefs.SetFloat(ZOOM_PREF_KEY, viewRadius);
+            PlayerPrefs.Save();
+
+            // Clear fog so the back-projected fog grid (which depends on
+            // viewRadius via worldPerPx) snaps to the new pixel sampling cleanly
+            // on the next redraw — without this, stale fog cells can briefly
+            // show through at the new zoom.
+            _exploredCells.Clear();
+        }
+
+        /// <summary>
+        /// Adjust zoom by integer detents. Positive detents zoom *out* (larger
+        /// view radius — see more world); negative detents zoom *in*. Step is
+        /// geometric so each click feels equally weighted at any zoom level.
+        /// </summary>
+        public void AdjustZoom(int detents)
+        {
+            if (detents == 0) return;
+            float factor = Mathf.Pow(ZOOM_STEP_FACTOR, detents);
+            SetViewRadius(viewRadius * factor);
+        }
+
         // ── Static instance for MinimapDot color lookups ──────────────────
         public static MinimapManager Instance { get; private set; }
 
@@ -72,6 +135,7 @@ namespace Valkur.UI.HUD
         private static void ResetStaticsOnPlayModeEnter()
         {
             Instance = null;
+            _dots?.Clear();
             _markers?.Clear();
         }
 
@@ -100,6 +164,14 @@ namespace Valkur.UI.HUD
         private void Awake()
         {
             Instance = this;
+
+            // Restore the player's last zoom preference. Out-of-range values
+            // from older or corrupted prefs are clamped silently.
+            if (PlayerPrefs.HasKey(ZOOM_PREF_KEY))
+            {
+                float saved = PlayerPrefs.GetFloat(ZOOM_PREF_KEY, DEFAULT_VIEW_RADIUS);
+                viewRadius = Mathf.Clamp(saved, MIN_VIEW_RADIUS, MAX_VIEW_RADIUS);
+            }
 
             _tex = new Texture2D(texWidth, texHeight, TextureFormat.RGBA32, false)
             {
