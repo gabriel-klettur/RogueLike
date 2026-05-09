@@ -122,6 +122,8 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                 instantiated.Initialise(room, _config != null ? _config.playerLayer : (int?)null);
                 foreach (var door in roomGo.GetComponentsInChildren<Door>())
                     instantiated.RegisterDoor(door);
+                // Spawn doorPrefab instances on connected doorways (skipped for corridors).
+                instantiated.AddDoorsToRooms();
 
                 // 2c) Make Room available to spawner / audio subscribers.
                 RoomRegistry.Register(room);

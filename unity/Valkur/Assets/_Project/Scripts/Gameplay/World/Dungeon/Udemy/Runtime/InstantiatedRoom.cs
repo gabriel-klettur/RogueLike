@@ -99,6 +99,71 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
             if (door != null) _doors.Add(door);
         }
 
+        /// <summary>
+        /// Instantiate <see cref="Doorway.doorPrefab"/> at every CONNECTED
+        /// doorway of this room and register the resulting Door MonoBehaviour
+        /// for the lock / unlock flow. Mirrors Udemy's
+        /// <c>InstantiatedRoom.AddDoorsToRooms</c>: corridors don't get
+        /// doors (they're the seam, not the gate), and doorways with no
+        /// authored prefab are silently skipped.
+        ///
+        /// World position of each spawned door follows Udemy's offsets
+        /// (1 tile out from the doorway anchor, with a sub-tile shift on
+        /// E/W to centre vertically against a 2-tile-tall doorframe). All
+        /// positions are computed in tile units; we keep PPU = 1 so a tile
+        /// equals one world unit.
+        /// </summary>
+        public void AddDoorsToRooms()
+        {
+            if (Room == null || Room.doorWayList == null) return;
+
+            // Corridors don't get doors. Mirrors Udemy's AddDoorsToRooms guard.
+            if (Room.roomNodeType != null
+                && (Room.roomNodeType.IsCorridor
+                    || Room.roomNodeType.IsCorridorNS
+                    || Room.roomNodeType.IsCorridorEW))
+                return;
+
+            var roomLowerWorld = (Vector3)(Vector2)Room.lowerBounds;
+            var templateLower = (Vector3)(Vector2)Room.templateLowerBounds;
+
+            for (int i = 0; i < Room.doorWayList.Count; i++)
+            {
+                var doorway = Room.doorWayList[i];
+                if (doorway == null || !doorway.isConnected || doorway.doorPrefab == null)
+                    continue;
+
+                // Translate doorway template-local position into world space
+                // (Room was placed at lowerBounds; templateLowerBounds is the
+                // template-local anchor of that lower-left corner).
+                Vector3 doorwayWorld = (Vector3)(Vector2)doorway.position
+                    + roomLowerWorld - templateLower;
+
+                Vector3 offset;
+                switch (doorway.orientation)
+                {
+                    case Orientation.North: offset = new Vector3(0.5f, 1f, 0); break;
+                    case Orientation.South: offset = new Vector3(0.5f, 0f, 0); break;
+                    case Orientation.East:  offset = new Vector3(1f, 1.25f, 0); break;
+                    case Orientation.West:  offset = new Vector3(0f, 1.25f, 0); break;
+                    default: offset = Vector3.zero; break;
+                }
+
+                var doorGo = Object.Instantiate(doorway.doorPrefab,
+                    doorwayWorld + offset, Quaternion.identity, transform);
+                var doorComponent = doorGo.GetComponent<Door>();
+                if (doorComponent != null)
+                {
+                    if (Room.roomNodeType != null && Room.roomNodeType.IsBossRoom)
+                    {
+                        doorComponent.isBossRoomDoor = true;
+                        doorComponent.LockDoor();
+                    }
+                    _doors.Add(doorComponent);
+                }
+            }
+        }
+
         public void LockDoors()
         {
             for (int i = 0; i < _doors.Count; i++)

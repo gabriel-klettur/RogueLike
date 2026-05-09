@@ -46,7 +46,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4290426862265872319}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8348a5a66d5b014080da8b356039743, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   spriteRenderer: {fileID: 2216138685056215045}
@@ -106,7 +106,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4290426862265872319}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf7add1eb957fd84d8fdba00b7bb40cc, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   moveSoundEffect: {fileID: 0}
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4290426862265872319}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69b1b4be76edc61498063752c0335306, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   contactDamageAmount: 10

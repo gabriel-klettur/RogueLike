@@ -252,7 +252,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 5578879441319861494}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e90563a5e176db46ad39b3c28f079d1, type: 3}
+  m_Script: {fileID: 11500000, guid: fdddbd141edd5dd41953a096b5ce6cd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   doorCollider: {fileID: 1418891430562460673}
@@ -324,6 +324,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 7260416609332673242}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e646bd033fec4144b82efc9de8ff39f, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 

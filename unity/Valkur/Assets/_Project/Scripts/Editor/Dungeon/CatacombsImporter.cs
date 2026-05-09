@@ -47,7 +47,29 @@ namespace Valkur.Editor.Dungeon
         {
             "e6dbde3e998f1d049be1d57d8f539e67", // InstantiatedRoom
             "eee43d1cce0924c49848f833da77970f", // RoomLightingControl
+            "226aff819a9c7cd44b5045d38509f098",
+            "2be983c2b06135c4e905687622dd2444",
+            "4776923baa2c32744b43b6c3a80bba56",
+            "4f810bb2f1c41ff47879dc43ca838916",
+            "b8348a5a66d5b014080da8b356039743",
+            "88daf06f157ba4948a94ed28e6199aef",
+            "cf7add1eb957fd84d8fdba00b7bb40cc",
+            "69b1b4be76edc61498063752c0335306",
+            "fc52c282aba93c843a401795ce23a195",
+            "6e646bd033fec4144b82efc9de8ff39f",
         };
+
+        // Udemy → Valkur script GUID remappings. Where the Udemy class has a
+        // direct Valkur counterpart with field-compatible serialized data,
+        // we rewrite the GUID instead of stripping the component so the
+        // imported prefab keeps its inspector wiring (e.g. doorCollider
+        // child reference).
+        private static readonly Dictionary<string, string> UdemyToValkurScriptRemap
+            = new Dictionary<string, string>
+            {
+                // Udemy Door  →  Valkur.Gameplay.World.Dungeon.Udemy.Doors.Door
+                { "7e90563a5e176db46ad39b3c28f079d1", "fdddbd141edd5dd41953a096b5ce6cd5" },
+            };
 
         [MenuItem("Valkur/Dungeon/Import Catacombs Theme")]
         public static void ImportCatacombs()
@@ -195,24 +217,41 @@ namespace Valkur.Editor.Dungeon
 
             // doorwayList entries — each starts with "- position:" then
             // orientation, doorPrefab, and the start/copy width/height.
-            // We greedily walk the file with a multi-line regex.
+            // The doorPrefab line carries a GUID we resolve to the imported
+            // door .prefab so the room template references the actual asset.
+            // doorPrefab can be either {fileID: 0} (unassigned) or
+            // {fileID: ..., guid: <32hex>, type: 3}. Group 4 captures the
+            // GUID when present, empty otherwise — explicit alternation so
+            // .NET regex doesn't shortcut past the GUID with non-greedy
+            // wildcards.
             var doorwayPattern = new Regex(
                 @"-\s*position:\s*\{x:\s*(-?\d+),\s*y:\s*(-?\d+)\}\s*\n" +
                 @"\s*orientation:\s*(\d+)\s*\n" +
-                @"\s*doorPrefab:[^\n]*\n" +
+                @"\s*doorPrefab:\s*\{(?:fileID:\s*0\}|fileID:\s*\d+,\s*guid:\s*([a-f0-9]{32}),\s*type:\s*3\})\s*\n" +
                 @"\s*doorwayStartCopyPosition:\s*\{x:\s*(-?\d+),\s*y:\s*(-?\d+)\}\s*\n" +
                 @"\s*doorwayCopyTileWidth:\s*(\d+)\s*\n" +
                 @"\s*doorwayCopyTileHeight:\s*(\d+)",
                 RegexOptions.Multiline);
             foreach (Match m in doorwayPattern.Matches(yaml))
             {
+                // Groups: 1=posX 2=posY 3=orientation 4=doorPrefabGuid
+                //         5=copyX 6=copyY 7=width 8=height
+                var doorPrefabGuid = m.Groups[4].Value;
+                GameObject doorPrefab = null;
+                if (!string.IsNullOrEmpty(doorPrefabGuid))
+                {
+                    var path = AssetDatabase.GUIDToAssetPath(doorPrefabGuid);
+                    if (!string.IsNullOrEmpty(path))
+                        doorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                }
                 result.Doorways.Add(new Doorway
                 {
                     position = new Vector2Int(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value)),
                     orientation = (Orientation)int.Parse(m.Groups[3].Value),
-                    doorwayStartCopyPosition = new Vector2Int(int.Parse(m.Groups[4].Value), int.Parse(m.Groups[5].Value)),
-                    doorwayCopyTileWidth = int.Parse(m.Groups[6].Value),
-                    doorwayCopyTileHeight = int.Parse(m.Groups[7].Value),
+                    doorPrefab = doorPrefab,
+                    doorwayStartCopyPosition = new Vector2Int(int.Parse(m.Groups[5].Value), int.Parse(m.Groups[6].Value)),
+                    doorwayCopyTileWidth = int.Parse(m.Groups[7].Value),
+                    doorwayCopyTileHeight = int.Parse(m.Groups[8].Value),
                 });
             }
 
@@ -263,22 +302,44 @@ namespace Valkur.Editor.Dungeon
 
         private static int StripMissingScriptsFromPrefabs()
         {
+            // Also process Doors and Environment so their nested Udemy scripts
+            // (DestroyableItem, MoveItem, Door, etc.) get either remapped or
+            // stripped. Keeping the Catacombs prefabs clean isn't enough —
+            // every Environment child prefab gets instantiated by Unity at
+            // load time, and a missing-script reference there spams the same
+            // warning on every Dungeon v1 load.
+            var prefabFiles = new List<string>();
+            prefabFiles.AddRange(Directory.GetFiles(PrefabsDir, "*.prefab"));
+            prefabFiles.AddRange(Directory.GetFiles(Root + "/Doors", "*.prefab",
+                SearchOption.AllDirectories));
+            prefabFiles.AddRange(Directory.GetFiles(Root + "/Environment", "*.prefab",
+                SearchOption.AllDirectories));
+
             int filesChanged = 0;
-            var prefabFiles = Directory.GetFiles(PrefabsDir, "*.prefab");
-            // Build a regex that matches any MonoBehaviour block whose script
-            // GUID is in our strip list. We replace the GUID with all-zeros
-            // so Unity treats the component as a benign "missing reference"
-            // without spamming the console for a known-stripped class.
             foreach (var path in prefabFiles)
             {
                 var content = File.ReadAllText(path);
                 var modified = content;
+
+                // 1) Remap GUIDs whose Udemy class has a Valkur counterpart.
+                foreach (var kv in UdemyToValkurScriptRemap)
+                {
+                    var pattern = $@"(m_Script:\s*\{{fileID:\s*)\d+(\s*,\s*guid:\s*){kv.Key}(\s*,\s*type:\s*3\}})";
+                    // Use Valkur Unity script fileID 11500000 (standard for MonoScript assets).
+                    modified = Regex.Replace(modified, pattern,
+                        m => $"{m.Groups[1].Value}11500000{m.Groups[2].Value}{kv.Value}{m.Groups[3].Value}");
+                }
+
+                // 2) Strip script references with no Valkur equivalent (they
+                //    just become benign "missing reference" entries the user
+                //    never sees because we use fileID 0).
                 foreach (var guid in UdemyScriptsToStrip)
                 {
                     var pattern = $@"m_Script:\s*\{{fileID:\s*\d+,\s*guid:\s*{guid},\s*type:\s*3\}}";
                     modified = Regex.Replace(modified, pattern,
                         "m_Script: {fileID: 0}");
                 }
+
                 if (modified != content)
                 {
                     File.WriteAllText(path, modified);

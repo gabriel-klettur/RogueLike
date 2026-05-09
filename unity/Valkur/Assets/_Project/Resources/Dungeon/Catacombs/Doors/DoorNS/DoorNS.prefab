@@ -67,7 +67,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1283670324062226019}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e646bd033fec4144b82efc9de8ff39f, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2738513325019869880
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6927665885970513103}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e90563a5e176db46ad39b3c28f079d1, type: 3}
+  m_Script: {fileID: 11500000, guid: fdddbd141edd5dd41953a096b5ce6cd5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   doorCollider: {fileID: 1843479092442461466}

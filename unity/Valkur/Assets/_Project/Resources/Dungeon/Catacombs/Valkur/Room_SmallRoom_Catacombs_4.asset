@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5f9d1f6c44f6d24fb1ca354ab56b37d, type: 3}
   m_Name: Room_SmallRoom_Catacombs_4
   m_EditorClassIdentifier: 
-  guid: 854dcb77-81e3-4250-9576-cc52db539158
+  guid: 31f009e9-b0c5-4828-9d51-337fd0506717
   prefab: {fileID: 4327421925113694216, guid: e7673f8a0f62ae648bdec60031ae1092, type: 3}
-  previousPrefab: {fileID: 0}
+  previousPrefab: {fileID: 4327421925113694216, guid: e7673f8a0f62ae648bdec60031ae1092, type: 3}
   battleMusicId: 
   ambientMusicId: 
   roomNodeType: {fileID: 11400000, guid: cb2390263603a654290458f9f41fc0d6, type: 2}
@@ -23,7 +23,7 @@ MonoBehaviour:
   doorwayList:
   - position: {x: 19, y: 37}
     orientation: 0
-    doorPrefab: {fileID: 0}
+    doorPrefab: {fileID: 6927665885970513103, guid: 9f72ee17a8328ea4b9820daa39a3c5f1, type: 3}
     doorwayStartCopyPosition: {x: 16, y: 37}
     doorwayCopyTileWidth: 5
     doorwayCopyTileHeight: 8
@@ -31,7 +31,7 @@ MonoBehaviour:
     isUnavailable: 0
   - position: {x: 19, y: 5}
     orientation: 2
-    doorPrefab: {fileID: 0}
+    doorPrefab: {fileID: 6927665885970513103, guid: 9f72ee17a8328ea4b9820daa39a3c5f1, type: 3}
     doorwayStartCopyPosition: {x: 16, y: 9}
     doorwayCopyTileWidth: 5
     doorwayCopyTileHeight: 5
@@ -39,7 +39,7 @@ MonoBehaviour:
     isUnavailable: 0
   - position: {x: 36, y: 22}
     orientation: 1
-    doorPrefab: {fileID: 0}
+    doorPrefab: {fileID: 5578879441319861494, guid: dbaf977f867362c4fb3f8877012d4b97, type: 3}
     doorwayStartCopyPosition: {x: 33, y: 28}
     doorwayCopyTileWidth: 4
     doorwayCopyTileHeight: 8
@@ -47,7 +47,7 @@ MonoBehaviour:
     isUnavailable: 0
   - position: {x: 2, y: 22}
     orientation: 3
-    doorPrefab: {fileID: 0}
+    doorPrefab: {fileID: 5578879441319861494, guid: dbaf977f867362c4fb3f8877012d4b97, type: 3}
     doorwayStartCopyPosition: {x: 2, y: 28}
     doorwayCopyTileWidth: 4
     doorwayCopyTileHeight: 8

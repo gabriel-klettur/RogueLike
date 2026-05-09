@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5f9d1f6c44f6d24fb1ca354ab56b37d, type: 3}
   m_Name: Room_CorridorEW_Catacombs_2
   m_EditorClassIdentifier: 
-  guid: a7ff2b59-bdd3-40bd-afb8-8d2c2d56291d
+  guid: fb9cd1eb-761d-428d-b7d9-71ccf026a587
   prefab: {fileID: 5351491626515514454, guid: d59543b753461aa4094dd4331eeda1ad, type: 3}
-  previousPrefab: {fileID: 0}
+  previousPrefab: {fileID: 5351491626515514454, guid: d59543b753461aa4094dd4331eeda1ad, type: 3}
   battleMusicId: 
   ambientMusicId: 
   roomNodeType: {fileID: 11400000, guid: b3bcdbdede79c7448b27609dea24328f, type: 2}

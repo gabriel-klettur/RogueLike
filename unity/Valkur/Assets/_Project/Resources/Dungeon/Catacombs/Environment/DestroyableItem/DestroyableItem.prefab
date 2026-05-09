@@ -47,7 +47,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 498162341808410655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 226aff819a9c7cd44b5045d38509f098, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   startingHealthAmount: 1
@@ -158,7 +158,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 498162341808410655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2be983c2b06135c4e905687622dd2444, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &1935190523975209475
@@ -170,7 +170,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 498162341808410655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4776923baa2c32744b43b6c3a80bba56, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   healthBar: {fileID: 0}
@@ -185,7 +185,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 498162341808410655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f810bb2f1c41ff47879dc43ca838916, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   contactDamageAmount: 5
@@ -198,7 +198,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 498162341808410655}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8348a5a66d5b014080da8b356039743, type: 3}
+  m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
   spriteRenderer: {fileID: 7470762224977111315}
