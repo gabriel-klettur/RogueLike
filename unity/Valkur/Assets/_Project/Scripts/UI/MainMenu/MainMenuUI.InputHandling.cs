@@ -72,6 +72,10 @@ namespace Valkur.UI.MainMenu
             // Clear any stale position checkpoint so the new character spawns at the
             // default spawn point rather than the previous session's last position.
             Valkur.Gameplay.Save.SaveFileManager.DeletePositionCheckpoint();
+            // Also reset the Map Editor's active-slot pointer so a previous
+            // session's "Dungeon v1" (or any other custom slot) doesn't leak
+            // into the fresh playthrough — new game always starts on default.
+            Valkur.Gameplay.MapEditor.MapEditorManager.ResetActiveSlotToDefaultOnDisk();
             TransitionAudioToGame();
             LoadingScreenController.Show(gameplaySceneName);
         }

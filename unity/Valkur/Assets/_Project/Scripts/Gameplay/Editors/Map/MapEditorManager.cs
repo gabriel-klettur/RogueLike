@@ -17,6 +17,17 @@ namespace Valkur.Gameplay.MapEditor
     /// </summary>
     public partial class MapEditorManager : SingletonMonoBehaviour<MapEditorManager>, GameEditorManager.IGameEditor
     {
+        /// <summary>
+        /// Public bridge to <see cref="MapEditorMapSlots.ResetActiveSlotToDefaultOnDisk"/>
+        /// so callers in other assemblies (e.g. <c>MainMenuUI.StartNewGame</c>)
+        /// can reset the persistent <c>_active.txt</c> to the default slot
+        /// before the gameplay scene boots. The slot store class itself is
+        /// internal to keep the file-IO contract from leaking outside the
+        /// Map Editor.
+        /// </summary>
+        public static void ResetActiveSlotToDefaultOnDisk()
+            => MapEditorMapSlots.ResetActiveSlotToDefaultOnDisk();
+
         [Header("References")]
         [SerializeField] private ZoneManager zoneManager;
         [SerializeField] private WorldGridBuilder worldGridBuilder;

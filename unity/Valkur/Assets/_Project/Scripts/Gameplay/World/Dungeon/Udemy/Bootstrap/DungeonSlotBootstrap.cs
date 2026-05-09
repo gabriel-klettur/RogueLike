@@ -38,12 +38,26 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
         private string _lastHandledSlot = "<none>"; // sentinel: never handled
         private bool _subscribed;
 
+        // Boot-sync window: while MapEditorManager.Start runs
+        // BootSyncWithActiveSlotIfNeeded, the persistent _active.txt may point
+        // at "Dungeon v1" from a previous session. We must NOT teleport during
+        // that window — a fresh game/load should respect the lastPlayerPos
+        // already restored by the boot sync (or land at lobby default).
+        // Only the user's deliberate F11 → Load click should trigger the
+        // regen + entrance teleport flow.
+        private const float BootSyncQuietWindowSeconds = 2f;
+        private float _enabledSinceTime;
+
         private void Awake()
         {
             Debug.Log("[DungeonSlotBootstrap] Awake — installed and waiting for MapEditorManager.");
         }
 
-        private void OnEnable() => TrySubscribe();
+        private void OnEnable()
+        {
+            _enabledSinceTime = Time.unscaledTime;
+            TrySubscribe();
+        }
 
         private void OnDisable()
         {
@@ -66,12 +80,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
 
             mgr.OnMapSlotsChanged += HandleSlotsChanged;
             _subscribed = true;
-            Debug.Log($"[DungeonSlotBootstrap] Subscribed to OnMapSlotsChanged. " +
-                      $"ActiveMapSlot='{mgr.ActiveMapSlot}'.");
 
-            // Force a first pass so we pick up the slot that was already
-            // active when bootstrap finished (the "load on start" case).
-            HandleSlotsChanged();
+            // Seed _lastHandledSlot with the current active slot so we do NOT
+            // auto-fire on the initial state. The persistent _active.txt may
+            // hold "Dungeon v1" from a previous session; new game / continue
+            // should still spawn the player at the default lobby until they
+            // explicitly click Load on the Dungeon v1 slot.
+            _lastHandledSlot = mgr.ActiveMapSlot ?? string.Empty;
+            Debug.Log($"[DungeonSlotBootstrap] Subscribed to OnMapSlotsChanged. " +
+                      $"Initial slot snapshot='{_lastHandledSlot}' (no auto-fire).");
         }
 
         private void HandleSlotsChanged()
@@ -85,10 +102,10 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
 
             var slot = mgr.ActiveMapSlot ?? string.Empty;
             Debug.Log($"[DungeonSlotBootstrap] HandleSlotsChanged → slot='{slot}', last='{_lastHandledSlot}'.");
-            if (slot == _lastHandledSlot) return;
             _lastHandledSlot = slot;
 
-            // Tear down whatever the previous slot generated (Udemy or BSP).
+            // Always clean up the prior dungeon — even if the user reloads the
+            // same Udemy slot, we want a fresh layout rather than stacked rooms.
             if (_activeStrategy != null)
             {
                 Debug.Log("[DungeonSlotBootstrap] Cleaning up previous Udemy strategy.");
@@ -102,8 +119,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                 return;
             }
 
-            Debug.Log($"[DungeonSlotBootstrap] Slot '{slot}' matches Udemy prefix → generating dungeon.");
-            TryGenerateUdemyDungeon();
+            // During the boot-sync window the slot fires OnMapSlotsChanged
+            // even when the player just hit "New Game" / "Continue" — we
+            // must NOT teleport in that case. Only deliberate Loads (after
+            // the quiet window) get the entrance teleport.
+            bool insideBootSync = (Time.unscaledTime - _enabledSinceTime) < BootSyncQuietWindowSeconds;
+
+            Debug.Log($"[DungeonSlotBootstrap] Slot '{slot}' matches Udemy prefix → generating dungeon. " +
+                      $"Teleport={!insideBootSync} (sinceEnabled={Time.unscaledTime - _enabledSinceTime:F1}s).");
+            TryGenerateUdemyDungeon(teleportToEntrance: !insideBootSync);
         }
 
         private static bool IsUdemySlot(string slotName)
@@ -112,7 +136,7 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                 && slotName.StartsWith(UdemySlotPrefix, System.StringComparison.OrdinalIgnoreCase);
         }
 
-        private void TryGenerateUdemyDungeon()
+        private void TryGenerateUdemyDungeon(bool teleportToEntrance = true)
         {
             var level = Resources.Load<DungeonLevelSO>(DungeonLevelResourcePath);
             var nodeTypes = Resources.Load<RoomNodeTypeListSO>(NodeTypeListResourcePath);
@@ -158,10 +182,13 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                 return;
             }
 
-            TeleportPlayerToEntrance(result.EntrancePosition);
+            if (teleportToEntrance)
+            {
+                TeleportPlayerToEntrance(result.EntrancePosition);
+            }
             Debug.Log(
                 $"[DungeonSlotBootstrap] ✅ Generated Udemy dungeon for slot '{MapEditorManager.Instance?.ActiveMapSlot}': " +
-                $"{result.RoomBounds.Count} rooms, entrance tile @ {result.EntrancePosition}.");
+                $"{result.RoomBounds.Count} rooms, entrance tile @ {result.EntrancePosition}, teleported={teleportToEntrance}.");
         }
 
         // Mirrors MapEditorManager.TeleportPlayerToWorldPosition — same camera reset path.

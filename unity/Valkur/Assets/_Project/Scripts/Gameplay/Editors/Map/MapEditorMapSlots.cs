@@ -232,6 +232,29 @@ namespace Valkur.Gameplay.MapEditor
 
         // ── Active slot tracking ────────────────────────────────────────────────
 
+        /// <summary>
+        /// Wipe the persistent <c>_active.txt</c> file and the cached slot
+        /// pointer so the next gameplay session starts with the default slot.
+        /// Called from the New Game flow so a previous session's "Dungeon v1"
+        /// (or any other custom slot) doesn't leak into the fresh playthrough.
+        /// Safe to call from anywhere — uses no Unity APIs that require a
+        /// live MapEditorManager singleton.
+        /// </summary>
+        public static void ResetActiveSlotToDefaultOnDisk()
+        {
+            try
+            {
+                string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
+                string path = Path.Combine(dir, ACTIVE_FILE);
+                if (File.Exists(path)) File.Delete(path);
+                Debug.Log("[MapEditor.Slots] Active slot reset to default for new game.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor.Slots] Failed to reset active slot: {ex.Message}");
+            }
+        }
+
         public void SetActive(string slot)
         {
             string clean = Sanitize(slot);
