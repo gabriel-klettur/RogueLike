@@ -191,6 +191,11 @@ namespace Valkur.Gameplay.Buildings
                         if (newRenderers[i] != null)
                             newRenderers[i].enabled = _buildingsVisible;
                     RefreshCollisionFor(bObj);
+                    // Register with the loader so it gets destroyed on the next
+                    // ClearSpawned() — without this, slot switches leave the
+                    // building alive and the next save sweeps it into the new
+                    // slot's JSON via FindObjectsOfType<BuildingObject>().
+                    _buildingLoader?.RegisterPlacedBuilding(bObj);
                     created = bObj;
                     InvalidateBuildingCache();
                     SetActiveBuilding(bObj);

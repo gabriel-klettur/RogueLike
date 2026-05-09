@@ -113,6 +113,11 @@ namespace Valkur.Gameplay.Buildings
                             if (newRenderers[r] != null)
                                 newRenderers[r].enabled = _buildingsVisible;
                         RefreshCollisionFor(bObj);
+                        // Register with the loader so a subsequent map-slot
+                        // switch can destroy these via ClearSpawned() instead
+                        // of leaving them as orphans the next save bleeds into
+                        // the wrong slot's JSON.
+                        _buildingLoader?.RegisterPlacedBuilding(bObj);
                         placedObjects.Add(bObj);
                     }
 

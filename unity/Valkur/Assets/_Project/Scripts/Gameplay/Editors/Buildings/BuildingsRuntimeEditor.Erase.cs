@@ -366,6 +366,14 @@ namespace Valkur.Gameplay.Buildings
                                 renderers[r].enabled = _buildingsVisible;
 
                         RefreshCollisionFor(bObj);
+                        // Re-registration on undo: the redo of an erase ran
+                        // through Destroy(), which removed the GameObject AND
+                        // (silently) any reference inside _spawnedBuildings.
+                        // Restoring the building means restoring the loader's
+                        // ownership so a later slot-switch ClearSpawned() can
+                        // destroy it, instead of leaving it as an orphan that
+                        // bleeds into the next map's save.
+                        _buildingLoader?.RegisterPlacedBuilding(bObj);
                         liveTargets.Add(bObj);
                     }
                     InvalidateBuildingCache();

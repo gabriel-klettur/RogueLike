@@ -118,10 +118,15 @@ namespace Valkur.Gameplay.MapEditor
 
         // Mirrors the just-written working-copy JSON to the slot file of the
         // currently-active map. Silent no-op when no active slot is set yet
-        // (e.g. very early boot, before the slot store is constructed).
+        // (e.g. very early boot, before the slot store is constructed) OR
+        // when boot-sync is mid-flight — without that second guard a
+        // PersistZonesToDisk firing during BootSyncWithActiveSlotIfNeeded
+        // would overwrite the slot file with the half-loaded DB+working-copy
+        // state we're trying to replace.
         private void MirrorWorkingCopyToActiveSlot(string json)
         {
             if (string.IsNullOrEmpty(json)) return;
+            if (_isBootSyncInProgress) return;
             var store = ResolveSlotStore();
             if (store == null) return;
             string active = store.ActiveSlot;

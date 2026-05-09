@@ -200,16 +200,67 @@ namespace Valkur.Gameplay.World
         }
 
         /// <summary>
-        /// Remove all building GameObjects previously spawned by this loader.
+        /// Remove all building GameObjects previously spawned by this loader,
+        /// PLUS any orphan <see cref="BuildingObject"/> currently parented under
+        /// <c>_buildingsRoot</c>. The orphan sweep is critical: the runtime
+        /// Buildings editor (F10) creates BuildingObjects through its own
+        /// placement / fill / erase-undo paths and historically did not register
+        /// them with this loader's <see cref="_spawnedBuildings"/> list, so a
+        /// strict list-only Clear left those instances alive across map-slot
+        /// switches. They then leaked into the next slot's save (the editor
+        /// serialises via <c>FindObjectsOfType&lt;BuildingObject&gt;()</c>),
+        /// causing buildings placed in one map to appear in every other map —
+        /// the regression this method now defends against.
         /// </summary>
         public void ClearSpawned()
         {
+            Transform root = _buildingsRoot != null ? _buildingsRoot : transform;
+            if (root != null)
+            {
+                var inScene = root.GetComponentsInChildren<BuildingObject>(includeInactive: true);
+                for (int i = 0; i < inScene.Length; i++)
+                {
+                    if (inScene[i] != null)
+                        DestroyBuildingGameObject(inScene[i].gameObject);
+                }
+            }
+            // Cover the (rare) case where a tracked building was reparented out
+            // of `_buildingsRoot` after spawn — still owned by us, still must die.
             foreach (var b in _spawnedBuildings)
             {
                 if (b != null)
-                    Destroy(b.gameObject);
+                    DestroyBuildingGameObject(b.gameObject);
             }
             _spawnedBuildings.Clear();
+        }
+
+        // EditMode-safe destroy: <see cref="Object.Destroy"/> is deferred to the
+        // next frame, which never ticks inside EditMode tests, leaving the
+        // GameObject technically alive for the rest of the test. Production
+        // (Play mode) keeps the deferred semantics — only EditMode falls back
+        // to <see cref="Object.DestroyImmediate"/> so test assertions about
+        // post-clear state can read the truth synchronously.
+        private static void DestroyBuildingGameObject(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go);
+            else                       DestroyImmediate(go);
+        }
+
+        /// <summary>
+        /// Register a <see cref="BuildingObject"/> created outside this loader
+        /// (e.g. via the runtime Buildings editor's place / fill / undo paths)
+        /// so <see cref="ClearSpawned"/>, <see cref="SpawnedBuildings"/> and
+        /// dependent systems (<c>ResurrectionZoneAutoBinder</c>,
+        /// <c>GameplaySceneSetup</c>) see the same set of buildings the loader
+        /// itself spawned. Idempotent: a second call with the same instance is
+        /// a no-op so callers don't have to track which path they came from.
+        /// </summary>
+        public void RegisterPlacedBuilding(BuildingObject building)
+        {
+            if (building == null) return;
+            if (_spawnedBuildings.Contains(building)) return;
+            _spawnedBuildings.Add(building);
         }
 
         /// <summary>

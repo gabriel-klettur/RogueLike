@@ -33,6 +33,14 @@ namespace Valkur.Gameplay.MapEditor
         public string ActiveMapSlot => ResolveSlotStore().ActiveSlot;
         public string[] ListMapSlots() => ResolveSlotStore().ListSlots().ToArray();
 
+        // True while Start() is mid-flight and the active-slot sync is still
+        // running. Prevents PersistZonesToDisk's MirrorWorkingCopyToActiveSlot
+        // from clobbering the slot file with a half-loaded DB+working-copy
+        // state — the canonical regression that ate slot data on every
+        // launch with a custom slot active.
+        private bool _isBootSyncInProgress;
+        public bool IsBootSyncInProgress => _isBootSyncInProgress;
+
         /// <summary>
         /// <see cref="WorldId"/> of the currently-active slot. Persistence
         /// systems that route per-slot (tile overlays today; buildings /
@@ -45,6 +53,98 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_slotStore == null) _slotStore = new MapEditorMapSlots();
             return _slotStore;
+        }
+
+        // ── Boot-time sync with active slot ──────────────────────────────────────
+
+        /// <summary>
+        /// Boot-time alignment between <c>_active.txt</c> and the live scene.
+        /// LoadZonesFromDisk reads the working copy keyed off <c>WorldId.Base</c>;
+        /// if the user shut down with a custom slot active, that working copy
+        /// reflects the previous edit but the scene's DB zones are the default
+        /// world. Without this sync the result is a Frankenstein layout and
+        /// the next PersistZonesToDisk mirrors that layout into the custom
+        /// slot file, silently overwriting the user's saved zones.
+        ///
+        /// Solution: when the active slot is custom, treat the slot file as
+        /// authoritative — replace zones, hydrate portals + biome buildings,
+        /// rebind tile-overlay routing, and reload world content. No
+        /// PersistZonesToDisk fires during this pass (the in-progress flag
+        /// disables the slot mirror), so the slot file stays untouched.
+        /// </summary>
+        private void BootSyncWithActiveSlotIfNeeded()
+        {
+            var store = ResolveSlotStore();
+            string active = store.ActiveSlot;
+            if (string.IsNullOrEmpty(active)) return;
+            if (string.Equals(active, MapEditorMapSlots.DEFAULT_SLOT,
+                              StringComparison.OrdinalIgnoreCase))
+                return;
+
+            string json = store.ReadSlot(active);
+            if (json == null)
+            {
+                Debug.LogWarning($"[MapEditor] Active slot '{active}' has no on-disk file " +
+                                 $"— falling back to default zones. Use F11 → Maps to repick a slot.");
+                return;
+            }
+
+            ZonePersistenceFile data;
+            try { data = JsonUtility.FromJson<ZonePersistenceFile>(json); }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[MapEditor] Boot-sync parse failed for slot '{active}': {ex.Message}");
+                return;
+            }
+            if (data == null) return;
+            MapZonesMigrations.Migrate(data);
+
+            // The caller (Start()) holds _isBootSyncInProgress for the entire
+            // boot window — assert defensively so a future caller invoking
+            // this method outside boot doesn't silently corrupt the slot
+            // file via the mirror call inside PersistZonesToDisk.
+            if (!_isBootSyncInProgress)
+            {
+                Debug.LogError("[MapEditor] BootSyncWithActiveSlotIfNeeded called outside the " +
+                               "boot window — aborting to avoid mirroring half-loaded state into the slot file.");
+                return;
+            }
+
+            Debug.Log($"[MapEditor] Boot-sync: active slot is '{active}' — " +
+                      $"replacing default zones with slot snapshot ({data.zones?.Count ?? 0} zone(s)).");
+
+            // Slot file is authoritative — replace, don't merge with DB.
+            ApplySlotToZoneManager(data);
+
+            // Tile editor's persistence layer must point at the active
+            // slot's WorldId so any subsequent paint lands in the right
+            // directory. WorldLoader's ApplyAllOverrides already used the
+            // correct WorldId, but the editor's internal _persistence
+            // instance was created with whatever it last cached.
+            RebindTileEditorToActiveWorld();
+
+            // Re-paint the tilemap for the now-correct zone set. Without
+            // this the visual stays on the old DB-default tiles.
+            RefreshTilemapForActiveSlot();
+
+            // Slot-specific runtime objects.
+            HydratePortalsFromPersistence(data);
+            HydrateBiomeBuildingsFromPersistence(data);
+
+            // Buildings: drop everything spawned during boot from the
+            // default and reload from the slot's BuildingsDir.
+            ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
+            ClearAllSpawnedWorldContent();
+            ReloadAllWorldContent();
+
+            // Restore last-known player position. Ignored when the slot
+            // hasn't been visited yet.
+            Vector2 spawnPos = GetSavedPlayerPosition(data);
+            TeleportPlayerToWorldPosition(spawnPos);
+
+            // Notify UI listeners so any "active map" indicator refreshes
+            // its highlight without waiting for the user to open F11.
+            OnMapSlotsChanged?.Invoke();
         }
 
         // ── Load a named slot into the live ZoneManager ──────────────────────────

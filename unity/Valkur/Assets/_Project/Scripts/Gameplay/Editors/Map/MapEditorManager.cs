@@ -135,7 +135,26 @@ namespace Valkur.Gameplay.MapEditor
 
             CreateOverlayRoot();
             CreateUI();
-            LoadZonesFromDisk();
+
+            // Wrap the entire boot-time zone hydration in the boot-sync flag
+            // so any PersistZonesToDisk that fires during it (LoadZonesFromDisk
+            // does this when it has to clean up intra-file duplicates) is
+            // prevented from mirroring the half-loaded state into the active
+            // slot's file — that mirror was the canonical regression that
+            // ate slot data on every launch with a custom slot active.
+            _isBootSyncInProgress = true;
+            try
+            {
+                LoadZonesFromDisk();
+                // If the user closed the game with a custom slot active, the
+                // working-copy + DB merge above leaves the scene mixing default
+                // DB zones with the previous slot's persisted zones. Sync from
+                // the active slot's file directly so the boot scene matches the
+                // map the user actually chose. No-op when the active slot is
+                // the implicit "default" — that path uses DB zones authoritatively.
+                BootSyncWithActiveSlotIfNeeded();
+            }
+            finally { _isBootSyncInProgress = false; }
             HandleZonesChanged();
 
             zoneManager.OnZonesChanged += HandleZonesChanged;
