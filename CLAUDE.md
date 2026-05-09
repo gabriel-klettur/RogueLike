@@ -141,6 +141,18 @@ Namespaces are independent of folder paths — `using Valkur.Gameplay.Buildings;
 | Buildings PPU | 32 | Buildings have a higher PPU for finer detail |
 | Tiles PPU | 32 | Audited via `tools/atlas/audit_tile_sizes.py` |
 
+## Asset organization & naming
+
+The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections **Naming Convention**, **Where assets live**, **Forbidden patterns**). The summary:
+
+- Top-level `_Project/` folders are `PascalCase` (`Art`, `Audio`, `Data`, `Resources`, `SpriteAtlases`, …); everything inside is `snake_case` (`art/items/alchemy/`, `audio/sfx/inventory/`).
+- File names: `snake_case`, lowercase extensions, English only, no spaces / `(` / `,` / `'`. Never `*_old.png`, `*_copy.png`, `ChatGPT *.png`.
+- Vendor / asset-store packs go under `<Layer>/Vendor/<PackName>/` (e.g. `Art/VFX/Vendor/SlashVFX/`), never at `Assets/` root.
+- `Resources/` is loaded whole at build — keep it minimal (only assets actually loaded by `Resources.Load<T>`).
+- Sprite atlases live in **one** place: `_Project/SpriteAtlases/`.
+- Backups don't go in `Assets/` — git is the backup. No `_backups/`, `Backups/`, `*_old.*` allowed.
+- The lint script `tools/atlas/audit_asset_conventions.py` and the EditMode test `AssetConventionsTests` enforce the rules — run them before any large asset import.
+
 ## Where data lives
 
 | Data | Source of truth |
