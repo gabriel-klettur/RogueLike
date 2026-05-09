@@ -1,7 +1,8 @@
 # Incident — Run "twin-save" (duplicate save folder with identical content, distinct runId)
 
-**Status:** mitigated — root cause identified (EditMode test pollution), production guard added 2026-05-08.
+**Status:** mitigated — second mechanism identified (`SceneManager.sceneLoaded` zombies from EditMode test pollution), additional defences added 2026-05-09.
 **First observed:** 2026-05-08 (user report; both autosaves dated `2026-05-08T10:07:46`)
+**x12 recurrence:** 2026-05-09 — twelve duplicate folders written within 41 ms at `13:13:02`, all with byte-identical body and distinct `meta.run_id`. Eleven of the twelve runIds matched `BeginNewRun` calls inside `SaveServiceDirtyAndImmediateTests:SetUp` (line 98). The 2026-05-08 production guard `RefuseWriteOutsidePlayMode` was confirmed firing in EditMode (test writes refused) — but the saves landed in **Play Mode**, driven by zombie SaveService components that survived test TearDown and re-subscribed themselves to `GameEvents.OnZoneChanged` on the first runtime scene load.
 **Severity:** medium — pollutes the Load Game panel; data is not lost; user can manually delete the orphan folders.
 **NOT to be confused with:** the long-known "phantom Lv.0/Lobby" pattern documented in `SaveFileManager.Pruning.cs`. That pattern is fully mitigated. This was a **separate** pattern caused by EditMode tests writing into the user's real `Application.persistentDataPath`.
 
@@ -213,6 +214,71 @@ Until the root cause is fixed, manually delete the orphan folder:
 The "orphan" is whichever folder name is **NOT** present in
 `profile.json#runs[].runId`. Take a backup before deleting.
 
+## 2026-05-09 update — second mechanism (`SceneManager.sceneLoaded` zombies)
+
+The 2026-05-08 fix (`RefuseWriteOutsidePlayMode`) only covers disk writes
+that originate **while** `Application.isPlaying == false`. The 2026-05-09
+recurrence happened entirely inside Play Mode, so that guard was bypassed.
+Editor.log evidence (lines 686228–706145) shows the writes drove off
+`Valkur.Gameplay.World.ZoneManager:Update` → `GameEvents.FireZoneChanged` —
+i.e. legitimate runtime calls — but each invocation reached **twelve**
+distinct `HandleZoneChanged` handlers, one per `_currentRunId`.
+
+### Why zombie SaveService components survive test TearDown
+
+1. EditMode tests instantiate the singleton via `AddComponent<SaveService>`
+   followed by reflective `ForceSingletonInit` (which manually calls
+   `OnSingletonAwake`). The MonoBehaviour `Awake` is skipped — Unity
+   does not run lifecycle methods on components added in EditMode.
+2. `OnSingletonAwake` subscribes to two static delegates:
+   `SceneManager.sceneLoaded += OnSceneLoaded` and the GameEvents bus.
+3. `[TearDown]` calls `Object.DestroyImmediate(_saveServiceGo)`. Because
+   the component never received `Awake`, Unity does **not** invoke
+   `OnDestroy` either — the unsubscribe code in `SaveService.OnDestroy`
+   never runs. The `SceneManager.sceneLoaded` invocation list keeps a
+   strong reference to the now-Unity-null component, preventing GC.
+4. `[TearDown]` also calls `GameEvents.Clear()`, which nulls the
+   GameEvents subscriber lists. The zombies are temporarily disconnected
+   from GameEvents — but their `SceneManager.sceneLoaded` subscription
+   survives.
+5. On Play Mode entry, the first runtime scene load fires
+   `SceneManager.sceneLoaded`. **Every** zombie's `OnSceneLoaded`
+   executes — at the time of the incident the body unconditionally
+   called `RebindGameEvents()`, re-subscribing each zombie's dead
+   `HandleZoneChanged` to the live `GameEvents.OnZoneChanged`.
+6. The first `ZoneManager.Update` Lobby→Alpha transition fires once;
+   eleven zombies + one production SaveService each handle it; eleven
+   zombies + one production each call `WriteAutosaveToDisk` against
+   their own `_currentRunId` field; eleven leftover folders + one
+   legitimate save land on disk in 41 ms.
+
+The "ordinal=0 bootstrap window" guard (`SaveService.cs:369`) skipped a
+few of the very first attempts (the warning `Save skipped — run ordinal
+not yet assigned` is in the log), which is why the eleven zombie writes
+all carry `run_ordinal=1` from `SetRunOrdinal(1)` calls in the test
+bodies — only zombies whose tests had reached that line could pass the
+guard. That maps the eleven orphans 1:1 to the eleven tests in
+`SaveServiceDirtyAndImmediateTests` that call `SetRunOrdinal(1)`.
+
+### Production fixes — 2026-05-09
+
+1. **`SaveService.OnSceneLoaded` zombie short-circuit.** When `this == null`
+   (Unity-destroyed component still held by a static delegate) the handler
+   self-unsubscribes from `SceneManager.sceneLoaded`, calls
+   `UnbindGameEvents()` (idempotent no-op, kept for symmetry), and returns
+   without re-binding. Live components keep the existing rebind path so the
+   `SceneTransitionManager`/`LoadingScreenController` clear-and-rebind
+   contract is unchanged.
+2. **`GameEvents.ResetSubscribersOnPlayModeEnter` (new
+   `[RuntimeInitializeOnLoadMethod(SubsystemRegistration)]`).** Wipes the
+   bus before any Awake fires on Play Mode entry — defence-in-depth so the
+   "Domain Reload OFF carries delegates across Play Mode boundaries"
+   property never leaks subscribers from a previous EditMode session.
+3. **Regression tests** (`SaveServiceZombieResubscribeTests`):
+   - `GameEvents_HasRuntimeInitializeOnLoadResetHook`
+   - `OnSceneLoaded_ZombieInstance_DoesNotResubscribeToGameEvents`
+   - `OnSceneLoaded_LiveInstance_StillRebindsAfterClear`
+
 ## Resolution checklist
 
 - [x] Logs reproduce the call chain (Editor.log lines ~1779382–2727880,
@@ -233,7 +299,16 @@ The "orphan" is whichever folder name is **NOT** present in
 - [x] `[RunTwinSave-Diag]` instrumentation flipped to dormant
       (`DIAG_RUN_TWIN_SAVE = false`); kept in source as a re-enable
       switch in case a non-test recurrence ever shows up.
+- [x] **2026-05-09:** `SaveService.OnSceneLoaded` zombie short-circuit added,
+      `GameEvents.ResetSubscribersOnPlayModeEnter` added,
+      `SaveServiceZombieResubscribeTests` regression coverage in place.
 - [ ] Optional follow-up: extend `IsPhantomRun` to detect "ordinal
       duplicates" (two folders sharing `meta.run_ordinal` with identical
       body bytes modulo meta) — defence-in-depth against any future
       mechanism that bypasses the guard.
+- [ ] Optional follow-up: audit every `SingletonMonoBehaviour<T>` subclass
+      whose EditMode tests use `AddComponent + ForceSingletonInit + later
+      DestroyImmediate` — they may have the same `OnDestroy`-skipped-on-
+      never-Awake'd-component leak. Likely candidates:
+      `GameEditorManager`, `PerformanceMonitor`, any test that subscribes
+      to `SceneManager.sceneLoaded` from a static event.

@@ -156,7 +156,28 @@ namespace Valkur.Gameplay
         // Both SceneTransitionManager.LoadScene and LoadingScreenController call
         // GameEvents.Clear() to flush stale subscribers before swapping scenes.
         // That nukes our subscriptions too, so re-bind on every scene load.
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => RebindGameEvents();
+        //
+        // Zombie-instance check: with Domain Reload OFF, an EditMode test fixture
+        // can leak a SaveService whose GameObject was destroyed (`this == null`
+        // via Unity's overloaded ==) but whose C# component is kept alive by the
+        // static `SceneManager.sceneLoaded` delegate. When the user then enters
+        // Play Mode, the new scene load fires this callback on every leaked
+        // zombie, which would re-subscribe its dead handlers to GameEvents and
+        // produce one runaway autosave per zombie on the first FireZoneChanged.
+        // That is the x12 recurrence documented in
+        // `.github/incidents/RUN_TWIN_SAVE.md` (2026-05-09). Zombies detect
+        // themselves here and self-unsubscribe so the static delegate can finally
+        // release the dead instance for garbage collection.
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (this == null)
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+                UnbindGameEvents();
+                return;
+            }
+            RebindGameEvents();
+        }
 
         /// <summary>
         /// Marks the current session as worth autosaving on quit / on the

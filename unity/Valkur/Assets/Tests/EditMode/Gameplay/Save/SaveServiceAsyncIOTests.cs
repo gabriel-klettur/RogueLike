@@ -55,6 +55,18 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
             onAwake?.Invoke(svc, null);
         }
 
+        // EditMode-added components skip Awake/OnDestroy. Call this before
+        // DestroyImmediate so SceneManager.sceneLoaded / GameEvents
+        // subscriptions are unwound — otherwise the static delegate retains
+        // a Unity-null zombie. See incident .github/incidents/RUN_TWIN_SAVE.md.
+        private static void ManuallyInvokeOnDestroy(SaveService svc)
+        {
+            if (svc == null) return;
+            var onDestroy = typeof(SaveService).GetMethod("OnDestroy",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            try { onDestroy?.Invoke(svc, null); } catch { /* best-effort cleanup */ }
+        }
+
         private static void SetBool(SaveService svc, string fieldName, bool value)
         {
             var f = typeof(SaveService).GetField(fieldName,
@@ -142,6 +154,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
         {
             // Give any in-flight task a moment to settle before we delete its files.
             _saveService?.FlushPendingWrites(5f);
+
+            ManuallyInvokeOnDestroy(_saveService);
 
             if (_saveServiceGo != null)
                 UnityEngine.Object.DestroyImmediate(_saveServiceGo);

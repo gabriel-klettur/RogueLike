@@ -49,6 +49,23 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
             onAwake?.Invoke(svc, null);
         }
 
+        /// <summary>
+        /// Components added via AddComponent in EditMode never receive Awake,
+        /// so Unity also skips OnDestroy at DestroyImmediate time. The
+        /// SceneManager.sceneLoaded subscription installed by OnSingletonAwake
+        /// would then keep the C# component alive as a zombie that re-binds
+        /// to GameEvents on the next runtime scene load — the x12 recurrence
+        /// of incident .github/incidents/RUN_TWIN_SAVE.md (2026-05-09).
+        /// Call this BEFORE DestroyImmediate so the cleanup contract holds.
+        /// </summary>
+        private static void ManuallyInvokeOnDestroy(SaveService svc)
+        {
+            if (svc == null) return;
+            var onDestroy = typeof(SaveService).GetMethod("OnDestroy",
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            try { onDestroy?.Invoke(svc, null); } catch { /* best-effort cleanup */ }
+        }
+
         /// <summary>Reads a private/internal float field from SaveService by name.</summary>
         private static float GetFloat(SaveService svc, string fieldName)
         {
@@ -101,6 +118,8 @@ namespace Valkur.Tests.EditMode.Gameplay.Save
         [TearDown]
         public void TearDown()
         {
+            ManuallyInvokeOnDestroy(_saveService);
+
             if (_saveServiceGo != null)
                 Object.DestroyImmediate(_saveServiceGo);
 
