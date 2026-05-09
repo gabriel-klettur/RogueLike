@@ -3,6 +3,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data.Dungeon.Udemy;
 using Valkur.Gameplay.World.Dungeon.Udemy.Builder;
+using Valkur.Gameplay.World.Dungeon.Udemy.Doors;
 
 namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
 {
@@ -79,14 +80,30 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // Door lock/unlock — Phase 5 will replace these stubs with calls
-        // into the Door MonoBehaviours instantiated for connected doorways.
-        // Kept here so subscribers (RoomEnemyTracker) have a stable target.
+        // Door wiring — populated by the strategy after instantiating door
+        // prefabs at each connected doorway. Boss room doors start locked.
         // ─────────────────────────────────────────────────────────────────
 
-        private readonly List<MonoBehaviour> _doors = new List<MonoBehaviour>();
+        private readonly List<Door> _doors = new List<Door>();
 
-        public void LockDoors() { /* Phase 5 */ }
-        public void UnlockDoors() { /* Phase 5 */ }
+        public IReadOnlyList<Door> Doors => _doors;
+
+        /// <summary>Called by the strategy once per door instance attached to this room.</summary>
+        public void RegisterDoor(Door door)
+        {
+            if (door != null) _doors.Add(door);
+        }
+
+        public void LockDoors()
+        {
+            for (int i = 0; i < _doors.Count; i++)
+                if (_doors[i] != null) _doors[i].LockDoor();
+        }
+
+        public void UnlockDoors()
+        {
+            for (int i = 0; i < _doors.Count; i++)
+                if (_doors[i] != null) _doors[i].UnlockDoor();
+        }
     }
 }
