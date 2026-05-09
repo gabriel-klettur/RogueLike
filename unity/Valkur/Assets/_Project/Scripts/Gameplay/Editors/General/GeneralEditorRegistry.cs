@@ -56,6 +56,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Spawners",      () => SpawnerEditorManager.Instance));
             list.Add(MakeEditor("Lighting",      () => LightingRuntimeEditor.Instance));
             list.Add(MakeEditor("Time & Weather",() => TimeWeatherEditor.Instance));
+            list.Add(MakeEditor("Dungeon NodeGraph", () => Valkur.Gameplay.Editors.DungeonNodeGraph.DungeonNodeGraphEditor.Instance));
 
             // ── Diagnostics (toggles, no exclusive activation) ──────────────
             list.Add(new GeneralEditorEntry(
