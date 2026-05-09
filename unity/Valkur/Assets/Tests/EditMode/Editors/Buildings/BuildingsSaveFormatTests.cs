@@ -33,6 +33,21 @@ namespace Valkur.Tests.EditMode.Editors.Buildings
         // serialization tests cannot corrupt the project data-integrity fixtures.
         private readonly Dictionary<string, string> _fileBackups = new Dictionary<string, string>();
 
+        [SetUp]
+        public void SetUp()
+        {
+            // Pin the active slot to "default" for the duration of every test
+            // in this fixture. Without this, a user who left the F11 Map
+            // Editor on a custom slot (e.g. "TEST 2") leaves _active.txt on
+            // disk pointing there; MapEditorActiveSlot.Read() honours that
+            // file, MapEditorActiveSlot.BuildingsDir() routes saves to
+            // persistentDataPath/Maps/<slot>/Buildings/, and the assertions
+            // below — which read from streamingAssetsPath — see stale
+            // user data instead of what the test just wrote.
+            Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(
+                Valkur.Core.MapEditorActiveSlot.DEFAULT_SLOT);
+        }
+
         [TearDown]
         public void TearDown()
         {

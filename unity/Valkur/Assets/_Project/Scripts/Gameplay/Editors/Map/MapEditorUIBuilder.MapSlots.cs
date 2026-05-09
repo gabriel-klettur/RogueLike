@@ -49,6 +49,10 @@ namespace Valkur.Gameplay.MapEditor
             // screen. Updated each frame from MapEditorUI.Update while the
             // overlay is visible; SetTargetProgress / SetStatus drive it.
             public Valkur.UIKit.LoadingBarWidget MapsLoadingBar;
+            // Background image swapped by the teleport-art rotation on every
+            // ShowMapsLoadingOverlay call.
+            public Image           MapsLoadingBgImage;
+            public AspectRatioFitter MapsLoadingBgFitter;
 
             // Mutable state shared across click handlers
             public MapSlotsDialogState MapsState;
@@ -544,12 +548,43 @@ namespace Valkur.Gameplay.MapEditor
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
 
-            // Solid black background — placeholder for a future per-map
-            // splash image. Also acts as a click-blocker so the user can't
-            // accidentally fire input while a slot load runs.
-            var bg = go.AddComponent<Image>();
-            bg.color = Color.black;
-            bg.raycastTarget = true;
+            // Click-blocker layer so the user can't fire input while a slot
+            // load runs. Black so the corners stay solid even when the
+            // letterboxed teleport art doesn't reach the screen edge.
+            var blocker = go.AddComponent<Image>();
+            blocker.color = Color.black;
+            blocker.raycastTarget = true;
+
+            // ── Teleport-art background ───────────────────────────────────
+            // Outer container clips with RectMask2D; inner Image uses
+            // AspectRatioFitter.EnvelopeParent so the source aspect is
+            // preserved and the canvas is fully covered (any overflow is
+            // cropped, never stretched). The actual sprite is assigned per
+            // ShowMapsLoadingOverlay via TeleportMapBackgroundProvider so
+            // each slot transition rotates through the authored art.
+            var bgContainer = CreateUI("Bg_Container", go.transform);
+            var bgContRt    = bgContainer.GetComponent<RectTransform>();
+            bgContRt.anchorMin = Vector2.zero; bgContRt.anchorMax = Vector2.one;
+            bgContRt.offsetMin = Vector2.zero; bgContRt.offsetMax = Vector2.zero;
+            bgContainer.AddComponent<RectMask2D>();
+
+            var bgGo  = CreateUI("Bg_Image", bgContainer.transform);
+            var bgImg = bgGo.AddComponent<Image>();
+            bgImg.preserveAspect = true;
+            bgImg.raycastTarget  = false;
+            var bgRt  = bgGo.GetComponent<RectTransform>();
+            bgRt.anchorMin        = new Vector2(0.5f, 0.5f);
+            bgRt.anchorMax        = new Vector2(0.5f, 0.5f);
+            bgRt.pivot            = new Vector2(0.5f, 0.5f);
+            bgRt.anchoredPosition = Vector2.zero;
+            var fitter = bgGo.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            // Default 16:9 so the layout doesn't NaN before the first sprite
+            // is assigned; ApplyMapsLoadingBackground overwrites this with
+            // the actual sprite's aspect on every Show call.
+            fitter.aspectRatio = 16f / 9f;
+            refs.MapsLoadingBgImage  = bgImg;
+            refs.MapsLoadingBgFitter = fitter;
 
             // Map name banner (above the bar). Bold + accent colour so the
             // user always sees which slot is loading.

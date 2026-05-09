@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -58,8 +59,34 @@ namespace Valkur.Gameplay.MapEditor
             // last shown.
             _refs.MapsLoadingBar?.Reset();
             _refs.MapsLoadingBar?.SetStatus("Preparing");
+            // Rotate the teleport-art background so each map switch shows
+            // a different image. Falls back to a transparent background
+            // (the click-blocker Image stays solid black behind) when the
+            // provider has no sprites loaded.
+            ApplyTeleportBackground();
             _refs.MapsLoadingOverlay.transform.SetAsLastSibling();
             _refs.MapsLoadingOverlay.SetActive(true);
+        }
+
+        private void ApplyTeleportBackground()
+        {
+            if (_refs.MapsLoadingBgImage == null) return;
+            var sprite = Valkur.UIKit.TeleportMapBackgroundProvider.NextBackground();
+            if (sprite == null)
+            {
+                // No sprites authored yet — hide the layer so the underlying
+                // black click-blocker remains visible without a stale sprite.
+                _refs.MapsLoadingBgImage.sprite = null;
+                _refs.MapsLoadingBgImage.color  = new Color(0f, 0f, 0f, 0f);
+                return;
+            }
+            _refs.MapsLoadingBgImage.sprite = sprite;
+            _refs.MapsLoadingBgImage.color  = Color.white; // un-tint
+            if (_refs.MapsLoadingBgFitter != null && sprite.texture != null)
+            {
+                _refs.MapsLoadingBgFitter.aspectRatio = (float)sprite.texture.width
+                    / Mathf.Max(1, sprite.texture.height);
+            }
         }
 
         public void HideMapsLoadingOverlay()

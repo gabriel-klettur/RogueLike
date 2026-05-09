@@ -10,6 +10,25 @@ namespace Valkur.Tests.EditMode.Game.World
     [TestFixture]
     public class BuildingCollisionLoaderTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            // Pin the active slot to "default" so MapEditorActiveSlot routes
+            // the loader at streamingAssetsPath/Buildings/ — where every test
+            // here writes its synthetic JSON. Without the override, a real
+            // user-active slot from _active.txt would route the loader at
+            // persistentDataPath/Maps/<slot>/Buildings/ and miss the file
+            // the test just wrote.
+            Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(
+                Valkur.Core.MapEditorActiveSlot.DEFAULT_SLOT);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Valkur.Core.MapEditorActiveSlot.SetOverrideForTests(null);
+        }
+
         private static void SetPrivateField(object obj, string name, object value)
         {
             var type = obj.GetType();

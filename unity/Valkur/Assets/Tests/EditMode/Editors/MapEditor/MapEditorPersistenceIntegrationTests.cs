@@ -45,6 +45,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         private string _mapZonesSidecarBackupPath;  // our parking spot
         private bool   _hadExistingMapZones;
         private bool   _hadExistingSidecar;
+        // Active-slot pointer parked from real persistentDataPath while the
+        // test runs. Without this, a user-active slot like "TEST 2" leaks
+        // into MapEditorMapSlots constructor and the per-slot overlay
+        // routing introduced in the multi-map work points DeleteOverride at
+        // `MapOverrides/TEST_2/...` instead of the legacy flat root the
+        // tests seed files into.
+        private string _activeSlotPath;
+        private string _activeSlotParkedContent;
+        private bool   _hadExistingActiveSlot;
 
         private GameObject _gridGo;
         private WorldGridBuilder _grid;
@@ -68,6 +77,18 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             _mapZonesSidecarBackupPath = _mapZonesBackupPath + ".sidecar";
             _hadExistingMapZones = File.Exists(_mapZonesJsonPath);
             _hadExistingSidecar  = File.Exists(_mapZonesSidecarPath);
+
+            // Park the user's active-slot pointer so MapEditorMapSlots'
+            // constructor reads "default" and ActiveWorldId resolves to
+            // WorldId.Base — keeping the test's seeded override files at
+            // the legacy flat MapOverrides root reachable by DeleteOverride.
+            _activeSlotPath = Path.Combine(Application.persistentDataPath, "Maps", "_active.txt");
+            _hadExistingActiveSlot = File.Exists(_activeSlotPath);
+            if (_hadExistingActiveSlot)
+            {
+                _activeSlotParkedContent = File.ReadAllText(_activeSlotPath);
+                File.Delete(_activeSlotPath);
+            }
 
             // Park the production sidecar before the test starts: PersistZonesToDisk
             // writes via File.Replace which would otherwise overwrite it with the
@@ -152,6 +173,24 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             try { if (File.Exists(_mapZonesSidecarBackupPath)) File.Delete(_mapZonesSidecarBackupPath); } catch { }
 
             try { TileOverlayPersistence.DeleteOverride(USER_ZONE_NAME); } catch { }
+
+            // Restore the user's active-slot pointer parked in SetUp.
+            try
+            {
+                if (_hadExistingActiveSlot && !string.IsNullOrEmpty(_activeSlotPath)
+                    && _activeSlotParkedContent != null)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(_activeSlotPath));
+                    File.WriteAllText(_activeSlotPath, _activeSlotParkedContent);
+                }
+                else if (!_hadExistingActiveSlot && File.Exists(_activeSlotPath))
+                {
+                    // Test runs created a default-slot marker that didn't exist
+                    // before — drop it so the user's editor state stays clean.
+                    File.Delete(_activeSlotPath);
+                }
+            }
+            catch { }
 
             if (_mgrGo != null) Object.DestroyImmediate(_mgrGo);
             if (_gridGo != null) Object.DestroyImmediate(_gridGo);
