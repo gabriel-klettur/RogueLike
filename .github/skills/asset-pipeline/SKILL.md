@@ -144,6 +144,8 @@ Hard rules for **every** asset under `Assets/_Project/`:
 | Top-level under `_Project/` | `PascalCase` | `Art/`, `Audio/`, `Data/`, `Prefabs/`, `Resources/`, `Scenes/`, `Scripts/`, `Settings/`, `Shaders/`, `SpriteAtlases/` |
 | Domain subfolders | `snake_case` (lowercase) | `art/items/alchemy/`, `audio/sfx/inventory/`, `art/buildings/houses/` |
 | Vendor / asset-store packs | `_Project/<Layer>/Vendor/<PackName>/` | `_Project/Art/VFX/Vendor/SlashVFX/` |
+
+**Vendor packs keep their original internal structure intact** (the `Demo/`, `Materials/`, `Prefabs/` PascalCase subfolders that ship with the pack) so they can be updated by re-importing from the Asset Store without merge conflicts. The `snake_case` rule applies to folders we author, not to third-party drops.
 | Backups | NEVER inside `Assets/` — git is the backup | (deleted) |
 | Tier-2 recovery | `_Project/Data/Backups/` — **whitelisted exception** | maintained by `BuildingsDataGuard` + `MapEditorDataGuard` |
 | Empty folders | Don't keep folders with only `.meta` and no children | (deleted) |
