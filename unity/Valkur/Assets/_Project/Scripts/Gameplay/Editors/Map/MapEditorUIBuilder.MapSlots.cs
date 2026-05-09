@@ -45,6 +45,10 @@ namespace Valkur.Gameplay.MapEditor
             // Loading overlay (covers the canvas while a slot load runs).
             public GameObject      MapsLoadingOverlay;
             public TextMeshProUGUI MapsLoadingLabel;
+            // Reusable progress-bar widget — same chrome as the boot loading
+            // screen. Updated each frame from MapEditorUI.Update while the
+            // overlay is visible; SetTargetProgress / SetStatus drive it.
+            public Valkur.UIKit.LoadingBarWidget MapsLoadingBar;
 
             // Mutable state shared across click handlers
             public MapSlotsDialogState MapsState;
@@ -540,26 +544,34 @@ namespace Valkur.Gameplay.MapEditor
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
 
-            // Dim background — also acts as a click-blocker so the user can't
-            // accidentally fire input while a load is in progress.
+            // Solid black background — placeholder for a future per-map
+            // splash image. Also acts as a click-blocker so the user can't
+            // accidentally fire input while a slot load runs.
             var bg = go.AddComponent<Image>();
-            bg.color = new Color(0f, 0f, 0f, 0.78f);
+            bg.color = Color.black;
             bg.raycastTarget = true;
 
-            // Centred label.
+            // Map name banner (above the bar). Bold + accent colour so the
+            // user always sees which slot is loading.
             var labelGo = CreateUI("Label", go.transform);
             var labelRt = labelGo.GetComponent<RectTransform>();
             labelRt.anchorMin = new Vector2(0.5f, 0.5f);
             labelRt.anchorMax = new Vector2(0.5f, 0.5f);
             labelRt.pivot     = new Vector2(0.5f, 0.5f);
-            labelRt.sizeDelta = new Vector2(420f, 60f);
+            labelRt.anchoredPosition = new Vector2(0f, 80f);
+            labelRt.sizeDelta = new Vector2(640f, 48f);
 
             refs.MapsLoadingLabel = labelGo.AddComponent<TextMeshProUGUI>();
             refs.MapsLoadingLabel.text      = "Loading map…";
-            refs.MapsLoadingLabel.fontSize  = 22f;
+            refs.MapsLoadingLabel.fontSize  = 26f;
             refs.MapsLoadingLabel.fontStyle = FontStyles.Bold;
             refs.MapsLoadingLabel.color     = ACCENT;
             refs.MapsLoadingLabel.alignment = TextAlignmentOptions.Center;
+
+            // Progress bar — reuses the boot loading screen's chrome via
+            // the shared UIKit widget so both surfaces look identical.
+            refs.MapsLoadingBar = Valkur.UIKit.LoadingBarWidget.Mount(
+                go.transform, anchoredPos: new Vector2(0f, -10f), barWidth: 720f);
 
             refs.MapsLoadingOverlay = go;
             go.transform.SetAsLastSibling();

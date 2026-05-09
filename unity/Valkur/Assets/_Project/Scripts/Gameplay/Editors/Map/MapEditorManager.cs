@@ -362,13 +362,30 @@ namespace Valkur.Gameplay.MapEditor
 
         private System.Collections.IEnumerator LoadSlotWithOverlay(string slotName)
         {
+            // The overlay's progress bar is rendered each frame from
+            // MapEditorUI.Update; the staged progress + status reports below
+            // give the lerp something concrete to ease toward, so the user
+            // sees a continuously moving bar instead of a step jump from
+            // 0 % to 100 % at the end. The actual LoadMapSlot call is still
+            // synchronous — yields between checkpoints exist purely to give
+            // the renderer a chance to draw frames between phase reports.
             _ui?.ShowMapsLoadingOverlay(slotName);
-            // Two yields: the first lets the overlay reach the screen, the
-            // second lets layout/cinemachine settle before we hide it.
+            _ui?.ReportMapsLoadingProgress(0.05f, "Preparing");
             yield return null;
-            yield return null;
+            yield return null; // overlay + bar reach the screen
+            _ui?.ReportMapsLoadingProgress(0.20f, "Reading slot data");
+            yield return new WaitForSecondsRealtime(0.05f);
+            _ui?.ReportMapsLoadingProgress(0.40f, "Switching active world");
+            yield return new WaitForSecondsRealtime(0.05f);
+
             bool ok = LoadMapSlot(slotName);
-            yield return null;
+
+            _ui?.ReportMapsLoadingProgress(0.85f, "Finalising scene");
+            yield return new WaitForSecondsRealtime(0.05f);
+            _ui?.ReportMapsLoadingProgress(1.00f, ok ? "Done" : "Failed");
+            // Hold at 100 % briefly so the user sees the bar fill instead of
+            // the overlay disappearing at the same instant the lerp completes.
+            yield return new WaitForSecondsRealtime(0.30f);
             _ui?.HideMapsLoadingOverlay();
             _ui?.SetStatus(ok ? $"Loaded map '{slotName}'." : $"Load failed for '{slotName}'.");
         }

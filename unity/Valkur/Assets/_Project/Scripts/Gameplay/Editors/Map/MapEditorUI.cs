@@ -158,6 +158,11 @@ namespace Valkur.Gameplay.MapEditor
 
         private void Update()
         {
+            // Loading overlay uses a shared progress-bar widget — drive its
+            // lerp + dots animation here so the bar stays smooth even when
+            // the slot-load coroutine is mid-yield.
+            TickMapsLoadingBar(Time.unscaledDeltaTime);
+
             if (_isAddZoneMode && _refs.AddZoneBtnOutline != null)
             {
                 float pulseAdd = (Mathf.Sin(Time.unscaledTime * 5f) + 1f) * 0.5f;

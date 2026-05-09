@@ -52,7 +52,12 @@ namespace Valkur.Gameplay.MapEditor
             if (_refs.MapsLoadingLabel != null)
                 _refs.MapsLoadingLabel.text = string.IsNullOrEmpty(slotBeingLoaded)
                     ? "Loading map…"
-                    : $"Loading map '{slotBeingLoaded}'…";
+                    : $"Loading map '{slotBeingLoaded}'";
+            // Always start at 0 % — a stale displayed-progress from the
+            // previous load would jump-start the new bar at whatever was
+            // last shown.
+            _refs.MapsLoadingBar?.Reset();
+            _refs.MapsLoadingBar?.SetStatus("Preparing");
             _refs.MapsLoadingOverlay.transform.SetAsLastSibling();
             _refs.MapsLoadingOverlay.SetActive(true);
         }
@@ -61,6 +66,30 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_refs.MapsLoadingOverlay != null)
                 _refs.MapsLoadingOverlay.SetActive(false);
+        }
+
+        /// <summary>
+        /// Update the bar's target progress (0..1) and status text. Safe to
+        /// call from a coroutine that drives the slot-load phases.
+        /// </summary>
+        public void ReportMapsLoadingProgress(float progress01, string status)
+        {
+            _refs.MapsLoadingBar?.SetTargetProgress(progress01);
+            if (!string.IsNullOrEmpty(status))
+                _refs.MapsLoadingBar?.SetStatus(status);
+        }
+
+        /// <summary>True while the loading overlay is visible — used by the
+        /// UI's Update to drive the bar's Tick.</summary>
+        public bool IsMapsLoadingOverlayVisible
+            => _refs.MapsLoadingOverlay != null && _refs.MapsLoadingOverlay.activeSelf;
+
+        /// <summary>Drive the bar's lerp + dot animation while the overlay
+        /// is up. Must be called from MapEditorUI.Update.</summary>
+        public void TickMapsLoadingBar(float unscaledDeltaTime)
+        {
+            if (!IsMapsLoadingOverlayVisible) return;
+            _refs.MapsLoadingBar?.Tick(unscaledDeltaTime);
         }
     }
 }
