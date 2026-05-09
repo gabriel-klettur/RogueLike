@@ -82,6 +82,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
                     sourceCollision = src;
             }
 
+            // Visual fallback: if the prefab brought no tilemaps, paint the
+            // room's bounding box on the global Ground layer with the config's
+            // defaultFloorTile. Lets the dungeon be VISIBLE even when authored
+            // template prefabs are still empty — useful while iterating.
+            if (result.LayersTransferred == 0 && config != null && config.defaultFloorTile != null)
+            {
+                result.TilesStamped += PaintFallbackFloor(room, gridBuilder, config.defaultFloorTile);
+            }
+
             // Build the A* penalty matrix from the source collision tilemap.
             // We use the SOURCE (template-local) tilemap so coordinates match
             // template-local indexing, which RoomPathfindingBridge expects.
@@ -106,6 +115,21 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
         // ─────────────────────────────────────────────────────────────────
         // Tile transfer.
         // ─────────────────────────────────────────────────────────────────
+
+        private static int PaintFallbackFloor(Room room, WorldGridBuilder gridBuilder, TileBase fallback)
+        {
+            var ground = gridBuilder.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
+            if (ground == null) return 0;
+
+            int painted = 0;
+            for (int x = room.lowerBounds.x; x <= room.upperBounds.x; x++)
+            for (int y = room.lowerBounds.y; y <= room.upperBounds.y; y++)
+            {
+                ground.SetTile(new Vector3Int(x, y, 0), fallback);
+                painted++;
+            }
+            return painted;
+        }
 
         private static int TransferAllTiles(Tilemap src, Tilemap dst, Vector2Int worldOffset)
         {

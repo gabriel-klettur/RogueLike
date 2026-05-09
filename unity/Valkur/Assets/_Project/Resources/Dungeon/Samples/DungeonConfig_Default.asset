@@ -21,3 +21,4 @@ MonoBehaviour:
   playerLayer: 8
   projectileLayer: 10
   fadeInTime: 0.5
+  defaultFloorTile: {fileID: 11400000, guid: aca8b49c4a6f4d949b50e2825f07bc77, type: 2}

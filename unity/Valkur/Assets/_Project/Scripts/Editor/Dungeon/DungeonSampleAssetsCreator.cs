@@ -23,7 +23,7 @@ namespace Valkur.Editor.Dungeon
     /// </summary>
     public static class DungeonSampleAssetsCreator
     {
-        private const string Root = "Assets/_Project/Data/Dungeon/Samples";
+        private const string Root = "Assets/_Project/Resources/Dungeon/Samples";
 
         [MenuItem("Valkur/Dungeon/Create Sample Assets")]
         public static void CreateSampleAssets()
@@ -55,13 +55,34 @@ namespace Valkur.Editor.Dungeon
                 AssetDatabase.CreateAsset(typeList, typeListPath);
             }
 
-            // 3) Default dungeon config.
+            // 3) Default dungeon config + fallback floor Tile.
+            //    The Tile asset lives next to the config so the Udemy strategy
+            //    can paint room interiors even when authored prefabs are still
+            //    empty — gives the user something visible the first time they
+            //    teleport into "Dungeon v1".
+            var floorTilePath = $"{Root}/DungeonFloor_Tile.asset";
+            var floorTile = AssetDatabase.LoadAssetAtPath<UnityEngine.Tilemaps.Tile>(floorTilePath);
+            if (floorTile == null)
+            {
+                floorTile = ScriptableObject.CreateInstance<UnityEngine.Tilemaps.Tile>();
+                var sprite = Resources.Load<Sprite>("Tiles/dungeon_floor");
+                if (sprite != null) floorTile.sprite = sprite;
+                AssetDatabase.CreateAsset(floorTile, floorTilePath);
+            }
+
             var configPath = $"{Root}/DungeonConfig_Default.asset";
             var config = AssetDatabase.LoadAssetAtPath<DungeonConfigSO>(configPath);
             if (config == null)
             {
                 config = ScriptableObject.CreateInstance<DungeonConfigSO>();
+                config.defaultFloorTile = floorTile;
                 AssetDatabase.CreateAsset(config, configPath);
+            }
+            else if (config.defaultFloorTile == null)
+            {
+                // Existing config from an earlier menu run — backfill the tile.
+                config.defaultFloorTile = floorTile;
+                EditorUtility.SetDirty(config);
             }
 
             // 4) Five room templates.

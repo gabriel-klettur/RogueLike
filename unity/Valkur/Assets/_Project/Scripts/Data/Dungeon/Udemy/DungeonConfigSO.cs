@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -45,5 +45,9 @@ namespace Valkur.Data.Dungeon.Udemy
         [Header("Room Lighting")]
         [Tooltip("Fade-in duration when the player first enters a room (seconds). Phase 2 â€” wired later.")]
         [Min(0f)] public float fadeInTime = 0.5f;
+        [Header("Visual Fallback")]
+        [Tooltip("Tile painted across the bounding box of every room when the prefab has no Ground tilemap. " +
+                 "Lets you exercise the Udemy strategy with empty templates while authored prefabs are still in flight.")]
+        public TileBase defaultFloorTile;
     }
 }
