@@ -111,7 +111,7 @@ namespace Valkur.Gameplay.Spells
                     if (sr != null && sr.sprite != null) return sr.sprite;
                 }
             }
-            var tex = Resources.Load<Texture2D>("player_placeholder");
+            var tex = Resources.Load<Texture2D>("Placeholders/player_placeholder");
             if (tex == null) return null;
             return Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height),
                                  new Vector2(0.5f, 0f), pixelsPerUnit: 16f);
