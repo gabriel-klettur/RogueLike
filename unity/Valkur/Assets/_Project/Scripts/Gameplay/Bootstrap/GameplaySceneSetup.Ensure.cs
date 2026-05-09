@@ -9,6 +9,7 @@ using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.World.Chunks;
+using Valkur.Gameplay.World.Dungeon.Strategy;
 using Valkur.Gameplay.World.Worlds;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -204,16 +205,27 @@ namespace Valkur.Gameplay
                 }
             }
 
-            var loaderGo = new GameObject("DungeonLoader");
-            var dungeonLoader = loaderGo.AddComponent<World.DungeonLoader>();
-            loaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
-            dungeonLoader.SetConfig(_dungeonConfig);
-            dungeonLoader.GenerateAndPaint(
-                _gridBuilder,
-                dungeonOffX, dungeonOffY,
-                lobbyOffX, lobbyOffY,
-                zoneHeight,
-                _dungeonSeed);
+            // Route through the IDungeonStrategy abstraction. The BSP path is the
+            // legacy default; UdemyDungeonStrategy plugs in here for "Dungeon v1".
+            // Registering on every call is a no-op after the first thanks to
+            // last-write-wins; this keeps the strategy's _dungeonConfig fresh.
+            var bspStrategy = new BspDungeonStrategy(_dungeonConfig);
+            DungeonStrategyResolver.Register(bspStrategy);
+
+            var ctx = new DungeonGenerationContext
+            {
+                GridBuilder = _gridBuilder,
+                DungeonOffsetX = dungeonOffX,
+                DungeonOffsetY = dungeonOffY,
+                LobbyOffsetX = lobbyOffX,
+                LobbyOffsetY = lobbyOffY,
+                ZoneHeight = zoneHeight,
+                Seed = _dungeonSeed,
+                SceneContainer = GetSceneContainer("[World]"),
+            };
+
+            var strategy = DungeonStrategyResolver.Resolve(BspDungeonStrategy.StrategyId);
+            strategy.TryGenerate(ctx, out _);
         }
 
         /// <summary>

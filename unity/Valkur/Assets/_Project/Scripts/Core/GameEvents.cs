@@ -92,6 +92,23 @@ namespace Valkur.Core
         /// <summary>The player crossed into a new zone. Args: (oldZone, newZone)</summary>
         public static event Action<string, string> OnZoneChanged;
 
+        // ── Dungeon Room Events (Udemy strategy) ──
+
+        /// <summary>
+        /// The player entered a different dungeon room. Args:
+        /// (roomId, bounds in world tile coords, entrance tile, isClearedOfEnemies).
+        /// Primitive payload keeps Valkur.Core free of Gameplay dependencies — see
+        /// the note on OnSpellCast for the rationale.
+        /// </summary>
+        public static event Action<string, RectInt, Vector2Int, bool> OnRoomChanged;
+
+        /// <summary>
+        /// All enemies of a dungeon room have been defeated. Args: (roomId).
+        /// Listened to by InstantiatedRoom to unlock doors and by audio to swap
+        /// from battle to ambient music.
+        /// </summary>
+        public static event Action<string> OnRoomEnemiesDefeated;
+
         // ── Fire Methods ──
 
         public static void FireEntityDamaged(GameObject victim, GameObject attacker, int amount)
@@ -169,6 +186,16 @@ namespace Valkur.Core
             OnSpellCast?.Invoke(caster, spellKey, displayName, cooldownDuration);
         }
 
+        public static void FireRoomChanged(string roomId, RectInt bounds, Vector2Int entrance, bool isClearedOfEnemies)
+        {
+            OnRoomChanged?.Invoke(roomId, bounds, entrance, isClearedOfEnemies);
+        }
+
+        public static void FireRoomEnemiesDefeated(string roomId)
+        {
+            OnRoomEnemiesDefeated?.Invoke(roomId);
+        }
+
         /// <summary>
         /// Clear all subscribers. Call on scene unload or domain reload to prevent leaks.
         /// </summary>
@@ -189,6 +216,26 @@ namespace Valkur.Core
             OnItemConsumed = null;
             OnZoneChanged = null;
             OnSpellCast = null;
+            OnRoomChanged = null;
+            OnRoomEnemiesDefeated = null;
+        }
+
+        // ── Domain Reload OFF reset ─────────────────────────────────────────
+        // With "Enter Play Mode → Disable Domain Reload" enabled, every
+        // static event delegate above survives across Play Mode entries.
+        // EditMode test fixtures that subscribe a MonoBehaviour to e.g.
+        // OnZoneChanged then leak the GameObject (TearDown destroys the
+        // GO but the static delegate keeps the dead component alive enough
+        // that a subsequent Play Mode FireZoneChanged hits its handler).
+        // See `.github/incidents/RUN_TWIN_SAVE.md` (the x12 recurrence on
+        // 2026-05-09 was caused by 11 leaked SaveService instances each
+        // writing to its own runId folder when ZoneManager fired the first
+        // Lobby→Alpha transition). Wiping all subscribers at
+        // SubsystemRegistration restores the single-Domain-Reload contract.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSubscribersOnPlayModeEnter()
+        {
+            Clear();
         }
     }
 }
