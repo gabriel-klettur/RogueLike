@@ -48,6 +48,7 @@ namespace Valkur.Gameplay.MapEditor
 
             _state.SelectZone(trimmed);
             PersistZonesToDisk();
+            RecordZoneRename(oldName, trimmed);
             _ui?.SetStatus($"Renamed '{oldName}' to '{trimmed}'.");
             RefreshSelectionUIAndOverlay();
         }
@@ -68,6 +69,7 @@ namespace Valkur.Gameplay.MapEditor
             if (!zoneManager.SetZoneEditable(zone.zoneName, target)) { _ui?.SetStatus("Could not update zone editable state."); return; }
 
             PersistZonesToDisk();
+            RecordZoneToggleEditable(zone.zoneName, target);
             _ui?.SetStatus($"Zone '{zone.zoneName}' editable = {target}");
             RefreshSelectionUIAndOverlay();
         }
@@ -78,10 +80,12 @@ namespace Valkur.Gameplay.MapEditor
 
             int dx = direction.x * Mathf.Max(1, zoneManager.ZoneWidthTiles);
             int dy = direction.y * Mathf.Max(1, zoneManager.ZoneHeightTiles);
-            if (!zoneManager.MoveZone(_state.SelectedZone, new Vector2Int(dx, dy))) { _ui?.SetStatus("Failed to move zone."); return; }
+            string movingZone = _state.SelectedZone;
+            if (!zoneManager.MoveZone(movingZone, new Vector2Int(dx, dy))) { _ui?.SetStatus("Failed to move zone."); return; }
 
             PersistZonesToDisk();
-            _ui?.SetStatus($"Zone '{_state.SelectedZone}' moved by [{dx},{dy}].");
+            RecordZoneMove(movingZone, new Vector2Int(dx, dy));
+            _ui?.SetStatus($"Zone '{movingZone}' moved by [{dx},{dy}].");
             RefreshSelectionUIAndOverlay();
         }
 

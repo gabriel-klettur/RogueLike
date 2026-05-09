@@ -148,6 +148,7 @@ namespace Valkur.Gameplay.MapEditor
             _portals.Add(entry);
             SpawnPortalObject(entry);
             PersistZonesToDisk();
+            RecordPortalAdd(entry.portalId);
             return entry.portalId;
         }
 
@@ -157,6 +158,9 @@ namespace Valkur.Gameplay.MapEditor
             if (string.IsNullOrEmpty(portalId)) return false;
             int idx = _portals.FindIndex(p => p != null && p.portalId == portalId);
             if (idx < 0) return false;
+            // Snapshot for undo BEFORE the removal — once the entry is gone
+            // we'd lose the destination/spawn info needed to redo-place.
+            var removedSnapshot = _portals[idx];
             _portals.RemoveAt(idx);
             // Match the runtime object by name (set in SpawnPortalObject).
             string targetName = $"ZonePortal[{portalId}]";
@@ -169,6 +173,7 @@ namespace Valkur.Gameplay.MapEditor
                 }
             }
             PersistZonesToDisk();
+            RecordPortalRemove(removedSnapshot);
             return true;
         }
 

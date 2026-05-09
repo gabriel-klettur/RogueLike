@@ -120,6 +120,10 @@ namespace Valkur.Gameplay.MapEditor
             // resolves the new slot's WorldId. Tile-overlay routing keys off
             // the live store value via RebindTileEditorToActiveWorld().
             store.SetActive(clean);
+            // Clear undo history so a Ctrl+Z after a slot switch can't
+            // resurrect a zone from the previous slot — the captured Do/Undo
+            // closures reference the outgoing ZoneManager state.
+            ClearUndoHistory();
             // Re-bind the in-game tile editor's persistence layer to the new
             // world id BEFORE repainting so any subsequent dirty-tracking lands
             // in the new slot's directory.
@@ -244,6 +248,7 @@ namespace Valkur.Gameplay.MapEditor
             // the active-slot pointer; the new map starts portal-free.
             HydratePortalsFromPersistence(null);
             ResolveSlotStore().SetActive(clean);
+            ClearUndoHistory();
             // Re-bind the tile editor's overlay persistence to the new slot's
             // world so any first edits land in the new directory.
             RebindTileEditorToActiveWorld();

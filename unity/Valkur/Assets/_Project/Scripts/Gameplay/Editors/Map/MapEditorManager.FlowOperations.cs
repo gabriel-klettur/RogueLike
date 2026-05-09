@@ -117,6 +117,7 @@ namespace Valkur.Gameplay.MapEditor
             _state.SelectZone(zoneName);
             _state.NextZoneIndex++;
             PersistZonesToDisk();
+            RecordZoneAdd(zoneName, _pendingAddZoneOffset, editableInTileEditor);
             CancelAddZoneFlow();
             _ui?.SetStatus($"Zone '{zoneName}' added at [{_pendingAddZoneOffset.x},{_pendingAddZoneOffset.y}].");
             RefreshSelectionUIAndOverlay();
@@ -151,7 +152,17 @@ namespace Valkur.Gameplay.MapEditor
 
             var zones = zoneManager.GetZonesSnapshot();
             if (zones.Length <= 1) { _ui?.SetStatus("Cannot delete the last remaining zone."); return; }
+            // Capture the inverse BEFORE removal so undo can restore the
+            // zone with its original offset + editable flag.
+            Vector2Int zoneOffset = Vector2Int.zero;
+            bool zoneEditable = true;
+            if (zoneManager.TryGetZone(zoneName, out var snapshotZone))
+            {
+                zoneOffset = snapshotZone.gridOffset;
+                zoneEditable = snapshotZone.editableInTileEditor;
+            }
             if (!zoneManager.RemoveZone(zoneName)) { _ui?.SetStatus($"Could not delete zone '{zoneName}'."); return; }
+            RecordZoneRemove(zoneName, zoneOffset, zoneEditable);
 
             // Drop the orphan override file so it doesn't pile up on disk and
             // doesn't trigger "no matching zone" warnings on the next boot.
@@ -199,6 +210,16 @@ namespace Valkur.Gameplay.MapEditor
             int dx = Mathf.Max(1, zoneManager.ZoneWidthTiles);
             zoneManager.MoveZone(duplicatedZoneName, new Vector2Int(dx, 0));
             PersistZonesToDisk();
+            // Capture the duplicate's final offset/editable for undo. The
+            // duplicate inherits its source's editable flag.
+            Vector2Int dupOffset = Vector2Int.zero;
+            bool dupEditable = true;
+            if (zoneManager.TryGetZone(duplicatedZoneName, out var dupZone))
+            {
+                dupOffset = dupZone.gridOffset;
+                dupEditable = dupZone.editableInTileEditor;
+            }
+            RecordZoneAdd(duplicatedZoneName, dupOffset, dupEditable);
             _ui?.SetStatus($"Zone '{sourceZoneName}' duplicated to '{duplicatedZoneName}' and shifted by [{dx},0].");
             RefreshSelectionUIAndOverlay();
         }

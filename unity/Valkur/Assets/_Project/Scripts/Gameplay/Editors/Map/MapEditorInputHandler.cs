@@ -56,6 +56,29 @@ namespace Valkur.Gameplay.MapEditor
         public bool WasToggleEditablePressed()
             => KeyboardInputManager.WasEPressedThisFrame();
 
+        /// <summary>
+        /// Ctrl+Z (no Shift) — Undo. Mirrors the Tile Editor / Buildings Editor
+        /// hotkey contract so users with muscle memory across editors don't
+        /// have to relearn anything.
+        /// </summary>
+        public bool WasUndoPressed()
+            => KeyboardInputManager.IsCtrlHeld()
+               && !KeyboardInputManager.IsShiftHeld()
+               && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z);
+
+        /// <summary>
+        /// Ctrl+Y or Ctrl+Shift+Z — Redo. Both bindings are accepted because
+        /// macOS muscle memory tends toward Cmd+Shift+Z, while Windows uses
+        /// Ctrl+Y; the OR keeps both cohorts happy.
+        /// </summary>
+        public bool WasRedoPressed()
+        {
+            if (!KeyboardInputManager.IsCtrlHeld()) return false;
+            if (KeyboardInputManager.WasKeyPressedThisFrame(Key.Y, KeyCode.Y)) return true;
+            return KeyboardInputManager.IsShiftHeld()
+                && KeyboardInputManager.WasKeyPressedThisFrame(Key.Z, KeyCode.Z);
+        }
+
         public bool IsPointerOverUI()
         {
             return UnityEngine.EventSystems.EventSystem.current != null &&

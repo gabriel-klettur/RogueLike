@@ -209,6 +209,11 @@ namespace Valkur.Gameplay.MapEditor
 
             if (_input.WasToggleEditablePressed())
                 ToggleSelectedZoneEditable();
+
+            // Ctrl+Z / Ctrl+Y for undo/redo. IsTypingInput already returned
+            // above, so these only fire when the focus is on the world view.
+            if (_input.WasUndoPressed()) PerformUndo();
+            if (_input.WasRedoPressed()) PerformRedo();
         }
 
         private void ToggleActive()
