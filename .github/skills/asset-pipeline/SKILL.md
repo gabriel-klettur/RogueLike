@@ -145,6 +145,7 @@ Hard rules for **every** asset under `Assets/_Project/`:
 | Domain subfolders | `snake_case` (lowercase) | `art/items/alchemy/`, `audio/sfx/inventory/`, `art/buildings/houses/` |
 | Vendor / asset-store packs | `_Project/<Layer>/Vendor/<PackName>/` | `_Project/Art/VFX/Vendor/SlashVFX/` |
 | Backups | NEVER inside `Assets/` — git is the backup | (deleted) |
+| Tier-2 recovery | `_Project/Data/Backups/` — **whitelisted exception** | maintained by `BuildingsDataGuard` + `MapEditorDataGuard` |
 | Empty folders | Don't keep folders with only `.meta` and no children | (deleted) |
 
 The two-tier rule (`PascalCase` for top-level, `snake_case` for everything below) keeps Unity's standard project layout (`Resources/`, `StreamingAssets/`, `Scenes/`) intact while giving every domain folder a single, predictable convention.
@@ -158,7 +159,7 @@ The lint script `tools/atlas/audit_asset_conventions.py` enforces all of these (
 | `*.PNG`, `*.JPG`, `*.OGG` (uppercase ext) | Case-sensitive filesystems break |
 | Files in `Assets/` root that aren't `_Project/`, `Tests/`, `Settings/`, `StreamingAssets/`, `TextMesh Pro/`, `Scenes/`, `Screenshots/`, `Resources/`, or Unity-required SO | Flat root is unmanageable |
 | `Assets/_Project/Resources/*.png` (loose at root) | `Resources/` is loaded whole at build → bloat |
-| Folders named `_backups`, `Backups`, `backup`, `OLD`, `*_old` under `Assets/` | Git is the backup |
+| Folders named `_backups`, `Backups`, `backup`, `OLD`, `*_old` under `Assets/` (the only exception is `_Project/Data/Backups/`, which is the project-side tier-2 recovery for `buildings_instances.json` + `map_editor_zones.json` and is maintained by `BuildingsDataGuard` / `MapEditorDataGuard`) | Git is the backup |
 | Filenames containing `ChatGPT`, ` ` (space), `(`, `)`, `,`, `'` | Tooling-hostile |
 | Filenames ending in `_old.png`, `_copy.png`, `_new.png`, `_final.png`, `_v2.png` | Indicates uncommitted iteration; rename or delete |
 | `InitTestScene*.unity` committed (test runner artifact) | Already in `.gitignore`; older committed copies must be `git rm`'d |
