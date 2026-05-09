@@ -49,10 +49,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
             if (playerLayerOverride.HasValue) playerLayer = playerLayerOverride.Value;
             if (Room != null) Room.instantiatedRoom = this;
 
+            // Awake may not have run yet (AddComponent + Instantiate ordering),
+            // so resolve the trigger lazily here too.
+            if (_trigger == null) _trigger = GetComponent<BoxCollider2D>();
+
             // Size the trigger to cover the room's world bounds so the player
             // walking anywhere inside fires OnTriggerEnter2D.
-            if (room != null)
+            if (room != null && _trigger != null)
             {
+                _trigger.isTrigger = true;
                 int width = room.upperBounds.x - room.lowerBounds.x + 1;
                 int height = room.upperBounds.y - room.lowerBounds.y + 1;
                 _trigger.size = new Vector2(width, height);
