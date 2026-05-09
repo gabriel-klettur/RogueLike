@@ -99,7 +99,10 @@ TOOLING_TEMP_PREFIX_RE = re.compile(
     re.IGNORECASE,
 )
 ITERATION_SUFFIX_RE = re.compile(
-    r"_(old|copy|new|final|v\d+|tmp)\.[a-z0-9]+$",
+    # Require a leading separator so legitimate names like "new.meta" or
+    # bare "old.png" only fire when the iteration marker is suffixed onto
+    # an existing semantic name (e.g. "tex_old.png", "config_v2.json").
+    r"[_-](old|copy|new|final|v\d+|tmp)\.[a-z0-9]+$",
     re.IGNORECASE,
 )
 FORBIDDEN_CHARS_RE = re.compile(r"[(),']| {2,}")  # spaces handled separately
@@ -168,6 +171,9 @@ def check_assets_root(report: Report) -> None:
     if not UNITY_ASSETS.exists():
         return
     for entry in UNITY_ASSETS.iterdir():
+        # .meta sidecars belong to the entry they describe; only judge the entry itself.
+        if entry.name.endswith(".meta"):
+            continue
         if entry.name in ASSETS_ROOT_ALLOWED:
             continue
         if INIT_TEST_SCENE_RE.match(entry.name):
@@ -184,6 +190,10 @@ def check_resources_root(report: Report) -> None:
     if not res.exists():
         return
     for entry in res.iterdir():
+        # Folder .meta sidecars are paired with the folder they describe;
+        # only judge the folder itself, not its meta.
+        if entry.name.endswith(".meta") and (res / entry.name[:-5]).is_dir():
+            continue
         if entry.is_dir():
             if entry.name not in RESOURCES_ROOT_FOLDER_ALLOWED:
                 report.add("resources_root_unknown_folder", entry,
@@ -199,6 +209,7 @@ def check_filename(report: Report, path: Path) -> None:
     """Per-file naming rules (extension case, tooling-temp prefixes, iteration suffixes, spaces)."""
     name = path.name
     rel = path.relative_to(REPO_ROOT).as_posix()
+    rel_assets = _rel_posix(path)
 
     # Vendor packs and TMP keep their original names; skip per-file checks
     # there but still record violations for code-quality forbidden patterns.
@@ -208,12 +219,17 @@ def check_filename(report: Report, path: Path) -> None:
         report.add("uppercase_extension", path,
                    f"rename to lowercase '{UPPERCASE_EXT_RE.search(name).group(0).lower()}'")
 
-    if TOOLING_TEMP_PREFIX_RE.match(name):
+    # The Screenshots/ folder is a developer scratch space; we deliberately
+    # whitelist it at the Assets root, so don't flag temp filenames inside it.
+    if TOOLING_TEMP_PREFIX_RE.match(name) and not rel_assets.startswith("Screenshots/"):
         report.add("tooling_temp_filename", path,
                    "rename before committing (no ChatGPT/screenshot/untitled prefixes)")
 
     if not in_vendor:
-        if ITERATION_SUFFIX_RE.search(name):
+        # Screenshots/ is a developer scratch space; iteration suffixes there
+        # are normal "before/after" comparison shots, not committed assets.
+        if (ITERATION_SUFFIX_RE.search(name)
+                and not rel_assets.startswith("Screenshots/")):
             report.add("iteration_suffix", path,
                        "drop _old/_copy/_new/_final/_vN/_tmp — git tracks history")
 
@@ -245,7 +261,9 @@ def check_folder(report: Report, path: Path) -> None:
     if is_in_whitelist(path):
         return  # vendor packs / catalogs / etc. keep their original casing
 
-    if has_space(name):
+    # The TMP package install folder ('TextMesh Pro') ships with that exact
+    # name; we can't rename it without breaking the package.
+    if has_space(name) and rel != "TextMesh Pro":
         report.add("folder_has_space", path,
                    "folder names must be snake_case — no spaces")
 

@@ -67,7 +67,7 @@ namespace Valkur.Tests.EditMode.Game.Data
 
         private static readonly Regex UppercaseExtRe   = new(@"\.(PNG|JPG|JPEG|OGG|WAV|MP3|TIF|TIFF|BMP|GIF)$", RegexOptions.Compiled);
         private static readonly Regex ToolingTempRe    = new(@"^(ChatGPT[\s_]|screenshot[_-]|untitled([._-]|$))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex IterationSuffixRe = new(@"_(old|copy|new|final|v\d+|tmp)\.[a-z0-9]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex IterationSuffixRe = new(@"[_-](old|copy|new|final|v\d+|tmp)\.[a-z0-9]+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex ForbiddenCharsRe  = new(@"[(),']", RegexOptions.Compiled);
         private static readonly Regex InitTestSceneRe   = new(@"^InitTestScene\d+\.unity(\.meta)?$", RegexOptions.Compiled);
         private static readonly Regex BackupFolderRe    = new(@"^(_?backups?|OLD|.+_old)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -183,7 +183,100 @@ namespace Valkur.Tests.EditMode.Game.Data
                 "Rename to lowercase. Offenders:\n  - " + string.Join("\n  - ", offenders));
         }
 
-        // ── Soft rules (report counts only — promote to hard once cleaned) ──
+        // ── Hard rules (promoted from soft after the Stage 11 saneamiento) ──
+
+        // The five checks below were tracked as a single soft-rule warning
+        // through Stages 11a-11e while the legacy backlog (438 violations)
+        // burned down to zero. Now that lint reports OK, every category is
+        // a hard rule — any regression must fail the build.
+
+        [Test]
+        public void HardRules_NoToolingTempFilenames()
+        {
+            var offenders = new List<string>();
+            foreach (var path in EnumerateAssets())
+            {
+                string name = Path.GetFileName(path);
+                if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                string rel = Rel(path);
+                if (IsInInternalWhitelist(rel)) continue;
+                if (rel.StartsWith("Screenshots/", StringComparison.OrdinalIgnoreCase)) continue;
+                if (ToolingTempRe.IsMatch(name)) offenders.Add(rel);
+            }
+            Assert.That(offenders, Is.Empty,
+                "Filenames must not start with ChatGPT*, screenshot*, or untitled* (tooling-temp prefixes).\n" +
+                "Offenders:\n  - " + string.Join("\n  - ", offenders));
+        }
+
+        [Test]
+        public void HardRules_NoIterationSuffixes()
+        {
+            var offenders = new List<string>();
+            foreach (var path in EnumerateAssets())
+            {
+                string name = Path.GetFileName(path);
+                if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                string rel = Rel(path);
+                if (IsInInternalWhitelist(rel)) continue;
+                if (rel.StartsWith("Screenshots/", StringComparison.OrdinalIgnoreCase)) continue;
+                if (IterationSuffixRe.IsMatch(name)) offenders.Add(rel);
+            }
+            Assert.That(offenders, Is.Empty,
+                "Filenames must not end in _old/_copy/_new/_final/_vN/_tmp — git tracks history.\n" +
+                "Offenders:\n  - " + string.Join("\n  - ", offenders));
+        }
+
+        [Test]
+        public void HardRules_NoForbiddenCharsInFilenames()
+        {
+            var offenders = new List<string>();
+            foreach (var path in EnumerateAssets())
+            {
+                string name = Path.GetFileName(path);
+                if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                string rel = Rel(path);
+                if (IsInInternalWhitelist(rel)) continue;
+                if (ForbiddenCharsRe.IsMatch(name)) offenders.Add(rel);
+            }
+            Assert.That(offenders, Is.Empty,
+                "Filenames must not contain '(),' — these characters break tooling.\n" +
+                "Offenders:\n  - " + string.Join("\n  - ", offenders));
+        }
+
+        [Test]
+        public void HardRules_NoSpacesInFilenames()
+        {
+            var offenders = new List<string>();
+            foreach (var path in EnumerateAssets())
+            {
+                string name = Path.GetFileName(path);
+                if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                string rel = Rel(path);
+                if (IsInInternalWhitelist(rel)) continue;
+                if (name.Contains(" ")) offenders.Add(rel);
+            }
+            Assert.That(offenders, Is.Empty,
+                "Filenames must use snake_case — no spaces.\n" +
+                "Offenders:\n  - " + string.Join("\n  - ", offenders));
+        }
+
+        [Test]
+        public void HardRules_NoSpacesInFolderNames()
+        {
+            var offenders = new List<string>();
+            foreach (var dir in EnumerateAssetFolders())
+            {
+                string rel = Rel(dir);
+                if (IsInInternalWhitelist(rel)) continue;
+                if (rel.Equals("TextMesh Pro", StringComparison.OrdinalIgnoreCase)) continue;
+                if (Path.GetFileName(dir).Contains(" ")) offenders.Add(rel);
+            }
+            Assert.That(offenders, Is.Empty,
+                "Folder names must use snake_case — no spaces. (TextMesh Pro is whitelisted as a Unity package.)\n" +
+                "Offenders:\n  - " + string.Join("\n  - ", offenders));
+        }
+
+        // ── Legacy soft-rule shim (kept so existing CI dashboards don't break) ──
 
         [Test]
         public void SoftRules_ReportLegacyBacklog()
@@ -196,6 +289,7 @@ namespace Valkur.Tests.EditMode.Game.Data
                 if (name.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
                 string rel = Rel(path);
                 if (IsInInternalWhitelist(rel)) continue;
+                if (rel.StartsWith("Screenshots/", StringComparison.OrdinalIgnoreCase)) continue;
 
                 if (ToolingTempRe.IsMatch(name)) toolingTemp++;
                 if (IterationSuffixRe.IsMatch(name)) iterationSuffix++;
@@ -207,13 +301,14 @@ namespace Valkur.Tests.EditMode.Game.Data
             {
                 string rel = Rel(dir);
                 if (IsInInternalWhitelist(rel)) continue;
+                if (rel.Equals("TextMesh Pro", StringComparison.OrdinalIgnoreCase)) continue;
                 if (Path.GetFileName(dir).Contains(" ")) folderSpaces++;
             }
 
             int total = toolingTemp + iterationSuffix + forbiddenChars + filenameSpaces + folderSpaces;
             if (total == 0)
             {
-                Assert.Pass("No soft-rule violations remain — promote these checks to hard rules.");
+                Assert.Pass("No soft-rule violations remain — backlog is closed.");
             }
             else
             {
