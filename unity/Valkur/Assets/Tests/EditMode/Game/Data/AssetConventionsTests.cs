@@ -131,10 +131,11 @@ namespace Valkur.Tests.EditMode.Game.Data
                 if (!BackupFolderRe.IsMatch(name)) continue;
                 string rel = Rel(dir);
                 if (rel.StartsWith("_Project/Data/Backups", StringComparison.OrdinalIgnoreCase)) continue;
+                if (rel.StartsWith("_Project/Scripts/", StringComparison.OrdinalIgnoreCase)) continue; // C# code namespace
                 offenders.Add(rel);
             }
             Assert.That(offenders, Is.Empty,
-                "Backup folders are forbidden inside Assets/ — git is the backup. Only _Project/Data/Backups/ is whitelisted.\n" +
+                "Backup folders are forbidden inside Assets/ — git is the backup. Whitelist exceptions: _Project/Data/Backups/ and _Project/Scripts/**/Backups/.\n" +
                 "Offenders:\n  - " + string.Join("\n  - ", offenders));
         }
 

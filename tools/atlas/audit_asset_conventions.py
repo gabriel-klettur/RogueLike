@@ -233,11 +233,14 @@ def check_folder(report: Report, path: Path) -> None:
     name = path.name
     rel = _rel_posix(path)
 
-    # Always flag _backups except the whitelisted Data/Backups exception.
+    # Always flag _backups except the whitelisted exceptions:
+    #   - _Project/Data/Backups/  → tier-2 recovery (BuildingsDataGuard / MapEditorDataGuard)
+    #   - _Project/Scripts/.../Backups/  → C# code namespace (e.g. MapEditor backup browser)
     if BACKUP_FOLDER_RE.match(name):
-        if not rel.startswith("_Project/Data/Backups"):
+        if not (rel.startswith("_Project/Data/Backups")
+                or rel.startswith("_Project/Scripts/")):
             report.add("backup_folder_in_assets", path,
-                       "git is the backup; only _Project/Data/Backups/ is whitelisted")
+                       "git is the backup; whitelist exceptions: _Project/Data/Backups/ and _Project/Scripts/**/Backups/")
 
     if is_in_whitelist(path):
         return  # vendor packs / catalogs / etc. keep their original casing
