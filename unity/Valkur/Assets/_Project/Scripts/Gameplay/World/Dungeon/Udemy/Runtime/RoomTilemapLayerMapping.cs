@@ -15,27 +15,34 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
     public static class RoomTilemapLayerMapping
     {
         // Preferred names match Valkur's TilemapLayer enum exactly. Aliases keep
-        // Udemy-style "ground"/"front"/"decoration1" prefabs importable as-is.
+        // Udemy-style "ground"/"front"/"decoration1" prefabs importable as-is,
+        // and the "TilemapN_*" series matches the DungeonGunner Catacombs/
+        // Sorcery prefab convention.
         private static readonly Dictionary<string, TilemapLayerSetup.TilemapLayer> NameToLayer
             = new Dictionary<string, TilemapLayerSetup.TilemapLayer>(System.StringComparer.OrdinalIgnoreCase)
             {
                 { "Ground", TilemapLayerSetup.TilemapLayer.Ground },
                 { "groundTilemap", TilemapLayerSetup.TilemapLayer.Ground },
+                { "Tilemap1_Ground", TilemapLayerSetup.TilemapLayer.Ground },
 
                 { "FloorDecals", TilemapLayerSetup.TilemapLayer.FloorDecals },
                 { "Decoration1", TilemapLayerSetup.TilemapLayer.FloorDecals },
                 { "decoration1Tilemap", TilemapLayerSetup.TilemapLayer.FloorDecals },
+                { "Tilemap2_Decoration1", TilemapLayerSetup.TilemapLayer.FloorDecals },
 
                 { "Decorations", TilemapLayerSetup.TilemapLayer.Decorations },
                 { "Decoration2", TilemapLayerSetup.TilemapLayer.Decorations },
                 { "decoration2Tilemap", TilemapLayerSetup.TilemapLayer.Decorations },
+                { "Tilemap3_Decoration2", TilemapLayerSetup.TilemapLayer.Decorations },
 
                 { "WallsTop", TilemapLayerSetup.TilemapLayer.WallsTop },
                 { "Front", TilemapLayerSetup.TilemapLayer.WallsTop },
                 { "frontTilemap", TilemapLayerSetup.TilemapLayer.WallsTop },
+                { "Tilemap4_Front", TilemapLayerSetup.TilemapLayer.WallsTop },
 
                 { "Collision", TilemapLayerSetup.TilemapLayer.Collision },
                 { "collisionTilemap", TilemapLayerSetup.TilemapLayer.Collision },
+                { "Tilemap5_Collision", TilemapLayerSetup.TilemapLayer.Collision },
             };
 
         /// <summary>True when the given child GameObject name resolves to a known layer.</summary>

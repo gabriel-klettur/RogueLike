@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5f9d1f6c44f6d24fb1ca354ab56b37d, type: 3}
+  m_Name: Room_ChestRoom_Catacombs_2
+  m_EditorClassIdentifier: 
+  guid: b88f613d-0dda-41f2-955d-16a4cc27ada2
+  prefab: {fileID: 4327421925113694216, guid: 15ec1cad73a6a7b4c838a11ae55a00eb, type: 3}
+  previousPrefab: {fileID: 0}
+  battleMusicId: 
+  ambientMusicId: 
+  roomNodeType: {fileID: 11400000, guid: cb2390263603a654290458f9f41fc0d6, type: 2}
+  lowerBounds: {x: 7, y: 6}
+  upperBounds: {x: 37, y: 31}
+  doorwayList:
+  - position: {x: 22, y: 31}
+    orientation: 0
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 19, y: 31}
+    doorwayCopyTileWidth: 5
+    doorwayCopyTileHeight: 7
+    isConnected: 0
+    isUnavailable: 0
+  - position: {x: 22, y: 6}
+    orientation: 2
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 19, y: 8}
+    doorwayCopyTileWidth: 5
+    doorwayCopyTileHeight: 3
+    isConnected: 0
+    isUnavailable: 0
+  - position: {x: 37, y: 15}
+    orientation: 1
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 34, y: 21}
+    doorwayCopyTileWidth: 4
+    doorwayCopyTileHeight: 8
+    isConnected: 0
+    isUnavailable: 0
+  - position: {x: 7, y: 15}
+    orientation: 3
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 7, y: 21}
+    doorwayCopyTileWidth: 4
+    doorwayCopyTileHeight: 8
+    isConnected: 0
+    isUnavailable: 0
+  spawnPositionArray:
+  - {x: 18, y: 22}
+  - {x: 27, y: 22}
+  - {x: 14, y: 12}
+  - {x: 32, y: 13}
+  enemiesByLevelList: []
+  roomEnemySpawnParametersList: []
