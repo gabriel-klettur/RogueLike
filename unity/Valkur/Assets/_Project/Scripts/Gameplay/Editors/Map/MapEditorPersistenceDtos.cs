@@ -42,11 +42,35 @@ namespace Valkur.Gameplay.MapEditor
         // an empty list so downstream code never has to null-check.
         public List<PortalPersistenceEntry> portals = new List<PortalPersistenceEntry>();
 
+        // Buildings spawned by the F11 biome generator. Re-spawned at slot
+        // load so a regenerated biome survives a session restart instead of
+        // disappearing the next time the user opens the map. Empty / null
+        // on pre-1.2 files; the migration chain backfills an empty list.
+        public List<BiomeBuildingPersistenceEntry> biomeBuildings = new List<BiomeBuildingPersistenceEntry>();
+
         string IVersioned.SchemaVersion
         {
             get => schemaVersion;
             set => schemaVersion = value;
         }
+    }
+
+    /// <summary>
+    /// On-disk record of a building spawned by the biome generator. Stores
+    /// the world-unit position rather than tile coordinates so a future zone
+    /// move/rename doesn't drift the building. The instance id is preserved
+    /// in case the user inspects the saved scene under a debugger; biome IDs
+    /// always sit at or above
+    /// <see cref="MapEditorManager.BIOME_INSTANCE_ID_BASE"/>.
+    /// </summary>
+    [Serializable]
+    internal class BiomeBuildingPersistenceEntry
+    {
+        public int templateId;
+        public string zoneName;
+        public float worldX;
+        public float worldY;
+        public int instanceId;
     }
 
     [Serializable]
@@ -109,6 +133,12 @@ namespace Valkur.Gameplay.MapEditor
         /// to a freshly-saved v1.1 doc with no portals placed yet.</summary>
         public const string V1_1 = "1.1";
 
-        public const string CurrentVersion = V1_1;
+        /// <summary>Adds the per-slot biome-buildings list so biome
+        /// regeneration survives session restarts. v1.1 files migrate by
+        /// backfilling an empty list — same shape as a fresh v1.2 doc that
+        /// has never had a biome run.</summary>
+        public const string V1_2 = "1.2";
+
+        public const string CurrentVersion = V1_2;
     }
 }

@@ -23,8 +23,17 @@ namespace Valkur.Gameplay.MapEditor
         private void RenameZoneByName(string oldName, string newName)
         {
             if (string.IsNullOrWhiteSpace(oldName)) { _ui?.SetStatus("Rename failed: invalid zone."); return; }
-            string trimmed = (newName ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(trimmed)) { _ui?.SetStatus("Rename failed: empty name."); return; }
+            // Pre-flight validation with excludeName=oldName so renaming a
+            // zone "Forest" to "forest" (case-only change) is reported as
+            // "no change" rather than as a duplicate-of-itself.
+            var validation = MapEditorZoneNameValidator.Validate(
+                newName, zoneManager, excludeName: oldName,
+                out string trimmed, out string reason);
+            if (validation != MapEditorZoneNameValidator.Result.Ok)
+            {
+                _ui?.SetStatus($"Rename failed: {reason}");
+                return;
+            }
             if (!zoneManager.RenameZone(oldName, trimmed)) { _ui?.SetStatus($"Rename failed: '{trimmed}' may already exist."); return; }
 
             // Rename also moves the per-zone tile-override file so painted

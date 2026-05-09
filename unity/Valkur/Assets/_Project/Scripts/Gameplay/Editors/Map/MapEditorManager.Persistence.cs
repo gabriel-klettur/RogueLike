@@ -90,6 +90,10 @@ namespace Valkur.Gameplay.MapEditor
             // Mirror the in-memory portals list (managed by Portals partial)
             // into the document so it travels with the slot file.
             WritePortalsIntoPersistence(data);
+            // Same for biome-generated buildings — clone-on-write so future
+            // edits to the in-memory list don't mutate the just-serialised
+            // snapshot through reference sharing.
+            data.biomeBuildings = new List<BiomeBuildingPersistenceEntry>(_biomeBuildings);
 
             try
             {
@@ -288,6 +292,9 @@ namespace Valkur.Gameplay.MapEditor
 
                 // Spawn portals from disk into runtime objects.
                 HydratePortalsFromPersistence(data);
+                // Same for biome-generated buildings so a session restart
+                // sees the same biome scene the user left.
+                HydrateBiomeBuildingsFromPersistence(data);
 
                 Debug.Log($"[MapEditor] Loaded persisted zones: +{newZonesAdded} new, " +
                           $"{flagsRestored} flags restored, {intraFileDuplicates} intra-file duplicates dropped, " +

@@ -100,8 +100,18 @@ namespace Valkur.Gameplay.MapEditor
             if (!_isAddZoneFlowActive) { _ui?.SetStatus("Add Zone flow is not active."); return; }
             if (!_hasPendingAddTarget) { _ui?.SetStatus("Mark a 50x50 target in the world before confirming Add Zone."); return; }
 
-            string zoneName = (requestedZoneName ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(zoneName)) { _ui?.SetStatus("Add Zone failed: empty name."); return; }
+            // Pre-flight validation: empty / too-long / invalid characters /
+            // duplicate. Surfacing the specific reason in the status bar
+            // beats the generic "Add Zone failed" we used to show on every
+            // failure mode.
+            var validation = MapEditorZoneNameValidator.Validate(
+                requestedZoneName, zoneManager, excludeName: null,
+                out string zoneName, out string reason);
+            if (validation != MapEditorZoneNameValidator.Result.Ok)
+            {
+                _ui?.SetStatus(reason);
+                return;
+            }
 
             // Template mode requires a selected source zone. If the user left
             // the toggle ON without a selection (or the dialog defaulted it ON

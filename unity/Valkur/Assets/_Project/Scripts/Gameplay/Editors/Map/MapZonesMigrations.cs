@@ -30,6 +30,14 @@ namespace Valkur.Gameplay.MapEditor
                     doc.portals = new List<PortalPersistenceEntry>();
             });
 
+            // 1.1 → 1.2: introduce per-slot biome-buildings list. Same
+            // backfill rationale as the portals migration above.
+            chain.Register(MapZonesSchema.V1_1, MapZonesSchema.V1_2, doc =>
+            {
+                if (doc.biomeBuildings == null)
+                    doc.biomeBuildings = new List<BiomeBuildingPersistenceEntry>();
+            });
+
             return chain;
         }
 

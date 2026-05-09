@@ -98,6 +98,8 @@ namespace Valkur.Gameplay.MapEditor
                 // No portals on the synthetic blank-default load — drop any
                 // runtime portal objects from the outgoing slot.
                 HydratePortalsFromPersistence(null);
+                // Same idea for biome-buildings: blank-default = empty.
+                HydrateBiomeBuildingsFromPersistence(null);
             }
             else
             {
@@ -113,6 +115,9 @@ namespace Valkur.Gameplay.MapEditor
                 ApplySlotToZoneManager(data);
                 // Respawn portal objects from the new slot's record.
                 HydratePortalsFromPersistence(data);
+                // Re-create biome-generated buildings so a previously-run
+                // biome reproduces instead of disappearing on slot switch.
+                HydrateBiomeBuildingsFromPersistence(data);
                 spawnPos = GetSavedPlayerPosition(data);
             }
 
@@ -247,6 +252,9 @@ namespace Valkur.Gameplay.MapEditor
             // Drop the outgoing slot's portals from the scene before flipping
             // the active-slot pointer; the new map starts portal-free.
             HydratePortalsFromPersistence(null);
+            // Same for biome-buildings — the new map is clean of any
+            // previously-generated biome content.
+            HydrateBiomeBuildingsFromPersistence(null);
             ResolveSlotStore().SetActive(clean);
             ClearUndoHistory();
             // Re-bind the tile editor's overlay persistence to the new slot's

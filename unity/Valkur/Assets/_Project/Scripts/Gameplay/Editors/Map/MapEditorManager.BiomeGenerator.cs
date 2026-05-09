@@ -12,18 +12,25 @@ namespace Valkur.Gameplay.MapEditor
     /// Map Editor biome generator. Paints the Ground tilemap and scatters
     /// buildings across one or every zone according to a chosen
     /// <see cref="BiomeKind"/> recipe. Tile changes persist via
-    /// <see cref="TileOverlayPersistence"/>; building spawns are session-only
-    /// for this revision (they live until the next biome regeneration or
-    /// scene reload).
+    /// <see cref="TileOverlayPersistence"/>; building spawns persist as
+    /// <see cref="BiomeBuildingPersistenceEntry"/> records on the active
+    /// slot's <see cref="ZonePersistenceFile"/>, so a regeneration survives
+    /// session restarts and a slot re-load reproduces the same scene.
     /// </summary>
     public partial class MapEditorManager
     {
         // Reserved instance-id space so biome-spawned buildings never collide
         // with the data-driven instances loaded from buildings_instances.json
         // (whose IDs sit far below this base).
-        private const int BIOME_INSTANCE_ID_BASE = 1_000_000;
+        public const int BIOME_INSTANCE_ID_BASE = 1_000_000;
 
         private static int s_biomeInstanceCounter;
+
+        // In-memory mirror of the slot's biome-building records. PersistZonesToDisk
+        // copies this into the on-disk doc; LoadMapSlot hydrates it back and
+        // re-spawns each entry into the live BuildingLoader.
+        private readonly List<BiomeBuildingPersistenceEntry> _biomeBuildings
+            = new List<BiomeBuildingPersistenceEntry>();
 
         private BiomeCatalog _biomeCatalog;
         private BuildingLoader _cachedBuildingLoader;
@@ -45,8 +52,11 @@ namespace Valkur.Gameplay.MapEditor
             var targetZones = CollectTargetZones(req);
             if (targetZones.Count == 0) return "No zones to generate.";
 
-            // Wipe previous biome run so regenerations don't pile up.
+            // Wipe previous biome run so regenerations don't pile up. Both
+            // the live scene objects AND the on-disk record are cleared —
+            // the new run is the source of truth for this slot from here on.
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
+            _biomeBuildings.Clear();
 
             var rng = new System.Random(req.seed);
             int totalTiles = 0;
@@ -63,7 +73,55 @@ namespace Valkur.Gameplay.MapEditor
                 tileEditorManager?.Persistence?.SaveZone(zone.zoneName);
             }
 
+            // Flush the freshly captured biome-building records to the
+            // active slot's on-disk JSON so a restart / slot-flip reproduces
+            // the same scene instead of starting empty.
+            PersistZonesToDisk();
+
             return $"Biomes: {totalTiles} tiles + {totalBuildings} buildings across {targetZones.Count} zone(s).";
+        }
+
+        // ── Persistence hydration ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Replace the in-memory biome-buildings list with the records from a
+        /// freshly-loaded slot file and re-spawn each entry into the live
+        /// scene. Called from <see cref="LoadMapSlot"/>.
+        /// </summary>
+        internal void HydrateBiomeBuildingsFromPersistence(ZonePersistenceFile data)
+        {
+            _biomeBuildings.Clear();
+            // Drop any leftover scene objects from the outgoing slot before
+            // we start spawning the new ones — defensive, since LoadMapSlot
+            // already calls ClearGeneratedAbove() but a partial-failure in
+            // an earlier step shouldn't cause double-spawns here.
+            ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
+
+            if (data?.biomeBuildings == null || data.biomeBuildings.Count == 0)
+                return;
+
+            var loader = ResolveBuildingLoader();
+            if (loader == null) return;
+
+            int spawned = 0;
+            for (int i = 0; i < data.biomeBuildings.Count; i++)
+            {
+                var entry = data.biomeBuildings[i];
+                if (entry == null) continue;
+                _biomeBuildings.Add(entry);
+
+                // Keep the static counter ahead of any restored id so a future
+                // GenerateBiomes run can't collide with a still-loaded one.
+                int suffix = entry.instanceId - BIOME_INSTANCE_ID_BASE;
+                if (suffix > s_biomeInstanceCounter) s_biomeInstanceCounter = suffix;
+
+                var bObj = loader.SpawnAtWorldPosition(
+                    entry.templateId, entry.zoneName,
+                    new Vector3(entry.worldX, entry.worldY, 0f), entry.instanceId);
+                if (bObj != null) spawned++;
+            }
+            if (spawned > 0)
+                Debug.Log($"[MapEditor] Re-spawned {spawned} biome-generated building(s) for active slot.");
         }
 
         // ── Resolution helpers ───────────────────────────────────────────────────
@@ -209,6 +267,14 @@ namespace Valkur.Gameplay.MapEditor
                 if (bObj == null) continue;
 
                 placed.Add(new Vector2(wx, wy));
+                _biomeBuildings.Add(new BiomeBuildingPersistenceEntry
+                {
+                    templateId = template.templateId,
+                    zoneName   = zone.zoneName,
+                    worldX     = wx,
+                    worldY     = wy,
+                    instanceId = instanceId,
+                });
                 spawned++;
             }
             return spawned;
