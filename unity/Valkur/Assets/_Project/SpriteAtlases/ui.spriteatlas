@@ -406,7 +406,6 @@ SpriteAtlas:
   - undo
   - zoom_in
   - music_player_button
-  - background_ini_old
   - end_node
   - mague_vs_dragon_3
   - healing_totem
@@ -430,7 +429,6 @@ SpriteAtlas:
   - map_hud_button
   - clone_node
   - default_icon
-  - ChatGPT Image 2 jun 2025, 12_09_43
   - add_entity_on_system
   - spells_hud_button
   - remove_spell
@@ -447,7 +445,6 @@ SpriteAtlas:
   - set_assigment_animations
   - teleport_icon
   - loading_create_dungeon
-  - base_hud_hp_mp_2 1
   - intro_castle_morning
   - valkyrie_vs_dragon
   - eyedropper_tool

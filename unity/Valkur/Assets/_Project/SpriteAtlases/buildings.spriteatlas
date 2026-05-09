@@ -62,7 +62,6 @@ SpriteAtlas:
     - 1068d891118bdfe46af4704822104965: 21300000
     - 30467ab1f852a0243bf202bc2e81ebb1: 21300000
     - 8d40d13270956ec428d22c96bf0d38ae: 21300000
-    - 42e0f24209530714a9d6cd064344edbd: 21300000
     - fb98d85204b9d7d49aabcccf7528e94c: 21300000
     - e6ebb662fb59ef146928aa27484ede5f: 21300000
     - b83ba8a201918f647b18c63b8cbb0428: 21300000
@@ -160,7 +159,6 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 1068d891118bdfe46af4704822104965, type: 3}
   - {fileID: 21300000, guid: 30467ab1f852a0243bf202bc2e81ebb1, type: 3}
   - {fileID: 21300000, guid: 8d40d13270956ec428d22c96bf0d38ae, type: 3}
-  - {fileID: 21300000, guid: 42e0f24209530714a9d6cd064344edbd, type: 3}
   - {fileID: 21300000, guid: fb98d85204b9d7d49aabcccf7528e94c, type: 3}
   - {fileID: 21300000, guid: e6ebb662fb59ef146928aa27484ede5f, type: 3}
   - {fileID: 21300000, guid: b83ba8a201918f647b18c63b8cbb0428, type: 3}
@@ -245,10 +243,10 @@ SpriteAtlas:
   - {fileID: 21300000, guid: ff47977fe96bd04438f15286fdca7dae, type: 3}
   - {fileID: 21300000, guid: c43f82ffd5317b043aba6a19bb52a4f5, type: 3}
   m_PackedSpriteNamesToIndex:
-  - ChatGPT_Image_Apr_3,_2025,_05_11_07_AM
+  - shop_alchemist_house
   - fuente
   - tree_2
-  - ChatGPT_Image_Sep_17,_2025,_12_27_43_AM
+  - garden_tree_plaza
   - portal_dudgeon_2
   - seta_blanca
   - portal_dudgeon_1
@@ -257,13 +255,12 @@ SpriteAtlas:
   - magic_tower
   - curse_house_iso
   - nido_huevos
-  - ChatGPT_Image_Sep_11,_2025,_10_30_45_PM
   - raiz_expuesta_suave
   - flowers_7
   - tree_azul
   - healer
   - petalos_rosados_2
-  - ChatGPT_Image_Sep_11,_2025,_10_29_09_PM
+  - portal_stone_arch
   - ukranian_super_1
   - Flor_silvestre_azul
   - tree_4
@@ -271,11 +268,11 @@ SpriteAtlas:
   - alchemy_tower
   - semilla_reventada
   - flowers_2
-  - ChatGPT_Image_Apr_3,_2025,_05_12_38_AM
+  - combat_training_yard
   - flowers_1
-  - ChatGPT_Image_May_1,_2025,_11_04_43_AM
+  - statue_dwarf_destroyed
   - tree_7
-  - ChatGPT_Image_Apr_3,_2025,_05_11_14_AM
+  - temple_dark_chapel
   - flor_carnivora
   - totem_destruido
   - garden_5
@@ -289,18 +286,18 @@ SpriteAtlas:
   - champinones_agrupados_marrones
   - catholic
   - ukranian_super_2
-  - ChatGPT_Image_Apr_3,_2025,_05_11_32_AM
+  - shop_bank
   - craneo_muzgo
   - castle_2
-  - ChatGPT_Image_Sep_11,_2025,_10_27_21_PM
+  - portal_runes_inactive
   - tree_9
   - garden_1
   - tree_3
   - coliseo
   - petalos_rosados_1
-  - ChatGPT_Image_Apr_3,_2025,_05_11_17_AM
+  - shop_apothecary
   - mine
-  - ChatGPT_Image_May_5,_2025,_09_14_51_PM
+  - temple_sky_dragon_shrine
   - jewlery_shop
   - pozo_savia_corrupta
   - totem_forest
@@ -308,14 +305,14 @@ SpriteAtlas:
   - statue_olim_01
   - dummy
   - flowers_6
-  - ChatGPT_Image_Sep_11,_2025,_10_25_29_PM
+  - portal_well_closed
   - tree_10
   - training
   - tree_11
   - portal
   - hongos_liminiscentes_venenosos
   - tree_6
-  - ChatGPT_Image_Apr_3,_2025,_05_11_11_AM
+  - temple_holy_church
   - orden_house_2
   - hojas_frescas
   - petalos_rosados_3
@@ -324,7 +321,7 @@ SpriteAtlas:
   - flowers_4
   - tree_5
   - garden_3
-  - ChatGPT_Image_May_1,_2025,_11_04_33_AM
+  - statue_dwarf_warrior
   - totem_cargando_energia
   - guillotina
   - flowers_3

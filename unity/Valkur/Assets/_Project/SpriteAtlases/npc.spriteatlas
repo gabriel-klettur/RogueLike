@@ -71,7 +71,6 @@ SpriteAtlas:
     - 42fa1843de06bcd4da7bc00691e8ccc8: 21300000
     - 1310c0531626373449bb2458c8a243d6: 21300000
     - 0eeb665332d417d4ca2b38cc51e40fb8: 21300000
-    - 830b2b83a013f314c80ebf27fea716a4: 21300000
     - de42b09357e844f4c9767673369a74b8: 21300000
     - 9eef52d338cc28a4ba01328c8c24b439: 21300000
     - 53053b048b8858c43970716c6a4e3d7e: 21300000
@@ -170,7 +169,6 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 42fa1843de06bcd4da7bc00691e8ccc8, type: 3}
   - {fileID: 21300000, guid: 1310c0531626373449bb2458c8a243d6, type: 3}
   - {fileID: 21300000, guid: 0eeb665332d417d4ca2b38cc51e40fb8, type: 3}
-  - {fileID: 21300000, guid: 830b2b83a013f314c80ebf27fea716a4, type: 3}
   - {fileID: 21300000, guid: de42b09357e844f4c9767673369a74b8, type: 3}
   - {fileID: 21300000, guid: 9eef52d338cc28a4ba01328c8c24b439, type: 3}
   - {fileID: 21300000, guid: 53053b048b8858c43970716c6a4e3d7e, type: 3}
@@ -247,8 +245,8 @@ SpriteAtlas:
   - {fileID: 21300000, guid: 4982b8bfa202f8548a7caf2d36bb02da, type: 3}
   - {fileID: 21300000, guid: 7323c9cf9d927da46840abf302b94488, type: 3}
   m_PackedSpriteNamesToIndex:
-  - ChatGPT Image May 26, 2025, 11_56_12 AM
-  - ChatGPT Image May 26, 2025, 09_19_32 AM
+  - flame_knight_quarter
+  - jabato_side_01
   - final_boss_barbol_lvl3_top
   - final_boss_barbol_lvl2_right
   - barbol_1_down_attack
@@ -256,92 +254,91 @@ SpriteAtlas:
   - barbol_1_top
   - barbol_1_top_chase
   - dragon
-  - ChatGPT Image May 5, 2025, 08_53_01 PM
-  - ChatGPT Image May 26, 2025, 11_52_45 AM
-  - ChatGPT Image May 26, 2025, 11_08_06 AM
+  - dragon_forest_serpent
+  - dwarf_smith_warrior_solid
+  - nigro_01
   - gatitachanchita_down
-  - ChatGPT Image May 26, 2025, 09_28_46 AM
-  - ChatGPT Image May 26, 2025, 11_13_41 AM
-  - ChatGPT Image May 26, 2025, 11_57_42 AM
+  - jabato_side_03
+  - squeleton_03
+  - flame_knight_back
   - barbol_2_left
   - fairy_1_right
   - barbol_2_right
-  - ChatGPT Image May 26, 2025, 12_07_50 PM
-  - ChatGPT Image May 26, 2025, 12_00_11 PM
-  - ChatGPT Image May 5, 2025, 09_00_07 PM
+  - fire_cultist_front
+  - magma_golem_quarter
   - gatitachanchita_right
   - fairy_1_top
   - felipondor_brother_final_boss
-  - ChatGPT Image May 5, 2025, 08_59_54 PM
+  - dragon_cloud_green_mane
   - final_boss_barbol_lvl1_top
   - elite_barbol_1_down
-  - ChatGPT Image May 26, 2025, 11_12_08 AM
-  - ChatGPT Image May 26, 2025, 07_16_43 PM
+  - squeleton_02
+  - flame_demon_warrior_side
   - barbol_1_down
   - final_boss_barbol_lvl1_down
-  - ChatGPT Image May 26, 2025, 09_28_48 AM
-  - ChatGPT Image May 26, 2025, 12_01_32 PM
+  - jabato_side_04
+  - magma_golem_back
   - Abigail_banker
   - barbol_2_right_attack
   - final_boss_barbol_lvl3_down
-  - ChatGPT Image May 26, 2025, 06_48_28 PM
+  - flame_demon_warrior_front
   - fairy_1_down
-  - ChatGPT Image May 26, 2025, 09_21_44 AM
+  - jabato_side_02
   - elite_barbol_1_top
-  - ChatGPT Image May 26, 2025, 11_16_39 AM
+  - nigro_02
   - druida_1_down
   - final_boss_barbol_lvl3_right
-  - ChatGPT Image 28 may 2025, 10_11_44
-  - ChatGPT Image May 26, 2025, 07_19_32 PM
-  - ChatGPT Image May 26, 2025, 11_22_31 AM
+  - jabato_rear
+  - flame_demon_warrior_back
+  - mini_migro_04
   - gatitachanchita_top
   - barbol_1_top_attack
-  - ChatGPT Image May 26, 2025, 07_23_02 PM
-  - ChatGPT Image May 26, 2025, 11_19_45 AM
+  - flame_demon_warrior_fireball
+  - nigro_04
   - final_boss_barbol_lvl3_left
   - druida_1_top
   - final_boss_barbol_lvl2_down
-  - ChatGPT Image May 26, 2025, 11_18_54 AM
+  - mini_migro_02
   - barbol_1_left_chase
-  - ChatGPT Image May 26, 2025, 11_16_17 AM
+  - squeleton_04
   - final_boss_barbol_lvl1_right
   - elite_barbol_1_right
-  - ChatGPT Image May 26, 2025, 11_54_49 AM
-  - ChatGPT Image May 26, 2025, 11_59_26 AM
-  - ChatGPT Image May 26, 2025, 09_48_51 PM
-  - ChatGPT Image May 26, 2025, 11_08_02 AM
-  - ChatGPT Image May 26, 2025, 11_52_48 AM
+  - flame_knight_front
+  - magma_golem_front
+  - gatita_chanchita_back
+  - mini_migro_01
+  - dwarf_smith_back
   - valeria_alchemist
   - barbol_female_death
-  - ChatGPT Image 28 may 2025, 09_51_17
+  - jabato_side_solid
   - druida_1_right
-  - ChatGPT Image May 26, 2025, 12_11_52 PM
+  - fire_cultist_side
   - gatitachanchita_left
   - barbol_1_left_damage
   - final_boss_barbol_lvl2_left
-  - ChatGPT Image May 5, 2025, 09_05_42 PM
-  - ChatGPT Image May 26, 2025, 11_30_37 AM
-  - ChatGPT Image May 26, 2025, 11_49_43 AM
+  - dragon_cloud_blue_mane
+  - flame_blue_small
+  - dwarf_smith_warrior
   - elite_barbol_1_left
   - barbol_1_right_chase
   - final_boss_barbol_lvl1_left
   - barbol_1_right_attack
-  - ChatGPT Image May 26, 2025, 11_07_57 AM
-  - ChatGPT Image May 26, 2025, 11_08_04 AM
+  - squeleton_01
+  - wraith_pale
   - final_boss_barbol_lvl2_top
   - barbol_1_down_chase
   - barbol_1_left
   - barbol_2_down_right_attack
   - barbol_1_right
-  - ChatGPT Image May 5, 2025, 09_02_33 PM
-  - ChatGPT Image May 26, 2025, 11_20_44 AM
-  - ChatGPT Image May 26, 2025, 11_27_40 AM
+  - dragon_cloud_realistic
+  - mini_migro_03
+  - wraith_blue_lunging
   - gatita_chanchita_down
-  - ChatGPT_Image_May_5_2025_09_00_07_PM
-  - ChatGPT Image May 26, 2025, 11_18_06 AM
+  - dragon_cloud_green_mane_alt
+  - nigro_03
   - roberto_mague
-  - ChatGPT Image May 5, 2025, 08_55_38 PM
-  - ChatGPT Image May 26, 2025, 11_25_30 AM
+  - dragon_blue_mane_portrait
+  - ice_elemental_angry
   - smith_blacksmith
   - pavel_lumberjack
   m_RenderDataMap: {}
