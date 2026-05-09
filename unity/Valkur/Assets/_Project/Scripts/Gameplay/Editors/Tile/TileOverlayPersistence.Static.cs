@@ -4,17 +4,38 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Core.Coordinates;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {
     public partial class TileOverlayPersistence
     {
+        // ─────────────────────────────────────────────────────────────────
+        //  Per-world routing
+        // ─────────────────────────────────────────────────────────────────
+        //
+        // The legacy single-world callsites (no WorldId argument) still resolve
+        // to <see cref="WorldId.Base"/>, which keeps writing under the flat
+        // <c>persistentDataPath/MapOverrides/</c> root for byte-compat with
+        // pre-multi-map saves. Non-base worlds nest under their slug — e.g.
+        // <c>persistentDataPath/MapOverrides/forest/</c> — so each map slot
+        // owns an independent override layer on disk.
+
+        /// <summary>Absolute directory holding overlay files for the given world.</summary>
+        public static string OverrideDirectoryForWorld(WorldId worldId)
+        {
+            string root = Path.Combine(Application.persistentDataPath, OVERRIDE_DIR_NAME);
+            return worldId.IsBase ? root : Path.Combine(root, worldId.Slug);
+        }
 
         public static int ApplyAllOverrides(WorldGridBuilder gridBuilder, ZoneManager zoneManager)
+            => ApplyAllOverrides(gridBuilder, zoneManager, WorldId.Base);
+
+        public static int ApplyAllOverrides(WorldGridBuilder gridBuilder, ZoneManager zoneManager, WorldId worldId)
         {
             if (gridBuilder == null || zoneManager == null) return 0;
-            string dir = OverrideDirectory;
+            string dir = OverrideDirectoryForWorld(worldId);
             if (!Directory.Exists(dir)) return 0;
 
             var files = Directory.GetFiles(dir, "*" + OVERRIDE_EXTENSION);
@@ -63,21 +84,30 @@ namespace Valkur.Gameplay.TileEditor
         // ─────────────────────────────────────────────────────────────────
 
         public static string OverridePathForZone(string zoneName)
+            => OverridePathForZone(zoneName, WorldId.Base);
+
+        public static string OverridePathForZone(string zoneName, WorldId worldId)
         {
-            EnsureDirectoryStatic();
-            return Path.Combine(OverrideDirectory, zoneName + OVERRIDE_EXTENSION);
+            EnsureDirectoryStatic(worldId);
+            return Path.Combine(OverrideDirectoryForWorld(worldId), zoneName + OVERRIDE_EXTENSION);
         }
 
         public static string[] ListOverrideFiles()
+            => ListOverrideFiles(WorldId.Base);
+
+        public static string[] ListOverrideFiles(WorldId worldId)
         {
-            string dir = OverrideDirectory;
+            string dir = OverrideDirectoryForWorld(worldId);
             if (!Directory.Exists(dir)) return Array.Empty<string>();
             return Directory.GetFiles(dir, "*" + OVERRIDE_EXTENSION);
         }
 
         public static bool DeleteOverride(string zoneName)
+            => DeleteOverride(zoneName, WorldId.Base);
+
+        public static bool DeleteOverride(string zoneName, WorldId worldId)
         {
-            string path = OverridePathForZone(zoneName);
+            string path = OverridePathForZone(zoneName, worldId);
             if (!File.Exists(path)) return false;
             File.Delete(path);
             return true;
@@ -95,14 +125,17 @@ namespace Valkur.Gameplay.TileEditor
         /// false if a file already exists at the new name (caller can
         /// decide to overwrite).</returns>
         public static bool RenameOverride(string oldZoneName, string newZoneName)
+            => RenameOverride(oldZoneName, newZoneName, WorldId.Base);
+
+        public static bool RenameOverride(string oldZoneName, string newZoneName, WorldId worldId)
         {
             if (string.IsNullOrEmpty(oldZoneName) || string.IsNullOrEmpty(newZoneName)) return false;
             if (string.Equals(oldZoneName, newZoneName, StringComparison.Ordinal)) return true;
 
-            string oldPath = OverridePathForZone(oldZoneName);
+            string oldPath = OverridePathForZone(oldZoneName, worldId);
             if (!File.Exists(oldPath)) return true;     // nothing to move — success
 
-            string newPath = OverridePathForZone(newZoneName);
+            string newPath = OverridePathForZone(newZoneName, worldId);
             if (File.Exists(newPath))
             {
                 Debug.LogWarning(
@@ -212,12 +245,12 @@ namespace Valkur.Gameplay.TileEditor
         //  Misc
         // ─────────────────────────────────────────────────────────────────
 
-        private static void EnsureDirectoryStatic()
+        private static void EnsureDirectoryStatic(WorldId worldId)
         {
-            string dir = OverrideDirectory;
+            string dir = OverrideDirectoryForWorld(worldId);
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         }
 
-        private void EnsureDirectory() => EnsureDirectoryStatic();
+        private void EnsureDirectory() => EnsureDirectoryStatic(_worldId);
     }
 }

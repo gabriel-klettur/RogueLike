@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 
 namespace Valkur.Gameplay.MapEditor
 {
@@ -29,10 +32,78 @@ namespace Valkur.Gameplay.MapEditor
         public string ActiveSlot => _activeSlot;
         public string Directory  => Path.Combine(Application.persistentDataPath, DIR_NAME);
 
+        /// <summary>
+        /// <see cref="WorldId"/> bound to the currently-active slot. Used by
+        /// per-slot persistence (tile overlays today; buildings / lights / spawners
+        /// in follow-up phases) to keep each map's data isolated on disk while
+        /// preserving byte-compat with the legacy single-slot layout for the
+        /// implicit "default" slot.
+        /// </summary>
+        public WorldId ActiveWorldId => ResolveWorldId(_activeSlot);
+
         public MapEditorMapSlots()
         {
             EnsureDirectory();
             LoadActiveFromDisk();
+        }
+
+        // ── World-id routing ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Map a slot name to a stable <see cref="WorldId"/>. The implicit
+        /// "default" slot maps to <see cref="WorldId.Base"/> (slug "base",
+        /// Guid.Empty) so the legacy flat <c>persistentDataPath/MapOverrides/&lt;zone&gt;.overlay.json</c>
+        /// layout is preserved byte-for-byte. Every other slot maps to a
+        /// <see cref="WorldId"/> whose <c>Slug</c> equals the sanitized slot
+        /// name and whose <c>Guid</c> is a deterministic MD5 hash of that
+        /// slug — stable across editor restarts and machine reinstalls so
+        /// equality on <see cref="WorldId"/> stays consistent over time.
+        /// </summary>
+        public static WorldId ResolveWorldId(string slotName)
+        {
+            string clean = Sanitize(slotName);
+            if (string.IsNullOrEmpty(clean) ||
+                string.Equals(clean, DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase))
+                return WorldId.Base;
+            return new WorldId(GuidFromString(clean.ToLowerInvariant()), clean);
+        }
+
+        /// <summary>
+        /// Read the active-slot pointer directly from disk and return its
+        /// <see cref="WorldId"/>. Used by boot-time callsites (e.g.
+        /// <c>WorldLoader.LoadFullWorld</c>) that need to know which world to
+        /// route persistence into BEFORE any <see cref="MapEditorManager"/> has
+        /// been constructed. Falls back to <see cref="WorldId.Base"/> when no
+        /// active marker exists.
+        /// </summary>
+        public static WorldId ResolveBootActiveWorldId()
+        {
+            try
+            {
+                string dir = Path.Combine(Application.persistentDataPath, DIR_NAME);
+                string path = Path.Combine(dir, ACTIVE_FILE);
+                if (!File.Exists(path)) return WorldId.Base;
+                string raw = File.ReadAllText(path)?.Trim();
+                return ResolveWorldId(raw);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor.Slots] Boot-time active-slot read failed: {ex.Message}");
+                return WorldId.Base;
+            }
+        }
+
+        private static Guid GuidFromString(string s)
+        {
+            // MD5 yields 16 bytes — exactly the size Guid expects. Hashing here
+            // is purely a name-to-Guid derivation; cryptographic strength is
+            // irrelevant. Using MD5 keeps the dependency footprint minimal
+            // (no extra package) and the result deterministic across machines.
+            using (var md5 = MD5.Create())
+            {
+                byte[] bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(s ?? string.Empty));
+                return new Guid(bytes);
+            }
         }
 
         // ── Listing ──────────────────────────────────────────────────────────────

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core.Coordinates;
 using Valkur.Gameplay.MapEditor.Backups;
 using Valkur.Gameplay.Spawners;
+using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.MapEditor
@@ -15,9 +17,12 @@ namespace Valkur.Gameplay.MapEditor
     /// live working copy (<c>map_editor_zones.json</c>) is unchanged so
     /// existing recovery / migration paths keep working.
     ///
-    /// Tile overrides are deliberately NOT routed per slot in this revision —
-    /// they remain shared across maps via <c>MapOverrides/&lt;zone&gt;.overlay.json</c>,
-    /// keyed only by zone name. Slot-aware tile routing is a follow-up.
+    /// Tile overrides ARE routed per slot: the active slot resolves to a
+    /// <see cref="Valkur.Core.Coordinates.WorldId"/> (via
+    /// <see cref="MapEditorMapSlots.ResolveWorldId"/>), and every overlay write
+    /// / read goes through that world's subdirectory under
+    /// <c>persistentDataPath/MapOverrides/</c>. The implicit "default" slot
+    /// keeps the legacy flat layout for byte-compat with pre-multi-map saves.
     /// </summary>
     public partial class MapEditorManager
     {
@@ -27,6 +32,14 @@ namespace Valkur.Gameplay.MapEditor
 
         public string ActiveMapSlot => ResolveSlotStore().ActiveSlot;
         public string[] ListMapSlots() => ResolveSlotStore().ListSlots().ToArray();
+
+        /// <summary>
+        /// <see cref="WorldId"/> of the currently-active slot. Persistence
+        /// systems that route per-slot (tile overlays today; buildings /
+        /// lights / spawners as they migrate) read this to pick the right
+        /// directory for reads and writes.
+        /// </summary>
+        public WorldId ActiveWorldId => ResolveSlotStore().ActiveWorldId;
 
         private MapEditorMapSlots ResolveSlotStore()
         {
@@ -62,8 +75,11 @@ namespace Valkur.Gameplay.MapEditor
                 && string.Equals(store.ActiveSlot,
                     MapEditorMapSlots.DEFAULT_SLOT, StringComparison.OrdinalIgnoreCase);
             if (!skipBackup) BackupCurrentToActiveSlot();
-            // Persist Buildings-Editor edits to the OUTGOING slot before any
-            // wipe / flip. See BeginNewMap for the rationale.
+            // Flush tile-overlay edits AND persist Buildings-Editor edits to
+            // the OUTGOING slot before any wipe / flip. Without these the
+            // pending edits would either be discarded (overlays) or silently
+            // re-written into the new slot (buildings) — see BeginNewMap.
+            FlushTileOverlayEditsForOutgoingSlot();
             NotifyBuildingsEditorOfSlotChange();
 
             // Position to teleport the player to once the new slot is active.
@@ -94,13 +110,21 @@ namespace Valkur.Gameplay.MapEditor
                 spawnPos = GetSavedPlayerPosition(data);
             }
 
+            // Flip the active-slot pointer FIRST so the visual repaint below
+            // resolves the new slot's WorldId. Tile-overlay routing keys off
+            // the live store value via RebindTileEditorToActiveWorld().
+            store.SetActive(clean);
+            // Re-bind the in-game tile editor's persistence layer to the new
+            // world id BEFORE repainting so any subsequent dirty-tracking lands
+            // in the new slot's directory.
+            RebindTileEditorToActiveWorld();
+
             // Visual swap: drop any tiles painted for the previous slot, then
             // repaint the overrides whose zones live in this slot. Without this
             // the new ZoneManager state is correct but the user still sees the
             // previous map's tiles.
             RefreshTilemapForActiveSlot();
 
-            store.SetActive(clean);
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
             // Wipe and re-spawn the rest of the world (buildings, spawners, …).
             // For the blank-load default branch the reload step is effectively
@@ -118,18 +142,66 @@ namespace Valkur.Gameplay.MapEditor
             return true;
         }
 
-        // Clears the live tilemap and reapplies the override files for whichever
-        // zones are currently registered in the ZoneManager. Override files for
-        // OTHER slots are skipped (their zones are not registered), so each
-        // map looks like a clean slate even though the override JSONs all live
-        // in the same `MapOverrides/` directory on disk.
+        // Clears the live tilemap and reapplies the override files that belong
+        // to the currently-active slot's <see cref="WorldId"/>. Each slot now
+        // owns its own directory under <c>persistentDataPath/MapOverrides/</c>
+        // (the implicit "default" slot keeps the legacy flat root for byte-
+        // compat), so the visual swap between maps is fully isolated — no
+        // interference even when two slots share a zone name.
         private void RefreshTilemapForActiveSlot()
         {
             if (worldGridBuilder == null) return;
             worldGridBuilder.ClearWorld();
             if (zoneManager == null) return;
+            WorldId worldId = ResolveSlotStore().ActiveWorldId;
             Valkur.Gameplay.TileEditor.TileOverlayPersistence
-                .ApplyAllOverrides(worldGridBuilder, zoneManager);
+                .ApplyAllOverrides(worldGridBuilder, zoneManager, worldId);
+        }
+
+        // Flushes any in-flight tile-overlay edits to the OUTGOING slot's
+        // directory so they aren't silently rerouted into the new slot when
+        // the active-slot pointer flips. Best-effort: a missing/inactive
+        // tile editor is a no-op, never blocks the slot switch.
+        private void FlushTileOverlayEditsForOutgoingSlot()
+        {
+            try
+            {
+                var tileEditor = TileEditorManager.Instance != null
+                    ? TileEditorManager.Instance
+                    : FindObjectOfType<TileEditorManager>();
+                if (tileEditor != null && tileEditor.Persistence != null
+                    && tileEditor.Persistence.HasUnsavedChanges)
+                {
+                    int saved = tileEditor.Persistence.SaveAllDirty();
+                    if (saved > 0)
+                        Debug.Log($"[MapEditor] Flushed {saved} pending tile-overlay zone(s) " +
+                                  $"to outgoing world before slot switch.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Tile-overlay flush before slot switch failed: {ex.Message}");
+            }
+        }
+
+        // Rebinds the tile editor's overlay persistence to whatever the
+        // currently-active slot resolves to. Called immediately after
+        // <see cref="MapEditorMapSlots.SetActive"/> so subsequent edits land
+        // in the new slot's directory. Best-effort; failure logs a warning
+        // but never blocks the slot transition.
+        private void RebindTileEditorToActiveWorld()
+        {
+            try
+            {
+                var tileEditor = TileEditorManager.Instance != null
+                    ? TileEditorManager.Instance
+                    : FindObjectOfType<TileEditorManager>();
+                tileEditor?.RebindToWorld(ResolveSlotStore().ActiveWorldId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Tile-editor rebind to active world failed: {ex.Message}");
+            }
         }
 
         // ── Begin a fresh blank map ──────────────────────────────────────────────
@@ -147,12 +219,13 @@ namespace Valkur.Gameplay.MapEditor
                             MapBackupSchema.KindAutoBeforeNew);
 
             BackupCurrentToActiveSlot();
-            // Persist any pending Buildings-Editor edits (placed/deleted/moved
-            // buildings, painted colliders) to the OUTGOING slot's files BEFORE
-            // we flip the active-slot pointer. Without this, ClearAllSpawnedWorldContent
-            // would wipe the scene, the next save would serialise an empty scene,
-            // and the outgoing slot's data would be silently destroyed (the
-            // canonical "buildings disappeared from default after creating a new map" bug).
+            // Flush tile-overlay edits AND persist any pending Buildings-Editor
+            // edits (placed/deleted/moved buildings, painted colliders) to the
+            // OUTGOING slot's files BEFORE we flip the active-slot pointer.
+            // Without these flushes the wipe below would silently destroy the
+            // outgoing slot's data — the canonical "buildings disappeared from
+            // default after creating a new map" bug.
+            FlushTileOverlayEditsForOutgoingSlot();
             NotifyBuildingsEditorOfSlotChange();
 
             zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
@@ -162,6 +235,9 @@ namespace Valkur.Gameplay.MapEditor
                 _state.NextZoneIndex = 1;
             }
             ResolveSlotStore().SetActive(clean);
+            // Re-bind the tile editor's overlay persistence to the new slot's
+            // world so any first edits land in the new directory.
+            RebindTileEditorToActiveWorld();
             ResolveBuildingLoader()?.ClearGeneratedAbove(BIOME_INSTANCE_ID_BASE);
             // Wipe the tilemap so the user actually sees an empty canvas
             // instead of standing inside whatever was just removed from

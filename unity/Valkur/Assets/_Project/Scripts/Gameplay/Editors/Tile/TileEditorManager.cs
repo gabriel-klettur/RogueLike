@@ -2,7 +2,9 @@
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Core;
+using Valkur.Core.Coordinates;
 using Valkur.Gameplay.Editors;
+using Valkur.Gameplay.MapEditor;
 using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
@@ -163,13 +165,62 @@ namespace Valkur.Gameplay.TileEditor
             if (worldGridBuilder == null) return;
             var zoneManager = FindObjectOfType<ZoneManager>();
             if (zoneManager == null) return;
-            _persistence = new TileOverlayPersistence(zoneManager, worldGridBuilder);
+            // Resolve which map slot is active so per-slot overlay routing
+            // hits the right directory from the very first edit. Defaults to
+            // WorldId.Base (legacy flat layout) when the active-slot pointer
+            // is missing — i.e. on first run before any slot has been picked.
+            WorldId worldId = MapEditorMapSlots.ResolveBootActiveWorldId();
+            _persistence = new TileOverlayPersistence(zoneManager, worldGridBuilder, repository: null, worldId: worldId);
             // OnDirtyChanged is no longer wired to the UI — the manual Save button +
             // dirty indicator were removed once every edit path became auto-flushing
             // on mouse-up. The event is still raised by TileOverlayPersistence in
             // case a future debug/diagnostic surface wants to subscribe.
             _persistence.OnZoneSaved   += zone => _ui?.SetStatus($"Saved zone '{zone}'");
             _persistence.OnSaveFailed  += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
+        }
+
+        /// <summary>
+        /// Re-bind the tile-overlay persistence layer to a new <see cref="WorldId"/>.
+        /// Called by the Map Editor when the active map slot changes so subsequent
+        /// edits write to the new slot's directory instead of the previous one.
+        ///
+        /// Any pending dirty zones are flushed to the OUTGOING slot's directory
+        /// before the bind flips — losing them silently on a slot switch is the
+        /// worse failure mode. Subscribers (status messages on save / failure)
+        /// are re-attached on the new instance.
+        /// </summary>
+        public void RebindToWorld(WorldId worldId)
+        {
+            // Close any in-flight stroke first so its undo entry isn't stranded
+            // half-recorded across the rebind.
+            _undo?.EndStroke();
+
+            if (_persistence != null)
+            {
+                if (_persistence.WorldId == worldId) return;
+                if (_persistence.HasUnsavedChanges)
+                {
+                    int flushed = _persistence.SaveAllDirty();
+                    if (flushed > 0)
+                        Debug.Log($"[TileEditor] Flushed {flushed} dirty zone(s) to outgoing world '{_persistence.WorldId}' before slot switch.");
+                }
+            }
+
+            // Rebuild against the new world id. ZoneManager + WorldGridBuilder
+            // are scene-singletons, safe to re-resolve via FindObjectOfType.
+            if (worldGridBuilder == null)
+                worldGridBuilder = FindObjectOfType<WorldGridBuilder>();
+            var zoneManager = FindObjectOfType<ZoneManager>();
+            if (worldGridBuilder == null || zoneManager == null)
+            {
+                Debug.LogWarning($"[TileEditor] RebindToWorld('{worldId}') skipped — grid or zone manager missing.");
+                return;
+            }
+
+            _persistence = new TileOverlayPersistence(zoneManager, worldGridBuilder, repository: null, worldId: worldId);
+            _persistence.OnZoneSaved  += zone => _ui?.SetStatus($"Saved zone '{zone}'");
+            _persistence.OnSaveFailed += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
+            Debug.Log($"[TileEditor] Tile-overlay persistence rebound to world '{worldId}'.");
         }
 
         /// <summary>Save every dirty zone to <c>persistentDataPath/MapOverrides</c>. Returns the count saved.</summary>

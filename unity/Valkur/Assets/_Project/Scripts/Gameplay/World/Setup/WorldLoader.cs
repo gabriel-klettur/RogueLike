@@ -178,12 +178,19 @@ namespace Valkur.Gameplay.World
 
             // ── Pass 3: persisted tile-editor overrides ─────────────────────
             // Restores edits the user made in previous play sessions
-            // (one JSON per zone in persistentDataPath/MapOverrides).
+            // (one JSON per zone in persistentDataPath/MapOverrides). Routes
+            // through the active map slot's WorldId so each slot loads its
+            // own overrides — the implicit "default" slot keeps the legacy
+            // flat root for byte-compat with pre-multi-map saves.
             reportStage?.Invoke("Applying tile overrides");
             yield return null;
             var zoneManager = FindObjectOfType<ZoneManager>();
             if (zoneManager != null)
-                Valkur.Gameplay.TileEditor.TileOverlayPersistence.ApplyAllOverrides(_gridBuilder, zoneManager);
+            {
+                var bootWorldId = Valkur.Gameplay.MapEditor.MapEditorMapSlots.ResolveBootActiveWorldId();
+                Valkur.Gameplay.TileEditor.TileOverlayPersistence.ApplyAllOverrides(
+                    _gridBuilder, zoneManager, bootWorldId);
+            }
 
             Debug.Log($"[WorldLoader] Full world loaded: {_overlaysLoaded} overlays, " +
                       $"{_collisionsLoaded} collision grids across {entries.Count} zones " +

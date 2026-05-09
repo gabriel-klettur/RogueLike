@@ -158,15 +158,18 @@ namespace Valkur.Gameplay.MapEditor
             // DeleteOverride returns false when there was no file to delete
             // (the zone never had any tile edits) — that's expected, not an
             // error. A genuine I/O failure would throw; surface those.
+            // Routes via the active slot's WorldId so the delete stays scoped
+            // to the current map's override directory.
+            var worldId = ActiveWorldId;
             try
             {
-                Valkur.Gameplay.TileEditor.TileOverlayPersistence.DeleteOverride(zoneName);
+                Valkur.Gameplay.TileEditor.TileOverlayPersistence.DeleteOverride(zoneName, worldId);
             }
             catch (System.Exception ex)
             {
                 Debug.LogWarning($"[MapEditor] Failed to delete overlay file for '{zoneName}': {ex.Message}. " +
                                  $"Zone removed from ZoneManager; orphan file may remain at " +
-                                 $"{Valkur.Gameplay.TileEditor.TileOverlayPersistence.OverridePathForZone(zoneName)}.");
+                                 $"{Valkur.Gameplay.TileEditor.TileOverlayPersistence.OverridePathForZone(zoneName, worldId)}.");
             }
 
             if (_state.HasSelection && _state.SelectedZone == zoneName) _state.ClearSelection();

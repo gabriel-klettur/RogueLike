@@ -32,8 +32,9 @@ namespace Valkur.Gameplay.MapEditor
             // painted tiles loses every tile on the next world load. If
             // the move fails the zone is now mismatched with its overlay
             // file, so revert the rename and tell the user — losing tiles
-            // silently is the worse failure mode.
-            if (!Valkur.Gameplay.TileEditor.TileOverlayPersistence.RenameOverride(oldName, trimmed))
+            // silently is the worse failure mode. Routes via the active
+            // slot's WorldId so renames stay scoped to the current map.
+            if (!Valkur.Gameplay.TileEditor.TileOverlayPersistence.RenameOverride(oldName, trimmed, ActiveWorldId))
             {
                 if (!zoneManager.RenameZone(trimmed, oldName))
                 {
