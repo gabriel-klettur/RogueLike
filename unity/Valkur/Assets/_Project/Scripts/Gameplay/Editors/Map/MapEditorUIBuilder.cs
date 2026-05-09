@@ -110,7 +110,8 @@ namespace Valkur.Gameplay.MapEditor
             Action                 onToggleSelectedZoneEditable,
             Action<bool>           onRestrictEditChanged,
             Action<BiomeDialogResult> onConfirmGenerateBiomes,
-            MapSlotCallbacks       mapSlotCallbacks)
+            MapSlotCallbacks       mapSlotCallbacks,
+            PortalCallbacks        portalCallbacks)
         {
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
 
@@ -119,13 +120,14 @@ namespace Valkur.Gameplay.MapEditor
             BuildZonesPanel(canvasT, ref refs);
             BuildActionsPanel(canvasT, ref refs,
                 onBeginAddZoneFlow, onDuplicateSelectedZone,
-                onRequestDeleteSelectedZone);
+                onRequestDeleteSelectedZone, portalCallbacks);
             BuildPropertiesPanel(canvasT, ref refs, onRenameSelectedZone,
                 onToggleSelectedZoneEditable, onRestrictEditChanged);
             BuildBiomesPanel(canvasT, ref refs, onConfirmGenerateBiomes);
             BuildMapsPanel(canvasT, ref refs, mapSlotCallbacks);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
             BuildDeleteZoneDialog(canvasT, ref refs, onConfirmDeleteSelectedZone, onCancelDeleteZone);
+            BuildPlacePortalDialog(canvasT, ref refs, portalCallbacks);
             return refs;
         }
 
@@ -260,12 +262,14 @@ namespace Valkur.Gameplay.MapEditor
         private static void BuildActionsPanel(Transform canvasT, ref UIRefs refs,
             Action onBeginAdd,
             Action onDuplicate,
-            Action onRequestDelete)
+            Action onRequestDelete,
+            PortalCallbacks portalCallbacks)
         {
             float x = PANEL_GAP + ZONES_W + PANEL_GAP;
             refs.ActionsDropdown = MakeDrop("ActionsPanel", canvasT,
                 PanelDock.TopLeft, x, PANEL_TOP_OFFSET,
-                ACTIONS_W, ACTIONS_H, "ACTIONS", out var t, out refs.ActionsPanelDrag);
+                ACTIONS_W, ACTIONS_H + BTN_H + 12f /* room for Portal button */,
+                "ACTIONS", out var t, out refs.ActionsPanelDrag);
 
             BuildSectionLabel(t, "Operations");
 
@@ -278,6 +282,17 @@ namespace Valkur.Gameplay.MapEditor
 
             AddActionBtn(t, "Duplicate", BTN_H, onDuplicate);
             AddActionBtn(t, "Delete",    BTN_H, onRequestDelete, danger: true);
+
+            // Portal placement: armed by this button, finalised in the
+            // BuildPlacePortalDialog modal. Outline pulses while armed so
+            // the user has the same visual cue as Add Zone.
+            var placePortalBtn = AddActionBtn(t, "Place Portal", BTN_H,
+                () => portalCallbacks.OnBeginPlace?.Invoke());
+            refs.PlacePortalBtnImage   = placePortalBtn.GetComponent<Image>();
+            var placeOutline           = placePortalBtn.gameObject.AddComponent<Outline>();
+            placeOutline.effectColor    = new Color(0f, 0f, 0f, 0f);
+            placeOutline.effectDistance = new Vector2(2f, 2f);
+            refs.PlacePortalBtnOutline = placeOutline;
 
             refs.ActionsDropdown.SetActive(false);
         }

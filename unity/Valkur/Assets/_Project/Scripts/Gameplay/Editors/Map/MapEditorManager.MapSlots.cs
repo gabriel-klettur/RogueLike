@@ -95,6 +95,9 @@ namespace Valkur.Gameplay.MapEditor
                     _state.RestrictTileEditingToEditableZones = false;
                     _state.NextZoneIndex = 1;
                 }
+                // No portals on the synthetic blank-default load — drop any
+                // runtime portal objects from the outgoing slot.
+                HydratePortalsFromPersistence(null);
             }
             else
             {
@@ -106,7 +109,10 @@ namespace Valkur.Gameplay.MapEditor
                     return false;
                 }
                 if (data == null) return false;
+                MapZonesMigrations.Migrate(data);
                 ApplySlotToZoneManager(data);
+                // Respawn portal objects from the new slot's record.
+                HydratePortalsFromPersistence(data);
                 spawnPos = GetSavedPlayerPosition(data);
             }
 
@@ -234,6 +240,9 @@ namespace Valkur.Gameplay.MapEditor
                 _state.RestrictTileEditingToEditableZones = false;
                 _state.NextZoneIndex = 1;
             }
+            // Drop the outgoing slot's portals from the scene before flipping
+            // the active-slot pointer; the new map starts portal-free.
+            HydratePortalsFromPersistence(null);
             ResolveSlotStore().SetActive(clean);
             // Re-bind the tile editor's overlay persistence to the new slot's
             // world so any first edits land in the new directory.

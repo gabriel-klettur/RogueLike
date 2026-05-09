@@ -157,7 +157,8 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                 _ => { },           // onToggleZoneEditableByName
                 _ => { },           // onRestrictEditChanged
                 _ => { },           // onConfirmGenerateBiomes
-                default);           // mapSlotCallbacks (no-op struct)
+                default,            // mapSlotCallbacks (no-op struct)
+                default);           // portalCallbacks (no-op struct)
 
             return ui;
         }

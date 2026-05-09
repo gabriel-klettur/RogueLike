@@ -87,6 +87,10 @@ namespace Valkur.Gameplay.MapEditor
             // any unrelated edit.
             int shelvedPreserved = MergeShelvedZonesFromDisk(data, liveNames, liveOffsets);
 
+            // Mirror the in-memory portals list (managed by Portals partial)
+            // into the document so it travels with the slot file.
+            WritePortalsIntoPersistence(data);
+
             try
             {
                 string json = JsonUtility.ToJson(data, prettyPrint: true);
@@ -281,6 +285,9 @@ namespace Valkur.Gameplay.MapEditor
 
                 _state.RestrictTileEditingToEditableZones = data.restrictTileEditingToEditableZones;
                 _state.NextZoneIndex = Mathf.Max(1, data.nextZoneIndex);
+
+                // Spawn portals from disk into runtime objects.
+                HydratePortalsFromPersistence(data);
 
                 Debug.Log($"[MapEditor] Loaded persisted zones: +{newZonesAdded} new, " +
                           $"{flagsRestored} flags restored, {intraFileDuplicates} intra-file duplicates dropped, " +

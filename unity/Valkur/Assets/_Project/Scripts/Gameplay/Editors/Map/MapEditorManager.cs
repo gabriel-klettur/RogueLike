@@ -178,6 +178,17 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
+            // Same gesture for portal placement: arm via toolbar, click-to-mark
+            // on the next frame (the same-frame guard mirrors AddZone so the
+            // click that activated the button can't race ahead and place the
+            // portal under the toolbar itself).
+            if (_isPlacePortalActive && _input.WasSelectPressed() && !_input.IsPointerOverUI()
+                && Time.frameCount != _placePortalFlowStartedFrame)
+            {
+                MarkPortalSourceAtCursor();
+                return;
+            }
+
             if (_input.WasSelectPressed() && !_input.IsPointerOverUI())
                 SelectZoneAtCursor();
 
@@ -291,6 +302,13 @@ namespace Valkur.Gameplay.MapEditor
                 GetActive  = () => ActiveMapSlot,
             };
 
+            var portalCallbacks = new MapEditorUIBuilder.PortalCallbacks
+            {
+                OnBeginPlace   = OnBeginPlacePortalFromUI,
+                OnCancelPlace  = OnCancelPlacePortalFromUI,
+                OnConfirmPlace = OnConfirmPlacePortalFromUI,
+            };
+
             _ui.Initialize(
                 _state,
                 OnZoneSelected,
@@ -306,7 +324,8 @@ namespace Valkur.Gameplay.MapEditor
                 ToggleZoneEditableByName,
                 SetRestrictTileEditing,
                 OnConfirmGenerateBiomes,
-                slotCallbacks);
+                slotCallbacks,
+                portalCallbacks);
             _ui.SetVisible(false);
             _ui.SetRestrictToggle(_state.RestrictTileEditingToEditableZones);
 

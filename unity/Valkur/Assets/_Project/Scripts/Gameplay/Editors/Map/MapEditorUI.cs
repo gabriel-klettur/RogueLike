@@ -30,6 +30,10 @@ namespace Valkur.Gameplay.MapEditor
         private System.Action<bool> _onRestrictEditChanged;
         private System.Action<MapEditorUIBuilder.BiomeDialogResult> _onConfirmGenerateBiomes;
         private MapEditorUIBuilder.MapSlotCallbacks _mapSlotCallbacks;
+        private MapEditorUIBuilder.PortalCallbacks _portalCallbacks;
+
+        // Portal placement mode visual indicator state.
+        private bool _isPlacePortalMode;
 
         // Runtime-only references set by BuildUI(). NOT [SerializeField] — ResolveCanvas()
         // handles domain-reload recovery via GetComponentInChildren fallback; keeping these
@@ -58,7 +62,8 @@ namespace Valkur.Gameplay.MapEditor
             (_refs.DeleteZoneDialog != null && _refs.DeleteZoneDialog.activeSelf) ||
             (_refs.MapsDeleteDialog != null && _refs.MapsDeleteDialog.activeSelf) ||
             (_refs.MapsNewDialog != null && _refs.MapsNewDialog.activeSelf) ||
-            (_refs.MapsRenameDialog != null && _refs.MapsRenameDialog.activeSelf);
+            (_refs.MapsRenameDialog != null && _refs.MapsRenameDialog.activeSelf) ||
+            (_refs.PlacePortalDialog != null && _refs.PlacePortalDialog.activeSelf);
 
         /// <summary>Toggles the named floating panel open/closed and updates menu button styles.</summary>
         public void OnDropdownToggle(string key)
@@ -111,7 +116,8 @@ namespace Valkur.Gameplay.MapEditor
             System.Action<string> onToggleZoneEditableByName,
             System.Action<bool> onRestrictEditChanged,
             System.Action<MapEditorUIBuilder.BiomeDialogResult> onConfirmGenerateBiomes,
-            MapEditorUIBuilder.MapSlotCallbacks mapSlotCallbacks)
+            MapEditorUIBuilder.MapSlotCallbacks mapSlotCallbacks,
+            MapEditorUIBuilder.PortalCallbacks portalCallbacks)
         {
             _state = state;
             _onZoneSelected = onZoneSelected;
@@ -128,6 +134,7 @@ namespace Valkur.Gameplay.MapEditor
             _onRestrictEditChanged = onRestrictEditChanged;
             _onConfirmGenerateBiomes = onConfirmGenerateBiomes;
             _mapSlotCallbacks = mapSlotCallbacks;
+            _portalCallbacks = portalCallbacks;
 
             BuildUI();
             SetVisible(false);
@@ -151,16 +158,32 @@ namespace Valkur.Gameplay.MapEditor
 
         private void Update()
         {
-            if (!_isAddZoneMode) return;
-            if (_refs.AddZoneBtnOutline == null) return;
-            float pulse = (Mathf.Sin(Time.unscaledTime * 5f) + 1f) * 0.5f;
-            _refs.AddZoneBtnOutline.effectColor =
-                new Color(1f, 0.85f, 0f, Mathf.Lerp(0.15f, 1f, pulse));
-            if (_refs.AddZoneBtnImage != null)
-                _refs.AddZoneBtnImage.color = Color.Lerp(
-                    new Color(0.16f, 0.16f, 0.21f, 1f),
-                    new Color(0.30f, 0.25f, 0.06f, 1f),
-                    pulse * 0.45f);
+            if (_isAddZoneMode && _refs.AddZoneBtnOutline != null)
+            {
+                float pulseAdd = (Mathf.Sin(Time.unscaledTime * 5f) + 1f) * 0.5f;
+                _refs.AddZoneBtnOutline.effectColor =
+                    new Color(1f, 0.85f, 0f, Mathf.Lerp(0.15f, 1f, pulseAdd));
+                if (_refs.AddZoneBtnImage != null)
+                    _refs.AddZoneBtnImage.color = Color.Lerp(
+                        new Color(0.16f, 0.16f, 0.21f, 1f),
+                        new Color(0.30f, 0.25f, 0.06f, 1f),
+                        pulseAdd * 0.45f);
+            }
+
+            // Same pulse pattern, cyan tint, for portal-placement mode so the
+            // two armed states feel like part of the same UX family without
+            // colliding visually if the user somehow had both mid-flight.
+            if (_isPlacePortalMode && _refs.PlacePortalBtnOutline != null)
+            {
+                float pulsePortal = (Mathf.Sin(Time.unscaledTime * 5f) + 1f) * 0.5f;
+                _refs.PlacePortalBtnOutline.effectColor =
+                    new Color(0.30f, 0.85f, 0.95f, Mathf.Lerp(0.15f, 1f, pulsePortal));
+                if (_refs.PlacePortalBtnImage != null)
+                    _refs.PlacePortalBtnImage.color = Color.Lerp(
+                        new Color(0.16f, 0.16f, 0.21f, 1f),
+                        new Color(0.06f, 0.20f, 0.30f, 1f),
+                        pulsePortal * 0.45f);
+            }
         }
 
         public void SetVisible(bool visible)
@@ -183,6 +206,8 @@ namespace Valkur.Gameplay.MapEditor
                 HideMapsNewDialog();
                 HideMapsRenameDialog();
                 HideMapsLoadingOverlay();
+                HidePortalDialog();
+                SetPlacePortalMode(false);
             }
         }
 
@@ -362,6 +387,58 @@ namespace Valkur.Gameplay.MapEditor
         {
             if (_refs.DeleteZoneDialog != null)
                 _refs.DeleteZoneDialog.SetActive(false);
+        }
+
+        // ── Portal placement dialog ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Opens the portal-placement modal. <paramref name="sourceWorld"/> is
+        /// shown read-only; <paramref name="zoneNames"/> populates the
+        /// destination dropdown; <paramref name="preferred"/> selects the
+        /// initial choice.
+        /// </summary>
+        public void ShowPortalDialog(Vector3 sourceWorld, string preferred,
+            System.Collections.Generic.IList<string> zoneNames)
+        {
+            if (_refs.PlacePortalDialog == null) return;
+
+            if (_refs.PlacePortalSourceText != null)
+                _refs.PlacePortalSourceText.text =
+                    $"Source: ({sourceWorld.x:0.##}, {sourceWorld.y:0.##})";
+
+            MapEditorUIBuilder.PopulatePortalDestinationDropdown(
+                _refs.PlacePortalDestDropdown, zoneNames, preferred);
+
+            if (_refs.PlacePortalUseCenterToggle != null)
+                _refs.PlacePortalUseCenterToggle.SetIsOnWithoutNotify(true);
+            if (_refs.PlacePortalDestXInput != null) _refs.PlacePortalDestXInput.text = "0";
+            if (_refs.PlacePortalDestYInput != null) _refs.PlacePortalDestYInput.text = "0";
+            if (_refs.PlacePortalRadiusInput != null) _refs.PlacePortalRadiusInput.text = "0";
+
+            _refs.PlacePortalDialog.SetActive(true);
+        }
+
+        public void HidePortalDialog()
+        {
+            if (_refs.PlacePortalDialog != null)
+                _refs.PlacePortalDialog.SetActive(false);
+        }
+
+        /// <summary>
+        /// Mirrors <see cref="SetAddZoneMode"/> — when the placement flow is
+        /// armed but the user hasn't clicked yet, pulse the "Place Portal"
+        /// button outline so they can't lose track of the active mode.
+        /// </summary>
+        public void SetPlacePortalMode(bool active)
+        {
+            _isPlacePortalMode = active;
+            if (!active)
+            {
+                if (_refs.PlacePortalBtnOutline != null)
+                    _refs.PlacePortalBtnOutline.effectColor = new Color(0f, 0f, 0f, 0f);
+                if (_refs.PlacePortalBtnImage != null)
+                    _refs.PlacePortalBtnImage.color = new Color(0.16f, 0.16f, 0.21f, 1f);
+            }
         }
 
     }
