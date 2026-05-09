@@ -22,3 +22,4 @@ MonoBehaviour:
   projectileLayer: 10
   fadeInTime: 0.5
   defaultFloorTile: {fileID: 11400000, guid: aca8b49c4a6f4d949b50e2825f07bc77, type: 2}
+  defaultWallTile: {fileID: 11400000, guid: 7af61bd224c0ec641a6fdf7dad9f7caa, type: 2}

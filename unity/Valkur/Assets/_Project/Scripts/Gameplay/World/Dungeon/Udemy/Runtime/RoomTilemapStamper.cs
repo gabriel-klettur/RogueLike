@@ -84,11 +84,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
 
             // Visual fallback: if the prefab brought no tilemaps, paint the
             // room's bounding box on the global Ground layer with the config's
-            // defaultFloorTile. Lets the dungeon be VISIBLE even when authored
-            // template prefabs are still empty — useful while iterating.
+            // defaultFloorTile (interior) and defaultWallTile (perimeter,
+            // skipping connected doorways). Lets the dungeon be VISIBLE even
+            // when authored template prefabs are still empty.
             if (result.LayersTransferred == 0 && config != null && config.defaultFloorTile != null)
             {
-                result.TilesStamped += PaintFallbackFloor(room, gridBuilder, config.defaultFloorTile);
+                result.TilesStamped += PaintFallbackFloor(
+                    room, gridBuilder,
+                    floorTile: config.defaultFloorTile,
+                    wallTile: config.defaultWallTile);
             }
 
             // Build the A* penalty matrix from the source collision tilemap.
@@ -116,16 +120,44 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Runtime
         // Tile transfer.
         // ─────────────────────────────────────────────────────────────────
 
-        private static int PaintFallbackFloor(Room room, WorldGridBuilder gridBuilder, TileBase fallback)
+        private static int PaintFallbackFloor(
+            Room room, WorldGridBuilder gridBuilder, TileBase floorTile, TileBase wallTile)
         {
             var ground = gridBuilder.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground);
             if (ground == null) return 0;
+
+            // Pre-compute world-space tile positions of every CONNECTED doorway
+            // so we can punch holes in the wall ring there. We use the room's
+            // post-offset bounds + the doorway's template-local position
+            // translated into world space. Same offset math as Stamp().
+            var doorwayHoles = new System.Collections.Generic.HashSet<Vector2Int>();
+            foreach (var d in room.doorWayList)
+            {
+                if (d == null || !d.isConnected) continue;
+                int worldX = room.lowerBounds.x + d.position.x - room.templateLowerBounds.x;
+                int worldY = room.lowerBounds.y + d.position.y - room.templateLowerBounds.y;
+                doorwayHoles.Add(new Vector2Int(worldX, worldY));
+                // Widen the hole one tile in each cardinal axis so the player
+                // can actually walk through (rooms otherwise leave a 1-tile gap).
+                doorwayHoles.Add(new Vector2Int(worldX + 1, worldY));
+                doorwayHoles.Add(new Vector2Int(worldX - 1, worldY));
+                doorwayHoles.Add(new Vector2Int(worldX, worldY + 1));
+                doorwayHoles.Add(new Vector2Int(worldX, worldY - 1));
+            }
 
             int painted = 0;
             for (int x = room.lowerBounds.x; x <= room.upperBounds.x; x++)
             for (int y = room.lowerBounds.y; y <= room.upperBounds.y; y++)
             {
-                ground.SetTile(new Vector3Int(x, y, 0), fallback);
+                bool isPerimeter =
+                    x == room.lowerBounds.x || x == room.upperBounds.x ||
+                    y == room.lowerBounds.y || y == room.upperBounds.y;
+                bool isHole = doorwayHoles.Contains(new Vector2Int(x, y));
+
+                TileBase chosen = (isPerimeter && !isHole && wallTile != null)
+                    ? wallTile
+                    : floorTile;
+                ground.SetTile(new Vector3Int(x, y, 0), chosen);
                 painted++;
             }
             return painted;

@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: RoomTemplate_Chamber
   m_EditorClassIdentifier: 
   guid: 960b925a-5cee-41e9-89bc-f8c8c2b2f079
-  prefab: {fileID: 0}
+  prefab: {fileID: 3558042750914780409, guid: c06538960714fc746976831e69f45228, type: 3}
   previousPrefab: {fileID: 0}
   battleMusicId: 
   ambientMusicId: 
   roomNodeType: {fileID: 11400000, guid: cb2390263603a654290458f9f41fc0d6, type: 2}
   lowerBounds: {x: 0, y: 0}
-  upperBounds: {x: 4, y: 4}
+  upperBounds: {x: 6, y: 6}
   doorwayList:
-  - position: {x: 2, y: 4}
+  - position: {x: 3, y: 6}
     orientation: 0
     doorPrefab: {fileID: 0}
     doorwayStartCopyPosition: {x: 0, y: 0}
@@ -29,8 +29,8 @@ MonoBehaviour:
     doorwayCopyTileHeight: 1
     isConnected: 0
     isUnavailable: 0
-  - position: {x: 2, y: 0}
-    orientation: 2
+  - position: {x: 6, y: 3}
+    orientation: 1
     doorPrefab: {fileID: 0}
     doorwayStartCopyPosition: {x: 0, y: 0}
     doorwayCopyTileWidth: 1

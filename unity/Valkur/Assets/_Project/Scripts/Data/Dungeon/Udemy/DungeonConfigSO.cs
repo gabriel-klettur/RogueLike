@@ -46,8 +46,11 @@ namespace Valkur.Data.Dungeon.Udemy
         [Tooltip("Fade-in duration when the player first enters a room (seconds). Phase 2 â€” wired later.")]
         [Min(0f)] public float fadeInTime = 0.5f;
         [Header("Visual Fallback")]
-        [Tooltip("Tile painted across the bounding box of every room when the prefab has no Ground tilemap. " +
+        [Tooltip("Tile painted across the room interior when the prefab has no Ground tilemap. " +
                  "Lets you exercise the Udemy strategy with empty templates while authored prefabs are still in flight.")]
         public TileBase defaultFloorTile;
+
+        [Tooltip("Tile painted around the room perimeter (outline) in fallback mode. Doorway openings stay floor.")]
+        public TileBase defaultWallTile;
     }
 }

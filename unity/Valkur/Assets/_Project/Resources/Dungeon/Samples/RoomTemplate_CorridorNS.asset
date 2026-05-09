@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RoomTemplate_CorridorNS
   m_EditorClassIdentifier: 
   guid: 4c5cc0e6-9722-4a05-858a-4ecbf4785d72
-  prefab: {fileID: 0}
+  prefab: {fileID: 821021454777142559, guid: a986112fd89d1a54bb74cf4da4621366, type: 3}
   previousPrefab: {fileID: 0}
   battleMusicId: 
   ambientMusicId: 

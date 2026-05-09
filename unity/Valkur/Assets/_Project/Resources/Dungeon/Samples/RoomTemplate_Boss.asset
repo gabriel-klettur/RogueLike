@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: RoomTemplate_Boss
   m_EditorClassIdentifier: 
   guid: 128e4f5e-63ea-4a10-a034-1769bb106793
-  prefab: {fileID: 0}
+  prefab: {fileID: 1430536652260548295, guid: 2a74e77ba889dfe44a5e34b7a80bd518, type: 3}
   previousPrefab: {fileID: 0}
   battleMusicId: 
   ambientMusicId: 
   roomNodeType: {fileID: 11400000, guid: d66b621be6b87c548a96eff575f08ab2, type: 2}
   lowerBounds: {x: 0, y: 0}
-  upperBounds: {x: 7, y: 7}
+  upperBounds: {x: 6, y: 6}
   doorwayList:
-  - position: {x: 3, y: 7}
-    orientation: 0
+  - position: {x: 0, y: 3}
+    orientation: 3
     doorPrefab: {fileID: 0}
     doorwayStartCopyPosition: {x: 0, y: 0}
     doorwayCopyTileWidth: 1
