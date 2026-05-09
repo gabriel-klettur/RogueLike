@@ -38,6 +38,20 @@ namespace Valkur.Gameplay.World
 
         protected override bool Persist => false;
 
+        // Optional add-on consulted on every A* expansion. Null = legacy behavior.
+        private IPathFinderPenaltyProvider _penaltyProvider;
+
+        /// <summary>
+        /// Inject (or clear with null) the optional <see cref="IPathFinderPenaltyProvider"/>.
+        /// When set, A* adds <see cref="IPathFinderPenaltyProvider.GetExtraPenalty"/> to the
+        /// unit step cost on every neighbor expansion. Used by the Udemy dungeon
+        /// system to bias paths toward "preferred path" tiles.
+        /// </summary>
+        public void SetPenaltyProvider(IPathFinderPenaltyProvider provider)
+        {
+            _penaltyProvider = provider;
+        }
+
         // ── Public API ────────────────────────────────────────────────────────
 
         /// <summary>
@@ -101,7 +115,15 @@ namespace Valkur.Gameplay.World
 
                     if (!IsWalkable(neighbor)) continue;
 
-                    float tentG = gScore[current] + 1f;
+                    // Base step cost is 1; an optional penalty provider can add to it.
+                    // Provider is null in vanilla Valkur; the Udemy dungeon system installs one.
+                    float stepCost = 1f;
+                    if (_penaltyProvider != null)
+                    {
+                        int extra = _penaltyProvider.GetExtraPenalty(neighbor);
+                        if (extra > 0) stepCost += extra;
+                    }
+                    float tentG = gScore[current] + stepCost;
                     if (!gScore.TryGetValue(neighbor, out float oldG) || tentG < oldG)
                     {
                         cameFrom[neighbor] = current;
