@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: BuildingTemplate_94
   m_EditorClassIdentifier: 
   templateId: 94
-  assetPath: Buildings/combat/ChatGPT_Image_Apr_3,_2025,_05_12_38_AM
+  assetPath: Buildings/combat/combat_training_yard
   previewSprite: {fileID: 21300000, guid: 39b53fd3be432ef4fa687c00759581ac, type: 3}
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
   originalScale: {x: 1536, y: 1024}
-  sourceImagePath: assets/buildings/combat/ChatGPT Image Apr 3, 2025, 05_12_38 AM.png
+  sourceImagePath: assets/buildings/combat/combat_training_yard.png

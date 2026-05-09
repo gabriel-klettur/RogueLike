@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: BuildingTemplate_214
   m_EditorClassIdentifier: 
   templateId: 214
-  assetPath: Buildings/temples/ChatGPT_Image_Apr_3,_2025,_05_11_11_AM
+  assetPath: Buildings/temples/temple_holy_church
   previewSprite: {fileID: 21300000, guid: 3e3f762dab88a7844aa19e3e924d0a9e, type: 3}
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
   originalScale: {x: 256, y: 256}
-  sourceImagePath: assets/buildings/temples/ChatGPT Image Apr 3, 2025, 05_11_11 AM.png
+  sourceImagePath: assets/buildings/temples/temple_holy_church.png

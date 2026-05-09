@@ -19,7 +19,7 @@ namespace Valkur.Tests.EditMode.Game.Data
     /// any future regression should fail the build immediately.
     ///
     /// The "soft" rules emit a Debug.LogWarning with a count so the legacy
-    /// 438-violation backlog stays visible in CI without spuriously failing
+    /// ~280-violation backlog stays visible in CI without spuriously failing
     /// the suite. As Stages 7+ burn that backlog down, the corresponding
     /// soft rules will be promoted to hard ones (move them into the
     /// <see cref="HardRules"/> section).

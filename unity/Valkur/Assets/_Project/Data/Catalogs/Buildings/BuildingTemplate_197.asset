@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: BuildingTemplate_197
   m_EditorClassIdentifier: 
   templateId: 197
-  assetPath: Buildings/portals/ChatGPT_Image_Sep_11,_2025,_10_29_09_PM
+  assetPath: Buildings/portals/portal_stone_arch
   previewSprite: {fileID: 21300000, guid: be8e12d2c1445cf47a9128ea371d90db, type: 3}
   solid: 1
   splitRatio: 0.5
   colliderScope: CG
   originalScale: {x: 1024, y: 1024}
-  sourceImagePath: assets/buildings/portals/ChatGPT Image Sep 11, 2025, 10_29_09
+  sourceImagePath: assets/buildings/portals/portal_stone_arch
     PM.png
