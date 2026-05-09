@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5f9d1f6c44f6d24fb1ca354ab56b37d, type: 3}
+  m_Name: RoomTemplate_Entrance
+  m_EditorClassIdentifier: 
+  guid: db6ff4e7-bcb9-49fd-a47b-4a475faa2cc0
+  prefab: {fileID: 0}
+  previousPrefab: {fileID: 0}
+  battleMusicId: 
+  ambientMusicId: 
+  roomNodeType: {fileID: 11400000, guid: 727637646a0829a40bc1ac246edfb9ac, type: 2}
+  lowerBounds: {x: 0, y: 0}
+  upperBounds: {x: 4, y: 4}
+  doorwayList:
+  - position: {x: 2, y: 0}
+    orientation: 2
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 0, y: 0}
+    doorwayCopyTileWidth: 1
+    doorwayCopyTileHeight: 1
+    isConnected: 0
+    isUnavailable: 0
+  spawnPositionArray: []
+  enemiesByLevelList: []
+  roomEnemySpawnParametersList: []

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5f9d1f6c44f6d24fb1ca354ab56b37d, type: 3}
+  m_Name: RoomTemplate_Boss
+  m_EditorClassIdentifier: 
+  guid: 128e4f5e-63ea-4a10-a034-1769bb106793
+  prefab: {fileID: 0}
+  previousPrefab: {fileID: 0}
+  battleMusicId: 
+  ambientMusicId: 
+  roomNodeType: {fileID: 11400000, guid: d66b621be6b87c548a96eff575f08ab2, type: 2}
+  lowerBounds: {x: 0, y: 0}
+  upperBounds: {x: 7, y: 7}
+  doorwayList:
+  - position: {x: 3, y: 7}
+    orientation: 0
+    doorPrefab: {fileID: 0}
+    doorwayStartCopyPosition: {x: 0, y: 0}
+    doorwayCopyTileWidth: 1
+    doorwayCopyTileHeight: 1
+    isConnected: 0
+    isUnavailable: 0
+  spawnPositionArray: []
+  enemiesByLevelList: []
+  roomEnemySpawnParametersList: []
