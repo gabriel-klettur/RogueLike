@@ -43,11 +43,12 @@ namespace Valkur.Gameplay.TileEditor
 
             // Single-column icon toolbar — inner width (60-8-8=44) = BTN_H → square
             const float BTN_H = 44f;
-            CreateToolBtn(t, "Select",  "S",      TileEditorState.Tool.Select,      state, ref refs, onToolChanged, BTN_H);
-            CreateToolBtn(t, "Brush",   "B",      TileEditorState.Tool.Brush,       state, ref refs, onToolChanged, BTN_H);
-            CreateToolBtn(t, "Erase",   "E",      TileEditorState.Tool.Eraser,      state, ref refs, onToolChanged, BTN_H);
-            CreateToolBtn(t, "Fill",    "F",      TileEditorState.Tool.Fill,        state, ref refs, onToolChanged, BTN_H);
-            CreateToolBtn(t, "Pick",    "I",      TileEditorState.Tool.Eyedropper,  state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Select",  "S",      TileEditorState.Tool.Select,         state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Brush",   "B",      TileEditorState.Tool.Brush,          state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Erase",   "E",      TileEditorState.Tool.Eraser,         state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Fill",    "F",      TileEditorState.Tool.Fill,           state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Pick",    "I",      TileEditorState.Tool.Eyedropper,     state, ref refs, onToolChanged, BTN_H);
+            CreateToolBtn(t, "Auto",    "A",      TileEditorState.Tool.AutoTileRegion, state, ref refs, onToolChanged, BTN_H);
 
             BuildSeparator(t);
 

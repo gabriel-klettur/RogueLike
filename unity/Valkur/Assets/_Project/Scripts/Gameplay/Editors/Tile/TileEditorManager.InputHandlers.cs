@@ -34,6 +34,9 @@ namespace Valkur.Gameplay.TileEditor
                 // from View → Zone Grid when they want to see zone boundaries.
                 ApplyViewOverlayVisibility();
                 UpdateBorderToolLabel();
+                // Pull persisted terrain data + auto-cure variants. Safe to call here
+                // even if no overlays exist on disk — it short-circuits.
+                LoadAllTerrainsFromDisk();
                 // Camera stays attached so the player can walk and test tile colliders.
                 // Middle-mouse pan is still available via HandleCameraPan() → DetachFollow.
 
@@ -164,11 +167,12 @@ namespace Valkur.Gameplay.TileEditor
 
             switch (_state.CurrentTool)
             {
-                case TileEditorState.Tool.Brush:    HandleBrushInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Eraser:   HandleEraserInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Fill:     HandleFillInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Eyedropper: HandleEyedropperInput(tilemap, cellPos); break;
-                case TileEditorState.Tool.Select:   HandleSelectInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.Brush:          HandleBrushInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.Eraser:         HandleEraserInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.Fill:           HandleFillInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.Eyedropper:     HandleEyedropperInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.Select:         HandleSelectInput(tilemap, cellPos); break;
+                case TileEditorState.Tool.AutoTileRegion: HandleAutoTileRegionInput(tilemap, cellPos); break;
             }
         }
 

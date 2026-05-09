@@ -65,6 +65,10 @@ namespace Valkur.Gameplay.TileEditor
             _ui?.RefreshToolHighlights();
             _ui?.RefreshSelectModeToggles();
             _ui?.RefreshClipboardButtons();
+            // The Tiles picker swaps content when entering / leaving AutoTileRegion
+            // (raw sprite tiles ↔ terrain chips). Refresh on every tool change so
+            // the swap happens in both directions.
+            _ui?.RefreshTilePicker();
             _ui?.SetStatus($"Tool: {tool}");
             UpdateBorderToolLabel();
         }

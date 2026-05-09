@@ -109,10 +109,10 @@ namespace Valkur.Gameplay.TileEditor
 
         // Compact icon toolbar: inner width = 60 - 8(L) - 8(R) = 44 = BTN_H → perfect square buttons.
         public const float TOOLS_DROP_W = 60f;
-        // 5 tool buttons + Undo/Redo + 1 separator + paddings ≈ 360. Save was removed
-        // since every edit auto-saves on mouse-up (see persistence flushes in the
-        // brush/eraser/fill/colliders/cut/paste handlers).
-        public const float TOOLS_DROP_H = 360f + PANEL_HDR_H;   // 384
+        // 6 tool buttons (Select/Brush/Erase/Fill/Pick/Auto) + Undo/Redo + 1 separator +
+        // paddings ≈ 410. Save was removed since every edit auto-saves on mouse-up
+        // (see persistence flushes in the brush/eraser/fill/colliders/cut/paste handlers).
+        public const float TOOLS_DROP_H = 410f + PANEL_HDR_H;   // 434
         public const float TILES_DROP_W = 256f;
         public const float TILES_DROP_H = 540f + PANEL_HDR_H;   // 564
         public const int   TILES_GRID_COLS = 4;

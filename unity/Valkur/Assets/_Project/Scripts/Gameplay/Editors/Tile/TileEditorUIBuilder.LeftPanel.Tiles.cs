@@ -20,6 +20,7 @@ namespace Valkur.Gameplay.TileEditor
 
             // Selected tile preview row
             BuildSelectedTilePreview(t, ref refs);
+            BuildConfigureRow(t, ref refs);
             BuildSeparator(t);
 
             // Categories
@@ -81,6 +82,32 @@ namespace Valkur.Gameplay.TileEditor
             refs.SelectedTileNameText.alignment = TextAlignmentOptions.Left;
             refs.SelectedTileNameText.color = TEXT_PRIMARY;
             refs.SelectedTileNameText.enableWordWrapping = true;
+        }
+
+        private static void BuildConfigureRow(Transform parent, ref UIRefs refs)
+        {
+            var row = CreateUI("ConfigureRow", parent);
+            row.AddComponent<LayoutElement>().preferredHeight = 26f;
+            var h = row.AddComponent<HorizontalLayoutGroup>();
+            h.spacing = 6f;
+            h.childForceExpandWidth = true;
+            h.childForceExpandHeight = true;
+            h.childControlWidth = true;
+            h.childControlHeight = true;
+            h.padding = new RectOffset(4, 4, 2, 2);
+
+            var btnGo = CreateUI("ConfigBtn", row.transform);
+            var img = btnGo.AddComponent<Image>();
+            img.color = BTN_NORMAL;
+            refs.ConfigureTilesetBtn = btnGo.AddComponent<Button>();
+            var bc = refs.ConfigureTilesetBtn.colors;
+            bc.normalColor = BTN_NORMAL;
+            bc.highlightedColor = BTN_HOVER;
+            bc.pressedColor = BTN_ACTIVE;
+            refs.ConfigureTilesetBtn.colors = bc;
+            refs.ConfigureTilesetBtn.targetGraphic = img;
+            refs.ConfigureTilesetBtnLabel = TileEditorUIHelpers.AddCenteredText(
+                btnGo.transform, "CONFIGURE TILESET", 11f, FontStyles.Bold, TEXT_SECONDARY);
         }
 
         private static void BuildCategoryScroll(Transform parent, ref UIRefs refs)

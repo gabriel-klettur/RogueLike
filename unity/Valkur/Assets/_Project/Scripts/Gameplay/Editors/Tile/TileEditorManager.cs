@@ -177,6 +177,9 @@ namespace Valkur.Gameplay.TileEditor
             // case a future debug/diagnostic surface wants to subscribe.
             _persistence.OnZoneSaved   += zone => _ui?.SetStatus($"Saved zone '{zone}'");
             _persistence.OnSaveFailed  += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
+            // Hand the persistence layer the auto-tile terrain map so saves include
+            // the per-cell terrain matrix alongside the layer matrices.
+            _persistence.TerrainMap = TerrainMap;
         }
 
         /// <summary>
@@ -220,6 +223,7 @@ namespace Valkur.Gameplay.TileEditor
             _persistence = new TileOverlayPersistence(zoneManager, worldGridBuilder, repository: null, worldId: worldId);
             _persistence.OnZoneSaved  += zone => _ui?.SetStatus($"Saved zone '{zone}'");
             _persistence.OnSaveFailed += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
+            _persistence.TerrainMap = TerrainMap;
             Debug.Log($"[TileEditor] Tile-overlay persistence rebound to world '{worldId}'.");
         }
 

@@ -54,12 +54,14 @@ namespace Valkur.Gameplay.TileEditor
                         _openDropdowns.Remove("selectmodes"); };
 
             WireLayerVisibilityButtons();
+            WireConfiguratorButton();
 
             if (_catalog != null)
             {
                 _currentCategory = "";
                 PopulateCategoryTabs();
                 PopulateTileGrid(_currentCategory);
+                RefreshConfiguratorButtonState();
             }
         }
 
@@ -156,6 +158,7 @@ namespace Valkur.Gameplay.TileEditor
             _currentCategory = category;
             PopulateTileGrid(category);
             PopulateCategoryTabs();
+            RefreshConfiguratorButtonState();
         }
 
         private void PopulateTileGrid(string category)

@@ -190,6 +190,11 @@ namespace Valkur.Gameplay.TileEditor
 
         public void RefreshTilePicker()
         {
+            if (_state != null && _state.CurrentTool == TileEditorState.Tool.AutoTileRegion)
+            {
+                PopulateTerrainChips();
+                return;
+            }
             if (_catalog == null) return;
             PopulateTileGrid(_currentCategory);
         }

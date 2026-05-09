@@ -48,6 +48,16 @@ namespace Valkur.Gameplay.TileEditor
 
         public WorldId WorldId => _worldId;
 
+        /// <summary>
+        /// Optional per-cell terrain layer. When non-null, <see cref="SaveZoneInternal"/>
+        /// emits a <c>terrains</c> matrix alongside the layer matrices in the overlay
+        /// JSON, and the loader can restore it via
+        /// <see cref="OverlayLoader.ApplyTerrainsFromPath"/> for auto-tile auto-curation.
+        /// Older overlays without the field load with an empty terrain map (legacy
+        /// manual painting only).
+        /// </summary>
+        public TerrainMap TerrainMap { get; set; }
+
         public event Action OnDirtyChanged;
         public event Action<string> OnZoneSaved;
         public event Action<string, Exception> OnSaveFailed;

@@ -146,6 +146,11 @@ namespace Valkur.Gameplay.TileEditor
             // Panels visibility toggle button (menu bar, left of UX)
             public Image            PanelsToggleBtnImg;
             public TextMeshProUGUI  PanelsToggleBtnTmp;
+
+            // Tileset Configurator wizard — button inside Tiles panel that opens the
+            // Blob16 slot-mapping wizard for the currently-selected category.
+            public Button            ConfigureTilesetBtn;
+            public TextMeshProUGUI   ConfigureTilesetBtnLabel;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,

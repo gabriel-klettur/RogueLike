@@ -203,10 +203,15 @@ namespace Valkur.Gameplay.TileEditor
                     perLayer.Add(new KeyValuePair<string, string[,]>(layer.ToString(), matrix));
             }
 
-            return SerializeOverlay(perLayer, w, h);
+            string[,] terrainMatrix = null;
+            if (TerrainMap != null && TerrainMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
+                terrainMatrix = TerrainMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
+
+            return SerializeOverlay(perLayer, terrainMatrix, w, h);
         }
 
-        private static string SerializeOverlay(List<KeyValuePair<string, string[,]>> perLayer, int w, int h)
+        private static string SerializeOverlay(List<KeyValuePair<string, string[,]>> perLayer,
+                                                string[,] terrainMatrix, int w, int h)
         {
             var sb = new StringBuilder(64 * 1024);
             sb.Append("{\n  \"layers\": {");
@@ -230,7 +235,25 @@ namespace Valkur.Gameplay.TileEditor
                 sb.Append("\n    ]");
             }
 
-            sb.Append("\n  }\n}");
+            sb.Append("\n  }");
+
+            if (terrainMatrix != null)
+            {
+                sb.Append(",\n  \"terrains\": [");
+                for (int row = 0; row < h; row++)
+                {
+                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
+                    for (int col = 0; col < w; col++)
+                    {
+                        if (col > 0) sb.Append(", ");
+                        sb.Append('"').Append(EscapeJson(terrainMatrix[row, col] ?? string.Empty)).Append('"');
+                    }
+                    sb.Append(']');
+                }
+                sb.Append("\n  ]");
+            }
+
+            sb.Append("\n}");
             return sb.ToString();
         }
 

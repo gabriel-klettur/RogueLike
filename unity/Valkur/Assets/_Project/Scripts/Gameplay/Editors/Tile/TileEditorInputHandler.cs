@@ -21,6 +21,7 @@ namespace Valkur.Gameplay.TileEditor
         private InputAction _toolFillAction;
         private InputAction _toolEyedropperAction;
         private InputAction _toolSelectAction;
+        private InputAction _toolAutoTileAction;
         private InputAction _undoAction;
         private InputAction _redoAction;
         private InputAction _ctrlModifier;
@@ -53,6 +54,8 @@ namespace Valkur.Gameplay.TileEditor
             _toolEyedropperAction.Enable();
             _toolSelectAction = new InputAction("ToolSelect", InputActionType.Button, "<Keyboard>/s");
             _toolSelectAction.Enable();
+            _toolAutoTileAction = new InputAction("ToolAutoTile", InputActionType.Button, "<Keyboard>/a");
+            _toolAutoTileAction.Enable();
 
             _undoAction = new InputAction("Undo", InputActionType.Button, "<Keyboard>/z");
             _undoAction.Enable();
@@ -87,6 +90,8 @@ namespace Valkur.Gameplay.TileEditor
             if (eyeNew || UnityEngine.Input.GetKeyDown(KeyCode.I))           return TileEditorState.Tool.Eyedropper;
             bool selNew = _toolSelectAction != null && _toolSelectAction.WasPerformedThisFrame();
             if ((selNew || UnityEngine.Input.GetKeyDown(KeyCode.S)) && !ctrl) return TileEditorState.Tool.Select;
+            bool autoNew = _toolAutoTileAction != null && _toolAutoTileAction.WasPerformedThisFrame();
+            if ((autoNew || UnityEngine.Input.GetKeyDown(KeyCode.A)) && !ctrl) return TileEditorState.Tool.AutoTileRegion;
             return null;
         }
 
@@ -194,6 +199,7 @@ namespace Valkur.Gameplay.TileEditor
             DisposeAction(ref _toolFillAction);
             DisposeAction(ref _toolEyedropperAction);
             DisposeAction(ref _toolSelectAction);
+            DisposeAction(ref _toolAutoTileAction);
             DisposeAction(ref _undoAction);
             DisposeAction(ref _redoAction);
         }

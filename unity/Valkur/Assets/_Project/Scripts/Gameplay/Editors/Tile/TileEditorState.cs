@@ -17,7 +17,14 @@ namespace Valkur.Gameplay.TileEditor
             Brush,
             Eraser,
             Eyedropper,
-            Fill
+            Fill,
+            /// <summary>
+            /// Auto-tile region tool: drag a rectangle, then the system fills the
+            /// rect with a chosen terrain and resolves the correct Blob16 variant
+            /// for every cell in the rect + a one-cell ring around it.
+            /// Driven by the active <see cref="TerrainCatalog"/> + <see cref="TerrainMap"/>.
+            /// </summary>
+            AutoTileRegion
         }
 
         /// <summary>
@@ -128,5 +135,19 @@ namespace Valkur.Gameplay.TileEditor
 
         // Undo support
         public const int MAX_UNDO = 50;
+
+        // ── Auto-tile region tool ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Currently selected terrain ID for the <see cref="Tool.AutoTileRegion"/>
+        /// tool (e.g. "grass", "dirt"). Empty when no terrain has been picked yet.
+        /// </summary>
+        public string SelectedTerrain = "";
+
+        /// <summary>Cell where the active region drag started (left-mouse press), or null when not dragging.</summary>
+        public Vector3Int? RegionDragStart;
+
+        /// <summary>Cell where the active region drag is now (live preview), or null when not dragging.</summary>
+        public Vector3Int? RegionDragCurrent;
     }
 }

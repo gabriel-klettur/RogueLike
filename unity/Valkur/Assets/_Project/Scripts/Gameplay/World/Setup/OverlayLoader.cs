@@ -133,6 +133,48 @@ namespace Valkur.Gameplay.World
                 Debug.Log($"[OverlayLoader] Overlay '{Path.GetFileName(jsonPath)}' loaded at offset ({offsetX},{offsetY}).");
         }
 
+        /// <summary>
+        /// Read the optional <c>terrains</c> matrix from an overlay JSON and stamp
+        /// each non-empty cell into <paramref name="terrainMap"/> at the given
+        /// world-space offset. No-op when the file lacks the field — that's the
+        /// expected case for legacy (pre-Fase-5) overlays.
+        ///
+        /// Returns the number of cells written; 0 if the file is missing the
+        /// terrains field or doesn't exist on disk.
+        /// </summary>
+        public static int ApplyTerrainsFromPath(string jsonPath,
+            Valkur.Gameplay.TileEditor.TerrainMap terrainMap,
+            int offsetX, int offsetY)
+        {
+            if (terrainMap == null) return 0;
+            if (!File.Exists(jsonPath)) return 0;
+
+            string json = File.ReadAllText(jsonPath);
+            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
+            if (root == null) return 0;
+
+            if (!root.TryGetValue("terrains", out var terrainsObj)) return 0;
+            var rows = terrainsObj as List<object>;
+            if (rows == null) return 0;
+
+            int rowCount = rows.Count;
+            int written = 0;
+            for (int row = 0; row < rowCount; row++)
+            {
+                var rowList = rows[row] as List<object>;
+                if (rowList == null) continue;
+                int unityY = offsetY + (rowCount - 1 - row);
+                for (int col = 0; col < rowList.Count; col++)
+                {
+                    string terrain = rowList[col] as string;
+                    if (string.IsNullOrEmpty(terrain)) continue;
+                    terrainMap.SetTerrain(new Vector2Int(offsetX + col, unityY), terrain);
+                    written++;
+                }
+            }
+            return written;
+        }
+
         private static void PaintLayer(Tilemap tilemap, List<object> rows, bool isCollisionLayer,
             int offsetX = 0, int offsetY = 0, int maxWidth = 0, int maxHeight = 0,
             string sourceLabel = null)
