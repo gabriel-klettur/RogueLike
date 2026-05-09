@@ -82,8 +82,6 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
 
             foreach (var room in buildResult.RoomsByNodeId.Values)
             {
-                if (room.prefab == null) continue;
-
                 // Translate template-local bounds into world space + apply
                 // the requested dungeon offset so the whole dungeon sits
                 // inside the target map slot.
@@ -95,7 +93,22 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                     room.lowerBounds.y - room.templateLowerBounds.y,
                     0f);
 
-                var roomGo = Object.Instantiate(room.prefab, worldPos, Quaternion.identity);
+                // Templates without authored prefabs (the sample-generator
+                // path) still need a GameObject to host the InstantiatedRoom
+                // trigger collider. Create a minimal placeholder; the stamper's
+                // defaultFloorTile fallback paints the room's bounding box on
+                // the global Ground layer so the dungeon is visible.
+                GameObject roomGo;
+                if (room.prefab != null)
+                {
+                    roomGo = Object.Instantiate(room.prefab, worldPos, Quaternion.identity);
+                }
+                else
+                {
+                    roomGo = new GameObject($"Room_{room.id?.Substring(0, System.Math.Min(8, room.id.Length))}");
+                    roomGo.transform.position = worldPos;
+                    roomGo.AddComponent<BoxCollider2D>();
+                }
                 if (ctx.SceneContainer != null) roomGo.transform.SetParent(ctx.SceneContainer, true);
                 _spawnedRoots.Add(roomGo);
 
