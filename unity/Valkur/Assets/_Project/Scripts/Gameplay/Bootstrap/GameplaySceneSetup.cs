@@ -127,6 +127,12 @@ namespace Valkur.Gameplay
             // themselves. Replaces the single "Loading world" freeze.
             yield return LoadWorldProgressively();
 
+            // Install the slot watcher unconditionally — even when LoadWorldProgressively
+            // takes the legacy single-overlay branch (no GenerateDungeon call), the
+            // F11 Map Editor's slot loads still need to drive the Udemy regen flow.
+            EnsureDungeonSlotBootstrap();
+            Report("Installing dungeon slot watcher"); yield return null;
+
             RebakeTilemapColliders();
             Report("Rebaking tile colliders"); yield return null;
 

@@ -226,22 +226,18 @@ namespace Valkur.Gameplay
 
             var strategy = DungeonStrategyResolver.Resolve(BspDungeonStrategy.StrategyId);
             strategy.TryGenerate(ctx, out _);
-
-            // Listen for Map slot changes so a future "Dungeon v1" slot load
-            // regenerates the dungeon with the Udemy strategy and teleports the
-            // player to the entrance. The bootstrap above only covered the
-            // initial BSP-style generation; this hook handles every later swap.
-            EnsureDungeonSlotBootstrap();
         }
 
         // One-shot installer for the slot-watcher MonoBehaviour. Idempotent —
-        // re-finds itself instead of duplicating across hot-reloads.
+        // re-finds itself instead of duplicating across hot-reloads. Lives in
+        // a top-level GameObject (not under [World]) so a future ClearWorld
+        // call can't sweep it away mid-session.
         private void EnsureDungeonSlotBootstrap()
         {
             if (FindObjectOfType<World.Dungeon.Udemy.Bootstrap.DungeonSlotBootstrap>() != null) return;
-            var go = new GameObject("DungeonSlotBootstrap");
-            go.transform.SetParent(GetSceneContainer("[World]"), false);
+            var go = new GameObject("[DungeonSlotBootstrap]");
             go.AddComponent<World.Dungeon.Udemy.Bootstrap.DungeonSlotBootstrap>();
+            Debug.Log("[GameplaySceneSetup] DungeonSlotBootstrap installed.");
         }
 
         /// <summary>

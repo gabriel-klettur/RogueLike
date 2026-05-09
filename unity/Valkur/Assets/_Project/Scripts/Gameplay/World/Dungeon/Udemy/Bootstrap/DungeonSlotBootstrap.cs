@@ -20,12 +20,14 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
     ///
     /// Lifetime: instantiated once by <c>GameplaySceneSetup</c> after the
     /// MapEditor exists. Cleans up the previous strategy on every slot
-    /// switch so we don't leak GameObjects between dungeons.
+    /// switch so we don't leak GameObjects between dungeons. Verbose-by-
+    /// default logging because slot regeneration is a low-frequency event
+    /// where silent failures are very confusing for a user holding F11.
     /// </summary>
     [DisallowMultipleComponent]
     public class DungeonSlotBootstrap : MonoBehaviour
     {
-        // Resources path (Resources.Load drops the leading folder).
+        // Resources path (Resources.Load drops the leading "Resources/" folder).
         private const string DungeonLevelResourcePath = "Dungeon/Samples/DungeonLevel_Demo";
         private const string NodeTypeListResourcePath = "Dungeon/Samples/RoomNodeTypeList";
         private const string DungeonConfigResourcePath = "Dungeon/Samples/DungeonConfig_Default";
@@ -33,13 +35,15 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
         private const string UdemySlotPrefix = "Dungeon";
 
         private UdemyDungeonStrategy _activeStrategy;
-        private string _lastHandledSlot;
+        private string _lastHandledSlot = "<none>"; // sentinel: never handled
+        private bool _subscribed;
 
-        private void OnEnable()
+        private void Awake()
         {
-            // Manager may not exist on first enable — retry via Update if so.
-            TrySubscribe();
+            Debug.Log("[DungeonSlotBootstrap] Awake — installed and waiting for MapEditorManager.");
         }
+
+        private void OnEnable() => TrySubscribe();
 
         private void OnDisable()
         {
@@ -48,10 +52,9 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
             _subscribed = false;
         }
 
-        private bool _subscribed;
-
         private void Update()
         {
+            // Manager is created lazily — keep retrying until we can latch on.
             if (!_subscribed) TrySubscribe();
         }
 
@@ -60,30 +63,46 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
             if (_subscribed) return;
             var mgr = MapEditorManager.Instance;
             if (mgr == null) return;
+
             mgr.OnMapSlotsChanged += HandleSlotsChanged;
             _subscribed = true;
-            // Pick up the slot that was already loaded by bootstrap.
+            Debug.Log($"[DungeonSlotBootstrap] Subscribed to OnMapSlotsChanged. " +
+                      $"ActiveMapSlot='{mgr.ActiveMapSlot}'.");
+
+            // Force a first pass so we pick up the slot that was already
+            // active when bootstrap finished (the "load on start" case).
             HandleSlotsChanged();
         }
 
         private void HandleSlotsChanged()
         {
             var mgr = MapEditorManager.Instance;
-            if (mgr == null) return;
+            if (mgr == null)
+            {
+                Debug.LogWarning("[DungeonSlotBootstrap] OnMapSlotsChanged fired but Instance is null.");
+                return;
+            }
 
             var slot = mgr.ActiveMapSlot ?? string.Empty;
+            Debug.Log($"[DungeonSlotBootstrap] HandleSlotsChanged → slot='{slot}', last='{_lastHandledSlot}'.");
             if (slot == _lastHandledSlot) return;
             _lastHandledSlot = slot;
 
             // Tear down whatever the previous slot generated (Udemy or BSP).
             if (_activeStrategy != null)
             {
+                Debug.Log("[DungeonSlotBootstrap] Cleaning up previous Udemy strategy.");
                 _activeStrategy.Cleanup();
                 _activeStrategy = null;
             }
 
-            if (!IsUdemySlot(slot)) return;
+            if (!IsUdemySlot(slot))
+            {
+                Debug.Log($"[DungeonSlotBootstrap] Slot '{slot}' is not a Udemy slot (no '{UdemySlotPrefix}*' prefix). Skipping.");
+                return;
+            }
 
+            Debug.Log($"[DungeonSlotBootstrap] Slot '{slot}' matches Udemy prefix → generating dungeon.");
             TryGenerateUdemyDungeon();
         }
 
@@ -101,21 +120,23 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
 
             if (level == null || nodeTypes == null || config == null)
             {
-                Debug.LogWarning(
-                    "[DungeonSlotBootstrap] Missing sample assets under Resources/Dungeon/Samples — " +
-                    "run 'Valkur > Dungeon > Create Sample Assets' first.");
+                Debug.LogError(
+                    $"[DungeonSlotBootstrap] Missing sample assets — level={level != null}, " +
+                    $"nodeTypes={nodeTypes != null}, config={config != null}. " +
+                    "Run 'Valkur > Dungeon > Create Sample Assets' first.");
                 return;
             }
+
+            Debug.Log($"[DungeonSlotBootstrap] Loaded assets: level='{level.levelName}', " +
+                      $"nodeTypes ({nodeTypes.List.Count} types), config (default penalty={config.defaultMovementPenalty}).");
 
             var gridBuilder = FindObjectOfType<WorldGridBuilder>();
             if (gridBuilder == null)
             {
-                Debug.LogWarning("[DungeonSlotBootstrap] No WorldGridBuilder in scene; cannot stamp dungeon.");
+                Debug.LogError("[DungeonSlotBootstrap] No WorldGridBuilder in scene; cannot stamp dungeon.");
                 return;
             }
 
-            // Re-register the Udemy strategy so external callers
-            // (DungeonStrategyResolver.Resolve("udemy")) pick up the live one too.
             _activeStrategy = new UdemyDungeonStrategy(level, nodeTypes, config);
             DungeonStrategyResolver.Register(_activeStrategy);
 
@@ -139,15 +160,19 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
 
             TeleportPlayerToEntrance(result.EntrancePosition);
             Debug.Log(
-                $"[DungeonSlotBootstrap] Generated Udemy dungeon for slot '{MapEditorManager.Instance?.ActiveMapSlot}': " +
-                $"{result.RoomBounds.Count} rooms, entrance @ {result.EntrancePosition}.");
+                $"[DungeonSlotBootstrap] ✅ Generated Udemy dungeon for slot '{MapEditorManager.Instance?.ActiveMapSlot}': " +
+                $"{result.RoomBounds.Count} rooms, entrance tile @ {result.EntrancePosition}.");
         }
 
         // Mirrors MapEditorManager.TeleportPlayerToWorldPosition — same camera reset path.
         private static void TeleportPlayerToEntrance(Vector2Int entranceTile)
         {
             var playerT = EntityRegistry.PlayerTransform;
-            if (playerT == null) return;
+            if (playerT == null)
+            {
+                Debug.LogWarning("[DungeonSlotBootstrap] EntityRegistry.PlayerTransform is null; teleport skipped.");
+                return;
+            }
 
             // Tile coords are world units in Valkur (PPU = cellSize = 1f), with
             // a half-tile offset so the player stands on the tile center rather
@@ -162,6 +187,7 @@ namespace Valkur.Gameplay.World.Dungeon.Udemy.Bootstrap
                 camSetup.ReattachFollow();
                 camSetup.SnapToFollowTarget(newPos - oldPos);
             }
+            Debug.Log($"[DungeonSlotBootstrap] Teleported player from {oldPos} → {newPos}.");
         }
     }
 }
