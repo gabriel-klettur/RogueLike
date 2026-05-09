@@ -148,6 +148,7 @@ Hard rules for **every** asset under `Assets/_Project/`:
 **Vendor packs keep their original internal structure intact** (the `Demo/`, `Materials/`, `Prefabs/` PascalCase subfolders that ship with the pack) so they can be updated by re-importing from the Asset Store without merge conflicts. The `snake_case` rule applies to folders we author, not to third-party drops.
 | Backups | NEVER inside `Assets/` — git is the backup | (deleted) |
 | Tier-2 recovery | `_Project/Data/Backups/` — **whitelisted exception** | maintained by `BuildingsDataGuard` + `MapEditorDataGuard` |
+| Catalog buckets | `_Project/Data/Catalogs/<Name>/` keeps PascalCase — **whitelisted exception** | loaded by string name via `Resources.Load("Catalogs/<Name>")`; renaming forces matching path edits in many call sites |
 | Empty folders | Don't keep folders with only `.meta` and no children | (deleted) |
 
 The two-tier rule (`PascalCase` for top-level, `snake_case` for everything below) keeps Unity's standard project layout (`Resources/`, `StreamingAssets/`, `Scenes/`) intact while giving every domain folder a single, predictable convention.
