@@ -12,7 +12,7 @@ namespace Valkur.Editor
     /// </summary>
     public static class CharacterAtlasBuilder
     {
-        private const string AtlasPath = "Assets/_Project/Art/Characters/Atlas_Characters_Players.spriteatlas";
+        private const string AtlasPath = "Assets/_Project/SpriteAtlases/players.spriteatlas";
         private const string CharactersFolder = "Assets/_Project/Art/Characters";
         private const string PlayerCatalogRoot = "Assets/_Project/Data/Catalogs/Players";
 

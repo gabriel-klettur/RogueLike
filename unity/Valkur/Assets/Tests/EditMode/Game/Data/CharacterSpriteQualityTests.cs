@@ -31,7 +31,7 @@ namespace Valkur.Tests.EditMode.Game.Data
         private const int PlayerCharacterPPU   = 64;
         private const int MinMaxTextureSize    = 8192;
         private const string AtlasPath        =
-            "Assets/_Project/Art/Characters/Atlas_Characters_Players.spriteatlas";
+            "Assets/_Project/SpriteAtlases/players.spriteatlas";
 
         // ── Test-case source ────────────────────────────────────────────────
 
