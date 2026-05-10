@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace Valkur.Gameplay.Editors
@@ -17,6 +18,12 @@ namespace Valkur.Gameplay.Editors
     ///   - Editor close-> caller invokes <see cref="Reset"/> and
     ///                    <c>CameraSetup.ReattachFollow()</c> to restore follow.
     ///
+    /// UI-priority gate: if the MMB press lands on a UI element
+    /// (EventSystem reports the pointer is over a GameObject), the camera pan
+    /// is SUPPRESSED for the entire press-release cycle. Lets panels with
+    /// their own MMB-drag panning — e.g. the Tile Editor's TILES picker —
+    /// own the gesture without the world camera lurching at the same time.
+    ///
     /// Owned (not a MonoBehaviour) by each editor; query input every frame via
     /// <see cref="Tick"/> while the editor is active.
     /// </summary>
@@ -24,6 +31,10 @@ namespace Valkur.Gameplay.Editors
     {
         private Camera  _mainCamera;
         private bool    _isPanning;
+        // Set on MMB press when the pointer was over UI; locks the camera
+        // out for the rest of that drag even if the cursor leaves the UI.
+        // Cleared on MMB release so the NEXT press over world re-enables panning.
+        private bool    _suppressedThisGesture;
         private Vector2 _anchorScreenPos;
         private Vector3 _anchorCamPos;
 
@@ -46,26 +57,44 @@ namespace Valkur.Gameplay.Editors
 
             if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonPressedThisFrame())
             {
-                // Idempotent: DetachFollow returns early if already detached
-                // (BuildingsRuntimeEditor detaches in Activate; others rely on
-                // first MMB press to detach lazily).
-                camSetup.DetachFollow();
-                Transform anchorT = camSetup.GetDetachedTransform();
-                if (anchorT != null)
+                // If the press starts over UI, that UI element (typically a
+                // ScrollRect inside a panel) is the legitimate owner of the
+                // MMB drag — suppress camera pan for this whole gesture.
+                if (IsPointerOverUI())
                 {
-                    _isPanning = true;
-                    _anchorScreenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
-                    _anchorCamPos    = anchorT.position;
+                    _suppressedThisGesture = true;
+                    _isPanning             = false;
+                }
+                else
+                {
+                    _suppressedThisGesture = false;
+                    // Idempotent: DetachFollow returns early if already detached
+                    // (BuildingsRuntimeEditor detaches in Activate; others rely on
+                    // first MMB press to detach lazily).
+                    camSetup.DetachFollow();
+                    Transform anchorT = camSetup.GetDetachedTransform();
+                    if (anchorT != null)
+                    {
+                        _isPanning = true;
+                        _anchorScreenPos = Valkur.Core.Input.MouseInputManager.GetScreenMousePosition();
+                        _anchorCamPos    = anchorT.position;
+                    }
                 }
             }
             else if (Valkur.Core.Input.MouseInputManager.WasMiddleMouseButtonReleasedThisFrame())
             {
                 // Camera stays at the panned position; ReattachFollow() is the
                 // editor's responsibility on close (mirrors Tile + Buildings).
-                _isPanning = false;
+                _isPanning             = false;
+                _suppressedThisGesture = false;
             }
 
-            if (_isPanning && Valkur.Core.Input.MouseInputManager.IsMiddleMouseButtonPressed())
+            // While the press is held, update the camera position only if the
+            // gesture was NOT born over UI. Even if the cursor leaves the UI
+            // mid-drag, the suppression stays sticky so the camera doesn't
+            // "jump in" half-way through a UI pan.
+            if (_isPanning && !_suppressedThisGesture
+                && Valkur.Core.Input.MouseInputManager.IsMiddleMouseButtonPressed())
             {
                 Transform vcamT = camSetup.GetDetachedTransform();
                 if (vcamT == null) return;
@@ -87,7 +116,19 @@ namespace Valkur.Gameplay.Editors
         /// </summary>
         public void Reset()
         {
-            _isPanning = false;
+            _isPanning             = false;
+            _suppressedThisGesture = false;
+        }
+
+        /// <summary>
+        /// Returns true when the mouse cursor is hovering any UI raycast target
+        /// managed by the active <see cref="EventSystem"/>. Used to gate the
+        /// camera pan: clicks on panels must NOT also drag the world camera.
+        /// </summary>
+        private static bool IsPointerOverUI()
+        {
+            var es = EventSystem.current;
+            return es != null && es.IsPointerOverGameObject();
         }
     }
 }
