@@ -1,5 +1,5 @@
 {
-    "schemaVersion": "1.0",
+    "schemaVersion": "1.2",
     "restrictTileEditingToEditableZones": true,
     "nextZoneIndex": 17,
     "zones": [
@@ -248,9 +248,17 @@
             "gridOffsetX": 0,
             "gridOffsetY": 0,
             "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_portals_A",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
         }
     ],
     "hasLastPlayerPosition": true,
-    "lastPlayerWorldX": 175.19126892089845,
-    "lastPlayerWorldY": 76.16505432128906
+    "lastPlayerWorldX": 172.3400115966797,
+    "lastPlayerWorldY": 83.81996154785156,
+    "portals": [],
+    "biomeBuildings": []
 }
