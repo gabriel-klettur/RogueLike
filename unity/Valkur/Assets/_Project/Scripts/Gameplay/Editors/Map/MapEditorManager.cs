@@ -219,6 +219,16 @@ namespace Valkur.Gameplay.MapEditor
                 return;
             }
 
+            // Stamp placement: same arm-then-click pattern as AddZone / PlacePortal.
+            // The ignore-same-frame guard prevents the click that armed the flow
+            // (over the Stamp panel's "Place" button) from immediately stamping.
+            if (_isStampFlowActive && _input.WasSelectPressed() && !_input.IsPointerOverUI()
+                && Time.frameCount != _stampFlowStartedFrame)
+            {
+                HandleStampClickAtCursor();
+                return;
+            }
+
             if (_input.WasSelectPressed() && !_input.IsPointerOverUI())
                 SelectZoneAtCursor();
 
@@ -344,6 +354,13 @@ namespace Valkur.Gameplay.MapEditor
                 OnConfirmPlace = OnConfirmPlacePortalFromUI,
             };
 
+            var stampCallbacks = new MapEditorUIBuilder.StampCallbacks
+            {
+                DiscoverStamps = DiscoverStampManifests,
+                OnPlaceStamp   = BeginStampFlow,
+                OnCancelStamp  = CancelStampFlow,
+            };
+
             _ui.Initialize(
                 _state,
                 OnZoneSelected,
@@ -360,7 +377,8 @@ namespace Valkur.Gameplay.MapEditor
                 SetRestrictTileEditing,
                 OnConfirmGenerateBiomes,
                 slotCallbacks,
-                portalCallbacks);
+                portalCallbacks,
+                stampCallbacks);
             _ui.SetVisible(false);
             _ui.SetRestrictToggle(_state.RestrictTileEditingToEditableZones);
 

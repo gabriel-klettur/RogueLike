@@ -178,7 +178,8 @@ namespace Valkur.Gameplay.MapEditor
                 _onRestrictEditChanged,
                 _onConfirmGenerateBiomes,
                 _mapSlotCallbacks,
-                _portalCallbacks);
+                _portalCallbacks,
+                _stampCallbacks);
         }
 
     }

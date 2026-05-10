@@ -31,6 +31,7 @@ namespace Valkur.Gameplay.MapEditor
         private System.Action<MapEditorUIBuilder.BiomeDialogResult> _onConfirmGenerateBiomes;
         private MapEditorUIBuilder.MapSlotCallbacks _mapSlotCallbacks;
         private MapEditorUIBuilder.PortalCallbacks _portalCallbacks;
+        private MapEditorUIBuilder.StampCallbacks _stampCallbacks;
 
         // Portal placement mode visual indicator state.
         private bool _isPlacePortalMode;
@@ -78,6 +79,7 @@ namespace Valkur.Gameplay.MapEditor
             SetDropdownVisible("props",    _refs.PropsDropdown);
             SetDropdownVisible("biomes",   _refs.BiomesDropdown);
             SetDropdownVisible("maps",     _refs.MapsDropdown);
+            SetDropdownVisible("stamp",    _refs.StampDropdown);
             UpdateMenuBtnStyles();
         }
 
@@ -99,6 +101,8 @@ namespace Valkur.Gameplay.MapEditor
                 _refs.BiomesMenuBtnImg,   _refs.BiomesMenuBtnTmp,   _openDropdowns.Contains("biomes"));
             MapEditorUIBuilder.ApplyMenuBtnStyle(
                 _refs.MapsMenuBtnImg,     _refs.MapsMenuBtnTmp,     _openDropdowns.Contains("maps"));
+            MapEditorUIBuilder.ApplyMenuBtnStyle(
+                _refs.StampMenuBtnImg,    _refs.StampMenuBtnTmp,    _openDropdowns.Contains("stamp"));
         }
 
         public void Initialize(
@@ -117,7 +121,8 @@ namespace Valkur.Gameplay.MapEditor
             System.Action<bool> onRestrictEditChanged,
             System.Action<MapEditorUIBuilder.BiomeDialogResult> onConfirmGenerateBiomes,
             MapEditorUIBuilder.MapSlotCallbacks mapSlotCallbacks,
-            MapEditorUIBuilder.PortalCallbacks portalCallbacks)
+            MapEditorUIBuilder.PortalCallbacks portalCallbacks,
+            MapEditorUIBuilder.StampCallbacks stampCallbacks)
         {
             _state = state;
             _onZoneSelected = onZoneSelected;
@@ -135,6 +140,7 @@ namespace Valkur.Gameplay.MapEditor
             _onConfirmGenerateBiomes = onConfirmGenerateBiomes;
             _mapSlotCallbacks = mapSlotCallbacks;
             _portalCallbacks = portalCallbacks;
+            _stampCallbacks = stampCallbacks;
 
             BuildUI();
             SetVisible(false);
@@ -204,6 +210,7 @@ namespace Valkur.Gameplay.MapEditor
                 SetDropdownVisible("props",    _refs.PropsDropdown);
                 SetDropdownVisible("biomes",   _refs.BiomesDropdown);
                 SetDropdownVisible("maps",     _refs.MapsDropdown);
+                SetDropdownVisible("stamp",    _refs.StampDropdown);
                 UpdateMenuBtnStyles();
                 HideAddZoneDialog();
                 HideDeleteZoneDialog();

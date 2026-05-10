@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay.TileEditor;
+using Valkur.Gameplay.World;
 using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
@@ -93,6 +95,7 @@ namespace Valkur.Gameplay.MapEditor
         private const float PROPS_BTN_W    = 68f;
         private const float BIOMES_BTN_W   = 80f;
         private const float MAPS_BTN_W     = 70f;
+        private const float STAMP_BTN_W    = 70f;
 
         // ── BuildAll ─────────────────────────────────────────────────────────────
 
@@ -111,7 +114,8 @@ namespace Valkur.Gameplay.MapEditor
             Action<bool>           onRestrictEditChanged,
             Action<BiomeDialogResult> onConfirmGenerateBiomes,
             MapSlotCallbacks       mapSlotCallbacks,
-            PortalCallbacks        portalCallbacks)
+            PortalCallbacks        portalCallbacks,
+            StampCallbacks         stampCallbacks)
         {
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
 
@@ -125,10 +129,26 @@ namespace Valkur.Gameplay.MapEditor
                 onToggleSelectedZoneEditable, onRestrictEditChanged);
             BuildBiomesPanel(canvasT, ref refs, onConfirmGenerateBiomes);
             BuildMapsPanel(canvasT, ref refs, mapSlotCallbacks);
+            BuildStampPanel(canvasT, ref refs,
+                stampCallbacks.DiscoverStamps,
+                stampCallbacks.OnPlaceStamp,
+                stampCallbacks.OnCancelStamp);
             BuildAddZoneDialog(canvasT, ref refs, onConfirmAddZone, onCancelAddZoneFlow);
             BuildDeleteZoneDialog(canvasT, ref refs, onConfirmDeleteSelectedZone, onCancelDeleteZone);
             BuildPlacePortalDialog(canvasT, ref refs, portalCallbacks);
             return refs;
+        }
+
+        /// <summary>
+        /// Bundle for the Map Editor Stamp panel callbacks. Mirrors
+        /// <see cref="MapSlotCallbacks"/> / <see cref="PortalCallbacks"/> so the
+        /// BuildAll signature stays manageable.
+        /// </summary>
+        public struct StampCallbacks
+        {
+            public Func<List<StampDescriptor>> DiscoverStamps;
+            public Action<string, TilemapLayerSetup.TilemapLayer> OnPlaceStamp;
+            public Action OnCancelStamp;
         }
 
         /// <summary>
@@ -220,6 +240,8 @@ namespace Valkur.Gameplay.MapEditor
                 () => onToggle?.Invoke("biomes"),   out refs.BiomesMenuBtnTmp);
             refs.MapsMenuBtnImg     = AddMenuBtn(t, "Maps v",     MAPS_BTN_W,
                 () => onToggle?.Invoke("maps"),     out refs.MapsMenuBtnTmp);
+            refs.StampMenuBtnImg    = AddMenuBtn(t, "Stamp v",    STAMP_BTN_W,
+                () => onToggle?.Invoke("stamp"),    out refs.StampMenuBtnTmp);
 
             // Flexible spacer pushes status text to the right
             CreateUI("Spacer", t).AddComponent<LayoutElement>().flexibleWidth = 1f;
