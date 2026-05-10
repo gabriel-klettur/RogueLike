@@ -1,7 +1,7 @@
 {
     "schemaVersion": "1.2",
     "restrictTileEditingToEditableZones": true,
-    "nextZoneIndex": 17,
+    "nextZoneIndex": 18,
     "zones": [
         {
             "zoneName": "dungeon",
@@ -254,11 +254,17 @@
             "gridOffsetX": 0,
             "gridOffsetY": 0,
             "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_0_2",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
         }
     ],
     "hasLastPlayerPosition": true,
-    "lastPlayerWorldX": 172.3400115966797,
-    "lastPlayerWorldY": 83.81996154785156,
+    "lastPlayerWorldX": 27.089643478393556,
+    "lastPlayerWorldY": 29.253936767578126,
     "portals": [],
     "biomeBuildings": []
 }

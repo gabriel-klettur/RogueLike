@@ -28,7 +28,11 @@
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\" -Recurse -Filter \"*Editor*\" -Directory)",
       "Bash(sed 's/.cs$//')",
       "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\\\\Assets\\\\_Project\\\\Art\\\\Tiles\\\\TileAssets\\\\\" -Directory | Select-Object -ExpandProperty Name)",
-      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\" -Directory)"
+      "Bash(Get-ChildItem -Path \"d:\\\\Python\\\\RogueLike\\\\unity\\\\Valkur\" -Directory)",
+      "Bash(python -c ' *)",
+      "Bash(identify \"d:/Python/RogueLike/unity/Valkur/Assets/_Project/Art/Buildings/castles/SNES - Secret of Mana - Maps - Pandora Castle \\(Exterior\\).png\")",
+      "Bash(python3)",
+      "Bash(dir 'd:\\\\Python')"
     ]
   }
 }
