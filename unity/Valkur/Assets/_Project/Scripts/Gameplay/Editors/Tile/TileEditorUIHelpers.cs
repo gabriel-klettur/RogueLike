@@ -113,23 +113,42 @@ namespace Valkur.Gameplay.TileEditor
         // paddings ≈ 410. Save was removed since every edit auto-saves on mouse-up
         // (see persistence flushes in the brush/eraser/fill/colliders/cut/paste handlers).
         public const float TOOLS_DROP_H = 410f + PANEL_HDR_H;   // 434
-        public const float TILES_DROP_W = 256f;
+        // Wider than the historical 256 px so the top row (SELECTED preview +
+        // RULESET button on the left, CATEGORIES on the right) has comfortable
+        // breathing room. With 256 the SELECTED tile name and "NO RULESET FOR
+        // CATEGORY" both wrapped to 2-3 lines, which the user flagged as
+        // "muy pegados". 384 lets each side of the top row settle at ~200/160 px
+        // and the TILES grid below also gets noticeably more tiles per visible
+        // row, since the picker viewport scales with the panel content width.
+        public const float TILES_DROP_W = 384f;
         public const float TILES_DROP_H = 540f + PANEL_HDR_H;   // 564
         public const int   TILES_GRID_COLS = 4;
         public const float TILES_GRID_SPACING = 4f;
         public const float TILES_SCROLLBAR_W = 12f;
-        // 4-column tile picker cell sized to roughly match the in-game tile footprint.
-        // TILES_DROP_W(256) - VLG padding(8+8) - Scrollbar(12) - GridLayout padding(4+4) - 3*spacing(4) = 212; /4 = 53. Use 52 for a clean integer.
-        public const float TILES_CELL_SIZE = 52f;
+        // 4-column tile picker cell when a legacy (non-tilesheet) category is
+        // active. Bumped up from 52 → 64 since the wider panel has the room.
+        public const float TILES_CELL_SIZE = 64f;
         public const float TILES_ROW_WIDTH = TILES_DROP_W - 16f - TILES_SCROLLBAR_W - 8f;
-        public const float LAYERS_DROP_W = 240f;
+        // Layers panel — sized to fit the longest layer name ("OverheadDetails", 15 chars
+        // at fontSize 11) plus the Vis (16) + Idx (18) icons and inner padding (~50 px).
+        public const float LAYERS_DROP_W = 155f;
         public const float LAYERS_DROP_H = 300f + PANEL_HDR_H;      // 324
+        // Generic "properties panel" width — reused by Items/Buildings/FSM editors.
+        // Don't shrink without checking those callers.
         public const float INSPECTOR_DROP_W = 250f;
         public const float INSPECTOR_DROP_H = 256f + PANEL_HDR_H;   // 280
+        // Tile Editor only: the Inspector here just shows three small tile previews
+        // + layer info. Sized to fit a typical 15-char tile name (e.g. "pandora_r06_c07")
+        // next to the 32-px preview thumbnail; longer names fall back to ellipsis.
+        public const float TILE_INSPECTOR_DROP_W = 170f;
         public const float COLLIDERS_DROP_W = 230f;
-        public const float COLLIDERS_DROP_H = 220f + PANEL_HDR_H;   // 244
+        // Content: Show toggle (30) + sep (1) + EDIT MODE label (16) + Draw (30) + Erase (30)
+        // + VLG padding (12) + spacing × 4 (16) ≈ 135. + 1 px content/header gap.
+        public const float COLLIDERS_DROP_H = 140f + PANEL_HDR_H;   // 164
         public const float SIZE_DROP_W = 200f;
-        public const float SIZE_DROP_H = 150f + PANEL_HDR_H;        // 174
+        // Content: value label (32) + slider row (28) +
+        // VLG padding (12) + spacing × 1 (4) ≈ 76.
+        public const float SIZE_DROP_H = 78f + PANEL_HDR_H;         // 102
         public const float VIEW_DROP_W = 230f;
         public const float VIEW_DROP_H = 130f + PANEL_HDR_H;        // 154
         public const float UX_DROP_W   = 320f;

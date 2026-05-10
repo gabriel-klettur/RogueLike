@@ -132,7 +132,6 @@ namespace Valkur.Gameplay.TileEditor
                 OnTileSelected, OnToolChanged, OnLayerChanged, OnBrushSizeChanged,
                 OnLayerVisibilityChanged, OnUndoClicked, OnRedoClicked,
                 OnShowCollidersClicked, OnDrawCollidersClicked, OnEraseCollidersClicked,
-                OnAutoGenerateCollidersClicked, OnClearAllCollidersClicked,
                 onPerfToggle: null,
                 onShowGridLinesClicked: OnShowGridLinesClicked,
                 onShowZoneGridClicked:  OnShowZoneGridClicked,

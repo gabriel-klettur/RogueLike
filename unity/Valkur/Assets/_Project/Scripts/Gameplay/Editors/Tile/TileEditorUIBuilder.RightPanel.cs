@@ -90,7 +90,7 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildInspectorDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs)
         {
             refs.InspectorDropdown = MakeDropdownPanel("InspectorDropdown", canvasT,
-                PanelDock.TopRight, InspectorX, InspectorY, INSPECTOR_DROP_W, INSPECTOR_DROP_H,
+                PanelDock.TopRight, InspectorX, InspectorY, TILE_INSPECTOR_DROP_W, INSPECTOR_DROP_H,
                 "Inspector", out var inspectorContent, out refs.InspectorPanelDrag);
 
             var t = inspectorContent;

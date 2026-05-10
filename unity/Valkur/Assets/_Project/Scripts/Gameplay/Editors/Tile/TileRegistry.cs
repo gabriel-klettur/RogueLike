@@ -46,6 +46,35 @@ namespace Valkur.Gameplay.TileEditor
             _namesByTile[tile] = name;
         }
 
+        /// <summary>
+        /// Drop the cached Tile registered under <paramref name="name"/>, if any.
+        /// Used by callers (e.g. <see cref="TerrainTileResolver.ResolveTile"/>)
+        /// that detected the cached entry has a destroyed sprite and want a
+        /// fresh wrapping created the next time the same name is requested.
+        /// </summary>
+        public void Unregister(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (_tilesByName.TryGetValue(name, out var tile))
+            {
+                _tilesByName.Remove(name);
+                if (tile != null) _namesByTile.Remove(tile);
+            }
+        }
+
+        /// <summary>
+        /// Reset the registry to its uninitialized state. Primarily for tests:
+        /// EditMode test fixtures destroy the sprites they create in TearDown,
+        /// which would leave Tile instances pointing at destroyed sprites in
+        /// the cache. Calling this in TearDown guarantees test isolation.
+        /// </summary>
+        public void Clear()
+        {
+            _catalog = null;
+            _tilesByName.Clear();
+            _namesByTile.Clear();
+        }
+
         public TileBase GetTile(string name)
         {
             _tilesByName.TryGetValue(name, out var tile);

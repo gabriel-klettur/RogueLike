@@ -149,6 +149,9 @@ namespace Valkur.Gameplay.TileEditor
             _state.RectDragCurrent = null;
             _state.IsDragging = false;
             ApplySelectionOverlay();
+            // The picker mirrors the same Single/Rect/Multi semantics, so the
+            // user expects "Clear Selection" to wipe both surfaces in one click.
+            _ui?.ClearTilesetSelection();
             _ui?.SetStatus("Selection cleared");
             _ui?.RefreshClipboardButtons();
         }

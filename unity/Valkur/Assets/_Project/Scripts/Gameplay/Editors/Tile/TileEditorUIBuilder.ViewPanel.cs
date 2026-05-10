@@ -15,7 +15,7 @@ namespace Valkur.Gameplay.TileEditor
     public static partial class TileEditorUIBuilder
     {
         // Continues the right-edge stack: Inspector → Colliders → Size → View.
-        private static float ViewX => PANEL_GAP + INSPECTOR_DROP_W + PANEL_GAP
+        private static float ViewX => PANEL_GAP + TILE_INSPECTOR_DROP_W + PANEL_GAP
                                     + COLLIDERS_DROP_W + PANEL_GAP
                                     + SIZE_DROP_W + PANEL_GAP;
         private static float ViewY => PANEL_TOP_OFFSET;

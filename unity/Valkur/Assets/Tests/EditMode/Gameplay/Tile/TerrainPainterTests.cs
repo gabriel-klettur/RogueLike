@@ -43,6 +43,15 @@ namespace Valkur.Tests.EditMode.Gameplay.Tile
                 if (so != null) Object.DestroyImmediate(so);
             _scriptableObjects.Clear();
 
+            // Clear caches that out-live the test boundary. TileRegistry caches
+            // Tile instances by sprite name; without this, a Tile from the
+            // previous test (whose sprite we just destroyed above) would
+            // leak into the next test and trip MissingReferenceException
+            // when its `.sprite.name` is read. The production resolver is
+            // also defensive (TerrainTileResolver.IsCachedTileStillValid),
+            // but clearing here keeps the test suite's failure mode obvious
+            // if the resolver's defence ever regresses.
+            TileRegistry.Instance.Clear();
             TerrainCatalogLoader.InvalidateCache();
         }
 

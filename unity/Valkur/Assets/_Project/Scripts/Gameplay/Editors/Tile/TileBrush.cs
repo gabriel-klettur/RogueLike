@@ -121,6 +121,38 @@ namespace Valkur.Gameplay.TileEditor
         {
             return tilemap.GetTile(cellPos);
         }
+
+        /// <summary>
+        /// Stamp a heterogeneous TileBase pattern onto the tilemap. <paramref name="anchor"/>
+        /// is the world cell that maps to <c>pattern[0, 0]</c>; the rest of the pattern
+        /// extends right (+X) and down (-Y), matching the row/col convention used by the
+        /// tileset migration tool. Null entries in the pattern are skipped (preserve the
+        /// existing tile underneath). Returns the edit list so callers can append it to a
+        /// <see cref="TileEditBatch"/> for undo/redo grouping.
+        /// </summary>
+        public static List<TileEdit> Stamp(Tilemap tilemap, Vector3Int anchor,
+            TileBase[,] pattern, Func<Vector3Int, bool> canEditCell = null)
+        {
+            var edits = new List<TileEdit>();
+            if (tilemap == null || pattern == null) return edits;
+            int rows = pattern.GetLength(0);
+            int cols = pattern.GetLength(1);
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    var tile = pattern[r, c];
+                    if (tile == null) continue;
+                    var pos = new Vector3Int(anchor.x + c, anchor.y - r, 0);
+                    if (canEditCell != null && !canEditCell(pos)) continue;
+                    var oldTile = tilemap.GetTile(pos);
+                    if (oldTile == tile) continue;
+                    edits.Add(new TileEdit(pos, oldTile, tile));
+                    tilemap.SetTile(pos, tile);
+                }
+            }
+            return edits;
+        }
     }
 
     /// <summary>

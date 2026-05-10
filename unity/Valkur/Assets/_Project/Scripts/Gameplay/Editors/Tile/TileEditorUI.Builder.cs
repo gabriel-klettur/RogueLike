@@ -31,7 +31,6 @@ namespace Valkur.Gameplay.TileEditor
                 _onToolChanged, _onLayerChanged, _onBrushSizeChanged, ToggleDropdown,
                 _onUndo, _onRedo,
                 _onShowCollidersClicked, _onDrawCollidersClicked, _onEraseCollidersClicked,
-                _onAutoGenerateCollidersClicked, _onClearAllCollidersClicked,
                 _onPerfToggle, ToggleAllPanels,
                 _onShowGridLinesClicked, _onShowZoneGridClicked,
                 _onSelectModeChanged, _onCopyClicked, _onCutClicked,
@@ -55,6 +54,7 @@ namespace Valkur.Gameplay.TileEditor
 
             WireLayerVisibilityButtons();
             WireConfiguratorButton();
+            WireTilesetControls();
 
             if (_catalog != null)
             {
@@ -166,27 +166,76 @@ namespace Valkur.Gameplay.TileEditor
             foreach (var slot in _tileSlots) if (slot != null) Destroy(slot);
             _tileSlots.Clear();
             _selectedSlotIndex = -1;
+
+            // Reset the unified picker selection state — applies equally to
+            // tilesheet (manifest-driven) and legacy categories so their
+            // Single/Rect/Multi semantics behave identically. The (r,c) keys
+            // we accumulate during a session no longer point at the same
+            // tile once a different category is on screen.
+            ResetPickerSelectionState();
+
             if (_catalog == null) return;
 
             var tiles = string.IsNullOrEmpty(category)
                 ? new List<TileCatalog.TileEntry>(_catalog.Entries)
                 : _catalog.GetTilesForCategory(category);
 
+            bool isTilesheet = tiles.Count > 0 && tiles[0].gridR >= 0;
+
+            ApplyGridLayoutForCategory(tiles, isTilesheet);
+            if (_refs.TilesetControlsRow != null)
+                _refs.TilesetControlsRow.SetActive(isTilesheet);
+
+            int slotCount = isTilesheet
+                ? PopulateTilesheetSlots(tiles)
+                : PopulateLegacySlots(tiles);
+
+            if (_refs.TileCountText != null)
+                _refs.TileCountText.text = $"{slotCount} tiles" + (string.IsNullOrEmpty(category) ? "" : $" in {category}");
+        }
+
+        private void ApplyGridLayoutForCategory(List<TileCatalog.TileEntry> tiles, bool isTilesheet)
+        {
+            if (_refs.TileGridContent == null) return;
+            var gl = _refs.TileGridContent.GetComponent<GridLayoutGroup>();
+            if (gl == null) return;
+            if (isTilesheet)
+            {
+                int maxC = 0;
+                for (int i = 0; i < tiles.Count; i++)
+                    if (tiles[i].gridC > maxC) maxC = tiles[i].gridC;
+                gl.constraintCount = maxC + 1;
+                gl.cellSize = new Vector2(_tilesetZoom, _tilesetZoom);
+                gl.spacing = new Vector2(1f, 1f);
+            }
+            else
+            {
+                gl.constraintCount = TILES_GRID_COLS;
+                gl.cellSize = new Vector2(TILES_CELL_SIZE, TILES_CELL_SIZE);
+                gl.spacing = new Vector2(TILES_GRID_SPACING, TILES_GRID_SPACING);
+            }
+        }
+
+        private int PopulateLegacySlots(List<TileCatalog.TileEntry> tiles)
+        {
+            // Synthesise (R, C) for each slot from its index in the picker grid.
+            // Legacy categories don't have a manifest; we lay out their tiles in
+            // the standard 4-column grid (TILES_GRID_COLS, from
+            // TileEditorUIHelpers via `using static`) and treat each slot's
+            // visible position as its selection identifier — so the same
+            // Single/Rect/Multi handlers in TileEditorUI.TilesetView can drive
+            // legacy categories with zero special-casing.
+            int cols = TILES_GRID_COLS;
+
             for (int i = 0; i < tiles.Count; i++)
             {
                 var entry = tiles[i];
+                int row = i / cols;
+                int col = i % cols;
+
                 var go = CreateUI($"Slot_{i}", _refs.TileGridContent);
                 var slotImg = go.AddComponent<Image>();
                 slotImg.color = SLOT_BG;
-                var btn = go.AddComponent<Button>();
-                var bc = btn.colors;
-                bc.normalColor = SLOT_BG;
-                bc.highlightedColor = SLOT_HOVER;
-                bc.selectedColor = SLOT_SELECTED;
-                btn.colors = bc;
-                btn.targetGraphic = slotImg;
-                int ci = i; var ce = entry;
-                btn.onClick.AddListener(() => { _selectedSlotIndex = ci; _onTileSelected?.Invoke(ce); HighlightSelectedSlot(); });
 
                 Sprite preview = entry.preview;
                 if (preview == null && entry.tile is Tile t) preview = t.sprite;
@@ -203,11 +252,23 @@ namespace Valkur.Gameplay.TileEditor
                     si.sprite = preview; si.preserveAspect = true; si.raycastTarget = false;
                 }
 
+                // Selection-highlight overlay (initially hidden). Mirrors the
+                // tilesheet view's DragHL pattern so the same RefreshTilesetSelectionVisuals
+                // can paint Rect-preview gold + persistent-selection green here too.
+                var hgo = CreateUI("DragHL", go.transform);
+                var hrt = hgo.GetComponent<RectTransform>();
+                hrt.anchorMin = new Vector2(0f, 0f); hrt.anchorMax = new Vector2(1f, 1f);
+                hrt.offsetMin = Vector2.zero; hrt.offsetMax = Vector2.zero;
+                var hImg = hgo.AddComponent<Image>();
+                hImg.raycastTarget = false;
+                hgo.SetActive(false);
+
+                RegisterPickerSlot(go, row, col, entry, hgo);
+                AttachPickerSlotHandlers(go, row, col, i, entry);
+
                 _tileSlots.Add(go);
             }
-
-            if (_refs.TileCountText != null)
-                _refs.TileCountText.text = $"{tiles.Count} tiles" + (string.IsNullOrEmpty(category) ? "" : $" in {category}");
+            return tiles.Count;
         }
 
         private void HighlightSelectedSlot()

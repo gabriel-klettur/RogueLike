@@ -18,15 +18,13 @@ namespace Valkur.Gameplay.TileEditor
     {
         // X offset (pixels from right edge): InspectorX is `PANEL_GAP`, so the
         // Colliders panel must skip past Inspector's full width plus a gap.
-        private static float CollidersX => PANEL_GAP + INSPECTOR_DROP_W + PANEL_GAP;
+        private static float CollidersX => PANEL_GAP + TILE_INSPECTOR_DROP_W + PANEL_GAP;
         private static float CollidersY => PANEL_TOP_OFFSET;
 
         private static void BuildCollidersDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action onShowCollidersClicked,
             System.Action onDrawCollidersClicked,
-            System.Action onEraseCollidersClicked,
-            System.Action onAutoGenerateCollidersClicked,
-            System.Action onClearAllCollidersClicked)
+            System.Action onEraseCollidersClicked)
         {
             refs.CollidersDropdown = MakeDropdownPanel("CollidersDropdown", canvasT,
                 PanelDock.TopRight, CollidersX, CollidersY, COLLIDERS_DROP_W, COLLIDERS_DROP_H,
@@ -61,26 +59,6 @@ namespace Valkur.Gameplay.TileEditor
             BuildColliderToggleRow(t, "Erase Colliders",
                 state.CurrentColliderMode == TileEditorState.ColliderMode.Erase, onEraseCollidersClicked,
                 out refs.EraseCollidersToggleImg, out refs.EraseCollidersToggleLabel);
-
-            BuildSeparator(t);
-
-            // Bulk-action buttons.
-            BuildColliderActionButton(t, "Auto-Generate from Walls", onAutoGenerateCollidersClicked);
-            BuildColliderActionButton(t, "Clear All Colliders", onClearAllCollidersClicked);
-
-            BuildSeparator(t);
-
-            // Brush size hint (pulled from the menu bar's brush nav).
-            var hintGo = CreateUI("Hint", t);
-            hintGo.AddComponent<LayoutElement>().preferredHeight = 30f;
-            refs.CollidersHintText = hintGo.AddComponent<TextMeshProUGUI>();
-            refs.CollidersHintText.text =
-                "Brush size respects the Size selector in the menu bar. " +
-                "Toggle off both Draw/Erase to return to normal tile editing.";
-            refs.CollidersHintText.fontSize = 9f;
-            refs.CollidersHintText.alignment = TextAlignmentOptions.TopLeft;
-            refs.CollidersHintText.color = TEXT_MUTED;
-            refs.CollidersHintText.enableWordWrapping = true;
 
             refs.CollidersDropdown.SetActive(false);
         }
@@ -146,42 +124,6 @@ namespace Valkur.Gameplay.TileEditor
             stateTmp.fontStyle = FontStyles.Bold;
             stateTmp.alignment = TextAlignmentOptions.Right;
             stateTmp.color = initialOn ? RED_ACCENT : TEXT_MUTED;
-
-            btn.onClick.AddListener(() => onClicked?.Invoke());
-        }
-
-        /// <summary>
-        /// Single-shot action button (no on/off state). Used for bulk operations
-        /// like "Auto-Generate from Walls" and "Clear All Colliders".
-        /// </summary>
-        private static void BuildColliderActionButton(Transform parent, string label, System.Action onClicked)
-        {
-            var row = CreateUI($"Action_{label}", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 26f;
-
-            var bg = row.AddComponent<Image>();
-            bg.color = BTN_NORMAL;
-
-            var btn = row.AddComponent<Button>();
-            var c = btn.colors;
-            c.normalColor = BTN_NORMAL;
-            c.highlightedColor = BTN_HOVER;
-            c.pressedColor = BTN_ACTIVE;
-            btn.colors = c;
-            btn.targetGraphic = bg;
-
-            var lblGo = CreateUI("Lbl", row.transform);
-            var lblRT = lblGo.GetComponent<RectTransform>();
-            lblRT.anchorMin = Vector2.zero;
-            lblRT.anchorMax = Vector2.one;
-            lblRT.offsetMin = new Vector2(8f, 0f);
-            lblRT.offsetMax = new Vector2(-8f, 0f);
-            var lblTmp = lblGo.AddComponent<TextMeshProUGUI>();
-            lblTmp.text = label;
-            lblTmp.fontSize = 11f;
-            lblTmp.fontStyle = FontStyles.Bold;
-            lblTmp.alignment = TextAlignmentOptions.Center;
-            lblTmp.color = TEXT_PRIMARY;
 
             btn.onClick.AddListener(() => onClicked?.Invoke());
         }

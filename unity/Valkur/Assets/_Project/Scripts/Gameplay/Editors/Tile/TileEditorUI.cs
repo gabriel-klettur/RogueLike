@@ -29,8 +29,6 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onShowCollidersClicked;
         private System.Action _onDrawCollidersClicked;
         private System.Action _onEraseCollidersClicked;
-        private System.Action _onAutoGenerateCollidersClicked;
-        private System.Action _onClearAllCollidersClicked;
         private System.Action _onPerfToggle;
         private System.Action _onShowGridLinesClicked;
         private System.Action _onShowZoneGridClicked;
@@ -68,8 +66,6 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowCollidersClicked = null,
             System.Action onDrawCollidersClicked = null,
             System.Action onEraseCollidersClicked = null,
-            System.Action onAutoGenerateCollidersClicked = null,
-            System.Action onClearAllCollidersClicked = null,
             System.Action onPerfToggle = null,
             System.Action onShowGridLinesClicked = null,
             System.Action onShowZoneGridClicked = null,
@@ -91,8 +87,6 @@ namespace Valkur.Gameplay.TileEditor
             _onShowCollidersClicked = onShowCollidersClicked;
             _onDrawCollidersClicked = onDrawCollidersClicked;
             _onEraseCollidersClicked = onEraseCollidersClicked;
-            _onAutoGenerateCollidersClicked = onAutoGenerateCollidersClicked;
-            _onClearAllCollidersClicked = onClearAllCollidersClicked;
             _onPerfToggle = onPerfToggle;
             _onShowGridLinesClicked = onShowGridLinesClicked;
             _onShowZoneGridClicked = onShowZoneGridClicked;

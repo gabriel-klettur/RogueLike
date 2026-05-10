@@ -45,25 +45,12 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_refs.BrushSizeLabel != null)
                 _refs.BrushSizeLabel.text = $"{_state.BrushSize}x{_state.BrushSize}";
-            RefreshBrushSizePresets();
-        }
 
-        /// <summary>
-        /// Re-tint the 1x1..25x25 preset buttons in the Size dropdown so the active
-        /// brush size pops in accent. State is owned by <see cref="TileEditorState"/>;
-        /// this method just repaints to match.
-        /// </summary>
-        public void RefreshBrushSizePresets()
-        {
-            if (_refs.BrushSizePresetImgs == null) return;
-            for (int i = 0; i < _refs.BrushSizePresetImgs.Count; i++)
-            {
-                bool active = (i + 1) == _state.BrushSize;
-                if (_refs.BrushSizePresetImgs[i] != null)
-                    _refs.BrushSizePresetImgs[i].color = active ? BTN_ACTIVE : BTN_NORMAL;
-                if (i < _refs.BrushSizePresetLabels.Count && _refs.BrushSizePresetLabels[i] != null)
-                    _refs.BrushSizePresetLabels[i].color = active ? ACCENT : TEXT_SECONDARY;
-            }
+            // Sync the slider when the brush size changed from somewhere else
+            // (menu-bar −/+, hotkeys). SetValueWithoutNotify avoids re-firing the
+            // onValueChanged callback that would re-enter OnBrushSizeChanged.
+            if (_refs.BrushSizeSlider != null)
+                _refs.BrushSizeSlider.SetValueWithoutNotify(_state.BrushSize);
         }
 
         /// <summary>

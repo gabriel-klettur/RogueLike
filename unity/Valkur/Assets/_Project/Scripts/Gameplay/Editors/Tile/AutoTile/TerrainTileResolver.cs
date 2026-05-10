@@ -20,7 +20,13 @@ namespace Valkur.Gameplay.TileEditor
 
             var registry = TileRegistry.Instance;
             var existing = registry.GetTile(sprite.name);
-            if (existing != null) return existing;
+            if (IsCachedTileStillValid(existing, sprite))
+                return existing;
+
+            // Cache miss OR cached entry's sprite was destroyed (the latter can
+            // happen across EditMode test runs and after Domain Reload while
+            // Sprites are GC'd). Evict and rebuild.
+            if (existing != null) registry.Unregister(sprite.name);
 
             var tile = ScriptableObject.CreateInstance<Tile>();
             tile.sprite = sprite;
@@ -29,6 +35,27 @@ namespace Valkur.Gameplay.TileEditor
             tile.name = sprite.name;
             registry.Register(sprite.name, tile);
             return tile;
+        }
+
+        /// <summary>
+        /// Returns true if <paramref name="cached"/> is non-null AND still
+        /// references a live sprite. Unity's overloaded <c>==</c> treats
+        /// destroyed UnityEngine.Object instances as null, so a plain
+        /// reference check is sufficient — the explicit cast just makes the
+        /// intent obvious to the reader.
+        /// </summary>
+        private static bool IsCachedTileStillValid(TileBase cached, Sprite expectedSprite)
+        {
+            if (cached == null) return false;
+            if (cached is Tile t)
+            {
+                // Sprite identity matters: if the cache holds a Tile whose
+                // sprite was destroyed (== null under Unity overload), or that
+                // points at a different live sprite, treat as stale.
+                if (t.sprite == null) return false;
+                if (t.sprite != expectedSprite && t.sprite.name != expectedSprite.name) return false;
+            }
+            return true;
         }
 
         /// <summary>

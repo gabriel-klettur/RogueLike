@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Gameplay.World;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -128,6 +129,10 @@ namespace Valkur.Gameplay.TileEditor
 
         // ── View panel hover ──
 
+        // Highest visual TilemapLayer index. Hover-scan iterates from this down to 0
+        // so the TOPMOST rendered tile (drawn last) wins over deeper layers.
+        private const int TopmostHoverLayerIndex = 8; // OverheadDetails
+
         private partial void UpdateViewPanelHover()
         {
             if (_ui == null) return;
@@ -138,27 +143,61 @@ namespace Valkur.Gameplay.TileEditor
                 return;
             }
 
-            var tilemap = GetCurrentTilemap();
-            if (tilemap == null)
+            // Any tilemap shares the same grid — use the active one only as a cell-coord source.
+            var probe = GetCurrentTilemap();
+            if (probe == null || worldGridBuilder == null)
             {
                 _ui.UpdateViewPanelHovered(null, "", "");
                 return;
             }
 
-            Vector3Int cellPos = GetCellUnderMouse(tilemap);
-            var tileBase = tilemap.GetTile(cellPos);
-            if (tileBase != null)
+            Vector3Int cellPos = GetCellUnderMouse(probe);
+
+            if (TryFindHoveredVisibleLayer(cellPos, out var layer, out var tileBase))
             {
                 Sprite sprite = null;
                 if (tileBase is Tile t) sprite = t.sprite;
-                string layerName = $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}";
-                _ui.UpdateViewPanelHovered(sprite, tileBase.name, layerName);
+                _ui.UpdateViewPanelHovered(sprite, tileBase.name, $"{(int)layer}: {layer}");
             }
             else
             {
-                _ui.UpdateViewPanelHovered(null, $"({cellPos.x},{cellPos.y}) empty",
-                    $"{(int)_state.CurrentLayer}: {_state.CurrentLayer}");
+                _ui.UpdateViewPanelHovered(null, $"({cellPos.x},{cellPos.y}) empty", "");
             }
+        }
+
+        /// <summary>
+        /// Scans visible layers top-down and returns the topmost one that has a tile
+        /// at <paramref name="cellPos"/>. Skips the Collision layer (its tiles are
+        /// alpha-zero authoring metadata, not what the user visually hovers) and any
+        /// layer the user has hidden via the Layers panel toggle.
+        ///
+        /// <para>Returns <c>false</c> when no visible non-collision layer has a tile
+        /// at the cell (or when the manager hasn't been wired yet).</para>
+        /// </summary>
+        internal bool TryFindHoveredVisibleLayer(Vector3Int cellPos,
+            out TilemapLayerSetup.TilemapLayer layer, out TileBase tile)
+        {
+            layer = default;
+            tile = null;
+            if (worldGridBuilder == null || _ui == null) return false;
+
+            for (int li = TopmostHoverLayerIndex; li >= 0; li--)
+            {
+                if (li == (int)TilemapLayerSetup.TilemapLayer.Collision) continue;
+                if (!_ui.IsLayerVisible(li)) continue;
+
+                var l = (TilemapLayerSetup.TilemapLayer)li;
+                var tm = worldGridBuilder.GetTilemap(l);
+                if (tm == null) continue;
+
+                var tb = tm.GetTile(cellPos);
+                if (tb == null) continue;
+
+                layer = l;
+                tile  = tb;
+                return true;
+            }
+            return false;
         }
     }
 }

@@ -84,18 +84,16 @@ namespace Valkur.Gameplay.TileEditor
             public TextMeshProUGUI SizeMenuBtnTmp;
             public TextMeshProUGUI ViewMenuBtnTmp;
 
-            // Colliders panel — visualize toggle, draw toggle, erase toggle, status hint
+            // Colliders panel — visualize toggle, draw toggle, erase toggle.
             public Image ShowCollidersToggleImg;
             public TextMeshProUGUI ShowCollidersToggleLabel;
             public Image DrawCollidersToggleImg;
             public TextMeshProUGUI DrawCollidersToggleLabel;
             public Image EraseCollidersToggleImg;
             public TextMeshProUGUI EraseCollidersToggleLabel;
-            public TextMeshProUGUI CollidersHintText;
 
-            // Size panel — preset buttons (1x1 .. 5x5)
-            public List<Image> BrushSizePresetImgs;
-            public List<TextMeshProUGUI> BrushSizePresetLabels;
+            // Size panel — slider (1..25, integer steps).
+            public Slider BrushSizeSlider;
 
             // (Save button + dirty indicator removed — auto-save covers this.)
 
@@ -151,6 +149,22 @@ namespace Valkur.Gameplay.TileEditor
             // Blob16 slot-mapping wizard for the currently-selected category.
             public Button            ConfigureTilesetBtn;
             public TextMeshProUGUI   ConfigureTilesetBtnLabel;
+
+            // Tileset View controls — only visible when the active category has a
+            // `_manifest.json` (i.e. came from a sliced tilesheet via
+            // tools/atlas/migrate_tilesheet.py). Lets the user zoom in/out and
+            // hide duplicate cells while keeping the original sheet layout.
+            public GameObject        TilesetControlsRow;
+            public Slider            TilesetZoomSlider;
+            public TextMeshProUGUI   TilesetZoomLabel;
+            public Image             TilesetDedupToggleImg;
+            public TextMeshProUGUI   TilesetDedupToggleLabel;
+
+            // Top row of the Tiles panel (SELECTED + RULESET on the left,
+            // CATEGORIES on the right). Tracked so ApplyTilesPanelResizePolicy
+            // can mark it as horizontally flexible — letting the CATEGORIES
+            // list reflow into more columns when the panel widens.
+            public GameObject        TilesTopRow;
         }
 
         public static UIRefs BuildAll(Transform canvasT, TileEditorState state,
@@ -163,8 +177,6 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowColliders = null,
             System.Action onDrawColliders = null,
             System.Action onEraseColliders = null,
-            System.Action onAutoGenerateColliders = null,
-            System.Action onClearAllColliders = null,
             System.Action onPerfToggle = null,
             System.Action onAllPanelsToggle = null,
             System.Action onShowGridLines = null,
@@ -181,9 +193,7 @@ namespace Valkur.Gameplay.TileEditor
                 ToolButtonTexts = new Dictionary<TileEditorState.Tool, TextMeshProUGUI>(),
                 LayerRowBgs = new List<Image>(),
                 LayerRowLabels = new List<TextMeshProUGUI>(),
-                LayerVisIcons = new List<Image>(),
-                BrushSizePresetImgs = new List<Image>(),
-                BrushSizePresetLabels = new List<TextMeshProUGUI>()
+                LayerVisIcons = new List<Image>()
             };
 
             BuildMenuBar(canvasT, state, ref refs, onBrushSizeChanged, onDropdownToggle, onPerfToggle, onAllPanelsToggle);
@@ -192,8 +202,7 @@ namespace Valkur.Gameplay.TileEditor
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);
             BuildCollidersDropdown(canvasT, state, ref refs,
-                onShowColliders, onDrawColliders, onEraseColliders,
-                onAutoGenerateColliders, onClearAllColliders);
+                onShowColliders, onDrawColliders, onEraseColliders);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
                 onShowGridLines, onShowZoneGrid, onShowColliders);

@@ -20,8 +20,18 @@ namespace Valkur.Gameplay.TileEditor
                 preview = tileAsset.sprite;
             _ui.UpdateSelectedTilePreview(preview, entry.tileName);
 
-            if (_state.CurrentTool == TileEditorState.Tool.Select ||
-                _state.CurrentTool == TileEditorState.Tool.Eyedropper)
+            // Auto-switch to Brush so the user can paint immediately after
+            // picking a tile. Skipped while the user is mid-flow building a
+            // multi-tile selection in the picker (Select tool + Rect/Multi
+            // sub-mode): switching tools there would fire the leavingSelect
+            // reset (see OnToolChanged below) and collapse the selection set
+            // back to Single mode, breaking the workflow the user just started.
+            bool inMultiTileSelectFlow =
+                _state.CurrentTool == TileEditorState.Tool.Select &&
+                _state.CurrentSelectMode != TileEditorState.SelectMode.Single;
+            if (!inMultiTileSelectFlow &&
+                (_state.CurrentTool == TileEditorState.Tool.Select ||
+                 _state.CurrentTool == TileEditorState.Tool.Eyedropper))
             {
                 OnToolChanged(TileEditorState.Tool.Brush);
             }
