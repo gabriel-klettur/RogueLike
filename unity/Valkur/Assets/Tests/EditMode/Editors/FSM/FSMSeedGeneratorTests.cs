@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Editor.FSM;
-using Valkur.Gameplay.Enemies.FSM;
+using Valkur.Gameplay.FSM;
 
 namespace Valkur.Tests.EditMode.Editors.FSM
 {
