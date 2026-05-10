@@ -105,6 +105,7 @@ namespace Valkur.Gameplay
         // without touching any Unity Object reference during teardown.
         private Vector2 _lastKnownPlayerPos;
         private string  _lastKnownPlayerZone = "";
+        private Valkur.Gameplay.World.ZoneManager _zoneManagerCache;
         private int     _lastKnownPlayerHp   = -1;   // -1 = not yet sampled
         private bool    _hasKnownPlayerPos;
 
@@ -222,9 +223,20 @@ namespace Valkur.Gameplay
             var playerTransform = EntityRegistry.PlayerTransform;
             if (playerTransform != null)
             {
-                _lastKnownPlayerPos  = playerTransform.position;
-                _lastKnownPlayerZone = "";
-                _hasKnownPlayerPos   = true;
+                _lastKnownPlayerPos = playerTransform.position;
+                // Resolve zone via the live ZoneManager so the position checkpoint
+                // carries the right zone label across quit/relaunch.
+                // Previously this cached "" unconditionally — the on-disk
+                // checkpoint then had no zone, the spawn loader had nothing to
+                // anchor the restored position on, and the player re-spawned at
+                // the lobby centre (25, 25) every time.
+                if (_zoneManagerCache == null)
+                    _zoneManagerCache = Valkur.Core.ServiceLocator.Get<Valkur.Gameplay.World.ZoneManager>()
+                                     ?? FindObjectOfType<Valkur.Gameplay.World.ZoneManager>();
+                _lastKnownPlayerZone = _zoneManagerCache != null
+                    ? (_zoneManagerCache.CurrentZone ?? "")
+                    : "";
+                _hasKnownPlayerPos = true;
 
                 var hp = EntityRegistry.Player?.GetComponent<Health>();
                 if (hp != null) _lastKnownPlayerHp = hp.CurrentHp;

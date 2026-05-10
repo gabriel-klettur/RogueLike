@@ -25,12 +25,32 @@ namespace Valkur.Gameplay
             if (_spellCatalog != null)
                 EntitySetup.SetSpellCatalog(_spellCatalog);
 
-            // Spawn at Lobby center. With full world, Lobby offset is (50,50) + center (25,25) = (75,75).
-            // With single overlay (Lobby at 0,0), center is (25,25).
+            // Spawn at Lobby center by default. With full world, Lobby offset
+            // is (50,50) + center (25,25) = (75,75); with single overlay
+            // (Lobby at 0,0) the centre is (25,25).
             Vector3 spawnPos = new Vector3(25f, 25f, 0f);
             var zm = FindObjectOfType<World.ZoneManager>();
             if (zm != null && zm.TryGetZone("Lobby", out var lobbyDef))
                 spawnPos = new Vector3(lobbyDef.gridOffset.x + 25f, lobbyDef.gridOffset.y + 25f, 0f);
+
+            // If a position checkpoint exists from a previous session (last
+            // autosave / quit-time write), respawn there instead. New Game
+            // already deletes the checkpoint via SaveFileManager.DeletePositionCheckpoint
+            // in MainMenuUI.StartNewGame, so this branch only triggers for
+            // Continue / hot-reload scenarios.
+            //
+            // SaveService.Load also calls ApplyPositionCheckpointIfNewer
+            // later in the bootstrap, but that fires AFTER the player
+            // instantiates — meaning Cinemachine and the camera setup briefly
+            // see the lobby-centre pose. Reading the checkpoint now skips the
+            // visible "snap from lobby" frame.
+            var checkpoint = Valkur.Gameplay.Save.SaveFileManager.ReadPositionCheckpoint();
+            if (checkpoint != null && !string.IsNullOrEmpty(checkpoint.timestamp))
+            {
+                spawnPos = new Vector3(checkpoint.x, checkpoint.y, 0f);
+                Debug.Log($"[GameplaySceneSetup] Restoring player position from checkpoint: " +
+                          $"({checkpoint.x:F1}, {checkpoint.y:F1}) zone='{checkpoint.zone}'.");
+            }
 
             // ── 1. Resolve player class (Resources.LoadAll scan) ────────────
             Report("Loading player class"); yield return null;
