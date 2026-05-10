@@ -36,6 +36,12 @@ namespace Valkur.UIKit
         [SerializeField, Tooltip("Spacing between cells (applied on both axes).")]
         private float spacing = 4f;
 
+        [SerializeField, Tooltip("Optional explicit cell height. " +
+            "When ≤ 0 the cell stays square (height = computed width, the historical default). " +
+            "Set > 0 for rectangular cells — e.g. the Tile Editor's category buttons use a " +
+            "responsive width but a fixed 22 px row height.")]
+        private float cellHeightOverride = 0f;
+
         // RectOffset is a Unity native wrapper that calls set_left/right/top/bottom
         // on construction. Those setters are forbidden inside MonoBehaviour
         // field initializers — initialise lazily inside OnEnable instead.
@@ -51,6 +57,7 @@ namespace Valkur.UIKit
         public float MinCellSize { get => minCellSize; set { minCellSize = value; ForceRecompute(); } }
         public float MaxCellSize { get => maxCellSize; set { maxCellSize = value; ForceRecompute(); } }
         public float Spacing     { get => spacing;     set { spacing     = value; ForceRecompute(); } }
+        public float CellHeightOverride { get => cellHeightOverride; set { cellHeightOverride = value; ForceRecompute(); } }
 
         public RectOffset Padding
         {
@@ -124,7 +131,8 @@ namespace Valkur.UIKit
             if (_padding == null)
                 _padding = new RectOffset(paddingLeft, paddingRight, paddingTop, paddingBottom);
 
-            _grid.cellSize        = new Vector2(cellW, cellW);
+            float cellH = cellHeightOverride > 0f ? cellHeightOverride : cellW;
+            _grid.cellSize        = new Vector2(cellW, cellH);
             _grid.spacing         = new Vector2(spacing, spacing);
             _grid.padding         = _padding;
             _grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;

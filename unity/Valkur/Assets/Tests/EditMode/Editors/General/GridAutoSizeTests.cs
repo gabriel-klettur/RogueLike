@@ -248,5 +248,85 @@ namespace Valkur.Tests.EditMode.Editors.General
                 }
             });
         }
+
+        // ── CellHeightOverride (rectangular cells) ──────────────────────────
+        // Added to support the F8 Tile Editor's CATEGORIES list, which is a
+        // responsive grid of 22-px-tall rows. Without an explicit height
+        // override the cells would be square (height = width), which would
+        // turn each category row into a fat 110-200 px-tall button.
+
+        [Test]
+        public void CellHeightOverride_Positive_ProducesRectangularCells()
+        {
+            var auto = BuildGrid(width: 200f, minCell: 50f, maxCell: 80f);
+            auto.CellHeightOverride = 22f;  // setter triggers a recompute
+
+            var grid = auto.GetComponent<GridLayoutGroup>();
+            Assert.AreEqual(22f, grid.cellSize.y, 0.01f,
+                "Cell height must match the override exactly.");
+            Assert.AreNotEqual(grid.cellSize.x, grid.cellSize.y,
+                "With cellHeightOverride > 0, cells are no longer square.");
+        }
+
+        [Test]
+        public void CellHeightOverride_Zero_KeepsCellsSquare_BackwardsCompat()
+        {
+            // Default cellHeightOverride = 0 → square cells.
+            var auto = BuildGrid(width: 256f);
+            var grid = auto.GetComponent<GridLayoutGroup>();
+
+            Assert.AreEqual(grid.cellSize.x, grid.cellSize.y, 0.01f,
+                "Default cellHeightOverride (0) must preserve the historical " +
+                "square-cell behaviour — every existing picker grid relies on it.");
+        }
+
+        [Test]
+        public void CellHeightOverride_DoesNotAffectColumnCount()
+        {
+            // Two grids, identical width/minCell, different cellHeightOverride.
+            // Only the Y axis should change; the column-count math reads
+            // exclusively from width + paddingLeft + paddingRight + spacing.
+            var square = BuildGrid(width: 400f, minCell: 100f);
+            int colsSq = square.GetComponent<GridLayoutGroup>().constraintCount;
+
+            var rect = BuildGrid(width: 400f, minCell: 100f);
+            rect.CellHeightOverride = 22f;
+            int colsRect = rect.GetComponent<GridLayoutGroup>().constraintCount;
+
+            Assert.AreEqual(colsSq, colsRect,
+                "cellHeightOverride must only affect the Y axis — column count " +
+                "is derived from width and minCellSize alone.");
+        }
+
+        [Test]
+        public void Setter_CellHeightOverride_TriggersRecompute()
+        {
+            var auto = BuildGrid(width: 200f);
+            var grid = auto.GetComponent<GridLayoutGroup>();
+            float widthBefore  = grid.cellSize.x;
+
+            // Setter MUST call ForceRecompute internally — otherwise the new
+            // cellHeight wouldn't reach the GridLayoutGroup until the next
+            // OnRectTransformDimensionsChange.
+            auto.CellHeightOverride = 30f;
+
+            Assert.AreEqual(30f, grid.cellSize.y, 0.01f,
+                "Setting CellHeightOverride must immediately update GridLayoutGroup.cellSize.y.");
+            Assert.AreEqual(widthBefore, grid.cellSize.x, 0.01f,
+                "Changing only CellHeightOverride must NOT alter cellSize.x.");
+        }
+
+        [Test]
+        public void CellHeightOverride_NegativeValue_TreatedAsSquare()
+        {
+            // Guard against accidental negative values from inspector or
+            // serialized data: < 0 must behave the same as 0 (square cells).
+            var auto = BuildGrid(width: 200f);
+            auto.CellHeightOverride = -50f;
+
+            var grid = auto.GetComponent<GridLayoutGroup>();
+            Assert.AreEqual(grid.cellSize.x, grid.cellSize.y, 0.01f,
+                "Negative cellHeightOverride must collapse to the square-cell default.");
+        }
     }
 }
