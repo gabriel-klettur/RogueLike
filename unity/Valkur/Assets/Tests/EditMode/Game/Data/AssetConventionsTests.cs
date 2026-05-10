@@ -36,14 +36,30 @@ namespace Valkur.Tests.EditMode.Game.Data
             "UniversalRenderPipelineGlobalSettings.asset",
         };
 
+        // Catalog ScriptableObjects loaded by string name via `Resources.Load`.
+        // Adding a file here means the runtime depends on it living at the
+        // exact path `_Project/Resources/<name>` — moving it under a subfolder
+        // would break the load.
         private static readonly HashSet<string> ResourcesRootAllowedFiles = new(StringComparer.OrdinalIgnoreCase)
         {
-            "AudioCatalog.asset", "SlashVfxCatalog.asset", "TileCatalog.asset",
+            "AudioCatalog.asset",
+            "SlashVfxCatalog.asset",
+            "TileCatalog.asset",
+            "TerrainCatalog.asset", // autotile pipeline (rulesets + Blob16 lookup)
         };
 
+        // Subfolders of Resources/ that ship whole into the build. Each entry
+        // is justified by a runtime call site that loads from `Resources/<name>/...`.
         private static readonly HashSet<string> ResourcesRootAllowedFolders = new(StringComparer.OrdinalIgnoreCase)
         {
-            "Buildings", "Catalogs", "Input", "Placeholders", "Spells", "Tiles", "UI",
+            "Buildings",
+            "Catalogs",
+            "Dungeon",     // autotile sample tilesheets + catacombs blob assets
+            "Input",
+            "Placeholders",
+            "Spells",
+            "Tiles",
+            "UI",
         };
 
         // Folders that opt out of the snake_case-below-PascalCase rule:

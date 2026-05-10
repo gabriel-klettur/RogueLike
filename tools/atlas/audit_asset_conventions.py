@@ -70,6 +70,8 @@ PATH_PREFIX_WHITELIST_RELATIVE: tuple[str, ...] = (
 )
 
 # Files allowed at Resources/ root (loaded by string name).
+# Mirrors AssetConventionsTests.ResourcesRootAllowedFiles — keep both lists in
+# sync; both are checked in CI (Python here, NUnit in EditMode).
 RESOURCES_ROOT_ALLOWED: set[str] = {
     "AudioCatalog.asset",
     "AudioCatalog.asset.meta",
@@ -77,13 +79,17 @@ RESOURCES_ROOT_ALLOWED: set[str] = {
     "SlashVfxCatalog.asset.meta",
     "TileCatalog.asset",
     "TileCatalog.asset.meta",
+    "TerrainCatalog.asset",            # autotile pipeline
+    "TerrainCatalog.asset.meta",
 }
 
 # Top-level whitelist for Resources/ subfolder names (these are loaded by
 # string path, so renaming them mid-project breaks Resources.Load callers).
+# Mirrors AssetConventionsTests.ResourcesRootAllowedFolders.
 RESOURCES_ROOT_FOLDER_ALLOWED: set[str] = {
     "Buildings",
     "Catalogs",
+    "Dungeon",                         # autotile sample tilesheets / catacombs
     "Input",
     "Placeholders",
     "Spells",
