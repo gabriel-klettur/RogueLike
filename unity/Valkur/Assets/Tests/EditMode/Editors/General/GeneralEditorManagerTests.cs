@@ -230,40 +230,97 @@ namespace Valkur.Tests.EditMode.Editors.General
         }
 
         // ── Registry composition ─────────────────────────────────────────────────
+        //
+        // Each section's expected labels are enumerated explicitly so that:
+        //   • adding a new entry to GeneralEditorRegistry without updating the
+        //     test fails fast (catches "stealth additions" that may break UX);
+        //   • removing or renaming an entry surfaces a useful diff instead of a
+        //     bare count mismatch;
+        //   • the total count is derived from the section sets, so adding an
+        //     entry only requires one edit in this file rather than three.
+        // To extend: add the new label to the matching section set.
+
+        private static readonly string[] ExpectedEditorLabels =
+        {
+            "Tile", "Buildings", "Items", "Spells", "Entities", "Boss", "FSM",
+            "Map", "Inventory", "Particles", "Spawners", "Lighting",
+            "Time & Weather", "Dungeon NodeGraph",
+        };
+
+        private static readonly string[] ExpectedDiagnosticsLabels =
+        {
+            "Combat Ranges", "Debug HUD", "Save Log",
+        };
+
+        private static readonly string[] ExpectedGameLabels =
+        {
+            "Pause Menu", "Save Game", "Load", "Options", "Map Backups", "Exit to Menu",
+        };
+
+        private static int ExpectedTotal =>
+            ExpectedEditorLabels.Length +
+            ExpectedDiagnosticsLabels.Length +
+            ExpectedGameLabels.Length;
 
         [Test]
         public void Registry_ReturnsExpectedTotalEntryCount()
         {
             var entries = GeneralEditorRegistry.BuildEntries();
-            Assert.AreEqual(22, entries.Count,
-                "Registry must list 13 runtime editors + 3 diagnostics + 6 game actions = 22 buttons total.");
+            Assert.AreEqual(ExpectedTotal, entries.Count,
+                $"Registry must list {ExpectedEditorLabels.Length} runtime editors + " +
+                $"{ExpectedDiagnosticsLabels.Length} diagnostics + " +
+                $"{ExpectedGameLabels.Length} game actions = {ExpectedTotal} buttons total.");
         }
 
         [Test]
-        public void Registry_HasThirteenEditorEntries()
+        public void Registry_EditorSection_MatchesExpectedLabels()
         {
-            var entries = GeneralEditorRegistry.BuildEntries();
-            int editors = entries.Count(e => e.Section == GeneralEditorSection.Editors);
-            Assert.AreEqual(13, editors,
-                "Editors section must enumerate the 13 runtime editors (Tile, Buildings, Items, Spells, Entities, FSM, Map, Inventory, Particles, Spawners, Lighting, Time & Weather, Boss).");
+            AssertSectionMatches(GeneralEditorSection.Editors, ExpectedEditorLabels);
         }
 
         [Test]
-        public void Registry_HasThreeDiagnosticsEntries()
+        public void Registry_DiagnosticsSection_MatchesExpectedLabels()
         {
-            var entries = GeneralEditorRegistry.BuildEntries();
-            int diags = entries.Count(e => e.Section == GeneralEditorSection.Diagnostics);
-            Assert.AreEqual(3, diags,
-                "Diagnostics section must list Combat Ranges + Debug HUD + Save Log.");
+            AssertSectionMatches(GeneralEditorSection.Diagnostics, ExpectedDiagnosticsLabels);
         }
 
         [Test]
-        public void Registry_HasSixGameEntries()
+        public void Registry_GameSection_MatchesExpectedLabels()
+        {
+            AssertSectionMatches(GeneralEditorSection.Game, ExpectedGameLabels);
+        }
+
+        [Test]
+        public void Registry_HasNoDuplicateLabelsInAnySection()
+        {
+            // A duplicate label between two MakeEditor() calls is the classic
+            // "I forgot to delete the old line after a copy-paste" bug.
+            var entries = GeneralEditorRegistry.BuildEntries();
+            foreach (GeneralEditorSection section in System.Enum.GetValues(typeof(GeneralEditorSection)))
+            {
+                var dup = entries
+                    .Where(e => e.Section == section)
+                    .GroupBy(e => e.Label)
+                    .FirstOrDefault(g => g.Count() > 1);
+                Assert.IsNull(dup,
+                    $"Section '{section}' has duplicate label '{dup?.Key}' — " +
+                    "two registry entries with the same label collide in the launcher UI.");
+            }
+        }
+
+        private static void AssertSectionMatches(GeneralEditorSection section, string[] expected)
         {
             var entries = GeneralEditorRegistry.BuildEntries();
-            int game = entries.Count(e => e.Section == GeneralEditorSection.Game);
-            Assert.AreEqual(6, game,
-                "Game section must list Pause Menu + Save Game + Load + Options + Map Backups + Exit to Menu.");
+            var actual = entries
+                .Where(e => e.Section == section)
+                .Select(e => e.Label)
+                .ToArray();
+
+            CollectionAssert.AreEquivalent(expected, actual,
+                $"Section '{section}' label set drift. " +
+                $"Expected: [{string.Join(", ", expected)}]. " +
+                $"Actual: [{string.Join(", ", actual)}]. " +
+                "If the change is intentional, update the matching Expected*Labels constant in this test file.");
         }
 
         [Test]
