@@ -95,8 +95,22 @@ namespace Valkur.Data
     }
 
     /// <summary>
-    /// Lightweight position-only checkpoint for crash-safe position persistence.
-    /// Written every few seconds during gameplay; separate from full save files.
+    /// Lightweight crash-recovery snapshot of the player's position + zone.
+    ///
+    /// NOTE: this duplicates the information stored in
+    /// <see cref="PlayerSaveData.position"/> + <see cref="PlayerSaveData.currentZone"/>
+    /// inside the full <see cref="GameSaveData"/>. The duplication exists so
+    /// the gameplay scene's spawn step can read a 30-byte JSON without
+    /// having to parse the entire save document (full saves grow with NPC
+    /// memory + inventory, parsing them on every spawn would add latency to
+    /// loading screens).
+    ///
+    /// The two are kept in lockstep: <c>SaveService.WriteAutosaveToDisk</c>
+    /// calls <c>SavePositionCheckpoint</c> on every successful write, so the
+    /// checkpoint always reflects the same position as the most recent full
+    /// save tick. Full state restoration (HP, mana, XP, inventory, NPCs)
+    /// still requires loading the full save via <c>SaveService.Load</c> —
+    /// the checkpoint alone restores position only.
     /// </summary>
     [Serializable]
     public class PositionCheckpointData

@@ -450,6 +450,16 @@ namespace Valkur.Gameplay
                 // changes after this point, so re-arm the dirty flag.
                 if (force) _sessionDirty = false;
 
+                // Keep the lightweight position checkpoint in sync with every
+                // full save. The two systems used to drift: the full save
+                // could write at minute granularity while the checkpoint
+                // wrote at 10-second granularity, so a crash between them
+                // showed the player a position the full save didn't agree
+                // with. Mirroring on every full save means
+                // SpawnPlayerProgressively's checkpoint read always matches
+                // PlayerSaveData.position from the same save tick.
+                try { SavePositionCheckpoint(); } catch { /* best-effort */ }
+
                 Debug.Log($"[SaveService] {(force ? "QuickSave" : "Autosave")} {(useAsyncDiskIO ? "queued" : "completed")}: {targetPath}");
                 return true;
             }
