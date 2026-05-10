@@ -167,6 +167,15 @@ namespace Valkur.Gameplay.MapEditor
             bool isDefaultBlankLoad = json == null && isDefault;
             if (json == null && !isDefaultBlankLoad) return false;
 
+            // Snapshot the OUTGOING slot's player state to disk before
+            // anything mutates the world. Without this, switching maps would
+            // discard whatever the user did since the last autosave tick:
+            // position, HP, mana, inventory, learned skills. Mid-switch
+            // crashes are also covered — the save lands BEFORE we wipe the
+            // grid. Skipped during boot-sync to avoid mirroring a half-loaded
+            // state into the slot we're about to abandon.
+            if (!_isBootSyncInProgress) FlushPlayerStateBeforeSlotChange("LoadMapSlot");
+
             // Snapshot the current state into its existing slot first so the
             // user doesn't silently lose unsaved edits — except when reloading
             // 'default' onto itself, which would otherwise freeze the very
@@ -325,6 +334,10 @@ namespace Valkur.Gameplay.MapEditor
         {
             string clean = MapEditorMapSlots.Sanitize(slotName);
             if (string.IsNullOrEmpty(clean)) clean = MapEditorMapSlots.DEFAULT_SLOT;
+
+            // Persist the player's current run state before BeginNewMap wipes
+            // the live grid. Same rationale as the LoadMapSlot guard.
+            FlushPlayerStateBeforeSlotChange("BeginNewMap");
 
             // Snapshot the OUTGOING active slot before we wipe live state.
             // If the user later changes their mind they can roll the slot
@@ -546,6 +559,30 @@ namespace Valkur.Gameplay.MapEditor
         }
 
         // ── Internals ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Force-flush the player's run state (HP, mana, inventory, position,
+        /// zone) to the active save run AND drop a position checkpoint just
+        /// before a destructive slot operation (LoadMapSlot / BeginNewMap).
+        /// Without this, switching maps would discard whatever the player
+        /// did since the last autosave tick — the autosave timer is at
+        /// minute granularity, the user expects "I just clicked a slot" to
+        /// be safe.
+        /// </summary>
+        private void FlushPlayerStateBeforeSlotChange(string trigger)
+        {
+            var saveService = Valkur.Gameplay.SaveService.Instance;
+            if (saveService == null) return;
+            try
+            {
+                saveService.SavePositionCheckpoint();
+                saveService.SaveImmediately($"map slot change ({trigger})");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Pre-slot-change flush failed: {ex.Message}");
+            }
+        }
 
         private void BackupCurrentToActiveSlot()
         {

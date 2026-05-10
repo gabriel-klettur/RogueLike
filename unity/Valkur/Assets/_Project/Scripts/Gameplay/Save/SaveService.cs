@@ -654,6 +654,29 @@ namespace Valkur.Gameplay
             }
         }
 
+        // Catches the desktop Alt+Tab / minimise case that OnApplicationPause
+        // does NOT fire for in standalone Windows builds. Without this, a
+        // crash while the editor is in the background would lose every edit
+        // since the last 10-second checkpoint. Same defence-in-depth save
+        // sequence as OnApplicationPause, scaled down (no FlushPendingWrites
+        // — focus loss is not as risky as backgrounding on mobile, and we
+        // don't want to stutter the editor every Alt+Tab).
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus) return;
+            if (!_hasKnownPlayerPos) return;
+            try
+            {
+                SavePositionCheckpoint();
+                if (_lastKnownPlayerHp > 0)
+                    SaveImmediately("application focus lost");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SaveService] Focus-loss save failed: {ex.Message}");
+            }
+        }
+
         private void OnApplicationQuit()
         {
             Debug.Log("[SaveService] Application quitting — triggering position checkpoint + autosave.");
