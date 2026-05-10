@@ -20,6 +20,14 @@ namespace Valkur.Gameplay.TileEditor
             public string tileName;
             public TileBase tile;
             public Sprite preview;
+
+            // Tilesheet metadata. -1 means "this tile did not come from a sliced
+            // tilesheet" (legacy categories like grass_dirt, sand_ocean…).
+            // Populated from Resources/Tiles/<cat>/_manifest.json when present.
+            public int gridR;
+            public int gridC;
+            public int uniqueId;
+            public bool transparent;
         }
 
         [SerializeField] private List<TileEntry> entries = new List<TileEntry>();
@@ -58,10 +66,14 @@ namespace Valkur.Gameplay.TileEditor
         {
             var catalog = CreateInstance<TileCatalog>();
 
-            // Known category folders under Resources/Tiles/
+            // Known category folders under Resources/Tiles/.
+            // Tilesheet-style categories (with a _manifest.json) live alongside
+            // the legacy single-tile categories — the loader auto-detects which
+            // is which by probing for _manifest.json.
             string[] categories = {
                 "grass_dirt", "grass_rock", "ocean_grass", "rock_water",
-                "sand_grass", "sand_ocean", "sand_ocean_2", "sand_rock"
+                "sand_grass", "sand_ocean", "sand_ocean_2", "sand_rock",
+                "castle_pandora"
             };
 
             var seen = new HashSet<string>();
@@ -73,10 +85,35 @@ namespace Valkur.Gameplay.TileEditor
                 var sprites = Resources.LoadAll<Sprite>(path);
                 if (sprites == null || sprites.Length == 0) continue;
 
+                // Load tilesheet manifest if present. Categories without a
+                // manifest (legacy) get the default -1/-1/-1 metadata.
+                var manifestText = Resources.Load<TextAsset>($"Tiles/{cat}/_manifest");
+                Dictionary<string, TilesheetManifest.Cell> cellLookup = null;
+                if (manifestText != null)
+                {
+                    var manifest = JsonUtility.FromJson<TilesheetManifest>(manifestText.text);
+                    if (manifest != null && manifest.cells != null)
+                    {
+                        cellLookup = new Dictionary<string, TilesheetManifest.Cell>(manifest.cells.Length);
+                        foreach (var cell in manifest.cells)
+                            cellLookup[cell.file] = cell;
+                    }
+                }
+
                 foreach (var sprite in sprites)
                 {
                     // Avoid duplicates (subfolders may overlap)
                     if (!seen.Add(sprite.name)) continue;
+
+                    int gR = -1, gC = -1, uId = -1;
+                    bool transparent = false;
+                    if (cellLookup != null && cellLookup.TryGetValue(sprite.name, out var cell))
+                    {
+                        gR = cell.r;
+                        gC = cell.c;
+                        uId = cell.uniqueId;
+                        transparent = cell.transparent;
+                    }
 
                     var tile = CreateInstance<Tile>();
                     tile.sprite = sprite;
@@ -89,7 +126,11 @@ namespace Valkur.Gameplay.TileEditor
                         category = cat,
                         tileName = sprite.name,
                         tile = tile,
-                        preview = sprite
+                        preview = sprite,
+                        gridR = gR,
+                        gridC = gC,
+                        uniqueId = uId,
+                        transparent = transparent
                     });
                     total++;
                 }
@@ -116,7 +157,11 @@ namespace Valkur.Gameplay.TileEditor
                             category = "uncategorized",
                             tileName = sprite.name,
                             tile = tile,
-                            preview = sprite
+                            preview = sprite,
+                            gridR = -1,
+                            gridC = -1,
+                            uniqueId = -1,
+                            transparent = false
                         });
                         total++;
                     }
