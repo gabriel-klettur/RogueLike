@@ -1,6 +1,7 @@
 using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
+using Valkur.Gameplay.Enemies.FSM;
 
 namespace Valkur.Gameplay.FSM
 {
@@ -80,8 +81,16 @@ namespace Valkur.Gameplay.FSM
 
             gameObject.name = def.displayName;
 
-            // Create FSM with context from definition
-            _fsm = new StateMachine(gameObject, new IdleState());
+            // Create FSM. Prefer the JSON-driven factory (Phase 3 of the FSM
+            // data migration: drives initial state + allowed-state guard from
+            // StreamingAssets/FSM/sets.json). Fall back to the legacy
+            // hard-coded boot whenever the archetype isn't seeded — keeps
+            // brand-new monster prefabs working before the designer runs the
+            // generator.
+            if (!FSMRuntimeFactory.TryBuildForArchetype(def.monsterKey, gameObject, out _fsm))
+            {
+                _fsm = new StateMachine(gameObject, new IdleState());
+            }
             _fsm.SetContext(FSMComponents.KEY, new FSMComponents(gameObject));
             _fsm.SetContext("aggro_range", def.stats.aggroRange);
             _fsm.SetContext("melee_range", (float)def.stats.meleeRange);
