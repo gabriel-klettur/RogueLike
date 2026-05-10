@@ -5,6 +5,7 @@
         "Valkur.Core",
         "Valkur.Gameplay",
         "Valkur.Data",
+        "Valkur.Editor",
         "Valkur.Infrastructure",
         "Valkur.UI",
         "Valkur.UIKit",

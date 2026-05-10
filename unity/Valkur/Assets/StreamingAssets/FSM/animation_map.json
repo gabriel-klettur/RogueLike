@@ -1,0 +1,14 @@
+{
+  "default": {
+    "AlertChaseState": "chase",
+    "AttackState": "attack",
+    "ChaseState": "chase",
+    "DeathState": "death",
+    "FleeState": "walk",
+    "IdleState": "idle",
+    "NPCCastState": "cast",
+    "PatrolState": "walk",
+    "UnconsciousState": "death"
+  },
+  "per_set": {}
+}

@@ -1,0 +1,15 @@
+{
+  "by_archetype": {
+    "barbol": "Monster_Default",
+    "barbol_amarillo_4": "Monster_Default",
+    "barbol_baby": "Monster_Default",
+    "barbol_boss": "Monster_Default",
+    "barbol_cyan": "Monster_Default",
+    "barbol_gigante": "Monster_Default",
+    "barbol_gris": "Monster_Default",
+    "barbol_morado": "Monster_Default",
+    "barbol_musgo": "Monster_Default",
+    "barbol_oscuro": "Monster_Default"
+  },
+  "by_eid": {}
+}

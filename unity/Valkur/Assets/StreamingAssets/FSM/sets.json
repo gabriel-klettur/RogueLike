@@ -1,0 +1,95 @@
+{
+  "sets": [
+    {
+      "auto_generated": true,
+      "blackboard": {},
+      "id": "Monster_Default",
+      "initial": "IdleState",
+      "label": "Default Hostile Monster",
+      "states": [
+        {
+          "id": "IdleState",
+          "is_initial": true,
+          "is_terminal": false,
+          "label": "Idle",
+          "props": {},
+          "x": 80,
+          "y": 80
+        },
+        {
+          "id": "PatrolState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "Patrol",
+          "props": {},
+          "x": 300,
+          "y": 80
+        },
+        {
+          "id": "ChaseState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "Chase",
+          "props": {},
+          "x": 520,
+          "y": 80
+        },
+        {
+          "id": "AlertChaseState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "Alert Chase",
+          "props": {},
+          "x": 80,
+          "y": 240
+        },
+        {
+          "id": "AttackState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "Attack",
+          "props": {},
+          "x": 300,
+          "y": 240
+        },
+        {
+          "id": "FleeState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "Flee",
+          "props": {},
+          "x": 520,
+          "y": 240
+        },
+        {
+          "id": "NPCCastState",
+          "is_initial": false,
+          "is_terminal": false,
+          "label": "NPC Cast",
+          "props": {},
+          "x": 80,
+          "y": 400
+        },
+        {
+          "id": "UnconsciousState",
+          "is_initial": false,
+          "is_terminal": true,
+          "label": "Unconscious",
+          "props": {},
+          "x": 300,
+          "y": 400
+        },
+        {
+          "id": "DeathState",
+          "is_initial": false,
+          "is_terminal": true,
+          "label": "Death",
+          "props": {},
+          "x": 520,
+          "y": 400
+        }
+      ],
+      "transitions": []
+    }
+  ]
+}
