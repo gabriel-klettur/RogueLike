@@ -14,7 +14,7 @@ namespace Valkur.Gameplay.TileEditor
     /// Delegates input to TileEditorInputHandler, undo/redo to TileEditorUndoSystem.
     /// Toggle with F8.
     /// </summary>
-    public partial class TileEditorManager : SingletonMonoBehaviour<TileEditorManager>, GameEditorManager.IGameEditor, IAllowsPlayerMovement
+    public partial class TileEditorManager : SingletonMonoBehaviour<TileEditorManager>, GameEditorManager.IGameEditor, IAllowsPlayerMovement, ISuspendsPlayerCombat
     {
         [Header("Tile Catalog")]
         [SerializeField] private TileCatalog tileCatalog;

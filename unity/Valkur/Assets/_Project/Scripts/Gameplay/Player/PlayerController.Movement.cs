@@ -62,6 +62,11 @@ namespace Valkur.Gameplay
             // Spirits can move but cannot attack, dash, or cast.
             if (isSpirit) return;
 
+            // Movement-only editors (Tile Editor) keep WASD walking but
+            // suppress every combat input so left-click paint doesn't also
+            // fire fireball, right-click doesn't slash, etc.
+            if (IsPlayerCombatSuspended()) return;
+
             PollCombatActions();
         }
 
@@ -137,6 +142,26 @@ namespace Valkur.Gameplay
         {
             if (active == null) return false;
             return !(active is IAllowsPlayerMovement);
+        }
+
+        private static bool IsPlayerCombatSuspended()
+        {
+            if (!GameEditorManager.HasInstance) return false;
+            return ShouldSuspendCombatFor(GameEditorManager.Instance.ActiveEditor);
+        }
+
+        /// <summary>
+        /// Pure predicate: returns whether the given active editor should
+        /// suspend the player's combat actions (attacks / dash / spell casts)
+        /// while keeping movement enabled. Editors opt in via
+        /// <see cref="ISuspendsPlayerCombat"/>. Internal so EditMode tests can
+        /// drive the gate without bringing up a full <see cref="GameEditorManager"/>
+        /// in the scene.
+        /// </summary>
+        internal static bool ShouldSuspendCombatFor(GameEditorManager.IGameEditor active)
+        {
+            if (active == null) return false;
+            return active is ISuspendsPlayerCombat;
         }
 
         private void UpdateFacingDirection()

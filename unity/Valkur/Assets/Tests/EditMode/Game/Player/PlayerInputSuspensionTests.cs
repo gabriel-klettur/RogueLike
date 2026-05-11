@@ -39,6 +39,16 @@ namespace Valkur.Tests.EditMode.Game.Player
             return (bool)method.Invoke(null, new object[] { active });
         }
 
+        private static bool InvokeCombat(GameEditorManager.IGameEditor active)
+        {
+            var method = typeof(PlayerController)
+                .GetMethod("ShouldSuspendCombatFor",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method,
+                "Expected internal static PlayerController.ShouldSuspendCombatFor(IGameEditor).");
+            return (bool)method.Invoke(null, new object[] { active });
+        }
+
         // ── Stub editors used as predicate inputs ─────────────────────────────
 
         private sealed class PlainEditor : GameEditorManager.IGameEditor
@@ -53,6 +63,15 @@ namespace Valkur.Tests.EditMode.Game.Player
             : GameEditorManager.IGameEditor, IAllowsPlayerMovement
         {
             public string EditorName => "MovementFriendly";
+            public bool   IsActive   => true;
+            public void Activate()   { }
+            public void Deactivate() { }
+        }
+
+        private sealed class MovementOnlyEditor
+            : GameEditorManager.IGameEditor, IAllowsPlayerMovement, ISuspendsPlayerCombat
+        {
+            public string EditorName => "MovementOnly";
             public bool   IsActive   => true;
             public void Activate()   { }
             public void Deactivate() { }
@@ -131,6 +150,67 @@ namespace Valkur.Tests.EditMode.Game.Player
                 typeof(Valkur.Gameplay.TileEditor.TileEditorManager)),
                 "TileEditorManager must implement IAllowsPlayerMovement to preserve its " +
                 "in-game tile-painting UX.");
+        }
+
+        // ── Combat-suspension predicate ───────────────────────────────────────
+        //
+        // ShouldSuspendCombatFor decides whether attacks / dash / spells are
+        // gated WHILE the player is still allowed to walk. Tile Editor opts in
+        // so left-click paint doesn't double as a fireball cast.
+
+        [Test]
+        public void NoActiveEditor_DoesNotSuspendCombat()
+        {
+            Assert.IsFalse(InvokeCombat(null),
+                "When no editor is active, combat must not be suspended.");
+        }
+
+        [Test]
+        public void EditorWithoutCombatMarker_DoesNotSuspendCombat()
+        {
+            // A movement-friendly editor (e.g. Buildings, Spawners) that does NOT
+            // implement ISuspendsPlayerCombat keeps the full combat pipeline.
+            Assert.IsFalse(InvokeCombat(new MovementFriendlyEditor()),
+                "An editor without ISuspendsPlayerCombat must NOT suspend combat — " +
+                "Buildings/Spawners editors rely on the player being able to attack while open.");
+        }
+
+        [Test]
+        public void EditorWithCombatMarker_SuspendsCombat()
+        {
+            Assert.IsTrue(InvokeCombat(new MovementOnlyEditor()),
+                "An editor implementing ISuspendsPlayerCombat must suspend combat.");
+        }
+
+        [Test]
+        public void TileEditor_ImplementsSuspendsPlayerCombat()
+        {
+            // Pins the Tile Editor's "movement only" UX: left-click is the paint
+            // gesture, so combat must be gated while F8 is open.
+            Assert.IsTrue(typeof(ISuspendsPlayerCombat).IsAssignableFrom(
+                typeof(Valkur.Gameplay.TileEditor.TileEditorManager)),
+                "TileEditorManager must implement ISuspendsPlayerCombat so left-click " +
+                "tile painting does not also fire the player's fireball spell.");
+        }
+
+        [Test]
+        public void BuildingsEditor_DoesNotImplementSuspendsPlayerCombat()
+        {
+            // Buildings editor wants the player to walk AND fight while testing
+            // collider placement — only the Tile Editor opts into combat suspension.
+            Assert.IsFalse(typeof(ISuspendsPlayerCombat).IsAssignableFrom(
+                typeof(Valkur.Gameplay.Buildings.BuildingsRuntimeEditor)),
+                "BuildingsRuntimeEditor must NOT implement ISuspendsPlayerCombat — " +
+                "combat is part of its collider-testing UX.");
+        }
+
+        [Test]
+        public void SpawnerEditor_DoesNotImplementSuspendsPlayerCombat()
+        {
+            Assert.IsFalse(typeof(ISuspendsPlayerCombat).IsAssignableFrom(
+                typeof(Valkur.Gameplay.Spawners.SpawnerEditorManager)),
+                "SpawnerEditorManager must NOT implement ISuspendsPlayerCombat — " +
+                "the player must be able to fight spawned NPCs while F3 is open.");
         }
     }
 }
