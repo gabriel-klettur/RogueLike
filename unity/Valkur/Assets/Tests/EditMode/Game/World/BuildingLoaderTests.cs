@@ -404,12 +404,14 @@ namespace Valkur.Tests.EditMode.Game.World
 
         /// <summary>
         /// Confirms that the live file has the expected minimum number of entries.
-        /// Baseline: 141 entries at commit 4a562b26a (the authored data after
-        /// in-engine edits). If the count drops below 141, data was lost.
+        /// Baseline: 109 entries at commit 3106625a6 (after the user manually
+        /// removed ~30 buildings via the F10 runtime editor — the previous
+        /// baseline of 141 from 4a562b26a no longer reflects the desired
+        /// authored set). If the count drops below 109, data was lost.
         /// </summary>
         [Test]
         [Category("DataIntegrity")]
-        public void InstancesJson_HasAtLeast142Entries()
+        public void InstancesJson_HasAtLeast109Entries()
         {
             string path = Path.Combine(
                 Application.streamingAssetsPath, "Buildings", "buildings_instances.json");
@@ -418,12 +420,12 @@ namespace Valkur.Tests.EditMode.Game.World
             IList items = InvokeParse(File.ReadAllText(path));
             Assume.That(items != null, "Parser returned null.");
 
-            Assert.GreaterOrEqual(items.Count, 141,
-                $"Expected at least 141 buildings but found {items.Count}.\n" +
+            Assert.GreaterOrEqual(items.Count, 109,
+                $"Expected at least 109 buildings but found {items.Count}.\n" +
                 "Possible causes:\n" +
                 "  • The file was restored from a stale backup.\n" +
                 "  • The Buildings runtime editor (F10) deleted instances without saving.\n" +
-                "Restore with:  git checkout 4a562b26a -- " +
+                "Restore with:  git checkout 3106625a6 -- " +
                 "unity/Valkur/Assets/StreamingAssets/Buildings/buildings_instances.json");
         }
 
