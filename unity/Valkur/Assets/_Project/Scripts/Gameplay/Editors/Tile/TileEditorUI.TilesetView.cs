@@ -39,6 +39,11 @@ namespace Valkur.Gameplay.TileEditor
         // toggles dedup. Coordinates are (col, row) of the tilesheet manifest.
         private readonly HashSet<Vector2Int> _tilesetSelectedSlots = new HashSet<Vector2Int>();
 
+        // Clipboard snapshot for the picker. Populated by CommitTilesetSelection;
+        // cleared by ClearTilesetSelection and ResetPickerSelectionState (category
+        // change). Coordinates are (col, row) matching _tilesetSelectedSlots.
+        private readonly HashSet<Vector2Int> _tilesetCopiedSlots = new HashSet<Vector2Int>();
+
         // Maps every tilesheet slot back to its (r, c) + tile entry so the
         // selection logic can resolve "which slot is the pointer over".
         private readonly Dictionary<GameObject, TilesetSlotInfo> _tilesetSlotInfo
@@ -46,6 +51,10 @@ namespace Valkur.Gameplay.TileEditor
         // Per-slot highlight overlay GameObject. Activated and re-coloured
         // each frame the selection state changes.
         private readonly Dictionary<GameObject, GameObject> _tilesetSlotHighlight
+            = new Dictionary<GameObject, GameObject>();
+        // Per-slot COPY-highlight overlay GameObject (thick yellow border).
+        // Activated whenever the slot's (col,row) is in _tilesetCopiedSlots.
+        private readonly Dictionary<GameObject, GameObject> _tilesetSlotCopyHighlight
             = new Dictionary<GameObject, GameObject>();
 
         private struct TilesetSlotInfo
@@ -123,15 +132,29 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Clears only the copy-highlight overlay (yellow CopyHL) without touching
+        /// the green selection or clipboard state. Called by the manager's F8-deactivate
+        /// branch so the yellow ring is gone after the editor closes, even though the
+        /// underlying state is preserved for if the user re-opens the editor.
+        /// </summary>
+        public void ClearTilesetCopyHighlight()
+        {
+            _tilesetCopiedSlots.Clear();
+            RefreshTilesetCopyVisuals();
+        }
+
+        /// <summary>
         /// Public entry-point used by the manager's "Clear Selection" handler so
         /// clearing the map selection also wipes the picker selection in one click.
         /// </summary>
         public void ClearTilesetSelection()
         {
             _tilesetSelectedSlots.Clear();
+            _tilesetCopiedSlots.Clear();
             _tilesetDragStart = null;
             _tilesetDragEnd = null;
             RefreshTilesetSelectionVisuals();
+            RefreshTilesetCopyVisuals();
             if (_state != null)
             {
                 _state.Clipboard = null;
@@ -156,8 +179,10 @@ namespace Valkur.Gameplay.TileEditor
             _tilesetDragStart = null;
             _tilesetDragEnd = null;
             _tilesetSelectedSlots.Clear();
+            _tilesetCopiedSlots.Clear();
             _tilesetSlotInfo.Clear();
             _tilesetSlotHighlight.Clear();
+            _tilesetSlotCopyHighlight.Clear();
         }
 
         /// <summary>
@@ -171,6 +196,17 @@ namespace Valkur.Gameplay.TileEditor
         {
             _tilesetSlotInfo[slot] = new TilesetSlotInfo { R = r, C = c, Entry = entry };
             _tilesetSlotHighlight[slot] = highlightOverlay;
+        }
+
+        /// <summary>
+        /// Register the copy-highlight overlay for a slot. Separate from
+        /// <see cref="RegisterPickerSlot"/> to preserve the existing public API that
+        /// tests depend on. Invoked by <see cref="PopulateTilesheetSlots"/> immediately
+        /// after the DragHL sibling is registered.
+        /// </summary>
+        internal void RegisterPickerSlotCopyHighlight(GameObject slot, GameObject copyHighlightOverlay)
+        {
+            _tilesetSlotCopyHighlight[slot] = copyHighlightOverlay;
         }
 
         private int PopulateTilesheetSlots(List<TileCatalog.TileEntry> tiles)
@@ -226,7 +262,16 @@ namespace Valkur.Gameplay.TileEditor
                     hImg.raycastTarget = false;
                     hgo.SetActive(false);
 
+                    // Copy-highlight overlay — thick bright-yellow FRAME (not a
+                    // fill) drawn around the slot when its (col,row) is in
+                    // _tilesetCopiedSlots. Built as four child Image strips so the
+                    // tile preview underneath stays fully visible. Parent GO is the
+                    // toggle target; activating it shows all four strips at once.
+                    var cgo = CreateCopyHLFrame(go.transform);
+                    cgo.SetActive(false);
+
                     RegisterPickerSlot(go, entry.gridR, entry.gridC, entry, hgo);
+                    RegisterPickerSlotCopyHighlight(go, cgo);
                     AttachPickerSlotHandlers(go, entry.gridR, entry.gridC, ci, ce);
                     realSlots++;
                 }
@@ -235,6 +280,73 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             return realSlots;
+        }
+
+        /// <summary>
+        /// Builds the CopyHL frame as a parent GO containing four thin Image
+        /// strips anchored to the slot's edges (top / bottom / left / right).
+        /// Toggling the parent's active state shows or hides the entire frame.
+        /// The slot's tile preview stays visible through the open centre.
+        /// </summary>
+        private GameObject CreateCopyHLFrame(Transform slotParent)
+        {
+            var frame = CreateUI("CopyHL", slotParent);
+            var frt = frame.GetComponent<RectTransform>();
+            frt.anchorMin = new Vector2(0f, 0f); frt.anchorMax = new Vector2(1f, 1f);
+            frt.offsetMin = Vector2.zero; frt.offsetMax = Vector2.zero;
+
+            float t = TileEditorConstants.PickerCopyHighlightBorderPx;
+            var color = TileEditorConstants.PickerCopyHighlightColor;
+
+            // Top: stretch X, pin to top edge, height = t.
+            AddBorderStrip(frame.transform, "Top",
+                anchorMin: new Vector2(0f, 1f), anchorMax: new Vector2(1f, 1f),
+                pivot:     new Vector2(0.5f, 1f),
+                sizeDelta: new Vector2(0f, t),
+                anchoredPos: Vector2.zero,
+                color: color);
+
+            // Bottom: stretch X, pin to bottom edge, height = t.
+            AddBorderStrip(frame.transform, "Bottom",
+                anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(1f, 0f),
+                pivot:     new Vector2(0.5f, 0f),
+                sizeDelta: new Vector2(0f, t),
+                anchoredPos: Vector2.zero,
+                color: color);
+
+            // Left: stretch Y, pin to left edge, width = t.
+            AddBorderStrip(frame.transform, "Left",
+                anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0f, 1f),
+                pivot:     new Vector2(0f, 0.5f),
+                sizeDelta: new Vector2(t, 0f),
+                anchoredPos: Vector2.zero,
+                color: color);
+
+            // Right: stretch Y, pin to right edge, width = t.
+            AddBorderStrip(frame.transform, "Right",
+                anchorMin: new Vector2(1f, 0f), anchorMax: new Vector2(1f, 1f),
+                pivot:     new Vector2(1f, 0.5f),
+                sizeDelta: new Vector2(t, 0f),
+                anchoredPos: Vector2.zero,
+                color: color);
+
+            return frame;
+        }
+
+        private static void AddBorderStrip(Transform parent, string name,
+            Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
+            Vector2 sizeDelta, Vector2 anchoredPos, Color color)
+        {
+            var go = CreateUI(name, parent);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin     = anchorMin;
+            rt.anchorMax     = anchorMax;
+            rt.pivot         = pivot;
+            rt.sizeDelta     = sizeDelta;
+            rt.anchoredPosition = anchoredPos;
+            var img = go.AddComponent<Image>();
+            img.color = color;
+            img.raycastTarget = false;
         }
 
         // Attaches PointerDown/PointerEnter/PointerUp handlers to a picker slot.
@@ -376,6 +488,28 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Repaints the CopyHL overlay for every tilesheet slot based on
+        /// <see cref="_tilesetCopiedSlots"/>: slots whose (col,row) is in the set
+        /// show the thick bright-yellow CopyHL; all others are hidden.
+        /// Called after every <see cref="CommitTilesetSelection"/>,
+        /// <see cref="ClearTilesetSelection"/>, and <see cref="ResetPickerSelectionState"/>.
+        /// </summary>
+        private void RefreshTilesetCopyVisuals()
+        {
+            foreach (var kv in _tilesetSlotInfo)
+            {
+                var info = kv.Value;
+                var pos  = new Vector2Int(info.C, info.R);
+                bool isCopied = _tilesetCopiedSlots.Contains(pos);
+
+                if (!_tilesetSlotCopyHighlight.TryGetValue(kv.Key, out var cgo) || cgo == null)
+                    continue;
+
+                cgo.SetActive(isCopied);
+            }
+        }
+
+        /// <summary>
         /// Repaints every tilesheet slot's overlay based on the current state:
         ///   • drag-preview rect (Rect mode, mid-drag) → gold
         ///   • persistent selected (any mode)         → green
@@ -436,6 +570,8 @@ namespace Valkur.Gameplay.TileEditor
             if (_tilesetSelectedSlots.Count == 0)
             {
                 _state.Clipboard = null;
+                _tilesetCopiedSlots.Clear();
+                RefreshTilesetCopyVisuals();
                 RefreshClipboardButtons();
                 return;
             }
@@ -472,8 +608,41 @@ namespace Valkur.Gameplay.TileEditor
                 SourceLayer  = _state.CurrentLayer,
                 IsCut        = false,
             };
+            // Snapshot selected slots into the copy-set and repaint the CopyHL overlays.
+            _tilesetCopiedSlots.Clear();
+            foreach (var p in _tilesetSelectedSlots)
+                _tilesetCopiedSlots.Add(p);
+            RefreshTilesetCopyVisuals();
             RefreshClipboardButtons();
             SetStatus($"Selected {_tilesetSelectedSlots.Count} tile(s) from picker — V to paste.");
+
+            // For multi-tile picker copies (Rect / Multi with >1 slot), invalidate
+            // the map's pending Select-tool selection. Without this, a stale green
+            // selection on the map would be picked up by Ctrl+C (OnCopyClicked
+            // reads _state.SelectedCells) and overwrite the picker clipboard we
+            // just populated, making subsequent Ctrl+V paste the wrong tiles.
+            // Single-tile commits (the typical "pick a brush" gesture) leave the
+            // map selection alone so brush-then-paint workflows aren't disrupted.
+            if (_tilesetSelectedSlots.Count > 1 && TileEditorManager.HasInstance)
+                TileEditorManager.Instance.ClearMapSelectionFromPickerCommit();
+        }
+
+        /// <summary>
+        /// Counterpart of <c>TileEditorManager.ClearMapSelectionFromPickerCommit</c>:
+        /// when the map's Copy / Cut succeeds, the picker's green selection +
+        /// yellow CopyHL frame represent a stale (older) clipboard source. Wipe
+        /// them so the user sees a single active source. Does NOT touch
+        /// <see cref="TileEditorState.Clipboard"/> — the map-side caller has just
+        /// written the map tiles into it.
+        /// </summary>
+        public void ClearPickerSelectionFromMapCopy()
+        {
+            _tilesetSelectedSlots.Clear();
+            _tilesetCopiedSlots.Clear();
+            _tilesetDragStart = null;
+            _tilesetDragEnd   = null;
+            RefreshTilesetSelectionVisuals();
+            RefreshTilesetCopyVisuals();
         }
     }
 }

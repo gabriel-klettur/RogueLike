@@ -55,6 +55,16 @@ namespace Valkur.Gameplay.TileEditor
         // Double-click on a zone → centre + frame it on screen.
         private readonly EditorDoubleClickDetector _doubleClick = new EditorDoubleClickDetector();
 
+        /// <summary>
+        /// The last tilemap cell the cursor was hovering over the map (updated every
+        /// frame that <c>IsPointerOverUI()</c> is false). Used by
+        /// <c>OnPasteClicked</c> as the paste anchor when the pointer is over the
+        /// picker panel or another UI element — so pressing Ctrl+V while hovering
+        /// the picker panel pastes at the last map position, not at origin or the
+        /// stale <see cref="TileEditorState.SelectedCellPos"/>.
+        /// </summary>
+        private Vector3Int? _lastMapCursorCell;
+
         public TileEditorState State => _state;
         public bool IsActive => _state != null && _state.Active;
 

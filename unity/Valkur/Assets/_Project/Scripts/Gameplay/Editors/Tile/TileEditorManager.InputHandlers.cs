@@ -55,7 +55,13 @@ namespace Valkur.Gameplay.TileEditor
                 // Flush any unsaved tile edits so changes aren't lost when the editor is closed.
                 if (Application.isPlaying) _persistence?.SaveAllDirty();
                 _state.SelectedCellPos = null;
+                _lastMapCursorCell = null;
                 _state.BrushStrokeCells.Clear();
+                // Clear the map-side clipboard outline on deactivate so it doesn't
+                // linger as a ghost on the next editor session.
+                ClearCopiedMapCells();
+                // Clear the picker-side copy-highlight (yellow CopyHL overlays) too.
+                _ui?.ClearTilesetCopyHighlight();
                 HideBrushPreview();
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);

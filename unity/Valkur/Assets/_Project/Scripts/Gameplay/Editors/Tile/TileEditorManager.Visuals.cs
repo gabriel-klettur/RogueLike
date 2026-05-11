@@ -75,6 +75,12 @@ namespace Valkur.Gameplay.TileEditor
 
             _gridCursor.gameObject.SetActive(true);
             Vector3Int cellPos = GetCellUnderMouse(tilemap);
+
+            // Track the last map cell under the cursor so OnPasteClicked can
+            // use it as the paste anchor even when the pointer is over the picker
+            // panel (IsPointerOverUI → falls back to this instead of stale
+            // SelectedCellPos or the origin).
+            _lastMapCursorCell = cellPos;
             Vector3 worldPos = GetCellWorldCenter(tilemap, cellPos);
 
             // Brush is anchored at the cursor cell (cursor = TOP-LEFT of the N×N footprint).

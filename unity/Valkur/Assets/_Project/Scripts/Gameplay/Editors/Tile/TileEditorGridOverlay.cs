@@ -63,6 +63,11 @@ namespace Valkur.Gameplay.TileEditor
         // Persistent selection (Select tool, all sub-modes) — drawn as GREEN outlines
         // independent of the ephemeral _brushCells stroke preview.
         private readonly HashSet<Vector2Int> _selectedCells = new HashSet<Vector2Int>();
+        // Clipboard snapshot — cells most recently Copy'd or Cut from the map.
+        // Drawn as a THICK YELLOW border so the user can see what is "in clipboard"
+        // independently of the current green selection. Cleared on ClearSelection
+        // and on editor deactivate; survives layer changes and Paste.
+        private readonly HashSet<Vector2Int> _copiedCells = new HashSet<Vector2Int>();
         // Live rectangle preview during a Rect-mode drag (anchors in cell space, inclusive).
         private Vector2Int? _rectDragStart;
         private Vector2Int? _rectDragCurrent;
@@ -161,6 +166,19 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Enable or disable the white per-tile grid lines.</summary>
         public void SetShowGridLines(bool show) => _showGridLines = show;
+
+        /// <summary>
+        /// Replace the set of cells currently in the tile clipboard. These are drawn as
+        /// a thick bright-yellow border so the user can see the copy/cut source even after
+        /// the green selection has changed. Pass <c>null</c> or empty to clear.
+        /// </summary>
+        public void SetCopiedCells(IEnumerable<Vector3Int> cells)
+        {
+            _copiedCells.Clear();
+            if (cells == null) return;
+            foreach (var c in cells)
+                _copiedCells.Add(new Vector2Int(c.x, c.y));
+        }
 
         /// <summary>Set the tilemap and new tile for Fill preview calculation.</summary>
         public void SetFillPreview(Tilemap tilemap, TileBase newTile)

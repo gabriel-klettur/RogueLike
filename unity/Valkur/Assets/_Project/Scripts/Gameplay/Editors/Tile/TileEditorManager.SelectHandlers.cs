@@ -19,6 +19,58 @@ namespace Valkur.Gameplay.TileEditor
     /// </summary>
     public partial class TileEditorManager
     {
+        // ── Clipboard source tracking (map side) ─────────────────────────────
+        // Snapshot of the cells that were selected at the moment of the most
+        // recent Copy or Cut. Drawn as a thick bright-yellow outline on the
+        // GL grid overlay so the user can see the clipboard source region even
+        // after the green selection has moved elsewhere.
+        // Lives here (not on TileEditorState) because it is a pure visual
+        // concern — it drives only the overlay, not the paste logic.
+        private readonly HashSet<Vector3Int> _copiedMapCells = new HashSet<Vector3Int>();
+
+        /// <summary>
+        /// Snapshot <paramref name="cells"/> into <see cref="_copiedMapCells"/> and push
+        /// the updated set to the grid overlay. Call after every Copy / Cut operation.
+        /// </summary>
+        private void SnapshotCopiedMapCells(IEnumerable<Vector3Int> cells)
+        {
+            _copiedMapCells.Clear();
+            if (cells != null)
+                foreach (var c in cells) _copiedMapCells.Add(c);
+            _gridOverlay?.SetCopiedCells(_copiedMapCells);
+        }
+
+        /// <summary>Clear the map-side clipboard outline (e.g. on ClearSelection or editor deactivate).</summary>
+        private void ClearCopiedMapCells()
+        {
+            _copiedMapCells.Clear();
+            _gridOverlay?.SetCopiedCells(null);
+        }
+
+        /// <summary>
+        /// Wipe the map's pending Select-tool selection so a subsequent Ctrl+C
+        /// doesn't read stale cells and shadow whatever the user just copied via
+        /// the TILES PICKER. Called by <see cref="TileEditorUI.CommitTilesetSelection"/>
+        /// when the picker commits a multi-tile selection — the picker copy is
+        /// now the canonical clipboard source, so any green map selection from
+        /// before is conceptually invalid.
+        ///
+        /// Clears the green selection set, the drag anchors, and the yellow
+        /// map-side copy outline. Does NOT touch <see cref="TileEditorState.Clipboard"/>
+        /// — the caller has just written the picker tiles into it and we must
+        /// preserve them for the next paste.
+        /// </summary>
+        public void ClearMapSelectionFromPickerCommit()
+        {
+            _state.SelectedCells.Clear();
+            _state.SelectedCellPos = null;
+            _state.RectDragStart   = null;
+            _state.RectDragCurrent = null;
+            _state.IsDragging      = false;
+            ClearCopiedMapCells();
+            ApplySelectionOverlay();
+            _ui?.RefreshClipboardButtons();
+        }
         // ── Per-frame dispatch ────────────────────────────────────────────────
 
         private void HandleSelectInputDispatch(Tilemap tilemap, Vector3Int cellPos)
@@ -149,6 +201,9 @@ namespace Valkur.Gameplay.TileEditor
             _state.RectDragCurrent = null;
             _state.IsDragging = false;
             ApplySelectionOverlay();
+            // Clear the map-side clipboard outline so the yellow ring disappears
+            // together with the green selection.
+            ClearCopiedMapCells();
             // The picker mirrors the same Single/Rect/Multi semantics, so the
             // user expects "Clear Selection" to wipe both surfaces in one click.
             _ui?.ClearTilesetSelection();
@@ -208,6 +263,11 @@ namespace Valkur.Gameplay.TileEditor
                 SourceLayer  = _state.CurrentLayer,
                 IsCut        = false,
             };
+            // Snapshot the source cells for the yellow clipboard outline.
+            SnapshotCopiedMapCells(_state.SelectedCells);
+            // Map just became the clipboard source — wipe the picker's stale
+            // green/yellow visuals so the user sees a single active source.
+            _ui?.ClearPickerSelectionFromMapCopy();
             _ui?.RefreshClipboardButtons();
             _ui?.SetStatus($"Copied {bounds.size.x}×{bounds.size.y} (layer {_state.CurrentLayer})");
         }
@@ -252,13 +312,19 @@ namespace Valkur.Gameplay.TileEditor
             if (tilemap == null) { _ui?.SetStatus("No tilemap on current layer"); return; }
 
             // Anchor priority:
-            //   1) the cell currently under the mouse (if pointer is over the canvas
+            //   1) the cell currently under the mouse (if pointer is NOT over UI
             //      AND the input handler is available — null in EditMode tests)
-            //   2) the last selected cell (if any)
-            //   3) origin (0,0) as last resort
+            //   2) the last map cell the cursor was over (_lastMapCursorCell) — lets
+            //      the user hover the picker panel, pick a rect, and press Ctrl+V
+            //      without the paste teleporting to origin or a stale SelectedCellPos.
+            //      This is updated every frame IsPointerOverUI() is false.
+            //   3) the last selected map cell (legacy fallback for tests without a camera)
+            //   4) origin (0,0,0) as last resort
             Vector3Int anchor;
             if (_input != null && !_input.IsPointerOverUI())
                 anchor = GetCellUnderMouse(tilemap);
+            else if (_lastMapCursorCell.HasValue)
+                anchor = _lastMapCursorCell.Value;
             else if (_state.SelectedCellPos.HasValue)
                 anchor = _state.SelectedCellPos.Value;
             else

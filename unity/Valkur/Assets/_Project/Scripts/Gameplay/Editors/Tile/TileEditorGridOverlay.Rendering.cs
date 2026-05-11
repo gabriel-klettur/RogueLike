@@ -101,6 +101,17 @@ namespace Valkur.Gameplay.TileEditor
 
             GL.Begin(GL.QUADS);
 
+            // Clipboard highlight: thick YELLOW border per cell most recently Copy/Cut.
+            // Drawn below the green selection so green wins when a cell is in both.
+            // Uses a proportionally larger thickness so the ring is visually distinct
+            // from the 3 px hover ring (4 px = ClipboardOutlineThicknessPx).
+            if (_copiedCells.Count > 0)
+            {
+                float clipT = pixelSize * TileEditorConstants.ClipboardOutlineThicknessPx;
+                foreach (var c in _copiedCells)
+                    DrawBorderQuads(c.x, c.y, TileEditorConstants.ClipboardOutlineColor, clipT);
+            }
+
             // Persistent Select-tool selection: GREEN border per cell. Drawn first
             // so the live brush stroke (yellow) and hover (cyan) overlay on top.
             if (_selectedCells.Count > 0)
