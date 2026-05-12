@@ -408,6 +408,54 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Select
         }
 
         [Test]
+        public void Rect_OneCell_AutoSwitchesToBrushTool()
+        {
+            // Fix #2 regression guard: a 1×1 Rect click in the picker must
+            // call _onToolChanged(Brush) so the user can paint immediately.
+            // Before the fix, OnTileSelected's inMultiTileSelectFlow guard
+            // blocked the auto-switch when CurrentSelectMode != Single.
+            var ui = CreateMinimalUI(TileEditorState.SelectMode.Rect);
+            var slots = RegisterSlots(ui, (0, 0), (0, 1));
+
+            TileEditorState.Tool? observedTool = null;
+            // Inject the callback via the private field that Initialize() normally sets.
+            SetPrivate(ui, "_onToolChanged",
+                (System.Action<TileEditorState.Tool>)(t => observedTool = t));
+
+            Down(ui, slots[1]);
+            Up(ui, slots[1]);
+
+            Assert.IsTrue(observedTool.HasValue,
+                "A 1×1 Rect click must invoke _onToolChanged so the tool switches.");
+            Assert.AreEqual(TileEditorState.Tool.Brush, observedTool.Value,
+                "The auto-switch must select the Brush tool, not another tool.");
+        }
+
+        [Test]
+        public void Rect_MultiCell_DoesNotAutoSwitchToBrushTool()
+        {
+            // Negative guard: a multi-cell Rect drag must NOT auto-switch to
+            // Brush — it must stay in Select/Rect so the user can Ctrl+V to paste.
+            var ui = CreateMinimalUI(TileEditorState.SelectMode.Rect);
+            var slots = RegisterSlots(ui,
+                (0, 0), (0, 1),
+                (1, 0), (1, 1));
+
+            TileEditorState.Tool? observedTool = null;
+            SetPrivate(ui, "_onToolChanged",
+                (System.Action<TileEditorState.Tool>)(t => observedTool = t));
+
+            // 2×1 drag: (0,0) → (0,1).
+            Down(ui, slots[0]);
+            Enter(ui, 0, 1);
+            Up(ui, slots[1]);
+
+            Assert.IsFalse(observedTool.HasValue,
+                "A multi-cell Rect drag must NOT trigger an auto-switch to Brush " +
+                "— the user stays in Select/Rect to allow Ctrl+V paste.");
+        }
+
+        [Test]
         public void Rect_ReleaseReplacesPreviousSelection()
         {
             var ui = CreateMinimalUI(TileEditorState.SelectMode.Rect);

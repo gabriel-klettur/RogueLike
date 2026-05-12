@@ -473,11 +473,21 @@ namespace Valkur.Gameplay.TileEditor
             // intact even when the user is in Rect mode.
             int rectW = (cMax - cMin) + 1;
             int rectH = (rMax - rMin) + 1;
-            if (rectW == 1 && rectH == 1)
+            bool isSingleCell = rectW == 1 && rectH == 1;
+            if (isSingleCell)
                 SetActiveBrush(slotIndex, entry);
 
             RefreshTilesetSelectionVisuals();
             CommitTilesetSelection();
+
+            // For a 1×1 Rect click, auto-switch to Brush so the user can paint
+            // immediately — mirrors the Single-mode behaviour.
+            // Multi-cell rects stay in Select/Rect so Ctrl+V can be used to paste.
+            // We call _onToolChanged directly instead of going through OnTileSelected
+            // because OnTileSelected blocks the auto-switch whenever
+            // CurrentSelectMode != Single (intentional for multi-cell flows).
+            if (isSingleCell)
+                _onToolChanged?.Invoke(TileEditorState.Tool.Brush);
         }
 
         private void SetActiveBrush(int slotIndex, TileCatalog.TileEntry entry)
