@@ -156,7 +156,35 @@ namespace Valkur.Gameplay.TileEditor
 
         private partial void HandleMouseInput()
         {
-            if (_input.IsPointerOverUI()) return;
+            if (_input.IsPointerOverUI())
+            {
+                // If the user released LMB while the pointer was over UI (e.g. the
+                // TILES PICKER), any in-flight drag on the map must be cancelled here —
+                // the tool handlers never see the release event because this guard
+                // returns early, leaving _state.IsDragging = true indefinitely and
+                // preventing the picker from registering subsequent clicks correctly.
+                if (Valkur.Core.Input.MouseInputManager.WasLeftMouseButtonReleasedThisFrame()
+                    && _state.IsDragging)
+                {
+                    // Commit any pending Rect selection (uses the last known drag end).
+                    if (_state.CurrentTool == TileEditorState.Tool.Select
+                        && _state.CurrentSelectMode == TileEditorState.SelectMode.Rect)
+                    {
+                        CommitRectSelection();
+                        var releaseTilemap = GetCurrentTilemap();
+                        if (releaseTilemap != null) UpdateSelectionStatusForUI(releaseTilemap);
+                        _ui?.RefreshClipboardButtons();
+                        ApplySelectionOverlay();
+                    }
+                    _state.IsDragging      = false;
+                    _state.RectDragStart   = null;
+                    _state.RectDragCurrent = null;
+                    // Close any brush/eraser stroke that was released over UI too.
+                    _undo?.EndStroke();
+                    if (Application.isPlaying) _persistence?.SaveAllDirty();
+                }
+                return;
+            }
 
             // Collider edit modes (Draw / Erase) take priority over the regular tool
             // dispatch — they always target the Collision tilemap and ignore SelectedTile.
