@@ -39,6 +39,9 @@ namespace Valkur.Gameplay.TileEditor
             RefreshLayersPanel();
             if (_refs.ViewLayerSelectedText != null)
                 _refs.ViewLayerSelectedText.text = $"  {(int)_state.CurrentLayer}: {_state.CurrentLayer}";
+            // Active-layer flip changes the Move-To-Layer no-op guard, so re-evaluate
+            // the Move button's enable state.
+            RefreshClipboardButtons();
         }
 
         public void RefreshBrushSizeLabel()
@@ -93,9 +96,14 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>
         /// Refresh the enabled state of the Copy / Cut / Paste / Clear buttons.
-        /// Paste is the only one that depends on persistent state (clipboard); the rest
-        /// are always interactable while the editor is active — they just no-op without
-        /// a selection. Copy/Cut visually fade when there is nothing selected.
+        /// Paste is the only clipboard control gated on persistent state (clipboard
+        /// contents); the rest are interactable when there is a map selection.
+        ///
+        /// Note: the Move-To-Layer slider has no companion button to disable —
+        /// the slider stays interactable so users can preview the destination
+        /// label; the manager's <c>OnMoveToLayerClicked</c> shows a status
+        /// message and bails harmlessly when there is no selection or the target
+        /// equals the active layer.
         /// </summary>
         public void RefreshClipboardButtons()
         {
@@ -108,6 +116,17 @@ namespace Valkur.Gameplay.TileEditor
             if (_refs.CopyButton  != null) _refs.CopyButton.interactable  = hasSelection;
             if (_refs.CutButton   != null) _refs.CutButton.interactable   = hasSelection;
             if (_refs.ClearSelectionButton != null) _refs.ClearSelectionButton.interactable = hasSelection;
+        }
+
+        /// <summary>
+        /// Sync the "Target: {idx}: {Layer}" label below the Move-To-Layer slider.
+        /// Called whenever the slider changes or the active layer flips (so the
+        /// "differs from active" hint stays truthful).
+        /// </summary>
+        public void RefreshMoveToLayerLabel(int sliderValue)
+        {
+            if (_refs.MoveToLayerValueLabel == null) return;
+            _refs.MoveToLayerValueLabel.text = TileEditorUIBuilder.FormatMoveToLayerLabel(sliderValue);
         }
 
         /// <summary>

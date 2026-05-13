@@ -156,10 +156,28 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         private void RegenerateColliderIfNeeded(TileEditBatch batch)
         {
-            if (batch == null || batch.TargetTilemap == null) return;
+            if (batch == null) return;
             var collision = GetCollisionTilemap();
-            if (collision == null || batch.TargetTilemap != collision) return;
-            RegenerateCompositeCollider(collision);
+            if (collision == null) return;
+
+            if (batch.TargetTilemap == collision)
+            {
+                RegenerateCompositeCollider(collision);
+                return;
+            }
+
+            // Cross-tilemap batch (e.g. Move-To-Layer with Collision as source or
+            // destination): the batch's fallback tilemap is not Collision, but one
+            // or more individual edits target it through TileEdit.TargetTilemap.
+            // Scan the edits and rebake the composite once if any hit Collision.
+            for (int i = 0; i < batch.Edits.Count; i++)
+            {
+                if (batch.Edits[i].TargetTilemap == collision)
+                {
+                    RegenerateCompositeCollider(collision);
+                    return;
+                }
+            }
         }
 
         // ── View panel handlers ──
@@ -255,6 +273,17 @@ namespace Valkur.Gameplay.TileEditor
             _cachedCurrentLayer = _state.CurrentLayer;
             _cachedCurrentTilemap = worldGridBuilder.GetTilemap(_state.CurrentLayer);
             return _cachedCurrentTilemap;
+        }
+
+        /// <summary>
+        /// Resolve the tilemap for an arbitrary layer (i.e. not necessarily the active one).
+        /// Mirrors <see cref="GetCurrentTilemap"/> but uncached — caller is the rare cross-layer
+        /// operation (Move-To-Layer), where caching a second slot would complicate frame
+        /// invariants for little gain.
+        /// </summary>
+        private Tilemap GetTilemapForLayer(TilemapLayerSetup.TilemapLayer layer)
+        {
+            return worldGridBuilder != null ? worldGridBuilder.GetTilemap(layer) : null;
         }
 
         private Vector3Int GetCellUnderMouse(Tilemap tilemap)

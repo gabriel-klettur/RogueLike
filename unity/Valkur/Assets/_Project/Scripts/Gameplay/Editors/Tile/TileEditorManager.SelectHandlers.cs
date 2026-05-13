@@ -355,6 +355,94 @@ namespace Valkur.Gameplay.TileEditor
             _ui?.SetStatus($"Pasted {edits.Count} cell(s)");
         }
 
+        // ── Move To Layer (action on existing selection) ────────────────────
+        //
+        // Take every cell in <see cref="TileEditorState.SelectedCells"/> that holds a
+        // tile on the active layer and move it to <paramref name="destLayer"/> as a
+        // single atomic operation: clear the cell on the source tilemap, paint the
+        // same tile on the destination tilemap. Both half-edits are recorded in one
+        // <see cref="TileEditBatch"/> via the per-edit <c>TargetTilemap</c> override
+        // (see <see cref="TileEdit"/> docs) so a single Ctrl+Z reverses both halves.
+        //
+        // Picker-only selections are filtered out by the empty <c>SelectedCells</c>
+        // check — the picker has no map cells so there is nothing to move.
+        // Destination-equals-source is a no-op (preserves the existing scene rather
+        // than silently churning through every cell). Cells filtered by
+        // <see cref="CanEditCell"/> (out-of-zone / read-only) are skipped just like
+        // every other bulk operation.
+        //
+        // After a successful move the editor auto-switches to the destination layer
+        // (so the user sees the result in context). The selection is intentionally
+        // left intact so the user can verify visually and chain another action.
+
+        internal void OnMoveToLayerClicked(TilemapLayerSetup.TilemapLayer destLayer)
+        {
+            if (_state.SelectedCells.Count == 0) { _ui?.SetStatus("Nothing selected"); return; }
+            if (destLayer == _state.CurrentLayer)
+            {
+                _ui?.SetStatus($"Already on layer {destLayer}");
+                return;
+            }
+
+            var srcTilemap = GetCurrentTilemap();
+            var dstTilemap = GetTilemapForLayer(destLayer);
+            if (srcTilemap == null || dstTilemap == null)
+            {
+                _ui?.SetStatus("Tilemap unavailable");
+                return;
+            }
+
+            _undo.StartStroke(srcTilemap);
+            var edits = new List<TileEdit>();
+            int moved = 0;
+
+            foreach (var c in _state.SelectedCells)
+            {
+                if (!CanEditCell(c)) continue;
+                var srcTile = srcTilemap.GetTile(c);
+                if (srcTile == null) continue;
+
+                var oldDst = dstTilemap.GetTile(c);
+
+                // Phase A: clear source
+                srcTilemap.SetTile(c, null);
+                edits.Add(new TileEdit(c, srcTile, null, srcTilemap));
+
+                // Phase B: paint destination (overwrites whatever was there)
+                dstTilemap.SetTile(c, srcTile);
+                edits.Add(new TileEdit(c, oldDst, srcTile, dstTilemap));
+
+                moved++;
+            }
+
+            _undo.RecordEdits(edits);
+            _undo.EndStroke();
+            _persistence?.MarkBatchDirty(edits);
+            if (Application.isPlaying) _persistence?.SaveAllDirty();
+
+            if (moved == 0)
+            {
+                _ui?.SetStatus("No tiles to move on the source layer");
+                return;
+            }
+
+            // Switch the editor to the destination layer so subsequent edits
+            // land on the layer the user just populated. Uses the same path as
+            // the right-panel layer selector — closes any in-flight stroke
+            // (already closed by EndStroke above; idempotent) and refreshes UI.
+            OnLayerChanged(destLayer);
+
+            // If the move touched Collision (as source OR destination) the composite
+            // collider was rebuilt against stale geometry; OnLayerChanged doesn't know,
+            // so explicitly rebake here.
+            var collision = GetCollisionTilemap();
+            if (collision != null && (srcTilemap == collision || dstTilemap == collision))
+                RegenerateCompositeCollider(collision);
+
+            _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer}");
+            _ui?.RefreshClipboardButtons();
+        }
+
         private static BoundsInt ComputeSelectionBounds(HashSet<Vector3Int> cells)
         {
             int xMin = int.MaxValue, yMin = int.MaxValue;

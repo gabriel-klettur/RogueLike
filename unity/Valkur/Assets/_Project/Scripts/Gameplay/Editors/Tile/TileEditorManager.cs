@@ -149,7 +149,8 @@ namespace Valkur.Gameplay.TileEditor
                 onCopyClicked:          OnCopyClicked,
                 onCutClicked:           OnCutClicked,
                 onPasteClicked:         OnPasteClicked,
-                onClearSelectionClicked: ClearSelection);
+                onClearSelectionClicked: ClearSelection,
+                onMoveToLayerClicked:   idx => OnMoveToLayerClicked((TilemapLayerSetup.TilemapLayer)idx));
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();

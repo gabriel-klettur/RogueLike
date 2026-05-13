@@ -158,18 +158,35 @@ namespace Valkur.Gameplay.TileEditor
     /// <summary>
     /// Represents a single tile edit for undo/redo support.
     /// Maps to Python's PaintTilesCommand edit tuple.
+    ///
+    /// <see cref="TargetTilemap"/> is optional: leave null and the edit is applied to
+    /// the enclosing <see cref="TileEditBatch.TargetTilemap"/> on Undo/Redo (the legacy
+    /// single-layer behaviour every brush/eraser/fill/paste call relies on). Set it
+    /// non-null when a single batch needs to mutate more than one tilemap atomically —
+    /// e.g. Move-To-Layer, which clears a cell on the source layer and paints it on a
+    /// different destination layer inside the same Ctrl+Z scope.
     /// </summary>
     public struct TileEdit
     {
         public Vector3Int Position;
         public TileBase OldTile;
         public TileBase NewTile;
+        public Tilemap TargetTilemap;
 
         public TileEdit(Vector3Int pos, TileBase oldTile, TileBase newTile)
         {
             Position = pos;
             OldTile = oldTile;
             NewTile = newTile;
+            TargetTilemap = null;
+        }
+
+        public TileEdit(Vector3Int pos, TileBase oldTile, TileBase newTile, Tilemap target)
+        {
+            Position = pos;
+            OldTile = oldTile;
+            NewTile = newTile;
+            TargetTilemap = target;
         }
     }
 
@@ -184,19 +201,21 @@ namespace Valkur.Gameplay.TileEditor
 
         public void Undo()
         {
-            if (TargetTilemap == null) return;
             for (int i = Edits.Count - 1; i >= 0; i--)
             {
-                TargetTilemap.SetTile(Edits[i].Position, Edits[i].OldTile);
+                var map = Edits[i].TargetTilemap != null ? Edits[i].TargetTilemap : TargetTilemap;
+                if (map == null) continue;
+                map.SetTile(Edits[i].Position, Edits[i].OldTile);
             }
         }
 
         public void Redo()
         {
-            if (TargetTilemap == null) return;
             foreach (var edit in Edits)
             {
-                TargetTilemap.SetTile(edit.Position, edit.NewTile);
+                var map = edit.TargetTilemap != null ? edit.TargetTilemap : TargetTilemap;
+                if (map == null) continue;
+                map.SetTile(edit.Position, edit.NewTile);
             }
         }
     }

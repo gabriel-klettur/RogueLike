@@ -158,7 +158,10 @@ namespace Valkur.Gameplay.TileEditor
         // Select tool is active. Mirrors the Colliders panel layout (3 toggle rows
         // for Single/Rect/Multi + a clipboard action row + hint).
         public const float SELECT_MODES_DROP_W = 200f;
-        public const float SELECT_MODES_DROP_H = 230f + PANEL_HDR_H; // 254
+        // Height bumped from 230 → 320 to host the Move-To-Layer section
+        // (separator + section label + value label + slider + footer hint).
+        // The slider commits the move on pointer-release; no separate button.
+        public const float SELECT_MODES_DROP_H = 320f + PANEL_HDR_H; // 344
 
         // ── Factory methods ──
         // Generic primitives delegate to the kit; only the TileEditor-specific

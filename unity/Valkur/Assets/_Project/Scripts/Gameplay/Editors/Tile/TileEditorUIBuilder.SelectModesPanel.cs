@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Valkur.Gameplay.World;
+using Valkur.UIKit;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
 
 namespace Valkur.Gameplay.TileEditor
@@ -27,7 +29,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onCopyClicked,
             System.Action onCutClicked,
             System.Action onPasteClicked,
-            System.Action onClearSelectionClicked)
+            System.Action onClearSelectionClicked,
+            System.Action<int> onMoveToLayerClicked)
         {
             refs.SelectModesDropdown = MakeDropdownPanel("SelectModesDropdown", canvasT,
                 PanelDock.TopLeft, SelectModesX, SelectModesY,
@@ -60,6 +63,11 @@ namespace Valkur.Gameplay.TileEditor
 
             BuildSeparator(t);
 
+            // ── Move-To-Layer section: slider + commit button ───────────────
+            BuildMoveToLayerSection(t, state, ref refs, onMoveToLayerClicked);
+
+            BuildSeparator(t);
+
             // Hint text (kbd shortcuts)
             var hintGo = CreateUI("Hint", t);
             hintGo.AddComponent<LayoutElement>().preferredHeight = 32f;
@@ -71,6 +79,106 @@ namespace Valkur.Gameplay.TileEditor
             hint.enableWordWrapping = true;
 
             refs.SelectModesDropdown.SetActive(false);
+        }
+
+        // Slim slider geometry — matches the Brush Size slider's visual style so
+        // both runtime panels feel consistent. Kept private to this builder; the
+        // Size panel owns its own copy because its constants differ (range 1..25).
+        private const float MOVE_SLIDER_ROW_H   = 28f;
+        private const float MOVE_SLIDER_TRACK_H = 4f;
+        private const float MOVE_SLIDER_THUMB   = 14f;
+
+        /// <summary>
+        /// Section that lets the user move the current map selection to any of the
+        /// nine <see cref="TilemapLayerSetup.TilemapLayer"/> layers via a slim 0..8
+        /// slider and a "Move" commit button. The destination index is echoed to
+        /// the value label so the user knows what the next click will commit to.
+        /// </summary>
+        private static void BuildMoveToLayerSection(Transform parent, TileEditorState state, ref UIRefs refs,
+            System.Action<int> onMoveToLayerClicked)
+        {
+            // Section header — small caps, left-aligned, mirrors the existing
+            // section-label style used elsewhere in the editor.
+            var hdrGo = CreateUI("MoveSectionLbl", parent);
+            hdrGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            var hdr = hdrGo.AddComponent<TextMeshProUGUI>();
+            hdr.text = "MOVE TO LAYER";
+            hdr.fontSize = 9f;
+            hdr.fontStyle = FontStyles.Bold;
+            hdr.alignment = TextAlignmentOptions.Left;
+            hdr.color = TEXT_SECONDARY;
+            hdr.raycastTarget = false;
+
+            // Value label — dynamic "Target: {idx}: {LayerName}".
+            int initial = (int)state.CurrentLayer;
+            var valueGo = CreateUI("MoveValueLbl", parent);
+            valueGo.AddComponent<LayoutElement>().preferredHeight = 18f;
+            refs.MoveToLayerValueLabel = valueGo.AddComponent<TextMeshProUGUI>();
+            refs.MoveToLayerValueLabel.text = FormatMoveToLayerLabel(initial);
+            refs.MoveToLayerValueLabel.fontSize = 11f;
+            refs.MoveToLayerValueLabel.alignment = TextAlignmentOptions.Center;
+            refs.MoveToLayerValueLabel.color = ACCENT;
+            refs.MoveToLayerValueLabel.raycastTarget = false;
+
+            // Slider row — slim track, integer steps over [0, 8].
+            var sliderRow = CreateUI("MoveSliderRow", parent);
+            sliderRow.AddComponent<LayoutElement>().preferredHeight = MOVE_SLIDER_ROW_H;
+
+            var sliderHost = CreateUI("SliderHost", sliderRow.transform);
+            var hostRt = sliderHost.GetComponent<RectTransform>();
+            hostRt.anchorMin = new Vector2(0f, 0f);
+            hostRt.anchorMax = new Vector2(1f, 1f);
+            hostRt.pivot     = new Vector2(0.5f, 0.5f);
+            hostRt.offsetMin = new Vector2(4f, 0f);
+            hostRt.offsetMax = new Vector2(-4f, 0f);
+
+            refs.MoveToLayerSlider = UISlider.MakeSlimTrack(sliderHost.transform, "Slider",
+                min: 0,
+                max: 8, // 9 TilemapLayer values, 0..8
+                initial: initial,
+                onValueChanged: null, // label sync wired in TileEditorUI.Builder
+                hitHeight:   MOVE_SLIDER_ROW_H,
+                trackHeight: MOVE_SLIDER_TRACK_H,
+                thumbSize:   MOVE_SLIDER_THUMB,
+                trackColor:  new Color(0.18f, 0.20f, 0.24f, 1f),
+                fillColor:   ACCENT_DIM,
+                handleColor: ACCENT);
+            refs.MoveToLayerSlider.wholeNumbers = true;
+            UIFactory.StretchFill(refs.MoveToLayerSlider.gameObject);
+
+            // Attach the pointer-release relay to the slider's own GameObject.
+            // Coexists with Selectable's drag handling (only observes events,
+            // never consumes). The commit happens here on release rather than
+            // through a separate "Apply" button — matches the user's expectation
+            // that picking a layer with the slider IS the action.
+            refs.MoveToLayerSliderRelay = refs.MoveToLayerSlider.gameObject.AddComponent<MoveLayerSliderRelay>();
+            var sliderCap = refs.MoveToLayerSlider;
+            refs.MoveToLayerSliderRelay.OnReleased = () =>
+                onMoveToLayerClicked?.Invoke(Mathf.RoundToInt(sliderCap.value));
+
+            // Footer hint so the user immediately understands the slider IS the
+            // commit (no hidden button to discover).
+            var hintGo = CreateUI("MoveHint", parent);
+            hintGo.AddComponent<LayoutElement>().preferredHeight = 14f;
+            var moveHint = hintGo.AddComponent<TextMeshProUGUI>();
+            moveHint.text = "Release slider to move selection";
+            moveHint.fontSize = 9f;
+            moveHint.alignment = TextAlignmentOptions.Center;
+            moveHint.color = TEXT_MUTED;
+            moveHint.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// Build the "Target: {idx}: {LayerName}" string shown beneath the section
+        /// header. Public-internal because the UI refresh path (see
+        /// <see cref="TileEditorUI.RefreshMoveToLayerLabel"/>) must produce the
+        /// exact same format whenever the slider moves.
+        /// </summary>
+        internal static string FormatMoveToLayerLabel(int sliderValue)
+        {
+            int idx = Mathf.Clamp(sliderValue, 0, 8);
+            var layer = (TilemapLayerSetup.TilemapLayer)idx;
+            return $"Target: {idx}: {layer}";
         }
 
         /// <summary>

@@ -127,6 +127,15 @@ namespace Valkur.Gameplay.TileEditor
             public Button ClearSelectionButton;
             public Image  ClearSelectionButtonImg;
 
+            // Move-To-Layer action: slider (0..8) picks the destination layer and
+            // commits the cross-tilemap move on pointer release (no commit button).
+            // The relay is the bridge between the slider's pointer-up / end-drag
+            // events and the manager's <c>OnMoveToLayerClicked</c> action; the value
+            // label echoes the current slider target as "{idx}: {LayerName}".
+            public Slider                  MoveToLayerSlider;
+            public MoveLayerSliderRelay    MoveToLayerSliderRelay;
+            public TextMeshProUGUI         MoveToLayerValueLabel;
+
             // View panel — three toggle rows mirroring the Colliders panel UI/UX.
             public Image ShowGridLinesToggleImg;
             public TextMeshProUGUI ShowGridLinesToggleLabel;
@@ -185,7 +194,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onCopyClicked = null,
             System.Action onCutClicked = null,
             System.Action onPasteClicked = null,
-            System.Action onClearSelectionClicked = null)
+            System.Action onClearSelectionClicked = null,
+            System.Action<int> onMoveToLayerClicked = null)
         {
             var refs = new UIRefs
             {
@@ -207,7 +217,8 @@ namespace Valkur.Gameplay.TileEditor
             BuildViewDropdown(canvasT, state, ref refs,
                 onShowGridLines, onShowZoneGrid, onShowColliders);
             BuildSelectModesDropdown(canvasT, state, ref refs,
-                onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked);
+                onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
+                onMoveToLayerClicked);
             BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 

@@ -34,7 +34,16 @@ namespace Valkur.Gameplay.TileEditor
                 _onPerfToggle, ToggleAllPanels,
                 _onShowGridLinesClicked, _onShowZoneGridClicked,
                 _onSelectModeChanged, _onCopyClicked, _onCutClicked,
-                _onPasteClicked, _onClearSelectionClicked);
+                _onPasteClicked, _onClearSelectionClicked,
+                _onMoveToLayerClicked);
+
+            // Slider value-changed → refresh the "Target: {idx}: {Layer}" label
+            // so the user sees the live destination while dragging. The actual
+            // commit fires on slider release via MoveLayerSliderRelay (wired
+            // inside the builder).
+            if (_refs.MoveToLayerSlider != null)
+                _refs.MoveToLayerSlider.onValueChanged.AddListener(v =>
+                    RefreshMoveToLayerLabel(Mathf.RoundToInt(v)));
 
             // Wire close callbacks: clicking the ✕ on any panel header closes it cleanly
             // (updates menu-bar button highlights via ToggleDropdown).
