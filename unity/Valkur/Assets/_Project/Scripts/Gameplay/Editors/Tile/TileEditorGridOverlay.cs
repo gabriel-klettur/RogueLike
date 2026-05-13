@@ -84,6 +84,27 @@ namespace Valkur.Gameplay.TileEditor
         private TileBase _fillPreviewNewTile;
         private readonly HashSet<Vector2Int> _fillPreviewCells = new HashSet<Vector2Int>();
         private float _fillPreviewBlinkTime;
+        // Reusable BFS buffers — avoids allocating a new HashSet/Queue every
+        // frame inside CalculateFillPreview while the Fill tool is active
+        // (used to fire ~120 Hz × 2 calls/frame, dominating GC churn).
+        private readonly HashSet<Vector2Int> _fillPreviewVisited = new HashSet<Vector2Int>();
+        private readonly Queue<Vector2Int> _fillPreviewQueue = new Queue<Vector2Int>();
+        // 4-connected directions cached as a static — was a per-call new-allocation.
+        private static readonly Vector2Int[] FillPreviewDirections = {
+            new Vector2Int(0, 1), new Vector2Int(0, -1),
+            new Vector2Int(-1, 0), new Vector2Int(1, 0),
+        };
+        // Hover-cell key the current preview was computed for. Skip recompute
+        // when the user keeps hovering the same cell (the common case while
+        // the cursor sits still or the hover hasn't crossed a cell border).
+        private Vector2Int _fillPreviewLastHover;
+        private bool _fillPreviewLastValid;
+        // Defensive cap: when zoomed out enough that the cursor's hover cell
+        // can flicker over very large connected areas, skip the BFS rather than
+        // pay 10k cells × 120fps. Floods larger than this just don't show a
+        // preview ring; the actual Fill stroke still works (FloodFill in
+        // TileBrush has its own cap).
+        private const int FillPreviewMaxCells = 10000;
 
         // ── Public API ────────────────────────────────────────────────────────
 
@@ -180,13 +201,21 @@ namespace Valkur.Gameplay.TileEditor
                 _copiedCells.Add(new Vector2Int(c.x, c.y));
         }
 
-        /// <summary>Set the tilemap and new tile for Fill preview calculation.</summary>
+        /// <summary>
+        /// Set the tilemap and new tile for Fill preview calculation. Invalidates
+        /// the cached preview but does NOT run the BFS — the actual flood-fill
+        /// is computed inside <see cref="DrawGrid"/> when the Fill tool is the
+        /// active tool, so we don't pay for it twice per frame.
+        /// </summary>
         public void SetFillPreview(Tilemap tilemap, TileBase newTile)
         {
-            _fillPreviewTilemap = tilemap;
-            _fillPreviewNewTile = newTile;
-            _fillPreviewCells.Clear();
-            CalculateFillPreview();
+            if (_fillPreviewTilemap != tilemap || _fillPreviewNewTile != newTile)
+            {
+                _fillPreviewTilemap = tilemap;
+                _fillPreviewNewTile = newTile;
+                _fillPreviewLastValid = false;
+                _fillPreviewCells.Clear();
+            }
         }
 
         /// <summary>Clear the Fill preview state.</summary>
@@ -195,55 +224,75 @@ namespace Valkur.Gameplay.TileEditor
             _fillPreviewTilemap = null;
             _fillPreviewNewTile = null;
             _fillPreviewCells.Clear();
+            _fillPreviewLastValid = false;
         }
+
+        /// <summary>
+        /// Invalidate the Fill preview cache so the next frame recomputes the
+        /// BFS even if the hover cell hasn't moved. Called by the manager after
+        /// any edit (brush/erase/fill stroke, undo/redo) that may have changed
+        /// the tilemap content the preview was sampled against.
+        /// </summary>
+        public void InvalidateFillPreview() => _fillPreviewLastValid = false;
 
         // ── Private Methods ─────────────────────────────────────────────────────
 
-        /// <summary>Calculate the Fill preview area based on current hover position.</summary>
+        /// <summary>
+        /// Compute the Fill preview area based on current hover position. Skips
+        /// entirely when the active tool isn't Fill, when no source / target
+        /// tilemap is bound, or when the hover cell hasn't crossed a tile
+        /// boundary since the previous compute (the common case while idle).
+        /// Reuses the visited/queue buffers across frames to avoid GC churn.
+        /// </summary>
         private void CalculateFillPreview()
         {
-            _fillPreviewCells.Clear();
-            
-            if (_currentTool != TileEditorState.Tool.Fill || _fillPreviewTilemap == null || _fillPreviewNewTile == null)
+            if (_currentTool != TileEditorState.Tool.Fill
+                || _fillPreviewTilemap == null
+                || _fillPreviewNewTile == null)
+            {
+                if (_fillPreviewLastValid || _fillPreviewCells.Count > 0)
+                {
+                    _fillPreviewCells.Clear();
+                    _fillPreviewLastValid = false;
+                }
                 return;
+            }
+
+            // Same hover cell as last compute → preview is still valid, no BFS.
+            if (_fillPreviewLastValid && _fillPreviewLastHover == _hoverCell) return;
+
+            _fillPreviewLastHover = _hoverCell;
+            _fillPreviewLastValid = true;
+            _fillPreviewCells.Clear();
 
             var startPos = new Vector3Int(_hoverCell.x, _hoverCell.y, 0);
             var targetTile = _fillPreviewTilemap.GetTile(startPos);
-            
-            // If target tile is the same as new tile, no fill needed
+
+            // If target tile equals the new tile, painting would no-op — nothing
+            // to highlight. Leave the cache valid so we don't BFS again until the
+            // hover moves.
             if (targetTile == _fillPreviewNewTile) return;
 
-            var visited = new HashSet<Vector2Int>();
-            var queue = new Queue<Vector2Int>();
-            queue.Enqueue(_hoverCell);
-            visited.Add(_hoverCell);
+            _fillPreviewVisited.Clear();
+            _fillPreviewQueue.Clear();
+            _fillPreviewQueue.Enqueue(_hoverCell);
+            _fillPreviewVisited.Add(_hoverCell);
 
-            var directions = new Vector3Int[]
-            {
-                Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right
-            };
-
-            int maxCells = 10000; // Same limit as actual Fill
             int count = 0;
-
-            while (queue.Count > 0 && count < maxCells)
+            while (_fillPreviewQueue.Count > 0 && count < FillPreviewMaxCells)
             {
-                var pos = queue.Dequeue();
+                var pos = _fillPreviewQueue.Dequeue();
                 var current = _fillPreviewTilemap.GetTile(new Vector3Int(pos.x, pos.y, 0));
-                
                 if (current != targetTile) continue;
 
                 _fillPreviewCells.Add(pos);
                 count++;
 
-                foreach (var dir in directions)
+                for (int i = 0; i < FillPreviewDirections.Length; i++)
                 {
-                    var neighbor = pos + new Vector2Int(dir.x, dir.y);
-                    if (!visited.Contains(neighbor))
-                    {
-                        visited.Add(neighbor);
-                        queue.Enqueue(neighbor);
-                    }
+                    var neighbor = pos + FillPreviewDirections[i];
+                    if (_fillPreviewVisited.Add(neighbor))
+                        _fillPreviewQueue.Enqueue(neighbor);
                 }
             }
         }

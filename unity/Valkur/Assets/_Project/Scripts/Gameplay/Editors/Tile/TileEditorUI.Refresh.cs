@@ -175,15 +175,45 @@ namespace Valkur.Gameplay.TileEditor
                 _refs.PerfProbeMenuBtnTmp.color = active ? ACCENT : TEXT_PRIMARY;
         }
 
+        // Tracks which content kind currently lives in the picker grid so
+        // RefreshTilePicker can skip the wholesale rebuild when the active tool
+        // changes without crossing the AutoTileRegion ↔ regular-tools boundary
+        // (Brush ↔ Eraser ↔ Fill ↔ Eyedropper ↔ Select all share the same
+        // tile-grid content). Rebuilding castle_pandora's 2,688 slots on every
+        // tool flip caused a per-frame freeze when the user picked a tile from
+        // the map (Eyedropper auto-switches to Brush → fired RefreshTilePicker).
+        private enum PickerContentKind { None, Tiles, TerrainChips }
+        private PickerContentKind _currentPickerContent = PickerContentKind.None;
+
         public void RefreshTilePicker()
         {
-            if (_state != null && _state.CurrentTool == TileEditorState.Tool.AutoTileRegion)
+            bool wantTerrain = _state != null && _state.CurrentTool == TileEditorState.Tool.AutoTileRegion;
+
+            if (wantTerrain)
             {
+                if (_currentPickerContent == PickerContentKind.TerrainChips) return;
                 PopulateTerrainChips();
+                _currentPickerContent = PickerContentKind.TerrainChips;
                 return;
             }
+
             if (_catalog == null) return;
+            if (_currentPickerContent == PickerContentKind.Tiles) return;
             PopulateTileGrid(_currentCategory);
+            _currentPickerContent = PickerContentKind.Tiles;
+        }
+
+        /// <summary>
+        /// Force-invalidates the cached picker-content kind so the next
+        /// <see cref="RefreshTilePicker"/> rebuilds even if the active tool's
+        /// kind hasn't changed. Called by paths that genuinely need a fresh
+        /// grid (category change, dedup toggle, F8 activation) — those already
+        /// call <see cref="PopulateTileGrid"/> directly, so they merely need
+        /// to keep the cache honest.
+        /// </summary>
+        internal void InvalidatePickerContentCache()
+        {
+            _currentPickerContent = PickerContentKind.None;
         }
 
         public void UpdateSelectedTilePreview(Sprite sprite, string tileName)

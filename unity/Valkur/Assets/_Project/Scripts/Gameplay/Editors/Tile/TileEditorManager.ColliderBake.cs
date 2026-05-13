@@ -8,7 +8,10 @@ namespace Valkur.Gameplay.TileEditor
     {        private Tilemap GetCollisionTilemap()
         {
             if (worldGridBuilder == null) return null;
-            return worldGridBuilder.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision);
+            if (_tilemapCacheFrame == Time.frameCount && _cachedCollisionTilemap != null)
+                return _cachedCollisionTilemap;
+            _cachedCollisionTilemap = worldGridBuilder.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision);
+            return _cachedCollisionTilemap;
         }
 
         /// <summary>

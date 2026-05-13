@@ -57,6 +57,10 @@ namespace Valkur.Gameplay.TileEditor
                 _undo.EndStroke();
                 // Auto-persist: fill is atomic so we save immediately after the operation.
                 if (Application.isPlaying) _persistence?.SaveAllDirty();
+                // The flood we just painted invalidates the cached BFS preview
+                // — every cell in the old set now matches the new tile, so the
+                // hover-cell key alone isn't enough to detect the change.
+                _gridOverlay?.InvalidateFillPreview();
 
                 if (edits.Count == 0 && !CanEditCell(cellPos))
                     _ui.SetStatus("Blocked: zone is not editable. Use F11 Map Editor.");

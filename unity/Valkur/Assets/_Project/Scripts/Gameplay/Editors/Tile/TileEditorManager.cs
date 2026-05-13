@@ -265,6 +265,15 @@ namespace Valkur.Gameplay.TileEditor
 
             if (!_state.Active) return;
 
+            // Reset per-frame caches (tilemap lookups + pointer-over-UI) so the
+            // first reader pays the resolve cost and every later reader in the
+            // same frame hits the cache. The tilemap path saves ~6 Transform.Find
+            // calls/frame; the pointer-over-UI cache cuts EventSystem raycasts
+            // from 3 (HandleMouseInput, UpdateGridCursor, UpdateViewPanelHover)
+            // down to 1.
+            InvalidateTilemapFrameCache();
+            InvalidatePointerOverUiFrameCache();
+
             // Shift+F8 toggles the perf probe overlay (only useful while editor is active).
             // Routed through KeyboardInputManager for legacy fallback.
             if (Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(UnityEngine.InputSystem.Key.F8, KeyCode.F8) &&

@@ -60,7 +60,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_gridCursor == null) return;
 
-            if (_input.IsPointerOverUI())
+            if (IsPointerOverUiCached())
             {
                 _gridCursor.gameObject.SetActive(false);
                 return;
@@ -139,13 +139,27 @@ namespace Valkur.Gameplay.TileEditor
         // so the TOPMOST rendered tile (drawn last) wins over deeper layers.
         private const int TopmostHoverLayerIndex = 8; // OverheadDetails
 
+        // Cached snapshot of the last hover push so we can skip the TMP rebuild
+        // + string-allocation when nothing visible has changed. Without this
+        // cache the View panel re-formatted "(x,y) empty" every frame the
+        // cursor sat over the map, blowing GC + dirtying TMP meshes at 120 Hz.
+        private enum HoverPushKind { None, Empty, Tile }
+        private HoverPushKind _lastHoverKind;
+        private Vector3Int _lastHoverCell;
+        private TileBase _lastHoverTile;
+        private TilemapLayerSetup.TilemapLayer _lastHoverLayer;
+
         private partial void UpdateViewPanelHover()
         {
             if (_ui == null) return;
 
-            if (_input.IsPointerOverUI())
+            if (IsPointerOverUiCached())
             {
-                _ui.UpdateViewPanelHovered(null, "", "");
+                if (_lastHoverKind != HoverPushKind.None)
+                {
+                    _ui.UpdateViewPanelHovered(null, "", "");
+                    _lastHoverKind = HoverPushKind.None;
+                }
                 return;
             }
 
@@ -153,7 +167,11 @@ namespace Valkur.Gameplay.TileEditor
             var probe = GetCurrentTilemap();
             if (probe == null || worldGridBuilder == null)
             {
-                _ui.UpdateViewPanelHovered(null, "", "");
+                if (_lastHoverKind != HoverPushKind.None)
+                {
+                    _ui.UpdateViewPanelHovered(null, "", "");
+                    _lastHoverKind = HoverPushKind.None;
+                }
                 return;
             }
 
@@ -161,13 +179,29 @@ namespace Valkur.Gameplay.TileEditor
 
             if (TryFindHoveredVisibleLayer(cellPos, out var layer, out var tileBase))
             {
+                // Skip the TMP push if (cell, layer, tile) all match the last
+                // pushed state — the sprite + label can't have changed.
+                if (_lastHoverKind == HoverPushKind.Tile
+                    && _lastHoverCell == cellPos
+                    && _lastHoverLayer == layer
+                    && ReferenceEquals(_lastHoverTile, tileBase))
+                    return;
+
                 Sprite sprite = null;
                 if (tileBase is Tile t) sprite = t.sprite;
                 _ui.UpdateViewPanelHovered(sprite, tileBase.name, $"{(int)layer}: {layer}");
+                _lastHoverKind  = HoverPushKind.Tile;
+                _lastHoverCell  = cellPos;
+                _lastHoverLayer = layer;
+                _lastHoverTile  = tileBase;
             }
             else
             {
+                if (_lastHoverKind == HoverPushKind.Empty && _lastHoverCell == cellPos) return;
                 _ui.UpdateViewPanelHovered(null, $"({cellPos.x},{cellPos.y}) empty", "");
+                _lastHoverKind = HoverPushKind.Empty;
+                _lastHoverCell = cellPos;
+                _lastHoverTile = null;
             }
         }
 

@@ -156,7 +156,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private partial void HandleMouseInput()
         {
-            if (_input.IsPointerOverUI())
+            if (IsPointerOverUiCached())
             {
                 // If the user released LMB while the pointer was over UI (e.g. the
                 // TILES PICKER), any in-flight drag on the map must be cancelled here —

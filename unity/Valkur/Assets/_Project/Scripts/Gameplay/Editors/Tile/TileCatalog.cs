@@ -32,28 +32,51 @@ namespace Valkur.Gameplay.TileEditor
 
         [SerializeField] private List<TileEntry> entries = new List<TileEntry>();
 
+        // Category-keyed index built lazily on first lookup. Avoids the O(total)
+        // scan of entries every time GetTilesForCategory / IsCurrentCategoryTilesheet
+        // is called — a hot path while picking from large tilesheets like
+        // castle_pandora (2,688 cells). Invalidated whenever entries mutate.
+        [System.NonSerialized] private Dictionary<string, List<TileEntry>> _byCategory;
+        [System.NonSerialized] private List<string> _categoriesCache;
+
         public IReadOnlyList<TileEntry> Entries => entries;
+
+        private void EnsureIndex()
+        {
+            if (_byCategory != null) return;
+            _byCategory = new Dictionary<string, List<TileEntry>>(16);
+            _categoriesCache = new List<string>(16);
+            foreach (var e in entries)
+            {
+                if (!_byCategory.TryGetValue(e.category, out var list))
+                {
+                    list = new List<TileEntry>();
+                    _byCategory[e.category] = list;
+                    _categoriesCache.Add(e.category);
+                }
+                list.Add(e);
+            }
+        }
+
+        private void InvalidateIndex()
+        {
+            _byCategory = null;
+            _categoriesCache = null;
+        }
 
         public List<string> GetCategories()
         {
-            var cats = new List<string>();
-            foreach (var e in entries)
-            {
-                if (!cats.Contains(e.category))
-                    cats.Add(e.category);
-            }
-            return cats;
+            EnsureIndex();
+            // Defensive copy: callers iterate / mutate the result list.
+            return new List<string>(_categoriesCache);
         }
 
         public List<TileEntry> GetTilesForCategory(string category)
         {
-            var result = new List<TileEntry>();
-            foreach (var e in entries)
-            {
-                if (e.category == category)
-                    result.Add(e);
-            }
-            return result;
+            EnsureIndex();
+            if (_byCategory.TryGetValue(category, out var list))
+                return new List<TileEntry>(list);
+            return new List<TileEntry>();
         }
 
         /// <summary>
@@ -180,6 +203,7 @@ namespace Valkur.Gameplay.TileEditor
         public void PopulateFromAssets(List<TileEntry> newEntries)
         {
             entries = newEntries;
+            InvalidateIndex();
             UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif

@@ -61,6 +61,7 @@ namespace Valkur.Gameplay.TileEditor
                 _currentCategory = "";
                 PopulateCategoryTabs();
                 PopulateTileGrid(_currentCategory);
+                _currentPickerContent = PickerContentKind.Tiles;
                 RefreshConfiguratorButtonState();
             }
         }
@@ -157,6 +158,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             _currentCategory = category;
             PopulateTileGrid(category);
+            _currentPickerContent = PickerContentKind.Tiles;
             PopulateCategoryTabs();
             RefreshConfiguratorButtonState();
         }
@@ -166,6 +168,10 @@ namespace Valkur.Gameplay.TileEditor
             foreach (var slot in _tileSlots) if (slot != null) Destroy(slot);
             _tileSlots.Clear();
             _selectedSlotIndex = -1;
+            // Old indices reference now-destroyed slots — clear so the next
+            // HighlightSelectedSlot doesn't try to "deselect" a stale index
+            // that may collide with a different tile in the new grid.
+            _highlightedSlotIndex = -1;
 
             // Reset the unified picker selection state — applies equally to
             // tilesheet (manifest-driven) and legacy categories so their
@@ -181,6 +187,9 @@ namespace Valkur.Gameplay.TileEditor
                 : _catalog.GetTilesForCategory(category);
 
             bool isTilesheet = tiles.Count > 0 && tiles[0].gridR >= 0;
+            // Cache the flag here so IsCurrentCategoryTilesheet stays O(1) for
+            // the rest of the session (zoom slider, dedup toggle, etc.).
+            _currentCategoryIsTilesheet = isTilesheet;
 
             ApplyGridLayoutForCategory(tiles, isTilesheet);
             if (_refs.TilesetControlsRow != null)
@@ -271,13 +280,38 @@ namespace Valkur.Gameplay.TileEditor
             return tiles.Count;
         }
 
+        // Slot index whose background is currently painted with SLOT_SELECTED.
+        // Tracked so HighlightSelectedSlot only repaints the two slots that
+        // actually changed colour (de-select old, select new) — was iterating
+        // all 2,688 slots on every click for castle_pandora, calling
+        // GetComponent<Image>() per slot.
+        private int _highlightedSlotIndex = -1;
+
         private void HighlightSelectedSlot()
         {
-            for (int i = 0; i < _tileSlots.Count; i++)
+            if (_highlightedSlotIndex == _selectedSlotIndex) return;
+
+            if (_highlightedSlotIndex >= 0 && _highlightedSlotIndex < _tileSlots.Count)
             {
-                var img = _tileSlots[i].GetComponent<Image>();
-                if (img != null) img.color = i == _selectedSlotIndex ? SLOT_SELECTED : SLOT_BG;
+                var prev = _tileSlots[_highlightedSlotIndex];
+                if (prev != null)
+                {
+                    var img = prev.GetComponent<Image>();
+                    if (img != null) img.color = SLOT_BG;
+                }
             }
+
+            if (_selectedSlotIndex >= 0 && _selectedSlotIndex < _tileSlots.Count)
+            {
+                var cur = _tileSlots[_selectedSlotIndex];
+                if (cur != null)
+                {
+                    var img = cur.GetComponent<Image>();
+                    if (img != null) img.color = SLOT_SELECTED;
+                }
+            }
+
+            _highlightedSlotIndex = _selectedSlotIndex;
         }
     }
 }

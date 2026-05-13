@@ -20,6 +20,9 @@ namespace Valkur.Gameplay.TileEditor
             foreach (var slot in _tileSlots) if (slot != null) Destroy(slot);
             _tileSlots.Clear();
             _selectedSlotIndex = -1;
+            // Old indices reference now-destroyed chips — clear so the next
+            // HighlightSelectedSlot doesn't try to "deselect" a stale index.
+            _highlightedSlotIndex = -1;
 
             var catalog = TerrainCatalogLoader.Load();
             int chipCount = 0;

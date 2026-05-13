@@ -203,10 +203,58 @@ namespace Valkur.Gameplay.TileEditor
 
         // â”€â”€ Helpers â”€â”€
 
+        // Per-frame cache for GetCurrentTilemap / GetCollisionTilemap. WorldGridBuilder.GetTilemap
+        // does a Transform.Find + GetComponent each call; without this cache the tile
+        // editor pays 6+ Find calls per frame (UpdateGridCursor, UpdateViewPanelHover,
+        // HandleMouseInput, etc.). Reset every frame by InvalidateTilemapFrameCache.
+        private int      _tilemapCacheFrame      = -1;
+        private Tilemap  _cachedCurrentTilemap;
+        private TilemapLayerSetup.TilemapLayer _cachedCurrentLayer;
+        private Tilemap  _cachedCollisionTilemap;
+
+        // Per-frame cache for IsPointerOverUI. EventSystem.IsPointerOverGameObject
+        // raycasts the entire UI canvas tree; calling it from each of the four
+        // hot paths (HandleMouseInput, UpdateGridCursor, UpdateViewPanelHover,
+        // CommitRectSelection) is wasted work — the value can't change inside
+        // one frame.
+        private int  _pointerOverUiFrame = -1;
+        private bool _pointerOverUiCached;
+
+        private void InvalidatePointerOverUiFrameCache()
+        {
+            _pointerOverUiFrame = -1;
+        }
+
+        internal bool IsPointerOverUiCached()
+        {
+            int f = Time.frameCount;
+            if (_pointerOverUiFrame == f) return _pointerOverUiCached;
+            _pointerOverUiFrame   = f;
+            _pointerOverUiCached  = _input != null && _input.IsPointerOverUI();
+            return _pointerOverUiCached;
+        }
+
+        /// <summary>
+        /// Reset the per-frame tilemap cache. Called at the top of <see cref="Update"/>
+        /// so any layer change made earlier in the frame is honoured on the next frame.
+        /// </summary>
+        private void InvalidateTilemapFrameCache()
+        {
+            _tilemapCacheFrame = Time.frameCount;
+            _cachedCurrentTilemap = null;
+            _cachedCollisionTilemap = null;
+        }
+
         private Tilemap GetCurrentTilemap()
         {
             if (worldGridBuilder == null) return null;
-            return worldGridBuilder.GetTilemap(_state.CurrentLayer);
+            if (_tilemapCacheFrame == Time.frameCount
+                && _cachedCurrentTilemap != null
+                && _cachedCurrentLayer == _state.CurrentLayer)
+                return _cachedCurrentTilemap;
+            _cachedCurrentLayer = _state.CurrentLayer;
+            _cachedCurrentTilemap = worldGridBuilder.GetTilemap(_state.CurrentLayer);
+            return _cachedCurrentTilemap;
         }
 
         private Vector3Int GetCellUnderMouse(Tilemap tilemap)

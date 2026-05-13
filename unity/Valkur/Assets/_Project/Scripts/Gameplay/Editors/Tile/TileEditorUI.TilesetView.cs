@@ -30,6 +30,11 @@ namespace Valkur.Gameplay.TileEditor
         private bool _tilesetDedupOn = false;
         private float _tilesetZoom = TileEditorUIBuilder.TILESET_ZOOM_DEFAULT;
 
+        // Cached per-category metadata so IsCurrentCategoryTilesheet doesn't
+        // re-scan the catalog every time. Refreshed whenever the picker
+        // re-populates for a new category.
+        private bool _currentCategoryIsTilesheet;
+
         // Drag-rect transient state (only meaningful while SelectMode == Rect).
         private Vector2Int? _tilesetDragStart;
         private Vector2Int? _tilesetDragEnd;
@@ -62,6 +67,13 @@ namespace Valkur.Gameplay.TileEditor
             public int R;
             public int C;
             public TileCatalog.TileEntry Entry;
+            // Cached at registration so the hot picker paths don't pay a
+            // GetComponent<RectTransform>() per slot per frame (2,688 slots ×
+            // 60 fps = 160k calls/s for castle_pandora before this cache).
+            public RectTransform Rt;
+            // Cached highlight Image so RefreshTilesetSelectionVisuals can
+            // recolour without another GetComponent per slot.
+            public Image HighlightImg;
         }
 
         // Gold-ish — shown only while the user is mid-drag in Rect mode.
@@ -110,6 +122,7 @@ namespace Valkur.Gameplay.TileEditor
             // leave stale (col,row) entries pointing at placeholders.
             _tilesetSelectedSlots.Clear();
             PopulateTileGrid(_currentCategory);
+            _currentPickerContent = PickerContentKind.Tiles;
         }
 
         private void RefreshTilesetDedupVisual()
@@ -126,9 +139,9 @@ namespace Valkur.Gameplay.TileEditor
         /// <summary>True when the current category's tiles came from a sliced tilesheet manifest.</summary>
         private bool IsCurrentCategoryTilesheet()
         {
-            if (_catalog == null || string.IsNullOrEmpty(_currentCategory)) return false;
-            var tiles = _catalog.GetTilesForCategory(_currentCategory);
-            return tiles.Count > 0 && tiles[0].gridR >= 0;
+            // Reads the cached flag set in PopulateTileGrid — avoids re-scanning
+            // the catalog on every zoom-slider tick.
+            return _currentCategoryIsTilesheet;
         }
 
         /// <summary>
@@ -189,12 +202,24 @@ namespace Valkur.Gameplay.TileEditor
         /// Track a freshly-built slot so the picker's selection logic (drag-rect
         /// hit-tests, highlight refresh, clipboard commit) can find it by
         /// <see cref="GameObject"/>. Invoked by both <see cref="PopulateLegacySlots"/>
-        /// and <see cref="PopulateTilesheetSlots"/>.
+        /// and <see cref="PopulateTilesheetSlots"/>. Caches the slot's
+        /// <see cref="RectTransform"/> and the highlight overlay's
+        /// <see cref="Image"/> so hot picker paths don't pay a GetComponent per
+        /// slot per frame.
         /// </summary>
         internal void RegisterPickerSlot(GameObject slot, int r, int c,
             TileCatalog.TileEntry entry, GameObject highlightOverlay)
         {
-            _tilesetSlotInfo[slot] = new TilesetSlotInfo { R = r, C = c, Entry = entry };
+            var rt = slot != null ? slot.GetComponent<RectTransform>() : null;
+            var hImg = highlightOverlay != null ? highlightOverlay.GetComponent<Image>() : null;
+            _tilesetSlotInfo[slot] = new TilesetSlotInfo
+            {
+                R = r,
+                C = c,
+                Entry = entry,
+                Rt = rt,
+                HighlightImg = hImg,
+            };
             _tilesetSlotHighlight[slot] = highlightOverlay;
         }
 
@@ -232,6 +257,11 @@ namespace Valkur.Gameplay.TileEditor
                 slotImg.color = renderAsPlaceholder
                     ? new Color(SLOT_BG.r, SLOT_BG.g, SLOT_BG.b, 0.35f)
                     : SLOT_BG;
+                // Placeholders carry no event handlers, so they should not block
+                // the UGUI raycast either — at 2,534 placeholders for castle_pandora
+                // this trims every pointer event's raycast cost dramatically.
+                if (renderAsPlaceholder)
+                    slotImg.raycastTarget = false;
 
                 if (!renderAsPlaceholder)
                 {
@@ -439,7 +469,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             foreach (var kv in _tilesetSlotInfo)
             {
-                var rt = kv.Key != null ? kv.Key.GetComponent<RectTransform>() : null;
+                var rt = kv.Value.Rt;
                 if (rt != null && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null))
                 {
                     info = kv.Value;
@@ -551,14 +581,12 @@ namespace Valkur.Gameplay.TileEditor
                 if (inDrag)
                 {
                     hgo.SetActive(true);
-                    var img = hgo.GetComponent<Image>();
-                    if (img != null) img.color = TILESET_RECT_PREVIEW_COLOR;
+                    if (info.HighlightImg != null) info.HighlightImg.color = TILESET_RECT_PREVIEW_COLOR;
                 }
                 else if (isSelected)
                 {
                     hgo.SetActive(true);
-                    var img = hgo.GetComponent<Image>();
-                    if (img != null) img.color = TILESET_SELECTED_COLOR;
+                    if (info.HighlightImg != null) info.HighlightImg.color = TILESET_SELECTED_COLOR;
                 }
                 else
                 {
