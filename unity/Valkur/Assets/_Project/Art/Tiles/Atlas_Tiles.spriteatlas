@@ -6,12 +6,12 @@ SpriteAtlas:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: env-tiles
+  m_Name: Atlas_Tiles
   m_EditorData:
     serializedVersion: 2
     textureSettings:
       serializedVersion: 2
-      anisoLevel: 0
+      anisoLevel: 1
       compressionQuality: 0
       maxTextureSize: 0
       textureCompression: 0
@@ -23,14 +23,14 @@ SpriteAtlas:
     platformSettings:
     - serializedVersion: 3
       m_BuildTarget: DefaultTexturePlatform
-      m_MaxTextureSize: 2048
+      m_MaxTextureSize: 4096
       m_ResizeAlgorithm: 0
       m_TextureFormat: 4
       m_TextureCompression: 0
       m_CompressionQuality: 50
       m_CrunchedCompression: 0
       m_AllowsAlphaSplitting: 0
-      m_Overridden: 1
+      m_Overridden: 0
       m_IgnorePlatformSupport: 0
       m_AndroidETC2FallbackOverride: 0
       m_ForceMaximumCompressionQuality_BC6H_BC7: 0
@@ -41,7 +41,7 @@ SpriteAtlas:
       allowAlphaSplitting: 0
       enableRotation: 0
       enableTightPacking: 0
-      enableAlphaDilation: 1
+      enableAlphaDilation: 0
     secondaryTextureSettings: {}
     variantMultiplier: 1
     packables:
@@ -9285,5 +9285,5 @@ SpriteAtlas:
   - pandora_r24_c01
   - pandora_r07_c06
   m_RenderDataMap: {}
-  m_Tag: env-tiles
+  m_Tag: Atlas_Tiles
   m_IsVariant: 0
