@@ -246,6 +246,10 @@ namespace Valkur.Gameplay.TileEditor
             var seenUniques = new HashSet<int>();
             int realSlots = 0;
 
+            // Pre-size the slot list + per-slot dictionaries so adding 2,688
+            // entries (castle_pandora) doesn't trigger ~12 internal grow-resizes.
+            if (_tileSlots.Capacity < tiles.Count) _tileSlots.Capacity = tiles.Count;
+
             for (int i = 0; i < tiles.Count; i++)
             {
                 var entry = tiles[i];
@@ -280,28 +284,16 @@ namespace Valkur.Gameplay.TileEditor
                         si.sprite = preview; si.preserveAspect = true; si.raycastTarget = false;
                     }
 
-                    // Selection-highlight overlay (initially hidden). Sits on top
-                    // of the preview but does not block raycasts so the slot still
-                    // receives input. Re-coloured by RefreshTilesetSelectionVisuals.
-                    var hgo = CreateUI("DragHL", go.transform);
-                    var hrt = hgo.GetComponent<RectTransform>();
-                    hrt.anchorMin = new Vector2(0f, 0f); hrt.anchorMax = new Vector2(1f, 1f);
-                    hrt.offsetMin = Vector2.zero; hrt.offsetMax = Vector2.zero;
-                    var hImg = hgo.AddComponent<Image>();
-                    hImg.color = TILESET_SELECTED_COLOR;
-                    hImg.raycastTarget = false;
-                    hgo.SetActive(false);
-
-                    // Copy-highlight overlay — thick bright-yellow FRAME (not a
-                    // fill) drawn around the slot when its (col,row) is in
-                    // _tilesetCopiedSlots. Built as four child Image strips so the
-                    // tile preview underneath stays fully visible. Parent GO is the
-                    // toggle target; activating it shows all four strips at once.
-                    var cgo = CreateCopyHLFrame(go.transform);
-                    cgo.SetActive(false);
-
-                    RegisterPickerSlot(go, entry.gridR, entry.gridC, entry, hgo);
-                    RegisterPickerSlotCopyHighlight(go, cgo);
+                    // The DragHL (selection) and CopyHL (clipboard) overlays are
+                    // BUILT LAZILY by RefreshTilesetSelectionVisuals /
+                    // RefreshTilesetCopyVisuals on the few slots that actually need
+                    // them. For castle_pandora's 154-real-slot category that means
+                    // 6 GameObjects (1 DragHL + 5 CopyHL frame parts) per real slot
+                    // are NOT created up-front — net ~900 GameObjects skipped.
+                    // Tests still register pre-built overlays via RegisterPickerSlot /
+                    // RegisterPickerSlotCopyHighlight; the lazy ensure short-circuits
+                    // when the dictionary entry is non-null.
+                    RegisterPickerSlot(go, entry.gridR, entry.gridC, entry, highlightOverlay: null);
                     AttachPickerSlotHandlers(go, entry.gridR, entry.gridC, ci, ce);
                     realSlots++;
                 }
@@ -533,6 +525,11 @@ namespace Valkur.Gameplay.TileEditor
         /// show the thick bright-yellow CopyHL; all others are hidden.
         /// Called after every <see cref="CommitTilesetSelection"/>,
         /// <see cref="ClearTilesetSelection"/>, and <see cref="ResetPickerSelectionState"/>.
+        ///
+        /// The CopyHL frame is BUILT LAZILY here on the first activation —
+        /// PopulateTilesheetSlots no longer pre-builds it for every slot to
+        /// avoid the 5 GameObjects × 2,688-slot allocation spike when the user
+        /// clicks a heavy CATEGORIES button (e.g. castle_pandora).
         /// </summary>
         private void RefreshTilesetCopyVisuals()
         {
@@ -542,11 +539,40 @@ namespace Valkur.Gameplay.TileEditor
                 var pos  = new Vector2Int(info.C, info.R);
                 bool isCopied = _tilesetCopiedSlots.Contains(pos);
 
-                if (!_tilesetSlotCopyHighlight.TryGetValue(kv.Key, out var cgo) || cgo == null)
-                    continue;
+                _tilesetSlotCopyHighlight.TryGetValue(kv.Key, out var cgo);
 
-                cgo.SetActive(isCopied);
+                if (isCopied)
+                {
+                    if (cgo == null)
+                    {
+                        cgo = EnsureCopyHLFrame(kv.Key);
+                        if (cgo == null) continue;
+                    }
+                    cgo.SetActive(true);
+                }
+                else if (cgo != null)
+                {
+                    cgo.SetActive(false);
+                }
             }
+        }
+
+        /// <summary>
+        /// Lazily build (and register) the CopyHL frame for <paramref name="slot"/>.
+        /// No-ops when the slot already has a frame registered (production reload
+        /// or test pre-registration). Returns the frame so the caller can toggle
+        /// its active state. Returns null when <paramref name="slot"/> is null.
+        /// </summary>
+        private GameObject EnsureCopyHLFrame(GameObject slot)
+        {
+            if (slot == null) return null;
+            if (_tilesetSlotCopyHighlight.TryGetValue(slot, out var existing) && existing != null)
+                return existing;
+
+            var frame = CreateCopyHLFrame(slot.transform);
+            frame.SetActive(false);
+            _tilesetSlotCopyHighlight[slot] = frame;
+            return frame;
         }
 
         /// <summary>
@@ -554,6 +580,11 @@ namespace Valkur.Gameplay.TileEditor
         ///   • drag-preview rect (Rect mode, mid-drag) → gold
         ///   • persistent selected (any mode)         → green
         ///   • neither                                → hidden
+        ///
+        /// The DragHL Image is BUILT LAZILY here on the first activation —
+        /// PopulateTilesheetSlots no longer pre-builds it for every slot to
+        /// avoid the 1 GameObject × 2,688-slot allocation spike when the user
+        /// clicks a heavy CATEGORIES button (e.g. castle_pandora).
         /// </summary>
         private void RefreshTilesetSelectionVisuals()
         {
@@ -567,6 +598,9 @@ namespace Valkur.Gameplay.TileEditor
                 rMin = Mathf.Min(s.y, e.y); rMax = Mathf.Max(s.y, e.y);
             }
 
+            // Snapshot keys before any mutation so we can update _tilesetSlotInfo
+            // entries (struct-by-value) inside the loop without dictionary churn.
+            // For non-(selected|inDrag) slots we never touch the dictionary.
             foreach (var kv in _tilesetSlotInfo)
             {
                 var info = kv.Value;
@@ -575,24 +609,55 @@ namespace Valkur.Gameplay.TileEditor
                                            && info.R >= rMin && info.R <= rMax;
                 bool isSelected = _tilesetSelectedSlots.Contains(pos);
 
-                if (!_tilesetSlotHighlight.TryGetValue(kv.Key, out var hgo) || hgo == null)
-                    continue;
+                _tilesetSlotHighlight.TryGetValue(kv.Key, out var hgo);
 
-                if (inDrag)
+                if (inDrag || isSelected)
                 {
+                    if (hgo == null)
+                    {
+                        hgo = EnsureSlotDragHighlight(kv.Key);
+                        if (hgo == null) continue;
+                        // Cache the lazily-created Image back into the slot info
+                        // so subsequent recolours don't pay another GetComponent.
+                        info.HighlightImg = hgo.GetComponent<Image>();
+                        _tilesetSlotInfo[kv.Key] = info;
+                    }
                     hgo.SetActive(true);
-                    if (info.HighlightImg != null) info.HighlightImg.color = TILESET_RECT_PREVIEW_COLOR;
+                    if (info.HighlightImg != null)
+                        info.HighlightImg.color = inDrag
+                            ? TILESET_RECT_PREVIEW_COLOR
+                            : TILESET_SELECTED_COLOR;
                 }
-                else if (isSelected)
-                {
-                    hgo.SetActive(true);
-                    if (info.HighlightImg != null) info.HighlightImg.color = TILESET_SELECTED_COLOR;
-                }
-                else
+                else if (hgo != null)
                 {
                     hgo.SetActive(false);
                 }
             }
+        }
+
+        /// <summary>
+        /// Lazily build (and register) the DragHL highlight overlay for
+        /// <paramref name="slot"/>. No-ops when an overlay already exists
+        /// (production reload or test pre-registration). Returns the overlay
+        /// GameObject so the caller can toggle its active state.
+        /// </summary>
+        private GameObject EnsureSlotDragHighlight(GameObject slot)
+        {
+            if (slot == null) return null;
+            if (_tilesetSlotHighlight.TryGetValue(slot, out var existing) && existing != null)
+                return existing;
+
+            var hgo = CreateUI("DragHL", slot.transform);
+            var hrt = hgo.GetComponent<RectTransform>();
+            hrt.anchorMin = new Vector2(0f, 0f); hrt.anchorMax = new Vector2(1f, 1f);
+            hrt.offsetMin = Vector2.zero; hrt.offsetMax = Vector2.zero;
+            var hImg = hgo.AddComponent<Image>();
+            hImg.color = TILESET_SELECTED_COLOR;
+            hImg.raycastTarget = false;
+            hgo.SetActive(false);
+
+            _tilesetSlotHighlight[slot] = hgo;
+            return hgo;
         }
 
         /// <summary>

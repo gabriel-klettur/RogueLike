@@ -195,9 +195,24 @@ namespace Valkur.Gameplay.TileEditor
             if (_refs.TilesetControlsRow != null)
                 _refs.TilesetControlsRow.SetActive(isTilesheet);
 
+            // Deactivate the grid container while we mass-add children. UGUI
+            // would otherwise queue per-child Rebuild marks against the
+            // GridLayoutGroup + ContentSizeFitter and re-measure inside
+            // CanvasUpdateRegistry at end-of-frame; with the container
+            // inactive the layout system skips every queued rebuild and we
+            // pay one batched layout pass on SetActive(true). For
+            // castle_pandora (~2,688 cells) this turns a multi-frame stall
+            // into a single end-of-frame layout. Skipped entirely when the
+            // container is missing (BuildUI called before this UI exists).
+            var gridGo = _refs.TileGridContent != null ? _refs.TileGridContent.gameObject : null;
+            bool wasGridActive = gridGo != null && gridGo.activeSelf;
+            if (wasGridActive) gridGo.SetActive(false);
+
             int slotCount = isTilesheet
                 ? PopulateTilesheetSlots(tiles)
                 : PopulateLegacySlots(tiles);
+
+            if (wasGridActive) gridGo.SetActive(true);
 
             if (_refs.TileCountText != null)
                 _refs.TileCountText.text = $"{slotCount} tiles" + (string.IsNullOrEmpty(category) ? "" : $" in {category}");
