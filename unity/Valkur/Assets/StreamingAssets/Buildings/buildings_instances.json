@@ -431,7 +431,7 @@
 }}},
   {"id": 65, "template_id": 290, "zone": "lobby", "rel_x": 876, "rel_y": 818, "overrides": {"scale": [175, 239], "split_ratio": 0.6974, "collider_scope": "CG"}},
   {"id": 66, "template_id": 201, "zone": "Forest", "rel_x": 1176, "rel_y": 398, "overrides": {"scale": [331, 331], "collider_scope": "CU"}},
-  {"id": 67, "template_id": 272, "zone": "lobby", "rel_x": 1893, "rel_y": 53, "overrides": {"scale": [333, 333], "collider_scope": "CU", "collision_override": {
+  {"id": 67, "template_id": 272, "zone": "lobby", "rel_x": 1802, "rel_y": -200, "overrides": {"scale": [333, 333], "collider_scope": "CU", "collision_override": {
   "width": 8,
   "height": 8,
   "collision": [
