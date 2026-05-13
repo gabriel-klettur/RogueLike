@@ -54,14 +54,17 @@ namespace Valkur.Editor
             else if (assetPath.Contains("/Tiles/"))
             {
                 // Tile sprites must render at exactly 1 world unit (1 cell).
-                // Canonical size: 32x32 px @ PPU=32. Sources up to 64x64 are still
-                // accepted (will rescale to 1 unit) without warning.
+                // PPU is derived from the source size so any square tile fills a
+                // cell: 16x16 -> PPU=16, 32x32 -> PPU=32, 64x64 -> PPU=64.
+                // This lets low-resolution packs (e.g. SNES 16-px castle art)
+                // coexist with the canonical 32-px tiles without a per-folder
+                // override — each pack stays at native pixel scale.
                 //
-                // Anything larger is REJECTED with an error: oversized tiles cause
-                // catastrophic visual bleeding (one cell rendering as N×N units),
-                // which historically produced the "sand patch" overlap bug.
-                // Run `Valkur > Tiles > Audit Sizes` (or `python tools/atlas/
-                // audit_tile_sizes.py --fix`) to downscale offenders to 32x32.
+                // Anything larger than TILE_MAX_ALLOWED_SIZE is REJECTED with an
+                // error: oversized tiles cause catastrophic visual bleeding (one
+                // cell rendering as N×N units), historically the "sand patch"
+                // overlap bug. Run `Valkur > Tiles > Audit Sizes` (or `python
+                // tools/atlas/audit_tile_sizes.py --fix`) to downscale offenders.
                 Vector2Int srcSize = GetSourceTextureSize(importer);
                 int tileMax = Mathf.Max(srcSize.x, srcSize.y);
                 if (tileMax > TILE_MAX_ALLOWED_SIZE)
@@ -71,8 +74,18 @@ namespace Valkur.Editor
                         $"{srcSize.x}x{srcSize.y} px, exceeds the {TILE_MAX_ALLOWED_SIZE}px " +
                         $"limit. Tiles must be ≤{TILE_MAX_ALLOWED_SIZE}x{TILE_MAX_ALLOWED_SIZE} " +
                         $"to render as a single map cell. Run `Valkur > Tiles > Audit Sizes` to fix.");
+                    importer.spritePixelsPerUnit = TILE_PPU;
                 }
-                importer.spritePixelsPerUnit = TILE_PPU;
+                else if (tileMax > 0)
+                {
+                    importer.spritePixelsPerUnit = tileMax;
+                }
+                else
+                {
+                    // Source size unavailable (reflection call failed) — fall
+                    // back to the canonical 32-px policy.
+                    importer.spritePixelsPerUnit = TILE_PPU;
+                }
                 SetPivot(importer, new Vector2(0.5f, 0.5f));
             }
             else if (assetPath.Contains("/Characters/"))
@@ -163,8 +176,10 @@ namespace Valkur.Editor
 
         /// <summary>
         /// Returns the source PNG/JPG dimensions as a Vector2Int (width, height).
-        /// Uses TextureImporter.GetSourceTextureWidthAndHeight via reflection-free API
-        /// available since Unity 2019.2.
+        /// On first import the TextureImporter's reflective GetWidthAndHeight
+        /// returns (0,0) because Unity hasn't ingested the texture yet, so we
+        /// also fall back to parsing the PNG IHDR chunk straight from disk —
+        /// guaranteed to work even during the very first OnPreprocessTexture call.
         /// </summary>
         private static Vector2Int GetSourceTextureSize(TextureImporter importer)
         {
@@ -179,7 +194,46 @@ namespace Valkur.Editor
                 w = (int)args[0];
                 h = (int)args[1];
             }
+            if (w == 0 || h == 0)
+            {
+                var fromDisk = ReadPngDimensionsFromDisk(importer.assetPath);
+                if (fromDisk.x > 0 && fromDisk.y > 0)
+                    return fromDisk;
+            }
             return new Vector2Int(w, h);
+        }
+
+        /// <summary>
+        /// Parses the PNG IHDR chunk from disk to extract width/height.
+        /// Returns Vector2Int.zero on any read failure.
+        /// </summary>
+        private static Vector2Int ReadPngDimensionsFromDisk(string assetPath)
+        {
+            try
+            {
+                using (var stream = System.IO.File.OpenRead(assetPath))
+                using (var reader = new System.IO.BinaryReader(stream))
+                {
+                    byte[] sig = reader.ReadBytes(8);
+                    if (sig.Length < 8 || sig[0] != 0x89 || sig[1] != 'P' ||
+                        sig[2] != 'N' || sig[3] != 'G')
+                        return Vector2Int.zero;
+                    reader.ReadBytes(4); // chunk length
+                    byte[] chunkType = reader.ReadBytes(4);
+                    if (chunkType.Length < 4 || chunkType[0] != 'I' || chunkType[1] != 'H' ||
+                        chunkType[2] != 'D' || chunkType[3] != 'R')
+                        return Vector2Int.zero;
+                    int w = (reader.ReadByte() << 24) | (reader.ReadByte() << 16) |
+                            (reader.ReadByte() << 8) | reader.ReadByte();
+                    int h = (reader.ReadByte() << 24) | (reader.ReadByte() << 16) |
+                            (reader.ReadByte() << 8) | reader.ReadByte();
+                    return new Vector2Int(w, h);
+                }
+            }
+            catch
+            {
+                return Vector2Int.zero;
+            }
         }
 
         private void OnPreprocessAudio()
