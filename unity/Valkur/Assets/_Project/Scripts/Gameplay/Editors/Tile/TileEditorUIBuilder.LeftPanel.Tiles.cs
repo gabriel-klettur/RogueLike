@@ -28,9 +28,13 @@ namespace Valkur.Gameplay.TileEditor
         private const float TILES_PANEL_ROW_W = TILES_DROP_W - 16f;
 
         // Top-row layout (SELECTED + RULESET on the left, CATEGORIES on the right).
-        // Single fixed height for the whole row so the two columns visually align
-        // and the panel surface above the picker stays compact (no dead space).
-        private const float TILES_TOP_ROW_H   = 80f;
+        // Floor for the auto-derived row height so the column LayoutGroups always
+        // have a sane minimum to compute against. The row's actual height is
+        // max(LEFT.preferredHeight, RIGHT.preferredHeight) — both columns report
+        // content-driven heights, so the row only takes the room it needs.
+        // The effective ceiling is bounded by TILES_CAT_SCROLL_MAX_H (the
+        // CATEGORIES scroll caps itself before the row gets pushed any taller).
+        private const float TILES_TOP_ROW_MIN_H = 56f;
         // Left-column width — sized so the SELECTED tile name fits on a single
         // line ("pandora_r06_c07" ≈ 110 px at fontSize 12) AND the RULESET
         // button ("NO RULESET FOR CATEGORY") fits across without wrapping.
@@ -93,15 +97,34 @@ namespace Valkur.Gameplay.TileEditor
         /// Builds the horizontal top row of the Tiles panel:
         ///   • left column  → SELECTED preview + CONFIGURE TILESET button.
         ///   • right column → CATEGORIES label + scrollable category list.
-        /// Both columns share the same height (<see cref="TILES_TOP_ROW_H"/>)
-        /// so the panel surface above the TILES grid has no dead space.
+        /// Row height is content-driven (<see cref="TILES_TOP_ROW_MIN_H"/>
+        /// floor, soft-capped by the inner CATEGORIES scroll's own
+        /// <see cref="TILES_CAT_SCROLL_MAX_H"/>) — both columns report
+        /// preferredHeight from their content so the row only takes the room
+        /// it actually needs and the picker below recovers vertical space.
         /// </summary>
         private static void BuildTopRow(Transform parent, ref UIRefs refs)
         {
             var row = CreateUI("TopRow", parent);
             refs.TilesTopRow = row;
             var le  = row.AddComponent<LayoutElement>();
-            le.preferredHeight = TILES_TOP_ROW_H;
+            // Don't pin a fixed preferredHeight — we want the row to size to
+            // max(LEFT.preferredHeight, RIGHT.preferredHeight) so it shrinks
+            // when CATEGORIES is short. minHeight gives us a sane floor; the
+            // ceiling is enforced separately via LayoutElementFollowsChildHeight
+            // wired below.
+            le.minHeight       = TILES_TOP_ROW_MIN_H;
+            le.preferredHeight = -1f;
+            // CRITICAL: pin flexibleHeight = 0 so the panel-content VLG never
+            // distributes extra panel space INTO this row. Without this hard
+            // pin, any nested element with flex > 0 (e.g. the SELECTED Name TMP
+            // before we fixed it) propagates flex upward through both VLGs and
+            // the row HLG; the panel VLG then siphons the picker's surplus
+            // space into the TopRow, leaving the picker undersized and a fat
+            // empty band between CATEGORIES and the TILES section. With
+            // flexibleHeight pinned, all surplus goes to the only child that
+            // still publishes flex > 0 — the TILES picker (flex=1).
+            le.flexibleHeight  = 0f;
 
             var hlg = row.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing                = TILES_TOP_GAP;
@@ -188,7 +211,9 @@ namespace Valkur.Gameplay.TileEditor
                     le.preferredWidth = TILES_PANEL_ROW_W;
                     le.flexibleWidth  = 1f;
                     // flexibleHeight on the picker is already 1 from BuildTilePicker;
-                    // the top row keeps its fixed preferredHeight (TILES_TOP_ROW_H).
+                    // the top row's preferredHeight stays content-driven (set
+                    // to -1 in BuildTopRow) so it shrinks when the CATEGORIES
+                    // scroll only needs one row.
                 }
                 else
                 {
@@ -236,7 +261,17 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildSelectedTilePreview(Transform parent, ref UIRefs refs)
         {
             var row = CreateUI("SelectedPreview", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 48f;
+            // flexibleHeight = 0 pins the row at preferredHeight even when the
+            // parent column has leftover vertical space (e.g. when the
+            // CATEGORIES scroll on the right side stretches the TopRow taller).
+            // Without this the row inherits flexibleHeight=1 from the "Name" TMP
+            // inside Info → VLG of the LEFT column distributes the leftover
+            // pixels into the row → the yellow Img outline ends up tall and
+            // narrow instead of a 40 × 40 thumbnail.
+            var rowLe = row.AddComponent<LayoutElement>();
+            rowLe.preferredHeight = 48f;
+            rowLe.minHeight       = 48f;
+            rowLe.flexibleHeight  = 0f;
             var h = row.AddComponent<HorizontalLayoutGroup>();
             h.spacing = 10f;
             h.childForceExpandWidth = false;
@@ -246,7 +281,16 @@ namespace Valkur.Gameplay.TileEditor
             h.padding = new RectOffset(4, 4, 4, 4);
 
             var imgGo = CreateUI("Img", row.transform);
-            imgGo.AddComponent<LayoutElement>().preferredWidth = 40f;
+            // Pin the thumbnail to a square 40 × 40 footprint regardless of how
+            // tall the parent row ends up — flexibleWidth/Height = 0 stops the
+            // HLG from stretching the slot into a non-square rectangle.
+            var imgLe = imgGo.AddComponent<LayoutElement>();
+            imgLe.preferredWidth  = 40f;
+            imgLe.preferredHeight = 40f;
+            imgLe.minWidth        = 40f;
+            imgLe.minHeight       = 40f;
+            imgLe.flexibleWidth   = 0f;
+            imgLe.flexibleHeight  = 0f;
             refs.SelectedTilePreviewImg = imgGo.AddComponent<Image>();
             refs.SelectedTilePreviewImg.color = SLOT_BG;
             refs.SelectedTilePreviewImg.preserveAspect = true;
@@ -281,16 +325,34 @@ namespace Valkur.Gameplay.TileEditor
             refs.SelectedTileNameText.enableWordWrapping = true;
         }
 
+        // Horizontal padding inside the CONFIGURE button (between bg edge and label).
+        // Button width = label preferredWidth + 2 * this.
+        private const int CONFIGURE_BTN_INNER_PAD_X = 10;
+
         private static void BuildConfigureRow(Transform parent, ref UIRefs refs)
         {
             var row = CreateUI("ConfigureRow", parent);
-            row.AddComponent<LayoutElement>().preferredHeight = 26f;
+            // flexibleHeight = 0 stops the row from absorbing leftover vertical
+            // space in the LEFT column when the parent TopRow grows tall (e.g.
+            // because the CATEGORIES scroll on the right is using its full cap).
+            // Without this the button would float toward the bottom of the row
+            // — visually disconnected from the SELECTED preview above it.
+            var rowLe = row.AddComponent<LayoutElement>();
+            rowLe.preferredHeight = 26f;
+            rowLe.minHeight       = 26f;
+            rowLe.flexibleHeight  = 0f;
             var h = row.AddComponent<HorizontalLayoutGroup>();
             h.spacing = 6f;
-            h.childForceExpandWidth = true;
+            // childForceExpandWidth = false + childAlignment = MiddleLeft so the
+            // button sits at its own preferred width on the left edge of the row
+            // instead of being stretched to fill the column. Lets the button text
+            // ("CONFIGURE: castle_pandora", "NO RULESET FOR CATEGORY", …) drive
+            // the visible button surface area and saves horizontal real estate.
+            h.childForceExpandWidth = false;
             h.childForceExpandHeight = true;
             h.childControlWidth = true;
             h.childControlHeight = true;
+            h.childAlignment = TextAnchor.MiddleLeft;
             h.padding = new RectOffset(4, 4, 2, 2);
 
             var btnGo = CreateUI("ConfigBtn", row.transform);
@@ -303,21 +365,64 @@ namespace Valkur.Gameplay.TileEditor
             bc.pressedColor = BTN_ACTIVE;
             refs.ConfigureTilesetBtn.colors = bc;
             refs.ConfigureTilesetBtn.targetGraphic = img;
-            refs.ConfigureTilesetBtnLabel = TileEditorUIHelpers.AddCenteredText(
-                btnGo.transform, "CONFIGURE TILESET", 11f, FontStyles.Bold, TEXT_SECONDARY);
+
+            // Layout group + ContentSizeFitter so the button's RectTransform
+            // grows / shrinks horizontally to match the TMP label's preferred
+            // text width on every refresh. Vertical stays fixed (parent HLG
+            // forces height = row height = 26 px). The label is added as a
+            // layout-controlled child (not stretch-anchored) — TMP implements
+            // ILayoutElement so its preferredWidth bubbles up to CSF.
+            var btnHlg = btnGo.AddComponent<HorizontalLayoutGroup>();
+            btnHlg.padding = new RectOffset(
+                CONFIGURE_BTN_INNER_PAD_X, CONFIGURE_BTN_INNER_PAD_X, 2, 2);
+            btnHlg.spacing                = 0f;
+            btnHlg.childForceExpandWidth  = false;
+            btnHlg.childForceExpandHeight = true;
+            btnHlg.childControlWidth      = true;
+            btnHlg.childControlHeight     = true;
+            btnHlg.childAlignment         = TextAnchor.MiddleCenter;
+
+            var btnCsf = btnGo.AddComponent<ContentSizeFitter>();
+            btnCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            btnCsf.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
+
+            var lblGo = CreateUI("Lbl", btnGo.transform);
+            refs.ConfigureTilesetBtnLabel = lblGo.AddComponent<TextMeshProUGUI>();
+            refs.ConfigureTilesetBtnLabel.text          = "CONFIGURE TILESET";
+            refs.ConfigureTilesetBtnLabel.fontSize      = 11f;
+            refs.ConfigureTilesetBtnLabel.fontStyle     = FontStyles.Bold;
+            refs.ConfigureTilesetBtnLabel.color         = TEXT_SECONDARY;
+            refs.ConfigureTilesetBtnLabel.alignment     = TextAlignmentOptions.Center;
+            refs.ConfigureTilesetBtnLabel.raycastTarget = false;
+            // Single-line; no wrap — button width MUST equal label preferredWidth
+            // for CSF to converge. Word-wrap would make TMP report a shrunken
+            // preferredWidth and the button would oscillate.
+            refs.ConfigureTilesetBtnLabel.enableWordWrapping = false;
+            refs.ConfigureTilesetBtnLabel.overflowMode       = TextOverflowModes.Overflow;
         }
+
+        // Hard ceiling on the auto-resized CATEGORIES scroll height. Beyond this
+        // the scroll engages and the user pans through the rest. Sized so that
+        // even with the minimum cell height (22 px + 3 px spacing) the user can
+        // see at least 5 rows of categories before scrolling — enough for the
+        // common case of 12-15 categories at 3 columns ≈ 5 rows tall.
+        private const float TILES_CAT_SCROLL_MAX_H = 130f;
+        // Floor — keep the scrollbar interactable even when only one row exists.
+        private const float TILES_CAT_SCROLL_MIN_H = TILES_CAT_BTN_H + 6f;
 
         private static void BuildCategoryScroll(Transform parent, ref UIRefs refs)
         {
             var scrollGo = CreateUI("CatScroll", parent);
             var le = scrollGo.AddComponent<LayoutElement>();
-            // The scroll lives inside the top-row's right column whose height
-            // is set by the parent HorizontalLayoutGroup. flexibleHeight=1 +
-            // a small minHeight lets the scroll absorb whatever vertical space
-            // is left after the section label, with a sane lower bound so the
-            // scrollbar handle stays interactable when the panel is shrunk.
-            le.flexibleHeight = 1f;
-            le.minHeight      = 40f;
+            // Auto-size the scroll's height to fit the grid content (clamped by
+            // TILES_CAT_SCROLL_MIN/MAX_H) instead of stretching to fill the
+            // top-row column. When the categories list is short the scroll
+            // collapses tight against the section label, freeing vertical real
+            // estate for the picker below. The grid's GridAutoSize already
+            // drives content.rect.height; LayoutElementFollowsChildHeight
+            // mirrors that into le.preferredHeight.
+            le.flexibleHeight = 0f;
+            le.minHeight      = TILES_CAT_SCROLL_MIN_H;
             // Background panel
             var bg = scrollGo.AddComponent<Image>();
             bg.color = BG_SURFACE;
@@ -375,6 +480,19 @@ namespace Valkur.Gameplay.TileEditor
             sr.content = cr;
             sr.viewport = vpRt;
             sr.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+            // Mirror the grid content's measured height into the scroll's
+            // LayoutElement.preferredHeight so the scroll shrinks tight when
+            // the grid only has 1-2 rows and grows up to the cap when there
+            // are many categories. Without this the scroll would stretch via
+            // flexibleHeight=1 and waste vertical space above the picker.
+            var follow = scrollGo.AddComponent<LayoutElementFollowsChildHeight>();
+            follow.SourceContent = cr;
+            follow.MinHeight     = TILES_CAT_SCROLL_MIN_H;
+            follow.MaxHeight     = TILES_CAT_SCROLL_MAX_H;
+            // 4 px on each side — matches the GridLayoutGroup vertical padding
+            // (top 2 + bottom 2) so the scroll surface doesn't clip cell borders.
+            follow.ExtraPadding  = 4f;
         }
 
         private static void BuildTilePicker(Transform parent, ref UIRefs refs)
