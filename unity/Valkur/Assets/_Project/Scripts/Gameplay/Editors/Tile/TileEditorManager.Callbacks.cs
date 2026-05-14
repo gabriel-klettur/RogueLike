@@ -263,6 +263,19 @@ namespace Valkur.Gameplay.TileEditor
             _cachedCollisionTilemap = null;
         }
 
+        // ── CollisionTagMap host (analogue of TerrainMap) ────────────────
+        // Lazy property so EditMode test fixtures that construct the manager
+        // without going through Start() still get a valid map on first access.
+        private CollisionTagMap _collisionTagMap;
+
+        /// <summary>
+        /// Per-cell tag layer parallel to the Collision tilemap. Resolves to
+        /// <see cref="CollisionTagMap.Wildcard"/> when no explicit tag is stored — that
+        /// keeps legacy maps (and any cell painted before the user changes
+        /// <see cref="TileEditorState.ActiveCollisionTag"/>) at the pre-feature behaviour.
+        /// </summary>
+        public CollisionTagMap CollisionTags => _collisionTagMap ??= new CollisionTagMap();
+
         private Tilemap GetCurrentTilemap()
         {
             if (worldGridBuilder == null) return null;

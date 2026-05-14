@@ -75,6 +75,30 @@ namespace Valkur.Gameplay.TileEditor
         // Collider overlay state (Colliders panel).
         private Tilemap _collisionTilemap;
         private bool    _showColliderOverlay;
+        // Optional per-cell tag layer (CollisionTagMap). When non-null, each painted
+        // collider cell receives a small corner marker coloured per its tag so the
+        // user can tell at a glance which visual layer the collider applies to.
+        private CollisionTagMap _collisionTagMap;
+
+        /// <summary>
+        /// Per-tag corner-marker palette. Index 0 = wildcard ("*"); indices 1..9 map
+        /// to <see cref="World.TilemapLayerSetup.TilemapLayer"/> 0..8. Colours chosen
+        /// to be distinguishable on top of the translucent red collider fill at PPU=16
+        /// without saturating the cell.
+        /// </summary>
+        private static readonly Color[] TagPalette =
+        {
+            new Color(1.00f, 1.00f, 1.00f, 0.95f), // *  wildcard      → white
+            new Color(0.55f, 0.40f, 0.20f, 1f),    // 0  Ground         → warm brown
+            new Color(1.00f, 0.70f, 0.20f, 1f),    // 1  FloorDecals    → amber
+            new Color(0.45f, 0.45f, 0.50f, 1f),    // 2  Collision      → grey
+            new Color(0.15f, 0.75f, 0.70f, 1f),    // 3  ObjectsLow     → teal
+            new Color(0.80f, 0.15f, 0.15f, 1f),    // 4  WallsBottom    → dark red
+            new Color(0.95f, 0.30f, 0.85f, 1f),    // 5  Decorations    → magenta
+            new Color(1.00f, 0.45f, 0.10f, 1f),    // 6  WallsTop       → orange-red
+            new Color(0.25f, 0.55f, 1.00f, 1f),    // 7  ObjectsHigh    → blue
+            new Color(0.70f, 0.55f, 0.95f, 1f),    // 8  OverheadDetails→ pale violet
+        };
 
         // View-panel toggles.
         private bool _showGridLines = true;
@@ -184,6 +208,25 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Enable or disable the red collider overlay.</summary>
         public void SetShowColliderOverlay(bool show) => _showColliderOverlay = show;
+
+        /// <summary>
+        /// Bind the <see cref="CollisionTagMap"/> the overlay should sample for the
+        /// per-tag corner markers drawn on top of the red collider fill. Pass null to
+        /// disable the tag markers (the rest of the collider overlay continues to draw).
+        /// </summary>
+        public void SetCollisionTagMap(CollisionTagMap map) => _collisionTagMap = map;
+
+        /// <summary>
+        /// Resolve a tag string ("*", "0".."8") to its corner-marker colour. Invalid
+        /// tags fall back to the wildcard slot so the visual never goes black/garbage.
+        /// </summary>
+        private static Color ResolveTagColor(string tag)
+        {
+            if (string.IsNullOrEmpty(tag) || tag == CollisionTagMap.Wildcard) return TagPalette[0];
+            if (tag.Length == 1 && tag[0] >= '0' && tag[0] <= '8')
+                return TagPalette[1 + (tag[0] - '0')];
+            return TagPalette[0];
+        }
 
         /// <summary>Enable or disable the white per-tile grid lines.</summary>
         public void SetShowGridLines(bool show) => _showGridLines = show;

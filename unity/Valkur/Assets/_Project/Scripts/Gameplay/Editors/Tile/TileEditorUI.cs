@@ -38,6 +38,7 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onPasteClicked;
         private System.Action _onClearSelectionClicked;
         private System.Action<int> _onMoveToLayerClicked;
+        private System.Action<string> _onCollisionTagChanged;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -75,7 +76,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onCutClicked = null,
             System.Action onPasteClicked = null,
             System.Action onClearSelectionClicked = null,
-            System.Action<int> onMoveToLayerClicked = null)
+            System.Action<int> onMoveToLayerClicked = null,
+            System.Action<string> onCollisionTagChanged = null)
         {
             _state = state;
             _catalog = catalog;
@@ -98,6 +100,7 @@ namespace Valkur.Gameplay.TileEditor
             _onPasteClicked        = onPasteClicked;
             _onClearSelectionClicked = onClearSelectionClicked;
             _onMoveToLayerClicked    = onMoveToLayerClicked;
+            _onCollisionTagChanged   = onCollisionTagChanged;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();

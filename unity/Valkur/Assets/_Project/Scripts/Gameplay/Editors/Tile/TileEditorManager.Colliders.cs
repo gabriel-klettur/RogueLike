@@ -99,6 +99,7 @@ namespace Valkur.Gameplay.TileEditor
         {
             if (_gridOverlay == null) return;
             _gridOverlay.SetCollisionTilemap(GetCollisionTilemap());
+            _gridOverlay.SetCollisionTagMap(CollisionTags);
             _gridOverlay.SetShowColliderOverlay(_state.ShowColliderOverlay);
         }
 
@@ -138,6 +139,7 @@ namespace Valkur.Gameplay.TileEditor
                 var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
+                ApplyTagToEdits(edits, drawing);
                 AddCellsToBrushStroke(cellPos);
                 _state.IsDragging = true;
                 if (edits.Count > 0)
@@ -149,6 +151,7 @@ namespace Valkur.Gameplay.TileEditor
                 var edits = TileBrush.Paint(collision, cellPos, tileToPaint, _state.BrushSize, canEditCell: null);
                 _undo.RecordEdits(edits);
                 _persistence?.MarkBatchDirty(edits);
+                ApplyTagToEdits(edits, drawing);
                 AddCellsToBrushStroke(cellPos);
                 if (edits.Count > 0)
                     RegenerateCompositeCollider(collision);
@@ -167,5 +170,47 @@ namespace Valkur.Gameplay.TileEditor
 
         // ── Helpers ──────────────────────────────────────────────────────
 
+        // ── Apply-To-Layer picker handler ───────────────────────────────
+
+        /// <summary>
+        /// User clicked one of the Apply-To-Layer buttons in the Colliders panel.
+        /// Updates <see cref="TileEditorState.ActiveCollisionTag"/>, asks the UI to
+        /// repaint the picker row's highlight + value label, and emits a status hint.
+        /// Invalid tag values fall back to <see cref="CollisionTagMap.Wildcard"/>.
+        /// </summary>
+        internal void OnCollisionTagChanged(string tag)
+        {
+            if (!CollisionTagMap.IsValidTag(tag)) tag = CollisionTagMap.Wildcard;
+            _state.ActiveCollisionTag = tag;
+            _ui?.RefreshCollisionTagPicker();
+            _ui?.SetStatus($"Collider tag → {tag}");
+        }
+
+        /// <summary>
+        /// Mirror every edit emitted by <see cref="TileBrush.Paint"/> into
+        /// <see cref="CollisionTagMap"/>:
+        ///   • Drawing → stamp <see cref="TileEditorState.ActiveCollisionTag"/> on each
+        ///     cell that received a collider tile.
+        ///   • Erasing → clear the cell so a future re-paint starts back at the user's
+        ///     current active tag (no stale tag rides on top of a fresh paint).
+        ///
+        /// Lives outside the undo-recorded batch in M1 — see
+        /// "Open questions: Undo del tag map" in the plan. The fallback when an Undo
+        /// reinstates a collider without a tag is the map's wildcard default, which is
+        /// the safe ("applies to all") choice.
+        /// </summary>
+        private void ApplyTagToEdits(System.Collections.Generic.List<TileEdit> edits, bool drawing)
+        {
+            if (edits == null || edits.Count == 0) return;
+            string tag = drawing ? _state.ActiveCollisionTag : null;
+            if (drawing && !CollisionTagMap.IsValidTag(tag))
+                tag = CollisionTagMap.Wildcard;
+
+            for (int i = 0; i < edits.Count; i++)
+            {
+                if (drawing) CollisionTags.Set(edits[i].Position, tag);
+                else         CollisionTags.Clear(edits[i].Position);
+            }
+        }
     }
 }

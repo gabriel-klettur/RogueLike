@@ -207,11 +207,17 @@ namespace Valkur.Gameplay.TileEditor
             if (TerrainMap != null && TerrainMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
                 terrainMatrix = TerrainMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
 
-            return SerializeOverlay(perLayer, terrainMatrix, w, h);
+            string[,] collisionTagMatrix = null;
+            if (CollisionTagMap != null && CollisionTagMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
+                collisionTagMatrix = CollisionTagMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
+
+            return SerializeOverlay(perLayer, terrainMatrix, collisionTagMatrix, w, h);
         }
 
         private static string SerializeOverlay(List<KeyValuePair<string, string[,]>> perLayer,
-                                                string[,] terrainMatrix, int w, int h)
+                                                string[,] terrainMatrix,
+                                                string[,] collisionTagMatrix,
+                                                int w, int h)
         {
             var sb = new StringBuilder(64 * 1024);
             sb.Append("{\n  \"layers\": {");
@@ -247,6 +253,22 @@ namespace Valkur.Gameplay.TileEditor
                     {
                         if (col > 0) sb.Append(", ");
                         sb.Append('"').Append(EscapeJson(terrainMatrix[row, col] ?? string.Empty)).Append('"');
+                    }
+                    sb.Append(']');
+                }
+                sb.Append("\n  ]");
+            }
+
+            if (collisionTagMatrix != null)
+            {
+                sb.Append(",\n  \"collisionTags\": [");
+                for (int row = 0; row < h; row++)
+                {
+                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
+                    for (int col = 0; col < w; col++)
+                    {
+                        if (col > 0) sb.Append(", ");
+                        sb.Append('"').Append(EscapeJson(collisionTagMatrix[row, col] ?? string.Empty)).Append('"');
                     }
                     sb.Append(']');
                 }

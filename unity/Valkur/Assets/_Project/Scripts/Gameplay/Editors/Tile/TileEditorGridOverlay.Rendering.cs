@@ -242,6 +242,34 @@ namespace Valkur.Gameplay.TileEditor
                 DrawBorderQuads(cx, cy, ColliderBorderColor, t);
             }
             GL.End();
+
+            // Per-tag corner marker: top-left ~25% of each painted cell, coloured by
+            // the cell's CollisionTagMap entry. Skipped if no tag map is bound — the
+            // legacy "all colliders apply to all entities" semantics remain visually
+            // identical to before this feature shipped.
+            if (_collisionTagMap == null) return;
+            const float MarkerSize = 0.30f; // cell-units → ≈30% of a tile width
+
+            GL.Begin(GL.QUADS);
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (tiles[i] == null) continue;
+                int cx = sx + (i % w);
+                int cy = sy + (i / w);
+                string tag = _collisionTagMap.Get(new Vector2Int(cx, cy));
+                GL.Color(ResolveTagColor(tag));
+
+                // Top-left corner of the cell. Cell occupies [cx..cx+1] × [cy..cy+1].
+                float x0 = cx;
+                float y1 = cy + 1f;
+                float x1 = cx + MarkerSize;
+                float y0 = cy + 1f - MarkerSize;
+                GL.Vertex3(x0, y0, 0f);
+                GL.Vertex3(x1, y0, 0f);
+                GL.Vertex3(x1, y1, 0f);
+                GL.Vertex3(x0, y1, 0f);
+            }
+            GL.End();
         }
 
         /// <summary>

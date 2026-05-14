@@ -119,6 +119,33 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Repaint the Apply-To-Layer button row in the Colliders panel + the value
+        /// label below the header to reflect <see cref="TileEditorState.ActiveCollisionTag"/>.
+        /// The active button uses the same red-accent tint as the Show/Draw/Erase toggles
+        /// to feel native to the panel; the value label echoes the tag textually so the
+        /// user can confirm at a glance which tag the next collider paint will stamp.
+        /// </summary>
+        public void RefreshCollisionTagPicker()
+        {
+            if (_state == null) return;
+            if (_refs.CollisionTagActiveLabel != null)
+                _refs.CollisionTagActiveLabel.text = $"Active: {_state.ActiveCollisionTag}";
+
+            if (_refs.CollisionTagButtonImgs == null || _refs.CollisionTagButtonLabels == null) return;
+            for (int i = 0; i < _refs.CollisionTagButtonImgs.Length; i++)
+            {
+                string tag = TileEditor.CollisionTagMap.ValidTags[i];
+                bool active = tag == _state.ActiveCollisionTag;
+                if (_refs.CollisionTagButtonImgs[i] != null)
+                    _refs.CollisionTagButtonImgs[i].color = active
+                        ? new Color(COLLIDER_BORDER.r, COLLIDER_BORDER.g, COLLIDER_BORDER.b, 0.30f)
+                        : BTN_NORMAL;
+                if (_refs.CollisionTagButtonLabels[i] != null)
+                    _refs.CollisionTagButtonLabels[i].color = active ? RED_ACCENT : TEXT_PRIMARY;
+            }
+        }
+
+        /// <summary>
         /// Sync the "Target: {idx}: {Layer}" label below the Move-To-Layer slider.
         /// Called whenever the slider changes or the active layer flips (so the
         /// "differs from active" hint stays truthful).

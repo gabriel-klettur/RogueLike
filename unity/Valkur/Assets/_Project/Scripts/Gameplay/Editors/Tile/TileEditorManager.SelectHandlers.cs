@@ -392,9 +392,17 @@ namespace Valkur.Gameplay.TileEditor
                 return;
             }
 
+            // The Collision tilemap is co-mutated within the same batch so a single
+            // Ctrl+Z reverses tile move + collider erase atomically. Per the plan's
+            // user-confirmed decision, Move-To-Layer DELETES the source-cell collider
+            // (and its tag) when one is present — the visual tile has logically moved
+            // away, so the obstacle should follow. The Undo restores the collider tile.
+            var collisionTm = GetTilemapForLayer(TilemapLayerSetup.TilemapLayer.Collision);
+
             _undo.StartStroke(srcTilemap);
             var edits = new List<TileEdit>();
             int moved = 0;
+            int collidersErased = 0;
 
             foreach (var c in _state.SelectedCells)
             {
@@ -411,6 +419,20 @@ namespace Valkur.Gameplay.TileEditor
                 // Phase B: paint destination (overwrites whatever was there)
                 dstTilemap.SetTile(c, srcTile);
                 edits.Add(new TileEdit(c, oldDst, srcTile, dstTilemap));
+
+                // Phase C: erase any collision cell sitting on top of the moved tile.
+                // Same batch ⇒ same Ctrl+Z.
+                if (collisionTm != null)
+                {
+                    var oldCollider = collisionTm.GetTile(c);
+                    if (oldCollider != null)
+                    {
+                        collisionTm.SetTile(c, null);
+                        edits.Add(new TileEdit(c, oldCollider, null, collisionTm));
+                        _collisionTagMap?.Clear(c);
+                        collidersErased++;
+                    }
+                }
 
                 moved++;
             }
@@ -432,14 +454,19 @@ namespace Valkur.Gameplay.TileEditor
             // (already closed by EndStroke above; idempotent) and refreshes UI.
             OnLayerChanged(destLayer);
 
-            // If the move touched Collision (as source OR destination) the composite
-            // collider was rebuilt against stale geometry; OnLayerChanged doesn't know,
-            // so explicitly rebake here.
+            // If the move touched Collision (as source OR destination) OR if Phase C
+            // erased any collider cell, the composite collider was rebuilt against stale
+            // geometry; OnLayerChanged doesn't know, so explicitly rebake here.
             var collision = GetCollisionTilemap();
-            if (collision != null && (srcTilemap == collision || dstTilemap == collision))
+            bool touchedCollision = collision != null &&
+                (srcTilemap == collision || dstTilemap == collision || collidersErased > 0);
+            if (touchedCollision)
                 RegenerateCompositeCollider(collision);
 
-            _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer}");
+            if (collidersErased > 0)
+                _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer} (+{collidersErased} collider{(collidersErased == 1 ? "" : "s")} cleared)");
+            else
+                _ui?.SetStatus($"Moved {moved} cell(s) → {destLayer}");
             _ui?.RefreshClipboardButtons();
         }
 

@@ -58,6 +58,17 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public TerrainMap TerrainMap { get; set; }
 
+        /// <summary>
+        /// Optional per-cell collision tag layer. When non-null,
+        /// <see cref="SaveZoneInternal"/> emits a <c>collisionTags</c> matrix alongside
+        /// the layer matrices in the overlay JSON, and the loader
+        /// (<see cref="OverlayLoader.ApplyCollisionTagsFromPath"/>) can restore it.
+        /// Legacy overlays without the field load with every cell defaulting to
+        /// <see cref="CollisionTagMap.Wildcard"/> — preserves the pre-feature behaviour
+        /// where a painted collider applies to every entity.
+        /// </summary>
+        public CollisionTagMap CollisionTagMap { get; set; }
+
         public event Action OnDirtyChanged;
         public event Action<string> OnZoneSaved;
         public event Action<string, Exception> OnSaveFailed;

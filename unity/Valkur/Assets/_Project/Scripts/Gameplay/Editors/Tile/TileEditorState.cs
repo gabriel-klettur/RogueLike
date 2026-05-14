@@ -92,6 +92,16 @@ namespace Valkur.Gameplay.TileEditor
         public ColliderMode CurrentColliderMode = ColliderMode.None;
 
         /// <summary>
+        /// Tag stamped into <see cref="CollisionTagMap"/> for every collider cell painted
+        /// while <see cref="ColliderMode.Draw"/> is active. One of
+        /// <see cref="CollisionTagMap.ValidTags"/> ("*" wildcard or "0".."8" matching a
+        /// <see cref="World.TilemapLayerSetup.TilemapLayer"/>). Defaults to "*" so the
+        /// pre-feature behaviour (collider applies to everything) stays the default the
+        /// user has to opt out of.
+        /// </summary>
+        public string ActiveCollisionTag = CollisionTagMap.Wildcard;
+
+        /// <summary>
         /// World-space cell last interacted with (click/place/eyedrop).
         /// Shown as a GREEN outline. Maps to Python's selected_tile (.x,.y).
         /// </summary>

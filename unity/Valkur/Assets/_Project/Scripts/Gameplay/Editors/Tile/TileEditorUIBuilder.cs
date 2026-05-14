@@ -92,6 +92,15 @@ namespace Valkur.Gameplay.TileEditor
             public Image EraseCollidersToggleImg;
             public TextMeshProUGUI EraseCollidersToggleLabel;
 
+            // Apply-To-Layer picker for the Collision tag (CollisionTagMap):
+            // 10 small buttons ("*" + "0".."8") + a value label echoing the active tag.
+            // Drives TileEditorState.ActiveCollisionTag; the Draw-mode painter stamps
+            // this value into the CollisionTagMap for every painted cell.
+            public TextMeshProUGUI            CollisionTagActiveLabel;
+            public Button[]                   CollisionTagButtons;
+            public Image[]                    CollisionTagButtonImgs;
+            public TextMeshProUGUI[]          CollisionTagButtonLabels;
+
             // Size panel — slider (1..25, integer steps).
             public Slider BrushSizeSlider;
 
@@ -195,7 +204,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onCutClicked = null,
             System.Action onPasteClicked = null,
             System.Action onClearSelectionClicked = null,
-            System.Action<int> onMoveToLayerClicked = null)
+            System.Action<int> onMoveToLayerClicked = null,
+            System.Action<string> onCollisionTagChanged = null)
         {
             var refs = new UIRefs
             {
@@ -212,7 +222,7 @@ namespace Valkur.Gameplay.TileEditor
             BuildLayersDropdown(canvasT, state, ref refs, onLayerChanged);
             BuildInspectorDropdown(canvasT, state, ref refs);
             BuildCollidersDropdown(canvasT, state, ref refs,
-                onShowColliders, onDrawColliders, onEraseColliders);
+                onShowColliders, onDrawColliders, onEraseColliders, onCollisionTagChanged);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
                 onShowGridLines, onShowZoneGrid, onShowColliders);

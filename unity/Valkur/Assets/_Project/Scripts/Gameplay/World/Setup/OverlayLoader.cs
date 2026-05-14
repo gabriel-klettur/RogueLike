@@ -175,6 +175,51 @@ namespace Valkur.Gameplay.World
             return written;
         }
 
+        /// <summary>
+        /// Read the optional <c>collisionTags</c> matrix from an overlay JSON and stamp
+        /// each non-empty cell into <paramref name="tagMap"/>. Cells with empty strings
+        /// (or missing entirely) are intentionally NOT written — the map's
+        /// <see cref="Valkur.Gameplay.TileEditor.CollisionTagMap.Get(Vector2Int)"/>
+        /// reader returns <see cref="Valkur.Gameplay.TileEditor.CollisionTagMap.Wildcard"/>
+        /// for missing cells, so legacy overlays without the field default to "*"
+        /// and preserve the pre-feature physics behaviour (collider applies to all).
+        ///
+        /// Returns the number of cells written; 0 if the file is missing the field or
+        /// doesn't exist on disk.
+        /// </summary>
+        public static int ApplyCollisionTagsFromPath(string jsonPath,
+            Valkur.Gameplay.TileEditor.CollisionTagMap tagMap,
+            int offsetX, int offsetY)
+        {
+            if (tagMap == null) return 0;
+            if (!File.Exists(jsonPath)) return 0;
+
+            string json = File.ReadAllText(jsonPath);
+            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
+            if (root == null) return 0;
+
+            if (!root.TryGetValue("collisionTags", out var tagsObj)) return 0;
+            var rows = tagsObj as List<object>;
+            if (rows == null) return 0;
+
+            int rowCount = rows.Count;
+            int written = 0;
+            for (int row = 0; row < rowCount; row++)
+            {
+                var rowList = rows[row] as List<object>;
+                if (rowList == null) continue;
+                int unityY = offsetY + (rowCount - 1 - row);
+                for (int col = 0; col < rowList.Count; col++)
+                {
+                    string tag = rowList[col] as string;
+                    if (string.IsNullOrEmpty(tag)) continue;
+                    tagMap.Set(new Vector2Int(offsetX + col, unityY), tag);
+                    written++;
+                }
+            }
+            return written;
+        }
+
         private static void PaintLayer(Tilemap tilemap, List<object> rows, bool isCollisionLayer,
             int offsetX = 0, int offsetY = 0, int maxWidth = 0, int maxHeight = 0,
             string sourceLabel = null)

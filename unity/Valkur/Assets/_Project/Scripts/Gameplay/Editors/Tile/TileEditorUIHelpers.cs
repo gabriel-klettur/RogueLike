@@ -142,9 +142,11 @@ namespace Valkur.Gameplay.TileEditor
         // next to the 32-px preview thumbnail; longer names fall back to ellipsis.
         public const float TILE_INSPECTOR_DROP_W = 170f;
         public const float COLLIDERS_DROP_W = 230f;
+        // Note for COLLIDERS_DROP_H below: 140 → 210 to host the Apply-To-Layer section
+        // (separator + header label + active-tag value label + 10-button picker row).
         // Content: Show toggle (30) + sep (1) + EDIT MODE label (16) + Draw (30) + Erase (30)
         // + VLG padding (12) + spacing × 4 (16) ≈ 135. + 1 px content/header gap.
-        public const float COLLIDERS_DROP_H = 140f + PANEL_HDR_H;   // 164
+        public const float COLLIDERS_DROP_H = 210f + PANEL_HDR_H;   // 234
         public const float SIZE_DROP_W = 200f;
         // Content: value label (32) + slider row (28) +
         // VLG padding (12) + spacing × 1 (4) ≈ 76.
