@@ -47,6 +47,20 @@ namespace Valkur.Gameplay.TileEditor
             int w = zoneManager.ZoneWidthTiles;
             int h = zoneManager.ZoneHeightTiles;
 
+            // Resolve the parallel-matrix sinks — both live on the TileEditorManager
+            // singleton via lazy properties, so accessing them spawns the underlying
+            // map if it isn't built yet. Guarded by HasInstance for the rare case
+            // ApplyAllOverrides runs before GameplaySceneSetup composes the editor.
+            CollisionTagMap collisionTagSink = null;
+            World.Layering.LayerJumpMap layerJumpSink = null;
+            if (TileEditorManager.HasInstance)
+            {
+                collisionTagSink = TileEditorManager.Instance.CollisionTags;
+                layerJumpSink = TileEditorManager.Instance.LayerJumps;
+            }
+            int tagsLoaded = 0;
+            int jumpsLoaded = 0;
+
             for (int i = 0; i < files.Length; i++)
             {
                 string zoneName = Path.GetFileName(files[i]);
@@ -68,6 +82,13 @@ namespace Valkur.Gameplay.TileEditor
                     zone.gridOffset.x, zone.gridOffset.y,
                     clearLayerRegion: true, regionWidth: w, regionHeight: h);
                 applied++;
+
+                if (collisionTagSink != null)
+                    tagsLoaded += OverlayLoader.ApplyCollisionTagsFromPath(
+                        files[i], collisionTagSink, zone.gridOffset.x, zone.gridOffset.y);
+                if (layerJumpSink != null)
+                    jumpsLoaded += OverlayLoader.ApplyLayerJumpsFromPath(
+                        files[i], layerJumpSink, zone.gridOffset.x, zone.gridOffset.y);
             }
 
             if (applied > 0)
@@ -76,6 +97,18 @@ namespace Valkur.Gameplay.TileEditor
                 Debug.Log($"[TileOverlayPersistence] Skipped {orphaned} orphaned override " +
                           $"file(s) (no matching zone, e.g. '{firstOrphan}'). Safe to ignore — " +
                           $"these belong to zones deleted via the Map Editor.");
+            if (tagsLoaded > 0 || jumpsLoaded > 0)
+                Debug.Log($"[TileOverlayPersistence] Restored {tagsLoaded} collision tag(s) " +
+                          $"and {jumpsLoaded} layer-jump cell(s) from disk.");
+
+            // M2.1: the sub-tilemap composites bake from the freshly painted Collision
+            // tilemap + tag map. SetTile already marks the baker dirty via
+            // Tilemap.tilemapTileChanged, but the tagMap edits we just streamed in
+            // don't fire that event — schedule an explicit rebake so per-layer
+            // physics matches the loaded tags from frame 0.
+            if (tagsLoaded > 0 && Application.isPlaying)
+                World.Layering.WorldCollisionBaker.EnsureExists().ScheduleRebake();
+
             return applied;
         }
 

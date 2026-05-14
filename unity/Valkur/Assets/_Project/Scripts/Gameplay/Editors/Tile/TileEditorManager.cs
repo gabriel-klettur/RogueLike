@@ -168,7 +168,9 @@ namespace Valkur.Gameplay.TileEditor
                 onShowLayerJumpsClicked:  OnShowLayerJumpsClicked,
                 onDrawLayerJumpsClicked:  OnDrawLayerJumpsClicked,
                 onEraseLayerJumpsClicked: OnEraseLayerJumpsClicked,
-                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged);
+                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged,
+                // View: per-tile layer-digit overlay
+                onShowTileLayerClicked:   OnShowTileLayerClicked);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
@@ -211,6 +213,10 @@ namespace Valkur.Gameplay.TileEditor
             // Same handoff for the per-cell collision-tag map (M1 of per-visual-layer
             // collisions). Missing on load → legacy "*"/wildcard behaviour preserved.
             _persistence.CollisionTagMap = CollisionTags;
+            // M1.8: tile-painted Layer Jumps are persisted side-by-side with the
+            // collision tags. Without this assignment the save path would emit no
+            // "layerJumps" matrix and authored jumps would be lost on reload.
+            _persistence.LayerJumpMap = LayerJumps;
         }
 
         /// <summary>
@@ -256,6 +262,7 @@ namespace Valkur.Gameplay.TileEditor
             _persistence.OnSaveFailed += (zone, ex) => _ui?.SetStatus($"Save failed for '{zone}': {ex.Message}");
             _persistence.TerrainMap = TerrainMap;
             _persistence.CollisionTagMap = CollisionTags;
+            _persistence.LayerJumpMap = LayerJumps;
             Debug.Log($"[TileEditor] Tile-overlay persistence rebound to world '{worldId}'.");
         }
 

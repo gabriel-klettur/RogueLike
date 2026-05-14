@@ -141,9 +141,13 @@ namespace Valkur.Gameplay.TileEditor
             if (files.Length == 0) return 0;
 
             var terrainMap = TerrainMap;
+            var tagSink = CollisionTags;
+            var jumpSink = LayerJumps;
             var catalog = TerrainCatalogLoader.Load();
             int totalLoaded = 0;
             int totalCured = 0;
+            int totalTags = 0;
+            int totalJumps = 0;
 
             for (int i = 0; i < files.Length; i++)
             {
@@ -154,6 +158,15 @@ namespace Valkur.Gameplay.TileEditor
 
                 int written = Valkur.Gameplay.World.OverlayLoader.ApplyTerrainsFromPath(
                     files[i], terrainMap, zone.gridOffset.x, zone.gridOffset.y);
+                // Tags + jumps live next to the terrain matrix — load them in the
+                // same sweep so an F8-open that arrived after WorldLoader's
+                // ApplyAllOverrides still seeds the maps. Idempotent: re-applying
+                // the same matrix just overwrites identical entries.
+                totalTags += Valkur.Gameplay.World.OverlayLoader.ApplyCollisionTagsFromPath(
+                    files[i], tagSink, zone.gridOffset.x, zone.gridOffset.y);
+                totalJumps += Valkur.Gameplay.World.OverlayLoader.ApplyLayerJumpsFromPath(
+                    files[i], jumpSink, zone.gridOffset.x, zone.gridOffset.y);
+
                 if (written == 0) continue;
                 totalLoaded += written;
 
@@ -175,6 +188,14 @@ namespace Valkur.Gameplay.TileEditor
             if (totalLoaded > 0)
                 Debug.Log($"[TileEditor] Loaded {totalLoaded} terrain cells from disk; " +
                           $"auto-cured {totalCured} variant(s).");
+            if (totalTags > 0 || totalJumps > 0)
+                Debug.Log($"[TileEditor] Loaded {totalTags} collision tag(s) and " +
+                          $"{totalJumps} layer-jump(s) from disk.");
+
+            // M2.1: rebake sub-tilemap composites so per-layer physics reflects the
+            // freshly streamed tag map. Inexpensive when nothing was loaded.
+            if (totalTags > 0 && Application.isPlaying)
+                Valkur.Gameplay.World.Layering.WorldCollisionBaker.EnsureExists().ScheduleRebake();
             return totalLoaded;
         }
     }
