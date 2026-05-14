@@ -7,6 +7,7 @@ using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.NPC;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay
 {
@@ -330,6 +331,40 @@ namespace Valkur.Gameplay
                     results.Add(d.Slug);
             results.Sort(StringComparer.OrdinalIgnoreCase);
             return results.ToArray();
+        }
+
+        // ── layer (M1.7: Player layer mutation MVP) ───────────────────────────
+
+        /// <summary>
+        /// Console handler for <c>layer &lt;0..8&gt;</c> — sets the player's
+        /// <see cref="VisualLayerOccupant.CurrentVisualLayer"/> for testing the
+        /// per-visual-layer collision pipeline (M1.5 foundation, M2 runtime). The
+        /// occupant's <c>SetVisualLayer</c> path clamps + fires <c>OnLayerChanged</c>
+        /// so the COLLIDERS LAYER diagnostic panel reacts the same way as it will
+        /// when M2's gameplay triggers eventually drive the same setter.
+        /// </summary>
+        private void CmdLayer(string[] parts)
+        {
+            if (parts == null || parts.Length != 2)
+            {
+                Log("Usage: layer <0..8>");
+                return;
+            }
+            if (!int.TryParse(parts[1], out int target) || target < VisualLayerOccupant.MinLayer
+                || target > VisualLayerOccupant.MaxLayer)
+            {
+                Log($"Invalid layer '{parts[1]}'. Expected 0..8.");
+                return;
+            }
+
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) { Log("No player found."); return; }
+            var occupant = player.GetComponent<VisualLayerOccupant>();
+            if (occupant == null) { Log("Player has no VisualLayerOccupant."); return; }
+
+            int prev = occupant.CurrentVisualLayer;
+            occupant.SetVisualLayer(target);
+            Log($"Player layer: {prev} → {occupant.CurrentVisualLayer} ({occupant.LayerName}).");
         }
 
         private static string[] MonsterKeyCompleter(string[] tokens)

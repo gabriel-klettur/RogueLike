@@ -447,6 +447,14 @@ namespace Valkur.Gameplay
                 Handler = _ => CmdKillAll()
             });
             RegisterCommand(new ConsoleCommand {
+                Name = "layer",
+                Usage = "layer <0..8>",
+                Help = "set the player's CurrentVisualLayer (0=Ground … 8=OverheadDetails). " +
+                       "Diagnostic for the per-layer collisions pipeline (M1.5 / M2).",
+                Category = "cheats",
+                Handler = args => CmdLayer(args)
+            });
+            RegisterCommand(new ConsoleCommand {
                 Name = "noclip", Aliases = new[] { "/noclip" },
                 Usage = "noclip [on|off]", Help = "toggle collision with the world layer",
                 Category = "cheats",

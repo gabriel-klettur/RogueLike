@@ -60,6 +60,12 @@ namespace Valkur.Data
         public int experience;
         public int level;
         public InventoryData inventory;
+
+        // Current visual layer index (0=Ground, 4=WallsBottom, 8=OverheadDetails)
+        // for the per-visual-layer collisions pipeline (M1.5 foundation, M2 runtime).
+        // Default 0 ensures legacy saves load with the player on Ground — JsonUtility
+        // tolerates missing fields, so pre-feature saves never see a regression.
+        public int visualLayer = 0;
     }
 
     /// <summary>

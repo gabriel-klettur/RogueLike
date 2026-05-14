@@ -2,6 +2,7 @@ using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Inventory;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.Save
 {
@@ -33,11 +34,13 @@ namespace Valkur.Gameplay.Save
             RestoreMana(player, data.player);
             RestoreExperience(player, data.player);
             RestoreInventory(player, data.player);
+            RestoreVisualLayer(player, data.player);
 
             Debug.Log($"[GameStateRestorer] Player state restored: pos={data.player.position}, " +
                       $"HP={data.player.hp}/{data.player.maxHp}, " +
                       $"Mana={data.player.mana}/{data.player.maxMana}, " +
-                      $"XP={data.player.experience}, Lv={data.player.level}");
+                      $"XP={data.player.experience}, Lv={data.player.level}, " +
+                      $"VisualLayer={data.player.visualLayer}");
         }
 
         private static void RestorePosition(GameObject player, PlayerSaveData psd)
@@ -171,6 +174,23 @@ namespace Valkur.Gameplay.Save
             for (int i = 0; i < inventory.Slots.Count; i++)
                 if (!inventory.Slots[i].IsEmpty) live++;
             Debug.Log($"[GameStateRestorer] Live Inventory probe: {live} non-empty bag slot(s) on '{player.name}'.");
+        }
+
+        /// <summary>
+        /// Restore the player's current visual layer from <paramref name="psd"/>'s
+        /// <c>visualLayer</c> field. Routes through
+        /// <see cref="VisualLayerOccupant.SetVisualLayer(int)"/> so listeners (panel
+        /// readouts now, per-layer Physics2D includeLayers in M2) get the same
+        /// <c>OnLayerChanged</c> event they would on a gameplay-driven flip.
+        /// </summary>
+        private static void RestoreVisualLayer(GameObject player, PlayerSaveData psd)
+        {
+            var occupant = player.GetComponent<VisualLayerOccupant>();
+            if (occupant == null) return;
+            // Setter clamps to [MinLayer..MaxLayer] and no-ops if the value didn't
+            // change, so a fresh-spawn player on layer 0 reloading a layer-0 save
+            // skips the event entirely — cheaper and matches "no real transition".
+            occupant.SetVisualLayer(psd.visualLayer);
         }
     }
 }

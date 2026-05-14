@@ -6,6 +6,7 @@ using Valkur.Data;
 using Valkur.Gameplay.FSM;
 using Valkur.Gameplay.Inventory;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.Save
 {
@@ -51,6 +52,7 @@ namespace Valkur.Gameplay.Save
             var mana = player.GetComponent<Mana>();
             var experience = player.GetComponent<Experience>();
             var inventory = player.GetComponent<Inventory.Inventory>();
+            var layerOccupant = player.GetComponent<VisualLayerOccupant>();
 
             var psd = new PlayerSaveData
             {
@@ -62,7 +64,8 @@ namespace Valkur.Gameplay.Save
                 maxMana = mana != null ? mana.MaxMana : 0,
                 currentZone = UnityEngine.Object.FindObjectOfType<ZoneManager>()?.CurrentZone ?? "",
                 experience = experience != null ? experience.TotalXp : 0,
-                level = experience != null ? experience.Level : 1
+                level = experience != null ? experience.Level : 1,
+                visualLayer = layerOccupant != null ? layerOccupant.CurrentVisualLayer : 0
             };
 
             if (inventory != null)
