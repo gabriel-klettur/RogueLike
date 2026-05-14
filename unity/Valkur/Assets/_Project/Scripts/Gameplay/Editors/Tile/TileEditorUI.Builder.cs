@@ -36,7 +36,9 @@ namespace Valkur.Gameplay.TileEditor
                 _onSelectModeChanged, _onCopyClicked, _onCutClicked,
                 _onPasteClicked, _onClearSelectionClicked,
                 _onMoveToLayerClicked,
-                _onCollisionTagChanged);
+                _onCollisionTagChanged,
+                _onShowLayerJumpsClicked, _onDrawLayerJumpsClicked,
+                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged);
 
             // Slider value-changed → refresh the "Target: {idx}: {Layer}" label
             // so the user sees the live destination while dragging. The actual
@@ -67,6 +69,11 @@ namespace Valkur.Gameplay.TileEditor
             // because it isn't user-toggled, only conditionally auto-shown.
             if (_refs.CollidersLayerPanelDrag != null) _refs.CollidersLayerPanelDrag.OnClose =
                 () => { if (_refs.CollidersLayerDropdown != null) _refs.CollidersLayerDropdown.SetActive(false); };
+            // Layer Jumps dropdown: closes via menu-bar toggle path so the
+            // "Jumps" menu-bar button highlight stays in sync (clicking it again
+            // re-opens; OnClose just removes from _openDropdowns).
+            if (_refs.LayerJumpsPanelDrag != null) _refs.LayerJumpsPanelDrag.OnClose =
+                () => ToggleDropdown("layerjumps");
 
             WireLayerVisibilityButtons();
             WireConfiguratorButton();

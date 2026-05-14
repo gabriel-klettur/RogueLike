@@ -220,6 +220,48 @@ namespace Valkur.Gameplay.World
             return written;
         }
 
+        /// <summary>
+        /// Read the optional <c>layerJumps</c> matrix from an overlay JSON and stamp
+        /// each non-empty cell into <paramref name="jumpMap"/>. Missing field, missing
+        /// file, or empty cells all degrade to "no jumps" → the runtime
+        /// <see cref="Valkur.Gameplay.World.Layering.LayerJumpTriggerSystem"/> simply
+        /// never fires for that zone. Cero regression on legacy overlays.
+        ///
+        /// Returns the number of cells written.
+        /// </summary>
+        public static int ApplyLayerJumpsFromPath(string jsonPath,
+            Valkur.Gameplay.World.Layering.LayerJumpMap jumpMap,
+            int offsetX, int offsetY)
+        {
+            if (jumpMap == null) return 0;
+            if (!File.Exists(jsonPath)) return 0;
+
+            string json = File.ReadAllText(jsonPath);
+            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
+            if (root == null) return 0;
+
+            if (!root.TryGetValue("layerJumps", out var jumpsObj)) return 0;
+            var rows = jumpsObj as List<object>;
+            if (rows == null) return 0;
+
+            int rowCount = rows.Count;
+            int written = 0;
+            for (int row = 0; row < rowCount; row++)
+            {
+                var rowList = rows[row] as List<object>;
+                if (rowList == null) continue;
+                int unityY = offsetY + (rowCount - 1 - row);
+                for (int col = 0; col < rowList.Count; col++)
+                {
+                    string target = rowList[col] as string;
+                    if (string.IsNullOrEmpty(target)) continue;
+                    jumpMap.Set(new Vector2Int(offsetX + col, unityY), target);
+                    written++;
+                }
+            }
+            return written;
+        }
+
         private static void PaintLayer(Tilemap tilemap, List<object> rows, bool isCollisionLayer,
             int offsetX = 0, int offsetY = 0, int maxWidth = 0, int maxHeight = 0,
             string sourceLabel = null)

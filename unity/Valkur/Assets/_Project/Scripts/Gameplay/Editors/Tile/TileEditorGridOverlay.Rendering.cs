@@ -90,6 +90,11 @@ namespace Valkur.Gameplay.TileEditor
             if (_showColliderOverlay && _collisionTilemap != null)
                 DrawColliderOverlay(cam, xMin, yMin, xMax, yMax);
 
+            // ── Layer Jumps overlay (M1.8): blue fill + blue border + white digit ──
+            // Independent of the Colliders overlay; both can be visible at once.
+            if (_showLayerJumps && _layerJumpMap != null && _layerJumpMap.Count > 0)
+                DrawLayerJumpsOverlay(cam, xMin, yMin, xMax, yMax);
+
             // ── Fill preview: blinking yellow fill for Fill tool ──
             if (_currentTool == TileEditorState.Tool.Fill && _fillPreviewCells.Count > 0)
                 DrawFillPreview(cam);
@@ -260,6 +265,63 @@ namespace Valkur.Gameplay.TileEditor
                 string tag = _collisionTagMap.Get(new Vector2Int(cx, cy));
                 int glyphIdx = TagToGlyphIndex(tag);
                 if (glyphIdx < 0) continue;
+                DrawGlyphQuads(cx + 0.5f, cy + 0.5f, glyphIdx);
+            }
+            GL.End();
+        }
+
+        /// <summary>
+        /// Paint a translucent blue fill + opaque blue border + centred white digit
+        /// for every cell that has a <see cref="LayerJumpMap"/> entry within the
+        /// visible viewport. Sparse iteration — walks the map's
+        /// <see cref="LayerJumpMap.Cells"/> directly (no per-cell GetTilesBlock
+        /// because there is no underlying tilemap) and filters by viewport bounds.
+        /// Bounded by the natural sparsity of jump cells (a designer paints a
+        /// handful, never thousands).
+        /// </summary>
+        private void DrawLayerJumpsOverlay(Camera cam, int xMin, int yMin, int xMax, int yMax)
+        {
+            float pixelSize = (cam.orthographicSize * 2f) / Screen.height;
+            float t = pixelSize * ColliderBorderThicknessPx;
+
+            // Pass 1 — fill quads (translucent blue).
+            GL.Begin(GL.QUADS);
+            GL.Color(LayerJumpFillColor);
+            foreach (var kv in _layerJumpMap.Cells)
+            {
+                int cx = kv.Key.x;
+                int cy = kv.Key.y;
+                if (cx < xMin || cx > xMax || cy < yMin || cy > yMax) continue;
+                GL.Vertex3(cx,        cy,        0f);
+                GL.Vertex3(cx + 1f,   cy,        0f);
+                GL.Vertex3(cx + 1f,   cy + 1f,   0f);
+                GL.Vertex3(cx,        cy + 1f,   0f);
+            }
+            GL.End();
+
+            // Pass 2 — opaque blue border, 4 quads per cell.
+            GL.Begin(GL.QUADS);
+            foreach (var kv in _layerJumpMap.Cells)
+            {
+                int cx = kv.Key.x;
+                int cy = kv.Key.y;
+                if (cx < xMin || cx > xMax || cy < yMin || cy > yMax) continue;
+                DrawBorderQuads(cx, cy, LayerJumpBorderColor, t);
+            }
+            GL.End();
+
+            // Pass 3 — white digit glyph centred on each cell using the existing
+            // 5x7 bitmap font from the Colliders pipeline. TagToGlyphIndex maps
+            // "0".."8" → 0..8; jumps never store "*" so the wildcard slot is unused.
+            GL.Begin(GL.QUADS);
+            GL.Color(GlyphColor);
+            foreach (var kv in _layerJumpMap.Cells)
+            {
+                int cx = kv.Key.x;
+                int cy = kv.Key.y;
+                if (cx < xMin || cx > xMax || cy < yMin || cy > yMax) continue;
+                int glyphIdx = TagToGlyphIndex(kv.Value);
+                if (glyphIdx < 0 || glyphIdx > 8) continue; // skip wildcard / invalid
                 DrawGlyphQuads(cx + 0.5f, cy + 0.5f, glyphIdx);
             }
             GL.End();

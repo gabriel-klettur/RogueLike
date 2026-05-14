@@ -78,6 +78,8 @@ namespace Valkur.Gameplay.TileEditor
                 () => onDropdownToggle?.Invoke("size"), out refs.SizeMenuBtnTmp);
             refs.ViewMenuBtnImg = BuildMenuButton(t, "View v", VIEW_BTN_W,
                 () => onDropdownToggle?.Invoke("view"), out refs.ViewMenuBtnTmp);
+            refs.JumpsMenuBtnImg = BuildMenuButton(t, "Jumps v", JUMPS_BTN_W,
+                () => onDropdownToggle?.Invoke("layerjumps"), out refs.JumpsMenuBtnTmp);
 
             // ── Flexible spacer ──
             var spacer = CreateUI("Spacer", t);

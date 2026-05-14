@@ -39,6 +39,11 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onClearSelectionClicked;
         private System.Action<int> _onMoveToLayerClicked;
         private System.Action<string> _onCollisionTagChanged;
+        // M1.8 Layer Jumps
+        private System.Action _onShowLayerJumpsClicked;
+        private System.Action _onDrawLayerJumpsClicked;
+        private System.Action _onEraseLayerJumpsClicked;
+        private System.Action<string> _onLayerJumpsTargetChanged;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -77,7 +82,12 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onPasteClicked = null,
             System.Action onClearSelectionClicked = null,
             System.Action<int> onMoveToLayerClicked = null,
-            System.Action<string> onCollisionTagChanged = null)
+            System.Action<string> onCollisionTagChanged = null,
+            // M1.8 Layer Jumps
+            System.Action onShowLayerJumpsClicked = null,
+            System.Action onDrawLayerJumpsClicked = null,
+            System.Action onEraseLayerJumpsClicked = null,
+            System.Action<string> onLayerJumpsTargetChanged = null)
         {
             _state = state;
             _catalog = catalog;
@@ -101,6 +111,10 @@ namespace Valkur.Gameplay.TileEditor
             _onClearSelectionClicked = onClearSelectionClicked;
             _onMoveToLayerClicked    = onMoveToLayerClicked;
             _onCollisionTagChanged   = onCollisionTagChanged;
+            _onShowLayerJumpsClicked  = onShowLayerJumpsClicked;
+            _onDrawLayerJumpsClicked  = onDrawLayerJumpsClicked;
+            _onEraseLayerJumpsClicked = onEraseLayerJumpsClicked;
+            _onLayerJumpsTargetChanged = onLayerJumpsTargetChanged;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -205,6 +219,9 @@ namespace Valkur.Gameplay.TileEditor
                 case "ux":
                     if (_refs.UxDropdown != null) _refs.UxDropdown.SetActive(open);
                     break;
+                case "layerjumps":
+                    if (_refs.LayerJumpsDropdown != null) _refs.LayerJumpsDropdown.SetActive(open);
+                    break;
             }
         }
 
@@ -218,6 +235,7 @@ namespace Valkur.Gameplay.TileEditor
             ApplyMenuBtnStyle(_refs.SizeMenuBtnImg,      _refs.SizeMenuBtnTmp,      _openDropdowns.Contains("size"));
             ApplyMenuBtnStyle(_refs.ViewMenuBtnImg,      _refs.ViewMenuBtnTmp,      _openDropdowns.Contains("view"));
             ApplyMenuBtnStyle(_refs.UxMenuBtnImg,        _refs.UxMenuBtnTmp,        _openDropdowns.Contains("ux"));
+            ApplyMenuBtnStyle(_refs.JumpsMenuBtnImg,     _refs.JumpsMenuBtnTmp,     _openDropdowns.Contains("layerjumps"));
             bool allMainOpen = _openDropdowns.Contains("tools")     && _openDropdowns.Contains("tiles") &&
                                _openDropdowns.Contains("layers")    && _openDropdowns.Contains("inspector") &&
                                _openDropdowns.Contains("colliders") && _openDropdowns.Contains("size") &&

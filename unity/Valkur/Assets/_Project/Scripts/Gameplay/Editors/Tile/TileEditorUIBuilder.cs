@@ -144,6 +144,27 @@ namespace Valkur.Gameplay.TileEditor
             public Button ClearSelectionButton;
             public Image  ClearSelectionButtonImg;
 
+            // ── Layer Jumps panel (M1.8) ────────────────────────────────────
+            // Independent dropdown for painting per-cell layer-jump triggers.
+            // Mirrors the Colliders panel architecture: Show / Draw / Erase
+            // toggles + a 9-button TARGET LAYER picker (0..8, no wildcard).
+            public GameObject       LayerJumpsDropdown;
+            public DraggablePanel   LayerJumpsPanelDrag;
+            public Image            ShowLayerJumpsToggleImg;
+            public TextMeshProUGUI  ShowLayerJumpsToggleLabel;
+            public Image            DrawLayerJumpsToggleImg;
+            public TextMeshProUGUI  DrawLayerJumpsToggleLabel;
+            public Image            EraseLayerJumpsToggleImg;
+            public TextMeshProUGUI  EraseLayerJumpsToggleLabel;
+            public TextMeshProUGUI  LayerJumpsActiveLabel;
+            public Image[]          LayerJumpsTargetImgs;
+            public TextMeshProUGUI[] LayerJumpsTargetLabels;
+            // Menu-bar button + View-panel duplicate of "Show Layer Jumps".
+            public Image            JumpsMenuBtnImg;
+            public TextMeshProUGUI  JumpsMenuBtnTmp;
+            public Image            ViewShowLayerJumpsToggleImg;
+            public TextMeshProUGUI  ViewShowLayerJumpsToggleLabel;
+
             // Move-To-Layer action: slider (0..8) picks the destination layer and
             // commits the cross-tilemap move on pointer release (no commit button).
             // The relay is the bridge between the slider's pointer-up / end-drag
@@ -213,7 +234,12 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onPasteClicked = null,
             System.Action onClearSelectionClicked = null,
             System.Action<int> onMoveToLayerClicked = null,
-            System.Action<string> onCollisionTagChanged = null)
+            System.Action<string> onCollisionTagChanged = null,
+            // M1.8 Layer Jumps callbacks
+            System.Action onShowLayerJumps = null,
+            System.Action onDrawLayerJumps = null,
+            System.Action onEraseLayerJumps = null,
+            System.Action<string> onLayerJumpsTargetChanged = null)
         {
             var refs = new UIRefs
             {
@@ -233,11 +259,13 @@ namespace Valkur.Gameplay.TileEditor
                 onShowColliders, onDrawColliders, onEraseColliders, onCollisionTagChanged);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
-                onShowGridLines, onShowZoneGrid, onShowColliders);
+                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps);
             BuildSelectModesDropdown(canvasT, state, ref refs,
                 onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
                 onMoveToLayerClicked);
             BuildCollidersLayerDropdown(canvasT, ref refs);
+            BuildLayerJumpsDropdown(canvasT, state, ref refs,
+                onShowLayerJumps, onDrawLayerJumps, onEraseLayerJumps, onLayerJumpsTargetChanged);
             BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 

@@ -23,7 +23,8 @@ namespace Valkur.Gameplay.TileEditor
         private static void BuildViewDropdown(Transform canvasT, TileEditorState state, ref UIRefs refs,
             System.Action onShowGridLinesClicked,
             System.Action onShowZoneGridClicked,
-            System.Action onShowCollidersClicked)
+            System.Action onShowCollidersClicked,
+            System.Action onShowLayerJumpsClicked)
         {
             refs.ViewDropdown = MakeDropdownPanel("ViewDropdown", canvasT,
                 PanelDock.TopRight, ViewX, ViewY, VIEW_DROP_W, VIEW_DROP_H,
@@ -42,6 +43,10 @@ namespace Valkur.Gameplay.TileEditor
             BuildColliderToggleRow(t, "Show Colliders",
                 state.ShowColliderOverlay, onShowCollidersClicked,
                 out refs.ViewShowCollidersToggleImg, out refs.ViewShowCollidersToggleLabel);
+
+            BuildColliderToggleRow(t, "Show Layer Jumps",
+                state.ShowLayerJumpsOverlay, onShowLayerJumpsClicked,
+                out refs.ViewShowLayerJumpsToggleImg, out refs.ViewShowLayerJumpsToggleLabel);
 
             refs.ViewDropdown.SetActive(false);
         }

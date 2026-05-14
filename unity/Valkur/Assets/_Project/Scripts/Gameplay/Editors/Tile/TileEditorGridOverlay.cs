@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Tilemaps;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -39,6 +40,12 @@ namespace Valkur.Gameplay.TileEditor
         private static readonly Color ColliderFillColor   = new Color(1f, 0.10f, 0.15f, 0.32f);
         private static readonly Color ColliderBorderColor = new Color(1f, 0.10f, 0.15f, 1f);
 
+        // Blue overlay (M1.8) drawn over every cell that has a LayerJumpMap entry
+        // when "Show Layer Jumps" is ON. Distinct from the red Colliders to avoid
+        // visual confusion when both overlays are visible at once.
+        private static readonly Color LayerJumpFillColor   = new Color(0.10f, 0.45f, 1f, 0.32f);
+        private static readonly Color LayerJumpBorderColor = new Color(0.10f, 0.45f, 1f, 1f);
+
         // Border thickness of all cell highlights, in screen pixels.
         private const float HoverThicknessPx = 3f;
         // Border thickness used for collider cells (slightly thinner than the hover ring).
@@ -75,6 +82,9 @@ namespace Valkur.Gameplay.TileEditor
         // Collider overlay state (Colliders panel).
         private Tilemap _collisionTilemap;
         private bool    _showColliderOverlay;
+        // Layer Jumps overlay state (Layer Jumps panel, M1.8).
+        private LayerJumpMap _layerJumpMap;
+        private bool         _showLayerJumps;
         // Optional per-cell tag layer (CollisionTagMap). When non-null, each painted
         // collider cell receives a small corner marker coloured per its tag so the
         // user can tell at a glance which visual layer the collider applies to.
@@ -228,6 +238,15 @@ namespace Valkur.Gameplay.TileEditor
         /// disable the tag markers (the rest of the collider overlay continues to draw).
         /// </summary>
         public void SetCollisionTagMap(CollisionTagMap map) => _collisionTagMap = map;
+
+        /// <summary>
+        /// Bind the <see cref="LayerJumpMap"/> the overlay should sample for the
+        /// blue jump-tile overlay (M1.8). Pass null to disable.
+        /// </summary>
+        public void SetLayerJumpMap(LayerJumpMap map) => _layerJumpMap = map;
+
+        /// <summary>Enable or disable the blue layer-jumps overlay (M1.8).</summary>
+        public void SetShowLayerJumps(bool show) => _showLayerJumps = show;
 
         /// <summary>
         /// Resolve a tag string to its index in <see cref="DigitMasks"/>: "0".."8" map

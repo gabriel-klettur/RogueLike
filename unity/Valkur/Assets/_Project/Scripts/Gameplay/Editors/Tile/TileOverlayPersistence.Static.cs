@@ -211,12 +211,17 @@ namespace Valkur.Gameplay.TileEditor
             if (CollisionTagMap != null && CollisionTagMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
                 collisionTagMatrix = CollisionTagMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
 
-            return SerializeOverlay(perLayer, terrainMatrix, collisionTagMatrix, w, h);
+            string[,] layerJumpsMatrix = null;
+            if (LayerJumpMap != null && LayerJumpMap.HasAnyInRect(zone.gridOffset.x, zone.gridOffset.y, w, h))
+                layerJumpsMatrix = LayerJumpMap.BuildMatrix(zone.gridOffset.x, zone.gridOffset.y, w, h);
+
+            return SerializeOverlay(perLayer, terrainMatrix, collisionTagMatrix, layerJumpsMatrix, w, h);
         }
 
         private static string SerializeOverlay(List<KeyValuePair<string, string[,]>> perLayer,
                                                 string[,] terrainMatrix,
                                                 string[,] collisionTagMatrix,
+                                                string[,] layerJumpsMatrix,
                                                 int w, int h)
         {
             var sb = new StringBuilder(64 * 1024);
@@ -269,6 +274,22 @@ namespace Valkur.Gameplay.TileEditor
                     {
                         if (col > 0) sb.Append(", ");
                         sb.Append('"').Append(EscapeJson(collisionTagMatrix[row, col] ?? string.Empty)).Append('"');
+                    }
+                    sb.Append(']');
+                }
+                sb.Append("\n  ]");
+            }
+
+            if (layerJumpsMatrix != null)
+            {
+                sb.Append(",\n  \"layerJumps\": [");
+                for (int row = 0; row < h; row++)
+                {
+                    sb.Append(row == 0 ? "\n    [" : ",\n    [");
+                    for (int col = 0; col < w; col++)
+                    {
+                        if (col > 0) sb.Append(", ");
+                        sb.Append('"').Append(EscapeJson(layerJumpsMatrix[row, col] ?? string.Empty)).Append('"');
                     }
                     sb.Append(']');
                 }

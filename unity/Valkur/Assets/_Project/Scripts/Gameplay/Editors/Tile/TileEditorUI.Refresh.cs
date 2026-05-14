@@ -210,6 +210,56 @@ namespace Valkur.Gameplay.TileEditor
                 _state.ShowZoneGrid);
             ApplyColliderToggleVisual(_refs.ViewShowCollidersToggleImg, _refs.ViewShowCollidersToggleLabel,
                 _state.ShowColliderOverlay);
+            ApplyColliderToggleVisual(_refs.ViewShowLayerJumpsToggleImg, _refs.ViewShowLayerJumpsToggleLabel,
+                _state.ShowLayerJumpsOverlay);
+        }
+
+        // ── Layer Jumps panel (M1.8) ─────────────────────────────────────
+
+        /// <summary>
+        /// Repaint the three toggle rows in the LAYER JUMPS panel to mirror the
+        /// current <see cref="TileEditorState.ShowLayerJumpsOverlay"/> and
+        /// <see cref="TileEditorState.CurrentLayerJumpMode"/>. Also keeps the
+        /// duplicate "Show Layer Jumps" row in the View panel in sync.
+        /// </summary>
+        public void RefreshLayerJumpsToggles()
+        {
+            if (_state == null) return;
+
+            ApplyColliderToggleVisual(_refs.ShowLayerJumpsToggleImg, _refs.ShowLayerJumpsToggleLabel,
+                _state.ShowLayerJumpsOverlay);
+            ApplyColliderToggleVisual(_refs.DrawLayerJumpsToggleImg, _refs.DrawLayerJumpsToggleLabel,
+                _state.CurrentLayerJumpMode == TileEditorState.LayerJumpMode.Draw);
+            ApplyColliderToggleVisual(_refs.EraseLayerJumpsToggleImg, _refs.EraseLayerJumpsToggleLabel,
+                _state.CurrentLayerJumpMode == TileEditorState.LayerJumpMode.Erase);
+
+            // The View panel hosts a duplicate "Show Layer Jumps" row.
+            RefreshViewToggles();
+        }
+
+        /// <summary>
+        /// Repaint the 9-button TARGET LAYER picker row + the active-value label
+        /// to reflect the current <see cref="TileEditorState.ActiveJumpTargetLayer"/>.
+        /// </summary>
+        public void RefreshLayerJumpsPicker()
+        {
+            if (_state == null) return;
+
+            if (_refs.LayerJumpsActiveLabel != null)
+                _refs.LayerJumpsActiveLabel.text = $"Active: {_state.ActiveJumpTargetLayer}";
+
+            if (_refs.LayerJumpsTargetImgs == null || _refs.LayerJumpsTargetLabels == null) return;
+            for (int i = 0; i < _refs.LayerJumpsTargetImgs.Length; i++)
+            {
+                string target = i.ToString();
+                bool active = target == _state.ActiveJumpTargetLayer;
+                if (_refs.LayerJumpsTargetImgs[i] != null)
+                    _refs.LayerJumpsTargetImgs[i].color = active
+                        ? new Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.30f)
+                        : BTN_NORMAL;
+                if (_refs.LayerJumpsTargetLabels[i] != null)
+                    _refs.LayerJumpsTargetLabels[i].color = active ? ACCENT : TEXT_PRIMARY;
+            }
         }
 
         private static void ApplyColliderToggleVisual(UnityEngine.UI.Image bg, TMPro.TextMeshProUGUI label, bool on)

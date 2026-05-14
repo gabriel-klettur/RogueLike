@@ -198,6 +198,15 @@ namespace Valkur.Gameplay.TileEditor
                 return;
             }
 
+            // M1.8: Layer-Jumps edit mode is mutually exclusive with Colliders
+            // (the toggle handlers enforce it), so this branch only fires when
+            // Colliders is OFF and Draw/Erase Jumps is ON.
+            if (IsLayerJumpsEditModeActive())
+            {
+                HandleLayerJumpsInput();
+                return;
+            }
+
             var tilemap = GetCurrentTilemap();
             if (tilemap == null) return;
 

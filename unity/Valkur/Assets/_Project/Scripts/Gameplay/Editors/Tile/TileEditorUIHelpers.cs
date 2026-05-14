@@ -103,6 +103,8 @@ namespace Valkur.Gameplay.TileEditor
         public const float COLLIDERS_BTN_W = 84f;
         public const float SIZE_BTN_W = 64f;
         public const float VIEW_BTN_W = 64f;
+        public const float JUMPS_BTN_W = 72f; // "Jumps v" — slightly wider than View to fit the s
+
         public const float UX_BTN_W     = 50f;
         public const float PERF_BTN_W   = 60f;
         public const float PANELS_BTN_W = 68f;
@@ -141,6 +143,12 @@ namespace Valkur.Gameplay.TileEditor
         // visual layers have a tile underfoot (from VisualLayerProbe).
         public const float COLLIDERS_LAYER_DROP_W = 220f;
         public const float COLLIDERS_LAYER_DROP_H = 70f + PANEL_HDR_H;  // 94
+
+        // M1.8 "LAYER JUMPS" panel — mirrors the Colliders panel architecture
+        // (Show + Draw + Erase toggles + 9-button target picker). Slightly taller
+        // than Colliders to fit the larger picker row.
+        public const float LAYER_JUMPS_DROP_W = 230f;
+        public const float LAYER_JUMPS_DROP_H = 230f + PANEL_HDR_H;     // 254
         // Generic "properties panel" width — reused by Items/Buildings/FSM editors.
         // Don't shrink without checking those callers.
         public const float INSPECTOR_DROP_W = 250f;
@@ -160,7 +168,7 @@ namespace Valkur.Gameplay.TileEditor
         // VLG padding (12) + spacing × 1 (4) ≈ 76.
         public const float SIZE_DROP_H = 78f + PANEL_HDR_H;         // 102
         public const float VIEW_DROP_W = 230f;
-        public const float VIEW_DROP_H = 130f + PANEL_HDR_H;        // 154
+        public const float VIEW_DROP_H = 170f + PANEL_HDR_H;        // 194 (was 154; M1.8 adds Show Layer Jumps row)
         public const float UX_DROP_W   = 320f;
         public const float UX_DROP_H   = 520f + PANEL_HDR_H;        // 544
 

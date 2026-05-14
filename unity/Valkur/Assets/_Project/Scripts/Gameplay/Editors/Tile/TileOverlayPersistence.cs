@@ -69,6 +69,16 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public CollisionTagMap CollisionTagMap { get; set; }
 
+        /// <summary>
+        /// Optional per-cell layer-jumps map (M1.8). When non-null,
+        /// <see cref="SaveZoneInternal"/> emits a <c>layerJumps</c> matrix alongside
+        /// the layer / terrain / collisionTags matrices, and the loader
+        /// (<see cref="OverlayLoader.ApplyLayerJumpsFromPath"/>) restores it. Legacy
+        /// overlays without the field load with no jumps in the map → runtime
+        /// <see cref="World.Layering.LayerJumpTriggerSystem"/> simply never fires.
+        /// </summary>
+        public World.Layering.LayerJumpMap LayerJumpMap { get; set; }
+
         public event Action OnDirtyChanged;
         public event Action<string> OnZoneSaved;
         public event Action<string, Exception> OnSaveFailed;

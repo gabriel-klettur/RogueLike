@@ -101,6 +101,37 @@ namespace Valkur.Gameplay.TileEditor
         /// </summary>
         public string ActiveCollisionTag = CollisionTagMap.Wildcard;
 
+        // ── Layer Jumps (M1.8) ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Active edit mode of the Layer Jumps panel. Mirrors <see cref="ColliderMode"/>:
+        /// when <see cref="LayerJumpMode.Draw"/> or <see cref="LayerJumpMode.Erase"/>,
+        /// mouse input paints / erases entries in
+        /// <see cref="World.Layering.LayerJumpMap"/> instead of any tilemap. Mutually
+        /// exclusive with <see cref="CurrentColliderMode"/> — the manager turns one off
+        /// when the other turns on.
+        /// </summary>
+        public enum LayerJumpMode { None, Draw, Erase }
+
+        /// <summary>Active layer-jumps edit mode. None disables jump painting.</summary>
+        public LayerJumpMode CurrentLayerJumpMode = LayerJumpMode.None;
+
+        /// <summary>
+        /// When true, the GL overlay paints a translucent blue square + white target-
+        /// layer digit on every cell that has a layer-jump entry. Toggled by the
+        /// Layer Jumps panel's "Show Layer Jumps" header AND by the View panel's
+        /// duplicate row.
+        /// </summary>
+        public bool ShowLayerJumpsOverlay;
+
+        /// <summary>
+        /// Target visual layer stamped into every cell painted while
+        /// <see cref="LayerJumpMode.Draw"/> is active. One of "0".."8" matching a
+        /// <see cref="World.TilemapLayerSetup.TilemapLayer"/>. Defaults to "0" (Ground)
+        /// so a freshly-painted jump always has a valid destination.
+        /// </summary>
+        public string ActiveJumpTargetLayer = "0";
+
         /// <summary>
         /// World-space cell last interacted with (click/place/eyedrop).
         /// Shown as a GREEN outline. Maps to Python's selected_tile (.x,.y).

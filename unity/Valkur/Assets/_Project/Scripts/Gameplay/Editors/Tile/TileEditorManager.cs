@@ -151,7 +151,12 @@ namespace Valkur.Gameplay.TileEditor
                 onPasteClicked:         OnPasteClicked,
                 onClearSelectionClicked: ClearSelection,
                 onMoveToLayerClicked:   idx => OnMoveToLayerClicked((TilemapLayerSetup.TilemapLayer)idx),
-                onCollisionTagChanged:  OnCollisionTagChanged);
+                onCollisionTagChanged:  OnCollisionTagChanged,
+                // M1.8 Layer Jumps
+                onShowLayerJumpsClicked:  OnShowLayerJumpsClicked,
+                onDrawLayerJumpsClicked:  OnDrawLayerJumpsClicked,
+                onEraseLayerJumpsClicked: OnEraseLayerJumpsClicked,
+                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
