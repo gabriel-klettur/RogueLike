@@ -136,22 +136,27 @@ namespace Valkur.Gameplay.TileEditor
             System.Action<string> onClicked,
             out Button btn, out Image bg, out TextMeshProUGUI labelTmp)
         {
+            // NOTE: we deliberately use Image + OnPointerClickRelay instead of UGUI
+            // Button here. With 10 buttons on this row, the UGUI Selectable static-
+            // array bookkeeping (Selectable.OnDisable line 555) raced and NREd when
+            // the user toggled the panel closed (panel + all children disable in
+            // one frame). The relay-based path stays out of s_Selectables entirely.
+            // <paramref name="btn"/> is intentionally returned null — the UIRefs
+            // array still exists for backward compatibility but is no longer
+            // consumed by the Refresh path.
+            btn = null;
+
             var go = CreateUI($"Tag_{tag}", parent);
             go.AddComponent<LayoutElement>().flexibleWidth = 1f;
 
             bg = go.AddComponent<Image>();
             bg.color = active ? new Color(COLLIDER_BORDER.r, COLLIDER_BORDER.g, COLLIDER_BORDER.b, 0.30f)
                               : BTN_NORMAL;
+            bg.raycastTarget = true; // receive PointerClick events for the relay
 
-            btn = go.AddComponent<Button>();
-            var c = btn.colors;
-            c.normalColor      = bg.color;
-            c.highlightedColor = BTN_HOVER;
-            c.pressedColor     = BTN_ACTIVE;
-            btn.colors = c;
-            btn.targetGraphic = bg;
+            var relay = go.AddComponent<OnPointerClickRelay>();
             string cap = tag;
-            btn.onClick.AddListener(() => onClicked?.Invoke(cap));
+            relay.OnClicked = () => onClicked?.Invoke(cap);
 
             var lblGo = CreateUI("Lbl", go.transform);
             var lblRt = lblGo.GetComponent<RectTransform>();
