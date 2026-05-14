@@ -74,12 +74,18 @@ namespace Valkur.Gameplay.TileEditor
             int layer = -1;
             string layerName = null;
             int populated = 0;
+            Vector2Int? cell = null;
             if (_playerLayerOccupant != null)
             {
                 layer = _playerLayerOccupant.CurrentVisualLayer;
                 layerName = _playerLayerOccupant.LayerName;
-                populated = VisualLayerProbe.Sample(_playerLayerOccupant.transform.position,
-                                                     worldGridBuilder, _underfootScratch);
+                var pos = _playerLayerOccupant.transform.position;
+                populated = VisualLayerProbe.Sample(pos, worldGridBuilder, _underfootScratch);
+                // Compute the player cell using the SAME math the
+                // LayerJumpTriggerSystem uses to look up jumps. Surfacing this
+                // value in the panel lets the author confirm visually that
+                // "the cell I painted" == "the cell the trigger samples".
+                cell = new Vector2Int(Mathf.FloorToInt(pos.x), Mathf.FloorToInt(pos.y));
             }
             else
             {
@@ -89,7 +95,8 @@ namespace Valkur.Gameplay.TileEditor
             }
 
             _ui.RefreshPlayerLayerPanel(layer, layerName,
-                populated > 0 ? _underfootScratch : null);
+                populated > 0 ? _underfootScratch : null,
+                cell);
         }
     }
 }

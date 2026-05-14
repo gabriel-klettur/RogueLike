@@ -130,6 +130,11 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel   PlayerLayerPanelDrag;
             public TextMeshProUGUI  PlayerLayerLogicalLabel;
             public TextMeshProUGUI  PlayerLayerUnderfootLabel;
+            // Cell readout shows the integer cell the runtime trigger uses to
+            // sample the LayerJumpMap. Diagnostic when a jump doesn't fire —
+            // if this Cell matches the painted jump's cell but the layer
+            // doesn't change, the bootstrap is the suspect, not cell math.
+            public TextMeshProUGUI  PlayerLayerCellLabel;
             // "Show Player Layer" toggle row in the View panel (default ON).
             public Image            ViewShowPlayerLayerToggleImg;
             public TextMeshProUGUI  ViewShowPlayerLayerToggleLabel;

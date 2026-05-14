@@ -113,6 +113,14 @@ namespace Valkur.Gameplay.TileEditor
             _input = new TileEditorInputHandler();
             _input.CreateActions();
             _undo = new TileEditorUndoSystem();
+
+            // Defensive: ensure the runtime LayerJumpTriggerSystem singleton
+            // exists in this scene. Its own bootstrap uses
+            // RuntimeInitializeOnLoadMethod(AfterSceneLoad), which doesn't fire
+            // on script-reload — so if M1.8 shipped while the user was already
+            // mid-Play-Mode, the system would never spawn. Calling EnsureExists()
+            // here is idempotent and guarantees jumps work from the first F8.
+            Valkur.Gameplay.World.Layering.LayerJumpTriggerSystem.EnsureExists();
         }
 
         private void Start()

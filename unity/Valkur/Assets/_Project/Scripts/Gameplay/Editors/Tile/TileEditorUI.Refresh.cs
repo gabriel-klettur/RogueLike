@@ -125,7 +125,8 @@ namespace Valkur.Gameplay.TileEditor
         /// visible, so allocations are kept to two TextMeshPro.text assignments
         /// and any underlying string formatting Unity does internally.
         /// </summary>
-        public void RefreshPlayerLayerPanel(int logicalLayer, string logicalLayerName, bool[] underfoot)
+        public void RefreshPlayerLayerPanel(int logicalLayer, string logicalLayerName,
+                                            bool[] underfoot, UnityEngine.Vector2Int? cell)
         {
             if (_refs.PlayerLayerLogicalLabel != null)
             {
@@ -134,26 +135,35 @@ namespace Valkur.Gameplay.TileEditor
                     : $"Layer: {logicalLayer} — {logicalLayerName}";
             }
 
-            if (_refs.PlayerLayerUnderfootLabel == null) return;
-
-            if (underfoot == null || underfoot.Length == 0)
+            if (_refs.PlayerLayerUnderfootLabel != null)
             {
-                _refs.PlayerLayerUnderfootLabel.text = "Underfoot: —";
-                return;
+                if (underfoot == null || underfoot.Length == 0)
+                {
+                    _refs.PlayerLayerUnderfootLabel.text = "Underfoot: —";
+                }
+                else
+                {
+                    var sb = new System.Text.StringBuilder(48);
+                    sb.Append("Underfoot: ");
+                    bool any = false;
+                    for (int i = 0; i < underfoot.Length; i++)
+                    {
+                        if (!underfoot[i]) continue;
+                        if (any) sb.Append(", ");
+                        sb.Append(i);
+                        any = true;
+                    }
+                    if (!any) sb.Append("(none)");
+                    _refs.PlayerLayerUnderfootLabel.text = sb.ToString();
+                }
             }
 
-            var sb = new System.Text.StringBuilder(48);
-            sb.Append("Underfoot: ");
-            bool any = false;
-            for (int i = 0; i < underfoot.Length; i++)
+            if (_refs.PlayerLayerCellLabel != null)
             {
-                if (!underfoot[i]) continue;
-                if (any) sb.Append(", ");
-                sb.Append(i);
-                any = true;
+                _refs.PlayerLayerCellLabel.text = cell.HasValue
+                    ? $"Cell: ({cell.Value.x}, {cell.Value.y})"
+                    : "Cell: —";
             }
-            if (!any) sb.Append("(none)");
-            _refs.PlayerLayerUnderfootLabel.text = sb.ToString();
         }
 
         /// <summary>

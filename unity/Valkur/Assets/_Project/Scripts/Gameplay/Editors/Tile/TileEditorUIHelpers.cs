@@ -144,7 +144,8 @@ namespace Valkur.Gameplay.TileEditor
         // layer (from VisualLayerOccupant) + a snapshot of which visual layers
         // have a tile underfoot (from VisualLayerProbe).
         public const float PLAYER_LAYER_DROP_W = 220f;
-        public const float PLAYER_LAYER_DROP_H = 70f + PANEL_HDR_H;  // 94
+        // 3 readout rows: Layer / Underfoot / Cell — 22px each + a touch of padding.
+        public const float PLAYER_LAYER_DROP_H = 90f + PANEL_HDR_H;  // 114
 
         // M1.8 "LAYER JUMPS" panel — mirrors the Colliders panel architecture
         // (Show + Draw + Erase toggles + 9-button target picker). Slightly taller

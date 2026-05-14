@@ -36,7 +36,21 @@ namespace Valkur.Gameplay.World.Layering
         private Vector2Int? _lastCell;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void BootstrapAfterSceneLoad()
+        private static void BootstrapAfterSceneLoad() => EnsureExists();
+
+        /// <summary>
+        /// Idempotent spawner. Safe to call from anywhere — does nothing if the
+        /// singleton already exists.
+        ///
+        /// Why a public hook beyond <see cref="BootstrapAfterSceneLoad"/>:
+        /// <c>RuntimeInitializeOnLoadMethod(AfterSceneLoad)</c> only fires on
+        /// scene loads, NOT on script reloads. If the user is mid-Play-Mode
+        /// when M1.8 shipped this class for the first time, the bootstrap path
+        /// would never run for their session. <see cref="TileEditorManager"/>
+        /// calls this from its <c>OnSingletonAwake</c> as belt-and-suspenders
+        /// so the trigger system is always present alongside the editor.
+        /// </summary>
+        public static void EnsureExists()
         {
             if (HasInstance) return;
             var go = new GameObject(nameof(LayerJumpTriggerSystem));

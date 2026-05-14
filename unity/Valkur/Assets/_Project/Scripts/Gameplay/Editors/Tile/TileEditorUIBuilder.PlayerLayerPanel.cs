@@ -47,6 +47,7 @@ namespace Valkur.Gameplay.TileEditor
 
             refs.PlayerLayerLogicalLabel   = BuildPlayerLayerReadoutLine(t, "Layer: —");
             refs.PlayerLayerUnderfootLabel = BuildPlayerLayerReadoutLine(t, "Underfoot: —");
+            refs.PlayerLayerCellLabel      = BuildPlayerLayerReadoutLine(t, "Cell: —");
 
             // Hidden until the editor activates AND ShowPlayerLayer is ON. The
             // manager calls SetActive(true) via ApplyPlayerLayerPanelVisibility.
