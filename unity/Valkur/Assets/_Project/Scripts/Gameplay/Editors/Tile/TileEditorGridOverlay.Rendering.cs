@@ -95,6 +95,11 @@ namespace Valkur.Gameplay.TileEditor
             if (_showLayerJumps && _layerJumpMap != null && _layerJumpMap.Count > 0)
                 DrawLayerJumpsOverlay(cam, xMin, yMin, xMax, yMax);
 
+            // ── Tile Layer overlay (View panel): white digit per visible painted cell ──
+            // Cost is bounded by viewport size, not by map size.
+            if (_showTileLayer && _layerTilemaps != null)
+                DrawTileLayerOverlay(cam, xMin, yMin, xMax, yMax);
+
             // ── Fill preview: blinking yellow fill for Fill tool ──
             if (_currentTool == TileEditorState.Tool.Fill && _fillPreviewCells.Count > 0)
                 DrawFillPreview(cam);
@@ -324,6 +329,86 @@ namespace Valkur.Gameplay.TileEditor
                 if (glyphIdx < 0 || glyphIdx > 8) continue; // skip wildcard / invalid
                 DrawGlyphQuads(cx + 0.5f, cy + 0.5f, glyphIdx);
             }
+            GL.End();
+        }
+
+        /// <summary>
+        /// Per visible cell, stamp the white digit of the TOPMOST visual layer that has
+        /// a tile painted at that cell. Iterates the 9 tilemaps from
+        /// <see cref="TilemapLayerSetup.TilemapLayer.OverheadDetails"/> (index 8) down
+        /// to <see cref="TilemapLayerSetup.TilemapLayer.Ground"/> (0), drawing exactly
+        /// one digit per cell. The viewport-sized <see cref="_tileLayerDrawnGrid"/>
+        /// bitmap skips cells a higher layer already claimed without allocating a
+        /// HashSet per frame.
+        ///
+        /// Performance:
+        ///   • <see cref="Tilemap.GetTilesBlock"/> fetches every candidate tile in a
+        ///     single managed call per layer (≤ 9 managed calls total per frame),
+        ///     clipped to each tilemap's painted <see cref="Tilemap.cellBounds"/> —
+        ///     a sparse map costs near-zero, not "map size × 9".
+        ///   • The viewport rect is capped by <see cref="MaxTileLayerCells"/>, mirroring
+        ///     the collider overlay's defensive bail-out at extreme zoom-out.
+        ///   • No per-frame allocations beyond what GetTilesBlock returns; the drawn
+        ///     bitmap is grown only when the viewport expands.
+        /// </summary>
+        private void DrawTileLayerOverlay(Camera cam, int xMin, int yMin, int xMax, int yMax)
+        {
+            int w = xMax - xMin;
+            int h = yMax - yMin;
+            if (w <= 0 || h <= 0) return;
+            int viewportCells = w * h;
+            if (viewportCells > MaxTileLayerCells) return;
+
+            // Grow + reset the per-frame "already drew here" bitmap.
+            if (_tileLayerDrawnGrid == null || _tileLayerDrawnGrid.Length < viewportCells)
+                _tileLayerDrawnGrid = new bool[viewportCells];
+            else
+                System.Array.Clear(_tileLayerDrawnGrid, 0, viewportCells);
+
+            GL.Begin(GL.QUADS);
+            GL.Color(GlyphColor);
+
+            // Walk layers high → low so the topmost painted layer wins on each cell.
+            for (int layerIdx = _layerTilemaps.Length - 1; layerIdx >= 0; layerIdx--)
+            {
+                var tm = _layerTilemaps[layerIdx];
+                if (tm == null) continue;
+
+                // Clip the visible window against THIS tilemap's painted bounds.
+                // Sparse layers (e.g. ObjectsHigh painted in one corner) cost only
+                // the intersection of their bounds with the viewport.
+                var bounds = tm.cellBounds;
+                int sx = Mathf.Max(xMin, bounds.xMin);
+                int sy = Mathf.Max(yMin, bounds.yMin);
+                int ex = Mathf.Min(xMax, bounds.xMax);
+                int ey = Mathf.Min(yMax, bounds.yMax);
+                int bw = ex - sx;
+                int bh = ey - sy;
+                if (bw <= 0 || bh <= 0) continue;
+
+                var rect = new BoundsInt(sx, sy, 0, bw, bh, 1);
+                TileBase[] tiles;
+                try { tiles = tm.GetTilesBlock(rect); }
+                catch { continue; }
+                if (tiles == null || tiles.Length == 0) continue;
+
+                // Glyph index 0..8 maps to layer 0..8 in DigitMasks (same encoding
+                // as the collision-tag and layer-jump digits).
+                int glyphIdx = layerIdx;
+                if (glyphIdx < 0 || glyphIdx > 8) continue;
+
+                for (int i = 0; i < tiles.Length; i++)
+                {
+                    if (tiles[i] == null) continue;
+                    int cx = sx + (i % bw);
+                    int cy = sy + (i / bw);
+                    int drawnIdx = (cy - yMin) * w + (cx - xMin);
+                    if (_tileLayerDrawnGrid[drawnIdx]) continue;
+                    _tileLayerDrawnGrid[drawnIdx] = true;
+                    DrawGlyphQuads(cx + 0.5f, cy + 0.5f, glyphIdx);
+                }
+            }
+
             GL.End();
         }
 

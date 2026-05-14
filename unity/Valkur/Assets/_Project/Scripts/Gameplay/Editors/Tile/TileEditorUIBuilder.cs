@@ -194,6 +194,8 @@ namespace Valkur.Gameplay.TileEditor
             public TextMeshProUGUI ShowZoneGridToggleLabel;
             public Image ViewShowCollidersToggleImg;
             public TextMeshProUGUI ViewShowCollidersToggleLabel;
+            public Image ViewShowTileLayerToggleImg;
+            public TextMeshProUGUI ViewShowTileLayerToggleLabel;
 
             // UX / Theme panel
             public GameObject       UxDropdown;
@@ -252,7 +254,10 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumps = null,
             System.Action onDrawLayerJumps = null,
             System.Action onEraseLayerJumps = null,
-            System.Action<string> onLayerJumpsTargetChanged = null)
+            System.Action<string> onLayerJumpsTargetChanged = null,
+            // View: per-tile layer-digit overlay (visualizes which visual layer each
+            // painted tile lives on; viewport-bounded for cost-stability).
+            System.Action onShowTileLayer = null)
         {
             var refs = new UIRefs
             {
@@ -272,7 +277,7 @@ namespace Valkur.Gameplay.TileEditor
                 onShowColliders, onDrawColliders, onEraseColliders, onCollisionTagChanged);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
-                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps);
+                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps, onShowTileLayer);
             BuildSelectModesDropdown(canvasT, state, ref refs,
                 onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
                 onMoveToLayerClicked);

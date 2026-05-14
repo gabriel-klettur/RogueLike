@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.TestTools;
 using TMPro;
 using Valkur.Gameplay.TileEditor;
 using static Valkur.Gameplay.TileEditor.TileEditorUIHelpers;
@@ -37,10 +38,22 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
     {
         private GameObject _host;
 
+        [SetUp]
+        public void SetUp()
+        {
+            // Building the View panel instantiates several UGUI Selectables (Buttons).
+            // Destroying the canvas in TearDown can hit Unity 2022.3's known
+            // Selectable.OnDisable:555 IndexOutOfRangeException (com.unity.ugui@1.0.0).
+            // The bug is harmless to gameplay — the Selectables are gone either way —
+            // so we tolerate the log line instead of failing every Builder_* test.
+            LogAssert.ignoreFailingMessages = true;
+        }
+
         [TearDown]
         public void TearDown()
         {
             if (_host != null) Object.DestroyImmediate(_host);
+            LogAssert.ignoreFailingMessages = false;
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -225,6 +238,95 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.UI
             // _gridOverlay is intentionally NOT attached here.
             Assert.DoesNotThrow(() => InvokePrivate(manager, "ApplyViewOverlayVisibility"),
                 "ApplyViewOverlayVisibility must be null-safe on every collaborator.");
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // 3b. Show Tile Layer overlay (per-tile layer-digit visualisation)
+        // ════════════════════════════════════════════════════════════════════
+
+        [Test]
+        public void State_ShowTileLayerOverlay_DefaultsOff()
+        {
+            // Per-tile digit overlay is opt-in (View panel toggle) — must default OFF
+            // so existing zones don't render the digits on every editor open.
+            var state = new TileEditorState();
+            Assert.IsFalse(state.ShowTileLayerOverlay,
+                "ShowTileLayerOverlay must default to false (toggle is opt-in).");
+        }
+
+        [Test]
+        public void Manager_OnShowTileLayerClicked_TogglesState()
+        {
+            var manager = NewManager();
+            AttachOverlay(manager);
+
+            bool before = manager.State.ShowTileLayerOverlay;
+            InvokePrivate(manager, "OnShowTileLayerClicked");
+            Assert.AreNotEqual(before, manager.State.ShowTileLayerOverlay,
+                "OnShowTileLayerClicked must flip ShowTileLayerOverlay once per call.");
+
+            InvokePrivate(manager, "OnShowTileLayerClicked");
+            Assert.AreEqual(before, manager.State.ShowTileLayerOverlay,
+                "Second click must return to the original value.");
+        }
+
+        [Test]
+        public void Manager_OnShowTileLayerClicked_PushesToOverlay_Immediately()
+        {
+            // Same instant-feedback contract the other View toggles enforce:
+            // the View-panel button sits over UI, so UpdateGridCursor would skip
+            // the per-frame push — the callback itself must propagate the flag.
+            var manager = NewManager();
+            var overlay = AttachOverlay(manager);
+
+            Assert.IsFalse(GetPrivateBool(overlay, "_showTileLayer"),
+                "Pre-check: overlay starts with the tile-layer overlay hidden.");
+
+            InvokePrivate(manager, "OnShowTileLayerClicked");
+
+            Assert.IsTrue(manager.State.ShowTileLayerOverlay, "State flipped to true.");
+            Assert.IsTrue(GetPrivateBool(overlay, "_showTileLayer"),
+                "Overlay flag must be pushed instantly so the digits render on the very next frame.");
+        }
+
+        [Test]
+        public void Overlay_SetShowTileLayer_MutatesPrivateFlag()
+        {
+            // Direct contract on the overlay surface: GL.DrawTileLayerOverlay early-outs
+            // on this flag, so setter → field round-trip is the cheapest regression net.
+            var go = new GameObject("OverlayHost");
+            try
+            {
+                var overlay = go.AddComponent<TileEditorGridOverlay>();
+                overlay.SetShowTileLayer(true);
+                Assert.IsTrue(GetPrivateBool(overlay, "_showTileLayer"));
+
+                overlay.SetShowTileLayer(false);
+                Assert.IsFalse(GetPrivateBool(overlay, "_showTileLayer"));
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void Overlay_SetLayerTilemaps_StoresReference()
+        {
+            // The overlay must keep the array reference so DrawTileLayerOverlay can
+            // iterate layers without allocating per frame. Passing null disables
+            // the overlay entirely (drawing path early-outs on null array).
+            var go = new GameObject("OverlayHost");
+            try
+            {
+                var overlay = go.AddComponent<TileEditorGridOverlay>();
+                var arr = new UnityEngine.Tilemaps.Tilemap[9];
+                overlay.SetLayerTilemaps(arr);
+                Assert.AreSame(arr, GetPrivateField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
+                    "Overlay must store the exact array reference passed in (no copy).");
+
+                overlay.SetLayerTilemaps(null);
+                Assert.IsNull(GetPrivateField<UnityEngine.Tilemaps.Tilemap[]>(overlay, "_layerTilemaps"),
+                    "Null reset must clear the reference, not throw.");
+            }
+            finally { Object.DestroyImmediate(go); }
         }
 
         // ════════════════════════════════════════════════════════════════════

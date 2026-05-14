@@ -199,6 +199,19 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Toggle the per-tile layer-digit overlay (View panel → "Show Tile Layer").
+        /// Cheap to flip — the overlay's draw method early-outs when the flag is off,
+        /// and the per-frame cost when ON is bounded by the viewport, not the map size.
+        /// </summary>
+        private void OnShowTileLayerClicked()
+        {
+            _state.ShowTileLayerOverlay = !_state.ShowTileLayerOverlay;
+            ApplyViewOverlayVisibility();
+            _ui?.RefreshViewToggles();
+            _ui?.SetStatus(_state.ShowTileLayerOverlay ? "Tile layer overlay visible" : "Tile layer overlay hidden");
+        }
+
+        /// <summary>
         /// Push the View-panel flags to their respective renderers so toggles respond
         /// instantly — without this, the overlay would only see the new value on the first
         /// frame the cursor leaves the UI (the per-frame push in <c>UpdateGridCursor</c>
@@ -213,9 +226,57 @@ namespace Valkur.Gameplay.TileEditor
         {
             _gridOverlay?.SetShowGridLines(_state.ShowGridLines);
 
+            // Tile-layer overlay: resolve the 9 visual tilemaps once (lazy) and push
+            // the array reference + the on/off flag to the overlay. Resolution is
+            // skipped while the toggle is OFF so the cost stays at zero — flipping
+            // the toggle ON triggers a single Find+GetComponent sweep across the 9
+            // layers (cached as long as the WorldGridBuilder hierarchy is stable).
+            if (_gridOverlay != null)
+            {
+                if (_state.ShowTileLayerOverlay)
+                    _gridOverlay.SetLayerTilemaps(EnsureLayerTilemapsCache());
+                _gridOverlay.SetShowTileLayer(_state.ShowTileLayerOverlay);
+            }
+
             if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)
                 Valkur.Gameplay.MapEditor.MapEditorManager.Instance
                     .SetExternalOverlayRequest(_state.ShowZoneGrid);
+        }
+
+        // ── Per-layer tilemap cache (drives "Show Tile Layer" overlay) ────────
+        // Resolved lazily on first toggle-ON. The array is reused across frames so
+        // there's exactly one allocation per editor session. Worldload / scene
+        // reset clears the cache via InvalidateLayerTilemapsCache below.
+        private Tilemap[] _layerTilemapsCache;
+
+        private Tilemap[] EnsureLayerTilemapsCache()
+        {
+            if (_layerTilemapsCache == null)
+                _layerTilemapsCache = new Tilemap[9];
+
+            // Re-resolve any null slots — covers both the lazy first call and
+            // recovery after a zone reload that may have destroyed a tilemap.
+            bool needsResolve = false;
+            for (int i = 0; i < _layerTilemapsCache.Length; i++)
+                if (_layerTilemapsCache[i] == null) { needsResolve = true; break; }
+
+            if (needsResolve && worldGridBuilder != null)
+            {
+                for (int i = 0; i < _layerTilemapsCache.Length; i++)
+                {
+                    var layer = (TilemapLayerSetup.TilemapLayer)i;
+                    _layerTilemapsCache[i] = worldGridBuilder.GetTilemap(layer);
+                }
+            }
+
+            return _layerTilemapsCache;
+        }
+
+        internal void InvalidateLayerTilemapsCache()
+        {
+            if (_layerTilemapsCache == null) return;
+            for (int i = 0; i < _layerTilemapsCache.Length; i++)
+                _layerTilemapsCache[i] = null;
         }
 
 

@@ -90,6 +90,22 @@ namespace Valkur.Gameplay.TileEditor
         // user can tell at a glance which visual layer the collider applies to.
         private CollisionTagMap _collisionTagMap;
 
+        // Tile-layer overlay state (View panel "Show Tile Layer"). The 9 tilemaps are
+        // indexed by <see cref="TilemapLayerSetup.TilemapLayer"/>; per visible cell
+        // we walk them top→bottom and stamp the digit of the first painted layer.
+        // Sampling is viewport-bounded so the cost stays O(visible cells) regardless
+        // of map size — at 1080p / orthoSize≈10 the visible window is ~700 cells.
+        private Tilemap[] _layerTilemaps;
+        private bool      _showTileLayer;
+        // Cached "drawn already" bitmap, sized to the current viewport rect. Lets the
+        // top→bottom layer walk skip cells a higher layer already drew without using
+        // a HashSet (which would allocate + box int keys). Reused frame-to-frame and
+        // grown only when the viewport expands.
+        private bool[] _tileLayerDrawnGrid;
+        // Cap analogous to MaxColliderCells — bail out at extreme zoom-out instead of
+        // sampling 50k+ cells per frame.
+        private const int MaxTileLayerCells = 20000;
+
         // ── Per-tag GL bitmap-font glyphs ─────────────────────────────────────
         // Each painted Collision cell draws a centered white digit ("0".."8") or "*"
         // showing which visual layer the collider applies to. Rendered as solid GL
@@ -247,6 +263,18 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>Enable or disable the blue layer-jumps overlay (M1.8).</summary>
         public void SetShowLayerJumps(bool show) => _showLayerJumps = show;
+
+        /// <summary>
+        /// Bind the 9 visual-layer tilemaps the overlay samples for the "Show Tile
+        /// Layer" feature. Index matches <see cref="TilemapLayerSetup.TilemapLayer"/>
+        /// (0 = Ground … 8 = OverheadDetails). The manager owns the array and reuses
+        /// the same reference across frames so this is a cheap one-time bind. Pass
+        /// null to disable sampling entirely.
+        /// </summary>
+        public void SetLayerTilemaps(Tilemap[] tilemaps) => _layerTilemaps = tilemaps;
+
+        /// <summary>Enable or disable the per-tile layer-digit overlay.</summary>
+        public void SetShowTileLayer(bool show) => _showTileLayer = show;
 
         /// <summary>
         /// Resolve a tag string to its index in <see cref="DigitMasks"/>: "0".."8" map

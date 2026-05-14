@@ -172,7 +172,7 @@ namespace Valkur.Gameplay.TileEditor
         // VLG padding (12) + spacing × 1 (4) ≈ 76.
         public const float SIZE_DROP_H = 78f + PANEL_HDR_H;         // 102
         public const float VIEW_DROP_W = 230f;
-        public const float VIEW_DROP_H = 170f + PANEL_HDR_H;        // 194 (rolled back from 234 in M1.8c — Show Player Layer moved to menu-bar)
+        public const float VIEW_DROP_H = 210f + PANEL_HDR_H;        // 234 — fits 5 toggle rows (added "Show Tile Layer")
         public const float UX_DROP_W   = 320f;
         public const float UX_DROP_H   = 520f + PANEL_HDR_H;        // 544
 

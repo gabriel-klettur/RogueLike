@@ -79,6 +79,15 @@ namespace Valkur.Gameplay.TileEditor
         public bool ShowGridLines = true;
 
         /// <summary>
+        /// When true, every painted cell in the viewport gets a small white digit "0".."8"
+        /// stamped in its centre showing the index of the topmost visual layer that
+        /// holds a tile at that cell (matches <see cref="World.TilemapLayerSetup.TilemapLayer"/>).
+        /// Toggled from the View panel. Bounded by the viewport — only the cells currently
+        /// on screen are sampled per frame, so the cost stays flat regardless of map size.
+        /// </summary>
+        public bool ShowTileLayerOverlay;
+
+        /// <summary>
         /// When true, the GL overlay draws a thick coloured border around every zone
         /// (matches the Map Editor's zone outlines). Toggled from the View panel.
         /// </summary>

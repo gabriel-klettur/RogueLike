@@ -38,7 +38,8 @@ namespace Valkur.Gameplay.TileEditor
                 _onMoveToLayerClicked,
                 _onCollisionTagChanged,
                 _onShowLayerJumpsClicked, _onDrawLayerJumpsClicked,
-                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged);
+                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged,
+                _onShowTileLayerClicked);
 
             // Slider value-changed → refresh the "Target: {idx}: {Layer}" label
             // so the user sees the live destination while dragging. The actual
