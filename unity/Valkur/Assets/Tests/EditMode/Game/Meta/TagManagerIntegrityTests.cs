@@ -81,6 +81,7 @@ namespace Valkur.Tests.EditMode.Game.Meta
             "Projectiles",
             "VFX",
             "Overhead",
+            "EntitiesOverhead",
             "UI_World",
             "Overlay",
         };
@@ -199,6 +200,44 @@ namespace Valkur.Tests.EditMode.Game.Meta
             {
                 Object.DestroyImmediate(go);
             }
+        }
+
+        /// <summary>
+        /// Position guard for <c>EntitiesOverhead</c>: the layer was inserted via
+        /// SerializedObject API specifically to sit BETWEEN <c>Overhead</c> and
+        /// <c>UI_World</c>. A future hand-edit / merge resolution that moved the
+        /// entry would silently re-introduce the "player on layer 8 draws under
+        /// tiles" bug (when moved down) OR cover health bars (when moved up).
+        /// Reads the YAML directly so a stale Unity cache cannot mask the drift.
+        /// </summary>
+        [Test]
+        public void TagManager_EntitiesOverhead_Sits_Between_Overhead_And_UIWorld()
+        {
+            string path = System.IO.Path.Combine(
+                Application.dataPath, "..", "ProjectSettings", "TagManager.asset");
+            Assert.IsTrue(System.IO.File.Exists(path),
+                "TagManager.asset must exist at " + path);
+
+            var lines = System.IO.File.ReadAllLines(path);
+            int overheadIdx = -1, entitiesOverheadIdx = -1, uiWorldIdx = -1;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (trimmed == "- name: Overhead")          overheadIdx = i;
+                else if (trimmed == "- name: EntitiesOverhead") entitiesOverheadIdx = i;
+                else if (trimmed == "- name: UI_World")     uiWorldIdx = i;
+            }
+
+            Assert.GreaterOrEqual(overheadIdx, 0,         "TagManager YAML must contain 'Overhead'.");
+            Assert.GreaterOrEqual(entitiesOverheadIdx, 0, "TagManager YAML must contain 'EntitiesOverhead'.");
+            Assert.GreaterOrEqual(uiWorldIdx, 0,          "TagManager YAML must contain 'UI_World'.");
+
+            Assert.Less(overheadIdx, entitiesOverheadIdx,
+                "EntitiesOverhead must appear AFTER Overhead in TagManager so it " +
+                "renders on top of OverheadDetails tiles (the elevated-player fix).");
+            Assert.Less(entitiesOverheadIdx, uiWorldIdx,
+                "EntitiesOverhead must appear BEFORE UI_World so in-world HUD " +
+                "(WorldHealthBar etc) stays drawn above the elevated player.");
         }
     }
 }

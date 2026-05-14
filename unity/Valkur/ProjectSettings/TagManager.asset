@@ -91,6 +91,9 @@ TagManager:
   - name: Overhead
     uniqueID: 17
     locked: 0
+  - name: EntitiesOverhead
+    uniqueID: 18
+    locked: 0
   - name: UI_World
     uniqueID: 7
     locked: 0

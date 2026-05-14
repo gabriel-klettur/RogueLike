@@ -33,6 +33,7 @@ namespace Valkur.Gameplay
     [RequireComponent(typeof(Health))]
     [RequireComponent(typeof(VisualLayerOccupant))]
     [RequireComponent(typeof(VisualLayerColliderSync))]
+    [RequireComponent(typeof(VisualLayerSortingSync))]
     public partial class PlayerController : MonoBehaviour
     {
         [Header("Movement")]

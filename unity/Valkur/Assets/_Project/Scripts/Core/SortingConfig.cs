@@ -24,6 +24,14 @@ namespace Valkur.Core
         public const string LAYER_PROJECTILES = "Projectiles";
         public const string LAYER_VFX = "VFX";
         public const string LAYER_OVERHEAD = "Overhead";
+        /// <summary>
+        /// Entities (Player, NPCs) whose <see cref="Gameplay.World.Layering.VisualLayerOccupant.CurrentVisualLayer"/>
+        /// equals 8 (OverheadDetails) render here so they appear in front of every
+        /// painted tilemap layer. Sits strictly between <see cref="LAYER_OVERHEAD"/>
+        /// and <see cref="LAYER_UI_WORLD"/> so in-world UI (health bars, mana bars)
+        /// still draws above the elevated player sprite.
+        /// </summary>
+        public const string LAYER_ENTITIES_OVERHEAD = "EntitiesOverhead";
         public const string LAYER_UI_WORLD = "UI_World";
         public const string LAYER_OVERLAY = "Overlay";
 
