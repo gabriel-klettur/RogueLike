@@ -318,6 +318,60 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Undo
         }
 
         /// <summary>
+        /// Move-To-Layer fires THREE edits per cell when the source visual tile also
+        /// has a collider on the Collision layer:
+        ///   A) clear source visual tile
+        ///   B) paint destination visual tile
+        ///   C) erase the collision cell (user-confirmed: visual tile moves → obstacle moves with it)
+        /// All three live in the same batch via the per-edit <c>TargetTilemap</c> override.
+        /// A single Ctrl+Z must restore source + dest + collider atomically.
+        /// </summary>
+        [Test]
+        public void MoveToLayerWithCollider_SingleUndoRestoresAllThreeTilemaps()
+        {
+            var b = new GameObject("CollisionTilemap"); b.transform.SetParent(_root.transform, false);
+            var collisionTm = b.AddComponent<Tilemap>();
+            try
+            {
+                var cell = new Vector3Int(2, 2, 0);
+                _sourceTm.SetTile(cell, _tileA);   // visual tile on source
+                collisionTm.SetTile(cell, _tileB); // collider on Collision layer
+
+                _undo.StartStroke(_sourceTm);
+                // Phase A: clear source
+                _sourceTm.SetTile(cell, null);
+                // Phase B: paint dest
+                _destTm.SetTile(cell, _tileA);
+                // Phase C: erase collision (the M1 user-confirmed behaviour)
+                collisionTm.SetTile(cell, null);
+
+                _undo.RecordEdits(new List<TileEdit>
+                {
+                    new TileEdit(cell, _tileA, null,  _sourceTm),
+                    new TileEdit(cell, null,   _tileA, _destTm),
+                    new TileEdit(cell, _tileB, null,  collisionTm),
+                });
+                _undo.EndStroke();
+
+                Assert.IsNull(_sourceTm.GetTile(cell),       "Pre-undo: source cleared.");
+                Assert.AreEqual(_tileA, _destTm.GetTile(cell), "Pre-undo: dest holds visual tile.");
+                Assert.IsNull(collisionTm.GetTile(cell),     "Pre-undo: collider erased.");
+
+                _undo.Undo();
+
+                Assert.AreEqual(_tileA, _sourceTm.GetTile(cell), "Undo: source visual restored.");
+                Assert.IsNull(_destTm.GetTile(cell),             "Undo: dest cleared.");
+                Assert.AreEqual(_tileB, collisionTm.GetTile(cell), "Undo: collider restored.");
+
+                _undo.Redo();
+                Assert.IsNull(_sourceTm.GetTile(cell));
+                Assert.AreEqual(_tileA, _destTm.GetTile(cell));
+                Assert.IsNull(collisionTm.GetTile(cell));
+            }
+            finally { Object.DestroyImmediate(b); }
+        }
+
+        /// <summary>
         /// The undo stack caps at <see cref="TileEditorState.MAX_UNDO"/> regardless of
         /// whether a batch is single- or cross-tilemap. Push N+1 cross-tilemap batches
         /// and verify the oldest is evicted (its Undo no longer reaches the source).
