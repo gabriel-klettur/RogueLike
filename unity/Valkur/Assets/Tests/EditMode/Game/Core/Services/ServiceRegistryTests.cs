@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Core;
 using Valkur.Core.Services;
 
-namespace Valkur.Tests.EditMode.Core.Services
+namespace Valkur.Tests.EditMode.Game.Core.Services
 {
     /// <summary>
     /// Pins the contract of <see cref="IServiceRegistry"/>:

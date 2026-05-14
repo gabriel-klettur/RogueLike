@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Core.Persistence;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode.Data
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Pins the contract that <see cref="InventoryData"/> participates in

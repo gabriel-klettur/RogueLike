@@ -4,7 +4,7 @@ using NUnit.Framework;
 using Valkur.Core.Coordinates;
 using Valkur.Infrastructure.Persistence.Repositories;
 
-namespace Valkur.Tests.EditMode.Infrastructure.Persistence.Repositories
+namespace Valkur.Tests.EditMode.Game.Infrastructure.Persistence.Repositories
 {
     /// <summary>
     /// Shared contract every <see cref="ITileOverrideRepository"/>

@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 
-namespace Valkur.Tests.EditMode.Data.Chunks
+namespace Valkur.Tests.EditMode.Game.Data.Chunks
 {
     /// <summary>
     /// Pins the diff-on-procedural contract: a virgin chunk has an empty

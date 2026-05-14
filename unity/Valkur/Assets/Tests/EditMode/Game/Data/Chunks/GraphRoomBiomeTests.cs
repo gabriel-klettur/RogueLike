@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 
-namespace Valkur.Tests.EditMode.Data.Chunks
+namespace Valkur.Tests.EditMode.Game.Data.Chunks
 {
     /// <summary>
     /// Pins <see cref="GraphRoomBiome"/>: room flags are deterministic

@@ -2,7 +2,7 @@ using NUnit.Framework;
 using Valkur.Core.Persistence;
 using Valkur.Infrastructure.Migrations;
 
-namespace Valkur.Tests.EditMode.Infrastructure.Migrations
+namespace Valkur.Tests.EditMode.Game.Infrastructure.Migrations
 {
     /// <summary>
     /// Pins the contract of <see cref="MigrationChain{T}"/>: walks registered

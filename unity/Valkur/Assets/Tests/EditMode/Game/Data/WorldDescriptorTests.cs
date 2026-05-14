@@ -3,7 +3,7 @@ using UnityEngine;
 using Valkur.Core.Coordinates;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode.Data
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Pins the contract of <see cref="WorldDescriptor"/> — the asset Phase 1

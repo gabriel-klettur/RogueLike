@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode.Data
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Pins WorldConfig defaults and the deterministic slug→Guid mapping that

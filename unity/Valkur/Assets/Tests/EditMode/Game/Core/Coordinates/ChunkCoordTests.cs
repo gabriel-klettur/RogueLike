@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Valkur.Core.Coordinates;
 
-namespace Valkur.Tests.EditMode.Core.Coordinates
+namespace Valkur.Tests.EditMode.Game.Core.Coordinates
 {
     /// <summary>
     /// Pins ChunkCoord behaviour: equality includes the world id, packed key

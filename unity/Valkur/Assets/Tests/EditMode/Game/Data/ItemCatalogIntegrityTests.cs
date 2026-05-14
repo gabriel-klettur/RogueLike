@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using Valkur.Data;
 
-namespace Valkur.Tests.EditMode.Data
+namespace Valkur.Tests.EditMode.Game.Data
 {
     /// <summary>
     /// Pins data quality of every <see cref="ItemDefinition"/> ScriptableObject

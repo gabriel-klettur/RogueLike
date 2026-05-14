@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using Valkur.Core.Coordinates;
 
-namespace Valkur.Tests.EditMode.Core.Coordinates
+namespace Valkur.Tests.EditMode.Game.Core.Coordinates
 {
     /// <summary>
     /// Pins the equality and identity contract of <see cref="WorldId"/>: two

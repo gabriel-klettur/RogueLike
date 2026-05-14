@@ -4,7 +4,7 @@ using UnityEngine.TestTools;
 using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 
-namespace Valkur.Tests.EditMode.Data.Chunks
+namespace Valkur.Tests.EditMode.Game.Data.Chunks
 {
     /// <summary>
     /// Phase 2 acceptance: the full diff-on-procedural cycle works.

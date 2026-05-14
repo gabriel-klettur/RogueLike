@@ -3,7 +3,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 using Valkur.Infrastructure.Persistence.Repositories;
 
-namespace Valkur.Tests.EditMode.Data.Chunks
+namespace Valkur.Tests.EditMode.Game.Data.Chunks
 {
     /// <summary>
     /// Phase 2 acceptance: the diff-on-procedural cycle survives a full

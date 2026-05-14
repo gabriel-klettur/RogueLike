@@ -5,7 +5,7 @@ using Valkur.Core.Coordinates;
 using Valkur.Data.Chunks;
 using Valkur.Infrastructure.Persistence.Repositories;
 
-namespace Valkur.Tests.EditMode.Infrastructure.Persistence.Repositories
+namespace Valkur.Tests.EditMode.Game.Infrastructure.Persistence.Repositories
 {
     /// <summary>
     /// Contract every <see cref="IChunkDeltaRepository"/> implementation

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -21,193 +20,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
     ///     SetSelectedZone, SetRestrictToggle, SetStatus,
     ///     ShowAddZoneDialog/HideAddZoneDialog, ShowDeleteZoneDialog/HideDeleteZoneDialog
     ///   • RebuildZonesList smoke-test (empty zone set → no child objects)
+    ///   • Hot-reload regression: canvas + state/input field recovery
+    ///   • InputHandler toggle-key binding
     ///
-    /// Pattern mirrors BuildingsEditorLifecycleTests.cs — reflection helpers,
-    /// scene-object teardown, LogAssert suppression for renderer-material warnings.
+    /// Zone CRUD operations → MapEditorZoneOpsTests.cs
+    /// UI flow state machine → MapEditorUIFlowsTests.cs
     /// </summary>
     [TestFixture]
-    public class MapEditorTests
+    public class MapEditorTests : MapEditorTestBase
     {
-        private readonly List<GameObject>     _sceneObjects = new List<GameObject>();
-        private readonly List<ScriptableObject> _assets     = new List<ScriptableObject>();
-
-        // Backup of the user's real persistence file. Many ops tests call
-        // CreateManagerWithZones(("Alpha",...)) and then exercise rename/
-        // move/delete/duplicate/restrict — every one of those methods invokes
-        // PersistZonesToDisk(), which would otherwise overwrite the user's
-        // map_editor_zones.json with the test seed. SetUp moves it aside and
-        // TearDown restores it. The DataGuard sweeps any orphan if a test
-        // crashes between the two.
-        private string _userZonesPrimary;
-        private string _userZonesBackup;
-        private string _userZonesSidecar;        // path of the production .bak
-        private string _userZonesSidecarBackup;  // our parking spot for it
-        private bool   _hadUserZones;
-        private bool   _hadUserSidecar;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _userZonesPrimary = System.IO.Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
-            _userZonesBackup  = _userZonesPrimary + ".test_backup_" + System.Guid.NewGuid().ToString("N").Substring(0, 8);
-            _userZonesSidecar       = _userZonesPrimary + ".bak";
-            _userZonesSidecarBackup = _userZonesBackup  + ".sidecar";
-
-            _hadUserZones    = System.IO.File.Exists(_userZonesPrimary);
-            _hadUserSidecar  = System.IO.File.Exists(_userZonesSidecar);
-
-            // Park the production sidecar BEFORE running tests so they don't
-            // poison it via File.Replace (which writes the prior primary into
-            // the .bak slot).
-            if (_hadUserSidecar)
-            {
-                System.IO.File.Copy(_userZonesSidecar, _userZonesSidecarBackup, overwrite: true);
-                System.IO.File.Delete(_userZonesSidecar);
-            }
-
-            if (_hadUserZones)
-            {
-                // Copy + Delete (instead of Move) so a test crash leaves the
-                // primary intact and only the backup needs sweeping.
-                System.IO.File.Copy(_userZonesPrimary, _userZonesBackup, overwrite: true);
-                System.IO.File.Delete(_userZonesPrimary);
-            }
-        }
-
-        // ── Helpers ──────────────────────────────────────────────────────────────
-
-        private static void ClearSingletonInstance<T>() where T : MonoBehaviour
-        {
-            var type = typeof(T).BaseType;
-            while (type != null)
-            {
-                var field = type.GetField("_instance",
-                    BindingFlags.NonPublic | BindingFlags.Static);
-                if (field != null) { field.SetValue(null, null); return; }
-                type = type.BaseType;
-            }
-        }
-
-        private T CreateSingleton<T>(string name = "TestGO") where T : MonoBehaviour
-        {
-            ClearSingletonInstance<T>();
-            var go   = new GameObject(name);
-            var comp = go.AddComponent<T>();
-            InvokeMethod(comp, "OnSingletonAwake");
-            _sceneObjects.Add(go);
-            return comp;
-        }
-
-        private static FieldInfo GetField(object obj, string name)
-        {
-            var t = obj.GetType();
-            while (t != null)
-            {
-                var f = t.GetField(name,
-                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-                if (f != null) return f;
-                t = t.BaseType;
-            }
-            return null;
-        }
-
-        private static void InvokeMethod(object obj, string methodName, params object[] args)
-        {
-            var t = obj.GetType();
-            MethodInfo m = null;
-            while (t != null && m == null)
-            {
-                m = t.GetMethod(methodName,
-                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                t = t.BaseType;
-            }
-            m?.Invoke(obj, args);
-        }
-
-        private static void SetField(object obj, string name, object value)
-            => GetField(obj, name)?.SetValue(obj, value);
-
-        private static object GetFieldValue(object obj, string name)
-            => GetField(obj, name)?.GetValue(obj);
-
-        /// <summary>
-        /// Creates a minimal MapEditorUI (MonoBehaviour partial class) and calls
-        /// Initialize() with no-op callbacks so BuildUI() runs inside EditMode.
-        /// </summary>
-        private MapEditorUI CreateInitializedUI()
-        {
-            var go = new GameObject("MapEditorUI");
-            _sceneObjects.Add(go);
-            var ui = go.AddComponent<MapEditorUI>();
-
-            var state = new MapEditorState();
-            LogAssert.ignoreFailingMessages = true;
-            ui.Initialize(
-                state,
-                _ => { },           // onZoneSelected
-                () => { },          // onBeginAddZoneFlow
-                (n, t, e) => { },   // onConfirmAddZone
-                () => { },          // onCancelAddZoneFlow
-                () => { },          // onDuplicateSelectedZone
-                () => { },          // onRequestDeleteSelectedZone
-                () => { },          // onConfirmDeleteSelectedZone
-                _ => { },           // onRenameSelectedZone
-                (o, n) => { },      // onRenameZoneByName
-                () => { },          // onToggleSelectedZoneEditable
-                _ => { },           // onToggleZoneEditableByName
-                _ => { },           // onRestrictEditChanged
-                _ => { },           // onConfirmGenerateBiomes
-                default,            // mapSlotCallbacks (no-op struct)
-                default,            // portalCallbacks (no-op struct)
-                default);           // stampCallbacks (no-op struct)
-
-            return ui;
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            // First priority: get the user's persistence file back. Wrapped
-            // independently so a destroy-immediate failure later in TearDown
-            // can't strand the user without their zones.
-            try
-            {
-                // Test ops may have created the primary via PersistZonesToDisk;
-                // remove that test artifact before restoring the real backup.
-                if (System.IO.File.Exists(_userZonesPrimary))
-                    System.IO.File.Delete(_userZonesPrimary);
-                if (_hadUserZones && System.IO.File.Exists(_userZonesBackup))
-                    System.IO.File.Move(_userZonesBackup, _userZonesPrimary);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[MapEditorTests] Could not restore user zones " +
-                                 $"(MapEditorDataGuard will recover on next Editor load): {ex.Message}");
-            }
-            // Drop the test-poisoned sidecar (File.Replace produced it from
-            // the in-test primary, not the user's data) and restore the
-            // production sidecar parked in SetUp.
-            try { if (System.IO.File.Exists(_userZonesSidecar)) System.IO.File.Delete(_userZonesSidecar); } catch { }
-            try
-            {
-                if (_hadUserSidecar && System.IO.File.Exists(_userZonesSidecarBackup))
-                    System.IO.File.Move(_userZonesSidecarBackup, _userZonesSidecar);
-            }
-            catch { }
-            try { if (System.IO.File.Exists(_userZonesBackup)) System.IO.File.Delete(_userZonesBackup); } catch { }
-            try { if (System.IO.File.Exists(_userZonesSidecarBackup)) System.IO.File.Delete(_userZonesSidecarBackup); } catch { }
-
-            foreach (var go in _sceneObjects)
-                if (go != null) UnityEngine.Object.DestroyImmediate(go);
-            _sceneObjects.Clear();
-
-            foreach (var so in _assets)
-                if (so != null) UnityEngine.Object.DestroyImmediate(so);
-            _assets.Clear();
-
-            LogAssert.ignoreFailingMessages = false;
-        }
-
         // ── MapEditorManager: basic contract ─────────────────────────────────────
 
         [Test]
@@ -288,7 +109,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assume.That(img != null, "UIRefs.ZonesMenuBtnImg must be wired after Initialize.");
             Assume.That(tmp != null, "UIRefs.ZonesMenuBtnTmp must be wired after Initialize.");
 
-            // Set to open first, then close
             MapEditorUIBuilder.ApplyMenuBtnStyle(img, tmp, isOpen: true);
             var openColour = img.color;
 
@@ -359,17 +179,14 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
 
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
 
-            // Initially the panel is closed
             Assert.IsFalse(refs.ZonesDropdown != null && refs.ZonesDropdown.activeSelf,
                 "Zones panel must be closed on start.");
 
-            // First toggle → open
             ui.OnDropdownToggle("zones");
             refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
             Assert.IsTrue(refs.ZonesDropdown != null && refs.ZonesDropdown.activeSelf,
                 "Zones panel must open after first toggle.");
 
-            // Second toggle → close
             ui.OnDropdownToggle("zones");
             refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
             Assert.IsFalse(refs.ZonesDropdown != null && refs.ZonesDropdown.activeSelf,
@@ -415,12 +232,11 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             var ui = CreateInitializedUI();
             ui.SetVisible(true);
-            ui.OnDropdownToggle("props");   // open Properties panel so refs are active
+            ui.OnDropdownToggle("props");
 
             ui.SetSelectedZone("TestZone", editable: true);
 
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            // Zone name must be pre-filled in the Properties panel rename input.
             Assert.AreEqual("TestZone", refs.NameInput?.text ?? "",
                 "NameInput must contain the zone name after SetSelectedZone.");
         }
@@ -432,7 +248,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             ui.SetSelectedZone(string.Empty, editable: false);
 
             var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            // For an empty zone name, NameInput must not be changed (stays empty / untouched).
             Assert.IsFalse((refs.NameInput?.text ?? "").Contains("TestZone"),
                 "NameInput must not contain a stale zone name when zone is cleared.");
         }
@@ -547,7 +362,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             LogAssert.ignoreFailingMessages = true;
 
-            // Verify the F11 binding string in the action map
             var handler = new MapEditorInputHandler();
             InvokeMethod(handler, "CreateActions");
 
@@ -558,8 +372,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             var action = field.GetValue(handler);
             Assert.IsNotNull(action, "_toggleAction must be initialized after CreateActions().");
 
-            // Verify the binding path contains "f11" (Unity Input System uses lowercase
-            // key names, e.g. "<Keyboard>/f11"). Use case-insensitive comparison.
             var bindings = action.GetType().GetProperty("bindings")?.GetValue(action);
             bool hasF11 = false;
             if (bindings is System.Collections.IEnumerable bindingsList)
@@ -604,8 +416,6 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             canvasRootField.SetValue(ui, null);
             cachedCanvasField.SetValue(ui, null);
 
-            // Canvas should still be reachable via children and the next
-            // SetVisible(false) MUST disable it.
             var canvas = ui.GetComponentInChildren<Canvas>(true);
             Assert.IsNotNull(canvas, "Underlying canvas must still exist in scene.");
             Assert.IsTrue(canvas.enabled,
@@ -637,704 +447,20 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
             Assert.IsNotNull(stateField, "_state field must exist.");
             Assert.IsNotNull(inputField, "_input field must exist.");
 
-            // Sanity: created normally, fields are populated
             Assert.IsNotNull(stateField.GetValue(mgr),
                 "_state must be initialized after singleton awake.");
             Assert.IsNotNull(inputField.GetValue(mgr),
                 "_input must be initialized after singleton awake.");
 
-            // Simulate hot-reload nulling private fields
             stateField.SetValue(mgr, null);
             inputField.SetValue(mgr, null);
 
-            // OnEnable is a Unity message; invoke directly to simulate re-enable
-            // after domain reload. EnsureCoreInitialized() must restore both.
             InvokeMethod(mgr, "OnEnable");
 
             Assert.IsNotNull(stateField.GetValue(mgr),
                 "_state must be re-initialized by OnEnable after hot-reload.");
             Assert.IsNotNull(inputField.GetValue(mgr),
                 "_input must be re-initialized by OnEnable after hot-reload.");
-        }
-
-        // ── ACTIONS Operations: end-to-end with real ZoneManager ────────────────
-        //
-        // These tests wire up a MapEditorManager + a real ZoneManager (no UI, no
-        // disk persistence — disk writes go to Application.persistentDataPath
-        // which is sandboxed for the test runner). They drive each ACTIONS panel
-        // operation through reflection (private methods) and assert on
-        // ZoneManager state to prove the full call chain works.
-
-        /// <summary>Build a manager wired to a real ZoneManager pre-seeded with
-        /// the supplied zones. Skips Start() so we don't need camera/UI/world.</summary>
-        private MapEditorManager CreateManagerWithZones(params (string name, Vector2Int offset, bool editable)[] seeds)
-        {
-            LogAssert.ignoreFailingMessages = true;
-            var mgr = CreateSingleton<MapEditorManager>("OpsTestMapEditorManager");
-
-            var zoneManagerGo = new GameObject("OpsTestZoneManager");
-            _sceneObjects.Add(zoneManagerGo);
-            var zm = zoneManagerGo.AddComponent<ZoneManager>();
-
-            // Seed zones via public AddZone (also fires OnZonesChanged → harmless).
-            foreach (var (name, offset, editable) in seeds)
-                Assert.IsTrue(zm.AddZone(name, offset, editable),
-                    $"Seed zone '{name}' must be addable.");
-
-            SetField(mgr, "zoneManager", zm);
-            return mgr;
-        }
-
-        private static ZoneManager GetZM(MapEditorManager mgr)
-            => (ZoneManager) GetFieldValue(mgr, "zoneManager");
-
-        private static MapEditorState GetState(MapEditorManager mgr)
-            => (MapEditorState) GetFieldValue(mgr, "_state");
-
-        // ── Rename ────────────────────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_RenameSelectedZone_RenamesInZoneManager()
-        {
-            var mgr = CreateManagerWithZones(
-                ("Alpha", Vector2Int.zero,    true),
-                ("Beta",  new Vector2Int(50, 0), true));
-            GetState(mgr).SelectZone("Alpha");
-
-            InvokeMethod(mgr, "RenameSelectedZone", "Gamma");
-
-            Assert.IsFalse(GetZM(mgr).TryGetZone("Alpha", out _),
-                "'Alpha' must no longer exist after rename.");
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Gamma", out _),
-                "'Gamma' must exist after rename.");
-            Assert.AreEqual("Gamma", GetState(mgr).SelectedZone,
-                "Selection must follow the renamed zone.");
-        }
-
-        [Test]
-        public void Operation_RenameSelectedZone_NoSelection_DoesNotThrow()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).ClearSelection();
-
-            Assert.DoesNotThrow(() => InvokeMethod(mgr, "RenameSelectedZone", "Foo"),
-                "Rename without a selection must be a safe no-op.");
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out _),
-                "Original zone must remain intact when rename has no selection.");
-        }
-
-        [Test]
-        public void Operation_RenameSelectedZone_EmptyName_DoesNotRename()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            InvokeMethod(mgr, "RenameSelectedZone", "   ");
-
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out _),
-                "Empty rename input must not modify the zone name.");
-        }
-
-        // ── Toggle Editable ───────────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_ToggleSelectedZoneEditable_FlipsFlag()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            InvokeMethod(mgr, "ToggleSelectedZoneEditable");
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out var z1));
-            Assert.IsFalse(z1.editableInTileEditor, "Editable flag must flip true→false.");
-
-            InvokeMethod(mgr, "ToggleSelectedZoneEditable");
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out var z2));
-            Assert.IsTrue(z2.editableInTileEditor, "Editable flag must flip false→true.");
-        }
-
-        // ── Move ──────────────────────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_MoveSelectedZone_AppliesZoneStridedDelta()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-            int w = GetZM(mgr).ZoneWidthTiles;
-            int h = GetZM(mgr).ZoneHeightTiles;
-
-            InvokeMethod(mgr, "MoveSelectedZone", Vector2Int.right);
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out var moved1));
-            Assert.AreEqual(new Vector2Int(w, 0), moved1.gridOffset,
-                "Move right must shift by ZoneWidthTiles, not 1.");
-
-            InvokeMethod(mgr, "MoveSelectedZone", Vector2Int.up);
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out var moved2));
-            Assert.AreEqual(new Vector2Int(w, h), moved2.gridOffset,
-                "Move up must add ZoneHeightTiles to Y.");
-        }
-
-        [Test]
-        public void Operation_MoveSelectedZone_NoSelection_DoesNotThrow()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).ClearSelection();
-
-            Assert.DoesNotThrow(() =>
-                InvokeMethod(mgr, "MoveSelectedZone", Vector2Int.right));
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out var z));
-            Assert.AreEqual(Vector2Int.zero, z.gridOffset,
-                "Zone offset must not change when no selection.");
-        }
-
-        // ── Duplicate ─────────────────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_DuplicateSelectedZone_CreatesShiftedCopy()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            int before = GetZM(mgr).GetZonesSnapshot().Length;
-            InvokeMethod(mgr, "DuplicateSelectedZone");
-            int after = GetZM(mgr).GetZonesSnapshot().Length;
-
-            Assert.AreEqual(before + 1, after, "Duplicate must add exactly one zone.");
-            Assert.AreNotEqual("Alpha", GetState(mgr).SelectedZone,
-                "Selection must follow the new duplicate, not the source.");
-
-            Assert.IsTrue(GetZM(mgr).TryGetZone(GetState(mgr).SelectedZone, out var dup));
-            Assert.AreEqual(new Vector2Int(GetZM(mgr).ZoneWidthTiles, 0), dup.gridOffset,
-                "Duplicate must be shifted right by ZoneWidthTiles to avoid overlap.");
-        }
-
-        // ── Delete (request + confirm) ────────────────────────────────────────────
-
-        [Test]
-        public void Operation_RequestDelete_StoresPendingDeleteName()
-        {
-            var mgr = CreateManagerWithZones(
-                ("Alpha", Vector2Int.zero,    true),
-                ("Beta",  new Vector2Int(50, 0), true));
-            GetState(mgr).SelectZone("Beta");
-
-            InvokeMethod(mgr, "RequestDeleteSelectedZone");
-            var pending = (string) GetFieldValue(mgr, "_pendingDeleteZoneName");
-            Assert.AreEqual("Beta", pending,
-                "RequestDelete must stage the selected zone name for confirmation.");
-        }
-
-        [Test]
-        public void Operation_ConfirmDelete_RemovesPendingZone()
-        {
-            var mgr = CreateManagerWithZones(
-                ("Alpha", Vector2Int.zero,    true),
-                ("Beta",  new Vector2Int(50, 0), true));
-            GetState(mgr).SelectZone("Beta");
-
-            InvokeMethod(mgr, "RequestDeleteSelectedZone");
-            InvokeMethod(mgr, "ConfirmDeleteSelectedZone");
-
-            Assert.IsFalse(GetZM(mgr).TryGetZone("Beta", out _),
-                "'Beta' must be removed after Confirm.");
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out _),
-                "Other zones must remain.");
-            Assert.IsNull(GetFieldValue(mgr, "_pendingDeleteZoneName"),
-                "_pendingDeleteZoneName must clear after confirm.");
-        }
-
-        [Test]
-        public void Operation_ConfirmDelete_LastZone_RefusesToDelete()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            InvokeMethod(mgr, "RequestDeleteSelectedZone");
-            InvokeMethod(mgr, "ConfirmDeleteSelectedZone");
-
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Alpha", out _),
-                "Cannot delete the last remaining zone — must refuse.");
-        }
-
-        // ── Add Zone Flow ─────────────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_BeginAddZoneFlow_NoSelection_StillActivatesFlow()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).ClearSelection();
-
-            InvokeMethod(mgr, "BeginAddZoneFlow");
-
-            Assert.IsTrue((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "Add Zone flow must activate even without a pre-selection — source zone is optional.");
-        }
-
-        [Test]
-        public void Operation_ConfirmAddZone_FromTemplate_AppendsZoneAtTarget()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            // Bypass UI: directly enter the flow + set a target offset
-            SetField(mgr, "_isAddZoneFlowActive", true);
-            SetField(mgr, "_hasPendingAddTarget", true);
-            SetField(mgr, "_pendingAddZoneOffset", new Vector2Int(50, 0));
-
-            InvokeMethod(mgr, "ConfirmAddZone", "Beta", true, false);
-
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Beta", out var beta),
-                "ConfirmAddZone must add the new zone via template path.");
-            Assert.AreEqual(new Vector2Int(50, 0), beta.gridOffset);
-            Assert.IsFalse(beta.editableInTileEditor,
-                "Editable override (false) must be applied to the new zone.");
-            Assert.AreEqual("Beta", GetState(mgr).SelectedZone,
-                "New zone must become the selection after confirm.");
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "Flow must end after a successful confirm.");
-        }
-
-        [Test]
-        public void Operation_ConfirmAddZone_WithoutTarget_DoesNotCreateZone()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            SetField(mgr, "_isAddZoneFlowActive", true);
-            SetField(mgr, "_hasPendingAddTarget", false);
-
-            InvokeMethod(mgr, "ConfirmAddZone", "Beta", true, true);
-
-            Assert.IsFalse(GetZM(mgr).TryGetZone("Beta", out _),
-                "ConfirmAddZone must refuse when no target offset has been marked.");
-        }
-
-        [Test]
-        public void Operation_ConfirmAddZone_EmptyName_DoesNotCreateZone()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            SetField(mgr, "_isAddZoneFlowActive", true);
-            SetField(mgr, "_hasPendingAddTarget", true);
-            SetField(mgr, "_pendingAddZoneOffset", new Vector2Int(50, 0));
-
-            int before = GetZM(mgr).GetZonesSnapshot().Length;
-            InvokeMethod(mgr, "ConfirmAddZone", "   ", true, true);
-            int after = GetZM(mgr).GetZonesSnapshot().Length;
-
-            Assert.AreEqual(before, after,
-                "Empty / whitespace zone name must be rejected by Confirm.");
-        }
-
-        [Test]
-        public void Operation_CancelAddZoneFlow_ResetsFlowFlags()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            SetField(mgr, "_isAddZoneFlowActive", true);
-            SetField(mgr, "_hasPendingAddTarget", true);
-
-            InvokeMethod(mgr, "CancelAddZoneFlow");
-
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"));
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_hasPendingAddTarget"));
-        }
-
-        // ── SetRestrictTileEditing ────────────────────────────────────────────────
-
-        [Test]
-        public void Operation_SetRestrictTileEditing_PersistsFlag()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            var st  = GetState(mgr);
-
-            InvokeMethod(mgr, "SetRestrictTileEditing", false);
-            Assert.IsFalse(st.RestrictTileEditingToEditableZones);
-
-            InvokeMethod(mgr, "SetRestrictTileEditing", true);
-            Assert.IsTrue(st.RestrictTileEditingToEditableZones);
-        }
-
-        // ── Adaptive overlay-line width ────────────────────────────────────────────
-
-        [Test]
-        public void Overlay_ComputeAdaptiveLineWidth_ScalesWithCameraZoom()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-
-            // Build a real orthographic camera so ComputeAdaptiveLineWidth has
-            // a non-null target.
-            var camGo = new GameObject("OpsTestCam");
-            _sceneObjects.Add(camGo);
-            var cam = camGo.AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = 5f;
-            SetField(mgr, "_mainCamera", cam);
-
-            float wClose = (float) typeof(MapEditorManager)
-                .GetMethod("ComputeAdaptiveLineWidth",
-                    BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(mgr, null);
-
-            cam.orthographicSize = 50f; // zoom out 10×
-            float wFar = (float) typeof(MapEditorManager)
-                .GetMethod("ComputeAdaptiveLineWidth",
-                    BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(mgr, null);
-
-            Assert.GreaterOrEqual(wFar, wClose,
-                "Adaptive line width must grow (or stay equal at clamp) when zooming out.");
-            Assert.GreaterOrEqual(wClose, 0.01f,
-                "Adaptive line width must stay strictly positive.");
-        }
-
-        // ── Add Zone Mode: blinking button + deferred dialog ──────────────────────
-
-        [Test]
-        public void MapEditorUI_AddZoneBtnOutline_NotNull_AfterInitialize()
-        {
-            var ui   = CreateInitializedUI();
-            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            Assert.IsNotNull(refs.AddZoneBtnOutline,
-                "UIRefs.AddZoneBtnOutline must be set during BuildAll.");
-        }
-
-        [Test]
-        public void MapEditorUI_AddZoneBtnImage_NotNull_AfterInitialize()
-        {
-            var ui   = CreateInitializedUI();
-            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            Assert.IsNotNull(refs.AddZoneBtnImage,
-                "UIRefs.AddZoneBtnImage must be set during BuildAll.");
-        }
-
-        [Test]
-        public void MapEditorUI_SetAddZoneMode_True_SetsField()
-        {
-            var ui = CreateInitializedUI();
-            ui.SetAddZoneMode(true);
-            Assert.IsTrue((bool) GetFieldValue(ui, "_isAddZoneMode"),
-                "SetAddZoneMode(true) must set the _isAddZoneMode field.");
-        }
-
-        [Test]
-        public void MapEditorUI_SetAddZoneMode_False_ClearsField()
-        {
-            var ui = CreateInitializedUI();
-            ui.SetAddZoneMode(true);
-            ui.SetAddZoneMode(false);
-            Assert.IsFalse((bool) GetFieldValue(ui, "_isAddZoneMode"),
-                "SetAddZoneMode(false) must clear the _isAddZoneMode field.");
-        }
-
-        [Test]
-        public void MapEditorUI_SetAddZoneMode_False_ResetsOutlineToTransparent()
-        {
-            var ui   = CreateInitializedUI();
-            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            ui.SetAddZoneMode(true);
-            ui.SetAddZoneMode(false);
-            Assert.AreEqual(0f, refs.AddZoneBtnOutline.effectColor.a,
-                "Outline alpha must be reset to 0 when SetAddZoneMode(false) is called.");
-        }
-
-        [Test]
-        public void Operation_BeginAddZoneFlow_WithSelection_ActivatesFlow()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).SelectZone("Alpha");
-
-            InvokeMethod(mgr, "BeginAddZoneFlow");
-
-            Assert.IsTrue((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "BeginAddZoneFlow must set _isAddZoneFlowActive to true.");
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_hasPendingAddTarget"),
-                "_hasPendingAddTarget must start false — user has not clicked the map yet.");
-        }
-
-        [Test]
-        public void Operation_CancelAddZoneFlow_ClearsAllFlowState()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            SetField(mgr, "_isAddZoneFlowActive", true);
-            SetField(mgr, "_hasPendingAddTarget",  true);
-
-            InvokeMethod(mgr, "CancelAddZoneFlow");
-
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "CancelAddZoneFlow must clear _isAddZoneFlowActive.");
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_hasPendingAddTarget"),
-                "CancelAddZoneFlow must clear _hasPendingAddTarget.");
-        }
-
-        // ── Add Zone same-frame race guard ───────────────────────────────────────
-        //
-        // BeginAddZoneFlow records Time.frameCount. The Update loop refuses to
-        // call MarkAddZoneTargetAtCursor on the same frame the flow started so
-        // that the click which activated the flow (over the "Add Zone" UI
-        // button) cannot also race ahead and mark a target.
-
-        [Test]
-        public void Operation_BeginAddZoneFlow_RecordsCurrentFrameAsStartedFrame()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-
-            InvokeMethod(mgr, "BeginAddZoneFlow");
-
-            int started = (int) GetFieldValue(mgr, "_addZoneFlowStartedFrame");
-            Assert.AreEqual(Time.frameCount, started,
-                "_addZoneFlowStartedFrame must equal Time.frameCount so the same-frame race guard fires.");
-        }
-
-        [Test]
-        public void MapEditorManager_AddZoneFlowStartedFrame_DefaultsToNegativeOne()
-        {
-            // Default value must NOT collide with Time.frameCount=0 at boot,
-            // otherwise the very first click on Add Zone would race.
-            LogAssert.ignoreFailingMessages = true;
-            var mgr = CreateSingleton<MapEditorManager>("RaceDefaultMgr");
-            int started = (int) GetFieldValue(mgr, "_addZoneFlowStartedFrame");
-            Assert.AreEqual(-1, started,
-                "_addZoneFlowStartedFrame default must be -1 (sentinel) — never a real frame number.");
-        }
-
-        // ── ConfirmAddZone fallback when template ON but no source selected ─────
-        //
-        // The Add Zone dialog's "Use selected as template" toggle must not be
-        // able to silently fail when no source is selected. ConfirmAddZone
-        // downgrades useTemplate→false in that case and creates a blank zone.
-
-        [Test]
-        public void Operation_ConfirmAddZone_TemplateOnNoSelection_FallsBackToBlankCreate()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-            GetState(mgr).ClearSelection();
-
-            SetField(mgr, "_isAddZoneFlowActive",  true);
-            SetField(mgr, "_hasPendingAddTarget",  true);
-            SetField(mgr, "_pendingAddZoneOffset", new Vector2Int(150, 150));
-
-            // useSelectedZoneAsTemplate=true but no selection — must NOT fail
-            // silently behind the modal; must create a blank zone instead.
-            InvokeMethod(mgr, "ConfirmAddZone", "Beta", true, true);
-
-            Assert.IsTrue(GetZM(mgr).TryGetZone("Beta", out var beta),
-                "ConfirmAddZone must fall back to blank create when template is on but no source is selected.");
-            Assert.AreEqual(new Vector2Int(150, 150), beta.gridOffset,
-                "Fallback path must still honour the pending target offset.");
-            Assert.IsTrue(beta.editableInTileEditor,
-                "Editable flag from confirm dialog must propagate to the new zone.");
-            Assert.IsFalse((bool) GetFieldValue(mgr, "_isAddZoneFlowActive"),
-                "Successful confirm must end the flow even via the fallback path.");
-        }
-
-        // ── Default editable=true for blank zones (no source) ───────────────────
-        //
-        // When MarkAddZoneTargetAtCursor opens the dialog and there is no
-        // source zone, the "editable" flag passed to ShowAddZoneDialog must be
-        // true so the new zone is editable in the Tile Editor by default.
-
-        [Test]
-        public void MapEditorUI_ShowAddZoneDialog_NoSource_TemplateToggleOffAndDisabled()
-        {
-            var ui = CreateInitializedUI();
-            ui.ShowAddZoneDialog("zone_150_150", sourceZoneName: "", sourceEditable: false);
-
-            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            Assume.That(refs.AddUseTemplateToggle != null,
-                "AddUseTemplateToggle must be wired by BuildAll.");
-
-            Assert.IsFalse(refs.AddUseTemplateToggle.isOn,
-                "Template toggle must default OFF when there is no source zone.");
-            Assert.IsFalse(refs.AddUseTemplateToggle.interactable,
-                "Template toggle must be non-interactable when there is no source — it has nothing to template from.");
-        }
-
-        [Test]
-        public void MapEditorUI_ShowAddZoneDialog_WithSource_TemplateToggleOnAndInteractable()
-        {
-            var ui = CreateInitializedUI();
-            ui.ShowAddZoneDialog("zone_150_150", sourceZoneName: "Alpha", sourceEditable: true);
-
-            var refs = (MapEditorUIBuilder.UIRefs) GetFieldValue(ui, "_refs");
-            Assume.That(refs.AddUseTemplateToggle != null,
-                "AddUseTemplateToggle must be wired by BuildAll.");
-
-            Assert.IsTrue(refs.AddUseTemplateToggle.isOn,
-                "Template toggle must default ON when a source zone is provided.");
-            Assert.IsTrue(refs.AddUseTemplateToggle.interactable,
-                "Template toggle must be interactable when a source is available.");
-        }
-
-        // ── Offset-based zone naming (zone_X_Y) ─────────────────────────────────
-        //
-        // GenerateOffsetZoneName produces zone names that reflect their grid
-        // offset, which is far more informative than a sequential counter.
-
-        [Test]
-        public void GenerateOffsetZoneName_ReturnsOffsetBasedName()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-
-            string name = (string) typeof(MapEditorManager)
-                .GetMethod("GenerateOffsetZoneName",
-                    BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(mgr, new object[] { new Vector2Int(150, 150) });
-
-            Assert.AreEqual("zone_150_150", name,
-                "Offset (150,150) must produce the canonical name 'zone_150_150'.");
-        }
-
-        [Test]
-        public void GenerateOffsetZoneName_HandlesNegativeOffset()
-        {
-            var mgr = CreateManagerWithZones(("Alpha", Vector2Int.zero, true));
-
-            string name = (string) typeof(MapEditorManager)
-                .GetMethod("GenerateOffsetZoneName",
-                    BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(mgr, new object[] { new Vector2Int(-50, 100) });
-
-            Assert.AreEqual("zone_-50_100", name,
-                "Negative offsets must be preserved in the generated name (no abs / no underscore-trick).");
-        }
-
-        [Test]
-        public void GenerateOffsetZoneName_AppendsSuffixWhenBaseNameCollides()
-        {
-            // Seed a zone exactly at the offset we'll ask for. The generator
-            // must walk past the collision instead of returning a duplicate.
-            var mgr = CreateManagerWithZones(
-                ("Alpha",         Vector2Int.zero,           true),
-                ("zone_150_150",  new Vector2Int(150, 150),  true));
-
-            string name = (string) typeof(MapEditorManager)
-                .GetMethod("GenerateOffsetZoneName",
-                    BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(mgr, new object[] { new Vector2Int(150, 150) });
-
-            Assert.AreNotEqual("zone_150_150", name,
-                "Generator must not return a name that already exists.");
-            Assert.IsTrue(name.StartsWith("zone_150_150"),
-                $"Suffixed name must keep the offset prefix. Got '{name}'.");
-            Assert.IsFalse(GetZM(mgr).TryGetZone(name, out _),
-                "Suffixed name must not already exist in ZoneManager.");
-        }
-
-        // ── MapEditorInputHandler centralization regression ─────────────────────
-        //
-        // The handler was refactored to route mouse/keyboard polling through
-        // MouseInputManager / KeyboardInputManager (the centralized facades
-        // that OR new+legacy backends to survive Unity 2022.3 InputSystem
-        // event drops). The old ad-hoc InputAction fields must NOT come back
-        // — they would silently die under the bug. The toggle action stays
-        // because EditorHotkeyBindings already routes through the canonical
-        // InputService asset.
-
-        [Test]
-        public void MapEditorInputHandler_DoesNotOwnAdHocSelectAction()
-        {
-            var handler = new MapEditorInputHandler();
-            Assert.IsNull(handler.GetType().GetField("_selectAction",
-                BindingFlags.NonPublic | BindingFlags.Instance),
-                "_selectAction must NOT exist after the centralized-facade refactor — " +
-                "click polling routes through MouseInputManager.WasLeftMouseButtonPressedThisFrame().");
-        }
-
-        [Test]
-        public void MapEditorInputHandler_DoesNotOwnAdHocKeyboardActions()
-        {
-            var handler = new MapEditorInputHandler();
-            string[] obsolete = {
-                "_createAction", "_duplicateAction", "_deleteAction",
-                "_renameAction", "_toggleEditableAction"
-            };
-            foreach (var fieldName in obsolete)
-            {
-                Assert.IsNull(handler.GetType().GetField(fieldName,
-                    BindingFlags.NonPublic | BindingFlags.Instance),
-                    $"{fieldName} must NOT exist after the centralized-facade refactor — " +
-                    "keyboard polling routes through KeyboardInputManager.WasKeyPressedThisFrame().");
-            }
-        }
-
-        // ── External overlay sharing (Tile Editor → Map Editor zone borders) ────
-        //
-        // The Tile Editor (F8) requests that the Map Editor's zone-border
-        // overlay be shown so the user can see zone delimitations while
-        // painting. The Map Editor must honour the request without activating
-        // its own UI, and must hide the overlay only once both signals
-        // (its own _state.Active AND the external request) are false.
-
-        [Test]
-        public void MapEditorManager_SetExternalOverlayRequest_True_ShowsOverlayWhileEditorInactive()
-        {
-            LogAssert.ignoreFailingMessages = true;
-            var mgr = CreateSingleton<MapEditorManager>("ExtOverlayMgr");
-            // Simulate Start()'s overlay-root creation step — Start() also
-            // touches ZoneManager and Camera which we don't have in EditMode.
-            InvokeMethod(mgr, "CreateOverlayRoot");
-
-            mgr.SetExternalOverlayRequest(true);
-
-            var overlayRoot = (GameObject) GetFieldValue(mgr, "_overlayRoot");
-            Assert.IsNotNull(overlayRoot, "_overlayRoot must be created by CreateOverlayRoot.");
-            Assert.IsTrue(overlayRoot.activeSelf,
-                "Overlay root must become active when an external editor requests it, " +
-                "even when the Map Editor itself is not active.");
-        }
-
-        [Test]
-        public void MapEditorManager_SetExternalOverlayRequest_False_HidesOverlayWhenEditorAlsoInactive()
-        {
-            LogAssert.ignoreFailingMessages = true;
-            var mgr = CreateSingleton<MapEditorManager>("ExtOverlayMgr");
-            InvokeMethod(mgr, "CreateOverlayRoot");
-
-            mgr.SetExternalOverlayRequest(true);
-            mgr.SetExternalOverlayRequest(false);
-
-            var overlayRoot = (GameObject) GetFieldValue(mgr, "_overlayRoot");
-            Assert.IsFalse(overlayRoot.activeSelf,
-                "Overlay must hide once the external request is released and the Map Editor itself is inactive.");
-        }
-
-        [Test]
-        public void MapEditorManager_SetExternalOverlayRequest_False_KeepsOverlayWhileMapEditorActive()
-        {
-            LogAssert.ignoreFailingMessages = true;
-            var mgr = CreateSingleton<MapEditorManager>("ExtOverlayMgr");
-            InvokeMethod(mgr, "CreateOverlayRoot");
-
-            // Activate the Map Editor's own state (skip ToggleActive — it
-            // touches UI and zoneManager which aren't wired in EditMode).
-            var state = (MapEditorState) GetFieldValue(mgr, "_state");
-            state.Active = true;
-            InvokeMethod(mgr, "UpdateOverlayVisibility");
-
-            mgr.SetExternalOverlayRequest(true);
-            mgr.SetExternalOverlayRequest(false);
-
-            var overlayRoot = (GameObject) GetFieldValue(mgr, "_overlayRoot");
-            Assert.IsTrue(overlayRoot.activeSelf,
-                "Overlay must stay visible while the Map Editor itself is active, " +
-                "even after the external request is released.");
-        }
-
-        [Test]
-        public void MapEditorInputHandler_PollMethodsDoNotThrow_BeforeCreateActions()
-        {
-            // Even if CreateActions() hasn't been called (or the facades have
-            // no live input device, which is the EditMode reality), every
-            // Was*Pressed query must return a value safely — the underlying
-            // facades guard against null Mouse/Keyboard.current themselves.
-            var handler = new MapEditorInputHandler();
-            Assert.DoesNotThrow(() => handler.WasSelectPressed(),
-                "WasSelectPressed must be safe to call before any input device exists.");
-            Assert.DoesNotThrow(() => handler.WasCreatePressed());
-            Assert.DoesNotThrow(() => handler.WasDuplicatePressed());
-            Assert.DoesNotThrow(() => handler.WasDeletePressed());
-            Assert.DoesNotThrow(() => handler.WasRenamePressed());
-            Assert.DoesNotThrow(() => handler.WasToggleEditablePressed());
         }
     }
 }

@@ -7,7 +7,7 @@ using Valkur.Core.Services;
 // resolves into the test namespace and fails.
 using WC = Valkur.Core.WorldContext.WorldContext;
 
-namespace Valkur.Tests.EditMode.Core.WorldContext
+namespace Valkur.Tests.EditMode.Game.Core.WorldContext
 {
     /// <summary>
     /// Pins WorldContext semantics: <see cref="WC.Global"/> wraps the

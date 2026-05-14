@@ -7,8 +7,13 @@ using Valkur.Core;
 namespace Valkur.Tests.PlayMode.Core
 {
     /// <summary>
-    /// PlayMode tests for ServiceLocator and GameDirector registration patterns.
-    /// Validates service registration, retrieval, and cleanup.
+    /// PlayMode tests for <see cref="GameDirector"/> integration with
+    /// <see cref="ServiceLocator"/>. The pure sync register/get/unregister/clear
+    /// path lives in <c>EditMode/Game/Core/Services/ServiceLocatorTests.cs</c>;
+    /// the three tests below stay in PlayMode because they require:
+    ///   - <see cref="MonoBehaviour"/> Awake/OnDestroy to fire (registration hook).
+    ///   - <see cref="Time.timeScale"/> mutation (Pause path).
+    ///   - One real frame to elapse so destroy callbacks run before re-query.
     /// </summary>
     public class ServiceLocatorPlayTests
     {
@@ -24,62 +29,6 @@ namespace Valkur.Tests.PlayMode.Core
             ServiceLocator.Clear();
         }
 
-        // ── Basic Registration ──
-
-        [Test]
-        public void Register_ThenGet_ReturnsSameInstance()
-        {
-            var service = new DummyService();
-            ServiceLocator.Register<IDummyService>(service);
-
-            var retrieved = ServiceLocator.Get<IDummyService>();
-            Assert.AreSame(service, retrieved);
-        }
-
-        [Test]
-        public void Get_Unregistered_ReturnsNull()
-        {
-            var result = ServiceLocator.Get<IDummyService>();
-            Assert.IsNull(result);
-        }
-
-        [Test]
-        public void TryGet_Registered_ReturnsTrue()
-        {
-            ServiceLocator.Register<IDummyService>(new DummyService());
-            bool found = ServiceLocator.TryGet<IDummyService>(out var service);
-            Assert.IsTrue(found);
-            Assert.IsNotNull(service);
-        }
-
-        [Test]
-        public void TryGet_Unregistered_ReturnsFalse()
-        {
-            bool found = ServiceLocator.TryGet<IDummyService>(out var service);
-            Assert.IsFalse(found);
-            Assert.IsNull(service);
-        }
-
-        [Test]
-        public void Unregister_RemovesService()
-        {
-            ServiceLocator.Register<IDummyService>(new DummyService());
-            ServiceLocator.Unregister<IDummyService>();
-            Assert.IsNull(ServiceLocator.Get<IDummyService>());
-        }
-
-        [Test]
-        public void Clear_RemovesAllServices()
-        {
-            ServiceLocator.Register<IDummyService>(new DummyService());
-            ServiceLocator.Register<IDummyService2>(new DummyService2());
-            ServiceLocator.Clear();
-            Assert.IsNull(ServiceLocator.Get<IDummyService>());
-            Assert.IsNull(ServiceLocator.Get<IDummyService2>());
-        }
-
-        // ── GameDirector Integration ──
-
         [UnityTest]
         public IEnumerator GameDirector_RegistersSelfInServiceLocator()
         {
@@ -89,7 +38,7 @@ namespace Valkur.Tests.PlayMode.Core
             yield return null;
 
             var director = ServiceLocator.Get<GameDirector>();
-            Assert.IsNotNull(director, "GameDirector should register itself in ServiceLocator");
+            Assert.IsNotNull(director, "GameDirector should register itself in ServiceLocator.");
             Assert.AreEqual(GameDirector.Instance, director);
 
             Object.Destroy(go);
@@ -109,7 +58,7 @@ namespace Valkur.Tests.PlayMode.Core
             yield return null;
 
             Assert.IsNull(ServiceLocator.Get<GameDirector>(),
-                "GameDirector should unregister from ServiceLocator on destroy");
+                "GameDirector should unregister from ServiceLocator on destroy.");
         }
 
         [UnityTest]
@@ -130,12 +79,5 @@ namespace Valkur.Tests.PlayMode.Core
 
             Object.Destroy(go);
         }
-
-        // ── Helpers ──
-
-        private interface IDummyService { }
-        private class DummyService : IDummyService { }
-        private interface IDummyService2 { }
-        private class DummyService2 : IDummyService2 { }
     }
 }
