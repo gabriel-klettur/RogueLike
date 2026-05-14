@@ -120,13 +120,19 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel ViewPanelDrag;
             public DraggablePanel SelectModesPanelDrag;
 
-            // "COLLIDERS LAYER" diagnostic dropdown — auto-shown by the manager
-            // whenever the Tile Editor is active AND ShowColliderOverlay is ON.
+            // "PLAYER LAYER" diagnostic dropdown — auto-shown by the manager
+            // whenever the Tile Editor is active AND ShowPlayerLayer is ON.
+            // Independent of any specific authoring tool (colliders, layer
+            // jumps, etc.) — surfaces the player's current visual layer + the
+            // layers present under their feet for any layer-related work.
             // Position: bottom-right, immediately to the left of the Layers panel.
-            public GameObject       CollidersLayerDropdown;
-            public DraggablePanel   CollidersLayerPanelDrag;
-            public TextMeshProUGUI  CollidersLayerLogicalLabel;
-            public TextMeshProUGUI  CollidersLayerUnderfootLabel;
+            public GameObject       PlayerLayerDropdown;
+            public DraggablePanel   PlayerLayerPanelDrag;
+            public TextMeshProUGUI  PlayerLayerLogicalLabel;
+            public TextMeshProUGUI  PlayerLayerUnderfootLabel;
+            // "Show Player Layer" toggle row in the View panel (default ON).
+            public Image            ViewShowPlayerLayerToggleImg;
+            public TextMeshProUGUI  ViewShowPlayerLayerToggleLabel;
 
             // SelectModes panel — three radio rows + clipboard action buttons.
             public Image ModeSingleToggleImg;
@@ -239,7 +245,9 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumps = null,
             System.Action onDrawLayerJumps = null,
             System.Action onEraseLayerJumps = null,
-            System.Action<string> onLayerJumpsTargetChanged = null)
+            System.Action<string> onLayerJumpsTargetChanged = null,
+            // M1.8b Show Player Layer toggle
+            System.Action onShowPlayerLayer = null)
         {
             var refs = new UIRefs
             {
@@ -259,11 +267,11 @@ namespace Valkur.Gameplay.TileEditor
                 onShowColliders, onDrawColliders, onEraseColliders, onCollisionTagChanged);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
-                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps);
+                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps, onShowPlayerLayer);
             BuildSelectModesDropdown(canvasT, state, ref refs,
                 onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
                 onMoveToLayerClicked);
-            BuildCollidersLayerDropdown(canvasT, ref refs);
+            BuildPlayerLayerDropdown(canvasT, ref refs);
             BuildLayerJumpsDropdown(canvasT, state, ref refs,
                 onShowLayerJumps, onDrawLayerJumps, onEraseLayerJumps, onLayerJumpsTargetChanged);
             BuildUxDropdown(canvasT, ref refs);

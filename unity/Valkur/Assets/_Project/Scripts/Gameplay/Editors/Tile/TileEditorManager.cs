@@ -156,7 +156,9 @@ namespace Valkur.Gameplay.TileEditor
                 onShowLayerJumpsClicked:  OnShowLayerJumpsClicked,
                 onDrawLayerJumpsClicked:  OnDrawLayerJumpsClicked,
                 onEraseLayerJumpsClicked: OnEraseLayerJumpsClicked,
-                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged);
+                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged,
+                // M1.8b Show Player Layer
+                onShowPlayerLayerClicked: OnShowPlayerLayerClicked);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();
@@ -303,10 +305,10 @@ namespace Valkur.Gameplay.TileEditor
             UpdateBrushPreview();
             UpdateGridCursor();
             UpdateViewPanelHover();
-            // Refresh the "COLLIDERS LAYER" diagnostic panel content. The method
+            // Refresh the "PLAYER LAYER" diagnostic panel content. The method
             // short-circuits when the panel isn't visible, so this is effectively
-            // a no-op while Show Colliders is OFF.
-            TickCollidersLayerPanel();
+            // a no-op while Show Player Layer is OFF.
+            TickPlayerLayerPanel();
         }
 
         // Double-click on a zone → centre + frame it on screen. Coexists with

@@ -119,26 +119,26 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Refresh the two readouts of the "COLLIDERS LAYER" diagnostic panel
-        /// (bottom-right, visible only while ShowColliderOverlay is ON). Cheap
-        /// string-builds: called every frame by the manager while the panel is
+        /// Refresh the two readouts of the "PLAYER LAYER" diagnostic panel
+        /// (bottom-right, visible while ShowPlayerLayer is ON). Cheap string-
+        /// builds: called every frame by the manager while the panel is
         /// visible, so allocations are kept to two TextMeshPro.text assignments
         /// and any underlying string formatting Unity does internally.
         /// </summary>
-        public void RefreshCollidersLayerPanel(int logicalLayer, string logicalLayerName, bool[] underfoot)
+        public void RefreshPlayerLayerPanel(int logicalLayer, string logicalLayerName, bool[] underfoot)
         {
-            if (_refs.CollidersLayerLogicalLabel != null)
+            if (_refs.PlayerLayerLogicalLabel != null)
             {
-                _refs.CollidersLayerLogicalLabel.text = logicalLayer < 0
+                _refs.PlayerLayerLogicalLabel.text = logicalLayer < 0
                     ? "Layer: (no player)"
                     : $"Layer: {logicalLayer} — {logicalLayerName}";
             }
 
-            if (_refs.CollidersLayerUnderfootLabel == null) return;
+            if (_refs.PlayerLayerUnderfootLabel == null) return;
 
             if (underfoot == null || underfoot.Length == 0)
             {
-                _refs.CollidersLayerUnderfootLabel.text = "Underfoot: —";
+                _refs.PlayerLayerUnderfootLabel.text = "Underfoot: —";
                 return;
             }
 
@@ -153,7 +153,7 @@ namespace Valkur.Gameplay.TileEditor
                 any = true;
             }
             if (!any) sb.Append("(none)");
-            _refs.CollidersLayerUnderfootLabel.text = sb.ToString();
+            _refs.PlayerLayerUnderfootLabel.text = sb.ToString();
         }
 
         /// <summary>
@@ -212,6 +212,8 @@ namespace Valkur.Gameplay.TileEditor
                 _state.ShowColliderOverlay);
             ApplyColliderToggleVisual(_refs.ViewShowLayerJumpsToggleImg, _refs.ViewShowLayerJumpsToggleLabel,
                 _state.ShowLayerJumpsOverlay);
+            ApplyColliderToggleVisual(_refs.ViewShowPlayerLayerToggleImg, _refs.ViewShowPlayerLayerToggleLabel,
+                _state.ShowPlayerLayer);
         }
 
         // ── Layer Jumps panel (M1.8) ─────────────────────────────────────

@@ -24,7 +24,8 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowGridLinesClicked,
             System.Action onShowZoneGridClicked,
             System.Action onShowCollidersClicked,
-            System.Action onShowLayerJumpsClicked)
+            System.Action onShowLayerJumpsClicked,
+            System.Action onShowPlayerLayerClicked)
         {
             refs.ViewDropdown = MakeDropdownPanel("ViewDropdown", canvasT,
                 PanelDock.TopRight, ViewX, ViewY, VIEW_DROP_W, VIEW_DROP_H,
@@ -47,6 +48,10 @@ namespace Valkur.Gameplay.TileEditor
             BuildColliderToggleRow(t, "Show Layer Jumps",
                 state.ShowLayerJumpsOverlay, onShowLayerJumpsClicked,
                 out refs.ViewShowLayerJumpsToggleImg, out refs.ViewShowLayerJumpsToggleLabel);
+
+            BuildColliderToggleRow(t, "Show Player Layer",
+                state.ShowPlayerLayer, onShowPlayerLayerClicked,
+                out refs.ViewShowPlayerLayerToggleImg, out refs.ViewShowPlayerLayerToggleLabel);
 
             refs.ViewDropdown.SetActive(false);
         }

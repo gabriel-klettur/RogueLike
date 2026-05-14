@@ -38,7 +38,8 @@ namespace Valkur.Gameplay.TileEditor
                 _onMoveToLayerClicked,
                 _onCollisionTagChanged,
                 _onShowLayerJumpsClicked, _onDrawLayerJumpsClicked,
-                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged);
+                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged,
+                _onShowPlayerLayerClicked);
 
             // Slider value-changed → refresh the "Target: {idx}: {Layer}" label
             // so the user sees the live destination while dragging. The actual
@@ -67,8 +68,11 @@ namespace Valkur.Gameplay.TileEditor
             // computed by the manager's ApplyColliderOverlayVisibility — toggling
             // ShowColliderOverlay off+on brings it back. Not part of _openDropdowns
             // because it isn't user-toggled, only conditionally auto-shown.
-            if (_refs.CollidersLayerPanelDrag != null) _refs.CollidersLayerPanelDrag.OnClose =
-                () => { if (_refs.CollidersLayerDropdown != null) _refs.CollidersLayerDropdown.SetActive(false); };
+            // [x] on the PLAYER LAYER panel header → flips ShowPlayerLayer OFF
+            // via the manager so the View toggle stays in sync and the panel
+            // doesn't auto-reappear until the user opts back in.
+            if (_refs.PlayerLayerPanelDrag != null) _refs.PlayerLayerPanelDrag.OnClose =
+                () => _onShowPlayerLayerClicked?.Invoke();
             // Layer Jumps dropdown: closes via menu-bar toggle path so the
             // "Jumps" menu-bar button highlight stays in sync (clicking it again
             // re-opens; OnClose just removes from _openDropdowns).
@@ -120,11 +124,11 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
-        /// Expose the "COLLIDERS LAYER" diagnostic panel GameObject so the manager
-        /// can flip its active state in response to editor / Show-Colliders toggles
-        /// without reaching into the private <c>_refs</c> struct.
+        /// Expose the "PLAYER LAYER" diagnostic panel GameObject so the manager
+        /// can flip its active state in response to editor / Show-Player-Layer
+        /// toggles without reaching into the private <c>_refs</c> struct.
         /// </summary>
-        public GameObject GetCollidersLayerPanel() => _refs.CollidersLayerDropdown;
+        public GameObject GetPlayerLayerPanel() => _refs.PlayerLayerDropdown;
 
         private void RefreshLayersPanel()
         {

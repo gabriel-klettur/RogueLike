@@ -44,6 +44,8 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onDrawLayerJumpsClicked;
         private System.Action _onEraseLayerJumpsClicked;
         private System.Action<string> _onLayerJumpsTargetChanged;
+        // M1.8b Show Player Layer
+        private System.Action _onShowPlayerLayerClicked;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -87,7 +89,9 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumpsClicked = null,
             System.Action onDrawLayerJumpsClicked = null,
             System.Action onEraseLayerJumpsClicked = null,
-            System.Action<string> onLayerJumpsTargetChanged = null)
+            System.Action<string> onLayerJumpsTargetChanged = null,
+            // M1.8b Show Player Layer
+            System.Action onShowPlayerLayerClicked = null)
         {
             _state = state;
             _catalog = catalog;
@@ -115,6 +119,7 @@ namespace Valkur.Gameplay.TileEditor
             _onDrawLayerJumpsClicked  = onDrawLayerJumpsClicked;
             _onEraseLayerJumpsClicked = onEraseLayerJumpsClicked;
             _onLayerJumpsTargetChanged = onLayerJumpsTargetChanged;
+            _onShowPlayerLayerClicked = onShowPlayerLayerClicked;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
