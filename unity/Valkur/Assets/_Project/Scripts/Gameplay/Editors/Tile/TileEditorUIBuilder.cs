@@ -120,6 +120,14 @@ namespace Valkur.Gameplay.TileEditor
             public DraggablePanel ViewPanelDrag;
             public DraggablePanel SelectModesPanelDrag;
 
+            // "COLLIDERS LAYER" diagnostic dropdown — auto-shown by the manager
+            // whenever the Tile Editor is active AND ShowColliderOverlay is ON.
+            // Position: bottom-right, immediately to the left of the Layers panel.
+            public GameObject       CollidersLayerDropdown;
+            public DraggablePanel   CollidersLayerPanelDrag;
+            public TextMeshProUGUI  CollidersLayerLogicalLabel;
+            public TextMeshProUGUI  CollidersLayerUnderfootLabel;
+
             // SelectModes panel — three radio rows + clipboard action buttons.
             public Image ModeSingleToggleImg;
             public TextMeshProUGUI ModeSingleToggleLabel;
@@ -229,6 +237,7 @@ namespace Valkur.Gameplay.TileEditor
             BuildSelectModesDropdown(canvasT, state, ref refs,
                 onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
                 onMoveToLayerClicked);
+            BuildCollidersLayerDropdown(canvasT, ref refs);
             BuildUxDropdown(canvasT, ref refs);
             BuildLayerIndicator(canvasT, state, ref refs, onLayerChanged);
 

@@ -133,6 +133,14 @@ namespace Valkur.Gameplay.TileEditor
         // at fontSize 11) plus the Vis (16) + Idx (18) icons and inner padding (~50 px).
         public const float LAYERS_DROP_W = 155f;
         public const float LAYERS_DROP_H = 300f + PANEL_HDR_H;      // 324
+
+        // "COLLIDERS LAYER" diagnostic panel — appears bottom-right, immediately to
+        // the LEFT of the Layers dropdown. Visible only while the Tile Editor is
+        // active AND the Colliders panel's "Show Colliders" toggle is ON. Shows the
+        // player's logical layer (from VisualLayerOccupant) + a snapshot of which
+        // visual layers have a tile underfoot (from VisualLayerProbe).
+        public const float COLLIDERS_LAYER_DROP_W = 220f;
+        public const float COLLIDERS_LAYER_DROP_H = 70f + PANEL_HDR_H;  // 94
         // Generic "properties panel" width — reused by Items/Buildings/FSM editors.
         // Don't shrink without checking those callers.
         public const float INSPECTOR_DROP_W = 250f;

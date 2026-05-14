@@ -298,6 +298,10 @@ namespace Valkur.Gameplay.TileEditor
             UpdateBrushPreview();
             UpdateGridCursor();
             UpdateViewPanelHover();
+            // Refresh the "COLLIDERS LAYER" diagnostic panel content. The method
+            // short-circuits when the panel isn't visible, so this is effectively
+            // a no-op while Show Colliders is OFF.
+            TickCollidersLayerPanel();
         }
 
         // Double-click on a zone → centre + frame it on screen. Coexists with

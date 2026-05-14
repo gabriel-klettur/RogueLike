@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Tilemaps;
 using Valkur.Gameplay.World;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay.TileEditor
 {
@@ -101,6 +102,74 @@ namespace Valkur.Gameplay.TileEditor
             _gridOverlay.SetCollisionTilemap(GetCollisionTilemap());
             _gridOverlay.SetCollisionTagMap(CollisionTags);
             _gridOverlay.SetShowColliderOverlay(_state.ShowColliderOverlay);
+            ApplyCollidersLayerPanelVisibility();
+        }
+
+        // ── COLLIDERS LAYER diagnostic panel ─────────────────────────────
+        // The panel sits bottom-right of the canvas, immediately to the left of
+        // the Layers dropdown. It is *purely* a diagnostic readout — visible only
+        // when the user is actively authoring per-layer collisions (editor active
+        // AND Show Colliders ON), so it never costs screen space during normal
+        // gameplay or while other Tile-Editor tools are in use.
+
+        // Cached refs resolved lazily — avoids per-frame FindObjectOfType cost
+        // while the panel is being ticked.
+        private VisualLayerOccupant _playerLayerOccupant;
+        private readonly bool[] _underfootScratch = new bool[9];
+
+        /// <summary>
+        /// Show / hide the "COLLIDERS LAYER" panel based on whether the user is
+        /// in a state where the readout is useful. Hidden in every other state
+        /// (game mode, editor open with Show Colliders OFF).
+        /// </summary>
+        private void ApplyCollidersLayerPanelVisibility()
+        {
+            if (_ui == null) return;
+            var panel = _ui.GetCollidersLayerPanel();
+            if (panel == null) return;
+            bool show = _state != null && _state.Active && _state.ShowColliderOverlay;
+            if (panel.activeSelf != show)
+                panel.SetActive(show);
+        }
+
+        /// <summary>
+        /// Update the panel's two readout labels with the player's logical
+        /// visual layer (from <see cref="VisualLayerOccupant"/>) + the set of
+        /// visual layers that currently have a tile under the player's feet
+        /// (from <see cref="VisualLayerProbe"/>). Called once per frame by
+        /// <see cref="Update"/> while the panel is visible.
+        /// </summary>
+        internal void TickCollidersLayerPanel()
+        {
+            if (_ui == null) return;
+            var panel = _ui.GetCollidersLayerPanel();
+            if (panel == null || !panel.activeSelf) return;
+
+            // Re-resolve the player occupant lazily — it can get nulled out
+            // between deaths/respawns, so a null check is cheaper than a hard
+            // singleton subscription.
+            if (_playerLayerOccupant == null)
+                _playerLayerOccupant = FindObjectOfType<VisualLayerOccupant>();
+
+            int layer = -1;
+            string layerName = null;
+            int populated = 0;
+            if (_playerLayerOccupant != null)
+            {
+                layer = _playerLayerOccupant.CurrentVisualLayer;
+                layerName = _playerLayerOccupant.LayerName;
+                populated = VisualLayerProbe.Sample(_playerLayerOccupant.transform.position,
+                                                     worldGridBuilder, _underfootScratch);
+            }
+            else
+            {
+                // Clear the scratch buffer so the underfoot line shows "(none)"
+                // instead of stale data from the previous owner.
+                for (int i = 0; i < _underfootScratch.Length; i++) _underfootScratch[i] = false;
+            }
+
+            _ui.RefreshCollidersLayerPanel(layer, layerName,
+                populated > 0 ? _underfootScratch : null);
         }
 
         // ── Mouse routing for collider edit modes ────────────────────────

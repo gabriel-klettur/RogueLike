@@ -61,6 +61,12 @@ namespace Valkur.Gameplay.TileEditor
             if (_refs.SelectModesPanelDrag != null) _refs.SelectModesPanelDrag.OnClose =
                 () => { if (_refs.SelectModesDropdown != null) _refs.SelectModesDropdown.SetActive(false);
                         _openDropdowns.Remove("selectmodes"); };
+            // Colliders-Layer diagnostic: closes silently on [x]. Visibility is re-
+            // computed by the manager's ApplyColliderOverlayVisibility — toggling
+            // ShowColliderOverlay off+on brings it back. Not part of _openDropdowns
+            // because it isn't user-toggled, only conditionally auto-shown.
+            if (_refs.CollidersLayerPanelDrag != null) _refs.CollidersLayerPanelDrag.OnClose =
+                () => { if (_refs.CollidersLayerDropdown != null) _refs.CollidersLayerDropdown.SetActive(false); };
 
             WireLayerVisibilityButtons();
             WireConfiguratorButton();
@@ -105,6 +111,13 @@ namespace Valkur.Gameplay.TileEditor
         {
             return layerIdx >= 0 && layerIdx < 9 && _layerVisibility[layerIdx];
         }
+
+        /// <summary>
+        /// Expose the "COLLIDERS LAYER" diagnostic panel GameObject so the manager
+        /// can flip its active state in response to editor / Show-Colliders toggles
+        /// without reaching into the private <c>_refs</c> struct.
+        /// </summary>
+        public GameObject GetCollidersLayerPanel() => _refs.CollidersLayerDropdown;
 
         private void RefreshLayersPanel()
         {

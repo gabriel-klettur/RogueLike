@@ -33,6 +33,7 @@ namespace Valkur.Gameplay.TileEditor
                 // "Zone Grid" toggle (default: hidden). Authors enable it explicitly
                 // from View → Zone Grid when they want to see zone boundaries.
                 ApplyViewOverlayVisibility();
+                ApplyCollidersLayerPanelVisibility();
                 UpdateBorderToolLabel();
                 // Pull persisted terrain data + auto-cure variants. Safe to call here
                 // even if no overlays exist on disk — it short-circuits.
@@ -66,6 +67,9 @@ namespace Valkur.Gameplay.TileEditor
                 if (_borderOverlayGo != null) _borderOverlayGo.SetActive(false);
                 if (_gridCursor != null) _gridCursor.gameObject.SetActive(false);
                 if (_gridOverlayGo != null) _gridOverlayGo.SetActive(false);
+                // Hide the Colliders-Layer diagnostic panel together with the rest
+                // of the editor chrome — it has no purpose outside the editor.
+                ApplyCollidersLayerPanelVisibility();
                 // Release the zone-border overlay request so it hides unless
                 // the Map Editor itself is still active.
                 if (Valkur.Gameplay.MapEditor.MapEditorManager.HasInstance)

@@ -119,6 +119,44 @@ namespace Valkur.Gameplay.TileEditor
         }
 
         /// <summary>
+        /// Refresh the two readouts of the "COLLIDERS LAYER" diagnostic panel
+        /// (bottom-right, visible only while ShowColliderOverlay is ON). Cheap
+        /// string-builds: called every frame by the manager while the panel is
+        /// visible, so allocations are kept to two TextMeshPro.text assignments
+        /// and any underlying string formatting Unity does internally.
+        /// </summary>
+        public void RefreshCollidersLayerPanel(int logicalLayer, string logicalLayerName, bool[] underfoot)
+        {
+            if (_refs.CollidersLayerLogicalLabel != null)
+            {
+                _refs.CollidersLayerLogicalLabel.text = logicalLayer < 0
+                    ? "Layer: (no player)"
+                    : $"Layer: {logicalLayer} — {logicalLayerName}";
+            }
+
+            if (_refs.CollidersLayerUnderfootLabel == null) return;
+
+            if (underfoot == null || underfoot.Length == 0)
+            {
+                _refs.CollidersLayerUnderfootLabel.text = "Underfoot: —";
+                return;
+            }
+
+            var sb = new System.Text.StringBuilder(48);
+            sb.Append("Underfoot: ");
+            bool any = false;
+            for (int i = 0; i < underfoot.Length; i++)
+            {
+                if (!underfoot[i]) continue;
+                if (any) sb.Append(", ");
+                sb.Append(i);
+                any = true;
+            }
+            if (!any) sb.Append("(none)");
+            _refs.CollidersLayerUnderfootLabel.text = sb.ToString();
+        }
+
+        /// <summary>
         /// Repaint the Apply-To-Layer button row in the Colliders panel + the value
         /// label below the header to reflect <see cref="TileEditorState.ActiveCollisionTag"/>.
         /// The active button uses the same red-accent tint as the Show/Draw/Erase toggles
