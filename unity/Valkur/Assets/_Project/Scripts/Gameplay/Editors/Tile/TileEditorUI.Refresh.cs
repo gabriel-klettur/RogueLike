@@ -222,8 +222,6 @@ namespace Valkur.Gameplay.TileEditor
                 _state.ShowColliderOverlay);
             ApplyColliderToggleVisual(_refs.ViewShowLayerJumpsToggleImg, _refs.ViewShowLayerJumpsToggleLabel,
                 _state.ShowLayerJumpsOverlay);
-            ApplyColliderToggleVisual(_refs.ViewShowPlayerLayerToggleImg, _refs.ViewShowPlayerLayerToggleLabel,
-                _state.ShowPlayerLayer);
         }
 
         // ── Layer Jumps panel (M1.8) ─────────────────────────────────────

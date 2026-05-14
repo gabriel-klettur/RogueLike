@@ -135,9 +135,11 @@ namespace Valkur.Gameplay.TileEditor
             // if this Cell matches the painted jump's cell but the layer
             // doesn't change, the bootstrap is the suspect, not cell math.
             public TextMeshProUGUI  PlayerLayerCellLabel;
-            // "Show Player Layer" toggle row in the View panel (default ON).
-            public Image            ViewShowPlayerLayerToggleImg;
-            public TextMeshProUGUI  ViewShowPlayerLayerToggleLabel;
+            // Menu-bar button highlight refs — clicking the menu-bar entry
+            // toggles the dropdown's visibility via the standard ToggleDropdown
+            // path. Same pattern as Tools/Tiles/Layers/Inspector/etc.
+            public Image            PlayerLayerMenuBtnImg;
+            public TextMeshProUGUI  PlayerLayerMenuBtnTmp;
 
             // SelectModes panel — three radio rows + clipboard action buttons.
             public Image ModeSingleToggleImg;
@@ -250,9 +252,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumps = null,
             System.Action onDrawLayerJumps = null,
             System.Action onEraseLayerJumps = null,
-            System.Action<string> onLayerJumpsTargetChanged = null,
-            // M1.8b Show Player Layer toggle
-            System.Action onShowPlayerLayer = null)
+            System.Action<string> onLayerJumpsTargetChanged = null)
         {
             var refs = new UIRefs
             {
@@ -272,7 +272,7 @@ namespace Valkur.Gameplay.TileEditor
                 onShowColliders, onDrawColliders, onEraseColliders, onCollisionTagChanged);
             BuildSizeDropdown(canvasT, state, ref refs, onBrushSizeChanged);
             BuildViewDropdown(canvasT, state, ref refs,
-                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps, onShowPlayerLayer);
+                onShowGridLines, onShowZoneGrid, onShowColliders, onShowLayerJumps);
             BuildSelectModesDropdown(canvasT, state, ref refs,
                 onSelectModeChanged, onCopyClicked, onCutClicked, onPasteClicked, onClearSelectionClicked,
                 onMoveToLayerClicked);

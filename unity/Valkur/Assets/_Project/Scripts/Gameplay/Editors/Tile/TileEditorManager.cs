@@ -168,9 +168,7 @@ namespace Valkur.Gameplay.TileEditor
                 onShowLayerJumpsClicked:  OnShowLayerJumpsClicked,
                 onDrawLayerJumpsClicked:  OnDrawLayerJumpsClicked,
                 onEraseLayerJumpsClicked: OnEraseLayerJumpsClicked,
-                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged,
-                // M1.8b Show Player Layer
-                onShowPlayerLayerClicked: OnShowPlayerLayerClicked);
+                onLayerJumpsTargetChanged: OnLayerJumpsTargetChanged);
 
             CreateBrushPreview();
             CreateScreenBorderOverlay();

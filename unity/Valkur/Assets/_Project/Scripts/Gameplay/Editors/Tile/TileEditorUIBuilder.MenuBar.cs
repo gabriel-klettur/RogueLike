@@ -78,6 +78,12 @@ namespace Valkur.Gameplay.TileEditor
                 () => onDropdownToggle?.Invoke("size"), out refs.SizeMenuBtnTmp);
             refs.ViewMenuBtnImg = BuildMenuButton(t, "View v", VIEW_BTN_W,
                 () => onDropdownToggle?.Invoke("view"), out refs.ViewMenuBtnTmp);
+            // M1.8c: PLAYER LAYER diagnostic, moved from View toggle to a
+            // proper menu-bar dropdown — it was always a panel, not a view
+            // setting. Click toggles open/close. Default opens on F8 along
+            // with the rest of the main panels (see TileEditorUI.OpenAllDropdowns).
+            refs.PlayerLayerMenuBtnImg = BuildMenuButton(t, "Player Layer v", PLAYER_LAYER_BTN_W,
+                () => onDropdownToggle?.Invoke("playerlayer"), out refs.PlayerLayerMenuBtnTmp);
             refs.JumpsMenuBtnImg = BuildMenuButton(t, "Jumps v", JUMPS_BTN_W,
                 () => onDropdownToggle?.Invoke("layerjumps"), out refs.JumpsMenuBtnTmp);
 

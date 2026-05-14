@@ -38,8 +38,7 @@ namespace Valkur.Gameplay.TileEditor
                 _onMoveToLayerClicked,
                 _onCollisionTagChanged,
                 _onShowLayerJumpsClicked, _onDrawLayerJumpsClicked,
-                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged,
-                _onShowPlayerLayerClicked);
+                _onEraseLayerJumpsClicked, _onLayerJumpsTargetChanged);
 
             // Slider value-changed → refresh the "Target: {idx}: {Layer}" label
             // so the user sees the live destination while dragging. The actual
@@ -68,11 +67,11 @@ namespace Valkur.Gameplay.TileEditor
             // computed by the manager's ApplyColliderOverlayVisibility — toggling
             // ShowColliderOverlay off+on brings it back. Not part of _openDropdowns
             // because it isn't user-toggled, only conditionally auto-shown.
-            // [x] on the PLAYER LAYER panel header → flips ShowPlayerLayer OFF
-            // via the manager so the View toggle stays in sync and the panel
-            // doesn't auto-reappear until the user opts back in.
+            // [x] on the PLAYER LAYER panel header → standard dropdown close.
+            // Routes through ToggleDropdown so the menu-bar "Player Layer"
+            // button highlight stays in sync (it should now show as not-open).
             if (_refs.PlayerLayerPanelDrag != null) _refs.PlayerLayerPanelDrag.OnClose =
-                () => _onShowPlayerLayerClicked?.Invoke();
+                () => ToggleDropdown("playerlayer");
             // Layer Jumps dropdown: closes via menu-bar toggle path so the
             // "Jumps" menu-bar button highlight stays in sync (clicking it again
             // re-opens; OnClose just removes from _openDropdowns).

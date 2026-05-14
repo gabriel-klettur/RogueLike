@@ -85,15 +85,6 @@ namespace Valkur.Gameplay.TileEditor
         public bool ShowZoneGrid;
 
         /// <summary>
-        /// When true, the bottom-right "PLAYER LAYER" diagnostic panel is shown
-        /// while the Tile Editor is active. Default ON — the readout is useful
-        /// for any layer-related authoring (colliders, jumps, DevConsole `layer`,
-        /// future spells). Toggled from the View panel's "Show Player Layer" row
-        /// and via the panel's own [x] close button.
-        /// </summary>
-        public bool ShowPlayerLayer = true;
-
-        /// <summary>
         /// Active collider authoring mode. When <see cref="ColliderMode.Draw"/> or
         /// <see cref="ColliderMode.Erase"/>, mouse input paints/erases the Collision layer
         /// instead of the currently selected drawing layer.

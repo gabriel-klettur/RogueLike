@@ -104,6 +104,7 @@ namespace Valkur.Gameplay.TileEditor
         public const float SIZE_BTN_W = 64f;
         public const float VIEW_BTN_W = 64f;
         public const float JUMPS_BTN_W = 72f; // "Jumps v" — slightly wider than View to fit the s
+        public const float PLAYER_LAYER_BTN_W = 100f; // "Player Layer v" — wider for the longer label
 
         public const float UX_BTN_W     = 50f;
         public const float PERF_BTN_W   = 60f;
@@ -171,7 +172,7 @@ namespace Valkur.Gameplay.TileEditor
         // VLG padding (12) + spacing × 1 (4) ≈ 76.
         public const float SIZE_DROP_H = 78f + PANEL_HDR_H;         // 102
         public const float VIEW_DROP_W = 230f;
-        public const float VIEW_DROP_H = 210f + PANEL_HDR_H;        // 234 (was 154 → 194 → 234 across M1.8 + M1.8b row additions)
+        public const float VIEW_DROP_H = 170f + PANEL_HDR_H;        // 194 (rolled back from 234 in M1.8c — Show Player Layer moved to menu-bar)
         public const float UX_DROP_W   = 320f;
         public const float UX_DROP_H   = 520f + PANEL_HDR_H;        // 544
 

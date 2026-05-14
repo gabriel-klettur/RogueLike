@@ -4,16 +4,14 @@ using Valkur.Gameplay.World.Layering;
 namespace Valkur.Gameplay.TileEditor
 {
     /// <summary>
-    /// PLAYER LAYER diagnostic panel — the bottom-right readout that surfaces the
-    /// player's logical visual layer + which visual layers currently have tiles
-    /// at the player's foot position.
+    /// PLAYER LAYER diagnostic panel — the bottom-right readout that surfaces
+    /// the player's logical visual layer + which visual layers currently have
+    /// tiles at the player's foot position.
     ///
-    /// Independent of any specific authoring tool: visible whenever the Tile
-    /// Editor is active AND <see cref="TileEditorState.ShowPlayerLayer"/> is ON.
-    /// Decoupled (in M1.8b) from the Colliders system — previously the panel
-    /// was misnamed "COLLIDERS LAYER" and gated on Show Colliders, which made no
-    /// sense once Layer Jumps and DevConsole layer commands started using the
-    /// same info.
+    /// Independent of any specific authoring tool. As of M1.8c the panel is a
+    /// standard menu-bar dropdown (toggled via the "Player Layer" button next
+    /// to "Jumps") — same pattern as every other Tile Editor dropdown. Auto-
+    /// opens together with the rest of the main panels when F8 activates.
     /// </summary>
     public partial class TileEditorManager
     {
@@ -21,34 +19,6 @@ namespace Valkur.Gameplay.TileEditor
         // while the panel is being ticked.
         private VisualLayerOccupant _playerLayerOccupant;
         private readonly bool[] _underfootScratch = new bool[9];
-
-        /// <summary>
-        /// User clicked the "Show Player Layer" toggle in the View panel.
-        /// Flips the state flag and re-evaluates the panel visibility + refreshes
-        /// the View panel's toggle visuals so the row reflects the new state.
-        /// </summary>
-        internal void OnShowPlayerLayerClicked()
-        {
-            _state.ShowPlayerLayer = !_state.ShowPlayerLayer;
-            ApplyPlayerLayerPanelVisibility();
-            _ui?.RefreshViewToggles();
-            _ui?.SetStatus(_state.ShowPlayerLayer ? "Player layer panel visible" : "Player layer panel hidden");
-        }
-
-        /// <summary>
-        /// Show / hide the "PLAYER LAYER" panel based on whether the user is in a
-        /// state where the readout is useful: editor active AND toggle ON. Hidden
-        /// in every other state (game mode, editor with toggle OFF).
-        /// </summary>
-        internal void ApplyPlayerLayerPanelVisibility()
-        {
-            if (_ui == null) return;
-            var panel = _ui.GetPlayerLayerPanel();
-            if (panel == null) return;
-            bool show = _state != null && _state.Active && _state.ShowPlayerLayer;
-            if (panel.activeSelf != show)
-                panel.SetActive(show);
-        }
 
         /// <summary>
         /// Refresh the panel's two readout lines with the player's logical

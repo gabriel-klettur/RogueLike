@@ -44,8 +44,6 @@ namespace Valkur.Gameplay.TileEditor
         private System.Action _onDrawLayerJumpsClicked;
         private System.Action _onEraseLayerJumpsClicked;
         private System.Action<string> _onLayerJumpsTargetChanged;
-        // M1.8b Show Player Layer
-        private System.Action _onShowPlayerLayerClicked;
 
         // ── UI refs from builder ──
         private TileEditorUIBuilder.UIRefs _refs;
@@ -89,9 +87,7 @@ namespace Valkur.Gameplay.TileEditor
             System.Action onShowLayerJumpsClicked = null,
             System.Action onDrawLayerJumpsClicked = null,
             System.Action onEraseLayerJumpsClicked = null,
-            System.Action<string> onLayerJumpsTargetChanged = null,
-            // M1.8b Show Player Layer
-            System.Action onShowPlayerLayerClicked = null)
+            System.Action<string> onLayerJumpsTargetChanged = null)
         {
             _state = state;
             _catalog = catalog;
@@ -119,7 +115,6 @@ namespace Valkur.Gameplay.TileEditor
             _onDrawLayerJumpsClicked  = onDrawLayerJumpsClicked;
             _onEraseLayerJumpsClicked = onEraseLayerJumpsClicked;
             _onLayerJumpsTargetChanged = onLayerJumpsTargetChanged;
-            _onShowPlayerLayerClicked = onShowPlayerLayerClicked;
             for (int i = 0; i < 9; i++) _layerVisibility[i] = true;
 
             BuildUI();
@@ -138,7 +133,7 @@ namespace Valkur.Gameplay.TileEditor
 
         private void OpenAllDropdowns()
         {
-            foreach (var name in new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view" })
+            foreach (var name in new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view", "playerlayer" })
             {
                 SetDropdownOpen(name, true);
                 _openDropdowns.Add(name);
@@ -172,7 +167,7 @@ namespace Valkur.Gameplay.TileEditor
 
         public void ToggleAllPanels()
         {
-            var mainPanels = new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view" };
+            var mainPanels = new[] { "tools", "tiles", "layers", "inspector", "colliders", "size", "view", "playerlayer" };
             bool allOpen = System.Array.TrueForAll(mainPanels, n => _openDropdowns.Contains(n));
             if (allOpen)
             {
@@ -227,6 +222,9 @@ namespace Valkur.Gameplay.TileEditor
                 case "layerjumps":
                     if (_refs.LayerJumpsDropdown != null) _refs.LayerJumpsDropdown.SetActive(open);
                     break;
+                case "playerlayer":
+                    if (_refs.PlayerLayerDropdown != null) _refs.PlayerLayerDropdown.SetActive(open);
+                    break;
             }
         }
 
@@ -241,10 +239,11 @@ namespace Valkur.Gameplay.TileEditor
             ApplyMenuBtnStyle(_refs.ViewMenuBtnImg,      _refs.ViewMenuBtnTmp,      _openDropdowns.Contains("view"));
             ApplyMenuBtnStyle(_refs.UxMenuBtnImg,        _refs.UxMenuBtnTmp,        _openDropdowns.Contains("ux"));
             ApplyMenuBtnStyle(_refs.JumpsMenuBtnImg,     _refs.JumpsMenuBtnTmp,     _openDropdowns.Contains("layerjumps"));
+            ApplyMenuBtnStyle(_refs.PlayerLayerMenuBtnImg, _refs.PlayerLayerMenuBtnTmp, _openDropdowns.Contains("playerlayer"));
             bool allMainOpen = _openDropdowns.Contains("tools")     && _openDropdowns.Contains("tiles") &&
                                _openDropdowns.Contains("layers")    && _openDropdowns.Contains("inspector") &&
                                _openDropdowns.Contains("colliders") && _openDropdowns.Contains("size") &&
-                               _openDropdowns.Contains("view");
+                               _openDropdowns.Contains("view")      && _openDropdowns.Contains("playerlayer");
             ApplyMenuBtnStyle(_refs.PanelsToggleBtnImg, _refs.PanelsToggleBtnTmp, allMainOpen);
         }
 
