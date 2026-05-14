@@ -121,6 +121,10 @@ namespace Valkur.Gameplay.TileEditor
             // mid-Play-Mode, the system would never spawn. Calling EnsureExists()
             // here is idempotent and guarantees jumps work from the first F8.
             Valkur.Gameplay.World.Layering.LayerJumpTriggerSystem.EnsureExists();
+
+            // Same belt-and-suspenders for the M2 collision baker: spawns +
+            // wires the sub-tilemaps if the grid is already built. Idempotent.
+            Valkur.Gameplay.World.Layering.WorldCollisionBaker.EnsureExists();
         }
 
         private void Start()

@@ -12,6 +12,12 @@ TagManager:
   - Spawner
   - Portal
   - Vendor
+  - collisionTilemap
+  - groundTilemap
+  - minimapTilemap
+  - decoration1Tilemap
+  - decoration2Tilemap
+  - frontTilemap
   layers:
   - Default
   - TransparentFX
@@ -31,16 +37,16 @@ TagManager:
   - Spawner
   - ParticlePreview
   - SpellPreview
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - WorldL0
+  - WorldL1
+  - WorldL2
+  - WorldL3
+  - WorldL4
+  - WorldL5
+  - WorldL6
+  - WorldL7
+  - WorldL8
+  - WorldAll
   - 
   - 
   - 
