@@ -6,6 +6,7 @@ using Valkur.Gameplay.Buildings;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Combat.Death;
 using Valkur.Gameplay.Spells;
+using Valkur.Gameplay.World.Layering;
 
 namespace Valkur.Gameplay
 {
@@ -30,6 +31,7 @@ namespace Valkur.Gameplay
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Health))]
+    [RequireComponent(typeof(VisualLayerOccupant))]
     public partial class PlayerController : MonoBehaviour
     {
         [Header("Movement")]
