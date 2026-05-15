@@ -56,15 +56,28 @@ namespace Valkur.Gameplay.World.Layering
         }
 
         /// <summary>
-        /// Return the HIGHEST layer index (0..8) that has a non-empty tile at
-        /// <paramref name="worldPos"/>, or -1 if no layer does. Useful for a quick
-        /// "topmost visual surface at this point" lookup without allocating a buffer.
+        /// Return the HIGHEST VISIBLE layer index (0..8) that has a non-empty tile
+        /// at <paramref name="worldPos"/>, or -1 if no visible layer does.
+        ///
+        /// <para>
+        /// The Collision tilemap (index 2) is intentionally SKIPPED — its tiles
+        /// are invisible <c>wall</c> markers used to bake the physics composite,
+        /// not authored visual surfaces. Treating them as a "topmost step-able
+        /// layer" would make the M1.9 auto-drop system snap the player onto
+        /// walls instead of the ground below them. Callers that need the raw
+        /// per-layer presence (including Collision) should use <see cref="Sample"/>
+        /// instead.
+        /// </para>
+        ///
+        /// Useful for a quick "topmost visual surface at this point" lookup
+        /// without allocating a buffer.
         /// </summary>
         public static int GetTopmostLayer(Vector3 worldPos, WorldGridBuilder grid)
         {
             if (grid == null) return -1;
             for (int i = LayerCount - 1; i >= 0; i--)
             {
+                if (i == (int)TilemapLayerSetup.TilemapLayer.Collision) continue;
                 var tm = grid.GetTilemap((TilemapLayerSetup.TilemapLayer)i);
                 if (tm == null) continue;
                 var cell = tm.WorldToCell(worldPos);

@@ -125,6 +125,11 @@ namespace Valkur.Gameplay.TileEditor
             // Same belt-and-suspenders for the M2 collision baker: spawns +
             // wires the sub-tilemaps if the grid is already built. Idempotent.
             Valkur.Gameplay.World.Layering.WorldCollisionBaker.EnsureExists();
+
+            // M1.9 — auto-drop singleton (player falls to lower layer when
+            // walking off an elevated tile, unless a jump tile says otherwise).
+            // Idempotent; mirrors the same hot-reload guard as the systems above.
+            Valkur.Gameplay.World.Layering.LayerAutoDropSystem.EnsureExists();
         }
 
         private void Start()

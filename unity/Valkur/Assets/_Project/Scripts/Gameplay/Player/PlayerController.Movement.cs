@@ -90,7 +90,75 @@ namespace Valkur.Gameplay
             if (_dashAbility != null && _dashAbility.IsDashing)
                 return;
 
-            _rb.velocity = _moveInput * moveSpeed;
+            // M1.9 — hard-stop on void cells. When the predicted next cell has
+            // zero tiles in any visible layer it's a "you can't walk here"
+            // wall, even if the cell has no Collision tile. Axis-split clamp
+            // so the player still slides along the edge instead of freezing
+            // on diagonal input.
+            Vector2 clampedInput = ClampInputAgainstVoid(_moveInput);
+
+            _rb.velocity = clampedInput * moveSpeed;
+        }
+
+        /// <summary>
+        /// Predict the player's next position under <paramref name="rawInput"/>
+        /// and zero out any axis whose component lands the player inside a
+        /// void cell (no tiles in <see cref="World.Layering.VisualLayerProbe"/>
+        /// at that point). Each axis is tested independently so diagonal
+        /// motion can still slide along the edge of a void instead of
+        /// freezing entirely — matches the feel of walking into a regular
+        /// Unity collider.
+        ///
+        /// Returns <paramref name="rawInput"/> unchanged when the
+        /// <see cref="WorldGridBuilder"/> isn't available (boot-time race,
+        /// EditMode tests without a grid). Cero impacto en mapas legacy:
+        /// every cell inside a zone has Ground painted, so the probe sample
+        /// always returns ≥ 1 layer and the clamp is a no-op.
+        /// </summary>
+        internal Vector2 ClampInputAgainstVoid(Vector2 rawInput)
+        {
+            if (rawInput.sqrMagnitude < 0.0001f) return rawInput;
+            if (_voidProbeGrid == null)
+                _voidProbeGrid = FindObjectOfType<World.WorldGridBuilder>();
+            if (_voidProbeGrid == null) return rawInput;
+
+            Vector2 origin = transform.position;
+            float step = moveSpeed * Time.fixedDeltaTime;
+
+            // Predicted full-vector position. If it's in painted territory,
+            // no clamp needed (fast path — the common case for legacy maps).
+            Vector2 next = origin + rawInput * step;
+            if (!IsVoidCell(next)) return rawInput;
+
+            // The combined input lands in a void — test each axis alone.
+            Vector2 result = rawInput;
+            if (result.x != 0f)
+            {
+                Vector2 xOnly = origin + new Vector2(result.x, 0f) * step;
+                if (IsVoidCell(xOnly)) result.x = 0f;
+            }
+            if (result.y != 0f)
+            {
+                Vector2 yOnly = origin + new Vector2(0f, result.y) * step;
+                if (IsVoidCell(yOnly)) result.y = 0f;
+            }
+            return result;
+        }
+
+        // Reused 9-element sample buffer for the void probe. VisualLayerProbe.Sample
+        // takes a caller-allocated bool[] so we never GC on the hot path.
+        private readonly bool[] _voidSampleBuf = new bool[9];
+
+        // Cached WorldGridBuilder ref. Resolved lazily on first void probe so
+        // the field never carries a stale reference across scene reloads.
+        private World.WorldGridBuilder _voidProbeGrid;
+
+        private bool IsVoidCell(Vector2 worldPos)
+        {
+            // VisualLayerProbe.Sample returns the COUNT of populated layers; the
+            // bool[] is filled side-effect-y. Zero means no tile in any of the
+            // 9 visual layers including Collision — a true "void" wall cell.
+            return World.Layering.VisualLayerProbe.Sample(worldPos, _voidProbeGrid, _voidSampleBuf) == 0;
         }
 
         private void ReadInput()

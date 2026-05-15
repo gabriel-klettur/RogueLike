@@ -109,5 +109,51 @@ namespace Valkur.Tests.EditMode.Game.World.Layering
         {
             Assert.AreEqual(-1, VisualLayerProbe.GetTopmostLayer(Vector3.zero, null));
         }
+
+        /// <summary>
+        /// Collision tiles are invisible <c>wall</c> markers used by the M2.1
+        /// physics baker, not authored visual surfaces. GetTopmostLayer must
+        /// SKIP them so M1.9's auto-drop snaps the player onto real floors
+        /// instead of "standing on a wall tile" at layer 2. Sample() still
+        /// reports Collision in its buffer — only the topmost helper filters.
+        /// </summary>
+        [Test]
+        public void GetTopmostLayer_OnlyCollisionTile_ReturnsMinusOne()
+        {
+            // Paint EXCLUSIVELY on the Collision layer (the invisible wall).
+            _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision)
+                 .SetTile(new Vector3Int(2, 2, 0), _tile);
+
+            int topmost = VisualLayerProbe.GetTopmostLayer(new Vector3(2.5f, 2.5f, 0f), _grid);
+            Assert.AreEqual(-1, topmost,
+                "Collision-only cells must not count as a step-able layer — " +
+                "otherwise the auto-drop system would treat invisible walls " +
+                "as a 'topmost surface' and pull the player onto them.");
+
+            // Confirm the buffer-based Sample DOES still report Collision —
+            // the two probes serve different gameplay questions.
+            int populated = VisualLayerProbe.Sample(new Vector3(2.5f, 2.5f, 0f), _grid, _buf);
+            Assert.AreEqual(1, populated);
+            Assert.IsTrue(_buf[(int)TilemapLayerSetup.TilemapLayer.Collision],
+                "Sample() must still include Collision in its raw layer-presence buffer.");
+        }
+
+        /// <summary>
+        /// Collision must lose to any visible layer above it. With a Ground (0)
+        /// tile AND a Collision (2) tile at the same cell, the topmost visible
+        /// layer is Ground — Collision at index 2 is skipped, leaving 0 as the
+        /// highest VISIBLE.
+        /// </summary>
+        [Test]
+        public void GetTopmostLayer_GroundPlusCollision_ReturnsGround()
+        {
+            _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Ground)
+                 .SetTile(new Vector3Int(3, 3, 0), _tile);
+            _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision)
+                 .SetTile(new Vector3Int(3, 3, 0), _tile);
+
+            int topmost = VisualLayerProbe.GetTopmostLayer(new Vector3(3.5f, 3.5f, 0f), _grid);
+            Assert.AreEqual((int)TilemapLayerSetup.TilemapLayer.Ground, topmost);
+        }
     }
 }
