@@ -37,6 +37,17 @@ namespace Valkur.Gameplay.TileEditor
         private void OnDrawCollidersClicked()
         {
             bool wasDraw = _state.CurrentColliderMode == TileEditorState.ColliderMode.Draw;
+
+            // M1.10 guard: refuse Draw activation when no layer is currently selected
+            // in the Apply-To-Layer picker. Painting with an empty mask would stamp
+            // cells the new physics dispatch (DispatchCellToSubmaps) cannot route
+            // anywhere — the user must pick at least one layer (or "*") first.
+            if (!wasDraw && string.IsNullOrEmpty(_state.ActiveCollisionTag))
+            {
+                _ui?.SetStatus("Select at least one layer (or *) before enabling Draw.");
+                return;
+            }
+
             // End any in-flight stroke so Draw-mode entry/exit doesn't leak edits.
             _undo?.EndStroke();
             _state.IsDragging = false;
@@ -174,16 +185,69 @@ namespace Valkur.Gameplay.TileEditor
 
         /// <summary>
         /// User clicked one of the Apply-To-Layer buttons in the Colliders panel.
-        /// Updates <see cref="TileEditorState.ActiveCollisionTag"/>, asks the UI to
-        /// repaint the picker row's highlight + value label, and emits a status hint.
-        /// Invalid tag values fall back to <see cref="CollisionTagMap.Wildcard"/>.
+        /// Semantics (M1.10 multi-tag picker):
+        /// <list type="bullet">
+        ///   <item>Clicked <see cref="CollisionTagMap.Wildcard"/> ("*"):
+        ///         all/clear shortcut — if the active mask is already full
+        ///         (== <see cref="CollisionTagMap.FullLayerMask"/>), clears it;
+        ///         otherwise sets it to FULL. The on-disk form alternates
+        ///         between "*" and the empty string respectively.</item>
+        ///   <item>Clicked a digit "0".."8": toggles that individual layer bit
+        ///         in the active mask. The canonical CSV form is recomputed
+        ///         after every toggle so the storage stays sorted + deduped.</item>
+        ///   <item>Anything else (legacy CSV from a future caller): canonicalised
+        ///         once and stored as-is; the picker behaves single-set for that path.</item>
+        /// </list>
         /// </summary>
         internal void OnCollisionTagChanged(string tag)
         {
-            if (!CollisionTagMap.IsValidTag(tag)) tag = CollisionTagMap.Wildcard;
-            _state.ActiveCollisionTag = tag;
+            int currentMask = CurrentCollisionMask();
+
+            if (tag == CollisionTagMap.Wildcard)
+            {
+                // All/clear shortcut.
+                bool wasFull = currentMask == CollisionTagMap.FullLayerMask;
+                int nextMask = wasFull ? 0 : CollisionTagMap.FullLayerMask;
+                _state.ActiveCollisionTag = nextMask == CollisionTagMap.FullLayerMask
+                    ? CollisionTagMap.Wildcard
+                    : string.Empty;
+            }
+            else if (tag != null && tag.Length == 1 && tag[0] >= '0' && tag[0] <= '8')
+            {
+                // Independent toggle for one of the nine digit buttons.
+                int bit = 1 << (tag[0] - '0');
+                int nextMask = currentMask ^ bit;
+                _state.ActiveCollisionTag = nextMask == 0
+                    ? string.Empty
+                    : CollisionTagMap.TagFromLayerMask(nextMask);
+            }
+            else if (CollisionTagMap.IsValidTag(tag))
+            {
+                // Direct CSV set (canonicalised by the map's Set/Canonicalize path).
+                _state.ActiveCollisionTag = CollisionTagMap.TagFromLayerMask(
+                    CollisionTagMap.LayerMaskFromTag(tag));
+            }
+            else
+            {
+                // Garbage → safe fallback to the legacy wildcard semantic.
+                _state.ActiveCollisionTag = CollisionTagMap.Wildcard;
+            }
+
             _ui?.RefreshCollisionTagPicker();
-            _ui?.SetStatus($"Collider tag → {tag}");
+            _ui?.SetStatus(string.IsNullOrEmpty(_state.ActiveCollisionTag)
+                ? "Collider tag → (none — pick at least one layer to draw)"
+                : $"Collider tag → {_state.ActiveCollisionTag}");
+        }
+
+        /// <summary>
+        /// Layer mask currently selected in the Apply-To-Layer picker. Empty active
+        /// tag returns 0 (no layers selected — paint is disabled until the user
+        /// toggles at least one layer or clicks "*").
+        /// </summary>
+        private int CurrentCollisionMask()
+        {
+            if (string.IsNullOrEmpty(_state.ActiveCollisionTag)) return 0;
+            return CollisionTagMap.LayerMaskFromTag(_state.ActiveCollisionTag);
         }
 
         /// <summary>

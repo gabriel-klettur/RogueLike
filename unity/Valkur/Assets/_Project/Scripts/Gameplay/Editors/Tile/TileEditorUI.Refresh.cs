@@ -176,14 +176,37 @@ namespace Valkur.Gameplay.TileEditor
         public void RefreshCollisionTagPicker()
         {
             if (_state == null) return;
+
+            // The active label shows the canonical CSV — "*" for full mask, "" for
+            // empty mask (no layers selected), "0,2,5" for a multi-layer subset.
+            string label = string.IsNullOrEmpty(_state.ActiveCollisionTag)
+                ? "(none)"
+                : _state.ActiveCollisionTag;
             if (_refs.CollisionTagActiveLabel != null)
-                _refs.CollisionTagActiveLabel.text = $"Active: {_state.ActiveCollisionTag}";
+                _refs.CollisionTagActiveLabel.text = $"Active: {label}";
 
             if (_refs.CollisionTagButtonImgs == null || _refs.CollisionTagButtonLabels == null) return;
+
+            // Multi-tag picker (M1.10): each digit button highlights independently
+            // based on its bit in the active layer mask. The "*" button highlights
+            // when the mask is FULL (canonical wildcard); it acts as an all/clear
+            // shortcut, not a mutually-exclusive option.
+            int mask = TileEditor.CollisionTagMap.LayerMaskFromTag(_state.ActiveCollisionTag);
+            // Special case: empty string means "no layers", not the legacy wildcard
+            // fallback that LayerMaskFromTag normally returns for empty input.
+            if (string.IsNullOrEmpty(_state.ActiveCollisionTag)) mask = 0;
+
             for (int i = 0; i < _refs.CollisionTagButtonImgs.Length; i++)
             {
                 string tag = TileEditor.CollisionTagMap.ValidTags[i];
-                bool active = tag == _state.ActiveCollisionTag;
+                bool active;
+                if (tag == TileEditor.CollisionTagMap.Wildcard)
+                    active = mask == TileEditor.CollisionTagMap.FullLayerMask;
+                else if (tag.Length == 1 && tag[0] >= '0' && tag[0] <= '8')
+                    active = (mask & (1 << (tag[0] - '0'))) != 0;
+                else
+                    active = false;
+
                 if (_refs.CollisionTagButtonImgs[i] != null)
                     _refs.CollisionTagButtonImgs[i].color = active
                         ? new Color(COLLIDER_BORDER.r, COLLIDER_BORDER.g, COLLIDER_BORDER.b, 0.30f)

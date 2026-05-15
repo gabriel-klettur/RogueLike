@@ -219,11 +219,53 @@ namespace Valkur.Gameplay.World.Layering
                 string tag = _tagMap != null
                     ? _tagMap.Get(new Vector2Int(cx, cy))
                     : CollisionTagMap.Wildcard;
-                int compositeIdx = ResolveCompositeIndex(tag);
 
-                // Reuse the exact source tile (already the project's invisible
-                // "wall") rather than tracking a separate reference here.
-                _subTilemaps[compositeIdx].SetTile(new Vector3Int(cx, cy, 0), tile);
+                DispatchCellToSubmaps(tag, new Vector3Int(cx, cy, 0), tile);
+            }
+        }
+
+        /// <summary>
+        /// Stamp a single Collision cell into every sub-tilemap matching its tag.
+        /// <list type="bullet">
+        ///   <item><b>Wildcard "*"</b> (or missing/garbage tag) → stamped into the
+        ///         single <see cref="WorldAllCompositeIndex"/> sub-tilemap, NOT into
+        ///         the 9 per-layer slots. WorldAll's physics layer is already
+        ///         opted-in by every entity's <c>VisualLayerColliderSync</c>, so a
+        ///         duplicate stamp in each per-layer slot would only inflate
+        ///         collider counts without changing behaviour.</item>
+        ///   <item><b>Single tag "N"</b> → stamped into sub-tilemap N.</item>
+        ///   <item><b>Multi-tag CSV "0,2,5"</b> (M1.10) → stamped into each
+        ///         per-layer sub-tilemap whose bit is set in the mask. Cells with
+        ///         all 9 layers selected canonicalize to <see cref="CollisionTagMap.Wildcard"/>
+        ///         before reaching this method, so the "explode into all 9 +
+        ///         WorldAll" pathological case never fires.</item>
+        /// </list>
+        /// Reuses the exact source tile (project's invisible "wall") rather than
+        /// allocating a new TileBase per stamp.
+        /// </summary>
+        private void DispatchCellToSubmaps(string tag, Vector3Int cellPos, TileBase tile)
+        {
+            if (string.IsNullOrEmpty(tag) || tag == CollisionTagMap.Wildcard)
+            {
+                _subTilemaps[WorldAllCompositeIndex].SetTile(cellPos, tile);
+                return;
+            }
+
+            int mask = CollisionTagMap.LayerMaskFromTag(tag);
+            if (mask == CollisionTagMap.FullLayerMask)
+            {
+                _subTilemaps[WorldAllCompositeIndex].SetTile(cellPos, tile);
+                return;
+            }
+
+            // Multi-bit mask: stamp into each per-layer sub-tilemap whose bit is set.
+            // Per-cell cost is the count of set bits (typically 2–3 for authored
+            // multi-tags) — never the full 9-way explosion because the FullLayerMask
+            // branch short-circuits that case to WorldAll.
+            for (int i = 0; i < WorldCollisionLayers.LayerCount; i++)
+            {
+                if ((mask & (1 << i)) != 0)
+                    _subTilemaps[i].SetTile(cellPos, tile);
             }
         }
 
@@ -247,11 +289,5 @@ namespace Valkur.Gameplay.World.Layering
             RebuildAll();
         }
 
-        private static int ResolveCompositeIndex(string tag)
-        {
-            if (string.IsNullOrEmpty(tag) || tag == CollisionTagMap.Wildcard) return WorldAllCompositeIndex;
-            if (tag.Length == 1 && tag[0] >= '0' && tag[0] <= '8') return tag[0] - '0';
-            return WorldAllCompositeIndex; // fallback for garbage
-        }
     }
 }

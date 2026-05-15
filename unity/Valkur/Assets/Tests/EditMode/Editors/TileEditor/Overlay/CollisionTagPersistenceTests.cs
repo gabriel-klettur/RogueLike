@@ -169,5 +169,84 @@ namespace Valkur.Tests.EditMode.Editors.TileEditor.Overlay
             int written = OverlayLoader.ApplyCollisionTagsFromPath(nonexistent, _tagMap, 0, 0);
             Assert.AreEqual(0, written);
         }
+
+        // ════════════════════════════════════════════════════════════════════
+        // M1.10 — Multi-tag CSV round-trip + canonicalisation
+        // ════════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Multi-tag CSV must survive a save → reload through the same overlay
+        /// JSON pipeline. The schema is unchanged (still <c>string[h,w]</c>) —
+        /// only the per-cell payload widens from "*"/"0".."8" to canonical CSV.
+        /// </summary>
+        [Test]
+        public void RoundTrip_MultiTagCsv_PreservesEveryAuthoredCombo()
+        {
+            var collision = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision);
+            collision.SetTile(new Vector3Int(1, 1, 0), _wallTile);
+            collision.SetTile(new Vector3Int(2, 2, 0), _wallTile);
+            collision.SetTile(new Vector3Int(3, 3, 0), _wallTile);
+            collision.SetTile(new Vector3Int(4, 4, 0), _wallTile);
+
+            _tagMap.Set(new Vector2Int(1, 1), "0");           // legacy single
+            _tagMap.Set(new Vector2Int(2, 2), "0,2,5");       // canonical multi
+            _tagMap.Set(new Vector2Int(3, 3), "*");           // wildcard
+            _tagMap.Set(new Vector2Int(4, 4), "5,2,0,2");     // raw — canonicalised on Set
+
+            _persistence.MarkCellDirty(new Vector3Int(1, 1, 0));
+            Assert.IsTrue(_persistence.SaveZone(ZONE));
+
+            string path = TileOverlayPersistence.OverridePathForZone(ZONE);
+            var roundTrip = new CollisionTagMap();
+            int written = OverlayLoader.ApplyCollisionTagsFromPath(path, roundTrip, 0, 0);
+            Assert.AreEqual(4, written, "All four authored cells must round-trip.");
+
+            Assert.AreEqual("0",       roundTrip.Get(new Vector2Int(1, 1)));
+            Assert.AreEqual("0,2,5",   roundTrip.Get(new Vector2Int(2, 2)));
+            Assert.AreEqual("*",       roundTrip.Get(new Vector2Int(3, 3)));
+            Assert.AreEqual("0,2,5",   roundTrip.Get(new Vector2Int(4, 4)),
+                "Raw '5,2,0,2' must canonicalise before being persisted; reload sees '0,2,5'.");
+        }
+
+        /// <summary>
+        /// The on-disk JSON must contain the CSV literal so diffs in version
+        /// control remain human-readable and tools can grep tag usage without
+        /// instantiating the map.
+        /// </summary>
+        [Test]
+        public void SavedJson_LiterallyContains_CanonicalCsv()
+        {
+            var collision = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision);
+            collision.SetTile(new Vector3Int(2, 2, 0), _wallTile);
+            _tagMap.Set(new Vector2Int(2, 2), "5,2,0,2");
+            _persistence.MarkCellDirty(new Vector3Int(2, 2, 0));
+            _persistence.SaveZone(ZONE);
+
+            string json = File.ReadAllText(TileOverlayPersistence.OverridePathForZone(ZONE));
+            StringAssert.Contains("\"0,2,5\"", json,
+                "Multi-tag cells must serialise to their canonical CSV form, " +
+                "not the raw author-supplied input.");
+        }
+
+        /// <summary>
+        /// A single-tag map (M1 legacy) must keep loading unchanged after the
+        /// multi-tag schema extension. The parser path is identical — Set()
+        /// just routes single digits through Canonicalize which leaves them alone.
+        /// </summary>
+        [Test]
+        public void LegacySingleTagOverlay_LoadsWithoutChange()
+        {
+            var collision = _grid.GetTilemap(TilemapLayerSetup.TilemapLayer.Collision);
+            collision.SetTile(new Vector3Int(0, 0, 0), _wallTile);
+            _tagMap.Set(new Vector2Int(0, 0), "4");
+            _persistence.MarkCellDirty(new Vector3Int(0, 0, 0));
+            _persistence.SaveZone(ZONE);
+
+            var roundTrip = new CollisionTagMap();
+            OverlayLoader.ApplyCollisionTagsFromPath(
+                TileOverlayPersistence.OverridePathForZone(ZONE), roundTrip, 0, 0);
+
+            Assert.AreEqual("4", roundTrip.Get(new Vector2Int(0, 0)));
+        }
     }
 }

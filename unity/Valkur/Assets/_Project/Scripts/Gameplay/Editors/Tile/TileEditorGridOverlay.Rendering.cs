@@ -255,9 +255,11 @@ namespace Valkur.Gameplay.TileEditor
 
             // Per-tag bitmap glyph: a white 5x7 monospace digit ("0".."8") or "*"
             // centred on each painted Collision cell, showing which visual layer the
-            // collider applies to. Skipped entirely if no tag map is bound — the
-            // legacy "all colliders apply to all entities" semantics remain visually
-            // identical to before this feature shipped.
+            // collider applies to. M1.10: multi-tag CSV like "0,2,5" renders as a
+            // single horizontal text run that scales down uniformly so the whole
+            // string fits inside the cell. Skipped entirely if no tag map is bound —
+            // the legacy "all colliders apply to all entities" semantics remain
+            // visually identical to before this feature shipped.
             if (_collisionTagMap == null) return;
 
             GL.Begin(GL.QUADS);
@@ -268,9 +270,7 @@ namespace Valkur.Gameplay.TileEditor
                 int cx = sx + (i % w);
                 int cy = sy + (i / w);
                 string tag = _collisionTagMap.Get(new Vector2Int(cx, cy));
-                int glyphIdx = TagToGlyphIndex(tag);
-                if (glyphIdx < 0) continue;
-                DrawGlyphQuads(cx + 0.5f, cy + 0.5f, glyphIdx);
+                DrawTagTextQuads(cx + 0.5f, cy + 0.5f, tag);
             }
             GL.End();
         }
