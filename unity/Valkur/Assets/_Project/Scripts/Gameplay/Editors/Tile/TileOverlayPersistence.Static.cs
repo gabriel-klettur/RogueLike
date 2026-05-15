@@ -232,7 +232,15 @@ namespace Valkur.Gameplay.TileEditor
                     }
                 }
 
-                if (hasAny)
+                // Collision must always be emitted, even when empty: if the user
+                // erased every collider in a zone, omitting the layer would let
+                // the base map's colliders (loaded additively in Phase 1) survive
+                // the override pass — the erasures would silently come back on
+                // the next load. The `clearLayerRegion: true` semantics in
+                // ApplyAllOverrides only fire for layers present in the JSON,
+                // so we keep an empty Collision matrix to force the clear.
+                bool alwaysEmit = layer == TilemapLayerSetup.TilemapLayer.Collision;
+                if (hasAny || alwaysEmit)
                     perLayer.Add(new KeyValuePair<string, string[,]>(layer.ToString(), matrix));
             }
 
