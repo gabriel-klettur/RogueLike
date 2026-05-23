@@ -169,6 +169,12 @@ namespace Valkur.Gameplay
         /// </summary>
         private void GenerateDungeon(World.ZoneDatabaseLoader dbLoader)
         {
+            if (!_generateBspDungeon)
+            {
+                Debug.Log("[GameplaySceneSetup] BSP dungeon generation skipped (generateBspDungeon = false).");
+                return;
+            }
+
             if (_dungeonConfig == null)
             {
                 // Create a runtime config with default values matching Python constants

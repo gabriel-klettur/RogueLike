@@ -92,6 +92,11 @@ namespace Valkur.Gameplay
         [Tooltip("Seed for dungeon generation. -1 for random each run.")]
         [SerializeField] private int _dungeonSeed = -1;
 
+        [Tooltip("When true, GenerateDungeon() runs BspDungeonStrategy to procedurally paint the " +
+                 "'dungeon' zone. Disable for hand-authored maps where the dungeon zone is painted " +
+                 "manually via the F8 Tile Editor overlay.")]
+        [SerializeField] private bool _generateBspDungeon = true;
+
         private WorldGridBuilder _gridBuilder;
 
         // Stage budget: 41 base + decompositions.
@@ -120,6 +125,19 @@ namespace Valkur.Gameplay
 
             EnsureWorldManager();
             Report("Initializing WorldManager"); yield return null;
+
+            // TileEditorManager MUST exist before LoadWorldProgressively runs
+            // its "Applying tile overrides" stage. Reason: that stage funnels
+            // collision-tag JSON into TileEditorManager.Instance.CollisionTags;
+            // if the editor singleton isn't alive yet, the sink is null and the
+            // tags are silently dropped. The downstream effect is that the M2
+            // baker reads every cell as Wildcard ("*") and stamps them into the
+            // WorldAll sub-tilemap, blocking the player on every visual layer
+            // regardless of the painted tag — exactly the "Player on L0 still
+            // blocked by tag-7 cells" production bug. Creating the editor here
+            // (idempotent) primes the tag-map sink before overrides apply.
+            EnsureTileEditor();
+            Report("Initializing tile editor"); yield return null;
 
             // Progressive world load — sub-stages "Loading zone database",
             // "Painting zone overlays", "Linking world colliders", "Applying

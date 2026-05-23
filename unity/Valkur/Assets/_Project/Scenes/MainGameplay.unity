@@ -1091,6 +1091,7 @@ MonoBehaviour:
   _spellCatalog: {fileID: 11400000, guid: b5f4bf60bea172e4f89f60d72bc82a03, type: 2}
   _dungeonConfig: {fileID: 0}
   _dungeonSeed: -1
+  _generateBspDungeon: 0
 --- !u!4 &568156325
 Transform:
   m_ObjectHideFlags: 0
