@@ -65,13 +65,29 @@ namespace Valkur.Editor
                 importer.spriteImportMode = SpriteImportMode.Single;
                 importer.spritePixelsPerUnit = ppu;
                 importer.filterMode = FilterMode.Point;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.mipmapEnabled = false;
+                // Per-folder compression policy (mirrors ValkurAssetPostprocessor):
+                //   * Buildings → CompressedHQ (~8× memory savings, no visible
+                //     quality loss at game zoom).
+                //   * Everything else → Uncompressed (pixel-perfect tile/character art).
+                bool useCompressedHQ = path.Contains("/Buildings/");
+                importer.textureCompression = useCompressedHQ
+                    ? TextureImporterCompression.CompressedHQ
+                    : TextureImporterCompression.Uncompressed;
+                // Mirrors ValkurAssetPostprocessor.OnPreprocessTexture: Clamp
+                // wrap + FullRect mesh + 1 px extrude are the canonical
+                // tile-safe settings that prevent the Camera-backgroundColor
+                // seam between adjacent tiles. Keep this block in lock-step
+                // with the postprocessor — if it ever drifts, the manual
+                // reimporter will reintroduce the Tight-mesh seam bug.
+                importer.wrapMode = TextureWrapMode.Clamp;
 
                 var settings = new TextureImporterSettings();
                 importer.ReadTextureSettings(settings);
                 settings.spriteAlignment = (int)SpriteAlignment.Custom;
                 settings.spritePivot = pivot;
+                settings.spriteMeshType = SpriteMeshType.FullRect;
+                settings.spriteExtrude = 1;
                 importer.SetTextureSettings(settings);
 
                 importer.SaveAndReimport();

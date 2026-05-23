@@ -37,8 +37,30 @@ namespace Valkur.Editor
             // Common settings for all game art
             importer.textureType = TextureImporterType.Sprite;
             importer.filterMode = FilterMode.Point;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.mipmapEnabled = false;
+            // Per-folder compression policy. The original "everything
+            // Uncompressed" caused ~600 MB of VRAM/disk on Building sprites
+            // alone (1024×1536 RGBA × 100 buildings) and explained the
+            // 10-15s boot freeze + sustained low FPS. Smart compression:
+            //   * Tiles + small pixel art (32px-ish) → Uncompressed
+            //     (compression artefacts on tiny pixel art are visible).
+            //   * Buildings (1024+px sprites, scaled at runtime) →
+            //     CompressedHQ (BC7/DXT5 high quality, ~8× VRAM/disk
+            //     savings, no visible quality loss at game zoom).
+            // The per-platform override block at the bottom of this method
+            // honours the same per-folder rule so Standalone/WebGL/Android/
+            // iPhone builds don't silently fall back to the wrong format.
+            bool useCompressedHQ = ShouldCompressForCategory(assetPath);
+            importer.textureCompression = useCompressedHQ
+                ? TextureImporterCompression.CompressedHQ
+                : TextureImporterCompression.Uncompressed;
+            // Clamp wrap mode prevents the GPU from sampling the opposite
+            // edge of the texture when a tile mesh's UV reads land a hair
+            // outside the [0,1] range due to camera sub-pixel offsets.
+            // Repeat (Unity's default for 2D textures) makes the wrong side
+            // of the sprite leak through that 1-pixel UV overshoot and
+            // shows up as a 1-px coloured seam between adjacent tiles.
+            importer.wrapMode = TextureWrapMode.Clamp;
 
             // Category-specific PPU and pivot
             if (assetPath.Contains("/Buildings/"))
@@ -125,52 +147,107 @@ namespace Valkur.Editor
 
             // Per-platform overrides: Standalone / WebGL / iOS / Android default
             // to compressed textures regardless of the Default platform setting.
-            // Pixel art with compression artefacts is the single highest-impact
-            // visual regression in 2D; 12k+ tile sprites on a Standalone build
-            // would otherwise ship compressed even though the postprocessor
-            // wrote Uncompressed to the Default platform. Forcing the platform
-            // settings keeps the policy durable across all build targets.
+            // For pixel-art folders (Tiles, Characters, NPC, Items) we force
+            // Uncompressed on every platform because compression artefacts on
+            // tiny sprites are the highest-impact visual regression in 2D.
+            // For large-format folders (Buildings) we let the per-platform
+            // setting use CompressedHQ — saves ~80% disk + VRAM with no
+            // visible quality loss at the zoom range Buildings are viewed at.
             //
             // Characters also need maxTextureSize lifted to 8192 — their wide
             // spritesheets (5248×128) get crushed to 2048×50 by the per-platform
             // default, killing per-frame detail before the atlas even runs.
             int platformMaxSize = assetPath.Contains("/Characters/") ? 8192 : 0;
-            ApplyUncompressedPlatformOverride(importer, "Standalone", platformMaxSize);
-            ApplyUncompressedPlatformOverride(importer, "WebGL",      platformMaxSize);
-            ApplyUncompressedPlatformOverride(importer, "Android",    platformMaxSize);
-            ApplyUncompressedPlatformOverride(importer, "iPhone",     platformMaxSize);
+            ApplyPlatformOverride(importer, "Standalone", useCompressedHQ, platformMaxSize);
+            ApplyPlatformOverride(importer, "WebGL",      useCompressedHQ, platformMaxSize);
+            ApplyPlatformOverride(importer, "Android",    useCompressedHQ, platformMaxSize);
+            ApplyPlatformOverride(importer, "iPhone",     useCompressedHQ, platformMaxSize);
         }
 
-        // Forces the per-platform texture import block to "Override = true" with
-        // Uncompressed format, mirroring the Default-platform setting. Idempotent:
-        // re-runs after a manual platform override are silent no-ops.
-        // Pass maxTextureSize > 0 to also override the per-platform max size.
-        private static void ApplyUncompressedPlatformOverride(TextureImporter importer, string platform, int maxTextureSize = 0)
+        /// <summary>
+        /// Returns true when the asset at <paramref name="assetPath"/> should
+        /// be CompressedHQ (DXT5/BC7) instead of Uncompressed. The split keeps
+        /// pixel-art categories raw while compressing large-format sprites
+        /// where 8:1 compression is invisible at typical viewing zoom.
+        /// </summary>
+        private static bool ShouldCompressForCategory(string assetPath)
+        {
+            // Building sprites are 1024+ px and scaled at runtime. Compression
+            // is invisible at game zoom and saves ~600 MB VRAM project-wide
+            // (the main cause of the 10-15s boot freeze + sustained low FPS).
+            if (assetPath.Contains("/Buildings/")) return true;
+            // Everything else (Tiles, Characters, NPC, Items, UI, …) stays
+            // Uncompressed because compression artefacts on small pixel art
+            // are immediately visible at any zoom.
+            return false;
+        }
+
+        // Forces the per-platform texture import block to "Override = true"
+        // with the requested compression policy. Idempotent: re-runs are no-ops
+        // when settings already match. Pass maxTextureSize > 0 to also override
+        // the per-platform max size.
+        private static void ApplyPlatformOverride(
+            TextureImporter importer,
+            string platform,
+            bool useCompressedHQ,
+            int maxTextureSize = 0)
         {
             var ps = importer.GetPlatformTextureSettings(platform);
             if (ps == null) return;
+
+            var desiredCompression = useCompressedHQ
+                ? TextureImporterCompression.CompressedHQ
+                : TextureImporterCompression.Uncompressed;
 
             bool needsMaxSizeChange = maxTextureSize > 0 && ps.maxTextureSize != maxTextureSize;
 
             // Skip work if already in the desired state.
             if (ps.overridden &&
-                ps.textureCompression == TextureImporterCompression.Uncompressed &&
+                ps.textureCompression == desiredCompression &&
                 !needsMaxSizeChange)
                 return;
 
             ps.overridden          = true;
-            ps.textureCompression  = TextureImporterCompression.Uncompressed;
+            ps.textureCompression  = desiredCompression;
             ps.format              = TextureImporterFormat.Automatic;
             if (maxTextureSize > 0) ps.maxTextureSize = maxTextureSize;
             importer.SetPlatformTextureSettings(ps);
         }
 
+        // Pixel-art tile sprites MUST use FullRect (rectangular mesh that
+        // spans the entire sprite rect) with non-zero spriteExtrude (1 px of
+        // duplicated edge texels around the rect in the atlas). Together
+        // these eliminate the Camera-backgroundColor seam that otherwise
+        // bleeds through:
+        //   * Tight mesh hugs the visible alpha pixels → adjacent tile
+        //     meshes don't meet at the cell boundary and a sub-pixel gap
+        //     exposes Camera.backgroundColor (Unity's default dark cyan
+        //     blue), producing the textbook "blue horizontal line" seam
+        //     reported in #seams.
+        //   * spriteExtrude=0 means atlas-packed sprites have zero padding
+        //     of duplicated edge texels; Point filter then reads the
+        //     neighbouring atlas slot whenever the camera lands sub-pixel.
+        // FullRect mesh + extrude=1 is the canonical tile-safe configuration
+        // recommended by Unity for Tilemap rendering.
+        private const int TILE_SPRITE_EXTRUDE = 1;
+
         private static void SetPivot(TextureImporter importer, Vector2 pivot)
+        {
+            ApplySpriteSettings(importer, pivot, SpriteMeshType.FullRect, TILE_SPRITE_EXTRUDE);
+        }
+
+        private static void ApplySpriteSettings(
+            TextureImporter importer,
+            Vector2 pivot,
+            SpriteMeshType meshType,
+            uint extrudePixels)
         {
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             settings.spriteAlignment = (int)SpriteAlignment.Custom;
             settings.spritePivot = pivot;
+            settings.spriteMeshType = meshType;
+            settings.spriteExtrude = extrudePixels;
             importer.SetTextureSettings(settings);
         }
 
