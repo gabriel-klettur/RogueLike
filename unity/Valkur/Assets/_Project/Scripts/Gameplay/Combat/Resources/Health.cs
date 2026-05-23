@@ -39,6 +39,24 @@ namespace Valkur.Gameplay
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 
+        /// <summary>
+        /// Overload that lets callers set the current HP independently of the
+        /// max — used by save/load to restore a damaged pool without going
+        /// through <see cref="TakeDamage"/>. Going through TakeDamage would
+        /// fire <see cref="OnDamaged"/> + <c>GameEvents.FireEntityDamaged</c>,
+        /// which the combat audio + feedback systems treat as a real hit and
+        /// play the damage SFX / hit-flash on game boot — the canonical
+        /// "player loses HP and you hear the hurt sound the instant the run
+        /// starts" bug. This path only fires <see cref="OnHpChanged"/> so the
+        /// HUD updates without faking a damage event.
+        /// </summary>
+        public void Initialize(int max, int current)
+        {
+            maxHp = max;
+            currentHp = Mathf.Clamp(current, 0, max);
+            OnHpChanged?.Invoke(currentHp, maxHp);
+        }
+
         public void TakeDamage(int amount)
         {
             if (IsDead || amount <= 0 || _invincible) return;

@@ -45,6 +45,24 @@ namespace Valkur.Gameplay
         }
 
         /// <summary>
+        /// Overload that lets save/load restore a partial mana pool without
+        /// going through <see cref="TryConsume"/> — TryConsume fires
+        /// <see cref="OnManaConsumed"/>, which any future spell-cost SFX or
+        /// VFX subscriber would treat as a real consumption (the same boot-
+        /// time false-event pattern as <c>Health.Initialize(max, current)</c>).
+        /// Only fires <see cref="OnManaChanged"/> so the HUD bar updates.
+        /// </summary>
+        public void Initialize(int max, int current, float regen = 2f)
+        {
+            maxMana = max;
+            _currentMana = Mathf.Clamp(current, 0, max);
+            regenPerSecond = regen;
+            _lastConsumeTime = 0f;
+            _regenAccumulator = 0f;
+            OnManaChanged?.Invoke(_currentMana, maxMana);
+        }
+
+        /// <summary>
         /// Permanently increase the max mana cap and grant the matching
         /// amount of current mana. Used by skill-tree stat boosts; mirrors
         /// <see cref="Health.IncreaseMaxHp"/>. Reset-and-refill is the job

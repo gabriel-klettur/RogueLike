@@ -106,6 +106,11 @@ namespace Valkur.Gameplay
         private Vector2 _lastKnownPlayerPos;
         private string  _lastKnownPlayerZone = "";
         private Valkur.Gameplay.World.ZoneManager _zoneManagerCache;
+        // Lazily-cached player Health component. Re-resolved when the player
+        // GameObject changes identity (respawn / load), avoiding a per-frame
+        // GetComponent<Health>() call inside Update.
+        private GameObject _cachedPlayerHpOwner;
+        private Health _cachedPlayerHealth;
         private int     _lastKnownPlayerHp   = -1;   // -1 = not yet sampled
         private bool    _hasKnownPlayerPos;
 
@@ -238,8 +243,17 @@ namespace Valkur.Gameplay
                     : "";
                 _hasKnownPlayerPos = true;
 
-                var hp = EntityRegistry.Player?.GetComponent<Health>();
-                if (hp != null) _lastKnownPlayerHp = hp.CurrentHp;
+                // Cached Health lookup. The player can respawn / reload mid-run,
+                // so we re-resolve when the GameObject identity changes; in
+                // steady-state gameplay this is a plain reference read.
+                var player = EntityRegistry.Player;
+                if (player != null && (_cachedPlayerHpOwner != player || _cachedPlayerHealth == null))
+                {
+                    _cachedPlayerHpOwner = player;
+                    _cachedPlayerHealth = player.GetComponent<Health>();
+                }
+                if (_cachedPlayerHealth != null)
+                    _lastKnownPlayerHp = _cachedPlayerHealth.CurrentHp;
             }
 
             if (autosaveEnabled)

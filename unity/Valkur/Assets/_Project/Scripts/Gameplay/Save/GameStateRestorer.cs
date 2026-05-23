@@ -53,13 +53,15 @@ namespace Valkur.Gameplay.Save
             var health = player.GetComponent<Health>();
             if (health == null) return;
 
-            health.Initialize(psd.maxHp);
             // Guard: a save with hp==0 means the player died before saving.
             // Restore to full health so the player is never loaded in a dead state.
             int safeHp = (psd.hp > 0) ? psd.hp : psd.maxHp;
-            int damage = psd.maxHp - safeHp;
-            if (damage > 0)
-                health.TakeDamage(damage);
+
+            // Use the (max, current) overload so OnDamaged / EntityDamaged
+            // events DON'T fire. Going through TakeDamage(delta) here used
+            // to play the hurt SFX + hit-flash the instant the run started,
+            // because CombatAudioSystem treats every OnDamaged as a real hit.
+            health.Initialize(psd.maxHp, safeHp);
         }
 
         private static void RestoreMana(GameObject player, PlayerSaveData psd)
@@ -67,10 +69,13 @@ namespace Valkur.Gameplay.Save
             var mana = player.GetComponent<Mana>();
             if (mana == null || psd.maxMana <= 0) return;
 
-            mana.Initialize(Mathf.RoundToInt(psd.maxMana), 2f);
-            int manaToConsume = Mathf.RoundToInt(psd.maxMana - psd.mana);
-            if (manaToConsume > 0)
-                mana.TryConsume(manaToConsume);
+            int maxMana = Mathf.RoundToInt(psd.maxMana);
+            int curMana = Mathf.RoundToInt(psd.mana);
+
+            // Same rationale as RestoreHealth: bypass TryConsume so future
+            // OnManaConsumed subscribers (spell-cost SFX, etc.) don't fire
+            // a fake consume event on game load.
+            mana.Initialize(maxMana, curMana, 2f);
         }
 
         private static void RestoreExperience(GameObject player, PlayerSaveData psd)
