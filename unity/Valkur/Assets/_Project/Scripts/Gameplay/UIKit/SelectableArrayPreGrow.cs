@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,26 +22,36 @@ namespace Valkur.UIKit
     /// disabled (Valkur runs in this mode for fast iteration), both
     /// <c>s_Selectables</c> AND <c>s_SelectableCount</c> survive Play→Stop
     /// transitions. Selectables destroyed at scene-unload time don't always
-    /// hit OnDisable, so the count drifts ABOVE the real living-Selectable
-    /// total. On the next Play, a fresh OnEnable computes
+    /// hit OnDisable (UGUI bug — happens when an OnEnable earlier threw and
+    /// <c>m_EnableCalled</c> never got set, plus a handful of other edge
+    /// cases), so the count drifts ABOVE the real living-Selectable total.
+    /// On the next Play, a fresh OnEnable computes
     /// <c>m_CurrentIndex = s_SelectableCount</c> (now &gt; Length), the
-    /// grow-check fails the equality test, and the very next line
+    /// grow-check fails the strict-equality test, and the very next line
     /// <c>s_Selectables[m_CurrentIndex] = this;</c> throws.
     ///
     /// ── Fix ───────────────────────────────────────────────────────────────
-    /// Reset BOTH <c>s_Selectables</c> (a fresh 1024-slot clean array) AND
-    /// <c>s_SelectableCount</c> (back to 0) on every Play start. We run at
+    /// Reset BOTH <c>s_Selectables</c> (a fresh <see cref="InitialCapacity"/>
+    /// clean array) AND <c>s_SelectableCount</c> (back to 0) on every Play
+    /// start. We run at
     /// <see cref="RuntimeInitializeLoadType.SubsystemRegistration"/> — the
-    /// earliest stage, before any scene Awake — so no real Selectable has
-    /// registered yet and clearing both fields cannot disturb live state.
-    /// Each Selectable that gets enabled afterwards re-registers from a
-    /// clean slate, and the 1024-element capacity then prevents in-session
-    /// growth events (the secondary cause documented in the issue tracker).
+    /// earliest stage, before any scene Awake — so:
+    ///   • All editor-scene Selectables have already been destroyed by the
+    ///     play-mode transition (any drift they introduced is dead state),
+    ///   • Runtime-scene Selectables have not yet had a chance to register,
+    ///     so resetting the count cannot underflow any live OnDisable.
     ///
-    /// Implemented via reflection because both fields are internal to
-    /// UGUI; no production package modification needed. Safe no-op if
-    /// Unity ever renames the fields — the warning logs once instead of
-    /// crashing.
+    /// The previous version of this workaround grew the array but left
+    /// <c>s_SelectableCount</c> alone out of an unfounded fear that resetting
+    /// it would cause a live Selectable's OnDisable to underflow. At
+    /// SubsystemRegistration time there are no live Selectables, so the
+    /// reset is safe and is the only way to recover from drift &gt;
+    /// <see cref="InitialCapacity"/> (which long editor sessions hit).
+    ///
+    /// Implemented via reflection because both fields are protected statics
+    /// on UGUI's Selectable; no production package modification needed. Safe
+    /// no-op if Unity ever renames the fields — the warning logs once
+    /// instead of crashing.
     /// </summary>
     public static class SelectableArrayPreGrow
     {
@@ -49,48 +60,39 @@ namespace Valkur.UIKit
         // headroom. Bumps to higher values are a one-line edit if a future
         // editor adds another panel-load of Selectables. 4 KiB of pointers
         // is a fraction of a typical scene's UI memory.
-        private const int InitialCapacity = 1024;
+        public const int InitialCapacity = 1024;
 
-        // SubsystemRegistration runs BEFORE any scene Awake, so existing
-        // Selectables can't yet have registered against the old (smaller)
-        // array — growing here is safe. We deliberately do NOT reset
-        // s_SelectableCount: any Selectables still alive across the Play
-        // boundary already have m_CurrentIndex pointing into the OLD array,
-        // and zeroing the count would cause their next OnDisable to compute
-        // s_SelectableCount-- == -1 and throw IndexOutOfRangeException at
-        // Selectable.OnDisable line ~555. Array.Copy preserves those refs.
+        private const string SelectablesFieldName = "s_Selectables";
+        private const string SelectableCountFieldName = "s_SelectableCount";
+
+        // SubsystemRegistration runs BEFORE any scene Awake. The play-mode
+        // transition has already destroyed every editor-scene Selectable, so
+        // the static array can be replaced wholesale without dangling any
+        // live OnDisable swap-pop logic. New Selectables register against
+        // the fresh array from index 0 with no risk of overflow.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void PreGrow()
+        private static void ResetStaticState()
         {
             try
             {
                 var t = typeof(Selectable);
-                var field = t.GetField("s_Selectables",
+                var arrField = t.GetField(SelectablesFieldName,
                     BindingFlags.NonPublic | BindingFlags.Static);
-                if (field == null)
+                var countField = t.GetField(SelectableCountFieldName,
+                    BindingFlags.NonPublic | BindingFlags.Static);
+
+                if (arrField == null || countField == null)
                 {
                     Debug.LogWarning(
-                        "[SelectableArrayPreGrow] Selectable.s_Selectables not " +
-                        "found — Unity may have renamed the field. The UGUI " +
-                        "IndexOutOfRangeException workaround is inactive.");
+                        "[SelectableArrayPreGrow] UGUI Selectable static fields " +
+                        "not found — Unity may have renamed them. Workaround inactive.");
                     return;
                 }
 
-                if (!(field.GetValue(null) is Selectable[] current))
-                {
-                    Debug.LogWarning(
-                        "[SelectableArrayPreGrow] s_Selectables is not a " +
-                        "Selectable[]. Workaround skipped.");
-                    return;
-                }
-
-                if (current.Length >= InitialCapacity) return; // already big enough
-
-                var grown = new Selectable[InitialCapacity];
-                System.Array.Copy(current, grown, current.Length);
-                field.SetValue(null, grown);
+                arrField.SetValue(null, new Selectable[InitialCapacity]);
+                countField.SetValue(null, 0);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogWarning(
                     $"[SelectableArrayPreGrow] Skipped — reflection threw: {ex.Message}");
