@@ -260,11 +260,17 @@
             "gridOffsetX": 0,
             "gridOffsetY": 0,
             "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_default",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
         }
     ],
     "hasLastPlayerPosition": true,
-    "lastPlayerWorldX": 27.089643478393556,
-    "lastPlayerWorldY": 29.253936767578126,
+    "lastPlayerWorldX": 176.24227905273438,
+    "lastPlayerWorldY": 57.050724029541019,
     "portals": [],
     "biomeBuildings": []
 }
