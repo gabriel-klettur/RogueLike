@@ -68,10 +68,25 @@ namespace Valkur.Gameplay.World.Layering
                 instance = go.AddComponent<WorldCollisionBaker>();
             }
 
+            // Stale-source detection: Unity's overloaded == returns true for
+            // destroyed Components even though the C# reference is still set.
+            // When the source Collision tilemap was destroyed under us (zone
+            // change), invalidate readiness so the bind path below re-runs
+            // against the new scene's WorldGridBuilder. Without this retry,
+            // the baker's _sourceCollision dangles, the new Collision
+            // tilemap's own TilemapCollider2D never gets disabled, and EVERY
+            // painted Collision cell would block the player on every visual
+            // layer regardless of tag — the M2 filter would be silently
+            // bypassed.
+            if (instance._sourceCollision == null)
+                instance._isReady = false;
+
             // Try to wire up immediately if the grid + tilemap already exist.
             // If they're not ready yet (e.g. async scene setup), the dirty
             // listener catches the first SetTile and the deferred rebake fires
-            // a frame later.
+            // a frame later. _isReady stays false when no grid is found in
+            // the scene, so the next EnsureExists / LateUpdate self-heal
+            // retries automatically.
             if (!instance._isReady)
             {
                 var gridBuilder = FindObjectOfType<WorldGridBuilder>();
@@ -94,6 +109,25 @@ namespace Valkur.Gameplay.World.Layering
                         instance.ScheduleRebake();
                     }
                 }
+            }
+            else if (instance._tagMap == null && TileEditorManager.HasInstance)
+            {
+                // Late-arrival tag map: WorldCollisionBaker.BootstrapAfterSceneLoad
+                // runs BEFORE GameplaySceneSetup creates TileEditorManager, so the
+                // initial Initialize received tagMap = null. Without an explicit
+                // rebake here, _tagMap stays null AND no further dirty event
+                // fires automatically (the overlay-load tile changes already
+                // flushed via LateUpdate while _tagMap was still null, stamping
+                // every cell as Wildcard into WorldAll → the player is blocked on
+                // every visual layer regardless of tag, until the user manually
+                // paints / erases a cell to trigger another rebake).
+                //
+                // TileEditorManager.OnSingletonAwake calls EnsureExists as part
+                // of its boot sequence — that's where this branch fires. We bind
+                // the tag map and schedule a fresh rebake so cells get routed by
+                // their actual tag from frame 0, before the user touches anything.
+                instance._tagMap = TileEditorManager.Instance.CollisionTags;
+                instance.ScheduleRebake();
             }
 
             return instance;
@@ -127,6 +161,17 @@ namespace Valkur.Gameplay.World.Layering
 
         private void LateUpdate()
         {
+            // Self-heal: if the source Collision tilemap was destroyed (zone
+            // change) or the baker never initialised against a real grid
+            // (boot-time race), retry the bind every frame until it sticks.
+            // The check is two cheap field reads in the healthy path; only
+            // when stale does it pay the FindObjectOfType inside EnsureExists.
+            if (!_isReady || _sourceCollision == null)
+            {
+                EnsureExists();
+                return;
+            }
+
             if (!_dirty) return;
             _dirty = false;
             RebuildAll();
@@ -194,6 +239,21 @@ namespace Valkur.Gameplay.World.Layering
         public void RebuildAll()
         {
             if (!_isReady || _sourceCollision == null) return;
+
+            // Lazy bind of the tag map: when EnsureExists ran at boot
+            // (AfterSceneLoad), TileEditorManager may not have spawned yet,
+            // so Initialize received a null tagMap. Without this fallback the
+            // per-cell tag lookup below silently returns Wildcard for EVERY
+            // cell — they all get stamped into the WorldAll sub-tilemap,
+            // which every entity's includeLayers opts into → the player is
+            // blocked on every visual layer regardless of the painted tag,
+            // and the M2 filter is completely bypassed. THE production bug
+            // the user reported as "Player on L0 still blocked by tag-7
+            // colliders even after the rebind / WallsBottom fixes".
+            // Re-checking on every rebake is cheap (one HasInstance branch),
+            // and the lookup short-circuits once the tag map is bound.
+            if (_tagMap == null && TileEditorManager.HasInstance)
+                _tagMap = TileEditorManager.Instance.CollisionTags;
 
             for (int i = 0; i < CompositeCount; i++)
                 _subTilemaps[i]?.ClearAllTiles();
