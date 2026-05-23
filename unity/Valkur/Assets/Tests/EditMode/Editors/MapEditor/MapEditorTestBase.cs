@@ -206,7 +206,16 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         // ── Zone-manager wiring helpers ───────────────────────────────────────────
 
         /// <summary>Build a manager wired to a real ZoneManager pre-seeded with
-        /// the supplied zones. Skips Start() so we don't need camera/UI/world.</summary>
+        /// the supplied zones. Skips Start() so we don't need camera/UI/world.
+        ///
+        /// Always injects an <see cref="Valkur.Infrastructure.Persistence.Repositories.InMemoryMapEditorZonesRepository"/>
+        /// so PersistZonesToDisk calls stay off the user's real
+        /// <c>Application.persistentDataPath/map_editor_zones.json</c>. The
+        /// SetUp/TearDown backup/restore is still in place as a second
+        /// safety net, but tests that don't need disk semantics shouldn't
+        /// touch the real file at all — that's the class of bug
+        /// (test seed clobbers user data) the May 23 zone-loss incident
+        /// traced back to.</summary>
         protected MapEditorManager CreateManagerWithZones(params (string name, Vector2Int offset, bool editable)[] seeds)
         {
             LogAssert.ignoreFailingMessages = true;
@@ -221,6 +230,13 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
                     $"Seed zone '{name}' must be addable.");
 
             SetField(mgr, "zoneManager", zm);
+            // Default to in-memory persistence so PersistZonesToDisk never
+            // hits the user's real map_editor_zones.json. Any fixture that
+            // genuinely needs file IO should NOT inherit from MapEditorTestBase
+            // — it should manage its own setup explicitly (see
+            // MapEditorPersistenceIntegrationTests).
+            mgr.SetZonesRepository(
+                new Valkur.Infrastructure.Persistence.Repositories.InMemoryMapEditorZonesRepository());
             return mgr;
         }
 

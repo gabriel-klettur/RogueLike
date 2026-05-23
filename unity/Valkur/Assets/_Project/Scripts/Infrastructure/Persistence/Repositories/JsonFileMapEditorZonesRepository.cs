@@ -33,6 +33,35 @@ namespace Valkur.Infrastructure.Persistence.Repositories
             _rootOverride = rootOverride;
         }
 
+        // ── Write-from-EditMode guard ──────────────────────────────────────────
+        //
+        // The May 23 incident lost 38 user zones from the default map because
+        // an EditMode test (running without an InMemory repo or temp-path
+        // override) hit the default ctor here, wrote its 7-zone seed straight
+        // into the user's real `Application.persistentDataPath/map_editor_zones.json`,
+        // and orphaned the user's working state. Tests have backup/restore in
+        // their own SetUp/TearDown, but any chain hiccup leaves the live file
+        // corrupted.
+        //
+        // This guard mirrors `SaveService.RefuseWriteOutsidePlayMode`. It
+        // refuses writes that originate from EditMode AGAINST the production
+        // path (default ctor). Tests have two ways to opt in to file IO
+        // intentionally:
+        //   • Use the (string rootOverride) ctor with a temp directory — most
+        //     tests don't need real-path semantics and should switch to this.
+        //   • Set `AllowEditModeWritesToRealPath = true` inside a using-block
+        //     around a deliberate test of the real path (MapEditorPersistenceIntegrationTests).
+        // Static so RAII patterns can scope the override per-test.
+
+        /// <summary>
+        /// Set <see langword="true"/> from a test's <c>[SetUp]</c> when the
+        /// test deliberately needs to read/write the real persistentDataPath
+        /// file (and does its own backup/restore). Restore to <see langword="false"/>
+        /// in <c>[TearDown]</c>. Default-ctor writes go through the guard,
+        /// override-path writes never do — that path is implicitly trusted.
+        /// </summary>
+        public static bool AllowEditModeWritesToRealPath { get; set; }
+
         public string PathFor(WorldId worldId) => Path.Combine(WorldDirectory(worldId), FILE_NAME);
 
         public bool Exists(WorldId worldId)
@@ -66,6 +95,26 @@ namespace Valkur.Infrastructure.Persistence.Repositories
 
         public void WriteAtomic(WorldId worldId, string json)
         {
+            // Refuse EditMode writes against the production path unless a
+            // test has explicitly opted in. See the AllowEditModeWritesToRealPath
+            // comment above for the full rationale (May 23 38-zone loss).
+            // The override-ctor path (_rootOverride != null) is implicitly
+            // trusted: a caller that pointed at a temp dir is by definition
+            // not writing to user data.
+            if (_rootOverride == null
+                && !Application.isPlaying
+                && !AllowEditModeWritesToRealPath)
+            {
+                Debug.LogWarning(
+                    "[MapEditorZonesRepository] Refused EditMode write to production " +
+                    "map_editor_zones.json. Tests must inject an InMemoryMapEditorZonesRepository " +
+                    "OR construct JsonFileMapEditorZonesRepository(tempPath) OR set " +
+                    "AllowEditModeWritesToRealPath = true around a deliberate real-path test " +
+                    "(remember to reset it in TearDown). This guard prevents the May 23 " +
+                    "zone-loss class of bug where a test seed clobbered user data.");
+                return;
+            }
+
             string path = PathFor(worldId);
             string dir  = Path.GetDirectoryName(path);
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);

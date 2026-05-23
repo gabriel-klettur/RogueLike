@@ -69,6 +69,15 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         {
             LogAssert.ignoreFailingMessages = true;
 
+            // This fixture deliberately tests real-path persistence (see the
+            // class docstring) so it must opt in to the EditMode-write guard
+            // on JsonFileMapEditorZonesRepository. Without this opt-in the
+            // guard refuses writes to persistentDataPath/map_editor_zones.json
+            // and every assertion that asserts file content fails. TearDown
+            // resets the flag so the guard re-engages for the next fixture.
+            Valkur.Infrastructure.Persistence.Repositories.JsonFileMapEditorZonesRepository
+                .AllowEditModeWritesToRealPath = true;
+
             // Resolve the MapEditor persistence path via reflection (it's a
             // private property that returns Application.persistentDataPath/map_editor_zones.json).
             _mapZonesJsonPath = Path.Combine(Application.persistentDataPath, "map_editor_zones.json");
@@ -143,6 +152,17 @@ namespace Valkur.Tests.EditMode.Editors.MapEditor
         [TearDown]
         public void TearDown()
         {
+            // Re-engage the EditMode-write guard so subsequent fixtures that
+            // don't opt in are protected. Wrapped in a try so a failure here
+            // never strands the flag in the "allow" state — but assigning a
+            // bool effectively can't throw, the wrap is purely defensive.
+            try
+            {
+                Valkur.Infrastructure.Persistence.Repositories.JsonFileMapEditorZonesRepository
+                    .AllowEditModeWritesToRealPath = false;
+            }
+            catch { }
+
             // Each step is wrapped so a failure in one does not abort the
             // others — the user's persistence file restoration is the most
             // important guarantee here, so it runs first and independently.
