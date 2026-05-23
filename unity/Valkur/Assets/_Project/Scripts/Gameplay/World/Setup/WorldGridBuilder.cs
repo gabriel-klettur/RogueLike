@@ -128,6 +128,15 @@ namespace Valkur.Gameplay.World
 
             var renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortOrder = TilemapRenderer.SortOrder.TopLeft;
+            // IMPORTANT: keep Unity's default Chunk mode.
+            // A previous iteration set Mode.Individual to "fix" chunk-boundary
+            // seam lines, but MCP profiling proved (a) the seam lines were a
+            // Game-View-only composite artifact that doesn't appear in builds,
+            // and (b) Individual mode submits one quad per visible tile —
+            // ~60k tiles → CPU collapse to <30 FPS. Chunk mode batches the
+            // tilemap into 16×16-cell meshes (typically 1 draw call per
+            // chunk per layer), which is the correct trade-off for a moderate-
+            // sized open-world map.
             // Manual chunk culling bounds keep Unity's per-chunk frustum culling working.
             // With Auto, Unity grows each chunk's culling bounds to fit the largest sprite
             // in the tilemap (tall walls, wide decorations, etc.), which in practice
@@ -167,25 +176,15 @@ namespace Valkur.Gameplay.World
                 layerSetup.Configure(layer, true);
             }
 
-            // WallsBottom also gets collision
-            if (layer == TilemapLayerSetup.TilemapLayer.WallsBottom)
-            {
-                go.layer = LayerMask.NameToLayer("World"); // Projectile layer matrix: 10 ↔ 11
-
-                var collider = go.AddComponent<TilemapCollider2D>();
-                if (tilemapPhysicsMaterial != null)
-                    collider.sharedMaterial = tilemapPhysicsMaterial;
-
-                var composite = go.AddComponent<CompositeCollider2D>();
-                composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
-                composite.generationType = CompositeCollider2D.GenerationType.Manual;
-
-                collider.usedByComposite = true;
-
-                var rb = go.GetComponent<Rigidbody2D>();
-                if (rb != null)
-                    rb.bodyType = RigidbodyType2D.Static;
-            }
+            // WallsBottom intentionally has NO independent collider. The M2
+            // per-visual-layer system makes the Collision tilemap (+ its tag
+            // map) the single authoritative source for what blocks an entity
+            // at a given layer. An always-on collider here would bypass that
+            // filter — a player on a different visual layer would still be
+            // blocked by a wall sprite painted on WallsBottom — which is the
+            // exact contradiction the M2 design was built to eliminate.
+            // Authors who want a WallsBottom wall to block must also paint a
+            // Collision cell at the same coordinate (with the desired tag).
 
             layerSetup.ApplyLayerSettings();
         }

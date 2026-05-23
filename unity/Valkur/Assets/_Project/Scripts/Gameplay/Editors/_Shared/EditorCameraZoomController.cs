@@ -38,9 +38,14 @@ namespace Valkur.Gameplay.Editors
             float scrollY = MouseInputManager.GetMouseWheelDelta();
             if (Mathf.Abs(scrollY) < 0.1f) return;
 
+            // Hybrid step: PPU-aligned N-step inside the snap range (one detent
+            // = one level — no "stuck on same N" when the multiplicative factor
+            // is too small to escape an N=2→N=1 ratio of 2.0), then pure
+            // multiplicative above the snap top so the panoramic
+            // [N=1 level, maxEditorZoomOrthoSize] range stays smooth.
             float current = camSetup.GetCurrentOrthographicSize();
-            float factor  = 1f - Mathf.Sign(scrollY) * _zoomSpeed;
-            float next    = current * factor;
+            int direction = scrollY > 0f ? +1 : -1;
+            float next    = camSetup.ComputeEditorZoomNext(current, direction, _zoomSpeed);
             camSetup.SetEditorZoom(next);
         }
     }

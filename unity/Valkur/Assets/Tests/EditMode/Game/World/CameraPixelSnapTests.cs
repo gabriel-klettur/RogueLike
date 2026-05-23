@@ -70,6 +70,7 @@ namespace Valkur.Tests.EditMode.Game.World
             m?.Invoke(snap, null);
         }
 
+
         // ── Tests ─────────────────────────────────────────────────────────────
 
         /// <summary>
@@ -242,6 +243,40 @@ namespace Valkur.Tests.EditMode.Game.World
 
             Assert.AreEqual(originalZ, go.transform.position.z, 0.0001f,
                 "CameraPixelSnap must not modify the Z axis — Z is owned by Cinemachine.");
+        }
+
+        // ────────────────────────────────────────────────────────────────────
+        // Ortho-size MUST NOT be touched
+        //
+        // History: a prior iteration of CameraPixelSnap quantised the
+        // camera's orthographicSize each frame to make 1/wpp integer (and
+        // later to make 1/wpp a multiple of the tile PPU). Both attempts
+        // broke gameplay zoom UX and in-game editor zoom UX — every editor
+        // that drives ortho directly (Tile, Buildings, Map, Spells, etc.)
+        // fought the rewrite each frame. The chunk-boundary seam fix lives
+        // at the TilemapRenderer level (Mode.Individual), not the camera.
+        // This test enforces the architectural boundary.
+        // ────────────────────────────────────────────────────────────────────
+
+        [Test]
+        public void LateUpdate_DoesNotModifyOrthographicSize()
+        {
+            var (go, cam, snap) = CreateSnapper();
+            cam.targetTexture = MakeRT(720, 720);
+            cam.orthographic = true;
+            cam.aspect = 2.0f;
+
+            float[] orthoValues = { 2f, 3.5f, 5f, 5.05f, 7.7f, 12.3f, 25f, 50f };
+            foreach (float ortho in orthoValues)
+            {
+                cam.orthographicSize = ortho;
+                InvokeLateUpdate(snap);
+                Assert.That(cam.orthographicSize, Is.EqualTo(ortho).Within(0.0001f),
+                    $"CameraPixelSnap must leave ortho={ortho} untouched. " +
+                    "Rewriting ortho breaks the zoom UX in both gameplay and the " +
+                    "in-game editors that drive ortho directly. Chunk-boundary " +
+                    "seams must be solved at the TilemapRenderer level instead.");
+            }
         }
 
         /// <summary>

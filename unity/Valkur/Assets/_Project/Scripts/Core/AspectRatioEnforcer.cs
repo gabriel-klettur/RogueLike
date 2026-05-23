@@ -64,22 +64,43 @@ namespace Valkur.Core
 
             var rect = new Rect();
 
+            // Critical: round the viewport rect so the resulting pixelRect
+            // has INTEGER dimensions. With the naive fractional rect (e.g.
+            // 0.972), Unity ends up with pixelRect.height = 819.5 — a half-
+            // pixel that Game View composites with a sub-pixel offset,
+            // producing visible horizontal seam lines across the tilemap
+            // ("the blue/black lines" reported on 2026-05-16). Anchoring the
+            // rect to integer pixels eliminates the composite drift; the
+            // letterbox/pillarbox bars stay perfectly black either way.
+
             if (scaleHeight < 1.0f)
             {
-                // Pillarbox — window is taller than target, add bars top/bottom
-                rect.width = 1.0f;
-                rect.height = scaleHeight;
-                rect.x = 0f;
-                rect.y = (1.0f - scaleHeight) / 2.0f;
+                // Pillarbox — window is taller than target. Round the inner
+                // height to an integer pixel count, recompute the rect from
+                // the rounded value. Forcing even avoids the rare half-row
+                // off-by-one at odd screen heights.
+                int innerPxH = Mathf.RoundToInt(scaleHeight * Screen.height);
+                if ((innerPxH & 1) == 1) innerPxH--;
+                if (innerPxH < 2) innerPxH = 2;
+                int innerY = (Screen.height - innerPxH) / 2;
+                rect.width  = 1f;
+                rect.height = (float)innerPxH / Screen.height;
+                rect.x      = 0f;
+                rect.y      = (float)innerY / Screen.height;
             }
             else
             {
-                // Letterbox — window is wider than target, add bars left/right
+                // Letterbox — window is wider than target. Round the inner
+                // width to an integer pixel count.
                 float scaleWidth = 1.0f / scaleHeight;
-                rect.width = scaleWidth;
-                rect.height = 1.0f;
-                rect.x = (1.0f - scaleWidth) / 2.0f;
-                rect.y = 0f;
+                int innerPxW = Mathf.RoundToInt(scaleWidth * Screen.width);
+                if ((innerPxW & 1) == 1) innerPxW--;
+                if (innerPxW < 2) innerPxW = 2;
+                int innerX = (Screen.width - innerPxW) / 2;
+                rect.width  = (float)innerPxW / Screen.width;
+                rect.height = 1f;
+                rect.x      = (float)innerX / Screen.width;
+                rect.y      = 0f;
             }
 
             _cam.rect = rect;
