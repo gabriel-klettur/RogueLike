@@ -71,6 +71,13 @@ namespace Valkur.Gameplay.MapEditor
             public Action<string>          OnNew;
             public Func<string[]>          ListSlots;
             public Func<string>            GetActive;
+            // Backup hooks — exposed from the same panel because they operate
+            // on the same "active slot" concept. OnOpenBackupBrowser spawns
+            // the existing MapBackupBrowserUI; OnCreateBackupNow fires a
+            // manual snapshot of the active slot and returns a status string
+            // for the editor status bar.
+            public Action                  OnOpenBackupBrowser;
+            public Func<string>            OnCreateBackupNow;
         }
 
         public class MapSlotsDialogState
@@ -151,6 +158,16 @@ namespace Valkur.Gameplay.MapEditor
                 if (localNewNameInput != null) localNewNameInput.text = "";
                 if (localNewDialog != null) localNewDialog.SetActive(true);
             });
+
+            // Backup access from inside F11 so the user never has to leave
+            // the Map Editor to snapshot or browse. Two buttons mirror the
+            // two most common operations: snapshot the current state and
+            // browse / restore prior snapshots.
+            var localOnSnapshot = callbacks.OnCreateBackupNow;
+            AddActionBtn(t, "Snapshot now", BTN_H, () => localOnSnapshot?.Invoke());
+
+            var localOnOpenBrowser = callbacks.OnOpenBackupBrowser;
+            AddActionBtn(t, "Backups…", BTN_H, () => localOnOpenBrowser?.Invoke());
 
             refs.MapsDropdown.SetActive(false);
         }

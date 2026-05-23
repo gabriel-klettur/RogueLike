@@ -171,6 +171,14 @@ namespace Valkur.Gameplay.MapEditor
             zoneManager.OnZonesChanged += HandleZonesChanged;
             ApplyTileEditorConstraint();
 
+            // Backup scheduler: spawn the child component and route every
+            // zone-change event into MarkDirty so the idle-timer + quit-hook
+            // logic has something to react to. The scheduler is the missing
+            // safety net for the "many small edits, no destructive event"
+            // case that no existing trigger covers.
+            EnsureBackupScheduler();
+            zoneManager.OnZonesChanged += HandleZonesChangedForBackup;
+
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Register(this);
         }
 
@@ -339,12 +347,14 @@ namespace Valkur.Gameplay.MapEditor
 
             var slotCallbacks = new MapEditorUIBuilder.MapSlotCallbacks
             {
-                OnLoad     = OnSlotLoad,
-                OnDelete   = OnSlotDelete,
-                OnRename   = OnSlotRename,
-                OnNew      = OnSlotNew,
-                ListSlots  = ListMapSlots,
-                GetActive  = () => ActiveMapSlot,
+                OnLoad              = OnSlotLoad,
+                OnDelete            = OnSlotDelete,
+                OnRename            = OnSlotRename,
+                OnNew               = OnSlotNew,
+                ListSlots           = ListMapSlots,
+                GetActive           = () => ActiveMapSlot,
+                OnOpenBackupBrowser = OnOpenBackupBrowserFromF11,
+                OnCreateBackupNow   = OnCreateBackupNowFromF11,
             };
 
             var portalCallbacks = new MapEditorUIBuilder.PortalCallbacks
@@ -532,7 +542,10 @@ namespace Valkur.Gameplay.MapEditor
             OnMapSlotsChanged -= RefreshMapsListInUI;
 
             if (zoneManager != null)
+            {
                 zoneManager.OnZonesChanged -= HandleZonesChanged;
+                zoneManager.OnZonesChanged -= HandleZonesChangedForBackup;
+            }
 
             _input?.Dispose();
 

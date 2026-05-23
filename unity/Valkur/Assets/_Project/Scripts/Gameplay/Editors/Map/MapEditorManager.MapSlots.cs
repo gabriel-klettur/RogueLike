@@ -115,6 +115,12 @@ namespace Valkur.Gameplay.MapEditor
 
             // Slot file is authoritative — replace, don't merge with DB.
             ApplySlotToZoneManager(data);
+            // Adopt (don't re-apply) the overlay: the renamed names are
+            // already baked into data.zones, but the (originalName →
+            // currentName) pairs must travel with subsequent persists so
+            // chained renames stay coherent and a future revert can drop
+            // the right entry.
+            AdoptDatabaseRenamesFromSlot(data);
 
             // Tile editor's persistence layer must point at the active
             // slot's WorldId so any subsequent paint lands in the right
@@ -209,6 +215,8 @@ namespace Valkur.Gameplay.MapEditor
                 HydratePortalsFromPersistence(null);
                 // Same idea for biome-buildings: blank-default = empty.
                 HydrateBiomeBuildingsFromPersistence(null);
+                // No DB zones either → no database-rename overlay applies.
+                ClearDatabaseRenames();
             }
             else
             {
@@ -222,6 +230,10 @@ namespace Valkur.Gameplay.MapEditor
                 if (data == null) return false;
                 MapZonesMigrations.Migrate(data);
                 ApplySlotToZoneManager(data);
+                // Adopt the slot's database-rename overlay. ApplySlotToZoneManager
+                // already replayed the renamed names into ZoneManager, so this
+                // is "remember the pairs for future persists", not "re-apply".
+                AdoptDatabaseRenamesFromSlot(data);
                 // Respawn portal objects from the new slot's record.
                 HydratePortalsFromPersistence(data);
                 // Re-create biome-generated buildings so a previously-run
@@ -368,6 +380,10 @@ namespace Valkur.Gameplay.MapEditor
             // Same for biome-buildings — the new map is clean of any
             // previously-generated biome content.
             HydrateBiomeBuildingsFromPersistence(null);
+            // Same for database-rename overlay — a fresh blank map has no
+            // catalog zones to rename, so the outgoing slot's pairs are
+            // irrelevant here.
+            ClearDatabaseRenames();
             ResolveSlotStore().SetActive(clean);
             ClearUndoHistory();
             // Re-bind the tile editor's overlay persistence to the new slot's

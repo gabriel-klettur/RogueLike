@@ -34,6 +34,14 @@ namespace Valkur.Gameplay.MapEditor
                 _ui?.SetStatus($"Rename failed: {reason}");
                 return;
             }
+            // Snapshot BEFORE the rename commits: was oldName a "fresh" DB
+            // catalog zone, i.e. present in ZoneManager and not already the
+            // currentName of an existing overlay pair? Determines whether
+            // the rename needs a new overlay entry (DB origin) or just
+            // updates an existing chained entry / does nothing (user zone).
+            bool oldNameWasFreshDbOrigin =
+                zoneManager.TryGetZone(oldName, out _) && !IsTrackedAsRenameCurrentName(oldName);
+
             if (!zoneManager.RenameZone(oldName, trimmed)) { _ui?.SetStatus($"Rename failed: '{trimmed}' may already exist."); return; }
 
             // Rename also moves the per-zone tile-override file so painted
@@ -54,6 +62,12 @@ namespace Valkur.Gameplay.MapEditor
                 RefreshSelectionUIAndOverlay();
                 return;
             }
+
+            // Update the database-rename overlay so the rename survives the
+            // next ZoneDatabaseLoader pass. No-op for purely user-created
+            // zones; handles chained renames (dungeon → portals → mazes)
+            // and reverts (portals → dungeon drops the pair) automatically.
+            RecordDatabaseRename(oldName, trimmed, oldNameWasFreshDbOrigin);
 
             _state.SelectZone(trimmed);
             PersistZonesToDisk();

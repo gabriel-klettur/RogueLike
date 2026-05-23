@@ -94,6 +94,11 @@ namespace Valkur.Gameplay.MapEditor
             // edits to the in-memory list don't mutate the just-serialised
             // snapshot through reference sharing.
             data.biomeBuildings = new List<BiomeBuildingPersistenceEntry>(_biomeBuildings);
+            // Database-zone rename overlay — clones the in-memory pairs so
+            // any subsequent rename mutation doesn't reach back into this
+            // snapshot. Empty list when the user hasn't renamed any
+            // catalog-backed zone yet, which is the common path.
+            WriteDatabaseZoneRenamesIntoPersistence(data);
 
             try
             {
@@ -205,6 +210,15 @@ namespace Valkur.Gameplay.MapEditor
 
             try
             {
+                // Apply database-zone rename overlay BEFORE snapshotting
+                // ZoneDatabaseLoader's output. After this call the live
+                // ZoneManager already reflects user renames of catalog
+                // zones (e.g. dungeon → portals), so the persisted entries
+                // below match Case A correctly. Empty overlay → no-op.
+                int renamesApplied = ApplyDatabaseZoneRenamesFromPersistence(data);
+                if (renamesApplied > 0)
+                    Debug.Log($"[MapEditor] Applied {renamesApplied} database-zone rename(s) from overlay.");
+
                 if (data.zones == null || data.zones.Count == 0)
                 {
                     Debug.Log($"[MapEditor] Persistence file '{source}' has no zones to restore.");
@@ -213,8 +227,9 @@ namespace Valkur.Gameplay.MapEditor
                 Debug.Log($"[MapEditor] Reading {data.zones.Count} persisted zone(s) from '{source}'.");
 
                 // Existing zones come from ZoneDatabaseLoader (the source of truth, with
-                // correct Y-flipped offsets). Treat them as authoritative — don't override
-                // their offsets with potentially-stale persisted values. Only:
+                // correct Y-flipped offsets), as further mutated by the rename overlay
+                // above. Treat them as authoritative — don't override their offsets with
+                // potentially-stale persisted values. Only:
                 //   1. Restore "editableInTileEditor" flags for zones that already exist.
                 //   2. Add brand-new zones that the user created and that are NOT in the DB.
                 //   3. Drop persisted entries with duplicate names or offsets.

@@ -38,6 +38,15 @@ namespace Valkur.Gameplay.MapEditor
                     doc.biomeBuildings = new List<BiomeBuildingPersistenceEntry>();
             });
 
+            // 1.2 → 1.3: introduce per-slot database-zone-renames overlay.
+            // Backfill an empty list — pre-1.3 files never had this overlay
+            // and therefore never recorded a rename of a catalog-backed zone.
+            chain.Register(MapZonesSchema.V1_2, MapZonesSchema.V1_3, doc =>
+            {
+                if (doc.databaseZoneRenames == null)
+                    doc.databaseZoneRenames = new List<DatabaseZoneRenameEntry>();
+            });
+
             return chain;
         }
 

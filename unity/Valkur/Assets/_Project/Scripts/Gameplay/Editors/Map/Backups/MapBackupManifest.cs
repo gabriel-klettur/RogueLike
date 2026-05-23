@@ -49,5 +49,16 @@ namespace Valkur.Gameplay.MapEditor.Backups
         public const string KindAutoBeforeDelete  = "AutoBeforeDelete";
         public const string KindAutoBeforeNew     = "AutoBeforeNew";
         public const string KindAutoBeforeRestore = "AutoBeforeRestore";
+        // Per-zone delete trigger — distinct from KindAutoBeforeDelete (which
+        // is a SLOT-level delete) so retention logic can distinguish "many
+        // small zone edits" from "one big slot wipe".
+        public const string KindAutoBeforeZoneOp  = "AutoBeforeZoneOp";
+        // Idle-timer + lifecycle snapshots produced by MapBackupScheduler.
+        // Bucketed by trigger so retention can keep, e.g., one quit-snap per
+        // session and a longer tail of idle-snaps without these crowding the
+        // explicit before-X snapshots out of the listing.
+        public const string KindAutoIdle          = "AutoIdle";
+        public const string KindAutoQuit          = "AutoQuit";
+        public const string KindAutoFocusLoss     = "AutoFocusLoss";
     }
 }

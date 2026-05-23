@@ -52,6 +52,18 @@ namespace Valkur.Gameplay.MapEditor
             var targetZones = CollectTargetZones(req);
             if (targetZones.Count == 0) return "No zones to generate.";
 
+            // Snapshot BEFORE the biome op commits — regen overwrites tile
+            // overlays wholesale for the affected zones with no per-edit
+            // undo entry. Without this snapshot the only safety net is the
+            // project .bak (which covers zone definitions but not the
+            // overlays that biome regen replaces).
+            string scope = req.selectedZoneOnly && !string.IsNullOrWhiteSpace(req.selectedZoneName)
+                ? $"zone '{req.selectedZoneName}'"
+                : $"{targetZones.Count} zone(s)";
+            TryAutoSnapshot(ActiveMapSlot,
+                            $"Pre-biome-generation safety snapshot ({req.biome}, {scope})",
+                            Valkur.Gameplay.MapEditor.Backups.MapBackupSchema.KindAutoBeforeZoneOp);
+
             // Wipe previous biome run so regenerations don't pile up. Both
             // the live scene objects AND the on-disk record are cleared —
             // the new run is the source of truth for this slot from here on.

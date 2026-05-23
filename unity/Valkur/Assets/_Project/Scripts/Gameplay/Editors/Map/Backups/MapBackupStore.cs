@@ -191,6 +191,13 @@ namespace Valkur.Gameplay.MapEditor.Backups
                 if (Directory.Exists(finalDir)) Directory.Delete(finalDir, recursive: true);
                 Directory.Move(stagingDir, finalDir);
                 Debug.Log($"[MapBackup] Created snapshot '{id}' ({manifest.fileCount} files, {FormatBytes(totalBytes)}).");
+
+                // Apply retention policy now so the directory never grows
+                // unbounded as the scheduler keeps creating auto snapshots.
+                // Manual snapshots are exempt — a user-curated label is a
+                // promise the system shouldn't break.
+                EnforceAutoRetention();
+
                 return manifest;
             }
             catch (Exception ex)
@@ -283,6 +290,48 @@ namespace Valkur.Gameplay.MapEditor.Backups
             if (rel.StartsWith("streaming/", StringComparison.Ordinal))
                 return Path.Combine(StreamingRoot, rel.Substring("streaming/".Length).Replace('/', Path.DirectorySeparatorChar));
             return null;
+        }
+
+        // ── Retention ───────────────────────────────────────────────────────────
+
+        /// <summary>Maximum number of automatic snapshots kept on disk.
+        /// Manual ones are exempt from pruning — the user labeled them and
+        /// expects them to stay. The cap is per-store, not per-slot, because
+        /// snapshots are listed globally in the browser.</summary>
+        public const int AutoRetentionLimit = 10;
+
+        /// <summary>
+        /// Prunes auto snapshots beyond <see cref="AutoRetentionLimit"/>,
+        /// keeping the newest. <see cref="MapBackupSchema.KindManual"/>
+        /// entries are NEVER pruned. Called automatically after every
+        /// <see cref="CreateSnapshot"/> so the directory size stays bounded
+        /// without the user having to clean up by hand.
+        ///
+        /// Returns the number of snapshots actually deleted (zero when the
+        /// store is already under the cap).
+        /// </summary>
+        public int EnforceAutoRetention()
+        {
+            var all = ListBackups();
+            int deleted = 0;
+            int seenAuto = 0;
+            // ListBackups is newest-first; walk it and delete autos once we
+            // pass the cap. Manuals are never counted toward the cap and
+            // never deleted by this pass.
+            foreach (var m in all)
+            {
+                if (m == null) continue;
+                bool isManual = string.Equals(m.kind,
+                    MapBackupSchema.KindManual, StringComparison.OrdinalIgnoreCase);
+                if (isManual) continue;
+                seenAuto++;
+                if (seenAuto <= AutoRetentionLimit) continue;
+                if (DeleteBackup(m.id)) deleted++;
+            }
+            if (deleted > 0)
+                Debug.Log($"[MapBackup] Retention pruned {deleted} auto snapshot(s) " +
+                          $"(kept newest {AutoRetentionLimit}; manuals untouched).");
+            return deleted;
         }
 
         // ── Misc helpers ────────────────────────────────────────────────────────

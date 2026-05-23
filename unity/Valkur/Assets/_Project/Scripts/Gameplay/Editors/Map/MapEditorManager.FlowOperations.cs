@@ -162,6 +162,15 @@ namespace Valkur.Gameplay.MapEditor
 
             var zones = zoneManager.GetZonesSnapshot();
             if (zones.Length <= 1) { _ui?.SetStatus("Cannot delete the last remaining zone."); return; }
+
+            // Auto-snapshot BEFORE the delete commits so the user can recover
+            // the zone via the backup browser even after the undo history
+            // gets cleared (slot switch, session restart, etc.). The earlier
+            // BackupCurrentToActiveSlot path only mirrors to the slot file,
+            // not to a snapshot that survives further edits.
+            TryAutoSnapshot(ActiveMapSlot,
+                            $"Pre-delete-zone safety snapshot for '{zoneName}'",
+                            Valkur.Gameplay.MapEditor.Backups.MapBackupSchema.KindAutoBeforeZoneOp);
             // Capture the inverse BEFORE removal so undo can restore the
             // zone with its original offset + editable flag.
             Vector2Int zoneOffset = Vector2Int.zero;
@@ -173,6 +182,11 @@ namespace Valkur.Gameplay.MapEditor
             }
             if (!zoneManager.RemoveZone(zoneName)) { _ui?.SetStatus($"Could not delete zone '{zoneName}'."); return; }
             RecordZoneRemove(zoneName, zoneOffset, zoneEditable);
+            // If the deleted zone was a renamed catalog zone, drop the
+            // overlay pair so the next boot doesn't try to rename a now-
+            // non-existent zone (it'd silently fail) and so the slot file
+            // doesn't accumulate dead pairs. No-op for user-created zones.
+            ForgetDatabaseRenameForCurrentName(zoneName);
 
             // Drop the orphan override file so it doesn't pile up on disk and
             // doesn't trigger "no matching zone" warnings on the next boot.

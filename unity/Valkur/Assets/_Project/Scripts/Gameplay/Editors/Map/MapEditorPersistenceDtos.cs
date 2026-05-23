@@ -48,11 +48,35 @@ namespace Valkur.Gameplay.MapEditor
         // on pre-1.2 files; the migration chain backfills an empty list.
         public List<BiomeBuildingPersistenceEntry> biomeBuildings = new List<BiomeBuildingPersistenceEntry>();
 
+        // Renames applied on top of zones that originate from the StreamingAssets
+        // zones_database.json catalog. The catalog is the canonical fixed source
+        // of database-backed zones; user renames don't write back to it, so the
+        // working-copy needs an overlay to survive restarts. Each entry maps
+        // `originalName` (the name straight out of the database, never mutates)
+        // to `currentName` (what the user wants to see). MapEditorManager
+        // applies these BEFORE diffing the persisted `zones` list against the
+        // live ZoneManager so the Case-A flag-restore branch matches correctly.
+        // Empty / null on pre-1.3 files; the migration chain backfills.
+        public List<DatabaseZoneRenameEntry> databaseZoneRenames = new List<DatabaseZoneRenameEntry>();
+
         string IVersioned.SchemaVersion
         {
             get => schemaVersion;
             set => schemaVersion = value;
         }
+    }
+
+    /// <summary>
+    /// One rename applied on top of a zone whose original name comes from the
+    /// StreamingAssets zones_database.json catalog. See the
+    /// <c>databaseZoneRenames</c> field on <see cref="ZonePersistenceFile"/>
+    /// for the full rationale.
+    /// </summary>
+    [Serializable]
+    internal class DatabaseZoneRenameEntry
+    {
+        public string originalName;
+        public string currentName;
     }
 
     /// <summary>
@@ -139,6 +163,12 @@ namespace Valkur.Gameplay.MapEditor
         /// has never had a biome run.</summary>
         public const string V1_2 = "1.2";
 
-        public const string CurrentVersion = V1_2;
+        /// <summary>Adds the per-slot database-zone-renames overlay so renames
+        /// of catalog-backed zones (e.g. dungeon → portals) survive restarts.
+        /// v1.2 files migrate by backfilling an empty list — same shape as a
+        /// fresh v1.3 doc with no renames recorded yet.</summary>
+        public const string V1_3 = "1.3";
+
+        public const string CurrentVersion = V1_3;
     }
 }
