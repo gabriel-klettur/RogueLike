@@ -25,26 +25,47 @@ namespace Valkur.Tests.EditMode.Game.World
         // ── SnapOrthoSize math ───────────────────────────────────────────────
 
         /// <summary>
-        /// The whole point of the snap: after it runs, each tile texel must
-        /// cover an exact integer number of screen pixels. Verified across a
-        /// grid of plausible (requested, pixelHeight, ppu) combinations.
-        ///
-        /// Only valid when the request is within the snap's effective range
-        /// (N≥1). Above that — when each tile texel projects to sub-pixel size —
-        /// the snap intentionally passes through; see
+        /// Pre-filtered cartesian product of (requested, pxH, ppu) tuples that
+        /// land inside the snap's effective range (<c>nCont = pxH/(2×requested×ppu) ≥ 1</c>).
+        /// Using <see cref="TestCaseSourceAttribute"/> instead of a raw triple-
+        /// <c>[Values]</c> grid keeps every yielded combination valid for the
+        /// integer-texel-per-pixel assertion below — no <c>Assume.That</c> /
+        /// Inconclusive cases, which would otherwise show up as orange-X marks
+        /// in Unity's Test Runner window despite passing at the job level.
+        /// The complementary "outside the snap range" cases are exercised by
         /// <see cref="SnapOrthoSize_BypassesAboveTopLevel"/>.
         /// </summary>
-        [Test]
-        public void SnapOrthoSize_ProducesIntegerTexelsPerScreenPixel(
-            [Values(2f, 3.1f, 5f, 7.7f, 12.3f, 20f, 25f)] float requested,
-            [Values(720, 792, 800, 1080, 1440)]            int pxH,
-            [Values(16, 32, 64)]                            int ppu)
+        public static System.Collections.Generic.IEnumerable<TestCaseData>
+            SnapInsideRangeCases()
         {
-            float nCont = pxH / (2f * requested * ppu);
-            Assume.That(nCont, Is.GreaterThanOrEqualTo(1f),
-                "Combination is outside the snap's effective range — covered by " +
-                "SnapOrthoSize_BypassesAboveTopLevel.");
+            float[] requestedValues = { 2f, 3.1f, 5f, 7.7f, 12.3f, 20f, 25f };
+            int[]   pxHValues       = { 720, 792, 800, 1080, 1440 };
+            int[]   ppuValues       = { 16, 32, 64 };
 
+            foreach (float requested in requestedValues)
+            foreach (int   pxH       in pxHValues)
+            foreach (int   ppu       in ppuValues)
+            {
+                float nCont = pxH / (2f * requested * ppu);
+                if (nCont < 1f) continue; // covered by SnapOrthoSize_BypassesAboveTopLevel
+                yield return new TestCaseData(requested, pxH, ppu)
+                    .SetName($"SnapOrthoSize_ProducesIntegerTexelsPerScreenPixel(" +
+                             $"req={requested},pxH={pxH},ppu={ppu})");
+            }
+        }
+
+        /// <summary>
+        /// The whole point of the snap: after it runs, each tile texel must
+        /// cover an exact integer number of screen pixels. Verified across a
+        /// pre-filtered grid of (requested, pixelHeight, ppu) combinations —
+        /// only those inside the snap's effective range (N≥1) are yielded;
+        /// above-range combinations are covered by
+        /// <see cref="SnapOrthoSize_BypassesAboveTopLevel"/>.
+        /// </summary>
+        [Test, TestCaseSource(nameof(SnapInsideRangeCases))]
+        public void SnapOrthoSize_ProducesIntegerTexelsPerScreenPixel(
+            float requested, int pxH, int ppu)
+        {
             float snapped = CameraSetup.SnapOrthoSize(requested, pxH, ppu);
 
             // texelsPerScreenPixel = pxH / (2 × orthoSize × ppu) must be ≥ 1 and integer.

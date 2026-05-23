@@ -71,7 +71,26 @@ namespace Valkur.UIKit
         // live OnDisable swap-pop logic. New Selectables register against
         // the fresh array from index 0 with no risk of overflow.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        private static void ResetOnPlayStart() => Reset();
+
+        /// <summary>
+        /// Force UGUI's Selectable static array back to a fresh
+        /// <see cref="InitialCapacity"/>-slot buffer and zero the count. Public
+        /// API but ONLY safe to call when no <see cref="Selectable"/> instances
+        /// exist anywhere in the scene tree — e.g. the very start of Play Mode
+        /// (the runtime <c>SubsystemRegistration</c> hook below) where every
+        /// editor-scene Selectable has already been destroyed and no runtime-
+        /// scene Selectable has registered yet.
+        ///
+        /// DO NOT call from EditMode tests: the editor stays alive during the
+        /// test session and its permanent UI (Inspector, Project window, the
+        /// Test Runner itself) keeps Selectables registered against the
+        /// pre-Reset array. Zeroing the count behind their back makes their
+        /// next <see cref="Selectable.OnDisable"/> underflow against a fresh
+        /// array — the exact <c>IndexOutOfRangeException</c> cascade we are
+        /// trying to prevent. Use <see cref="EnsureCapacity(int)"/> instead.
+        /// </summary>
+        public static void Reset()
         {
             try
             {
@@ -96,6 +115,70 @@ namespace Valkur.UIKit
             {
                 Debug.LogWarning(
                     $"[SelectableArrayPreGrow] Skipped — reflection threw: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Safe-at-any-time variant: grows <c>s_Selectables</c> so its
+        /// length is at least <c>max(requestedCapacity, s_SelectableCount × 2)</c>.
+        /// The <c>count × 2</c> term is the critical defence: if drift has
+        /// already pushed <c>s_SelectableCount</c> above the requested
+        /// capacity (a Selectable's OnEnable threw earlier in the session and
+        /// the matching OnDisable skipped its decrement), a fixed capacity
+        /// floor wouldn't recover — the next OnEnable would still try to
+        /// write past the array end because UGUI's grow-check fires only on
+        /// strict equality (<c>count == length</c>). Doubling above the live
+        /// count guarantees the strict-equality check triggers before any
+        /// out-of-bounds write.
+        ///
+        /// Never zeroes the count and never drops references — any live
+        /// <see cref="Selectable"/> (including the editor's permanent UI:
+        /// Inspector, Project window, Test Runner) keeps its valid
+        /// <c>m_CurrentIndex</c> after the grow.
+        ///
+        /// Designed for the EditMode test runner: calling <see cref="Reset"/>
+        /// mid-session orphans live Selectables and triggers an
+        /// <c>IndexOutOfRangeException</c> cascade in the editor's own UI
+        /// (which then surfaces as "unhandled log message" failures in
+        /// dozens of unrelated tests). <c>EnsureCapacity</c> avoids that.
+        /// </summary>
+        public static void EnsureCapacity(int requestedCapacity)
+        {
+            if (requestedCapacity <= 0) return;
+            try
+            {
+                var t = typeof(Selectable);
+                var arrField = t.GetField(SelectablesFieldName,
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                var countField = t.GetField(SelectableCountFieldName,
+                    BindingFlags.NonPublic | BindingFlags.Static);
+                if (arrField == null || countField == null)
+                {
+                    Debug.LogWarning(
+                        "[SelectableArrayPreGrow] UGUI Selectable static fields " +
+                        "not found — EnsureCapacity inactive.");
+                    return;
+                }
+
+                var current = (Selectable[])arrField.GetValue(null);
+                int liveCount = (int)countField.GetValue(null);
+                // Drift safety: if the count has crept above requestedCapacity
+                // (failed-OnEnable cascade), the floor doesn't help — grow
+                // explicitly to 2× the live count so UGUI's strict-equality
+                // grow-check has room to fire before any out-of-bounds write.
+                int target = Mathf.Max(requestedCapacity, liveCount * 2);
+
+                if (current != null && current.Length >= target) return;
+
+                var bigger = new Selectable[target];
+                if (current != null)
+                    Array.Copy(current, bigger, current.Length);
+                arrField.SetValue(null, bigger);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(
+                    $"[SelectableArrayPreGrow] EnsureCapacity skipped — reflection threw: {ex.Message}");
             }
         }
     }

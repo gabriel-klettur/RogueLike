@@ -33,7 +33,9 @@ namespace Valkur.Tests.EditMode.Game.UI
     {
         private FieldInfo _arrField;
         private FieldInfo _countField;
-        private MethodInfo _resetMethod;
+        // Private wrapper that wires Reset() into the runtime SubsystemRegistration
+        // hook; reflected for the attribute-presence assertion below.
+        private MethodInfo _resetOnPlayStartMethod;
 
         [SetUp]
         public void SetUp()
@@ -43,12 +45,14 @@ namespace Valkur.Tests.EditMode.Game.UI
                 BindingFlags.NonPublic | BindingFlags.Static);
             _countField = t.GetField("s_SelectableCount",
                 BindingFlags.NonPublic | BindingFlags.Static);
-            _resetMethod = typeof(SelectableArrayPreGrow).GetMethod("ResetStaticState",
+            _resetOnPlayStartMethod = typeof(SelectableArrayPreGrow).GetMethod("ResetOnPlayStart",
                 BindingFlags.NonPublic | BindingFlags.Static);
 
             Assert.IsNotNull(_arrField, "UGUI Selectable.s_Selectables field not found via reflection.");
             Assert.IsNotNull(_countField, "UGUI Selectable.s_SelectableCount field not found via reflection.");
-            Assert.IsNotNull(_resetMethod, "SelectableArrayPreGrow.ResetStaticState not found via reflection.");
+            Assert.IsNotNull(_resetOnPlayStartMethod,
+                "SelectableArrayPreGrow.ResetOnPlayStart not found via reflection — " +
+                "the runtime SubsystemRegistration wrapper around Reset() must exist.");
         }
 
         // ── Field discovery -----------------------------------------------
@@ -68,16 +72,16 @@ namespace Valkur.Tests.EditMode.Game.UI
         }
 
         [Test]
-        public void ResetStaticStateMethod_HasRuntimeInitializeAttribute()
+        public void ResetOnPlayStartMethod_HasRuntimeInitializeAttribute()
         {
             // The runtime hook MUST be present — otherwise the workaround
             // never fires at Play start and the entire defense disappears.
-            var attr = _resetMethod.GetCustomAttribute<RuntimeInitializeOnLoadMethodAttribute>();
+            var attr = _resetOnPlayStartMethod.GetCustomAttribute<RuntimeInitializeOnLoadMethodAttribute>();
             Assert.IsNotNull(attr,
-                "ResetStaticState must carry [RuntimeInitializeOnLoadMethod] — " +
-                "without it the workaround never runs.");
+                "ResetOnPlayStart must carry [RuntimeInitializeOnLoadMethod] — " +
+                "without it the workaround never runs at Play start.");
             Assert.AreEqual(RuntimeInitializeLoadType.SubsystemRegistration, attr.loadType,
-                "ResetStaticState must fire at SubsystemRegistration so no " +
+                "ResetOnPlayStart must fire at SubsystemRegistration so no " +
                 "Selectable has registered yet when the reset runs.");
         }
 
@@ -102,7 +106,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             int savedCount = (int)_countField.GetValue(null);
             try
             {
-                _resetMethod.Invoke(null, null);
+                SelectableArrayPreGrow.Reset();
                 var arr = (Selectable[])_arrField.GetValue(null);
                 Assert.GreaterOrEqual(arr.Length, SelectableArrayPreGrow.InitialCapacity,
                     "Array should be at least InitialCapacity after reset.");
@@ -121,7 +125,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             int savedCount = (int)_countField.GetValue(null);
             try
             {
-                _resetMethod.Invoke(null, null);
+                SelectableArrayPreGrow.Reset();
                 Assert.AreEqual(0, (int)_countField.GetValue(null),
                     "Count must be 0 after reset — this is the only way to recover from drift > array length.");
             }
@@ -139,7 +143,7 @@ namespace Valkur.Tests.EditMode.Game.UI
             int savedCount = (int)_countField.GetValue(null);
             try
             {
-                _resetMethod.Invoke(null, null);
+                SelectableArrayPreGrow.Reset();
                 var arr = (Selectable[])_arrField.GetValue(null);
                 Assert.AreNotSame(savedArr, arr,
                     "Reset should replace the array reference, not mutate the old one.");
@@ -160,9 +164,9 @@ namespace Valkur.Tests.EditMode.Game.UI
             int savedCount = (int)_countField.GetValue(null);
             try
             {
-                _resetMethod.Invoke(null, null);
-                _resetMethod.Invoke(null, null);
-                _resetMethod.Invoke(null, null);
+                SelectableArrayPreGrow.Reset();
+                SelectableArrayPreGrow.Reset();
+                SelectableArrayPreGrow.Reset();
                 var arr = (Selectable[])_arrField.GetValue(null);
                 Assert.GreaterOrEqual(arr.Length, SelectableArrayPreGrow.InitialCapacity);
                 Assert.AreEqual(0, (int)_countField.GetValue(null),
