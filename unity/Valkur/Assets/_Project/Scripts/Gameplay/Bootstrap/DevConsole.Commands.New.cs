@@ -367,6 +367,98 @@ namespace Valkur.Gameplay
             Log($"Player layer: {prev} → {occupant.CurrentVisualLayer} ({occupant.LayerName}).");
         }
 
+        // ── layerdiag ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Dump the full per-visual-layer collision pipeline state. Use when
+        /// "Player on L{X} is blocked by a tag-{Y} collider" reports keep
+        /// coming in — the output reveals which leg of the M2 contract is
+        /// broken (matrix, sub-tilemap layer assignment, player includeLayers,
+        /// baker readiness, etc.).
+        /// </summary>
+        private void CmdLayerDiag()
+        {
+            Log("=== Layer Diagnostic ===");
+
+            // ── Player state ──────────────────────────────────────────────
+            var player = EntityRegistry.PlayerTransform;
+            if (player == null) { Log("No player found."); return; }
+            Log($"Player GO physics layer: {player.gameObject.layer} ('{UnityEngine.LayerMask.LayerToName(player.gameObject.layer)}')");
+
+            var occupant = player.GetComponent<VisualLayerOccupant>();
+            Log($"Player VisualLayerOccupant.CurrentVisualLayer: {(occupant != null ? occupant.CurrentVisualLayer.ToString() : "MISSING")}");
+
+            var colliders = player.GetComponentsInChildren<UnityEngine.Collider2D>(includeInactive: true);
+            Log($"Player has {colliders.Length} Collider2D(s):");
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                var c = colliders[i];
+                if (c == null) continue;
+                Log($"  [{i}] {c.GetType().Name} on '{c.gameObject.name}' (layer {c.gameObject.layer}) " +
+                    $"enabled={c.enabled} isTrigger={c.isTrigger}");
+                Log($"      includeLayers=0x{c.includeLayers.value:X} ({DecodeMask(c.includeLayers.value)})");
+                Log($"      excludeLayers=0x{c.excludeLayers.value:X} ({DecodeMask(c.excludeLayers.value)})");
+            }
+
+            // ── Physics2D matrix entries (Player vs WorldL{N} / WorldAll) ─
+            int playerLayer = UnityEngine.LayerMask.NameToLayer("Player");
+            Log($"Physics2D matrix (playerLayer={playerLayer}):");
+            for (int i = 0; i < World.Layering.WorldCollisionLayers.LayerCount; i++)
+            {
+                int wl = World.Layering.WorldCollisionLayers.GetWorldLayerIndex(i);
+                bool ignored = wl >= 0 && UnityEngine.Physics2D.GetIgnoreLayerCollision(playerLayer, wl);
+                Log($"  Player vs WorldL{i} (idx={wl}): {(ignored ? "IGNORE" : "COLLIDE")}");
+            }
+            int worldAll = World.Layering.WorldCollisionLayers.GetWorldAllIndex();
+            bool worldAllIgnored = worldAll >= 0 && UnityEngine.Physics2D.GetIgnoreLayerCollision(playerLayer, worldAll);
+            Log($"  Player vs WorldAll (idx={worldAll}): {(worldAllIgnored ? "IGNORE" : "COLLIDE")}");
+
+            // ── Baker state ───────────────────────────────────────────────
+            if (World.Layering.WorldCollisionBaker.HasInstance)
+            {
+                var baker = World.Layering.WorldCollisionBaker.Instance;
+                Log($"WorldCollisionBaker GO: '{baker.gameObject.name}' " +
+                    $"activeInHierarchy={baker.gameObject.activeInHierarchy} enabled={baker.enabled}");
+                var t = baker.GetType();
+                var isReadyField = t.GetField("_isReady", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var sourceField = t.GetField("_sourceCollision", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var subTilemapsField = t.GetField("_subTilemaps", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                bool isReady = isReadyField != null && (bool)isReadyField.GetValue(baker);
+                var src = sourceField != null ? sourceField.GetValue(baker) as UnityEngine.Tilemaps.Tilemap : null;
+                Log($"  _isReady={isReady}  _sourceCollision={(src == null ? "<null/destroyed>" : src.name)}  " +
+                    $"sourceColliderEnabled={(src != null && src.GetComponent<UnityEngine.Tilemaps.TilemapCollider2D>() is var sc && sc != null ? sc.enabled.ToString() : "n/a")}");
+
+                if (subTilemapsField?.GetValue(baker) is UnityEngine.Tilemaps.Tilemap[] subs)
+                {
+                    for (int i = 0; i < subs.Length; i++)
+                    {
+                        var sub = subs[i];
+                        string slot = i < World.Layering.WorldCollisionLayers.LayerCount ? $"L{i}" : "All";
+                        if (sub == null) Log($"  sub[{slot}]: <null/destroyed>");
+                        else Log($"  sub[{slot}]: '{sub.name}' on physics layer {sub.gameObject.layer} ('{UnityEngine.LayerMask.LayerToName(sub.gameObject.layer)}')");
+                    }
+                }
+            }
+            else
+            {
+                Log("WorldCollisionBaker.HasInstance = false");
+            }
+        }
+
+        private static string DecodeMask(int mask)
+        {
+            if (mask == 0) return "none";
+            var sb = new System.Text.StringBuilder();
+            for (int b = 0; b < 32; b++)
+            {
+                if ((mask & (1 << b)) == 0) continue;
+                if (sb.Length > 0) sb.Append(", ");
+                string name = UnityEngine.LayerMask.LayerToName(b);
+                sb.Append(string.IsNullOrEmpty(name) ? $"layer{b}" : $"{name}({b})");
+            }
+            return sb.ToString();
+        }
+
         private static string[] MonsterKeyCompleter(string[] tokens)
         {
             string prefix = tokens.Length >= 2 ? tokens[tokens.Length - 1] : "";

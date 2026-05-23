@@ -455,6 +455,14 @@ namespace Valkur.Gameplay
                 Handler = args => CmdLayer(args)
             });
             RegisterCommand(new ConsoleCommand {
+                Name = "layerdiag",
+                Usage = "layerdiag",
+                Help = "dump the per-visual-layer collision pipeline state " +
+                       "(player layer, includeLayers, matrix, baker state, sub-tilemaps).",
+                Category = "cheats",
+                Handler = _ => CmdLayerDiag()
+            });
+            RegisterCommand(new ConsoleCommand {
                 Name = "noclip", Aliases = new[] { "/noclip" },
                 Usage = "noclip [on|off]", Help = "toggle collision with the world layer",
                 Category = "cheats",
@@ -471,8 +479,8 @@ namespace Valkur.Gameplay
             // ── world ─────────────────────────────────────────────────────────
             RegisterCommand(new ConsoleCommand {
                 Name = "tp", Aliases = new[] { "teleport", "/teleport" },
-                Usage = "tp <x> <y>  |  tp <world> <x> <y>  |  tp <world>",
-                Help = "teleport player to coordinates or to a world's spawn",
+                Usage = "tp  |  tp <x> <y>  |  tp <world> <x> <y>  |  tp <world>",
+                Help = "no args → warp to mouse cursor; else coords or a world/zone slug",
                 Category = "world",
                 Handler = args => CmdTeleport(args),
                 Completer = args => WorldSlugCompleter(args)

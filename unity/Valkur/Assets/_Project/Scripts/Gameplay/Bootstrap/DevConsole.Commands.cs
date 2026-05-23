@@ -38,6 +38,19 @@ namespace Valkur.Gameplay
             var player = EntityRegistry.PlayerTransform;
             if (player == null) { Log("No player found."); return; }
 
+            // Signature 0: teleport   (no args → warp to mouse cursor world position)
+            if (parts.Length == 1)
+            {
+                if (!Valkur.Core.Input.MouseInputManager.TryGetWorldMousePosition(out Vector2 worldMouse))
+                {
+                    Log("Could not read mouse position.");
+                    return;
+                }
+                player.position = new Vector3(worldMouse.x, worldMouse.y, 0f);
+                Log($"Teleported to mouse cursor ({worldMouse.x:F2}, {worldMouse.y:F2}).");
+                return;
+            }
+
             // Signature 1: tp <x> <y>   (both numeric)
             if (parts.Length >= 3 &&
                 float.TryParse(parts[1], NumberStyles.Float,
