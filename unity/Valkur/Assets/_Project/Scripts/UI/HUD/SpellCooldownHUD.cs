@@ -120,6 +120,14 @@ namespace Valkur.UI.HUD
             private readonly GameObject _go;
             private readonly TextMeshProUGUI _label;
             private string _displayName;
+            // Tracks the last `Remaining` value that was actually written to
+            // the label, quantised to the same 0.1-s precision the display
+            // uses. Skipping the string-build + TMP rebuild on frames where
+            // the visible text would not change saves ~5x per cooldown row
+            // (60 Hz Update → ~10 Hz actual text refresh) and eliminates a
+            // recurring string allocation while spells are on cooldown.
+            // Catalog row: VendorShopUI ("conditional text rebuild").
+            private int _lastDisplayedTenths = int.MinValue;
 
             public float Remaining { get; private set; }
 
@@ -168,6 +176,10 @@ namespace Valkur.UI.HUD
             {
                 _displayName = displayName;
                 Remaining    = total;
+                // Force the next Refresh() to actually write the label, even if
+                // the new `total` quantises to the same tenths as the previous
+                // value — the displayName may have changed too.
+                _lastDisplayedTenths = int.MinValue;
                 Refresh();
             }
 
@@ -186,6 +198,14 @@ namespace Valkur.UI.HUD
             private void Refresh()
             {
                 if (_label == null) return;
+                // Quantise to tenths of a second — the format string ("0.0") only
+                // surfaces that precision, so any frame where the tenth-of-a-second
+                // bucket hasn't changed would produce identical text. Skipping the
+                // string interpolation + .text setter on those frames eliminates
+                // the per-frame GC alloc and the TMP mesh rebuild.
+                int tenths = Mathf.Max(0, Mathf.RoundToInt(Remaining * 10f));
+                if (tenths == _lastDisplayedTenths) return;
+                _lastDisplayedTenths = tenths;
                 _label.text = $"{_displayName}  {Remaining:0.0}s";
             }
         }

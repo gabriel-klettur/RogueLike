@@ -26,6 +26,9 @@ namespace Valkur.Gameplay.Chat
         private Transform _target;
         private Canvas _canvas;
         private RectTransform _canvasRect;
+        // Camera.main walks the tagged-camera index on every access. Caching
+        // once in Initialize avoids two per-frame lookups inside LateUpdate.
+        private Transform _camTransform;
 
         private struct BubbleEntry
         {
@@ -124,9 +127,16 @@ namespace Valkur.Gameplay.Chat
             if (_target != null)
                 transform.position = _target.position + Vector3.up * _yOffset;
 
-            // Face camera
-            if (Camera.main != null)
-                transform.forward = Camera.main.transform.forward;
+            // Face camera. Cache Camera.main lazily — its property accessor
+            // walks the tag index on every call, and we'd otherwise hit it
+            // twice per LateUpdate per chat bubble.
+            if (_camTransform == null)
+            {
+                var c = Camera.main;
+                if (c != null) _camTransform = c.transform;
+            }
+            if (_camTransform != null)
+                transform.forward = _camTransform.forward;
 
             // Expire and fade bubbles
             for (int i = _bubbles.Count - 1; i >= 0; i--)

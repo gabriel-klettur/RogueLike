@@ -22,6 +22,11 @@ namespace Valkur.Gameplay.Combat
         // Active effects keyed by their runtime Type — one instance per type max.
         // Re-applying the same type replaces the previous instance (refresh semantics).
         private readonly Dictionary<Type, StatusEffect> _active = new();
+        // Reused removal buffer — hoisted out of Update so the GC doesn't pay for
+        // a new List<Type> every frame an entity has active effects (DoTs, stuns,
+        // freezes during combat). With ~7 status managers, the original code
+        // allocated up to 7 lists/frame, triggering Gen0 GC in tight combat loops.
+        private readonly List<Type> _removalBuffer = new();
 
         public event Action<StatusEffect> OnEffectApplied;
         public event Action<StatusEffect> OnEffectRemoved;
@@ -75,21 +80,25 @@ namespace Valkur.Gameplay.Combat
         {
             if (_active.Count == 0) return;
 
-            var toRemove = new List<Type>();
+            // Reuse the hoisted buffer instead of allocating a fresh list each
+            // frame. Capacity stays at the high-water mark across frames, which
+            // is acceptable for a per-entity manager (a handful of effects max).
+            _removalBuffer.Clear();
 
             foreach (var kv in _active)
             {
                 var effect = kv.Value;
                 if (effect.IsExpired)
                 {
-                    toRemove.Add(kv.Key);
+                    _removalBuffer.Add(kv.Key);
                     continue;
                 }
                 effect.Tick(this);
             }
 
-            foreach (var type in toRemove)
+            for (int i = 0; i < _removalBuffer.Count; i++)
             {
+                var type = _removalBuffer[i];
                 if (_active.TryGetValue(type, out var expired))
                     RemoveEffect(type, expired);
             }

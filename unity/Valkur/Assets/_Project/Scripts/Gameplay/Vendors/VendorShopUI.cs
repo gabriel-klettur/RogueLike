@@ -70,13 +70,26 @@ namespace Valkur.Gameplay.NPC
             SetVisible(false);
         }
 
+        // Cached gold count and label so we only rebuild the TMP string when
+        // the value actually changes. The original code allocated a new
+        // string + triggered a TMP mesh rebuild every Update tick while the
+        // shop was open — measurable GC pressure during browsing sessions.
+        private int _lastDisplayedGold = int.MinValue;
+
         private void Update()
         {
             if (!_visible) return;
             if (_closeAction != null && _closeAction.WasPerformedThisFrame())
                 SetVisible(false);
             if (_goldText != null && _playerWallet != null)
-                _goldText.text = $"Gold: {_playerWallet.Coins}";
+            {
+                int coins = _playerWallet.Coins;
+                if (coins != _lastDisplayedGold)
+                {
+                    _lastDisplayedGold = coins;
+                    _goldText.text = "Gold: " + coins;
+                }
+            }
         }
 
         protected override void OnDestroy()

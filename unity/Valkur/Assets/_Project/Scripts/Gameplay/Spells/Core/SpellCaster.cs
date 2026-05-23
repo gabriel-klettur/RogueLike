@@ -36,6 +36,11 @@ namespace Valkur.Gameplay.Spells
         // SpellBook: key-based spell lookup for expanded bindings beyond 4 slots
         private readonly Dictionary<string, SpellDefinition> _spellBook = new Dictionary<string, SpellDefinition>();
         private readonly Dictionary<string, float> _spellBookCooldowns = new Dictionary<string, float>();
+        // Reused per-Update buffer to tick spell-book cooldowns without
+        // allocating a fresh List<string> every frame. With the player's
+        // SpellCaster running this Update at 60 Hz, the original allocation
+        // was a steady source of Gen0 GC pressure during combat.
+        private readonly List<string> _spellBookTickBuffer = new List<string>();
 
         private static readonly Dictionary<SpellType, ISpellExecutor> Executors = new Dictionary<SpellType, ISpellExecutor>
         {
@@ -118,15 +123,19 @@ namespace Valkur.Gameplay.Spells
                     _cooldownTimers[i] -= Time.deltaTime;
             }
 
-            // Tick spell book cooldowns
-            var keysToUpdate = new List<string>();
-            foreach (var kv in _spellBookCooldowns)
+            // Tick spell book cooldowns. Early-out when none are active
+            // (the common case) avoids the foreach + buffer fill entirely.
+            if (_spellBookCooldowns.Count > 0)
             {
-                if (kv.Value > 0f) keysToUpdate.Add(kv.Key);
-            }
-            foreach (var key in keysToUpdate)
-            {
-                _spellBookCooldowns[key] -= Time.deltaTime;
+                _spellBookTickBuffer.Clear();
+                foreach (var kv in _spellBookCooldowns)
+                {
+                    if (kv.Value > 0f) _spellBookTickBuffer.Add(kv.Key);
+                }
+                for (int i = 0; i < _spellBookTickBuffer.Count; i++)
+                {
+                    _spellBookCooldowns[_spellBookTickBuffer[i]] -= Time.deltaTime;
+                }
             }
 
             if (_phase != CastPhase.Ready)

@@ -33,6 +33,12 @@ namespace Valkur.Gameplay.Spawners
         private bool _damageableOverride;
         private int _maxHpOverride;
 
+        // Proximity-trigger throttle. Polling every frame across 18+ active
+        // spawners adds up; checking 10x/sec is enough for a feature the
+        // player only notices when crossing the trigger ring.
+        private const float ProximityPollInterval = 0.1f;
+        private float _proximityNextPoll;
+
         public string InstanceId => _instanceId;
         public string Zone => _zone;
         public SpawnerTemplateData Template => _template;
@@ -102,11 +108,26 @@ namespace Valkur.Gameplay.Spawners
 
             if (_template.triggerType == TriggerType.Proximity && !_triggered)
             {
+                // 10 Hz throttle: the proximity check fires across all spawners
+                // every frame in the original, which means 18+ Vector2.Distance
+                // calls per frame just to test a feature the player only
+                // notices once per crossing. Polling at 10 Hz drops that to
+                // ≤2 calls per frame across the active set, and the worst-case
+                // 100ms latency on entering a trigger radius is imperceptible.
+                if (Time.unscaledTime < _proximityNextPoll) return;
+                _proximityNextPoll = Time.unscaledTime + ProximityPollInterval;
+
                 var playerT = EntityRegistry.PlayerTransform;
                 if (playerT == null) return;
 
-                float dist = Vector2.Distance(playerT.position, transform.position);
-                if (dist <= _template.triggerRadius)
+                // sqrMagnitude avoids the per-frame sqrt that Vector2.Distance
+                // implies — radius² is constant per template, so the compare
+                // is mathematically equivalent.
+                float dx = playerT.position.x - transform.position.x;
+                float dy = playerT.position.y - transform.position.y;
+                float sqrDist = dx * dx + dy * dy;
+                float radius = _template.triggerRadius;
+                if (sqrDist <= radius * radius)
                 {
                     _triggered = true;
                     _state = SpawnerState.Active;

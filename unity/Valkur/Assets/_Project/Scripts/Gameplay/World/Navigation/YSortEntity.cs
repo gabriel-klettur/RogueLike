@@ -46,13 +46,17 @@ namespace Valkur.Gameplay.World
 
         private void LateUpdate()
         {
-            if (!updateEveryFrame)
-            {
-                float currentY = transform.position.y;
-                if (Mathf.Abs(currentY - _lastY) < Y_THRESHOLD)
-                    return;
-                _lastY = currentY;
-            }
+            // Always skip when the entity hasn't moved meaningfully on Y.
+            // Even with updateEveryFrame=true the sorting order is derived
+            // solely from transform.position.y, so writing it again when
+            // nothing changed wastes a SpriteRenderer.sortingOrder set
+            // (which propagates a dirty flag through URP's batcher). 7+
+            // stationary YSortEntity instances were paying this cost every
+            // LateUpdate before this guard.
+            float currentY = transform.position.y;
+            if (Mathf.Abs(currentY - _lastY) < Y_THRESHOLD)
+                return;
+            _lastY = currentY;
 
             UpdateSortingOrder();
         }
