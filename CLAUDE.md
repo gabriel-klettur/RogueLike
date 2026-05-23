@@ -215,6 +215,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
 | `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
 | `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
+| `performance-optimizer` | Data-driven FPS / frame-time / GC optimization via Profiler + Recorder API |
 | `udemy-inspiration` | Pull architectural patterns from DungeonGunnerCourse |
 
 ## Slash commands (`.claude/commands/`)
@@ -225,6 +226,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `/unity-tests` | Run EditMode (or both) test suite via MCP, poll, report |
 | `/unity-test-new <System>` | Scaffold a test in correct folder/namespace |
 | `/unity-status` | Console + last test summary at a glance |
+| `/unity-profile` | Capture Profiler/Recorder snapshot — CPU/GPU axis breakdown + GC baseline |
 
 ## Skills (`.claude/skills/` and `.github/skills/`)
 
@@ -233,6 +235,7 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 | Skill | Source-of-truth file |
 |---|---|
 | unity-development | `.github/skills/unity-development/SKILL.md` |
+| unity-performance | `.github/skills/unity-performance/SKILL.md` |
 | unity-testing | `.github/skills/unity-testing/SKILL.md` |
 | asset-pipeline | `.github/skills/asset-pipeline/SKILL.md` |
 | markdown-docs | `.github/skills/markdown-docs/SKILL.md` |
