@@ -1,0 +1,19 @@
+{
+    "schemaVersion": "1.3",
+    "restrictTileEditingToEditableZones": true,
+    "nextZoneIndex": 1,
+    "zones": [
+        {
+            "zoneName": "Alpha",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        }
+    ],
+    "hasLastPlayerPosition": false,
+    "lastPlayerWorldX": 0.0,
+    "lastPlayerWorldY": 0.0,
+    "portals": [],
+    "biomeBuildings": [],
+    "databaseZoneRenames": []
+}

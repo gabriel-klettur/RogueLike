@@ -1,0 +1,48 @@
+{
+    "schemaVersion": "1.2",
+    "restrictTileEditingToEditableZones": true,
+    "nextZoneIndex": 1,
+    "zones": [
+        {
+            "zoneName": "Alpha",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_-100_100",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_portals_A",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_0_2",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_0_0",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        },
+        {
+            "zoneName": "zone_default",
+            "gridOffsetX": 0,
+            "gridOffsetY": 0,
+            "editableInTileEditor": true
+        }
+    ],
+    "hasLastPlayerPosition": true,
+    "lastPlayerWorldX": 55.555179595947269,
+    "lastPlayerWorldY": -11.661896705627442,
+    "portals": [],
+    "biomeBuildings": []
+}
