@@ -36,7 +36,7 @@ namespace Valkur.Editor
                 ReimportTiles();
                 ReimportNPCs();
                 ReimportFolder("Assets/_Project/Art/Characters", "Character", CHARACTER_PPU, new Vector2(0.5f, 0f));
-                ReimportFolder("Assets/_Project/Art/Buildings", "Building", BUILDING_PPU, new Vector2(0.5f, 0f));
+                ReimportFolder("Assets/_Project/Resources/Buildings", "Building", BUILDING_PPU, new Vector2(0.5f, 0f));
             }
             finally
             {

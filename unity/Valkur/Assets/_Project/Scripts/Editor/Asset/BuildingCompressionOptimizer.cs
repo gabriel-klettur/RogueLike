@@ -5,8 +5,7 @@ namespace Valkur.Editor
 {
     /// <summary>
     /// One-shot menu to apply the new <see cref="TextureImporterCompression.CompressedHQ"/>
-    /// policy to every PNG under <c>Resources/Buildings/</c> (and the mirror
-    /// authoring folder <c>Art/Buildings/</c> if present). Use after editing
+    /// policy to every PNG under <c>Resources/Buildings/</c>. Use after editing
     /// <see cref="ValkurAssetPostprocessor"/>'s per-folder compression rule —
     /// changing the postprocessor only affects newly-imported assets, so the
     /// ~95 existing Building PNGs need an explicit reimport to flip from
@@ -28,7 +27,6 @@ namespace Valkur.Editor
         private static readonly string[] BuildingFolders =
         {
             "Assets/_Project/Resources/Buildings",
-            "Assets/_Project/Art/Buildings",
         };
 
         private static readonly string[] AllPlatforms =
