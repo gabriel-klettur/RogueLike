@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.World
 {
@@ -42,7 +43,10 @@ namespace Valkur.Gameplay.World
                 if (tiles == 0 && paths == 0)
                 {
                     empty++;
-                    Debug.Log($"[TileCollisionDiagnostics] {layerName}: 0 tiles → no collision (empty layer).");
+                    // An empty layer is the normal case for most of the 11 visual
+                    // layers — reported in the summary line below, detail on demand.
+                    VerboseLog.Log(VerboseLog.Category.Collision,
+                        () => $"[TileCollisionDiagnostics] {layerName}: 0 tiles → no collision (empty layer).");
                 }
                 else if (tiles > 0 && paths == 0)
                 {
@@ -55,7 +59,9 @@ namespace Valkur.Gameplay.World
                 else
                 {
                     healthy++;
-                    Debug.Log($"[TileCollisionDiagnostics] {layerName}: {tiles} tiles, pathCount={paths}.");
+                    // Healthy layers need no attention; the summary counts them.
+                    VerboseLog.Log(VerboseLog.Category.Collision,
+                        () => $"[TileCollisionDiagnostics] {layerName}: {tiles} tiles, pathCount={paths}.");
                 }
             }
 

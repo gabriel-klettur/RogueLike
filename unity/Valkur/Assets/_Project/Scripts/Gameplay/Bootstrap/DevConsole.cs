@@ -455,6 +455,14 @@ namespace Valkur.Gameplay
                 Handler = args => CmdLayer(args)
             });
             RegisterCommand(new ConsoleCommand {
+                Name = "verbose",
+                Usage = "verbose [category] [on|off]",
+                Help = "list or toggle high-volume dev logging (world, settings, " +
+                       "collision, bootstrap, all). Off by default; the choice persists.",
+                Category = "cheats",
+                Handler = args => CmdVerbose(args)
+            });
+            RegisterCommand(new ConsoleCommand {
                 Name = "layerdiag",
                 Usage = "layerdiag",
                 Help = "dump the per-visual-layer collision pipeline state " +

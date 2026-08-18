@@ -376,6 +376,48 @@ namespace Valkur.Gameplay
         /// broken (matrix, sub-tilemap layer assignment, player includeLayers,
         /// baker readiness, etc.).
         /// </summary>
+        /// <summary>
+        /// `verbose` — inspect or flip the high-volume logging categories owned
+        /// by <see cref="VerboseLog"/>.
+        ///
+        /// The detail those categories carry is genuinely useful when working on
+        /// world loading, settings persistence or collision baking; it is simply
+        /// off by default because it drowned the boot log. Nothing was deleted —
+        /// this command is how you get it back, without a recompile, and the
+        /// choice survives Play-mode restarts.
+        /// </summary>
+        private void CmdVerbose(string[] args)
+        {
+            if (args == null || args.Length < 2)
+            {
+                Log(VerboseLog.Describe());
+                Log("usage: verbose <world|settings|collision|bootstrap|all> <on|off>");
+                return;
+            }
+
+            if (!VerboseLog.TryParse(args[1], out var category))
+            {
+                Log($"unknown category '{args[1]}'. Try: world, settings, collision, bootstrap, all.");
+                return;
+            }
+
+            if (args.Length < 3)
+            {
+                Log($"{args[1].ToLowerInvariant()} = {(VerboseLog.IsOn(category) ? "on" : "off")}");
+                return;
+            }
+
+            string state = args[2].ToLowerInvariant();
+            if (state != "on" && state != "off")
+            {
+                Log($"expected 'on' or 'off', got '{args[2]}'.");
+                return;
+            }
+
+            VerboseLog.Set(category, state == "on");
+            Log($"{args[1].ToLowerInvariant()} = {state}");
+        }
+
         private void CmdLayerDiag()
         {
             Log("=== Layer Diagnostic ===");

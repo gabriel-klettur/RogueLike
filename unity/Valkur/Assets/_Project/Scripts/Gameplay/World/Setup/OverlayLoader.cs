@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Valkur.Core;
 
 namespace Valkur.Gameplay.World
 {
@@ -130,7 +131,11 @@ namespace Valkur.Gameplay.World
             if (_missingCount > 0)
                 Debug.LogWarning($"[OverlayLoader] {_missingCount} tile references could not be resolved ({jsonPath}).");
             else
-                Debug.Log($"[OverlayLoader] Overlay '{Path.GetFileName(jsonPath)}' loaded at offset ({offsetX},{offsetY}).");
+                // Per-overlay detail: 48 zones = 48 lines at every boot. WorldLoader
+                // already prints the one-line total, so this is gated rather than
+                // removed — `verbose world on` brings it back when debugging a map.
+                VerboseLog.Log(VerboseLog.Category.World,
+                    () => $"[OverlayLoader] Overlay '{Path.GetFileName(jsonPath)}' loaded at offset ({offsetX},{offsetY}).");
         }
 
         /// <summary>
@@ -305,7 +310,10 @@ namespace Valkur.Gameplay.World
             }
 
             if (tilesSet > 0)
-                Debug.Log($"[OverlayLoader] Painted {tilesSet} tiles on '{tilemap.gameObject.name}'.");
+                // Fires once per (overlay x tilemap layer) — the single largest
+                // source of boot log volume. Gated, not dropped.
+                VerboseLog.Log(VerboseLog.Category.World,
+                    () => $"[OverlayLoader] Painted {tilesSet} tiles on '{tilemap.gameObject.name}'.");
         }
 
         private static TileBase ResolveTile(string tileName, bool isCollisionLayer)

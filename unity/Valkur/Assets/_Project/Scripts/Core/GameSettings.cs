@@ -104,7 +104,10 @@ namespace Valkur.Core
             try
             {
                 File.WriteAllText(FilePath, JsonUtility.ToJson(this, true));
-                Debug.Log("[GameSettings] Saved to disk.");
+                // Save() runs on every settings mutation — dragging one volume
+                // slider produced dozens of identical lines. Kept behind
+                // `verbose settings on` for when persistence itself is suspect.
+                VerboseLog.Log(VerboseLog.Category.Settings, "[GameSettings] Saved to disk.");
             }
             catch (Exception e)
             {
