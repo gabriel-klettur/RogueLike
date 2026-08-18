@@ -93,3 +93,7 @@ MonoBehaviour:
   - fireball_impact_burst
   - fireball_impact_debris
   - fireball_impact_smoke
+  castPreset: fireball_cast_flash
+  castPresetLayers:
+  - fireball_cast_ring
+  - fireball_cast_sparks

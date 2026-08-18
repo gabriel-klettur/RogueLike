@@ -191,6 +191,14 @@ namespace Valkur.Data
         [Tooltip("Extra impact presets layered on top of impactPreset, in draw order.")]
         public List<string> impactPresetLayers;
 
+        [Tooltip("Preset played at the caster the moment the spell fires. The launch is the " +
+                 "only beat the player is guaranteed to be looking at, so it carries most of " +
+                 "the spell's sense of power.")]
+        public string castPreset;
+
+        [Tooltip("Extra cast presets layered on top of castPreset, in draw order.")]
+        public List<string> castPresetLayers;
+
         /// <summary>
         /// Every trail preset this spell wants, primary first. Never returns null.
         /// </summary>
@@ -200,6 +208,11 @@ namespace Valkur.Data
         /// Every impact preset this spell wants, primary first. Never returns null.
         /// </summary>
         public List<string> CollectImpactPresets() => CollectPresets(impactPreset, impactPresetLayers);
+
+        /// <summary>
+        /// Every launch preset this spell wants, primary first. Never returns null.
+        /// </summary>
+        public List<string> CollectCastPresets() => CollectPresets(castPreset, castPresetLayers);
 
         /// <summary>
         /// Merges the single legacy field with the layer list, dropping blanks and

@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Spells
             // from the middle of the character, not the pivot (which is at the feet for 2D
             // sprites with bottom-center pivot). Falls back to collider bounds, then to a
             // fixed +0.5 Y offset.
-            Vector3 casterCenter = ResolveCasterCenter(ctx.Caster);
+            Vector3 casterCenter = ResolveCastOrigin(ctx.Caster);
 
             // Spawn slightly in front of the caster along the fire direction so the
             // projectile clears the caster's own collider and doesn't start overlapping
@@ -120,6 +120,16 @@ namespace Valkur.Gameplay.Spells
                 vfxService.SpawnImpact(spawnPos, flashColor, 0.15f, 0.5f);
             }
 
+            // Launch stack, played at the caster. Unlike the trail this is not parented to
+            // anything: the muzzle effect belongs to the moment and the place, not to the
+            // projectile that is already leaving.
+            var castPresets = ctx.Spell.CollectCastPresets();
+            if (castPresets.Count > 0 && VFXManager.Instance != null)
+            {
+                for (int i = 0; i < castPresets.Count; i++)
+                    VFXManager.Instance.SpawnParticlePreset(castPresets[i], spawnPos, -1f);
+            }
+
         }
 
         /// <summary>
@@ -162,6 +172,49 @@ namespace Valkur.Gameplay.Spells
             float minY = caster.position.y + MIN_LIFT_ABOVE_PIVOT;
             if (result.y < minY) result.y = minY;
             return result;
+        }
+
+        /// <summary>
+        /// Fraction of the caster's half-height, above its centre, where a cast leaves the
+        /// body. <see cref="ResolveCasterCenter"/> returns the geometric middle of the
+        /// sprite — the waist on a humanoid — so a projectile launched from there reads as
+        /// coming out of the character's stomach. Hands sit roughly here.
+        /// </summary>
+        private const float CAST_HEIGHT_FRACTION = 0.45f;
+
+        /// <summary>
+        /// Where a projectile leaves the caster: the body centre lifted to hand height.
+        ///
+        /// Deliberately separate from <see cref="ResolveCasterCenter"/>, which stays the
+        /// body centre because melee arcs, knockback directions and AOE origins all want
+        /// the middle of the character rather than its hands.
+        /// </summary>
+        public static Vector3 ResolveCastOrigin(Transform caster)
+        {
+            if (caster == null) return Vector3.zero;
+
+            Vector3 center = ResolveCasterCenter(caster);
+            return center + new Vector3(0f, ResolveCasterHalfHeight(caster) * CAST_HEIGHT_FRACTION, 0f);
+        }
+
+        /// <summary>
+        /// Half the caster's visual height, from the sprite if there is one, else its
+        /// collider, else the minimum lift. Used to express cast height as a proportion of
+        /// the character rather than as a magic number that only suits one sprite size.
+        /// </summary>
+        private static float ResolveCasterHalfHeight(Transform caster)
+        {
+            var sr = caster.GetComponent<SpriteRenderer>();
+            if (sr == null) sr = caster.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null && sr.sprite != null && sr.bounds.extents.y > 0.01f)
+                return sr.bounds.extents.y;
+
+            var col2d = caster.GetComponent<Collider2D>();
+            if (col2d == null) col2d = caster.GetComponentInChildren<Collider2D>();
+            if (col2d != null && col2d.bounds.extents.y > 0.01f)
+                return col2d.bounds.extents.y;
+
+            return MIN_LIFT_ABOVE_PIVOT;
         }
 
         /// <summary>

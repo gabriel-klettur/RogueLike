@@ -77,6 +77,10 @@ namespace Valkur.Tests.EditMode.Game.Data
                 foreach (var id in spell.CollectImpactPresets())
                     if (_particles.GetById(id) == null)
                         missing.Add($"{spell.spellKey} → impact '{id}'");
+
+                foreach (var id in spell.CollectCastPresets())
+                    if (_particles.GetById(id) == null)
+                        missing.Add($"{spell.spellKey} → cast '{id}'");
             }
             return missing;
         }
@@ -154,6 +158,38 @@ namespace Valkur.Tests.EditMode.Game.Data
             Assert.GreaterOrEqual(impact.Count, 3,
                 "An impact reads as one event but is built from several — flash, shockwave, " +
                 "debris, smoke.");
+        }
+
+        [Test]
+        public void Fireball_HasALaunchStack()
+        {
+            var fireball = Spells().FirstOrDefault(s => s.spellKey == "fireball");
+            Assert.IsNotNull(fireball);
+
+            Assert.IsNotEmpty(fireball.CollectCastPresets(),
+                "The launch is the one beat the player is guaranteed to be looking at — the " +
+                "projectile leaves immediately, but the cast happens where their attention " +
+                "already is.");
+        }
+
+        [Test]
+        public void FireballTrail_LeavesSomethingBehindInWorldSpace()
+        {
+            var fireball = Spells().FirstOrDefault(s => s.spellKey == "fireball");
+            Assert.IsNotNull(fireball);
+
+            var defs = fireball.CollectVfxPresets()
+                .Select(id => _particles.GetById(id))
+                .Where(d => d != null && d.vfx != null)
+                .ToList();
+
+            Assert.IsTrue(defs.Any(d => d.vfx.worldSpace),
+                "Local-space particles are carried along by the emitter, so on a projectile " +
+                "moving at 16 u/s the whole 'trail' travels with the orb and nothing is left " +
+                "behind. At least one layer must simulate in world space or the effect reads " +
+                "as a rigid blob rather than as something travelling.");
+            Assert.IsTrue(defs.Any(d => !d.vfx.worldSpace),
+                "The core is the projectile: it must ride along, not be left behind.");
         }
 
         [Test]
