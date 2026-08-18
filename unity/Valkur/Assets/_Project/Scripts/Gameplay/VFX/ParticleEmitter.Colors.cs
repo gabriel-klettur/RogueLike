@@ -16,26 +16,17 @@ namespace Valkur.Gameplay.VFX
             renderer.sortingOrder = 0;
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
 
-            // Choose material based on blend mode
-            if (p.additive)
-            {
-                var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-                if (shader == null) shader = Shader.Find("Sprites/Default");
-                var mat = new Material(shader);
-                // Additive blend: src = SrcAlpha, dst = One
-                mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
-                mat.SetInt("_ZWrite", 0);
-                mat.EnableKeyword("_EMISSION");
-                renderer.material = mat;
-            }
-            else
-            {
-                // Alpha blend — use URP Particles/Unlit if available, fallback to Sprites-Default
-                var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-                if (shader == null) shader = Shader.Find("Sprites/Default");
-                renderer.material = new Material(shader);
-            }
+            // Texture: a hand-authored sprite wins; otherwise resolve the procedural shape
+            // (Auto derives it from kind + blend mode). Null = the legacy untextured quad.
+            Texture texture = p.customSprite != null
+                ? p.customSprite.texture
+                : ParticleTextureLibrary.Get(
+                    ParticleTextureLibrary.ResolveShape(p.textureShape, p.kind, p.additive),
+                    p.textureSoftness);
+
+            // sharedMaterial — never .material: the cache exists so emitters batch and so
+            // EditMode tests stop leaking per-renderer material instances.
+            renderer.sharedMaterial = ParticleMaterialCache.Get(texture, p.additive);
         }
 
         // ------------------------------------------------------------------ burst loop coroutine

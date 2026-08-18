@@ -69,6 +69,19 @@ namespace Valkur.Data
         [Tooltip("Use additive blending. Python: blend_mode == 'additive'.")]
         public bool additive = false;
 
+        // --------------- Texture ---------------
+        [Tooltip("Billboard texture shape. 'Auto' derives it from kind + additive. " +
+                 "'None' restores the legacy untextured quad.")]
+        public ParticleTextureShape textureShape = ParticleTextureShape.Auto;
+
+        [Tooltip("Edge falloff of the procedural texture. 0 = hard disc, 1 = very soft haze. " +
+                 "Ignored when a customSprite is assigned or textureShape is None.")]
+        [Range(0f, 1f)]
+        public float textureSoftness = 0.5f;
+
+        [Tooltip("Optional hand-authored sprite. Overrides textureShape when set.")]
+        public Sprite customSprite;
+
         // --------------- Shape & Radius ---------------
         [Tooltip("Emission radius for aura/circle shapes (world units). Python: radius / 16.")]
         public float radius = 1.5f;
