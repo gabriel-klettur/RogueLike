@@ -159,7 +159,53 @@ namespace Valkur.Tests.EditMode.Game.Combat
         {
             var p = CreateProjectile();
             p.SetImpactPreset("explosion_small");
-            Assert.AreEqual("explosion_small", GetField<string>(p, "_impactPreset"));
+
+            // The single-preset setter is now a convenience over the stack, so the stored
+            // state is a list. An impact is built from several presets — flash, shockwave,
+            // debris, smoke — and this setter is the one-layer case of that.
+            CollectionAssert.AreEqual(
+                new[] { "explosion_small" },
+                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
+        }
+
+        [Test]
+        public void SetImpactPresets_StoresTheWholeStackInOrder()
+        {
+            var p = CreateProjectile();
+            p.SetImpactPresets(new System.Collections.Generic.List<string>
+            {
+                "fireball_impact_flash", "fireball_impact_shockwave", "fireball_impact_burst"
+            });
+
+            CollectionAssert.AreEqual(
+                new[] { "fireball_impact_flash", "fireball_impact_shockwave", "fireball_impact_burst" },
+                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+                "Order is draw order: the flash must land before the smoke that covers it.");
+        }
+
+        [Test]
+        public void SetImpactPreset_AfterAStack_ReplacesItRatherThanAppending()
+        {
+            var p = CreateProjectile();
+            p.SetImpactPresets(new System.Collections.Generic.List<string> { "a", "b", "c" });
+            p.SetImpactPreset("solo");
+
+            CollectionAssert.AreEqual(
+                new[] { "solo" },
+                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+                "Projectiles are pooled and reconfigured per shot; an appending setter would " +
+                "accumulate every spell ever fired from that pool slot.");
+        }
+
+        [Test]
+        public void SetImpactPreset_WithNullOrEmpty_LeavesNoStackBehind()
+        {
+            var p = CreateProjectile();
+            p.SetImpactPresets(new System.Collections.Generic.List<string> { "leftover" });
+            p.SetImpactPreset(null);
+
+            Assert.IsEmpty(GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"),
+                "A spell with no impact preset must clear the previous shot's, not inherit it.");
         }
 
         // ── Multiple setters compose without interfering ───────────────
@@ -180,7 +226,9 @@ namespace Valkur.Tests.EditMode.Game.Combat
             Assert.AreEqual(20f, GetField<float>(p, "damage"), 1e-4f);
             Assert.AreEqual(1f,  GetField<float>(p, "lifetime"), 1e-4f);
             Assert.AreEqual(15f, GetField<float>(p, "range"), 1e-4f);
-            Assert.AreEqual("explosion_small", GetField<string>(p, "_impactPreset"));
+            CollectionAssert.AreEqual(
+                new[] { "explosion_small" },
+                GetField<System.Collections.Generic.List<string>>(p, "_impactPresets"));
             Assert.AreEqual(2.5f, GetField<float>(p, "_acceleration"), 1e-4f);
             Assert.AreEqual(1.5f, GetField<float>(p, "_explosionRadius"), 1e-4f);
             Assert.AreEqual(30f,  GetField<float>(p, "_explosionDamage"), 1e-4f);

@@ -182,5 +182,47 @@ namespace Valkur.Data
         [Header("VFX Preset")]
         public string vfxPreset;
         public string impactPreset;
+
+        [Tooltip("Extra trail presets layered on top of vfxPreset, in draw order. " +
+                 "A convincing effect is a stack — core, wake, sparks, smoke — because one " +
+                 "ParticleSystem is one material and one behaviour.")]
+        public List<string> vfxPresetLayers;
+
+        [Tooltip("Extra impact presets layered on top of impactPreset, in draw order.")]
+        public List<string> impactPresetLayers;
+
+        /// <summary>
+        /// Every trail preset this spell wants, primary first. Never returns null.
+        /// </summary>
+        public List<string> CollectVfxPresets() => CollectPresets(vfxPreset, vfxPresetLayers);
+
+        /// <summary>
+        /// Every impact preset this spell wants, primary first. Never returns null.
+        /// </summary>
+        public List<string> CollectImpactPresets() => CollectPresets(impactPreset, impactPresetLayers);
+
+        /// <summary>
+        /// Merges the single legacy field with the layer list, dropping blanks and
+        /// duplicates. Keeping the single field authoritative means the other spells keep
+        /// working untouched and a layered spell stays readable in the Inspector: the
+        /// primary is the one you would name if you could only name one.
+        /// </summary>
+        private static List<string> CollectPresets(string primary, List<string> extra)
+        {
+            var result = new List<string>();
+            if (!string.IsNullOrWhiteSpace(primary)) result.Add(primary);
+
+            if (extra != null)
+            {
+                for (int i = 0; i < extra.Count; i++)
+                {
+                    string id = extra[i];
+                    if (string.IsNullOrWhiteSpace(id)) continue;
+                    if (result.Contains(id)) continue;
+                    result.Add(id);
+                }
+            }
+            return result;
+        }
     }
 }

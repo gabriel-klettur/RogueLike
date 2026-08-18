@@ -71,8 +71,11 @@ namespace Valkur.Gameplay.Spells
                     ctx.Spell.range > 0 ? ctx.Spell.range : 20f,
                     ctx.TargetLayers
                 );
-                if (!string.IsNullOrEmpty(ctx.Spell.impactPreset))
-                    proj.SetImpactPreset(ctx.Spell.impactPreset);
+                // Assigned unconditionally: the projectile is pooled, so skipping the call
+                // for a spell with no impact preset would leave the PREVIOUS spell's
+                // explosion attached to it. CollectImpactPresets also folds in
+                // impactPresetLayers, which a spell may use without a primary.
+                proj.SetImpactPresets(ctx.Spell.CollectImpactPresets());
                 // Acceleration: reuses the SpellDefinition.distance field (unused for projectiles).
                 if (ctx.Spell.distance > 0f)
                     proj.SetAcceleration(ctx.Spell.distance);

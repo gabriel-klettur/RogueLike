@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
@@ -5,9 +6,14 @@ using Valkur.Gameplay.VFX;
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Particles-only projectile visual. The trail is the spell's
-    /// <c>vfxPreset</c> particle system parented to the moving projectile;
+    /// Particles-only projectile visual. The trail is the spell's trail preset STACK —
+    /// <c>vfxPreset</c> plus <c>vfxPresetLayers</c> — parented to the moving projectile;
     /// no SpriteRenderer is drawn on the projectile itself.
+    ///
+    /// A stack rather than a single preset because one ParticleSystem is one material and
+    /// one behaviour: a convincing projectile needs a bright additive core, a wake behind
+    /// it, sparks that fall away and an alpha-blended smoke mass, and no single emitter
+    /// can be all four at once.
     ///
     /// Impact FX is handled by <see cref="Projectile.OnExpire"/>, which already
     /// spawns <c>SpellDefinition.impactPreset</c> at the hit point — so this
@@ -16,8 +22,8 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     public class ParticleProjectileVisual : MonoBehaviour, IProjectileVisual
     {
-        private string _trailPresetId;
-        private GameObject _trailGo;
+        private readonly List<string> _trailPresetIds = new List<string>();
+        private readonly List<GameObject> _trailGos = new List<GameObject>();
         private bool _impacted;
 
         /// <summary>
@@ -26,14 +32,23 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         public void SetSpell(SpellDefinition spell)
         {
-            string newPreset = spell != null ? spell.vfxPreset : null;
-            if (_trailPresetId == newPreset) return;
+            var wanted = spell != null ? spell.CollectVfxPresets() : new List<string>();
+            if (SameAsCurrent(wanted)) return;
 
-            _trailPresetId = newPreset;
+            _trailPresetIds.Clear();
+            _trailPresetIds.AddRange(wanted);
             if (!gameObject.activeInHierarchy) return;
 
             StopTrail();
             StartTrail();
+        }
+
+        private bool SameAsCurrent(List<string> wanted)
+        {
+            if (wanted.Count != _trailPresetIds.Count) return false;
+            for (int i = 0; i < wanted.Count; i++)
+                if (wanted[i] != _trailPresetIds[i]) return false;
+            return true;
         }
 
         private void Awake()
@@ -64,30 +79,37 @@ namespace Valkur.Gameplay.Spells
 
         private void StartTrail()
         {
-            if (string.IsNullOrEmpty(_trailPresetId)) return;
+            if (_trailPresetIds.Count == 0) return;
             if (VFXManager.Instance == null) return;
-            if (_trailGo != null) return;
+            if (_trailGos.Count > 0) return;
 
-            _trailGo = VFXManager.Instance.SpawnParticlePreset(
-                _trailPresetId, transform.position, duration: -1f);
-            if (_trailGo == null) return;
+            for (int i = 0; i < _trailPresetIds.Count; i++)
+            {
+                var go = VFXManager.Instance.SpawnParticlePreset(
+                    _trailPresetIds[i], transform.position, duration: -1f);
+                if (go == null) continue;
 
-            _trailGo.transform.SetParent(transform, worldPositionStays: true);
-            _trailGo.transform.localPosition = Vector3.zero;
+                go.transform.SetParent(transform, worldPositionStays: true);
+                go.transform.localPosition = Vector3.zero;
+                _trailGos.Add(go);
+            }
         }
 
         private void StopTrail()
         {
-            if (_trailGo == null) return;
+            for (int i = 0; i < _trailGos.Count; i++)
+            {
+                var go = _trailGos[i];
+                if (go == null) continue;
 
-            // Detach before stopping so existing particles can fade out where
-            // they were last emitted instead of teleporting back to the pool.
-            _trailGo.transform.SetParent(null, worldPositionStays: true);
+                // Detach before stopping so existing particles can fade out where
+                // they were last emitted instead of teleporting back to the pool.
+                go.transform.SetParent(null, worldPositionStays: true);
 
-            var emitter = _trailGo.GetComponent<ParticleEmitter>();
-            if (emitter != null) emitter.StopEmitting();
-
-            _trailGo = null;
+                var emitter = go.GetComponent<ParticleEmitter>();
+                if (emitter != null) emitter.StopEmitting();
+            }
+            _trailGos.Clear();
         }
 
         private void HideRootSpriteRenderer()

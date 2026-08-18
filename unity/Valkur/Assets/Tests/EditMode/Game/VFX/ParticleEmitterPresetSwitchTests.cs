@@ -324,6 +324,56 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 "A burst preset emits only through its Burst, never continuously.");
         }
 
+        [Test]
+        public void ApplyPreset_SpinningPresetThenStillPreset_DisablesRotation()
+        {
+            var emitter = CreateEmitter();
+
+            var spinning = MakePreset("switch_spin", "aura", true);
+            spinning.vfx.rotationSpeedDegrees = 120f;
+            emitter.ApplyPreset(spinning, 1f);
+            var ps = GetPs(emitter);
+            Assert.IsTrue(ps.rotationOverLifetime.enabled, "Sanity: a spin speed enables the module.");
+
+            emitter.ApplyPreset(MakePreset("switch_still", "aura", true), 1f);
+
+            Assert.IsFalse(ps.rotationOverLifetime.enabled,
+                "A preset that asks for no spin must switch the module off — inherited rotation " +
+                "makes a still effect drift for no reason the author can see.");
+        }
+
+        [Test]
+        public void ApplyPreset_RotationJitter_SpreadsStartRotationBothWays()
+        {
+            var emitter = CreateEmitter();
+            var def = MakePreset("switch_jitter", "aura", true);
+            def.vfx.startRotationJitterDegrees = 180f;
+
+            emitter.ApplyPreset(def, 1f);
+
+            var start = GetPs(emitter).main.startRotation;
+            Assert.Less(start.constantMin, 0f,
+                "Jitter must be symmetric: a one-sided range biases every particle the same way, " +
+                "which is visible as a pattern rather than as randomness.");
+            Assert.Greater(start.constantMax, 0f);
+        }
+
+        [Test]
+        public void ApplyPreset_NoJitter_LeavesStartRotationAtZero()
+        {
+            var emitter = CreateEmitter();
+            var spun = MakePreset("switch_spun", "aura", true);
+            spun.vfx.startRotationJitterDegrees = 180f;
+            emitter.ApplyPreset(spun, 1f);
+
+            emitter.ApplyPreset(MakePreset("switch_flat", "aura", true), 1f);
+
+            var start = GetPs(emitter).main.startRotation;
+            Assert.AreEqual(0f, start.constantMax, 1e-4f,
+                "Same leak family as the shape and drag modules: written unconditionally so a " +
+                "reused emitter cannot inherit the previous preset's jitter.");
+        }
+
         // ── Repeated switching ───────────────────────────────────────────────────
 
         [Test]

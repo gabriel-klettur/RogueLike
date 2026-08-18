@@ -82,6 +82,15 @@ namespace Valkur.Data
         [Tooltip("Optional hand-authored sprite. Overrides textureShape when set.")]
         public Sprite customSprite;
 
+        // --------------- Rotation ---------------
+        [Tooltip("Particles are born with a random rotation in ±this many degrees. " +
+                 "0 = all axis-aligned, which makes identical billboards read as a repeated stamp.")]
+        public float startRotationJitterDegrees = 0f;
+
+        [Tooltip("Degrees per second each particle spins over its life. The sign is randomised " +
+                 "per particle, so a positive value means 'spin this fast, either way'.")]
+        public float rotationSpeedDegrees = 0f;
+
         // --------------- Shape & Radius ---------------
         [Tooltip("Emission radius for aura/circle shapes (world units). Python: radius / 16.")]
         public float radius = 1.5f;

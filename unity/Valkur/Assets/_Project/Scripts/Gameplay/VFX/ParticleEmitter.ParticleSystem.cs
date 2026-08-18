@@ -82,6 +82,29 @@ namespace Valkur.Gameplay.VFX
                 emission.burstCount = 0;
             }
 
+            // ---- Rotation ----
+            // Both modules are written unconditionally: a preset that leaves rotation at
+            // zero must actively switch it off, or a reused emitter keeps spinning with
+            // whatever the previously applied preset asked for.
+            float jitter = Mathf.Abs(p.startRotationJitterDegrees) * Mathf.Deg2Rad;
+            main.startRotation = jitter > 0f
+                ? new ParticleSystem.MinMaxCurve(-jitter, jitter)
+                : new ParticleSystem.MinMaxCurve(0f);
+
+            var rot = _ps.rotationOverLifetime;
+            if (Mathf.Abs(p.rotationSpeedDegrees) > 0.01f)
+            {
+                float rad = p.rotationSpeedDegrees * Mathf.Deg2Rad;
+                rot.enabled = true;
+                // Symmetric range so each particle picks its own spin direction — a whole
+                // system turning the same way reads as a rotating texture, not as fire.
+                rot.z = new ParticleSystem.MinMaxCurve(-rad, rad);
+            }
+            else
+            {
+                rot.enabled = false;
+            }
+
             // ---- Shape ----
             ConfigureShape(p, scale);
 

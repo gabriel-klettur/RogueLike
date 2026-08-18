@@ -30,7 +30,8 @@ namespace Valkur.Gameplay.Spells
         private bool _expired;
         private Color _vfxColor = new Color(1f, 0.6f, 0.2f, 0.8f);
         private string _poolKey;
-        private string _impactPreset;
+        private readonly System.Collections.Generic.List<string> _impactPresets =
+            new System.Collections.Generic.List<string>();
         // Caster transform — projectiles MUST never damage their own caster, even
         // when the caster has a child collider on a layer included in targetLayers
         // (e.g. a hurtbox / perception trigger). Without this, GetComponentInParent
@@ -70,7 +71,22 @@ namespace Valkur.Gameplay.Spells
         /// <summary>
         /// Set the particle preset played on impact (e.g. "explosion_small").
         /// </summary>
-        public void SetImpactPreset(string preset) => _impactPreset = preset;
+        public void SetImpactPreset(string preset)
+        {
+            _impactPresets.Clear();
+            if (!string.IsNullOrEmpty(preset)) _impactPresets.Add(preset);
+        }
+
+        /// <summary>
+        /// Set the whole impact preset stack. An impact reads as one event but is built
+        /// from several: a flash, an expanding shockwave, debris, a lingering smoke puff.
+        /// Order is draw order.
+        /// </summary>
+        public void SetImpactPresets(System.Collections.Generic.List<string> presets)
+        {
+            _impactPresets.Clear();
+            if (presets != null) _impactPresets.AddRange(presets);
+        }
 
         /// <summary>Constant acceleration applied to speed each second (world units/s²).</summary>
         public void SetAcceleration(float accel) => _acceleration = accel;
@@ -262,8 +278,11 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnImpact(vfxPos, _vfxColor, 0.25f, 0.8f);
 
                 // Play the spell's impact particle preset (e.g. explosion_small) scaled up.
-                if (!string.IsNullOrEmpty(_impactPreset))
-                    VFXManager.Instance.SpawnParticlePreset(_impactPreset, vfxPos, -1f, ImpactPresetScale);
+                for (int i = 0; i < _impactPresets.Count; i++)
+                {
+                    if (string.IsNullOrEmpty(_impactPresets[i])) continue;
+                    VFXManager.Instance.SpawnParticlePreset(_impactPresets[i], vfxPos, -1f, ImpactPresetScale);
+                }
             }
 
             // Return to pool or destroy
@@ -290,6 +309,7 @@ namespace Valkur.Gameplay.Spells
             _acceleration = 0f;
             _explosionRadius = 0f;
             _explosionDamage = 0f;
+            _impactPresets.Clear();   // pool reuse: never inherit the last spell's explosion
             _caster = null; // pool reuse: drop the previous caster so the next
                             // shooter doesn't inherit a stale ignore-target.
             if (_rb != null) _rb.velocity = Vector2.zero;
