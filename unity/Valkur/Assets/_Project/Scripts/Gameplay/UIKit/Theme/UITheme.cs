@@ -39,6 +39,13 @@ namespace Valkur.UIKit
 
         // ── Lines / overlays ──
         public static readonly Color BORDER        = new Color(0.90f, 0.76f, 0.38f, 0.35f);
+        /// <summary>
+        /// Hard, fully opaque yellow for the selected-item frame in picker grids.
+        /// Deliberately louder than <see cref="SLOT_SELECTED"/>: a translucent
+        /// background tint disappears entirely behind a slot whose icon or live
+        /// preview covers the whole cell.
+        /// </summary>
+        public static readonly Color SELECTION_BORDER = new Color(1f, 0.84f, 0.20f, 1f);
         public static readonly Color SEPARATOR     = new Color(0.25f, 0.25f, 0.30f, 0.6f);
 
         // ── State colors ──

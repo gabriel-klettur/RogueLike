@@ -31,6 +31,7 @@ namespace Valkur.Gameplay.Editors
         public static readonly Color SLOT_HOVER     = UITheme.SLOT_HOVER;
         public static readonly Color SLOT_SELECTED  = UITheme.SLOT_SELECTED;
         public static readonly Color BORDER         = UITheme.BORDER;
+        public static readonly Color SELECTION_BORDER = UITheme.SELECTION_BORDER;
         public static readonly Color SEPARATOR      = UITheme.SEPARATOR;
         public static readonly Color DANGER         = UITheme.DANGER;
         public static readonly Color SUCCESS        = UITheme.SUCCESS;

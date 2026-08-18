@@ -103,9 +103,14 @@ namespace Valkur.Gameplay.VFX
                 raw.color   = new Color(0f, 0f, 0f, 0f);
             }
 
-            // Selection highlight via existing outline system (slot image tint).
-            if (slotImg != null && pid == _selectedPresetId)
-                slotImg.color = UITheme.SLOT_SELECTED;
+            // Selection highlight. The background tint other pickers rely on is
+            // useless here — the preview RawImage covers the whole cell — so the
+            // selected slot also gets a thick opaque frame drawn on top of it.
+            if (pid == _selectedPresetId)
+            {
+                if (slotImg != null) slotImg.color = UITheme.SLOT_SELECTED;
+                EditorUIHelpers.MakeSelectionBorder(btn.GetComponent<RectTransform>());
+            }
 
             // EventTrigger: register pointer-down so the picker drag system can
             // start tracking before Button.onClick fires (Entities/Buildings parity).
