@@ -52,7 +52,12 @@ namespace Valkur.Gameplay.VFX
             // no-op. We don't gate on _ps.isPlaying because that flag is unreliable
             // right after a SetActive(false→true) cycle.
             if (_ps != null && _preset != null)
+            {
+                // The child may have been deactivated by a burst's stopAction; Play()
+                // would be silently ignored while it is.
+                if (!_ps.gameObject.activeSelf) _ps.gameObject.SetActive(true);
                 _ps.Play();
+            }
         }
 
         private void OnDestroy()
@@ -81,7 +86,18 @@ namespace Valkur.Gameplay.VFX
                 return;
             }
 
+            // Leaving the lightning path has to be explicit. AnimateLightning is a
+            // while(true) coroutine that keeps re-enabling the LineRenderer forever, so
+            // an emitter reused across presets (the editor's preview emitter is reused
+            // for every selection) would keep drawing the old bolt on top of every
+            // preset chosen afterwards.
+            TeardownLightning();
+
             EnsureParticleSystem();
+            // A finished burst sets stopAction = Disable, which deactivates the child
+            // holding the ParticleSystem. Play() on an inactive GameObject is a no-op,
+            // so without this the emitter is dead for good after its first one-shot.
+            if (!_ps.gameObject.activeSelf) _ps.gameObject.SetActive(true);
             _ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ConfigureParticleSystem(preset.vfx, _scaleMultiplier);
 

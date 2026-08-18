@@ -10,11 +10,15 @@ namespace Valkur.Gameplay.VFX
 
         private void SetupLightning(ParticleVfxParams p)
         {
-            // Destroy any existing particle system — lightning uses LineRenderer
+            // Park any existing particle system — lightning draws with a LineRenderer.
+            // Disabled rather than destroyed: Destroy() only takes effect at the end of
+            // the frame, so an emitter switched lightning→particles in quick succession
+            // could find the pending-destroy child and build a second one beside it.
+            // Keeping the reference also means ApplyPreset can simply wake it back up.
             if (_ps != null)
             {
-                Destroy(_ps.gameObject);
-                _ps = null;
+                _ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                _ps.gameObject.SetActive(false);
             }
 
             EnsureLineRenderer(p);
@@ -22,15 +26,35 @@ namespace Valkur.Gameplay.VFX
             _lightningCoroutine = StartCoroutine(AnimateLightning(p));
         }
 
+        /// <summary>
+        /// Stops the lightning animation and hides its LineRenderer. Called when a
+        /// non-lightning preset is applied to an emitter that previously ran one —
+        /// <see cref="AnimateLightning"/> never terminates on its own, so without this
+        /// the bolt keeps drawing over whatever preset comes next.
+        ///
+        /// The child GameObject is kept (just disabled) so re-selecting a lightning
+        /// preset reuses it instead of leaking one per switch.
+        /// </summary>
+        private void TeardownLightning()
+        {
+            if (_lightningCoroutine != null)
+            {
+                StopCoroutine(_lightningCoroutine);
+                _lightningCoroutine = null;
+            }
+            if (_lr != null) _lr.enabled = false;
+        }
+
         private void EnsureLineRenderer(ParticleVfxParams p)
         {
-            _lr = GetComponentInChildren<LineRenderer>();
+            _lr = GetComponentInChildren<LineRenderer>(true);
             if (_lr == null)
             {
                 var child = new GameObject("LightningRenderer");
                 child.transform.SetParent(transform, false);
                 _lr = child.AddComponent<LineRenderer>();
             }
+            _lr.enabled = true;
 
             _lr.positionCount = p.segments + 1;
             _lr.startWidth = p.thickness * _scaleMultiplier;
@@ -38,9 +62,14 @@ namespace Valkur.Gameplay.VFX
             _lr.useWorldSpace = false;
             _lr.sortingLayerName = "VFX";
 
-            // Material
-            var shader = Shader.Find("Sprites/Default");
-            _lr.material = new Material(shader ?? Shader.Find("Hidden/Internal-Colored"));
+            // Material: built once and reused. Assigning a fresh Material on every
+            // apply leaked one instance per preset switch, and the colours below ride
+            // on vertex colour anyway, so one material serves every bolt.
+            if (_lr.sharedMaterial == null)
+            {
+                var shader = Shader.Find("Sprites/Default") ?? Shader.Find("Hidden/Internal-Colored");
+                _lr.sharedMaterial = new Material(shader) { hideFlags = HideFlags.DontSave };
+            }
 
             // Color
             Color c = PickColor(p);

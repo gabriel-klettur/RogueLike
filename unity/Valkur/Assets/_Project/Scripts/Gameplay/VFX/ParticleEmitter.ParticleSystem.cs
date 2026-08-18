@@ -11,7 +11,9 @@ namespace Valkur.Gameplay.VFX
         private void EnsureParticleSystem()
         {
             if (_ps != null) return;
-            _ps = GetComponentInChildren<ParticleSystem>();
+            // includeInactive: a burst whose stopAction disabled the child would
+            // otherwise look absent here, and we would build a second one beside it.
+            _ps = GetComponentInChildren<ParticleSystem>(true);
             if (_ps == null)
             {
                 var child = new GameObject("Particles");
@@ -74,6 +76,10 @@ namespace Valkur.Gameplay.VFX
             else
             {
                 emission.rateOverTime = Mathf.Max(1f, p.emitRate);
+                // A previously applied burst preset leaves its Burst in the list, and the
+                // list is independent of rateOverTime — the old burst would keep firing on
+                // top of the new continuous emitter at every duration boundary.
+                emission.burstCount = 0;
             }
 
             // ---- Shape ----
@@ -102,12 +108,20 @@ namespace Valkur.Gameplay.VFX
             }
 
             // ---- Velocity Damping (drag) ----
+            // Fetched unconditionally: emitters are reused across presets (the editor's
+            // preview emitter is), so a module one preset turns on has to be turned off
+            // by the next one or its drag silently clamps every effect chosen afterwards.
+            var vlim = _ps.limitVelocityOverLifetime;
             if (p.drag > 0f)
             {
-                var vlim = _ps.limitVelocityOverLifetime;
                 vlim.enabled = true;
+                vlim.separateAxes = false;
                 vlim.dampen = Mathf.Clamp01(p.drag);
                 vlim.limit = new ParticleSystem.MinMaxCurve(p.speed * scale);
+            }
+            else
+            {
+                vlim.enabled = false;
             }
 
             // ---- Noise (falling_leaf sway) ----
@@ -141,6 +155,19 @@ namespace Valkur.Gameplay.VFX
         {
             var shape = _ps.shape;
             shape.enabled = true;
+
+            // Normalise to Unity's defaults before the switch. Each branch below sets only
+            // the properties its own shape cares about, so on a reused emitter a cone's
+            // rotation, a box's scale or an aura's edge-only radiusThickness would survive
+            // into the next preset and deform it — a ring emitted flat on its side, an
+            // explosion emitting from a shell instead of a volume. A freshly spawned
+            // emitter never sees that, which is why it only ever showed up in the editor's
+            // preview, where one emitter serves every preset.
+            shape.position        = Vector3.zero;
+            shape.rotation        = Vector3.zero;
+            shape.scale           = Vector3.one;
+            shape.radiusThickness = 1f;
+            shape.angle           = 25f;
 
             switch (p.kind ?? "")
             {
