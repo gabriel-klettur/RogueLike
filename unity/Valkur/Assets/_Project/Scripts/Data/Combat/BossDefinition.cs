@@ -68,6 +68,16 @@ namespace Valkur.Data
                      "(typically an enrage roar).")]
             public string activationSfxId;
 
+            [Tooltip("Optional music track id (AudioCatalog) to crossfade to when " +
+                     "this phase activates. Empty = keep whatever is already " +
+                     "playing. Phase 0's entry is applied when the boss spawns, " +
+                     "so a boss can open on its own theme.")]
+            public string musicTrackId;
+
+            [Tooltip("Crossfade length in seconds for musicTrackId. " +
+                     "-1 = use the catalog's configured CrossfadeSec.")]
+            public float musicCrossfadeSec = -1f;
+
             [Header("Rhythmic charts (optional)")]
             [Tooltip("Beat-anchored attack charts for this phase. One chart " +
                      "per song (matched on MusicTrackEntry.id). When the active " +

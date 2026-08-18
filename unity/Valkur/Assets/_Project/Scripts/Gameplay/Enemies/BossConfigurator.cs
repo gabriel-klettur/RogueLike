@@ -45,6 +45,7 @@ namespace Valkur.Gameplay
         private SpellCaster           _caster;
         private BossBeatChoreographer _choreographer;
         private BossCueDispatcher     _cueDispatcher;
+        private BossPhaseAudio        _phaseAudio;
 
         public BossDefinition Definition => definition;
         public BossDefinition.Phase CurrentPhaseData
@@ -64,6 +65,7 @@ namespace Valkur.Gameplay
             _caster        = GetComponent<SpellCaster>();
             _choreographer = GetComponent<BossBeatChoreographer>();
             _cueDispatcher = GetComponent<BossCueDispatcher>();
+            _phaseAudio    = GetComponent<BossPhaseAudio>();
         }
 
         private void OnEnable()
@@ -84,19 +86,41 @@ namespace Valkur.Gameplay
         private void Start()
         {
             if (definition == null || definition.phases == null || definition.phases.Length == 0) return;
+            // Music first: ResolveChart picks the chart whose musicTrackId
+            // matches the ACTIVE song, so the entry theme has to be playing
+            // before the chart is bound or the boss silently falls back to
+            // the cooldown rotation on its own opening phase.
+            ApplyPhaseMusic(definition.phases[0]);
             ConfigureChart(definition.phases[0]);
         }
 
         // Test seam — EditMode tests can drive ConfigurePhases / ConfigureRotation
-        // without spinning up a full scene.
+        // without spinning up a full scene. EditMode's AddComponent does not run
+        // OnEnable, so the phase subscription is made here too; that lets a test
+        // exercise the real transition path via BossPhaseController.EvaluateAt
+        // instead of poking private methods with reflection.
         public void InitForTest(BossPhaseController phases, NPCAutoCast autoCast,
                                 SpellCaster caster, SpellCatalog catalog)
         {
+            if (_subscribedForTest && _phases != null)
+            {
+                _phases.OnPhaseChanged -= OnPhaseChanged;
+                _subscribedForTest = false;
+            }
             _phases = phases;
             _autoCast = autoCast;
             _caster = caster;
             spellCatalog = catalog;
+            if (_phases != null)
+            {
+                _phases.OnPhaseChanged += OnPhaseChanged;
+                _subscribedForTest = true;
+            }
         }
+
+        // Tracks the InitForTest subscription separately from the OnEnable one
+        // so re-initialising a fixture never double-subscribes.
+        private bool _subscribedForTest;
 
         public void ConfigurePhasesFromDefinition()
         {
@@ -170,6 +194,7 @@ namespace Valkur.Gameplay
             var phase = definition.phases[newPhase];
 
             ConfigureRotation(newPhase);
+            ApplyPhaseMusic(phase);
             ConfigureChart(phase);
 
             // Activation SFX (if any) — fired through the existing audio service.
@@ -178,6 +203,31 @@ namespace Valkur.Gameplay
                 var audio = ServiceLocator.Get<IAudioService>();
                 audio?.PlaySfxById(phase.activationSfxId);
             }
+        }
+
+        /// <summary>
+        /// Crossfades the game music to the phase's authored track. No-op when
+        /// the phase leaves <c>musicTrackId</c> empty (the previous track keeps
+        /// playing), when no audio service is registered, or when the boss
+        /// carries a <see cref="BossPhaseAudio"/> component — that component is
+        /// the inspector-authored alternative and owns the music swap on its
+        /// own, so running both would fire two crossfades per transition.
+        /// </summary>
+        private void ApplyPhaseMusic(BossDefinition.Phase phase)
+        {
+            if (phase == null || string.IsNullOrEmpty(phase.musicTrackId)) return;
+            // Resolved lazily as well as in Awake: a boss assembled at runtime
+            // (or in an EditMode fixture, where Awake never runs) can gain the
+            // component after this configurator was constructed.
+            if (_phaseAudio == null) _phaseAudio = GetComponent<BossPhaseAudio>();
+            if (_phaseAudio != null && _phaseAudio.isActiveAndEnabled) return;
+
+            var audio = ServiceLocator.Get<IAudioService>();
+            if (audio == null) return;
+            if (string.Equals(audio.CurrentTrackId, phase.musicTrackId, System.StringComparison.Ordinal))
+                return;  // already playing — a redundant crossfade would restart the song mid-chart.
+
+            audio.PlayMusicByTrackId(phase.musicTrackId, phase.musicCrossfadeSec);
         }
 
         /// <summary>
