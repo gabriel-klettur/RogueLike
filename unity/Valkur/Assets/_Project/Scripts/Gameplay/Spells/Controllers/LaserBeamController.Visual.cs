@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -20,13 +21,18 @@ namespace Valkur.Gameplay.Spells
                 // Outer glow line (wider, soft alpha).
                 _glowLine = BuildLine("LaserBeam_Glow", width * GLOW_WIDTH_MULT,
                     new Color(_beamColor.r, _beamColor.g, _beamColor.b, GLOW_ALPHA),
-                    sortingOrder: 4, out _glowMaterial);
+                    sortingOrder: 4, BeamTextureKind.Glow, GLOW_SOFTNESS);
 
                 // Inner bright core line (narrower, full alpha, slightly washed-out toward white).
                 Color coreCol = Color.Lerp(_beamColor, Color.white, 0.35f);
                 coreCol.a = CORE_ALPHA;
                 _coreLine = BuildLine("LaserBeam_Core", width * CORE_WIDTH_MULT,
-                    coreCol, sortingOrder: 5, out _coreMaterial);
+                    coreCol, sortingOrder: 5, BeamTextureKind.Energy, CORE_SOFTNESS);
+
+                // Remembered because RunBeam modulates width every frame and must not
+                // compound its own output.
+                _authoredGlowWidth = width * GLOW_WIDTH_MULT;
+                _authoredCoreWidth = width * CORE_WIDTH_MULT;
             }
             else
             {
@@ -282,7 +288,8 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>Builds a uniform-width LineRenderer (start/end widths equal) for the beam.</summary>
-        private LineRenderer BuildLine(string name, float width, Color color, int sortingOrder, out Material material)
+        private LineRenderer BuildLine(string name, float width, Color color, int sortingOrder,
+                                       BeamTextureKind kind, float softness)
         {
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
@@ -293,7 +300,10 @@ namespace Valkur.Gameplay.Spells
             lr.numCapVertices = 6;       // rounded ends -> more "laser" look
             lr.numCornerVertices = 0;
             lr.alignment = LineAlignment.View;
-            lr.textureMode = LineTextureMode.Stretch;
+            // Tile, not Stretch: the texture repeats along the beam at a fixed world size,
+            // so a long beam shows more of the energy pattern instead of smearing one copy
+            // of it. RunBeam sets the tiling from the visible length each frame.
+            lr.textureMode = LineTextureMode.Tile;
 
             // Uniform thickness from origin to impact (no taper).
             lr.startWidth = width;
@@ -301,10 +311,11 @@ namespace Valkur.Gameplay.Spells
             lr.startColor = color;
             lr.endColor = color;
 
-            material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                ?? Shader.Find("Sprites/Default"));
-            material.hideFlags = HideFlags.HideAndDontSave;
-            lr.sharedMaterial = material;
+            // Shared, additive, and textured. Previously this allocated an alpha-blended
+            // Material per beam per line: alpha meant the beam occluded the world instead of
+            // adding light to it, and with no texture the LineRenderer drew a hard-edged
+            // rectangle with no falloff across its width.
+            lr.sharedMaterial = BeamMaterialCache.Get(BeamTextureLibrary.Get(kind, softness));
 
             // Render in the VFX sorting layer so the beam sits ON TOP of the world
             // (tiles, walls, entities). The visual origin is pushed forward by

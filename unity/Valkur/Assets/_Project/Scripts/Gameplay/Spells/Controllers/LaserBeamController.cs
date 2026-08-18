@@ -27,13 +27,32 @@ namespace Valkur.Gameplay.Spells
         /// leaves <see cref="SpellDefinition.range"/> at 0.</summary>
         public const float DEFAULT_RANGE = 10f;
 
-        private const float DEFAULT_BEAM_WIDTH = 0.12f;
+        private const float DEFAULT_BEAM_WIDTH = 0.16f;
 
         // Visual layering: bright thin core inside a softer wider glow.
         private const float CORE_WIDTH_MULT = 0.55f;   // core line width = beam width * this
-        private const float GLOW_WIDTH_MULT = 1.6f;    // outer glow width = beam width * this
+        private const float GLOW_WIDTH_MULT = 2.4f;    // outer glow width = beam width * this
         private const float CORE_ALPHA = 1.0f;
-        private const float GLOW_ALPHA = 0.45f;
+        private const float GLOW_ALPHA = 0.34f;
+
+        /// <summary>Edge falloff of the two band textures. See BeamTextureLibrary.</summary>
+        // Widths were retuned when the lines became additive and textured. A textured band
+        // fades out toward its edges, so it reads narrower than its geometric width; and
+        // additive blending reads brighter than alpha at the same value, so the glow's alpha
+        // came down as its width went up. Net at scale 2: a ~2.8 px core inside a ~12 px
+        // halo, against the previous 2 px core inside 6 px.
+        private const float CORE_SOFTNESS = 0.25f;
+        private const float GLOW_SOFTNESS = 0.80f;
+
+        /// <summary>World units of beam per repeat of the energy texture.</summary>
+        private const float SCROLL_TILE_WORLD_LENGTH = 1.6f;
+
+        /// <summary>Texture repeats per second travelling along the beam, toward the target.</summary>
+        private const float SCROLL_SPEED = 2.2f;
+
+        /// <summary>Width wobble, as a fraction of the authored width. Keeps the beam alive.</summary>
+        private const float WIDTH_PULSE_AMOUNT = 0.12f;
+        private const float WIDTH_PULSE_HZ = 11f;
 
         /// <summary>Mana drained per second while the beam is active.</summary>
         public const float MANA_PER_SECOND = 2f;
@@ -59,8 +78,14 @@ namespace Valkur.Gameplay.Spells
 
         private LineRenderer _coreLine;
         private LineRenderer _glowLine;
-        private Material _coreMaterial;
-        private Material _glowMaterial;
+        // Scroll lives in a MaterialPropertyBlock rather than on the material: the material
+        // is shared across every beam in the scene, so writing tiling/offset on it would
+        // make two simultaneous beams scroll as one.
+        private MaterialPropertyBlock _coreBlock;
+        private MaterialPropertyBlock _glowBlock;
+        private float _scrollOffset;
+        private float _authoredCoreWidth;
+        private float _authoredGlowWidth;
         private ParticleSystem _impactBurst;
         private GameObject _impactGo;
         private ParticleSystem _trailPS;
@@ -228,6 +253,41 @@ namespace Valkur.Gameplay.Spells
                     var c = coreBaseColor; c.a = coreBaseColor.a * alphaMult;
                     _coreLine.startColor = c;
                     _coreLine.endColor = c;
+                }
+
+                // ── Energy flow and breathing ────────────────────────────────
+                // The beam is otherwise geometrically static once it has grown: same two
+                // points, same width, same colour, frame after frame. These two are what
+                // separate a beam that is ON from a beam that is FIRING.
+
+                // Scroll toward the target. Negative because texture offset moves the
+                // sampling window, so subtracting walks the pattern forward along +U.
+                _scrollOffset -= SCROLL_SPEED * Time.deltaTime;
+                if (_scrollOffset < -1f) _scrollOffset += 1f;   // keep it bounded forever
+
+                // Tiling from world length, so a 2-unit beam and a 6-unit beam show the
+                // same size of energy pattern instead of one stretched copy.
+                float tiling = Mathf.Max(1f, visibleLength / SCROLL_TILE_WORLD_LENGTH);
+
+                float pulse = 1f + WIDTH_PULSE_AMOUNT * Mathf.Sin(Time.time * WIDTH_PULSE_HZ);
+
+                if (_glowLine != null)
+                {
+                    _glowBlock = _glowBlock ?? new MaterialPropertyBlock();
+                    BeamMaterialCache.ApplyScroll(_glowLine, _glowBlock, tiling, _scrollOffset * 0.5f);
+                    // The glow breathes in antiphase with the core, so the beam looks like it
+                    // is pressurised rather than simply flickering.
+                    float w = _authoredGlowWidth * (2f - pulse) * _growT;
+                    _glowLine.startWidth = w;
+                    _glowLine.endWidth = w;
+                }
+                if (_coreLine != null)
+                {
+                    _coreBlock = _coreBlock ?? new MaterialPropertyBlock();
+                    BeamMaterialCache.ApplyScroll(_coreLine, _coreBlock, tiling, _scrollOffset);
+                    float w = _authoredCoreWidth * pulse * _growT;
+                    _coreLine.startWidth = w;
+                    _coreLine.endWidth = w;
                 }
 
                 // Anchor the impact burst at the (visible) beam tip facing outward.
@@ -413,8 +473,6 @@ namespace Valkur.Gameplay.Spells
 
         private void OnDestroy()
         {
-            if (_coreMaterial != null) Destroy(_coreMaterial);
-            if (_glowMaterial != null) Destroy(_glowMaterial);
         }
     }
 }
