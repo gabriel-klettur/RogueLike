@@ -249,6 +249,16 @@ namespace Valkur.Gameplay
         // Command Execution
         // ------------------------------------------------------------------
 
+        /// <summary>
+        /// Runs a console command line exactly as if it had been typed.
+        ///
+        /// Public on purpose: it makes the whole reload surface below reachable from
+        /// PlayMode tests and from `mcp__unity__execute_code`, so the same agent that
+        /// edits the C# can trigger the verification without anyone touching the Game
+        /// view. That is the difference between "restart to check" and "check".
+        /// </summary>
+        public void Execute(string raw) => ExecuteCommand(raw);
+
         private void ExecuteCommand(string raw)
         {
             Log($"> {raw}");
@@ -603,6 +613,9 @@ namespace Valkur.Gameplay
                 Category = "system",
                 Handler = args => CmdLoad(args)
             });
+
+            // Re-read authored data into the live scene — see DevConsole.Commands.Reload.cs.
+            RegisterReloadCommands();
         }
 
         // ------------------------------------------------------------------
