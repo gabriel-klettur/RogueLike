@@ -82,5 +82,14 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: fireball_trail
-  impactPreset: explosion_small
+  vfxPreset: fireball_core
+  impactPreset: fireball_impact_flash
+  vfxPresetLayers:
+  - fireball_wake
+  - fireball_sparks
+  - fireball_smoke
+  impactPresetLayers:
+  - fireball_impact_shockwave
+  - fireball_impact_burst
+  - fireball_impact_debris
+  - fireball_impact_smoke

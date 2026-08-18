@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
+  m_Name: PP_fireball_impact_smoke
+  m_EditorClassIdentifier: 
+  id: fireball_impact_smoke
+  displayName: "Fireball Impact \u2014 Smoke"
+  type: explosion
+  vfx:
+    kind: smoke_burst
+    loops: 0
+    emitRate: 10
+    count: 10
+    burstIntervalSeconds: 1
+    speed: 0.35
+    gravity: 0
+    drag: 0
+    direction: {x: 0, y: -1}
+    lifespan: 1.1
+    sizeMin: 0.12
+    sizeMax: 0.2
+    colors:
+    - {r: 0.34, g: 0.24, b: 0.18, a: 1}
+    - {r: 0.1, g: 0.09, b: 0.09, a: 1}
+    color: {r: 0.26, g: 0.19, b: 0.15, a: 1}
+    additive: 0
+    textureShape: 5
+    textureSoftness: 0.9
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 180
+    rotationSpeedDegrees: 30
+    radius: 1.5
+    arcRangeDegrees: 45
+    segments: 10
+    lightningOffset: 0.625
+    thickness: 0.1
+    spouts:
+    - 0.5
+    splashCount: 2
+    dropletSize: 0.1
+    swayAmp: 0.04
+    swaySpeed: 0.12
+    stripeGap: 0.5
+    rippleAmp: 0.6
+    alphaBase: 110
+    alphaWave: 70
+    highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    dispersion: 0
+    gravityVector: {x: 0, y: 0.35}
+    useGravityVector: 1
+    sizeOverLife:
+    - time: 0
+      value: 0.7
+    - time: 1
+      value: 2
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.2
+      value: 0.45
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 0.45, g: 0.28, b: 0.17, a: 1}
+    - time: 0.4
+      color: {r: 0.26, g: 0.19, b: 0.15, a: 1}
+    - time: 1
+      color: {r: 0.1, g: 0.09, b: 0.09, a: 1}
+    ellipseRatio: 1
+    outerRadius: 0
