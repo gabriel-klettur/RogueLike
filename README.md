@@ -1,7 +1,7 @@
 # Valkur — Roguelike RPG
 
 <p align="center">
-  <strong>A full-featured top-down roguelike RPG built from scratch in Python/Pygame, now being migrated to Unity/C# — featuring a custom ECS architecture, procedural dungeon generation, real-time combat with 25+ spells, FSM-driven AI, in-game editors, a lighting engine, and a complete save/load pipeline.</strong>
+  <strong>A full-featured top-down roguelike RPG built in Unity 2022.3 LTS (URP 2D / C#), originally prototyped from scratch in Python/Pygame — featuring procedural dungeon generation, real-time combat with 25+ spells, FSM-driven AI with boss phases, eleven in-game editors, a 2D lighting engine with a day/night cycle, and a complete save/load pipeline.</strong>
 </p>
 
 <p align="center">
@@ -21,13 +21,20 @@
 
 ## About This Project
 
-**Valkur** is a top-down roguelike RPG developed as a monorepo with two parallel implementations:
+**Valkur** is a top-down roguelike RPG built in **Unity 2022.3 LTS** (URP 2D / C#).
 
-1. **Python/Pygame** — A fully playable desktop game with a custom ECS engine, 25+ spell systems, FSM-driven monster AI, procedural map generation, a real-time lighting engine, drag-and-drop inventory, multiple in-game editors, and a SQLite persistence layer with Alembic migrations.
+It began life as a **Python/Pygame** desktop game with a custom ECS engine, 25+ spell
+systems, FSM-driven monster AI, procedural map generation, a real-time lighting engine
+and a SQLite persistence layer. That implementation is **complete and archived**: it
+lives at the git tag `archive/python-legacy-2026-05-06` and no longer ships on `main`.
+The sections below marked *(archived)* describe it, and are kept because the Unity
+architecture is a direct descendant of those decisions.
 
-2. **Unity/C#** — An ongoing migration of the Python game into Unity, preserving all gameplay systems with a clean C# architecture: ScriptableObject-driven data, FSM enemy AI, a spell casting framework, tile/map editors, zone management, and a full save/load pipeline.
-
-This is not a tutorial or prototype. The Python version alone contains **1,800+ source files** across engine, game, UI, and editor modules, with a comprehensive test suite. The Unity port already includes **14 EditMode test suites**, data migration tooling that imports directly from the Python data layer, and production-quality editor extensions.
+This is not a tutorial or a prototype. The Unity project holds **~937 C# source files
+(~157k lines)** across six assemblies, backed by **417 test files running 4,300+ EditMode
+cases**, eleven in-game runtime editors, and production-quality Editor tooling. The
+Python original contributed **1,800+ source files** of its own; every catalog, sprite and
+JSON it produced has been migrated into ScriptableObjects and `StreamingAssets`.
 
 The goal of this repository is to demonstrate how I design, architect, and maintain **complex game systems** with engineering rigor comparable to production software — across two different technology stacks.
 
@@ -38,14 +45,14 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 - [Key Highlights](#key-highlights)
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
-- [Python Game — Deep Dive](#python-game--deep-dive)
+- [Python Game — Deep Dive (archived)](#python-game--deep-dive-archived)
   - [ECS Architecture](#ecs-architecture)
   - [Combat & Spells](#combat--spells)
   - [AI — Finite State Machine](#ai--finite-state-machine)
   - [Rendering & Lighting](#rendering--lighting)
   - [In-Game Editors](#in-game-editors)
   - [Persistence & Data](#persistence--data)
-- [Unity Migration — Deep Dive](#unity-migration--deep-dive)
+- [Unity — Deep Dive](#unity--deep-dive)
   - [Core Architecture](#core-architecture)
   - [Gameplay Systems](#gameplay-systems)
   - [Editor Tooling](#editor-tooling)
@@ -62,7 +69,7 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 
 | Area | What I Built |
 |------|-------------|
-| **Custom ECS Engine (Python)** | Component registry, system registry, spatial indexing, spawn manager — all from scratch with strict domain separation |
+| **Custom ECS Engine (Python, archived)** | Component registry, system registry, spatial indexing, spawn manager — all from scratch with strict domain separation |
 | **25+ Spell Systems** | Fireball, chain lightning, meteor shower, dash, boomerang, teleport, force field, mines, puddles, cone breath, totems, summons, and more — each with dedicated ECS systems |
 | **FSM-Driven Monster AI** | 9 states (Idle, Patrol, Chase, AlertChase, Attack, Flee, Damage, Unconscious, Death) with animation bridges and configurable AI parameters |
 | **Real-Time Lighting Engine** | Day/night cycle, lightmap rendering, shadow polygons, occlusion tiles, light caching, quality presets, and staggered updates for performance |
@@ -70,9 +77,9 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 | **7 In-Game Editors** | Tiles, buildings, map, inventory, items, entities, and spells — full CRUD with UI panels built on a reusable widget framework |
 | **Drag-and-Drop Inventory** | Transfer system, death drops, map-load drops, pickup system, and a complete inventory UI with item factories |
 | **SQLite + Alembic Persistence** | Structured data layer with schema migrations, JSON/SQLite hybrid storage, and save-slot management |
-| **Unity C# Migration** | Clean port of all Python systems into Unity with ScriptableObject catalogs, Assembly Definitions, ServiceLocator, and automated data migration from Python JSON/SQLite |
-| **14 EditMode Test Suites (Unity)** | NUnit tests covering FSM, combat, health, inventory, save data, spatial hashing, spell casting, zone management, and more |
-| **40+ Python Test Files** | pytest suites covering ECS systems, combat, spells, FSM, editors, rendering, persistence, and integration |
+| **Unity C# Architecture** | Six assemblies with an enforced dependency graph, ScriptableObject catalogs, ServiceLocator, object pooling, and a repository-backed persistence layer |
+| **4,300+ EditMode Tests (Unity)** | 417 NUnit files covering FSM, combat, health, inventory, save data, spatial hashing, spell casting, zone management, map-slot isolation, world layering, and asset conventions |
+| **40+ Python Test Files (archived)** | pytest suites covering ECS systems, combat, spells, FSM, editors, rendering, persistence, and integration — preserved at the legacy tag |
 | **Performance Tooling** | Benchmark framework with JSON export, performance overlay, entity culling, spatial hashing, chunk-based rendering, and object pooling |
 
 ---
@@ -151,7 +158,7 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 │  Assembly Definitions: Valkur.Core · Valkur.Data · Valkur.Gameplay      │
 │                        Valkur.UI · Valkur.Editor · Valkur.Tests         │
 │                                                                          │
-│  14 EditMode Test Suites (NUnit) · PlayMode Tests · ScriptableObjects  │
+│  4,300+ EditMode Tests (NUnit) · PlayMode Tests · ScriptableObjects    │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -168,7 +175,7 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 
 ## Tech Stack
 
-### Python (Desktop Game)
+### Python (Desktop Game — archived)
 
 | Technology | Purpose |
 |------------|---------|
@@ -193,7 +200,7 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 | **C# 10** | Full type safety with nullable reference types |
 | **ScriptableObjects** | Data-driven catalogs for players, monsters, items, spells, and spawners |
 | **Assembly Definitions** | Strict compile-time separation: Core, Data, Gameplay, UI, Editor, Tests |
-| **NUnit** | EditMode test framework with 14 test suites |
+| **NUnit** | EditMode test framework — 417 test files, 4,300+ cases |
 | **TextMeshPro** | Rich text rendering for HUD, nameplates, and debug overlays |
 | **Cinemachine** | Smooth camera follow and framing |
 | **SpriteAtlas** | Optimized sprite batching for characters and tiles |
@@ -211,7 +218,7 @@ The goal of this repository is to demonstrate how I design, architect, and maint
 
 ---
 
-## Python Game — Deep Dive
+## Python Game — Deep Dive *(archived)*
 
 ### ECS Architecture
 
@@ -303,7 +310,7 @@ All editors share a common **widget framework** (`roguelike_ui/widgets/`): Butto
 
 ---
 
-## Unity Migration — Deep Dive
+## Unity — Deep Dive
 
 ### Core Architecture
 
@@ -367,12 +374,10 @@ Runtime (GameplaySceneSetup → EntitySetup → EntityAnimationBinder)
 
 ## Testing Strategy
 
+The suite runs **4,300+ EditMode cases across 417 test files** in about 105 seconds.
+
 | Layer | Tool | Coverage |
 |-------|------|----------|
-| **Python ECS Systems** | pytest | Combat, spells (fireball, meteor, laser, boomerang), FSM integration, hitboxes, friendly fire |
-| **Python Editors** | pytest | Tiles toolbar, spawner panels, building editors, world rendering |
-| **Python Persistence** | pytest | DB engine models, integrity imports, preflight persistence, schema validation |
-| **Python Integration** | pytest | Blank world rendering, hostile AI behavior, NPC animation sync |
 | **Unity FSM** | NUnit EditMode | All 9 states, transitions, brain initialization, cooldowns |
 | **Unity Combat** | NUnit EditMode | Melee damage, health clamping, death triggers, experience gain |
 | **Unity Spells** | NUnit EditMode | Mana consumption, insufficient mana gating, CanCast checks |
@@ -381,8 +386,9 @@ Runtime (GameplaySceneSetup → EntitySetup → EntityAnimationBinder)
 | **Unity World** | NUnit EditMode | Zone management, spatial hash queries, tile brush operations |
 | **Unity Data** | NUnit EditMode | Data migration validation, player selection, bootstrap |
 | **Unity Animation** | NUnit EditMode | Directional animator, cardinal resolution, set building |
-| **Python Static** | Ruff | Strict linting and formatting across all Python sources |
-| **Type Safety** | Type hints (Python) + nullable refs (C#) | Full static analysis across both stacks |
+| **Map Editor** | NUnit EditMode | Per-slot data isolation, backup rotation, zone renames |
+| **World layering** | NUnit EditMode | Layer jumps, multi-tag colliders, gravity drop, save round-trip |
+| **Asset conventions** | NUnit EditMode | Naming rules, PPU policy, atlas membership |
 
 ---
 
@@ -390,74 +396,14 @@ Runtime (GameplaySceneSetup → EntitySetup → EntityAnimationBinder)
 
 ```
 RogueLike/
-├── python/                              # Fully playable Python/Pygame game
-│   ├── launcher.py                      # Entry point
-│   ├── requirements.txt                 # Dependencies
-│   ├── setup.py                         # Editable package install
-│   ├── alembic/                         # Database migrations
-│   ├── schemas/                         # JSON validation schemas
-│   ├── data/                            # 750+ data files (JSON, SQLite)
-│   │   ├── roguelike.sqlite3            # Primary database
-│   │   ├── config/                      # Input bindings, settings
-│   │   ├── entities/                    # Entity definitions
-│   │   ├── spells/                      # Spell definitions
-│   │   ├── inventory/                   # Inventory maps
-│   │   ├── worlds/                      # World/zone data
-│   │   ├── saves/                       # Save slots
-│   │   └── ...                          # buildings, chat, fsm, vendors, etc.
-│   ├── assets/                          # Sprites, tilesets, audio, particles
-│   ├── scripts/                         # Tooling: migrations, validators,
-│   │                                    #   asset audit, schema enforcement
-│   ├── tests/                           # 40+ test files
-│   │   ├── roguelike_engine/            # Engine tests
-│   │   ├── roguelike_game/              # Game logic tests
-│   │   ├── roguelike_editors/           # Editor tests
-│   │   └── roguelike_ui/               # UI widget tests
-│   └── src/
-│       ├── roguelike_engine/            # Low-level motor
-│       │   ├── camera/                  # 2D camera + viewport
-│       │   ├── map/                     # Map MVC + chunk rendering
-│       │   ├── tile/                    # Tile MVC + loaders
-│       │   ├── buildings/               # Building MVC + hitboxes
-│       │   ├── rendering/lighting/      # Lighting engine (18 modules)
-│       │   ├── minimap/                 # Configurable minimap
-│       │   ├── z_layer/                 # Z-layer composition + persistence
-│       │   ├── world/                   # World state + persistence
-│       │   ├── cache/                   # Memory + disk cache framework
-│       │   ├── console/                 # In-game console MVC
-│       │   ├── diagnostics/             # Debug overlay MVC
-│       │   ├── input/                   # Keyboard + mouse abstraction
-│       │   ├── audio/                   # Audio engine
-│       │   ├── chat/                    # Chat system
-│       │   ├── config/                  # Engine configuration
-│       │   ├── db/                      # Database layer
-│       │   └── utils/                   # Loaders, benchmark, helpers
-│       │
-│       ├── roguelike_game/              # Gameplay layer
-│       │   ├── ecs/
-│       │   │   ├── core/                # ECS manager, registries, spatial index
-│       │   │   ├── components/          # 15 component domains
-│       │   │   │   ├── abilities/       # 27 ability components
-│       │   │   │   ├── combat/          # 21 combat components
-│       │   │   │   ├── ai/              # 9 AI components
-│       │   │   │   └── ...              # physics, rendering, inventory, etc.
-│       │   │   └── systems/             # 12 system groups
-│       │   │       ├── combat/spells/   # 25+ spell systems
-│       │   │       ├── fsm/states/      # FSM states (monster + player)
-│       │   │       ├── rendering/       # 40+ render systems
-│       │   │       ├── inventory/       # 7 inventory systems
-│       │   │       └── ...              # input, physics, audio, particles
-│       │   ├── managers/                # Game loop + editors (7 editors)
-│       │   ├── factories/               # Entity + item factories
-│       │   ├── config/                  # Spells, input, players config
-│       │   └── map/                     # Map loading, generation, pathfinding
-│       │
-│       ├── roguelike_ui/                # Reusable UI framework
-│       │   ├── widgets/                 # 15+ widget types
-│       │   ├── hud/                     # HUD orchestrator + action grid
-│       │   └── services/                # JSON persistence, formatting
-│       │
-│       └── roguelike_editors/           # Editor implementations
+├── tools/                               # Standalone Python utilities
+│   ├── atlas/                           # Sprite atlas + tile size audits
+│   ├── audio/                           # BPM analysis, AudioCatalog patching
+│   └── world/                           # Overlay generation
+│
+│   # The original Python/Pygame implementation used to live in python/.
+│   # It is archived at the git tag archive/python-legacy-2026-05-06 and no
+│   # longer ships on main — the Unity project is the game.
 │
 └── unity/
     └── Valkur/                          # Unity 2022.3 LTS project
@@ -501,32 +447,8 @@ RogueLike/
 
 ### Prerequisites
 
-- **Python 3.11+** and **pip** (for the Python game)
-- **Unity 2022.3 LTS** (for the Unity project)
-
-### Run the Python game
-
-```bash
-cd python
-python -m venv .venv
-
-# Windows
-.\.venv\Scripts\Activate
-# Linux/macOS
-source .venv/bin/activate
-
-pip install -e .
-pip install -r requirements.txt
-
-python launcher.py
-```
-
-### Run Python tests
-
-```bash
-cd python
-pytest -q
-```
+- **Unity 2022.3 LTS** — the only requirement to build and play the game
+- **Python 3.11+** and **pip** — optional, for the asset/audio utilities under `tools/`
 
 ### Open the Unity project
 
@@ -539,28 +461,56 @@ pytest -q
 
 1. Open **Window → General → Test Runner**
 2. Select **EditMode** tab
-3. Click **Run All** — 14 test suites will execute
+3. Click **Run All** — 4,300+ cases, roughly 105 seconds
 
-### Migrate Python data to Unity
+Headless equivalent:
 
-In Unity Editor:
-1. **Tools → Valkur → Migrate Python Data** — imports all JSON/SQLite data
-2. **Tools → Valkur → Rebuild Player Character Assets** — slices and binds character sprites
-3. **Tools → Valkur → Build Character Atlas** — generates optimized sprite atlas
-4. **Tools → Valkur → Validate Content** — checks data integrity
+```bash
+Unity.exe -batchmode -nographics -silent-crashes   -projectPath unity/Valkur   -runTests -testPlatform EditMode   -testResults TestResults.xml -logFile -
+```
+
+### Play the archived Python original
+
+The Pygame implementation is preserved at a tag rather than on `main`:
+
+```bash
+git checkout archive/python-legacy-2026-05-06
+cd python
+python -m venv .venv && .\.venv\Scripts\Activate   # Linux/macOS: source .venv/bin/activate
+pip install -e . && pip install -r requirements.txt
+python launcher.py
+```
+
+### Asset + audio utilities
+
+```bash
+python tools/atlas/audit_asset_conventions.py     # naming / layout lint
+python tools/atlas/audit_tile_sizes.py            # PPU + tile size audit
+python tools/audio/analyze_music.py               # BPM / beat analysis
+python tools/audio/patch_audio_catalog_bpm.py     # write results into AudioCatalog.asset
+```
 
 ---
 
 ## Roadmap
 
-- [ ] Complete Unity migration of all Python gameplay systems
-- [ ] Multiplayer networking via WebRTC/WebSocket (foundation exists in Python)
-- [ ] Neural-network-trained enemy AI behaviors
-- [ ] Procedural dungeon generation in Unity (ported from Python `map/generator.py`)
-- [ ] Full lighting engine port to Unity (Universal Render Pipeline)
-- [ ] Steam/itch.io distribution build
-- [ ] End-to-end Playwright/integration tests
-- [ ] CI/CD pipeline with automated test runs
+Shipped:
+
+- [x] Complete Unity migration of every Python gameplay system
+- [x] Procedural dungeon generation with chunk streaming
+- [x] 2D lighting engine on URP with a day/night cycle
+- [x] Eleven in-game runtime editors (tiles, map, buildings, entities, spells, …)
+- [x] Multi-map editing with per-slot data isolation on disk
+- [x] Layered world traversal — layer jumps, per-layer collision filtering
+- [x] Save pipeline with atomic writes, checksums and rotating backups
+
+Next:
+
+- [ ] Built-in parallel worlds (Sky / Hell) on top of the per-slot routing
+- [ ] Cross-world portals as a runtime gameplay mechanic
+- [ ] Sprite-atlas consolidation into the nine planned domain atlases
+- [ ] Steam / itch.io distribution build
+- [ ] CI/CD pipeline running the EditMode suite on every push
 - [ ] Localization system (i18n)
 - [ ] Modding support via external data definitions
 
