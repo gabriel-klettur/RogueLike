@@ -39,6 +39,15 @@ namespace Valkur.Gameplay.TileEditor
         public static float  OutlinePx   = _defOutlinePx;
 
         /// <summary>Raised after any field is mutated, so dependent UI sliders can refresh.</summary>
+        /// <summary>
+        /// Editor UI from the previous Play session would otherwise still be listening.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticEventOnPlayModeEnter()
+        {
+            OnChanged = null;
+        }
+
         public static event Action OnChanged;
 
         // Static ctor wires the kit chrome to read THIS theme. Runs the

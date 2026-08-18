@@ -43,6 +43,15 @@ namespace Valkur.Data
             HasExplicitSelection = true;
         }
 
+        /// <summary>
+        /// A player class picked in one session must not silently apply to the next.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            ResetToDefault();
+        }
+
         public static void ResetToDefault()
         {
             _selectedPlayerKey = DefaultOrder[0];

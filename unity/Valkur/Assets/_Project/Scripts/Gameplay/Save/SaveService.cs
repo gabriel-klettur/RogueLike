@@ -135,6 +135,17 @@ namespace Valkur.Gameplay
         /// — silent corruption recovery is a footgun in a sandbox game,
         /// the player must know their main save was repaired.
         /// </summary>
+        /// <summary>
+        /// Same leak class as the RUN_TWIN_SAVE incident: a subscriber from the previous
+        /// Play session stays attached to this static event and fires against a
+        /// destroyed component. See .github/incidents/RUN_TWIN_SAVE.md.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticEventOnPlayModeEnter()
+        {
+            OnSaveRecovered = null;
+        }
+
         public static event System.Action<SaveLoadResult> OnSaveRecovered;
 
         protected override bool Persist => true;

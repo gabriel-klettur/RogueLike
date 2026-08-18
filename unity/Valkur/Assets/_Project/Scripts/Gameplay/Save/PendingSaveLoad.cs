@@ -18,6 +18,17 @@ namespace Valkur.Gameplay.Save
 
         public static bool HasPending => !string.IsNullOrEmpty(Path);
 
+        /// <summary>
+        /// Intent to load a save belongs to one session. Left set, the next Play
+        /// auto-loads a save nobody asked for.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            Path = null;
+            PlayerClass = null;
+        }
+
         public static string Consume()
         {
             string p = Path;

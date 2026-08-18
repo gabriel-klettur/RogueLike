@@ -88,6 +88,17 @@ namespace Valkur.Core
         /// <summary>
         /// Clear all registrations. Call on scene unload or domain reload.
         /// </summary>
+        /// <summary>
+        /// Without this the registry starts the second Play session holding destroyed
+        /// player/monster/NPC GameObjects. Correctness used to depend on the editor
+        /// forcing every Play through the Bootstrap scene; now it stands on its own.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            Clear();
+        }
+
         public static void Clear()
         {
             _player = null;

@@ -62,6 +62,18 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         /// </summary>
         public static bool AllowEditModeWritesToRealPath { get; set; }
 
+        /// <summary>
+        /// Re-arms the guard on every Play. A test that opted in and failed before its
+        /// TearDown would otherwise leave the door open for the rest of the domain's
+        /// life — which is exactly the 38-zone loss of 2026-05-23 this guard exists to
+        /// prevent.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetGuardOnPlayModeEnter()
+        {
+            AllowEditModeWritesToRealPath = false;
+        }
+
         public string PathFor(WorldId worldId) => Path.Combine(WorldDirectory(worldId), FILE_NAME);
 
         public bool Exists(WorldId worldId)

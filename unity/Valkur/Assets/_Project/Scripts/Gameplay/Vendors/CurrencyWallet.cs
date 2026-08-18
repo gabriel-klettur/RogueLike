@@ -22,7 +22,16 @@ namespace Valkur.Gameplay
         // ── Events ────────────────────────────────────────────────────
 
         /// <summary>Fires after balance changes. Args: newBalance, delta.</summary>
-        public static System.Action<int, int> OnCoinsChanged;
+        /// <summary>
+        /// Subscribers from the previous Play session would otherwise still be attached.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticEventOnPlayModeEnter()
+        {
+            OnCoinsChanged = null;
+        }
+
+        public static event System.Action<int, int> OnCoinsChanged;
 
         // ── Lifecycle ─────────────────────────────────────────────────
 

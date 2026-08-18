@@ -75,6 +75,23 @@ namespace Valkur.Gameplay.Spells.UI
             }
         }
 
+        /// <summary>
+        /// A drag interrupted by leaving Play Mode leaves DraggedSpell set and a ghost
+        /// GameObject referenced, so the next session starts mid-drag holding a
+        /// destroyed object.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            DraggedSpell = null;
+            Origin = SpellDragOrigin.None;
+            SourceSlotIndex = -1;
+            _ghostRoot = null;
+            _ghostRect = null;
+            _ghostImage = null;
+            _ghostCanvasGroup = null;
+        }
+
         public static void End()
         {
             DraggedSpell = null;

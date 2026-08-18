@@ -1,0 +1,184 @@
+# Baseline: static mutable fields that survive a Play-mode boundary without a
+# [RuntimeInitializeOnLoadMethod(SubsystemRegistration)] reset hook.
+#
+# Domain Reload is OFF in this project, so every entry below is a field that still
+# holds the last session's value when you press Play again. Most are harmless caches;
+# some are latent "works on the first Play, breaks on the second" bugs.
+#
+# THIS FILE ONLY EVER SHRINKS.
+#
+#   - Adding a new unreset static fails DomainReloadStaticResetTests. Fix it by adding
+#     the hook, or by marking the field [SelfHealingStatic("reason")] at the
+#     declaration. Appending a line here is a deliberate, reviewable exception, not
+#     the default move.
+#   - Removing the last offender from a type and forgetting to delete its line here
+#     ALSO fails the suite, so the list cannot rot into fiction.
+#
+# Format: KIND<TAB>Namespace.Type.FieldName
+#   UNITYOBJ   holds a UnityEngine.Object. Highest risk: becomes a fake-null
+#              MissingReference on the second Play.
+#   DELEGATE   event or Action. Leaks subscribers across sessions (RUN_TWIN_SAVE class).
+#   COLLECTION list/dict/array. Usually immutable lookup data; verify before trusting.
+#   VALUE      plain value or reflection cache.
+#
+# Generated 2026-08-18 from Valkur.Core, Valkur.Data, Valkur.Infrastructure,
+# Valkur.Gameplay, Valkur.UI, Valkur.UIKit.
+
+COLLECTION	Valkur.Core.GameSettingsBindings._table
+COLLECTION	Valkur.Data.PlayerClassCatalog.Presets
+COLLECTION	Valkur.Gameplay.Buildings.BuildingsRuntimeEditor.TUTORIAL_STEPS
+COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorManager.TUTORIAL_STEPS
+COLLECTION	Valkur.Gameplay.Editors.Boss.BossEditorTimelineRenderer.CUE_COLORS
+COLLECTION	Valkur.Gameplay.Inventory.InventoryUI.CURRENCY_ITEM_IDS
+COLLECTION	Valkur.Gameplay.Inventory.InventoryUI.EQUIP_SLOT_LABELS
+COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._columns
+COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._equipSlotNames
+COLLECTION	Valkur.Gameplay.Items.ItemTableColumns._rarityNames
+COLLECTION	Valkur.Gameplay.Save.SaveFileManager.ReservedSaveNames
+COLLECTION	Valkur.Gameplay.Save.SaveMigrationChain._steps
+COLLECTION	Valkur.Gameplay.SpawnStabilizer._overlapBuffer
+COLLECTION	Valkur.Gameplay.Spells.FireworkLaunchExecutor.FireworkColors
+COLLECTION	Valkur.Gameplay.Spells.Projectile._explosionHits
+COLLECTION	Valkur.Gameplay.Spells.Projectile._sweepHits
+COLLECTION	Valkur.Gameplay.Spells.SpellCaster.Executors
+COLLECTION	Valkur.Gameplay.Spells.SpellsRuntimeEditor.TUTORIAL_STEPS
+COLLECTION	Valkur.Gameplay.Spells.SpellTableColumns._columns
+COLLECTION	Valkur.Gameplay.Spells.SpellTableColumns._elementOptions
+COLLECTION	Valkur.Gameplay.Spells.SpellTableColumns._spellTypeNames
+COLLECTION	Valkur.Gameplay.Spells.SpellTableColumns.DefaultHidden
+COLLECTION	Valkur.Gameplay.TileEditor.CollisionTagMap.ValidTags
+COLLECTION	Valkur.Gameplay.TileEditor.TileEditorGridOverlay.DigitMasks
+COLLECTION	Valkur.Gameplay.TileEditor.TileEditorGridOverlay.FillPreviewDirections
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditor.CYCLE_NORMALIZED_TIMES
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditor.SETTINGS_PHASE_TIMES
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditor.SETTINGS_PHASES
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditor.SPEED_MULTIPLIERS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditor.WEATHER_TYPES
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.CYCLE_ROWS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.SETTINGS_SLIDER_FORMAT
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.SETTINGS_SLIDER_LABELS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.SETTINGS_SLIDER_MAXS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.SETTINGS_SLIDER_MINS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.SETTINGS_TABS
+COLLECTION	Valkur.Gameplay.TimeWeather.TimeWeatherEditorUIBuilder.WEATHER_ROWS
+COLLECTION	Valkur.Gameplay.VFX.ParticlesRuntimeEditor.TUTORIAL_STEPS
+COLLECTION	Valkur.Gameplay.VFX.ParticleTableColumns._columns
+COLLECTION	Valkur.Gameplay.VFX.ParticleTableColumns.DefaultHidden
+COLLECTION	Valkur.Gameplay.World.Dungeon.Strategy.DungeonStrategyResolver._strategies
+COLLECTION	Valkur.Gameplay.World.Dungeon.Udemy.Runtime.RoomTilemapLayerMapping.NameToLayer
+COLLECTION	Valkur.Gameplay.World.Layering.VisualLayerSortingSync.SortingLayerByVisualLayer
+COLLECTION	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldLayerIndices
+COLLECTION	Valkur.Gameplay.World.PathFinder.Cardinals
+COLLECTION	Valkur.UI.EditorSubTabData.All
+COLLECTION	Valkur.UI.HUD.HUDVisibilityController.RootHUDCanvasNames
+COLLECTION	Valkur.UI.Loading.LoadingScreenController.LoadingTips
+COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
+COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassBorderColors
+COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassFaceUvRects
+COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassPortraitPaths
+COLLECTION	Valkur.UI.SpellBarHUD._keyLabels
+COLLECTION	Valkur.UIKit.DraggablePanel._allPanels
+COLLECTION	Valkur.UIKit.PanelChrome._all
+UNITYOBJ	Valkur.Core.GameDirector.<Instance>k__BackingField
+UNITYOBJ	Valkur.Core.Input.MouseInputManager._instance
+UNITYOBJ	Valkur.Core.Input.PersistentEventSystem._instance
+UNITYOBJ	Valkur.Gameplay.Combat.FloatingDamageSpawner._prefab
+UNITYOBJ	Valkur.Gameplay.Combat.ToastSystem._instance
+UNITYOBJ	Valkur.Gameplay.Combat.WorldHealthBar._sharedMaterial
+UNITYOBJ	Valkur.Gameplay.Combat.WorldHealthBar._sharedPixelSprite
+UNITYOBJ	Valkur.Gameplay.Editors.BuildingOutlineRenderer.s_lineMat
+UNITYOBJ	Valkur.Gameplay.Editors.BuildingOutlineRenderer.s_whiteSprite
+UNITYOBJ	Valkur.Gameplay.Editors.BuildingOutlineRenderer.s_whiteTex
+UNITYOBJ	Valkur.Gameplay.Editors.EntityOutlineRenderer.s_lineMat
+UNITYOBJ	Valkur.Gameplay.EntitySetup._spellCatalog
+UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._monsterSprite
+UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._playerSprite
+UNITYOBJ	Valkur.Gameplay.EntitySpriteHelper._unlitSpriteMaterial
+UNITYOBJ	Valkur.Gameplay.MapEditor.Backups.MapBackupBrowserUI.<Instance>k__BackingField
+UNITYOBJ	Valkur.Gameplay.MapEditor.MapEditorUI._whiteSprite
+UNITYOBJ	Valkur.Gameplay.ProjectilePrefabFactory._fireballPrefab
+UNITYOBJ	Valkur.Gameplay.ProjectilePrefabFactory._fireballSpell
+UNITYOBJ	Valkur.Gameplay.Spawners.SpawnerOutlineRenderer.s_lineMat
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._haloSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._innerGlowSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._pillarSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._pulseRingSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeInnerSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeOuterSprite
+UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._sparkleSprite
+UNITYOBJ	Valkur.Gameplay.Spells.CameraShake._instance
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._blade
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._bolt
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._core
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._glow
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._halo
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._hotCore
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._ring
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._snowflake
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkle
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkleStar
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._unlitMaterial
+UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._wisp
+UNITYOBJ	Valkur.Gameplay.Spells.SlashExecutor._vfxCatalog
+UNITYOBJ	Valkur.Gameplay.TileEditor.TerrainCatalogLoader._cached
+UNITYOBJ	Valkur.Gameplay.UI.SpellBarHUD._whitePixel
+UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_lineMat
+UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_whiteSprite
+UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_whiteTex
+UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_fillMaterial
+UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_lineMaterial
+UNITYOBJ	Valkur.Gameplay.World.BuildingColliderDebugOverlay.s_whiteSprite
+UNITYOBJ	Valkur.Gameplay.World.BuildingObject.s_urpSpriteMat
+UNITYOBJ	Valkur.Gameplay.World.TilemapColliderDebugOverlay.s_mat
+UNITYOBJ	Valkur.Infrastructure.MusicBeatClock.<Instance>k__BackingField
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._circleCache
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sChevDown
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sChevUp
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sMinus
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sNext
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._solidCache
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sPause
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sPlay
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sPrev
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sRoundRect
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sSpeaker
+UNITYOBJ	Valkur.UI.HUD.MusicPlayerHUD._sSpeakerMute
+UNITYOBJ	Valkur.UI.Loading.LoadingScreenController._instance
+UNITYOBJ	Valkur.UI.Loading.LoadingScreenController._whiteSprite
+UNITYOBJ	Valkur.UIKit.LoadingBarWidget._whiteSprite
+UNITYOBJ	Valkur.UIKit.MenuBarChrome._instance
+VALUE	Valkur.Core.GameBootstrap.<GameplaySceneName>k__BackingField
+VALUE	Valkur.Core.GameSettings._instance
+VALUE	Valkur.Core.Input.MouseInputManager._testOverridePosition
+VALUE	Valkur.Gameplay.Combat.FloatingDamageSpawner._pool
+VALUE	Valkur.Gameplay.EntitySetup._configureMarkerMethod
+VALUE	Valkur.Gameplay.EntitySetup._configureMethod
+VALUE	Valkur.Gameplay.EntitySetup._minimapDotEnumType
+VALUE	Valkur.Gameplay.EntitySetup._minimapDotType
+VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerReflectionFailed
+VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerShapeType
+VALUE	Valkur.Gameplay.EntitySetup._minimapMarkerType
+VALUE	Valkur.Gameplay.EntitySetup._minimapReflectionFailed
+VALUE	Valkur.Gameplay.Spells.AuraController._light2DColor
+VALUE	Valkur.Gameplay.Spells.AuraController._light2DInnerRadius
+VALUE	Valkur.Gameplay.Spells.AuraController._light2DIntensity
+VALUE	Valkur.Gameplay.Spells.AuraController._light2DOuterRadius
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dColor
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dFalloff
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dInner
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dIntensity
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dLightType
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dOuter
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dResolved
+VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._light2DType
+VALUE	Valkur.Gameplay.Spells.SlashExecutor._vfxCatalogTried
+VALUE	Valkur.Gameplay.TileEditor.TileRegistry._instance
+VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._resolved
+VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldAllIndex
+VALUE	Valkur.UIKit.DraggablePanel.BottomReservedPx
+VALUE	Valkur.UIKit.DraggablePanel.GlobalInterPanelSnap
+VALUE	Valkur.UIKit.DraggablePanel.LeftReservedPx
+VALUE	Valkur.UIKit.DraggablePanel.RightReservedPx
+VALUE	Valkur.UIKit.DraggablePanel.TopReservedPx
+VALUE	Valkur.UIKit.MenuBarChrome.ColorSource
+VALUE	Valkur.UIKit.PanelChrome.ColorSource

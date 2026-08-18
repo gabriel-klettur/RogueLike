@@ -421,6 +421,16 @@ namespace Valkur.Gameplay.MapEditor
         // failure (disk full, locked file, etc.) never prevents the user from
         // doing the actual destructive operation — the snapshot is a best-
         // effort safety net, not a precondition.
+        /// <summary>
+        /// The backup store caches file handles and paths for the active slot. Held
+        /// across a Play boundary it would keep serving the previous session's slot.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSharedBackupStoreOnPlayModeEnter()
+        {
+            _sharedBackupStore = null;
+        }
+
         private static MapBackupStore _sharedBackupStore;
         private static MapBackupStore BackupStore =>
             _sharedBackupStore ?? (_sharedBackupStore = new MapBackupStore());
@@ -453,7 +463,7 @@ namespace Valkur.Gameplay.MapEditor
         // the full per-slot WorldId routing plan that closes the gap so each
         // slot owns its own buildings/lights/spawners/particles on disk too.
 
-        private void ClearAllSpawnedWorldContent()
+        public void ClearAllSpawnedWorldContent()
         {
             var bl = FindObjectOfType<BuildingLoader>();
             bl?.ClearSpawned();
@@ -466,7 +476,7 @@ namespace Valkur.Gameplay.MapEditor
             FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.ClearAll();
         }
 
-        private void ReloadAllWorldContent()
+        public void ReloadAllWorldContent()
         {
             // Every loader below resolves its file through the ACTIVE slot at
             // call time (MapEditorActiveSlot / WorldStreamingFileRepositoryBase),

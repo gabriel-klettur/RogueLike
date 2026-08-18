@@ -12,9 +12,20 @@ namespace Valkur.Gameplay.Save
     {
         public const string CURRENT_SCHEMA = "1.1";
 
-        // Register built-in steps on first access.
-        static SaveSchemaMigrator()
+        /// <summary>
+        /// Registers the built-in migration steps.
+        ///
+        /// This used to be a static constructor, which runs exactly once per app
+        /// domain. With Domain Reload off that meant: run the EditMode suite, and
+        /// whatever the tests left in SaveMigrationChain is what Play Mode gets —
+        /// usually an empty chain, so saves silently stopped migrating and only a
+        /// full Unity restart brought them back. Re-registering on every Play
+        /// makes the chain a property of the session instead of the domain.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void RegisterBuiltInSteps()
         {
+            SaveMigrationChain.Clear();
             SaveMigrationChain.Register("1.0", "1.1", data =>
             {
                 // v1.0 -> v1.1: nothing structural changed; the version bump itself

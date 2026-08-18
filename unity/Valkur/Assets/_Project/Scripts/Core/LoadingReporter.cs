@@ -25,6 +25,16 @@ namespace Valkur.Core
             => OnGameplayReady?.Invoke();
 
         /// <summary>Called by LoadingScreenController.OnDestroy to avoid stale references.</summary>
+        /// <summary>
+        /// Static delegates outlive a Play session with Domain Reload off, so the
+        /// previous session's loading-screen handlers would fire against destroyed UI.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            Clear();
+        }
+
         public static void Clear()
         {
             OnStageProgress = null;

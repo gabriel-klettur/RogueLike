@@ -32,7 +32,16 @@ namespace Valkur.Gameplay.Inventory
 
         // ── Events ────────────────────────────────────────────────────
         /// <summary>Fired after a successful consume. Args: (item)</summary>
-        public static System.Action<ItemDefinition> OnItemConsumed;
+        /// <summary>
+        /// Subscribers from the previous Play session would otherwise still be attached.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticEventOnPlayModeEnter()
+        {
+            OnItemConsumed = null;
+        }
+
+        public static event System.Action<ItemDefinition> OnItemConsumed;
 
         // ── Lifecycle ─────────────────────────────────────────────────
 

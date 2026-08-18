@@ -42,6 +42,18 @@ namespace Valkur.Core
         /// <summary>
         /// Clear all registered services. Call on application quit or domain reload.
         /// </summary>
+        /// <summary>
+        /// Domain Reload is OFF, so a registration made in one Play session is still
+        /// here in the next one — pointing at a destroyed object. Nothing unregisters
+        /// these at runtime, which is why the resulting MissingReferenceException
+        /// surfaces at the consumer instead of at the stale registration.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            Clear();
+        }
+
         public static void Clear()
         {
             _services.Clear();

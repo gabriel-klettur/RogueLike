@@ -92,6 +92,17 @@ namespace Valkur.Gameplay.Save
         }
 
         /// <summary>Test-only reset. Clears the buffer and the lifetime counter.</summary>
+        /// <summary>
+        /// Telemetry is per-session. Carrying entries and listeners across a Play
+        /// boundary both skews the numbers and keeps destroyed subscribers alive.
+        /// </summary>
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlayModeEnter()
+        {
+            ResetForTests();
+            ClearEntryRecordedListeners();
+        }
+
         public static void ResetForTests()
         {
             lock (_lock)
