@@ -741,5 +741,5 @@
   {"id": 98, "template_id": 8, "zone": "zone_-50_0", "rel_x": 1243, "rel_y": 1136, "overrides": {"scale": [298, 384]}},
   {"id": 99, "template_id": 13, "zone": "Lobby", "rel_x": 759, "rel_y": 117, "overrides": {"scale": [93, 162]}},
   {"id": 100, "template_id": 302, "zone": "zone_100_50", "rel_x": 876, "rel_y": -189, "overrides": {"scale": [196, 251]}},
-  {"id": 101, "template_id": 6, "zone": "Lobby", "rel_x": 722, "rel_y": 603, "overrides": {"scale": [197, 242], "z_top": 4}}
+  {"id": 101, "template_id": 6, "zone": "Lobby", "rel_x": 722, "rel_y": 603, "overrides": {"scale": [197, 242], "z_top": 5}}
 ]
