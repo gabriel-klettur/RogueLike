@@ -141,5 +141,25 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 "The shader gained a _MainTex. Re-check whether a texture-scroll path is now " +
                 "viable before adding one.");
         }
+
+        [Test]
+        public void TheShaderMustConsumeVertexColour()
+        {
+            // The obvious response to "this shader ignores the ST transform" is to swap it for
+            // one that does not, and the obvious candidate is URP/Unlit. That shader's
+            // Attributes struct declares POSITION and TEXCOORD0 and no COLOR semantic at all,
+            // so it discards vertex colour — which on this beam carries the per-line tint, the
+            // three per-layer alphas, AND the grow/fade envelope that LaserBeamController
+            // drives through startColor/endColor every frame. The beam would pop in and out at
+            // full brightness instead of growing and fading.
+            //
+            // URP/Particles/Unlit keeps it: its forward pass does
+            // `output.color = GetParticleColor(input.color)`.
+            var mat = BeamMaterialCache.Get(Tex(BeamTextureKind.Core));
+
+            Assert.AreEqual("Universal Render Pipeline/Particles/Unlit", mat.shader.name,
+                "Any replacement must be checked for a COLOR semantic in its vertex input " +
+                "before it is adopted, or the beam silently loses its colour and its fade.");
+        }
     }
 }

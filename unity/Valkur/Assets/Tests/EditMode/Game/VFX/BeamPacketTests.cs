@@ -251,6 +251,12 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 $"Baseline centreline luminance is {baseline:0.000}. Above ~0.85 the beam is " +
                 "effectively clipped and a travelling charge cannot be seen at all.");
 
+            Assert.Greater(baseline, 0.40f,
+                $"Baseline centreline luminance is {baseline:0.000}. The upper bound alone lets " +
+                "the beam be dimmed indefinitely to buy headroom, which trades the saturation " +
+                "bug for a beam that no longer reads as incandescent — the exact regression the " +
+                "additive rework was done to fix.");
+
             float peakTex = BeamTextureLibrary.EvaluateAlpha(BeamTextureKind.Packet, 0f, 0.82f, SOFTNESS);
             float contrast = peakTex * packetAlpha;
 
@@ -265,6 +271,37 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 source, @"\b" + name + @"\s*=\s*([0-9.]+)f");
             Assert.IsTrue(m.Success, $"{name} not found — the alpha budget test cannot verify anything.");
             return float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        [Test]
+        public void TheChargesLeaveAGapForTheEyeToMeasureTravelAgainst()
+        {
+            // Coverage, not a constant product: what matters is how much of the beam is lit by
+            // a charge at once. Past roughly two thirds the charges merge into a continuous
+            // bright rope and there is no dark stretch left for the eye to judge motion
+            // against — the beam goes back to looking uniformly on.
+            const float L = LaserBeamController.DEFAULT_RANGE;
+            float worst = 0f;
+
+            for (int step = 0; step <= 200; step++)
+            {
+                float phase = step / 200f;
+                float covered = 0f;
+
+                for (int i = 0; i < LaserBeamController.PACKET_COUNT; i++)
+                {
+                    float p = Mathf.Repeat(phase + (i / (float)LaserBeamController.PACKET_COUNT), 1f);
+                    if (LaserBeamController.ResolvePacketSpan(p, L, LaserBeamController.PACKET_LENGTH,
+                                                              out float from, out float to))
+                        covered += to - from;
+                }
+
+                worst = Mathf.Max(worst, covered / L);
+            }
+
+            Assert.Less(worst, 0.66f,
+                $"At its busiest the charges cover {worst:P0} of the beam. Raising PACKET_COUNT " +
+                "or PACKET_LENGTH past this point removes the gap that makes the travel legible.");
         }
 
         // ── Wiring ───────────────────────────────────────────────────────────────
