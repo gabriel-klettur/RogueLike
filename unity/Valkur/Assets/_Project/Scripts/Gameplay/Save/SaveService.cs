@@ -23,7 +23,12 @@ namespace Valkur.Gameplay
         // EditMode test pollution; the production guard `RefuseWriteOutsidePlayMode`
         // now blocks recurrence so the diag is dormant. Flip back to true if a
         // recurrence ever shows up in a real player profile.
-        private const bool DIAG_RUN_TWIN_SAVE = false;
+        // static readonly, NOT const: the diagnostic blocks below are kept on
+        // purpose so the twin-save incident can be re-instrumented by flipping
+        // this one flag (see .github/incidents/RUN_TWIN_SAVE.md). A const would
+        // let the compiler fold the branch away and report every guarded block
+        // as CS0162 unreachable code.
+        private static readonly bool DIAG_RUN_TWIN_SAVE = false;
 
         // All auto-save semantics (timer autosave, shutdown save, quicksave-on-exit)
         // collapse to the same per-run autosave file via SaveFileManager.GetAutosavePath.

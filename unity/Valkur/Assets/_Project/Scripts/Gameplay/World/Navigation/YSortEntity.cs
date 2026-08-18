@@ -22,9 +22,6 @@ namespace Valkur.Gameplay.World
         [Tooltip("If true, sorting layer is set to 'Entities' on Awake.")]
         [SerializeField] private bool autoSetSortingLayer = true;
 
-        [Tooltip("Update frequency: every frame (true) or only when moved (false).")]
-        [SerializeField] private bool updateEveryFrame = true;
-
         private SpriteRenderer _sr;
         private float _lastY;
         private const float Y_THRESHOLD = 0.01f;
@@ -47,12 +44,11 @@ namespace Valkur.Gameplay.World
         private void LateUpdate()
         {
             // Always skip when the entity hasn't moved meaningfully on Y.
-            // Even with updateEveryFrame=true the sorting order is derived
-            // solely from transform.position.y, so writing it again when
-            // nothing changed wastes a SpriteRenderer.sortingOrder set
-            // (which propagates a dirty flag through URP's batcher). 7+
-            // stationary YSortEntity instances were paying this cost every
-            // LateUpdate before this guard.
+            // The sorting order is derived solely from transform.position.y,
+            // so writing it again when nothing changed wastes a
+            // SpriteRenderer.sortingOrder set (which propagates a dirty flag
+            // through URP's batcher). 7+ stationary YSortEntity instances were
+            // paying this cost every LateUpdate before this guard.
             float currentY = transform.position.y;
             if (Mathf.Abs(currentY - _lastY) < Y_THRESHOLD)
                 return;

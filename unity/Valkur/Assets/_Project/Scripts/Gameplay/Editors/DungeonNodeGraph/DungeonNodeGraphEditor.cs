@@ -45,9 +45,10 @@ namespace Valkur.Gameplay.Editors.DungeonNodeGraph
             GameEditorManager.EnsureInstance().Register(this);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            base.OnDestroy();
         }
 
         public void Activate()
