@@ -32,8 +32,13 @@ namespace Valkur.Gameplay.Spells
         // Visual layering: bright thin core inside a softer wider glow.
         private const float CORE_WIDTH_MULT = 0.55f;   // core line width = beam width * this
         private const float GLOW_WIDTH_MULT = 2.4f;    // outer glow width = beam width * this
-        private const float CORE_ALPHA = 1.0f;
-        private const float GLOW_ALPHA = 0.34f;
+        // Additive blending accumulates: dst += rgb * a. With the core at 1.0 and the glow at
+        // 0.34 the centreline summed past 1.0 on its own, so the beam clipped to pure white and
+        // a travelling charge had no headroom left to be brighter in — it was mathematically
+        // invisible before it ever reached the screen. These values leave the baseline near 0.6
+        // so the charge can add ~0.5 and only the head blooms out.
+        private const float CORE_ALPHA = 0.45f;
+        private const float GLOW_ALPHA = 0.22f;
 
         /// <summary>Edge falloff of the two band textures. See BeamTextureLibrary.</summary>
         // Widths were retuned when the lines became additive and textured. A textured band
@@ -44,11 +49,19 @@ namespace Valkur.Gameplay.Spells
         private const float CORE_SOFTNESS = 0.25f;
         private const float GLOW_SOFTNESS = 0.80f;
 
-        /// <summary>World units of beam per repeat of the energy texture.</summary>
-        private const float SCROLL_TILE_WORLD_LENGTH = 1.6f;
+        /// <summary>Charges in flight at once. Staggered in phase so the flow reads as steady.</summary>
+        public const int PACKET_COUNT = 2;
 
-        /// <summary>Texture repeats per second travelling along the beam, toward the target.</summary>
-        private const float SCROLL_SPEED = 2.2f;
+        /// <summary>Trips per second each charge makes from the caster to the impact point.</summary>
+        private const float PACKET_RATE = 1.35f;
+
+        /// <summary>World length of one charge.</summary>
+        public const float PACKET_LENGTH = 1.7f;
+
+        /// <summary>Charge width, as a multiple of beam width. Wider than the core so it bulges.</summary>
+        private const float PACKET_WIDTH_MULT = 1.35f;
+        private const float PACKET_ALPHA = 0.60f;
+        private const float PACKET_SOFTNESS = 0.5f;
 
         /// <summary>Width wobble, as a fraction of the authored width. Keeps the beam alive.</summary>
         private const float WIDTH_PULSE_AMOUNT = 0.12f;
@@ -78,13 +91,14 @@ namespace Valkur.Gameplay.Spells
 
         private LineRenderer _coreLine;
         private LineRenderer _glowLine;
-        // Scroll lives in a MaterialPropertyBlock rather than on the material: the material
-        // is shared across every beam in the scene, so writing tiling/offset on it would
-        // make two simultaneous beams scroll as one.
-        private MaterialPropertyBlock _coreBlock;
-        private MaterialPropertyBlock _glowBlock;
-        private float _scrollOffset;
+        // The travelling charges. Short lines whose endpoints slide from the caster to the
+        // impact point and restart. Geometry rather than a scrolling texture, because URP's
+        // particle shaders sample UV0 raw and ignore the ST transform entirely — see the note
+        // in BeamMaterialCache.
+        private LineRenderer[] _packetLines;
+        private float _packetPhase;
         private float _authoredCoreWidth;
+        private float _authoredPacketWidth;
         private float _authoredGlowWidth;
         private ParticleSystem _impactBurst;
         private GameObject _impactGo;
@@ -126,6 +140,35 @@ namespace Valkur.Gameplay.Spells
             _fading = false;
             BuildVisual(ctx);
             StartCoroutine(RunBeam());
+        }
+
+        /// <summary>
+        /// Where one travelling charge sits on the beam right now.
+        ///
+        /// <paramref name="phase"/> is 0..1 through its trip. The charge is placed so that at
+        /// phase 0 its head is at the caster and at phase 1 its tail has reached the impact
+        /// point, which means it grows out of the muzzle and is absorbed at the far end rather
+        /// than popping into existence fully formed at both ends.
+        ///
+        /// Returns false when the visible span has collapsed — a zero-length LineRenderer
+        /// draws a dot at the origin, which reads as a stuck bead on the caster.
+        /// </summary>
+        public static bool ResolvePacketSpan(float phase, float beamLength, float packetLength,
+                                             out float from, out float to)
+        {
+            from = 0f;
+            to = 0f;
+            if (beamLength <= 0f || packetLength <= 0f) return false;
+
+            // Head sweeps 0 .. beamLength + packetLength so the whole charge clears the tip.
+            float head = Mathf.Clamp01(phase) * (beamLength + packetLength);
+
+            from = Mathf.Clamp(head - packetLength, 0f, beamLength);
+            to = Mathf.Clamp(head, 0f, beamLength);
+
+            // Below about a tenth of a tile the charge is subpixel at any sane zoom, and the
+            // stretched texture degenerates into a flat smear of its brightest column.
+            return (to - from) > 0.05f;
         }
 
         /// <summary>Bumps the keep-alive timestamp. Call every frame the trigger is held.</summary>
@@ -176,6 +219,8 @@ namespace Valkur.Gameplay.Spells
             // Cache the original "full opacity" colors so we can modulate during fade.
             Color glowBaseColor = _glowLine != null ? _glowLine.startColor : Color.white;
             Color coreBaseColor = _coreLine != null ? _coreLine.startColor : Color.white;
+            Color packetBaseColor = _packetLines != null && _packetLines.Length > 0 && _packetLines[0] != null
+                ? _packetLines[0].startColor : Color.white;
 
             // Loop continues until either the active phase ends naturally OR the fade
             // animation completes (whichever comes second).
@@ -267,37 +312,54 @@ namespace Valkur.Gameplay.Spells
                 // points, same width, same colour, frame after frame. These two are what
                 // separate a beam that is ON from a beam that is FIRING.
 
-                // Scroll toward the target. Negative because texture offset moves the
-                // sampling window, so subtracting walks the pattern forward along +U.
-                _scrollOffset -= SCROLL_SPEED * Time.deltaTime;
-                if (_scrollOffset < -1f) _scrollOffset += 1f;   // keep it bounded forever
-
-                // Tiling from world length, so a 2-unit beam and a 6-unit beam show the
-                // same size of energy pattern instead of one stretched copy.
-                float tiling = Mathf.Max(1f, visibleLength / SCROLL_TILE_WORLD_LENGTH);
+                // Advance the charges. One phase drives all of them; each is offset by an
+                // even fraction of a cycle so they arrive evenly spaced rather than together.
+                _packetPhase += PACKET_RATE * Time.deltaTime;
+                if (_packetPhase > 1f) _packetPhase -= 1f;   // keep it bounded forever
 
                 float pulse = 1f + WIDTH_PULSE_AMOUNT * Mathf.Sin(Time.time * WIDTH_PULSE_HZ);
 
                 if (_glowLine != null)
                 {
-                    _glowBlock = _glowBlock ?? new MaterialPropertyBlock();
-                    BeamMaterialCache.ApplyScroll(_glowLine, _glowBlock, tiling, _scrollOffset * 0.5f);
-                    // The glow breathes in antiphase with the core, so the beam looks like it
-                    // is pressurised rather than simply flickering.
+                    // Glow and core breathe in antiphase, so the beam thickens and thins
+                    // without its total brightness visibly changing.
                     float w = _authoredGlowWidth * (2f - pulse) * _growT;
                     _glowLine.startWidth = w;
                     _glowLine.endWidth = w;
                 }
                 if (_coreLine != null)
                 {
-                    _coreBlock = _coreBlock ?? new MaterialPropertyBlock();
-                    BeamMaterialCache.ApplyScroll(_coreLine, _coreBlock, tiling, _scrollOffset);
                     float w = _authoredCoreWidth * pulse * _growT;
                     _coreLine.startWidth = w;
                     _coreLine.endWidth = w;
                 }
 
-                // Anchor the impact burst at the (visible) beam tip facing outward.
+                if (_packetLines != null)
+                {
+                    float pw = _authoredPacketWidth * _growT;
+                    var pc = packetBaseColor; pc.a = packetBaseColor.a * alphaMult;
+
+                    for (int i = 0; i < _packetLines.Length; i++)
+                    {
+                        var line = _packetLines[i];
+                        if (line == null) continue;
+
+                        float phase = Mathf.Repeat(_packetPhase + (i / (float)_packetLines.Length), 1f);
+                        bool visible = ResolvePacketSpan(phase, visibleLength, PACKET_LENGTH,
+                                                         out float from, out float to);
+
+                        line.enabled = visible;
+                        if (!visible) continue;
+
+                        line.startWidth = pw;
+                        line.endWidth = pw;
+                        line.startColor = pc;
+                        line.endColor = pc;
+                        line.SetPosition(0, visualOrigin + dir * from);
+                        line.SetPosition(1, visualOrigin + dir * to);
+                    }
+                }
+
                 if (_impactGo != null)
                 {
                     _impactGo.transform.position = visibleEnd;
@@ -417,6 +479,9 @@ namespace Valkur.Gameplay.Spells
 
             // Cleanup all visual children spawned in BuildVisual.
             if (_glowLine != null) Destroy(_glowLine.gameObject);
+            if (_packetLines != null)
+                foreach (var p in _packetLines)
+                    if (p != null) Destroy(p.gameObject);
             if (_coreLine != null) Destroy(_coreLine.gameObject);
             if (_impactGo != null)
             {

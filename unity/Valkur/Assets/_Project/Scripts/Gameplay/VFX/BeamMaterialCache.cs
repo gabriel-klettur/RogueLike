@@ -58,23 +58,22 @@ namespace Valkur.Gameplay.VFX
             return mat;
         }
 
-        /// <summary>
-        /// Writes per-renderer tiling and scroll offset without cloning the shared material.
-        ///
-        /// <paramref name="tiling"/> is how many times the texture repeats along the beam;
-        /// derive it from world length so a long beam does not stretch its energy pattern.
-        /// <paramref name="offset"/> animates to make that pattern travel.
-        /// </summary>
-        public static void ApplyScroll(Renderer renderer, MaterialPropertyBlock block,
-                                       float tiling, float offset)
-        {
-            if (renderer == null || block == null) return;
-
-            renderer.GetPropertyBlock(block);
-            var st = new Vector4(tiling, 1f, offset, 0f);
-            block.SetVector("_MainTex_ST", st);
-            block.SetVector("_BaseMap_ST", st);
-            renderer.SetPropertyBlock(block);
-        }
+        // ApplyScroll USED to live here, writing tiling and offset into _MainTex_ST and
+        // _BaseMap_ST on a MaterialPropertyBlock so the beam's texture could travel. It was
+        // deleted because it never did anything, and it is worth recording why so nobody
+        // rebuilds it:
+        //
+        //   * "Universal Render Pipeline/Particles/Unlit" has no _MainTex property at all —
+        //     its texture is _BaseMap. Writing _MainTex_ST addresses nothing.
+        //   * It declares _BaseMap_ST inside CBUFFER_START(UnityPerMaterial), but its forward
+        //     pass never reads it. There is no TRANSFORM_TEX anywhere in
+        //     ParticlesUnlitForwardPass.hlsl; GetParticleTexcoords assigns
+        //     `outputTexcoord = inputTexcoords.xy` and that raw UV0 is what gets sampled.
+        //     URP's particle shaders animate UVs through flipbook data, not through ST.
+        //
+        // So the scroll was a silent no-op for as long as it existed, and the tests that
+        // covered it asserted only that the values were written into the block — never that
+        // they changed a pixel. The travelling charge is geometry now: LaserBeamController
+        // slides short LineRenderers along the beam, which depends on no shader feature.
     }
 }

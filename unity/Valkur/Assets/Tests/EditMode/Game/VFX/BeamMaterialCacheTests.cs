@@ -119,49 +119,27 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 "exactly the look this whole change exists to remove.");
         }
 
-        // ── Per-renderer scroll ──────────────────────────────────────────────────
+        // ── The scroll that never was ────────────────────────────────────────────
 
         [Test]
-        public void ApplyScroll_WritesTilingAndOffsetOntoTheRenderer()
+        public void TheShaderCannotBeAskedToScrollItsTexture()
         {
-            var line = MakeLine();
-            var block = new MaterialPropertyBlock();
+            // ApplyScroll used to live on this class and was covered by tests asserting that
+            // tiling and offset landed in the renderer's MaterialPropertyBlock. They passed.
+            // The beam still never moved, because the shader reads neither property:
+            // URP/Particles/Unlit has no _MainTex at all, and although it declares _BaseMap_ST
+            // in UnityPerMaterial its forward pass never applies it — GetParticleTexcoords
+            // assigns UV0 straight through. Those tests verified that we wrote a value, not
+            // that the value did anything, which is exactly the failure mode that also let the
+            // beam ship alpha-blended for months.
+            //
+            // This test is the marker left in its place: if the shader ever gains a working ST
+            // path, it fails and the geometric packet in LaserBeamController becomes optional.
+            var mat = BeamMaterialCache.Get(Tex(BeamTextureKind.Core));
 
-            BeamMaterialCache.ApplyScroll(line, block, tiling: 3.5f, offset: -0.25f);
-
-            var read = new MaterialPropertyBlock();
-            line.GetPropertyBlock(read);
-            var st = read.GetVector("_MainTex_ST");
-
-            Assert.AreEqual(3.5f, st.x, 1e-4f, "x is tiling along the beam.");
-            Assert.AreEqual(-0.25f, st.z, 1e-4f, "z is the scroll offset.");
-            Assert.AreEqual(1f, st.y, 1e-4f, "The across-beam axis must never tile.");
-        }
-
-        [Test]
-        public void ApplyScroll_KeepsTwoRenderersIndependent()
-        {
-            var a = MakeLine();
-            var b = MakeLine();
-            var blockA = new MaterialPropertyBlock();
-            var blockB = new MaterialPropertyBlock();
-
-            BeamMaterialCache.ApplyScroll(a, blockA, 2f, 0.1f);
-            BeamMaterialCache.ApplyScroll(b, blockB, 2f, 0.9f);
-
-            var readA = new MaterialPropertyBlock();
-            a.GetPropertyBlock(readA);
-
-            Assert.AreEqual(0.1f, readA.GetVector("_MainTex_ST").z, 1e-4f,
-                "The material is shared, so scroll must live per-renderer. Writing it on the " +
-                "material would make every beam in the scene scroll as one.");
-        }
-
-        [Test]
-        public void ApplyScroll_NullArguments_AreSafe()
-        {
-            Assert.DoesNotThrow(() => BeamMaterialCache.ApplyScroll(null, new MaterialPropertyBlock(), 1f, 0f));
-            Assert.DoesNotThrow(() => BeamMaterialCache.ApplyScroll(MakeLine(), null, 1f, 0f));
+            Assert.IsFalse(mat.HasProperty("_MainTex"),
+                "The shader gained a _MainTex. Re-check whether a texture-scroll path is now " +
+                "viable before adding one.");
         }
     }
 }

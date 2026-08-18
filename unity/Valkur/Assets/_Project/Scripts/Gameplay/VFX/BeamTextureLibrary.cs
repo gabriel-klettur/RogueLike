@@ -18,6 +18,14 @@ namespace Valkur.Gameplay.VFX
 
         /// <summary>Core modulated along its length, so scrolling it reads as energy flowing.</summary>
         Energy = 2,
+
+        /// <summary>
+        /// A self-contained charge: bright head, streak trailing behind it, and zero at BOTH
+        /// ends of the U axis. Meant for <see cref="UnityEngine.LineTextureMode.Stretch"/> on
+        /// a short line whose endpoints slide along the beam, so one copy spans the packet and
+        /// its ends fade out instead of being cut off.
+        /// </summary>
+        Packet = 3,
     }
 
     /// <summary>
@@ -128,6 +136,45 @@ namespace Valkur.Gameplay.VFX
                                 + 0.18f * Mathf.Sin(along * Mathf.PI * 2f * 3f)
                                 + 0.10f * Mathf.Sin(along * Mathf.PI * 2f * 7f);
                     return band * pulse;
+                }
+
+                case BeamTextureKind.Packet:
+                {
+                    float band = Mathf.Pow(1f - d, Mathf.Lerp(5f, 2f, softness));
+
+                    // U runs 0 (trailing end) to 1 (leading end) across the packet, ONCE.
+                    // Nothing tiles and nothing scrolls here — this shape is stationary in
+                    // texture space and the geometry is what moves. The first attempt did the
+                    // opposite (scroll the UVs of a full-length line) and rendered completely
+                    // static, because URP's particle shaders sample UV0 raw: they never apply
+                    // _BaseMap_ST, and they have no _MainTex at all.
+                    const float HEAD = 0.82f;
+
+                    // Head: tight and bright, the leading edge of the charge.
+                    const float HEAD_SIGMA = 0.075f;
+                    float dh = along - HEAD;
+                    float head = Mathf.Exp(-(dh * dh) / (2f * HEAD_SIGMA * HEAD_SIGMA));
+
+                    // Tail: behind the head only. The asymmetry is what encodes a direction of
+                    // travel — a symmetric blob reads as a throb, not as something moving.
+                    const float TAIL_LENGTH = 0.30f;
+                    float tail = along < HEAD ? Mathf.Exp((along - HEAD) / TAIL_LENGTH) * 0.6f : 0f;  // TAIL_WEIGHT
+
+                    // Both ends must reach zero — this line has hard geometric ends, and
+                    // residual alpha there is a cut edge travelling along the beam. Confined to
+                    // the outer tenth: a sin^2 across the whole length also crushes the head,
+                    // which sits at 0.82 and would keep only 29% of its brightness.
+                    const float END_FADE = 0.10f;
+                    float endFade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(along / END_FADE))
+                                  * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((1f - along) / END_FADE));
+
+                    // Normalised rather than clamped. Clamping flattens the top, where head and
+                    // tail overlap, and a flat top erases the very asymmetry that tells the eye
+                    // which way the charge is going.
+                    const float TAIL_WEIGHT = 0.6f;
+                    float shape = (head + tail) / (1f + TAIL_WEIGHT);
+
+                    return band * Mathf.Clamp01(shape) * endFade;
                 }
 
                 default:

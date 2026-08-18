@@ -24,15 +24,35 @@ namespace Valkur.Gameplay.Spells
                     new Color(_beamColor.r, _beamColor.g, _beamColor.b, GLOW_ALPHA),
                     sortingOrder: 4, BeamTextureKind.Glow, GLOW_SOFTNESS);
 
-                // Inner bright core line (narrower, full alpha, slightly washed-out toward white).
+                // Travelling charges. Each is its own short line whose two endpoints slide
+                // from the caster to the impact point and restart — the motion is in the
+                // geometry, not in a texture offset, because URP's particle shaders sample
+                // UV0 raw and ignore the ST transform completely.
+                Color packetCol = Color.Lerp(_beamColor, Color.white, 0.55f);
+                packetCol.a = PACKET_ALPHA;
+                _packetLines = new LineRenderer[PACKET_COUNT];
+                for (int i = 0; i < PACKET_COUNT; i++)
+                {
+                    _packetLines[i] = BuildLine($"LaserBeam_Packet{i}", width * PACKET_WIDTH_MULT,
+                        packetCol, sortingOrder: 5, BeamTextureKind.Packet, PACKET_SOFTNESS);
+                    // Stretch, not Tile: U must run 0..1 across the charge exactly once so its
+                    // head, tail and end-fades land where the texture puts them. Tile would
+                    // repeat the shape every width-and-a-bit of world space, which is what
+                    // turned the first attempt into uniform white.
+                    _packetLines[i].textureMode = LineTextureMode.Stretch;
+                    _packetLines[i].enabled = false;   // until RunBeam gives it a real span
+                }
+
+                // Inner bright core line (narrower, slightly washed-out toward white).
                 Color coreCol = Color.Lerp(_beamColor, Color.white, 0.35f);
                 coreCol.a = CORE_ALPHA;
                 _coreLine = BuildLine("LaserBeam_Core", width * CORE_WIDTH_MULT,
-                    coreCol, sortingOrder: 5, BeamTextureKind.Energy, CORE_SOFTNESS);
+                    coreCol, sortingOrder: 6, BeamTextureKind.Core, CORE_SOFTNESS);
 
                 // Remembered because RunBeam modulates width every frame and must not
                 // compound its own output.
                 _authoredGlowWidth = width * GLOW_WIDTH_MULT;
+                _authoredPacketWidth = width * PACKET_WIDTH_MULT;
                 _authoredCoreWidth = width * CORE_WIDTH_MULT;
             }
             else
@@ -126,10 +146,10 @@ namespace Valkur.Gameplay.Spells
             var renderer = host.GetComponent<ParticleSystemRenderer>();
             if (renderer != null)
             {
-                // Above core (5) and glow (4) so the muzzle visually sits on top
-                // of the line where the beam emerges.
+                // Above every line — glow (4), pulse (5), core (6) — so the muzzle
+                // visually sits on top of the line where the beam emerges.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
-                renderer.sortingOrder = 7;
+                renderer.sortingOrder = 9;
                 // Shared additive + textured, via the same cache the particles use. Was a
                 // per-emitter alpha material with no texture and no teardown: the muzzle
                 // could not glow, drew hard-edged squares, and leaked one Material per beam.
@@ -191,7 +211,7 @@ namespace Valkur.Gameplay.Spells
                 // emerges in FRONT of the caster (VISUAL_FORWARD_OFFSET) so we want
                 // the trail particles on top of world geometry, not behind it.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
-                renderer.sortingOrder = 5;
+                renderer.sortingOrder = 7;
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
                     ParticleTextureLibrary.Get(ParticleTextureShape.Spark, 0.4f), additive: true);
             }
@@ -263,7 +283,7 @@ namespace Valkur.Gameplay.Spells
             if (renderer != null)
             {
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
-                renderer.sortingOrder = 6;
+                renderer.sortingOrder = 8;
                 // Use the procedural Bolt sprite from ElementalSprites for the
                 // zig-zag look — matches the lightning_emitter preset.
                 ElementalSprites.EnsureAll();
@@ -293,9 +313,9 @@ namespace Valkur.Gameplay.Spells
             lr.numCapVertices = 6;       // rounded ends -> more "laser" look
             lr.numCornerVertices = 0;
             lr.alignment = LineAlignment.View;
-            // Tile, not Stretch: the texture repeats along the beam at a fixed world size,
-            // so a long beam shows more of the energy pattern instead of smearing one copy
-            // of it. RunBeam sets the tiling from the visible length each frame.
+            // Tile by default. Core and Glow are constant along their length, so which mode
+            // they use makes no difference to them; the packet lines override this to Stretch,
+            // where it decides everything.
             lr.textureMode = LineTextureMode.Tile;
 
             // Uniform thickness from origin to impact (no taper).
@@ -384,7 +404,7 @@ namespace Valkur.Gameplay.Spells
             {
                 // Was the literal "VFX" rather than the constant every other renderer here uses.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
-                renderer.sortingOrder = 6;
+                renderer.sortingOrder = 8;
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
                     ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.55f), additive: true);
             }
