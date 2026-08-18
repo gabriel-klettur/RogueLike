@@ -1,6 +1,6 @@
 ---
-status: in-progress
-last-updated: 2026-05-06
+status: phase-a-complete
+last-updated: 2026-08-18
 owner: Map Editor
 ---
 
@@ -41,16 +41,61 @@ missing is the wiring that pipes the active map slot through these repos.
 4. **`default` slot is protected** — never deletable, never renamable, always
    present in the saved-maps list.
 
-### Known limitation (closes in Phase A below)
+### Known limitation (CLOSED — see "Phase A as shipped")
 
-Auto-save still routes every loader through `WorldId.Base`, so editing
-buildings in slot `myMap` *writes back to the same file the default slot
-reads*. Switching maps **looks** independent today, but creating new content
-in a non-default slot pollutes default's data on disk. Phase A removes this.
+Auto-save used to route every loader through `WorldId.Base`, so editing
+buildings in slot `myMap` *wrote back to the same file the default slot
+reads*. Switching maps **looked** independent, but creating new content
+in a non-default slot polluted default's data on disk.
+
+Buildings were fixed first (via `MapEditorActiveSlot`); spawners, lights,
+particles and authored item drops were closed on 2026-08-18. No world-content
+domain shares a file across slots any more.
 
 ---
 
-## Phase A — Per-slot persistence routing
+## Phase A — Per-slot persistence routing — ✅ SHIPPED (2026-08-18)
+
+> **What actually shipped differs from the plan below, which is kept for
+> historical context.** The plan gave every loader its own `_activeWorldId`
+> field. That was rejected once the Buildings fix landed, because it would
+> have written custom-slot data into `StreamingAssets/Worlds/<slug>/` — a
+> read-only location on most build targets — and would have duplicated the
+> same routing logic across five loaders and four editors.
+>
+> **Shipped design — routing lives in one place, not in every caller:**
+>
+> - `Valkur.Core.MapEditorActiveSlot` gained a generic `DirFor(subdir, slot)`
+>   (`BuildingsDir` is now a thin wrapper over it). Default slot →
+>   `StreamingAssets/<Subdir>/`; custom slot →
+>   `persistentDataPath/Maps/<slot>/<Subdir>/`.
+> - `WorldStreamingFileRepositoryBase` consults it for the base world behind an
+>   opt-in `IsMapSlotAware` flag. `JsonFile{Spawner,Light,Particle}InstanceRepository`
+>   and `JsonFileItemDropRepository` opt in; `JsonFileZoneDatabaseRepository`
+>   deliberately does not (shared zone catalog).
+> - A pinned `streamingRootOverride` (tests, run-scoped drop store) always wins
+>   over slot routing, so a player's in-progress run drops stay in `Saves/<runId>/`.
+> - The two callers that bypassed repositories were routed too:
+>   `FileParticleInstanceStore` (resolves per call, not in its constructor) and
+>   `SpawnerEditorManager`'s save.
+> - Slot switch now flushes lights and item drops to the OUTGOING slot, and
+>   clears + reloads buildings, spawners, lights, particles and drops for the
+>   INCOMING one (`WorldLightLoader.Reload/ClearSpawnedLights`,
+>   `ItemDropService.ReloadForActiveSlot` were added for this).
+>
+> Because the loaders resolve their file through the active slot at call time,
+> **no loader needed an `_activeWorldId` field at all** — A2 and A3 below are
+> satisfied without touching those files.
+>
+> Regression coverage: `Assets/Tests/EditMode/Editors/MapEditor/WorldContentPerSlotRoutingTests.cs`
+> (24 cases) pins default-slot byte-compat, custom-slot isolation, the
+> zone-database exemption, pinned-root precedence, and world-vs-slot orthogonality.
+>
+> The map slot and the `WorldId` axes stay orthogonal: slots are user-authored
+> maps under `persistentDataPath`, worlds are designed dimensions that ship in
+> `StreamingAssets/Worlds/<slug>/`. Phase B/C below still describe the world axis.
+
+### Original plan (historical)
 
 Wire each loader through the active slot's `WorldId`. Path mapping is already
 implemented by `WorldStreamingFileRepositoryBase`:
@@ -194,32 +239,45 @@ real *gameplay* dimensions:
 
 A1 (slot ↔ WorldId)
 
-- [ ] `Scripts/Gameplay/Editors/Map/MapEditorMapSlots.cs` — `SlotToWorldId`.
+- [x] `Scripts/Gameplay/Editors/Map/MapEditorMapSlots.cs` — shipped as
+      `ResolveWorldId` / `ResolveBootActiveWorldId`.
+- [x] `Scripts/Core/MapEditorActiveSlot.cs` — `DirFor(subdir, slot)` (the
+      routing primitive the shipped design is built on).
 
-A2 (loaders)
+A2 (loaders) — no per-loader field needed; routing centralised in the repos
 
-- [ ] `Scripts/Gameplay/World/Buildings/BuildingLoader.cs`
-- [ ] `Scripts/Gameplay/Spawners/SpawnerInstanceLoader.cs`
-- [ ] `Scripts/Gameplay/World/Lighting/WorldLightLoader.cs`
-- [ ] `Scripts/Gameplay/Particles/ParticleInstanceLoader.cs`
+- [x] `Scripts/Infrastructure/Persistence/Repositories/WorldStreamingFileRepositoryBase.cs`
+      — `IsMapSlotAware` opt-in; pinned root still wins.
+- [x] `JsonFile{Spawner,Light,Particle}InstanceRepository`, `JsonFileItemDropRepository`
+      — opted in.
+- [x] `Scripts/Gameplay/VFX/FileParticleInstanceStore.cs` — bypassed the repo
+      layer; now resolves its path per call through the active slot.
 
 A3 (editors)
 
-- [ ] `Scripts/Gameplay/Editors/Buildings/BuildingsRuntimeEditor.Persistence.cs`
-- [ ] `Scripts/Gameplay/Editors/Spawners/SpawnerEditorManager.Persistence.cs`
-- [ ] `Scripts/Gameplay/Editors/Lighting/LightingRuntimeEditor.Persistence.cs`
-- [ ] `Scripts/Gameplay/Editors/Particles/ParticlesRuntimeEditor.Persistence.cs`
+- [x] `Scripts/Gameplay/Editors/Buildings/BuildingsRuntimeEditor.Persistence.cs`
+      — already slot-aware via `MapEditorActiveSlot`.
+- [x] `Scripts/Gameplay/Editors/Spawners/SpawnerEditorManager.Modes.cs` — the
+      save path was the last raw `Application.streamingAssetsPath` write.
+- [x] Lighting (Ctrl+F3) and Particles (F1) editors — save through
+      `WorldLightLoader.SaveAll` / `FileParticleInstanceStore`, both now routed.
 
 A4 (orchestration)
 
-- [ ] `Scripts/Gameplay/Editors/Map/MapEditorManager.MapSlots.cs`
-      → `OnSlotSwitched` helper, called from `BeginNewMap` + `LoadMapSlot`.
+- [x] `Scripts/Gameplay/Editors/Map/MapEditorManager.MapSlots.cs` — flush
+      (tiles, buildings, lights, drops) before the pointer flips; clear +
+      reload every domain after. Shipped inside the existing
+      `BeginNewMap` / `LoadMapSlot` flows rather than as a separate
+      `OnSlotSwitched` helper.
+- [x] `WorldLightLoader.Reload()` / `ClearSpawnedLights()` and
+      `ItemDropService.ReloadForActiveSlot()` added to make that possible.
 
-A5 (tiles)
+A5 (tiles) — was already done before this pass
 
-- [ ] `Scripts/Gameplay/Editors/Tile/TileOverlayPersistence.Static.cs`
-- [ ] `Scripts/Infrastructure/Persistence/Repositories/JsonFileTileOverrideRepository.cs`
-      (already routes per-WorldId in writes — confirm reads).
+- [x] `Scripts/Gameplay/Editors/Tile/TileOverlayPersistence.Static.cs` — takes a
+      `WorldId`; the legacy no-arg overloads default to `WorldId.Base`.
+- [x] `Scripts/Infrastructure/Persistence/Repositories/JsonFileTileOverrideRepository.cs`
+      — reads and writes both route per-`WorldId`.
 
 B (builtins)
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Core.Coordinates;
 using Valkur.Gameplay.MapEditor.Backups;
 using Valkur.Gameplay.Spawners;
@@ -196,6 +197,8 @@ namespace Valkur.Gameplay.MapEditor
             // re-written into the new slot (buildings) — see BeginNewMap.
             FlushTileOverlayEditsForOutgoingSlot();
             NotifyBuildingsEditorOfSlotChange();
+            FlushLightEditsForOutgoingSlot();
+            FlushItemDropsForOutgoingSlot();
 
             // Position to teleport the player to once the new slot is active.
             // Defaults to world origin; replaced by the slot file's last-known
@@ -367,6 +370,8 @@ namespace Valkur.Gameplay.MapEditor
             // default after creating a new map" bug.
             FlushTileOverlayEditsForOutgoingSlot();
             NotifyBuildingsEditorOfSlotChange();
+            FlushLightEditsForOutgoingSlot();
+            FlushItemDropsForOutgoingSlot();
 
             zoneManager?.ReplaceZones(Array.Empty<ZoneManager.ZoneDefinition>());
             if (_state != null)
@@ -456,23 +461,64 @@ namespace Valkur.Gameplay.MapEditor
             var sl = FindObjectOfType<SpawnerInstanceLoader>();
             sl?.ClearInstances();
 
-            var wll = FindObjectOfType<WorldLightLoader>();
-            if (wll != null)
-            {
-                var snapshot = new List<GameObject>(wll.ActiveLightObjects);
-                foreach (var lightGo in snapshot)
-                    wll.RemoveLight(lightGo);
-            }
+            FindObjectOfType<WorldLightLoader>()?.ClearSpawnedLights();
+
+            FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.ClearAll();
         }
 
         private void ReloadAllWorldContent()
         {
+            // Every loader below resolves its file through the ACTIVE slot at
+            // call time (MapEditorActiveSlot / WorldStreamingFileRepositoryBase),
+            // so calling them after the slot pointer has flipped re-spawns the
+            // incoming map's content — never the outgoing one's.
             FindObjectOfType<BuildingLoader>()?.LoadBuildings();
             FindObjectOfType<SpawnerInstanceLoader>()?.LoadInstances();
-            // WorldLightLoader currently doesn't expose a public re-load — it
-            // loads in Start() and exposes only RemoveLight. Re-loading here is
-            // a no-op until the loader gains a `Reload()` API; the rest of the
-            // pipeline is wired so adding it later is one more line.
+            FindObjectOfType<WorldLightLoader>()?.Reload();
+            FindObjectOfType<Valkur.Gameplay.VFX.ParticleInstancesLoader>()?.Reload();
+            ServiceLocator.Get<Valkur.Gameplay.WorldDrops.ItemDropService>()?.ReloadForActiveSlot();
+        }
+
+        // Persists the live light set to the OUTGOING slot's file before the
+        // active-slot pointer flips. The Lighting editor (Ctrl+F3) saves only
+        // on an explicit Save click, so without this a user who places lamps
+        // and then switches maps loses them.
+        //
+        // Guarded on a non-empty light set: WorldLightLoader bails out of
+        // LoadInstances when URP 2D or the preset catalog is missing, leaving
+        // zero active lights. Flushing that state would serialise an empty
+        // array over a perfectly good light_instances.json.
+        // Persists authored item drops to the OUTGOING slot's file before the
+        // active-slot pointer flips, mirroring the buildings / lights flushes.
+        private static void FlushItemDropsForOutgoingSlot()
+        {
+            try
+            {
+                ServiceLocator.Get<Valkur.Gameplay.WorldDrops.ItemDropService>()?.Flush();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Item-drop flush before slot switch failed: {ex.Message}");
+            }
+        }
+
+        private static void FlushLightEditsForOutgoingSlot()
+        {
+            try
+            {
+                var loader = WorldLightLoader.Instance != null
+                    ? WorldLightLoader.Instance
+                    : FindObjectOfType<WorldLightLoader>();
+                if (loader == null || loader.ActiveLightCount == 0) return;
+                int written = loader.SaveAll();
+                if (written > 0)
+                    Debug.Log($"[MapEditor] Flushed {written} light instance(s) " +
+                              "to outgoing slot before slot switch.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[MapEditor] Light flush before slot switch failed: {ex.Message}");
+            }
         }
 
         private void TeleportPlayerToBlankMapOrigin()

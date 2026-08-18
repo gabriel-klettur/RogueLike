@@ -24,6 +24,13 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         protected override string Subdir   => _subdir;
         protected override string FileName => _fileName;
 
+        // Authoring drops (StreamingAssets/Items) belong to the map being
+        // edited, so they follow the active slot. The run-scoped store passes a
+        // pinned root (Saves/<runId>) and the base class skips slot routing for
+        // it, keeping a player's in-progress run drops where the save system
+        // expects them.
+        protected override bool IsMapSlotAware => true;
+
         public JsonFileItemDropRepository()
             : this(null, DEFAULT_SUBDIR, DEFAULT_FILE_NAME) { }
 

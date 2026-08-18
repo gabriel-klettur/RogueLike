@@ -10,6 +10,10 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         protected override string Subdir   => "Lights";
         protected override string FileName => "light_instances.json";
 
+        // Placed light instances are authored per map slot: the F11 Map Editor
+        // creates independent maps and each must own its own file on disk.
+        protected override bool IsMapSlotAware => true;
+
         public JsonFileLightInstanceRepository() : this(null) { }
 
         public JsonFileLightInstanceRepository(string streamingRootOverride)

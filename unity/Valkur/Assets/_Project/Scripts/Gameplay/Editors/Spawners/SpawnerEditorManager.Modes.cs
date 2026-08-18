@@ -301,7 +301,13 @@ namespace Valkur.Gameplay.Spawners
             }
             sb.AppendLine("]");
 
-            string path = Path.Combine(Application.streamingAssetsPath, STREAMING_SUBFOLDER, INSTANCES_FILENAME);
+            // Map-slot aware: the default slot keeps the legacy
+            // StreamingAssets/Spawners/ location, custom maps authored from the
+            // F11 Map Editor write under persistentDataPath/Maps/<slot>/Spawners/.
+            // Placing a spawner on one map must never overwrite another's file.
+            string path = Path.Combine(
+                Valkur.Core.MapEditorActiveSlot.DirForActiveSlot(STREAMING_SUBFOLDER),
+                INSTANCES_FILENAME);
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, sb.ToString());
             SetStatus($"Saved {all.Length} instance(s).");

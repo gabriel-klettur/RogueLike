@@ -18,11 +18,15 @@ namespace Valkur.Core
     ///   • may not exist yet at boot time (BuildingLoader.Start() runs before
     ///     the editor singleton instance is created).
     ///
-    /// The "default" slot keeps the legacy <c>StreamingAssets/Buildings/...</c>
+    /// The "default" slot keeps the legacy <c>StreamingAssets/&lt;Subdir&gt;/...</c>
     /// path so existing builds continue to load the baseline world unchanged.
-    /// Custom slots are routed to <c>persistentDataPath/Maps/&lt;slot&gt;/Buildings/...</c>
+    /// Custom slots are routed to <c>persistentDataPath/Maps/&lt;slot&gt;/&lt;Subdir&gt;/...</c>
     /// — runtime-writable on every Unity target, and isolated per slot so editing
     /// one map can never silently nuke another.
+    ///
+    /// The same routing serves every world-content domain (Buildings, Spawners,
+    /// Lights, Particles, Items) through <see cref="DirFor"/>; Buildings simply
+    /// got there first and keeps a named convenience wrapper.
     /// </summary>
     public static class MapEditorActiveSlot
     {
@@ -117,15 +121,36 @@ namespace Valkur.Core
         /// user creates lives independently under
         /// <c>persistentDataPath/Maps/&lt;slot&gt;/Buildings/</c>.
         /// </summary>
-        public static string BuildingsDir(string slot)
-        {
-            if (IsDefault(slot))
-                return Path.Combine(StreamingRoot, BUILDINGS_DIR);
-            return Path.Combine(PersistentRoot, MAPS_DIR_NAME, slot, BUILDINGS_DIR);
-        }
+        public static string BuildingsDir(string slot) => DirFor(BUILDINGS_DIR, slot);
 
         /// <summary>Convenience wrapper: <see cref="BuildingsDir"/> for the active slot.</summary>
         public static string BuildingsDirForActiveSlot() => BuildingsDir(Read());
+
+        /// <summary>
+        /// Generic form of <see cref="BuildingsDir"/>: returns the directory that
+        /// holds <paramref name="subdir"/>'s JSON files for the given
+        /// <paramref name="slot"/>.
+        ///
+        /// Default slot keeps the legacy <c>StreamingAssets/&lt;subdir&gt;/</c> path
+        /// (the baseline world ships inside the build and StreamingAssets is
+        /// read-only on most targets); every custom slot lives independently
+        /// under <c>persistentDataPath/Maps/&lt;slot&gt;/&lt;subdir&gt;/</c>, which is
+        /// writable at runtime everywhere.
+        ///
+        /// Used by <c>WorldStreamingFileRepositoryBase</c> so spawners, lights,
+        /// particles and item drops inherit the per-slot isolation Buildings
+        /// already had, without every loader growing its own routing field.
+        /// </summary>
+        public static string DirFor(string subdir, string slot)
+        {
+            string clean = string.IsNullOrEmpty(subdir) ? string.Empty : subdir;
+            if (IsDefault(slot))
+                return Path.Combine(StreamingRoot, clean);
+            return Path.Combine(PersistentRoot, MAPS_DIR_NAME, slot, clean);
+        }
+
+        /// <summary>Convenience wrapper: <see cref="DirFor"/> for the active slot.</summary>
+        public static string DirForActiveSlot(string subdir) => DirFor(subdir, Read());
 
         // ── Internals ─────────────────────────────────────────────────────────
 

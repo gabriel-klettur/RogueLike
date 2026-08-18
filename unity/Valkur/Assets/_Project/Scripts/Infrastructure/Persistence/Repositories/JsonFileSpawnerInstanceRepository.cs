@@ -10,6 +10,10 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         protected override string Subdir   => "Spawners";
         protected override string FileName => "spawners_instances.json";
 
+        // Placed spawner instances are authored per map slot: the F11 Map Editor
+        // creates independent maps and each must own its own file on disk.
+        protected override bool IsMapSlotAware => true;
+
         public JsonFileSpawnerInstanceRepository() : this(null) { }
 
         public JsonFileSpawnerInstanceRepository(string streamingRootOverride)

@@ -356,6 +356,36 @@ namespace Valkur.Gameplay.WorldDrops
         /// <summary>Drop everything from cache and from both repos.</summary>
         public void ClearAll()
         {
+            DestroyLivePickups();
+            _byId.Clear();
+            if (_flushOnEveryChange) Flush();
+        }
+
+        /// <summary>
+        /// Re-read both repositories and respawn every pickup, discarding the
+        /// pickups currently in the scene. Used when the Map Editor switches
+        /// map slots: the authoring repository resolves its file through the
+        /// active slot, so once the slot pointer has flipped this repopulates
+        /// the world with the incoming map's drops instead of leaving the
+        /// outgoing map's items lying around.
+        ///
+        /// Deliberately does NOT flush — the caller persists pending edits to
+        /// the OUTGOING slot before flipping the pointer. Flushing here would
+        /// write the outgoing cache into the incoming slot's file, which is the
+        /// exact cross-map corruption this routing exists to prevent.
+        /// </summary>
+        public int ReloadForActiveSlot()
+        {
+            DestroyLivePickups();
+            int loaded = LoadFromRepository();
+            Rehydrate();
+            return loaded;
+        }
+
+        // Destroys every spawned pickup GameObject and forgets the live map,
+        // without touching the record cache or either repository.
+        private void DestroyLivePickups()
+        {
             foreach (var live in _liveByDropId.Values)
             {
                 if (live == null) continue;
@@ -364,8 +394,6 @@ namespace Valkur.Gameplay.WorldDrops
                 else UnityEngine.Object.DestroyImmediate(live.gameObject);
             }
             _liveByDropId.Clear();
-            _byId.Clear();
-            if (_flushOnEveryChange) Flush();
         }
 
         // ── Internals ─────────────────────────────────────────────────────────

@@ -10,6 +10,10 @@ namespace Valkur.Infrastructure.Persistence.Repositories
         protected override string Subdir   => "Particles";
         protected override string FileName => "particles_instances.json";
 
+        // Placed particle instances are authored per map slot: the F11 Map Editor
+        // creates independent maps and each must own its own file on disk.
+        protected override bool IsMapSlotAware => true;
+
         public JsonFileParticleInstanceRepository() : this(null) { }
 
         public JsonFileParticleInstanceRepository(string streamingRootOverride)

@@ -310,6 +310,31 @@ namespace Valkur.Gameplay.World
         // ── Runtime authoring API (used by LightingRuntimeEditor) ────────────
 
         /// <summary>
+        /// Destroy every spawned light and re-read the instance file for the
+        /// currently-active Map Editor slot. Called on slot switch so the scene
+        /// mirrors the map the user just opened instead of keeping the previous
+        /// map's lamps burning.
+        ///
+        /// Note this deliberately does NOT save first — the Map Editor flushes
+        /// pending light edits to the OUTGOING slot before flipping the pointer.
+        /// </summary>
+        public void Reload()
+        {
+            ClearSpawnedLights();
+            LoadInstances();
+        }
+
+        /// <summary>Destroy every spawned light without touching disk.</summary>
+        public void ClearSpawnedLights()
+        {
+            for (int i = _activeLights.Count - 1; i >= 0; i--)
+            {
+                if (_activeLights[i].go != null) Destroy(_activeLights[i].go);
+            }
+            _activeLights.Clear();
+        }
+
+        /// <summary>
         /// Spawn a fresh runtime light at <paramref name="worldPos"/> using preset
         /// <paramref name="presetKey"/>. Returns null when the preset is missing or
         /// URP 2D is not installed.
