@@ -58,6 +58,12 @@ namespace Valkur.Tests.EditMode.Game.World
             "Gameplay/Editors/Spells/SpellPreviewService.Framing.cs",
             "Gameplay/Editors/Particles/ParticlePreviewService.cs",
 
+            // Inspector preview for a ParticlePresetDefinition. The camera
+            // belongs to a PreviewRenderUtility and lives in its own preview
+            // scene — it is not the game camera and Cinemachine never sees it.
+            // Written once per preset change, not per repaint.
+            "Editor/Windows/ParticlePresetDefinitionEditor.cs",
+
             // Tile editor zoom input → routed back through CameraSetup,
             // but historically also held a fallback path. Allowed; covered
             // by separate CameraZoomClampTests.
