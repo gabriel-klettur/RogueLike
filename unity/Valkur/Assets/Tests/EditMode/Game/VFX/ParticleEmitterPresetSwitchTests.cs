@@ -374,6 +374,47 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 "reused emitter cannot inherit the previous preset's jitter.");
         }
 
+        [Test]
+        public void ApplyPreset_WorldSpacePreset_SimulatesInWorldSpace()
+        {
+            var emitter = CreateEmitter();
+            var def = MakePreset("switch_world", "aura", true);
+            def.vfx.worldSpace = true;
+
+            emitter.ApplyPreset(def, 1f);
+
+            Assert.AreEqual(ParticleSystemSimulationSpace.World, GetPs(emitter).main.simulationSpace,
+                "This is what makes a trail a trail: local-space particles ride along with a " +
+                "moving emitter and leave nothing behind.");
+        }
+
+        [Test]
+        public void ApplyPreset_WorldSpaceThenLocal_ReturnsToLocalSpace()
+        {
+            var emitter = CreateEmitter();
+            var world = MakePreset("switch_world2", "aura", true);
+            world.vfx.worldSpace = true;
+            emitter.ApplyPreset(world, 1f);
+
+            emitter.ApplyPreset(MakePreset("switch_local", "aura", true), 1f);
+
+            Assert.AreEqual(ParticleSystemSimulationSpace.Local, GetPs(emitter).main.simulationSpace,
+                "Same leak family as shape, drag, bursts and rotation: an emitter reused across " +
+                "presets must not inherit the previous one's simulation space.");
+        }
+
+        [Test]
+        public void ApplyPreset_DashKind_StaysWorldSpaceWithoutOptingIn()
+        {
+            var emitter = CreateEmitter();
+
+            emitter.ApplyPreset(MakePreset("switch_dash", "dash", true), 1f);
+
+            Assert.AreEqual(ParticleSystemSimulationSpace.World, GetPs(emitter).main.simulationSpace,
+                "The dash trail predates the worldSpace field and must keep working with no " +
+                "preset change.");
+        }
+
         // ── Repeated switching ───────────────────────────────────────────────────
 
         [Test]

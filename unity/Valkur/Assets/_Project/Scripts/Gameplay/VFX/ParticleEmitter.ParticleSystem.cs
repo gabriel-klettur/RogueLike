@@ -64,7 +64,14 @@ namespace Valkur.Gameplay.VFX
                 var vel = _ps.velocityOverLifetime;
                 vel.enabled = false;
             }
-            main.simulationSpace = kind is "dash" ? ParticleSystemSimulationSpace.World : ParticleSystemSimulationSpace.Local;
+            // World space is what makes a trail a trail. In local space every particle is
+            // carried along by the emitter, so a projectile moving at 16 u/s drags its
+            // whole "wake" with it and leaves nothing behind — the effect reads as a rigid
+            // blob rather than as something travelling. "dash" keeps its historical
+            // override so the dash trail is unaffected by presets that never opt in.
+            main.simulationSpace = (p.worldSpace || kind == "dash")
+                ? ParticleSystemSimulationSpace.World
+                : ParticleSystemSimulationSpace.Local;
 
             // ---- Emission ----
             var emission = _ps.emission;

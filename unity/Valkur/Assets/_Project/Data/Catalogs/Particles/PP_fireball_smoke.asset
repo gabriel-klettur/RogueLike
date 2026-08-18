@@ -21,11 +21,11 @@ MonoBehaviour:
     emitRate: 14
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.45
+    speed: 0.25
     gravity: 0
     drag: 0
     direction: {x: 0, y: -1}
-    lifespan: 0.85
+    lifespan: 1
     sizeMin: 0.3
     sizeMax: 0.5
     colors:
@@ -38,6 +38,7 @@ MonoBehaviour:
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
     rotationSpeedDegrees: 40
+    worldSpace: 1
     radius: 1.5
     arcRangeDegrees: 45
     segments: 10

@@ -91,6 +91,12 @@ namespace Valkur.Data
                  "per particle, so a positive value means 'spin this fast, either way'.")]
         public float rotationSpeedDegrees = 0f;
 
+        // --------------- Simulation space ---------------
+        [Tooltip("Emit into world space instead of the emitter's local space. Required for any " +
+                 "trail: on a moving emitter, local-space particles travel WITH it and nothing " +
+                 "is ever left behind. Default false so existing presets are unchanged.")]
+        public bool worldSpace = false;
+
         // --------------- Shape & Radius ---------------
         [Tooltip("Emission radius for aura/circle shapes (world units). Python: radius / 16.")]
         public float radius = 1.5f;

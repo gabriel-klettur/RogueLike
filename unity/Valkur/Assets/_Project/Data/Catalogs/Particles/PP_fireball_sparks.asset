@@ -18,14 +18,14 @@ MonoBehaviour:
   vfx:
     kind: smoke_emitter
     loops: 1
-    emitRate: 30
+    emitRate: 38
     count: 12
     burstIntervalSeconds: 1
-    speed: 2.6
-    gravity: 3
+    speed: 1.4
+    gravity: 4
     drag: 0
     direction: {x: 0, y: -1}
-    lifespan: 0.45
+    lifespan: 0.65
     sizeMin: 0.07
     sizeMax: 0.14
     colors:
@@ -38,6 +38,7 @@ MonoBehaviour:
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 0
     rotationSpeedDegrees: 0
+    worldSpace: 1
     radius: 1.5
     arcRangeDegrees: 45
     segments: 10
