@@ -23,7 +23,7 @@ namespace Valkur.Gameplay.Enemies.FSM
         {
             if (_setsContent == null) return;
             for (int i = _setsContent.childCount - 1; i >= 0; i--)
-                Destroy(_setsContent.GetChild(i).gameObject);
+                SafeDestroy.Of(_setsContent.GetChild(i).gameObject);
 
             // "+ New Set" header button
             var newBtn = EditorUIHelpers.MakeButton(_setsContent, "+ New Set",

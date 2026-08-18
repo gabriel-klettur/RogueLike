@@ -219,7 +219,7 @@ namespace Valkur.Gameplay.Inventory
                 && (Time.time - _spawnTime) >= _despawnTtlSeconds)
             {
                 _pendingReason = DestructionReason.Expired;
-                Destroy(gameObject);
+                SafeDestroy.Of(gameObject);
             }
         }
 
@@ -293,7 +293,7 @@ namespace Valkur.Gameplay.Inventory
             {
                 _pickedUp = true;
                 _pendingReason = DestructionReason.PickedUp;
-                Destroy(gameObject);
+                SafeDestroy.Of(gameObject);
             }
             return true;
         }

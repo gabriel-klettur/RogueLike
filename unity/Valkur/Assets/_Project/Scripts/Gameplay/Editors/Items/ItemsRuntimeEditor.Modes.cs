@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -378,7 +378,7 @@ namespace Valkur.Gameplay.Items
                     if (service != null && pendingInstance != null)
                         service.RemoveByDropId(pendingInstance.dropId);
                     else if (pendingPickup != null)
-                        Destroy(pendingPickup.gameObject);
+                        SafeDestroy.Of(pendingPickup.gameObject);
                     pendingPickup = null;
                 }));
 
@@ -448,7 +448,7 @@ namespace Valkur.Gameplay.Items
             }
             else
             {
-                Destroy(pickup.gameObject);
+                SafeDestroy.Of(pickup.gameObject);
             }
 
             ForceRefreshInstances();

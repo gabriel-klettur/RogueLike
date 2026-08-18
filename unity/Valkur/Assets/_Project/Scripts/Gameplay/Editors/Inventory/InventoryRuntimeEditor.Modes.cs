@@ -115,7 +115,7 @@ namespace Valkur.Gameplay.Inventory
             if (_entityListContent == null) return;
 
             for (int i = _entityListContent.childCount - 1; i >= 0; i--)
-                Destroy(_entityListContent.GetChild(i).gameObject);
+                SafeDestroy.Of(_entityListContent.GetChild(i).gameObject);
 
             string filter = (_entitySearch ?? "").Trim().ToLowerInvariant();
 
@@ -200,7 +200,7 @@ namespace Valkur.Gameplay.Inventory
             if (_slotGridContent == null) return;
 
             for (int i = _slotGridContent.childCount - 1; i >= 0; i--)
-                Destroy(_slotGridContent.GetChild(i).gameObject);
+                SafeDestroy.Of(_slotGridContent.GetChild(i).gameObject);
 
             if (_ownerTmp != null)
             {
@@ -271,7 +271,7 @@ namespace Valkur.Gameplay.Inventory
             if (_catalogGridContent == null) return;
 
             for (int i = _catalogGridContent.childCount - 1; i >= 0; i--)
-                Destroy(_catalogGridContent.GetChild(i).gameObject);
+                SafeDestroy.Of(_catalogGridContent.GetChild(i).gameObject);
 
             switch (_catalog)
             {

@@ -212,9 +212,6 @@ namespace Valkur.Tests.EditMode.Game.Combat
             // Simulate pool despawn -> respawn. EditMode does not always fire
             // OnDisable/OnEnable on SetActive when the component was bootstrapped via
             // direct AddComponent in tests, so invoke them explicitly.
-            // OnDisable may Destroy() the URP Light2D child which logs an editor-only error.
-            LogAssert.Expect(LogType.Error,
-                new System.Text.RegularExpressions.Regex("Destroy may not be called from edit mode"));
             InvokePrivate(fb, "OnDisable");
             InvokePrivate(fb, "OnEnable");
             fb.OnImpact(Vector3.zero);
@@ -240,18 +237,20 @@ namespace Valkur.Tests.EditMode.Game.Combat
             }
             // EditMode does not reliably fire OnDisable on SetActive(false) for
             // components added via AddComponent in test code; invoke directly.
-            // OnDisable destroys the URP Light2D child which logs an editor-only error.
-            LogAssert.Expect(LogType.Error,
-                new System.Text.RegularExpressions.Regex("Destroy may not be called from edit mode"));
             InvokePrivate(fb, "OnDisable");
 
-            // OnDisable schedules Destroy(); EditMode flushes via DestroyImmediate path,
-            // but Destroy() of a child only takes effect on next frame. The contract being
-            // tested here is that the field is cleared, not that the GO is gone instantly.
+            // The reference must be cleared...
             var field = typeof(FireballVisual).GetField("_light2DGo",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.IsNotNull(field);
             Assert.IsNull(field.GetValue(fb), "_light2DGo reference must be cleared on disable");
+
+            // ...and the child must actually be gone. This assertion was impossible while
+            // OnDisable called Destroy(), which edit mode refuses to honour; SafeDestroy.Of
+            // takes the DestroyImmediate branch outside play mode, so the pooled visual no
+            // longer leaks one Light2D child per despawn.
+            Assert.IsTrue(fb.transform.Find("FireballLight") == null,
+                "The dynamic Light2D child must be destroyed, not just unreferenced.");
         }
 
         // ── Reflection plumbing ──────────────────────────────────────

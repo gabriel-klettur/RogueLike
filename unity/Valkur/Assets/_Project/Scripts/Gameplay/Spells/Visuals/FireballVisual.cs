@@ -183,7 +183,7 @@ namespace Valkur.Gameplay.Spells
             // Pool-safe cleanup of the dynamic light when projectile is despawned.
             if (_light2DGo != null)
             {
-                Destroy(_light2DGo);
+                SafeDestroy.Of(_light2DGo);
                 _light2DGo = null;
                 _light2DComponent = null;
             }
@@ -277,7 +277,7 @@ namespace Valkur.Gameplay.Spells
             float dt = Time.deltaTime;
             _age += dt;
             float t = _age / _life;
-            if (t >= 1f) { Destroy(gameObject); return; }
+            if (t >= 1f) { SafeDestroy.Of(gameObject); return; }
 
             _vel   *= 1f - 2.5f * dt;
             _vel.y += 1.6f * dt; // heat rises

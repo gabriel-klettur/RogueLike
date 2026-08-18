@@ -96,7 +96,7 @@ namespace Valkur.Gameplay.Spells
                 }
                 catch
                 {
-                    if (_light2DGo != null) Destroy(_light2DGo);
+                    if (_light2DGo != null) SafeDestroy.Of(_light2DGo);
                     _light2DComponent = null;
                 }
             }
@@ -184,7 +184,7 @@ namespace Valkur.Gameplay.Spells
                 }
             }
 
-            if (u >= 1f) Destroy(gameObject);
+            if (u >= 1f) SafeDestroy.Of(gameObject);
         }
     }
 

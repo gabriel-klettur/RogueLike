@@ -148,11 +148,15 @@ namespace Valkur.Tests.EditMode.Game.Combat
 
             var update = typeof(FireballImpactFX).GetMethod("Update",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            // Just ensure the destruction codepath doesn't throw at u >= 1.
-            // Destroy() in EditMode logs an Error which we explicitly accept.
-            LogAssert.Expect(LogType.Error,
-                new System.Text.RegularExpressions.Regex("Destroy may not be called from edit mode"));
+
             Assert.DoesNotThrow(() => update.Invoke(fx, null));
+
+            // This used to assert the opposite: the production code called Destroy(),
+            // which is illegal in edit mode, and the test expected the resulting error.
+            // Routing it through SafeDestroy.Of means the object is really gone here, so
+            // the self-destruction contract can be asserted directly.
+            Assert.IsTrue(fx == null,
+                "Past its duration the effect must destroy itself, not merely stop animating.");
         }
     }
 
