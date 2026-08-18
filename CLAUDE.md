@@ -212,6 +212,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `asset-pipeline` | Sprite/audio/atlas migration; PPU/pivot policies |
 | `buildings-editor` | Anything involving the Buildings Editor (window or runtime F10) |
 | `tile-editor` | Anything involving the Tile Editor (F6) |
+| `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor (F1) |
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
 | `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
 | `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
@@ -228,6 +229,24 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `/unity-status` | Console + last test summary at a glance |
 | `/unity-profile` | Capture Profiler/Recorder snapshot — CPU/GPU axis breakdown + GC baseline |
 
+## Console verbosity
+
+High-volume development logs are gated by `Scripts/Core/VerboseLog.cs` — off by
+default, never deleted. Toggle from the in-game DevConsole (choice persists via
+`PlayerPrefs`, survives Play-mode restarts):
+
+```
+verbose                  # list categories + state
+verbose world on         # per-overlay / per-tilemap world loading detail
+verbose settings on      # every GameSettings.Save
+verbose collision on     # per-layer collision bake detail
+verbose all off
+```
+
+Summary lines, warnings and errors are deliberately **not** gated. When adding a
+log that fires per file / per tile / per frame, gate it with a category and use
+the `Func<string>` overload so the string is never built while it's off.
+
 ## Skills (`.claude/skills/` and `.github/skills/`)
 
 Skills are knowledge bases; agents and commands load them as needed. Authoritative content lives under `.github/skills/` (shared with Copilot); `.claude/skills/` are thin Claude wrappers that point to the same files.
@@ -238,6 +257,7 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 | unity-performance | `.github/skills/unity-performance/SKILL.md` |
 | unity-testing | `.github/skills/unity-testing/SKILL.md` |
 | asset-pipeline | `.github/skills/asset-pipeline/SKILL.md` |
+| vfx-authoring | `.github/skills/vfx-authoring/SKILL.md` |
 | markdown-docs | `.github/skills/markdown-docs/SKILL.md` |
 | valkur-conventions | `.github/skills/valkur-conventions/SKILL.md` |
 
@@ -253,6 +273,8 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 - **Custom GL drawing in URP** — use `RenderPipelineManager.endCameraRendering`, not `OnRenderObject` (`Camera.current` is null in URP).
 - **Static mutable fields without reset** → MissingReferenceException after second Play (Domain Reload is OFF).
 - **Sprite-Lit-Default with no Light2D** → black tiles. Use `Sprite-Unlit-Default` fallback (already wired in `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`).
+- **Two SpriteAtlas assets over the same folder** → Unity logs `Sprite X matches more than one built-in atlases` once *per sprite* (3077 warnings once) and ships the atlas twice. `SpriteAtlasBuilder` now refuses to build a group whose source folder is already packed by another atlas anywhere in the project.
+- **Deleting a MonoBehaviour leaves prefabs with null component slots** — `m_Script: {fileID: 0}`, no guid, one console entry per slot on every import (2345 of them from the DungeonGunner removal). Strip with `GameObjectUtility.RemoveMonoBehavioursWithMissingScript` via `PrefabUtility.LoadPrefabContents`/`SaveAsPrefabAsset`; check for unresolved guids first, since those *are* recoverable information.
 - **F10 Buildings save position-collapse bug** — root cause unknown but mitigated by 3 guards in `BuildingsRuntimeEditor.Persistence.cs`. If the F10 save ever logs `ABORTING save — ...`, that's this bug firing. Read `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` for the recovery procedure and the next-step investigation checklist.
 
 ## Incident reports
@@ -267,7 +289,8 @@ related symptom reappears.
 
 ## Open work
 
-- **Asset pipeline Phase 2** — atlas consolidation + finalised `asset_map.csv` schema. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides; what remains is the formal naming convention + `SpriteAtlas` group build for the 9 planned domain atlases.
-- **Boss music wiring** — `BossPhaseController.OnPhaseChanged` is not yet wired to `AudioManager.PlayMusic`. Audio side is ready (catalog supports per-scope track resolution); needs the wiring.
+- **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
+- **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
+- **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
