@@ -28,6 +28,7 @@ pixel-art world. Treat "it compiles and emits" as the floor, not the goal.
 |---|---|
 | `ParticleVfxParams.cs` | The ~40-field VFX DTO + `Keyframe2D` / `ColorKeyframe` |
 | `ParticleTextureShape.cs` | Billboard texture enum (`Auto`, `None`, `SoftDot`, `Glow`, `Spark`, `Smoke`, `Ring`, `Star`) |
+| `SpellDefinition.cs` | Three preset slots — `vfxPreset` / `impactPreset` / `castPreset`, each with a `…Layers` list. `Collect*Presets()` merges them |
 | `ParticlePresetDefinition.cs` | ScriptableObject: `id`, `displayName`, `type`, `vfx` |
 | `ParticlePresetCatalog.cs` | List + lazy `GetById` lookup |
 
@@ -60,17 +61,20 @@ pixel-art world. Treat "it compiles and emits" as the floor, not the goal.
 **Persistence** — `IParticleInstanceRepository` / `JsonFileParticleInstanceRepository` →
 `StreamingAssets/Particles/particles_instances*.json` (per map slot since Multi-map Phase A).
 
-**Assets** — 88 presets at `Assets/_Project/Data/Catalogs/Particles/PP_*.asset`,
+**Assets** — 78 presets at `Assets/_Project/Data/Catalogs/Particles/PP_*.asset`,
 registered in `ParticlePresetCatalog.asset`.
 
-**Tests** — `Assets/Tests/EditMode/Editors/Particles/` (9 files) and
-`Assets/Tests/EditMode/Game/VFX/` (13 files).
+**Tests** — `Assets/Tests/EditMode/Editors/Particles/` (11 files) and
+`Assets/Tests/EditMode/Game/VFX/` (17 files).
 
 ## Subsystem rules
 
 - **`loops` is the single source of truth** for burst vs continuous. Not `kind`, not `count`.
 - **`kind` drives the shape** (`ConfigureShape` switch). An unrecognised `kind` silently
   falls through to a 0.15-radius sphere — always check the string against the switch.
+- **A trail needs `worldSpace`.** Local-space particles are carried along by the emitter,
+  so a preset parented to a moving projectile leaves nothing behind. The layer that IS
+  the moving object stays local.
 - **`alphaOverLife` gates `colorOverLife`.** Author alpha keys first or your color keys
   are dropped without warning.
 - **`startColor` multiplies `colorOverLifetime`.** Keep one near white.
@@ -94,8 +98,9 @@ Do not start by tweaking numbers. Diagnose which lever is missing, in this order
    `textureSoftness` too: crisp discs look like confetti.
 2. **Alpha + color over lifetime** — is the preset on the hardcoded fade path?
 3. **Size over lifetime** — looping emitters with no `sizeOverLife` have the module off.
-4. **Layering** — one preset rarely suffices. Propose a `_core_soft` / `_rim_add` /
-   `_sparks_add` stack, following the `PP_portal_*` precedent.
+4. **Layering** — one preset rarely suffices. Spells stack through `vfxPresetLayers` /
+   `impactPresetLayers` / `castPresetLayers`; the fireball is nine presets across those
+   three slots and is the reference to copy.
 
 Then tune numbers. Report the change in visual terms, not just field diffs.
 
@@ -104,7 +109,7 @@ Then tune numbers. Report the change in visual terms, not just field diffs.
 1. **Read** the relevant `ParticleEmitter` partial plus the preset `.asset` YAML before
    changing anything. The `.asset` files are readable YAML — read them directly.
 2. **Extend `ParticleVfxParams` additively.** New fields must default to today's behavior
-   so all 88 existing presets render identically. A field that changes existing output is
+   so all 78 existing presets render identically. A field that changes existing output is
    a regression.
 3. **Touch only the particles/VFX subsystem.** Cross-system needs → `ServiceLocator` /
    `GameEvents`.

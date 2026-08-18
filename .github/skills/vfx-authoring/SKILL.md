@@ -41,9 +41,18 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
 3. **Size over lifetime.** Nothing in nature pops into existence at full size. Ease in,
    ease out. Burst presets get expand-then-shrink; continuous emitters get grow-then-fade.
 4. **Layering.** One `ParticleSystem` is one material and one behavior. Beautiful effects
-   in this project are **2–4 stacked presets** — core + rim + sparks + haze — which is
-   exactly why `PP_portal_*` exists as `_core_soft` + `_rim_add` + `_sparks_add` triplets.
-   Copy that pattern rather than cramming everything into one preset.
+   in this project are **2–5 stacked presets** — core + wake + sparks + smoke — which is
+   why `PP_portal_*` exists as `_core_soft` + `_rim_add` + `_sparks_add` triplets and why
+   the fireball is nine presets across three stacks.
+
+   Spells stack through `SpellDefinition`, which has three preset slots, each with a
+   primary field plus a `…Layers` list: `vfxPreset` (trail, parented to the projectile),
+   `impactPreset` (spawned at the hit point at 5× scale — author impact sizes divided by
+   five), and `castPreset` (spawned unparented at the caster). Placed world emitters stack
+   by placing several presets in the F1 editor.
+
+   Reach for a new layer whenever one emitter would have to be two things at once — the
+   classic being additive light and alpha-blended mass.
 
 ### Depth cues that sell "3D" on a 2D billboard
 
@@ -98,6 +107,9 @@ Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
 | `textureShape` | enum | which procedural billboard texture the material gets | `Auto` derives it from `kind` + `additive`; `None` = the legacy hard quad. See §2.1. |
 | `textureSoftness` | float 0–1 | falloff width of the procedural shape | Quantised to 16 steps before the texture cache is keyed. |
 | `customSprite` | Sprite | overrides `textureShape` entirely | For hand-authored art. Uses `sprite.texture`, so the sprite should be its own texture, not an atlas sub-rect. |
+| `startRotationJitterDegrees` | float | `main.startRotation` as ±jitter | 0 leaves every quad axis-aligned, which reads as a repeated stamp. Written unconditionally. |
+| `rotationSpeedDegrees` | float | `rotationOverLifetime.z` as ±speed | Sign is per-particle. Written unconditionally. |
+| `worldSpace` | bool | `main.simulationSpace` | **The trail switch.** See §2.2. `kind == "dash"` forces world space regardless. |
 | `radius` | float | shape radius for aura / portal | |
 | `outerRadius` | float | overrides `radius` for `portal` | |
 | `ellipseRatio` | float | ground-plane squash | 1 = circle. |
@@ -140,6 +152,31 @@ controls ring band width and star arm thickness.
 Materials come from `ParticleMaterialCache`, shared per (texture, blend mode) and assigned
 to `sharedMaterial`. Never build a material inside an emitter — that breaks SRP batching
 and leaks instances in EditMode.
+
+### 2.2 Simulation space — the difference between a trail and a halo
+
+`worldSpace` decides whether a particle, once emitted, belongs to the world or to the
+emitter that made it.
+
+- **Local (default).** Particles are carried along by the emitter. Correct for anything
+  that IS the object: an orb, an aura ring, a shield.
+- **World.** Particles stay where they were born. Required for anything that should be
+  *left behind*.
+
+This is not a subtlety. On an emitter parented to a projectile moving at 16 u/s, a
+local-space "trail" travels with the projectile and leaves nothing at all — the whole
+effect moves as one rigid blob. The fireball shipped that way: its layer was named
+`fireball_wake` and could not wake.
+
+Two consequences worth knowing before authoring:
+
+- In world space the separation between particles comes from the **emitter's** motion,
+  not from particle `speed`. Turning speed up scatters the trail sideways instead of
+  lengthening it; lengthen with `lifespan` instead. Trail length ≈ `lifespan × emitter speed`.
+- `kind == "dash"` forces world space regardless of the flag, which predates the field.
+
+`ParticleEmitter` writes the module unconditionally, so a reused emitter cannot inherit
+the previous preset's space — the same rule as shape, drag, bursts and rotation.
 
 ### The three gradient paths (know which one you are on)
 
@@ -200,6 +237,7 @@ not `count`, is the one to hold.
 |---|---|---|
 | Ambient world emitter (placed via F1) | **≤ 40** | Many are on screen at once; `ParticleInstancesLoader` culls off-camera but on-screen density adds up. |
 | Player aura / trail | ≤ 60 | Always visible. |
+| Signature spell (fireball) | ≤ 120 | A deliberate exception, capped by `maxInstances` and enforced by `FireballSignatureTests`. Do not treat it as the general rule. |
 | Spell impact (burst) | ≤ 120 per burst | Sub-second life, so peak-only. |
 | Boss / set-piece | ≤ 250 across all stacked layers | Budget the *stack*, not each preset. |
 
@@ -232,7 +270,6 @@ Fix them in `ParticleEmitter` before spending long tuning numbers.
 | Gap | Where | Impact |
 |---|---|---|
 | **No `textureSheetAnimation`.** | `ParticleEmitter.ParticleSystem.cs` | No animated smoke/fire sprite sheets. `PP_textured_spark_flipbook` is still misnamed — it has a texture now, but no flipbook. |
-| **No `rotationOverLifetime` / `startRotation`.** | same | Every quad is axis-aligned; identical particles read as repeated stamps. |
 | **No `trails` module.** | same | Sparks have no streaks. |
 | **No `lights` module.** | same | VFX do not light the URP 2D scene. |
 | **No sub-emitters.** | same | Multi-stage effects must be hand-stacked as separate placed presets. |
@@ -249,9 +286,14 @@ Fix them in `ParticleEmitter` before spending long tuning numbers.
   code never changed it — so every non-additive preset was rendering as a solid quad in
   the geometry queue. Materials now set `_Surface=1`, `_ZWrite=0`, correct blend factors,
   and `renderQueue = 3000`.
+- Rotation (`startRotationJitterDegrees`, `rotationSpeedDegrees`). Both ranges are
+  symmetric so each particle picks its own angle and spin direction — a whole system
+  turning the same way reads as a rotating texture rather than as fire.
+- Simulation space (`worldSpace`). See §2.2; this is the difference between a trail and
+  a halo, and it was the reason the fireball's "wake" preset could not wake.
 
-Priority for the next step-change: `startRotation` + `rotationOverLifetime`, then `trails`,
-then `textureSheetAnimation`. Each is a small additive change to `ParticleVfxParams` plus
+Priority for the next step-change: `trails`, then `lights`, then
+`textureSheetAnimation`. Each is a small additive change to `ParticleVfxParams` plus
 one `ConfigureX` block — unlike further tuning of numeric fields, which is hitting
 diminishing returns.
 
@@ -264,6 +306,8 @@ diminishing returns.
 3. Set `kind` from §3 (it drives the emission shape), then `loops`.
    Then set `textureShape` from §2.1 — `Auto` is acceptable, explicit is better — and dial
    `textureSoftness`.
+   If the layer should be left behind by a moving emitter, set `worldSpace` (§2.2). If it
+   IS the moving thing, leave it local.
 4. Author `alphaOverLife` **first** — without it you silently fall onto the hardcoded
    fade path and `colorOverLife` is ignored.
 5. Author `colorOverLife` hot-to-cool. Keep `colors[0]` near white so the multiply does

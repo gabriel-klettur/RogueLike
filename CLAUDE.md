@@ -161,7 +161,7 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Music BPM / beat metadata | Same asset (per-track fields), or `tools/audio/{analyze_music,patch_audio_catalog_bpm}.py` |
 | Items | `Data/Catalogs/Items/ItemCatalog.asset` |
 | Monsters | `Data/Catalogs/Monsters/*.asset` (catalog at `MonsterCatalog.asset`) |
-| Spells | `Data/Catalogs/Spells/SpellCatalog.asset` (edit via Inspector or F4 in-game) |
+| Spells | `Data/Catalogs/SpellCatalog.asset` — note it sits beside `Catalogs/`, not inside `Catalogs/Spells/`, which holds the individual `*.asset` definitions (edit via Inspector or F4 in-game) |
 | Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) |
 | Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F1) |
 | Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F3) |
@@ -229,6 +229,30 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `/unity-status` | Console + last test summary at a glance |
 | `/unity-profile` | Capture Profiler/Recorder snapshot — CPU/GPU axis breakdown + GC baseline |
 
+## Live reload (no Stop/Play)
+
+Most loaders can re-read their authored data without leaving Play Mode. The commands live
+in `Scripts/Gameplay/Bootstrap/DevConsole.Commands.Reload.cs` under the `reload` category:
+
+```
+reloadworld  (rw)   buildings, spawners, lights, particles, item drops for the active slot
+reloadfsm           invalidate the FSM cache and rebuild every live monster brain
+reloadtiles  (rt)   repaint the tilemap from JSON and re-bake colliders
+map [slot]          list map slots, or hot-load one
+reconfig            re-apply MonsterDefinition changes to living NPCs, keeping positions
+respawnnpcs         kill everything and re-fire the spawners
+```
+
+`DevConsole.Execute(string)` is public, so all of it is reachable from PlayMode tests and
+from `mcp__unity__execute_code` — an agent can trigger its own verification without anyone
+touching the Game view.
+
+Two per-machine EditorPrefs matter as much as any of this and are NOT in the repo:
+`Script Changes While Playing` should be *Recompile After Finished Playing* and
+`Auto Refresh` should be *Enabled Outside Playmode*. With the defaults, editing a script
+mid-play reloads the domain WITHOUT re-running the `SubsystemRegistration` resets, leaving
+a corrupted session you have to Stop out of anyway.
+
 ## Console verbosity
 
 High-volume development logs are gated by `Scripts/Core/VerboseLog.cs` — off by
@@ -291,6 +315,15 @@ related symptom reappears.
 
 - **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
 - **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
+- **Four spells reference particle presets that do not exist** — `vortex_pull` and
+  `vortex_push` name `vortex_dark`, `flame_breath` names `breath_fire`, `root_whip` names
+  `root_whip`. None has ever been in `ParticlePresetCatalog`, so those spells fire with no
+  visible trail and nothing logged. Recorded in `SpellVfxPresetIntegrityTests.KnownMissingPresets`,
+  which ratchets in both directions — author the preset (or clear the dead reference) and
+  delete the baseline line.
+- **`explosion_small` has `speed: 0`** — its 24 particles spawn in a 0.1-unit sphere and sit
+  there fading, so every spell still using it gets a blink instead of a blast. Left alone
+  deliberately while the fireball was rebuilt; fixing it improves everything that uses it.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
