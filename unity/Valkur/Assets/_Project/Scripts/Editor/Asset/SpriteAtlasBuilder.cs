@@ -80,6 +80,23 @@ namespace Valkur.Editor
                     continue;
                 }
 
+                // The check above only catches an atlas sitting INSIDE the source
+                // folder. A stray atlas anywhere else that lists the same folder as
+                // a packable is just as damaging and slipped through for months:
+                // Art/Tiles/Atlas_Tiles.spriteatlas packed Resources/Tiles, the same
+                // folder as this 'env-tiles' group, producing 3077 "matches more than
+                // one built-in atlases" warnings and a duplicated atlas in the build.
+                string foreignAtlas = FindForeignAtlasPacking(group.sourceFolder, atlasPath);
+                if (foreignAtlas != null)
+                {
+                    Debug.LogError(
+                        $"[SpriteAtlasBuilder] '{foreignAtlas}' already packs " +
+                        $"'{group.sourceFolder}'. Skipping '{group.name}' — two atlases over " +
+                        "the same sprites warn once per sprite and ship the atlas twice. " +
+                        "Delete the stray atlas, then re-run this menu item.");
+                    continue;
+                }
+
                 var atlas = exists
                     ? AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath)
                     : new SpriteAtlas();
@@ -156,5 +173,27 @@ namespace Valkur.Editor
                 this.bilinear = bilinear;
             }
         }
+        /// <summary>
+        /// Returns the path of any SpriteAtlas OTHER than <paramref name="selfPath"/>
+        /// that lists <paramref name="folderPath"/> among its packables, or null when
+        /// the folder is claimed by at most this group's own atlas.
+        /// </summary>
+        private static string FindForeignAtlasPacking(string folderPath, string selfPath)
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:SpriteAtlas"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path == selfPath) continue;
+                var other = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
+                if (other == null) continue;
+                foreach (var packable in other.GetPackables())
+                {
+                    if (packable == null) continue;
+                    if (AssetDatabase.GetAssetPath(packable) == folderPath) return path;
+                }
+            }
+            return null;
+        }
+
     }
 }

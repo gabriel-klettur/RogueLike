@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Valkur.Editor.Tiles
 {
     /// <summary>
-    /// In-editor counterpart of <c>python/scripts/audit_tile_sizes.py</c>.
+    /// In-editor counterpart of <c>tools/atlas/audit_tile_sizes.py</c>.
     ///
     /// Scans every PNG under <c>Assets/_Project/Resources/Tiles</c> and reports
     /// which sprites violate the canonical tile size policy (≤64x64 px @ PPU=32).
@@ -106,7 +106,7 @@ namespace Valkur.Editor.Tiles
                     report += $"    {v.Width,4}x{v.Height,-4}  ppu={v.Ppu,-5}  {v.Path}\n";
                 }
             }
-            report += "\nFix with: python python/scripts/audit_tile_sizes.py --fix";
+            report += "\nFix with: python tools/atlas/audit_tile_sizes.py --fix";
             Debug.LogError(report);
         }
 
