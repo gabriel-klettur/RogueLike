@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using Valkur.Core;
@@ -41,9 +41,7 @@ namespace Valkur.Gameplay.Chat
             string playerName = "Player";
             AddMessage(playerName, text);
 
-            // Show player bubble
-            EnsurePlayerBubble();
-            _playerBubble.PushBubble(text, PLAYER_BUBBLE_TTL_MS, Color.cyan);
+            ShowPlayerBubble(text, PLAYER_BUBBLE_TTL_MS, Color.cyan);
 
             // Generate NPC reply (offline mode: cycle through dialogue lines)
             GenerateReply(text);
@@ -55,8 +53,7 @@ namespace Valkur.Gameplay.Chat
             if (_pendingChunks.Count > 0 && Time.time >= _nextChunkTime)
             {
                 var chunk = _pendingChunks.Dequeue();
-                if (_targetBubble != null)
-                    _targetBubble.PushBubble(chunk.text, NPC_BUBBLE_TTL_MS);
+                ShowTargetBubble(chunk.text, NPC_BUBBLE_TTL_MS);
                 AddMessage(chunk.sender, chunk.text);
                 _nextChunkTime = Time.time + REPLY_CHUNK_DELAY_SEC;
             }
@@ -141,10 +138,27 @@ namespace Valkur.Gameplay.Chat
             OnMessageReceived?.Invoke(sender, text);
         }
 
-        private void EnsurePlayerBubble()
+        /// <summary>
+        /// Returns the player's chat bubble, creating it on first use, or <c>null</c> when
+        /// there is no player to attach one to.
+        ///
+        /// Named Resolve rather than Ensure deliberately. "Ensure" promises a postcondition
+        /// this cannot always deliver — EntityRegistry has no player during boot, while a
+        /// cutscene owns the camera, or after the player dies — and every call site had
+        /// taken that promise at face value and dereferenced the result. Returning the
+        /// bubble instead of assigning a field makes the absence impossible to ignore by
+        /// accident.
+        ///
+        /// Nothing outside <see cref="ShowPlayerBubble"/> should call this.
+        /// </summary>
+        private ChatBubble ResolvePlayerBubble()
         {
             var player = EntityRegistry.PlayerTransform;
-            if (player == null) return;
+            if (player == null)
+            {
+                _playerBubble = null;
+                return null;
+            }
 
             _playerBubble = player.GetComponentInChildren<ChatBubble>();
             if (_playerBubble == null)
@@ -154,6 +168,34 @@ namespace Valkur.Gameplay.Chat
                 _playerBubble = bubbleGo.AddComponent<ChatBubble>();
                 _playerBubble.Initialize(player);
             }
+            return _playerBubble;
+        }
+
+        /// <summary>
+        /// The single way anything in ChatSystem shows a bubble over the player.
+        ///
+        /// A missing player is a normal state, not an error: the conversation still has a
+        /// history, still writes memory and still logs. Only the floating text is skipped,
+        /// so the caller has nothing to decide and cannot get it wrong.
+        /// </summary>
+        private void ShowPlayerBubble(string text, int ttlMs, Color color)
+        {
+            var bubble = ResolvePlayerBubble();
+            if (bubble == null) return;
+            bubble.PushBubble(text, ttlMs, color);
+        }
+
+        /// <summary>
+        /// The single way anything in ChatSystem shows a bubble over the NPC.
+        ///
+        /// The target can be destroyed mid-conversation — killed, despawned by the zone
+        /// streamer — while queued reply chunks are still draining, so this is null-safe
+        /// for the same reason as its player-side twin.
+        /// </summary>
+        private void ShowTargetBubble(string text, int ttlMs)
+        {
+            if (_targetBubble == null) return;
+            _targetBubble.PushBubble(text, ttlMs);
         }
 
         // ── Data Structures ──

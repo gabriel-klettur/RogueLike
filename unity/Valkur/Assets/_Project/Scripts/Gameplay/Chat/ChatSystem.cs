@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
@@ -143,9 +143,8 @@ namespace Valkur.Gameplay.Chat
 
             if (bestTarget == null)
             {
-                // Show "no one nearby" bubble on player
-                EnsurePlayerBubble();
-                _playerBubble.PushBubble("No hay nadie cerca para hablar...", NO_ONE_BUBBLE_TTL_MS,
+                // Show "no one nearby" bubble on player.
+                ShowPlayerBubble("No hay nadie cerca para hablar...", NO_ONE_BUBBLE_TTL_MS,
                     new Color(0.7f, 0.7f, 0.7f));
                 return false;
             }
@@ -181,13 +180,15 @@ namespace Valkur.Gameplay.Chat
                 _targetBubble.Initialize(target.transform);
             }
 
-            EnsurePlayerBubble();
+            // Build the player bubble up front so the first message does not pay for the
+            // GameObject mid-conversation. Its absence is handled by ShowPlayerBubble.
+            ResolvePlayerBubble();
 
             // Show greeting only on the first-ever visit (hasGreeted persisted).
             if (_activePersona != null && !_activeMemory.hasGreeted && !string.IsNullOrEmpty(_activePersona.greeting))
             {
                 AddMessage(npcName, _activePersona.greeting);
-                _targetBubble.PushBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
+                ShowTargetBubble(_activePersona.greeting, NPC_BUBBLE_TTL_MS);
                 _activeMemory.hasGreeted = true;
             }
 

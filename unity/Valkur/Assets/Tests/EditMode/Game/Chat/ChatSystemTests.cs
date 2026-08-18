@@ -1077,5 +1077,120 @@ namespace Valkur.Tests.EditMode.Game.Chat
             Assert.IsEmpty(chat.History, "Arrangement failed: history should start empty (no greeting).");
             return chat;
         }
+
+        // ── No player registered ─────────────────────────────────────────────
+        //
+        // Every other test in this fixture registers a player, originally to route
+        // around a NullReferenceException in SubmitPlayerMessage: EnsurePlayerBubble
+        // early-returned when EntityRegistry had no player, left _playerBubble null, and
+        // the caller dereferenced it anyway. The bubble helpers now carry the absence in
+        // their return type, so these tests exercise that path directly.
+        //
+        // A missing player is a normal state, not a corner case: it is what the registry
+        // reports during boot, while a cutscene owns the scene, and after the player dies.
+
+        [Test]
+        public void SubmitPlayerMessage_NoPlayerRegistered_DoesNotThrow()
+        {
+            var persona = MakePersona("p1", "Gatita");
+            var catalog = MakeCatalog(("Gatita", persona));
+            var chat = CreateChatSystem(catalog, new FakeChatProvider());
+            var npc = CreateNpc("Gatita", Vector2.zero);
+            chat.OpenChat(npc);
+            EntityRegistry.Clear();   // player despawned mid-conversation
+
+            Assert.DoesNotThrow(() => chat.SubmitPlayerMessage("hola"),
+                "A missing player must cost the floating bubble and nothing else.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_NoPlayerRegistered_StillRecordsTheLine()
+        {
+            var persona = MakePersona("p1", "Gatita");
+            var catalog = MakeCatalog(("Gatita", persona));
+            var chat = CreateChatSystem(catalog, new FakeChatProvider());
+            var npc = CreateNpc("Gatita", Vector2.zero);
+            chat.OpenChat(npc);
+            EntityRegistry.Clear();
+
+            chat.SubmitPlayerMessage("hola");
+
+            Assert.IsNotEmpty(chat.History,
+                "History, memory and the session log are independent of the visual bubble. " +
+                "Losing the line because nothing could draw it would be the wrong trade.");
+        }
+
+        [Test]
+        public void SubmitPlayerMessage_NoPlayerRegistered_StillReachesTheProvider()
+        {
+            var persona = MakePersona("p1", "Gatita");
+            var catalog = MakeCatalog(("Gatita", persona));
+            var provider = new FakeChatProvider();
+            var chat = CreateChatSystem(catalog, provider);
+            var npc = CreateNpc("Gatita", Vector2.zero);
+            chat.OpenChat(npc);
+            EntityRegistry.Clear();
+
+            chat.SubmitPlayerMessage("hola");
+
+            Assert.AreEqual(1, provider.CallCount,
+                "The NPC must still answer — the conversation is not the bubble.");
+        }
+
+        [Test]
+        public void OpenChat_NoPlayerRegistered_DoesNotThrow()
+        {
+            var persona = MakePersona("p1", "Gatita");
+            var catalog = MakeCatalog(("Gatita", persona));
+            var chat = CreateChatSystem(catalog, new FakeChatProvider());
+            var npc = CreateNpc("Gatita", Vector2.zero);
+
+            Assert.DoesNotThrow(() => chat.OpenChat(npc),
+                "OpenChat builds the player bubble up front; with no player it must skip it.");
+            Assert.IsTrue(chat.IsChatOpen);
+        }
+
+        [Test]
+        public void TryOpenChat_NoPlayerRegistered_ReturnsFalseWithoutThrowing()
+        {
+            var chat = CreateChatSystem(MakeCatalog(), new FakeChatProvider());
+            CreateNpc("Gatita", Vector2.zero);
+
+            bool opened = true;
+            Assert.DoesNotThrow(() => opened = chat.TryOpenChat(Vector2.zero),
+                "The no-target path also shows a player bubble, and it ran before the " +
+                "proximity search could establish there was a player at all.");
+            Assert.IsFalse(opened);
+        }
+
+        [Test]
+        public void PlayerReappearing_GetsABubbleAgainWithoutReopeningTheChat()
+        {
+            var chat = OpenReadyChat(out _, out _);
+            EntityRegistry.Clear();
+            chat.SubmitPlayerMessage("into the void");
+
+            CreatePlayer();
+            Assert.DoesNotThrow(() => chat.SubmitPlayerMessage("back again"),
+                "The bubble is resolved per message, so a respawned player recovers on its " +
+                "own instead of staying mute for the rest of the session.");
+            Assert.AreEqual(2, chat.History.Count);
+        }
+
+        [Test]
+        public void TargetDestroyedMidConversation_DrainingChunksDoesNotThrow()
+        {
+            var chat = OpenReadyChat(out var provider, out _);
+            provider.ReplyToReturn = "one two three four five six seven eight nine";
+            chat.SubmitPlayerMessage("hi");
+
+            // The NPC is killed or streamed out while its reply is still queued.
+            var target = chat.ChatTarget;
+            if (target != null) UnityEngine.Object.DestroyImmediate(target);
+
+            SetFieldValue(chat, "_nextChunkTime", 0f);
+            Assert.DoesNotThrow(() => InvokeMethod(chat, "Update"),
+                "Queued chunks outlive their speaker; draining them must not fault.");
+        }
     }
 }
