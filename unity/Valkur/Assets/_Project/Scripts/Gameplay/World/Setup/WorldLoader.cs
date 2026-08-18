@@ -36,6 +36,17 @@ namespace Valkur.Gameplay.World
         /// <summary>Number of collision files successfully loaded.</summary>
         public int CollisionsLoaded => _collisionsLoaded;
 
+        /// <summary>
+        /// Turns the Start()-time self-load off so a caller can drive the load itself.
+        ///
+        /// GameplaySceneSetup builds this component with AddComponent and then loads
+        /// explicitly. Start() still fires afterwards, so without this the world was
+        /// built twice on every Play. Mirrors BuildingLoader.Initialize and
+        /// SpawnerInstanceLoader.Initialize, which already disable their own auto-load
+        /// for exactly this reason.
+        /// </summary>
+        public void SetAutoLoad(bool value) => _autoLoad = value;
+
         private void Start()
         {
             if (_autoLoad)

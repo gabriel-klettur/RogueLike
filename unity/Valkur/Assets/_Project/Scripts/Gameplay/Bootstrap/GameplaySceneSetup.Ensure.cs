@@ -132,6 +132,9 @@ namespace Valkur.Gameplay
                 Report("Loading zone database"); yield return null;
                 var dbLoaderGo = new GameObject("ZoneDatabaseLoader");
                 var dbLoader = dbLoaderGo.AddComponent<World.ZoneDatabaseLoader>();
+                // Start() would load the database a second time a frame later; we load
+                // it explicitly below so the bootstrap controls the ordering.
+                dbLoader.SetAutoLoad(false);
                 dbLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
                 dbLoader.LoadDatabase();
 
@@ -140,6 +143,10 @@ namespace Valkur.Gameplay
                 //    "Applying tile overrides" are reported by WorldLoader.
                 var worldLoaderGo = new GameObject("WorldLoader");
                 var worldLoader = worldLoaderGo.AddComponent<World.WorldLoader>();
+                // Same double-load trap: the progressive load below is the real one.
+                // Left on, Start() repainted every zone, re-parsed every overlay and
+                // re-baked every collider a frame after this finished.
+                worldLoader.SetAutoLoad(false);
                 worldLoaderGo.transform.SetParent(GetSceneContainer("[World]"), false);
                 yield return worldLoader.LoadFullWorldProgressively(stage =>
                 {
