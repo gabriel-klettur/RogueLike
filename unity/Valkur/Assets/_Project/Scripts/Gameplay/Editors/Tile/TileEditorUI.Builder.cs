@@ -85,7 +85,12 @@ namespace Valkur.Gameplay.TileEditor
 
             if (_catalog != null)
             {
-                _currentCategory = "";
+                // Seed with the first real category rather than "" (all categories).
+                // The empty string makes PopulateTileGrid copy _catalog.Entries whole and
+                // instantiate a GameObject + Image per tile — 3,008 of them, before the
+                // editor has been opened once, on every Play. The first category is ~36.
+                var categories = _catalog.GetCategories();
+                _currentCategory = categories.Count > 0 ? categories[0] : "";
                 PopulateCategoryTabs();
                 PopulateTileGrid(_currentCategory);
                 _currentPickerContent = PickerContentKind.Tiles;

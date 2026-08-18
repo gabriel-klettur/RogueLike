@@ -61,6 +61,20 @@ namespace Valkur.Gameplay.World
         }
 
         /// <summary>
+        /// Reads and parses one overlay file, or returns null when it is missing or malformed.
+        ///
+        /// Exposed so a caller applying several aspects of the SAME file — tiles, collision
+        /// tags, layer jumps — parses it once instead of once per aspect. The override pass
+        /// used to read and deserialize every MapOverrides file three times over, 4.56 MB of
+        /// parsing where 1.52 MB would do, plus the matching garbage.
+        /// </summary>
+        public static Dictionary<string, object> ParseOverlay(string jsonPath)
+        {
+            if (!File.Exists(jsonPath)) return null;
+            return MiniJsonRuntime.Deserialize(File.ReadAllText(jsonPath)) as Dictionary<string, object>;
+        }
+
+        /// <summary>
         /// Load an overlay JSON from an arbitrary absolute path and paint at the given offset.
         /// When <paramref name="clearLayerRegion"/> is true, the [offset, offset+region] rectangle
         /// of every painted layer is cleared first so empty cells in the JSON are also applied (true erase).
@@ -80,13 +94,24 @@ namespace Valkur.Gameplay.World
                 return;
             }
 
-            string json = File.ReadAllText(jsonPath);
-            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
+            var root = ParseOverlay(jsonPath);
             if (root == null)
             {
                 Debug.LogError("[OverlayLoader] Failed to parse overlay JSON.");
                 return;
             }
+
+            LoadOverlayFromRoot(root, gridBuilder, offsetX, offsetY,
+                clearLayerRegion, regionWidth, regionHeight, maxWidth, maxHeight, jsonPath);
+        }
+
+        /// <summary>Same as <see cref="LoadOverlayFromPath"/> for an already-parsed overlay root.</summary>
+        public static void LoadOverlayFromRoot(Dictionary<string, object> root, WorldGridBuilder gridBuilder,
+            int offsetX, int offsetY, bool clearLayerRegion, int regionWidth, int regionHeight,
+            int maxWidth = 0, int maxHeight = 0, string sourceLabel = "(in-memory)")
+        {
+            if (root == null || gridBuilder == null) return;
+            string jsonPath = sourceLabel;
 
             var layers = root.GetValueOrDefault("layers") as Dictionary<string, object>;
             if (layers == null)
@@ -150,12 +175,14 @@ namespace Valkur.Gameplay.World
         public static int ApplyTerrainsFromPath(string jsonPath,
             Valkur.Gameplay.TileEditor.TerrainMap terrainMap,
             int offsetX, int offsetY)
+            => ApplyTerrains(ParseOverlay(jsonPath), terrainMap, offsetX, offsetY);
+
+        /// <summary>Same as <see cref="ApplyTerrainsFromPath"/> for an already-parsed overlay root.</summary>
+        public static int ApplyTerrains(Dictionary<string, object> root,
+            Valkur.Gameplay.TileEditor.TerrainMap terrainMap,
+            int offsetX, int offsetY)
         {
             if (terrainMap == null) return 0;
-            if (!File.Exists(jsonPath)) return 0;
-
-            string json = File.ReadAllText(jsonPath);
-            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
             if (root == null) return 0;
 
             if (!root.TryGetValue("terrains", out var terrainsObj)) return 0;
@@ -195,12 +222,14 @@ namespace Valkur.Gameplay.World
         public static int ApplyCollisionTagsFromPath(string jsonPath,
             Valkur.Gameplay.TileEditor.CollisionTagMap tagMap,
             int offsetX, int offsetY)
+            => ApplyCollisionTags(ParseOverlay(jsonPath), tagMap, offsetX, offsetY);
+
+        /// <summary>Same as <see cref="ApplyCollisionTagsFromPath"/> for an already-parsed overlay root.</summary>
+        public static int ApplyCollisionTags(Dictionary<string, object> root,
+            Valkur.Gameplay.TileEditor.CollisionTagMap tagMap,
+            int offsetX, int offsetY)
         {
             if (tagMap == null) return 0;
-            if (!File.Exists(jsonPath)) return 0;
-
-            string json = File.ReadAllText(jsonPath);
-            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
             if (root == null) return 0;
 
             if (!root.TryGetValue("collisionTags", out var tagsObj)) return 0;
@@ -237,12 +266,14 @@ namespace Valkur.Gameplay.World
         public static int ApplyLayerJumpsFromPath(string jsonPath,
             Valkur.Gameplay.World.Layering.LayerJumpMap jumpMap,
             int offsetX, int offsetY)
+            => ApplyLayerJumps(ParseOverlay(jsonPath), jumpMap, offsetX, offsetY);
+
+        /// <summary>Same as <see cref="ApplyLayerJumpsFromPath"/> for an already-parsed overlay root.</summary>
+        public static int ApplyLayerJumps(Dictionary<string, object> root,
+            Valkur.Gameplay.World.Layering.LayerJumpMap jumpMap,
+            int offsetX, int offsetY)
         {
             if (jumpMap == null) return 0;
-            if (!File.Exists(jsonPath)) return 0;
-
-            string json = File.ReadAllText(jsonPath);
-            var root = MiniJsonRuntime.Deserialize(json) as Dictionary<string, object>;
             if (root == null) return 0;
 
             if (!root.TryGetValue("layerJumps", out var jumpsObj)) return 0;
@@ -274,33 +305,60 @@ namespace Valkur.Gameplay.World
             int tilesSet = 0;
             int tilesClipped = 0;
             int rowCount = rows.Count;
-            // When clipping is enabled, use the JSON's row count to compute the Y-flip basis
-            // so painting still produces the same orientation; we only skip out-of-bounds tiles.
+
+            // Widest row wins; rows are allowed to be ragged.
+            int widest = 0;
+            for (int y = 0; y < rowCount; y++)
+                if (rows[y] is List<object> r && r.Count > widest) widest = r.Count;
+
+            int blockW = maxWidth > 0 ? Mathf.Min(widest, maxWidth) : widest;
+            int blockH = maxHeight > 0 ? Mathf.Min(rowCount, maxHeight) : rowCount;
+            if (blockW <= 0 || blockH <= 0) return;
+
+            // One block read + one block write instead of a SetTile per cell. A full
+            // world load issued ~248,000 individual SetTile calls, each of which dirties
+            // the tilemap and its collider; this collapses that to a couple of ops per
+            // (zone x layer).
+            //
+            // The read matters: SetTilesBlock writes EVERY cell in the rectangle,
+            // including the nulls, whereas SetTile only ever touched cells the JSON
+            // actually named. Seeding the buffer with what is already there keeps a gap
+            // in the overlay meaning "leave this alone" rather than "erase this" — the
+            // base world pass depends on that, and only the override pass asks for a
+            // true erase (it passes clearLayerRegion and is cleared before we get here).
+            var bounds = new BoundsInt(offsetX, offsetY, 0, blockW, blockH, 1);
+            var buffer = tilemap.GetTilesBlock(bounds);
+
             for (int y = 0; y < rowCount; y++)
             {
                 var row = rows[y] as List<object>;
                 if (row == null) continue;
+
+                // Overlay data is row-major (y=0 is top). Unity tilemap y=0 is bottom.
+                // Flip Y so row 0 in JSON maps to the top of the map.
+                int flippedY = rowCount - 1 - y;
 
                 for (int x = 0; x < row.Count; x++)
                 {
                     string tileName = row[x] as string;
                     if (string.IsNullOrEmpty(tileName)) continue;
 
+                    // Bounds clip — skip any tile outside the declared zone footprint.
+                    // Counted before resolving, so a clipped tile costs no sprite load.
+                    if (maxWidth > 0 && x >= maxWidth) { tilesClipped++; continue; }
+                    if (maxHeight > 0 && flippedY >= maxHeight) { tilesClipped++; continue; }
+                    if (x >= blockW || flippedY >= blockH) continue;
+
                     var tile = ResolveTile(tileName, isCollisionLayer);
                     if (tile == null) continue;
 
-                    // Overlay data is row-major (y=0 is top). Unity tilemap y=0 is bottom.
-                    // Flip Y so row 0 in JSON maps to the top of the map.
-                    int flippedY = rowCount - 1 - y;
-
-                    // Bounds clip — skip any tile outside the declared zone footprint.
-                    if (maxWidth > 0 && x >= maxWidth) { tilesClipped++; continue; }
-                    if (maxHeight > 0 && flippedY >= maxHeight) { tilesClipped++; continue; }
-
-                    tilemap.SetTile(new Vector3Int(offsetX + x, offsetY + flippedY, 0), tile);
+                    buffer[(flippedY * blockW) + x] = tile;
                     tilesSet++;
                 }
             }
+
+            if (tilesSet > 0)
+                tilemap.SetTilesBlock(bounds, buffer);
 
             if (tilesClipped > 0)
             {
@@ -345,6 +403,18 @@ namespace Valkur.Gameplay.World
             return tile;
         }
 
+        /// <summary>
+        /// Subfolders of <c>Resources/Tiles/</c>, largest first so the common miss is
+        /// found soonest. Ordering matters only for speed; correctness does not depend
+        /// on this list being complete — see <see cref="ResolveSprite"/>.
+        /// </summary>
+        private static readonly string[] CATEGORY_FOLDERS =
+        {
+            "castle_pandora", "grass_rock", "sand_grass", "grass_dirt", "tileset_1",
+            "rock_water", "sand_rock", "sand_ocean", "rock_grass", "ocean_grass",
+            "sand_ocean_2", "multi_tiles", "ready",
+        };
+
         private static Sprite ResolveSprite(string tileName)
         {
             // Direct mirror: overlay name maps 1:1 to Resources/Tiles/{tileName}
@@ -361,6 +431,27 @@ namespace Valkur.Gameplay.World
                 sprite = Resources.Load<Sprite>("Tiles/" + stripped);
                 if (sprite != null) return sprite;
                 tileName = stripped;
+            }
+
+            // Probe the known category folders before the brute-force index.
+            //
+            // Overlays written by older Tile Editor versions store a bare file name
+            // ("pandora_r07_c03") with no folder, so the direct load above misses and we
+            // used to fall straight into EnsureSpriteIndex — a synchronous
+            // Resources.LoadAll of ~3,077 sprites / 31 MB, inside a stage that never
+            // yields. That is a hard Editor freeze, not a slow frame, and one unresolved
+            // pandora tile was enough to trigger it.
+            //
+            // A dozen misses from Resources.Load cost effectively nothing by comparison.
+            // If this list goes stale the only consequence is falling back to the old
+            // path, so it degrades rather than breaks.
+            if (!tileName.Contains("/"))
+            {
+                for (int i = 0; i < CATEGORY_FOLDERS.Length; i++)
+                {
+                    sprite = Resources.Load<Sprite>($"Tiles/{CATEGORY_FOLDERS[i]}/{tileName}");
+                    if (sprite != null) return sprite;
+                }
             }
 
             EnsureSpriteIndex();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -78,17 +78,29 @@ namespace Valkur.Gameplay.TileEditor
                     continue;
                 }
 
-                OverlayLoader.LoadOverlayFromPath(files[i], gridBuilder,
+                // Parse once, apply three times. Each *FromPath overload re-reads and
+                // re-deserializes the file, so this loop used to parse every override
+                // three times over — 4.56 MB of JSON where 1.52 MB does, plus the
+                // matching garbage, inside a stage that never yields.
+                var root = OverlayLoader.ParseOverlay(files[i]);
+                if (root == null)
+                {
+                    Debug.LogWarning($"[TileOverlayPersistence] Could not parse override '{files[i]}'.");
+                    continue;
+                }
+
+                OverlayLoader.LoadOverlayFromRoot(root, gridBuilder,
                     zone.gridOffset.x, zone.gridOffset.y,
-                    clearLayerRegion: true, regionWidth: w, regionHeight: h);
+                    clearLayerRegion: true, regionWidth: w, regionHeight: h,
+                    sourceLabel: files[i]);
                 applied++;
 
                 if (collisionTagSink != null)
-                    tagsLoaded += OverlayLoader.ApplyCollisionTagsFromPath(
-                        files[i], collisionTagSink, zone.gridOffset.x, zone.gridOffset.y);
+                    tagsLoaded += OverlayLoader.ApplyCollisionTags(
+                        root, collisionTagSink, zone.gridOffset.x, zone.gridOffset.y);
                 if (layerJumpSink != null)
-                    jumpsLoaded += OverlayLoader.ApplyLayerJumpsFromPath(
-                        files[i], layerJumpSink, zone.gridOffset.x, zone.gridOffset.y);
+                    jumpsLoaded += OverlayLoader.ApplyLayerJumps(
+                        root, layerJumpSink, zone.gridOffset.x, zone.gridOffset.y);
             }
 
             if (applied > 0)
