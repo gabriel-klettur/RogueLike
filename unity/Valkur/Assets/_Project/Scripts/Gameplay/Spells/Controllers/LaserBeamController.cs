@@ -206,7 +206,14 @@ namespace Valkur.Gameplay.Spells
 
                 // Resolve current beam direction & origin every frame (player may rotate).
                 Vector2 dir = ResolveDirection();
-                Vector2 origin = (Vector2)ProjectileExecutor.ResolveCasterCenter(transform);
+                // Hand height, the same origin the fireball leaves from. ResolveCasterCenter
+                // returns the geometric middle of the sprite — the waist on a humanoid — so
+                // the beam used to emerge from the caster's stomach.
+                //
+                // Resolved every frame rather than cached: the caster moves, and a beam is
+                // held. And used for the raycast as well as the visuals, so what is drawn and
+                // what is hit stay the same line.
+                Vector2 origin = (Vector2)ProjectileExecutor.ResolveCastOrigin(transform);
 
                 // Player-only: clamp the effective range to the cursor's distance
                 // from the caster centre. If the mouse is BEFORE the spell's max

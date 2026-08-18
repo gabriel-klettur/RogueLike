@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
@@ -129,11 +130,11 @@ namespace Valkur.Gameplay.Spells
                 // of the line where the beam emerges.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 7;
-                renderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"))
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
+                // Shared additive + textured, via the same cache the particles use. Was a
+                // per-emitter alpha material with no texture and no teardown: the muzzle
+                // could not glow, drew hard-edged squares, and leaked one Material per beam.
+                renderer.sharedMaterial = ParticleMaterialCache.Get(
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.85f), additive: true);
             }
 
             ps.Play();
@@ -191,11 +192,8 @@ namespace Valkur.Gameplay.Spells
                 // the trail particles on top of world geometry, not behind it.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 5;
-                renderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"))
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
+                renderer.sharedMaterial = ParticleMaterialCache.Get(
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Spark, 0.4f), additive: true);
             }
 
             ps.Play();
@@ -272,13 +270,8 @@ namespace Valkur.Gameplay.Spells
                 var boltSprite = ElementalSprites.Bolt;
                 if (boltSprite != null)
                 {
-                    var mat = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                                ?? Shader.Find("Sprites/Default"))
-                    {
-                        hideFlags = HideFlags.HideAndDontSave,
-                        mainTexture = boltSprite.texture
-                    };
-                    renderer.material = mat;
+                    renderer.sharedMaterial = ParticleMaterialCache.Get(
+                        boltSprite.texture, additive: true);
                     renderer.renderMode = ParticleSystemRenderMode.Billboard;
                 }
             }
@@ -353,10 +346,19 @@ namespace Valkur.Gameplay.Spells
             var emission = ps.emission;
             emission.rateOverTime = 80f;
 
+            // Cone, not Circle. RunBeam already rotates this host every frame so its local
+            // +X faces back down the beam — but a Circle emits equally in all directions, so
+            // that rotation produced no visible change at all and the spray looked the same
+            // whichever way the beam pointed. A cone makes the sparks come OFF the surface,
+            // back toward the caster, which is what sells the beam as hitting something.
             var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 32f;
             shape.radius = beamWidth * 0.5f;
             shape.radiusThickness = 1f;
+            // Unity's cone emits along its local +Z; rotate it onto the host's +X so the
+            // per-frame rotation in RunBeam actually aims it.
+            shape.rotation = new Vector3(0f, 90f, 0f);
 
             // Fade-out via color over lifetime.
             var col = ps.colorOverLifetime;
@@ -380,13 +382,11 @@ namespace Valkur.Gameplay.Spells
             var renderer = host.GetComponent<ParticleSystemRenderer>();
             if (renderer != null)
             {
-                renderer.sortingLayerName = "VFX";
+                // Was the literal "VFX" rather than the constant every other renderer here uses.
+                renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 6;
-                renderer.material = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                    ?? Shader.Find("Sprites/Default"))
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                };
+                renderer.sharedMaterial = ParticleMaterialCache.Get(
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.55f), additive: true);
             }
 
             ps.Play();
