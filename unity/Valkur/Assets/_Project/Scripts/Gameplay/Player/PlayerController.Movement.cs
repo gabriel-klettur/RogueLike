@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Valkur.Core;
 using Valkur.Core.Input;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.Spells;
 
@@ -57,7 +58,21 @@ namespace Valkur.Gameplay
 
             UpdateFacingDirection();
 
-            if (isStunned || inputSuspended) return;
+            if (isStunned) return;
+
+            if (inputSuspended)
+            {
+                // An editor that redirects left click (Spells F4) still wants THAT one
+                // gesture while everything else stays frozen. Deliberately not solved by
+                // marking the editor IAllowsPlayerMovement, which is the obvious one-word
+                // fix and is wrong twice over: ReadInput OR-reads raw WASD with no
+                // focused-field guard, so typing in the editor's search box would walk the
+                // player; and WorldDropInteractor gates its left-click drag on the same
+                // interface, so world drops would fight the cast for the same click.
+                // Every editor that does not opt in answers null below and stays frozen.
+                if (!isSpirit) PollRedirectedPrimaryCast();
+                return;
+            }
 
             // Spirits can move but cannot attack, dash, or cast.
             if (isSpirit) return;
@@ -232,6 +247,114 @@ namespace Valkur.Gameplay
             return active is ISuspendsPlayerCombat;
         }
 
+        /// <summary>
+        /// Which spell key left click casts this frame.
+        ///
+        /// Pure so EditMode tests can drive it without a scene, matching
+        /// <see cref="ShouldSuspendCombatFor"/>. With no active editor, or an editor that does
+        /// not opt in, or one that opts in with nothing selected, the answer is
+        /// <paramref name="defaultKey"/> — which is what keeps normal gameplay untouched.
+        /// </summary>
+        internal static string ResolvePrimaryCastKey(GameEditorManager.IGameEditor active, string defaultKey)
+        {
+            var chooser = active as IChoosesPrimaryCastSpell;
+            string key = chooser?.PrimaryCastSpellKey;
+            return string.IsNullOrEmpty(key) ? defaultKey : key;
+        }
+
+        private string ResolvePrimaryCastKey()
+        {
+            var active = GameEditorManager.HasInstance ? GameEditorManager.Instance.ActiveEditor : null;
+            return ResolvePrimaryCastKey(active, DEFAULT_PRIMARY_SPELL_KEY);
+        }
+
+        /// <summary>What left click casts during ordinary play. Python parity: M_LEFT.</summary>
+        private const string DEFAULT_PRIMARY_SPELL_KEY = "fireball";
+
+        /// <summary>Beam started by LEFT click, so its release does not stop a middle-click one.</summary>
+        private LaserBeamController _leftHeldBeam;
+
+        /// <summary>
+        /// Casts <paramref name="key"/> for a held trigger, using channel semantics when the
+        /// spell is one.
+        ///
+        /// A beam is hold-to-channel: Begin once, Refresh every frame, Stop on release. Firing
+        /// one through the ordinary path instead would start it and never refresh it, so it
+        /// would die after <see cref="LaserBeamController.AUTO_STOP_GRACE"/> — about a sixth of
+        /// a second — and read as a beam that flickers rather than one the player is holding.
+        /// This is the same shape the middle-click branch already uses; it lives here because
+        /// left click can now be pointed at ANY spell, beams included.
+        /// </summary>
+        /// <summary>
+        /// True when the active editor is asking left click to cast something specific.
+        /// Pure so EditMode tests can drive it without a scene, matching
+        /// <see cref="ShouldSuspendInputFor"/>.
+        /// </summary>
+        internal static bool EditorRedirectsPrimaryCast(GameEditorManager.IGameEditor active)
+            => !string.IsNullOrEmpty((active as IChoosesPrimaryCastSpell)?.PrimaryCastSpellKey);
+
+        /// <summary>
+        /// The left-click primary on its own — the only combat gesture allowed through while
+        /// a redirecting editor has gameplay input suspended. No dash, no right-click slash,
+        /// no number-key casts, no movement.
+        /// </summary>
+        private void PollRedirectedPrimaryCast()
+        {
+            var active = GameEditorManager.HasInstance ? GameEditorManager.Instance.ActiveEditor : null;
+            string key = ResolvePrimaryCastKey(active, null);
+
+            // Handled before anything else so a beam is always released, whether the editor
+            // closed under it, the selection was cleared, or the pointer wandered onto a panel
+            // mid-hold. Otherwise the reference dangles and the next click stops a stale beam.
+            if (MouseInputManager.WasLeftMouseButtonReleasedThisFrame() || string.IsNullOrEmpty(key))
+            {
+                StopLeftHeldBeam();
+                return;
+            }
+
+            // A click that lands on the editor's own panels belongs to the editor. Without
+            // this, every click on a spell tile in the picker would also cast into the world
+            // behind it.
+            if (IsPointerOverInteractiveUI()) return;
+
+            if (MouseInputManager.IsLeftMouseButtonPressed())
+                CastHeldPrimary(key);
+        }
+
+        private void StopLeftHeldBeam()
+        {
+            if (_leftHeldBeam != null) _leftHeldBeam.Stop();
+            _leftHeldBeam = null;
+        }
+
+        private void CastHeldPrimary(string key)
+        {
+            if (_spellCaster == null) return;
+
+            var spell = _spellCaster.GetSpellByKey(key);
+            if (spell != null && spell.type == SpellType.Beam)
+            {
+                var beam = _spellCaster.GetComponent<LaserBeamController>();
+                if (beam != null)
+                {
+                    beam.Refresh();
+                }
+                else if (_spellCaster.TryCastByKey(key, _facingDirection))
+                {
+                    // Remembered so releasing left click stops only the beam left click
+                    // started. There is one controller per caster, so a blind Stop() on
+                    // release would also kill a beam the player is channelling on middle
+                    // click — releasing the left button would cut the laser short.
+                    _leftHeldBeam = _spellCaster.GetComponent<LaserBeamController>();
+                }
+                TriggerCastAnimation();
+                return;
+            }
+
+            if (_spellCaster.TryCastByKey(key, _facingDirection))
+                TriggerCastAnimation();
+        }
+
         private void UpdateFacingDirection()
         {
             if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
@@ -334,10 +457,23 @@ namespace Valkur.Gameplay
             return transform.position;
         }
 
+        private static bool IsPointerOverInteractiveUI()
+        {
+            var eventSystem = UnityEngine.EventSystems.EventSystem.current;
+            return eventSystem != null && eventSystem.IsPointerOverGameObject();
+        }
+
         private void PollCombatActions()
         {
             bool isDashing = _dashAbility != null && _dashAbility.IsDashing;
             if (isDashing) return;
+
+            // A click that lands on interactive UI belongs to the UI, not to the
+            // world: without this, double-clicking the HUD ability row to open the
+            // character sheet would also throw two fireballs. Decorative HUD
+            // graphics set raycastTarget = false, and panels that hide themselves
+            // clear blocksRaycasts, so only live UI blocks here.
+            if (IsPointerOverInteractiveUI()) return;
 
             // Primary attack (left click) → fireball (spell slot 0)
             // Python parity: M_LEFT → fireball
@@ -345,11 +481,17 @@ namespace Valkur.Gameplay
             // MouseInputManager already ORs new InputSystem with the legacy backend, so
             // we don't need to read PrimaryAttackAction separately — both backends are
             // covered.
+            // The key is resolved per frame rather than hardcoded: a runtime editor that
+            // implements IChoosesPrimaryCastSpell redirects this click to whatever it has
+            // selected, so the Spells Editor can be used to try a spell out in the world. With
+            // no such editor open the resolver returns "fireball" and this is unchanged.
             if (MouseInputManager.IsLeftMouseButtonPressed())
-            {
-                if (_spellCaster != null && _spellCaster.TryCastByKey("fireball", _facingDirection))
-                    TriggerCastAnimation();
-            }
+                CastHeldPrimary(ResolvePrimaryCastKey());
+
+            // Releasing left click ends a channelled primary. Harmless for every other spell
+            // type — there is simply no beam to stop.
+            if (MouseInputManager.WasLeftMouseButtonReleasedThisFrame())
+                StopLeftHeldBeam();
 
             // Secondary attack (right click) → slash spell
             // Python parity: M_RIGHT → slash

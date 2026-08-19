@@ -27,7 +27,8 @@ namespace Valkur.Gameplay.Spells
     /// (Add/Remove/Save/Reload/property edits) are stubs that emit a status toast —
     /// Phase 2 will wire them to the data layer.
     /// </summary>
-    public partial class SpellsRuntimeEditor : SingletonMonoBehaviour<SpellsRuntimeEditor>, GameEditorManager.IGameEditor
+    public partial class SpellsRuntimeEditor : SingletonMonoBehaviour<SpellsRuntimeEditor>,
+        GameEditorManager.IGameEditor, Valkur.Core.IChoosesPrimaryCastSpell
     {
         [SerializeField, Tooltip("Spell catalog asset")]
         private SpellCatalog _catalog;
@@ -80,6 +81,18 @@ namespace Valkur.Gameplay.Spells
         // ── IGameEditor ──
         public string EditorName => "Spells Editor";
         public bool IsActive => _active;
+
+        /// <summary>
+        /// The spell LEFT CLICK casts while this editor is open, so a spell can be tried out in
+        /// the world without leaving the editor or rebinding a slot.
+        ///
+        /// Gated on <see cref="IsActive"/> rather than just returning the selection: the editor
+        /// is a scene singleton that outlives its open state, and a stale key here would keep
+        /// redirecting the player's primary attack long after F4 was closed. Null while closed
+        /// is what makes "closed behaves exactly as before" true by construction rather than by
+        /// remembering to clear something.
+        /// </summary>
+        public string PrimaryCastSpellKey => _active ? _selectedKey : null;
 
         // ── Lifecycle ──
 

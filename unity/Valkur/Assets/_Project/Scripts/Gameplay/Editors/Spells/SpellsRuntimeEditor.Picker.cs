@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -136,6 +136,15 @@ namespace Valkur.Gameplay.Spells
                         bgImg.color = tint;
                     }
                 }
+
+                // Selection frame. The background tint above is nearly invisible on this
+                // grid: every spell has a HUD icon with a solid backdrop behind it, so the
+                // slot bg only shows in a thin margin and the selected tile reads like any
+                // other. The Particles picker hit the same wall with its live previews, and
+                // this is the same shared frame it uses — drawn on top, raycast-transparent,
+                // so the tile still takes clicks normally.
+                if (key == _selectedKey)
+                    EditorUIHelpers.MakeSelectionBorder(btn.GetComponent<RectTransform>());
 
                 // Add drag-drop support: make this spell draggable to the HUD
                 var draggable = btn.gameObject.AddComponent<DraggableSpellItem>();
