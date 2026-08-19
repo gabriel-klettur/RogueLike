@@ -99,6 +99,8 @@ namespace Valkur.Gameplay.Spells
         {
             if (spell != null && spell.type == SpellType.Dash)
                 return Valkur.Gameplay.DirectionalAnimator.AnimState.Chase;
+            if (RegularSlashAttack.Matches(spell))
+                return Valkur.Gameplay.DirectionalAnimator.AnimState.Attack;
             return Valkur.Gameplay.DirectionalAnimator.AnimState.Cast;
         }
 

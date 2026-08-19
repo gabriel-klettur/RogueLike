@@ -64,6 +64,7 @@ namespace Valkur.Gameplay
             _fireballSpell.spellKey = "fireball";
             _fireballSpell.displayName = "Fireball";
             _fireballSpell.type = SpellType.Projectile;
+            _fireballSpell.audience = SpellAudience.Player | SpellAudience.Boss;
             _fireballSpell.manaCost = 1f;
             _fireballSpell.prepareDuration = 0f;
             _fireballSpell.channelDuration = 0f;

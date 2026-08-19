@@ -60,6 +60,7 @@ namespace Valkur.Gameplay.Spells
             public Image            SaveBtnImg;
 
             // Spells panel — shared
+            public TabStrip         SpellAudienceTabs;
             public TMP_InputField   SearchBox;
             public TextMeshProUGUI  StatusText;
 

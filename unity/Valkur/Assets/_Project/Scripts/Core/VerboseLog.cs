@@ -44,7 +44,9 @@ namespace Valkur.Core
             Collision = 1 << 2,
             /// <summary>Scene composition step-by-step wiring.</summary>
             Bootstrap = 1 << 3,
-            All = World | Settings | Collision | Bootstrap,
+            /// <summary>Per-hit damage detail (fires once per hit, per entity).</summary>
+            Combat = 1 << 4,
+            All = World | Settings | Collision | Bootstrap | Combat,
         }
 
         private const string PREFS_KEY = "Valkur.VerboseLog.Mask";

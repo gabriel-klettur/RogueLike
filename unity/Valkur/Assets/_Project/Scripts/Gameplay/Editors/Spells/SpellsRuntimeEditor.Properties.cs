@@ -52,6 +52,17 @@ namespace Valkur.Gameplay.Spells
             form.AddDropdown("type",     "Type",
                 Enum.GetNames(typeof(SpellType)),
                 (int)s.type);
+            form.AddDropdown("audience", "Audience", new[]
+            {
+                "Unassigned",
+                "Player",
+                "NPC",
+                "Player + NPC",
+                "Boss",
+                "Player + Boss",
+                "NPC + Boss",
+                "Player + NPC + Boss",
+            }, (int)s.audience);
 
             // ── Casting ──
             AddSectionHeader(form, "── Casting ──");
@@ -62,76 +73,104 @@ namespace Valkur.Gameplay.Spells
             form.AddBool  ("interruptible", "Interruptible",  s.interruptible);
             form.AddBool  ("automatic",     "Automatic",      s.automatic);
 
+            // ── Cast Origin ──
+            // Where the effect is born on the caster's body, and how far in front.
+            // The anchor is a fraction of the caster's height, so one setting reads
+            // the same on a rat and on a boss.
+            AddSectionHeader(form, "── Cast Origin ──");
+            form.AddDropdown("castAnchor", "Anchor",
+                Enum.GetNames(typeof(SpellCastAnchor)),
+                (int)s.castAnchor);
+            form.AddFloat("castForwardOffset", "Forward Offset", s.castForwardOffset);
+
             // ── Timings ──
-            AddSectionHeader(form, "── Timings ──");
-            form.AddFloat("prepareDuration",  "Prepare (s)",  s.prepareDuration);
-            form.AddFloat("channelDuration",  "Channel (s)",  s.channelDuration);
-            form.AddFloat("cooldownDuration", "Cooldown (s)", s.cooldownDuration);
+            AddSection(form, s, "── Timings ──",
+                ("prepareDuration",  () => form.AddFloat("prepareDuration",  "Prepare (s)",  s.prepareDuration)),
+                ("channelDuration",  () => form.AddFloat("channelDuration",  "Channel (s)",  s.channelDuration)),
+                ("cooldownDuration", () => form.AddFloat("cooldownDuration", "Cooldown (s)", s.cooldownDuration)));
 
             // ── Combat ──
-            AddSectionHeader(form, "── Combat ──");
-            form.AddFloat("damage",    "Damage",    s.damage);
-            form.AddFloat("speed",     "Speed",     s.speed);
-            form.AddFloat("range",     "Range",     s.range);
-            form.AddFloat("lifetime",  "Lifetime",  s.lifetime);
-            form.AddFloat("radius",    "Radius",    s.radius);
-            form.AddFloat("knockback", "Knockback", s.knockback);
+            // radius and hitRadius are two different authored shapes and most spells read
+            // only one of them, so the filter is what keeps a designer from tuning the
+            // dead one and concluding the spell ignores its own numbers.
+            AddSection(form, s, "── Combat ──",
+                ("damage",           () => form.AddFloat("damage",           "Damage",           s.damage)),
+                ("speed",            () => form.AddFloat("speed",            "Speed",            s.speed)),
+                ("range",            () => form.AddFloat("range",            "Range",            s.range)),
+                ("lifetime",         () => form.AddFloat("lifetime",         "Lifetime",         s.lifetime)),
+                ("radius",           () => form.AddFloat("radius",           "Radius",           s.radius)),
+                ("hitRadius",        () => form.AddFloat("hitRadius",        "Hit Radius",       s.hitRadius)),
+                ("arcRangeDegrees",  () => form.AddFloat("arcRangeDegrees",  "Arc (deg)",        s.arcRangeDegrees)),
+                ("knockback",        () => form.AddFloat("knockback",        "Knockback",        s.knockback)),
+                ("collisionDamage",  () => form.AddFloat("collisionDamage",  "Collision Damage", s.collisionDamage)),
+                ("distance",         () => form.AddFloat("distance",         "Distance",         s.distance)));
 
             // ── Type-specific ──
-            switch (s.type)
-            {
-                case SpellType.Dash:
-                    AddSectionHeader(form, "── Dash ──");
-                    form.AddFloat("distance",        "Distance",         s.distance);
-                    form.AddFloat("collisionDamage", "Collision Damage", s.collisionDamage);
-                    break;
+            AddSection(form, s, "── Meteor ──",
+                ("meteorCount",        () => form.AddInt  ("meteorCount",        "Meteor Count",  s.meteorCount)),
+                ("meteorInterval",     () => form.AddFloat("meteorInterval",     "Interval",      s.meteorInterval)),
+                ("meteorAreaRadius",   () => form.AddFloat("meteorAreaRadius",   "Area Radius",   s.meteorAreaRadius)),
+                ("meteorImpactRadius", () => form.AddFloat("meteorImpactRadius", "Impact Radius", s.meteorImpactRadius)));
 
-                case SpellType.Meteor:
-                    AddSectionHeader(form, "── Meteor ──");
-                    form.AddInt  ("meteorCount",        "Meteor Count",        s.meteorCount);
-                    form.AddFloat("meteorInterval",     "Meteor Interval",     s.meteorInterval);
-                    form.AddFloat("meteorAreaRadius",   "Area Radius",         s.meteorAreaRadius);
-                    form.AddFloat("meteorImpactRadius", "Impact Radius",       s.meteorImpactRadius);
-                    break;
+            AddSection(form, s, "── Mine ──",
+                ("armingTime",      () => form.AddFloat("armingTime",      "Arming Time",      s.armingTime)),
+                ("triggerRadius",   () => form.AddFloat("triggerRadius",   "Trigger Radius",   s.triggerRadius)),
+                ("explosionRadius", () => form.AddFloat("explosionRadius", "Explosion Radius", s.explosionRadius)),
+                ("explosionDamage", () => form.AddFloat("explosionDamage", "Explosion Damage", s.explosionDamage)),
+                ("ttl",             () => form.AddFloat("ttl",             "TTL (s)",          s.ttl)));
 
-                case SpellType.Mine:
-                    AddSectionHeader(form, "── Mine ──");
-                    form.AddFloat("armingTime",      "Arming Time",      s.armingTime);
-                    form.AddFloat("triggerRadius",   "Trigger Radius",   s.triggerRadius);
-                    form.AddFloat("explosionRadius", "Explosion Radius", s.explosionRadius);
-                    form.AddFloat("explosionDamage", "Explosion Damage", s.explosionDamage);
-                    form.AddFloat("ttl",             "TTL (s)",          s.ttl);
-                    break;
+            AddSection(form, s, "── Wall ──",
+                ("wallWidth",        () => form.AddFloat("wallWidth",        "Wall Width",        s.wallWidth)),
+                ("wallHeight",       () => form.AddFloat("wallHeight",       "Wall Height",       s.wallHeight)),
+                ("wallHP",           () => form.AddFloat("wallHP",           "Wall HP",           s.wallHP)),
+                ("blockProjectiles", () => form.AddBool ("blockProjectiles", "Block Projectiles", s.blockProjectiles)),
+                ("blockUnits",       () => form.AddBool ("blockUnits",       "Block Units",       s.blockUnits)));
 
-                case SpellType.Wall:
-                    AddSectionHeader(form, "── Wall ──");
-                    form.AddFloat("wallWidth",        "Wall Width",        s.wallWidth);
-                    form.AddFloat("wallHeight",       "Wall Height",       s.wallHeight);
-                    form.AddFloat("wallHP",           "Wall HP",           s.wallHP);
-                    form.AddBool ("blockProjectiles", "Block Projectiles", s.blockProjectiles);
-                    form.AddBool ("blockUnits",       "Block Units",       s.blockUnits);
-                    break;
+            AddSection(form, s, "── Summon ──",
+                ("summonTemplate", () => form.AddText ("summonTemplate", "Summon Template", s.summonTemplate ?? "")),
+                ("summonCount",    () => form.AddInt  ("summonCount",    "Summon Count",    s.summonCount)),
+                ("summonDuration", () => form.AddFloat("summonDuration", "Duration (s)",    s.summonDuration)));
 
-                case SpellType.Summon:
-                    AddSectionHeader(form, "── Summon ──");
-                    form.AddText ("summonTemplate", "Summon Template", s.summonTemplate ?? "");
-                    form.AddInt  ("summonCount",    "Summon Count",    s.summonCount);
-                    form.AddFloat("summonDuration", "Duration (s)",    s.summonDuration);
-                    break;
-            }
+            AddSection(form, s, "── Cone ──",
+                ("coneArc",    () => form.AddFloat("coneArc",    "Cone Arc (deg)", s.coneArc)),
+                ("coneLength", () => form.AddFloat("coneLength", "Cone Length",    s.coneLength)));
+
+            AddSection(form, s, "── Force ──",
+                ("force",        () => form.AddFloat("force",        "Force",         s.force)),
+                ("forceMode",    () => form.AddText ("forceMode",    "Force Mode",    s.forceMode ?? "")),
+                ("followCaster", () => form.AddBool ("followCaster", "Follow Caster", s.followCaster)),
+                ("totemKind",    () => form.AddText ("totemKind",    "Totem Kind",    s.totemKind ?? "")));
 
             // ── DoT / Aura ──
-            AddSectionHeader(form, "── DoT / Aura ──");
-            form.AddFloat("duration",      "Duration (s)",  s.duration);
-            form.AddFloat("damagePerTick", "Damage / Tick", s.damagePerTick);
-            form.AddFloat("healPerTick",   "Heal / Tick",   s.healPerTick);
-            form.AddFloat("tickPeriod",    "Tick Period",   s.tickPeriod);
-            form.AddText ("element",       "Element",       s.element ?? "");
+            AddSection(form, s, "── DoT / Aura ──",
+                ("duration",      () => form.AddFloat("duration",      "Duration (s)",  s.duration)),
+                ("damagePerTick", () => form.AddFloat("damagePerTick", "Damage / Tick", s.damagePerTick)),
+                ("healPerTick",   () => form.AddFloat("healPerTick",   "Heal / Tick",   s.healPerTick)),
+                ("tickPeriod",    () => form.AddFloat("tickPeriod",    "Tick Period",   s.tickPeriod)),
+                ("element",       () => form.AddText ("element",       "Element",       s.element ?? "")));
 
-            // ── VFX (header only — full editor in Phase 2) ──
-            AddSectionHeader(form, "── VFX ──");
-            form.AddText("vfxPreset",    "VFX Preset",    s.vfxPreset ?? "");
-            form.AddText("impactPreset", "Impact Preset", s.impactPreset ?? "");
+            // ── Placement / VFX ──
+            AddSection(form, s, "── VFX ──",
+                ("spawnAtMouse", () => form.AddBool("spawnAtMouse", "Spawn At Mouse", s.spawnAtMouse)),
+                ("vfxPreset",    () => form.AddText("vfxPreset",    "VFX Preset",     s.vfxPreset ?? "")),
+                ("impactPreset", () => form.AddText("impactPreset", "Impact Preset",  s.impactPreset ?? "")));
+        }
+
+        /// <summary>
+        /// Emits a section, skipping every row whose field does nothing for this spell,
+        /// and skipping the header too when that leaves the section empty. A header over
+        /// no rows reads as a broken panel.
+        /// </summary>
+        private void AddSection(PropertyForm form, SpellDefinition spell, string header,
+                                params (string field, System.Action emit)[] rows)
+        {
+            bool headerWritten = false;
+            for (int i = 0; i < rows.Length; i++)
+            {
+                if (!SpellFieldRelevance.Applies(spell, rows[i].field)) continue;
+                if (!headerWritten) { AddSectionHeader(form, header); headerWritten = true; }
+                rows[i].emit();
+            }
         }
 
         private void UpdateAssetsTab()
@@ -282,6 +321,11 @@ namespace Valkur.Gameplay.Spells
                 RefreshPropertiesForm();
             }
             else if (key == "displayName")
+            {
+                _catalog.SetSpellsRuntime(_catalog.AllSpells);
+                RefreshActivePicker();
+            }
+            else if (key == "audience")
             {
                 _catalog.SetSpellsRuntime(_catalog.AllSpells);
                 RefreshActivePicker();

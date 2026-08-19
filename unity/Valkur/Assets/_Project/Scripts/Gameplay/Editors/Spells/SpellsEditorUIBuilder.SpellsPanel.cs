@@ -34,6 +34,13 @@ namespace Valkur.Gameplay.Spells
             // ── 1. Tab strip ──────────────────────────────────────────────────
             var tabStrip = TabStrip.Create(t, "SpellsViewTabStrip", height: 26f);
 
+            refs.SpellAudienceTabs = TabStrip.Create(t, "SpellAudienceTabStrip", height: 24f);
+            refs.SpellAudienceTabs.AddTab("all",        "All",        null);
+            refs.SpellAudienceTabs.AddTab("player",     "Player",     null);
+            refs.SpellAudienceTabs.AddTab("npc",        "NPC",        null);
+            refs.SpellAudienceTabs.AddTab("boss",       "Boss",       null);
+            refs.SpellAudienceTabs.AddTab("unassigned", "Unassigned", null);
+
             // ── 2. Search box ─────────────────────────────────────────────────
             refs.SearchBox = SearchBox.Create(t, "Search spells...", onSearchChanged);
 

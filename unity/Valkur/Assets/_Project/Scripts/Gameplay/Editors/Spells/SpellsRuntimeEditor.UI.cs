@@ -64,6 +64,9 @@ namespace Valkur.Gameplay.Spells
                 _uiRefs.SpellsColumnsCfgBtn.onClick.AddListener(OpenColumnsConfigPopup);
             RefreshColumnsCountLabel();
 
+            if (_uiRefs.SpellAudienceTabs != null)
+                _uiRefs.SpellAudienceTabs.TabChanged += OnAudienceTabChanged;
+
             // Wire the View panel's direction-selector callbacks.
             WireViewPanel();
 

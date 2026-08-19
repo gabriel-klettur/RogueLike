@@ -50,6 +50,7 @@ namespace Valkur.Gameplay.Spells
         // Selection / filter
         private string _selectedKey;
         private string _searchFilter = "";
+        private string _audienceFilterKey = "all";
 
         // Dropdown open/close — mirrors ItemsRuntimeEditor / BuildingsRuntimeEditor
         private readonly HashSet<string> _openDropdowns = new HashSet<string>();
@@ -94,6 +95,13 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         public string PrimaryCastSpellKey => _active ? _selectedKey : null;
 
+        /// <summary>
+        /// Spells selected through F4 are for live authoring and iteration, so their
+        /// redirected left-click cast is free. Gating this on the live open state keeps
+        /// ordinary gameplay mana rules untouched as soon as the editor closes.
+        /// </summary>
+        public bool PrimaryCastIgnoresManaCost => _active;
+
         // ── Lifecycle ──
 
         protected override void OnSingletonAwake()
@@ -115,6 +123,7 @@ namespace Valkur.Gameplay.Spells
             ShutdownPreview();
             if (_ownsToggleAction) _toggleAction?.Dispose();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
+            ReleaseEditorInvulnerability();
             base.OnDestroy();
         }
 
@@ -129,6 +138,8 @@ namespace Valkur.Gameplay.Spells
             }
 
             if (!_active) return;
+
+            TickEditorInvulnerability(Time.unscaledDeltaTime);
 
             // Middle-mouse camera pan — same UX as every other runtime editor.
             _cameraPan.Tick();
@@ -176,6 +187,9 @@ namespace Valkur.Gameplay.Spells
             OpenAllPanels();
             RefreshActivePicker();
             RefreshPropertiesForm();
+            // F4 leaves you standing in the live world with combat armed, so nothing
+            // stops an NPC killing you mid-tuning. Borrow invincibility while it is open.
+            ApplyEditorInvulnerability();
             SetStatus("Spells Editor active. F4 to close.");
             Debug.Log("[SpellsEditor] Activated (F4)");
         }
@@ -183,6 +197,7 @@ namespace Valkur.Gameplay.Spells
         public void Deactivate()
         {
             _active = false;
+            ReleaseEditorInvulnerability();
             // Tear down the live preview before hiding the canvas so the camera /
             // RenderTexture / spawned spell objects are released and audio mute is
             // restored. Safe to call even if the View panel was never opened.

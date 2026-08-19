@@ -6,6 +6,7 @@ using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Editors;
 using Valkur.Gameplay.Spells.UI;
+using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -39,6 +40,7 @@ namespace Valkur.Gameplay.Spells
             foreach (var key in _catalog.GetAllKeys())
             {
                 if (!_catalog.TryGet(key, out var spell) || spell == null) continue;
+                if (!MatchesAudienceFilter(spell, _audienceFilterKey)) continue;
                 if (filter.Length > 0)
                 {
                     string name = (spell.displayName ?? key).ToLowerInvariant();
@@ -47,6 +49,36 @@ namespace Valkur.Gameplay.Spells
                 }
                 _filtered.Add(spell);
             }
+        }
+
+        /// <summary>
+        /// Pure audience predicate shared by the Grid and Table views. Audience is
+        /// catalog metadata only; this method never participates in spell casting.
+        /// </summary>
+        public static bool MatchesAudienceFilter(SpellDefinition spell, string audienceFilterKey)
+        {
+            if (spell == null) return false;
+
+            switch (audienceFilterKey)
+            {
+                case "player":
+                    return (spell.audience & SpellAudience.Player) != 0;
+                case "npc":
+                    return (spell.audience & SpellAudience.NPC) != 0;
+                case "boss":
+                    return (spell.audience & SpellAudience.Boss) != 0;
+                case "unassigned":
+                    return spell.audience == SpellAudience.None;
+                case "all":
+                default:
+                    return true;
+            }
+        }
+
+        private void OnAudienceTabChanged(int _, string key)
+        {
+            _audienceFilterKey = string.IsNullOrEmpty(key) ? "all" : key;
+            RefreshActivePicker();
         }
 
         /// <summary>
@@ -146,6 +178,8 @@ namespace Valkur.Gameplay.Spells
                 if (key == _selectedKey)
                     EditorUIHelpers.MakeSelectionBorder(btn.GetComponent<RectTransform>());
 
+                AddAudienceBadges(btn.transform, spell.audience);
+
                 // Add drag-drop support: make this spell draggable to the HUD
                 var draggable = btn.gameObject.AddComponent<DraggableSpellItem>();
                 draggable.Configure(spell, icon, SpellDragOrigin.Picker);
@@ -154,9 +188,77 @@ namespace Valkur.Gameplay.Spells
             }
 
             string filterTrim = (_searchFilter ?? "").Trim();
+            string audienceLabel = AudienceFilterLabel(_audienceFilterKey);
             SetStatus(filterTrim.Length == 0
-                ? $"{shown} spells"
-                : $"{shown} match '{_searchFilter}'");
+                ? $"{audienceLabel}: {shown} spells"
+                : $"{audienceLabel}: {shown} match '{_searchFilter}'");
+        }
+
+        private static string AudienceFilterLabel(string key)
+        {
+            switch (key)
+            {
+                case "player":     return "Player";
+                case "npc":        return "NPC";
+                case "boss":       return "Boss";
+                case "unassigned": return "Unassigned";
+                default:           return "All";
+            }
+        }
+
+        private static void AddAudienceBadges(Transform slotRoot, SpellAudience audience)
+        {
+            int count = audience == SpellAudience.None ? 1 : 0;
+            if ((audience & SpellAudience.Player) != 0) count++;
+            if ((audience & SpellAudience.NPC) != 0) count++;
+            if ((audience & SpellAudience.Boss) != 0) count++;
+
+            var row = new GameObject("AudienceBadges", typeof(RectTransform));
+            row.transform.SetParent(slotRoot, false);
+            var rowRt = (RectTransform)row.transform;
+            rowRt.anchorMin = Vector2.one;
+            rowRt.anchorMax = Vector2.one;
+            rowRt.pivot = Vector2.one;
+            rowRt.anchoredPosition = new Vector2(-3f, -3f);
+            rowRt.sizeDelta = new Vector2(count * 14f + Mathf.Max(0, count - 1) * 2f, 14f);
+
+            var layout = row.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 2f;
+            layout.childAlignment = TextAnchor.UpperRight;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            if (audience == SpellAudience.None)
+                AddAudienceBadge(row.transform, "?", new Color(0.55f, 0.40f, 0.12f, 0.96f));
+            if ((audience & SpellAudience.Player) != 0)
+                AddAudienceBadge(row.transform, "P", new Color(0.12f, 0.42f, 0.82f, 0.96f));
+            if ((audience & SpellAudience.NPC) != 0)
+                AddAudienceBadge(row.transform, "N", new Color(0.82f, 0.36f, 0.10f, 0.96f));
+            if ((audience & SpellAudience.Boss) != 0)
+                AddAudienceBadge(row.transform, "B", new Color(0.50f, 0.20f, 0.68f, 0.96f));
+        }
+
+        private static void AddAudienceBadge(Transform parent, string label, Color color)
+        {
+            var badge = new GameObject("Badge_" + label, typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+            badge.transform.SetParent(parent, false);
+
+            var le = badge.GetComponent<LayoutElement>();
+            le.minWidth = 14f;
+            le.preferredWidth = 14f;
+            le.minHeight = 14f;
+            le.preferredHeight = 14f;
+
+            var image = badge.GetComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
+
+            var text = UILabel.AddCenteredText(badge.transform, label, 9f,
+                FontStyles.Bold, Color.white);
+            text.raycastTarget = false;
         }
 
         private void SelectSpell(string key)

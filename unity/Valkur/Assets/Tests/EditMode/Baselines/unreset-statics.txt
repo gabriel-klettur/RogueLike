@@ -76,7 +76,6 @@ COLLECTION	Valkur.UI.MainMenu.MainMenuUI.BgPaths
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassBorderColors
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassFaceUvRects
 COLLECTION	Valkur.UI.MainMenu.MainMenuUI.ClassPortraitPaths
-COLLECTION	Valkur.UI.SpellBarHUD._keyLabels
 COLLECTION	Valkur.UIKit.DraggablePanel._allPanels
 COLLECTION	Valkur.UIKit.PanelChrome._all
 UNITYOBJ	Valkur.Core.GameDirector.<Instance>k__BackingField

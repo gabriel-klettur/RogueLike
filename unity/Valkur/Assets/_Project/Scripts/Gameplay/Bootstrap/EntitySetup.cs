@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
@@ -131,6 +131,11 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<StatusEffectManager>() == null)
                 go.AddComponent<StatusEffectManager>();
+
+            // Hit flash + knockback. Nothing attached this before, which is why
+            // NPCs took damage without ever flashing white.
+            if (go.GetComponent<CombatFeedback>() == null)
+                go.AddComponent<CombatFeedback>();
 
             // Tints the sprite gray as the monster dies (Python's death_tint_system).
             // Auto-subscribes to Health.OnDeath in its own OnEnable; just adding the

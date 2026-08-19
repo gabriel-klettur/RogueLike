@@ -384,33 +384,12 @@ namespace Valkur.Gameplay.Spells
             dRt.anchorMax = Vector2.one;
             dRt.sizeDelta = Vector2.zero;
 
-            var bg = dGo.AddComponent<Image>();
-            bg.color = UITheme.BG_SURFACE;
-
-            var dd = dGo.AddComponent<TMP_Dropdown>();
-            dd.targetGraphic = bg;
-            dd.ClearOptions();
-            var opts = new System.Collections.Generic.List<string>(col.DropdownOptions);
-            dd.AddOptions(opts);
-            dd.SetValueWithoutNotify(col.GetDropdownIndex(def));
+            // Same builder the properties panel uses. A bare AddComponent<TMP_Dropdown>
+            // has no template, so the cell rendered fine and threw the moment anyone
+            // clicked it — the list could never open.
+            var dd = UIDropdown.Add(dGo.transform, col.DropdownOptions,
+                                    col.GetDropdownIndex(def), fontSize: 10f);
             dd.onValueChanged.AddListener(i => OnSpellDropdownCellCommit(col, def, i));
-
-            var labelGo  = UIFactory.CreateUI("Label", dGo.transform);
-            UIFactory.StretchFill(labelGo);
-            var labelRt  = labelGo.GetComponent<RectTransform>();
-            labelRt.offsetMin = new Vector2(4f, 2f);
-            labelRt.offsetMax = new Vector2(-4f, -2f);
-            var labelTmp = labelGo.AddComponent<TextMeshProUGUI>();
-            labelTmp.fontSize  = 10f;
-            labelTmp.color     = UITheme.TEXT_PRIMARY;
-            labelTmp.alignment = TextAlignmentOptions.MidlineLeft;
-            labelTmp.enableWordWrapping = false;
-            labelTmp.overflowMode       = TextOverflowModes.Truncate;
-            dd.captionText = labelTmp;
-
-            labelTmp.text = col.DropdownOptions != null && col.DropdownOptions.Count > 0
-                ? col.DropdownOptions[col.GetDropdownIndex(def)]
-                : "";
         }
 
         private void BuildSpellSpriteCell(Transform cellT, SpellTableColumn col, SpellDefinition def)

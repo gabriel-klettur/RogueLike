@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Data;
 
 namespace Valkur.Gameplay.Spells
@@ -141,6 +142,12 @@ namespace Valkur.Gameplay.Spells
         private static readonly string[] _spellTypeNames =
             Enum.GetNames(typeof(SpellType));
 
+        [SelfHealingStatic("Immutable enum-name table built once from Enum.GetNames. " +
+                           "Holds no Unity objects and is never mutated, so it cannot go " +
+                           "stale across a Play session.")]
+        private static readonly string[] _castAnchorNames =
+            Enum.GetNames(typeof(SpellCastAnchor));
+
         private static readonly string[] _elementOptions =
             { "", "Fire", "Ice", "Light", "Dark", "Arcane", "Lightning" };
 
@@ -233,6 +240,18 @@ namespace Valkur.Gameplay.Spells
                 ColBool("interruptible", W_BOOL, SpellColumnCategory.Casting,
                     "When true any movement or hit during channel cancels the cast.",
                     d => d.interruptible, (d, v) => d.interruptible = v),
+
+                ColDropdown("castAnchor", W_TYPE, SpellColumnCategory.Casting,
+                    "Point on the caster's body the spell is born from. Measured as a " +
+                    "fraction of the caster's height, so one setting suits every sprite size.",
+                    _castAnchorNames,
+                    d => (int)d.castAnchor,
+                    (d, i) => d.castAnchor = (SpellCastAnchor)i),
+
+                ColFloat("castForwardOffset", W_FLOAT_BIG, SpellColumnCategory.Casting,
+                    "Offset from the anchor along the cast direction, in world units. " +
+                    "Negative places the effect behind the caster. 0 = system default (0.5).",
+                    d => d.castForwardOffset, (d, v) => d.castForwardOffset = v),
 
                 // ── Damage / Range ────────────────────────────────────────────
                 ColFloat("damage", W_FLOAT, SpellColumnCategory.DamageRange,

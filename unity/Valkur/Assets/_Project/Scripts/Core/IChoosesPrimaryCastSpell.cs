@@ -33,5 +33,12 @@ namespace Valkur.Core
         /// so an editor opened on an empty grid behaves exactly as it did before.
         /// </summary>
         string PrimaryCastSpellKey { get; }
+
+        /// <summary>
+        /// Whether the redirected primary cast should bypass its mana requirement.
+        /// This is evaluated for every cast rather than latched, so closing the editor
+        /// restores normal mana validation and consumption immediately.
+        /// </summary>
+        bool PrimaryCastIgnoresManaCost { get; }
     }
 }

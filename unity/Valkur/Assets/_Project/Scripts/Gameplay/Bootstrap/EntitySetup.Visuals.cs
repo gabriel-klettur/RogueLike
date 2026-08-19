@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Valkur.Core;
 using Valkur.Data;
 using Valkur.Gameplay.Combat;
@@ -57,6 +57,10 @@ namespace Valkur.Gameplay
 
             if (go.GetComponent<StatusEffectManager>() == null)
                 go.AddComponent<StatusEffectManager>();
+
+            // Hit flash + knockback, same as monsters get in ConfigureMonster.
+            if (go.GetComponent<CombatFeedback>() == null)
+                go.AddComponent<CombatFeedback>();
 
             // Combo counter: only on player (tag is set before this call)
             if (go.CompareTag("Player") && go.GetComponent<ComboCounter>() == null)

@@ -36,11 +36,13 @@ namespace Valkur.Tests.EditMode.Game.Editors
         private sealed class ChoosingEditor : GameEditorManager.IGameEditor, IChoosesPrimaryCastSpell
         {
             public string Key;
+            public bool IgnoreManaCost;
             public string EditorName => "Choosing";
             public bool IsActive => true;
             public void Activate() { }
             public void Deactivate() { }
             public string PrimaryCastSpellKey => Key;
+            public bool PrimaryCastIgnoresManaCost => IgnoreManaCost;
         }
 
         // ── Closed, or an editor that does not opt in ────────────────────────────
@@ -95,6 +97,28 @@ namespace Valkur.Tests.EditMode.Game.Editors
 
             ed.Key = null;
             Assert.AreEqual(DEFAULT_KEY, PlayerController.ResolvePrimaryCastKey(ed, DEFAULT_KEY));
+        }
+
+        [Test]
+        public void ManaWaiverExistsOnlyForTheActiveRedirectedSelection()
+        {
+            var spellsEditor = new ChoosingEditor
+            {
+                Key = "fireball",
+                IgnoreManaCost = true
+            };
+
+            Assert.IsTrue(PlayerController.PrimaryCastIgnoresManaCost(spellsEditor),
+                "An active F4 selection should be free to cast while authoring.");
+
+            spellsEditor.Key = null;
+            Assert.IsFalse(PlayerController.PrimaryCastIgnoresManaCost(spellsEditor),
+                "An editor with no selected spell has no cast to exempt.");
+
+            Assert.IsFalse(PlayerController.PrimaryCastIgnoresManaCost(null),
+                "Closing F4 removes the active editor, restoring normal mana rules.");
+            Assert.IsFalse(PlayerController.PrimaryCastIgnoresManaCost(new PlainEditor()),
+                "Other runtime editors must not affect spell mana costs.");
         }
 
         // ── The two editor contracts do not overlap ──────────────────────────────
