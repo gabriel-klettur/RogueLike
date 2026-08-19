@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.World;
@@ -125,9 +125,21 @@ namespace Valkur.Gameplay.VFX
         /// </summary>
         public void ClearAll()
         {
-            foreach (var go in _spawnedEmitters)
+            // Every persisted emitter in the scene, not only the ones this loader spawned.
+            //
+            // ParticlesRuntimeEditor saves by FindObjectsOfType<PersistedParticleInstance>, so
+            // emitters placed with F1 DO reach the file — but the editor never adds them to
+            // _spawnedEmitters, so clearing the tracked list left them alive across a reload
+            // while the file recreated them alongside. Every map switch doubled them, and the
+            // Particles editor saves automatically, so the doubling was written back rather
+            // than vanishing at the next restart.
+            //
+            // Identical to the spawner defect fixed in SpawnerInstanceLoader; the marker
+            // component exists precisely so both sides can agree on the set, and only the save
+            // side was using it. See .github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md.
+            foreach (var identity in FindObjectsOfType<PersistedParticleInstance>(includeInactive: true))
             {
-                if (go != null) Destroy(go);
+                if (identity != null) Valkur.Core.SafeDestroy.Of(identity.gameObject);
             }
             _spawnedEmitters.Clear();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -81,12 +81,19 @@ namespace Valkur.Editor
             // Convert world position back to zone-relative pixels
             ZoneManager zm = UnityEngine.Object.FindObjectOfType<ZoneManager>();
             var (zone, relX, relY) = WorldPosToZoneRel(worldPos, zm);
+            if (string.IsNullOrEmpty(zone))
+            {
+                // WorldPosToZoneRel refuses positions no zone covers. Falling back to the
+                // selected zone here would anchor the instance to an origin it was never
+                // placed against, which is how a rel pair silently becomes meaningless.
+                return;
+            }
 
             var inst = new ParticleInstanceData
             {
                 id               = _nextId++,
                 preset_id        = _selectedPresetId,
-                zone             = zone ?? _selectedZone,
+                zone             = zone,
                 rel_x            = relX,
                 rel_y            = relY,
                 scale_multiplier = _scaleMultiplier
@@ -179,17 +186,19 @@ namespace Valkur.Editor
 
         private Vector2 ComputeSceneWorldPos(ParticleInstanceData inst, ZoneManager zm)
         {
-            const float PPU = 32f;  // matches TILE_PPU in ValkurAssetPostprocessor
-            const float TILE = 1f;
-
             Vector2Int offset = Vector2Int.zero;
             if (zm != null && !string.IsNullOrEmpty(inst.zone))
                 if (zm.TryGetZone(inst.zone, out var def))
                     offset = def.gridOffset;
 
-            float wx = offset.x * TILE + inst.rel_x / PPU;
-            float wy = offset.y * TILE - inst.rel_y / PPU;
-            return new Vector2(wx, wy);
+            // Shared with the writer above and with the runtime serializer. This used to
+            // open-code `wy = offset.y - rel_y / PPU`, measuring from the zone's bottom edge
+            // while the runtime measures from its top row, so the window drew every instance
+            // (zoneHeightTiles - 1) tiles away from where the game put it.
+            int zoneHeight = zm != null ? zm.ZoneHeightTiles : 50;
+            float tileSize = zm != null ? zm.TileSize : 1f;
+            return ParticleInstanceSerializer.RelToWorld(
+                new Vector2Int(inst.rel_x, inst.rel_y), offset, zoneHeight, tileSize);
         }
 
         private (string zone, int relX, int relY) WorldPosToZoneRel(Vector2 worldPos, ZoneManager zm)
@@ -200,17 +209,25 @@ namespace Valkur.Editor
                     new Vector2Int(Mathf.FloorToInt(worldPos.x / zm.TileSize),
                                    Mathf.FloorToInt(worldPos.y / zm.TileSize)), out var def))
             {
-                float offsetX = def.gridOffset.x * zm.TileSize;
-                float offsetY = def.gridOffset.y * zm.TileSize;
-                int relX = Mathf.RoundToInt((worldPos.x - offsetX) * PPU);
-                int relY = Mathf.RoundToInt((offsetY - worldPos.y) * PPU); // Y-flip back to Pygame
-                return (def.zoneName, relX, relY);
+                // Shared with the runtime serializer, which is the other writer of this same
+                // file. This used to be open-coded and measured rel_y from the zone's BOTTOM
+                // edge while the runtime measures it from the TOP row — both self-consistent,
+                // and between them every instance jumped (zoneHeightTiles - 1) tiles depending
+                // on which tool had touched it last.
+                var rel = ParticleInstanceSerializer.WorldToRel(
+                    worldPos, def.gridOffset, zm.ZoneHeightTiles, zm.TileSize);
+                return (def.zoneName, rel.x, rel.y);
             }
 
-            // Fallback: no zone found, use raw coords as rel with the selected zone
-            int rx = Mathf.RoundToInt(worldPos.x * PPU);
-            int ry = Mathf.RoundToInt(-worldPos.y * PPU);
-            return (_selectedZone, rx, ry);
+            // No zone covers this point. Writing raw world coordinates into a zone-relative
+            // field — which is what this did, tagged with whatever zone happened to be
+            // selected — is precisely the defect that made spawners drift by their zone's
+            // origin on every restart. Refuse instead: the caller drops the placement and the
+            // user is told, which is recoverable in a way silently-wrong data is not.
+            Debug.LogWarning($"[ParticlesEditorWindow] No zone covers " +
+                             $"({worldPos.x:F1}, {worldPos.y:F1}); refusing to place an instance " +
+                             "there rather than persisting an unanchored position.");
+            return (null, 0, 0);
         }
 
         private void FocusInstance(ParticleInstanceData inst)

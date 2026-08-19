@@ -63,15 +63,17 @@ namespace Valkur.Gameplay.VFX
 
                 if (zm != null && zm.TryGetZone(zone, out var zd))
                 {
-                    relX = Mathf.RoundToInt((wx - zd.gridOffset.x * tileSize) * PPU);
-                    relY = Mathf.RoundToInt((zd.gridOffset.y * tileSize + (zoneHeightTiles - 1) * tileSize - wy) * PPU);
+                    var rel = WorldToRel(new Vector2(wx, wy), zd.gridOffset, zoneHeightTiles, tileSize);
+                    relX = rel.x;
+                    relY = rel.y;
                 }
                 else
                 {
                     // No ZoneManager or zone not found: treat origin as (0,0), zone as "".
                     zone = "";
-                    relX = Mathf.RoundToInt(wx * PPU);
-                    relY = Mathf.RoundToInt(((zoneHeightTiles - 1) * tileSize - wy) * PPU);
+                    var rel = WorldToRel(new Vector2(wx, wy), Vector2Int.zero, zoneHeightTiles, tileSize);
+                    relX = rel.x;
+                    relY = rel.y;
                 }
 
                 if (!first) sb.Append(",");
@@ -177,6 +179,37 @@ namespace Valkur.Gameplay.VFX
         }
 
         // ── Coordinate helpers ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// World position to the zone-relative pixel pair stored as <c>rel_x</c>/<c>rel_y</c>.
+        ///
+        /// Public because this file is not the only writer of
+        /// <c>particles_instances.json</c>: the editor-window Particles editor writes it too,
+        /// and it open-coded its own version measuring <c>rel_y</c> from the zone's BOTTOM edge
+        /// while this one measures from the TOP row. Both were self-consistent; between them
+        /// every instance moved by <c>zoneHeightTiles - 1</c> tiles depending on which tool had
+        /// touched it last.
+        ///
+        /// Exactly the inverse of <see cref="ComputeWorldPos"/> with <c>flipY: true</c>. Both
+        /// directions live here so the two writers cannot disagree again — the same reason
+        /// <see cref="Valkur.Gameplay.Spawners.SpawnerTileMapping"/> exists.
+        /// </summary>
+        public static Vector2Int WorldToRel(
+            Vector2 world, Vector2Int gridOffset, int zoneHeightTiles, float tileSize)
+        {
+            return new Vector2Int(
+                Mathf.RoundToInt((world.x - gridOffset.x * tileSize) * PPU),
+                Mathf.RoundToInt((gridOffset.y * tileSize + (zoneHeightTiles - 1) * tileSize - world.y) * PPU));
+        }
+
+        /// <summary>Zone-relative pixel pair back to world. Inverse of <see cref="WorldToRel"/>.</summary>
+        public static Vector2 RelToWorld(
+            Vector2Int rel, Vector2Int gridOffset, int zoneHeightTiles, float tileSize)
+        {
+            return new Vector2(
+                gridOffset.x * tileSize + rel.x / PPU,
+                gridOffset.y * tileSize + (zoneHeightTiles - 1) * tileSize - rel.y / PPU);
+        }
 
         private static Vector2 ComputeWorldPos(
             string zone,
