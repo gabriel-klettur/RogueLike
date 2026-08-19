@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: laser_beam_blue
   displayName: Laser Blue
   type: 5
+  audience: 1
   manaCost: 2
   maxInstances: 1
   allowOverlap: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: summon_barbol
   displayName: Summon Barbol
   type: 23
+  audience: 1
   manaCost: 20
   maxInstances: 1
   allowOverlap: 1

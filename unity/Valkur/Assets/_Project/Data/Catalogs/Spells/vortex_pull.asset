@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: vortex_pull
   displayName: Vortex Pull
   type: 21
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1

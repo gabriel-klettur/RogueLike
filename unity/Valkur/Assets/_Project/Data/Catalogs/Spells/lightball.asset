@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: lightball
   displayName: Bola de Luz
   type: 0
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1
@@ -26,9 +27,9 @@ MonoBehaviour:
   prepareDuration: 0.5
   channelDuration: 0.5
   cooldownDuration: 0.5
-  speed: 225
+  speed: 30
   damage: 10
-  range: 450
+  range: 10
   lifetime: 2
   radius: 0
   hitRadius: 0
@@ -41,7 +42,7 @@ MonoBehaviour:
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
-  element: 
+  element: Light
   healPerTick: 0
   force: 0
   forceMode: 
@@ -78,9 +79,22 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 1, g: 0.9, b: 0.35, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: lightball_trail
-  impactPreset: explosion_light_small
+  vfxPreset: lightball_core
+  impactPreset: lightball_impact_flash
+  vfxPresetLayers:
+  - lightball_wake
+  - lightball_motes
+  - lightball_radiance
+  impactPresetLayers:
+  - lightball_impact_shockwave
+  - lightball_impact_burst
+  - lightball_impact_rays
+  - lightball_impact_radiance
+  castPreset: lightball_cast_flash
+  castPresetLayers:
+  - lightball_cast_ring
+  - lightball_cast_motes

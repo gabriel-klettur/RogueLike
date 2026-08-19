@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: sphere_magic_shield
   displayName: Sphere Magic Shield
   type: 18
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 0

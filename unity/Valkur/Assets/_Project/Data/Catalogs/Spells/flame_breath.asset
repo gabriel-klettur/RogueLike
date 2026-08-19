@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: flame_breath
   displayName: Flame Breath
   type: 22
+  audience: 1
   manaCost: 12
   maxInstances: 1
   allowOverlap: 1

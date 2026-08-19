@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: meteor_shower
   displayName: Meteor Shower
   type: 11
+  audience: 1
   manaCost: 18
   maxInstances: 1
   allowOverlap: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: darkball
   displayName: Bola de Oscuridad
   type: 0
+  audience: 1
   manaCost: 10
   maxInstances: 20
   allowOverlap: 1
@@ -26,9 +27,9 @@ MonoBehaviour:
   prepareDuration: 0.2
   channelDuration: 0.5
   cooldownDuration: 1
-  speed: 37.5
+  speed: 25
   damage: 10
-  range: 37.5
+  range: 10
   lifetime: 1
   radius: 0
   hitRadius: 0
@@ -41,7 +42,7 @@ MonoBehaviour:
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
-  element: 
+  element: Dark
   healPerTick: 0
   force: 0
   forceMode: 
@@ -78,9 +79,22 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 0.58, g: 0.12, b: 0.95, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: darkball_trail
-  impactPreset: explosion_dark_small
+  vfxPreset: darkball_core
+  impactPreset: darkball_impact_flash
+  vfxPresetLayers:
+  - darkball_wake
+  - darkball_fragments
+  - darkball_smoke
+  impactPresetLayers:
+  - darkball_impact_shockwave
+  - darkball_impact_burst
+  - darkball_impact_fragments
+  - darkball_impact_smoke
+  castPreset: darkball_cast_flash
+  castPresetLayers:
+  - darkball_cast_ring
+  - darkball_cast_fragments

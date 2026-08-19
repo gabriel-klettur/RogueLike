@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: dash
   displayName: Dash
   type: 3
+  audience: 1
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

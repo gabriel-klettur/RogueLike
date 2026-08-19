@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: fireball
   displayName: Bola de Fuego
   type: 0
+  audience: 5
   manaCost: 1
   maxInstances: 20
   allowOverlap: 1

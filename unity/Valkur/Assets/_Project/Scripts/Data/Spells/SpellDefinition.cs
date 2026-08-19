@@ -37,6 +37,41 @@ namespace Valkur.Data
     }
 
     /// <summary>
+    /// Editorial catalog grouping for the Spells Editor. This is deliberately
+    /// independent from runtime ownership/permission rules: a spell can appear
+    /// in more than one audience tab without changing who can cast it.
+    /// </summary>
+    [Flags]
+    public enum SpellAudience
+    {
+        None   = 0,
+        Player = 1 << 0,
+        NPC    = 1 << 1,
+        Boss   = 1 << 2,
+    }
+
+    /// <summary>
+    /// Point on the caster's body a spell is born from. Resolved as a fraction of
+    /// the caster's half-height above its visual centre, so it scales by itself
+    /// from a rat to a boss instead of baking in one sprite's pixel offsets.
+    ///
+    /// <c>Hands</c> is deliberately the zero value: every SpellDefinition asset
+    /// authored before this field existed deserializes to 0, and Hands is the
+    /// origin all of them were tuned against.
+    /// </summary>
+    public enum SpellCastAnchor
+    {
+        [Tooltip("Hand height. The historical origin for every spell.")]
+        Hands = 0,
+        [Tooltip("Ground level, at the caster's feet.")]
+        Feet,
+        [Tooltip("Visual centre of the sprite — the waist on a humanoid.")]
+        Center,
+        [Tooltip("Top of the sprite.")]
+        Head,
+    }
+
+    /// <summary>
     /// ScriptableObject defining a spell/ability.
     /// Maps to Python's SpellConfig dataclass and spells.json entries.
     /// </summary>
@@ -47,6 +82,8 @@ namespace Valkur.Data
         public string spellKey;
         public string displayName;
         public SpellType type;
+        [Tooltip("Editorial groups shown in the Spells Editor. Does not restrict runtime casting.")]
+        public SpellAudience audience;
 
         [Header("Casting")]
         public float manaCost;
@@ -101,6 +138,17 @@ namespace Valkur.Data
         [Header("Spawn Position")]
         [Tooltip("Spawn effect at mouse position instead of caster")]
         public bool spawnAtMouse;
+
+        [Header("Cast Origin")]
+        [Tooltip("Where on the caster's body this spell is born. Scales with the caster's " +
+                 "size, so the same setting reads correctly on a rat and on a boss.")]
+        public SpellCastAnchor castAnchor = SpellCastAnchor.Hands;
+
+        [Tooltip("Offset from the anchor along the cast direction, in world units. Positive " +
+                 "pushes the effect in front of the caster, negative behind it. Exactly 0 " +
+                 "means 'use the system default' (0.5) — the value every asset authored " +
+                 "before this field existed reads.")]
+        public float castForwardOffset;
 
         [Header("Meteor")]
         [Tooltip("Number of meteor strikes")]

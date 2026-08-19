@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: healing_totem
   displayName: Healing Totem
   type: 24
+  audience: 1
   manaCost: 16
   maxInstances: 1
   allowOverlap: 1

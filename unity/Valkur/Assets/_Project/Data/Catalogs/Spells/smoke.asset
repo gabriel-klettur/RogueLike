@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: smoke
   displayName: Smoke
   type: 6
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1

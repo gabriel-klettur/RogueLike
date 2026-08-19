@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: firework_launch
   displayName: Firework Launch
   type: 16
+  audience: 1
   manaCost: 10
   maxInstances: 3
   allowOverlap: 1

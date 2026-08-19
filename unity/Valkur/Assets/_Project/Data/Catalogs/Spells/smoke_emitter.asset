@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: smoke_emitter
   displayName: Smoke Emitter
   type: 17
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1

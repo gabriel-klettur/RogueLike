@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: iceball
   displayName: Bola de Hielo
   type: 0
+  audience: 5
   manaCost: 10
   maxInstances: 20
   allowOverlap: 1
@@ -26,9 +27,9 @@ MonoBehaviour:
   prepareDuration: 0.2
   channelDuration: 0.5
   cooldownDuration: 1
-  speed: 56.25
+  speed: 25.25
   damage: 10
-  range: 56.25
+  range: 15
   lifetime: 1
   radius: 0
   hitRadius: 0
@@ -41,7 +42,7 @@ MonoBehaviour:
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
-  element: 
+  element: Ice
   healPerTick: 0
   force: 0
   forceMode: 
@@ -78,9 +79,22 @@ MonoBehaviour:
   particleDispersion: 0
   particleLifespan: 0
   particleSpeed: 0
-  particleColor: {r: 1, g: 1, b: 1, a: 1}
+  particleColor: {r: 0.55, g: 0.88, b: 1, a: 1}
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: iceball_trail_strong
-  impactPreset: explosion_ice_large
+  vfxPreset: iceball_core
+  impactPreset: iceball_impact_flash
+  vfxPresetLayers:
+  - iceball_wake
+  - iceball_shards
+  - iceball_mist
+  impactPresetLayers:
+  - iceball_impact_shockwave
+  - iceball_impact_burst
+  - iceball_impact_shards
+  - iceball_impact_mist
+  castPreset: iceball_cast_flash
+  castPresetLayers:
+  - iceball_cast_ring
+  - iceball_cast_shards

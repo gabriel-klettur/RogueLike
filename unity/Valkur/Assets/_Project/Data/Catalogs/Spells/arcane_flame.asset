@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: arcane_flame
   displayName: Arcane Flame
   type: 15
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 0

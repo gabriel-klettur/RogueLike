@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: boomerang
   displayName: Boomerang
   type: 10
+  audience: 1
   manaCost: 8
   maxInstances: 1
   allowOverlap: 1

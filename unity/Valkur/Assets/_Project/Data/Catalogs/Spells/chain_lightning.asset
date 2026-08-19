@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: chain_lightning
   displayName: Chain Lightning
   type: 13
+  audience: 1
   manaCost: 14
   maxInstances: 1
   allowOverlap: 1

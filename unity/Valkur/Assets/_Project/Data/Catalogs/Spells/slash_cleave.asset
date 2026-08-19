@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: slash_cleave
   displayName: Slash (Cleave)
   type: 1
+  audience: 1
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

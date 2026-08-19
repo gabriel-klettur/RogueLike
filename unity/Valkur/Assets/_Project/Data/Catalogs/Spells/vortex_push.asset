@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: vortex_push
   displayName: Vortex Push
   type: 21
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1

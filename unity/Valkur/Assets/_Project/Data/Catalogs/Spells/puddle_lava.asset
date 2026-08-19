@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: puddle_lava
   displayName: Lava Puddle
   type: 19
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 1

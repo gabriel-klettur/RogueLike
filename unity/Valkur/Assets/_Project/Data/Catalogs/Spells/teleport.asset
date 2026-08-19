@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: teleport
   displayName: Teleport
   type: 4
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 0

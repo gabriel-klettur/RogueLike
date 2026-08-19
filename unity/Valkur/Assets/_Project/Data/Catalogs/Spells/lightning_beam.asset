@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: lightning_beam
   displayName: Lightning Beam
   type: 5
+  audience: 1
   manaCost: 2
   maxInstances: 1
   allowOverlap: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: hostile_slash_red
   displayName: Hostile Slash (Red)
   type: 1
+  audience: 2
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

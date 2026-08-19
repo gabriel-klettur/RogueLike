@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: mine_basic
   displayName: Basic Mine
   type: 20
+  audience: 1
   manaCost: 6
   maxInstances: 3
   allowOverlap: 1

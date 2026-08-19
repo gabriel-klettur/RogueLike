@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: slash_stab
   displayName: Slash (Stab)
   type: 1
+  audience: 1
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

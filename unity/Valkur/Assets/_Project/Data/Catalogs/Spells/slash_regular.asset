@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9d8be0c389cb214c8a4442bd8ce5ffa, type: 3}
-  m_Name: hostile_slash
-  m_EditorClassIdentifier: 
-  spellKey: hostile_slash
-  displayName: Hostile Slash
+  m_Name: slash_regular
+  m_EditorClassIdentifier:
+  spellKey: slash_regular
+  displayName: Slash Regular
   type: 1
-  audience: 2
+  audience: 1
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0
@@ -24,17 +24,17 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 2
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 0.08
   channelDuration: 0
-  cooldownDuration: 0.7
+  cooldownDuration: 0.48
   speed: 0
-  damage: 18
+  damage: 20
   range: 0
-  lifetime: 0.26666668
-  radius: 2.25
-  hitRadius: 4
-  arcRangeDegrees: 140
-  hitArcDegrees: 140
+  lifetime: 0.32
+  radius: 2.6
+  hitRadius: 2.6
+  arcRangeDegrees: 100
+  hitArcDegrees: 100
   length: 0
   distance: 0
   knockback: 0
@@ -42,10 +42,10 @@ MonoBehaviour:
   duration: 0
   damagePerTick: 0
   tickPeriod: 0
-  element: 
+  element: physical
   healPerTick: 0
   force: 0
-  forceMode: 
+  forceMode:
   followCaster: 0
   spawnAtMouse: 0
   meteorCount: 0
@@ -62,28 +62,30 @@ MonoBehaviour:
   wallHP: 0
   blockProjectiles: 0
   blockUnits: 0
-  summonTemplate: 
+  summonTemplate:
   summonCount: 0
   summonDuration: 0
-  totemKind: 
-  coneArc: 140
-  coneLength: 0
+  totemKind:
+  coneArc: 100
+  coneLength: 2.6
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
-  offset: 1
+  offset: 0
   iconSprite: {fileID: 21300000, guid: 7f083683779a4ee478afc01007a3f26e, type: 3}
-  telegraphColor: {r: 0.47058824, g: 0.9019608, b: 0.627451, a: 0.3137255}
+  telegraphColor: {r: 0.55, g: 0.84, b: 1, a: 0.3}
   telegraphAlpha: 80
-  particleCount: 28
+  particleCount: 0
   particleDispersion: 0
   particleLifespan: 0
-  particleSpeed: 6
-  particleColor: {r: 0, g: 1, b: 0.39215687, a: 1}
+  particleSpeed: 0
+  particleColor: {r: 0.62, g: 0.86, b: 1, a: 1}
   particleColors: []
-  sizeRange:
-  - 4
-  - 8
+  sizeRange: []
   emitRate: 0
-  vfxPreset: slash_emitter
-  impactPreset: 
+  vfxPreset:
+  impactPreset:
+  vfxPresetLayers: []
+  impactPresetLayers: []
+  castPreset:
+  castPresetLayers: []

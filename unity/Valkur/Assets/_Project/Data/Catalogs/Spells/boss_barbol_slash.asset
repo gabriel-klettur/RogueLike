@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: boss_barbol_slash
   displayName: Barbol Boss Slash
   type: 1
+  audience: 4
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

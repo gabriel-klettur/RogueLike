@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: root_whip
   displayName: Root Whip
   type: 19
+  audience: 1
   manaCost: 0
   maxInstances: 0
   allowOverlap: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: hostile_dash
   displayName: Hostile Dash
   type: 3
+  audience: 2
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

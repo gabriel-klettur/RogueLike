@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: wall_ice
   displayName: Ice Wall
   type: 7
+  audience: 1
   manaCost: 0
   maxInstances: 1
   allowOverlap: 0

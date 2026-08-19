@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: healing_aura
   displayName: "Aura de Curaci\xF3n"
   type: 14
+  audience: 1
   manaCost: 10
   maxInstances: 1
   allowOverlap: 0

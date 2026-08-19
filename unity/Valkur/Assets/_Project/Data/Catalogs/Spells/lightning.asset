@@ -15,6 +15,7 @@ MonoBehaviour:
   spellKey: lightning
   displayName: Lightning
   type: 12
+  audience: 1
   manaCost: 10
   maxInstances: 0
   allowOverlap: 1
