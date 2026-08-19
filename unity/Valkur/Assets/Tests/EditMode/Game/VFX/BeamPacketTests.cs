@@ -257,7 +257,11 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 "bug for a beam that no longer reads as incandescent — the exact regression the " +
                 "additive rework was done to fix.");
 
-            float peakTex = BeamTextureLibrary.EvaluateAlpha(BeamTextureKind.Packet, 0f, 0.82f, SOFTNESS);
+            // The true maximum, not the head's centre — the tail is one-sided and worth
+            // nothing exactly at the head, so sampling there understates the charge by a third.
+            float peakTex = 0f;
+            for (int i = 0; i <= SAMPLES; i++)
+                peakTex = Mathf.Max(peakTex, Centre(i / (float)SAMPLES));
             float contrast = peakTex * packetAlpha;
 
             Assert.Greater(contrast, 0.25f,

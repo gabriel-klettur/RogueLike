@@ -15,6 +15,12 @@ namespace Valkur.Gameplay.Spells
                 ? ctx.Spell.particleColor
                 : new Color(0f, 0.9f, 1f, 1f);
 
+            // Resolved once, before anything is built, so every layer of this beam — the three
+            // lines, the muzzle, the trail and the impact — composites under the same equation.
+            // A beam too dark to add light to the frame is drawn subtractively instead; see
+            // BeamMaterialCache.ShouldRenderAdditive.
+            _beamAdditive = BeamMaterialCache.ShouldRenderAdditive(_beamColor);
+
             bool lightningMode = IsLightningBeam(ctx.Spell);
 
             if (!lightningMode)
@@ -22,19 +28,22 @@ namespace Valkur.Gameplay.Spells
                 // Outer glow line (wider, soft alpha).
                 _glowLine = BuildLine("LaserBeam_Glow", width * GLOW_WIDTH_MULT,
                     new Color(_beamColor.r, _beamColor.g, _beamColor.b, GLOW_ALPHA),
-                    sortingOrder: 4, BeamTextureKind.Glow, GLOW_SOFTNESS);
+                    ORDER_GLOW, BeamTextureKind.Glow, GLOW_SOFTNESS);
 
                 // Travelling charges. Each is its own short line whose two endpoints slide
                 // from the caster to the impact point and restart — the motion is in the
                 // geometry, not in a texture offset, because URP's particle shaders sample
                 // UV0 raw and ignore the ST transform completely.
-                Color packetCol = Color.Lerp(_beamColor, Color.white, 0.55f);
+                ResolvePacketStyle(_beamAdditive, out float coreWhiteLerp,
+                                   out float packetWhiteLerp, out int packetOrder);
+
+                Color packetCol = Color.Lerp(_beamColor, Color.white, packetWhiteLerp);
                 packetCol.a = PACKET_ALPHA;
                 _packetLines = new LineRenderer[PACKET_COUNT];
                 for (int i = 0; i < PACKET_COUNT; i++)
                 {
                     _packetLines[i] = BuildLine($"LaserBeam_Packet{i}", width * PACKET_WIDTH_MULT,
-                        packetCol, sortingOrder: 5, BeamTextureKind.Packet, PACKET_SOFTNESS);
+                        packetCol, packetOrder, BeamTextureKind.Packet, PACKET_SOFTNESS);
                     // Stretch, not Tile: U must run 0..1 across the charge exactly once so its
                     // head, tail and end-fades land where the texture puts them. Tile would
                     // repeat the shape every width-and-a-bit of world space, which is what
@@ -44,10 +53,10 @@ namespace Valkur.Gameplay.Spells
                 }
 
                 // Inner bright core line (narrower, slightly washed-out toward white).
-                Color coreCol = Color.Lerp(_beamColor, Color.white, 0.35f);
+                Color coreCol = Color.Lerp(_beamColor, Color.white, coreWhiteLerp);
                 coreCol.a = CORE_ALPHA;
                 _coreLine = BuildLine("LaserBeam_Core", width * CORE_WIDTH_MULT,
-                    coreCol, sortingOrder: 6, BeamTextureKind.Core, CORE_SOFTNESS);
+                    coreCol, ORDER_CORE, BeamTextureKind.Core, CORE_SOFTNESS);
 
                 // Remembered because RunBeam modulates width every frame and must not
                 // compound its own output.
@@ -62,26 +71,26 @@ namespace Valkur.Gameplay.Spells
                 // visual.
                 _lightningGo = new GameObject("LaserBeam_Lightning");
                 _lightningGo.transform.SetParent(transform, false);
-                _lightningPS = BuildLightningEmitter(_lightningGo, _beamColor, width);
+                _lightningPS = BuildLightningEmitter(_lightningGo, _beamColor, width, _beamAdditive);
             }
 
             // Impact burst at the laser tip — continuous particles in laser color.
             _impactGo = new GameObject("LaserBeam_Impact");
             _impactGo.transform.SetParent(transform, false);
-            _impactBurst = BuildImpactBurst(_impactGo, _beamColor, width);
+            _impactBurst = BuildImpactBurst(_impactGo, _beamColor, width, _beamAdditive);
 
             // Trail particles along the beam path — emit perpendicular drift to
             // sell the energy travelling through the line.
             _trailGo = new GameObject("LaserBeam_Trail");
             _trailGo.transform.SetParent(transform, false);
-            _trailPS = BuildTrailParticles(_trailGo, _beamColor, width);
+            _trailPS = BuildTrailParticles(_trailGo, _beamColor, width, _beamAdditive);
 
             // Muzzle emitter at the beam origin — looks like the fireball spawn
             // flash but persistent. Vibrates each frame via small position jitter
             // applied in RunBeam, plus a noise module on the ParticleSystem itself.
             _muzzleGo = new GameObject("LaserBeam_Muzzle");
             _muzzleGo.transform.SetParent(transform, false);
-            _muzzlePS = BuildMuzzleEmitter(_muzzleGo, _beamColor, width);
+            _muzzlePS = BuildMuzzleEmitter(_muzzleGo, _beamColor, width, _beamAdditive);
             _muzzleBeamWidth = width;
         }
 
@@ -91,7 +100,8 @@ namespace Valkur.Gameplay.Spells
         /// duration of the channel — caller is expected to call Stop() on
         /// <c>_fading = true</c> so existing particles fade out naturally.
         /// </summary>
-        private static ParticleSystem BuildMuzzleEmitter(GameObject host, Color color, float beamWidth)
+        private static ParticleSystem BuildMuzzleEmitter(GameObject host, Color color, float beamWidth,
+                                                       bool additive)
         {
             var ps = host.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -154,7 +164,7 @@ namespace Valkur.Gameplay.Spells
                 // per-emitter alpha material with no texture and no teardown: the muzzle
                 // could not glow, drew hard-edged squares, and leaked one Material per beam.
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
-                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.85f), additive: true);
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.85f), additive: additive);
             }
 
             ps.Play();
@@ -165,7 +175,8 @@ namespace Valkur.Gameplay.Spells
         /// Builds an Edge-shape ParticleSystem that emits along the beam line.
         /// Each frame the controller orients/scales it to span origin → end.
         /// </summary>
-        private static ParticleSystem BuildTrailParticles(GameObject host, Color color, float beamWidth)
+        private static ParticleSystem BuildTrailParticles(GameObject host, Color color, float beamWidth,
+                                                       bool additive)
         {
             var ps = host.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -213,7 +224,7 @@ namespace Valkur.Gameplay.Spells
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 7;
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
-                    ParticleTextureLibrary.Get(ParticleTextureShape.Spark, 0.4f), additive: true);
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Spark, 0.4f), additive: additive);
             }
 
             ps.Play();
@@ -234,7 +245,8 @@ namespace Valkur.Gameplay.Spells
         /// controller positions / orients the host so the edge spans
         /// visualOrigin → visibleEnd.
         /// </summary>
-        private static ParticleSystem BuildLightningEmitter(GameObject host, Color color, float beamWidth)
+        private static ParticleSystem BuildLightningEmitter(GameObject host, Color color, float beamWidth,
+                                                       bool additive)
         {
             var ps = host.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -291,7 +303,7 @@ namespace Valkur.Gameplay.Spells
                 if (boltSprite != null)
                 {
                     renderer.sharedMaterial = ParticleMaterialCache.Get(
-                        boltSprite.texture, additive: true);
+                        boltSprite.texture, additive: additive);
                     renderer.renderMode = ParticleSystemRenderMode.Billboard;
                 }
             }
@@ -328,7 +340,7 @@ namespace Valkur.Gameplay.Spells
             // Material per beam per line: alpha meant the beam occluded the world instead of
             // adding light to it, and with no texture the LineRenderer drew a hard-edged
             // rectangle with no falloff across its width.
-            lr.sharedMaterial = BeamMaterialCache.Get(BeamTextureLibrary.Get(kind, softness));
+            lr.sharedMaterial = BeamMaterialCache.Get(BeamTextureLibrary.Get(kind, softness), _beamAdditive);
 
             // Render in the VFX sorting layer so the beam sits ON TOP of the world
             // (tiles, walls, entities). The visual origin is pushed forward by
@@ -343,7 +355,8 @@ namespace Valkur.Gameplay.Spells
         /// Builds a small ParticleSystem that simulates the explosion happening at
         /// the laser's impact point. Particles spray outward in the laser's color.
         /// </summary>
-        private static ParticleSystem BuildImpactBurst(GameObject host, Color color, float beamWidth)
+        private static ParticleSystem BuildImpactBurst(GameObject host, Color color, float beamWidth,
+                                                       bool additive)
         {
             var ps = host.AddComponent<ParticleSystem>();
             // A freshly-added ParticleSystem auto-plays (playOnAwake defaults to true).
@@ -406,7 +419,7 @@ namespace Valkur.Gameplay.Spells
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 8;
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
-                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.55f), additive: true);
+                    ParticleTextureLibrary.Get(ParticleTextureShape.Glow, 0.55f), additive: additive);
             }
 
             ps.Play();

@@ -60,6 +60,45 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>Charge width, as a multiple of beam width. Wider than the core so it bulges.</summary>
         private const float PACKET_WIDTH_MULT = 1.35f;
+
+        // How far each layer is washed toward white, and it depends on how the beam composites.
+        //
+        // An additive beam gets its brightness by ADDING light, so lifting the core and the
+        // charge toward white is what makes them read as hot. A dark beam composites with
+        // `over` instead and can only darken, so the same lift lands the core on mid grey —
+        // which against a mid-grey stone floor is very nearly invisible. It has to separate in
+        // the other direction: the body stays black and only the charge lifts, so the beam
+        // reads darker than the ground while the charge reads lighter.
+        private const float CORE_WHITE_LERP_ADDITIVE = 0.35f;
+        // Zero, not merely low. The core of a void beam IS the void; any lift at all makes
+        // the beam brighter than a dark cave floor, and a black beam that brightens the scene
+        // has failed at the one thing it is for.
+        private const float CORE_WHITE_LERP_DARK = 0f;
+        private const float PACKET_WHITE_LERP_ADDITIVE = 0.55f;
+        private const float PACKET_WHITE_LERP_DARK = 0.78f;
+
+        /// <summary>Draw order for glow, charge and core.</summary>
+        public const int ORDER_GLOW = 4;
+        public const int ORDER_PACKET_ADDITIVE = 5;
+        public const int ORDER_CORE = 6;
+
+        /// <summary>
+        /// A dark beam draws its charge ABOVE the core rather than inside it.
+        ///
+        /// Additive blending is commutative, so layer order is free. `over` is not: at order 5
+        /// the core paints across the charge every frame and drags it back down to the body's
+        /// tone, which erases the only thing separating them.
+        /// </summary>
+        public const int ORDER_PACKET_DARK = 7;
+
+        /// <summary>Layer wash and draw order for the charge, given how the beam composites.</summary>
+        public static void ResolvePacketStyle(bool additive, out float coreWhiteLerp,
+                                              out float packetWhiteLerp, out int packetOrder)
+        {
+            coreWhiteLerp = additive ? CORE_WHITE_LERP_ADDITIVE : CORE_WHITE_LERP_DARK;
+            packetWhiteLerp = additive ? PACKET_WHITE_LERP_ADDITIVE : PACKET_WHITE_LERP_DARK;
+            packetOrder = additive ? ORDER_PACKET_ADDITIVE : ORDER_PACKET_DARK;
+        }
         private const float PACKET_ALPHA = 0.60f;
         private const float PACKET_SOFTNESS = 0.5f;
 
@@ -111,6 +150,9 @@ namespace Valkur.Gameplay.Spells
         private GameObject _muzzleGo;
         private float _muzzleBeamWidth;   // cached for per-frame position jitter
         private Color _beamColor;
+        // False for a beam too dark to add light to the frame. Additive blending can only
+        // brighten, so a black beam drawn additively is invisible rather than dark.
+        private bool _beamAdditive = true;
 
         // Lightning beam mode — when the spell's vfxPreset is "lightning_emitter"
         // we skip the LineRenderer beam entirely and instead emit zig-zag bolt
