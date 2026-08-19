@@ -108,6 +108,7 @@ namespace Valkur.Gameplay.Spawners
             si.Initialize(template, instanceId, zone, spawner);
 
             SelectInstance(si);
+            MarkInstancesDirty();
             SetStatus($"Placed '{instanceId}' at ({worldPos.x:F1}, {worldPos.y:F1}).");
         }
 
@@ -239,6 +240,11 @@ namespace Valkur.Gameplay.Spawners
                 return;
             }
 
+            // Marked at the END of the drag, not while it is in progress: a spawner dragged
+            // across the map moves every frame, and persisting each intermediate position
+            // would rewrite the whole file dozens of times for one gesture.
+            MarkInstancesDirty();
+
             string id    = instance.InstanceId;
             string label = $"Move {id} ({to.x:F1},{to.y:F1})";
             _undo.Record(new UndoStack.LambdaCommand(label,
@@ -278,9 +284,54 @@ namespace Valkur.Gameplay.Spawners
 
         // ── Persistence (Save) ──────────────────────────────────────────────────
 
-        public void SaveInstancesToJson()
+        /// <summary>
+        /// Writes every placed spawner to the active map slot's instances file.
+        ///
+        /// Returns false and writes nothing when the guard below trips, so callers that save
+        /// automatically — closing the editor, Ctrl+S — cannot turn a bad session into data
+        /// loss on disk.
+        /// </summary>
+        public bool SaveInstancesToJson()
         {
+            // EditMode tests construct this manager and drive Activate/Deactivate. Now that
+            // closing saves, an unguarded write would let the test runner replace the real
+            // StreamingAssets file with whatever a fixture happened to have in its scene.
+            // Same class of pollution as the run twin-save incident, and the same guard.
+            if (Application.isEditor && !Application.isPlaying)
+            {
+                Debug.LogWarning("[SpawnerEditor] Save refused — Play Mode is not active. " +
+                                 "EditMode test pollution prevention; production is unaffected.");
+                return false;
+            }
+
+            _autosavePending = false;
+
             var all = FindObjectsOfType<SpawnerInstance>();
+
+            string path = Path.Combine(
+                Valkur.Core.MapEditorActiveSlot.DirForActiveSlot(STREAMING_SUBFOLDER),
+                INSTANCES_FILENAME);
+
+            // Refuse to replace a populated file with an empty one.
+            //
+            // Saving used to happen only when the user pressed the toolbar button, so an empty
+            // scene could only ever be written deliberately. Now that closing the editor saves,
+            // a session where the loader failed — no catalog, no ZoneManager, a parse error,
+            // any of the paths in SpawnerInstanceLoader that log and return — would come up
+            // with zero instances in the scene and quietly erase every spawner ever authored.
+            //
+            // Same shape as the Buildings save-collapse incident, and cheap to make impossible:
+            // an empty save over a non-empty file is never what anyone wanted, and the manual
+            // route out is to delete the file.
+            if (all.Length == 0 && FileHasEntries(path))
+            {
+                SetStatus("ABORTING save — 0 spawners in scene but the file is not empty.");
+                Debug.LogWarning($"[SpawnerEditor] ABORTING save — 0 instances in scene but " +
+                                 $"'{path}' still holds spawners. Refusing to erase it. If you " +
+                                 "really meant to clear the map, delete the file by hand.");
+                return false;
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine("[");
             for (int i = 0; i < all.Length; i++)
@@ -301,17 +352,78 @@ namespace Valkur.Gameplay.Spawners
             }
             sb.AppendLine("]");
 
-            // Map-slot aware: the default slot keeps the legacy
-            // StreamingAssets/Spawners/ location, custom maps authored from the
-            // F11 Map Editor write under persistentDataPath/Maps/<slot>/Spawners/.
-            // Placing a spawner on one map must never overwrite another's file.
-            string path = Path.Combine(
-                Valkur.Core.MapEditorActiveSlot.DirForActiveSlot(STREAMING_SUBFOLDER),
-                INSTANCES_FILENAME);
+            // The path is map-slot aware: the default slot keeps the legacy
+            // StreamingAssets/Spawners/ location, custom maps authored from the F11 Map Editor
+            // write under persistentDataPath/Maps/<slot>/Spawners/. Placing a spawner on one
+            // map must never overwrite another's file.
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, sb.ToString());
             SetStatus($"Saved {all.Length} instance(s).");
             Debug.Log($"[SpawnerEditor] Saved {all.Length} instance(s) → {path}");
+            return true;
+        }
+
+        // ── Autosave ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Seconds of quiet after the last edit before the map is written.
+        ///
+        /// Not zero, for two reasons. Placing a run of spawners fires one edit per click, and
+        /// a debounce collapses that burst into a single write instead of rewriting the whole
+        /// file per spawner. More importantly <see cref="DeleteSelectedInstance"/> goes through
+        /// SafeDestroy, which in Play Mode defers to <c>Destroy</c> — the object is still alive
+        /// until the end of the frame, so a save that ran immediately would find the deleted
+        /// spawner with FindObjectsOfType and write it straight back.
+        /// </summary>
+        private const float AUTOSAVE_DEBOUNCE_SECONDS = 0.75f;
+
+        private bool _autosavePending;
+        private float _autosaveDueAt;
+
+        /// <summary>
+        /// Records that the map changed. Every mutation funnels through here rather than
+        /// calling save directly, so a new edit operation cannot forget to persist — which is
+        /// exactly how this editor ended up with no automatic save at all.
+        /// </summary>
+        internal void MarkInstancesDirty()
+        {
+            _autosavePending = true;
+            _autosaveDueAt = Time.unscaledTime + AUTOSAVE_DEBOUNCE_SECONDS;
+        }
+
+        /// <summary>Writes the map once the debounce has elapsed. Called every active frame.</summary>
+        private void TickAutosave()
+        {
+            if (!_autosavePending) return;
+            if (Time.unscaledTime < _autosaveDueAt) return;
+            SaveInstancesToJson();
+        }
+
+        /// <summary>Writes immediately if anything is pending. Used when the editor closes.</summary>
+        internal void FlushAutosave()
+        {
+            if (_autosavePending) SaveInstancesToJson();
+        }
+
+        /// <summary>
+        /// Whether the instances file on disk currently holds at least one spawner.
+        ///
+        /// Deliberately crude — it looks for an object brace rather than parsing — because it
+        /// only ever gates a refusal. A malformed file reads as "has entries" and blocks the
+        /// save, which is the safe direction: the user still has whatever was there.
+        /// </summary>
+        private static bool FileHasEntries(string path)
+        {
+            try
+            {
+                return File.Exists(path) && File.ReadAllText(path).Contains("{");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[SpawnerEditor] Could not read '{path}' to check it before " +
+                                 $"saving ({e.Message}). Treating it as populated.");
+                return true;
+            }
         }
     }
 }

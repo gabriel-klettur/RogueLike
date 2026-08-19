@@ -84,6 +84,11 @@ namespace Valkur.Gameplay.Spawners
 
         public void Deactivate()
         {
+            // Flush anything the debounce has not written yet. Placing a spawner and closing
+            // within the debounce window is the obvious way to lose an edit, and it is exactly
+            // what someone does when they place one last spawner and hit F3.
+            if (_active) FlushAutosave();
+
             _active = false;
             if (_root != null) _root.SetActive(false);
             _selectedTemplate = null;
@@ -141,14 +146,32 @@ namespace Valkur.Gameplay.Spawners
             // even while interacting with the picker / properties panels.
             _cameraPan.Tick();
 
+            // Ctrl+S, matching Buildings (F10), Tile (F6) and Lighting (Ctrl+F3). This editor
+            // was the only one without it, and without any automatic save either — its single
+            // save trigger was the toolbar button, so a session of placing spawners was lost on
+            // restart unless the user happened to click it. That read as broken persistence
+            // when the persistence itself was fine.
+            if (Valkur.Core.Input.KeyboardInputManager.IsCtrlHeld() &&
+                Valkur.Core.Input.KeyboardInputManager.WasKeyPressedThisFrame(
+                    UnityEngine.InputSystem.Key.S, KeyCode.S))
+                SaveInstancesToJson();
+
             if (_escapeAction != null && _escapeAction.WasPerformedThisFrame())
                 CancelCurrentMode();
 
+            TickAutosave();
             UpdatePickerDrag();
             UpdateOutlineState();
             HandleMapInteraction();
             UpdateStatus();
         }
+
+        /// <summary>
+        /// Last chance to persist. Stopping Play Mode with the editor still open is the other
+        /// obvious way to lose an edit inside the debounce window, and OnApplicationQuit still
+        /// runs while Application.isPlaying is true, so the write guard lets it through.
+        /// </summary>
+        private void OnApplicationQuit() => FlushAutosave();
 
         protected override void OnDestroy()
         {
@@ -176,9 +199,9 @@ namespace Valkur.Gameplay.Spawners
             _ui = SpawnerEditorUIBuilder.BuildAll(
                 _root.transform,
                 onDropdownToggle: ToggleDropdown,
-                onUndo:           () => { _undo.Undo(); SetStatus("Undo"); },
-                onRedo:           () => { _undo.Redo(); SetStatus("Redo"); },
-                onSave:           SaveInstancesToJson,
+                onUndo:           () => { _undo.Undo(); MarkInstancesDirty(); SetStatus("Undo"); },
+                onRedo:           () => { _undo.Redo(); MarkInstancesDirty(); SetStatus("Redo"); },
+                onSave:           () => SaveInstancesToJson(),
                 onReload:         () => { RefreshPicker(); SetStatus("Reload: catalog refreshed"); },
                 onSearchChanged:  v => { _searchFilter = v ?? string.Empty; RefreshPicker(); },
                 onDeleteSelected: DeleteSelectedInstance,

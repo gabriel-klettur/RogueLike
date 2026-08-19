@@ -202,6 +202,7 @@ namespace Valkur.Gameplay.Spawners
             _selectedInstance = null;
             // Cancel any in-progress drag tied to the now-dead instance.
             _dragging = false;
+            MarkInstancesDirty();
             SetStatus($"Deleted '{id}'.");
             RefreshPropertiesPanel();
         }
