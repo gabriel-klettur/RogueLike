@@ -85,7 +85,9 @@ namespace Valkur.Gameplay.Spells
                     var health = hit.GetComponent<Health>();
                     if (health != null && !health.IsDead)
                     {
-                        health.TakeDamage(Mathf.RoundToInt(ctx.Spell.collisionDamage));
+                        int dealt = Mathf.RoundToInt(ctx.Spell.collisionDamage);
+                        health.TakeDamage(dealt);
+                        Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
                         if (ctx.Spell.knockback > 0)
                         {
                             var hitRb = hit.GetComponent<Rigidbody2D>();

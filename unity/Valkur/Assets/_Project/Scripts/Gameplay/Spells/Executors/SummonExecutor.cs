@@ -17,7 +17,7 @@ namespace Valkur.Gameplay.Spells
             float duration = ctx.Spell.summonDuration > 0 ? ctx.Spell.summonDuration : 20f;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 
-            Vector2 spawnPos = (Vector2)ctx.Caster.position + ctx.Direction * dist;
+            Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
 
             for (int i = 0; i < count; i++)
             {

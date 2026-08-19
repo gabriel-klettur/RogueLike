@@ -36,7 +36,7 @@ namespace Valkur.Gameplay.Spells
                 Color col = ctx.Spell.particleColor != Color.clear
                     ? ctx.Spell.particleColor
                     : new Color(0.3f, 0.5f, 1f, 0.5f);
-                VFXManager.Instance.SpawnAreaIndicator(ctx.Caster.position, col, radius * 0.5f, 0.4f);
+                VFXManager.Instance.SpawnAreaIndicator(ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell), col, radius * 0.5f, 0.4f);
             }
 
         }

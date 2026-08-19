@@ -8,19 +8,22 @@ using UnityEngine;
 namespace Valkur.Tests.EditMode.Game.Combat
 {
     /// <summary>
-    /// Anything a caster fires must leave from the same place: hand height.
+    /// Anything a caster places in the world resolves its origin through one helper:
+    /// the spell's own <c>castAnchor</c> on the caster's body, plus its own forward
+    /// clearance.
     ///
     /// <c>ProjectileExecutor.ResolveCasterCenter</c> returns the geometric middle of the
     /// caster's sprite, which on a humanoid with a feet pivot is the waist.
     /// <c>ResolveCastOrigin</c> lifts that to where the hands are. Both are legitimate —
     /// melee arcs, knockback directions and AOE origins genuinely want the body centre —
     /// but a spell that *emits* something from the caster and uses the centre visibly comes
-    /// out of the character's stomach.
+    /// out of the character's stomach. <c>ResolveCastStart</c> adds Fireball's collider
+    /// clearance and is the canonical origin for every such spell.
     ///
-    /// The fireball had that bug and it was reported from a screenshot. The laser had the
-    /// identical bug in a different file, and nothing connected the two. This is that
-    /// connection: a source scan in the same shape as ZoomContractTests, so the next spell
-    /// to reach for the wrong helper fails here instead of shipping.
+    /// This source contract keeps every executor and controller connected to that single
+    /// origin, so none of them can silently reintroduce its own offset — and, since the
+    /// anchor became per-spell, that each of them actually passes the spell through
+    /// instead of quietly taking the system default.
     /// </summary>
     [TestFixture]
     public class CastOriginContractTests
@@ -31,12 +34,43 @@ namespace Valkur.Tests.EditMode.Game.Combat
         /// </summary>
         private static readonly string[] BodyCentreCallsites =
         {
-            // Defines both helpers; ResolveCastOrigin is built on top of ResolveCasterCenter.
+            // Defines the body, hand and shared Fireball-start helpers.
             "Gameplay/Spells/Executors/ProjectileExecutor.cs",
+        };
 
-            // A melee arc sweeps around the body, and knockback is measured from its middle.
-            // Firing this from the hands would bias every swing upward.
+        /// <summary>
+        /// Every implementation that places something relative to its caster. Ground-targeted
+        /// zones, auras and summons are on the list too: their anchor is authored per spell
+        /// now, so they resolve through the same helper and their own distance term rides on
+        /// top of it.
+        ///
+        /// Deliberately absent: DashExecutor and TeleportExecutor. Those move the caster's
+        /// body rather than spawning an effect, so anchoring their maths to hand height would
+        /// teleport the character upward.
+        /// </summary>
+        private static readonly string[] CasterEmissionCallsites =
+        {
+            "Gameplay/Spells/Controllers/ConeBreathController.cs",
+            "Gameplay/Spells/Controllers/LaserBeamController.cs",
+            "Gameplay/Spells/Executors/ArcaneFlameExecutor.cs",
+            "Gameplay/Spells/Executors/AreaExecutor.cs",
+            "Gameplay/Spells/Executors/AuraExecutor.cs",
+            "Gameplay/Spells/Executors/BoomerangExecutor.cs",
+            "Gameplay/Spells/Executors/ConeBreathExecutor.cs",
+            "Gameplay/Spells/Executors/FireworkLaunchExecutor.cs",
+            "Gameplay/Spells/Executors/LightningExecutor.cs",
+            "Gameplay/Spells/Executors/MeteorExecutor.cs",
+            "Gameplay/Spells/Executors/MineExecutor.cs",
+            "Gameplay/Spells/Executors/ProjectileExecutor.cs",
+            "Gameplay/Spells/Executors/PuddleExecutor.cs",
+            "Gameplay/Spells/Executors/ShieldExecutor.cs",
             "Gameplay/Spells/Executors/SlashExecutor.cs",
+            "Gameplay/Spells/Executors/SmokeEmitterExecutor.cs",
+            "Gameplay/Spells/Executors/SmokeExecutor.cs",
+            "Gameplay/Spells/Executors/SummonExecutor.cs",
+            "Gameplay/Spells/Executors/TotemExecutor.cs",
+            "Gameplay/Spells/Executors/VortexFieldExecutor.cs",
+            "Gameplay/Spells/Executors/WallExecutor.cs",
         };
 
         private static readonly Regex BodyCentreCall = new Regex(
@@ -91,25 +125,93 @@ namespace Valkur.Tests.EditMode.Game.Combat
         }
 
         [Test]
-        public void TheLaserBeamFiresFromHandHeight()
+        public void EveryCasterEmissionUsesTheExactFireballStart()
         {
-            // Named explicitly because it is the one that was wrong, and because a source
-            // scan alone would go quiet if the beam simply stopped resolving an origin.
-            string path = Path.Combine(ScriptsRoot, "Gameplay", "Spells", "Controllers",
-                                       "LaserBeamController.cs");
-            Assert.IsTrue(File.Exists(path), "LaserBeamController.cs moved — update this test.");
+            var violations = new List<string>();
 
-            string source = File.ReadAllText(path);
-            Assert.IsTrue(source.Contains("ResolveCastOrigin"),
-                "The beam must resolve its origin at hand height, like the fireball. It is " +
-                "used for the raycast as well as the visuals so that what is drawn and what " +
-                "is hit stay the same line.");
+            foreach (var rel in CasterEmissionCallsites)
+            {
+                string path = Path.Combine(ScriptsRoot,
+                    rel.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(path))
+                {
+                    violations.Add($"{rel}: file is missing");
+                    continue;
+                }
+
+                int executableCalls = File.ReadAllLines(path).Count(line =>
+                {
+                    string trimmed = line.TrimStart();
+                    return !trimmed.StartsWith("//")
+                        && !trimmed.StartsWith("///")
+                        && !trimmed.StartsWith("*")
+                        && line.Contains("ResolveCastStart(");
+                });
+
+                // ProjectileExecutor contains the helper declaration plus Fireball's call.
+                int requiredCalls = rel.EndsWith("ProjectileExecutor.cs") ? 2 : 1;
+                if (executableCalls < requiredCalls)
+                    violations.Add($"{rel}: expected {requiredCalls} ResolveCastStart call(s), found {executableCalls}");
+            }
+
+            Assert.IsEmpty(violations,
+                "Every spell that visibly leaves the caster must use Fireball's exact " +
+                "ResolveCastStart point (hand height plus forward clearance). Ground-targeted " +
+                "spells do not belong on this list.\n\nViolations:\n  " +
+                string.Join("\n  ", violations));
+        }
+
+        /// <summary>
+        /// The anchor is authored per spell, so a callsite that resolves the origin without
+        /// handing the spell over silently ignores whatever the designer set and falls back
+        /// to Hands + the default clearance. That is invisible in play and invisible in a
+        /// diff, so it is pinned here.
+        /// </summary>
+        [Test]
+        public void EveryCallsitePassesTheSpellsOwnCastOrigin()
+        {
+            var violations = new List<string>();
+
+            foreach (var rel in CasterEmissionCallsites)
+            {
+                // ProjectileExecutor declares the overloads, including the deliberate
+                // system-default one, so its own text is exempt from this rule.
+                if (rel.EndsWith("ProjectileExecutor.cs")) continue;
+
+                string path = Path.Combine(ScriptsRoot, rel.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(path)) { violations.Add($"{rel}: file is missing"); continue; }
+
+                string src = File.ReadAllText(path);
+                int from = 0;
+                while (true)
+                {
+                    int call = src.IndexOf("ResolveCastStart(", from, System.StringComparison.Ordinal);
+                    if (call < 0) break;
+                    from = call + 1;
+
+                    int end = src.IndexOf(';', call);
+                    string args = end < 0 ? src.Substring(call) : src.Substring(call, end - call);
+
+                    // Either the spell itself, or the anchor + clearance a controller
+                    // adopted from it up front.
+                    if (args.Contains("Spell") || args.Contains("_castAnchor")) continue;
+
+                    int lineNumber = src.Take(call).Count(c => c == '\n') + 1;
+                    violations.Add($"{rel}:{lineNumber}  ->  {args.Trim()}");
+                }
+            }
+
+            Assert.IsEmpty(violations,
+                "These resolve the cast origin without passing the spell, so castAnchor and " +
+                "castForwardOffset are ignored and the effect always comes out of the hands.\n\n" +
+                "Pass ctx.Spell (executors) or adopt it once via SetCastOrigin (controllers).\n\n" +
+                "Callsites:\n  " + string.Join("\n  ", violations));
         }
 
         [Test]
         public void EveryAuthorisedCallsiteStillExists()
         {
-            foreach (var rel in BodyCentreCallsites)
+            foreach (var rel in BodyCentreCallsites.Concat(CasterEmissionCallsites).Distinct())
             {
                 string path = Path.Combine(ScriptsRoot, rel.Replace('/', Path.DirectorySeparatorChar));
                 Assert.IsTrue(File.Exists(path),

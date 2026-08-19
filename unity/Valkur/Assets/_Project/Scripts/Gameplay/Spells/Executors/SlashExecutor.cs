@@ -36,15 +36,6 @@ namespace Valkur.Gameplay.Spells
         /// </summary>
         private const float CATALOG_PREFAB_SCALE_PER_RADIUS = 0.18f;
 
-        /// <summary>
-        /// World-unit offset (≈ tiles) from the caster's body centre to the slash
-        /// VFX spawn point along the cast direction. Valkur tiles are 1 world unit;
-        /// 1.25 puts the slash visibly in front of the player (about a tile away)
-        /// without overlapping the body sprite. Hit-detection still uses the same
-        /// origin so the visual matches the damage area.
-        /// </summary>
-        private const float SLASH_FORWARD_OFFSET = 1.25f;
-
         // Lazy-loaded slash VFX catalog. Cached so we don't hit Resources on every cast.
         private static SlashVfxCatalog _vfxCatalog;
         private static bool _vfxCatalogTried;
@@ -63,15 +54,25 @@ namespace Valkur.Gameplay.Spells
             float hitRadius = ctx.Spell.hitRadius > 0 ? ctx.Spell.hitRadius : ctx.Spell.range;
             if (hitRadius <= 0) hitRadius = 1.5f;
 
-            // Resolve the caster's body centre rather than its pivot. 2D character
-            // sprites use a bottom-centre pivot, so caster.position sits at the feet —
-            // casting from there makes every spell appear to spawn under the boots.
-            // Convention (per CLAUDE.md): every spell except Dash originates from the
-            // body centre. ProjectileExecutor.ResolveCasterCenter inspects sprite /
-            // collider bounds with a guaranteed minimum lift above the pivot.
-            Vector2 casterCenter = ProjectileExecutor.ResolveCasterCenter(ctx.Caster);
+            // The arc begins at Fireball's canonical hand point. Gameplay geometry and
+            // both visual paths share it, so the swing cannot detach from its damage area.
+            Vector2 castStart = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
 
-            Vector2 hitCenter = casterCenter + ctx.Direction * (hitRadius * 0.5f);
+            // slash_regular is deliberately a complete authored attack instead of a
+            // different tint on the legacy catalog prefab. Its moving crescent owns
+            // the damage sweep, impacts and hit-stop so contact happens exactly where
+            // the visible cutting edge is. Keep the old slash path untouched.
+            if (RegularSlashAttack.Matches(ctx.Spell))
+            {
+                Color regularColor = ctx.Spell.particleColor != Color.clear
+                    ? ctx.Spell.particleColor
+                    : new Color(0.62f, 0.86f, 1f, 1f);
+                regularColor = EnsureMinBrightness(regularColor, MIN_SLASH_BRIGHTNESS);
+                RegularSlashAttack.Spawn(ctx, castStart, hitRadius, arc, regularColor);
+                return;
+            }
+
+            Vector2 hitCenter = castStart + ctx.Direction * (hitRadius * 0.5f);
             var hits = Physics2D.OverlapCircleAll(hitCenter, hitRadius, ctx.TargetLayers);
 
             int hitCount = 0;
@@ -81,13 +82,15 @@ namespace Valkur.Gameplay.Spells
                 var health = hit.GetComponent<Health>();
                 if (health == null || health.IsDead) continue;
 
-                Vector2 toTarget = ((Vector2)hit.transform.position - casterCenter).normalized;
+                Vector2 toTarget = ((Vector2)hit.transform.position - castStart).normalized;
                 float angle = Vector2.Angle(ctx.Direction, toTarget);
                 if (angle <= arc * 0.5f)
                 {
-                    health.TakeDamage(Mathf.RoundToInt(ctx.Spell.damage));
+                    int dealt = Mathf.RoundToInt(ctx.Spell.damage);
+                    health.TakeDamage(dealt);
+                    Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
                     var feedback = hit.GetComponent<CombatFeedback>();
-                    if (feedback != null) feedback.ApplyKnockback(casterCenter);
+                    if (feedback != null) feedback.ApplyKnockback(castStart);
                     hitCount++;
                 }
             }
@@ -110,11 +113,11 @@ namespace Valkur.Gameplay.Spells
             var catalogPrefab = ResolveVfxCatalog()?.Resolve(ctx.Spell.spellKey);
             if (catalogPrefab != null)
             {
-                SpawnCatalogSlashVfx(catalogPrefab, casterCenter, ctx.Direction, hitRadius, slashColor);
+                SpawnCatalogSlashVfx(catalogPrefab, castStart, ctx.Direction, hitRadius, slashColor);
             }
             else
             {
-                SlashArcFX.Spawn(casterCenter, ctx.Direction, hitRadius, arc, slashColor);
+                SlashArcFX.Spawn(castStart, ctx.Direction, hitRadius, arc, slashColor);
             }
 
             if (hitCount > 0) CameraShake.Trigger(0.18f, 0.18f);
@@ -124,27 +127,20 @@ namespace Valkur.Gameplay.Spells
         }
 
         /// <summary>
-        /// Instantiates a slash VFX prefab from the catalog at <paramref name="casterCenter"/>
-        /// + a fixed forward offset along <paramref name="direction"/>, rotated to face
-        /// the cast vector, scaled to roughly span <paramref name="hitRadius"/>, and
-        /// tinted with <paramref name="tint"/>. The prefab auto-destroys after
+        /// Instantiates a slash VFX prefab from the catalog at <paramref name="castStart"/>,
+        /// rotated to face the cast vector, scaled to roughly span
+        /// <paramref name="hitRadius"/>, and tinted with <paramref name="tint"/>. The prefab auto-destroys after
         /// <see cref="CATALOG_PREFAB_TTL"/>.
         /// </summary>
-        private static void SpawnCatalogSlashVfx(GameObject prefab, Vector3 casterCenter,
+        private static void SpawnCatalogSlashVfx(GameObject prefab, Vector3 castStart,
                                                  Vector2 direction, float hitRadius,
                                                  Color tint)
         {
-            // Spawn ~1.25 tiles ahead of the body centre along the cast direction so
-            // the slash always appears in front of the player toward the cursor,
-            // never on top of the body sprite. Using a fixed tile offset (rather
-            // than a hitRadius fraction) keeps small slashes visible too.
-            Vector3 spawnPos = casterCenter + (Vector3)(direction.normalized * SLASH_FORWARD_OFFSET);
-
             // Rotation: align the prefab's +X axis with the slash direction (prefabs
             // are authored facing +X by default). This rotates the slash plane around
             // the world Z so the swing reads correctly from a top-down 2D camera.
             float zAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            var go = Object.Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, zAngle));
+            var go = Object.Instantiate(prefab, castStart, Quaternion.Euler(0f, 0f, zAngle));
 
             // Uniform scale so the visual roughly matches the gameplay arc radius.
             float s = Mathf.Max(0.4f, hitRadius * CATALOG_PREFAB_SCALE_PER_RADIUS);

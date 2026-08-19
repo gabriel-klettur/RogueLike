@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.Spells
     {
         public void Execute(SpellContext ctx)
         {
-            Vector3 pos = ctx.Caster.position;
+            Vector3 pos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 1.2f;
             float radius = 1.5f;
 

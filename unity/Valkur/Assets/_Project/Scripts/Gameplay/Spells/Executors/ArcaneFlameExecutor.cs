@@ -18,7 +18,7 @@ namespace Valkur.Gameplay.Spells
             float damagePerTick = ctx.Spell.damagePerTick > 0 ? ctx.Spell.damagePerTick : 5f;
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.5f;
 
-            Vector2 pos = (Vector2)ctx.Caster.position + ctx.Direction * 2f;
+            Vector2 pos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * 2f;
 
             var flameGo = new GameObject("ArcaneFlame");
             flameGo.transform.position = (Vector3)pos;

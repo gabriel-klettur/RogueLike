@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
+  m_Name: PP_darkball_wake
+  m_EditorClassIdentifier: 
+  id: darkball_wake
+  displayName: Darkball - Umbral Corona
+  type: trail
+  vfx:
+    kind: trail
+    loops: 1
+    emitRate: 220
+    count: 12
+    burstIntervalSeconds: 1
+    speed: 0.4
+    gravity: 0
+    drag: 0.08
+    direction: {x: 0, y: -1}
+    lifespan: 0.24
+    sizeMin: 0.11
+    sizeMax: 0.28
+    colors:
+    - {r: 0.92, g: 0.48, b: 1, a: 1}
+    - {r: 0.58, g: 0.12, b: 0.95, a: 1}
+    - {r: 0.16, g: 0.015, b: 0.38, a: 1}
+    color: {r: 0.92, g: 0.48, b: 1, a: 1}
+    additive: 1
+    textureShape: 3
+    textureSoftness: 0.58
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 180
+    rotationSpeedDegrees: 45
+    worldSpace: 1
+    radius: 1.5
+    arcRangeDegrees: 45
+    segments: 10
+    lightningOffset: 0.625
+    thickness: 0.1
+    spouts:
+    - 0.5
+    splashCount: 2
+    dropletSize: 0.1
+    swayAmp: 0.04
+    swaySpeed: 0.12
+    stripeGap: 0.5
+    rippleAmp: 0.6
+    alphaBase: 110
+    alphaWave: 70
+    highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    dispersion: 0.08
+    gravityVector: {x: 0, y: 0}
+    useGravityVector: 0
+    sizeOverLife:
+    - time: 0
+      value: 1
+    - time: 1
+      value: 0.25
+    alphaOverLife:
+    - time: 0
+      value: 0.85
+    - time: 0.1
+      value: 0.95
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 0.92, g: 0.48, b: 1, a: 1}
+    - time: 0.45
+      color: {r: 0.58, g: 0.12, b: 0.95, a: 1}
+    - time: 1
+      color: {r: 0.16, g: 0.015, b: 0.38, a: 1}
+    ellipseRatio: 1
+    outerRadius: 0

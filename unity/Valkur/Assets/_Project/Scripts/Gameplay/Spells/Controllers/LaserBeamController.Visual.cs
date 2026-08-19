@@ -218,9 +218,8 @@ namespace Valkur.Gameplay.Spells
             var renderer = host.GetComponent<ParticleSystemRenderer>();
             if (renderer != null)
             {
-                // Trail renders on the VFX layer alongside the beam line — beam now
-                // emerges in FRONT of the caster (VISUAL_FORWARD_OFFSET) so we want
-                // the trail particles on top of world geometry, not behind it.
+                // Trail renders on the VFX layer alongside the beam line, on top of
+                // world geometry rather than disappearing behind it.
                 renderer.sortingLayerName = SortingConfig.LAYER_VFX;
                 renderer.sortingOrder = 7;
                 renderer.sharedMaterial = ParticleMaterialCache.Get(
@@ -343,9 +342,7 @@ namespace Valkur.Gameplay.Spells
             lr.sharedMaterial = BeamMaterialCache.Get(BeamTextureLibrary.Get(kind, softness), _beamAdditive);
 
             // Render in the VFX sorting layer so the beam sits ON TOP of the world
-            // (tiles, walls, entities). The visual origin is pushed forward by
-            // VISUAL_FORWARD_OFFSET in RunBeam so the beam emerges in front of the
-            // caster rather than behind, matching the slash spawn convention.
+            // (tiles, walls, entities).
             lr.sortingLayerName = SortingConfig.LAYER_VFX;
             lr.sortingOrder = sortingOrder;
             return lr;

@@ -1,5 +1,7 @@
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using Valkur.Core;
 using Valkur.Gameplay;
 
 namespace Valkur.Tests.EditMode.Game.Combat
@@ -15,6 +17,21 @@ namespace Valkur.Tests.EditMode.Game.Combat
     [TestFixture]
     public class ManaTests
     {
+        private sealed class FreeCastingEditor : GameEditorManager.IGameEditor, IChoosesPrimaryCastSpell
+        {
+            public string EditorName => "Spells Editor";
+            public bool IsActive { get; private set; }
+            public string PrimaryCastSpellKey => IsActive ? "fireball" : null;
+            public bool PrimaryCastIgnoresManaCost => IsActive;
+
+            public void Activate() => IsActive = true;
+            public void Deactivate() => IsActive = false;
+        }
+
+        private static readonly FieldInfo s_editorManagerInstanceField =
+            typeof(SingletonMonoBehaviour<GameEditorManager>).GetField(
+                "_instance", BindingFlags.NonPublic | BindingFlags.Static);
+
         private Mana CreateMana(int maxMana = 100, float regen = 0f)
         {
             var go = new GameObject("Entity");
@@ -111,6 +128,50 @@ namespace Valkur.Tests.EditMode.Game.Combat
                 Assert.AreEqual(100, m.CurrentMana);
             }
             finally { Destroy(m); }
+        }
+
+        [Test]
+        public void TryConsume_SpellsEditorOpenIsFree_ClosingRestoresConsumption()
+        {
+            GameObject managerGo = null;
+            Mana mana = null;
+
+            try
+            {
+                // Domain Reload is disabled in this project, so isolate the singleton
+                // exactly as the other GameEditorManager EditMode fixtures do.
+                s_editorManagerInstanceField?.SetValue(null, null);
+                managerGo = new GameObject("[GameEditorManager_ManaTest]");
+                var manager = managerGo.AddComponent<GameEditorManager>();
+                typeof(SingletonMonoBehaviour<GameEditorManager>)
+                    .GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance)
+                    ?.Invoke(manager, null);
+
+                var playerGo = new GameObject("Player_ManaTest");
+                playerGo.AddComponent<PlayerController>();
+                mana = playerGo.AddComponent<Mana>();
+                mana.Initialize(3, regen: 0f);
+
+                var editor = new FreeCastingEditor();
+                manager.Register(editor);
+                manager.OpenExclusive(editor);
+
+                Assert.IsTrue(mana.TryConsume(3));
+                Assert.AreEqual(3, mana.CurrentMana,
+                    "Every player mana charge must be ignored while F4 is open, including channel drains.");
+
+                manager.CloseAll();
+
+                Assert.IsTrue(mana.TryConsume(3));
+                Assert.AreEqual(0, mana.CurrentMana,
+                    "Closing F4 must restore ordinary mana consumption immediately.");
+            }
+            finally
+            {
+                if (mana != null) Object.DestroyImmediate(mana.gameObject);
+                if (managerGo != null) Object.DestroyImmediate(managerGo);
+                s_editorManagerInstanceField?.SetValue(null, null);
+            }
         }
     }
 }

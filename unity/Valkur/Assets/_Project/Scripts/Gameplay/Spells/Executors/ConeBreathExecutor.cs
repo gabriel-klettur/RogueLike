@@ -19,15 +19,17 @@ namespace Valkur.Gameplay.Spells
             float damagePerTick = ctx.Spell.damagePerTick > 0 ? ctx.Spell.damagePerTick : 4f;
             float tickPeriod = ctx.Spell.tickPeriod > 0 ? ctx.Spell.tickPeriod : 0.2f;
 
+            Vector3 castStart = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             var coneGo = new GameObject("ConeBreath");
-            coneGo.transform.position = ctx.Caster.position;
+            coneGo.transform.position = castStart;
 
             var controller = coneGo.AddComponent<ConeBreathController>();
+            controller.SetCastOrigin(ctx.Spell);
             controller.Initialize(duration, arc, length, Mathf.RoundToInt(damagePerTick),
                 tickPeriod, ctx.Direction, ctx.Caster, ctx.TargetLayers, ctx.Spell.element);
 
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
-                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ctx.Caster.position, duration);
+                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, castStart, duration);
 
         }
     }

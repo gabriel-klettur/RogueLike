@@ -11,6 +11,10 @@ Shader "Valkur/SpriteHDRTint"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         [HDR] _Color ("HDR Tint", Color) = (1,1,1,1)
+        // Hit flash. _FlashAmount 0 leaves the sprite exactly as it was, so this
+        // is a no-op for every renderer that never sets it.
+        _FlashColor ("Flash Color", Color) = (1,1,1,1)
+        _FlashAmount ("Flash Amount", Range(0,1)) = 0
     }
 
     SubShader
@@ -56,6 +60,8 @@ Shader "Valkur/SpriteHDRTint"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
+                float4 _FlashColor;
+                float  _FlashAmount;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -76,6 +82,11 @@ Shader "Valkur/SpriteHDRTint"
                 // Multiply texture by per-renderer color (vertex, alpha-friendly)
                 // and by the material's HDR _Color (constant, NOT vertex-clamped).
                 half4 c = tex * IN.color * _Color;
+                // Hit flash: push RGB toward the flash colour while alpha keeps the
+                // silhouette. A multiplicative tint cannot do this — multiplying an
+                // already-white sprite by white changes nothing, which is why the
+                // old SpriteRenderer.color flash was invisible on white-tinted NPCs.
+                c.rgb = lerp(c.rgb, _FlashColor.rgb, _FlashAmount);
                 return c;
             }
             ENDHLSL

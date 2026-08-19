@@ -417,26 +417,15 @@ namespace Valkur.Tests.EditMode.Game.Combat
             Assert.GreaterOrEqual(LaserBeamController.FADE_DURATION, 0.04f, "Fade must last more than 2 frames");
         }
 
-        // ── Visual forward-offset (beam emerges in front of the caster) ───
+        // ── Shared Fireball origin ─────────────────────────────────────────
 
         [Test]
-        public void Constants_VisualForwardOffset_IsPositive()
+        public void SharedCastStart_HasFireballForwardClearance()
         {
-            // Must be positive — the beam emerges in FRONT of the caster (1+ tile
-            // ahead of body centre), matching the slash spawn convention.
-            Assert.Greater(LaserBeamController.VISUAL_FORWARD_OFFSET, 0f,
-                "Forward offset must be positive so the beam visually starts in front of the caster");
-        }
-
-        [Test]
-        public void Constants_VisualForwardOffset_IsAroundOneTile()
-        {
-            // Convention is "1.25 tiles in front of body centre" so the laser spawn
-            // point matches the slash spawn point. Tolerate ±0.5wu for tuning.
-            Assert.GreaterOrEqual(LaserBeamController.VISUAL_FORWARD_OFFSET, 0.75f,
-                "Forward offset should be at least 0.75 wu so the beam clears the caster sprite");
-            Assert.LessOrEqual(LaserBeamController.VISUAL_FORWARD_OFFSET, 2f,
-                "Forward offset should be at most 2 wu so the beam doesn't visibly detach from the hand");
+            Assert.Greater(ProjectileExecutor.CAST_FORWARD_OFFSET, 0f,
+                "The shared start must clear the caster collider just like Fireball.");
+            Assert.LessOrEqual(ProjectileExecutor.CAST_FORWARD_OFFSET, 0.5f,
+                "The shared start must remain attached to the caster's hand.");
         }
 
         [Test]

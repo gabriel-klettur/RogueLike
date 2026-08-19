@@ -13,7 +13,7 @@ namespace Valkur.Gameplay.Spells
     {
         public void Execute(SpellContext ctx)
         {
-            Vector2 pos = ctx.Caster.position;
+            Vector2 pos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             float armingTime = ctx.Spell.armingTime > 0 ? ctx.Spell.armingTime : 0.5f;
             float triggerRadius = ctx.Spell.triggerRadius > 0 ? ctx.Spell.triggerRadius / 16f : 3.75f;
             float explosionRadius = ctx.Spell.explosionRadius > 0 ? ctx.Spell.explosionRadius / 16f : 8.75f;

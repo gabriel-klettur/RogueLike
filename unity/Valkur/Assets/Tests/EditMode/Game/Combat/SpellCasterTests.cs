@@ -257,5 +257,39 @@ namespace Valkur.Tests.EditMode.Game.Combat
             Assert.IsFalse(canCast);
             Cleanup(caster);
         }
+
+        [Test]
+        public void TryCastByKey_EditorManaOverride_DoesNotConsumeMana()
+        {
+            var caster = CreateCasterWithMana(currentMana: 3, maxMana: 3);
+            var spell = CreateSpell("fireball", cooldown: 0f, manaCost: 3f);
+            caster.RegisterSpell(spell.spellKey, spell);
+
+            bool cast = caster.TryCastByKey(spell.spellKey, Vector2.right, ignoreManaCost: true);
+
+            Assert.IsTrue(cast);
+            Assert.AreEqual(3, caster.GetComponent<Mana>().CurrentMana,
+                "The per-call F4 authoring override must leave mana untouched.");
+            Cleanup(caster);
+        }
+
+        [Test]
+        public void TryCastByKey_AfterEditorOverride_NormalManaConsumptionReturns()
+        {
+            var caster = CreateCasterWithMana(currentMana: 3, maxMana: 3);
+            var spell = CreateSpell("fireball", cooldown: 0f, manaCost: 3f);
+            caster.RegisterSpell(spell.spellKey, spell);
+
+            Assert.IsTrue(caster.TryCastByKey(
+                spell.spellKey, Vector2.right, ignoreManaCost: true));
+            Assert.AreEqual(3, caster.GetComponent<Mana>().CurrentMana,
+                "Sanity: the editor cast should be free.");
+
+            Assert.IsTrue(caster.TryCastByKey(spell.spellKey, Vector2.right),
+                "The same spell should use the ordinary path after F4 closes.");
+            Assert.AreEqual(0, caster.GetComponent<Mana>().CurrentMana,
+                "No exemption may remain after the editor-only call ends.");
+            Cleanup(caster);
+        }
     }
 }

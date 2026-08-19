@@ -106,7 +106,10 @@ namespace Valkur.Gameplay.Spells
                 var health = hit.GetComponent<Health>();
                 if (health != null && !health.IsDead)
                 {
-                    health.TakeDamage(Mathf.RoundToInt(_damage));
+                    int dealt = Mathf.RoundToInt(_damage);
+                    health.TakeDamage(dealt);
+                    if (_caster != null)
+                        Valkur.Core.GameEvents.FireHitDealt(_caster.gameObject, hit.gameObject, dealt);
                     if (VFXManager.Instance != null)
                         VFXManager.Instance.SpawnImpact(hit.transform.position, _vfxColor, 0.25f);
                     hitSomething = true;

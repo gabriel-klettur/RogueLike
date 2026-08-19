@@ -18,6 +18,7 @@ namespace Valkur.Gameplay
         // by default), so 0.35 s reliably plays at least 2 frames of the cast pose
         // before reverting — enough to read as "casting" without delaying gameplay.
         private const float CAST_ANIMATION_DURATION = 0.35f;
+        private const float REGULAR_SLASH_ANIMATION_DURATION = 0.42f;
 
         // Time.time at which the cast animation should end and locomotion can
         // resume. 0 = no cast animation pending. Refreshed on every successful
@@ -294,6 +295,21 @@ namespace Valkur.Gameplay
             => !string.IsNullOrEmpty((active as IChoosesPrimaryCastSpell)?.PrimaryCastSpellKey);
 
         /// <summary>
+        /// Whether the active editor's redirected left-click cast is exempt from mana.
+        /// Requiring an active editor and a live selection prevents either the waiver or
+        /// the redirected key from leaking into ordinary gameplay after the editor closes.
+        /// </summary>
+        internal static bool PrimaryCastIgnoresManaCost(GameEditorManager.IGameEditor active)
+        {
+            var chooser = active as IChoosesPrimaryCastSpell;
+            return active != null
+                && active.IsActive
+                && chooser != null
+                && chooser.PrimaryCastIgnoresManaCost
+                && !string.IsNullOrEmpty(chooser.PrimaryCastSpellKey);
+        }
+
+        /// <summary>
         /// The left-click primary on its own — the only combat gesture allowed through while
         /// a redirecting editor has gameplay input suspended. No dash, no right-click slash,
         /// no number-key casts, no movement.
@@ -318,7 +334,7 @@ namespace Valkur.Gameplay
             if (IsPointerOverInteractiveUI()) return;
 
             if (MouseInputManager.IsLeftMouseButtonPressed())
-                CastHeldPrimary(key);
+                CastHeldPrimary(key, PrimaryCastIgnoresManaCost(active));
         }
 
         private void StopLeftHeldBeam()
@@ -327,7 +343,7 @@ namespace Valkur.Gameplay
             _leftHeldBeam = null;
         }
 
-        private void CastHeldPrimary(string key)
+        private void CastHeldPrimary(string key, bool ignoreManaCost = false)
         {
             if (_spellCaster == null) return;
 
@@ -339,7 +355,7 @@ namespace Valkur.Gameplay
                 {
                     beam.Refresh();
                 }
-                else if (_spellCaster.TryCastByKey(key, _facingDirection))
+                else if (_spellCaster.TryCastByKey(key, _facingDirection, ignoreManaCost))
                 {
                     // Remembered so releasing left click stops only the beam left click
                     // started. There is one controller per caster, so a blind Stop() on
@@ -347,12 +363,12 @@ namespace Valkur.Gameplay
                     // click — releasing the left button would cut the laser short.
                     _leftHeldBeam = _spellCaster.GetComponent<LaserBeamController>();
                 }
-                TriggerCastAnimation();
+                TriggerCastAnimation(key);
                 return;
             }
 
-            if (_spellCaster.TryCastByKey(key, _facingDirection))
-                TriggerCastAnimation();
+            if (_spellCaster.TryCastByKey(key, _facingDirection, ignoreManaCost))
+                TriggerCastAnimation(key);
         }
 
         private void UpdateFacingDirection()
@@ -416,12 +432,18 @@ namespace Valkur.Gameplay
         /// (fireball / slash / hotkey-bound spells / laser-beam refresh). Dash is
         /// intentionally excluded — it owns its own movement animation.
         /// </summary>
-        private void TriggerCastAnimation()
+        private void TriggerCastAnimation(string spellKey = null)
         {
             if (_animator == null) return;
             var dir = _animator.ResolveDirectionFromVector(_facingDirection);
-            _animator.SetState(DirectionalAnimator.AnimState.Cast, dir);
-            _castAnimEndTime = Time.time + CAST_ANIMATION_DURATION;
+            bool isRegularSlash = string.Equals(spellKey, RegularSlashAttack.SpellKey,
+                System.StringComparison.OrdinalIgnoreCase);
+            _animator.SetState(isRegularSlash
+                ? DirectionalAnimator.AnimState.Attack
+                : DirectionalAnimator.AnimState.Cast, dir);
+            _castAnimEndTime = Time.time + (isRegularSlash
+                ? REGULAR_SLASH_ANIMATION_DURATION
+                : CAST_ANIMATION_DURATION);
         }
 
         /// <summary>
@@ -434,7 +456,8 @@ namespace Valkur.Gameplay
         {
             if (_animator == null || _castAnimEndTime <= 0f) return;
             if (Time.time < _castAnimEndTime) return;
-            if (_animator.CurrentState == DirectionalAnimator.AnimState.Cast)
+            if (_animator.CurrentState == DirectionalAnimator.AnimState.Cast ||
+                _animator.CurrentState == DirectionalAnimator.AnimState.Attack)
             {
                 var dir = _animator.ResolveDirectionFromVector(_facingDirection);
                 var state = IsMoving ? DirectionalAnimator.AnimState.Walk : DirectionalAnimator.AnimState.Idle;
@@ -600,7 +623,7 @@ namespace Valkur.Gameplay
                     if (fired)
                     {
                         if (_spellCaster.TryCastByKey(spellKey, _facingDirection))
-                            TriggerCastAnimation();
+                            TriggerCastAnimation(spellKey);
                         break; // only one spell per frame
                     }
                 }

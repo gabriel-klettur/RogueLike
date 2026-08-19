@@ -140,15 +140,17 @@ namespace Valkur.Gameplay.Spells
 
         /// <summary>
         /// Try to cast a spell from the spell book by its key.
+        /// <paramref name="ignoreManaCost"/> is a per-call authoring override used by
+        /// the active Spells Editor; it is never stored on the caster or spell.
         /// </summary>
-        public bool TryCastByKey(string spellKey, Vector2 direction)
+        public bool TryCastByKey(string spellKey, Vector2 direction, bool ignoreManaCost = false)
         {
             if (_phase != CastPhase.Ready) return false;
             if (!_spellBook.TryGetValue(spellKey, out var spell)) return false;
             if (_spellBookCooldowns.TryGetValue(spellKey, out float cd) && cd > 0f) return false;
 
             int manaCost = Mathf.Max(0, Mathf.RoundToInt(spell.manaCost));
-            if (manaCost > 0)
+            if (manaCost > 0 && !ignoreManaCost)
             {
                 var mana = ResolveMana();
                 if (mana == null)

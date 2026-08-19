@@ -108,6 +108,28 @@ namespace Valkur.Tests.EditMode.Game.Combat
         }
 
         [Test]
+        public void CastStart_IsFireballHandOriginPlusNormalizedClearance()
+        {
+            var caster = MakeCaster(2f, new Vector3(3.5f, 1.25f, 0f));
+            Vector2 direction = new Vector2(3f, 4f);
+
+            Vector3 handOrigin = ProjectileExecutor.ResolveCastOrigin(caster);
+            Vector3 start = ProjectileExecutor.ResolveCastStart(caster, direction);
+            Vector3 expected = handOrigin
+                + (Vector3)(direction.normalized * ProjectileExecutor.CAST_FORWARD_OFFSET);
+
+            Assert.AreEqual(expected.x, start.x, 1e-4f);
+            Assert.AreEqual(expected.y, start.y, 1e-4f);
+        }
+
+        [Test]
+        public void CastStart_NullCaster_IsSafe()
+        {
+            Assert.AreEqual(Vector3.zero,
+                ProjectileExecutor.ResolveCastStart(null, Vector2.right));
+        }
+
+        [Test]
         public void CastOrigin_NullCaster_IsSafe()
         {
             Assert.AreEqual(Vector3.zero, ProjectileExecutor.ResolveCastOrigin(null));

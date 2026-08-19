@@ -1,5 +1,6 @@
 using UnityEngine;
 using Valkur.Core;
+using Valkur.Data;
 using Valkur.Gameplay.Combat;
 using Valkur.Gameplay.VFX;
 
@@ -25,6 +26,20 @@ namespace Valkur.Gameplay.Spells
         private ParticleSystem _ps;
         private GameObject _lightGo;
         private Component _light;
+
+        // The cone follows the caster every frame, so it needs the spell's own origin
+        // settings rather than the system defaults. Initialize keeps its loose-value
+        // signature; the executor hands these over separately.
+        private SpellCastAnchor _castAnchor = SpellCastAnchor.Hands;
+        private float _castForwardOffset = ProjectileExecutor.CAST_FORWARD_OFFSET;
+
+        /// <summary>Adopt a spell's cast anchor and forward clearance. Null keeps the defaults.</summary>
+        public void SetCastOrigin(SpellDefinition spell)
+        {
+            if (spell == null) return;
+            _castAnchor = spell.castAnchor;
+            _castForwardOffset = ProjectileExecutor.ResolveCastForwardOffset(spell);
+        }
 
         public void Initialize(float duration, float arc, float length, int damagePerTick,
             float tickPeriod, Vector2 direction, Transform caster, LayerMask targetLayers, string element)
@@ -187,7 +202,10 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
-            transform.position = _caster.position;
+            // Follow the same moving muzzle point used by Fireball. The controller owns
+            // visuals and hit geometry, so both remain aligned while the caster moves.
+            transform.position = ProjectileExecutor.ResolveCastStart(
+                _caster, _direction, _castAnchor, _castForwardOffset);
             UpdateConeVisual();
 
             // Orient cone-shape particle emitter along _direction
@@ -218,7 +236,7 @@ namespace Valkur.Gameplay.Spells
                 // Spawn particle impact VFX along cone
                 if (VFXManager.Instance != null)
                 {
-                    Vector3 midPoint = _caster.position + (Vector3)_direction * _length * 0.6f;
+                    Vector3 midPoint = transform.position + (Vector3)_direction * _length * 0.6f;
                     VFXManager.Instance.SpawnImpact(midPoint,
                         _element == "fire" ? new Color(1f, 0.5f, 0.15f) : new Color(0.3f, 0.8f, 1f),
                         0.15f, _length * 0.3f);
@@ -232,7 +250,7 @@ namespace Valkur.Gameplay.Spells
 
             float halfArc = _arc * 0.5f * Mathf.Deg2Rad;
             float baseAngle = Mathf.Atan2(_direction.y, _direction.x);
-            Vector3 origin = _caster.position;
+            Vector3 origin = transform.position;
 
             // Draw a fan shape: origin → left edge → arc → right edge → origin
             int points = _lr.positionCount;
@@ -257,7 +275,8 @@ namespace Valkur.Gameplay.Spells
             if (_caster == null) return;
 
             // Overlap in range and filter by cone angle
-            var hits = Physics2D.OverlapCircleAll(_caster.position, _length, _targetLayers);
+            Vector2 origin = transform.position;
+            var hits = Physics2D.OverlapCircleAll(origin, _length, _targetLayers);
             float halfArc = _arc * 0.5f;
             float baseAngle = Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg;
 
@@ -267,13 +286,15 @@ namespace Valkur.Gameplay.Spells
                 var health = hit.GetComponent<Health>();
                 if (health == null || health.IsDead) continue;
 
-                Vector2 toTarget = ((Vector2)hit.transform.position - (Vector2)_caster.position).normalized;
+                Vector2 toTarget = ((Vector2)hit.transform.position - origin).normalized;
                 float targetAngle = Mathf.Atan2(toTarget.y, toTarget.x) * Mathf.Rad2Deg;
                 float angleDiff = Mathf.Abs(Mathf.DeltaAngle(baseAngle, targetAngle));
 
                 if (angleDiff <= halfArc)
                 {
                     health.TakeDamage(_damagePerTick);
+                    if (_caster != null)
+                        Valkur.Core.GameEvents.FireHitDealt(_caster.gameObject, hit.gameObject, _damagePerTick);
 
                     // Apply burn if fire element
                     if (_element == "fire")

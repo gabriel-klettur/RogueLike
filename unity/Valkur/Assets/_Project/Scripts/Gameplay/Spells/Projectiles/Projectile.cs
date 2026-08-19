@@ -196,6 +196,16 @@ namespace Valkur.Gameplay.Spells
             _rb.velocity = _direction * speed;
         }
 
+        // Publish the hit on the global channel so everything listening there —
+        // combo counter, combat audio, feedback — sees spell damage too. Without
+        // this only MeleeCombat ever reported a hit, which is why the player's
+        // spells never built a combo.
+        private void ReportHit(GameObject victim, int dealt)
+        {
+            if (_caster == null || victim == null || dealt <= 0) return;
+            Valkur.Core.GameEvents.FireHitDealt(_caster.gameObject, victim, dealt);
+        }
+
         private void ResolveHit(Collider2D other)
         {
             int hitMask = 1 << other.gameObject.layer;
@@ -204,7 +214,11 @@ namespace Valkur.Gameplay.Spells
             {
                 var health = other.GetComponent<Health>() ?? other.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
-                    health.TakeDamage(Mathf.RoundToInt(damage));
+                {
+                    int dealt = Mathf.RoundToInt(damage);
+                    health.TakeDamage(dealt);
+                    ReportHit(health.gameObject, dealt);
+                }
             }
             // Obstacle hits do no damage but still expire.
 
@@ -261,7 +275,11 @@ namespace Valkur.Gameplay.Spells
                     var h = col.GetComponent<Health>()
                          ?? col.GetComponentInParent<Health>();
                     if (h != null && !h.IsDead)
-                        h.TakeDamage(Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage));
+                    {
+                        int dealt = Mathf.RoundToInt(_explosionDamage > 0f ? _explosionDamage : damage);
+                        h.TakeDamage(dealt);
+                        ReportHit(h.gameObject, dealt);
+                    }
                 }
             }
 

@@ -29,8 +29,8 @@ namespace Valkur.Gameplay.Spells
         {
             _projExecutor.Execute(ctx);
 
-            // Launch flash: a multi-color radial spark fountain at caster
-            SpawnLaunchBurst(ctx.Caster.position);
+            // Launch flash shares the projectile's Fireball-derived muzzle point.
+            SpawnLaunchBurst(ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell));
 
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio != null) audio.PlaySfxById("spell_firework_launch");

@@ -19,19 +19,10 @@ namespace Valkur.Gameplay.Spells
             if (ctx.ProjectilePrefab == null) return;
 
             string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
-            // Resolve caster center from the visual sprite bounds so projectiles originate
-            // from the middle of the character, not the pivot (which is at the feet for 2D
-            // sprites with bottom-center pivot). Falls back to collider bounds, then to a
-            // fixed +0.5 Y offset.
-            Vector3 casterCenter = ResolveCastOrigin(ctx.Caster);
-
-            // Spawn slightly in front of the caster along the fire direction so the
-            // projectile clears the caster's own collider and doesn't start overlapping
-            // adjacent walls/buildings (which would make the swept-collision detect a
-            // distance==0 hit and detonate the fireball at the player's feet).
-            const float SPAWN_FORWARD_OFFSET = 0.5f;
-            Vector3 spawnPos = casterCenter
-                + (Vector3)(ctx.Direction.normalized * SPAWN_FORWARD_OFFSET);
+            // This is the canonical start point for every spell emitted by a caster.
+            // Keeping Fireball on the shared helper makes its proven-good launch point the
+            // source of truth for beams, breaths, boomerangs, lightning and slashes too.
+            Vector3 spawnPos = ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
 
             // Try pool-based spawn, fall back to Instantiate
             GameObject go = null;
@@ -183,6 +174,12 @@ namespace Valkur.Gameplay.Spells
         private const float CAST_HEIGHT_FRACTION = 0.45f;
 
         /// <summary>
+        /// Forward clearance used by Fireball and every other caster-emitted spell. It keeps
+        /// the effect outside the caster collider without visually detaching it from the hand.
+        /// </summary>
+        public const float CAST_FORWARD_OFFSET = 0.5f;
+
+        /// <summary>
         /// Where a projectile leaves the caster: the body centre lifted to hand height.
         ///
         /// Deliberately separate from <see cref="ResolveCasterCenter"/>, which stays the
@@ -190,11 +187,73 @@ namespace Valkur.Gameplay.Spells
         /// the middle of the character rather than its hands.
         /// </summary>
         public static Vector3 ResolveCastOrigin(Transform caster)
+            => ResolveCastOrigin(caster, SpellCastAnchor.Hands);
+
+        /// <summary>
+        /// Where a spell leaves the caster, for a chosen body anchor. The anchor is
+        /// applied as a fraction of the caster's half-height above its visual centre,
+        /// so one setting reads correctly on every sprite size instead of baking in
+        /// pixel offsets that only suit one character.
+        /// </summary>
+        public static Vector3 ResolveCastOrigin(Transform caster, SpellCastAnchor anchor)
         {
             if (caster == null) return Vector3.zero;
 
             Vector3 center = ResolveCasterCenter(caster);
-            return center + new Vector3(0f, ResolveCasterHalfHeight(caster) * CAST_HEIGHT_FRACTION, 0f);
+            return center + new Vector3(0f, ResolveCasterHalfHeight(caster) * AnchorFraction(anchor), 0f);
+        }
+
+        /// <summary>
+        /// Height of each anchor, as a signed fraction of the caster's half-height
+        /// measured from its visual centre: -1 is the bottom of the sprite, +1 the top.
+        /// </summary>
+        private static float AnchorFraction(SpellCastAnchor anchor)
+        {
+            switch (anchor)
+            {
+                case SpellCastAnchor.Feet:   return -1f;
+                case SpellCastAnchor.Center: return 0f;
+                case SpellCastAnchor.Head:   return 1f;
+                default:                     return CAST_HEIGHT_FRACTION;   // Hands
+            }
+        }
+
+        /// <summary>
+        /// Forward clearance a spell asks for, or the system default when it asks for
+        /// nothing. Only an exact 0 means "default" — that is the value every asset
+        /// authored before the field existed reads. Every other value is literal,
+        /// negatives included, so a spell can be born behind its anchor.
+        /// </summary>
+        public static float ResolveCastForwardOffset(SpellDefinition spell)
+            => spell != null && !Mathf.Approximately(spell.castForwardOffset, 0f)
+                ? spell.castForwardOffset
+                : CAST_FORWARD_OFFSET;
+
+        /// <summary>
+        /// Exact world-space point where Fireball starts: hand height plus a small clearance
+        /// in the normalized cast direction. All spells that visibly leave the caster must
+        /// use this method so their first frame shares the same origin.
+        /// </summary>
+        public static Vector3 ResolveCastStart(Transform caster, Vector2 direction)
+            => ResolveCastStart(caster, direction, SpellCastAnchor.Hands, CAST_FORWARD_OFFSET);
+
+        /// <summary>
+        /// World-space point a spell is born at, honouring its own anchor and forward
+        /// clearance. Every spell that places something relative to its caster resolves
+        /// through here, so the two knobs mean the same thing everywhere.
+        /// </summary>
+        public static Vector3 ResolveCastStart(Transform caster, Vector2 direction, SpellDefinition spell)
+            => ResolveCastStart(caster, direction,
+                                spell != null ? spell.castAnchor : SpellCastAnchor.Hands,
+                                ResolveCastForwardOffset(spell));
+
+        public static Vector3 ResolveCastStart(Transform caster, Vector2 direction,
+                                               SpellCastAnchor anchor, float forwardOffset)
+        {
+            if (caster == null) return Vector3.zero;
+
+            return ResolveCastOrigin(caster, anchor)
+                + (Vector3)(direction.normalized * forwardOffset);
         }
 
         /// <summary>

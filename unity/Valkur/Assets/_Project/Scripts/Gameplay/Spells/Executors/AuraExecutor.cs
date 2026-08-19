@@ -36,7 +36,7 @@ namespace Valkur.Gameplay.Spells
 
             // Keep data-driven preset support (extra particles on top of procedural FX).
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
-                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ctx.Caster.position, duration);
+                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell), duration);
 
         }
     }

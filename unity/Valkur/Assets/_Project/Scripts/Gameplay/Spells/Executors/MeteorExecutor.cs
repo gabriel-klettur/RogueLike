@@ -55,7 +55,7 @@ namespace Valkur.Gameplay.Spells
                         requireInView: true,
                         requireApplicationFocus: false))
                 {
-                    Vector2 casterPos = (Vector2)ctx.Caster.position;
+                    Vector2 casterPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
                     Vector2 toMouse = mouseWorld - casterPos;
                     float dist = toMouse.magnitude;
                     if (dist > maxDist && dist > 0.0001f)
@@ -64,7 +64,7 @@ namespace Valkur.Gameplay.Spells
                 }
             }
             // Fallback: NPC casting or cursor off-screen — direction × maxDist.
-            return (Vector2)ctx.Caster.position + ctx.Direction * maxDist;
+            return (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * maxDist;
         }
     }
 }

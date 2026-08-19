@@ -70,11 +70,16 @@ namespace Valkur.Gameplay
         private void OnEnable()
         {
             if (_health != null) _health.OnHpChanged += OnHpChanged;
+            // Publish presence so BossHealthBarHUD can claim the top-centre slot
+            // when the player closes in. Registration is the only coupling —
+            // the controller never talks to the HUD directly.
+            HUD.BossHealthBarHUD.RegisterBoss(this);
         }
 
         private void OnDisable()
         {
             if (_health != null) _health.OnHpChanged -= OnHpChanged;
+            HUD.BossHealthBarHUD.UnregisterBoss(this);
         }
 
         // Internal seam used by tests in EditMode where Awake doesn't fire.

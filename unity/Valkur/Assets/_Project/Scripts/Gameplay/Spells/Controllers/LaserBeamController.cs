@@ -118,16 +118,6 @@ namespace Valkur.Gameplay.Spells
         /// <summary>Time (s) for the beam to fade out after Stop() is requested.</summary>
         public const float FADE_DURATION = 0.12f;
 
-        /// <summary>
-        /// Visual-only forward offset (world units, ≈ tiles) applied to the beam's
-        /// rendered start point along the firing direction. Mirrors the slash spawn
-        /// convention (1.25 tiles in front of the body centre) so every spell except
-        /// Dash visually originates from the same point. Damage / raycast still use
-        /// the true caster centre; only the rendered line, trail particles and
-        /// impact-tip are anchored at the forward offset.
-        /// </summary>
-        public const float VISUAL_FORWARD_OFFSET = 1.25f;
-
         private LineRenderer _coreLine;
         private LineRenderer _glowLine;
         // The travelling charges. Short lines whose endpoints slide from the caster to the
@@ -293,14 +283,9 @@ namespace Valkur.Gameplay.Spells
 
                 // Resolve current beam direction & origin every frame (player may rotate).
                 Vector2 dir = ResolveDirection();
-                // Hand height, the same origin the fireball leaves from. ResolveCasterCenter
-                // returns the geometric middle of the sprite — the waist on a humanoid — so
-                // the beam used to emerge from the caster's stomach.
-                //
-                // Resolved every frame rather than cached: the caster moves, and a beam is
-                // held. And used for the raycast as well as the visuals, so what is drawn and
-                // what is hit stay the same line.
-                Vector2 origin = (Vector2)ProjectileExecutor.ResolveCastOrigin(transform);
+                // Resolve Fireball's exact start every frame so the held beam follows the
+                // moving caster. Raycast, damage and visuals all use this same point.
+                Vector2 origin = ProjectileExecutor.ResolveCastStart(transform, dir, _ctx.Spell);
 
                 // Player-only: clamp the effective range to the cursor's distance
                 // from the caster centre. If the mouse is BEFORE the spell's max
@@ -313,14 +298,9 @@ namespace Valkur.Gameplay.Spells
                 var wallHit = Physics2D.Raycast(origin, dir, effectiveRange, blockMask);
                 Vector2 fullEnd = wallHit.collider != null ? wallHit.point : origin + dir * effectiveRange;
 
-                // VISUAL origin: pushed FORWARD along dir so the rendered beam
-                // emerges from ~1 tile in front of the caster — same convention as
-                // the slash spawn point. Always at least 1.25 tiles ahead of body
-                // centre regardless of mouse distance.
-                Vector2 visualOrigin = origin + dir * VISUAL_FORWARD_OFFSET;
-                // If the mouse is closer than the forward offset, fullEnd would land
-                // BEHIND visualOrigin and the line renderer would draw backwards.
-                // Collapse the beam visually in that case (mouse on top of caster).
+                Vector2 visualOrigin = origin;
+                // If the cursor is behind the shared start, collapse the visual rather
+                // than drawing the beam backwards through the caster.
                 if (Vector2.Dot(fullEnd - visualOrigin, dir) < 0f)
                     fullEnd = visualOrigin;
 
@@ -488,6 +468,7 @@ namespace Valkur.Gameplay.Spells
                             if (health != null && !health.IsDead)
                             {
                                 health.TakeDamage(dmg);
+                                Valkur.Core.GameEvents.FireHitDealt(gameObject, c.gameObject, dmg);
                                 damagedThisTick.Add(c.gameObject);
                             }
                         }

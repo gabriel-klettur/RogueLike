@@ -75,6 +75,28 @@ namespace Valkur.Gameplay
         public int TotalCompleted      => _totalCompleted;
         public int LastCompletedCount  => _lastCompletedCount;
 
+        /// <summary>
+        /// Length in seconds of the window the CURRENT combo is running on.
+        /// The window shrinks as the streak grows, so UI that wants a truthful
+        /// drain bar must divide by this value rather than by the base window.
+        /// </summary>
+        public float CurrentWindowDuration => EffectiveWindow(Mathf.Max(1, _current));
+
+        /// <summary>
+        /// Fraction of the current combo window still left: 1 right after a hit
+        /// lands, 0 the instant it expires. Returns 0 when no combo is running.
+        /// </summary>
+        public float WindowRemaining01
+        {
+            get
+            {
+                if (_current <= 0) return 0f;
+                float window = CurrentWindowDuration;
+                if (window <= 0f) return 0f;
+                return Mathf.Clamp01((_windowEndTime - Time.time) / window);
+            }
+        }
+
         // ── Events ─────────────────────────────────────────────────────────
         /// <summary>Fired when the combo count changes. Arg = new count.</summary>
         public event Action<int> OnComboChanged;
@@ -95,8 +117,21 @@ namespace Valkur.Gameplay
 
         private void HandleHitDealt(GameObject attacker, GameObject victim, int damage)
         {
-            if (attacker != gameObject) return;
+            if (!IsOwnHit(attacker)) return;
             RegisterHit(victim, damage, "combat");
+        }
+
+        /// <summary>
+        /// True when <paramref name="attacker"/> is this entity, or something in
+        /// its hierarchy. Spells report the transform they were cast from, which
+        /// is often a child of the caster (a hand, a muzzle) rather than the
+        /// entity itself, so those hits have to count too.
+        /// </summary>
+        public bool IsOwnHit(GameObject attacker)
+        {
+            if (attacker == null) return false;
+            if (attacker == gameObject) return true;
+            return attacker.transform.IsChildOf(transform);
         }
 
         private void Update()

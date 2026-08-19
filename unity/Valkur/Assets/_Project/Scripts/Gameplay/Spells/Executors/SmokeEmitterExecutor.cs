@@ -15,7 +15,7 @@ namespace Valkur.Gameplay.Spells
         {
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 3f;
             float radius = 2f;
-            Vector3 pos = ctx.Caster.position;
+            Vector3 pos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
 
             var go = new GameObject("SmokeEmitter");
             go.transform.position = pos;

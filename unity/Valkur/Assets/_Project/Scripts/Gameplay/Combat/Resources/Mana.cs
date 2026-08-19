@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Valkur.Core;
 
 namespace Valkur.Gameplay
 {
@@ -121,6 +122,7 @@ namespace Valkur.Gameplay
         public bool TryConsume(int amount)
         {
             if (amount <= 0) return true;
+            if (ActiveSpellsEditorSuppressesPlayerManaConsumption()) return true;
             if (_currentMana < amount) return false;
 
             _currentMana -= amount;
@@ -130,6 +132,27 @@ namespace Valkur.Gameplay
             OnManaConsumed?.Invoke(amount);
             OnManaChanged?.Invoke(_currentMana, maxMana);
             return true;
+        }
+
+        /// <summary>
+        /// The F4 Spells Editor is an authoring surface: every mana charge made by the
+        /// player while it is open is a preview charge and must be ignored. Keeping the
+        /// decision here covers both the initial <see cref="Spells.SpellCaster"/> cost and
+        /// secondary drains such as <see cref="Spells.LaserBeamController"/>'s per-second
+        /// channel cost. The manager is queried on every attempt, so closing F4 restores
+        /// normal consumption immediately without a stored suppression flag.
+        /// </summary>
+        private bool ActiveSpellsEditorSuppressesPlayerManaConsumption()
+        {
+            if (GetComponent<PlayerController>() == null) return false;
+            if (!GameEditorManager.HasInstance) return false;
+
+            var active = GameEditorManager.Instance.ActiveEditor;
+            var chooser = active as IChoosesPrimaryCastSpell;
+            return active != null
+                && active.IsActive
+                && chooser != null
+                && chooser.PrimaryCastIgnoresManaCost;
         }
 
         /// <summary>

@@ -22,8 +22,8 @@ namespace Valkur.Gameplay.Spells
             float range    = ctx.Spell.range > 0 ? ctx.Spell.range : 8f;
             float jumpDist = ctx.Spell.radius > 0 ? ctx.Spell.radius : DEFAULT_JUMP_RANGE;
 
-            // Find initial target: nearest enemy in range from caster + direction
-            Vector2 castPos = ctx.Caster.position;
+            // The first arc leaves from the exact same hand point as Fireball.
+            Vector2 castPos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             var candidates = Physics2D.OverlapCircleAll(castPos, range, ctx.TargetLayers);
 
             // Sort by distance, excluding caster
@@ -60,7 +60,9 @@ namespace Valkur.Gameplay.Spells
                 {
                     // Damage falls off per jump: 100% → 75% → 56% ...
                     float falloff = Mathf.Pow(0.75f, chains);
-                    health.TakeDamage(Mathf.RoundToInt(ctx.Spell.damage * falloff));
+                    int dealt = Mathf.RoundToInt(ctx.Spell.damage * falloff);
+                    health.TakeDamage(dealt);
+                    Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, c.gameObject, dealt);
                 }
 
                 hit.Add(c.gameObject);
@@ -80,7 +82,7 @@ namespace Valkur.Gameplay.Spells
             }
 
             if (!string.IsNullOrEmpty(ctx.Spell.vfxPreset) && VFXManager.Instance != null)
-                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, ctx.Caster.position);
+                VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, castPos);
         }
     }
 }

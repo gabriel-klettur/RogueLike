@@ -26,11 +26,11 @@ namespace Valkur.Gameplay.Spells
             if (ctx.Spell.spawnAtMouse || isPull)
             {
                 float dist = ctx.Spell.range > 0 ? ctx.Spell.range : 6f;
-                spawnPos = (Vector2)ctx.Caster.position + ctx.Direction * dist;
+                spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
             }
             else
             {
-                spawnPos = ctx.Caster.position;
+                spawnPos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             }
 
             var vortexGo = new GameObject(isPull ? "VortexPull" : "VortexPush");

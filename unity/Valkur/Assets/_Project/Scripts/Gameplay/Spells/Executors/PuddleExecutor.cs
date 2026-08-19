@@ -24,8 +24,8 @@ namespace Valkur.Gameplay.Spells
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 2f;
 
             Vector2 spawnPos = ctx.Spell.spawnAtMouse
-                ? (Vector2)ctx.Caster.position + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
-                : (Vector2)ctx.Caster.position + ctx.Direction * dist;
+                ? (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
+                : (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
 
             bool rootWhip = ctx.Spell.vfxPreset == ROOT_WHIP_PRESET;
 

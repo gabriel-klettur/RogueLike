@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Spells
             float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f;
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 
-            Vector2 spawnPos = (Vector2)ctx.Caster.position + ctx.Direction * dist;
+            Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
             float angle = Mathf.Atan2(ctx.Direction.y, ctx.Direction.x) * Mathf.Rad2Deg;
 
             var wallGo = new GameObject("SpellWall");

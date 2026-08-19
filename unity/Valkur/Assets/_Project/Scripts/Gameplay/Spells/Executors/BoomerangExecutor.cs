@@ -19,7 +19,7 @@ namespace Valkur.Gameplay.Spells
                 return;
             }
 
-            Vector3 spawnPos = ctx.Caster.position + (Vector3)(ctx.Direction * 0.4f);
+            Vector3 spawnPos = ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell);
             var go = Object.Instantiate(ctx.ProjectilePrefab, spawnPos, Quaternion.identity);
             go.SetActive(true);
 

@@ -12,7 +12,7 @@ namespace Valkur.Gameplay.Spells
         public void Execute(SpellContext ctx)
         {
             float radius = ctx.Spell.radius > 0 ? ctx.Spell.radius : 2f;
-            Vector2 center = (Vector2)ctx.Caster.position + ctx.Direction * radius;
+            Vector2 center = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * radius;
 
             var hits = Physics2D.OverlapCircleAll(center, radius, ctx.TargetLayers);
             foreach (var hit in hits)
@@ -20,7 +20,11 @@ namespace Valkur.Gameplay.Spells
                 if (hit.gameObject == ctx.Caster.gameObject) continue;
                 var health = hit.GetComponent<Health>();
                 if (health != null && !health.IsDead)
-                    health.TakeDamage(Mathf.RoundToInt(ctx.Spell.damage));
+                {
+                    int dealt = Mathf.RoundToInt(ctx.Spell.damage);
+                    health.TakeDamage(dealt);
+                    Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
+                }
             }
 
             if (VFXManager.Instance != null)

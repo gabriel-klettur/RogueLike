@@ -10,12 +10,8 @@ namespace Valkur.Gameplay.Combat
     /// Attach to any entity with Health + SpriteRenderer.
     /// </summary>
     [RequireComponent(typeof(Health))]
-    public class CombatFeedback : MonoBehaviour
+    public partial class CombatFeedback : MonoBehaviour
     {
-        [Header("Hit Flash")]
-        [SerializeField] private float flashDuration = 0.12f;
-        [SerializeField] private Color flashColor = Color.white;
-
         [Header("Knockback")]
         [SerializeField] private float knockbackForce = 4f;
         [SerializeField] private float knockbackDuration = 0.15f;
@@ -27,8 +23,6 @@ namespace Valkur.Gameplay.Combat
         private Health _health;
         private SpriteRenderer _spriteRenderer;
         private Rigidbody2D _rb;
-        private Color _originalColor;
-        private Coroutine _flashCoroutine;
         private bool _isDying;
 
         private void Awake()
@@ -37,9 +31,10 @@ namespace Valkur.Gameplay.Combat
             _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             _rb = GetComponent<Rigidbody2D>();
 
-            if (_spriteRenderer != null)
-                _originalColor = _spriteRenderer.color;
+            EnsureHitFlashReady();
         }
+
+        private void Update() => TickHitFlash(Time.deltaTime);
 
         private void OnEnable()
         {
@@ -51,21 +46,22 @@ namespace Valkur.Gameplay.Combat
         {
             _health.OnDamaged -= OnDamaged;
             _health.OnDeath -= OnDeath;
+
+            // Pooled entities come back with whatever the last hit left behind, so
+            // clear the flash rather than reviving a half-white sprite.
+            CancelHitFlash();
         }
 
         private void OnDamaged(int amount)
         {
             if (_isDying) return;
 
-            // Hit flash
-            if (_spriteRenderer != null)
-            {
-                if (_flashCoroutine != null)
-                    StopCoroutine(_flashCoroutine);
-                _flashCoroutine = StartCoroutine(HitFlashRoutine());
-            }
+            TriggerHitFlash();
 
-            Debug.Log($"[Combat] {gameObject.name} took {amount} damage. HP: {_health.CurrentHp}/{_health.MaxHp}");
+            // Fires once per hit on every entity in a fight — gated so a busy
+            // brawl does not bury the console.
+            VerboseLog.Log(VerboseLog.Category.Combat,
+                () => $"[Combat] {gameObject.name} took {amount} damage. HP: {_health.CurrentHp}/{_health.MaxHp}");
         }
 
         /// <summary>
@@ -129,21 +125,6 @@ namespace Valkur.Gameplay.Combat
             if (controller != null) controller.enabled = false;
 
             StartCoroutine(DeathRoutine());
-        }
-
-        private void CancelHitFlash()
-        {
-            if (_flashCoroutine == null) return;
-            StopCoroutine(_flashCoroutine);
-            _flashCoroutine = null;
-        }
-
-        private IEnumerator HitFlashRoutine()
-        {
-            _spriteRenderer.color = flashColor;
-            yield return new WaitForSeconds(flashDuration);
-            _spriteRenderer.color = _originalColor;
-            _flashCoroutine = null;
         }
 
         private IEnumerator KnockbackDecayRoutine()
