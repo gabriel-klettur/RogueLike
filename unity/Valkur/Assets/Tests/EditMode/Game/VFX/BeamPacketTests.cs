@@ -251,11 +251,22 @@ namespace Valkur.Tests.EditMode.Game.VFX
                 $"Baseline centreline luminance is {baseline:0.000}. Above ~0.85 the beam is " +
                 "effectively clipped and a travelling charge cannot be seen at all.");
 
-            Assert.Greater(baseline, 0.40f,
-                $"Baseline centreline luminance is {baseline:0.000}. The upper bound alone lets " +
-                "the beam be dimmed indefinitely to buy headroom, which trades the saturation " +
-                "bug for a beam that no longer reads as incandescent — the exact regression the " +
-                "additive rework was done to fix.");
+            float peakTexEarly = 0f;
+            for (int i = 0; i <= SAMPLES; i++)
+                peakTexEarly = Mathf.Max(peakTexEarly, Centre(i / (float)SAMPLES));
+            float chargeAdds = peakTexEarly * packetAlpha;
+
+            // Stated against the charge rather than as an absolute floor. The upper bound alone
+            // would let the beam be dimmed indefinitely to buy headroom, trading the saturation
+            // bug for a beam that no longer reads as incandescent. But "0.40" was a number
+            // picked out of the air, and any legitimate retune of the alphas would have tripped
+            // it. What actually matters is the RATIO: if the steady beam is dim relative to what
+            // a passing charge adds, the eye stops seeing a laser that pulses and starts seeing
+            // a string of pulses with nothing between them.
+            Assert.Greater(baseline, chargeAdds * 0.5f,
+                $"Baseline centreline luminance is {baseline:0.000} against a charge that adds " +
+                $"{chargeAdds:0.000}. The beam has become a carrier for the charges rather than " +
+                "a beam they travel along.");
 
             // The true maximum, not the head's centre — the tail is one-sided and worth
             // nothing exactly at the head, so sampling there understates the charge by a third.
