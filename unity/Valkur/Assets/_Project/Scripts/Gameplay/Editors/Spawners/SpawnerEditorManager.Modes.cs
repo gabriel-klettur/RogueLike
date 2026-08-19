@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Valkur.Core.Input;
 using Valkur.Data;
+using Valkur.Gameplay.Spawners;
 using Valkur.UIKit;
 
 namespace Valkur.Gameplay.Spawners
@@ -263,10 +264,24 @@ namespace Valkur.Gameplay.Spawners
 
         private string ResolveZone(Vector3 worldPos)
         {
-            // TODO: route through ZoneManager.GetZoneAt(worldPos) once the zone
-            // editor exposes a public lookup. Defaults to Lobby for parity with
-            // the original placement helper.
-            _ = worldPos;
+            // This used to return "Lobby" unconditionally, with a TODO waiting for a public
+            // lookup that already existed. Harmless while the zone was only a label; not
+            // harmless once the save started converting positions THROUGH the zone's origin,
+            // because a spawner placed in zone_150_50 and labelled Lobby has its tile computed
+            // against the wrong offset and comes back 100 tiles away.
+            var zoneManager = FindObjectOfType<Valkur.Gameplay.World.ZoneManager>();
+            if (zoneManager != null
+                && zoneManager.TryGetZoneAtTile(
+                       new Vector2Int(Mathf.RoundToInt(worldPos.x), Mathf.RoundToInt(worldPos.y)),
+                       out var zone)
+                && !string.IsNullOrEmpty(zone.zoneName))
+            {
+                return zone.zoneName;
+            }
+
+            Debug.LogWarning($"[SpawnerEditor] No zone covers ({worldPos.x:F0}, {worldPos.y:F0}); " +
+                             "falling back to 'Lobby'. The spawner will save and load against " +
+                             "Lobby's origin, so it will not come back where it was placed.");
             return "Lobby";
         }
 
@@ -338,8 +353,17 @@ namespace Valkur.Gameplay.Spawners
             {
                 var si  = all[i];
                 var pos = si.transform.position;
-                int col = Mathf.RoundToInt(pos.x);
-                int row = Mathf.RoundToInt(pos.y);
+
+                // The file stores tiles ZONE-RELATIVE with the row axis flipped; world space
+                // is absolute with y growing upward. Writing RoundToInt(position) here — as
+                // this did — put absolute coordinates into a field the loader reads as
+                // zone-relative, so every reload shifted each spawner by its zone's origin.
+                // Lobby is at (150, 50), which is why spawners marched 150 tiles right per
+                // restart until they left the map. SpawnerTileMapping owns both directions
+                // now, so they cannot disagree again.
+                var tile = ResolveTileForSave(si, pos);
+                int col = tile.x;
+                int row = tile.y;
 
                 sb.Append("  {");
                 sb.Append($"\"template_id\": \"{si.Template?.templateId ?? "?"}\", ");
@@ -403,6 +427,29 @@ namespace Valkur.Gameplay.Spawners
         internal void FlushAutosave()
         {
             if (_autosavePending) SaveInstancesToJson();
+        }
+
+        /// <summary>
+        /// The zone-relative tile to persist for a placed spawner.
+        ///
+        /// Falls back to the raw world position only when the zone cannot be resolved — which
+        /// keeps a spawner in an unregistered zone round-tripping the way it always did rather
+        /// than silently teleporting it to the origin, and matches the loader, which skips
+        /// such an entry with a warning either way.
+        /// </summary>
+        private Vector2Int ResolveTileForSave(SpawnerInstance si, Vector3 worldPos)
+        {
+            var zoneManager = FindObjectOfType<Valkur.Gameplay.World.ZoneManager>();
+            if (zoneManager != null && !string.IsNullOrEmpty(si.Zone)
+                && zoneManager.TryGetZone(si.Zone, out var zoneDef))
+            {
+                return SpawnerTileMapping.WorldToTile(
+                    worldPos, zoneDef.gridOffset, zoneManager.ZoneHeightTiles);
+            }
+
+            Debug.LogWarning($"[SpawnerEditor] Zone '{si.Zone}' could not be resolved for " +
+                             $"'{si.InstanceId}'; persisting its raw world position.");
+            return new Vector2Int(Mathf.RoundToInt(worldPos.x), Mathf.RoundToInt(worldPos.y));
         }
 
         /// <summary>

@@ -162,14 +162,15 @@ namespace Valkur.Gameplay.Spawners
                 tileRow = Convert.ToInt32(tileList[1]);
             }
 
-            int zoneH = _zoneManager.ZoneHeightTiles;
-            float worldX = zoneDef.gridOffset.x + tileCol;
-            float worldY = zoneDef.gridOffset.y + (zoneH - 1) - tileRow;
+            // Shared with the F3 editor's save, so the round trip cannot drift. See
+            // SpawnerTileMapping for what happened when only this side did the conversion.
+            Vector2 world = SpawnerTileMapping.TileToWorld(
+                tileCol, tileRow, zoneDef.gridOffset, _zoneManager.ZoneHeightTiles);
 
             // Create SpawnerInstance GO
             var go = new GameObject($"Spawner_{instanceId}");
             go.transform.SetParent(transform, worldPositionStays: false);
-            go.transform.position = new Vector3(worldX, worldY, 0f);
+            go.transform.position = new Vector3(world.x, world.y, 0f);
 
             var si = go.AddComponent<SpawnerInstance>();
             si.Initialize(template, instanceId, zone, _monsterSpawner);
