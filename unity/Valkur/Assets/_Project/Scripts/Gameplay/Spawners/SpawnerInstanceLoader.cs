@@ -115,10 +115,22 @@ namespace Valkur.Gameplay.Spawners
 
         public void ClearInstances()
         {
-            foreach (var si in _instances)
+            // Every SpawnerInstance in the scene, not only the ones this loader created.
+            //
+            // There are exactly two creators: this loader, which tracks what it makes in
+            // _instances, and the F3 editor, which builds spawners directly and never
+            // registers them here. SpawnerEditorManager persists by FindObjectsOfType, so the
+            // editor's spawners DO reach the file — and clearing only the tracked set left
+            // them alive across a reload while the file recreated them, so the map doubled on
+            // every reloadworld / map switch. Autosave then wrote the doubled set back, which
+            // is why one id ended up in the file five times.
+            //
+            // Save and clear have to agree on the same set. FindObjectsOfType is what save
+            // uses, so it is what clear uses.
+            foreach (var si in FindObjectsOfType<SpawnerInstance>())
             {
                 if (si != null)
-                    Destroy(si.gameObject);
+                    Valkur.Core.SafeDestroy.Of(si.gameObject);
             }
             _instances.Clear();
         }

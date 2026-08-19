@@ -195,6 +195,53 @@ namespace Valkur.Tests.EditMode.Editors.Spawners
                 "data. Defaulting the other way turns an I/O hiccup into deletion.");
         }
 
+        // ── Clearing and saving must see the same spawners ──────────────────────
+
+        [Test]
+        public void ClearingDestroysEverySpawnerTheSaveWouldHaveWritten()
+        {
+            // The duplication bug lived in this asymmetry. There are two creators of
+            // SpawnerInstance: the loader, which tracks what it makes, and the F3 editor,
+            // which builds spawners directly and never registers them with the loader.
+            // SpawnerEditorManager saves by FindObjectsOfType, so the editor's spawners DO
+            // reach the file — but ClearInstances only destroyed the tracked ones, so a
+            // reload left them alive while the file recreated them. Every reloadworld or map
+            // switch doubled the map, and autosave wrote the doubled set back.
+            string loader = File.ReadAllText(Path.Combine(Application.dataPath, "_Project",
+                "Scripts", "Gameplay", "Spawners", "SpawnerInstanceLoader.cs"));
+
+            int clear = loader.IndexOf("public void ClearInstances()", System.StringComparison.Ordinal);
+            Assert.Greater(clear, -1, "ClearInstances moved — update this test.");
+
+            string body = loader.Substring(clear, System.Math.Min(1400, loader.Length - clear));
+            Assert.IsTrue(body.Contains("FindObjectsOfType<SpawnerInstance>()"),
+                "Clearing must enumerate the same set the save enumerates. Iterating only the " +
+                "loader's own list leaves editor-placed spawners behind, and the file then " +
+                "recreates them on top.");
+
+            string save = Read("Spawners", "SpawnerEditorManager.Modes.cs");
+            Assert.IsTrue(save.Contains("FindObjectsOfType<SpawnerInstance>()"),
+                "If the save ever stops using FindObjectsOfType, clear has to change with it — " +
+                "the two only stay correct together.");
+        }
+
+        [Test]
+        public void LoadingClearsBeforeItCreates()
+        {
+            string loader = File.ReadAllText(Path.Combine(Application.dataPath, "_Project",
+                "Scripts", "Gameplay", "Spawners", "SpawnerInstanceLoader.cs"));
+
+            int load = loader.IndexOf("public void LoadInstances()", System.StringComparison.Ordinal);
+            Assert.Greater(load, -1);
+            int clearCall = loader.IndexOf("ClearInstances();", load, System.StringComparison.Ordinal);
+            int firstCreate = loader.IndexOf("AddComponent<SpawnerInstance>", load, System.StringComparison.Ordinal);
+
+            Assert.Greater(clearCall, -1, "LoadInstances must clear first.");
+            Assert.Less(clearCall, firstCreate,
+                "Clearing after creating would destroy what was just loaded; clearing not at " +
+                "all makes every reload additive.");
+        }
+
         // ── Where it writes ──────────────────────────────────────────────────────
 
         [Test]
