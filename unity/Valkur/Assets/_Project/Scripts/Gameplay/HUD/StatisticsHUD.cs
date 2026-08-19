@@ -154,8 +154,10 @@ namespace Valkur.Gameplay.HUD
             var panel = new GameObject("Panel");
             panel.transform.SetParent(_root.transform, false);
             var panelRt = panel.AddComponent<RectTransform>();
-            panelRt.anchorMin = new Vector2(0.18f, 0.12f);
-            panelRt.anchorMax = new Vector2(0.82f, 0.88f);
+            // Same rect as SkillTreeHUD: the character sheet's tab strip sits
+            // directly above both, so they must occupy identical space.
+            panelRt.anchorMin = new Vector2(0.2f, 0.15f);
+            panelRt.anchorMax = new Vector2(0.8f, 0.85f);
             panelRt.offsetMin = panelRt.offsetMax = Vector2.zero;
             var panelImg = panel.AddComponent<Image>();
             panelImg.color = new Color(0f, 0f, 0f, 0.88f);

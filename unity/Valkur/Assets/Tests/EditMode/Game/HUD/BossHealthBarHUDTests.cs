@@ -104,6 +104,48 @@ namespace Valkur.Tests.EditMode.Game.HUD
         }
 
         [Test]
+        public void BoundBoss_ClaimsTheSharedTopSlot()
+        {
+            Assert.IsFalse(BossHealthBarHUD.IsShowing,
+                "Sanity: nothing owns the top-centre slot before a boss binds.");
+
+            _hud.BindToBoss(_phases);
+            Assert.IsTrue(BossHealthBarHUD.IsShowing,
+                "While a boss bar is up it owns the slot — TargetHUD reads this flag to stay hidden.");
+
+            _hud.BindToBoss(null);
+            Assert.IsFalse(BossHealthBarHUD.IsShowing,
+                "Releasing the boss must hand the slot back to TargetHUD.");
+        }
+
+        [Test]
+        public void BossDeath_ReleasesTheSharedTopSlot()
+        {
+            _hud.BindToBoss(_phases);
+            Assert.IsTrue(BossHealthBarHUD.IsShowing);
+
+            _bossHealth.TakeDamage(9999);
+            Assert.IsFalse(BossHealthBarHUD.IsShowing,
+                "A dead boss must not keep the target panel suppressed.");
+        }
+
+        [Test]
+        public void Registry_TracksBossesWithoutDuplicates()
+        {
+            BossHealthBarHUD.UnregisterBoss(_phases);   // start from a known state
+
+            BossHealthBarHUD.RegisterBoss(_phases);
+            BossHealthBarHUD.RegisterBoss(_phases);
+            BossHealthBarHUD.RegisterBoss(null);
+
+            // Nothing observable leaks out of the registry, so the contract we
+            // can pin is that repeated registration and null are both harmless.
+            Assert.DoesNotThrow(() => BossHealthBarHUD.UnregisterBoss(_phases));
+            Assert.DoesNotThrow(() => BossHealthBarHUD.UnregisterBoss(_phases));
+            Assert.DoesNotThrow(() => BossHealthBarHUD.UnregisterBoss(null));
+        }
+
+        [Test]
         public void EnsureBuilt_CreatesCanvasOnce()
         {
             // Already built in SetUp. Verify the Canvas exists and a second

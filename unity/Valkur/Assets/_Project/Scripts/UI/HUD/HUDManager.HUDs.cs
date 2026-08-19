@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -24,6 +24,7 @@ namespace Valkur.UI.HUD
             // Semi-transparent background
             var panelImg = panel.AddComponent<Image>();
             panelImg.color = new Color(0f, 0f, 0f, 0.6f);
+            panelImg.raycastTarget = false;
 
             var canvasGroup = panel.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0f;
@@ -145,6 +146,10 @@ namespace Valkur.UI.HUD
                 _xpBarPanel.SetActive(!editorActive);
             if (_spellCooldownPanel != null)
                 _spellCooldownPanel.SetActive(!editorActive);
+            if (_comboPanel != null)
+                _comboPanel.SetActive(!editorActive);
+            if (_bossBarPanel != null)
+                _bossBarPanel.SetActive(!editorActive);
         }
     }
 }

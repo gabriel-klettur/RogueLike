@@ -66,6 +66,12 @@ namespace Valkur.Tests.EditMode.Game.UI
             CleanupSingleton();
             // Also clear the static event in case a prior test left subscribers.
             ClearEditorStateEvent();
+            // And drop stray HUD containers. The controller finds its targets with
+            // GameObject.Find, which returns whichever "[UI]" it meets first — so a
+            // container left behind by any earlier test (GameplaySceneSetup builds
+            // one via GetSceneContainer, and EditMode objects outlive their test
+            // with Domain Reload off) gets hidden instead of the one built here.
+            DestroyStrayHudContainers();
 
             // Create a fresh GameEditorManager singleton.
             // In EditMode, Unity does NOT auto-call Awake/OnEnable — invoke manually.
@@ -88,6 +94,23 @@ namespace Valkur.Tests.EditMode.Game.UI
             // Clean singleton ref and event so the next test starts fresh.
             CleanupSingleton();
             ClearEditorStateEvent();
+        }
+
+        // Names the controller looks up by GameObject.Find. Any survivor from an
+        // earlier test would shadow this fixture's own containers.
+        private static readonly string[] HudContainerNames =
+        {
+            "[UI]", "MusicHUDCanvas", "ToastCanvas",
+        };
+
+        private static void DestroyStrayHudContainers()
+        {
+            foreach (var name in HudContainerNames)
+            {
+                GameObject stray;
+                while ((stray = GameObject.Find(name)) != null)
+                    Object.DestroyImmediate(stray);
+            }
         }
 
         // ── Singleton / event helpers ─────────────────────────────────────────

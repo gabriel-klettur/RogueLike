@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Valkur.Gameplay;
 using Valkur.Gameplay.FSM;
+using Valkur.Gameplay.HUD;
 
 namespace Valkur.UI.HUD
 {
@@ -54,8 +55,10 @@ namespace Valkur.UI.HUD
 
         private void Update()
         {
-            // Show while hovering, or for displayDuration after a hit
-            bool shouldShow = _targetHealth != null &&
+            // The boss bar owns this slot outright. While one is up the target
+            // panel stays hidden instead of stacking on top of it.
+            bool shouldShow = !BossHealthBarHUD.IsShowing &&
+                _targetHealth != null &&
                 (_isHovering || Time.time - _lastInteractionTime < displayDuration);
 
             float targetAlpha = shouldShow ? 1f : 0f;

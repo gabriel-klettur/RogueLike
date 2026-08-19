@@ -151,6 +151,14 @@ namespace Valkur.UI.HUD
             var le  = row.AddComponent<LayoutElement>();
             le.preferredHeight = HudAbilityRowHeight;
 
+            // Invisible hit area covering the whole row (slots AND the gaps
+            // between them) so the double-click that opens the character sheet
+            // lands anywhere on the row, not just on a slot.
+            var hit = row.AddComponent<Image>();
+            hit.color = new Color(0f, 0f, 0f, 0f);
+            hit.raycastTarget = true;
+            row.AddComponent<AbilityRowDoubleClick>();
+
             var hLayout = row.AddComponent<HorizontalLayoutGroup>();
             hLayout.padding = new RectOffset(0, 0, 0, 0);
             hLayout.spacing = AbilityRowSlotGap;

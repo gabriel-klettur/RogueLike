@@ -82,16 +82,14 @@ namespace Valkur.UIKit
         public void AddDropdown(string key, string label, IList<string> options, int selectedIndex)
         {
             var row = BuildRow(label);
-            var dGo = UIFactory.CreateUI("Dropdown", row.transform);
-            var le = dGo.AddComponent<LayoutElement>();
-            le.flexibleWidth = 1f;
-            var bg = dGo.AddComponent<Image>();
-            bg.color = UITheme.BG_SURFACE;
-            var dd = dGo.AddComponent<TMP_Dropdown>();
-            dd.targetGraphic = bg;
-            dd.ClearOptions();
-            dd.AddOptions(new List<string>(options));
-            if (selectedIndex >= 0 && selectedIndex < options.Count) dd.value = selectedIndex;
+
+            // Built through UIDropdown rather than a bare AddComponent: a TMP_Dropdown
+            // with no template looks correct closed and throws "The dropdown template is
+            // not assigned" the instant it is clicked, so the value can never change.
+            var host = UIFactory.CreateUI("DropdownHost", row.transform);
+            host.AddComponent<LayoutElement>().flexibleWidth = 1f;
+
+            var dd = UIDropdown.Add(host.transform, options, selectedIndex);
             dd.onValueChanged.AddListener(i => ValueChanged?.Invoke(key, i));
             _fields[key] = dd;
         }

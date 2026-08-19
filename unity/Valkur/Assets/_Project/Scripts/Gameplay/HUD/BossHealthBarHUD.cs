@@ -1,68 +1,197 @@
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using Valkur.Core;
 
 namespace Valkur.Gameplay.HUD
 {
     /// <summary>
-    /// Top-of-screen boss health bar. Tracks a single "active boss"
-    /// (whichever <see cref="BossPhaseController"/> the system is bound
-    /// to) and renders its HP fraction + phase label in a Canvas overlay.
-    /// Hides itself when no boss is bound, when the bound boss dies, or
-    /// when the boss leaves the camera range.
+    /// Top-of-screen boss bar. It occupies the same slot as the ordinary
+    /// <c>TargetHUD</c> and outranks it: while a boss bar is up,
+    /// <see cref="IsShowing"/> is true and the target panel keeps itself hidden,
+    /// so the two never stack on top of each other.
     ///
-    /// The companion <see cref="WorldHealthBar"/> floats above each NPC's
-    /// head; this HUD is the larger always-visible bar that signals "you
-    /// are fighting THIS boss right now". Designer wires a singleton
-    /// instance into the gameplay scene; combat code calls
-    /// <see cref="BindToBoss"/> when a boss aggros the player.
+    /// Engagement is automatic. Every <see cref="BossPhaseController"/> registers
+    /// itself while enabled; the HUD polls that registry a few times a second and
+    /// binds to the nearest living boss inside <see cref="engageRadius"/> of the
+    /// player, releasing it when the boss dies, despawns or is left behind.
+    /// <see cref="BindToBoss"/> stays public for scripted encounters and tests.
     ///
-    /// Built procedurally at runtime so designers don't have to author
-    /// a Canvas prefab. <see cref="EnsureBuilt"/> creates the Canvas +
-    /// Image + Text hierarchy on first show.
+    /// The bar shows the boss name, its current phase label, one pip per phase,
+    /// and an HP bar with a trailing "damage ghost" so a big hit reads as a chunk
+    /// torn out rather than a number that quietly moved.
     /// </summary>
-    public sealed class BossHealthBarHUD : SingletonMonoBehaviour<BossHealthBarHUD>
+    public sealed partial class BossHealthBarHUD : SingletonMonoBehaviour<BossHealthBarHUD>
     {
+        [Header("Auto-engage")]
+        [SerializeField, Tooltip("Bind automatically to the nearest living boss in range. " +
+                                 "Turn off for fully scripted encounters that call BindToBoss themselves.")]
+        private bool autoEngage = true;
+
+        [SerializeField, Tooltip("World-space distance at which a boss claims the bar.")]
+        private float engageRadius = 16f;
+
+        [SerializeField, Tooltip("Extra distance the player must travel beyond the engage radius " +
+                                 "before the bar lets go. Stops it flickering at the boundary.")]
+        private float disengageHysteresis = 4f;
+
+        [Header("Damage ghost")]
+        [SerializeField, Tooltip("Seconds the ghost bar holds before it starts catching up.")]
+        private float ghostDelay = 0.35f;
+
+        [SerializeField, Tooltip("How fast the ghost bar drains toward the real value, in bar fractions per second.")]
+        private float ghostSpeed = 0.55f;
+
+        // ── Registry ──────────────────────────────────────────────────────
+        private static readonly List<BossPhaseController> Registered = new List<BossPhaseController>();
+
+        /// <summary>True while a boss bar is on screen. TargetHUD yields to this.</summary>
+        public static bool IsShowing { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticsOnPlayModeEnter()
+        {
+            Registered.Clear();
+            IsShowing = false;
+        }
+
+        /// <summary>Called by <see cref="BossPhaseController"/> while it is enabled.</summary>
+        public static void RegisterBoss(BossPhaseController boss)
+        {
+            if (boss == null || Registered.Contains(boss)) return;
+            Registered.Add(boss);
+        }
+
+        /// <summary>Called by <see cref="BossPhaseController"/> when it is disabled or destroyed.</summary>
+        public static void UnregisterBoss(BossPhaseController boss)
+        {
+            if (boss == null) return;
+            Registered.Remove(boss);
+        }
+
+        // ── Runtime state ─────────────────────────────────────────────────
+        private const float EngagePollInterval = 0.25f;
+
         private BossPhaseController _boundBoss;
         private Health _boundHealth;
-
-        private Canvas _canvas;
-        private GameObject _root;
-        private Image _fill;
-        private UnityEngine.UI.Text _label;
+        private float _pollTimer;
+        private float _targetFill;
+        private float _ghostFill;
+        private float _ghostHoldTimer;
 
         protected override bool Persist => false;
 
-        // ── Public API ──────────────────────────────────────────────────────────
+        // ── Public API ────────────────────────────────────────────────────
 
         /// <summary>
-        /// Bind the HUD to a boss. The bar will refresh every frame from
-        /// the boss's Health and BossPhaseController. Passing null hides
-        /// the bar (used when the boss dies or leaves combat).
+        /// Bind the bar to a boss. Passing null hides it. Re-binding always
+        /// releases the previous boss's events first, so a second encounter
+        /// never leaves the bar reacting to the first boss's HP.
         /// </summary>
         public void BindToBoss(BossPhaseController boss)
         {
             UnbindCurrent();
+
             _boundBoss = boss;
-            if (_boundBoss != null)
+            if (_boundBoss == null)
             {
-                _boundHealth = boss.GetComponent<Health>();
-                EnsureBuilt();
-                if (_root != null) _root.SetActive(true);
-                Refresh();
-                _boundBoss.OnPhaseChanged += OnPhaseChanged;
-                if (_boundHealth != null) _boundHealth.OnHpChanged += OnHpChanged;
+                SetVisible(false);
+                return;
             }
-            else
-            {
-                if (_root != null) _root.SetActive(false);
-            }
+
+            _boundHealth = boss.GetComponent<Health>();
+            EnsureBuilt();
+
+            _boundBoss.OnPhaseChanged += OnPhaseChanged;
+            if (_boundHealth != null) _boundHealth.OnHpChanged += OnHpChanged;
+
+            SetVisible(true);
+            RebuildPhasePips();
+            Refresh();
+
+            // A fresh encounter starts with a full ghost — no phantom chunk.
+            _ghostFill = _targetFill;
+            _ghostHoldTimer = 0f;
         }
 
-        /// <summary>True when the HUD is currently bound to a live boss.</summary>
+        /// <summary>True when the bar is bound to a boss that is still alive.</summary>
         public bool IsActive => _boundBoss != null && _boundHealth != null && !_boundHealth.IsDead;
 
-        // ── Internals ──────────────────────────────────────────────────────────
+        /// <summary>The boss currently owning the bar, or null.</summary>
+        public BossPhaseController BoundBoss => _boundBoss;
+
+        // ── Lifecycle ─────────────────────────────────────────────────────
+
+        protected override void OnSingletonAwake() => EnsureBuilt();
+
+        protected override void OnDestroy()
+        {
+            UnbindCurrent();
+            SetVisible(false);
+            base.OnDestroy();
+        }
+
+        private void Update() => Tick(Time.deltaTime);
+
+        /// <summary>Frame driver, public so PlayMode tests can step it deterministically.</summary>
+        public void Tick(float deltaTime)
+        {
+            if (autoEngage)
+            {
+                _pollTimer -= deltaTime;
+                if (_pollTimer <= 0f)
+                {
+                    _pollTimer = EngagePollInterval;
+                    PollEngagement();
+                }
+            }
+
+            if (!IsShowing) return;
+            TickGhost(deltaTime);
+        }
+
+        // ── Engagement ────────────────────────────────────────────────────
+
+        private void PollEngagement()
+        {
+            var player = EntityRegistry.Player;
+            if (player == null) return;
+
+            Vector3 playerPos = player.transform.position;
+
+            // Keeping the bound boss needs a slightly larger radius than claiming
+            // one, so walking the boundary doesn't strobe the bar on and off.
+            if (_boundBoss != null && IsEngageable(_boundBoss, playerPos, engageRadius + disengageHysteresis))
+                return;
+
+            BossPhaseController nearest = null;
+            float nearestSqr = float.MaxValue;
+
+            for (int i = Registered.Count - 1; i >= 0; i--)
+            {
+                var candidate = Registered[i];
+                if (candidate == null) { Registered.RemoveAt(i); continue; }
+                if (!IsEngageable(candidate, playerPos, engageRadius)) continue;
+
+                float sqr = (candidate.transform.position - playerPos).sqrMagnitude;
+                if (sqr >= nearestSqr) continue;
+                nearestSqr = sqr;
+                nearest = candidate;
+            }
+
+            if (nearest != _boundBoss) BindToBoss(nearest);
+        }
+
+        private static bool IsEngageable(BossPhaseController boss, Vector3 playerPos, float radius)
+        {
+            if (boss == null || !boss.isActiveAndEnabled) return false;
+
+            var health = boss.GetComponent<Health>();
+            if (health == null || health.IsDead) return false;
+
+            return (boss.transform.position - playerPos).sqrMagnitude <= radius * radius;
+        }
+
+        // ── Binding internals ─────────────────────────────────────────────
 
         private void UnbindCurrent()
         {
@@ -74,7 +203,7 @@ namespace Valkur.Gameplay.HUD
 
         private void OnHpChanged(int current, int max)
         {
-            // Auto-unbind on death so the HUD doesn't linger.
+            // Auto-release on death so the bar never lingers over a corpse.
             if (current <= 0)
             {
                 BindToBoss(null);
@@ -83,100 +212,45 @@ namespace Valkur.Gameplay.HUD
             Refresh();
         }
 
-        private void OnPhaseChanged(int oldPhase, int newPhase)
+        private void OnPhaseChanged(int oldPhase, int newPhase) => Refresh();
+
+        private void TickGhost(float deltaTime)
         {
-            Refresh();
+            if (_ghostImage == null) return;
+
+            if (_ghostFill <= _targetFill)
+            {
+                _ghostFill = _targetFill;
+                _ghostImage.fillAmount = _ghostFill;
+                return;
+            }
+
+            if (_ghostHoldTimer > 0f)
+            {
+                _ghostHoldTimer -= deltaTime;
+                return;
+            }
+
+            _ghostFill = Mathf.MoveTowards(_ghostFill, _targetFill, ghostSpeed * deltaTime);
+            _ghostImage.fillAmount = _ghostFill;
         }
 
         private void Refresh()
         {
-            if (_fill == null || _label == null) return;
             if (_boundBoss == null || _boundHealth == null)
             {
-                if (_root != null) _root.SetActive(false);
+                SetVisible(false);
                 return;
             }
 
-            float frac = _boundHealth.MaxHp > 0
+            float previous = _targetFill;
+            _targetFill = _boundHealth.MaxHp > 0
                 ? Mathf.Clamp01((float)_boundHealth.CurrentHp / _boundHealth.MaxHp)
                 : 0f;
-            _fill.fillAmount = frac;
 
-            string phaseLabel = _boundBoss.CurrentLabel;
-            string bossName = _boundBoss.gameObject.name;
-            _label.text = string.IsNullOrEmpty(phaseLabel)
-                ? bossName
-                : $"{bossName} — {phaseLabel}";
-        }
+            if (_targetFill < previous) _ghostHoldTimer = ghostDelay;
 
-        // Build the Canvas + Image + Text hierarchy once. Stays simple —
-        // no fancy animation, no frame art. Designers can swap to a
-        // prefab-driven implementation later by replacing this method.
-        public void EnsureBuilt()
-        {
-            if (_canvas != null) return;
-
-            _root = new GameObject("BossHealthBarHUD_Root");
-            _root.transform.SetParent(transform, false);
-
-            _canvas = _root.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 50;
-            _root.AddComponent<CanvasScaler>().uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            _root.AddComponent<GraphicRaycaster>();
-
-            // Container — top of screen, full width minus margins.
-            var bg = new GameObject("BG");
-            bg.transform.SetParent(_root.transform, false);
-            var bgRt = bg.AddComponent<RectTransform>();
-            bgRt.anchorMin = new Vector2(0.15f, 0.92f);
-            bgRt.anchorMax = new Vector2(0.85f, 0.97f);
-            bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
-            var bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0f, 0f, 0f, 0.7f);
-
-            // Fill — clipped left-to-right.
-            var fillGo = new GameObject("Fill");
-            fillGo.transform.SetParent(bg.transform, false);
-            var fillRt = fillGo.AddComponent<RectTransform>();
-            fillRt.anchorMin = Vector2.zero;
-            fillRt.anchorMax = Vector2.one;
-            fillRt.offsetMin = fillRt.offsetMax = Vector2.zero;
-            _fill = fillGo.AddComponent<Image>();
-            _fill.color = new Color(0.78f, 0.18f, 0.18f, 0.95f);
-            _fill.type = Image.Type.Filled;
-            _fill.fillMethod = Image.FillMethod.Horizontal;
-            _fill.fillOrigin = (int)Image.OriginHorizontal.Left;
-            _fill.fillAmount = 1f;
-
-            // Label — overlaid on top of fill, centred.
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(bg.transform, false);
-            var labelRt = labelGo.AddComponent<RectTransform>();
-            labelRt.anchorMin = Vector2.zero;
-            labelRt.anchorMax = Vector2.one;
-            labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
-            _label = labelGo.AddComponent<Text>();
-            _label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _label.alignment = TextAnchor.MiddleCenter;
-            _label.color = Color.white;
-            _label.fontSize = 22;
-            _label.fontStyle = FontStyle.Bold;
-            _label.text = "";
-
-            _root.SetActive(false);
-        }
-
-        protected override void OnSingletonAwake()
-        {
-            EnsureBuilt();
-        }
-
-        protected override void OnDestroy()
-        {
-            UnbindCurrent();
-            base.OnDestroy();
+            ApplyVisualState(_boundBoss, _boundHealth, _targetFill);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Valkur.Core;
@@ -19,6 +19,11 @@ namespace Valkur.UI.HUD
         private Mana _playerMana;
         private GameObject _playerHudPanel;
 
+        // Footprint of the unified bottom-left panel, published so widgets that
+        // stack above it (combo badge today) don't have to recompute the math.
+        private float _playerPanelWidth;
+        private float _playerPanelHeight;
+
         public TargetHUD TargetHUD => _targetHUD;
 
         protected override void OnSingletonAwake()
@@ -36,6 +41,13 @@ namespace Valkur.UI.HUD
 
             CreatePlayerHUD(playerHealth);
             CreateTargetHUD();
+
+            // Combo badge — stacks directly above the unified player panel.
+            CreateComboHUD(playerHealth != null ? playerHealth.gameObject : null);
+
+            // Boss bar — shares the top-centre slot with the target panel and
+            // outranks it. Created after it so it draws on top.
+            CreateBossHealthBar();
 
             // Spell cooldown countdown stack — top-left, below the day/night
             // clock. One row per active cooldown; subscribes to GameEvents.OnSpellCast.
@@ -104,6 +116,8 @@ namespace Valkur.UI.HUD
             float panelHeight = Mathf.Max(HudPortraitSize, stackHeight) + HudPanelPadding * 2f;
             float panelWidth  = HudPortraitSize + HudStackWidth + HudPanelInnerSpacing + HudPanelPadding * 2f;
             panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
+            _playerPanelWidth  = panelWidth;
+            _playerPanelHeight = panelHeight;
 
             // Semi-transparent background
             var panelImg = panel.AddComponent<Image>();
