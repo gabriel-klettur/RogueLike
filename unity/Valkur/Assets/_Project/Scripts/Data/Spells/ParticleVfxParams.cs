@@ -55,6 +55,13 @@ namespace Valkur.Data
         [Tooltip("Maximum particle size (world units). Python: size_range[1] / 16.")]
         public float sizeMax = 0.3f;
 
+        [Tooltip("Width divided by height. sizeMin/sizeMax give the HEIGHT and this scales " +
+                 "the width against it, so 0.5 is a particle twice as tall as it is wide. " +
+                 "1 keeps the square particle every preset has always had, and is the " +
+                 "default, so nothing existing changes. Useful for anything with a long " +
+                 "axis — leaves, petals, shards — which a square quad cannot express.")]
+        public float sizeAspect = 1f;
+
         // --------------- Color ---------------
         [Tooltip("List of gradient colors. Uses all entries for a colour-over-lifetime gradient. " +
                  "Python: colors list (RGB 0-255).")]

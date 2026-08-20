@@ -25,8 +25,9 @@ MonoBehaviour:
     gravity: 0
     drag: 0
     lifespan: 1.7500001
-    sizeMin: 0.48
-    sizeMax: 0.8
+    sizeMin: 1.4399999
+    sizeMax: 2.4
+    sizeAspect: 0.6666667
     colors:
     - {r: 0.42, g: 1, b: 0.16, a: 1}
     - {r: 0.09, g: 0.62, b: 0.1, a: 1}

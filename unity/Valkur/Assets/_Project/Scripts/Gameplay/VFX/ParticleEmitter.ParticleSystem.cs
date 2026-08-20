@@ -49,7 +49,24 @@ namespace Valkur.Gameplay.VFX
                 : ParticleSystemStopAction.None;
             main.startLifetime = lifeSec;
             main.startSpeed = new ParticleSystem.MinMaxCurve(0f, p.speed * scale);
-            main.startSize = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
+            // sizeMin/sizeMax are the HEIGHT; sizeAspect scales width against it. At 1 this
+            // takes the uniform path every preset was authored against.
+            float aspect = p.sizeAspect > 0f ? p.sizeAspect : 1f;
+            if (Mathf.Abs(aspect - 1f) > 0.001f)
+            {
+                main.startSize3D = true;
+                main.startSizeX = new ParticleSystem.MinMaxCurve(p.sizeMin * scale * aspect,
+                                                                 p.sizeMax * scale * aspect);
+                main.startSizeY = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
+                main.startSizeZ = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
+            }
+            else
+            {
+                // Emitters are reused across presets — leaving startSize3D on would make the
+                // next preset inherit this one's aspect.
+                main.startSize3D = false;
+                main.startSize = new ParticleSystem.MinMaxCurve(p.sizeMin * scale, p.sizeMax * scale);
+            }
             main.startColor = BuildColorParameter(p);
             // Gravity: scalar gravity means falling down; vector gravity is pre-converted
             if (p.useGravityVector)
