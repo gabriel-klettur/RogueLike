@@ -47,6 +47,9 @@ namespace Valkur.Gameplay.VFX
             // These tabs carry no content of their own; they only narrow the list, so both
             // the Grid and the Table honour them.
             var catStrip = TabStrip.Create(t, "PresetsCategoryTabStrip", height: 24f);
+            // Eight tabs share one panel width. At the default 11 pt the longer labels wrap
+            // mid-word — "Portals" became "Portal / s" — which is worse than small text.
+            catStrip.LabelFontSize = 9f;
             refs.PresetsCategoryTabStrip = catStrip;
             catStrip.AddTab(CATEGORY_ALL_KEY, "All", null);
             foreach (var cat in ParticlePresetCategory.TabOrder)

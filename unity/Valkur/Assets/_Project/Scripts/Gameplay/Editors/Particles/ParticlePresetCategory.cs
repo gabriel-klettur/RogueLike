@@ -25,7 +25,9 @@ namespace Valkur.Gameplay.VFX
     {
         public enum Category
         {
-            /// <summary>World decoration: foliage, weather, chimney smoke, torches.</summary>
+            /// <summary>Living world: trees, leaves, petals, flowers, pollen.</summary>
+            Vegetation,
+            /// <summary>Placed props and weather: chimney smoke, torches, forges, rain.</summary>
             Ambient,
             /// <summary>Flowing water, fountains and their sparkle.</summary>
             Water,
@@ -44,7 +46,7 @@ namespace Valkur.Gameplay.VFX
             "Holds no Unity objects and is never mutated, so it cannot go stale across a Play session.")]
         public static readonly Category[] TabOrder =
         {
-            Category.Ambient, Category.Water, Category.Fire,
+            Category.Vegetation, Category.Ambient, Category.Water, Category.Fire,
             Category.Magic, Category.Portals, Category.SpellFx,
         };
 
@@ -53,6 +55,7 @@ namespace Valkur.Gameplay.VFX
         {
             switch (c)
             {
+                case Category.Vegetation: return "Plants";
                 case Category.Ambient: return "Ambient";
                 case Category.Water:   return "Water";
                 case Category.Fire:    return "Fire";
@@ -78,11 +81,18 @@ namespace Valkur.Gameplay.VFX
 
             ("portal_",     Category.Portals),
 
-            // Decoration.
-            ("falling_leaf",    Category.Ambient),
-            ("falling_petal",   Category.Ambient),
-            ("autumn_leaves",   Category.Ambient),
-            ("flowers_",        Category.Ambient),
+            // Growing things.
+            ("falling_leaf",    Category.Vegetation),
+            ("falling_petal",   Category.Vegetation),
+            ("autumn_leaves",   Category.Vegetation),
+            ("flowers_",        Category.Vegetation),
+            ("leaf_",           Category.Vegetation),
+            ("petal_",          Category.Vegetation),
+            ("pollen_",         Category.Vegetation),
+            ("tree_",           Category.Vegetation),
+            ("grass_",          Category.Vegetation),
+
+            // Placed props and weather.
             ("rain_",           Category.Ambient),
             ("chimney_",        Category.Ambient),
             ("torch_",          Category.Ambient),

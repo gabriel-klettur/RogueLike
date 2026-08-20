@@ -24,6 +24,14 @@ namespace Valkur.UIKit
         private readonly List<Tab> _tabs = new List<Tab>();
         private int _activeIndex = -1;
 
+        /// <summary>
+        /// Point size for tab labels. Tabs share the strip's width equally, so a strip with
+        /// many tabs needs smaller text or every label wraps mid-word — "Portals" rendering
+        /// as "Portal / s" is not a truncation the reader can undo.
+        /// Defaults to the value every existing strip was built with.
+        /// </summary>
+        public float LabelFontSize = 11f;
+
         public int ActiveIndex => _activeIndex;
         public string ActiveKey => _activeIndex >= 0 && _activeIndex < _tabs.Count ? _tabs[_activeIndex].Key : null;
         public event Action<int, string> TabChanged;
@@ -41,7 +49,7 @@ namespace Valkur.UIKit
             bg.color = UITheme.BTN_NORMAL;
             var btn = btnGo.AddComponent<Button>();
             btn.targetGraphic = bg;
-            var tmp = UILabel.AddCenteredText(btnGo.transform, label, 11f,
+            var tmp = UILabel.AddCenteredText(btnGo.transform, label, LabelFontSize,
                 FontStyles.Bold, UITheme.TEXT_PRIMARY);
             int idx = _tabs.Count;
             btn.onClick.AddListener(() => SetActive(idx));

@@ -44,8 +44,13 @@ namespace Valkur.Tests.EditMode.Editors.Particles
         [TestCase("forge_embers",      Cat.Ambient)]
         [TestCase("forge_glow",        Cat.Ambient)]
         [TestCase("chimney_smoke",     Cat.Ambient)]
-        [TestCase("falling_leaf_30s",  Cat.Ambient)]
-        [TestCase("falling_leaf_canopy", Cat.Ambient)]
+        [TestCase("rain_mist_soft",    Cat.Ambient)]
+        [TestCase("falling_petal_30s", Cat.Vegetation)]
+        [TestCase("flowers_pollen_soft", Cat.Vegetation)]
+        [TestCase("flowers_petal_pink_60s", Cat.Vegetation)]
+        [TestCase("autumn_leaves_gradient", Cat.Vegetation)]
+        [TestCase("falling_leaf_30s",  Cat.Vegetation)]
+        [TestCase("falling_leaf_canopy", Cat.Vegetation)]
         [TestCase("water_flow_h",      Cat.Water)]
         [TestCase("water_fountain_small", Cat.Water)]
         [TestCase("fountain_sparkle",  Cat.Water)]
@@ -124,8 +129,9 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             {
                 string label = ParticlePresetCategory.Label(c);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(label), $"{c} has no label.");
-                Assert.LessOrEqual(label.Length, 10,
-                    $"Label '{label}' is too long for the shared tab strip.");
+                Assert.LessOrEqual(label.Length, 8,
+                    $"Label '{label}' is too long for the shared tab strip, which now " +
+                    "splits one panel width between eight tabs.");
             }
         }
 
