@@ -88,6 +88,18 @@ namespace Valkur.Gameplay.VFX
         {
             _activeInstance = instance;
             ShowInstanceProperties(instance);
+
+            // Selecting a placed emitter selects its preset, so the View panel starts
+            // animating it and the Properties form loads its fields. This was the missing
+            // half of selection: the instance section filled in, the rest of the editor
+            // acted as if nothing was picked.
+            if (instance != null)
+            {
+                string pid = GetPresetIdFromGo(instance);
+                if (!string.IsNullOrEmpty(pid) &&
+                    !string.Equals(pid, _selectedPresetId, System.StringComparison.OrdinalIgnoreCase))
+                    SelectPreset(pid);
+            }
         }
 
         // Hit-test a ParticleEmitter under the cursor. Walks up parents because

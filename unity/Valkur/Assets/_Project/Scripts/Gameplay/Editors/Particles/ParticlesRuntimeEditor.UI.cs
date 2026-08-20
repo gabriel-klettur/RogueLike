@@ -25,7 +25,7 @@ namespace Valkur.Gameplay.VFX
                 onDropdownToggle: ToggleDropdown,
                 onUndo:           () => { _undo.Undo(); RefreshUndoRedoLabels(); SetStatus("Undo"); },
                 onRedo:           () => { _undo.Redo(); RefreshUndoRedoLabels(); SetStatus("Redo"); },
-                onSave:           () => { SaveInstancesToJson(); },
+                onSave:           () => { SaveInstancesToJson(); FlushPresetAssetsToDisk(); },
                 onReload:         () => { ReloadFromJson(); RefreshPicker(); },
                 onModeSelect:     () => SetMode(EditorMode.Select),
                 onModePlace:      () => SetMode(EditorMode.Place),

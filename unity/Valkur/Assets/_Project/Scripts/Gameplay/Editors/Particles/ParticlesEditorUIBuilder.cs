@@ -48,6 +48,8 @@ namespace Valkur.Gameplay.VFX
 
             // Presets panel — shared
             public TMP_InputField   SearchBox;
+            /// <summary>Editable preset rows in the Properties panel. Rebuilt per selection.</summary>
+            public PropertyForm     PresetPropsForm;
             /// <summary>Category filter strip above the search box. Content-less; filters only.</summary>
             public TabStrip         PresetsCategoryTabStrip;
             public TextMeshProUGUI  StatusText;

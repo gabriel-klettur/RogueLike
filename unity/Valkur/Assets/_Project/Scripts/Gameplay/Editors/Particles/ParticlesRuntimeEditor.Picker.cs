@@ -176,31 +176,29 @@ namespace Valkur.Gameplay.VFX
 
         private void ShowPresetProperties(string pid)
         {
-            if (_ui.PresetPropsText == null) return;
             var preset = _catalog?.GetById(pid);
-            if (preset == null) { _ui.PresetPropsText.text = "Not found."; return; }
 
-            var sb = new StringBuilder();
-            sb.AppendLine($"<b>ID:</b> {preset.id}");
-            sb.AppendLine($"<b>Name:</b> {preset.displayName}");
-            sb.AppendLine($"<b>Type:</b> {preset.type}");
-            var v = preset.vfx;
-            if (v != null)
+            // The rows themselves — every scalar the emitter reads, editable in place.
+            RebuildPresetPropertyForm(pid);
+
+            // The text label survives as the footer for what the form cannot edit yet, so
+            // a field that is not offered reads as a stated limit rather than a bug.
+            if (_ui.PresetPropsText != null)
             {
-                sb.AppendLine();
-                sb.AppendLine($"<b>Kind:</b> {v.kind}");
-                sb.AppendLine($"<b>Emit Rate:</b> {v.emitRate:F1}/s");
-                sb.AppendLine($"<b>Burst Count:</b> {v.count}");
-                sb.AppendLine($"<b>Lifespan:</b> {v.lifespan:F2}s");
-                sb.AppendLine($"<b>Speed:</b> {v.speed:F2} u/s");
-                sb.AppendLine($"<b>Gravity:</b> {v.gravity:F2}");
-                sb.AppendLine($"<b>Drag:</b> {v.drag:F2}");
-                sb.AppendLine($"<b>Size:</b> {v.sizeMin:F2} – {v.sizeMax:F2}");
-                sb.AppendLine($"<b>Radius:</b> {v.radius:F2}");
-                sb.AppendLine($"<b>Additive:</b> {v.additive}");
+                if (preset == null)
+                {
+                    _ui.PresetPropsText.text = "Not found.";
+                }
+                else
+                {
+                    _ui.PresetPropsText.text =
+                        $"<b>ID:</b> {preset.id}   <b>Type:</b> {preset.type}\n" +
+                        "Colours, over-life curves, sprites and gravity vector are " +
+                        "Inspector-only until their widgets exist.";
+                    _ui.PresetPropsText.richText = true;
+                }
             }
-            _ui.PresetPropsText.text = sb.ToString();
-            _ui.PresetPropsText.richText = true;
+            var v = preset?.vfx;
 
             // Sync the Loops toggle with the preset's current value.
             // We disable the callback temporarily to avoid re-triggering on programmatic set.

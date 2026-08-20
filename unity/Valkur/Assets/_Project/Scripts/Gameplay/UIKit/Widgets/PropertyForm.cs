@@ -31,6 +31,23 @@ namespace Valkur.UIKit
             return go.AddComponent<PropertyForm>();
         }
 
+        /// <summary>
+        /// A non-interactive section header. Forty-odd rows without grouping is a wall;
+        /// the Spells editor solves this privately, so the shared form needs its own.
+        /// </summary>
+        public void AddHeader(string label)
+        {
+            var go = UIFactory.CreateUI("Header_" + label, transform);
+            go.AddComponent<LayoutElement>().preferredHeight = 20f;
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            tmp.text          = label;
+            tmp.fontSize      = 10f;
+            tmp.fontStyle     = FontStyles.Bold;
+            tmp.color         = UITheme.ACCENT;
+            tmp.alignment     = TextAlignmentOptions.BottomLeft;
+            tmp.raycastTarget = false;
+        }
+
         public void AddText(string key, string label, string value)
         {
             var input = BuildInputRow(key, label, value);

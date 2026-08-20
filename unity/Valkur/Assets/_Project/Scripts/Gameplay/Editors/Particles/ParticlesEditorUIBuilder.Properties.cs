@@ -32,6 +32,9 @@ namespace Valkur.Gameplay.VFX
             presetLe.flexibleHeight = 2f;
             presetLe.minHeight      = 180f;
             EditorUIHelpers.AddVerticalScrollbar(presetScroll);
+            // Editable rows live in the form; the text label survives beneath it as the
+            // footer for what the form cannot yet edit (colour lists, curves, sprites).
+            refs.PresetPropsForm = PropertyForm.Create(presetContent, "PresetPropsForm");
             refs.PresetPropsText           = EditorUIHelpers.AddLabel(presetContent,
                 "Select a preset to view properties.", 11f);
             refs.PresetPropsText.color     = TEXT_SECONDARY;
