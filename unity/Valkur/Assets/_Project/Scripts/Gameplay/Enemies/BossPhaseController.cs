@@ -74,12 +74,14 @@ namespace Valkur.Gameplay
             // when the player closes in. Registration is the only coupling —
             // the controller never talks to the HUD directly.
             HUD.BossHealthBarHUD.RegisterBoss(this);
+            Feel.CameraFeel.RegisterBoss(this);
         }
 
         private void OnDisable()
         {
             if (_health != null) _health.OnHpChanged -= OnHpChanged;
             HUD.BossHealthBarHUD.UnregisterBoss(this);
+            Feel.CameraFeel.UnregisterBoss(this);
         }
 
         // Internal seam used by tests in EditMode where Awake doesn't fire.

@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.Combat
                     var health = hit.GetComponent<Health>();
                     if (health != null && !health.IsDead)
                     {
-                        health.TakeDamage(Mathf.RoundToInt(collisionDamage));
+                        health.TakeDamage(Mathf.RoundToInt(collisionDamage), gameObject);
 
                         // Apply knockback to hit target
                         var feedback = hit.GetComponent<CombatFeedback>();

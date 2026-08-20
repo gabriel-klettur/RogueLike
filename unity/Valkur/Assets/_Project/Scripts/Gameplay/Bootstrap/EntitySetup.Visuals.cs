@@ -66,6 +66,11 @@ namespace Valkur.Gameplay
             if (go.CompareTag("Player") && go.GetComponent<ComboCounter>() == null)
                 go.AddComponent<ComboCounter>();
 
+            // Hurt animation: monsters get theirs from the FSM's DamageState, the player is
+            // not FSM-driven and had no equivalent, so its authored damage sheets never played.
+            if (go.CompareTag("Player") && go.GetComponent<PlayerHurtReaction>() == null)
+                go.AddComponent<PlayerHurtReaction>();
+
             // Minimap dot — uses reflection to avoid Gameplay→UI circular dependency
             if (go.CompareTag("Player"))
                 ConfigureMinimapDot(go, "Player", new Color(0.2f, 0.95f, 0.3f, 1f));

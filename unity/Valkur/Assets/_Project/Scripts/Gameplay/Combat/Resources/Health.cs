@@ -57,7 +57,15 @@ namespace Valkur.Gameplay
             OnHpChanged?.Invoke(currentHp, maxHp);
         }
 
-        public void TakeDamage(int amount)
+        /// <summary>
+        /// Damage from an unattributed source — a burn tick, hunger, a console command.
+        /// Anything with a location should use the overload: without an attacker the damage
+        /// events carry no direction, and every system downstream that wants to point at
+        /// what hit you is left guessing.
+        /// </summary>
+        public void TakeDamage(int amount) => TakeDamage(amount, null);
+
+        public void TakeDamage(int amount, GameObject attacker)
         {
             if (IsDead || amount <= 0 || _invincible) return;
 
@@ -70,14 +78,14 @@ namespace Valkur.Gameplay
             OnDamaged?.Invoke(amount);
             OnHpChanged?.Invoke(currentHp, maxHp);
 
-            GameEvents.FireEntityDamaged(gameObject, null, amount);
+            GameEvents.FireEntityDamaged(gameObject, attacker, amount);
             if (gameObject.CompareTag("Player"))
                 GameEvents.FirePlayerDamaged(amount, currentHp, maxHp);
 
             if (currentHp <= 0)
             {
                 OnDeath?.Invoke();
-                GameEvents.FireEntityDied(gameObject, null);
+                GameEvents.FireEntityDied(gameObject, attacker);
                 if (gameObject.CompareTag("Player"))
                     GameEvents.FirePlayerDied();
             }

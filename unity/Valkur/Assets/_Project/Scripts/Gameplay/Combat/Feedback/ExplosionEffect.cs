@@ -130,9 +130,10 @@ namespace Valkur.Gameplay.Combat
 
                 if (health != null && !health.IsDead)
                 {
-                    health.TakeDamage(dealt);
+                    // TakeDamage raises FireEntityDamaged itself, now with the instigator.
+                    // Raising it again here made every explosion report each victim twice.
+                    health.TakeDamage(dealt, _instigator);
                     GameEvents.FireHitDealt(_instigator, target, dealt);
-                    GameEvents.FireEntityDamaged(target, _instigator, dealt);
                     VFXManager.Instance?.SpawnImpact(col.transform.position, _color, 0.2f, 0.5f);
                 }
             }

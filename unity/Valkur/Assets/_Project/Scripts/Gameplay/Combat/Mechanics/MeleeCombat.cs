@@ -83,7 +83,7 @@ namespace Valkur.Gameplay
                     float angle = Vector2.Angle(direction.normalized, toTarget);
                     if (angle <= arcDegrees * 0.5f)
                     {
-                        health.TakeDamage(damage);
+                        health.TakeDamage(damage, gameObject);
                         hitCount++;
 
                         // Apply knockback via CombatFeedback
@@ -101,13 +101,23 @@ namespace Valkur.Gameplay
                 Debug.Log($"[MeleeCombat] {gameObject.name} hit {hitCount} target(s) for {damage} damage");
         }
 
+        /// <summary>
+        /// The same crescent every slash spell draws, sized from this entity's own reach and
+        /// arc.
+        ///
+        /// This used to call VFXManager.SpawnSlashArc, which despite its name discarded both
+        /// the direction and the arc and drew a hard-edged filled circle of diameter 2x range
+        /// at 80% opacity — a coloured ball on the ground, on the Entities sorting layer,
+        /// wherever a monster swung. The arc is the whole point of a melee attack: it is what
+        /// tells the player which side of them is dangerous.
+        /// </summary>
         private void SpawnSlashVFX(Vector2 direction)
         {
             if (!showSlashVfx) return;
-            if (VFXManager.Instance == null) return;
 
-            Vector3 vfxPos = transform.position + (Vector3)(direction.normalized * (range * 0.5f));
-            VFXManager.Instance.SpawnSlashArc(vfxPos, direction, slashVfxColor, arcDegrees, range, 0.2f);
+            Vector2 origin = transform.position;
+            Spells.SlashAttack.SpawnVisual(transform, origin, direction.normalized,
+                                           range, arcDegrees, slashVfxColor);
         }
 
         private void OnDrawGizmosSelected()
