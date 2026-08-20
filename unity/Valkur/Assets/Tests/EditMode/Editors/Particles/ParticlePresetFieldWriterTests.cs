@@ -173,6 +173,110 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.AreEqual(-1f, _def.vfx.directionDegrees);
         }
 
+        // ── Colours: base, variation pair, intensity, gradient ──────────────
+
+        [Test]
+        public void ColorField_AcceptsHex_WithOrWithoutHash()
+        {
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.color", "#FF0000", out _));
+            Assert.AreEqual(Color.red, _def.vfx.color);
+
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.color", "00FF00", out _));
+            Assert.AreEqual(Color.green, _def.vfx.color);
+        }
+
+        [Test]
+        public void InvalidHex_FailsWithAMessage()
+        {
+            bool ok = ParticlePresetFieldWriter.TrySetField(_def, "vfx.color", "notacolour", out var err);
+            Assert.IsFalse(ok);
+            StringAssert.Contains("RRGGBB", err, "The message must teach the accepted format.");
+        }
+
+        /// <summary>
+        /// BuildColorParameter randomises between cols[0] and cols[last] only, so A and B
+        /// are the whole authorable surface. Editing one end of an empty array must grow it
+        /// to two, seeded from the base colour so the untouched end keeps the preset's look.
+        /// </summary>
+        [Test]
+        public void VariationPair_GrowsFromEmpty_SeededWithTheBaseColour()
+        {
+            _def.vfx.color = Color.cyan;
+            _def.vfx.colors = null;
+
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.colors.a", "#FF0000", out _));
+
+            Assert.AreEqual(2, _def.vfx.colors.Length);
+            Assert.AreEqual(Color.red, _def.vfx.colors[0]);
+            Assert.AreEqual(Color.cyan, _def.vfx.colors[1], "The B end must inherit the base.");
+        }
+
+        [Test]
+        public void VariationPair_BSetsTheLastEntry()
+        {
+            _def.vfx.colors = new[] { Color.white, Color.grey, Color.black };
+
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.colors.b", "#0000FF", out _));
+
+            Assert.AreEqual(Color.blue, _def.vfx.colors[2],
+                "B is cols[last] — the entry the engine actually reads.");
+            Assert.AreEqual(Color.white, _def.vfx.colors[0], "A untouched.");
+        }
+
+        /// <summary>
+        /// colourOverLife is IGNORED by the engine unless alphaOverLife is authored. Editing
+        /// a gradient stop on a preset without one must seed the exact legacy fade
+        /// (1 -> 0.5 at 0.6 -> 0), or the user edits a colour, sees nothing change, and
+        /// reasonably files it as a bug.
+        /// </summary>
+        [Test]
+        public void GradientStop_OnEmptyPreset_BuildsThreeKeys_AndSeedsTheLegacyFade()
+        {
+            _def.vfx.colorOverLife = null;
+            _def.vfx.alphaOverLife = null;
+
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(
+                _def, "vfx.colorOverLife.mid", "#FF0000", out var err), err);
+
+            Assert.AreEqual(3, _def.vfx.colorOverLife.Length);
+            Assert.AreEqual(0f, _def.vfx.colorOverLife[0].time);
+            Assert.AreEqual(0.5f, _def.vfx.colorOverLife[1].time);
+            Assert.AreEqual(1f, _def.vfx.colorOverLife[2].time);
+            Assert.AreEqual(Color.red, _def.vfx.colorOverLife[1].color);
+
+            Assert.AreEqual(3, _def.vfx.alphaOverLife.Length, "Legacy fade must be seeded.");
+            Assert.AreEqual(0.6f, _def.vfx.alphaOverLife[1].time, 0.0001f);
+            Assert.AreEqual(0.5f, _def.vfx.alphaOverLife[1].value, 0.0001f);
+        }
+
+        [Test]
+        public void GradientStop_PreservesTheOtherStops()
+        {
+            ParticlePresetFieldWriter.TrySetField(_def, "vfx.colorOverLife.start", "#FF0000", out _);
+            ParticlePresetFieldWriter.TrySetField(_def, "vfx.colorOverLife.end", "#0000FF", out _);
+            ParticlePresetFieldWriter.TrySetField(_def, "vfx.colorOverLife.mid", "#00FF00", out _);
+
+            Assert.AreEqual(Color.red, _def.vfx.colorOverLife[0].color);
+            Assert.AreEqual(Color.green, _def.vfx.colorOverLife[1].color);
+            Assert.AreEqual(Color.blue, _def.vfx.colorOverLife[2].color);
+        }
+
+        [Test]
+        public void GradientStop_UnknownName_FailsWithGuidance()
+        {
+            bool ok = ParticlePresetFieldWriter.TrySetField(
+                _def, "vfx.colorOverLife.banana", "#FF0000", out var err);
+            Assert.IsFalse(ok);
+            StringAssert.Contains("start", err);
+        }
+
+        [Test]
+        public void ColorIntensity_IsAPlainFloatField()
+        {
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.colorIntensity", 1.8f, out _));
+            Assert.AreEqual(1.8f, _def.vfx.colorIntensity, 0.0001f);
+        }
+
         // ── Fields that need widgets are refused, not mangled ───────────────
 
         [Test]

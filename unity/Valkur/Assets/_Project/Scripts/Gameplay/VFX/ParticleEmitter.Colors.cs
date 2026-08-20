@@ -70,15 +70,21 @@ namespace Valkur.Gameplay.VFX
 
         private ParticleSystem.MinMaxGradient BuildColorParameter(ParticleVfxParams p)
         {
+            // Intensity rides the START colour so it propagates for free: colourOverLifetime
+            // MULTIPLIES the start colour, so overdriving here brightens the whole life.
+            // RGB only — scaling alpha would change coverage, not brightness.
+            float k = p.colorIntensity > 0f ? p.colorIntensity : 1f;
+            Color Tint(Color c) => new Color(c.r * k, c.g * k, c.b * k, c.a);
+
             var cols = (p.colors != null && p.colors.Length > 0) ? p.colors : null;
             if (cols == null)
-                return new ParticleSystem.MinMaxGradient(p.color);
+                return new ParticleSystem.MinMaxGradient(Tint(p.color));
 
             if (cols.Length == 1)
-                return new ParticleSystem.MinMaxGradient(cols[0]);
+                return new ParticleSystem.MinMaxGradient(Tint(cols[0]));
 
             // Two-colour random: Unity picks between min and max color per particle
-            return new ParticleSystem.MinMaxGradient(cols[0], cols[cols.Length - 1]);
+            return new ParticleSystem.MinMaxGradient(Tint(cols[0]), Tint(cols[cols.Length - 1]));
         }
 
         private static AnimationCurve BuildAnimationCurve(Keyframe2D[] keys)

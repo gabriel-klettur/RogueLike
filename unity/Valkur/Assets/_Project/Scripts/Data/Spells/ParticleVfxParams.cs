@@ -73,6 +73,11 @@ namespace Valkur.Data
         [Tooltip("Use additive blending. Python: blend_mode == 'additive'.")]
         public bool additive = false;
 
+        [Tooltip("Brightness multiplier on every start colour. 1 = as authored; above 1 " +
+                 "overdrives toward glow (most useful on additive presets), below 1 dims. " +
+                 "Applied to RGB only — alpha is untouched.")]
+        public float colorIntensity = 1f;
+
         // --------------- Texture ---------------
         [Tooltip("Billboard texture shape. 'Auto' derives it from kind + additive. " +
                  "'None' restores the legacy untextured quad.")]

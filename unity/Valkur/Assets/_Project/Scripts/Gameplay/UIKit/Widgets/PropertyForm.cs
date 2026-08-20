@@ -96,6 +96,36 @@ namespace Valkur.UIKit
             _fields[key] = toggle;
         }
 
+        /// <summary>
+        /// A colour row: hex field plus a live swatch. Hex rather than a picker because a
+        /// full colour picker is its own project; designers read RRGGBB, and the swatch
+        /// confirms the parse at a glance. Emits the normalised "#RRGGBBAA" string, and
+        /// emits nothing on an unparseable value — the swatch simply does not change.
+        /// </summary>
+        public void AddColor(string key, string label, Color value)
+        {
+            var input = BuildInputRow(key, label, "#" + ColorUtility.ToHtmlStringRGBA(value));
+
+            var swGo = UIFactory.CreateUI("Swatch", input.transform.parent);
+            swGo.AddComponent<LayoutElement>().preferredWidth = 18f;
+            var sw = swGo.AddComponent<Image>();
+            sw.color = value;
+            // Between the label and the field: label sits at index 0.
+            swGo.transform.SetSiblingIndex(1);
+
+            _fields[key] = input;
+            input.onEndEdit.AddListener(v =>
+            {
+                string hex = string.IsNullOrEmpty(v) ? "" : (v.StartsWith("#") ? v : "#" + v);
+                if (ColorUtility.TryParseHtmlString(hex, out var c))
+                {
+                    sw.color = c;
+                    input.SetTextWithoutNotify("#" + ColorUtility.ToHtmlStringRGBA(c));
+                    ValueChanged?.Invoke(key, "#" + ColorUtility.ToHtmlStringRGBA(c));
+                }
+            });
+        }
+
         public void AddDropdown(string key, string label, IList<string> options, int selectedIndex)
         {
             var row = BuildRow(label);

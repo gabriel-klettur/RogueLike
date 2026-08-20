@@ -82,6 +82,28 @@ namespace Valkur.Gameplay.VFX
                 form.AddFloat("vfx.drag", "Drag", v.drag);
                 form.AddBool("vfx.worldSpace", "World Space", v.worldSpace);
 
+                form.AddHeader("COLOUR");
+                form.AddColor("vfx.color", "Base", v.color);
+                // The variation pair: BuildColorParameter randomises between the first and
+                // last entries and ignores everything between, so A and B are the whole
+                // authorable surface.
+                var colsArr = v.colors;
+                Color varA = (colsArr != null && colsArr.Length > 0) ? colsArr[0] : v.color;
+                Color varB = (colsArr != null && colsArr.Length > 1) ? colsArr[colsArr.Length - 1] : varA;
+                form.AddColor("vfx.colors.a", "Variation A", varA);
+                form.AddColor("vfx.colors.b", "Variation B", varB);
+                form.AddFloat("vfx.colorIntensity", "Intensity", v.colorIntensity);
+
+                form.AddHeader("COLOUR OVER LIFE");
+                var col = v.colorOverLife;
+                Color g0 = (col != null && col.Length > 0) ? col[0].color : Color.white;
+                Color g2 = (col != null && col.Length > 0) ? col[col.Length - 1].color : Color.white;
+                Color g1 = (col != null && col.Length >= 3) ? col[col.Length / 2].color
+                                                            : Color.Lerp(g0, g2, 0.5f);
+                form.AddColor("vfx.colorOverLife.start", "Birth", g0);
+                form.AddColor("vfx.colorOverLife.mid", "Middle", g1);
+                form.AddColor("vfx.colorOverLife.end", "Death", g2);
+
                 form.AddHeader("TEXTURE");
                 form.AddDropdown("vfx.textureShape", "Shape",
                     Enum.GetNames(typeof(ParticleTextureShape)), (int)v.textureShape);
