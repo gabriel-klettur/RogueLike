@@ -1,0 +1,191 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843b9d793711b4342b38a289cc666750, type: 3}
+  m_Name: CameraFeelProfile
+  m_EditorClassIdentifier: 
+  followOmega: 16
+  maxFollowLagWu: 1
+  followSettlePixels: 0.5
+  moveLeadWu: 0.85
+  aimLeadIdleWu: 0
+  aimLeadMovingWu: 0
+  maxLeadWu: 1.8
+  aimDeadzoneWu: 1.2
+  leadOmega: 4.5
+  leadOmegaHeavy: 3
+  leadDeadzonePixels: 0.75
+  spiritLeadScale: 0.35
+  maxShakeWu: 0.42
+  noiseNormalisation: 1.237
+  defaultTraumaDecay: 1.8
+  maxTraumaPerSecond: 3
+  heavyPrepareSeconds: 0.2
+  heavyCooldownSeconds: 3
+  heavyManaCost: 25
+  whiffWindowSeconds: 0.22
+  damageReference: 40
+  comboCap: 8
+  comboGain: 0.45
+  severeDamageFraction: 0.25
+  masterIntensity01: 1
+  teleportThresholdWu: 6
+  maxStepSeconds: 0.05
+  attackConnect:
+    traumaAdd: 0.3
+    traumaDecayPerSecond: 1.8
+    shakeFrequencyHz: 24
+    kickAmplitudeWu: 0.14
+    kickOmega: 26
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0.045
+    minIntervalSeconds: 0.08
+  attackWhiff:
+    traumaAdd: 0
+    traumaDecayPerSecond: 1.8
+    shakeFrequencyHz: 0
+    kickAmplitudeWu: 0.05
+    kickOmega: 30
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.15
+  hurt:
+    traumaAdd: 0.28
+    traumaDecayPerSecond: 1.3
+    shakeFrequencyHz: 13
+    kickAmplitudeWu: 0.2
+    kickOmega: 15
+    kickZeta: 0.65
+    leadFreezeSeconds: 0.2
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.12
+  castHeavy:
+    traumaAdd: 0.1
+    traumaDecayPerSecond: 2
+    shakeFrequencyHz: 18
+    kickAmplitudeWu: 0.12
+    kickOmega: 18
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.1
+  castPrepare:
+    traumaAdd: 0
+    traumaDecayPerSecond: 1.8
+    shakeFrequencyHz: 0
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 0.6
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.1
+  dashLaunch:
+    traumaAdd: 0.24
+    traumaDecayPerSecond: 2.2
+    shakeFrequencyHz: 20
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.1
+  dashLand:
+    traumaAdd: 0
+    traumaDecayPerSecond: 1.8
+    shakeFrequencyHz: 0
+    kickAmplitudeWu: 0.07
+    kickOmega: 24
+    kickZeta: 0.9
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.1
+  impactLight:
+    traumaAdd: 0.24
+    traumaDecayPerSecond: 2
+    shakeFrequencyHz: 24
+    kickAmplitudeWu: 0.06
+    kickOmega: 26
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.08
+  impactMedium:
+    traumaAdd: 0.38
+    traumaDecayPerSecond: 1.8
+    shakeFrequencyHz: 22
+    kickAmplitudeWu: 0.1
+    kickOmega: 24
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.08
+  impactHeavy:
+    traumaAdd: 0.52
+    traumaDecayPerSecond: 1.6
+    shakeFrequencyHz: 20
+    kickAmplitudeWu: 0.16
+    kickOmega: 22
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.1
+  impactMassive:
+    traumaAdd: 0.78
+    traumaDecayPerSecond: 1.4
+    shakeFrequencyHz: 16
+    kickAmplitudeWu: 0.24
+    kickOmega: 18
+    kickZeta: 0.85
+    leadFreezeSeconds: 0.15
+    hitStopSeconds: 0.05
+    minIntervalSeconds: 0.15
+  death:
+    traumaAdd: 0.85
+    traumaDecayPerSecond: 0.9
+    shakeFrequencyHz: 18
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 3
+    hitStopSeconds: 0
+    minIntervalSeconds: 1
+  bossPhase:
+    traumaAdd: 0.65
+    traumaDecayPerSecond: 0.55
+    shakeFrequencyHz: 11
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 0.6
+    hitStopSeconds: 0.1
+    minIntervalSeconds: 1
+  levelUp:
+    traumaAdd: 0.25
+    traumaDecayPerSecond: 1.2
+    shakeFrequencyHz: 9
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.5
+  comboPayoff:
+    traumaAdd: 0.28
+    traumaDecayPerSecond: 1.6
+    shakeFrequencyHz: 20
+    kickAmplitudeWu: 0
+    kickOmega: 0
+    kickZeta: 1
+    leadFreezeSeconds: 0
+    hitStopSeconds: 0
+    minIntervalSeconds: 0.3

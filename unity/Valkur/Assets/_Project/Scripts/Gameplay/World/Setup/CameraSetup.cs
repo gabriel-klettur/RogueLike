@@ -394,6 +394,14 @@ namespace Valkur.Gameplay
             ApplyOrthoAndCompat(nextSize);
         }
 
+        /// <summary>
+        /// The transform the virtual camera is currently following. Additive read-only
+        /// accessor: the camera feel director re-asserts its proxy every frame, because
+        /// <see cref="SetTarget"/> writes Follow without updating the saved target, so an
+        /// editor closing afterwards restores the player and silently kills the feel layer.
+        /// </summary>
+        public Transform GetFollowTarget() => _vcam != null ? _vcam.Follow : null;
+
         public void SetTarget(Transform target)
         {
             EnsureCompatibilityVcam();
@@ -693,9 +701,19 @@ namespace Valkur.Gameplay
             ApplyCompatibilityLensSize(size);
         }
 
-#if UNITY_EDITOR
+        /// <summary>
+        /// The compatibility vcam exists only to keep older Editor scenes rendering when the
+        /// primary vcam loses the priority election. Its body is Editor-only, but the method
+        /// itself must NOT be: <see cref="SetTarget"/>, <see cref="DetachFollow"/>,
+        /// <see cref="ReattachFollow"/> and <see cref="SetEditorZoom"/> all call
+        /// <see cref="EnsureCompatibilityVcam"/> unguarded, so wrapping the declaration in
+        /// <c>#if UNITY_EDITOR</c> made those four call sites reference a method that does
+        /// not exist in a player build — CS0103, and the game does not compile outside the
+        /// Editor. The guard belongs around the body.
+        /// </summary>
         private void CacheCompatibilityVcam()
         {
+#if UNITY_EDITOR
             var mainCamera = Camera.main;
             if (mainCamera == null)
             {
@@ -715,13 +733,15 @@ namespace Valkur.Gameplay
 
             _compatibilityVcam.m_Lens.OrthographicSize = _vcam.m_Lens.OrthographicSize;
             _compatibilityVcam.Follow = _vcam.Follow;
+#endif
         }
 
         private void EnsureCompatibilityVcam()
         {
+#if UNITY_EDITOR
             if (_compatibilityVcam == null)
                 CacheCompatibilityVcam();
-        }
 #endif
+        }
     }
 }
