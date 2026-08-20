@@ -418,6 +418,54 @@ namespace Valkur.Gameplay.VFX
                     shape.radius = 0.15f * scale;
                     break;
             }
+
+            // ── Authored overrides — applied AFTER the switch so they beat the kind ──
+            //
+            // The kinds hard-code their emission areas (falling_leaf a 2-unit strip,
+            // water_flow a 3-unit strip, smoke a circle of `dispersion`) and their
+            // directions (water_fountain aims up, everything else radial). These two
+            // overrides are the first authorable versions of either.
+
+            bool hasArea = p.spawnWidth > 0f || p.spawnHeight > 0f;
+            bool hasDir  = p.directionDegrees >= 0f;
+
+            if (hasArea)
+            {
+                shape.shapeType = ParticleSystemShapeType.Box;
+                shape.scale = new Vector3(
+                    Mathf.Max(0.01f, p.spawnWidth) * scale,
+                    Mathf.Max(0.01f, p.spawnHeight) * scale,
+                    0.01f);
+                shape.radiusThickness = 1f;
+                // A box emits along its local +Z. Left alone that is out of the screen —
+                // invisible motion on a 2D billboard — so aim it along the authored
+                // direction, or straight up when only the area was authored.
+                shape.rotation = AimShapeAt(hasDir ? p.directionDegrees : 90f);
+            }
+            else if (hasDir)
+            {
+                // Direction without an area: a cone whose axis is the heading and whose
+                // half-angle is the spread. `speed` becomes the throw along it — the same
+                // recipe water_fountain hard-codes for "up", generalised to any angle.
+                shape.shapeType = ParticleSystemShapeType.Cone;
+                shape.angle = Mathf.Clamp(p.directionSpreadDegrees, 0f, 89f);
+                shape.radius = Mathf.Max(0.02f, p.dispersion) * scale;
+                shape.radiusThickness = 1f;
+                shape.rotation = AimShapeAt(p.directionDegrees);
+            }
+        }
+
+        /// <summary>
+        /// Euler rotation that points a shape's emission axis (local +Z) along a 2D heading:
+        /// 0 = right, 90 = up, counter-clockwise. Derived via FromToRotation rather than
+        /// hand-built angles because composing an X-flip with a Z-spin by hand is exactly
+        /// how water_fountain's "aim upward (Unity Y-up)" comment came to need a comment.
+        /// </summary>
+        private static Vector3 AimShapeAt(float degrees)
+        {
+            float rad = degrees * Mathf.Deg2Rad;
+            var dir = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f);
+            return Quaternion.FromToRotation(Vector3.forward, dir).eulerAngles;
         }
 
     }

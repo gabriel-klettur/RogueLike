@@ -125,6 +125,30 @@ namespace Valkur.Data
         [Tooltip("Sway frequency (cycles per second). Python: sway_speed (dimensionless tuning value).")]
         public float swaySpeed = 0.12f;
 
+        // --------------- Spawn area & direction ---------------
+        [Tooltip("Width of the spawn area (world units). Above 0 this overrides the kind's " +
+                 "built-in emission shape with a centred box of exactly this footprint — the " +
+                 "kinds otherwise hard-code their areas (falling_leaf a 2-unit strip, " +
+                 "water_flow a 3-unit strip, smoke a circle of `dispersion`). 0 = keep the " +
+                 "kind's own shape.")]
+        public float spawnWidth = 0f;
+
+        [Tooltip("Height of the spawn area (world units). Same override rule as spawnWidth; " +
+                 "setting either engages the box.")]
+        public float spawnHeight = 0f;
+
+        [Tooltip("Direction particles are emitted toward, in degrees: 0 = right, 90 = up, " +
+                 "180 = left, 270 = down. Works through `speed`, which becomes the throw " +
+                 "along this heading. -1 (default) keeps the kind's own behaviour. Replaces " +
+                 "the old `direction` Vector2, which was imported from Python and read by " +
+                 "nothing.")]
+        public float directionDegrees = -1f;
+
+        [Tooltip("Half-angle of the emission cone around directionDegrees. 0 is a laser-" +
+                 "straight stream, 15 a gentle fan, 60 a wide spray. Ignored while " +
+                 "directionDegrees is -1.")]
+        public float directionSpreadDegrees = 15f;
+
         // --------------- Smoke Dispersion ---------------
         [Tooltip("Emission spread for smoke_emitter kind (world units). Python: dispersion / PPU.")]
         public float dispersion = 0f;

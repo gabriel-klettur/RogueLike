@@ -144,6 +144,35 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             Assert.AreEqual(0f, _def.vfx.noiseVerticalScale);
         }
 
+        // ── The spawn-area and direction fields ride the same path ──────────
+
+        [Test]
+        public void SpawnAreaAndDirection_AreWritable_LikeAnyOtherScalar()
+        {
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.spawnWidth", 4f, out _));
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.spawnHeight", "1.5", out _));
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.directionDegrees", 270, out _));
+            Assert.IsTrue(ParticlePresetFieldWriter.TrySetField(_def, "vfx.directionSpreadDegrees", 30f, out _));
+
+            Assert.AreEqual(4f, _def.vfx.spawnWidth);
+            Assert.AreEqual(1.5f, _def.vfx.spawnHeight, 0.0001f);
+            Assert.AreEqual(270f, _def.vfx.directionDegrees);
+            Assert.AreEqual(30f, _def.vfx.directionSpreadDegrees);
+        }
+
+        /// <summary>
+        /// Both default OFF: 0 area keeps the kind's built-in shape, -1 heading keeps its
+        /// built-in behaviour. All ~128 existing presets must deserialize to exactly the
+        /// emission they had before these fields existed.
+        /// </summary>
+        [Test]
+        public void SpawnAreaAndDirection_DefaultToOff()
+        {
+            Assert.AreEqual(0f, _def.vfx.spawnWidth);
+            Assert.AreEqual(0f, _def.vfx.spawnHeight);
+            Assert.AreEqual(-1f, _def.vfx.directionDegrees);
+        }
+
         // ── Fields that need widgets are refused, not mangled ───────────────
 
         [Test]

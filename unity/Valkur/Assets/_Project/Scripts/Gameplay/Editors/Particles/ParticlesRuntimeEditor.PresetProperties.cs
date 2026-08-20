@@ -65,12 +65,21 @@ namespace Valkur.Gameplay.VFX
                 form.AddFloat("vfx.sizeMax", "Height Max", v.sizeMax);
                 form.AddFloat("vfx.sizeAspect", "Width / Height", v.sizeAspect);
 
+                form.AddHeader("SPAWN AREA");
+                // 0 keeps the kind's built-in shape; either above 0 engages a centred box.
+                form.AddFloat("vfx.spawnWidth", "Area Width", v.spawnWidth);
+                form.AddFloat("vfx.spawnHeight", "Area Height", v.spawnHeight);
+                form.AddFloat("vfx.dispersion", "Spread (kind shape)", v.dispersion);
+
+                form.AddHeader("DIRECTION");
+                form.AddFloat("vfx.directionDegrees", "Heading deg (-1 off)", v.directionDegrees);
+                form.AddFloat("vfx.directionSpreadDegrees", "Spread deg", v.directionSpreadDegrees);
+
                 form.AddHeader("MOTION");
                 form.AddFloat("vfx.speed", "Speed", v.speed);
                 form.AddFloat("vfx.gravity", "Gravity (accel)", v.gravity);
                 form.AddBool("vfx.useGravityVector", "Constant Velocity", v.useGravityVector);
                 form.AddFloat("vfx.drag", "Drag", v.drag);
-                form.AddFloat("vfx.dispersion", "Spawn Spread", v.dispersion);
                 form.AddBool("vfx.worldSpace", "World Space", v.worldSpace);
 
                 form.AddHeader("TEXTURE");
