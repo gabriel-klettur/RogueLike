@@ -11,6 +11,9 @@ namespace Valkur.Gameplay.VFX
 {
     public static partial class ParticlesEditorUIBuilder
     {
+        /// <summary>Key of the "All" tab — the one category that filters nothing.</summary>
+        internal const string CATEGORY_ALL_KEY = "__all";
+
         // ── Presets Panel (Grid / Table) ──────────────────────────────────────────
         // Mirrors SpellsEditorUIBuilder.SpellsPanel.cs 1:1 in structure.
         //
@@ -25,7 +28,8 @@ namespace Valkur.Gameplay.VFX
         private const float PARTICLE_TABLE_SB_W           = 12f;
 
         private static void BuildPresetsPanel(Transform canvasT, ref UIRefs refs,
-            Action<string> onSearchChanged)
+            Action<string> onSearchChanged,
+            Action<string> onCategoryChanged = null)
         {
             float x = PANEL_GAP + TOOLS_W + PANEL_GAP;
             refs.PresetsDropdown = MakeDrop("ParticlesPresetsPanel", canvasT,
@@ -37,7 +41,19 @@ namespace Valkur.Gameplay.VFX
             var tabStrip = TabStrip.Create(t, "PresetsViewTabStrip", height: 26f);
             refs.PresetsTabStrip = tabStrip;
 
-            // ── 2. Search box ─────────────────────────────────────────────────
+            // ── 2. Category tab strip ─────────────────────────────────────────
+            // Two thirds of the catalog is spell internals — four projectile stacks and
+            // twenty portal variants — which is a lot to scroll past when placing a torch.
+            // These tabs carry no content of their own; they only narrow the list, so both
+            // the Grid and the Table honour them.
+            var catStrip = TabStrip.Create(t, "PresetsCategoryTabStrip", height: 24f);
+            refs.PresetsCategoryTabStrip = catStrip;
+            catStrip.AddTab(CATEGORY_ALL_KEY, "All", null);
+            foreach (var cat in ParticlePresetCategory.TabOrder)
+                catStrip.AddTab(cat.ToString(), ParticlePresetCategory.Label(cat), null);
+            catStrip.TabChanged += (_, key) => onCategoryChanged?.Invoke(key);
+
+            // ── 3. Search box ─────────────────────────────────────────────────
             refs.SearchBox = SearchBox.Create(t, "Search presets…",
                 v => onSearchChanged?.Invoke(v ?? ""));
 

@@ -48,6 +48,8 @@ namespace Valkur.Gameplay.VFX
 
             // Presets panel — shared
             public TMP_InputField   SearchBox;
+            /// <summary>Category filter strip above the search box. Content-less; filters only.</summary>
+            public TabStrip         PresetsCategoryTabStrip;
             public TextMeshProUGUI  StatusText;
             public TabStrip         PresetsTabStrip;
 
@@ -133,7 +135,8 @@ namespace Valkur.Gameplay.VFX
             Action         onToggleTutorial,
             Action         onDeleteInZone    = null,
             Action         onDeleteInstance  = null,
-            UnityEngine.Events.UnityAction<bool> onLoopsToggled = null)
+            UnityEngine.Events.UnityAction<bool> onLoopsToggled = null,
+            Action<string> onCategoryChanged = null)
         {
             // Reserve space below the menu bar so draggable panels cannot occlude it.
             DraggablePanel.TopReservedPx = MENUBAR_HEIGHT;
@@ -146,7 +149,7 @@ namespace Valkur.Gameplay.VFX
                 onAddSystem, onRemoveSystem,
                 onUndo, onRedo, onSave, onReload,
                 onDeleteInZone);
-            BuildPresetsPanel(canvasT, ref refs, onSearchChanged);
+            BuildPresetsPanel(canvasT, ref refs, onSearchChanged, onCategoryChanged);
             BuildPropertiesPanel(canvasT, ref refs, onDeleteInstance, onLoopsToggled);
             BuildViewPanel(canvasT, ref refs);
             BuildSpellsPanel(canvasT, ref refs, onToggleSpells);

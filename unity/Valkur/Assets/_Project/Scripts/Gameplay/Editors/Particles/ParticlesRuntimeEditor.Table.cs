@@ -122,6 +122,9 @@ namespace Valkur.Gameplay.VFX
             foreach (var preset in _catalog.Presets)
             {
                 if (preset == null) continue;
+                // Same gate as the Grid — a tab that hid a preset in one view and showed it
+                // in the other would make the tabs untrustworthy.
+                if (!MatchesCategoryFilter(preset)) continue;
                 if (filter.Length > 0)
                 {
                     string pid = (preset.id ?? "").ToLowerInvariant();

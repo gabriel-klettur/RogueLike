@@ -50,6 +50,12 @@ namespace Valkur.Gameplay.VFX
         // Picker filtering — search-box driven, no grouping.
         private string _searchFilter = "";
 
+        /// <summary>
+        /// Active preset category tab key. Empty or <c>__all</c> means no category gate.
+        /// Combines with <see cref="_searchFilter"/> — the search runs inside the tab.
+        /// </summary>
+        private string _categoryFilter = "";
+
         // Spells-using-this-preset collapsible (Python parity).
         private bool _spellsExpanded = true;
 

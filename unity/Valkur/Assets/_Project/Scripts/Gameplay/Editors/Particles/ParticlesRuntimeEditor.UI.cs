@@ -37,7 +37,8 @@ namespace Valkur.Gameplay.VFX
                 onToggleTutorial:  ToggleTutorial,
                 onDeleteInZone:    RequestDeleteAllInZoneWithConfirm,
                 onDeleteInstance:  RequestDeleteSelectedInstanceWithConfirm,
-                onLoopsToggled:    OnLoopsToggled);
+                onLoopsToggled:    OnLoopsToggled,
+                onCategoryChanged: k => { _categoryFilter = k ?? ""; RefreshPicker(); RefreshTable(); });
 
             // Wire panel close callbacks to keep dropdown state in sync (Buildings parity).
             if (_ui.ToolsPanelDrag    != null) _ui.ToolsPanelDrag.OnClose    = () => { _openDropdowns.Remove("tools");    RefreshMenuBtnHighlights(); };

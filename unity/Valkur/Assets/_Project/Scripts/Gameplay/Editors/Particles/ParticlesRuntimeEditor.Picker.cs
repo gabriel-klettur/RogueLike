@@ -36,6 +36,7 @@ namespace Valkur.Gameplay.VFX
             foreach (var preset in _catalog.Presets)
             {
                 if (preset == null) continue;
+                if (!MatchesCategoryFilter(preset)) continue;
                 if (filter.Length > 0)
                 {
                     string pid = (preset.id ?? "").ToLowerInvariant();
@@ -57,13 +58,42 @@ namespace Valkur.Gameplay.VFX
                 var largeTex  = _previewService.GetLargePreviewTexture();
                 bool hasLarge = largeTex != null && !string.IsNullOrEmpty(_selectedPresetId);
                 _ui.ViewRawImage.texture = hasLarge ? largeTex : null;
-                _ui.ViewRawImage.color   = hasLarge ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
+                _ui.ViewRawImage.color   = hasLarge ? Color.white : new Color(0.24f, 0.25f, 0.28f, 1f);
             }
 
+            string scope = IsCategoryFilterActive
+                ? $" in {ParticlePresetCategory.Label(ActiveCategory)}"
+                : "";
             SetStatus(filter.Length == 0
-                ? $"{visible.Count} presets"
-                : $"{visible.Count} match '{_searchFilter}'");
+                ? $"{visible.Count} presets{scope}"
+                : $"{visible.Count} match '{_searchFilter}'{scope}");
         }
+
+        /// <summary>
+        /// Active category tab, meaningful only when <see cref="IsCategoryFilterActive"/>.
+        /// </summary>
+        private ParticlePresetCategory.Category ActiveCategory
+        {
+            get
+            {
+                return System.Enum.TryParse(_categoryFilter,
+                           out ParticlePresetCategory.Category c)
+                    ? c
+                    : ParticlePresetCategory.Category.SpellFx;
+            }
+        }
+
+        /// <summary>False on the "All" tab and before any tab has been chosen.</summary>
+        private bool IsCategoryFilterActive
+            => !string.IsNullOrEmpty(_categoryFilter)
+               && _categoryFilter != ParticlesEditorUIBuilder.CATEGORY_ALL_KEY
+               && System.Enum.TryParse(_categoryFilter, out ParticlePresetCategory.Category _);
+
+        /// <summary>
+        /// Category gate, shared by the Grid and the Table so both agree on what is visible.
+        /// </summary>
+        private bool MatchesCategoryFilter(ParticlePresetDefinition preset)
+            => !IsCategoryFilterActive || ParticlePresetCategory.Of(preset) == ActiveCategory;
 
         private void AddPickerSlot(ParticlePresetDefinition preset)
         {
@@ -77,7 +107,7 @@ namespace Valkur.Gameplay.VFX
             // Slot background: dark neutral so the RenderTexture particles are readable.
             var slotImg = btn.GetComponent<Image>();
             if (slotImg != null)
-                slotImg.color = new Color(0.08f, 0.08f, 0.10f, 1f);
+                slotImg.color = new Color(0.24f, 0.25f, 0.28f, 1f);
 
             // RenderTexture thumbnail: live animated particle preview.
             var rawGo = new GameObject("PreviewRT", typeof(RectTransform));
