@@ -65,6 +65,21 @@ namespace Valkur.Gameplay.VFX
         // Padding factor around the computed bounds.
         private const float BOUNDS_PADDING    = 0.25f;
 
+        /// <summary>
+        /// Backdrop the preview cameras clear to.
+        ///
+        /// It used to be near-black (0.08). That flatters additive presets — explosions and
+        /// auras add onto darkness and glow — while making every ALPHA preset invisible,
+        /// because alpha composites toward the backdrop instead of adding to it. Water,
+        /// smoke and foliage are alpha by design (they are mass, not light), so the whole
+        /// decoration half of the catalog rendered as dark specks.
+        ///
+        /// A mid-dark neutral shows both: alpha effects now have something to sit against,
+        /// and additive ones still read because they add on top. Kept slightly blue-grey so
+        /// it does not tint warm effects.
+        /// </summary>
+        private static readonly Color PREVIEW_BACKDROP = new Color(0.24f, 0.25f, 0.28f, 1f);
+
         // ── State ────────────────────────────────────────────────────────────────
 
         private Transform        _parent;
@@ -436,7 +451,7 @@ namespace Valkur.Gameplay.VFX
             cam.orthographicSize = ORTHO_SIZE_THUMB_MIN;
             cam.cullingMask      = 1 << _layer;
             cam.clearFlags       = CameraClearFlags.SolidColor;
-            cam.backgroundColor  = new Color(0.08f, 0.08f, 0.10f, 1f);
+            cam.backgroundColor  = PREVIEW_BACKDROP;
             cam.nearClipPlane    = 0.1f;
             cam.farClipPlane     = 200f;
             // Born disabled: an enabled camera with no targetTexture renders straight

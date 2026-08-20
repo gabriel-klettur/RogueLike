@@ -117,7 +117,7 @@ namespace Valkur.Gameplay.VFX
                 var largeTex = _previewService.GetLargePreviewTexture();
                 bool has     = largeTex != null && !string.IsNullOrEmpty(_selectedPresetId);
                 _ui.ViewRawImage.texture = has ? largeTex : null;
-                _ui.ViewRawImage.color   = has ? Color.white : new Color(0.08f, 0.08f, 0.10f, 1f);
+                _ui.ViewRawImage.color   = has ? Color.white : new Color(0.24f, 0.25f, 0.28f, 1f);
             }
 
             // Play/Pause button label
