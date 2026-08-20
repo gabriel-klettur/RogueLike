@@ -82,6 +82,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `Combat/Lifecycle/` | TimedDespawn, SpawnStabilizer |
 | `Combat/StatusEffects/` | Status effect implementations (Burn, Poison, Stun, Freeze, Slow) |
 | `Editors/_Shared/` | EditorCameraPanController, EditorUIHelpers (cross-editor) |
+| `Editors/Camera/` | Camera Editor — no hotkey, opened from the General Editor; partials + UIBuilder + UIHoverHelp |
 | `Editors/Buildings/` | Buildings runtime editor (F10) — partials + UIBuilder + Outline + PerfProbe |
 | `Editors/Entities/` | Entities runtime editor — partials + UIBuilder + Outline |
 | `Editors/FSM/` | FSM runtime editor — partials + UIBuilder |
@@ -111,6 +112,7 @@ The Gameplay assembly is subdivided by feature so any single folder stays under 
 | `World/Buildings/` | BuildingLoader.*, BuildingObject.*, BuildingCollisionLoader.*, debug overlays |
 | `World/Zones/` | ZoneManager.*, ZoneDatabaseLoader, ZonePortal |
 | `World/Navigation/` | PathFinder, SpatialHash, NPCSeparationSystem, YSortEntity |
+| `World/Camera/` | CameraFeelDirector (+ partials), CameraFeel facade, CameraFeelMath, CameraFeelState |
 | `World/Lighting/` | WorldLightLoader, DayNightCycle |
 | `World/Setup/` | WorldLoader, OverlayLoader, CameraSetup, WorldGridBuilder |
 | `World/Pickups/` | CoinPickup |
@@ -165,6 +167,7 @@ The full convention lives in `.github/skills/asset-pipeline/SKILL.md` (sections 
 | Buildings | `Data/Catalogs/Buildings/BuildingCatalog.asset` (edit via F10 in-game) |
 | Particles | `Data/Catalogs/Particles/ParticlePresetCatalog.asset` (edit via F1) |
 | Spawners | `Data/Catalogs/Spawners/SpawnerTemplateCatalog.asset` (edit via F3) |
+| Camera feel (shake, kick, lead, smooth follow) | `Resources/CameraFeelProfile.asset` |
 | Lighting Presets | `Data/LightPresetCatalog.asset` (edit via Ctrl+F3) |
 | Chat Personas / Assignments | `Data/ChatPersonas/*.asset` + `ChatAssignmentCatalog.asset` |
 | Vendors | `Data/Vendor/{EconomyGroups,Configs}/*.asset` |
@@ -213,6 +216,7 @@ Use the right agent for the right job. Each agent has a constrained scope and pr
 | `buildings-editor` | Anything involving the Buildings Editor (window or runtime F10) |
 | `tile-editor` | Anything involving the Tile Editor (F6) |
 | `particles-editor` | Particle presets, `ParticleEmitter`, VFX beauty work, Particles Editor (F1) |
+| `spell-vfx-director` | Spell look & game-feel — slash/projectile/area silhouettes, timing, impact, hit-stop, camera shake |
 | `editor-ux-parity` | Audit / enforce UI/UX parity across in-game runtime editors |
 | `editor-wiring-auditor` | Audit how a runtime editor is wired into bootstrap, services, hotkeys |
 | `refactor-modularizer` | Split oversized files; extract reusable helpers; remove dead code |
@@ -296,45 +300,54 @@ Skills are knowledge bases; agents and commands load them as needed. Authoritati
 - **Cinemachine** overrides `Camera.main.transform` every LateUpdate. Use `CameraSetup.DetachFollow()` to pan freely.
 - **Custom GL drawing in URP** — use `RenderPipelineManager.endCameraRendering`, not `OnRenderObject` (`Camera.current` is null in URP).
 - **Static mutable fields without reset** → MissingReferenceException after second Play (Domain Reload is OFF).
+- **3D VFX packs do not survive the URP 2D Renderer.** `Art/VFX/Vendor/SlashVFX/` is authored
+  for a perspective camera: mesh particles (`m_RenderMode: 4` + FBX), sub-objects rotated onto
+  the XZ plane, 3D `Light` components the 2D Renderer ignores, and a distortion grab-pass with
+  no opaque source. Dropped into Valkur it renders as a flat sliver with no light. Every slash
+  is now code-native (`SlashAttack` + `SlashProfile`); the pack is kept but unreferenced.
+- **A slash's silhouette comes from its arc.** `SlashProfile` maps `arcRangeDegrees` to one of
+  four families (Thrust ≤55°, Crescent ≤108°, Cleave ≤175°, Whirl above), which then fixes the
+  beat lengths, trail, segment budget, shake and hit-stop. Damage sweeps with the drawn edge and
+  reaches exactly `hitRadius` — the legacy path damaged in a circle 1.5× longer than its visual.
+  `slash_regular` keeps its own authored implementation (`RegularSlashAttack`) on purpose.
+- **`SortingConfig.Z_SKY` is a Z depth, not a sorting order.** `LightningBoltFX` passed it as
+  `sortingOrder` on the **Entities** layer, so every bolt drew under wall tops, decorations and
+  all other VFX. World-space effects belong on `LAYER_VFX` with a small order. The same file
+  also assigned `lr.material` (cloning the shared material once per bolt) — use `sharedMaterial`.
+- **A spell that can silently do nothing cannot be learned.** `lightning` shared the chain
+  implementation, whose first act is `if (sorted.Count == 0) return;` — cast with no enemy in
+  range it spent mana and drew nothing, which read as "the spell is invisible". Every executor
+  must produce a visual on every successful cast, targets or not.
+- **The camera is moved by moving its follow target, never by writing the camera.** All three
+  `CinemachineTransposer` dampings are forced to 0 in `CameraSetup.Awake`, which makes the
+  transposer an exact 1:1 copy of `Follow` — verified live as `camera == follow + (0,0,-10)`
+  to within a fifth of a screen pixel. `CameraFeelDirector` owns a `[Camera Target]` proxy and
+  writes only that. Writing `Camera.main.transform` instead means racing the brain, which is
+  what the old `CameraShake` did and lost.
+- **Never write `orthographicSize` for an effect.** `CameraPixelSnap` derives its lattice from
+  the live ortho size, and `CameraSetup.SnapOrthoSize` keeps it on a ladder where one art texel
+  is an integer number of screen pixels (3.000 px at ortho 5 on a 960 px viewport). A zoom
+  punch of a few percent lands between rungs and makes every tile on screen crawl. There is no
+  seam-legal zoom punch in a 16-PPU game — express weight through kick, shake frequency, trauma
+  decay, hit-stop and lead freeze instead.
+- **Reparenting during activation is silently refused.** `SetParent` inside `OnEnable`/
+  `OnDisable` logs `Cannot set the parent of the GameObject X while activating or
+  deactivating the parent Y` and does nothing — `ParticleProjectileVisual` attached its
+  four trail emitters there, so every pooled projectile left them stranded at the pool
+  origin, four console errors per cast. Defer the attach to the next `LateUpdate`; detach
+  on the impact callback, which runs before the pool deactivates the object.
+- **`SpriteRenderer.color` on an entity body has exactly one owner: `SpriteTintStack`.**
+  Nine systems used to cache it as "the original", tint, and write the cache back — correct
+  alone, wrong together. A monster hit while burning had the flash capture orange as its
+  baseline and restore orange after the burn ended, permanently. Burn/Poison/Freeze/Slow/
+  Stun, the hit-flash fallback, `GrayscaleDeath` and `TransporterFX` now each own a
+  `TintLayer` and never touch the renderer; layers multiply so overlapping effects blend.
+  The stack lives on the ENTITY ROOT — attaching one to a child renderer creates a second
+  base colour and reopens the bug. `PlayerSpiritVisuals` is deliberately NOT migrated: it
+  tints every child renderer, not just the body.
 - **Sprite-Lit-Default with no Light2D** → black tiles. Use `Sprite-Unlit-Default` fallback (already wired in `WorldGridBuilder.ApplyUnlitFallbackIfNeeded()`).
 - **Two SpriteAtlas assets over the same folder** → Unity logs `Sprite X matches more than one built-in atlases` once *per sprite* (3077 warnings once) and ships the atlas twice. `SpriteAtlasBuilder` now refuses to build a group whose source folder is already packed by another atlas anywhere in the project.
 - **Deleting a MonoBehaviour leaves prefabs with null component slots** — `m_Script: {fileID: 0}`, no guid, one console entry per slot on every import (2345 of them from the DungeonGunner removal). Strip with `GameObjectUtility.RemoveMonoBehavioursWithMissingScript` via `PrefabUtility.LoadPrefabContents`/`SaveAsPrefabAsset`; check for unresolved guids first, since those *are* recoverable information.
-- **A persistence round trip is a pair.** Anything that writes a position/coordinate to
-  `StreamingAssets/` must transform it the same way the loader untransforms it, and the context
-  that transform depends on (zone, map slot, origin) must be resolved on BOTH sides. Spawners
-  shipped for months writing absolute world coordinates into a field the loader read as
-  zone-relative — they saved perfectly and came back 150 tiles away, once per restart. A test
-  that exercises only one half proves nothing; assert the composition, and assert the shipped
-  data is in bounds. See `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md`.
-- **F10 Buildings save position-collapse bug** — root cause unknown but mitigated by 3 guards in `BuildingsRuntimeEditor.Persistence.cs`. If the F10 save ever logs `ABORTING save — ...`, that's this bug firing. Read `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` for the recovery procedure and the next-step investigation checklist.
-
-## Incident reports
-
-Past incidents that left investigation hooks behind. Read these first when a
-related symptom reappears.
-
-| Incident | When | Doc |
-|---|---|---|
-| F10 Buildings save collapses `rel_x`/`rel_y` to one position per zone | 2026-05-08 (mitigated, root cause TBD) | `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` |
-| Run "twin-save" — duplicate `Saves/<runId>/` folders with byte-identical body but distinct `meta.run_id` | 2026-05-08 (mitigated — root cause: EditMode test pollution; fixed by `RefuseWriteOutsidePlayMode` guard) | `.github/incidents/RUN_TWIN_SAVE.md` |
-| Spawners drift by their zone's origin on every restart (save wrote absolute world coords into a zone-relative field) | 2026-08-19 (fixed) | `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md` |
-
-## Open work
-
-- **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
-- **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
-- **Four spells reference particle presets that do not exist** — `vortex_pull` and
-  `vortex_push` name `vortex_dark`, `flame_breath` names `breath_fire`, `root_whip` names
-  `root_whip`. None has ever been in `ParticlePresetCatalog`, so those spells fire with no
-  visible trail and nothing logged. Recorded in `SpellVfxPresetIntegrityTests.KnownMissingPresets`,
-  which ratchets in both directions — author the preset (or clear the dead reference) and
-  delete the baseline line.
-- **`explosion_small` has `speed: 0`** — its 24 particles spawn in a 0.1-unit sphere and sit
-  there fading, so every spell still using it gets a blink instead of a blast. Left alone
-  deliberately while the fireball was rebuilt; fixing it improves everything that uses it.
-- **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
-
-The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
 - **`Resources.LoadAll<T>("")` is a full-tree scan, not a filter.** The empty path
   deserializes every one of the ~7,400 assets under `Resources/` and only then keeps the
   ones matching `T` — so an asset whose `m_Script` no longer resolves logs "The referenced
@@ -377,3 +390,30 @@ The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill sta
   times and delete-then-move 4327, because Mono's `File.Replace` is not Win32 `ReplaceFile`.
   What carries a run across a crash in that window is the rotating backups and the
   checksum. What temp+rename does buy is that a reader never sees a half-written save.
+- **A persistence round trip is a pair.** Anything that writes a position/coordinate to
+  `StreamingAssets/` must transform it the same way the loader untransforms it, and the context
+  that transform depends on (zone, map slot, origin) must be resolved on BOTH sides. Spawners
+  shipped for months writing absolute world coordinates into a field the loader read as
+  zone-relative — they saved perfectly and came back 150 tiles away, once per restart. A test
+  that exercises only one half proves nothing; assert the composition, and assert the shipped
+  data is in bounds. See `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md`.
+- **F10 Buildings save position-collapse bug** — root cause unknown but mitigated by 3 guards in `BuildingsRuntimeEditor.Persistence.cs`. If the F10 save ever logs `ABORTING save — ...`, that's this bug firing. Read `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` for the recovery procedure and the next-step investigation checklist.
+
+## Incident reports
+
+Past incidents that left investigation hooks behind. Read these first when a
+related symptom reappears.
+
+| Incident | When | Doc |
+|---|---|---|
+| F10 Buildings save collapses `rel_x`/`rel_y` to one position per zone | 2026-05-08 (mitigated, root cause TBD) | `.github/incidents/BUILDINGS_SAVE_POSITION_COLLAPSE.md` |
+| Run "twin-save" — duplicate `Saves/<runId>/` folders with byte-identical body but distinct `meta.run_id` | 2026-05-08 (mitigated — root cause: EditMode test pollution; fixed by `RefuseWriteOutsidePlayMode` guard) | `.github/incidents/RUN_TWIN_SAVE.md` |
+| Spawners drift by their zone's origin on every restart (save wrote absolute world coords into a zone-relative field) | 2026-08-19 (fixed) | `.github/incidents/SPAWNER_COORDINATE_SPACE_DRIFT.md` |
+
+## Open work
+
+- **Multi-map Phase B/C** — Phase A (per-slot persistence routing) shipped 2026-08-18: buildings, spawners, lights, particles and authored item drops each own their file per map slot. Still open: built-in parallel worlds (Sky / Hell) and cross-world portals at runtime. See `.github/MAP_EDITOR_MULTIMAP_ROADMAP.md`.
+- **Asset pipeline Phase 2** — finalised `asset_map.csv` schema + the formal naming convention. Bulk reimport already executed; `ValkurAssetPostprocessor` writes Uncompressed platform overrides. Atlas consolidation is **done** (2026-08-18): exactly 9 atlases, all under `_Project/SpriteAtlases/`, one owner (`SpriteAtlasBuilder`).
+- **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
+
+The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
