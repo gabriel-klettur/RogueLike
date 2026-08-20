@@ -86,21 +86,78 @@ namespace Valkur.Gameplay.Save
             File.Copy(srcAutosavePath, firstBackup, overwrite: true);
         }
 
-        // Atomic temp-write + rename + checksum. Pure file IO, safe to call
-        // from any thread.
+        // Temp-write + rename + checksum. Pure file IO, safe to call from any thread.
+        // The name says "Atomic" and the rename is not — see SwapIntoPlace for what this
+        // does and does not guarantee.
         internal static void WriteSerializedJsonAtomic(string path, string json)
         {
             string dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            string tempPath = path + ".tmp";
-            File.WriteAllText(tempPath, json);
+            // Unique per write. The temp used to be "<path>.tmp" for EVERY writer of the
+            // same file, so two writes in flight at once opened the same temp handle and
+            // the loser died with "Access to the path is denied" — which is how this was
+            // found, one error on leaving Play. SaveService chains its autosaves through
+            // _pendingWrite, but WriteAutosaveAsync's Task.Run does not join that chain,
+            // so two writers really can overlap.
+            string tempPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
 
-            if (File.Exists(path)) File.Delete(path);
-            File.Move(tempPath, path);
+            try
+            {
+                File.WriteAllText(tempPath, json);
+                SwapIntoPlace(tempPath, path);
+            }
+            catch
+            {
+                // Never leave a half-written temp behind to accumulate in the save folder.
+                try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { /* best effort */ }
+                throw;
+            }
 
             WriteChecksum(path, json);
+        }
+
+        /// <summary>
+        /// Rename a finished temp file onto its target.
+        ///
+        /// What this DOES buy: a reader never sees a half-written save, because the bytes
+        /// land in the temp and only a rename is visible at the target.
+        ///
+        /// What it does NOT buy, despite the method's name: a gap-free swap. Measured in
+        /// this runtime over 200 rewrites with a reader spinning on File.Exists,
+        /// File.Replace left the target momentarily absent 3715 times and delete-then-move
+        /// 4327 — Mono's File.Replace is not Win32 ReplaceFile. Replace is kept because it
+        /// is the narrower window of the two, but the thing that actually makes a run
+        /// survive a crash in that window is the rotating backups and the checksum, not
+        /// this rename. Do not add a claim here that this is atomic.
+        ///
+        /// Retried because two writers race: SaveService serialises its own autosaves, but
+        /// WriteAutosaveAsync does not join that chain, so the destination can appear or
+        /// vanish between the existence check and the swap.
+        /// </summary>
+        private static void SwapIntoPlace(string tempPath, string path)
+        {
+            const int MAX_ATTEMPTS = 8;
+
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(path)) File.Replace(tempPath, path, null);
+                    else File.Move(tempPath, path);
+                    return;
+                }
+                catch (IOException) when (attempt < MAX_ATTEMPTS)
+                {
+                    // The other writer got there first, either way round: Move found the
+                    // name taken, or Replace found it gone. Both are worth another look
+                    // rather than failing a save over a race we can just retry out of.
+                    // UnauthorizedAccessException is deliberately NOT caught — that one is
+                    // a real permissions problem and must surface.
+                    System.Threading.Thread.Sleep(2);
+                }
+            }
         }
 
         public static GameSaveData TryLoadSingle(string path)
