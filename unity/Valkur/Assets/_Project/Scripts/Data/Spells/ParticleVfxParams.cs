@@ -44,9 +44,6 @@ namespace Valkur.Data
         [Range(0f, 0.98f)]
         public float drag = 0f;
 
-        [Tooltip("Emission direction for directional emitters (world-space, normalised). Python: direction.")]
-        public Vector2 direction = Vector2.down;
-
         // --------------- Lifetime ---------------
         [Tooltip("Particle lifetime (seconds). Python: lifespan / 60  OR  life_ms / 1000.")]
         public float lifespan = 1f;
@@ -114,40 +111,12 @@ namespace Valkur.Data
         [Tooltip("Beam / ribbon thickness (world units). Python: thickness / 16.")]
         public float thickness = 0.1f;
 
-        // --------------- Water Fountain ---------------
-        [Tooltip("Normalised X positions of water spouts in [0..1]. Python: spouts.")]
-        public float[] spouts = { 0.5f };
-
-        [Tooltip("Number of splash particles per droplet on landing. Python: splash_count.")]
-        public int splashCount = 2;
-
-        [Tooltip("Droplet particle size (world units). Python: droplet_size / 16.")]
-        public float dropletSize = 0.1f;
-
         // --------------- Falling Leaf / Sway ---------------
         [Tooltip("Horizontal sway amplitude (world units). Python: sway_amp / 16.")]
         public float swayAmp = 0.04f;
 
         [Tooltip("Sway frequency (cycles per second). Python: sway_speed (dimensionless tuning value).")]
         public float swaySpeed = 0.12f;
-
-        // --------------- Water Flow ---------------
-        [Tooltip("Gap between flow stripes (world units). Python: stripe_gap / 16.")]
-        public float stripeGap = 0.5f;
-
-        [Tooltip("Ripple amplitude for water surface effect. Python: ripple_amp.")]
-        public float rippleAmp = 0.6f;
-
-        [Tooltip("Base alpha (0-255). Python: alpha_base.")]
-        [Range(0, 255)]
-        public int alphaBase = 110;
-
-        [Tooltip("Alpha wave amplitude (0-255). Python: alpha_wave.")]
-        [Range(0, 255)]
-        public int alphaWave = 70;
-
-        [Tooltip("Secondary highlight colour for water flow. Python: highlight_color.")]
-        public Color highlightColor = new Color(0.23f, 0.43f, 0.63f, 1f);
 
         // --------------- Smoke Dispersion ---------------
         [Tooltip("Emission spread for smoke_emitter kind (world units). Python: dispersion / PPU.")]
@@ -171,10 +140,41 @@ namespace Valkur.Data
         [Tooltip("Color over lifetime keyframes [[t, [R,G,B]], ...]. Python: color_over_life.")]
         public ColorKeyframe[] colorOverLife;
 
-        // --------------- Portal ---------------
-        [Tooltip("Ellipse aspect ratio for portal rendering. Python: ellipse_ratio.")]
-        public float ellipseRatio = 1f;
+        // --------------- Flipbook (Texture Sheet Animation) ---------------
+        [Tooltip("Ordered animation frames. When non-empty the emitter switches to Unity's " +
+                 "Texture Sheet Animation in Sprites mode and every particle plays this " +
+                 "sequence over its lifetime instead of showing one static texture. All " +
+                 "frames must live in the same SpriteAtlas or Unity cannot batch them.")]
+        public Sprite[] flipbookFrames;
 
+        [Tooltip("How many times the whole frame sequence plays across one particle lifetime. " +
+                 "1 = the frames tell a single story from birth to death (the usual choice for " +
+                 "an evolving shape such as a smoke puff). Higher values loop the sequence.")]
+        public int flipbookCycles = 1;
+
+        [Tooltip("Start each particle on a random frame. Leave OFF when the frames depict a " +
+                 "progression — a particle that starts half-dissipated reads as a glitch. " +
+                 "Turn ON only for sequences where every frame is a valid starting state.")]
+        public bool flipbookRandomStartFrame = false;
+
+        // --------------- Noise (turbulence) ---------------
+        [Tooltip("Enable Unity's noise module. This is what separates drifting smoke from a " +
+                 "blob that merely shrinks. Kept opt-in so existing presets keep their look; " +
+                 "the falling_leaf kind still gets its legacy sway when this is off.")]
+        public bool noiseEnabled = false;
+
+        [Tooltip("Noise displacement in world units. Scaled by the emitter's scale.")]
+        public float noiseStrength = 0f;
+
+        [Tooltip("Noise frequency — low values give slow, broad billowing; high values give " +
+                 "fast, fine jitter.")]
+        public float noiseFrequency = 0.5f;
+
+        [Tooltip("How fast the noise field scrolls. Keeps a long-lived particle from settling " +
+                 "into a static offset.")]
+        public float noiseScrollSpeed = 0.2f;
+
+        // --------------- Portal ---------------
         [Tooltip("Outer ring radius for portal presets (world units). Python: outer_radius / PPU.")]
         public float outerRadius = 0f;
     }

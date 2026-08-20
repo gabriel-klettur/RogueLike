@@ -17,16 +17,17 @@ MonoBehaviour:
   type: smoke_emitter
   vfx:
     kind: smoke_emitter
-    emitRate: 120
-    count: 12
+    loops: 1
+    emitRate: 22
+    count: 14
     burstIntervalSeconds: 0
-    speed: 0
+    speed: 0.5
     gravity: 0
     drag: 0
     direction: {x: 0, y: -1}
-    lifespan: 1
-    sizeMin: 0.0625
-    sizeMax: 0.125
+    lifespan: 1.8
+    sizeMin: 0.42
+    sizeMax: 0.95
     colors:
     - {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     color: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
@@ -47,3 +48,100 @@ MonoBehaviour:
     alphaBase: 110
     alphaWave: 70
     highlightColor: {r: 0.23, g: 0.43, b: 0.63, a: 1}
+    dispersion: 0.55
+    gravityVector: {x: 0, y: 0.55}
+    useGravityVector: 1
+    sizeOverLife:
+    - time: 0
+      value: 0.45
+    - time: 0.35
+      value: 1
+    - time: 1
+      value: 1.35
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.12
+      value: 1
+    - time: 0.55
+      value: 0.62
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 0.85, g: 0.85, b: 0.88, a: 1}
+    - time: 0.45
+      color: {r: 0.6, g: 0.61, b: 0.66, a: 1}
+    - time: 1
+      color: {r: 0.32, g: 0.33, b: 0.4, a: 1}
+    flipbookFrames:
+    - {fileID: 21300000, guid: c3604815f5883694db7e5bece150e89f, type: 3}
+    - {fileID: 21300000, guid: a9c737931230d4041b769c7bbe8e4265, type: 3}
+    - {fileID: 21300000, guid: d4b8335b7ca154042bacf3c34b2f60ca, type: 3}
+    - {fileID: 21300000, guid: 37303291a2e66a1429ec146a80ca4a2a, type: 3}
+    - {fileID: 21300000, guid: b01da1d2b970653499200ce75ffa2b50, type: 3}
+    - {fileID: 21300000, guid: e0f33224abc8e4045a78861fa05272b6, type: 3}
+    - {fileID: 21300000, guid: 718c50b333fb6354581fb7ff818cd8ec, type: 3}
+    - {fileID: 21300000, guid: b214fe5a006c0ed4db35ff0ca14e3f76, type: 3}
+    - {fileID: 21300000, guid: 9111fff02a543ac4a8e274c6b10a9cce, type: 3}
+    - {fileID: 21300000, guid: c69f392af1aa93648b95bb0fe0a05642, type: 3}
+    - {fileID: 21300000, guid: e3db461008666cf4284aa8a37f0cf30d, type: 3}
+    - {fileID: 21300000, guid: 90a4f8c4f28d0b34ab9099a50cde0d58, type: 3}
+    - {fileID: 21300000, guid: 40324f54985bae541827615639dae09f, type: 3}
+    - {fileID: 21300000, guid: 8b1c7b63a52e289469248f5b8185dbfa, type: 3}
+    - {fileID: 21300000, guid: 3848668581aea9d479f4b033fd42bcef, type: 3}
+    - {fileID: 21300000, guid: 8c990b5a56b49c14e97cc094367cf42f, type: 3}
+    - {fileID: 21300000, guid: 298abb6782c66714b952751ded941c87, type: 3}
+    - {fileID: 21300000, guid: 0f0e0af026f9a2d48a515045d9cc67ff, type: 3}
+    - {fileID: 21300000, guid: bbe9e9240852b7d4faad6867b8d2f48b, type: 3}
+    - {fileID: 21300000, guid: 31495151f70be424293f27509338d08d, type: 3}
+    - {fileID: 21300000, guid: cb1d11649eb1bc44b92d19d660c47097, type: 3}
+    - {fileID: 21300000, guid: 42e2ba20cb5484a43949823df573f311, type: 3}
+    - {fileID: 21300000, guid: 0b72b0d659ef2684da6ac54ae738d0bf, type: 3}
+    - {fileID: 21300000, guid: 42bc55e4bebbb9c4988baa82be42808a, type: 3}
+    - {fileID: 21300000, guid: 43e4a468da4fc89468a9e9ede6045e63, type: 3}
+    - {fileID: 21300000, guid: 032e84c8b235be24dbbfa863258a0fcf, type: 3}
+    - {fileID: 21300000, guid: af7a621dd43ae3a4bb95e0fcd7e34a12, type: 3}
+    - {fileID: 21300000, guid: 38d6064a35eec634f93f33e63ae9cccf, type: 3}
+    - {fileID: 21300000, guid: 99bb5faa79a8c3c4bb1beeec3288978e, type: 3}
+    - {fileID: 21300000, guid: 215e4916766f03349afc113f432267b0, type: 3}
+    - {fileID: 21300000, guid: 45e0715d0e1680143b6ca7b51350989b, type: 3}
+    - {fileID: 21300000, guid: af0f426a105be3d4fbcecee8a98be43c, type: 3}
+    - {fileID: 21300000, guid: 19c9ad125f913c6498335ce5b9e5c4e9, type: 3}
+    - {fileID: 21300000, guid: 57d1462d6adce514cb48ee4a6711723d, type: 3}
+    - {fileID: 21300000, guid: a17a72cd7c0f47740b5db32f32dc66f0, type: 3}
+    - {fileID: 21300000, guid: 9d0bc8afb1b012b49a34016818b24c63, type: 3}
+    - {fileID: 21300000, guid: a951ba59958cce74685fae3636404f52, type: 3}
+    - {fileID: 21300000, guid: ebc361f321fe9b441b6c86e7e0ad5c9c, type: 3}
+    - {fileID: 21300000, guid: ed9b91bda9b6ef947883018ce8e78bf8, type: 3}
+    - {fileID: 21300000, guid: 857c59865ee6a5547882ef9b474c533e, type: 3}
+    - {fileID: 21300000, guid: 2f4e1d8ff5e7feb41afe62f8526800e2, type: 3}
+    - {fileID: 21300000, guid: c15891e97933b9842afa23adcd7d53e5, type: 3}
+    - {fileID: 21300000, guid: 4aa9801b4f7bf724aad337ec5b814c42, type: 3}
+    - {fileID: 21300000, guid: 91487df9982539849bb95eb07b34cfb4, type: 3}
+    - {fileID: 21300000, guid: 539015d6e829c7f4d8255baab122ab0f, type: 3}
+    - {fileID: 21300000, guid: aefb0ad063121334c9007260e5d8d359, type: 3}
+    - {fileID: 21300000, guid: 74cba3fd562498747b4c98f1d6e7369b, type: 3}
+    - {fileID: 21300000, guid: cad500392ba140f409a0b56668d881ad, type: 3}
+    - {fileID: 21300000, guid: f338f342196c55b4bba05a71de6071e8, type: 3}
+    - {fileID: 21300000, guid: e314eadaab62cca498da0fdcb5a44f35, type: 3}
+    - {fileID: 21300000, guid: 6812b708df1fbf44db58e5f036dbfc97, type: 3}
+    - {fileID: 21300000, guid: d4fd3f64ff3011e4fabd509f5a095201, type: 3}
+    - {fileID: 21300000, guid: 2044f5fd93ae62b4e9d6f1995781e985, type: 3}
+    - {fileID: 21300000, guid: 1ebd86e086894c9498c57e6d677b6bfd, type: 3}
+    - {fileID: 21300000, guid: 71459de2fdc37de468b9527ddc6ddb04, type: 3}
+    - {fileID: 21300000, guid: 9b28bc9dbe6bc5540b829840af40f4d4, type: 3}
+    - {fileID: 21300000, guid: d5f6552c0e017244ba0ff8da01a9257a, type: 3}
+    - {fileID: 21300000, guid: 83886c6e072333e4d894124a510244bd, type: 3}
+    - {fileID: 21300000, guid: 2f1520eb9d68b7e44813fed262b7844c, type: 3}
+    - {fileID: 21300000, guid: ceb286876b27486499433b2faa1007f7, type: 3}
+    - {fileID: 21300000, guid: f68b50323e02a43498e4d6fa6bfa6aeb, type: 3}
+    - {fileID: 21300000, guid: 9c5ddadaefabe4d4c866056c390c5194, type: 3}
+    - {fileID: 21300000, guid: 657fd8a2585ef2f45ae3d04b9c22d261, type: 3}
+    - {fileID: 21300000, guid: 694d177034a3f764b8c949cc192e372f, type: 3}
+    flipbookCycles: 1
+    flipbookRandomStartFrame: 0
+    noiseEnabled: 1
+    noiseStrength: 0.38
+    noiseFrequency: 0.32
+    noiseScrollSpeed: 0.25

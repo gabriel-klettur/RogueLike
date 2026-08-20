@@ -59,8 +59,9 @@ Everything else in `asset-pipeline` still applies — naming, folders, atlas pol
 - **Overbright core, tinted rim.** Center near-white (`a=1`), edge the element hue.
 - **Two-speed layers.** Fast small sparks + slow large haze = parallax without a camera move.
 - **Additive on the light, alpha on the mass.** Fire's glow is additive; fire's smoke is not.
-- **Elliptical shapes for ground effects.** `ellipseRatio` ≈ `0.5` makes a circle read as a
-  disc lying on the floor instead of a ring standing up facing the camera.
+- **Elliptical shapes for ground effects.** A circle squashed to ≈ `0.5` on Y reads as a disc
+  lying on the floor instead of a ring standing up facing the camera. There is no field for
+  this yet — `ellipseRatio` is dead (§7); squash by scaling the emitter's transform.
 - **Asymmetric alpha curve.** Fast attack (0 → 1 in the first 10 % of life), long decay.
   Symmetric fades look like a light switch.
 
@@ -98,7 +99,7 @@ Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
 | `gravity` | float | `main.gravityModifier = gravity / 9.81` | Ignored when `useGravityVector`. |
 | `gravityVector` + `useGravityVector` | Vector2, bool | `velocityOverLifetime` in Local space | For sideways drift (rain, wind). |
 | `drag` | float | `limitVelocityOverLifetime.dampen` (clamped 0–1) | Only enabled when `> 0`. |
-| `direction` | Vector2 | — | Read by callers, not by `ConfigureParticleSystem`. |
+| `direction` | Vector2 | — | **NOT IMPLEMENTED — dead field.** No caller and no emitter path reads it. Authoring it does nothing. |
 | `lifespan` | float | `main.startLifetime` | Floored at 0.05. |
 | `sizeMin` / `sizeMax` | float | `main.startSize` range × scale | World units. |
 | `colors[]` | Color[] | `BuildColorParameter` / `BuildFadeOutGradient` | **Only `[0]` and `[last]` reach `startColor`.** Middle entries only survive via `BuildFadeOutGradient` (max 8). |
@@ -112,13 +113,13 @@ Source: `Scripts/Data/Spells/ParticleVfxParams.cs`. Consumed by
 | `worldSpace` | bool | `main.simulationSpace` | **The trail switch.** See §2.2. `kind == "dash"` forces world space regardless. |
 | `radius` | float | shape radius for aura / portal | |
 | `outerRadius` | float | overrides `radius` for `portal` | |
-| `ellipseRatio` | float | ground-plane squash | 1 = circle. |
+| `ellipseRatio` | float | — | **NOT IMPLEMENTED — dead field.** No code squashes any shape; it only exists in `ParticleVfxParams.cs` and is serialized as `1` in every `.asset`. |
 | `arcRangeDegrees` | float | `shape.angle * 0.5` for `slash` cone | |
 | `dispersion` | float | shape radius for `smoke_emitter` | |
 | `segments`, `lightningOffset`, `thickness` | int, float, float | `ParticleEmitter.Lightning.cs` LineRenderer | `kind="lightning"` only — no ParticleSystem is created. |
-| `spouts[]`, `splashCount`, `dropletSize` | float[], int, float | water presets | |
+| `spouts[]`, `splashCount`, `dropletSize` | float[], int, float | — | **NOT IMPLEMENTED — dead fields.** Water-preset importer debt, no consumer. See §7. |
 | `swayAmp` / `swaySpeed` | float | `noise.strength` / `noise.frequency` | **`kind == "falling_leaf"` only.** Noise is force-disabled for every other kind. |
-| `stripeGap`, `rippleAmp`, `alphaBase`, `alphaWave`, `highlightColor` | — | water_flow legacy | |
+| `stripeGap`, `rippleAmp`, `alphaBase`, `alphaWave`, `highlightColor` | — | — | **NOT IMPLEMENTED — dead fields.** `water_flow` legacy, no consumer. See §7. |
 | `sizeOverLife[]` | Keyframe2D[] | `sizeOverLifetime.size` | If empty and `loops=false`, engine injects 0.3→1.0→0. If empty and looping, module is **off**. |
 | `alphaOverLife[]` | Keyframe2D[] | gradient alpha keys (max 8) | Presence switches to `BuildGradientFromCurves`. |
 | `colorOverLife[]` | ColorKeyframe[] | gradient color keys (max 8) | **Only read when `alphaOverLife` is non-empty.** Authoring color keys without alpha keys silently does nothing. |
@@ -199,7 +200,7 @@ color in both fields double-darkens. Keep one of them near white.
 
 | `kind` | Shape | Beauty recipe |
 |---|---|---|
-| `aura`, `healing_aura` | Circle, `radiusThickness=0` (edge emit) | Slow rise, `additive`, long life, low `emitRate`. Squash with `ellipseRatio` so it lies on the floor. |
+| `aura`, `healing_aura` | Circle, `radiusThickness=0` (edge emit) | Slow rise, `additive`, long life, low `emitRate`. It emits as a true circle — `ellipseRatio` is dead (§7), so a floor-lying disc needs the emitter transform scaled on Y. |
 | `portal` | Circle edge, `outerRadius` | Never one preset — stack `_core_soft` (alpha) + `_rim_add` (additive) + `_sparks_add` (additive, tiny, fast). |
 | `dash` | Circle r=0.1, **World simulation space** | The only kind in world space; particles stay behind the mover. Short life, fast shrink. |
 | `slash` | Cone, `angle = arcRangeDegrees/2` | Very short life (< 0.2 s), high count, additive. |
@@ -237,7 +238,7 @@ not `count`, is the one to hold.
 |---|---|---|
 | Ambient world emitter (placed via F1) | **≤ 40** | Many are on screen at once; `ParticleInstancesLoader` culls off-camera but on-screen density adds up. |
 | Player aura / trail | ≤ 60 | Always visible. |
-| Signature spell (fireball) | ≤ 120 | A deliberate exception, capped by `maxInstances` and enforced by `FireballSignatureTests`. Do not treat it as the general rule. |
+| Signature spell (fireball) | ≤ 120 | A deliberate exception. NOT enforced by anything: `maxInstances` is unread metadata (see §7) and `FireballSignatureTests` never asserts a particle budget. Do not treat it as the general rule. |
 | Spell impact (burst) | ≤ 120 per burst | Sub-second life, so peak-only. |
 | Boss / set-piece | ≤ 250 across all stacked layers | Budget the *stack*, not each preset. |
 
@@ -277,6 +278,15 @@ Fix them in `ParticleEmitter` before spending long tuning numbers.
 | **Gradient keys capped at 8.** | `BuildGradientFromCurves` | Unity's own limit — fine, but silently truncates. |
 | **`burstIntervalSeconds` dead.** | `IsBurstWithInterval()` returns `false` unconditionally | Repeating ambient bursts impossible. |
 | **Noise hardcoded to `falling_leaf`.** | `ConfigureParticleSystem` | No turbulence for smoke or fire. |
+
+**Dead fields — Python-importer debt.** These serialize, show up in the F1 inspector and
+survive every round trip, but a grep over `Assets/_Project/Scripts/` finds **zero runtime
+consumers** for any of them. They are leftovers from the Pygame preset importer. Authoring
+them changes nothing on screen; do not tune them, and do not cite them in a recipe:
+`direction`, `ellipseRatio`, `spouts[]`, `splashCount`, `dropletSize`, `stripeGap`,
+`rippleAmp`, `alphaBase`, `alphaWave`, `highlightColor`. Either wire them up in
+`ParticleEmitter` or delete them from `ParticleVfxParams` — leaving them half-present is
+what caused presets to be authored against effects that never existed.
 
 **Already fixed (2026-08-18)** — do not re-report these as gaps:
 

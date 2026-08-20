@@ -227,6 +227,7 @@ namespace Valkur.Tests.EditMode.Game.AI
             public void PlaySFX(AudioClip clip, float volumeScale = 1f) {}
             public void PlaySFXAtPosition(AudioClip clip, Vector3 position, float volumeScale = 1f) {}
             public void PlaySfxById(string sfxId, float volumeScale = 1f) {}
+            public bool HasSfx(string sfxId) => true;
             public void PlaySfxRandom(string[] sfxIds, float volumeScale = 1f) {}
             public void SetSFXVolume(float vol) {}
             public void SetAmbientVolume(float vol) {}

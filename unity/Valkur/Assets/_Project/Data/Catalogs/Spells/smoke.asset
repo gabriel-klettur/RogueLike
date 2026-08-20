@@ -31,7 +31,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 0
+  radius: 1.5
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -39,7 +39,7 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 0
+  duration: 1.2
   damagePerTick: 0
   tickPeriod: 0
   element: 

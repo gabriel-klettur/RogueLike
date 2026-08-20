@@ -1,4 +1,5 @@
 using UnityEngine;
+using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
@@ -57,7 +58,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(layer);
             sr.sortingLayerName = layer;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 
@@ -67,8 +68,15 @@ namespace Valkur.Gameplay.Spells
             go.transform.SetParent(parent, false);
             go.transform.localPosition = Vector3.zero;
             Particles = go.AddComponent<ParticleSystem>();
+            // AddComponent starts the system immediately (playOnAwake defaults to true),
+            // and `main.duration` is one of the fields Unity refuses to change on a
+            // playing system: it fires "Setting the duration while system is still
+            // playing is not supported" and keeps the old value. Stop first, configure,
+            // Play at the end — the same order every other emitter builder here uses.
+            Particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
             var main = Particles.main;
+            main.playOnAwake = false;
             main.duration = 999f;
             main.loop = true;
             main.startLifetime = Palette.particleLife;
@@ -104,11 +112,79 @@ namespace Valkur.Gameplay.Spells
                 });
             col.color = grad;
 
+            // ── Growth ──────────────────────────────────────────────────────────
+            // A cloud that never changes size reads as a stamp, not as something
+            // expanding into the air.
+            var sol = Particles.sizeOverLifetime;
+            if (Palette.particleGrowEnabled)
+            {
+                sol.enabled = true;
+                sol.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(
+                    new Keyframe(0f, Palette.particleGrowFrom),
+                    new Keyframe(0.35f, Palette.particleGrowPeak),
+                    new Keyframe(1f, Palette.particleGrowTo)));
+            }
+            else
+            {
+                sol.enabled = false;
+            }
+
+            // ── Turbulence ──────────────────────────────────────────────────────
+            var noise = Particles.noise;
+            if (Palette.particleNoiseStrength > 0f)
+            {
+                noise.enabled = true;
+                noise.strength = new ParticleSystem.MinMaxCurve(Palette.particleNoiseStrength);
+                noise.frequency = Mathf.Max(0.0001f, Palette.particleNoiseFrequency);
+                noise.damping = true;
+                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(0.25f);
+            }
+            else
+            {
+                noise.enabled = false;
+            }
+
+            // ── Flipbook ────────────────────────────────────────────────────────
+            var tsa = Particles.textureSheetAnimation;
+            Texture flipTex = null;
+            if (Palette.particleFlipbook != null && Palette.particleFlipbook.Length > 0)
+            {
+                for (int i = tsa.spriteCount - 1; i >= 0; i--) tsa.RemoveSprite(i);
+                int added = 0;
+                for (int i = 0; i < Palette.particleFlipbook.Length; i++)
+                {
+                    var f = Palette.particleFlipbook[i];
+                    if (f == null) continue;
+                    tsa.AddSprite(f);
+                    if (flipTex == null) flipTex = f.texture;
+                    added++;
+                }
+                if (added > 0)
+                {
+                    tsa.enabled = true;
+                    tsa.mode = ParticleSystemAnimationMode.Sprites;
+                    tsa.timeMode = ParticleSystemAnimationTimeMode.Lifetime;
+                    tsa.cycleCount = Mathf.Max(1, Palette.particleFlipbookCycles);
+                    tsa.startFrame = new ParticleSystem.MinMaxCurve(0f);
+                }
+                else { tsa.enabled = false; }
+            }
+            else
+            {
+                tsa.enabled = false;
+            }
+
             var psr = Particles.GetComponent<ParticleSystemRenderer>();
-            psr.material = ElementalSprites.SharedUnlitMaterial;
+            // A flipbook needs the atlas page its frames were packed onto; the shared unlit
+            // material samples a different texture and would draw the frames as blank quads.
+            psr.sharedMaterial = flipTex != null
+                ? ParticleMaterialCache.Get(flipTex, false)
+                : ElementalSprites.SharedUnlitMaterial;
             psr.sortingLayerID = SortingLayer.NameToID(layer);
             psr.sortingLayerName = layer;
             psr.sortingOrder = 60;
+
+            Particles.Play();
         }
 
         private void AttachLight(Transform parent, float radius)
@@ -147,6 +223,20 @@ namespace Valkur.Gameplay.Spells
             if (Core != null) { var c = Core.color; c.a = Palette.coreColor.a * a; Core.color = c; }
         }
 
+        /// <summary>
+        /// Stop emitting while letting every particle already in the air finish its life.
+        /// Returns how long the caller must wait before destroying the rig's GameObject.
+        ///
+        /// Destroying the object outright kills the live particles mid-flight, which is why
+        /// smoke used to vanish on a frame boundary instead of drifting apart.
+        /// </summary>
+        public float StopEmitting()
+        {
+            if (Particles != null)
+                Particles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            return Palette.particleLife;
+        }
+
         public void Destroy()
         {
             if (LightGo != null) Object.Destroy(LightGo);
@@ -168,6 +258,26 @@ namespace Valkur.Gameplay.Spells
         public float  particleLife, particleSpeedMin, particleSpeedMax;
         public float  particleSizeMin, particleSizeMax;
         public float  particleRate, particleGravity;
+
+        // ── Optional particle detail ────────────────────────────────────────────
+        // All default to off so the palettes written before these existed (LavaPuddle,
+        // HealingTotem, VortexPull, …) keep rendering exactly as they did.
+
+        /// <summary>Drive sizeOverLifetime. Off = particles keep their birth size forever.</summary>
+        public bool   particleGrowEnabled;
+        /// <summary>Size multipliers at t=0, t=0.35 and t=1 when growth is enabled.</summary>
+        public float  particleGrowFrom, particleGrowPeak, particleGrowTo;
+
+        /// <summary>World-unit turbulence. 0 = no noise module.</summary>
+        public float  particleNoiseStrength;
+        /// <summary>Low = slow broad billowing, high = fast fine jitter.</summary>
+        public float  particleNoiseFrequency;
+
+        /// <summary>Animation frames played over each particle's life. Null = static texture.</summary>
+        public Sprite[] particleFlipbook;
+        /// <summary>How many times the flipbook repeats per particle lifetime.</summary>
+        public int    particleFlipbookCycles;
+
         public bool   lightEnabled;
         public Color  lightColor;
         public float  lightIntensity, lightOuterMul;
@@ -195,23 +305,44 @@ namespace Valkur.Gameplay.Spells
             };
         }
 
-        public static AreaPalette Smoke()
+        /// <summary>
+        /// Smoke: a mass that occludes rather than emits. Built from two Wisp silhouettes
+        /// (anisotropic, so the cloud reads as billowing upward instead of as a disc) over
+        /// a soft halo, plus large slow particles that keep expanding as they thin out.
+        ///
+        /// The light is deliberately dim and cold: smoke does not glow, but a cloud that
+        /// receives no light at all reads as a hole punched in the scene. This is the amount
+        /// that makes it look like haze catching the ambient, and no more.
+        /// </summary>
+        /// <param name="flipbook">
+        /// Optional animation frames for the particles, supplied by the caster from the
+        /// particle preset asset so the frames stay designer-authored data rather than a
+        /// hardcoded Resources path. Null falls back to the procedural smoke texture.
+        /// </param>
+        public static AreaPalette Smoke(Sprite[] flipbook = null)
         {
             ElementalSprites.EnsureAll();
             return new AreaPalette
             {
                 runeSprite = null,
-                haloSprite = ElementalSprites.Halo, haloColor = new Color(0.55f, 0.55f, 0.60f, 0.45f), haloScale = 2.10f,
-                glowSprite = ElementalSprites.Glow, glowColor = new Color(0.40f, 0.40f, 0.45f, 0.40f), glowScale = 1.50f,
+                haloSprite = ElementalSprites.Halo, haloColor = new Color(0.52f, 0.53f, 0.58f, 0.34f), haloScale = 1.85f,
+                glowSprite = ElementalSprites.Wisp, glowColor = new Color(0.66f, 0.67f, 0.72f, 0.42f), glowScale = 1.55f,
                 coreSprite = null,
                 useFloor = false,
                 particleEnabled = true,
-                particleColorA = new Color(0.78f, 0.78f, 0.82f, 1f),
-                particleColorB = new Color(0.40f, 0.40f, 0.45f, 1f),
-                particleLife = 1.6f, particleSpeedMin = 0.4f, particleSpeedMax = 1.0f,
-                particleSizeMin = 0.20f, particleSizeMax = 0.45f,
-                particleRate = 30f, particleGravity = -0.4f,
-                lightEnabled = false, lightColor = Color.white, lightIntensity = 0f, lightOuterMul = 1f,
+                particleColorA = new Color(0.82f, 0.82f, 0.86f, 1f),
+                particleColorB = new Color(0.34f, 0.34f, 0.40f, 1f),
+                particleLife = 1.9f, particleSpeedMin = 0.25f, particleSpeedMax = 0.75f,
+                particleSizeMin = 0.42f, particleSizeMax = 0.95f,
+                particleRate = 16f, particleGravity = -0.35f,
+                // Smoke thins, it never shrinks — the tail multiplier stays above the peak
+                // so a dying puff is the widest and faintest thing on screen.
+                particleGrowEnabled = true,
+                particleGrowFrom = 0.45f, particleGrowPeak = 1.0f, particleGrowTo = 1.35f,
+                particleNoiseStrength = 0.38f, particleNoiseFrequency = 0.32f,
+                particleFlipbook = flipbook, particleFlipbookCycles = 1,
+                lightEnabled = true, lightColor = new Color(0.62f, 0.66f, 0.78f, 1f),
+                lightIntensity = 0.38f, lightOuterMul = 1.7f,
             };
         }
 

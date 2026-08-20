@@ -65,9 +65,13 @@ namespace Valkur.Gameplay.Spells
                 Executors[SpellType.Projectile].Execute(ctx);
             }
 
-            // Play spell SFX by spellKey (e.g. "fireball" → fireball SFX in catalog)
+            // Play spell SFX by spellKey (e.g. "fireball" → fireball SFX in catalog).
+            // This is a SPECULATIVE probe: most spells have no authored clip yet, and a
+            // spell without a sound is missing content, not a data bug. Gate on HasSfx so
+            // the miss stays silent — calling PlaySfxById blind warns once per spellKey,
+            // which used to dirty the console the moment anyone cast anything but fireball.
             var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null && !string.IsNullOrEmpty(spell.spellKey))
+            if (audio != null && !string.IsNullOrEmpty(spell.spellKey) && audio.HasSfx(spell.spellKey))
                 audio.PlaySfxById(spell.spellKey);
 
             // Broadcast cast for HUD overlays (cooldown countdown stack, etc.).

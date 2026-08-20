@@ -19,7 +19,11 @@ namespace Valkur.Gameplay.VFX
                 var child = new GameObject("Particles");
                 child.transform.SetParent(transform, false);
                 _ps = child.AddComponent<ParticleSystem>();
-                // Stop auto-play until fully configured
+                // AddComponent starts the system there and then. Clearing playOnAwake
+                // afterwards only affects the NEXT awake, so the system is still running
+                // while it is being configured — and Unity rejects several main-module
+                // writes on a playing system. Stop it outright.
+                _ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 var childMain = _ps.main;
                 childMain.playOnAwake = false;
             }
@@ -154,9 +158,19 @@ namespace Valkur.Gameplay.VFX
                 vlim.enabled = false;
             }
 
-            // ---- Noise (falling_leaf sway) ----
+            // ---- Noise (turbulence) ----
+            // Authored noise wins; falling_leaf keeps its legacy sway so the 100-odd presets
+            // that predate these fields render exactly as before.
             var noise = _ps.noise;
-            if (kind == "falling_leaf")
+            if (p.noiseEnabled && p.noiseStrength > 0f)
+            {
+                noise.enabled = true;
+                noise.strength = new ParticleSystem.MinMaxCurve(p.noiseStrength * scale);
+                noise.frequency = Mathf.Max(0.0001f, p.noiseFrequency);
+                noise.damping = true;
+                noise.scrollSpeed = new ParticleSystem.MinMaxCurve(p.noiseScrollSpeed);
+            }
+            else if (kind == "falling_leaf")
             {
                 noise.enabled = true;
                 noise.strength = new ParticleSystem.MinMaxCurve(p.swayAmp * scale);
@@ -177,8 +191,58 @@ namespace Valkur.Gameplay.VFX
             else
                 col.color = BuildFadeOutGradient(p);
 
+            // ---- Flipbook ----
+            ConfigureFlipbook(p);
+
             // ---- Renderer ----
             ConfigureRenderer(p);
+        }
+
+        /// <summary>
+        /// Drives Unity's Texture Sheet Animation from <see cref="ParticleVfxParams.flipbookFrames"/>.
+        /// Sprites mode (not Grid): the frames are separate assets packed into a SpriteAtlas,
+        /// and a grid sheet would mean one oversized texture instead.
+        ///
+        /// Always runs, including the empty case — emitters are reused across presets (the F1
+        /// preview emitter serves every one of them), so a sheet left over from the previously
+        /// selected preset would keep animating over the next preset's texture.
+        /// </summary>
+        private void ConfigureFlipbook(ParticleVfxParams p)
+        {
+            var tsa = _ps.textureSheetAnimation;
+            var frames = p.flipbookFrames;
+
+            if (frames == null || frames.Length == 0)
+            {
+                tsa.enabled = false;
+                return;
+            }
+
+            // RemoveSprite shifts the tail down, so walk backwards.
+            for (int i = tsa.spriteCount - 1; i >= 0; i--)
+                tsa.RemoveSprite(i);
+
+            int added = 0;
+            for (int i = 0; i < frames.Length; i++)
+            {
+                if (frames[i] == null) continue;
+                tsa.AddSprite(frames[i]);
+                added++;
+            }
+
+            if (added == 0)
+            {
+                tsa.enabled = false;
+                return;
+            }
+
+            tsa.enabled = true;
+            tsa.mode = ParticleSystemAnimationMode.Sprites;
+            tsa.timeMode = ParticleSystemAnimationTimeMode.Lifetime;
+            tsa.cycleCount = Mathf.Max(1, p.flipbookCycles);
+            tsa.startFrame = p.flipbookRandomStartFrame
+                ? new ParticleSystem.MinMaxCurve(0f, Mathf.Max(0f, added - 1))
+                : new ParticleSystem.MinMaxCurve(0f);
         }
 
         private void ConfigureShape(ParticleVfxParams p, float scale)

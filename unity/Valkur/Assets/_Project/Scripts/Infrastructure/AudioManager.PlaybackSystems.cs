@@ -183,6 +183,12 @@ namespace Valkur.Infrastructure
             AudioSource.PlayClipAtPoint(clip, position, _sfxVolume * volumeScale);
         }
 
+        public bool HasSfx(string sfxId)
+        {
+            if (catalog == null || string.IsNullOrEmpty(sfxId)) return false;
+            return catalog.GetSfx(sfxId)?.clip != null;
+        }
+
         public void PlaySfxById(string sfxId, float volumeScale = 1f)
         {
             if (catalog == null || string.IsNullOrEmpty(sfxId)) return;

@@ -26,6 +26,7 @@ namespace Valkur.Tests.EditMode.Game.Combat
             public readonly List<string[]> Random = new List<string[]>();
 
             public void PlaySfxById(string sfxId, float volumeScale = 1f) { ById.Add(sfxId); }
+            public bool HasSfx(string sfxId) => true;
             public void PlaySfxRandom(string[] sfxIds, float volumeScale = 1f) { Random.Add(sfxIds); }
 
             // ── Unused interface members (keep IAudioService happy) ────────────

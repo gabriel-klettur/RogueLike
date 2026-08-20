@@ -52,6 +52,16 @@ namespace Valkur.Core
         /// <summary>Play SFX by catalog ID (resolved via AudioCatalogSO).</summary>
         void PlaySfxById(string sfxId, float volumeScale = 1f);
 
+        /// <summary>
+        /// True when <paramref name="sfxId"/> resolves to a catalog entry that owns a
+        /// clip. Callers that probe speculatively — e.g. "play a sound named after this
+        /// spell, if one was ever authored" — must gate on this instead of calling
+        /// <see cref="PlaySfxById"/> blind: a miss there is reported as a warning,
+        /// because an explicit id that fails to resolve is a data bug. The catalog is
+        /// the single source of truth for whether something has a sound yet.
+        /// </summary>
+        bool HasSfx(string sfxId);
+
         /// <summary>Play random clip from a list of catalog IDs.</summary>
         void PlaySfxRandom(string[] sfxIds, float volumeScale = 1f);
 

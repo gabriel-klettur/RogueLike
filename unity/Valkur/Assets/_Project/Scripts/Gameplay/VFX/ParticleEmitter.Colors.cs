@@ -16,17 +16,36 @@ namespace Valkur.Gameplay.VFX
             renderer.sortingOrder = 0;
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
 
-            // Texture: a hand-authored sprite wins; otherwise resolve the procedural shape
-            // (Auto derives it from kind + blend mode). Null = the legacy untextured quad.
-            Texture texture = p.customSprite != null
-                ? p.customSprite.texture
-                : ParticleTextureLibrary.Get(
-                    ParticleTextureLibrary.ResolveShape(p.textureShape, p.kind, p.additive),
-                    p.textureSoftness);
+            // Texture, in priority order:
+            //   1. a flipbook — Texture Sheet Animation writes per-particle UVs into this
+            //      texture, so the material must sample the atlas page the frames live on;
+            //   2. a hand-authored single sprite;
+            //   3. the procedural shape (Auto derives it from kind + blend mode).
+            // Null = the legacy untextured quad.
+            Texture texture = ResolveFlipbookTexture(p);
+            if (texture == null)
+                texture = p.customSprite != null
+                    ? p.customSprite.texture
+                    : ParticleTextureLibrary.Get(
+                        ParticleTextureLibrary.ResolveShape(p.textureShape, p.kind, p.additive),
+                        p.textureSoftness);
 
             // sharedMaterial — never .material: the cache exists so emitters batch and so
             // EditMode tests stop leaking per-renderer material instances.
             renderer.sharedMaterial = ParticleMaterialCache.Get(texture, p.additive);
+        }
+
+        /// <summary>
+        /// The atlas page the flipbook frames were packed onto, or null when the preset has
+        /// no flipbook. Takes it from the first non-null frame: Texture Sheet Animation in
+        /// Sprites mode requires every frame to share one texture, so any of them answers.
+        /// </summary>
+        private static Texture ResolveFlipbookTexture(ParticleVfxParams p)
+        {
+            if (p.flipbookFrames == null) return null;
+            for (int i = 0; i < p.flipbookFrames.Length; i++)
+                if (p.flipbookFrames[i] != null) return p.flipbookFrames[i].texture;
+            return null;
         }
 
         // ------------------------------------------------------------------ burst loop coroutine
