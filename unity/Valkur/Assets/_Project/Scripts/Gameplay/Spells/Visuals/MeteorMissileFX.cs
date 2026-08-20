@@ -79,7 +79,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_PROJECTILES);
             sr.sortingLayerName = SortingConfig.LAYER_PROJECTILES;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 
@@ -120,7 +120,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_PROJECTILES);
             sr.sortingLayerName = SortingConfig.LAYER_PROJECTILES;
             sr.sortingOrder = 60;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             var ember = go.AddComponent<TrailEmber>();
             ember.Init(Random.Range(0.18f, 0.32f), Random.Range(0.10f, 0.20f));
@@ -135,7 +135,7 @@ namespace Valkur.Gameplay.Spells
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio != null) audio.PlaySfxById("spell_meteor_impact");
 
-            CameraShake.Trigger(0.40f, 0.30f);
+            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMassive, Vector2.down);
             if (_lightGo != null) Destroy(_lightGo);
             Destroy(gameObject);
         }

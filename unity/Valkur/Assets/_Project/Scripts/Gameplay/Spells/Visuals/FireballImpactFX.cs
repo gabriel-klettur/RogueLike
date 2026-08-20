@@ -43,7 +43,7 @@ namespace Valkur.Gameplay.Spells
             fx._baseColor = baseColor;
             fx.Build();
             fx.SpawnEmberBurst();
-            CameraShake.Trigger(ShakeAmplitude, ShakeDuration);
+            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactHeavy, Vector2.zero);
             return fx;
         }
 
@@ -58,7 +58,7 @@ namespace Valkur.Gameplay.Spells
             _flashSr.color = new Color(1f, 0.95f, 0.7f, 1f);
             _flashSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             _flashSr.sortingOrder = SortingConfig.Z_SKY + 12;
-            _flashSr.material = FireballVisual.SharedUnlitMaterial;
+            _flashSr.sharedMaterial = FireballVisual.SharedUnlitMaterial;
 
             // Expanding shockwave ring
             var ring = new GameObject("Shockwave");
@@ -69,7 +69,7 @@ namespace Valkur.Gameplay.Spells
             _ringSr.color = new Color(1f, 0.55f, 0.15f, 1f);
             _ringSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             _ringSr.sortingOrder = SortingConfig.Z_SKY + 11;
-            _ringSr.material = FireballVisual.SharedUnlitMaterial;
+            _ringSr.sharedMaterial = FireballVisual.SharedUnlitMaterial;
 
             // Bright Light2D pulse
             var l2dType = FireballVisual.GetLight2DType();
@@ -119,7 +119,7 @@ namespace Valkur.Gameplay.Spells
                 sr.sprite = ember;
                 sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
                 sr.sortingOrder = SortingConfig.Z_SKY + 9;
-                sr.material = unlit;
+                sr.sharedMaterial = unlit;
                 sr.color = Color.Lerp(new Color(1f, 0.95f, 0.55f, 1f),
                                       new Color(1f, 0.35f, 0.05f, 1f), Random.value);
 
@@ -188,67 +188,4 @@ namespace Valkur.Gameplay.Spells
         }
     }
 
-    /// <summary>
-    /// Lightweight, self-installing camera shake helper.
-    /// Applies a transient offset to Camera.main each LateUpdate and removes it on the next
-    /// LateUpdate, so it composes safely with camera-follow scripts (which write the
-    /// camera's "rest" position in their own Update/LateUpdate).
-    /// </summary>
-    internal class CameraShake : MonoBehaviour
-    {
-        private static CameraShake _instance;
-
-        private Camera _cam;
-        private Vector3 _appliedOffset;
-        private float _amplitude;
-        private float _duration;
-        private float _t;
-
-        public static void Trigger(float amplitude, float duration)
-        {
-            EnsureInstance();
-            if (_instance == null) return;
-            // Restart whichever effect is stronger.
-            if (amplitude > _instance._amplitude) _instance._amplitude = amplitude;
-            if (duration  > _instance._duration ) _instance._duration  = duration;
-            _instance._t = 0f;
-        }
-
-        private static void EnsureInstance()
-        {
-            if (_instance != null) return;
-            var cam = Camera.main;
-            if (cam == null) return;
-            var go = new GameObject("CameraShake");
-            // DontDestroyOnLoad is illegal in EditMode (and unnecessary for EditMode tests).
-            if (Application.isPlaying) DontDestroyOnLoad(go);
-            _instance = go.AddComponent<CameraShake>();
-            _instance._cam = cam;
-        }
-
-        private void LateUpdate()
-        {
-            if (_cam == null)
-            {
-                _cam = Camera.main;
-                if (_cam == null) return;
-            }
-
-            // Remove the offset applied last frame so we don't drift.
-            if (_appliedOffset != Vector3.zero)
-            {
-                _cam.transform.position -= _appliedOffset;
-                _appliedOffset = Vector3.zero;
-            }
-
-            if (_duration <= 0f || _t >= _duration) return;
-
-            _t += Time.unscaledDeltaTime;
-            float falloff = 1f - Mathf.Clamp01(_t / _duration);
-            float x = (Random.value * 2f - 1f) * _amplitude * falloff;
-            float y = (Random.value * 2f - 1f) * _amplitude * falloff;
-            _appliedOffset = new Vector3(x, y, 0f);
-            _cam.transform.position += _appliedOffset;
-        }
-    }
 }

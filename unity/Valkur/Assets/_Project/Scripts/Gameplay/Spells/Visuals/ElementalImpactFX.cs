@@ -37,7 +37,7 @@ namespace Valkur.Gameplay.Spells
             fx._palette = palette;
             fx.Build();
             fx.SpawnBurst();
-            CameraShake.Trigger(ShakeAmplitude, ShakeDuration);
+            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactHeavy, Vector2.zero);
             return fx;
         }
 
@@ -53,7 +53,7 @@ namespace Valkur.Gameplay.Spells
             _flashSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
             _flashSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             _flashSr.sortingOrder = SortingConfig.Z_SKY + 12;
-            _flashSr.material = ElementalSprites.SharedUnlitMaterial;
+            _flashSr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             // Shockwave ring
             var ring = new GameObject("Shockwave");
@@ -65,7 +65,7 @@ namespace Valkur.Gameplay.Spells
             _ringSr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
             _ringSr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             _ringSr.sortingOrder = SortingConfig.Z_SKY + 11;
-            _ringSr.material = ElementalSprites.SharedUnlitMaterial;
+            _ringSr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             // Light2D pulse
             var l2dType = ElementalProjectileVisual.GetLight2DType();
@@ -104,7 +104,7 @@ namespace Valkur.Gameplay.Spells
                 sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
                 sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
                 sr.sortingOrder = SortingConfig.Z_SKY + 7;
-                sr.material = ElementalSprites.SharedUnlitMaterial;
+                sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
                 sr.color = Color.Lerp(_palette.core, _palette.glow, Random.value);
 
                 var ember = go.AddComponent<ElementalEmber>();

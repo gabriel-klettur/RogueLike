@@ -25,6 +25,7 @@ namespace Valkur.Gameplay.Spells
         private readonly List<string> _trailPresetIds = new List<string>();
         private readonly List<GameObject> _trailGos = new List<GameObject>();
         private bool _impacted;
+        private bool _trailStartPending;
 
         /// <summary>
         /// Configure the trail preset for this projectile. Safe to call before
@@ -40,7 +41,7 @@ namespace Valkur.Gameplay.Spells
             if (!gameObject.activeInHierarchy) return;
 
             StopTrail();
-            StartTrail();
+            _trailStartPending = true;   // deferred for the same reason as OnEnable
         }
 
         private bool SameAsCurrent(List<string> wanted)
@@ -59,12 +60,35 @@ namespace Valkur.Gameplay.Spells
         private void OnEnable()
         {
             _impacted = false;
+
+            // NOT StartTrail() directly: parenting a child to a GameObject that is in the
+            // middle of being activated is illegal — Unity logs "Cannot set the parent of
+            // the GameObject X while activating or deactivating the parent Y" and the
+            // reparent silently does not happen, which left every trail emitter of every
+            // pooled projectile stranded at the pool's origin. One frame's delay costs
+            // nothing visually and is the only legal place to do it.
+            _trailStartPending = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_trailStartPending) return;
+            _trailStartPending = false;
+            if (_impacted) return;   // hit on the spawn frame: nothing left to trail
             StartTrail();
         }
 
         private void OnDisable()
         {
-            StopTrail();
+            _trailStartPending = false;
+
+            // Same restriction in reverse: this runs while the projectile is being
+            // deactivated, so SetParent(null) would throw the mirror error. The normal
+            // path is OnImpact, which runs before the projectile is returned to the pool
+            // and therefore CAN detach. Here we only stop emission — the emitters carry
+            // their own despawn timer and their particles simulate in world space, so
+            // they fade where they were emitted either way.
+            StopEmittersOnly();
         }
 
         public void OnImpact(Vector3 worldPos)
@@ -95,16 +119,36 @@ namespace Valkur.Gameplay.Spells
             }
         }
 
+        /// <summary>
+        /// Detach the emitters, then stop them. Detaching first is what lets the particles
+        /// already in flight fade out where they were last emitted instead of being dragged
+        /// back to the pool with the projectile.
+        ///
+        /// Only legal outside an activation callback — see <see cref="StopEmittersOnly"/>.
+        /// </summary>
         private void StopTrail()
         {
             for (int i = 0; i < _trailGos.Count; i++)
             {
                 var go = _trailGos[i];
                 if (go == null) continue;
-
-                // Detach before stopping so existing particles can fade out where
-                // they were last emitted instead of teleporting back to the pool.
                 go.transform.SetParent(null, worldPositionStays: true);
+            }
+            StopEmittersOnly();
+        }
+
+        /// <summary>
+        /// Stop emission without reparenting, for the one caller that runs while the
+        /// projectile is being deactivated and therefore cannot legally reparent anything.
+        /// The emitters carry their own despawn timer, so leaving them attached costs a
+        /// frame of the trail travelling back to the pool rather than a leak.
+        /// </summary>
+        private void StopEmittersOnly()
+        {
+            for (int i = 0; i < _trailGos.Count; i++)
+            {
+                var go = _trailGos[i];
+                if (go == null) continue;
 
                 var emitter = go.GetComponent<ParticleEmitter>();
                 if (emitter != null) emitter.StopEmitting();

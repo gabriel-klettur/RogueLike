@@ -151,22 +151,6 @@ namespace Valkur.Gameplay.VFX
         }
 
         /// <summary>
-        /// Spawn a slash arc effect at the given position facing a direction.
-        /// </summary>
-        public void SpawnSlashArc(Vector3 position, Vector2 direction, Color color, float arc = 90f, float radius = 1.5f, float duration = 0.2f)
-        {
-            var go = SpawnOrCreateSimpleVFX("slash", position);
-            if (go == null) return;
-
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            go.transform.rotation = Quaternion.Euler(0, 0, angle);
-
-            var vfx = go.GetComponent<SimpleVFX>();
-            if (vfx == null) vfx = go.AddComponent<SimpleVFX>();
-            vfx.Play(color, duration, radius, "slash", this);
-        }
-
-        /// <summary>
         /// Spawn an area indicator effect at the given position.
         /// </summary>
         public void SpawnAreaIndicator(Vector3 position, Color color, float radius = 2f, float duration = 0.5f)
@@ -194,37 +178,56 @@ namespace Valkur.Gameplay.VFX
             return Spawn(key, position, Quaternion.identity);
         }
 
+        /// <summary>
+        /// Diameter in world units of a SimpleVFX billboard at scale 1, so callers keep
+        /// passing a radius and keep getting that radius.
+        /// </summary>
+        private const int SIMPLE_VFX_TEXTURE_SIZE = 64;
+        private const float SIMPLE_VFX_PIXELS_PER_UNIT = 32f;
+
+        /// <summary>
+        /// The billboard behind SpawnImpact and SpawnAreaIndicator.
+        ///
+        /// It used to be a 32-pixel, point-filtered, hard-edged filled disc on the Entities
+        /// sorting layer at order 600 — an aliased ball of flat colour that sat on top of the
+        /// world wherever any of the seventeen call sites fired. It is now a soft radial
+        /// falloff on the VFX layer, which is what every other effect in the project renders
+        /// like. Same world size, so no caller's radius changes meaning.
+        /// </summary>
         private static GameObject CreateSimpleVFXPrefab(string key)
         {
             var go = new GameObject($"VFX_{key}");
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
-            sr.sortingOrder = SortingConfig.Z_SKY;
+            sr.sortingLayerName = SortingConfig.LAYER_VFX;
+            sr.sortingOrder = 10;
 
-            // Create a simple circle texture
-            int size = 32;
-            var tex = new Texture2D(size, size);
-            tex.filterMode = FilterMode.Point;
+            int size = SIMPLE_VFX_TEXTURE_SIZE;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
             var pixels = new Color[size * size];
-            float center = size / 2f;
-            float radiusSq = center * center;
+            float center = size * 0.5f;
 
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
-                    float dx = x - center + 0.5f;
-                    float dy = y - center + 0.5f;
-                    float distSq = dx * dx + dy * dy;
-                    pixels[y * size + x] = distSq <= radiusSq
-                        ? Color.white
-                        : Color.clear;
+                    float dx = (x - center + 0.5f) / center;
+                    float dy = (y - center + 0.5f) / center;
+                    float d = Mathf.Sqrt(dx * dx + dy * dy);
+                    // Bright plateau in the middle, long skirt to the rim. A linear falloff
+                    // still reads as a disc with an edge; this reads as light.
+                    float a = d >= 1f ? 0f : Mathf.Pow(1f - d, 2.2f);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, a);
                 }
             }
             tex.SetPixels(pixels);
             tex.Apply();
 
-            sr.sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 16f);
+            sr.sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f),
+                                      SIMPLE_VFX_PIXELS_PER_UNIT);
 
             go.AddComponent<SimpleVFX>();
             return go;

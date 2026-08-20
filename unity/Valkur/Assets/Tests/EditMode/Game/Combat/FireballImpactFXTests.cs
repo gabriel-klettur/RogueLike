@@ -209,38 +209,12 @@ namespace Valkur.Tests.EditMode.Game.Combat
     }
 
     /// <summary>
-    /// CameraShake is a self-installing helper used by FireballImpactFX. We can't drive
-    /// LateUpdate in EditMode, but we can verify the public Trigger() API is null-safe and
-    /// stacks amplitude/duration correctly (no exceptions thrown without a Camera.main).
+    /// The CameraShakeTests fixture that stood here reflected on
+    /// <c>Valkur.Gameplay.Spells.CameraShake</c> and asserted that Trigger did not throw.
+    /// That class is gone: its amplitude ratcheted upward for the life of the session and
+    /// its restore step subtracted an offset the Cinemachine brain had already erased.
+    /// Neither defect was reachable from a test that only checked for exceptions, which is
+    /// why the replacement — CameraFeelMath — is pure functions covered by
+    /// <c>CameraFeelMathTests</c> instead.
     /// </summary>
-    public class CameraShakeTests
-    {
-        [Test]
-        public void Trigger_WithoutMainCamera_DoesNotThrow()
-        {
-            // No camera in the EditMode test scene — Trigger must early-out silently.
-            Assert.DoesNotThrow(() => InvokeTrigger(0.2f, 0.3f),
-                "Trigger should be a no-op when Camera.main is null");
-        }
-
-        [Test]
-        public void Trigger_AcceptsZeroAndNegativeArguments_NoException()
-        {
-            Assert.DoesNotThrow(() => InvokeTrigger(0f, 0f));
-            Assert.DoesNotThrow(() => InvokeTrigger(-1f, -1f));
-        }
-
-        private static void InvokeTrigger(float amp, float dur)
-        {
-            // CameraShake is internal to FireballImpactFX.cs; invoke via reflection so the
-            // test stays in the same assembly without exposing internals_visible_to.
-            var assembly = typeof(FireballImpactFX).Assembly;
-            var t = assembly.GetType("Valkur.Gameplay.Spells.CameraShake");
-            Assert.IsNotNull(t, "CameraShake type not found in gameplay assembly");
-            var trigger = t.GetMethod("Trigger",
-                BindingFlags.Public | BindingFlags.Static);
-            Assert.IsNotNull(trigger, "CameraShake.Trigger(float,float) not found");
-            trigger.Invoke(null, new object[] { amp, dur });
-        }
-    }
 }

@@ -225,7 +225,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
             sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 
@@ -269,7 +269,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
             sr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
             sr.sortingOrder = SortingConfig.Z_SKY + 4;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             sr.color = Color.Lerp(_palette.core, _palette.glow, Random.value);
 
             // Velocity: backward + jitter (per-element drag/buoyancy)

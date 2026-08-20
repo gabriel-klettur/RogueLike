@@ -8,7 +8,6 @@ namespace Valkur.Core
     public interface IVFXService
     {
         void SpawnImpact(Vector3 position, Color color, float duration = 0.3f, float scale = 1f);
-        void SpawnSlashArc(Vector3 position, Vector2 direction, Color color, float arc = 90f, float radius = 1.5f, float duration = 0.2f);
         void SpawnAreaIndicator(Vector3 position, Color color, float radius = 2f, float duration = 0.5f);
         /// <summary>
         /// Spawn a particle preset by id at world position.
