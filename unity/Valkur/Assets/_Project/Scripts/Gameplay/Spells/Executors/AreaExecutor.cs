@@ -18,11 +18,11 @@ namespace Valkur.Gameplay.Spells
             foreach (var hit in hits)
             {
                 if (hit.gameObject == ctx.Caster.gameObject) continue;
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                 {
                     int dealt = Mathf.RoundToInt(ctx.Spell.damage);
-                    health.TakeDamage(dealt);
+                    health.TakeDamage(dealt, ctx.Caster.gameObject);
                     Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
                 }
             }

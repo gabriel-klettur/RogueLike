@@ -88,7 +88,7 @@ namespace Valkur.Gameplay.Spells
             var hits = Physics2D.OverlapCircleAll(transform.position, _triggerRadius, _targetLayers);
             foreach (var hit in hits)
             {
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                 {
                     Detonate();
@@ -130,7 +130,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(layer);
             sr.sortingLayerName = layer;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 
@@ -221,7 +221,7 @@ namespace Valkur.Gameplay.Spells
             var hits = Physics2D.OverlapCircleAll(transform.position, _explosionRadius, _targetLayers);
             foreach (var hit in hits)
             {
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                     health.TakeDamage(_explosionDamage);
             }
@@ -230,7 +230,7 @@ namespace Valkur.Gameplay.Spells
             ElementalImpactFX.Spawn(transform.position, SpellElement.Fire);
 
             // Big secondary shockwave scaled to explosion radius
-            CameraShake.Trigger(0.45f, 0.35f);
+            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMassive, Vector2.zero);
 
             var audio = ServiceLocator.Get<IAudioService>();
             if (audio != null) audio.PlaySfxById("spell_mine_explode");

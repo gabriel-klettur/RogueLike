@@ -51,7 +51,7 @@ namespace Valkur.Gameplay.Spells
                 sr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
                 sr.sortingLayerName = SortingConfig.LAYER_VFX;
                 sr.sortingOrder = 50;
-                sr.material = ElementalSprites.SharedUnlitMaterial;
+                sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
                 float ang = (i / (float)sparkCount) * Mathf.PI * 2f + Random.Range(-0.1f, 0.1f);
                 Vector2 vel = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * Random.Range(2.5f, 4.5f);

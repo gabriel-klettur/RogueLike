@@ -66,7 +66,7 @@ namespace Valkur.Gameplay.Spells
             var hits = Physics2D.OverlapCircleAll(worldImpact, _impactRadius, _targetLayers);
             foreach (var hit in hits)
             {
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                     health.TakeDamage(_damage);
             }

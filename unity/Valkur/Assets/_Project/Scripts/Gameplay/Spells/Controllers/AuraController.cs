@@ -205,7 +205,7 @@ namespace Valkur.Gameplay.Spells
             // Detach the auto-created MeshRenderer; we want SpriteRenderer-style billboard via PS renderer.
             var psr = go.GetComponent<ParticleSystemRenderer>();
             psr.renderMode = ParticleSystemRenderMode.Billboard;
-            psr.material = new Material(Shader.Find("Sprites/Default"));
+            psr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             // Render BEHIND the player at all costs: use the lowest gameplay layer
             // (Ground) and set the ID directly (Unity sometimes ignores the Name
             // setter when the renderer was just created).

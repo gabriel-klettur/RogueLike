@@ -103,7 +103,7 @@ namespace Valkur.Gameplay.Spells
             foreach (var hit in hits)
             {
                 if (hit.gameObject == _caster.gameObject) continue;
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                 {
                     int dealt = Mathf.RoundToInt(_damage);

@@ -80,7 +80,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(Valkur.Core.SortingConfig.LAYER_VFX);
             sr.sortingLayerName = Valkur.Core.SortingConfig.LAYER_VFX;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 

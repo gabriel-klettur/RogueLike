@@ -1,14 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Valkur.Core;
-using Valkur.Data;
 using Valkur.Gameplay.VFX;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Dash with epic motion-blur ghost trail and speed-line VFX.
-    /// Spawns 6 ghost frames between origin and destination, plus a Light2D streak
-    /// and screen shake. Mirrors Python's DashResolver damage/knockback rules.
+    /// Dash: the caster crosses the gap in one physics step, and everything the player
+    /// sees is <see cref="DashStreakFX"/> drawing that crossing over the next eighth of a
+    /// second.
+    ///
+    /// Two things were wrong underneath the visuals. The contact sweep ran
+    /// <c>OverlapCircle</c> at <c>ctx.Caster.position</c> immediately after
+    /// <c>MovePosition</c> — which is deferred to the next physics step, so the query
+    /// happened at the ORIGIN and dashing through a pack hit nobody. And the caster was
+    /// only ever moved as far as a hardcoded fallback, because both dash spells author
+    /// <c>distance: 0</c>. The sweep now follows the path the body actually takes.
     /// </summary>
     public class DashExecutor : ISpellExecutor
     {
@@ -23,18 +30,29 @@ namespace Valkur.Gameplay.Spells
         private const float MinTrailMoveSeconds     = 0.08f;
         private const float MaxTrailMoveSeconds     = 0.6f;
 
+        private const float DEFAULT_DISTANCE = 3f;
+
+        /// <summary>Half-width of the body sweep used for contact, in world units.</summary>
+        private const float SWEEP_RADIUS = 0.45f;
+
+        private static readonly Color DefaultTint = new Color(0.62f, 0.86f, 1f, 1f);
+
         public void Execute(SpellContext ctx)
         {
-            float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
+            float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : DEFAULT_DISTANCE;
             Vector2 startPos = ctx.Caster.position;
             Vector2 endPos = startPos + ctx.Direction * dist;
             float moveDuration = ctx.Spell.duration > 0f
                 ? Mathf.Clamp(ctx.Spell.duration, MinTrailMoveSeconds, MaxTrailMoveSeconds)
                 : DefaultTrailMoveSeconds;
 
+            // Contact is resolved against the path BEFORE the body is moved, because
+            // MovePosition does not take effect until the next physics step.
+            ApplyPathContact(ctx, startPos, dist);
+
             // Caster motion. In real gameplay the caster has a Rigidbody2D and
             // the dash is an instant teleport (1-frame physics step) — the
-            // ghost trail + particle wake sell the motion. The Spells Editor
+            // afterimages + particle wake sell the motion. The Spells Editor
             // preview spawns a synthetic caster WITHOUT a Rigidbody2D, so the
             // teleport branch is skipped; without a fallback the preview
             // character would stay stationary while only the FX traverse the
@@ -51,141 +69,83 @@ namespace Valkur.Gameplay.Spells
                 casterMover.Init(startPos, endPos, moveDuration);
             }
 
-            // VFX: ghost trail
-            var casterSr = ctx.Caster.GetComponentInChildren<SpriteRenderer>();
-            DashTrailFX.Spawn(startPos, endPos, ctx.Direction, casterSr);
+            Color tint = ctx.Spell.particleColor != Color.clear ? ctx.Spell.particleColor : DefaultTint;
+            var casterSr = ResolveBodyRenderer(ctx.Caster);
+            DashStreakFX.Spawn(ctx.Caster, startPos, endPos, casterSr, tint);
 
-            // Ground trail particles — spawn ONE emitter at startPos and lerp
-            // it to endPos across the dash window. Because "dash" presets use
-            // World simulation space, every particle is dropped where it was
-            // emitted, producing a continuous wake along the actual path
-            // instead of static puffs at fixed sample points.
-            if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
-            {
-                var trailGo = VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, startPos);
-                if (trailGo != null)
-                {
-                    var mover = trailGo.AddComponent<DashTrailMover>();
-                    mover.Init(startPos, endPos, moveDuration);
-                }
-            }
+            // Dust is kicked up by feet, so the wake runs on the same line the streak does.
+            Vector3 feet = DashStreakFX.FeetOffset(ctx.Caster, casterSr);
+            SpawnGroundWake(ctx, (Vector3)startPos + feet, (Vector3)endPos + feet, moveDuration);
 
-            CameraShake.Trigger(0.12f, 0.15f);
-
-            var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_dash_whoosh");
-
-            // Collision damage + knockback
-            if (ctx.Spell.collisionDamage > 0)
-            {
-                var hits = Physics2D.OverlapCircleAll(ctx.Caster.position, 1f, ctx.TargetLayers);
-                foreach (var hit in hits)
-                {
-                    if (hit.gameObject == ctx.Caster.gameObject) continue;
-                    var health = hit.GetComponent<Health>();
-                    if (health != null && !health.IsDead)
-                    {
-                        int dealt = Mathf.RoundToInt(ctx.Spell.collisionDamage);
-                        health.TakeDamage(dealt);
-                        Valkur.Core.GameEvents.FireHitDealt(ctx.Caster.gameObject, hit.gameObject, dealt);
-                        if (ctx.Spell.knockback > 0)
-                        {
-                            var hitRb = hit.GetComponent<Rigidbody2D>();
-                            if (hitRb != null)
-                            {
-                                Vector2 knockDir = ((Vector2)hit.transform.position - (Vector2)ctx.Caster.position).normalized;
-                                hitRb.AddForce(knockDir * ctx.Spell.knockback, ForceMode2D.Impulse);
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-
-    /// <summary>Spawns a chain of fading ghost sprites + speed-line Light2D streak.</summary>
-    internal class DashTrailFX : MonoBehaviour
-    {
-        private const int GhostCount = 6;
-        private const float Life = 0.35f;
-        private float _age;
-        private SpriteRenderer[] _ghosts;
-        private GameObject _lightGo;
-        private Component _light;
-
-        public static void Spawn(Vector2 from, Vector2 to, Vector2 dir, SpriteRenderer source)
-        {
-            var go = new GameObject("DashTrailFX");
-            go.transform.position = from;
-            var fx = go.AddComponent<DashTrailFX>();
-            fx.Build(from, to, dir, source);
+            // The camera commits to where the dash is going and settles on arrival. Guarded
+            // to the player inside the director — an NPC dashing must not move the frame.
+            Feel.CameraFeel.Dash(ctx.Direction, dist, moveDuration);
+            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_dash_whoosh");
         }
 
-        private void Build(Vector2 from, Vector2 to, Vector2 dir, SpriteRenderer source)
+        /// <summary>
+        /// Everything standing between the two ends of the dash is shoulder-checked once.
+        /// A circle cast rather than an overlap: the point of a dash is the line it draws.
+        /// </summary>
+        private static void ApplyPathContact(SpellContext ctx, Vector2 startPos, float dist)
         {
-            _ghosts = new SpriteRenderer[GhostCount];
-            ElementalSprites.EnsureAll();
-            Sprite sprite = source != null && source.sprite != null ? source.sprite : ElementalSprites.Glow;
-            float baseAlpha = 0.55f;
+            if (ctx.Spell.collisionDamage <= 0 || ctx.TargetLayers.value == 0) return;
 
-            for (int i = 0; i < GhostCount; i++)
-            {
-                float t = (i + 1f) / (GhostCount + 1f);
-                var ghostGo = new GameObject($"Ghost_{i}");
-                ghostGo.transform.SetParent(transform, false);
-                ghostGo.transform.position = Vector2.Lerp(from, to, t);
-                var sr = ghostGo.AddComponent<SpriteRenderer>();
-                sr.sprite = sprite;
-                sr.color = new Color(0.55f, 0.75f, 1f, baseAlpha * (1f - t));
-                sr.sortingLayerID = SortingLayer.NameToID(Valkur.Core.SortingConfig.LAYER_VFX);
-                sr.sortingLayerName = Valkur.Core.SortingConfig.LAYER_VFX;
-                sr.sortingOrder = 40;
-                if (source != null) ghostGo.transform.localScale = source.transform.lossyScale;
-                _ghosts[i] = sr;
-            }
+            var hits = Physics2D.CircleCastAll(startPos, SWEEP_RADIUS, ctx.Direction, dist,
+                                               ctx.TargetLayers);
+            if (hits.Length == 0) return;
 
-            // Light2D streak at midpoint
-            var l2dType = ElementalProjectileVisual.GetLight2DType();
-            if (l2dType != null)
+            int damage = Mathf.RoundToInt(ctx.Spell.collisionDamage);
+            var struck = new HashSet<Health>();
+
+            for (int i = 0; i < hits.Length; i++)
             {
-                _lightGo = new GameObject("DashLight");
-                _lightGo.transform.SetParent(transform, false);
-                _lightGo.transform.position = Vector2.Lerp(from, to, 0.5f);
-                try
-                {
-                    _light = _lightGo.AddComponent(l2dType);
-                    var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
-                    if (lt != null) lt.SetValue(_light, System.Enum.ToObject(lt.PropertyType, 2));
-                    ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(_light, new Color(0.55f, 0.75f, 1f, 1f));
-                    ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 2.0f);
-                    ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(_light, Mathf.Max(1.5f, Vector2.Distance(from, to) * 0.6f));
-                    ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(_light, 0.3f);
-                    ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(_light, 0.9f);
-                }
-                catch { }
+                Collider2D collider = hits[i].collider;
+                if (collider == null) continue;
+                if (collider.transform.IsChildOf(ctx.Caster)) continue;
+
+                Health health = collider.GetComponentInParent<Health>();
+                if (health == null || health.IsDead || !struck.Add(health)) continue;
+
+                health.TakeDamage(damage, ctx.Caster.gameObject);
+                GameEvents.FireHitDealt(ctx.Caster.gameObject, health.gameObject, damage);
+
+                if (ctx.Spell.knockback <= 0) continue;
+                var hitRb = health.GetComponent<Rigidbody2D>();
+                if (hitRb != null)
+                    hitRb.AddForce(ctx.Direction.normalized * ctx.Spell.knockback,
+                                   ForceMode2D.Impulse);
             }
         }
 
-        private void Update()
+        /// <summary>
+        /// Ground dust, spawned once per authored layer and lerped along the path. Because
+        /// "dash" presets simulate in world space, every particle stays where it was
+        /// emitted and the result is a continuous wake rather than a puff at the origin.
+        /// </summary>
+        private static void SpawnGroundWake(SpellContext ctx, Vector3 startPos, Vector3 endPos,
+                                            float moveDuration)
         {
-            _age += Time.deltaTime;
-            float t = _age / Life;
-            if (t >= 1f) { if (_lightGo != null) Destroy(_lightGo); Destroy(gameObject); return; }
-            float fade = 1f - t;
-            if (_ghosts != null)
+            if (VFXManager.Instance == null) return;
+
+            foreach (var presetId in ctx.Spell.CollectVfxPresets())
             {
-                foreach (var sr in _ghosts)
-                {
-                    if (sr == null) continue;
-                    var c = sr.color; c.a *= 1f - Time.deltaTime * 3.5f; sr.color = c;
-                }
+                var trailGo = VFXManager.Instance.SpawnParticlePreset(presetId, startPos);
+                if (trailGo == null) continue;
+                trailGo.AddComponent<DashTrailMover>().Init(startPos, endPos, moveDuration);
             }
-            if (_light != null)
-            {
-                try { ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_light, 2.0f * fade); }
-                catch { }
-            }
+        }
+
+        /// <summary>The renderer that draws the character, for the afterimages to copy.</summary>
+        private static SpriteRenderer ResolveBodyRenderer(Transform caster)
+        {
+            var sr = caster.GetComponent<SpriteRenderer>();
+            if (sr != null && sr.sprite != null) return sr;
+
+            foreach (var candidate in caster.GetComponentsInChildren<SpriteRenderer>())
+                if (candidate != null && candidate.sprite != null) return candidate;
+
+            return null;
         }
     }
 

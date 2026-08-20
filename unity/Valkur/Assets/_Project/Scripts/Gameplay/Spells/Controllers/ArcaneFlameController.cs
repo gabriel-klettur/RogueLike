@@ -81,7 +81,7 @@ namespace Valkur.Gameplay.Spells
             var hits = Physics2D.OverlapCircleAll(transform.position, _radius, _targetLayers);
             foreach (var hit in hits)
             {
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && !health.IsDead)
                     health.TakeDamage(_damagePerTick);
             }
@@ -121,7 +121,7 @@ namespace Valkur.Gameplay.Spells
             sr.sortingLayerID = SortingLayer.NameToID(layer);
             sr.sortingLayerName = layer;
             sr.sortingOrder = order;
-            sr.material = ElementalSprites.SharedUnlitMaterial;
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             return sr;
         }
 
@@ -131,6 +131,10 @@ namespace Valkur.Gameplay.Spells
             go.transform.SetParent(transform, false);
             go.transform.localPosition = Vector3.zero;
             _sparkles = go.AddComponent<ParticleSystem>();
+            // AddComponent starts the system immediately, and Unity refuses to accept
+            // main.duration on a system that is already playing — it asserts and keeps
+            // the old value. Stop first, configure, then Play.
+            _sparkles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = _sparkles.main;
             main.duration = 5f;
             main.loop = true;
@@ -172,11 +176,13 @@ namespace Valkur.Gameplay.Spells
             size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.4f, 1f, 0f));
 
             var psr = _sparkles.GetComponent<ParticleSystemRenderer>();
-            psr.material = ElementalSprites.SharedUnlitMaterial;
+            psr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             psr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_FLOOR_DECALS);
             psr.sortingLayerName = SortingConfig.LAYER_FLOOR_DECALS;
             psr.sortingOrder = 60;
             psr.sortingFudge = 0.5f;
+
+            _sparkles.Play();
         }
 
         private void TryAttachLight()

@@ -464,7 +464,7 @@ namespace Valkur.Gameplay.Spells
                             if (c.gameObject == gameObject) continue;
                             if (damagedThisTick.Contains(c.gameObject)) continue;
 
-                            var health = c.GetComponent<Health>();
+                            var health = c.GetComponentInParent<Health>();
                             if (health != null && !health.IsDead)
                             {
                                 health.TakeDamage(dmg);

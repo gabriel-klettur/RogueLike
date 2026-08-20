@@ -94,7 +94,7 @@ namespace Valkur.Gameplay.Spells
                 var rb = hit.GetComponent<Rigidbody2D>();
                 if (rb == null) continue;
 
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health != null && health.IsDead) continue;
 
                 Vector2 dir = ((Vector2)transform.position - rb.position).normalized;

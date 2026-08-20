@@ -16,7 +16,14 @@ namespace Valkur.Gameplay.Spells
 
         public void Execute(SpellContext ctx)
         {
-            if (ctx.ProjectilePrefab == null) return;
+            if (ctx.ProjectilePrefab == null)
+            {
+                // Silence here is the worst outcome: the cast is accepted, the mana is
+                // spent, and nothing appears. Every other bail in this pipeline says so.
+                Debug.LogWarning($"[ProjectileExecutor] '{ctx.Spell.spellKey}' has no projectile " +
+                                 "prefab, so the cast produced nothing.");
+                return;
+            }
 
             string poolKey = POOL_PREFIX + ctx.Spell.spellKey;
             // This is the canonical start point for every spell emitted by a caster.

@@ -28,7 +28,8 @@ namespace Valkur.Tests.EditMode.Game.Combat
         {
             "Gameplay/Spells/Projectiles/Projectile.cs",
             "Gameplay/Spells/Projectiles/BoomerangProjectile.cs",
-            "Gameplay/Spells/Executors/SlashExecutor.cs",
+            "Gameplay/Spells/Executors/SlashAttack.Damage.cs",
+            "Gameplay/Spells/Executors/RegularSlashAttack.cs",
             "Gameplay/Spells/Executors/AreaExecutor.cs",
             "Gameplay/Spells/Executors/LightningExecutor.cs",
             "Gameplay/Spells/Executors/DashExecutor.cs",

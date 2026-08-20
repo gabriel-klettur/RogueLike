@@ -49,7 +49,7 @@ namespace Valkur.Gameplay.Spells
             _aura.sortingLayerID = SortingLayer.NameToID(Valkur.Core.SortingConfig.LAYER_FLOOR_DECALS);
             _aura.sortingLayerName = Valkur.Core.SortingConfig.LAYER_FLOOR_DECALS;
             _aura.sortingOrder = 80;
-            _aura.material = ElementalSprites.SharedUnlitMaterial;
+            _aura.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
 
             var l2dType = ElementalProjectileVisual.GetLight2DType();
             if (l2dType != null)
@@ -74,7 +74,7 @@ namespace Valkur.Gameplay.Spells
         private void SpawnSummonBurst()
         {
             ElementalImpactFX.Spawn(transform.position, SpellElement.Arcane);
-            CameraShake.Trigger(0.20f, 0.20f);
+            Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactMedium, Vector2.up);
         }
 
         private void Update()
