@@ -94,8 +94,14 @@ namespace Valkur.UIKit
         private void OnEnable()
         {
             if (!_allPanels.Contains(this)) _allPanels.Add(this);
+            EnsureCloseButton();
             if (!_anchorNormalized)
+            {
                 StartCoroutine(NormalizeNextFrame());
+                // First enable only. Re-running this on every re-show would fight a host
+                // that is deliberately re-opening a panel the user closed last session.
+                ApplyRememberedVisibility();
+            }
         }
 
         private void OnDisable()

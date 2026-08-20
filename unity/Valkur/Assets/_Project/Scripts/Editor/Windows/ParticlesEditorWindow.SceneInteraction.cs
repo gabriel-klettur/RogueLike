@@ -203,8 +203,6 @@ namespace Valkur.Editor
 
         private (string zone, int relX, int relY) WorldPosToZoneRel(Vector2 worldPos, ZoneManager zm)
         {
-            const float PPU = 32f;  // matches TILE_PPU in ValkurAssetPostprocessor
-
             if (zm != null && zm.TryGetZoneAtTile(
                     new Vector2Int(Mathf.FloorToInt(worldPos.x / zm.TileSize),
                                    Mathf.FloorToInt(worldPos.y / zm.TileSize)), out var def))
