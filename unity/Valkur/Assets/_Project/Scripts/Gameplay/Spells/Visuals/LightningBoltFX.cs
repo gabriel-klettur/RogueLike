@@ -1,181 +1,289 @@
-using System.Reflection;
 using UnityEngine;
 using Valkur.Core;
 
 namespace Valkur.Gameplay.Spells
 {
     /// <summary>
-    /// Epic procedural lightning arc rendered as a multi-segment zig-zag with a
-    /// white-hot core <see cref="LineRenderer"/> + blue plasma glow <see cref="LineRenderer"/>
-    /// + Light2D pulses at both endpoints + camera shake. Self-destructs after a short
-    /// flash. Used by <see cref="LightningExecutor"/> for chain_lightning and by
-    /// <see cref="LaserBeamController"/> for the laser visual.
+    /// A lightning arc between two points: a wide plasma halo, a saturated bolt, a white-hot
+    /// filament, up to three forks that die on the way, and lights along the path.
+    ///
+    /// Three things were wrong with the previous version and all three made it hard to see.
+    /// It drew on the Entities sorting layer, so wall tops, decorations and every other VFX
+    /// covered it. It assigned <c>lr.material</c>, cloning the shared material once per bolt.
+    /// And its shape was uniform perpendicular jitter, which reads as a ribbon rather than a
+    /// discharge. It now draws on the VFX layer, shares its material, and builds its path by
+    /// fractal subdivision.
+    ///
+    /// The life of the arc is a leader, a flash and a flickering decay, because a bolt that
+    /// simply fades looks like a fading line and a bolt that flickers looks like electricity.
     /// </summary>
     public class LightningBoltFX : MonoBehaviour
     {
-        // ── Tuning ───────────────────────────────────────────────────────
-        private const float CoreWidth      = 0.10f;
-        private const float GlowWidth      = 0.32f;
-        private const int   Segments       = 14;          // zig-zag points between A and B
-        private const float JaggedAmplitude = 0.18f;       // random perpendicular jitter
-        private const float Lifetime       = 0.24f;
-        private const float ShakeAmp       = 0.06f;
-        private const float ShakeDur       = 0.10f;
+        private const float LIFETIME = 0.32f;
+        private const float LEADER_END = 0.05f;
+        private const float FLASH_END = 0.13f;
 
-        private LineRenderer _coreLr;
-        private LineRenderer _glowLr;
-        private GameObject _lightAGo, _lightBGo;
-        private Component _lightA, _lightB;
-        private Color _coreColor;
-        private Color _glowColor;
-        private float _t;
+        private const float HALO_WIDTH = 0.46f;
+        private const float BOLT_WIDTH = 0.17f;
+        private const float CORE_WIDTH = 0.062f;
+        private const float FORK_WIDTH = 0.085f;
 
-        public static LightningBoltFX Spawn(Vector3 from, Vector3 to, Color tint, bool shake = true)
+        private const float DISPLACEMENT = 0.11f;
+        private const float FORK_DISPLACEMENT = 0.16f;
+        private const int MAX_FORKS = 3;
+
+        private const float SHAKE_AMPLITUDE = 0.10f;
+        private const float SHAKE_DURATION = 0.12f;
+        private const float PEAK_LIGHT_INTENSITY = 3.4f;
+
+        /// <summary>Path indices the forks leave from — spread over the middle of the arc.</summary>
+        [SelfHealingStatic("Fixed lookup of three path indices, built once from literals. " +
+                           "Never written to and holds no Unity objects, so it cannot go stale.")]
+        private static readonly int[] ForkAnchors = { 8, 15, 22 };
+
+        private LineRenderer _halo;
+        private LineRenderer _bolt;
+        private LineRenderer _core;
+        private LineRenderer[] _forks;
+        private Component[] _lights;
+        private SpriteRenderer _originFlare;
+        private SpriteRenderer _originGlare;
+
+        private Vector3[] _points;
+        private Vector3[] _forkPoints;
+        private Vector3 _from;
+        private Vector3 _to;
+        private Color _tint;
+        private Color _coreTint;
+        private float _thickness;
+        private float _age;
+
+        /// <summary>
+        /// Draws an arc from <paramref name="from"/> to <paramref name="to"/>.
+        /// <paramref name="thickness"/> scales every width, so a boss discharge can be
+        /// heavier than a chained jump without a second effect.
+        /// </summary>
+        public static LightningBoltFX Spawn(Vector3 from, Vector3 to, Color tint,
+                                            bool shake = true, float thickness = 1f)
         {
             var go = new GameObject("LightningBoltFX");
             go.transform.position = (from + to) * 0.5f;
-            var fx = go.AddComponent<LightningBoltFX>();
-            fx._coreColor = new Color(1f, 1f, 1f, 1f);
-            fx._glowColor = tint.a > 0.05f ? tint : new Color(0.55f, 0.85f, 1f, 0.85f);
-            fx.Build(from, to);
-            if (shake) CameraShake.Trigger(ShakeAmp, ShakeDur);
 
-            // Audio
-            var audio = ServiceLocator.Get<IAudioService>();
-            if (audio != null) audio.PlaySfxById("spell_lightning_arc");
+            var fx = go.AddComponent<LightningBoltFX>();
+            fx._from = from;
+            fx._to = to;
+            fx._tint = tint.a > 0.05f ? tint : new Color(0.55f, 0.85f, 1f, 1f);
+            fx._coreTint = Color.Lerp(fx._tint, Color.white, 0.88f);
+            fx._thickness = Mathf.Max(0.2f, thickness);
+            fx.Build();
+
+            if (shake)
+                Feel.CameraFeel.Cue(Data.Feel.CameraFeelCue.ImpactLight,
+                                    (to - from).normalized);
+            ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_lightning_arc");
             return fx;
         }
 
-        private void Build(Vector3 from, Vector3 to)
+        private void Build()
         {
             ElementalSprites.EnsureAll();
 
-            _glowLr = BuildLine("Glow",  GlowWidth, _glowColor, SortingConfig.Z_SKY + 9);
-            _coreLr = BuildLine("Core",  CoreWidth, _coreColor, SortingConfig.Z_SKY + 11);
+            _points = new Vector3[LightningPath.POINT_COUNT];
+            _forkPoints = new Vector3[LightningPath.POINT_COUNT];
 
-            // Generate zig-zag points: linear interpolation + perpendicular noise.
-            Vector3 dir = (to - from);
-            float len = dir.magnitude;
-            if (len < 1e-4f) len = 0.01f;
-            Vector3 fwd = dir / len;
-            Vector3 perp = new Vector3(-fwd.y, fwd.x, 0f);
+            _halo = BuildLine("Halo", HALO_WIDTH, WithAlpha(_tint, 0.38f), 70);
+            _bolt = BuildLine("Bolt", BOLT_WIDTH, _tint, 72);
+            _core = BuildLine("Core", CORE_WIDTH, _coreTint, 74);
 
-            int n = Segments;
-            var pts = new Vector3[n];
-            pts[0] = from;
-            pts[n - 1] = to;
-            for (int i = 1; i < n - 1; i++)
-            {
-                float u = i / (float)(n - 1);
-                // Larger jitter mid-line, smaller near endpoints
-                float fall = Mathf.Sin(u * Mathf.PI);
-                float j = (Random.value * 2f - 1f) * JaggedAmplitude * fall * len * 0.25f;
-                pts[i] = Vector3.Lerp(from, to, u) + perp * j;
-            }
+            _forks = new LineRenderer[MAX_FORKS];
+            for (int i = 0; i < MAX_FORKS; i++)
+                _forks[i] = BuildLine("Fork_" + i, FORK_WIDTH, WithAlpha(_tint, 0.8f), 71);
 
-            _coreLr.positionCount = n;
-            _glowLr.positionCount = n;
-            _coreLr.SetPositions(pts);
-            _glowLr.SetPositions(pts);
-
-            // Endpoint Light2D pulses
-            SpawnLight(from, ref _lightAGo, ref _lightA);
-            SpawnLight(to,   ref _lightBGo, ref _lightB);
+            BuildOriginFlare();
+            RollPath();
+            BuildLights();
         }
 
-        private LineRenderer BuildLine(string name, float width, Color color, int order)
+        /// <summary>
+        /// The pop at the caster's hand. It used to come from the <c>lightning_emitter</c>
+        /// particle preset, which is a <c>kind: lightning</c> preset — meaning it drew a
+        /// whole second LineRenderer bolt of its own, at the caster, in no particular
+        /// direction, and lived for its lifespan plus a second. Four times longer than the
+        /// arc it was decorating, it read as a small bolt stuck to the player. The flare
+        /// belongs to the bolt, and dies with it.
+        /// </summary>
+        private void BuildOriginFlare()
         {
-            var go = new GameObject(name);
+            _originFlare = CreateSprite("OriginFlare", ElementalSprites.HotCore, _coreTint, 73);
+            _originGlare = CreateSprite("OriginGlare", ElementalSprites.SparkleStar, _tint, 75);
+            _originFlare.transform.position = _from;
+            _originGlare.transform.position = _from;
+            _originGlare.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+        }
+
+        private SpriteRenderer CreateSprite(string objectName, Sprite sprite, Color color, int order)
+        {
+            var go = new GameObject(objectName);
+            go.transform.SetParent(transform, worldPositionStays: false);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.color = WithAlpha(color, 0f);
+            sr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
+            sr.sortingLayerName = SortingConfig.LAYER_VFX;
+            sr.sortingOrder = order;
+            return sr;
+        }
+
+        private LineRenderer BuildLine(string objectName, float width, Color color, int order)
+        {
+            var go = new GameObject(objectName);
             go.transform.SetParent(transform, false);
             var lr = go.AddComponent<LineRenderer>();
             lr.useWorldSpace = true;
-            lr.startWidth = width;
-            lr.endWidth = width;
+            lr.positionCount = LightningPath.POINT_COUNT;
+            lr.startWidth = lr.endWidth = width * _thickness;
             lr.numCapVertices = 4;
             lr.numCornerVertices = 4;
-            lr.material = ElementalSprites.SharedUnlitMaterial;
-            lr.startColor = color;
-            lr.endColor = color;
-            lr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_ENTITIES);
-            lr.sortingLayerName = SortingConfig.LAYER_ENTITIES;
+            lr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
+            lr.startColor = lr.endColor = color;
+            lr.sortingLayerName = SortingConfig.LAYER_VFX;
             lr.sortingOrder = order;
             lr.alignment = LineAlignment.View;
             lr.textureMode = LineTextureMode.Stretch;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
             return lr;
         }
 
-        private void SpawnLight(Vector3 worldPos, ref GameObject go, ref Component comp)
+        /// <summary>Three lights: the hand, the middle of the arc and the point it lands on.</summary>
+        private void BuildLights()
         {
-            var l2dType = ElementalProjectileVisual.GetLight2DType();
-            if (l2dType == null) return;
-            go = new GameObject("ArcLight");
-            go.transform.position = worldPos;
-            try
+            var lightType = ElementalProjectileVisual.GetLight2DType();
+            if (lightType == null) return;
+
+            _lights = new Component[3];
+            Vector3[] at = { _from, (_from + _to) * 0.5f, _to };
+            float[] outer = { 2.0f, 2.6f, 3.0f };
+
+            for (int i = 0; i < at.Length; i++)
             {
-                comp = go.AddComponent(l2dType);
-                var lt = ElementalProjectileVisual.GetLight2DLightTypeProp();
-                if (lt != null) lt.SetValue(comp, System.Enum.ToObject(lt.PropertyType, 2));
-                ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(comp, _glowColor);
-                ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(comp, 3.0f);
-                ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(comp, 2.4f);
-                ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(comp, 0.3f);
-                ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(comp, 0.85f);
+                var go = new GameObject("ArcLight_" + i);
+                go.transform.SetParent(transform, worldPositionStays: false);
+                go.transform.position = at[i];
+                try
+                {
+                    var light = go.AddComponent(lightType);
+                    var typeProp = ElementalProjectileVisual.GetLight2DLightTypeProp();
+                    if (typeProp != null)
+                        typeProp.SetValue(light, System.Enum.ToObject(typeProp.PropertyType, 2));
+                    ElementalProjectileVisual.GetLight2DColorProp()?.SetValue(light, _tint);
+                    ElementalProjectileVisual.GetLight2DOuterProp()?.SetValue(light, outer[i] * _thickness);
+                    ElementalProjectileVisual.GetLight2DInnerProp()?.SetValue(light, 0.25f);
+                    ElementalProjectileVisual.GetLight2DFalloffProp()?.SetValue(light, 0.85f);
+                    _lights[i] = light;
+                }
+                catch { _lights[i] = null; }
             }
-            catch { /* reflection safety */ }
+        }
+
+        private void RollPath()
+        {
+            LightningPath.Generate(_points, _from, _to, DISPLACEMENT);
+            _halo.SetPositions(_points);
+            _bolt.SetPositions(_points);
+            _core.SetPositions(_points);
+
+            Vector3 direction = (_to - _from).normalized;
+            float length = (_to - _from).magnitude;
+
+            for (int i = 0; i < _forks.Length; i++)
+            {
+                LightningPath.GenerateFork(_forkPoints, _points[ForkAnchors[i]], direction,
+                    length * Random.Range(0.18f, 0.36f), FORK_DISPLACEMENT);
+                _forks[i].SetPositions(_forkPoints);
+            }
         }
 
         private void Update()
         {
-            _t += Time.deltaTime;
-            float u = Mathf.Clamp01(_t / Lifetime);
+            _age += Time.deltaTime;
 
-            // Crackle: redraw zig-zag every ~30ms while alive
-            if (_t < Lifetime * 0.7f && (Time.frameCount % 2) == 0)
-                RecrackleZigzag();
+            float energy = Energy(_age);
 
-            float a = (1f - u) * (1f - u);
-            if (_coreLr != null)
-            {
-                var c = _coreColor; c.a = a;
-                _coreLr.startColor = c; _coreLr.endColor = c;
-                float w = CoreWidth * Mathf.Lerp(1.2f, 0.4f, u);
-                _coreLr.startWidth = w; _coreLr.endWidth = w;
-            }
-            if (_glowLr != null)
-            {
-                var c = _glowColor; c.a = _glowColor.a * a;
-                _glowLr.startColor = c; _glowLr.endColor = c;
-                float w = GlowWidth * Mathf.Lerp(1.6f, 0.6f, u);
-                _glowLr.startWidth = w; _glowLr.endWidth = w;
-            }
+            // The leader gutters, so it is re-rolled every frame; once the arc has struck it
+            // only needs to crackle, and every other frame is enough to sell that.
+            if (_age < LEADER_END || Time.frameCount % 2 == 0) RollPath();
 
-            // Decay endpoint lights
-            float intensity = Mathf.Lerp(3.0f, 0f, u);
-            try { ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_lightA, intensity); } catch { }
-            try { ElementalProjectileVisual.GetLight2DIntensityProp()?.SetValue(_lightB, intensity); } catch { }
+            ApplyLine(_halo, HALO_WIDTH, _tint, 0.38f * energy, energy);
+            ApplyLine(_bolt, BOLT_WIDTH, _tint, energy, energy);
+            ApplyLine(_core, CORE_WIDTH, _coreTint, energy * energy, energy);
 
-            if (_t >= Lifetime) Destroy(gameObject);
+            // Forks belong to the strike itself, not to its afterglow.
+            float forkEnergy = Mathf.Max(0f, energy - 0.35f) / 0.65f;
+            for (int i = 0; i < _forks.Length; i++)
+                ApplyLine(_forks[i], FORK_WIDTH, _tint, forkEnergy * 0.8f, forkEnergy);
+
+            ApplyOriginFlare(energy);
+            ApplyLights(energy);
+
+            if (_age >= LIFETIME) Destroy(gameObject);
         }
 
-        private void RecrackleZigzag()
+        /// <summary>
+        /// Leader, flash, then a flickering decay. The flicker is what separates a bolt from
+        /// a line that is being turned down.
+        /// </summary>
+        private static float Energy(float age)
         {
-            if (_coreLr == null || _glowLr == null || _coreLr.positionCount < 3) return;
-            int n = _coreLr.positionCount;
-            Vector3 from = _coreLr.GetPosition(0);
-            Vector3 to = _coreLr.GetPosition(n - 1);
-            Vector3 dir = (to - from);
-            float len = Mathf.Max(0.01f, dir.magnitude);
-            Vector3 fwd = dir / len;
-            Vector3 perp = new Vector3(-fwd.y, fwd.x, 0f);
-            for (int i = 1; i < n - 1; i++)
+            if (age < LEADER_END) return Mathf.Lerp(0.22f, 0.55f, age / LEADER_END);
+            if (age < FLASH_END) return 1f;
+
+            float decay = Mathf.Clamp01((age - FLASH_END) / (LIFETIME - FLASH_END));
+            float falloff = Mathf.Pow(1f - decay, 1.6f);
+            float flicker = 0.62f + 0.38f * Mathf.Sin(age * 82f);
+            return falloff * flicker;
+        }
+
+        private void ApplyLine(LineRenderer line, float baseWidth, Color color,
+                               float alpha, float widthEnergy)
+        {
+            if (line == null) return;
+            Color c = WithAlpha(color, Mathf.Clamp01(alpha));
+            line.startColor = line.endColor = c;
+            float width = baseWidth * _thickness * Mathf.Lerp(0.45f, 1.15f, widthEnergy);
+            line.startWidth = line.endWidth = width;
+        }
+
+        private void ApplyOriginFlare(float energy)
+        {
+            if (_originFlare == null) return;
+            float size = (0.30f + 0.34f * energy) * _thickness;
+            _originFlare.transform.localScale = Vector3.one * size;
+            _originFlare.color = WithAlpha(_coreTint, energy * energy);
+
+            float glare = (0.55f + 0.85f * energy) * _thickness;
+            _originGlare.transform.localScale = new Vector3(glare, glare * 0.85f, 1f);
+            _originGlare.color = WithAlpha(_tint, energy * 0.85f);
+        }
+
+        private void ApplyLights(float energy)
+        {
+            if (_lights == null) return;
+            var intensityProp = ElementalProjectileVisual.GetLight2DIntensityProp();
+            if (intensityProp == null) return;
+
+            for (int i = 0; i < _lights.Length; i++)
             {
-                float u = i / (float)(n - 1);
-                float fall = Mathf.Sin(u * Mathf.PI);
-                float j = (Random.value * 2f - 1f) * JaggedAmplitude * fall * len * 0.25f;
-                Vector3 p = Vector3.Lerp(from, to, u) + perp * j;
-                _coreLr.SetPosition(i, p);
-                _glowLr.SetPosition(i, p);
+                if (_lights[i] == null) continue;
+                try { intensityProp.SetValue(_lights[i], PEAK_LIGHT_INTENSITY * energy); }
+                catch { /* URP 2D lighting absent in this project configuration. */ }
             }
+        }
+
+        private static Color WithAlpha(Color color, float alpha)
+        {
+            color.a = alpha;
+            return color;
         }
     }
 }
