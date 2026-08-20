@@ -31,7 +31,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 0
+  radius: 24
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -39,9 +39,9 @@ MonoBehaviour:
   distance: 0
   knockback: 0
   collisionDamage: 0
-  duration: 9999
-  damagePerTick: 0
-  tickPeriod: 0.25
+  duration: 4
+  damagePerTick: 7
+  tickPeriod: 0.3
   element: 
   healPerTick: 0
   force: 0
@@ -83,5 +83,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: root_whip
+  vfxPreset: 
   impactPreset: 

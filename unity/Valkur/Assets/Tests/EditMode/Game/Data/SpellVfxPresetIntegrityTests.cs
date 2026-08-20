@@ -58,10 +58,10 @@ namespace Valkur.Tests.EditMode.Game.Data
         /// </summary>
         private static readonly string[] KnownMissingPresets =
         {
-            "vortex_pull → vfx 'vortex_dark'",
-            "vortex_push → vfx 'vortex_dark'",
-            "flame_breath → vfx 'breath_fire'",
-            "root_whip → vfx 'root_whip'",
+            // Empty, and it stays that way. vortex_dark was authored; flame_breath's
+            // reference was cleared because ConeBreathController builds its own cone; and
+            // root_whip's was never a reference at all — PuddleExecutor was reading the
+            // field as a behaviour switch, and now branches on the spell key instead.
         };
 
         /// <summary>Every unresolved spell→preset reference in the project right now.</summary>

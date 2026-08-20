@@ -43,7 +43,7 @@ namespace Valkur.Tests.EditMode.Game.Data
         private static readonly HashSet<string> ResourcesRootAllowedFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             "AudioCatalog.asset",
-            "SlashVfxCatalog.asset",
+            "CameraFeelProfile.asset",
             "TileCatalog.asset",
             "TerrainCatalog.asset", // autotile pipeline (rulesets + Blob16 lookup)
         };

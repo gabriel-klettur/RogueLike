@@ -10,35 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_dash_trail_emitter
+  m_Name: PP_vortex_dark
   m_EditorClassIdentifier: 
-  id: dash_trail_emitter
-  displayName: Dash Trail
-  type: dash
+  id: vortex_dark
+  displayName: Vortex (Dark)
+  type: aura
   vfx:
-    kind: dash
+    kind: portal
     loops: 1
-    emitRate: 10
+    emitRate: 26
     count: 12
     burstIntervalSeconds: 0
-    speed: 0.9
+    speed: 0.5
     gravity: 0
-    drag: 0.4
+    drag: 0.35
     direction: {x: 0, y: -1}
-    lifespan: 0.45
-    sizeMin: 0.09
-    sizeMax: 0.2
+    lifespan: 1.15
+    sizeMin: 0.16
+    sizeMax: 0.42
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
     additive: 0
     textureShape: 5
-    textureSoftness: 0.85
+    textureSoftness: 0.8
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 90
-    worldSpace: 1
-    radius: 0.75
+    rotationSpeedDegrees: 200
+    worldSpace: 0
+    radius: 0.8
     arcRangeDegrees: 45
     segments: 10
     lightningOffset: 0.3125
@@ -59,24 +59,24 @@ MonoBehaviour:
     useGravityVector: 0
     sizeOverLife:
     - time: 0
-      value: 0.4
-    - time: 0.25
+      value: 0.35
+    - time: 0.3
       value: 1
     - time: 1
-      value: 1.15
+      value: 0.15
     alphaOverLife:
     - time: 0
       value: 0
-    - time: 0.1
-      value: 0.3
+    - time: 0.15
+      value: 0.85
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 0.86, g: 0.9, b: 1, a: 1}
-    - time: 0.55
-      color: {r: 0.62, g: 0.66, b: 0.78, a: 1}
+      color: {r: 0.55, g: 0.32, b: 0.92, a: 1}
+    - time: 0.5
+      color: {r: 0.22, g: 0.09, b: 0.42, a: 1}
     - time: 1
-      color: {r: 0.4, g: 0.42, b: 0.5, a: 1}
-    ellipseRatio: 1
-    outerRadius: 0
+      color: {r: 0.05, g: 0.02, b: 0.1, a: 1}
+    ellipseRatio: 0.55
+    outerRadius: 1

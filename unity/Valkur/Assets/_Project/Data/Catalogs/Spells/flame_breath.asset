@@ -35,7 +35,7 @@ MonoBehaviour:
   hitRadius: 0
   arcRangeDegrees: 60
   hitArcDegrees: 0
-  length: 16.25
+  length: 0
   distance: 0
   knockback: 0
   collisionDamage: 0
@@ -83,5 +83,5 @@ MonoBehaviour:
   particleColors: []
   sizeRange: []
   emitRate: 0
-  vfxPreset: breath_fire
+  vfxPreset: 
   impactPreset: 

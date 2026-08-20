@@ -19,21 +19,25 @@ MonoBehaviour:
     kind: explosion
     loops: 0
     emitRate: 10
-    count: 24
+    count: 26
     burstIntervalSeconds: 0
-    speed: 0
-    gravity: 0
-    drag: 0
+    speed: 4.2
+    gravity: 0.15
+    drag: 0.12
     direction: {x: 0, y: -1}
-    lifespan: 1
-    sizeMin: 0.0625
-    sizeMax: 0.125
+    lifespan: 0.55
+    sizeMin: 0.09
+    sizeMax: 0.22
     colors:
-    - {r: 1, g: 0.7058824, b: 0.3137255, a: 1}
-    - {r: 1, g: 0.47058824, b: 0.23529412, a: 1}
-    - {r: 1, g: 0.8627451, b: 0.47058824, a: 1}
-    color: {r: 1, g: 0.7058824, b: 0.3137255, a: 1}
-    additive: 0
+    - {r: 1, g: 1, b: 1, a: 1}
+    color: {r: 1, g: 1, b: 1, a: 1}
+    additive: 1
+    textureShape: 4
+    textureSoftness: 0.2
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 180
+    rotationSpeedDegrees: 180
+    worldSpace: 1
     radius: 0.75
     arcRangeDegrees: 45
     segments: 10
@@ -53,8 +57,26 @@ MonoBehaviour:
     dispersion: 0
     gravityVector: {x: 0, y: 0}
     useGravityVector: 0
-    sizeOverLife: []
-    alphaOverLife: []
-    colorOverLife: []
+    sizeOverLife:
+    - time: 0
+      value: 0.55
+    - time: 0.18
+      value: 1
+    - time: 1
+      value: 0.2
+    alphaOverLife:
+    - time: 0
+      value: 1
+    - time: 0.5
+      value: 0.8
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 1, g: 0.95, b: 0.82, a: 1}
+    - time: 0.4
+      color: {r: 1, g: 0.55, b: 0.18, a: 1}
+    - time: 1
+      color: {r: 0.45, g: 0.08, b: 0.02, a: 1}
     ellipseRatio: 1
     outerRadius: 0

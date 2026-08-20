@@ -24,17 +24,17 @@ MonoBehaviour:
   automatic: 0
   automaticCastPunish: 2
   lockCastDirection: 1
-  prepareDuration: 0
+  prepareDuration: 0.14
   channelDuration: 0
-  cooldownDuration: 0.6
+  cooldownDuration: 0.8
   speed: 0
-  damage: 18
+  damage: 26
   range: 0
-  lifetime: 0.23333335
-  radius: 1.5
-  hitRadius: 0
+  lifetime: 0.52
+  radius: 2.9
+  hitRadius: 2.9
   arcRangeDegrees: 140
-  hitArcDegrees: 0
+  hitArcDegrees: 140
   length: 0
   distance: 0
   knockback: 0
@@ -66,24 +66,22 @@ MonoBehaviour:
   summonCount: 0
   summonDuration: 0
   totemKind: 
-  coneArc: 140
+  coneArc: 0
   coneLength: 0
   sprite: {fileID: 0}
   scale: 1
   speedMultiplier: 1
-  offset: 0.875
+  offset: 0
   iconSprite: {fileID: 21300000, guid: c16867f79bb5d0c479d200864f14a8ea, type: 3}
-  telegraphColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.3}
+  telegraphColor: {r: 1, g: 0.8627451, b: 0.54901963, a: 0.3}
   telegraphAlpha: 80
-  particleCount: 26
+  particleCount: 0
   particleDispersion: 0
   particleLifespan: 0
-  particleSpeed: 5.2
+  particleSpeed: 0
   particleColor: {r: 1, g: 0.8627451, b: 0.54901963, a: 1}
   particleColors: []
-  sizeRange:
-  - 3
-  - 6
+  sizeRange: []
   emitRate: 0
   vfxPreset: slash_emitter
   impactPreset: 

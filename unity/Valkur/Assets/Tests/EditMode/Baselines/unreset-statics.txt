@@ -105,7 +105,6 @@ UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._pulseRingSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeInnerSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._runeOuterSprite
 UNITYOBJ	Valkur.Gameplay.Spells.AuraSpriteFactory._sparkleSprite
-UNITYOBJ	Valkur.Gameplay.Spells.CameraShake._instance
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._blade
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._bolt
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._core
@@ -118,7 +117,6 @@ UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkle
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._sparkleStar
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._unlitMaterial
 UNITYOBJ	Valkur.Gameplay.Spells.ElementalSprites._wisp
-UNITYOBJ	Valkur.Gameplay.Spells.SlashExecutor._vfxCatalog
 UNITYOBJ	Valkur.Gameplay.TileEditor.TerrainCatalogLoader._cached
 UNITYOBJ	Valkur.Gameplay.UI.SpellBarHUD._whitePixel
 UNITYOBJ	Valkur.Gameplay.VFX.ParticleEmitterOutlineRenderer.s_lineMat
@@ -170,7 +168,6 @@ VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dLightType
 VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dOuter
 VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._l2dResolved
 VALUE	Valkur.Gameplay.Spells.ElementalProjectileVisual._light2DType
-VALUE	Valkur.Gameplay.Spells.SlashExecutor._vfxCatalogTried
 VALUE	Valkur.Gameplay.TileEditor.TileRegistry._instance
 VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._resolved
 VALUE	Valkur.Gameplay.World.Layering.WorldCollisionLayers._worldAllIndex

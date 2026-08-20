@@ -42,7 +42,10 @@ namespace Valkur.Tests.EditMode.Game.Data
         {
             { SpellType.Beam,       new[] { "Controllers/LaserBeamController.cs",
                                             "Controllers/LaserBeamController.Visual.cs" } },
-            { SpellType.Slash,      new[] { "Executors/RegularSlashAttack.cs" } },
+            { SpellType.Slash,      new[] { "Executors/RegularSlashAttack.cs",
+                                            "Executors/SlashAttack.cs",
+                                            "Executors/SlashAttack.Damage.cs",
+                                            "Executors/SlashAttack.Visuals.cs" } },
             { SpellType.ConeBreath, new[] { "Controllers/ConeBreathController.cs" } },
         };
 

@@ -31,7 +31,7 @@ MonoBehaviour:
   damage: 0
   range: 0
   lifetime: 0
-  radius: 4
+  radius: 48
   hitRadius: 0
   arcRangeDegrees: 0
   hitArcDegrees: 0
@@ -40,8 +40,8 @@ MonoBehaviour:
   knockback: 0
   collisionDamage: 0
   duration: 6
-  damagePerTick: 0
-  tickPeriod: 0.25
+  damagePerTick: 8
+  tickPeriod: 0.4
   element: lava
   healPerTick: 0
   force: 0
