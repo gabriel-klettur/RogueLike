@@ -165,10 +165,29 @@ namespace Valkur.Gameplay.VFX
             if (p.noiseEnabled && p.noiseStrength > 0f)
             {
                 noise.enabled = true;
-                noise.strength = new ParticleSystem.MinMaxCurve(p.noiseStrength * scale);
                 noise.frequency = Mathf.Max(0.0001f, p.noiseFrequency);
                 noise.damping = true;
                 noise.scrollSpeed = new ParticleSystem.MinMaxCurve(p.noiseScrollSpeed);
+
+                float nStrength = p.noiseStrength * scale;
+                float vScale = Mathf.Clamp01(p.noiseVerticalScale);
+                if (vScale < 1f)
+                {
+                    // Noise displaces on every axis. When its magnitude approaches the fall
+                    // speed the vertical component wins as often as it loses, and particles
+                    // that must always descend — leaves — visibly drift back upward.
+                    // separateAxes keeps the horizontal flutter at full width while damping
+                    // only Y.
+                    noise.separateAxes = true;
+                    noise.strengthX = new ParticleSystem.MinMaxCurve(nStrength);
+                    noise.strengthY = new ParticleSystem.MinMaxCurve(nStrength * vScale);
+                    noise.strengthZ = new ParticleSystem.MinMaxCurve(nStrength);
+                }
+                else
+                {
+                    noise.separateAxes = false;
+                    noise.strength = new ParticleSystem.MinMaxCurve(nStrength);
+                }
             }
             else if (kind == "falling_leaf")
             {

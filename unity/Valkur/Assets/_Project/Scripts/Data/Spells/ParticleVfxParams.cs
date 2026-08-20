@@ -174,6 +174,15 @@ namespace Valkur.Data
                  "into a static offset.")]
         public float noiseScrollSpeed = 0.2f;
 
+        [Tooltip("Vertical share of the noise, 0..1. Noise displaces on every axis, so a " +
+                 "strength comparable to the fall speed pushes particles UPWARD as often as " +
+                 "down — which is wrong for anything that must always descend, like a " +
+                 "falling leaf. Below 1 this enables separateAxes and scales only the Y " +
+                 "component, keeping the horizontal flutter at full width. 1 = the original " +
+                 "uniform behaviour, so existing presets are unchanged.")]
+        [Range(0f, 1f)]
+        public float noiseVerticalScale = 1f;
+
         // --------------- Portal ---------------
         [Tooltip("Outer ring radius for portal presets (world units). Python: outer_radius / PPU.")]
         public float outerRadius = 0f;

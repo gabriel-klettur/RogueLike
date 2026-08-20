@@ -78,4 +78,5 @@ MonoBehaviour:
     noiseStrength: 0.55
     noiseFrequency: 0.14
     noiseScrollSpeed: 0.1
+    noiseVerticalScale: 0.18
     outerRadius: 0

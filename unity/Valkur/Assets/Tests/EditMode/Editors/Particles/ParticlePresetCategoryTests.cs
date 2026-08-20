@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 using Valkur.Data;
 using Valkur.Gameplay.VFX;
 using Cat = Valkur.Gameplay.VFX.ParticlePresetCategory.Category;
@@ -133,6 +134,44 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                     $"Label '{label}' is too long for the shared tab strip, which now " +
                     "splits one panel width between eight tabs.");
             }
+        }
+
+        /// <summary>
+        /// Anything that must always descend has to out-pull everything that can push it up.
+        ///
+        /// Unity's noise module displaces on every axis, so a strength comparable to the fall
+        /// speed lifts particles as often as it drops them — leaves visibly drifted back
+        /// upward. noiseVerticalScale damps only the Y component; this pins the margin so a
+        /// future flutter tuning cannot quietly reintroduce it.
+        /// </summary>
+        [TestCase("falling_leaf_canopy")]
+        [TestCase("falling_leaf_30s")]
+        [TestCase("falling_petal_30s")]
+        [TestCase("autumn_leaves_gradient")]
+        public void FallingFoliage_AlwaysDescends(string presetId)
+        {
+            var preset = LoadCatalog().GetById(presetId);
+            Assert.IsNotNull(preset, $"Preset '{presetId}' is not in the catalog.");
+            var v = preset.vfx;
+
+            // Descent is either the constant gravityVector or scalar acceleration; either
+            // way it must be downward and non-zero.
+            float descent = v.useGravityVector ? -v.gravityVector.y : v.gravity;
+            Assert.Greater(descent, 0f,
+                $"'{presetId}' has no downward pull — gravityVector.y must be negative, or " +
+                "scalar gravity positive.");
+
+            // Everything that can push a particle up at once: the vertical noise component,
+            // plus the birth speed, which a Circle emitter can aim straight up.
+            float noiseY = v.noiseEnabled
+                ? v.noiseStrength * Mathf.Clamp01(v.noiseVerticalScale)
+                : 0f;
+            float worstCaseUp = noiseY + Mathf.Max(0f, v.speed);
+
+            Assert.Less(worstCaseUp, descent,
+                $"'{presetId}' can rise: worst-case upward push {worstCaseUp:F2} " +
+                $"(noiseY {noiseY:F2} + birth speed {v.speed:F2}) is not below its descent " +
+                $"of {descent:F2}. Lower noiseVerticalScale or raise the descent.");
         }
 
         [Test]
