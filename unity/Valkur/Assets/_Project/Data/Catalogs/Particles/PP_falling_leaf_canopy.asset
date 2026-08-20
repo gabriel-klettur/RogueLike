@@ -18,10 +18,10 @@ MonoBehaviour:
   vfx:
     kind: falling_leaf
     loops: 1
-    emitRate: 5
+    emitRate: 2
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.05
+    speed: 0.02
     gravity: 0
     drag: 0
     lifespan: 1.7500001
@@ -75,8 +75,10 @@ MonoBehaviour:
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.2
-    noiseFrequency: 0.2
+    noiseStrength: 0.05
+    noiseFrequency: 0.25
     noiseScrollSpeed: 0.1
     noiseVerticalScale: 0.18
+    turnoverCycles: 3
+    turnoverMinWidth: 0.1
     outerRadius: 0

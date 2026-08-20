@@ -183,6 +183,19 @@ namespace Valkur.Data
         [Range(0f, 1f)]
         public float noiseVerticalScale = 1f;
 
+        [Tooltip("Times the particle turns over across its life. Above 0 this narrows the " +
+                 "WIDTH on a cosine while leaving the height alone, so the quad reads as a " +
+                 "flat thing rotating about its long axis — wide face-on, almost gone " +
+                 "edge-on. It is how a leaf can look like a leaf while descending a straight " +
+                 "vertical, without the lateral drift that normally carries that impression. " +
+                 "0 = off, and every existing preset keeps its uniform sizeOverLife.")]
+        public int turnoverCycles = 0;
+
+        [Tooltip("How thin the particle gets edge-on, as a fraction of full width. Never 0: " +
+                 "a quad at zero width pops out of existence for a frame instead of turning.")]
+        [Range(0.02f, 1f)]
+        public float turnoverMinWidth = 0.12f;
+
         // --------------- Portal ---------------
         [Tooltip("Outer ring radius for portal presets (world units). Python: outer_radius / PPU.")]
         public float outerRadius = 0f;

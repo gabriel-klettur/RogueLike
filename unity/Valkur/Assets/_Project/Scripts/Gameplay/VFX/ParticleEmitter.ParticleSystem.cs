@@ -121,9 +121,29 @@ namespace Valkur.Gameplay.VFX
 
             // ---- Size Over Lifetime ----
             var sol = _ps.sizeOverLifetime;
-            if (p.sizeOverLife != null && p.sizeOverLife.Length > 0)
+            if (p.turnoverCycles > 0)
+            {
+                // Width oscillates, height does not: the quad reads as a flat object rotating
+                // about its own long axis. This is what lets foliage look like foliage while
+                // falling down a straight vertical — the impression normally comes from
+                // lateral drift, which is exactly what a vertical fall cannot have.
+                sol.enabled = true;
+                sol.separateAxes = true;
+                var height = (p.sizeOverLife != null && p.sizeOverLife.Length > 0)
+                    ? BuildAnimationCurve(p.sizeOverLife)
+                    : AnimationCurve.Constant(0f, 1f, 1f);
+                sol.x = new ParticleSystem.MinMaxCurve(1f,
+                    BuildTurnoverCurve(p.turnoverCycles, p.turnoverMinWidth, height));
+                sol.y = new ParticleSystem.MinMaxCurve(1f, height);
+                sol.z = new ParticleSystem.MinMaxCurve(1f, height);
+            }
+            else if (p.sizeOverLife != null && p.sizeOverLife.Length > 0)
             {
                 sol.enabled = true;
+                // Emitters are reused across presets: a preset that turned separateAxes on
+                // has to be turned off by the next one, or its height curve silently becomes
+                // the next preset's width.
+                sol.separateAxes = false;
                 sol.size = new ParticleSystem.MinMaxCurve(1f, BuildAnimationCurve(p.sizeOverLife));
             }
             else if (isBurst)
@@ -262,6 +282,31 @@ namespace Valkur.Gameplay.VFX
             tsa.startFrame = p.flipbookRandomStartFrame
                 ? new ParticleSystem.MinMaxCurve(0f, Mathf.Max(0f, added - 1))
                 : new ParticleSystem.MinMaxCurve(0f);
+        }
+
+        /// <summary>
+        /// Width multiplier for a particle turning over <paramref name="cycles"/> times across
+        /// its life: |cos| of the turn angle, floored at <paramref name="minWidth"/> and
+        /// multiplied by the height curve so the two axes stay in proportion.
+        ///
+        /// Sampled rather than keyed at the extremes because a cosine reconstructed from two
+        /// keys per cycle is a triangle wave — the leaf would snap between faces instead of
+        /// rolling through them.
+        /// </summary>
+        private static AnimationCurve BuildTurnoverCurve(int cycles, float minWidth, AnimationCurve height)
+        {
+            const int SAMPLES_PER_CYCLE = 12;
+            int n = Mathf.Clamp(cycles, 1, 8) * SAMPLES_PER_CYCLE;
+            var curve = new AnimationCurve();
+            for (int i = 0; i <= n; i++)
+            {
+                float t = i / (float)n;
+                float w = Mathf.Abs(Mathf.Cos(Mathf.PI * cycles * t));
+                w = Mathf.Lerp(Mathf.Clamp(minWidth, 0.02f, 1f), 1f, w);
+                curve.AddKey(t, w * height.Evaluate(t));
+            }
+            for (int i = 0; i < curve.length; i++) curve.SmoothTangents(i, 0f);
+            return curve;
         }
 
         private void ConfigureShape(ParticleVfxParams p, float scale)
