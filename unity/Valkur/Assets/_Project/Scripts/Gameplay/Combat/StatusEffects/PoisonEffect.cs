@@ -25,9 +25,9 @@ namespace Valkur.Gameplay.Combat
 
         public override void OnApply(StatusEffectManager target)
         {
-            var sr = target.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                target.StartCoroutine(PoisonTintRoutine(sr, target));
+            var tint = SpriteTintStack.Attach(target);
+            if (tint != null)
+                target.StartCoroutine(PoisonTintRoutine(tint, target));
         }
 
         public override void Tick(StatusEffectManager target)
@@ -43,21 +43,19 @@ namespace Valkur.Gameplay.Combat
                 hp.TakeDamage(DamagePerTick * ticks);
         }
 
-        private System.Collections.IEnumerator PoisonTintRoutine(SpriteRenderer sr,
+        private System.Collections.IEnumerator PoisonTintRoutine(SpriteTintStack tint,
                                                                    StatusEffectManager target)
         {
-            Color originalColor = sr.color;
             Color poisonColor = new Color(0.3f, 1f, 0.3f, 1f);
 
             while (!IsExpired && target != null)
             {
                 float t = Mathf.PingPong((Time.time - StartTime) * 2f, 1f);
-                sr.color = Color.Lerp(originalColor, poisonColor, t * 0.5f);
+                tint.Set(TintLayer.Poison, Color.Lerp(Color.white, poisonColor, t * 0.5f));
                 yield return null;
             }
 
-            if (sr != null)
-                sr.color = originalColor;
+            if (tint != null) tint.Clear(TintLayer.Poison);
         }
     }
 }

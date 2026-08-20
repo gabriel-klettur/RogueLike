@@ -40,7 +40,6 @@ namespace Valkur.Gameplay.Combat
         // and dash bars hang off the same transform as child SpriteRenderers —
         // whitening those would blank the HP bar on every hit.
         private SpriteRenderer _bodyRenderer;
-        private Color _bodyBaseColor = Color.white;
         private bool _bodyFlashesViaShader;
         private MaterialPropertyBlock _flashMpb;
         private float _flashTimer;
@@ -85,7 +84,6 @@ namespace Valkur.Gameplay.Combat
                 // or the first one below it.
                 _bodyRenderer = GetComponent<SpriteRenderer>();
                 if (_bodyRenderer == null) _bodyRenderer = GetComponentInChildren<SpriteRenderer>();
-                if (_bodyRenderer != null) _bodyBaseColor = _bodyRenderer.color;
             }
 
             RefreshFlashCapability();
@@ -114,11 +112,9 @@ namespace Valkur.Gameplay.Combat
             if (_bodyRenderer == null) return;
             if (flashDuration <= 0f) return;
 
-            // Re-read the resting colours only when nothing is currently applied, so
-            // a second hit mid-flash does not capture the flashed colour as the
-            // colour to restore.
-            if (FlashAmount <= 0f) CaptureBaseColors();
-
+            // No resting colour to capture: SpriteTintStack owns the base, so a second hit
+            // mid-flash cannot record the flashed colour as the one to restore. That
+            // capture-on-retrigger dance was this file's half of the shared-tint bug.
             _flashTimer = flashDuration;
             ApplyFlash(1f);
         }
@@ -157,10 +153,14 @@ namespace Valkur.Gameplay.Combat
             if (FlashAmount > 0f || _appliedFlash > 0f) ApplyFlash(0f);
         }
 
-        private void CaptureBaseColors()
-        {
-            if (_bodyRenderer != null) _bodyBaseColor = _bodyRenderer.color;
-        }
+        /// <summary>
+        /// The tint arbiter, resolved on first use. Only the fallback path needs it — the
+        /// shader path writes a material uniform and never contends for the colour.
+        /// </summary>
+        private SpriteTintStack TintStack
+            => _tintStack != null ? _tintStack : (_tintStack = SpriteTintStack.Attach(gameObject));
+
+        private SpriteTintStack _tintStack;
 
         private void ApplyFlash(float amount)
         {
@@ -181,9 +181,14 @@ namespace Valkur.Gameplay.Combat
             }
             else
             {
-                // Legacy path: a multiply, so it only shows on sprites whose
-                // resting colour is not already the flash colour.
-                _bodyRenderer.color = Color.Lerp(_bodyBaseColor, flashColor, amount);
+                // Legacy path: a tint, so it only shows on sprites whose resting colour is
+                // not already the flash colour. Routed through the arbiter rather than
+                // written directly — a burning monster is mid-tint when it gets hit, and
+                // whichever of the two wrote the colour last used to keep it for good.
+                var stack = TintStack;
+                if (stack == null) return;
+                if (amount > 0f) stack.SetFlash(flashColor, amount);
+                else stack.ClearFlash();
             }
         }
     }

@@ -26,19 +26,16 @@ namespace Valkur.Gameplay.Combat
                                  "deathDisappearTime overrides this when present.")]
         private float defaultFadeDuration = 0.5f;
 
-        private SpriteRenderer _sr;
+        private SpriteTintStack _tint;
         private Health _health;
-        private Color _originalColor;
-        private Color _endColor;
+        private Color _endFactor;
         private bool _dying;
         private float _t;
         private float _fadeDuration;
 
         private void Awake()
         {
-            _sr = GetComponent<SpriteRenderer>();
-            if (_sr == null) _sr = GetComponentInChildren<SpriteRenderer>();
-            if (_sr != null) _originalColor = _sr.color;
+            _tint = SpriteTintStack.Attach(gameObject);
             _fadeDuration = defaultFadeDuration;
         }
 
@@ -46,6 +43,11 @@ namespace Valkur.Gameplay.Combat
         {
             _health = GetComponent<Health>();
             if (_health != null) _health.OnDeath += TriggerDeath;
+
+            // A pooled monster comes back through OnEnable. Without this it returns still
+            // wearing the darkening of the death that put it in the pool — ResetTint had no
+            // caller at all, so nothing ever undid it.
+            ResetTint();
         }
 
         private void OnDisable()
@@ -58,20 +60,18 @@ namespace Valkur.Gameplay.Combat
         {
             _dying = true;
             _t = 0f;
-            // Capture the color the entity is wearing at the moment of death so the
-            // fade lerps from the actual visible tint (post-EntityAnimationBinder
-            // tint and any debuff recolors), not from a stale Awake snapshot.
-            if (_sr != null) _originalColor = _sr.color;
+            _tint ??= SpriteTintStack.Attach(gameObject);
 
             // Multiplicative darkening preserves hue and saturation — a yellow corpse
             // ends as dark yellow, a cyan corpse ends as dark cyan — so each variant
             // stays visually identifiable until despawn instead of all converging to
             // the same neutral gray.
-            _endColor = new Color(
-                _originalColor.r * endDarknessFactor,
-                _originalColor.g * endDarknessFactor,
-                _originalColor.b * endDarknessFactor,
-                _originalColor.a);
+            //
+            // Expressed as a tint LAYER rather than as a captured colour: the darkening
+            // then composes with whatever else is tinting the body, so a corpse that dies
+            // mid-burn keeps flickering as it darkens instead of freezing the burn's
+            // orange into the corpse for good.
+            _endFactor = new Color(endDarknessFactor, endDarknessFactor, endDarknessFactor, 1f);
 
             // Stretch the fade across the corpse's whole lifetime so the user sees
             // a gradual darkening rather than an instant snap. We pull the window
@@ -93,16 +93,17 @@ namespace Valkur.Gameplay.Combat
 
         private void Update()
         {
-            if (!_dying || _sr == null) return;
+            if (!_dying || _tint == null) return;
             _t += Time.deltaTime / Mathf.Max(0.0001f, _fadeDuration);
-            _sr.color = Color.Lerp(_originalColor, _endColor, Mathf.Clamp01(_t));
+            _tint.Set(TintLayer.Death, Color.Lerp(Color.white, _endFactor, Mathf.Clamp01(_t)));
         }
 
         /// <summary>Reset to original color (e.g. on respawn).</summary>
         public void ResetTint()
         {
             _dying = false;
-            if (_sr != null) _sr.color = _originalColor;
+            _t = 0f;
+            if (_tint != null) _tint.Clear(TintLayer.Death);
         }
     }
 }

@@ -28,9 +28,9 @@ namespace Valkur.Gameplay.Combat
         public override void OnApply(StatusEffectManager target)
         {
             // Tint orange while burning
-            var sr = target.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                target.StartCoroutine(BurnTintRoutine(sr, target));
+            var tint = SpriteTintStack.Attach(target);
+            if (tint != null)
+                target.StartCoroutine(BurnTintRoutine(tint, target));
         }
 
         public override void Tick(StatusEffectManager target)
@@ -46,21 +46,19 @@ namespace Valkur.Gameplay.Combat
                 hp.TakeDamage(DamagePerTick * ticks);
         }
 
-        private System.Collections.IEnumerator BurnTintRoutine(SpriteRenderer sr,
+        private System.Collections.IEnumerator BurnTintRoutine(SpriteTintStack tint,
                                                                  StatusEffectManager target)
         {
-            Color originalColor = sr.color;
             Color burnColor = new Color(1f, 0.4f, 0.1f, 1f);
 
             while (!IsExpired && target != null)
             {
                 float t = Mathf.PingPong((Time.time - StartTime) * 3f, 1f);
-                sr.color = Color.Lerp(originalColor, burnColor, t * 0.6f);
+                tint.Set(TintLayer.Burn, Color.Lerp(Color.white, burnColor, t * 0.6f));
                 yield return null;
             }
 
-            if (sr != null)
-                sr.color = originalColor;
+            if (tint != null) tint.Clear(TintLayer.Burn);
         }
     }
 }

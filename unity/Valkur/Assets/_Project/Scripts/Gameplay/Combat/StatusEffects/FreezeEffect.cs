@@ -18,9 +18,9 @@ namespace Valkur.Gameplay.Combat
         {
             _rb = target.GetComponent<Rigidbody2D>();
 
-            var sr = target.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                target.StartCoroutine(FreezeTintRoutine(sr, target));
+            var tint = SpriteTintStack.Attach(target);
+            if (tint != null)
+                target.StartCoroutine(FreezeTintRoutine(tint, target));
         }
 
         public override void Tick(StatusEffectManager target)
@@ -35,21 +35,19 @@ namespace Valkur.Gameplay.Combat
             // Velocity resumes from controller/FSM next frame
         }
 
-        private System.Collections.IEnumerator FreezeTintRoutine(SpriteRenderer sr,
+        private System.Collections.IEnumerator FreezeTintRoutine(SpriteTintStack tint,
                                                                     StatusEffectManager target)
         {
-            Color original = sr.color;
             // Solid ice-blue (Python: distinct from slow tint)
             Color freezeColor = new Color(0.3f, 0.5f, 1f, 1f);
 
-            if (sr != null)
-                sr.color = Color.Lerp(original, freezeColor, 0.6f);
+            if (tint != null)
+                tint.Set(TintLayer.Freeze, Color.Lerp(Color.white, freezeColor, 0.6f));
 
             while (!IsExpired && target != null)
                 yield return null;
 
-            if (sr != null)
-                sr.color = original;
+            if (tint != null) tint.Clear(TintLayer.Freeze);
         }
     }
 }

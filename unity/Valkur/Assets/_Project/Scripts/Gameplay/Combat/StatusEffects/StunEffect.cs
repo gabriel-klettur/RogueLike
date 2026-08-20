@@ -20,9 +20,9 @@ namespace Valkur.Gameplay.Combat
             _rb = target.GetComponent<Rigidbody2D>();
 
             // Show stun visual — white stars above head via simple VFX
-            var sr = target.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                target.StartCoroutine(StunTintRoutine(sr, target));
+            var tint = SpriteTintStack.Attach(target);
+            if (tint != null)
+                target.StartCoroutine(StunTintRoutine(tint, target));
         }
 
         public override void Tick(StatusEffectManager target)
@@ -37,21 +37,19 @@ namespace Valkur.Gameplay.Combat
             // Velocity will resume naturally from controller inputs next frame
         }
 
-        private System.Collections.IEnumerator StunTintRoutine(SpriteRenderer sr,
+        private System.Collections.IEnumerator StunTintRoutine(SpriteTintStack tint,
                                                                  StatusEffectManager target)
         {
-            Color originalColor = sr.color;
             Color stunColor = new Color(0.9f, 0.9f, 0.2f, 1f);
 
             while (!IsExpired && target != null)
             {
                 float t = Mathf.PingPong(Time.time * 8f, 1f);
-                sr.color = Color.Lerp(originalColor, stunColor, t * 0.7f);
+                tint.Set(TintLayer.Stun, Color.Lerp(Color.white, stunColor, t * 0.7f));
                 yield return null;
             }
 
-            if (sr != null)
-                sr.color = originalColor;
+            if (tint != null) tint.Clear(TintLayer.Stun);
         }
     }
 }

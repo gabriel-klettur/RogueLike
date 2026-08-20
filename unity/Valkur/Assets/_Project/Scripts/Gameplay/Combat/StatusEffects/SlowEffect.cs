@@ -34,9 +34,9 @@ namespace Valkur.Gameplay.Combat
             }
 
             // Visual: blue tint
-            var sr = target.GetComponentInChildren<SpriteRenderer>();
-            if (sr != null)
-                target.StartCoroutine(SlowTintRoutine(sr, target));
+            var tint = SpriteTintStack.Attach(target);
+            if (tint != null)
+                target.StartCoroutine(SlowTintRoutine(tint, target));
         }
 
         public override void Tick(StatusEffectManager target)
@@ -50,20 +50,18 @@ namespace Valkur.Gameplay.Combat
                 _rb.drag = _originalDrag;
         }
 
-        private System.Collections.IEnumerator SlowTintRoutine(SpriteRenderer sr,
+        private System.Collections.IEnumerator SlowTintRoutine(SpriteTintStack tint,
                                                                  StatusEffectManager target)
         {
-            Color original = sr.color;
             Color slowColor = new Color(0.4f, 0.6f, 1f, 1f); // Ice-blue tint
 
             while (!IsExpired && target != null)
             {
-                sr.color = Color.Lerp(original, slowColor, 0.3f);
+                tint.Set(TintLayer.Slow, Color.Lerp(Color.white, slowColor, 0.3f));
                 yield return null;
             }
 
-            if (sr != null)
-                sr.color = original;
+            if (tint != null) tint.Clear(TintLayer.Slow);
         }
     }
 }
