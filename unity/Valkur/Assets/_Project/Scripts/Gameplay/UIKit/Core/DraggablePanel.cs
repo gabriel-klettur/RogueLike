@@ -94,13 +94,22 @@ namespace Valkur.UIKit
         private void OnEnable()
         {
             if (!_allPanels.Contains(this)) _allPanels.Add(this);
-            EnsureCloseButton();
+            // Chrome is NOT built here. Panel builders do AddComponent<DraggablePanel>() and
+            // assign DragHeader on the NEXT line, and AddComponent on an already-active
+            // object fires OnEnable synchronously — so at this point the header does not
+            // exist yet and the chrome would be skipped forever. NormalizeNextFrame runs a
+            // frame later, by which time both DragHeader and the host's OnClose exist.
             if (!_anchorNormalized)
             {
                 StartCoroutine(NormalizeNextFrame());
-                // First enable only. Re-running this on every re-show would fight a host
-                // that is deliberately re-opening a panel the user closed last session.
-                ApplyRememberedVisibility();
+            }
+            else
+            {
+                // Any enable after the first is the host re-showing this panel — every
+                // editor's menu toggle is a SetActive(true). Record it, or a panel the user
+                // closed once and then reopened would start closed again next session.
+                // Redundant when the panel was already open (it re-records "open"), harmless.
+                MarkOpened();
             }
         }
 
@@ -116,6 +125,11 @@ namespace Valkur.UIKit
         {
             yield return null;
             NormalizeAnchor();
+            // A frame late on purpose: the builders assign DragHeader immediately after
+            // AddComponent, and the host assigns OnClose after the whole UI is built. Both
+            // are in place by now, and neither was during OnEnable.
+            EnsureChrome();
+            ApplyRememberedVisibility();
         }
 
         public void OnPointerDown(PointerEventData _) => transform.SetAsLastSibling();
@@ -203,7 +217,19 @@ namespace Valkur.UIKit
             }
         }
 
-        /// <summary>Close (hide) this panel via the registered callback.</summary>
-        public void ClosePanel() => OnClose?.Invoke();
+        /// <summary>
+        /// Close this panel: hide it, then tell the host.
+        ///
+        /// It used to only raise <see cref="OnClose"/>, and every editor's handler does
+        /// nothing but drop the panel from its open-dropdown set and refresh the menu
+        /// highlight — none of them hides anything. So "close" left the panel on screen and
+        /// merely un-highlighted its menu button. Hiding is this method's own job; the
+        /// callback is for the host's bookkeeping.
+        /// </summary>
+        public void ClosePanel()
+        {
+            gameObject.SetActive(false);
+            OnClose?.Invoke();
+        }
     }
 }

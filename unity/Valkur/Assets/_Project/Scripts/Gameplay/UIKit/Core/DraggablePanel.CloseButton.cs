@@ -73,8 +73,14 @@ namespace Valkur.UIKit
         }
 
         /// <summary>
-        /// Adds the button if the header exists and does not already have one. Idempotent:
-        /// OnEnable runs again every time a panel is re-shown.
+        /// Adds the header chrome if it is missing. Idempotent, and public so a host that
+        /// builds a panel by hand — or a test, which cannot rely on OnEnable running outside
+        /// Play Mode — can bring it up deterministically.
+        /// </summary>
+        public void EnsureChrome() => EnsureCloseButton();
+
+        /// <summary>
+        /// Adds the button if the header exists and does not already have one. Idempotent.
         /// </summary>
         private void EnsureCloseButton()
         {
@@ -141,7 +147,7 @@ namespace Valkur.UIKit
         /// through the same OnClose the button uses so the editor's own bookkeeping runs
         /// exactly as if the user had clicked it.
         /// </summary>
-        private void ApplyRememberedVisibility()
+        public void ApplyRememberedVisibility()
         {
             if (!WasClosedLastSession) return;
             OnRestoredClosed?.Invoke();
