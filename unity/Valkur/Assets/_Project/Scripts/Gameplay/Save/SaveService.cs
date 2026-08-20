@@ -61,6 +61,16 @@ namespace Valkur.Gameplay
         // BeginNewRun and the bootstrap's StartTelemetryRun call).
         private int _currentRunOrdinal;
 
+        // Realtime stamp of the last BeginNewRun. The ordinal gate below is a
+        // normal, self-healing bootstrap race for the first few seconds of a run;
+        // it only deserves a warning if the ordinal never lands at all.
+        private float _runStartedAt = -1f;
+        private bool  _warnedOrdinalNeverAssigned;
+
+        // How long after BeginNewRun the missing ordinal still counts as "the
+        // bootstrap is still running" rather than "StartRun never fired".
+        private const float OrdinalBootstrapGraceSeconds = 15f;
+
         // Debounce window after a MarkDirty so a rapid burst of dirty events
         // (combat sequence, mass loot pickup) coalesces into a single save
         // instead of spamming the disk. The autosave timer remains the long-
@@ -156,6 +166,9 @@ namespace Valkur.Gameplay
 
         protected override void OnSingletonAwake()
         {
+            // Start the ordinal grace window here, not only in BeginNewRun: a save
+            // can be requested between the service coming up and BeginNewRun firing.
+            _runStartedAt = Time.realtimeSinceStartup;
             SaveFileManager.EnsureSaveDirectory();
             RebindGameEvents();
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -327,6 +340,8 @@ namespace Valkur.Gameplay
             // those would only happen from a deliberate Save call before the
             // telemetry system is online, which the bootstrap order rules out.
             _currentRunOrdinal = 0;
+            _runStartedAt = Time.realtimeSinceStartup;
+            _warnedOrdinalNeverAssigned = false;
             _sessionDirty = false;
             Debug.Log($"[SaveService] New run started: {_currentRunId}");
             if (DIAG_RUN_TWIN_SAVE)
@@ -431,9 +446,29 @@ namespace Valkur.Gameplay
             // restores `_currentRunOrdinal` from disk before any event can fire.
             if (_currentRunOrdinal == 0)
             {
-                Debug.LogWarning("[SaveService] Save skipped — run ordinal not yet assigned (still inside bootstrap). " +
-                                 "This prevents phantom Saves/<guid>/ folders from being written before " +
-                                 "ProfileTelemetrySystem.StartRun finalises the run identity.");
+                // Inside the grace window this is the designed, self-healing path — the
+                // autosave timer retries once StartRun lands, so nothing is lost and a
+                // warning here just fires on every boot. Past the window the ordinal is
+                // never coming and saves are silently disabled, which IS a warning.
+                bool withinBootstrap = _runStartedAt >= 0f &&
+                    Time.realtimeSinceStartup - _runStartedAt <= OrdinalBootstrapGraceSeconds;
+
+                string message = "[SaveService] Save skipped — run ordinal not yet assigned " +
+                                 "(still inside bootstrap). This prevents phantom Saves/<guid>/ folders " +
+                                 "from being written before ProfileTelemetrySystem.StartRun finalises " +
+                                 "the run identity.";
+
+                if (withinBootstrap)
+                {
+                    Debug.Log(message);
+                }
+                else if (!_warnedOrdinalNeverAssigned)
+                {
+                    _warnedOrdinalNeverAssigned = true;
+                    Debug.LogWarning(message + $" Still unassigned {OrdinalBootstrapGraceSeconds:0}s after " +
+                                     "BeginNewRun — ProfileTelemetrySystem.StartRun never called " +
+                                     "SetRunOrdinal, so this run cannot be saved.");
+                }
                 return false;
             }
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();

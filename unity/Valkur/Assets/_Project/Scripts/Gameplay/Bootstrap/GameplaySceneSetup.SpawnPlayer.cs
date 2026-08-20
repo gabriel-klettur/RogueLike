@@ -115,6 +115,14 @@ namespace Valkur.Gameplay
             return selectedRuntimeDef;
         }
 
+        /// <summary>
+        /// Optional drop-in folder for PlayerDefinitions shipped inside Resources.
+        /// The authored definitions live in Data/Catalogs/Players and are resolved
+        /// through the AssetDatabase branch below in the Editor; this folder exists
+        /// so a built player can still override them without a code change.
+        /// </summary>
+        private const string PlayerDefinitionResourceFolder = "Players";
+
         private PlayerDefinition TryResolveCatalogDefinition(string selectedKey)
         {
             if (string.IsNullOrWhiteSpace(selectedKey))
@@ -126,7 +134,11 @@ namespace Valkur.Gameplay
                 return defaultPlayerDef;
             }
 
-            var resourceDefs = Resources.LoadAll<PlayerDefinition>(string.Empty);
+            // Scoped to Resources/Players, never the whole tree: LoadAll with an empty
+            // path deserializes every one of the ~7 400 assets under Resources/ just to
+            // filter for one type, and any asset in there whose script no longer
+            // resolves logs a "referenced script (Unknown)" error on each call.
+            var resourceDefs = Resources.LoadAll<PlayerDefinition>(PlayerDefinitionResourceFolder);
             for (int i = 0; i < resourceDefs.Length; i++)
             {
                 var def = resourceDefs[i];

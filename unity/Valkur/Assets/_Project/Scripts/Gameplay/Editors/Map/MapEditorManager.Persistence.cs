@@ -286,9 +286,17 @@ namespace Valkur.Gameplay.MapEditor
                         // a duplicate-to-prune: the entry might become valid again if
                         // the database changes (e.g. a zone is removed). Keep it in
                         // the persistence file untouched — see the rewrite guard below.
-                        Debug.LogWarning($"[MapEditor] Persisted zone '{entry.zoneName}' offset {offset} " +
-                                         $"collides with an existing zone — kept in persistence file but " +
-                                         $"not registered this session.");
+                        // Not a warning: this is a stable, self-healing steady state. The
+                        // entry is deliberately preserved (see the rewrite guard below), so
+                        // the same clash re-fires on every single boot — six persisted zones
+                        // meant six console warnings per Play, forever, for a condition the
+                        // summary line below already reports as "user zones shelved".
+                        var shelvedName = entry.zoneName;
+                        var shelvedOffset = offset;
+                        Valkur.Core.VerboseLog.Log(Valkur.Core.VerboseLog.Category.World,
+                            () => $"[MapEditor] Persisted zone '{shelvedName}' offset {shelvedOffset} " +
+                                  "collides with an existing zone — kept in persistence file but " +
+                                  "not registered this session.");
                         userZonesShelved++;
                         continue;
                     }

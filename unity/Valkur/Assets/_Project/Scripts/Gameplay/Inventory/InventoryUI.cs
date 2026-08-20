@@ -186,8 +186,11 @@ namespace Valkur.Gameplay.Inventory
         private static PlayerDefinition ResolvePlayerDefinition(string key)
         {
             if (string.IsNullOrEmpty(key)) return null;
-            // Optional resolve from Resources/ if the project ships PlayerDefinition assets there.
-            var all = Resources.LoadAll<PlayerDefinition>("");
+            // Optional resolve from Resources/Players if the project ships PlayerDefinition
+            // assets there. Scoped, never the whole tree: LoadAll("") deserializes every
+            // asset under Resources/ and surfaces a console error for each one whose
+            // script no longer resolves.
+            var all = Resources.LoadAll<PlayerDefinition>("Players");
             for (int i = 0; i < all.Length; i++)
                 if (all[i] != null &&
                     string.Equals(all[i].playerKey, key, System.StringComparison.OrdinalIgnoreCase))

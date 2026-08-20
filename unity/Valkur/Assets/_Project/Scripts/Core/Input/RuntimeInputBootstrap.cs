@@ -31,14 +31,20 @@ namespace Valkur.Core.Input
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            EnsureRuntimeInput();
+            // createEventSystemIfMissing: false — the first scene's objects have not
+            // awoken yet, so creating one here means two active EventSystems the
+            // instant a scene that ships its own (MainMenu) enables it. OnSceneLoaded
+            // adopts the scene's, or creates one when the scene ships none.
+            EnsureRuntimeInput(createEventSystemIfMissing: false);
 
             if (_subscribed) return;
             SceneManager.sceneLoaded += OnSceneLoaded;
             _subscribed = true;
         }
 
-        public static EventSystem EnsureRuntimeInput()
+        public static EventSystem EnsureRuntimeInput() => EnsureRuntimeInput(true);
+
+        public static EventSystem EnsureRuntimeInput(bool createEventSystemIfMissing)
         {
             // Apply the boot-time fix-ups: dedup duplicate devices, flip
             // canRunInBackground bits, pin runtime InputSettings + force
@@ -48,7 +54,7 @@ namespace Valkur.Core.Input
             // Apply user's saved editor-toggle key overrides so the bindings
             // visible in Controls Settings actually take effect at runtime.
             EditorBindingsApplier.ReapplyAll();
-            var es = PersistentEventSystem.Ensure();
+            var es = PersistentEventSystem.Ensure(createEventSystemIfMissing);
             // Pin m_HasFocus=true on every frame so Editor focus changes
             // (Console / Inspector / MCP / OS) cannot mute OS event delivery
             // to the InputSystem. Play-Mode-only.

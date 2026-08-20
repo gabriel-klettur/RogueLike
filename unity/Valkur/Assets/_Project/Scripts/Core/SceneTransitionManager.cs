@@ -27,6 +27,15 @@ namespace Valkur.Core
             // Clear global event bus to prevent subscriber leaks
             GameEvents.Clear();
 
+            // Stand the persistent EventSystem down before the next scene awakes.
+            // MainMenu.unity still ships its own; with ours enabled, its OnEnable
+            // registers a second active EventSystem and uGUI logs "There can be only
+            // one active Event System." RuntimeInputBootstrap's sceneLoaded hook
+            // re-runs PersistentEventSystem.Ensure, which drops the duplicate and
+            // re-enables ours. LoadingScreenController already does the same before
+            // it flips allowSceneActivation.
+            Input.PersistentEventSystem.Pause();
+
             SceneManager.LoadScene(sceneName);
         }
     }

@@ -335,3 +335,45 @@ related symptom reappears.
 - **Boss music tracks** — the wiring is done (`BossDefinition.Phase.musicTrackId` → `BossConfigurator.ApplyPhaseMusic` → `IAudioService.PlayMusicByTrackId`, with `BossPhaseAudio` as the inspector-authored alternative). What remains is **data**: no boss-specific track exists in `AudioCatalog.asset` yet, so `SampleBoss.asset` leaves `musicTrackId` empty.
 
 The **`Valkur.Infrastructure.Persistence.Profile`** layer (run history, kill stats, achievements, profile counters, statistics HUD) lives behind `IProfileDb` (`JsonProfileDb` today; SQLite ready as a drop-in once row counts justify it) — see `.github/SQLITE_MIGRATION_AUDIT.md`.
+- **`Resources.LoadAll<T>("")` is a full-tree scan, not a filter.** The empty path
+  deserializes every one of the ~7,400 assets under `Resources/` and only then keeps the
+  ones matching `T` — so an asset whose `m_Script` no longer resolves logs "The referenced
+  script (Unknown) on this Behaviour is missing!" on EVERY call. `SpawnPlayer` did this
+  looking for `PlayerDefinition` (of which `Resources/` holds none), and paid for it with
+  34 console errors per Play from the raw Udemy `Room_*_Catacombs_*.asset` files. Always
+  pass a subfolder. Corollary: raw third-party ScriptableObjects whose script Valkur never
+  imported must NOT live under `Resources/` — the Catacombs sources now sit in
+  `Data/Dungeon/CatacombsSource/` and are read as YAML text by `CatacombsImporter`.
+- **Do not create the EventSystem at `BeforeSceneLoad`.** The first scene's objects have not
+  awoken yet, so `PersistentEventSystem` minted a second one and uGUI logged "There can be
+  only one active Event System." the instant MainMenu's own `OnEnable` registered — once per
+  boot. `Ensure(createIfMissing: false)` at boot, then adopt the scene's in the `sceneLoaded`
+  pass. Related: `Object.Destroy` is deferred to end-of-frame, so a duplicate is still
+  registered when you re-enable yours on the next line — set `enabled = false` first, which
+  runs `OnDisable` synchronously. Any sync `SceneManager.LoadScene` needs
+  `PersistentEventSystem.Pause()` before it, the way `LoadingScreenController` already does.
+- **A warning that fires on every boot for a deliberate steady state is a bug in the warning.**
+  Four separate ones trained the reader to scroll past the console: `TileCollisionDiagnostics`
+  called the visual `Collision` tilemap "not baked" (its `TilemapCollider2D` is disabled ON
+  PURPOSE — `WorldCollisionBaker` owns those cells via the `CollisionPhysics_*` sub-tilemaps);
+  the Map Editor warned once per persisted zone whose offset is shelved, a state it
+  deliberately preserves forever; `CameraFeelDirector` reported its own first proxy install as
+  "something reassigned the follow target"; `SaveService` warned on a bootstrap race it
+  retries out of by design. Gate the expected case (`VerboseLog`, or `Debug.Log`) and keep the
+  warning for the case that will not heal — e.g. the save ordinal still missing 15 s in.
+- **`main.duration` cannot be written while a ParticleSystem is playing.** `AddComponent<ParticleSystem>()`
+  starts it immediately (`playOnAwake` defaults true), so configuring it inline fires
+  "Setting the duration while system is still playing is not supported" and silently keeps the
+  old value. Order is `Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear)` → configure
+  → `Play()`, which is what every emitter builder outside `AreaFXRig` already did.
+- **"Atomic" write with a shared temp name is neither.** `WriteSerializedJsonAtomic` used
+  `<path>.tmp` — one fixed name for every writer of that file — so two overlapping writes
+  opened the same handle and the loser threw `Access to the path is denied`. Writes DO
+  overlap: `SaveService` chains its autosaves through `_pendingWrite`, but
+  `SaveFileManager.WriteAutosaveAsync` starts a `Task.Run` that never joins that chain.
+  It also did `File.Delete` then `File.Move`. Now: a GUID temp per write, plus a retrying
+  swap (the existence check races the other writer either way round). Note the name lies —
+  measured over 200 rewrites, `File.Replace` still left the target momentarily absent 3715
+  times and delete-then-move 4327, because Mono's `File.Replace` is not Win32 `ReplaceFile`.
+  What carries a run across a crash in that window is the rotating backups and the
+  checksum. What temp+rename does buy is that a reader never sees a half-written save.

@@ -16,7 +16,14 @@ namespace Valkur.Editor.Dungeon
     ///
     /// Pipeline:
     /// 1. Read every <c>Room_*Catacombs*.asset</c> already copied to
-    ///    <c>Resources/Dungeon/Catacombs/RoomTemplates/</c>.
+    ///    <c>Data/Dungeon/CatacombsSource/</c>. These are the raw Udemy
+    ///    ScriptableObjects: their <c>m_Script</c> points at the course's
+    ///    <c>RoomTemplateSO</c>, which does not exist in Valkur, so Unity logs
+    ///    "The referenced script (Unknown) on this Behaviour is missing!" once per
+    ///    asset every time something loads them. They therefore must NOT live under
+    ///    <c>Resources/</c> — any full-tree <c>Resources.LoadAll</c> deserialized all
+    ///    34 and produced 34 console errors per Play. They are parsed as YAML text
+    ///    here, never through the AssetDatabase's typed loader.
     /// 2. Parse its YAML for bounds + doorways + prefab GUID + room-node type GUID.
     /// 3. Build a Valkur RoomTemplateSO at <c>Resources/Dungeon/Catacombs/Valkur/</c>
     ///    with the same geometry, the prefab reference, and the right
@@ -35,7 +42,7 @@ namespace Valkur.Editor.Dungeon
     public static class CatacombsImporter
     {
         private const string Root = "Assets/_Project/Resources/Dungeon/Catacombs";
-        private const string SourceTemplatesDir = Root + "/RoomTemplates";
+        private const string SourceTemplatesDir = "Assets/_Project/Data/Dungeon/CatacombsSource";
         private const string ValkurTemplatesDir = Root + "/Valkur";
         private const string PrefabsDir = Root + "/Prefabs";
         private const string SamplesDir = "Assets/_Project/Resources/Dungeon/Samples";

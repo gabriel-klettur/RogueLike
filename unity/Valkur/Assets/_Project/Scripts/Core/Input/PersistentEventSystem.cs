@@ -20,7 +20,17 @@ namespace Valkur.Core.Input
 
         public static EventSystem Instance => _instance;
 
-        public static EventSystem Ensure()
+        public static EventSystem Ensure() => Ensure(createIfMissing: true);
+
+        /// <summary>
+        /// <paramref name="createIfMissing"/> must be FALSE when called before the
+        /// first scene's objects have awoken (<c>BeforeSceneLoad</c>). Minting an
+        /// EventSystem there guarantees a duplicate the moment a scene that ships
+        /// its own (MainMenu) runs <c>OnEnable</c>, and uGUI answers that with
+        /// "There can be only one active Event System." — once per boot. Deferring
+        /// to the <c>sceneLoaded</c> pass lets us adopt the scene's instead.
+        /// </summary>
+        public static EventSystem Ensure(bool createIfMissing)
         {
             // First-time setup: prefer adopting a scene-shipped EventSystem so we
             // don't lose any inspector tweaks (drag threshold, etc.); otherwise
@@ -36,6 +46,7 @@ namespace Valkur.Core.Input
                 }
                 else
                 {
+                    if (!createIfMissing) return null;
                     var go = new GameObject("[PersistentEventSystem]");
                     if (Application.isPlaying)
                         Object.DontDestroyOnLoad(go);
@@ -123,6 +134,15 @@ namespace Valkur.Core.Input
             for (int i = 0; i < all.Length; i++)
             {
                 if (all[i] == null || all[i] == keep) continue;
+
+                // Disable BEFORE destroying. Object.Destroy is deferred to the end of
+                // the frame, so the duplicate would still be registered with
+                // UIElementsRuntimeUtility when the caller re-enables the persistent
+                // one on the next line — which is exactly the "only one active Event
+                // System" error this sweep exists to prevent. Disabling runs OnDisable
+                // synchronously and unregisters it now.
+                all[i].enabled = false;
+
                 if (Application.isPlaying) Object.Destroy(all[i].gameObject);
                 else                       Object.DestroyImmediate(all[i].gameObject);
             }

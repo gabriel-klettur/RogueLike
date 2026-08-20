@@ -152,9 +152,10 @@ namespace Valkur.Gameplay.Inventory
             {
                 try
                 {
+                    // Resources/Items only. The former empty-path fallback walked all
+                    // ~7 400 assets under Resources/ and logged a console error for
+                    // every one whose script no longer resolved.
                     _allItems = Resources.LoadAll<ItemDefinition>("Items");
-                    if (_allItems == null || _allItems.Length == 0)
-                        _allItems = Resources.LoadAll<ItemDefinition>("");
                     BuildUI();
                     _uiBuilt = true;
                 }
