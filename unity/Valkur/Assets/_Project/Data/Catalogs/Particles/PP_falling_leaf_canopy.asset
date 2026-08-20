@@ -18,11 +18,11 @@ MonoBehaviour:
   vfx:
     kind: falling_leaf
     loops: 1
-    emitRate: 9.899495
+    emitRate: 5
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.3
-    gravity: 0.8
+    speed: 0.1
+    gravity: 0
     drag: 0
     lifespan: 1.7500001
     sizeMin: 0.48
@@ -36,7 +36,7 @@ MonoBehaviour:
     textureSoftness: 0.14
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 110
+    rotationSpeedDegrees: 55
     worldSpace: 0
     radius: 1.5
     arcRangeDegrees: 45
@@ -46,8 +46,8 @@ MonoBehaviour:
     swayAmp: 0.04
     swaySpeed: 0.12
     dispersion: 0.9
-    gravityVector: {x: 0, y: 0}
-    useGravityVector: 0
+    gravityVector: {x: 0, y: -0.45}
+    useGravityVector: 1
     sizeOverLife:
     - time: 0
       value: 0.9
@@ -75,7 +75,7 @@ MonoBehaviour:
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.4
-    noiseFrequency: 0.22
-    noiseScrollSpeed: 0.15
+    noiseStrength: 0.55
+    noiseFrequency: 0.14
+    noiseScrollSpeed: 0.1
     outerRadius: 0
