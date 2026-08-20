@@ -136,12 +136,36 @@ namespace Valkur.Gameplay.VFX
 
             UpdatePickerDrag();
             UpdateOutlineState();
+            HandleDeleteKey();
 
             // Suppress map click while a picker drag is in progress; the drag-drop
             // path is what spawns the emitter.
             if (_pickerDragging) return;
 
             HandleMapInteraction();
+        }
+
+        /// <summary>
+        /// Delete removes the selected instance immediately — no confirm, because the edit
+        /// is already undoable and a confirm on an undoable single-object delete is
+        /// friction, not safety. (Delete-all-in-zone keeps its modal: that one is bulk.)
+        ///
+        /// Guarded against typing: the Properties panel is now full of input fields, and
+        /// pressing Delete inside a hex colour field must edit the text, not destroy the
+        /// selection. Same guard MapEditorUI uses.
+        /// </summary>
+        private void HandleDeleteKey()
+        {
+            if (_activeInstance == null) return;
+            if (!Valkur.Core.Input.KeyboardInputManager.WasDeletePressedThisFrame()) return;
+
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null && es.currentSelectedGameObject != null &&
+                es.currentSelectedGameObject.GetComponent<TMPro.TMP_InputField>() != null)
+                return;
+
+            DeleteInstance(_activeInstance);
+            SetStatus("Deleted selected particle (Undo restores it).");
         }
 
         public void Activate()
