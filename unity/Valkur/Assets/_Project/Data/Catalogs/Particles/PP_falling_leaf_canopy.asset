@@ -21,7 +21,7 @@ MonoBehaviour:
     emitRate: 5
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.1
+    speed: 0.05
     gravity: 0
     drag: 0
     lifespan: 1.7500001
@@ -75,8 +75,8 @@ MonoBehaviour:
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.55
-    noiseFrequency: 0.14
+    noiseStrength: 0.2
+    noiseFrequency: 0.2
     noiseScrollSpeed: 0.1
     noiseVerticalScale: 0.18
     outerRadius: 0
