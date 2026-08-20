@@ -22,15 +22,15 @@ MonoBehaviour:
     count: 12
     burstIntervalSeconds: 1
     speed: 0.3
-    gravity: 3.2
+    gravity: 0.8
     drag: 0
-    lifespan: 7
-    sizeMin: 0.24
-    sizeMax: 0.4
+    lifespan: 4.9497476
+    sizeMin: 0.48
+    sizeMax: 0.8
     colors:
-    - {r: 0.55, g: 0.88, b: 0.28, a: 1}
-    - {r: 0.22, g: 0.58, b: 0.2, a: 1}
-    color: {r: 0.55, g: 0.88, b: 0.28, a: 1}
+    - {r: 0.42, g: 1, b: 0.16, a: 1}
+    - {r: 0.09, g: 0.62, b: 0.1, a: 1}
+    color: {r: 0.42, g: 1, b: 0.16, a: 1}
     additive: 0
     textureShape: 2
     textureSoftness: 0.14
@@ -68,9 +68,9 @@ MonoBehaviour:
     - time: 0
       color: {r: 1, g: 1, b: 1, a: 1}
     - time: 0.5
-      color: {r: 0.92, g: 1, b: 0.88, a: 1}
+      color: {r: 0.96, g: 1, b: 0.94, a: 1}
     - time: 1
-      color: {r: 0.74, g: 0.92, b: 0.7, a: 1}
+      color: {r: 0.86, g: 1, b: 0.84, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
