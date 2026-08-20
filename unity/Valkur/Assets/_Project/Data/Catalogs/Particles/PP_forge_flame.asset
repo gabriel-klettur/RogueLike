@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
+  m_Name: PP_forge_flame
+  m_EditorClassIdentifier: 
+  id: forge_flame
+  displayName: Forge Flame
+  type: aura
+  vfx:
+    kind: smoke_emitter
+    loops: 1
+    emitRate: 18
+    count: 12
+    burstIntervalSeconds: 1
+    speed: 0.3
+    gravity: 0
+    drag: 0
+    lifespan: 0.7
+    sizeMin: 0.2
+    sizeMax: 0.36
+    colors:
+    - {r: 1, g: 0.94, b: 0.72, a: 1}
+    - {r: 1, g: 0.48, b: 0.1, a: 1}
+    color: {r: 1, g: 0.94, b: 0.72, a: 1}
+    additive: 1
+    textureShape: 3
+    textureSoftness: 0.6
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 0
+    rotationSpeedDegrees: 0
+    worldSpace: 0
+    radius: 1.5
+    arcRangeDegrees: 45
+    segments: 10
+    lightningOffset: 0.625
+    thickness: 0.1
+    swayAmp: 0.04
+    swaySpeed: 0.12
+    dispersion: 0.24
+    gravityVector: {x: 0, y: 1.15}
+    useGravityVector: 1
+    sizeOverLife:
+    - time: 0
+      value: 0.6
+    - time: 0.3
+      value: 1
+    - time: 1
+      value: 0.2
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.12
+      value: 0.95
+    - time: 0.55
+      value: 0.7
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 1, g: 0.9, b: 0.62, a: 1}
+    - time: 0.35
+      color: {r: 1, g: 0.6, b: 0.14, a: 1}
+    - time: 1
+      color: {r: 0.62, g: 0.15, b: 0.03, a: 1}
+    flipbookFrames: []
+    flipbookCycles: 1
+    flipbookRandomStartFrame: 0
+    noiseEnabled: 1
+    noiseStrength: 0.17
+    noiseFrequency: 1.9
+    noiseScrollSpeed: 1.1
+    outerRadius: 0

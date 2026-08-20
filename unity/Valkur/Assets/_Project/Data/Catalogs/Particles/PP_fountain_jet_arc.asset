@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
+  m_Name: PP_fountain_jet_arc
+  m_EditorClassIdentifier: 
+  id: fountain_jet_arc
+  displayName: Fountain Jet Arc
+  type: fountain
+  vfx:
+    kind: water_fountain
+    loops: 1
+    emitRate: 70
+    count: 12
+    burstIntervalSeconds: 1
+    speed: 3.4
+    gravity: 26
+    drag: 0
+    lifespan: 0.9
+    sizeMin: 0.34
+    sizeMax: 0.54
+    colors:
+    - {r: 0.88, g: 0.97, b: 1, a: 1}
+    - {r: 0.45, g: 0.82, b: 1, a: 1}
+    color: {r: 0.45, g: 0.82, b: 1, a: 1}
+    additive: 0
+    textureShape: 2
+    textureSoftness: 0.45
+    customSprite: {fileID: 0}
+    startRotationJitterDegrees: 0
+    rotationSpeedDegrees: 0
+    worldSpace: 0
+    radius: 1.5
+    arcRangeDegrees: 45
+    segments: 10
+    lightningOffset: 0.625
+    thickness: 0.1
+    swayAmp: 0.04
+    swaySpeed: 0.12
+    dispersion: 0
+    gravityVector: {x: 0, y: 0}
+    useGravityVector: 0
+    sizeOverLife:
+    - time: 0
+      value: 1
+    - time: 0.75
+      value: 1
+    - time: 1
+      value: 0.7
+    alphaOverLife:
+    - time: 0
+      value: 0
+    - time: 0.05
+      value: 1
+    - time: 0.82
+      value: 1
+    - time: 1
+      value: 0
+    colorOverLife:
+    - time: 0
+      color: {r: 1, g: 1, b: 1, a: 1}
+    - time: 0.5
+      color: {r: 0.88, g: 0.96, b: 1, a: 1}
+    - time: 1
+      color: {r: 0.7, g: 0.86, b: 1, a: 1}
+    flipbookFrames: []
+    flipbookCycles: 1
+    flipbookRandomStartFrame: 0
+    noiseEnabled: 1
+    noiseStrength: 0.05
+    noiseFrequency: 0.8
+    noiseScrollSpeed: 0.4
+    outerRadius: 0

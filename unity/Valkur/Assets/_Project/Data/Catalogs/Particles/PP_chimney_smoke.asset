@@ -28,8 +28,9 @@ MonoBehaviour:
     sizeMin: 0.16
     sizeMax: 0.3
     colors:
-    - {r: 0.8, g: 0.78, b: 0.74, a: 1}
-    color: {r: 0.8, g: 0.78, b: 0.74, a: 1}
+    - {r: 0.86, g: 0.82, b: 0.76, a: 1}
+    - {r: 0.58, g: 0.58, b: 0.62, a: 1}
+    color: {r: 0.86, g: 0.82, b: 0.76, a: 1}
     additive: 0
     textureShape: 0
     textureSoftness: 0.5
