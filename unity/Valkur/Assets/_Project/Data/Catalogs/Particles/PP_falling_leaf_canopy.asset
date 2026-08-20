@@ -25,18 +25,18 @@ MonoBehaviour:
     gravity: 3.2
     drag: 0
     lifespan: 7
-    sizeMin: 0.1
-    sizeMax: 0.17
+    sizeMin: 0.24
+    sizeMax: 0.4
     colors:
-    - {r: 0.58, g: 0.84, b: 0.36, a: 1}
-    - {r: 0.24, g: 0.5, b: 0.2, a: 1}
-    color: {r: 0.58, g: 0.84, b: 0.36, a: 1}
+    - {r: 0.55, g: 0.88, b: 0.28, a: 1}
+    - {r: 0.22, g: 0.58, b: 0.2, a: 1}
+    color: {r: 0.55, g: 0.88, b: 0.28, a: 1}
     additive: 0
     textureShape: 2
-    textureSoftness: 0.3
+    textureSoftness: 0.14
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 95
+    rotationSpeedDegrees: 110
     worldSpace: 0
     radius: 1.5
     arcRangeDegrees: 45
@@ -50,32 +50,32 @@ MonoBehaviour:
     useGravityVector: 0
     sizeOverLife:
     - time: 0
-      value: 0.85
-    - time: 0.2
+      value: 0.9
+    - time: 0.15
       value: 1
     - time: 1
-      value: 0.9
+      value: 0.95
     alphaOverLife:
     - time: 0
       value: 0
-    - time: 0.06
+    - time: 0.05
       value: 1
-    - time: 0.8
+    - time: 0.85
       value: 1
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 0.55, g: 0.82, b: 0.36, a: 1}
-    - time: 0.45
-      color: {r: 0.34, g: 0.62, b: 0.25, a: 1}
+      color: {r: 1, g: 1, b: 1, a: 1}
+    - time: 0.5
+      color: {r: 0.92, g: 1, b: 0.88, a: 1}
     - time: 1
-      color: {r: 0.2, g: 0.4, b: 0.18, a: 1}
+      color: {r: 0.74, g: 0.92, b: 0.7, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.38
+    noiseStrength: 0.4
     noiseFrequency: 0.22
     noiseScrollSpeed: 0.15
     outerRadius: 0
