@@ -96,6 +96,10 @@ namespace Valkur.Gameplay.VFX
             zoomLbl.alignment = TextAlignmentOptions.Center;
             zoomLbl.color     = TEXT_MUTED;
             refs.ViewZoomInBtn = EditorUIHelpers.MakeButton(zoomRow.transform, "+", null, 26f, 14f);
+            // Game-true scale: at zoom 1x, one world unit spans exactly as many View pixels
+            // as it does on the game screen — the auto-fit stops deciding the size.
+            refs.ViewGameScaleBtn = EditorUIHelpers.MakeButton(zoomRow.transform, "1:1", null, 34f, 11f);
+            refs.ViewGameScaleBtnImg = refs.ViewGameScaleBtn.GetComponent<Image>();
 
             // ── 4. Transport row ──────────────────────────────────────────────
             var transportRow = CreateUI("TransportRow", t);

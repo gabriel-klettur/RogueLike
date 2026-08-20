@@ -90,6 +90,9 @@ namespace Valkur.Gameplay.VFX
             public Image            ViewSpeed1BtnImg;
             public Button           ViewZoomInBtn;
             public Button           ViewZoomOutBtn;
+            /// <summary>Toggles game-true scale in the View: 1x zoom = the game's own size.</summary>
+            public Button           ViewGameScaleBtn;
+            public Image            ViewGameScaleBtnImg;
 
             // Spells panel
             public TextMeshProUGUI  SpellsHeaderTmp;

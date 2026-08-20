@@ -23,6 +23,26 @@ namespace Valkur.Gameplay.VFX
 
         // ── Wiring ────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Toggle between auto-fit (every preset inflated or shrunk to fill the panel) and
+        /// game-true scale, where at zoom 1x a world unit spans exactly as many View pixels
+        /// as on the game screen. Zoom is reset on each switch so the first frame of the
+        /// new mode shows its own truth rather than the previous mode's magnification.
+        /// </summary>
+        private void OnGameScaleToggled()
+        {
+            bool on = !_previewService.GameScaleMode;
+            _previewService.SetGameScaleMode(on);
+            _previewService.ResetZoom();
+            if (_ui.ViewGameScaleBtnImg != null)
+                _ui.ViewGameScaleBtnImg.color = on
+                    ? UITheme.ACCENT_BG
+                    : UITheme.BTN_NORMAL;
+            SetStatus(on
+                ? "View: game-true scale — 1x zoom is the size you will see in the world."
+                : "View: auto-fit — sized to fill the panel, not to match the game.");
+        }
+
         private void WireViewPanel()
         {
             if (_ui.ViewPlayPauseBtn  != null) _ui.ViewPlayPauseBtn.onClick.AddListener(OnPlayPauseClicked);
@@ -32,6 +52,7 @@ namespace Valkur.Gameplay.VFX
 
             if (_ui.ViewZoomInBtn  != null) _ui.ViewZoomInBtn.onClick.AddListener(OnZoomIn);
             if (_ui.ViewZoomOutBtn != null) _ui.ViewZoomOutBtn.onClick.AddListener(OnZoomOut);
+            if (_ui.ViewGameScaleBtn != null) _ui.ViewGameScaleBtn.onClick.AddListener(OnGameScaleToggled);
 
             // Attach the hover probe to the preview surface so wheel zoom is
             // gated to cursor-over-preview (mirrors SpellsViewHoverProbe pattern).

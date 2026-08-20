@@ -142,6 +142,19 @@ namespace Valkur.Gameplay.VFX
         /// </summary>
         public float LargeOrthoZoom { get; private set; } = 1f;
 
+        /// <summary>
+        /// When true the View stops auto-fitting and shows the effect at the exact scale the
+        /// game camera does: one world unit spans as many View pixels as it spans on screen.
+        ///
+        /// Auto-fit is the single biggest fidelity lie the preview tells — it inflates a
+        /// two-pixel ember to fill the panel and shrinks a four-unit fountain to fit it, so
+        /// no two presets are ever shown at comparable sizes, let alone the game's.
+        /// Zoom still applies on top: 1x IS the game, 2x is a magnifier.
+        /// </summary>
+        public bool GameScaleMode { get; private set; }
+
+        public void SetGameScaleMode(bool on) { GameScaleMode = on; }
+
         /// <summary>Zoom in by one step (multiply by 1.25, clamp).</summary>
         public void ZoomIn()  => SetZoom(LargeOrthoZoom * ZOOM_STEP);
         /// <summary>Zoom out by one step (multiply by 0.8, clamp).</summary>
@@ -558,10 +571,29 @@ namespace Valkur.Gameplay.VFX
             Vector3 ep = _largeEmitterGo.transform.position;
             _largeCamera.transform.position = new Vector3(ep.x, ep.y, CAMERA_Z);
             // Apply user zoom: LargeOrthoZoom > 1 → smaller ortho → zoomed in.
-            float autoFit = ComputeOrthoSize(_largeEmitterGo, _largeRenderers,
-                                             ORTHO_SIZE_LARGE_MIN, ORTHO_SIZE_LARGE_MAX);
-            _largeCamera.orthographicSize = autoFit / Mathf.Max(LargeOrthoZoom, 0.0001f);
+            float baseOrtho = GameScaleMode
+                ? GameEquivalentOrtho()
+                : ComputeOrthoSize(_largeEmitterGo, _largeRenderers,
+                                   ORTHO_SIZE_LARGE_MIN, ORTHO_SIZE_LARGE_MAX);
+            _largeCamera.orthographicSize = baseOrtho / Mathf.Max(LargeOrthoZoom, 0.0001f);
             _largeCamera.targetTexture    = _largeRT;
+        }
+
+        /// <summary>
+        /// The ortho at which this RT's pixels-per-world-unit equals the live game camera's
+        /// screen pixels-per-world-unit. The game shows 2*ortho world units across
+        /// Screen.height pixels; matching that density on a LARGE_SIZE-pixel RT means
+        /// ortho_rt = ortho_game * LARGE_SIZE / Screen.height. Resolved every frame so the
+        /// View tracks window resizes and any game-camera ortho change.
+        /// </summary>
+        private static float GameEquivalentOrtho()
+        {
+            var gameCam = Camera.main;
+            float gameOrtho = (gameCam != null && gameCam.orthographic)
+                ? gameCam.orthographicSize
+                : 5f;                              // the project's authored default
+            float screenH = Mathf.Max(1, Screen.height);
+            return Mathf.Max(0.05f, gameOrtho * LARGE_SIZE / screenH);
         }
 
         private static Vector3 SlotPosition(int index)
