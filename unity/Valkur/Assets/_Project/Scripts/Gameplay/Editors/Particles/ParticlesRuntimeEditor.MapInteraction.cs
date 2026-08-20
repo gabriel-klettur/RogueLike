@@ -171,7 +171,7 @@ namespace Valkur.Gameplay.VFX
             if (instance == _activeInstance) SetActiveInstance(null);
 
             // For undo, we re-spawn from the preset (the original GO is gone after destroy).
-            ExecutePersistedEdit($"Delete {pid ?? "particle"}",
+            ExecuteDeletionEdit($"Delete {pid ?? "particle"}",
                 () => { if (instance != null) SafeDestroy.Of(instance); },
                 () =>
                 {
@@ -272,7 +272,7 @@ namespace Valkur.Gameplay.VFX
                 if (go == _hoveredInstance) _hoveredInstance = null;
             }
 
-            ExecutePersistedEdit($"Delete all in zone ({zoneName})",
+            ExecuteDeletionEdit($"Delete all in zone ({zoneName})",
                 () =>
                 {
                     foreach (var (go, _, _) in targets)

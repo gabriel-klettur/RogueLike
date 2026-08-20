@@ -84,6 +84,10 @@ namespace Valkur.Tests.EditMode.Editors.Particles
                 Application.streamingAssetsPath, "Particles", "particles_instances.json");
             _fileExistedBefore = File.Exists(_jsonPath);
             _snapshotContents  = _fileExistedBefore ? File.ReadAllText(_jsonPath) : null;
+
+            // This fixture backs the real file up above and restores it below, so it is one
+            // of the few allowed to write it from EditMode.
+            FileParticleInstanceStore.AllowEditModeWritesToRealPath = true;
         }
 
         [TearDown]
@@ -105,6 +109,8 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             foreach (var go in _sceneObjects)
                 if (go != null) UnityEngine.Object.DestroyImmediate(go);
             _sceneObjects.Clear();
+
+            FileParticleInstanceStore.AllowEditModeWritesToRealPath = false;
 
             ClearSingleton<ParticlesRuntimeEditor>();
             LogAssert.ignoreFailingMessages = false;
@@ -148,6 +154,13 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             var catalog = ScriptableObject.CreateInstance<ParticlePresetCatalog>();
             SetVal(editor, "_catalog", catalog);
             Invoke(editor, "Start");
+
+            // Start from an empty on-disk state. The anti-wipe guard refuses to write an
+            // empty scene over a populated file, which is the whole point of it — and the
+            // production data file this store resolves to holds the world's real emitters.
+            // TearDown restores whatever was here before.
+            Directory.CreateDirectory(Path.GetDirectoryName(_jsonPath));
+            File.WriteAllText(_jsonPath, "{\"version\":2,\"instances\":[]}");
 
             // No particle emitters in scene → save should write empty v2 object.
             Invoke(editor, "SaveInstancesToJson");
@@ -228,6 +241,147 @@ namespace Valkur.Tests.EditMode.Editors.Particles
 
             Assert.DoesNotThrow(() => Invoke(editor, "SaveInstancesToJson"),
                 "SaveInstancesToJson must not throw when catalog is null — instance list is just empty.");
+        }
+
+        // ── Anti-wipe guard ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The regression that motivated the guard: particles_instances.json held 221 placed
+        /// emitters and was reduced to an empty array in commit 23e315073.
+        ///
+        /// Every edit force-saves whatever PersistedParticleInstance components are in the
+        /// scene, which is only equivalent to "the current world" while the scene mirrors the
+        /// file. ParticleInstancesLoader.Reload() is ClearAll() then LoadAndSpawn() with no
+        /// transaction, and MapEditorManager.ClearAllSpawnedWorldContent() calls ClearAll() on
+        /// its own — after either leaves the scene empty, the next edit serialises nothing.
+        /// </summary>
+        [Test]
+        public void SaveInstancesToJson_EmptyScene_RefusesToOverwriteNonEmptyFile()
+        {
+            var editor = CreateEditor();
+
+            var store = new InMemoryParticleInstanceStore();
+            // Two records already on disk, nothing in the scene: the shape of the wipe.
+            const string existing =
+                "{\"version\":2,\"instances\":[" +
+                "{\"id\":\"a\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\",\"rel_x\":10,\"rel_y\":20}," +
+                "{\"id\":\"b\",\"preset_id\":\"water_fountain_small\",\"zone\":\"lobby\",\"rel_x\":30,\"rel_y\":40}]}";
+            store.Save(existing);
+            editor.SetInstanceStore(store);
+
+            LogAssert.ignoreFailingMessages = true;
+            Invoke(editor, "SaveInstancesToJson");
+
+            Assert.AreEqual(existing, store.CurrentJson,
+                "An empty scene must NOT overwrite a populated file — that is the 221-record wipe.");
+        }
+
+        /// <summary>
+        /// The guard must not block a genuine "delete the last one". Deletions run through
+        /// ExecuteDeletionEdit, which arms a one-shot exemption.
+        /// </summary>
+        [Test]
+        public void DeliberateDeletion_MayWriteEmptyOverNonEmptyFile()
+        {
+            var editor = CreateEditor();
+
+            var store = new InMemoryParticleInstanceStore();
+            store.Save("{\"version\":2,\"instances\":[" +
+                       "{\"id\":\"a\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\",\"rel_x\":10,\"rel_y\":20}]}");
+            editor.SetInstanceStore(store);
+
+            LogAssert.ignoreFailingMessages = true;
+            Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
+                   (System.Action)(() => { }), (System.Action)(() => { }));
+
+            Assert.IsTrue(store.CurrentJson.Contains("\"instances\":[]"),
+                $"A deliberate deletion must be allowed to empty the file. Got: {store.CurrentJson}");
+        }
+
+        /// <summary>
+        /// The partial wipe, which the empty-scene check alone does not catch and which
+        /// happened for real: a file holding 221 placed emitters was overwritten with the 3
+        /// that were in the scene, because only those 3 had ever been spawned there.
+        /// </summary>
+        [Test]
+        public void SaveInstancesToJson_RefusesCatastrophicDrop_WhenSceneHoldsFarFewerThanFile()
+        {
+            var editor = CreateEditor();
+
+            var sb = new System.Text.StringBuilder("{\"version\":2,\"instances\":[");
+            for (int i = 0; i < 40; i++)
+            {
+                if (i > 0) sb.Append(',');
+                sb.Append($"{{\"id\":\"g{i}\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\"," +
+                          $"\"rel_x\":{i},\"rel_y\":{i}}}");
+            }
+            sb.Append("]}");
+            string existing = sb.ToString();
+
+            var store = new InMemoryParticleInstanceStore();
+            store.Save(existing);
+            editor.SetInstanceStore(store);
+
+            LogAssert.ignoreFailingMessages = true;
+            // Scene holds nothing; 0 of 40 is far below the ratio.
+            Invoke(editor, "SaveInstancesToJson");
+
+            Assert.AreEqual(existing, store.CurrentJson,
+                "A save keeping far fewer instances than the file holds must be refused.");
+        }
+
+        /// <summary>
+        /// The drop guard must stay out of the way of ordinary editing: a small file shrinking
+        /// by a couple of entries is a normal delete, not a wipe.
+        /// </summary>
+        [Test]
+        public void SaveInstancesToJson_AllowsOrdinaryShrink_BelowCatastrophicFloor()
+        {
+            var editor = CreateEditor();
+
+            // Three on disk is under the floor of ten, so the ratio check must not engage.
+            var store = new InMemoryParticleInstanceStore();
+            store.Save("{\"version\":2,\"instances\":[" +
+                       "{\"id\":\"a\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\",\"rel_x\":1,\"rel_y\":1}," +
+                       "{\"id\":\"b\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\",\"rel_x\":2,\"rel_y\":2}," +
+                       "{\"id\":\"c\",\"preset_id\":\"falling_leaf_30s\",\"zone\":\"Forest\",\"rel_x\":3,\"rel_y\":3}]}");
+            editor.SetInstanceStore(store);
+
+            LogAssert.ignoreFailingMessages = true;
+            Invoke(editor, "ExecuteDeletionEdit", "Delete them",
+                   (System.Action)(() => { }), (System.Action)(() => { }));
+
+            Assert.IsTrue(store.CurrentJson.Contains("\"instances\":[]"),
+                $"A small deliberate shrink must still persist. Got: {store.CurrentJson}");
+        }
+
+        /// <summary>
+        /// The exemption is one-shot: an ordinary save straight after a deletion must be
+        /// guarded again, or the flag would leave the door open for the rest of the session.
+        /// </summary>
+        [Test]
+        public void EmptyWriteExemption_IsConsumedBySingleSave()
+        {
+            var editor = CreateEditor();
+
+            var store = new InMemoryParticleInstanceStore();
+            editor.SetInstanceStore(store);
+            LogAssert.ignoreFailingMessages = true;
+
+            // Deletion consumes the exemption and writes empty.
+            Invoke(editor, "ExecuteDeletionEdit", "Delete last particle",
+                   (System.Action)(() => { }), (System.Action)(() => { }));
+
+            // Refill the file behind the editor's back, then save from the same empty scene.
+            const string refilled =
+                "{\"version\":2,\"instances\":[" +
+                "{\"id\":\"c\",\"preset_id\":\"flowers_pollen_soft\",\"zone\":\"Forest\",\"rel_x\":1,\"rel_y\":2}]}";
+            store.Save(refilled);
+
+            Invoke(editor, "SaveInstancesToJson");
+
+            Assert.AreEqual(refilled, store.CurrentJson,
+                "The empty-write exemption must not survive past the save that consumed it.");
         }
     }
 }

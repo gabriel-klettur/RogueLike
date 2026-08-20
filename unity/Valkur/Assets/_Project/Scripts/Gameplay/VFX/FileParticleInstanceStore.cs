@@ -46,9 +46,46 @@ namespace Valkur.Gameplay.VFX
             return File.ReadAllText(path, System.Text.Encoding.UTF8);
         }
 
+        // ── Write-from-EditMode guard ──────────────────────────────────────────
+        //
+        // Mirrors SaveService.RefuseWriteOutsidePlayMode and the same guard on
+        // JsonFileMapEditorZonesRepository, for the same reason and after the same kind of
+        // loss: an EditMode test that constructs a ParticlesRuntimeEditor without injecting
+        // InMemoryParticleInstanceStore falls through to this store, resolves the real
+        // StreamingAssets path, and writes its empty fixture straight over the world's placed
+        // emitters. Fixtures that snapshot and restore still leave the file destroyed if any
+        // link in that chain is skipped — which is how particles_instances.json was reduced
+        // to an empty array by a full suite run.
+        //
+        // A test that genuinely needs the real path opts in explicitly and does its own
+        // backup/restore.
+
+        /// <summary>
+        /// Set true from a test's [SetUp] when it deliberately reads/writes the real
+        /// StreamingAssets file, and back to false in [TearDown]. Static so it can be scoped
+        /// per fixture. Production never touches it — Application.isPlaying already allows
+        /// the write.
+        /// </summary>
+        public static bool AllowEditModeWritesToRealPath;
+
+        // Domain Reload is OFF: a fixture that threw before its TearDown would otherwise
+        // leave the opt-in armed for the rest of the session, which is precisely the state
+        // this guard exists to prevent.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics() => AllowEditModeWritesToRealPath = false;
+
         /// <inheritdoc/>
         public void Save(string json)
         {
+            if (!Application.isPlaying && !AllowEditModeWritesToRealPath)
+            {
+                Debug.LogWarning(
+                    "[FileParticleInstanceStore] Refusing to write particle instances from " +
+                    "EditMode. Inject InMemoryParticleInstanceStore, or set " +
+                    "AllowEditModeWritesToRealPath in a fixture that backs the file up.");
+                return;
+            }
+
             string path = CurrentPath;
             string dir  = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))

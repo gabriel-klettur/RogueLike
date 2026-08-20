@@ -173,6 +173,12 @@ namespace Valkur.Tests.EditMode.Editors.Particles
             _catalog.SetPresets(new List<ParticlePresetDefinition> { _preset });
             SetVal(editor, "_catalog", _catalog);
 
+            // Keep persistence off disk. Without this the editor falls through to
+            // FileParticleInstanceStore, resolves the real StreamingAssets file, and its saves
+            // are measured against the world's actual emitters — the anti-wipe guard then
+            // (correctly) refuses and logs an error this fixture never asked for.
+            editor.SetInstanceStore(new InMemoryParticleInstanceStore());
+
             StubPreviewService(editor);
 
             if (withUI)
