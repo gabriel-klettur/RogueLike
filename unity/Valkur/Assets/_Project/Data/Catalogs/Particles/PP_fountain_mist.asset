@@ -18,7 +18,7 @@ MonoBehaviour:
   vfx:
     kind: smoke_emitter
     loops: 1
-    emitRate: 3
+    emitRate: 12
     count: 12
     burstIntervalSeconds: 1
     speed: 0.1
