@@ -18,13 +18,13 @@ MonoBehaviour:
   vfx:
     kind: falling_leaf
     loops: 1
-    emitRate: 6
+    emitRate: 16.970562
     count: 12
     burstIntervalSeconds: 1
     speed: 0.75
     gravity: 1.6875
     drag: 0
-    lifespan: 5.656854
+    lifespan: 2
     sizeMin: 0.48
     sizeMax: 0.8
     colors:
