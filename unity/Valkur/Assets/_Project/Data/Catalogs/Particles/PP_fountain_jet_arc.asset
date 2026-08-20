@@ -18,7 +18,7 @@ MonoBehaviour:
   vfx:
     kind: water_fountain
     loops: 1
-    emitRate: 70
+    emitRate: 105
     count: 12
     burstIntervalSeconds: 1
     speed: 3.4

@@ -18,13 +18,13 @@ MonoBehaviour:
   vfx:
     kind: smoke_emitter
     loops: 1
-    emitRate: 50
+    emitRate: 100
     count: 12
     burstIntervalSeconds: 1
     speed: 0.15
     gravity: 18
     drag: 0
-    lifespan: 0.6
+    lifespan: 0.42
     sizeMin: 0.38
     sizeMax: 0.62
     colors:
