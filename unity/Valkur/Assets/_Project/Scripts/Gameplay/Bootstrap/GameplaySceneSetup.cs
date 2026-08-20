@@ -161,6 +161,7 @@ namespace Valkur.Gameplay
             Report("Starting day/night cycle"); yield return null;
 
             EnsureVFXManager();
+            EnsureCameraFeelDirector();
             Report("Initializing visual effects"); yield return null;
 
             EnsureParticleInstancesLoader();
@@ -236,6 +237,7 @@ namespace Valkur.Gameplay
             Report("Initializing weather system"); yield return null;
 
             EnsureTimeWeatherEditor();
+            EnsureCameraEditor();
             Report("Initializing time & weather editor"); yield return null;
 
             EnsureDevConsole();

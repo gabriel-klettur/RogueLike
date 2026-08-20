@@ -90,6 +90,20 @@ namespace Valkur.Gameplay
         // time-of-day + weather subsystems (speed slider, phase shortcuts,
         // weather toggles, phase-tuning sliders) so the gameplay HUD only
         // shows the read-only sundial. Idempotent.
+        /// <summary>
+        /// The Camera Editor has no hotkey by design — it is reached from the General Editor
+        /// (ESC). Twelve of the thirteen function keys are already bound, and a surface used
+        /// during a tuning pass does not need one the player can hit by accident.
+        /// </summary>
+        private void EnsureCameraEditor()
+        {
+            if (Valkur.Gameplay.Editors.CameraFeelEditor.CameraRuntimeEditor.Instance != null) return;
+            var go = new GameObject("CameraEditor");
+            go.AddComponent<Valkur.Gameplay.Editors.CameraFeelEditor.CameraRuntimeEditor>();
+            go.transform.SetParent(GetSceneContainer("[Editors]"), false);
+            Debug.Log("[GameplaySceneSetup] CameraEditor created. Open it from the General Editor (ESC).");
+        }
+
         private void EnsureTimeWeatherEditor()
         {
             if (Valkur.Gameplay.TimeWeather.TimeWeatherEditor.Instance != null) return;

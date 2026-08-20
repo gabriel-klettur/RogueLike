@@ -34,6 +34,20 @@ namespace Valkur.Gameplay
         // gameplay frame runs — this step lives between EnsureZoneManager
         // (early) and SpawnPlayer (late). Idempotent: noop if an inspector-
         // wired DayNightCycle already lives in the scene.
+        /// <summary>
+        /// The camera feel director. It installs its own follow proxy and re-asserts it every
+        /// frame, so it must exist before the player starts moving — but it degrades to a
+        /// no-op while the rig is not ready, so ordering against CameraSetup is not critical.
+        /// </summary>
+        private void EnsureCameraFeelDirector()
+        {
+            if (Feel.CameraFeelDirector.HasInstance) return;
+            var go = new GameObject("CameraFeelDirector");
+            go.AddComponent<Feel.CameraFeelDirector>();
+            go.transform.SetParent(GetSceneContainer("[World]"), false);
+            Debug.Log("[GameplaySceneSetup] CameraFeelDirector created.");
+        }
+
         private void EnsureDayNightCycle()
         {
             if (FindObjectOfType<World.DayNightCycle>() != null) return;

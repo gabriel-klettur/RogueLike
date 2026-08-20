@@ -16,6 +16,7 @@ using Valkur.Gameplay.Spawners;
 using Valkur.Gameplay.Spells;
 using Valkur.Gameplay.TileEditor;
 using Valkur.Gameplay.Editors.Boss;
+using Valkur.Gameplay.Editors.CameraFeelEditor;
 using Valkur.Gameplay.TimeWeather;
 using Valkur.Gameplay.VFX;
 using Valkur.Gameplay.World;
@@ -56,6 +57,7 @@ namespace Valkur.Gameplay.Editors.General
             list.Add(MakeEditor("Spawners",      () => SpawnerEditorManager.Instance));
             list.Add(MakeEditor("Lighting",      () => LightingRuntimeEditor.Instance));
             list.Add(MakeEditor("Time & Weather",() => TimeWeatherEditor.Instance));
+            list.Add(MakeEditor("Camera",        () => CameraFeelEditor.CameraRuntimeEditor.Instance));
             list.Add(MakeEditor("Dungeon NodeGraph", () => Valkur.Gameplay.Editors.DungeonNodeGraph.DungeonNodeGraphEditor.Instance));
 
             // ── Diagnostics (toggles, no exclusive activation) ──────────────
