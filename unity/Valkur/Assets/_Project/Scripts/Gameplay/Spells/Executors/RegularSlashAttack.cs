@@ -293,7 +293,12 @@ namespace Valkur.Gameplay.Spells
                     health.transform.IsChildOf(_context.Caster) ||
                     _context.Caster.IsChildOf(health.transform)) continue;
 
-                Vector2 targetPoint = hit.bounds.center;
+                // The overlap query returns whatever collider of theirs sits on the target
+                // layer, including the large off-centre trigger an NPC uses to notice the
+                // player. Measured against that, the contact landed between the two
+                // characters rather than on the one that was struck.
+                Collider2D body = EntityColliderConfigurator.GetBodyCollider(health.gameObject);
+                Vector2 targetPoint = ResolveBodyPoint(health, body);
                 if (!IsInsideSector(transform.position, _direction, targetPoint, _radius, _arc))
                     continue;
 
@@ -306,7 +311,7 @@ namespace Valkur.Gameplay.Spells
 
                 int before = health.CurrentHp;
                 int damage = Mathf.Max(1, Mathf.RoundToInt(_context.Spell.damage));
-                health.TakeDamage(damage);
+                health.TakeDamage(damage, _context.Caster.gameObject);
                 if (health.CurrentHp == before) continue;
 
                 _damaged.Add(health);
@@ -315,7 +320,9 @@ namespace Valkur.Gameplay.Spells
                 CombatFeedback feedback = health.GetComponent<CombatFeedback>();
                 if (feedback != null) feedback.ApplyKnockback(transform.position);
 
-                Vector2 impactPoint = hit.ClosestPoint(transform.position);
+                Vector2 impactPoint = body != null
+                    ? body.ClosestPoint(transform.position)
+                    : targetPoint;
                 if ((impactPoint - (Vector2)transform.position).sqrMagnitude < 0.01f)
                     impactPoint = targetPoint;
                 RegularSlashImpactFX.Spawn(impactPoint, _direction, _baseColor);
@@ -323,11 +330,23 @@ namespace Valkur.Gameplay.Spells
                 _hitCount++;
                 if (_hitCount == 1)
                 {
-                    CameraShake.Trigger(0.22f, 0.14f);
-                    RegularSlashHitStop.Trigger(0.045f);
+                    // The camera and the hit-stop are now driven from the director's own
+                    // OnHitDealt handler, which applies the audience filter this call site
+                    // never had: an NPC swinging slash_regular used to freeze the session.
                     ServiceLocator.Get<IAudioService>()?.PlaySfxById("spell_slash_hit");
                 }
             }
+        }
+
+        /// <summary>Centre of a victim's body, preferring the bootstrap-built body box.</summary>
+        private static Vector2 ResolveBodyPoint(Health health, Collider2D body)
+        {
+            if (body != null) return body.bounds.center;
+
+            var sr = health.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null && sr.sprite != null) return sr.bounds.center;
+
+            return health.transform.position;
         }
 
         private void OnDestroy()
