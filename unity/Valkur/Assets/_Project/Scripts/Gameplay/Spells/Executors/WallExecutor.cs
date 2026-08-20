@@ -16,7 +16,10 @@ namespace Valkur.Gameplay.Spells
             float width = ctx.Spell.wallWidth > 0 ? ctx.Spell.wallWidth / 32f : 6f;
             float height = ctx.Spell.wallHeight > 0 ? ctx.Spell.wallHeight / 32f : 1.5f;
             float hp = ctx.Spell.wallHP > 0 ? ctx.Spell.wallHP : 100f;
-            float duration = ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f;
+            // The wall's real exit is its HP reaching zero; the timer is a backstop.
+            float duration = ctx.Spell.infinite
+                ? float.PositiveInfinity
+                : (ctx.Spell.duration > 0 ? ctx.Spell.duration : 6f);
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 
             Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
@@ -64,7 +67,11 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col2, width * 0.5f, 0.3f);
             }
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(wallGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreateWallSprite()
         {

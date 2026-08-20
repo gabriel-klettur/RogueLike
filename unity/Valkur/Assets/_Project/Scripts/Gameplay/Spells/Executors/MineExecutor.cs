@@ -18,7 +18,12 @@ namespace Valkur.Gameplay.Spells
             float triggerRadius = ctx.Spell.triggerRadius > 0 ? ctx.Spell.triggerRadius / 16f : 3.75f;
             float explosionRadius = ctx.Spell.explosionRadius > 0 ? ctx.Spell.explosionRadius / 16f : 8.75f;
             float explosionDamage = ctx.Spell.explosionDamage > 0 ? ctx.Spell.explosionDamage : ctx.Spell.damage;
-            float ttl = ctx.Spell.ttl > 0 ? ctx.Spell.ttl : 14f;
+            // A mine's ttl is a cleanup timer, not a clock it animates against:
+            // MineController animates from absolute Time.time and already owns a real
+            // exit — proximity detonation. Infinite here just means "the trap waits".
+            float ttl = ctx.Spell.infinite
+                ? float.PositiveInfinity
+                : (ctx.Spell.ttl > 0 ? ctx.Spell.ttl : 14f);
 
             var mineGo = new GameObject("SpellMine");
             mineGo.transform.position = (Vector3)pos;
@@ -42,7 +47,11 @@ namespace Valkur.Gameplay.Spells
                 Mathf.RoundToInt(explosionDamage), ttl, ctx.TargetLayers,
                 ctx.Spell.impactPreset);
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(mineGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreateMineSprite()
         {

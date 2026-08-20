@@ -36,7 +36,11 @@ namespace Valkur.Gameplay.Spells
             if (VFXManager.Instance != null && !string.IsNullOrEmpty(ctx.Spell.vfxPreset))
                 VFXManager.Instance.SpawnParticlePreset(ctx.Spell.vfxPreset, (Vector3)pos, duration);
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(flameGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreateFlameSprite()
         {

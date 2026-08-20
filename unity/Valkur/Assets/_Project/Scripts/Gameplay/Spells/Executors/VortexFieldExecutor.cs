@@ -57,7 +57,11 @@ namespace Valkur.Gameplay.Spells
                 vfxService.SpawnParticlePreset(preset, spawnPos, duration);
             }
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(vortexGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreateVortexSprite()
         {

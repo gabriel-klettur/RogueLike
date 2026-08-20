@@ -47,7 +47,11 @@ namespace Valkur.Gameplay.Spells
                     new Color(1f, 0.9f, 0.3f, 0.4f), radius, 0.5f);
             }
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(totemGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreateTotemSprite()
         {

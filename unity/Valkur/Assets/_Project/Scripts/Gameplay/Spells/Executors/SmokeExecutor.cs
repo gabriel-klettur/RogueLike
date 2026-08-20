@@ -30,6 +30,7 @@ namespace Valkur.Gameplay.Spells
             go.transform.position = pos;
             var lt = go.AddComponent<SmokeLifetime>();
             lt.Init(duration, radius, AreaPalette.Smoke(ResolveFlipbook(ctx.Spell)));
+            SpellEffectRegistry.Track(go, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
         }
 
         /// <summary>

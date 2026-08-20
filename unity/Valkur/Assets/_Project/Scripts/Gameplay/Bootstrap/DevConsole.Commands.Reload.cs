@@ -53,6 +53,16 @@ namespace Valkur.Gameplay
 
             RegisterCommand(new ConsoleCommand
             {
+                Name = "despawnspells",
+                Aliases = new[] { "ds" },
+                Usage = "despawnspells",
+                Help = "destroy every lingering spell effect (puddles, totems, walls, mines, vortices, smoke)",
+                Category = "reload",
+                Handler = _ => CmdDespawnSpells()
+            });
+
+            RegisterCommand(new ConsoleCommand
+            {
                 Name = "reloadtiles",
                 Aliases = new[] { "rt" },
                 Usage = "reloadtiles",
@@ -104,6 +114,19 @@ namespace Valkur.Gameplay
             manager.ClearAllSpawnedWorldContent();
             manager.ReloadAllWorldContent();
             Log($"[reload] World content reloaded for slot '{manager.ActiveMapSlot}'.");
+        }
+
+        /// <summary>
+        /// Clear every effect the <see cref="Valkur.Gameplay.Spells.SpellEffectRegistry"/>
+        /// is tracking. Area spells spawn scene-root objects holding no reference to their
+        /// caster, so before the registry existed a puddle whose countdown you had extended
+        /// could only be removed by leaving Play Mode.
+        /// </summary>
+        private void CmdDespawnSpells()
+        {
+            int live = Valkur.Gameplay.Spells.SpellEffectRegistry.LiveCount;
+            int destroyed = Valkur.Gameplay.Spells.SpellEffectRegistry.ClearAll();
+            Log($"[reload] destroyed {destroyed} spell effect(s) (was tracking {live}).");
         }
 
         private void CmdReloadFsm()

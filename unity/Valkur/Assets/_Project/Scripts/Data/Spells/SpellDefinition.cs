@@ -120,6 +120,16 @@ namespace Valkur.Data
         public float collisionDamage;
 
         [Header("DoT / Aura")]
+        [Tooltip("Never expire on a timer. Only meaningful for spells whose lifetime is a " +
+                 "cleanup timer rather than an animation clock, and which already own a real " +
+                 "termination condition: the mine detonates, the wall runs out of HP, the " +
+                 "summon dies. Do NOT set it on effects whose visuals are a function of " +
+                 "age/duration — they normalise time against their lifetime and freeze. " +
+                 "An infinite effect is tracked by SpellEffectRegistry, which honours " +
+                 "maxInstances and clears it on a zone change; without that it would outlive " +
+                 "the caster, the run, and every zone transition.")]
+        public bool infinite;
+
         public float duration;
         public float damagePerTick;
         public float tickPeriod;

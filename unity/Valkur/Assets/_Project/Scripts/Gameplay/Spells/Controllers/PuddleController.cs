@@ -98,7 +98,7 @@ namespace Valkur.Gameplay.Spells
             var hits = Physics2D.OverlapCircleAll(transform.position, _radius, _targetLayers);
             foreach (var hit in hits)
             {
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health == null || health.IsDead) continue;
 
                 if (_damagePerTick > 0)
@@ -106,7 +106,11 @@ namespace Valkur.Gameplay.Spells
 
                 if (_element == "lava" || _element == "fire")
                 {
-                    var statusMgr = hit.GetComponent<StatusEffectManager>();
+                    // Off `health`, not off `hit`: Health lives on the entity root (hence the
+                    // GetComponentInParent above) and EntitySetup attaches StatusEffectManager
+                    // to that same root. Querying the collider meant an entity whose collider
+                    // sits on a child took the damage but never caught fire.
+                    var statusMgr = health.GetComponent<StatusEffectManager>();
                     if (statusMgr != null)
                         statusMgr.Apply(new BurnEffect(3f, 5));
                 }

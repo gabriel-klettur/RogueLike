@@ -11,9 +11,14 @@ namespace Valkur.Gameplay.Spells
     /// </summary>
     public class PuddleExecutor : ISpellExecutor
     {
-        // vfxPreset marker that swaps the default puddle visual for the
-        // RootWhipFX tendril particle system (vines rising from the ground).
-        private const string ROOT_WHIP_PRESET = "root_whip";
+        /// <summary>
+        /// The one puddle that is not a puddle. It used to be recognised by its
+        /// <c>vfxPreset</c> reading "root_whip" — a preset that has never existed, because
+        /// the field was being used as a behaviour switch rather than as a reference. That
+        /// left a permanently unresolved preset reference in the catalog, indistinguishable
+        /// from a real typo. The spell key is the discriminator that was always meant.
+        /// </summary>
+        private const string ROOT_WHIP_KEY = "root_whip";
 
         public void Execute(SpellContext ctx)
         {
@@ -27,7 +32,8 @@ namespace Valkur.Gameplay.Spells
                 ? (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * (ctx.Spell.range > 0 ? ctx.Spell.range / 16f : 5f)
                 : (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
 
-            bool rootWhip = ctx.Spell.vfxPreset == ROOT_WHIP_PRESET;
+            bool rootWhip = string.Equals(ctx.Spell.spellKey, ROOT_WHIP_KEY,
+                                          System.StringComparison.OrdinalIgnoreCase);
 
             var puddleGo = new GameObject("SpellPuddle");
             puddleGo.transform.position = (Vector3)spawnPos;
@@ -75,7 +81,11 @@ namespace Valkur.Gameplay.Spells
                 VFXManager.Instance.SpawnAreaIndicator((Vector3)spawnPos, col, radius, 0.4f);
             }
 
-        }
+        
+            // Free-standing world object: nothing else can end it. The registry
+            // enforces maxInstances and clears it on a zone change.
+            SpellEffectRegistry.Track(puddleGo, ctx.Spell, ctx.Caster != null ? ctx.Caster.gameObject : null);
+}
 
         private static Sprite CreatePuddleSprite()
         {
@@ -191,13 +201,10 @@ namespace Valkur.Gameplay.Spells
                     : ElementalSprites.Glow;
                 if (sprite != null)
                 {
-                    var mat = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                              ?? Shader.Find("Sprites/Default"))
-                    {
-                        hideFlags = HideFlags.HideAndDontSave,
-                        mainTexture = sprite.texture
-                    };
-                    renderer.material = mat;
+                    // Shared per (texture, blend) instead of one material per puddle,
+                    // none of which were ever destroyed.
+                    renderer.sharedMaterial =
+                        Valkur.Gameplay.VFX.ParticleMaterialCache.Get(sprite.texture, additive: false);
                 }
             }
 

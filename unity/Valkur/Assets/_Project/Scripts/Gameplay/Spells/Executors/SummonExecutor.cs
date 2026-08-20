@@ -14,7 +14,10 @@ namespace Valkur.Gameplay.Spells
         public void Execute(SpellContext ctx)
         {
             int count = ctx.Spell.summonCount > 0 ? ctx.Spell.summonCount : 1;
-            float duration = ctx.Spell.summonDuration > 0 ? ctx.Spell.summonDuration : 20f;
+            // A summon's real exit is death; the timer only recalls a survivor.
+            float duration = ctx.Spell.infinite
+                ? float.PositiveInfinity
+                : (ctx.Spell.summonDuration > 0 ? ctx.Spell.summonDuration : 20f);
             float dist = ctx.Spell.distance > 0 ? ctx.Spell.distance : 3f;
 
             Vector2 spawnPos = (Vector2)ProjectileExecutor.ResolveCastStart(ctx.Caster, ctx.Direction, ctx.Spell) + ctx.Direction * dist;
@@ -22,16 +25,21 @@ namespace Valkur.Gameplay.Spells
             for (int i = 0; i < count; i++)
             {
                 Vector2 offset = count > 1 ? Random.insideUnitCircle * 1.5f : Vector2.zero;
-                SpawnSummon(spawnPos + offset, duration, ctx);
+                // Only the first unit applies maxInstances: the cap counts casts, not bodies.
+                SpawnSummon(spawnPos + offset, duration, ctx, enforceCap: i == 0);
             }
 
         }
 
-        private void SpawnSummon(Vector2 pos, float duration, SpellContext ctx)
+        private void SpawnSummon(Vector2 pos, float duration, SpellContext ctx, bool enforceCap)
         {
             // Create a simple combat proxy summon
             var summonGo = new GameObject($"Summon_{ctx.Spell.summonTemplate}");
             summonGo.transform.position = (Vector3)pos;
+            // Free-standing world object with no caster reference: the registry is the only
+            // thing that can end it if the summon is authored to never expire.
+            SpellEffectRegistry.Track(summonGo, ctx.Spell,
+                ctx.Caster != null ? ctx.Caster.gameObject : null, enforceCap);
             summonGo.layer = ctx.Caster.gameObject.layer;
 
             // Visual

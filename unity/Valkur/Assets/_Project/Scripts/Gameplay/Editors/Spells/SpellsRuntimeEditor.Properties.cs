@@ -144,6 +144,7 @@ namespace Valkur.Gameplay.Spells
             // ── DoT / Aura ──
             AddSection(form, s, "── DoT / Aura ──",
                 ("duration",      () => form.AddFloat("duration",      "Duration (s)",  s.duration)),
+                ("infinite",      () => form.AddBool ("infinite",      "Never Expires", s.infinite)),
                 ("damagePerTick", () => form.AddFloat("damagePerTick", "Damage / Tick", s.damagePerTick)),
                 ("healPerTick",   () => form.AddFloat("healPerTick",   "Heal / Tick",   s.healPerTick)),
                 ("tickPeriod",    () => form.AddFloat("tickPeriod",    "Tick Period",   s.tickPeriod)),

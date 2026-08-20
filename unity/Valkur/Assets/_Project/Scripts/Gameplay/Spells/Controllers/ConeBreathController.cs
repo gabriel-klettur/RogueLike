@@ -77,17 +77,16 @@ namespace Valkur.Gameplay.Spells
             _lr.sortingOrder = 4;
             _lr.useWorldSpace = true;
 
-            var mat = new Material(Shader.Find("Sprites/Default"));
-            mat.hideFlags = HideFlags.HideAndDontSave;
-
             Color hotColor = fire
                 ? new Color(1.00f, 0.85f, 0.30f, 0.85f)
                 : new Color(0.85f, 0.98f, 1.00f, 0.80f);
             Color coolColor = fire
                 ? new Color(0.95f, 0.30f, 0.05f, 0.10f)
                 : new Color(0.30f, 0.65f, 1.00f, 0.10f);
-            mat.color = hotColor;
-            _lr.material = mat;
+            // The gradient lives in the LineRenderer's vertex colours, so the shared
+            // unlit material carries everything this beam needs. The per-cast material
+            // it used to allocate was never destroyed.
+            _lr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             _lr.startColor = hotColor;
             _lr.endColor = coolColor;
 
@@ -103,6 +102,10 @@ namespace Valkur.Gameplay.Spells
             psGo.transform.SetParent(transform, false);
             psGo.transform.localPosition = Vector3.zero;
             _ps = psGo.AddComponent<ParticleSystem>();
+            // AddComponent starts the system immediately, and Unity refuses to accept
+            // main.duration on a system that is already playing — it asserts and keeps
+            // the old value. Stop first, configure, then Play.
+            _ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
             var main = _ps.main;
             main.duration = 999f;
@@ -165,10 +168,12 @@ namespace Valkur.Gameplay.Spells
             size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.4f, 1f, 1.6f));
 
             var psr = _ps.GetComponent<ParticleSystemRenderer>();
-            psr.material = ElementalSprites.SharedUnlitMaterial;
+            psr.sharedMaterial = ElementalSprites.SharedUnlitMaterial;
             psr.sortingLayerID = SortingLayer.NameToID(SortingConfig.LAYER_VFX);
             psr.sortingLayerName = SortingConfig.LAYER_VFX;
             psr.sortingOrder = 5;
+
+            _ps.Play();
         }
 
         private void TryAttachLight(bool fire)
@@ -283,7 +288,7 @@ namespace Valkur.Gameplay.Spells
             foreach (var hit in hits)
             {
                 if (hit.gameObject == _caster.gameObject) continue;
-                var health = hit.GetComponent<Health>();
+                var health = hit.GetComponentInParent<Health>();
                 if (health == null || health.IsDead) continue;
 
                 Vector2 toTarget = ((Vector2)hit.transform.position - origin).normalized;
@@ -299,7 +304,9 @@ namespace Valkur.Gameplay.Spells
                     // Apply burn if fire element
                     if (_element == "fire")
                     {
-                        var statusMgr = hit.GetComponent<StatusEffectManager>();
+                        // Off `health` (the entity root), not off the collider — see the same
+                        // fix in PuddleController.DamageTick.
+                        var statusMgr = health.GetComponent<StatusEffectManager>();
                         if (statusMgr != null)
                             statusMgr.Apply(new BurnEffect(2f, 3));
                     }
