@@ -143,6 +143,7 @@ namespace Valkur.UI.MainMenu
                 {
                     case MenuScreen.Options:
                     case MenuScreen.Sounds:
+                    case MenuScreen.Video:
                         OptionsGoBack();
                         return;
                     case MenuScreen.Inputs:
@@ -157,6 +158,7 @@ namespace Valkur.UI.MainMenu
                 case MenuScreen.Main:     HandleKeyboardNavigation(); break;
                 case MenuScreen.Options:  HandleOptionsListInput();   break;
                 case MenuScreen.Sounds:   HandleOptionsSoundsInput(); break;
+                case MenuScreen.Video:    HandleOptionsVideoInput();  break;
                 case MenuScreen.Inputs:   HandleOptionsInputsInput(); break;
                 case MenuScreen.LoadGame: HandleMMLoadInput();        break;
             }
@@ -276,6 +278,7 @@ namespace Valkur.UI.MainMenu
                     break;
                 case MenuScreen.Options:
                 case MenuScreen.Sounds:
+                case MenuScreen.Video:
                 case MenuScreen.Inputs:
                     if (_optOverlay != null) _optOverlay.transform.SetAsLastSibling();
                     break;

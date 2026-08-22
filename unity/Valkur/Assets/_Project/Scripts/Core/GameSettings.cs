@@ -20,6 +20,17 @@ namespace Valkur.Core
         // and respects this flag.
         public bool permadeath = false;
 
+        // ── Display ──────────────────────────────────────────────────────────
+        // Window size, in the units the player picked from Options > Video.
+        // 0x0 means "Native" — keep the desktop resolution and let
+        // AspectRatioEnforcer letterbox down to the 2:1 target. Any other value
+        // must be one of DisplaySettings.Presets; an unrecognised pair falls
+        // back to Native rather than resizing the window to something the
+        // camera can't render seam-free.
+        public int resolutionWidth  = 0;
+        public int resolutionHeight = 0;
+        public WindowMode windowMode = WindowMode.Windowed;
+
         // ── Audio ────────────────────────────────────────────────────────────
         public float musicVolume    = 0.6f;   // Python default 0.6
         public float ambientVolume  = 0.6f;
@@ -120,6 +131,10 @@ namespace Valkur.Core
             var fresh = new GameSettings();
             // Game mode
             permadeath = fresh.permadeath;
+            // Display
+            resolutionWidth  = fresh.resolutionWidth;
+            resolutionHeight = fresh.resolutionHeight;
+            windowMode       = fresh.windowMode;
             // Audio
             musicVolume = fresh.musicVolume;
             ambientVolume = fresh.ambientVolume;

@@ -15,7 +15,7 @@ namespace Valkur.UI.MainMenu
     public partial class MainMenuUI
     {
         // ── Screen state ─────────────────────────────────────────────────────
-        private enum MenuScreen { Main, Options, Sounds, Inputs, LoadGame, ClassSelector }
+        private enum MenuScreen { Main, Options, Sounds, Video, Inputs, LoadGame, ClassSelector }
         private MenuScreen _menuScreen = MenuScreen.Main;
 
         // ── Options overlay & panels ─────────────────────────────────────────
@@ -25,7 +25,7 @@ namespace Valkur.UI.MainMenu
         private GameObject _optInputsPanel;
 
         // ── Options list ─────────────────────────────────────────────────────
-        private readonly string[] _optMenuOptions = { "Inputs", "Sound", "Back" };
+        private readonly string[] _optMenuOptions = { "Inputs", "Sound", "Video", "Back" };
         private int      _optMenuSel;
         private Image[]  _optMenuPills;
         private Image[]  _optMenuBars;
@@ -81,7 +81,8 @@ namespace Valkur.UI.MainMenu
             if (es != null) es.SetSelectedGameObject(null);
 
             bool showMain  = screen == MenuScreen.Main;
-            bool showOpt   = screen == MenuScreen.Options || screen == MenuScreen.Sounds || screen == MenuScreen.Inputs;
+            bool showOpt   = screen == MenuScreen.Options || screen == MenuScreen.Sounds
+                          || screen == MenuScreen.Video   || screen == MenuScreen.Inputs;
             bool showLoad  = screen == MenuScreen.LoadGame;
             bool showClass = screen == MenuScreen.ClassSelector;
 
@@ -94,6 +95,7 @@ namespace Valkur.UI.MainMenu
             if (_optOverlay         != null) _optOverlay.SetActive(showOpt);
             if (_optPanel           != null) _optPanel.SetActive(screen == MenuScreen.Options);
             if (_optSoundsPanel     != null) _optSoundsPanel.SetActive(screen == MenuScreen.Sounds);
+            if (_optVideoPanel      != null) _optVideoPanel.SetActive(screen == MenuScreen.Video);
             if (_optInputsPanel     != null) _optInputsPanel.SetActive(screen == MenuScreen.Inputs);
             if (_mmLoadOverlay      != null) _mmLoadOverlay.SetActive(showLoad);
             if (_classSelectionPanel != null) _classSelectionPanel.SetActive(showClass);
@@ -110,6 +112,8 @@ namespace Valkur.UI.MainMenu
             { _optMenuSel = 0; UpdateOptListVisuals(); }
             if (screen == MenuScreen.Sounds)
             { _optSoundSel = 0; UpdateOptSoundsVisuals(); }
+            if (screen == MenuScreen.Video)
+            { _optVideoSel = 0; LoadOptVideoFromSettings(); RefreshOptVideoRows(); UpdateOptVideoVisuals(); }
             if (screen == MenuScreen.Inputs)
             { _optInputsTabSel = 0; UpdateOptInputsPanel(); }
             if (screen == MenuScreen.LoadGame)
@@ -122,6 +126,7 @@ namespace Valkur.UI.MainMenu
             {
                 case MenuScreen.Options:  ShowMenuScreen(MenuScreen.Main); break;
                 case MenuScreen.Sounds:   ShowMenuScreen(MenuScreen.Options); break;
+                case MenuScreen.Video:    ShowMenuScreen(MenuScreen.Options); break;
                 case MenuScreen.Inputs:   ShowMenuScreen(MenuScreen.Options); break;
                 case MenuScreen.LoadGame:
                     // Saves may have been deleted while in the load panel.
@@ -187,6 +192,7 @@ namespace Valkur.UI.MainMenu
             {
                 case "Inputs": ShowMenuScreen(MenuScreen.Inputs); break;
                 case "Sound":  ShowMenuScreen(MenuScreen.Sounds); break;
+                case "Video":  ShowMenuScreen(MenuScreen.Video);  break;
                 case "Back":   ShowMenuScreen(MenuScreen.Main);   break;
             }
         }

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Valkur.Core;
 using Valkur.Gameplay;
 using Valkur.Gameplay.Save;
@@ -59,6 +59,7 @@ namespace Valkur.UI.PauseMenu
             {
                 case "Inputs": ShowScreen(PauseScreen.Inputs); break;
                 case "Sound":  ShowScreen(PauseScreen.Sounds); break;
+                case "Video":  ShowScreen(PauseScreen.Video);  break;
                 case "Back":   ShowScreen(PauseScreen.Pause);  break;
             }
         }

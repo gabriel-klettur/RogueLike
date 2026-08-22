@@ -33,6 +33,7 @@ namespace Valkur.UI.PauseMenu
                 case PauseScreen.Pause:   HandlePauseListInput(); break;
                 case PauseScreen.Options: HandleListInput(_optOptions.Length,   ref _optSel,   _optPills,   _optBars,   _optTexts,   ExecuteOption); break;
                 case PauseScreen.Sounds:  HandleSoundsInput();  break;
+                case PauseScreen.Video:   HandleVideoInput();   break;
                 case PauseScreen.Inputs:  HandleInputsTabInput(); break;
                 case PauseScreen.LoadGame: HandleLoadGameInput(); break;
             }
@@ -145,12 +146,14 @@ namespace Valkur.UI.PauseMenu
             _pausePanel?.SetActive(s == PauseScreen.Pause);
             _optionsPanel?.SetActive(s == PauseScreen.Options);
             _soundsPanel?.SetActive(s == PauseScreen.Sounds);
+            _videoPanel?.SetActive(s == PauseScreen.Video);
             _inputsPanel?.SetActive(s == PauseScreen.Inputs);
             _loadGamePanel?.SetActive(s == PauseScreen.LoadGame);
 
             if (s == PauseScreen.Pause)   { _pauseSel = 0;  UpdateListVisuals(_pauseSel,  _pausePills,  _pauseBars,  _pauseTexts); }
             if (s == PauseScreen.Options) { _optSel = 0;    UpdateListVisuals(_optSel,    _optPills,    _optBars,    _optTexts);   }
             if (s == PauseScreen.Sounds)  { _soundSel = 0;  UpdateSoundsPanel(); }
+            if (s == PauseScreen.Video)   { _videoSel = 0;  LoadVideoFromSettings(); RefreshVideoRows(); UpdateVideoPanel(); }
             if (s == PauseScreen.Inputs)  { _inputsTabSel = 0; _inputsRowSel = 0; UpdateInputsPanel(); }
             if (s == PauseScreen.LoadGame) { RefreshLoadGamePanel(); }
         }
@@ -212,6 +215,7 @@ namespace Valkur.UI.PauseMenu
             {
                 case PauseScreen.Options:  ShowScreen(PauseScreen.Pause);   break;
                 case PauseScreen.Sounds:   ShowScreen(PauseScreen.Options); break;
+                case PauseScreen.Video:    ShowScreen(PauseScreen.Options); break;
                 case PauseScreen.Inputs:   ShowScreen(PauseScreen.Options); break;
                 case PauseScreen.LoadGame: ShowScreen(PauseScreen.Pause);   break;
                 default:                   ClosePause();                     break;

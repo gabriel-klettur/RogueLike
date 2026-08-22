@@ -18,6 +18,7 @@ namespace Valkur.UI.MainMenu
 
             BuildOptListPanel(_optOverlay.transform);
             BuildOptSoundsPanel(_optOverlay.transform);
+            BuildOptVideoPanel(_optOverlay.transform);
             BuildOptInputsPanel(_optOverlay.transform);
 
             _optOverlay.SetActive(false);

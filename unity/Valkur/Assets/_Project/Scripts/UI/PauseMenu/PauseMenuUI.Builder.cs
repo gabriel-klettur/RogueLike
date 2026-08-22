@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
@@ -32,6 +32,7 @@ namespace Valkur.UI.PauseMenu
                 onHover:   i => { _optSel = i; UpdateListVisuals(_optSel, _optPills, _optBars, _optTexts); },
                 onExecute: ExecuteOption);
             _soundsPanel = BuildSoundsPanel(_overlayRoot.transform);
+            _videoPanel  = BuildVideoPanel(_overlayRoot.transform);
             _inputsPanel = BuildInputsPanel(_overlayRoot.transform);
             _loadGamePanel = BuildLoadGamePanel(_overlayRoot.transform);
 

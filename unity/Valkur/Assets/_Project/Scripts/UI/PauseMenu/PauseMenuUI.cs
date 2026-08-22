@@ -66,7 +66,7 @@ namespace Valkur.UI.PauseMenu
         private const string MAIN_SCENE = "MainMenu";
 
         // ── State ─────────────────────────────────────────────────────────────
-        private enum PauseScreen { None, Pause, Options, Sounds, Inputs, LoadGame }
+        private enum PauseScreen { None, Pause, Options, Sounds, Video, Inputs, LoadGame }
         private PauseScreen _screen = PauseScreen.None;
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Valkur.UI.PauseMenu
         private TextMeshProUGUI[] _pauseTexts;
 
         // ── Options panel ─────────────────────────────────────────────────────
-        private readonly string[] _optOptions = { "Inputs", "Sound", "Back" };
+        private readonly string[] _optOptions = { "Inputs", "Sound", "Video", "Back" };
         private int      _optSel;
         private Image[]  _optPills;
         private Image[]  _optBars;
