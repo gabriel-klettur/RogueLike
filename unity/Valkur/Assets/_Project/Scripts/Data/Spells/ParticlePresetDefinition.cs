@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Valkur.Data
@@ -25,5 +26,9 @@ namespace Valkur.Data
         [Header("VFX Parameters")]
         [Tooltip("Visual effect configuration. Mirrors Python vfx.particles block.")]
         [SerializeField] public ParticleVfxParams vfx = new ParticleVfxParams();
+
+        [Header("Layers")]
+        [Tooltip("Optional child presets rendered by the same emitter, each as its own ParticleSystem, so one placed instance (or one spell slot) can be a stacked effect — additive light over alpha mass, fast sparks over slow haze. One level deep: a layer's own layers are ignored. Null entries, self-references and lightning-kind layers are skipped. Every layer is scaled by the emitter's scaleMultiplier exactly like the root vfx.")]
+        [SerializeField] public List<ParticlePresetDefinition> layers = new List<ParticlePresetDefinition>();
     }
 }

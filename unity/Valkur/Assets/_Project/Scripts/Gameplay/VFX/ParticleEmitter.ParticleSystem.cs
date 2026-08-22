@@ -11,9 +11,19 @@ namespace Valkur.Gameplay.VFX
         private void EnsureParticleSystem()
         {
             if (_ps != null) return;
+            // Once composite presets exist, a reused emitter can carry LAYER
+            // ParticleSystems too (see ParticleEmitter.Layers.cs), so a generic
+            // GetComponentInChildren could just as easily return a layer's system as
+            // the root's. The root is always the child named "Particles" (see the
+            // creation branch below) — look for that by name first, and only fall
+            // back to the old any-ParticleSystem search when it is not there yet
+            // (fresh emitter, or a save that predates layers).
+            var rootChild = transform.Find("Particles");
+            _ps = rootChild != null ? rootChild.GetComponent<ParticleSystem>() : null;
             // includeInactive: a burst whose stopAction disabled the child would
             // otherwise look absent here, and we would build a second one beside it.
-            _ps = GetComponentInChildren<ParticleSystem>(true);
+            if (_ps == null)
+                _ps = GetComponentInChildren<ParticleSystem>(true);
             if (_ps == null)
             {
                 var child = new GameObject("Particles");
@@ -29,7 +39,15 @@ namespace Valkur.Gameplay.VFX
             }
         }
 
-        private void ConfigureParticleSystem(ParticleVfxParams p, float scale)
+        /// <summary>
+        /// Configures one ParticleSystem — either the root <c>_ps</c> or a layer child
+        /// built by <see cref="SyncLayers"/> — from a <see cref="ParticleVfxParams"/>
+        /// block. Takes the target explicitly rather than reading the <c>_ps</c> field
+        /// so the exact same recipe (every module, every leak-guard) applies to both;
+        /// duplicating this method per-layer would drift the two paths apart the first
+        /// time either one was tuned.
+        /// </summary>
+        private void ConfigureParticleSystem(ParticleSystem ps, ParticleVfxParams p, float scale)
         {
             string kind = p.kind ?? "";
             // Use the explicit loops attribute as the single source of truth.
@@ -41,7 +59,7 @@ namespace Valkur.Gameplay.VFX
             float lifeSec = Mathf.Max(0.05f, p.lifespan);
 
             // ---- Main ----
-            var main = _ps.main;
+            var main = ps.main;
             main.playOnAwake = false;
             main.loop = p.loops;
             main.stopAction = isBurst
@@ -73,7 +91,7 @@ namespace Valkur.Gameplay.VFX
             {
                 // Use velocity-over-lifetime for arbitrary gravity direction
                 main.gravityModifier = 0f;
-                var vel = _ps.velocityOverLifetime;
+                var vel = ps.velocityOverLifetime;
                 vel.enabled = true;
                 vel.space = ParticleSystemSimulationSpace.Local;
                 vel.x = new ParticleSystem.MinMaxCurve(p.gravityVector.x);
@@ -82,7 +100,7 @@ namespace Valkur.Gameplay.VFX
             else
             {
                 main.gravityModifier = p.gravity > 0f ? p.gravity / UNITY_GRAVITY : 0f;
-                var vel = _ps.velocityOverLifetime;
+                var vel = ps.velocityOverLifetime;
                 vel.enabled = false;
             }
             // World space is what makes a trail a trail. In local space every particle is
@@ -95,7 +113,7 @@ namespace Valkur.Gameplay.VFX
                 : ParticleSystemSimulationSpace.Local;
 
             // ---- Emission ----
-            var emission = _ps.emission;
+            var emission = ps.emission;
             if (isBurst || isBurstLoop)
             {
                 emission.rateOverTime = 0f;
@@ -119,7 +137,7 @@ namespace Valkur.Gameplay.VFX
                 ? new ParticleSystem.MinMaxCurve(-jitter, jitter)
                 : new ParticleSystem.MinMaxCurve(0f);
 
-            var rot = _ps.rotationOverLifetime;
+            var rot = ps.rotationOverLifetime;
             if (Mathf.Abs(p.rotationSpeedDegrees) > 0.01f)
             {
                 float rad = p.rotationSpeedDegrees * Mathf.Deg2Rad;
@@ -134,10 +152,10 @@ namespace Valkur.Gameplay.VFX
             }
 
             // ---- Shape ----
-            ConfigureShape(p, scale);
+            ConfigureShape(ps, p, scale);
 
             // ---- Size Over Lifetime ----
-            var sol = _ps.sizeOverLifetime;
+            var sol = ps.sizeOverLifetime;
             if (p.turnoverCycles > 0)
             {
                 // Width oscillates, height does not: the quad reads as a flat object rotating
@@ -182,7 +200,7 @@ namespace Valkur.Gameplay.VFX
             // Fetched unconditionally: emitters are reused across presets (the editor's
             // preview emitter is), so a module one preset turns on has to be turned off
             // by the next one or its drag silently clamps every effect chosen afterwards.
-            var vlim = _ps.limitVelocityOverLifetime;
+            var vlim = ps.limitVelocityOverLifetime;
             if (p.drag > 0f)
             {
                 vlim.enabled = true;
@@ -198,7 +216,7 @@ namespace Valkur.Gameplay.VFX
             // ---- Noise (turbulence) ----
             // Authored noise wins; falling_leaf keeps its legacy sway so the 100-odd presets
             // that predate these fields render exactly as before.
-            var noise = _ps.noise;
+            var noise = ps.noise;
             if (p.noiseEnabled && p.noiseStrength > 0f)
             {
                 noise.enabled = true;
@@ -240,7 +258,7 @@ namespace Valkur.Gameplay.VFX
             }
 
             // ---- Colour Over Lifetime ----
-            var col = _ps.colorOverLifetime;
+            var col = ps.colorOverLifetime;
             col.enabled = true;
             if (p.alphaOverLife != null && p.alphaOverLife.Length > 0)
                 col.color = BuildGradientFromCurves(p);
@@ -248,10 +266,10 @@ namespace Valkur.Gameplay.VFX
                 col.color = BuildFadeOutGradient(p);
 
             // ---- Flipbook ----
-            ConfigureFlipbook(p);
+            ConfigureFlipbook(ps, p);
 
             // ---- Renderer ----
-            ConfigureRenderer(p);
+            ConfigureRenderer(ps, p);
         }
 
         /// <summary>
@@ -263,9 +281,9 @@ namespace Valkur.Gameplay.VFX
         /// preview emitter serves every one of them), so a sheet left over from the previously
         /// selected preset would keep animating over the next preset's texture.
         /// </summary>
-        private void ConfigureFlipbook(ParticleVfxParams p)
+        private void ConfigureFlipbook(ParticleSystem ps, ParticleVfxParams p)
         {
-            var tsa = _ps.textureSheetAnimation;
+            var tsa = ps.textureSheetAnimation;
             var frames = p.flipbookFrames;
 
             if (frames == null || frames.Length == 0)
@@ -326,9 +344,9 @@ namespace Valkur.Gameplay.VFX
             return curve;
         }
 
-        private void ConfigureShape(ParticleVfxParams p, float scale)
+        private void ConfigureShape(ParticleSystem ps, ParticleVfxParams p, float scale)
         {
-            var shape = _ps.shape;
+            var shape = ps.shape;
             shape.enabled = true;
 
             // Normalise to Unity's defaults before the switch. Each branch below sets only

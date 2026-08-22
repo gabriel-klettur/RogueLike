@@ -499,22 +499,47 @@ namespace Valkur.Gameplay.VFX
         /// <summary>
         /// If a non-looping (burst) emitter has finished playing, restart it so
         /// thumbnails remain animated. Identical to how a looping emitter behaves.
+        ///
+        /// Composite presets can mix a short burst root with a longer-lived layer (or
+        /// vice versa) — checking only <c>slot.Ps</c> would restart the whole stack
+        /// while a layer is still mid-play, snapping it back to frame zero. A slot only
+        /// counts as dead once EVERY ParticleSystem under its emitter (root + layers)
+        /// has finished.
         /// </summary>
         private void RestartIfDead(ThumbSlot slot)
         {
-            if (slot?.Ps == null || slot.Def == null) return;
-            // IsAlive() returns false when the system finished and no particles remain.
-            if (!slot.Ps.main.loop && !slot.Ps.IsAlive(true))
+            if (slot?.Ps == null || slot.Def == null || slot.EmitterGo == null) return;
+            if (!AnyAlive(slot.EmitterGo))
                 ApplyToSlot(slot, slot.Def); // re-applies, which calls ps.Play()
         }
 
         private static void RestartIfDead(ParticleEmitter emitter, ParticlePresetDefinition def)
         {
             if (emitter == null || def == null) return;
-            var ps = emitter.GetComponentInChildren<ParticleSystem>(true);
-            if (ps == null) return;
-            if (!ps.main.loop && !ps.IsAlive(true))
+            // A "lightning" preset builds no ParticleSystem at all (it draws with a
+            // LineRenderer instead) — without this guard AnyAlive would see an empty
+            // array, read that as "dead", and re-apply the preset every single Tick(),
+            // restarting the lightning coroutine forever instead of once.
+            if (emitter.GetComponentInChildren<ParticleSystem>(true) == null) return;
+            if (!AnyAlive(emitter.gameObject))
                 SafeApplyPreset(emitter, def);
+        }
+
+        /// <summary>
+        /// True while at least one ParticleSystem under <paramref name="emitterGo"/> —
+        /// root or composite layer — is still looping or has live/pending particles.
+        /// includeInactive so a burst system parked by stopAction=Disable is still seen.
+        /// </summary>
+        private static bool AnyAlive(GameObject emitterGo)
+        {
+            var systems = emitterGo.GetComponentsInChildren<ParticleSystem>(true);
+            for (int i = 0; i < systems.Length; i++)
+            {
+                var ps = systems[i];
+                if (ps == null) continue;
+                if (ps.main.loop || ps.IsAlive(true)) return true;
+            }
+            return false;
         }
 
         /// <summary>

@@ -58,6 +58,15 @@ namespace Valkur.Gameplay.VFX
                 if (!_ps.gameObject.activeSelf) _ps.gameObject.SetActive(true);
                 _ps.Play();
             }
+            // Same treatment for every composite layer — a re-enabled emitter must
+            // resume its whole stack, not just the root.
+            for (int i = 0; i < _layerSystems.Count; i++)
+            {
+                var layerPs = _layerSystems[i];
+                if (layerPs == null) continue;
+                if (!layerPs.gameObject.activeSelf) layerPs.gameObject.SetActive(true);
+                layerPs.Play();
+            }
         }
 
         private void OnDestroy()
@@ -83,6 +92,11 @@ namespace Valkur.Gameplay.VFX
             if (kind == "lightning")
             {
                 SetupLightning(preset.vfx);
+                // Lightning draws with a LineRenderer and never calls SyncLayers, so any
+                // layers left over from a PREVIOUS composite preset applied to this same
+                // (reused) emitter must be torn down explicitly or they keep simulating
+                // underneath the bolt.
+                TeardownLayers();
                 return;
             }
 
@@ -99,7 +113,13 @@ namespace Valkur.Gameplay.VFX
             // so without this the emitter is dead for good after its first one-shot.
             if (!_ps.gameObject.activeSelf) _ps.gameObject.SetActive(true);
             _ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            ConfigureParticleSystem(preset.vfx, _scaleMultiplier);
+            ConfigureParticleSystem(_ps, preset.vfx, _scaleMultiplier);
+
+            // Rebuild the layer stack (if any) against the newly configured root. Each
+            // layer plays itself as it is configured, so this covers both the "compose
+            // a new stack" and "shrink an existing one" cases before the root's own
+            // Play() below.
+            SyncLayers(preset, _scaleMultiplier);
 
             if (IsBurstWithInterval(kind) && preset.vfx.burstIntervalSeconds > 0f)
             {
@@ -119,7 +139,9 @@ namespace Valkur.Gameplay.VFX
         /// — e.g. the dash trail emitter that travels from origin to destination
         /// and must stop spawning new dust the instant it arrives, instead of
         /// pooling particles at the endpoint until VFXManager destroys the GO.
-        /// Also halts the repeating-burst coroutine if one is running.
+        /// Also halts the repeating-burst coroutine if one is running. Stops every
+        /// composite layer alongside the root — a trail whose light layer kept firing
+        /// after its mass layer stopped would visibly decouple the stack.
         /// </summary>
         public void StopEmitting()
         {
@@ -130,6 +152,11 @@ namespace Valkur.Gameplay.VFX
             }
             if (_ps != null)
                 _ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            for (int i = 0; i < _layerSystems.Count; i++)
+            {
+                var layerPs = _layerSystems[i];
+                if (layerPs != null) layerPs.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
         }
 
         /// <summary>
@@ -139,7 +166,8 @@ namespace Valkur.Gameplay.VFX
         /// re-started so the cadence resumes; for plain continuous emitters this
         /// just re-plays the underlying ParticleSystem. Used by long-lived togglers
         /// like <see cref="Valkur.Gameplay.ManaRegenAura"/> that switch the effect
-        /// on and off without rebuilding the emitter.
+        /// on and off without rebuilding the emitter. Replays every composite layer
+        /// alongside the root, mirroring <see cref="StopEmitting"/>.
         /// </summary>
         public void StartEmitting()
         {
@@ -152,6 +180,11 @@ namespace Valkur.Gameplay.VFX
                 _burstLoopCoroutine = StartCoroutine(BurstLoop(_preset.vfx.burstIntervalSeconds));
             }
             _ps.Play();
+            for (int i = 0; i < _layerSystems.Count; i++)
+            {
+                var layerPs = _layerSystems[i];
+                if (layerPs != null) layerPs.Play();
+            }
         }
 
         /// <summary>
@@ -160,7 +193,10 @@ namespace Valkur.Gameplay.VFX
         /// motion-driven emitter (e.g. the dash trail, which travels start→end
         /// in ~0.18 s — at the preset's stock 10/s only 1-2 particles drop along
         /// the path; bumping the rate while moving gives a continuous wake).
-        /// No-op if the ParticleSystem has not been built yet.
+        /// No-op if the ParticleSystem has not been built yet. ROOT ONLY — composite
+        /// layers keep their authored rate. Every current caller drives a single-preset
+        /// motion trail, so this has never needed to fan out to layers; extend it if a
+        /// caller shows up that does.
         /// </summary>
         public void SetEmissionRate(float ratePerSecond)
         {

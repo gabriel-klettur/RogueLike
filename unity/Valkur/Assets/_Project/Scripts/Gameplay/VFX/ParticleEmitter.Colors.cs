@@ -7,9 +7,9 @@ namespace Valkur.Gameplay.VFX
     public partial class ParticleEmitter
     {
 
-        private void ConfigureRenderer(ParticleVfxParams p)
+        private void ConfigureRenderer(ParticleSystem ps, ParticleVfxParams p)
         {
-            var renderer = _ps.GetComponent<ParticleSystemRenderer>();
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
             if (renderer == null) return;
 
             renderer.sortingLayerName = "VFX";
