@@ -92,7 +92,7 @@ namespace Valkur.Gameplay.VFX
             ("4. Move an instance",   "Right-click + drag a particle instance on the map to move it. Release to commit."),
             ("5. Delete an instance", "Click \"Remove\" or press the Delete tool, then click an instance. A confirmation modal will ask before destroying."),
             ("6. Undo / Redo",        "Use the Tools panel Undo / Redo buttons (or Ctrl+Z / Ctrl+Y). Capacity is 64."),
-            ("7. Save",               "Click Save in the Tools panel to write StreamingAssets/Particles/particles_instances.json. Press F1 again to close."),
+            ("7. Save",               "Instances and preset edits autosave — instances to StreamingAssets/Particles/particles_instances.json, presets to their PP_*.asset (Unity Editor only). Save forces an immediate write. Press F1 again to close."),
         };
 
         // Confirm-delete modal.
@@ -115,10 +115,15 @@ namespace Valkur.Gameplay.VFX
 
         protected override void OnDestroy()
         {
+            FlushDirtyPresets("destroy");
             _previewService.Shutdown();
             if (GameEditorManager.HasInstance) GameEditorManager.Instance.Unregister(this);
             base.OnDestroy();
         }
+
+        // Unity also raises this when the Editor leaves Play Mode, so an edit made seconds
+        // before Stop is not lost.
+        private void OnApplicationQuit() => FlushDirtyPresets("quit");
 
         private void Update()
         {
@@ -127,6 +132,7 @@ namespace Valkur.Gameplay.VFX
                 if (GameEditorManager.HasInstance) GameEditorManager.Instance.ToggleExclusive(this);
                 else                               ToggleActive();
             }
+            TickPresetAutosave();
             if (!_active) return;
 
             // Middle-mouse pan runs unconditionally.
@@ -189,6 +195,7 @@ namespace Valkur.Gameplay.VFX
 
         public void Deactivate()
         {
+            FlushDirtyPresets("close");
             _active = false;
             _root.SetActive(false);
             _selectedPresetId = null;

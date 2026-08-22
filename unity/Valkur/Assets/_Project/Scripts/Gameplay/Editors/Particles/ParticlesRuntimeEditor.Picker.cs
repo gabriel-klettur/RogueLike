@@ -193,7 +193,7 @@ namespace Valkur.Gameplay.VFX
                 {
                     _ui.PresetPropsText.text =
                         $"<b>ID:</b> {preset.id}   <b>Type:</b> {preset.type}\n" +
-                        "Colours, over-life curves, sprites and gravity vector are " +
+                        "Sprites and gravity vector are " +
                         "Inspector-only until their widgets exist.";
                     _ui.PresetPropsText.richText = true;
                 }
@@ -219,9 +219,7 @@ namespace Valkur.Gameplay.VFX
 
             preset.vfx.loops = value;
 
-#if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(preset);
-#endif
+            MarkParticlePresetDirty(preset);
             // Refresh properties text to reflect the new state.
             ShowPresetProperties(_selectedPresetId);
             SetStatus($"'{_selectedPresetId}' loops = {value}.");

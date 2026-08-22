@@ -9,7 +9,10 @@ namespace Valkur.Gameplay.VFX
     /// <summary>
     /// The editable half of the Properties panel: one row per authorable
     /// <see cref="ParticleVfxParams"/> field, applied through
-    /// <see cref="ParticlePresetFieldWriter"/> and pushed live.
+    /// <see cref="ParticlePresetFieldWriter"/> and pushed live to every matching emitter.
+    /// Edits also autosave to the preset .asset (Unity Editor only) after a short
+    /// debounce — see <see cref="MarkParticlePresetDirty"/> /
+    /// <c>ParticlesRuntimeEditor.PresetPersistence.cs</c>.
     ///
     /// Editing here edits the PRESET — by design. A preset is the shared definition, so a
     /// change reaches every placed emitter of that preset, the preview, and everything
@@ -17,10 +20,13 @@ namespace Valkur.Gameplay.VFX
     /// different storage story (the instance record only persists preset id, position and
     /// scale) and are deliberately not smuggled in through this panel.
     ///
-    /// What is NOT here: colour lists, over-life curves, sprites and gravityVector. Those
-    /// need dedicated widgets (swatch, curve editor, picker, two-field row) that
-    /// PropertyForm does not have yet; the footer under the form says so, because a field
-    /// that silently is not offered reads as a bug.
+    /// What is NOT here: sprites and gravityVector. Those need dedicated widgets (an
+    /// asset picker, a two-field row) that PropertyForm does not have yet; the footer
+    /// under the form says so, because a field that silently is not offered reads as a
+    /// bug. Colours and the over-life gradient ARE here — the form drives them through
+    /// the virtual keys ParticlePresetFieldWriter exposes (vfx.colors.a/b and
+    /// vfx.colorOverLife.start/mid/end), which flatten the underlying arrays onto
+    /// scalar-shaped colour rows.
     /// </summary>
     public partial class ParticlesRuntimeEditor
     {
@@ -170,7 +176,7 @@ namespace Valkur.Gameplay.VFX
             RebuildPresetPropertyForm(_propsFormPresetId);
 
             SetStatus($"'{_propsFormPresetId}' {key} updated — {touched} live emitter(s) refreshed. " +
-                      "Save writes it to the asset.");
+                      "Autosaves to the .asset.");
         }
 
         /// <summary>
@@ -196,22 +202,6 @@ namespace Valkur.Gameplay.VFX
                 n++;
             }
             return n;
-        }
-
-        /// <summary>
-        /// Flush edited preset assets to disk. Runtime edits mutate the loaded asset, and
-        /// in the Unity Editor that survives Play Mode — but only reaches the .asset file
-        /// on an AssetDatabase flush. In a build there is no asset database; saying so
-        /// beats a Save button that silently lies (the Spells editor set this precedent).
-        /// </summary>
-        private void FlushPresetAssetsToDisk()
-        {
-#if UNITY_EDITOR
-            UnityEditor.AssetDatabase.SaveAssets();
-            SetStatus("Preset changes written to their .asset files.");
-#else
-            SetStatus("Preset saving requires the Unity Editor; edits last this session only.");
-#endif
         }
     }
 }

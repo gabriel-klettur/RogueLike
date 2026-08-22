@@ -432,7 +432,8 @@ namespace Valkur.Gameplay.VFX
         /// <summary>
         /// Pushes a preset-asset edit onto the UndoStack.
         /// Unlike <see cref="ExecutePersistedEdit"/>, this does NOT touch the
-        /// instances JSON — preset ScriptableObjects are saved by Unity's AssetDatabase,
+        /// instances JSON — preset ScriptableObjects are autosaved by the
+        /// PresetPersistence partial (<c>ParticlesRuntimeEditor.PresetPersistence.cs</c>),
         /// not by the particles_instances.json persistence layer.
         /// </summary>
         private void ExecutePresetEdit(string label, System.Action doAction, System.Action undoAction)
@@ -441,14 +442,6 @@ namespace Valkur.Gameplay.VFX
                 () => doAction?.Invoke(),
                 () => undoAction?.Invoke());
             RefreshUndoRedoLabels();
-        }
-
-        private static void MarkParticlePresetDirty(ParticlePresetDefinition def)
-        {
-            if (def == null) return;
-#if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(def);
-#endif
         }
 
         // ── Scroll sync ───────────────────────────────────────────────────────
