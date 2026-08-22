@@ -10,34 +10,34 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 27d602a19fa51234eb9802e4cee9caaa, type: 3}
-  m_Name: PP_flowers_pollen_soft
+  m_Name: PP_flowers_pollen_haze_soft
   m_EditorClassIdentifier:
-  id: flowers_pollen_soft
-  displayName: Flowers Pollen
+  id: flowers_pollen_haze_soft
+  displayName: Flowers Pollen Haze (Soft)
   type: vegetation
   vfx:
-    kind: aura
+    kind: smoke_emitter
     loops: 1
-    emitRate: 4
+    emitRate: 1
     count: 12
     burstIntervalSeconds: 1
-    speed: 0.08
+    speed: 0.05
     gravity: 0
     drag: 0
-    lifespan: 5.5
-    sizeMin: 0.03
-    sizeMax: 0.14
-    sizeAspect: 1
+    lifespan: 7
+    sizeMin: 1
+    sizeMax: 1.9
+    sizeAspect: 1.7
     colors:
     - {r: 1, g: 1, b: 1, a: 1}
     color: {r: 1, g: 1, b: 1, a: 1}
     additive: 0
     colorIntensity: 1
-    textureShape: 3
-    textureSoftness: 0.55
+    textureShape: 5
+    textureSoftness: 0.9
     customSprite: {fileID: 0}
     startRotationJitterDegrees: 180
-    rotationSpeedDegrees: 0
+    rotationSpeedDegrees: 8
     worldSpace: 0
     radius: 0.5
     arcRangeDegrees: 45
@@ -46,48 +46,45 @@ MonoBehaviour:
     thickness: 0.0625
     swayAmp: 0.021875
     swaySpeed: 0.12
-    spawnWidth: 1.8
-    spawnHeight: 1.4
+    spawnWidth: 2.2
+    spawnHeight: 1.8
     directionDegrees: -1
     directionSpreadDegrees: 15
     dispersion: 0
-    gravityVector: {x: 0.04, y: 0.2}
+    gravityVector: {x: 0.03, y: 0.11}
     useGravityVector: 1
     sizeOverLife:
     - time: 0
-      value: 0.5
-    - time: 0.2
-      value: 1
+      value: 0.4
+    - time: 0.3
+      value: 0.75
     - time: 1
-      value: 0.6
+      value: 1
     alphaOverLife:
     - time: 0
       value: 0
-    - time: 0.12
-      value: 1
-    - time: 0.6
-      value: 0.5
+    - time: 0.25
+      value: 0.075
+    - time: 0.7
+      value: 0.05
     - time: 1
       value: 0
     colorOverLife:
     - time: 0
-      color: {r: 1, g: 0.98, b: 0.85, a: 1}
-    - time: 0.3
-      color: {r: 1, g: 0.82, b: 0.45, a: 1}
+      color: {r: 1, g: 0.93, b: 0.75, a: 1}
+    - time: 0.5
+      color: {r: 1, g: 0.82, b: 0.42, a: 1}
     - time: 1
-      color: {r: 0.94, g: 0.58, b: 0.22, a: 1}
+      color: {r: 1, g: 0.7, b: 0.26, a: 1}
     flipbookFrames: []
     flipbookCycles: 1
     flipbookRandomStartFrame: 0
     noiseEnabled: 1
-    noiseStrength: 0.2
-    noiseFrequency: 0.32
-    noiseScrollSpeed: 0.15
-    noiseVerticalScale: 0.45
+    noiseStrength: 0.22
+    noiseFrequency: 0.22
+    noiseScrollSpeed: 0.12
+    noiseVerticalScale: 0.5
     turnoverCycles: 0
     turnoverMinWidth: 0.12
     outerRadius: 0
-  layers:
-  - {fileID: 11400000, guid: dfdc49a58caa49929af488985be11d7b, type: 2}
-  - {fileID: 11400000, guid: 31ef706dc91841348d243b96b81ed979, type: 2}
-  - {fileID: 11400000, guid: 1bc2699ed55f405185947f29c84392bb, type: 2}
+  layers: []
